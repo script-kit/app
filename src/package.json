@@ -14,5 +14,11 @@
     "postinstall": "yarn electron-rebuild"
   },
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {
+    "electron-prompt": "^1.6.0",
+    "fsevents": "^2.3.1"
+  },
+  "devDependencies": {
+    "@types/electron-prompt": "^1.6.0"
+  }
 }
