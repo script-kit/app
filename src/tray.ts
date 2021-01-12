@@ -45,9 +45,6 @@ const makeMenu = async () => {
       const menuOptions = stdout.substring(
         stdout.indexOf(menuMarker) + menuMarker.length
       );
-
-      log.info({ filePath, menuOptions });
-
       if (!menuOptions) return;
 
       const accelerator = shortcutMap.get(filePath);

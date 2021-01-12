@@ -15,7 +15,6 @@ let child: ChildProcess | null = null;
 export const processMap = new Map();
 
 ipcMain.on('prompt', (event, data) => {
-  console.log({ event, data });
   const prompt = getPromptWindow();
   if (child) {
     child?.send(data);
@@ -41,6 +40,40 @@ const closeOnEscape = (prompt: BrowserWindow) => (
       prompt.hide();
     }
     log.info(`Escape pressed`);
+  }
+};
+
+const displayPrompt = (data: SimplePromptOptions) => {
+  log.info('prompt', data);
+  const prompt = getPromptWindow();
+
+  if (prompt) {
+    const cursor = screen.getCursorScreenPoint();
+    // Get display with cursor
+    const distScreen = screen.getDisplayNearestPoint({
+      x: cursor.x,
+      y: cursor.y,
+    });
+
+    const { width, height } = distScreen.workAreaSize;
+
+    log.info('-------');
+    log.info('Position:', width, '-', prompt.getPosition()[0]);
+    log.info('-------');
+
+    prompt.setSize(
+      Math.floor((width - prompt.getPosition()[0]) * distScreen.scaleFactor),
+      600 // Math.floor((height / 7) * distScreen.scaleFactor)
+    );
+    log.info('size:', prompt.getSize());
+    prompt.loadURL(`file://${__dirname}/index.html`);
+    prompt.webContents.on('did-finish-load', () => {
+      prompt.webContents.on('before-input-event', closeOnEscape(prompt));
+      prompt.webContents.send('prompt', data);
+      prompt.webContents.closeDevTools();
+
+      prompt.show();
+    });
   }
 };
 
@@ -77,42 +110,10 @@ const simpleScript = (execPath: string, execArgv: string[] = []) => {
 
   child.on('message', async (data: SimplePromptOptions) => {
     if (data.from === 'prompt') {
-      log.info('prompt', data);
-      const prompt = getPromptWindow();
-
-      if (prompt) {
-        const cursor = screen.getCursorScreenPoint();
-        // Get display with cursor
-        const distScreen = screen.getDisplayNearestPoint({
-          x: cursor.x,
-          y: cursor.y,
-        });
-
-        const { width, height } = distScreen.workAreaSize;
-
-        log.info('-------');
-        log.info('Position:', width, '-', prompt.getPosition()[0]);
-        log.info('-------');
-
-        prompt.setSize(
-          Math.floor(
-            (width - prompt.getPosition()[0]) * distScreen.scaleFactor
-          ),
-          Math.floor((height / 7) * distScreen.scaleFactor)
-        );
-        log.info('size:', prompt.getSize());
-        prompt.loadURL(`file://${__dirname}/index.html`);
-        prompt.webContents.on('did-finish-load', () => {
-          prompt.webContents.on('before-input-event', closeOnEscape(prompt));
-          prompt.webContents.send('prompt', data);
-          prompt.webContents.closeDevTools();
-
-          prompt.show();
-        });
-      }
+      displayPrompt(data);
     }
     if (data.from === 'need') {
-      //  implement need
+      displayPrompt(data);
     }
     if (data.from === 'show') {
       // showDismissableWindow(data);
