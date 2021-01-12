@@ -12,12 +12,13 @@ import { Dirent } from 'fs';
 import { grep } from 'shelljs';
 import {
   processMap,
-  shortcutMap,
   SIMPLE_BIN_PATH,
   SIMPLE_SCRIPTS_PATH,
   trySimpleScript,
 } from './simple';
 import { getAssetPath } from './assets';
+import { setPromptPosition } from './prompt';
+import { shortcutMap } from './shortcuts';
 
 let tray: Tray | null = null;
 let menu: MenuItemConstructorOptions[] | null = null;
@@ -35,6 +36,7 @@ const makeMenu = async () => {
   files
     .filter((file) => file.isFile())
     .map((file) => file.name)
+    .filter((name) => name.endsWith('.js'))
     .forEach((file) => {
       const filePath = path.join(SIMPLE_SCRIPTS_PATH, file);
       let { stdout } = grep(menuMarker, filePath);
@@ -44,14 +46,11 @@ const makeMenu = async () => {
         stdout.indexOf(menuMarker) + menuMarker.length
       );
 
+      log.info({ filePath, menuOptions });
+
       if (!menuOptions) return;
 
       const accelerator = shortcutMap.get(filePath);
-
-      const command = filePath
-        .replace(SIMPLE_SCRIPTS_PATH, '')
-        .replace('/', '')
-        .replace('.js', '');
 
       const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
 
@@ -146,6 +145,12 @@ const leftClick = async (event: KeyboardEvent, position: Point) => {
   const menuCondition = event.altKey || event.shiftKey || event.ctrlKey;
   const menuTemplate = await (menuCondition ? makeOtherMenu() : makeMenu());
 
+  if (tray) {
+    const bounds = tray?.getBounds();
+
+    setPromptPosition(bounds.x, bounds.y);
+  }
+
   if (tray) tray.setContextMenu(Menu.buildFromTemplate(menuTemplate));
 };
 
@@ -164,4 +169,6 @@ export const createTray = async () => {
   } catch (error) {
     log.error(error);
   }
+
+  return 'tray created';
 };

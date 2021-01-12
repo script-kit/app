@@ -10,12 +10,13 @@
  */
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
-import { app } from 'electron';
+import { app, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
+import { createPromptWindow } from './prompt';
 
 app.setName('Simple Scripts');
 app.setAsDefaultProtocolClient('simple');
@@ -60,6 +61,14 @@ app.on('window-all-closed', (e: Event) => e.preventDefault());
 const ready = async () => {
   await createTray();
   await manageShortcuts();
+
+  console.log(`------ AFTER MANAGE SHORTCUTS -----`);
+
+  createPromptWindow();
+
+  ipcMain.on('message', (event, data) => {
+    console.log({ data });
+  });
 };
 
 app.whenReady().then(ready).catch(console.log);

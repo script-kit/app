@@ -1,9 +1,10 @@
-import { app } from 'electron';
+import { app, BrowserWindow, ipcMain, Event, Tray, screen } from 'electron';
 import path from 'path';
 import kill from 'tree-kill';
 import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
-import prompt from 'electron-prompt';
+import { getPromptWindow } from './prompt';
+import { SimplePromptOptions } from './types';
 
 export const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
 export const SIMPLE_SCRIPTS_PATH = path.join(SIMPLE_PATH, 'scripts');
@@ -12,12 +13,36 @@ export const SIMPLE_BIN_PATH = path.join(SIMPLE_PATH, 'bin');
 let child: ChildProcess | null = null;
 
 export const processMap = new Map();
-export const shortcutMap = new Map();
 
-interface SimplePromptOptions extends prompt.Options {
-  from: 'prompt' | 'log' | 'show' | 'need';
-  message: string | undefined;
+ipcMain.on('prompt', (event, data) => {
+  console.log({ event, data });
+  const prompt = getPromptWindow();
+  if (child) {
+    child?.send(data);
+    prompt?.hide();
+  }
+});
+
+// https://www.electronjs.org/docs/api/web-contents#event-before-input-event
+interface WebContentsInput {
+  key: string;
+  code: number;
 }
+
+const closeOnEscape = (prompt: BrowserWindow) => (
+  event: Event,
+  input: WebContentsInput
+) => {
+  if (input.key === 'Escape' || input.key === 'Esc' || input.code === 27) {
+    event.preventDefault();
+    if (child) {
+      log.info(child.pid);
+      kill(child.pid);
+      prompt.hide();
+    }
+    log.info(`Escape pressed`);
+  }
+};
 
 const simpleScript = (execPath: string, execArgv: string[] = []) => {
   log.info('processMap:', processMap);
@@ -52,14 +77,38 @@ const simpleScript = (execPath: string, execArgv: string[] = []) => {
 
   child.on('message', async (data: SimplePromptOptions) => {
     if (data.from === 'prompt') {
-      const result = await prompt(data)?.catch((error) => {
-        log.error(error);
-        child?.kill();
-      });
-      if (result) {
-        child?.send(result);
-      } else {
-        child?.kill();
+      log.info('prompt', data);
+      const prompt = getPromptWindow();
+
+      if (prompt) {
+        const cursor = screen.getCursorScreenPoint();
+        // Get display with cursor
+        const distScreen = screen.getDisplayNearestPoint({
+          x: cursor.x,
+          y: cursor.y,
+        });
+
+        const { width, height } = distScreen.workAreaSize;
+
+        log.info('-------');
+        log.info('Position:', width, '-', prompt.getPosition()[0]);
+        log.info('-------');
+
+        prompt.setSize(
+          Math.floor(
+            (width - prompt.getPosition()[0]) * distScreen.scaleFactor
+          ),
+          Math.floor((height / 7) * distScreen.scaleFactor)
+        );
+        log.info('size:', prompt.getSize());
+        prompt.loadURL(`file://${__dirname}/index.html`);
+        prompt.webContents.on('did-finish-load', () => {
+          prompt.webContents.on('before-input-event', closeOnEscape(prompt));
+          prompt.webContents.send('prompt', data);
+          prompt.webContents.closeDevTools();
+
+          prompt.show();
+        });
       }
     }
     if (data.from === 'need') {

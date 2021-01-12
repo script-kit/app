@@ -25,7 +25,10 @@ const requiredByDLLConfig = module.parent.filename.includes(
 /**
  * Warn if the DLL is not built
  */
-if (!requiredByDLLConfig && !(fs.existsSync(dllDir) && fs.existsSync(manifest))) {
+if (
+  !requiredByDLLConfig &&
+  !(fs.existsSync(dllDir) && fs.existsSync(manifest))
+) {
   console.log(
     chalk.black.bgYellow.bold(
       'The DLL files are missing. Sit back while we build them for you with "yarn build-dll"'
@@ -61,9 +64,7 @@ export default merge(baseConfig, {
           {
             loader: require.resolve('babel-loader'),
             options: {
-              plugins: [
-                require.resolve('react-refresh/babel'),
-              ].filter(Boolean),
+              plugins: [require.resolve('react-refresh/babel')].filter(Boolean),
             },
           },
         ],
@@ -80,6 +81,7 @@ export default merge(baseConfig, {
               sourceMap: true,
             },
           },
+          'postcss-loader',
         ],
       },
       {
@@ -98,51 +100,10 @@ export default merge(baseConfig, {
               importLoaders: 1,
             },
           },
+          'postcss-loader',
         ],
       },
-      // SASS support - compile all .global.scss files and pipe it to style.css
-      {
-        test: /\.global\.(scss|sass)$/,
-        use: [
-          {
-            loader: 'style-loader',
-          },
-          {
-            loader: 'css-loader',
-            options: {
-              sourceMap: true,
-            },
-          },
-          {
-            loader: 'sass-loader',
-          },
-        ],
-      },
-      // SASS support - compile all other .scss files and pipe it to style.css
-      {
-        test: /^((?!\.global).)*\.(scss|sass)$/,
-        use: [
-          {
-            loader: 'style-loader',
-          },
-          {
-            loader: '@teamsupercell/typings-for-css-modules-loader',
-          },
-          {
-            loader: 'css-loader',
-            options: {
-              modules: {
-                localIdentName: '[name]__[local]__[hash:base64:5]',
-              },
-              sourceMap: true,
-              importLoaders: 1,
-            },
-          },
-          {
-            loader: 'sass-loader',
-          },
-        ],
-      },
+
       // WOFF Font
       {
         test: /\.woff(\?v=\d+\.\d+\.\d+)?$/,
@@ -200,7 +161,6 @@ export default merge(baseConfig, {
     ],
   },
   plugins: [
-
     requiredByDLLConfig
       ? null
       : new webpack.DllReferencePlugin({
@@ -261,13 +221,13 @@ export default merge(baseConfig, {
     },
     before() {
       console.log('Starting Main Process...');
-        spawn('npm', ['run', 'start:main'], {
-          shell: true,
-          env: process.env,
-          stdio: 'inherit',
-        })
-          .on('close', (code) => process.exit(code))
-          .on('error', (spawnError) => console.error(spawnError));
+      spawn('npm', ['run', 'start:main'], {
+        shell: true,
+        env: process.env,
+        stdio: 'inherit',
+      })
+        .on('close', (code) => process.exit(code))
+        .on('error', (spawnError) => console.error(spawnError));
     },
   },
 });

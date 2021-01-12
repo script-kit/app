@@ -2,11 +2,26 @@
 import { grep } from 'shelljs';
 import log from 'electron-log';
 import { globalShortcut } from 'electron';
+import chokidar from 'chokidar';
+import path from 'path';
 import { SIMPLE_SCRIPTS_PATH, trySimpleScript } from './simple';
 
-const shortcutMap = new Map();
+export const shortcutMap = new Map();
 
-const onFilesChanged = (event: 'add' | 'change', filePath: string) => {
+const onFilesChanged = (
+  event: 'add' | 'change' | 'unlink',
+  filePath: string
+) => {
+  if (event === 'change') log.info({ event, filePath });
+  shortcutMap.forEach(log.info);
+  if (event === 'unlink') {
+    const oldShortcut = shortcutMap.get(filePath);
+
+    if (oldShortcut) {
+      globalShortcut.unregister(oldShortcut);
+      shortcutMap.delete(filePath);
+    }
+  }
   if (event === 'add' || event === 'change') {
     const shortcutMarker = 'Shortcut: ';
     const { stdout } = grep(shortcutMarker, filePath);
@@ -52,12 +67,13 @@ const onFilesChanged = (event: 'add' | 'change', filePath: string) => {
     if (ret && globalShortcut.isRegistered(shortcut)) {
       log.info(`Registered ${shortcut} to ${command}`);
       shortcutMap.set(filePath, shortcut);
+      shortcutMap.forEach(log.info);
     }
   }
 };
 
 export const manageShortcuts = async () => {
-  (await import('chokidar'))
-    .watch(SIMPLE_SCRIPTS_PATH, { depth: 0 })
+  chokidar
+    .watch(`${SIMPLE_SCRIPTS_PATH}${path.sep}*.js`, { depth: 0 })
     .on('all', onFilesChanged);
 };

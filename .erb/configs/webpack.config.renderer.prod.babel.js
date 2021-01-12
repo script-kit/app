@@ -16,9 +16,12 @@ import DeleteSourceMaps from '../scripts/DeleteSourceMaps';
 CheckNodeEnv('production');
 DeleteSourceMaps();
 
-const devtoolsConfig = process.env.DEBUG_PROD === 'true' ? {
-  devtool: 'source-map'
-} : {};
+const devtoolsConfig =
+  process.env.DEBUG_PROD === 'true'
+    ? {
+        devtool: 'source-map',
+      }
+    : {};
 
 export default merge(baseConfig, {
   ...devtoolsConfig,
@@ -54,6 +57,7 @@ export default merge(baseConfig, {
               sourceMap: true,
             },
           },
+          'postcss-loader',
         ],
       },
       // Pipe other styles through css modules and append to style.css
@@ -72,55 +76,10 @@ export default merge(baseConfig, {
               sourceMap: true,
             },
           },
+          'postcss-loader',
         ],
       },
-      // Add SASS support  - compile all .global.scss files and pipe it to style.css
-      {
-        test: /\.global\.(scss|sass)$/,
-        use: [
-          {
-            loader: MiniCssExtractPlugin.loader,
-          },
-          {
-            loader: 'css-loader',
-            options: {
-              sourceMap: true,
-              importLoaders: 1,
-            },
-          },
-          {
-            loader: 'sass-loader',
-            options: {
-              sourceMap: true,
-            },
-          },
-        ],
-      },
-      // Add SASS support  - compile all other .scss files and pipe it to style.css
-      {
-        test: /^((?!\.global).)*\.(scss|sass)$/,
-        use: [
-          {
-            loader: MiniCssExtractPlugin.loader,
-          },
-          {
-            loader: 'css-loader',
-            options: {
-              modules: {
-                localIdentName: '[name]__[local]__[hash:base64:5]',
-              },
-              importLoaders: 1,
-              sourceMap: true,
-            },
-          },
-          {
-            loader: 'sass-loader',
-            options: {
-              sourceMap: true,
-            },
-          },
-        ],
-      },
+
       // WOFF Font
       {
         test: /\.woff(\?v=\d+\.\d+\.\d+)?$/,
@@ -179,20 +138,19 @@ export default merge(baseConfig, {
   },
 
   optimization: {
-    minimizer:
-      [
-          new TerserPlugin({
-            parallel: true,
-          }),
-          new OptimizeCSSAssetsPlugin({
-            cssProcessorOptions: {
-              map: {
-                inline: false,
-                annotation: true,
-              },
-            },
-          }),
-        ],
+    minimizer: [
+      new TerserPlugin({
+        parallel: true,
+      }),
+      new OptimizeCSSAssetsPlugin({
+        cssProcessorOptions: {
+          map: {
+            inline: false,
+            annotation: true,
+          },
+        },
+      }),
+    ],
   },
 
   plugins: [

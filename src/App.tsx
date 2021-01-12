@@ -1,20 +1,37 @@
-import React from 'react';
-import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
+/* eslint-disable jsx-a11y/no-autofocus */
+/* eslint-disable jsx-a11y/label-has-associated-control */
+import React, { FormEvent, useEffect, useState } from 'react';
+import { ipcRenderer, nativeTheme } from 'electron';
+import { SimplePromptOptions } from './types';
 
-const Hello = () => {
-  return (
-    <div>
-      <h2>Hello</h2>
-    </div>
-  );
-};
+export default function Prompt() {
+  const [name, setName] = useState('');
+  const [message, setMessage] = useState('');
+  useEffect(() => {
+    ipcRenderer.on('prompt', (event, data: SimplePromptOptions) => {
+      setMessage(data.message as string);
+    });
+  }, []);
 
-export default function App() {
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    console.log({ event });
+    ipcRenderer.send('prompt', name);
+  };
+
   return (
-    <Router>
-      <Switch>
-        <Route path="/" component={Hello} />
-      </Switch>
-    </Router>
+    <form onSubmit={onSubmit}>
+      <div className="mt-1">
+        <input
+          type="text"
+          name="prompt"
+          id="prompt"
+          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+          placeholder={message}
+          autoFocus
+          onChange={(e) => setName(e.currentTarget.value)}
+        />
+      </div>
+    </form>
   );
 }
