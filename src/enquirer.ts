@@ -28,7 +28,7 @@ export interface BasePromptOptions {
   stdout?: NodeJS.WriteStream;
 }
 
-interface Choice {
+export interface Choice {
   name: string;
   message?: string;
   value?: string;
@@ -36,7 +36,7 @@ interface Choice {
   disabled?: boolean | string;
 }
 
-interface ArrayPromptOptions extends BasePromptOptions {
+export interface ArrayPromptOptions extends BasePromptOptions {
   type:
     | 'autocomplete'
     | 'editable'

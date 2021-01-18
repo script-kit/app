@@ -141,13 +141,6 @@ const makeOtherMenu = async () => {
 const leftClick = async (event: KeyboardEvent, position: Point) => {
   const menuCondition = event.altKey || event.shiftKey || event.ctrlKey;
   const menuTemplate = await (menuCondition ? makeOtherMenu() : makeMenu());
-
-  if (tray) {
-    const bounds = tray?.getBounds();
-
-    setPromptPosition(bounds.x, bounds.y);
-  }
-
   if (tray) tray.setContextMenu(Menu.buildFromTemplate(menuTemplate));
 };
 

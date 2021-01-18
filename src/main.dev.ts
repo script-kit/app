@@ -16,11 +16,10 @@ import log from 'electron-log';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
-import { createPromptWindow } from './prompt';
 
 app.setName('Simple Scripts');
 app.setAsDefaultProtocolClient('simple');
-// app.dock.hide();
+app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
 
 export default class AppUpdater {
@@ -63,8 +62,6 @@ const ready = async () => {
   await manageShortcuts();
 
   console.log(`------ AFTER MANAGE SHORTCUTS -----`);
-
-  createPromptWindow();
 
   ipcMain.on('message', (event, data) => {
     console.log({ data });
