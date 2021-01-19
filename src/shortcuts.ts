@@ -55,9 +55,9 @@ const onFilesChanged = (
     // At this point, we know it's a new shortcut, so register it
 
     const ret = globalShortcut.register(shortcut, () => {
-      const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
+      // const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
 
-      trySimpleScript(execPath, []);
+      trySimpleScript(filePath, []);
     });
 
     if (!ret) {

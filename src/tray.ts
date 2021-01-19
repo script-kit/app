@@ -12,12 +12,12 @@ import { Dirent } from 'fs';
 import { grep } from 'shelljs';
 import {
   processMap,
+  simplePath,
   SIMPLE_BIN_PATH,
   SIMPLE_SCRIPTS_PATH,
   trySimpleScript,
 } from './simple';
 import { getAssetPath } from './assets';
-import { setPromptPosition } from './prompt';
 import { shortcutMap } from './shortcuts';
 
 let tray: Tray | null = null;
@@ -49,12 +49,10 @@ const makeMenu = async () => {
 
       const accelerator = shortcutMap.get(filePath);
 
-      const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
-
       let label = menuOptions.trim();
-      const click = () => trySimpleScript(execPath);
+      const click = () => trySimpleScript(filePath);
 
-      if (processMap.get(execPath)) {
+      if (processMap.get(filePath)) {
         label += ' 🔚';
       }
 
@@ -130,8 +128,7 @@ const makeOtherMenu = async () => {
   const newItem = {
     label: 'new',
     click: () => {
-      const execPath = path.join(SIMPLE_BIN_PATH, 'new');
-      trySimpleScript(execPath);
+      trySimpleScript(simplePath('cli', 'new'));
     },
   };
 
