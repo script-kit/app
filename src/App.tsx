@@ -64,7 +64,7 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (data.type === 'lazy' && value) {
+    if (data.type === 'lazy' && typeof value === 'string') {
       ipcRenderer.send('input', value);
     }
   }, [data, value]);
