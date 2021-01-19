@@ -111,9 +111,9 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       '--require',
       'dotenv/config',
       '--require',
-      simplePath('lib', 'core.cjs'),
+      simplePath('preload', 'core.cjs'),
       '--require',
-      simplePath('lib', 'system.cjs'),
+      simplePath('preload', 'system.cjs'),
     ],
     env: {
       SIMPLE_PATH,
