@@ -1,46 +1,43 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import React, { SyntheticEvent, useCallback, useEffect, useState } from 'react';
-import { ipcRenderer, nativeTheme } from 'electron';
+import React, { KeyboardEvent, useCallback, useEffect, useState } from 'react';
+import { app, ipcRenderer, nativeTheme } from 'electron';
 import { SimplePromptOptions } from './types';
 
 interface ChoiceData {
   name: string;
   value: string;
-  display: string | null;
+  info: string | null;
 }
 
 export default function App() {
   const [data, setData]: any[] = useState({});
-  const [value, setValue] = useState('');
+  const [inputValue, setInputValue] = useState('');
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState<ChoiceData[]>([]);
 
-  const submit = useCallback(() => {
-    if (choices[index]?.value) {
-      const choiceValue = choices[index]?.value;
-      ipcRenderer.send('prompt', choiceValue);
-    } else {
-      ipcRenderer.send('prompt', value);
-    }
-  }, [choices, index, value]);
+  const submit = useCallback((submitValue: string) => {
+    ipcRenderer.send('prompt', submitValue);
+  }, []);
 
   const onChange = useCallback((event) => {
     if (event.key === 'Enter') return;
-    if (event.key === 'Backspace') return;
     setIndex(0);
-    setValue(event.currentTarget.value);
+    setInputValue(event.currentTarget.value);
+  }, []);
+
+  const escFunction = useCallback((event) => {
+    if (event.key === 'Escape') {
+      ipcRenderer.send('escape');
+    }
   }, []);
 
   const onKeyDown = useCallback(
-    (event) => {
-      if (event.key === 'Backspace') {
-        // setIndex(0);
-        setValue(event.currentTarget.value);
-        return;
-      }
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      console.log(event);
       if (event.key === 'Enter') {
-        submit();
+        submit(choices?.[index]?.value || inputValue);
+
         return;
       }
 
@@ -60,18 +57,17 @@ export default function App() {
 
       setIndex(newIndex);
     },
-    [choices, index, submit]
+    [choices, index, submit, inputValue]
   );
 
   useEffect(() => {
-    if (data.type === 'lazy' && typeof value === 'string') {
-      ipcRenderer.send('input', value);
+    if (data.type === 'lazy' && typeof inputValue === 'string') {
+      ipcRenderer.send('input', inputValue);
     }
-  }, [data, value]);
+  }, [data, inputValue]);
 
   useEffect(() => {
-    const lazyHandler = (event, lazyChoices: any) => {
-      console.log({ lazyChoices });
+    const lazyHandler = (_event: any, lazyChoices: any) => {
       setChoices(lazyChoices);
     };
     ipcRenderer.on('lazy', lazyHandler);
@@ -84,10 +80,9 @@ export default function App() {
   useEffect(() => {
     if (data.type === 'lazy') return;
     const filtered = ((data?.choices as any[]) || [])?.filter((choice) => {
-      // TOOD: Handle names
       return choice?.name.match(
         new RegExp(
-          Array.from(value)
+          Array.from(inputValue)
             .map((letter) => `${letter}.*`)
             .join(''),
           'i'
@@ -95,19 +90,12 @@ export default function App() {
       );
     });
     setChoices(filtered);
-  }, [data, value]);
+  }, [data, inputValue]);
 
   useEffect(() => {
-    ipcRenderer.on('prompt', (event, promptData: SimplePromptOptions) => {
-      console.log({ promptData });
+    ipcRenderer.on('prompt', (_event, promptData: SimplePromptOptions) => {
       setData(promptData);
     });
-  }, []);
-
-  const escFunction = useCallback((event) => {
-    if (event.keyCode === 27) {
-      ipcRenderer.send('escape');
-    }
   }, []);
 
   useEffect(() => {
@@ -116,7 +104,7 @@ export default function App() {
     return () => {
       document.removeEventListener('keydown', escFunction, false);
     };
-  }, []);
+  }, [escFunction]);
 
   return (
     <div className="flex flex-row-reverse w-full">
@@ -124,7 +112,7 @@ export default function App() {
         <input
           className="w-full"
           type="text"
-          value={value}
+          value={inputValue}
           onChange={onChange}
           autoFocus
           placeholder={data?.message || ''}
@@ -150,9 +138,8 @@ export default function App() {
               text-left
               justify-start
               ${index === i ? `bg-gray-300` : ``}`}
-              onClick={(event) => {
-                setIndex(i);
-                submit();
+              onClick={(_event) => {
+                submit(choice.value);
               }}
             >
               {choice.name}
@@ -160,16 +147,14 @@ export default function App() {
           ))}
         </div>
       </div>
-      {choices[index]?.display && (
-        <div className="w-1/2 flex justify-end">
-          <div
-            className="bg-white"
-            // eslint-disable-next-line react/no-danger
-            dangerouslySetInnerHTML={{
-              __html: choices[index]?.display as string,
-            }}
-          />
-        </div>
+      {choices[index]?.info && (
+        <div
+          className="w-1/2 flex justify-end"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: choices[index]?.info as string,
+          }}
+        />
       )}
     </div>
   );

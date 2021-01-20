@@ -29,6 +29,17 @@ ipcMain.on('escape', () => {
   }
 });
 
+ipcMain.on('quit', () => {
+  closePromptWindow();
+
+  if (child) {
+    log.info(`Exiting: ${child.pid}`);
+    kill(child.pid);
+  }
+
+  app.quit();
+});
+
 ipcMain.on('prompt', (event, data) => {
   // console.log(`ipcMain.on('prompt')`, { data });
   if (child) {
@@ -146,6 +157,10 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   });
 
   child.on('message', async (data: any) => {
+    if (data === 'quit') {
+      app.quit();
+      return;
+    }
     // console.log({ data });
     if (data.from === 'prompt') {
       displayPrompt(data);
