@@ -41,6 +41,7 @@
       "main.prod.js.map",
       "package.json"
     ],
+    "afterSign": ".erb/scripts/Notarize.js",
     "mac": {
       "target": [
         "dmg"
