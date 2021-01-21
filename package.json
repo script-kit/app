@@ -1,5 +1,5 @@
 {
-  "name": "simple-app",
+  "name": "simpleapp",
   "productName": "Simple Scripts",
   "description": "A companion app for Simple Scripts",
   "scripts": {
@@ -36,6 +36,7 @@
       "dist/",
       "node_modules/",
       "index.html",
+      "preload.js",
       "main.prod.js",
       "main.prod.js.map",
       "package.json"
@@ -86,13 +87,13 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "simple-app",
-      "repo": "simple-app"
+      "owner": "johnlindquist",
+      "repo": "simpleapp"
     }
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/johnlindquist/simple-app.git"
+    "url": "git+https://github.com/johnlindquist/simpleapp.git"
   },
   "author": {
     "name": "John Lindquist",
