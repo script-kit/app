@@ -51,7 +51,6 @@ ipcMain.on('prompt', (event, data) => {
 ipcMain.on(
   'input',
   debounce((event, input) => {
-    console.log({ input });
     if (child) {
       child?.send({ from: 'input', input });
     }
@@ -66,7 +65,7 @@ interface WebContentsInput {
 }
 
 const displayPrompt = (data: SimplePromptOptions) => {
-  log.info('prompt', data);
+  // log.info('prompt', data);
   const prompt = getPromptWindow();
   prompt.setMaxListeners(1);
 

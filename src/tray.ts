@@ -6,12 +6,20 @@ import { getAssetPath } from './assets';
 
 let tray: Tray | null = null;
 
-const leftClick = async () => {
-  trySimpleScript('cli/run');
+const leftClick = async (event: MouseEvent) => {
+  if (event.metaKey) {
+    trySimpleScript('app/command-click');
+  } else if (event.shiftKey) {
+    trySimpleScript('app/shift-click');
+  } else if (event.ctrlKey) {
+    trySimpleScript('app/control-click');
+  } else if (event.altKey) {
+    trySimpleScript('app/alt-click');
+  }
 };
 
 const rightClick = async () => {
-  trySimpleScript('cli/run');
+  trySimpleScript('app/right-click');
 };
 
 const trayIcon = getAssetPath('IconTemplate.png');

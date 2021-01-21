@@ -13,7 +13,6 @@ const onFilesChanged = (
   filePath: string
 ) => {
   if (event === 'change') log.info({ event, filePath });
-  shortcutMap.forEach(log.info);
   if (event === 'unlink') {
     const oldShortcut = shortcutMap.get(filePath);
 
@@ -67,7 +66,6 @@ const onFilesChanged = (
     if (ret && globalShortcut.isRegistered(shortcut)) {
       log.info(`Registered ${shortcut} to ${command}`);
       shortcutMap.set(filePath, shortcut);
-      shortcutMap.forEach(log.info);
     }
   }
 };
