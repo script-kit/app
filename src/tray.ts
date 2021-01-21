@@ -15,6 +15,8 @@ const leftClick = async (event: MouseEvent) => {
     trySimpleScript('app/control-click');
   } else if (event.altKey) {
     trySimpleScript('app/alt-click');
+  } else {
+    trySimpleScript('app/left-click');
   }
 };
 

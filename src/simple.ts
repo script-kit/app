@@ -182,6 +182,18 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       // showDismissableWindow(data);
     }
 
+    if (data.from === 'system') {
+      const cursor = screen.getCursorScreenPoint();
+      // Get display with cursor
+      const activeScreen = screen.getDisplayNearestPoint({
+        x: cursor.x,
+        y: cursor.y,
+      });
+
+      child?.send({ from: 'system', activeScreen });
+      return;
+    }
+
     if (data.from === 'log') {
       log.info(data.message);
       return;
