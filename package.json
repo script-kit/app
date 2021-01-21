@@ -41,7 +41,6 @@
       "main.prod.js.map",
       "package.json"
     ],
-    "afterSign": ".erb/scripts/Notarize.js",
     "mac": {
       "target": [
         "dmg"
@@ -102,7 +101,7 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/electron-react-boilerplate/electron-react-boilerplate/issues"
+    "url": "https://github.com/johnlindquist/simpleapp/issues"
   },
   "keywords": [
     "electron",
@@ -110,7 +109,7 @@
     "typescript",
     "ts"
   ],
-  "homepage": "https://github.com/electron-react-boilerplate/electron-react-boilerplate#readme",
+  "homepage": "https://github.com/johnlindquist/simpleapp#readme",
   "jest": {
     "testURL": "http://localhost/",
     "moduleNameMapper": {
