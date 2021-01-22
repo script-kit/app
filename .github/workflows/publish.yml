@@ -28,7 +28,7 @@ jobs:
 
       - name: Download Simple Scripts Node
         run: |
-          ./simplescripts/config/install-node.sh --prefix ./simplescripts/node --platform darwin
+          ~/work/simpleapp/simpleapp/simplescripts/config/install-node.sh --prefix ~/work/simpleapp/simpleapp/simplescripts/node --platform darwin
 
       - name: Publish releases
         env:
