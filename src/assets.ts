@@ -2,10 +2,15 @@
 import { app } from 'electron';
 import path from 'path';
 
-const ASSETS_PATH = app.isPackaged
-  ? path.join(process.resourcesPath, 'assets')
-  : path.join(__dirname, '../assets');
+const checkPackaged = (name) =>
+  app.isPackaged
+    ? path.join(process.resourcesPath, name)
+    : path.join(__dirname, '..', name);
 
 export const getAssetPath = (...paths: string[]): string => {
-  return path.join(ASSETS_PATH, ...paths);
+  return path.join(checkPackaged('assets'), ...paths);
+};
+
+export const getBundledSimpleScripts = (...paths: string[]): string => {
+  return path.join(checkPackaged('simplescripts'), ...paths);
 };

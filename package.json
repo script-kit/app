@@ -83,7 +83,8 @@
       "output": "release"
     },
     "extraResources": [
-      "./assets/**"
+      "./assets/**",
+      "./simplescripts/**"
     ],
     "publish": {
       "provider": "github",

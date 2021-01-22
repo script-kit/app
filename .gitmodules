@@ -1,0 +1,3 @@
+[submodule "simplescripts"]
+	path = simplescripts
+	url = git@github.com:johnlindquist/simplescripts.git

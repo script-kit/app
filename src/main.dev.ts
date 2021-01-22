@@ -13,15 +13,20 @@ import 'regenerator-runtime/runtime';
 import { app, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import path from 'path';
+import { spawnSync } from 'child_process';
+import { test, cp } from 'shelljs';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
-import { getAssetPath } from './assets';
+import { getAssetPath, getBundledSimpleScripts } from './assets';
 
 app.setName('Simple Scripts');
 app.setAsDefaultProtocolClient('simple');
 app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
 
+/* eslint-disable jest/no-export */
+// Linter thinks the `test` function from shelljs makes this a test file
 export default class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
@@ -68,4 +73,27 @@ const ready = async () => {
   });
 };
 
-app.whenReady().then(ready).catch(console.log);
+const checkSimpleScripts = async () => {
+  const simpleScriptsPath = path.join(app.getPath('home'), '.simple');
+
+  const simpleScriptsExists = test('-d', simpleScriptsPath);
+  if (!simpleScriptsExists) {
+    log.info(`~/.simple not found. Installing...`);
+    const cpResult = cp('-R', getBundledSimpleScripts(), simpleScriptsPath);
+
+    log.info({ simpleScriptsPath });
+    const spawnResult = spawnSync(`npm`, [`i`], {
+      stdio: 'inherit',
+      cwd: simpleScriptsPath,
+      env: {
+        PATH: `${path.join(simpleScriptsPath, 'node', 'bin')}:${
+          process.env.PATH
+        }`,
+      },
+    });
+  }
+
+  await ready();
+};
+
+app.whenReady().then(checkSimpleScripts).catch(console.log);
