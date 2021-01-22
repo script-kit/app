@@ -42,6 +42,15 @@
       "package.json"
     ],
     "afterSign": ".erb/scripts/Notarize.js",
+    "protocols": [
+      {
+        "name": "simple",
+        "role": "Viewer",
+        "schemes": [
+          "simple"
+        ]
+      }
+    ],
     "mac": {
       "target": [
         "dmg"

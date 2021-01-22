@@ -10,17 +10,19 @@
  */
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
-import { app, ipcMain } from 'electron';
+import { app, ipcMain, protocol } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
-import { spawnSync } from 'child_process';
+import { spawnSync, SpawnSyncOptions } from 'child_process';
 import { test, cp } from 'shelljs';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath, getBundledSimpleScripts } from './assets';
+import { trySimpleScript } from './simple';
 
 app.setName('Simple Scripts');
+app.requestSingleInstanceLock();
 app.setAsDefaultProtocolClient('simple');
 app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
@@ -62,7 +64,26 @@ const installExtensions = async () => {
 
 app.on('window-all-closed', (e: Event) => e.preventDefault());
 
+const prepareProtocols = async () => {
+  protocol.registerHttpProtocol('simple', (req, cb) => {
+    log.info(`FILE PROTOCOL`);
+    log.info(req);
+    const command = req.url.split(' ').slice(1);
+    log.info(command);
+  });
+
+  app.on('open-url', (e, url) => {
+    e.preventDefault();
+    const [command, ...runArgs] = decodeURI(url)
+      .slice('simple://'.length)
+      .split(' ');
+
+    trySimpleScript(command, runArgs);
+  });
+};
+
 const ready = async () => {
+  await prepareProtocols();
   await createTray();
   await manageShortcuts();
 
@@ -74,23 +95,26 @@ const ready = async () => {
 };
 
 const checkSimpleScripts = async () => {
-  const simpleScriptsPath = path.join(app.getPath('home'), '.simple');
+  const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
 
-  const simpleScriptsExists = test('-d', simpleScriptsPath);
+  const simpleScriptsExists = test('-d', SIMPLE_PATH);
   if (!simpleScriptsExists) {
     log.info(`~/.simple not found. Installing...`);
-    const cpResult = cp('-R', getBundledSimpleScripts(), simpleScriptsPath);
+    cp('-R', getBundledSimpleScripts(), SIMPLE_PATH);
 
-    log.info({ simpleScriptsPath });
-    const spawnResult = spawnSync(`npm`, [`i`], {
+    const options: SpawnSyncOptions = {
       stdio: 'inherit',
-      cwd: simpleScriptsPath,
+      cwd: SIMPLE_PATH,
       env: {
-        PATH: `${path.join(simpleScriptsPath, 'node', 'bin')}:${
-          process.env.PATH
-        }`,
+        SIMPLE_PATH,
+        PATH: `${path.join(SIMPLE_PATH, 'node', 'bin')}:${process.env.PATH}`,
       },
-    });
+    };
+
+    log.info({ simpleScriptsPath: SIMPLE_PATH });
+    spawnSync(`npm`, [`i`], options);
+    spawnSync(`./config/create-env.sh`, [], options);
+    spawnSync(`./config/create-bins.sh`, [], options);
   }
 
   await ready();
