@@ -14,7 +14,7 @@ import { app, ipcMain, protocol } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
-import { spawnSync, SpawnSyncOptions } from 'child_process';
+import { spawn, spawnSync, SpawnSyncOptions } from 'child_process';
 import { test, cp } from 'shelljs';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
@@ -97,10 +97,10 @@ const ready = async () => {
 const checkSimpleScripts = async () => {
   const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
 
+  // eslint-disable-next-line jest/expect-expect
   const simpleScriptsExists = test('-d', SIMPLE_PATH);
   if (!simpleScriptsExists) {
     log.info(`~/.simple not found. Installing...`);
-    cp('-R', getBundledSimpleScripts(), SIMPLE_PATH);
 
     const options: SpawnSyncOptions = {
       stdio: 'inherit',
@@ -111,10 +111,31 @@ const checkSimpleScripts = async () => {
       },
     };
 
-    log.info({ simpleScriptsPath: SIMPLE_PATH });
-    spawnSync(`npm`, [`i`], options);
-    spawnSync(`./config/create-env.sh`, [], options);
-    spawnSync(`./config/create-bins.sh`, [], options);
+    const [
+      git,
+      ...gitArgs
+    ] = `git clone https://github.com/johnlindquist/simplescripts.git ${SIMPLE_PATH}`.split(
+      ' '
+    );
+
+    const [
+      installNode,
+      ...installNodeArgs
+    ] = `./config/install-node.sh --prefix node --platform darwin`.split(' ');
+
+    const gitResult = spawnSync(git, gitArgs, {
+      ...options,
+      cwd: app.getPath('home'),
+    });
+    console.log({ gitResult });
+    const installNodeResult = spawnSync(installNode, installNodeArgs, options);
+    console.log({ installNodeResult });
+    const npmResult = spawnSync(`npm`, [`i`], options);
+    console.log({ npmResult });
+    const createEnvResult = spawnSync(`./config/create-env.sh`, [], options);
+    console.log({ createEnvResult });
+    const createBinResult = spawnSync(`./config/create-bins.sh`, [], options);
+    console.log({ createBinResult });
   }
 
   await ready();

@@ -16,8 +16,6 @@ jobs:
     steps:
       - name: Checkout git repo
         uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Install Node, NPM and Yarn
         uses: actions/setup-node@v1
@@ -27,10 +25,6 @@ jobs:
       - name: Install dependencies
         run: |
           yarn install
-
-      - name: Download Simple Scripts Node
-        run: |
-          /Users/runner/work/simpleapp/simpleapp/simplescripts/config/install-node.sh --prefix /Users/runner/work/simpleapp/simpleapp/simplescripts/node --platform darwin
 
       - name: Publish releases
         env:
