@@ -129,6 +129,10 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       simplePath('preload', 'system.cjs'),
     ],
     env: {
+      ...process.env,
+      PATH: `${simplePath('node', 'bin')}:${simplePath('bin')}:${
+        process.env.PATH
+      }`,
       SIMPLE_PATH,
       NODE_PATH: simplePath('node_modules'),
       DOTENV_CONFIG_PATH: simplePath('.env'),
@@ -155,7 +159,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   });
 
   child.on('message', async (data: any) => {
-    if (data === 'quit') {
+    if (data.from === 'quit') {
       app.quit();
       return;
     }
