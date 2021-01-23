@@ -10,7 +10,3 @@ const checkPackaged = (name) =>
 export const getAssetPath = (...paths: string[]): string => {
   return path.join(checkPackaged('assets'), ...paths);
 };
-
-export const getBundledSimpleScripts = (...paths: string[]): string => {
-  return path.join(checkPackaged('simplescripts'), ...paths);
-};

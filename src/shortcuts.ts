@@ -4,9 +4,25 @@ import log from 'electron-log';
 import { globalShortcut } from 'electron';
 import chokidar from 'chokidar';
 import path from 'path';
-import { SIMPLE_SCRIPTS_PATH, trySimpleScript } from './simple';
+
+import {
+  SIMPLE_SCRIPTS_PATH,
+  SIMPLE_APP_SCRIPTS_PATH,
+  trySimpleScript,
+} from './simple';
 
 export const shortcutMap = new Map();
+
+const shortcutNormalizer = (shortcut: string) =>
+  shortcut
+    .replace(/(option|opt)/i, 'Alt')
+    .replace(
+      /(commandorcontrol|cmdorctrl|ctrl|ctl|command|cmd)/i,
+      'CommandOrControl'
+    )
+    .split(/\s|\+|-/)
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join('+');
 
 const onFilesChanged = (
   event: 'add' | 'change' | 'unlink',
@@ -25,29 +41,27 @@ const onFilesChanged = (
     const shortcutMarker = 'Shortcut: ';
     const { stdout } = grep(shortcutMarker, filePath);
 
-    const shortcut = stdout
+    const rawShortcut = stdout
       .substring(0, stdout.indexOf('\n'))
       .substring(stdout.indexOf(shortcutMarker) + shortcutMarker.length)
       .trim();
 
+    const shortcut = rawShortcut ? shortcutNormalizer(rawShortcut) : '';
+
     const oldShortcut = shortcutMap.get(filePath);
 
-    const command = filePath
-      .replace(SIMPLE_SCRIPTS_PATH, '')
-      .replace('/', '')
-      .replace('.js', '');
     // Handle existing shortcuts
     if (oldShortcut) {
       // No change
       if (oldShortcut === shortcut) {
-        log.info(`${shortcut} is already registered to ${command}`);
+        log.info(`${shortcut} is already registered to ${filePath}`);
         return;
       }
 
       // User removed an existing shortcut
       globalShortcut.unregister(oldShortcut);
       shortcutMap.delete(filePath);
-      log.info(`Unregistered ${oldShortcut} from ${command}`);
+      log.info(`Unregistered ${oldShortcut} from ${filePath}`);
     }
 
     if (!shortcut) return;
@@ -60,11 +74,11 @@ const onFilesChanged = (
     });
 
     if (!ret) {
-      log.info(`Failed to register: ${shortcut} to ${command}`);
+      log.info(`Failed to register: ${shortcut} to ${filePath}`);
     }
 
     if (ret && globalShortcut.isRegistered(shortcut)) {
-      log.info(`Registered ${shortcut} to ${command}`);
+      log.info(`Registered ${shortcut} to ${filePath}`);
       shortcutMap.set(filePath, shortcut);
     }
   }
@@ -72,6 +86,12 @@ const onFilesChanged = (
 
 export const manageShortcuts = async () => {
   chokidar
-    .watch(`${SIMPLE_SCRIPTS_PATH}${path.sep}*.js`, { depth: 0 })
+    .watch(
+      [
+        `${SIMPLE_SCRIPTS_PATH}${path.sep}*.js`,
+        `${SIMPLE_APP_SCRIPTS_PATH}${path.sep}*.js`,
+      ],
+      { depth: 0 }
+    )
     .on('all', onFilesChanged);
 };

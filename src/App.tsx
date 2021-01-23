@@ -26,12 +26,6 @@ export default function App() {
     setInputValue(event.currentTarget.value);
   }, []);
 
-  const escFunction = useCallback((event) => {
-    if (event.key === 'Escape') {
-      ipcRenderer.send('escape');
-    }
-  }, []);
-
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       console.log(event);
@@ -97,14 +91,6 @@ export default function App() {
       setData(promptData);
     });
   }, []);
-
-  useEffect(() => {
-    document.addEventListener('keydown', escFunction, false);
-
-    return () => {
-      document.removeEventListener('keydown', escFunction, false);
-    };
-  }, [escFunction]);
 
   return (
     <div className="flex flex-row-reverse w-full">

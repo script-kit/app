@@ -14,11 +14,11 @@ import { app, ipcMain, protocol } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
-import { spawn, spawnSync, SpawnSyncOptions } from 'child_process';
-import { test, cp } from 'shelljs';
+import { spawnSync, SpawnSyncOptions } from 'child_process';
+import { test } from 'shelljs';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
-import { getAssetPath, getBundledSimpleScripts } from './assets';
+import { getAssetPath } from './assets';
 import { trySimpleScript } from './simple';
 
 app.setName('Simple Scripts');

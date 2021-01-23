@@ -1,12 +1,13 @@
 /* eslint-disable import/prefer-default-export */
 import { Tray } from 'electron';
 import log from 'electron-log';
+import { KeyboardEvent } from 'electron/main';
 import { trySimpleScript } from './simple';
 import { getAssetPath } from './assets';
 
 let tray: Tray | null = null;
 
-const leftClick = async (event: MouseEvent) => {
+const leftClick = async (event: KeyboardEvent) => {
   if (event.metaKey) {
     trySimpleScript('app/command-click');
   } else if (event.shiftKey) {

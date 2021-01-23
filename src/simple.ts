@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Event, Tray, screen } from 'electron';
+import { app, ipcMain, screen, globalShortcut } from 'electron';
 import path from 'path';
 import kill from 'tree-kill';
 import { fork, ChildProcess } from 'child_process';
@@ -11,23 +11,14 @@ export const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
 export const simplePath = (...parts: string[]) =>
   path.join(SIMPLE_PATH, ...parts);
 
-export const SIMPLE_SCRIPTS_PATH = path.join(SIMPLE_PATH, 'scripts');
-export const SIMPLE_BIN_PATH = path.join(SIMPLE_PATH, 'bin');
-export const SIMPLE_NODE_PATH = path.join(SIMPLE_PATH, 'node');
+export const SIMPLE_SCRIPTS_PATH = simplePath('scripts');
+export const SIMPLE_APP_SCRIPTS_PATH = simplePath('app');
+export const SIMPLE_BIN_PATH = simplePath('bin');
+export const SIMPLE_NODE_PATH = simplePath('node');
 
 let child: ChildProcess | null = null;
 
 export const processMap = new Map();
-
-ipcMain.on('escape', () => {
-  log.info(`Escape pressed`);
-  closePromptWindow();
-
-  if (child) {
-    log.info(`Exiting: ${child.pid}`);
-    kill(child.pid);
-  }
-});
 
 ipcMain.on('quit', () => {
   closePromptWindow();
@@ -58,16 +49,24 @@ ipcMain.on(
   }, 250)
 );
 
-// https://www.electronjs.org/docs/api/web-contents#event-before-input-event
-interface WebContentsInput {
-  key: string;
-  code: number;
-}
+const escapeHandler = () => {
+  log.info(`Escape pressed`);
+  closePromptWindow();
+
+  if (child) {
+    log.info(`Exiting: ${child.pid}`);
+    kill(child.pid);
+    child = null;
+    globalShortcut.unregister('escape');
+  }
+};
 
 const displayPrompt = (data: SimplePromptOptions) => {
   // log.info('prompt', data);
   const prompt = getPromptWindow();
   prompt.setMaxListeners(1);
+
+  globalShortcut.register('escape', escapeHandler);
 
   if (prompt) {
     const cursor = screen.getCursorScreenPoint();
@@ -174,6 +173,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
     if (data.from === 'run') {
       console.log({ data });
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
       trySimpleScript(data.scriptPath, data.runArgs);
       return;
     }
@@ -196,7 +196,6 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
     if (data.from === 'log') {
       log.info(data.message);
-      return;
     }
   });
 
