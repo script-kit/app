@@ -98,6 +98,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       simplePath('preload', 'system.cjs'),
     ],
     env: {
+      PATH: `${simplePath('node', 'bin')}:${process.env.PATH}`,
       SIMPLE_PATH,
       NODE_PATH: simplePath('node_modules'),
       DOTENV_CONFIG_PATH: simplePath('.env'),
@@ -105,7 +106,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   });
   processMap.set(scriptPath, child.pid);
 
-  log.info(`Starting ${resolvePath} - ${child.pid}`);
+  log.info(`Starting ${child.pid}`);
 
   child.on('exit', () => {
     log.info(`EXITING:`, scriptPath, '| PID:', child?.pid);
