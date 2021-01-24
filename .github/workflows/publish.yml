@@ -26,6 +26,9 @@ jobs:
         run: |
           yarn install
 
+      - name: Semantic Release
+        uses: codfish/semantic-release-action@v1
+
       - name: Publish releases
         env:
           # These values are used for auto updates signing
