@@ -1,3 +1,11 @@
+## [1.0.2](https://github.com/johnlindquist/simpleapp/compare/v1.0.1...v1.0.2) (2021-01-24)
+
+
+### Bug Fixes
+
+* adding PATH back so "which" works ([1b45e6b](https://github.com/johnlindquist/simpleapp/commit/1b45e6b52469a922f92dbf4611909257fa88dbee))
+* generating a changelog ([f9bcdf9](https://github.com/johnlindquist/simpleapp/commit/f9bcdf906e5f1b05f73f33a26b63c91a888c39d2))
+
 # 1.4.0
 
 - Migrate to `eslint-config-erb@2`
