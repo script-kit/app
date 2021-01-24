@@ -27,7 +27,7 @@ jobs:
           yarn install
 
       - name: Semantic Release
-        uses: codfish/semantic-release-action@v1
+        uses: cycjimmy/semantic-release-action@v2.5.3
 
       - name: Publish releases
         env:
