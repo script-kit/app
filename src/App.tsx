@@ -18,6 +18,9 @@ export default function App() {
 
   const submit = useCallback((submitValue: string) => {
     ipcRenderer.send('prompt', submitValue);
+    setData({ type: 'clear', choices: [], message: '' });
+    setIndex(0);
+    setInputValue('');
   }, []);
 
   const onChange = useCallback((event) => {
@@ -28,7 +31,7 @@ export default function App() {
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
-      console.log(event);
+      // console.log(event);
       if (event.key === 'Enter') {
         submit(choices?.[index]?.value || inputValue);
 
@@ -88,6 +91,7 @@ export default function App() {
 
   useEffect(() => {
     ipcRenderer.on('prompt', (_event, promptData: SimplePromptOptions) => {
+      console.log(`setData`, promptData);
       setData(promptData);
     });
   }, []);

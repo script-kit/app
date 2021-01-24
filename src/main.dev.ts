@@ -20,6 +20,7 @@ import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
 import { trySimpleScript } from './simple';
+import { createPromptWindow } from './prompt';
 
 app.setName('Simple Scripts');
 app.requestSingleInstanceLock();
@@ -86,7 +87,7 @@ const ready = async () => {
   await prepareProtocols();
   await createTray();
   await manageShortcuts();
-
+  await createPromptWindow();
   console.log(`------ AFTER MANAGE SHORTCUTS -----`);
 
   ipcMain.on('message', (event, data) => {

@@ -4,7 +4,7 @@ import kill from 'tree-kill';
 import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
 import { debounce } from 'lodash';
-import { getPromptWindow, closePromptWindow } from './prompt';
+import { invokePromptWindow, closePromptWindow } from './prompt';
 import { SimplePromptOptions } from './types';
 
 export const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
@@ -20,6 +20,25 @@ let child: ChildProcess | null = null;
 
 export const processMap = new Map();
 
+export const killChild = () => {
+  console.log(`killChild`, child?.pid);
+  if (child) {
+    log.info(`Exiting: ${child.pid}`);
+    kill(child.pid);
+    child = null;
+  }
+};
+
+app.on('ready', () => {
+  const escapeHandler = () => {
+    log.info(`Escape pressed`);
+    closePromptWindow();
+    killChild();
+  };
+
+  globalShortcut.register('escape', escapeHandler);
+});
+
 ipcMain.on('quit', () => {
   closePromptWindow();
 
@@ -32,11 +51,10 @@ ipcMain.on('quit', () => {
 });
 
 ipcMain.on('prompt', (event, data) => {
-  // console.log(`ipcMain.on('prompt')`, { data });
+  console.log(`ipcMain.on('prompt')`, { data });
   if (child) {
     child?.send(data);
   }
-  closePromptWindow();
 });
 
 ipcMain.on(
@@ -45,57 +63,8 @@ ipcMain.on(
     if (child) {
       child?.send({ from: 'input', input });
     }
-    // prompt?.close();
   }, 250)
 );
-
-const escapeHandler = () => {
-  log.info(`Escape pressed`);
-  closePromptWindow();
-
-  if (child) {
-    log.info(`Exiting: ${child.pid}`);
-    kill(child.pid);
-    child = null;
-    globalShortcut.unregister('escape');
-  }
-};
-
-const displayPrompt = (data: SimplePromptOptions) => {
-  // log.info('prompt', data);
-  const prompt = getPromptWindow();
-  prompt.setMaxListeners(1);
-
-  globalShortcut.register('escape', escapeHandler);
-
-  if (prompt) {
-    const cursor = screen.getCursorScreenPoint();
-    // Get display with cursor
-    const distScreen = screen.getDisplayNearestPoint({
-      x: cursor.x,
-      y: cursor.y,
-    });
-
-    const {
-      width: screenWidth,
-      height: screenHeight,
-    } = distScreen.workAreaSize;
-    const width = Math.floor((screenWidth / 4) * distScreen.scaleFactor);
-    const height = Math.floor((screenHeight / 4) * distScreen.scaleFactor);
-    const x = Math.floor(screenWidth * distScreen.scaleFactor - width); // * distScreen.scaleFactor
-    const { y } = distScreen.workArea;
-    prompt.setBounds({ x, y, width, height });
-
-    prompt.loadURL(`file://${__dirname}/index.html`);
-
-    prompt.webContents.once('did-finish-load', () => {
-      prompt.webContents.send('prompt', data);
-      prompt.webContents.closeDevTools();
-
-      prompt.show();
-    });
-  }
-};
 
 const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   log.info(`\n--- SIMPLE SCRIPT ---`);
@@ -129,16 +98,14 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       simplePath('preload', 'system.cjs'),
     ],
     env: {
-      ...process.env,
-      PATH: `${simplePath('node', 'bin')}:${simplePath('bin')}:${
-        process.env.PATH
-      }`,
       SIMPLE_PATH,
       NODE_PATH: simplePath('node_modules'),
       DOTENV_CONFIG_PATH: simplePath('.env'),
     },
   });
   processMap.set(scriptPath, child.pid);
+
+  log.info(`Starting ${resolvePath} - ${child.pid}`);
 
   child.on('exit', () => {
     log.info(`EXITING:`, scriptPath, '| PID:', child?.pid);
@@ -147,13 +114,13 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   });
 
   child.on('close', () => {
-    // log.info(`CLOSING`, child.pid)
+    log.info(`CLOSING`, child?.pid);
     processMap.delete(scriptPath);
     closePromptWindow();
   });
 
   child.on('disconnect', () => {
-    // log.info(`DISCONNECTED`, child.pid)
+    log.info(`DISCONNECTED`, child?.pid);
     processMap.delete(scriptPath);
     closePromptWindow();
   });
@@ -165,13 +132,13 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     }
     // console.log({ data });
     if (data.from === 'prompt') {
-      displayPrompt(data);
+      invokePromptWindow('prompt', data);
+
       return;
     }
     if (data.from === 'choices') {
-      // console.log(`data.from === choices:`, data.choices);
-      const prompt = getPromptWindow();
-      prompt.webContents.send('lazy', data?.choices);
+      invokePromptWindow('lazy', data?.choices);
+
       return;
     }
 
@@ -204,6 +171,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   });
 
   child.on('error', (error) => {
+    console.log({ error });
     child?.send(error);
     processMap.delete(scriptPath);
     child?.kill();
