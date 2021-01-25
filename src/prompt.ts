@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { BrowserWindow, globalShortcut, screen } from 'electron';
+import { BrowserWindow, screen } from 'electron';
 import log from 'electron-log';
 import { getAssetPath } from './assets';
 
@@ -24,7 +24,15 @@ export const createPromptWindow = async () => {
   //   promptWindow?.webContents.closeDevTools();
   // });
 
-  promptWindow?.setMaxListeners(1);
+  promptWindow?.setMaxListeners(2);
+
+  promptWindow?.webContents.on('before-input-event', (event: any, input) => {
+    if (input.key === 'Escape') {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      hidePromptWindow();
+      promptWindow?.webContents.send('escape', {});
+    }
+  });
 };
 
 export const invokePromptWindow = (channel: string, data: any) => {
@@ -56,9 +64,7 @@ export const invokePromptWindow = (channel: string, data: any) => {
   return promptWindow;
 };
 
-export const closePromptWindow = () => {
-  console.log(`closePromptWindow isVisible`, promptWindow?.isVisible());
-
+export const hidePromptWindow = () => {
   if (promptWindow?.isVisible()) {
     log.info(`Hiding prompt`);
 

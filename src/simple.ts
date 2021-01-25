@@ -1,10 +1,14 @@
-import { app, ipcMain, screen, globalShortcut } from 'electron';
+import { app, ipcMain, screen } from 'electron';
 import path from 'path';
 import kill from 'tree-kill';
 import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
 import { debounce } from 'lodash';
-import { invokePromptWindow, closePromptWindow } from './prompt';
+import {
+  invokePromptWindow,
+  hidePromptWindow,
+  getPromptWindow,
+} from './prompt';
 
 export const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
 export const simplePath = (...parts: string[]) =>
@@ -19,28 +23,7 @@ let child: ChildProcess | null = null;
 
 export const processMap = new Map();
 
-export const killChild = () => {
-  console.log(`killChild`, child?.pid);
-  if (child) {
-    log.info(`Exiting: ${child.pid}`);
-    kill(child.pid);
-    child = null;
-  }
-};
-
-app.on('ready', () => {
-  const escapeHandler = () => {
-    log.info(`Escape pressed`);
-    closePromptWindow();
-    killChild();
-  };
-
-  globalShortcut.register('escape', escapeHandler);
-});
-
 ipcMain.on('quit', () => {
-  closePromptWindow();
-
   if (child) {
     log.info(`Exiting: ${child.pid}`);
     kill(child.pid);
@@ -65,15 +48,20 @@ ipcMain.on(
   }, 250)
 );
 
+const killChild = () => {
+  console.log(`killChild`, child?.pid);
+  if (child) {
+    log.info(`Exiting: ${child.pid}`);
+    kill(child.pid);
+    child = null;
+  }
+};
+
 const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   log.info(`\n--- SIMPLE SCRIPT ---`);
-  log.info('processMap:', processMap);
-  log.info(`EXECUTING: ${scriptPath} ${runArgs.join(' ')}`);
-  if (processMap.get(scriptPath)) {
-    kill(processMap.get(scriptPath));
-    processMap.delete(scriptPath);
-    return;
-  }
+  log.info('processMap:', [...processMap.entries()]);
+  log.info(`EXECUTING: ${scriptPath.split('/').pop()} ${runArgs.join(' ')}`);
+  // TODO: Support long-running scripts e.g. Crons
 
   const resolvePath = scriptPath.startsWith(path.sep)
     ? scriptPath
@@ -81,6 +69,9 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   const codePath = 'usr/local/bin/';
 
+  processMap.delete(child?.pid);
+  child?.removeAllListeners();
+  child?.kill();
   child = fork(resolvePath, [...runArgs, '--app'], {
     stdio: 'inherit',
     execPath: simplePath('node', 'bin', 'node'),
@@ -103,26 +94,26 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       DOTENV_CONFIG_PATH: simplePath('.env'),
     },
   });
-  processMap.set(scriptPath, child.pid);
+  processMap.set(child.pid, scriptPath);
 
   log.info(`Starting ${child.pid}`);
 
   child.on('exit', () => {
     log.info(`EXITING:`, scriptPath, '| PID:', child?.pid);
-    processMap.delete(scriptPath);
-    closePromptWindow();
+    processMap.delete(child?.pid);
+    hidePromptWindow();
   });
 
   child.on('close', () => {
     log.info(`CLOSING`, child?.pid);
-    processMap.delete(scriptPath);
-    closePromptWindow();
+    processMap.delete(child?.pid);
+    hidePromptWindow();
   });
 
   child.on('disconnect', () => {
     log.info(`DISCONNECTED`, child?.pid);
-    processMap.delete(scriptPath);
-    closePromptWindow();
+    processMap.delete(child?.pid);
+    hidePromptWindow();
   });
 
   child.on('message', async (data: any) => {
@@ -132,8 +123,11 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     }
     // console.log({ data });
     if (data.from === 'prompt') {
-      invokePromptWindow('prompt', data);
+      const promptWindow = invokePromptWindow('prompt', data);
 
+      // console.log(`rawListeners`, promptWindow?.rawListeners('hide'));
+
+      // promptWindow?.once('hide', killChild);
       return;
     }
     if (data.from === 'choices') {
@@ -173,7 +167,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   child.on('error', (error) => {
     console.log({ error });
     child?.send(error);
-    processMap.delete(scriptPath);
+    processMap.delete(child?.pid);
     child?.kill();
   });
 };
