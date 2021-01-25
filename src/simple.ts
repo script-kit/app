@@ -5,7 +5,6 @@ import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import { invokePromptWindow, closePromptWindow } from './prompt';
-import { SimplePromptOptions } from './types';
 
 export const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
 export const simplePath = (...parts: string[]) =>
@@ -80,7 +79,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     ? scriptPath
     : simplePath(scriptPath);
 
-  console.log('attempting to run:', resolvePath);
+  const codePath = 'usr/local/bin/';
 
   child = fork(resolvePath, [...runArgs, '--app'], {
     stdio: 'inherit',
@@ -95,10 +94,10 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       '--require',
       simplePath('preload', 'simple.cjs'),
       '--require',
-      simplePath('preload', 'system.cjs'),
+      simplePath('preload', 'mac.cjs'),
     ],
     env: {
-      PATH: `${simplePath('node', 'bin')}:${process.env.PATH}`,
+      PATH: `${simplePath('node', 'bin')}:${codePath}:${process.env.PATH}`,
       SIMPLE_PATH,
       NODE_PATH: simplePath('node_modules'),
       DOTENV_CONFIG_PATH: simplePath('.env'),
