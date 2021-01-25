@@ -3,7 +3,8 @@ name: Publish
 on:
   push:
     branches:
-      - [master, beta]
+      - master
+      - beta
 
 jobs:
   publish:
