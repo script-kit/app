@@ -1,3 +1,13 @@
+## [1.0.2-beta.1](https://github.com/johnlindquist/simpleapp/compare/v1.0.1...v1.0.2-beta.1) (2021-01-25)
+
+
+### Bug Fixes
+
+* **build:** add publish to beta branch ([bab3bc2](https://github.com/johnlindquist/simpleapp/commit/bab3bc2fcd530a9df7b1cb3138af142ce175e083))
+* Add PATH to detect vs code and switch to mac ([f4c55e2](https://github.com/johnlindquist/simpleapp/commit/f4c55e29c874f36c55598980955014dad34ccf95))
+* adding PATH back so "which" works ([1b45e6b](https://github.com/johnlindquist/simpleapp/commit/1b45e6b52469a922f92dbf4611909257fa88dbee))
+* generating a changelog ([f9bcdf9](https://github.com/johnlindquist/simpleapp/commit/f9bcdf906e5f1b05f73f33a26b63c91a888c39d2))
+
 # 1.4.0
 
 - Migrate to `eslint-config-erb@2`
