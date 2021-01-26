@@ -11,7 +11,7 @@ export const createNotification = async () => {
     frame: true,
     transparent: true,
     backgroundColor: '#00000000',
-    show: true,
+    show: false,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -44,7 +44,7 @@ const page = (html: string) => `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Script Notification</title>
+    <title>Simple Scripts Notification</title>
     <link rel="stylesheet" href="${styles}">
 </head>
 <body>

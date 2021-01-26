@@ -86,11 +86,9 @@ const prepareProtocols = async () => {
   const customProtocol = 'file2';
 
   protocol.registerFileProtocol(customProtocol, (request, callback) => {
-    console.log({ customProtocol });
-    console.log(request.url);
     const url = request.url.substr(customProtocol.length + 2);
     const file = { path: url };
-    console.log({ file });
+
     callback(file);
   });
 };
@@ -100,9 +98,7 @@ const ready = async () => {
   await createTray();
   await manageShortcuts();
   await createPromptWindow();
-
   await createNotification();
-  showNotification(`<div class="bg-white">App Ready</div>`);
 };
 
 const checkSimpleScripts = async () => {

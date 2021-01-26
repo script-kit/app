@@ -9,6 +9,8 @@ import {
   hidePromptWindow,
   getPromptWindow,
 } from './prompt';
+import { createNotification, showNotification } from './notifications';
+import { show } from './show';
 
 export const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
 export const simplePath = (...parts: string[]) =>
@@ -98,27 +100,36 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   log.info(`Starting ${child.pid}`);
 
-  child.on('exit', () => {
-    log.info(`EXITING:`, scriptPath, '| PID:', child?.pid);
-    processMap.delete(child?.pid);
-    hidePromptWindow();
-  });
+  const tryClean = (on: string) => () => {
+    try {
+      log.info(on, scriptPath, '| PID:', child?.pid);
+      processMap.delete(child?.pid);
+      hidePromptWindow();
+    } catch (error) {
+      log.warn(error);
+    }
+  };
 
-  child.on('close', () => {
-    log.info(`CLOSING`, child?.pid);
-    processMap.delete(child?.pid);
-    hidePromptWindow();
-  });
+  child.on('exit', tryClean('EXIT'));
 
-  child.on('disconnect', () => {
-    log.info(`DISCONNECTED`, child?.pid);
-    processMap.delete(child?.pid);
-    hidePromptWindow();
-  });
+  child.on('close', tryClean('CLOSE'));
+
+  child.on('disconnect', tryClean('DISCONNECT'));
 
   child.on('message', async (data: any) => {
+    console.log({ data });
     if (data.from === 'quit') {
       app.quit();
+      return;
+    }
+
+    if (data.from === 'notify') {
+      showNotification(data.html, data.options);
+      return;
+    }
+
+    if (data.from === 'show') {
+      show(data.html, data.options);
       return;
     }
     // console.log({ data });
@@ -141,10 +152,6 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
       trySimpleScript(data.scriptPath, data.runArgs);
       return;
-    }
-
-    if (data.from === 'show') {
-      // showDismissableWindow(data);
     }
 
     if (data.from === 'system') {
