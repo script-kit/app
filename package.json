@@ -12,7 +12,7 @@
     "postinstall": "node -r @babel/register .erb/scripts/CheckNativeDep.js && electron-builder install-app-deps && yarn cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js && opencollective-postinstall && yarn-deduplicate yarn.lock",
     "start": "node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
     "start:main": "cross-env NODE_ENV=development electron -r ./.erb/scripts/BabelRegister ./src/main.dev.ts",
-    "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
+    "start:renderer": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css && cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
     "test": "jest"
   },
   "lint-staged": {
@@ -233,6 +233,7 @@
     "node-sass": "^5.0.0",
     "opencollective-postinstall": "^2.0.3",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
+    "postcss-cli": "^8.3.1",
     "postcss-loader": "^4.1.0",
     "prettier": "^2.0.5",
     "react-refresh": "^0.9.0",
