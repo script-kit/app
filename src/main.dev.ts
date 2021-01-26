@@ -21,6 +21,7 @@ import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
 import { trySimpleScript } from './simple';
 import { createPromptWindow } from './prompt';
+import { createNotification, showNotification } from './notifications';
 
 app.setName('Simple Scripts');
 app.requestSingleInstanceLock();
@@ -81,6 +82,17 @@ const prepareProtocols = async () => {
 
     trySimpleScript(command, runArgs);
   });
+
+  const customProtocol = 'file2';
+
+  protocol.registerFileProtocol(customProtocol, (request, callback) => {
+    console.log({ customProtocol });
+    console.log(request.url);
+    const url = request.url.substr(customProtocol.length + 2);
+    const file = { path: url };
+    console.log({ file });
+    callback(file);
+  });
 };
 
 const ready = async () => {
@@ -88,11 +100,9 @@ const ready = async () => {
   await createTray();
   await manageShortcuts();
   await createPromptWindow();
-  console.log(`------ AFTER MANAGE SHORTCUTS -----`);
 
-  ipcMain.on('message', (event, data) => {
-    console.log({ data });
-  });
+  await createNotification();
+  showNotification(`<div class="bg-white">App Ready</div>`);
 };
 
 const checkSimpleScripts = async () => {
@@ -136,7 +146,7 @@ const checkSimpleScripts = async () => {
     const createEnvResult = spawnSync(`./config/create-env.sh`, [], options);
     console.log({ createEnvResult });
     const createBinResult = spawnSync(`./config/create-bins.sh`, [], options);
-    console.log({ createBinResult });
+    // console.log({ createBinResult });
   }
 
   await ready();
