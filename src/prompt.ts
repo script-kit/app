@@ -20,9 +20,9 @@ export const createPromptWindow = async () => {
 
   promptWindow.loadURL(`file://${__dirname}/index.html`);
 
-  // promptWindow.webContents.once('did-finish-load', () => {
-  //   promptWindow?.webContents.closeDevTools();
-  // });
+  promptWindow.webContents.once('did-finish-load', () => {
+    promptWindow?.webContents.closeDevTools();
+  });
 
   promptWindow?.setMaxListeners(2);
 
@@ -48,13 +48,14 @@ export const invokePromptWindow = (channel: string, data: any) => {
       y: cursor.y,
     });
 
+    const { scaleFactor } = distScreen;
     const {
       width: screenWidth,
       height: screenHeight,
     } = distScreen.workAreaSize;
-    const width = Math.floor((screenWidth / 4) * distScreen.scaleFactor);
-    const height = Math.floor((screenHeight / 4) * distScreen.scaleFactor);
-    const x = Math.floor(screenWidth * distScreen.scaleFactor - width); // * distScreen.scaleFactor
+    const width = Math.floor((screenWidth * scaleFactor) / (3 * scaleFactor));
+    const height = Math.floor((screenHeight * scaleFactor) / (3 * scaleFactor));
+    const x = Math.floor(screenWidth * scaleFactor - width); // * distScreen.scaleFactor
     const { y } = distScreen.workArea;
     promptWindow?.setBounds({ x, y, width, height });
 
