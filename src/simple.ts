@@ -34,8 +34,13 @@ ipcMain.on('quit', () => {
   app.quit();
 });
 
+let hideId: any = 0;
+
 ipcMain.on('prompt', (event, data) => {
-  console.log(`ipcMain.on('prompt')`, { data });
+  // console.log(`ipcMain.on('prompt')`, { data });
+  hideId = setTimeout(() => {
+    hidePromptWindow();
+  }, 150);
   if (child) {
     child?.send(data);
   }
@@ -117,6 +122,8 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   child.on('disconnect', tryClean('DISCONNECT'));
 
   child.on('message', async (data: any) => {
+    if (hideId) clearTimeout(hideId);
+
     console.log({ data });
     if (data.from === 'quit') {
       app.quit();
