@@ -1,3 +1,10 @@
+# [1.1.0-beta.2](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.1...v1.1.0-beta.2) (2021-01-26)
+
+
+### Features
+
+* **show:** Add show command to display arbitrary html ([5e602ff](https://github.com/johnlindquist/simpleapp/commit/5e602ff0eb4707dea76fb1e56eb3ee62f91ece6c))
+
 # [1.1.0-beta.1](https://github.com/johnlindquist/simpleapp/compare/v1.0.2-beta.1...v1.1.0-beta.1) (2021-01-26)
 
 
