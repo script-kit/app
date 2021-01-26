@@ -1,3 +1,10 @@
+# [1.1.0-beta.1](https://github.com/johnlindquist/simpleapp/compare/v1.0.2-beta.1...v1.1.0-beta.1) (2021-01-26)
+
+
+### Features
+
+* **notifications:** testing loading styles from a protocol ([0783a9a](https://github.com/johnlindquist/simpleapp/commit/0783a9a61b1625e06f90df170491a6a3367e13d4))
+
 ## [1.0.2-beta.1](https://github.com/johnlindquist/simpleapp/compare/v1.0.1...v1.0.2-beta.1) (2021-01-25)
 
 
