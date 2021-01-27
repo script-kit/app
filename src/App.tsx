@@ -108,7 +108,7 @@ export default function App() {
     <div className="flex flex-row-reverse w-full">
       <div className="w-1/2">
         <input
-          className="w-full"
+          className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white  focus:outline-none focus:border-transparent "
           type="text"
           value={inputValue}
           onChange={onChange}
@@ -124,7 +124,7 @@ export default function App() {
             .map((letter) => `${letter}.*`)
             .join('')}
         </div> */}
-        <div className="bg-gray-50 p-1 flex flex-col">
+        <div className="p-1 flex flex-col bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
           {((choices as any[]) || []).map((choice, i) => (
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events
             <button
@@ -135,7 +135,7 @@ export default function App() {
               whitespace-nowrap
               text-left
               justify-start
-              ${index === i ? `bg-gray-300` : ``}`}
+              ${index === i ? `bg-gray-300 dark:bg-gray-700` : ``}`}
               onClick={(_event) => {
                 submit(choice.value);
               }}
@@ -147,7 +147,7 @@ export default function App() {
       </div>
       {choices[index]?.info && (
         <div
-          className="w-1/2 flex justify-end"
+          className="w-1/2 flex justify-end bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html: choices[index]?.info as string,
@@ -156,7 +156,7 @@ export default function App() {
       )}
       {data?.info && (
         <div
-          className="w-1/2 flex justify-end"
+          className="w-1/2 flex justify-end bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html: data?.info as string,
