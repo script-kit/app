@@ -14,7 +14,7 @@ import { app, ipcMain, protocol } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
-import { spawnSync, SpawnSyncOptions } from 'child_process';
+import { spawnSync, SpawnSyncOptions, exec } from 'child_process';
 import { test } from 'shelljs';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
@@ -65,6 +65,18 @@ const installExtensions = async () => {
 };
 
 app.on('window-all-closed', (e: Event) => e.preventDefault());
+
+app.on('web-contents-created', (_, contents) => {
+  contents.on('will-navigate', (event, navigationUrl) => {
+    const parsedUrl = new URL(navigationUrl);
+    console.log({ parsedUrl });
+
+    if (parsedUrl.protocol.startsWith('http')) {
+      event.preventDefault();
+      exec(`open ${parsedUrl.href}`);
+    }
+  });
+});
 
 const prepareProtocols = async () => {
   protocol.registerHttpProtocol('simple', (req, cb) => {
