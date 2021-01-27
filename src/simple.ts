@@ -34,13 +34,11 @@ ipcMain.on('quit', () => {
   app.quit();
 });
 
-let hideId: any = 0;
-
 ipcMain.on('prompt', (event, data) => {
-  // console.log(`ipcMain.on('prompt')`, { data });
-  hideId = setTimeout(() => {
-    hidePromptWindow();
-  }, 150);
+  console.log(`APP -> ${processMap.get(child?.pid).split('/').pop()}`, {
+    data,
+  });
+
   if (child) {
     child?.send(data);
   }
@@ -116,15 +114,9 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   };
 
   child.on('exit', tryClean('EXIT'));
-
   child.on('close', tryClean('CLOSE'));
-
   child.on('disconnect', tryClean('DISCONNECT'));
-
   child.on('message', async (data: any) => {
-    if (hideId) clearTimeout(hideId);
-
-    console.log({ data });
     if (data.from === 'quit') {
       app.quit();
       return;
@@ -141,11 +133,8 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     }
     // console.log({ data });
     if (data.from === 'prompt') {
-      const promptWindow = invokePromptWindow('prompt', data);
+      invokePromptWindow('prompt', data);
 
-      // console.log(`rawListeners`, promptWindow?.rawListeners('hide'));
-
-      // promptWindow?.once('hide', killChild);
       return;
     }
     if (data.from === 'choices') {
