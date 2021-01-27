@@ -11,6 +11,7 @@ export const createPromptWindow = async () => {
     transparent: true,
     backgroundColor: '#00000000',
     show: false,
+    hasShadow: false,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
