@@ -1,3 +1,18 @@
+# [1.1.0-beta.4](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.3...v1.1.0-beta.4) (2021-01-27)
+
+
+### Bug Fixes
+
+* **css:** styling list elements ([60cca46](https://github.com/johnlindquist/simpleapp/commit/60cca46439fa3f72d41b9058f9c4d2398a71c21a))
+* **prompt:** clear on escape. Show info ([8bfa6ba](https://github.com/johnlindquist/simpleapp/commit/8bfa6bab436e0465dad2160cf063356b66bd6b5e))
+* **prompt:** removing shadow ([9c091ee](https://github.com/johnlindquist/simpleapp/commit/9c091ee7d8d33b8ca3c40dfe79353f7f79e44a88))
+* **simple:** Remove process timeout that closed prompt ([4d1392b](https://github.com/johnlindquist/simpleapp/commit/4d1392b4e0e3ffc9eb79b220bc2a8b37f5c26723))
+
+
+### Features
+
+* **url:** Open links in external browser, not electron ([8fd6fa1](https://github.com/johnlindquist/simpleapp/commit/8fd6fa18ba2faaab9930213fb54a7077041f0e46))
+
 # [1.1.0-beta.3](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.2...v1.1.0-beta.3) (2021-01-26)
 
 
