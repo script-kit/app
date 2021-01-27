@@ -1,3 +1,13 @@
+# [1.1.0-beta.3](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.2...v1.1.0-beta.3) (2021-01-26)
+
+
+### Bug Fixes
+
+* **css:** Adding base styles for show windows ([01abacc](https://github.com/johnlindquist/simpleapp/commit/01abacc39eee4dc3c268857c8bd8a816b65a4d4b))
+* **prompt:** Fixing size of prompt ([dbbceb1](https://github.com/johnlindquist/simpleapp/commit/dbbceb1243d0a01d1ce0945524c55524bceca802))
+* **prompt:** Hide the prompt unless interrupted by a message ([5712ba1](https://github.com/johnlindquist/simpleapp/commit/5712ba1a3a0b3f1679eb0ea15a2ded840fe570cd))
+* **yarn:** updaet yarn.lock ([75e3946](https://github.com/johnlindquist/simpleapp/commit/75e39469baab7e9ba0ac75660c5183008a7bd50e))
+
 # [1.1.0-beta.2](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.1...v1.1.0-beta.2) (2021-01-26)
 
 
