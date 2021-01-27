@@ -96,6 +96,14 @@ export default function App() {
     });
   }, []);
 
+  useEffect(() => {
+    ipcRenderer.on('escape', () => {
+      setData({ type: 'clear', choices: [], message: '' });
+      setIndex(0);
+      setInputValue('');
+    });
+  }, []);
+
   return (
     <div className="flex flex-row-reverse w-full">
       <div className="w-1/2">
@@ -143,6 +151,15 @@ export default function App() {
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html: choices[index]?.info as string,
+          }}
+        />
+      )}
+      {data?.info && (
+        <div
+          className="w-1/2 flex justify-end"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: data?.info as string,
           }}
         />
       )}
