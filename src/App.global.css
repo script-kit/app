@@ -41,6 +41,11 @@
     @apply ml-6;
   }
 
+  ol li {
+    list-style-type: decimal;
+    list-style-position: outside;
+  }
+
   ul li {
     list-style-type: disc;
     list-style-position: outside;
