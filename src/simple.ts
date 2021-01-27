@@ -91,6 +91,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       simplePath('preload', 'mac.cjs'),
     ],
     env: {
+      SIMPLE_CONTEXT: 'app',
       PATH: `${simplePath('node', 'bin')}:${codePath}:${process.env.PATH}`,
       SIMPLE_PATH,
       NODE_PATH: simplePath('node_modules'),
