@@ -86,8 +86,6 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       '--require',
       simplePath('preload', 'api.cjs'),
       '--require',
-      simplePath('preload', 'app.cjs'),
-      '--require',
       simplePath('preload', 'simple.cjs'),
       '--require',
       simplePath('preload', 'mac.cjs'),
