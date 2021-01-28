@@ -23,7 +23,7 @@
   }
 
   a {
-    @apply underline text-green-900;
+    @apply underline;
   }
 
   a:hover {

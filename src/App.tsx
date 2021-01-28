@@ -72,7 +72,7 @@ export default function App() {
     return () => {
       ipcRenderer.off('lazy', lazyHandler);
     };
-  }, []);
+  }, [setChoices]);
 
   useEffect(() => {
     if (data.type === 'lazy') return;
@@ -93,22 +93,24 @@ export default function App() {
     ipcRenderer.on('prompt', (_event, promptData: SimplePromptOptions) => {
       console.log(`setData`, promptData);
       setData(promptData);
+      setIndex(0);
     });
-  }, []);
+  }, [setData, setIndex]);
 
   useEffect(() => {
     ipcRenderer.on('escape', () => {
+      console.log(`ESCAPE!!!`);
       setData({ type: 'clear', choices: [], message: '' });
       setIndex(0);
       setInputValue('');
     });
-  }, []);
+  }, [setData, setIndex, setInputValue]);
 
   return (
-    <div className="flex flex-row-reverse w-full">
+    <div className="flex flex-row-reverse w-full h-screen overflow-y-hidden">
       <div className="w-1/2">
         <input
-          className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white  focus:outline-none focus:border-transparent "
+          className="w-full bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white  focus:outline-none focus:border-transparent "
           type="text"
           value={inputValue}
           onChange={onChange}
@@ -124,7 +126,7 @@ export default function App() {
             .map((letter) => `${letter}.*`)
             .join('')}
         </div> */}
-        <div className="p-1 flex flex-col bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+        <div className="p-1 flex flex-col bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white h-screen overflow-y-auto">
           {((choices as any[]) || []).map((choice, i) => (
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events
             <button
@@ -132,10 +134,13 @@ export default function App() {
               key={choice.value}
               className={`
               hover:bg-gray-400
+              dark:hover:bg-gray-600
+              placeholder-gray-700
+              dark:placeholder-gray-300
               whitespace-nowrap
               text-left
               justify-start
-              ${index === i ? `bg-gray-300 dark:bg-gray-700` : ``}`}
+              ${index === i ? `bg-gray-500` : ``}`}
               onClick={(_event) => {
                 submit(choice.value);
               }}
@@ -147,7 +152,7 @@ export default function App() {
       </div>
       {choices[index]?.info && (
         <div
-          className="w-1/2 flex justify-end bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+          className="w-1/2 flex justify-end bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white overscroll-none"
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html: choices[index]?.info as string,
@@ -156,7 +161,7 @@ export default function App() {
       )}
       {data?.info && (
         <div
-          className="w-1/2 flex justify-end bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+          className="w-1/2 flex justify-end bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white overscroll-y-none"
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html: data?.info as string,
