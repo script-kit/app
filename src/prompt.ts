@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { BrowserWindow, screen } from 'electron';
+import { BrowserWindow, screen, nativeTheme } from 'electron';
 import log from 'electron-log';
 import { getAssetPath } from './assets';
 
@@ -17,7 +17,16 @@ export const createPromptWindow = async () => {
       nodeIntegration: true,
       contextIsolation: false,
     },
+    alwaysOnTop: true,
+    closable: false,
+    minimizable: false,
+    maximizable: false,
+    skipTaskbar: true,
+    movable: false,
   });
+
+  promptWindow.setAlwaysOnTop(true, 'floating', 1);
+  promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   promptWindow.loadURL(`file://${__dirname}/index.html`);
 
@@ -29,9 +38,9 @@ export const createPromptWindow = async () => {
 
   promptWindow?.webContents.on('before-input-event', (event: any, input) => {
     if (input.key === 'Escape') {
+      promptWindow?.webContents.send('escape', {});
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
       hidePromptWindow();
-      promptWindow?.webContents.send('escape', {});
     }
   });
 };
@@ -42,6 +51,8 @@ export const invokePromptWindow = (channel: string, data: any) => {
   }
 
   if (!promptWindow?.isVisible()) {
+    console.log(`>>> MOVING PROMPT <<<`);
+    console.log(screen.getAllDisplays());
     const cursor = screen.getCursorScreenPoint();
     // Get display with cursor
     const distScreen = screen.getDisplayNearestPoint({
@@ -61,6 +72,8 @@ export const invokePromptWindow = (channel: string, data: any) => {
     promptWindow?.setBounds({ x, y, width, height });
 
     promptWindow?.show();
+    promptWindow?.focus();
+    promptWindow?.focusOnWebView();
   }
 
   return promptWindow;
