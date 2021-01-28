@@ -1,3 +1,15 @@
+# [1.1.0-beta.5](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.4...v1.1.0-beta.5) (2021-01-27)
+
+
+### Bug Fixes
+
+* **scripts:** Pass SIMPLE_CONTEXT as 'app' ([b545bad](https://github.com/johnlindquist/simpleapp/commit/b545bad2d0d6ed58438cdfa48d52f6421e382965))
+
+
+### Features
+
+* **css:** Dark mode first pass ([8352208](https://github.com/johnlindquist/simpleapp/commit/83522080f3fb06f7a869a2fa4dc5d3ef04f00749))
+
 # [1.1.0-beta.4](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.3...v1.1.0-beta.4) (2021-01-27)
 
 
