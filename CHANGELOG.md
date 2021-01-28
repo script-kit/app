@@ -1,3 +1,10 @@
+# [1.1.0-beta.7](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.6...v1.1.0-beta.7) (2021-01-28)
+
+
+### Features
+
+* **prompt:** Proper scrolling! 🚀 ([1d6adf4](https://github.com/johnlindquist/simpleapp/commit/1d6adf4aa20cbcc766a9a87994fd98c341813872))
+
 # [1.1.0-beta.6](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.5...v1.1.0-beta.6) (2021-01-28)
 
 
