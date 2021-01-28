@@ -1,3 +1,10 @@
+# [1.1.0-beta.6](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.5...v1.1.0-beta.6) (2021-01-28)
+
+
+### Bug Fixes
+
+* **css:** dark mode ([1f50dd3](https://github.com/johnlindquist/simpleapp/commit/1f50dd3bc382abed4d08b52e93bdc39917d70b02))
+
 # [1.1.0-beta.5](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.4...v1.1.0-beta.5) (2021-01-27)
 
 
