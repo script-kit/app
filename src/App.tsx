@@ -1,6 +1,13 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import React, { KeyboardEvent, useCallback, useEffect, useState } from 'react';
+import React, {
+  KeyboardEvent,
+  RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { app, ipcRenderer, nativeTheme } from 'electron';
 import { SimplePromptOptions } from './types';
 
@@ -15,10 +22,11 @@ export default function App() {
   const [inputValue, setInputValue] = useState('');
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState<ChoiceData[]>([]);
+  const scrollRef: RefObject<HTMLDivElement> = useRef(null);
 
   const submit = useCallback((submitValue: string) => {
     ipcRenderer.send('prompt', submitValue);
-    setData({ type: 'clear', choices: [], message: '' });
+    setData({ type: 'clear', choices: [], message: 'Processing...' });
     setIndex(0);
     setInputValue('');
   }, []);
@@ -53,8 +61,28 @@ export default function App() {
       if (newIndex > choices.length - 1) newIndex = choices.length - 1;
 
       setIndex(newIndex);
+
+      if (scrollRef.current) {
+        const el = scrollRef.current;
+        const itemHeight = el.scrollHeight / choices?.length;
+        const itemY = newIndex * itemHeight;
+
+        if (itemY + itemHeight >= el.scrollTop + el.clientHeight) {
+          el.scrollTo({
+            top: itemY - el.clientHeight + itemHeight,
+            behavior: 'auto',
+          });
+        }
+
+        if (itemY < el.scrollTop) {
+          el.scrollTo({
+            top: itemY,
+            behavior: 'auto',
+          });
+        }
+      }
     },
-    [choices, index, submit, inputValue]
+    [choices, index, submit, inputValue, scrollRef]
   );
 
   useEffect(() => {
@@ -107,10 +135,11 @@ export default function App() {
   }, [setData, setIndex, setInputValue]);
 
   return (
-    <div className="flex flex-row-reverse w-full h-screen overflow-y-hidden">
-      <div className="w-1/2">
+    <div className="flex flex-row-reverse w-full overflow-y-hidden h-screen">
+      <div className="w-1/2 h-screen">
         <input
-          className="w-full bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white  focus:outline-none focus:border-transparent "
+          style={{ height: '12vh' }}
+          className="w-full bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white  focus:outline-none focus:border-transparent"
           type="text"
           value={inputValue}
           onChange={onChange}
@@ -126,13 +155,18 @@ export default function App() {
             .map((letter) => `${letter}.*`)
             .join('')}
         </div> */}
-        <div className="p-1 flex flex-col bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white h-screen overflow-y-auto">
-          {((choices as any[]) || []).map((choice, i) => (
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-            <button
-              type="button"
-              key={choice.value}
-              className={`
+        {choices?.length > 0 && (
+          <div
+            ref={scrollRef}
+            style={{ height: '88vh' }}
+            className="p-1 flex flex-col bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white overflow-y-scroll"
+          >
+            {((choices as any[]) || []).map((choice, i) => (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+              <button
+                type="button"
+                key={choice.value}
+                className={`
               hover:bg-gray-400
               dark:hover:bg-gray-600
               placeholder-gray-700
@@ -141,14 +175,15 @@ export default function App() {
               text-left
               justify-start
               ${index === i ? `bg-gray-500` : ``}`}
-              onClick={(_event) => {
-                submit(choice.value);
-              }}
-            >
-              {choice.name}
-            </button>
-          ))}
-        </div>
+                onClick={(_event) => {
+                  submit(choice.value);
+                }}
+              >
+                {choice.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {choices[index]?.info && (
         <div
