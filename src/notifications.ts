@@ -24,17 +24,18 @@ export const createNotification = async () => {
   // });
 
   notificationWindow?.setMaxListeners(2);
-
-  notificationWindow?.webContents.on(
-    'before-input-event',
-    (event: any, input) => {
-      if (input.key === 'Escape') {
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        hidePromptWindow();
-        notificationWindow?.webContents.send('escape', {});
+  if (notificationWindow && !notificationWindow.isDestroyed()) {
+    notificationWindow?.webContents.on(
+      'before-input-event',
+      (event: any, input) => {
+        if (input.key === 'Escape') {
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
+          hidePromptWindow();
+          notificationWindow?.webContents.send('escape', {});
+        }
       }
-    }
-  );
+    );
+  }
 };
 
 const styles = 'dist/style.css';
