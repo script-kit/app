@@ -70,9 +70,11 @@ export const invokePromptWindow = (channel: string, data: any) => {
       width: screenWidth,
       height: screenHeight,
     } = distScreen.workAreaSize;
-    const width = Math.floor(screenWidth / 3);
+
+    const ratio = screenWidth / screenHeight;
     const height = Math.floor(screenHeight / 3);
-    const x = Math.floor(screenWidth - width / scaleFactor); // * distScreen.scaleFactor
+    const width = Math.floor(height * (4 / 3));
+    const x = Math.floor(screenWidth); // * distScreen.scaleFactor
     const { y } = distScreen.workArea;
     console.log({ screenWidth, screenHeight, width, height, x, y });
     promptWindow?.setBounds({ x, y, width, height });
