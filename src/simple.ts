@@ -193,16 +193,18 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
 export const debugToggle = () => {
   debugWindow = createDebug();
-  debugWindow?.webContents.on(
-    'before-input-event',
-    (event: any, input: any) => {
-      if (input.key === 'Escape') {
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        killDebug();
-        debugWindow = null;
+  if (debugWindow) {
+    debugWindow?.webContents.on(
+      'before-input-event',
+      (event: any, input: any) => {
+        if (input.key === 'Escape') {
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
+          killDebug();
+          debugWindow = null;
+        }
       }
-    }
-  );
+    );
+  }
 };
 
 export const trySimpleScript = (filePath: string, runArgs: string[] = []) => {

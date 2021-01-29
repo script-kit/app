@@ -37,8 +37,10 @@ const customProtocol = 'file2';
 let debugWindow: BrowserWindow | null = null;
 
 export const killDebug = () => {
-  debugWindow?.close();
-  debugWindow = null;
+  if (debugWindow) {
+    debugWindow?.close();
+    debugWindow = null;
+  }
 };
 
 export const createDebug = () => {

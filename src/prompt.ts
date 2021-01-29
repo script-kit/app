@@ -50,7 +50,7 @@ export const invokePromptWindow = (channel: string, data: any) => {
     promptWindow?.webContents.send(channel, data);
   }
 
-  if (!promptWindow?.isVisible()) {
+  if (promptWindow && !promptWindow?.isVisible()) {
     // console.log(`>>> MOVING PROMPT <<<`);
     const cursor = screen.getCursorScreenPoint();
     // Get display with cursor
@@ -79,7 +79,7 @@ export const invokePromptWindow = (channel: string, data: any) => {
 };
 
 export const hidePromptWindow = () => {
-  if (promptWindow?.isVisible()) {
+  if (promptWindow && promptWindow?.isVisible()) {
     log.info(`Hiding prompt`);
 
     promptWindow?.hide();
