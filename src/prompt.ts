@@ -51,7 +51,7 @@ export const invokePromptWindow = (channel: string, data: any) => {
   }
 
   if (!promptWindow?.isVisible()) {
-    console.log(`>>> MOVING PROMPT <<<`);
+    // console.log(`>>> MOVING PROMPT <<<`);
     const cursor = screen.getCursorScreenPoint();
     // Get display with cursor
     const distScreen = screen.getDisplayNearestPoint({

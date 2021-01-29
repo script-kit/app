@@ -1,16 +1,13 @@
-import { app, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import path from 'path';
 import kill from 'tree-kill';
 import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
 import { debounce } from 'lodash';
-import {
-  invokePromptWindow,
-  hidePromptWindow,
-  getPromptWindow,
-} from './prompt';
-import { createNotification, showNotification } from './notifications';
+import { invokePromptWindow, hidePromptWindow } from './prompt';
+import { showNotification } from './notifications';
 import { show } from './show';
+import { createDebug, killDebug } from './debug';
 
 export const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
 export const simplePath = (...parts: string[]) =>
@@ -22,6 +19,7 @@ export const SIMPLE_BIN_PATH = simplePath('bin');
 export const SIMPLE_NODE_PATH = simplePath('node');
 
 let child: ChildProcess | null = null;
+let debugWindow: BrowserWindow | null = null;
 
 export const processMap = new Map();
 
@@ -35,9 +33,7 @@ ipcMain.on('quit', () => {
 });
 
 ipcMain.on('prompt', (event, data) => {
-  console.log(`APP -> ${processMap.get(child?.pid).split('/').pop()}`, {
-    data,
-  });
+  console.log(`APP -> ${processMap.get(child?.pid).split('/').pop()}`);
 
   if (child) {
     child?.send(data);
@@ -62,6 +58,7 @@ const killChild = () => {
   }
 };
 
+let debugLineIndex = 0;
 const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   log.info(`\n--- SIMPLE SCRIPT ---`);
   log.info('processMap:', [...processMap.entries()]);
@@ -78,7 +75,8 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   child?.removeAllListeners();
   child?.kill();
   child = fork(resolvePath, [...runArgs, '--app'], {
-    stdio: 'inherit',
+    silent: true,
+    // stdio: 'inherit',
     execPath: simplePath('node', 'bin', 'node'),
     execArgv: [
       '--require',
@@ -172,6 +170,39 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     processMap.delete(child?.pid);
     child?.kill();
   });
+
+  const handleStdout = (data: string) => {
+    const line = data.toString();
+    if (line.startsWith('Error:')) {
+      show(
+        `<div class="bg-black text-green-500 font-mono h-screen">${line}</div>`
+      );
+    }
+
+    if (debugWindow) {
+      console.log(`APP`, line);
+      debugWindow.webContents.send('debug', {
+        line,
+        i: debugLineIndex += 1,
+      });
+    }
+  };
+
+  (child as any).stdout.on('data', handleStdout);
+};
+
+export const debugToggle = () => {
+  debugWindow = createDebug();
+  debugWindow?.webContents.on(
+    'before-input-event',
+    (event: any, input: any) => {
+      if (input.key === 'Escape') {
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        killDebug();
+        debugWindow = null;
+      }
+    }
+  );
 };
 
 export const trySimpleScript = (filePath: string, runArgs: string[] = []) => {

@@ -100,7 +100,7 @@ export default function App() {
     return () => {
       ipcRenderer.off('lazy', lazyHandler);
     };
-  }, [setChoices]);
+  }, []);
 
   useEffect(() => {
     if (data.type === 'lazy') return;
@@ -119,11 +119,11 @@ export default function App() {
 
   useEffect(() => {
     ipcRenderer.on('prompt', (_event, promptData: SimplePromptOptions) => {
-      console.log(`setData`, promptData);
+      // console.log(`setData`, promptData);
       setData(promptData);
       setIndex(0);
     });
-  }, [setData, setIndex]);
+  }, []);
 
   useEffect(() => {
     ipcRenderer.on('escape', () => {
@@ -132,14 +132,14 @@ export default function App() {
       setIndex(0);
       setInputValue('');
     });
-  }, [setData, setIndex, setInputValue]);
+  }, []);
 
   return (
-    <div className="flex flex-row-reverse w-full overflow-y-hidden h-screen">
+    <div className="flex flex-row-reverse w-full overflow-y-hidden">
       <div className="w-1/2 h-screen">
         <input
           style={{ height: '12vh' }}
-          className="w-full bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white  focus:outline-none focus:border-transparent"
+          className="w-full bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white  focus:outline-none focus:border-transparent"
           type="text"
           value={inputValue}
           onChange={onChange}
@@ -158,8 +158,8 @@ export default function App() {
         {choices?.length > 0 && (
           <div
             ref={scrollRef}
-            style={{ height: '88vh' }}
-            className="p-1 flex flex-col bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white overflow-y-scroll"
+            style={{ maxHeight: '88vh' }}
+            className="p-1 flex flex-col bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white overflow-y-scroll overflow-x-hidden"
           >
             {((choices as any[]) || []).map((choice, i) => (
               // eslint-disable-next-line jsx-a11y/click-events-have-key-events
@@ -187,7 +187,8 @@ export default function App() {
       </div>
       {choices[index]?.info && (
         <div
-          className="w-1/2 flex justify-end bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white overscroll-none"
+          style={{ height: 'fit-content' }}
+          className="w-1/2 flex  bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white overscroll-none p-1"
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html: choices[index]?.info as string,
@@ -196,7 +197,8 @@ export default function App() {
       )}
       {data?.info && (
         <div
-          className="w-1/2 flex justify-end bg-white dark:bg-gray-800 bg-opacity-90 text-black text-opacity-90  dark:text-white overscroll-y-none"
+          style={{ height: 'fit-content' }}
+          className="w-1/2 flex  bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white overscroll-y-none p-1"
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html: data?.info as string,

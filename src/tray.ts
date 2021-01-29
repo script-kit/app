@@ -2,7 +2,7 @@
 import { Tray } from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
-import { trySimpleScript } from './simple';
+import { trySimpleScript, debugToggle } from './simple';
 import { getAssetPath } from './assets';
 
 let tray: Tray | null = null;
@@ -15,7 +15,7 @@ const leftClick = async (event: KeyboardEvent) => {
   } else if (event.ctrlKey) {
     trySimpleScript('app/control-click');
   } else if (event.altKey) {
-    trySimpleScript('app/alt-click');
+    debugToggle();
   } else {
     trySimpleScript('app/left-click');
   }
