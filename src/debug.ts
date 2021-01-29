@@ -65,7 +65,7 @@ export const createDebug = () => {
       frame: true,
       transparent: false,
       backgroundColor: '#00000000',
-      show: false,
+      show: true,
       icon: getAssetPath('icon.png'),
       webPreferences: {
         nodeIntegration: true,
@@ -81,7 +81,6 @@ export const createDebug = () => {
 
     debugWindow.webContents.once('did-finish-load', () => {
       debugWindow?.webContents.closeDevTools();
-      debugWindow?.show();
     });
 
     debugWindow?.loadURL(
