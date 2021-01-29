@@ -1,3 +1,10 @@
+# [1.1.0-beta.8](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.7...v1.1.0-beta.8) (2021-01-29)
+
+
+### Features
+
+* **debug:** Add debug window when alt+click ([6b870b7](https://github.com/johnlindquist/simpleapp/commit/6b870b7cdcec02e1a43b5fa4a0b501c0c03bff74))
+
 # [1.1.0-beta.7](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.6...v1.1.0-beta.7) (2021-01-28)
 
 
