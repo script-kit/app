@@ -1,3 +1,11 @@
+# [1.1.0-beta.9](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.8...v1.1.0-beta.9) (2021-01-29)
+
+
+### Bug Fixes
+
+* **prompt:** Always focus, no matter what :D ([78292eb](https://github.com/johnlindquist/simpleapp/commit/78292ebbc22015ee86191e148ac19a0341ac942b))
+* **prompt:** Guard against closed windows when quitting ([c95f38e](https://github.com/johnlindquist/simpleapp/commit/c95f38e0adbd6b52a8b830b4df07eabf78cfc1c2))
+
 # [1.1.0-beta.8](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.7...v1.1.0-beta.8) (2021-01-29)
 
 
