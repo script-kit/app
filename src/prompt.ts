@@ -45,8 +45,14 @@ export const createPromptWindow = async () => {
   });
 };
 
+export const focusPrompt = () => {
+  if (promptWindow && !promptWindow.isDestroyed()) {
+    promptWindow?.focus();
+  }
+};
+
 export const invokePromptWindow = (channel: string, data: any) => {
-  if (promptWindow) {
+  if (promptWindow && !promptWindow.isDestroyed()) {
     promptWindow?.webContents.send(channel, data);
   }
 
@@ -72,7 +78,6 @@ export const invokePromptWindow = (channel: string, data: any) => {
 
     promptWindow?.show();
     promptWindow?.focus();
-    promptWindow?.focusOnWebView();
   }
 
   return promptWindow;

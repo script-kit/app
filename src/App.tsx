@@ -23,6 +23,13 @@ export default function App() {
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
+  const inputRef: RefObject<HTMLInputElement> = useRef(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef?.current.focus();
+    }
+  }, [inputRef]);
 
   const submit = useCallback((submitValue: string) => {
     ipcRenderer.send('prompt', submitValue);
@@ -94,6 +101,9 @@ export default function App() {
   useEffect(() => {
     const lazyHandler = (_event: any, lazyChoices: any) => {
       setChoices(lazyChoices);
+      if (inputRef.current) {
+        inputRef?.current.focus();
+      }
     };
     ipcRenderer.on('lazy', lazyHandler);
 
@@ -122,12 +132,18 @@ export default function App() {
       // console.log(`setData`, promptData);
       setData(promptData);
       setIndex(0);
+      if (inputRef.current) {
+        inputRef?.current.focus();
+      }
     });
   }, []);
 
   useEffect(() => {
     ipcRenderer.on('escape', () => {
       console.log(`ESCAPE!!!`);
+      if (inputRef.current) {
+        inputRef?.current.focus();
+      }
       setData({ type: 'clear', choices: [], message: '' });
       setIndex(0);
       setInputValue('');
@@ -138,6 +154,7 @@ export default function App() {
     <div className="flex flex-row-reverse w-full overflow-y-hidden">
       <div className="w-1/2 h-screen">
         <input
+          ref={inputRef}
           style={{ height: '12vh' }}
           className="w-full bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white  focus:outline-none focus:border-transparent"
           type="text"

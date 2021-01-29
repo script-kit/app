@@ -4,7 +4,7 @@ import kill from 'tree-kill';
 import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
 import { debounce } from 'lodash';
-import { invokePromptWindow, hidePromptWindow } from './prompt';
+import { invokePromptWindow, hidePromptWindow, focusPrompt } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
 import { createDebug, killDebug } from './debug';
@@ -26,6 +26,7 @@ export const processMap = new Map();
 ipcMain.on('quit', () => {
   if (child) {
     log.info(`Exiting: ${child.pid}`);
+    child.removeAllListeners();
     kill(child.pid);
   }
 
@@ -125,7 +126,12 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     }
 
     if (data.from === 'show') {
-      show(data.html, data.options);
+      const showWindow = show(data.html, data.options);
+      if (showWindow && !showWindow.isDestroyed()) {
+        showWindow.on('close', () => {
+          focusPrompt();
+        });
+      }
       return;
     }
     // console.log({ data });
@@ -179,7 +185,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       );
     }
 
-    if (debugWindow) {
+    if (debugWindow && !debugWindow?.isDestroyed()) {
       console.log(`APP`, line);
       debugWindow.webContents.send('debug', {
         line,
