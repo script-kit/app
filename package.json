@@ -1,6 +1,6 @@
 {
   "name": "simpleapp",
-  "productName": "Simple Scripts",
+  "productName": "SimpleScripts",
   "description": "A companion app for Simple Scripts",
   "scripts": {
     "build": "concurrently \"yarn build:main\" \"yarn build:renderer\"",
@@ -30,7 +30,7 @@
     ]
   },
   "build": {
-    "productName": "Simple Scripts",
+    "productName": "SimpleScripts",
     "appId": "dev.simplescripts",
     "files": [
       "dist/",
