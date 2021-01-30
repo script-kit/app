@@ -138,6 +138,10 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   child.on('close', tryClean('CLOSE'));
   child.on('disconnect', tryClean('DISCONNECT'));
   child.on('message', async (data: any) => {
+    if (data.from === 'setLogin') {
+      app.setLoginItemSettings(data);
+      return;
+    }
     if (data.from === 'quit') {
       if (child) {
         log.info(`Exiting: ${child.pid}`);
