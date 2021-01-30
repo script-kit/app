@@ -24,6 +24,7 @@ let debugWindow: BrowserWindow | null = null;
 export const processMap = new Map();
 
 ipcMain.on('quit', () => {
+  console.log(`>>> QUIT <<<`);
   if (child) {
     log.info(`Exiting: ${child.pid}`);
     child.removeAllListeners();
@@ -116,7 +117,13 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   child.on('disconnect', tryClean('DISCONNECT'));
   child.on('message', async (data: any) => {
     if (data.from === 'quit') {
-      app.quit();
+      console.log({ data });
+      if (child) {
+        log.info(`Exiting: ${child.pid}`);
+        child.removeAllListeners();
+        kill(child.pid);
+      }
+      app.exit();
       return;
     }
 
