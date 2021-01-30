@@ -1,4 +1,6 @@
 import { app, BrowserWindow, ipcMain, screen } from 'electron';
+import { autoUpdater } from 'electron-updater';
+
 import path from 'path';
 import kill from 'tree-kill';
 import { fork, ChildProcess } from 'child_process';
@@ -124,6 +126,16 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         kill(child.pid);
       }
       app.exit();
+      return;
+    }
+    if (data.from === 'update') {
+      autoUpdater.checkForUpdatesAndNotify();
+      return;
+    }
+
+    if (data.from === 'debug') {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      debugToggle();
       return;
     }
 

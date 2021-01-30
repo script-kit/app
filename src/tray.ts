@@ -15,7 +15,7 @@ const leftClick = async (event: KeyboardEvent) => {
   } else if (event.ctrlKey) {
     trySimpleScript('app/control-click');
   } else if (event.altKey) {
-    debugToggle();
+    trySimpleScript('app/alt-click');
   } else {
     trySimpleScript('app/left-click');
   }
