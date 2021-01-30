@@ -1,3 +1,11 @@
+# [1.1.0-beta.10](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.9...v1.1.0-beta.10) (2021-01-29)
+
+
+### Bug Fixes
+
+* **prompt:** Fix top-right positioning logic ([b0593c8](https://github.com/johnlindquist/simpleapp/commit/b0593c810b9c6fa5768de7b7ee15d00d2d182c21))
+* **prompt:** fixing ratio sizing ([0369d69](https://github.com/johnlindquist/simpleapp/commit/0369d69df497903b4b7a1a22cd04d82910cb7a01))
+
 # [1.1.0-beta.9](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.8...v1.1.0-beta.9) (2021-01-29)
 
 
