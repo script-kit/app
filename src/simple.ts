@@ -63,6 +63,26 @@ const killChild = () => {
 };
 
 let debugLineIndex = 0;
+export const debug = (...args: any) => {
+  const line = args
+    .map((arg: any) => JSON.stringify(arg))
+    .join(' - ')
+    .replace('\n', '');
+  log.info(line);
+  if (debugWindow && !debugWindow?.isDestroyed()) {
+    debugWindow.webContents.send('debug', {
+      line,
+      i: debugLineIndex += 1,
+    });
+  }
+
+  if (line.startsWith('Error:')) {
+    show(
+      `<div class="bg-black text-green-500 font-mono h-screen">${line}</div>`
+    );
+  }
+};
+
 const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   log.info(`\n--- SIMPLE SCRIPT ---`);
   log.info('processMap:', [...processMap.entries()]);
@@ -106,7 +126,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   const tryClean = (on: string) => () => {
     try {
-      log.info(on, scriptPath, '| PID:', child?.pid);
+      debug(on, scriptPath, '| PID:', child?.pid);
       processMap.delete(child?.pid);
       hidePromptWindow();
     } catch (error) {
@@ -119,7 +139,6 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   child.on('disconnect', tryClean('DISCONNECT'));
   child.on('message', async (data: any) => {
     if (data.from === 'quit') {
-      console.log({ data });
       if (child) {
         log.info(`Exiting: ${child.pid}`);
         child.removeAllListeners();
@@ -198,19 +217,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   const handleStdout = (data: string) => {
     const line = data.toString();
-    if (line.startsWith('Error:')) {
-      show(
-        `<div class="bg-black text-green-500 font-mono h-screen">${line}</div>`
-      );
-    }
-
-    if (debugWindow && !debugWindow?.isDestroyed()) {
-      console.log(`APP`, line);
-      debugWindow.webContents.send('debug', {
-        line,
-        i: debugLineIndex += 1,
-      });
-    }
+    debug(line);
   };
 
   (child as any).stdout.on('data', handleStdout);

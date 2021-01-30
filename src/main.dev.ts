@@ -19,7 +19,7 @@ import { test } from 'shelljs';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
-import { trySimpleScript } from './simple';
+import { trySimpleScript, debug } from './simple';
 import { createPromptWindow } from './prompt';
 import { createNotification, showNotification } from './notifications';
 
@@ -55,13 +55,13 @@ const installExtensions = async () => {
 };
 
 autoUpdater.on('checking-for-update', () => {
-  console.log('Checking for update...');
+  debug('Checking for update...');
 });
 autoUpdater.on('update-available', (info) => {
-  console.log('Update available.');
+  debug('Update available.', info);
 });
 autoUpdater.on('update-not-available', (info) => {
-  console.log('Update not available.');
+  debug('Update not available.', info);
 });
 autoUpdater.on('download-progress', (progressObj) => {
   let logMessage = `Download speed: ${progressObj.bytesPerSecond}`;
