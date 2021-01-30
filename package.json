@@ -1,5 +1,5 @@
 {
-  "name": "simpleapp",
+  "name": "simple",
   "productName": "Simple",
   "description": "A companion app for Simple Scripts",
   "scripts": {
@@ -98,12 +98,12 @@
     "publish": {
       "provider": "github",
       "owner": "johnlindquist",
-      "repo": "simpleapp"
+      "repo": "simple"
     }
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/johnlindquist/simpleapp.git"
+    "url": "git+https://github.com/johnlindquist/simple.git"
   },
   "author": {
     "name": "John Lindquist",
@@ -112,7 +112,7 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/johnlindquist/simpleapp/issues"
+    "url": "https://github.com/johnlindquist/simple/issues"
   },
   "keywords": [
     "electron",
@@ -120,7 +120,7 @@
     "typescript",
     "ts"
   ],
-  "homepage": "https://github.com/johnlindquist/simpleapp#readme",
+  "homepage": "https://github.com/johnlindquist/simple#readme",
   "jest": {
     "testURL": "http://localhost/",
     "moduleNameMapper": {
