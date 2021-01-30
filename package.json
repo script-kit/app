@@ -53,7 +53,8 @@
     ],
     "mac": {
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "type": "distribution",
       "hardenedRuntime": true,
