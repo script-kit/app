@@ -1,3 +1,10 @@
+# [1.1.0-beta.14](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.13...v1.1.0-beta.14) (2021-01-30)
+
+
+### Bug Fixes
+
+* **updater:** debug updater ([ea758a9](https://github.com/johnlindquist/simple/commit/ea758a9d8788c906b8627089fd606685e24859d9))
+
 # [1.1.0-beta.13](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.12...v1.1.0-beta.13) (2021-01-30)
 
 
