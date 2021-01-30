@@ -67,7 +67,7 @@ autoUpdater.on('download-progress', (progressObj) => {
   let logMessage = `Download speed: ${progressObj.bytesPerSecond}`;
   logMessage = `${logMessage} - Downloaded ${progressObj.percent}%`;
   logMessage = `${logMessage} (${progressObj.transferred}/${progressObj.total})`;
-  console.log(logMessage);
+  debug(logMessage);
 });
 app.on('window-all-closed', (e: Event) => e.preventDefault());
 
