@@ -1,3 +1,11 @@
+# [1.1.0-beta.11](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.10...v1.1.0-beta.11) (2021-01-30)
+
+
+### Bug Fixes
+
+* **app:** quit ([f6fda2d](https://github.com/johnlindquist/simpleapp/commit/f6fda2db990d4ab0e7c9b0273d78f2a920e021fe))
+* **prompt:** Fix positioning when displays side-by-side ([662914c](https://github.com/johnlindquist/simpleapp/commit/662914c15dc4b2c268e915a5f857ce4cdf3fb5aa))
+
 # [1.1.0-beta.10](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.9...v1.1.0-beta.10) (2021-01-29)
 
 
