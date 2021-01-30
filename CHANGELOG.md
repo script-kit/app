@@ -1,3 +1,10 @@
+# [1.1.0-beta.15](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.14...v1.1.0-beta.15) (2021-01-30)
+
+
+### Features
+
+* **app:** Allow to set to launch at login ([78a6df8](https://github.com/johnlindquist/simple/commit/78a6df8dbaa4f82b70dc9dfb9a74648ef51847af))
+
 # [1.1.0-beta.14](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.13...v1.1.0-beta.14) (2021-01-30)
 
 
