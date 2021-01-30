@@ -1,3 +1,15 @@
+# [1.1.0-beta.12](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.11...v1.1.0-beta.12) (2021-01-30)
+
+
+### Bug Fixes
+
+* **shortcuts:** Allow whitespace in shortcuts ([1e8c2f4](https://github.com/johnlindquist/simple/commit/1e8c2f487c295f093b25fa8597e61a1c91e2980e))
+
+
+### Features
+
+* **app:** Implement auto update 🤞 ([695637b](https://github.com/johnlindquist/simple/commit/695637bbf84d50a95abb8172b03cffab6e648433))
+
 # [1.1.0-beta.11](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.10...v1.1.0-beta.11) (2021-01-30)
 
 
