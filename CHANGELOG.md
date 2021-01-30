@@ -1,3 +1,10 @@
+# [1.1.0-beta.13](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.12...v1.1.0-beta.13) (2021-01-30)
+
+
+### Features
+
+* **debug:** Debug from anywhere ([5ca6050](https://github.com/johnlindquist/simple/commit/5ca6050aa67343ea46706cc3c1b8cbef27ca23d6))
+
 # [1.1.0-beta.12](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.11...v1.1.0-beta.12) (2021-01-30)
 
 
