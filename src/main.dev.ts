@@ -29,16 +29,6 @@ app.setAsDefaultProtocolClient('simple');
 app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
 
-/* eslint-disable jest/no-export */
-// Linter thinks the `test` function from shelljs makes this a test file
-export default class AppUpdater {
-  constructor() {
-    log.transports.file.level = 'info';
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
-  }
-}
-
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
@@ -64,6 +54,21 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 
+autoUpdater.on('checking-for-update', () => {
+  console.log('Checking for update...');
+});
+autoUpdater.on('update-available', (info) => {
+  console.log('Update available.');
+});
+autoUpdater.on('update-not-available', (info) => {
+  console.log('Update not available.');
+});
+autoUpdater.on('download-progress', (progressObj) => {
+  let logMessage = `Download speed: ${progressObj.bytesPerSecond}`;
+  logMessage = `${logMessage} - Downloaded ${progressObj.percent}%`;
+  logMessage = `${logMessage} (${progressObj.transferred}/${progressObj.total})`;
+  console.log(logMessage);
+});
 app.on('window-all-closed', (e: Event) => e.preventDefault());
 
 app.on('web-contents-created', (_, contents) => {
@@ -111,6 +116,9 @@ const ready = async () => {
   await manageShortcuts();
   await createPromptWindow();
   await createNotification();
+
+  autoUpdater.logger = log;
+  autoUpdater.checkForUpdatesAndNotify();
 };
 
 const checkSimpleScripts = async () => {
