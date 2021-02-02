@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { app, ipcRenderer, nativeTheme } from 'electron';
 import { SimplePromptOptions } from './types';
+import reactStringReplace from 'react-string-replace';
 
 interface ChoiceData {
   name: string;
@@ -115,14 +116,11 @@ export default function App() {
   useEffect(() => {
     if (data.type === 'lazy') return;
     const filtered = ((data?.choices as any[]) || [])?.filter((choice) => {
-      return choice?.name.match(
-        new RegExp(
-          Array.from(inputValue)
-            .map((letter) => `${letter}.*`)
-            .join(''),
-          'i'
-        )
-      );
+      try {
+        return choice?.name.match(new RegExp(inputValue, 'i'));
+      } catch (error) {
+        return false;
+      }
     });
     setChoices(filtered);
   }, [data, inputValue]);
@@ -182,7 +180,7 @@ export default function App() {
               // eslint-disable-next-line jsx-a11y/click-events-have-key-events
               <button
                 type="button"
-                key={choice.value}
+                key={choice.uuid}
                 className={`
               hover:bg-gray-400
               dark:hover:bg-gray-600
@@ -196,7 +194,11 @@ export default function App() {
                   submit(choice.value);
                 }}
               >
-                {choice.name}
+                {reactStringReplace(choice?.name, inputValue, (match, i) => (
+                  <span key={i} className="font-bold text-yellow-500">
+                    {match}
+                  </span>
+                ))}
               </button>
             ))}
           </div>

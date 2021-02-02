@@ -114,6 +114,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     ],
     env: {
       SIMPLE_CONTEXT: 'app',
+      SIMPLE_MAIN: resolvePath,
       PATH: `${simplePath('node', 'bin')}:${codePath}:${process.env.PATH}`,
       SIMPLE_PATH,
       NODE_PATH: simplePath('node_modules'),
@@ -126,6 +127,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   const tryClean = (on: string) => () => {
     try {
+      app?.hide();
       debug(on, scriptPath, '| PID:', child?.pid);
       processMap.delete(child?.pid);
       hidePromptWindow();
@@ -134,10 +136,12 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     }
   };
 
-  child.on('exit', tryClean('EXIT'));
   child.on('close', tryClean('CLOSE'));
-  child.on('disconnect', tryClean('DISCONNECT'));
   child.on('message', async (data: any) => {
+    if (data.from === 'hide') {
+      app?.hide();
+      return;
+    }
     if (data.from === 'setLogin') {
       app.setLoginItemSettings(data);
       return;

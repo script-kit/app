@@ -1,7 +1,8 @@
 /* eslint-disable import/prefer-default-export */
-import { BrowserWindow, screen, nativeTheme } from 'electron';
+import { BrowserWindow, screen, nativeTheme, app } from 'electron';
 import log from 'electron-log';
 import { getAssetPath } from './assets';
+import iohook from 'iohook';
 
 let promptWindow: BrowserWindow | null = null;
 
@@ -57,7 +58,6 @@ export const invokePromptWindow = (channel: string, data: any) => {
   }
 
   if (promptWindow && !promptWindow?.isVisible()) {
-    // console.log(`>>> MOVING PROMPT <<<`);
     const cursor = screen.getCursorScreenPoint();
     // Get display with cursor
     const distScreen = screen.getDisplayNearestPoint({
@@ -74,13 +74,13 @@ export const invokePromptWindow = (channel: string, data: any) => {
     const ratio = screenWidth / screenHeight;
     const height = Math.floor(screenHeight / 3);
     const width = Math.floor(height * (4 / 3));
-    const { x: workX, y } = distScreen.workArea;
-    const x = Math.floor(screenWidth - width + workX); // * distScreen.scaleFactor
+    const { x: workX, y: workY } = distScreen.workArea;
+    const x = Math.floor(screenWidth / 2 - width / 2 + workX); // * distScreen.scaleFactor
+    const y = Math.floor(workY + height / 10);
     console.log({ screenWidth, screenHeight, width, height, x, y });
     promptWindow?.setBounds({ x, y, width, height });
 
     promptWindow?.show();
-    promptWindow?.focus();
   }
 
   return promptWindow;
@@ -89,7 +89,7 @@ export const invokePromptWindow = (channel: string, data: any) => {
 export const hidePromptWindow = () => {
   if (promptWindow && promptWindow?.isVisible()) {
     log.info(`Hiding prompt`);
-
+    app?.hide();
     promptWindow?.hide();
   }
 };
