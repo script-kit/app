@@ -14,29 +14,20 @@ import { app, ipcMain, protocol } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
-import { spawnSync, SpawnSyncOptions } from 'child_process';
+import { spawnSync, SpawnSyncOptions, exec } from 'child_process';
 import { test } from 'shelljs';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
-import { trySimpleScript } from './simple';
+import { trySimpleScript, debug } from './simple';
 import { createPromptWindow } from './prompt';
+import { createNotification, showNotification } from './notifications';
 
 app.setName('Simple Scripts');
 app.requestSingleInstanceLock();
 app.setAsDefaultProtocolClient('simple');
 app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
-
-/* eslint-disable jest/no-export */
-// Linter thinks the `test` function from shelljs makes this a test file
-export default class AppUpdater {
-  constructor() {
-    log.transports.file.level = 'info';
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
-  }
-}
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -63,7 +54,34 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 
+autoUpdater.on('checking-for-update', () => {
+  debug('Checking for update...');
+});
+autoUpdater.on('update-available', (info) => {
+  debug('Update available.', info);
+});
+autoUpdater.on('update-not-available', (info) => {
+  debug('Update not available.', info);
+});
+autoUpdater.on('download-progress', (progressObj) => {
+  let logMessage = `Download speed: ${progressObj.bytesPerSecond}`;
+  logMessage = `${logMessage} - Downloaded ${progressObj.percent}%`;
+  logMessage = `${logMessage} (${progressObj.transferred}/${progressObj.total})`;
+  debug(logMessage);
+});
 app.on('window-all-closed', (e: Event) => e.preventDefault());
+
+app.on('web-contents-created', (_, contents) => {
+  contents.on('will-navigate', (event, navigationUrl) => {
+    const parsedUrl = new URL(navigationUrl);
+    console.log({ parsedUrl });
+
+    if (parsedUrl.protocol.startsWith('http')) {
+      event.preventDefault();
+      exec(`open ${parsedUrl.href}`);
+    }
+  });
+});
 
 const prepareProtocols = async () => {
   protocol.registerHttpProtocol('simple', (req, cb) => {
@@ -81,6 +99,15 @@ const prepareProtocols = async () => {
 
     trySimpleScript(command, runArgs);
   });
+
+  const customProtocol = 'file2';
+
+  protocol.registerFileProtocol(customProtocol, (request, callback) => {
+    const url = request.url.substr(customProtocol.length + 2);
+    const file = { path: url };
+
+    callback(file);
+  });
 };
 
 const ready = async () => {
@@ -88,11 +115,10 @@ const ready = async () => {
   await createTray();
   await manageShortcuts();
   await createPromptWindow();
-  console.log(`------ AFTER MANAGE SHORTCUTS -----`);
+  await createNotification();
 
-  ipcMain.on('message', (event, data) => {
-    console.log({ data });
-  });
+  autoUpdater.logger = log;
+  autoUpdater.checkForUpdatesAndNotify();
 };
 
 const checkSimpleScripts = async () => {
@@ -136,7 +162,7 @@ const checkSimpleScripts = async () => {
     const createEnvResult = spawnSync(`./config/create-env.sh`, [], options);
     console.log({ createEnvResult });
     const createBinResult = spawnSync(`./config/create-bins.sh`, [], options);
-    console.log({ createBinResult });
+    // console.log({ createBinResult });
   }
 
   await ready();

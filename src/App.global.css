@@ -1,3 +1,53 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  h1 {
+    @apply text-2xl;
+  }
+
+  h2 {
+    @apply text-xl;
+  }
+
+  h3 {
+    @apply text-lg;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-semibold mb-2;
+  }
+
+  a {
+    @apply underline;
+  }
+
+  a:hover {
+    @apply no-underline;
+  }
+
+  p,
+  ul,
+  ol {
+    @apply mb-4;
+  }
+
+  ul,
+  ol {
+    @apply ml-6;
+  }
+
+  ol li {
+    list-style-type: decimal;
+    list-style-position: outside;
+  }
+
+  ul li {
+    list-style-type: disc;
+    list-style-position: outside;
+  }
+}
