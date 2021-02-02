@@ -1,3 +1,10 @@
+# [1.1.0-beta.16](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.15...v1.1.0-beta.16) (2021-01-30)
+
+
+### Bug Fixes
+
+* **app:** Add zip target for auto update ([d93de06](https://github.com/johnlindquist/simple/commit/d93de066da2e13a73ec87c9e457639c604007b70))
+
 # [1.1.0-beta.15](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.14...v1.1.0-beta.15) (2021-01-30)
 
 
