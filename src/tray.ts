@@ -9,20 +9,20 @@ let tray: Tray | null = null;
 
 const leftClick = async (event: KeyboardEvent) => {
   if (event.metaKey) {
-    trySimpleScript('tray/command-click');
+    trySimpleScript('app/command-click');
   } else if (event.shiftKey) {
-    trySimpleScript('tray/shift-click');
+    trySimpleScript('app/shift-click');
   } else if (event.ctrlKey) {
-    trySimpleScript('tray/control-click');
+    trySimpleScript('app/control-click');
   } else if (event.altKey) {
-    trySimpleScript('tray/alt-click');
+    trySimpleScript('app/alt-click');
   } else {
-    trySimpleScript('tray/left-click');
+    trySimpleScript('app/left-click');
   }
 };
 
 const rightClick = async () => {
-  trySimpleScript('tray/right-click');
+  trySimpleScript('app/right-click');
 };
 
 const trayIcon = getAssetPath('IconTemplate.png');

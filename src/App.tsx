@@ -9,13 +9,13 @@ import React, {
   useState,
 } from 'react';
 import { app, ipcRenderer, nativeTheme } from 'electron';
-import { SimplePromptOptions } from './types';
 import reactStringReplace from 'react-string-replace';
+import { SimplePromptOptions } from './types';
 
 interface ChoiceData {
   name: string;
   value: string;
-  info: string | null;
+  preview: string | null;
 }
 
 export default function App() {
@@ -44,6 +44,15 @@ export default function App() {
     setIndex(0);
     setInputValue(event.currentTarget.value);
   }, []);
+
+  useEffect(() => {
+    if (choices?.length > 0 && choices?.[index]) {
+      ipcRenderer.send('selected', choices[index]);
+    }
+    if (choices?.length === 0) {
+      ipcRenderer.send('selected', null);
+    }
+  }, [choices, index]);
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
@@ -126,103 +135,94 @@ export default function App() {
   }, [data, inputValue]);
 
   useEffect(() => {
-    ipcRenderer.on('prompt', (_event, promptData: SimplePromptOptions) => {
-      // console.log(`setData`, promptData);
-      setData(promptData);
-      setIndex(0);
-      if (inputRef.current) {
-        inputRef?.current.focus();
-      }
-    });
+    if (ipcRenderer.listenerCount('prompt') === 0) {
+      ipcRenderer.on('prompt', (_event, promptData: SimplePromptOptions) => {
+        // console.log(`setData`, promptData);
+        setData(promptData);
+        setIndex(0);
+        if (inputRef.current) {
+          inputRef?.current.focus();
+        }
+      });
+    }
   }, []);
 
   useEffect(() => {
-    ipcRenderer.on('escape', () => {
-      console.log(`ESCAPE!!!`);
-      if (inputRef.current) {
-        inputRef?.current.focus();
-      }
-      setData({ type: 'clear', choices: [], message: '' });
-      setIndex(0);
-      setInputValue('');
-    });
+    if (ipcRenderer.listenerCount('escape') === 0) {
+      ipcRenderer.on('escape', () => {
+        console.log(`ESCAPE!!!`);
+        if (inputRef.current) {
+          inputRef?.current.focus();
+        }
+        setData({ type: 'clear', choices: [], message: '' });
+        setIndex(0);
+        setInputValue('');
+      });
+    }
   }, []);
 
   return (
-    <div className="flex flex-row-reverse w-full overflow-y-hidden">
-      <div className="w-1/2 h-screen">
-        <input
-          ref={inputRef}
-          style={{ height: '12vh' }}
-          className="w-full bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white  focus:outline-none focus:border-transparent"
-          type="text"
-          value={inputValue}
-          onChange={onChange}
-          autoFocus
-          placeholder={data?.message || ''}
-          onKeyDown={onKeyDown}
-        />
-        {/* <div className="bg-white">
+    <div className="flex flex-col w-full overflow-y-hidden h-full">
+      <input
+        ref={inputRef}
+        style={{ height: '12vh' }}
+        className="w-full bg-white dark:bg-black bg-opacity-80  text-black text-opacity-90  dark:text-white  focus:outline-none focus:border-transparent"
+        type="text"
+        value={inputValue}
+        onChange={onChange}
+        autoFocus
+        placeholder={data?.message || ''}
+        onKeyDown={onKeyDown}
+      />
+      {/* <div className="bg-white">
           {index} : {choices[index]?.name}
         </div>
         <div className="bg-white">
           {Array.from(value)
             .map((letter) => `${letter}.*`)
-            .join('')}
+            .join('')};
         </div> */}
-        {choices?.length > 0 && (
-          <div
-            ref={scrollRef}
-            style={{ maxHeight: '88vh' }}
-            className="p-1 flex flex-col bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white overflow-y-scroll overflow-x-hidden"
-          >
-            {((choices as any[]) || []).map((choice, i) => (
-              // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-              <button
-                type="button"
-                key={choice.uuid}
-                className={`
+      {choices?.length > 0 && (
+        <div
+          ref={scrollRef}
+          style={{ maxHeight: '88vh' }}
+          className="p-1 flex flex-col bg-white dark:bg-black bg-opacity-80  text-black text-opacity-90  dark:text-white overflow-y-scroll overflow-x-hidden"
+        >
+          {((choices as any[]) || []).map((choice, i) => (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+            <button
+              type="button"
+              key={choice.uuid}
+              className={`
               hover:bg-gray-400
-              dark:hover:bg-gray-600
+              dark:hover:bg-black
+              dark:hover:bg-opacity-90
               placeholder-gray-700
               dark:placeholder-gray-300
               whitespace-nowrap
               text-left
               justify-start
-              ${index === i ? `bg-gray-500` : ``}`}
-                onClick={(_event) => {
-                  submit(choice.value);
-                }}
-              >
-                {reactStringReplace(choice?.name, inputValue, (match, i) => (
-                  <span key={i} className="font-bold text-yellow-500">
-                    {match}
-                  </span>
-                ))}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      {choices[index]?.info && (
-        <div
-          style={{ height: 'fit-content' }}
-          className="w-1/2 flex  bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white overscroll-none p-1"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{
-            __html: choices[index]?.info as string,
-          }}
-        />
-      )}
-      {data?.info && (
-        <div
-          style={{ height: 'fit-content' }}
-          className="w-1/2 flex  bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white overscroll-y-none p-1"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{
-            __html: data?.info as string,
-          }}
-        />
+              flex-col
+              text-xl
+
+              p-2
+              ${index === i ? `bg-black` : ``}`}
+              onClick={(_event) => {
+                submit(choice.value);
+              }}
+            >
+              {reactStringReplace(choice?.name, inputValue, (match, ix) => (
+                <span key={ix} className=" text-yellow-500">
+                  {match}
+                </span>
+              ))}
+
+              <p className={`text-xs ${index === i && `font-semibold`}`}>
+                {(index === i && choice?.selected) || choice?.description}
+              </p>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

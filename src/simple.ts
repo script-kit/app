@@ -6,7 +6,13 @@ import kill from 'tree-kill';
 import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
 import { debounce } from 'lodash';
-import { invokePromptWindow, hidePromptWindow, focusPrompt } from './prompt';
+import {
+  invokePromptWindow,
+  hidePromptWindow,
+  focusPrompt,
+  showPreview,
+  hidePreview,
+} from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
 import { createDebug, killDebug } from './debug';
@@ -45,6 +51,20 @@ ipcMain.on(
   }, 250)
 );
 
+ipcMain.on(
+  'selected',
+  debounce((event, choice: any) => {
+    if (choice?.preview) {
+      log.info(`Showing`, choice.preview);
+
+      showPreview(choice.preview);
+    } else {
+      log.info(`Hiding preview`);
+      hidePreview();
+    }
+  }, 250)
+);
+
 const killChild = () => {
   console.log(`killChild`, child?.pid);
   if (child) {
@@ -60,7 +80,7 @@ export const debug = (...args: any) => {
     .map((arg: any) => JSON.stringify(arg))
     .join(' - ')
     .replace('\n', '');
-  log.info(line);
+  // log.info(line);
   if (debugWindow && !debugWindow?.isDestroyed()) {
     debugWindow.webContents.send('debug', {
       line,

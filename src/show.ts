@@ -34,9 +34,8 @@ export const show = (html: string, options: any = {}) => {
   const y = distScreen.workArea.y + Math.floor(screenHeight / 2 - height / 2);
 
   const showWindow = new BrowserWindow({
-    frame: true,
-    transparent: false,
-    backgroundColor: '#00000000',
+    frame: false,
+    transparent: true,
     show: false,
     icon: getAssetPath('icon.png'),
     webPreferences: {

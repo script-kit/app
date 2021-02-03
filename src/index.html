@@ -12,6 +12,17 @@
         document.getElementsByTagName('head')[0].appendChild(link);
       })();
     </script>
+    <style>
+      body {
+        pointer-events: none;
+      }
+      * {
+        pointer-events: all;
+      }
+      .draggable {
+        -webkit-app-region: drag;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
@@ -39,6 +50,23 @@
           );
         }
       }
+    </script>
+    <script>
+      setIgnoreMouseEvents = window
+        .require('electron')
+        .remote.getCurrentWindow().setIgnoreMouseEvents;
+
+      var t;
+
+      window.addEventListener('mousemove', (event) => {
+        if (event.target === document.documentElement) {
+          setIgnoreMouseEvents(true, { forward: true });
+          if (t) clearTimeout(t);
+          t = setTimeout(function () {
+            setIgnoreMouseEvents(false);
+          }, 150);
+        } else setIgnoreMouseEvents(false);
+      });
     </script>
   </body>
 </html>

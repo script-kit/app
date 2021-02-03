@@ -1,3 +1,4 @@
+import { app } from 'electron';
 import path from 'path';
 
 const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');

@@ -20,7 +20,7 @@ import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
 import { trySimpleScript, debug } from './simple';
-import { createPromptWindow } from './prompt';
+import { createPromptWindow, createPreview } from './prompt';
 import { createNotification } from './notifications';
 
 app.setName('Simple Scripts');
@@ -115,6 +115,7 @@ const ready = async () => {
   await createTray();
   await manageShortcuts();
   await createPromptWindow();
+  await createPreview();
   await createNotification();
 
   autoUpdater.logger = log;
