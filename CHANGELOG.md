@@ -1,3 +1,9 @@
+# [1.1.0-beta.18](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.17...v1.1.0-beta.18) (2021-02-03)
+
+
+### Features
+
+* **preview:** Separate preview from main. Main redesign ([94d6dec](https://github.com/johnlindquist/simple/commit/94d6decd6f9fef1a0cd437e9d0d558d2e3037f2e))
 
 # [1.1.0-beta.17](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.16...v1.1.0-beta.17) (2021-02-02)
 
