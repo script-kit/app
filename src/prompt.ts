@@ -1,8 +1,7 @@
 /* eslint-disable import/prefer-default-export */
-import { BrowserWindow, screen, nativeTheme, app } from 'electron';
+import { BrowserWindow, screen, app } from 'electron';
 import log from 'electron-log';
 import { getAssetPath } from './assets';
-import iohook from 'iohook';
 
 let promptWindow: BrowserWindow | null = null;
 
@@ -65,17 +64,15 @@ export const invokePromptWindow = (channel: string, data: any) => {
       y: cursor.y,
     });
 
-    const { scaleFactor } = distScreen;
     const {
       width: screenWidth,
       height: screenHeight,
     } = distScreen.workAreaSize;
 
-    const ratio = screenWidth / screenHeight;
     const height = Math.floor(screenHeight / 3);
     const width = Math.floor(height * (4 / 3));
     const { x: workX, y: workY } = distScreen.workArea;
-    const x = Math.floor(screenWidth / 2 - width / 2 + workX); // * distScreen.scaleFactor
+    const x = Math.floor(screenWidth / 2 - width / 2 + workX);
     const y = Math.floor(workY + height / 10);
     console.log({ screenWidth, screenHeight, width, height, x, y });
     promptWindow?.setBounds({ x, y, width, height });

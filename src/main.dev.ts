@@ -10,7 +10,7 @@
  */
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
-import { app, ipcMain, protocol } from 'electron';
+import { app, protocol } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
@@ -21,7 +21,7 @@ import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
 import { trySimpleScript, debug } from './simple';
 import { createPromptWindow } from './prompt';
-import { createNotification, showNotification } from './notifications';
+import { createNotification } from './notifications';
 
 app.setName('Simple Scripts');
 app.requestSingleInstanceLock();
@@ -162,7 +162,7 @@ const checkSimpleScripts = async () => {
     const createEnvResult = spawnSync(`./config/create-env.sh`, [], options);
     console.log({ createEnvResult });
     const createBinResult = spawnSync(`./config/create-bins.sh`, [], options);
-    // console.log({ createBinResult });
+    console.log({ createBinResult });
   }
 
   await ready();

@@ -5,11 +5,9 @@ import { globalShortcut } from 'electron';
 import chokidar from 'chokidar';
 import path from 'path';
 
-import {
-  SIMPLE_SCRIPTS_PATH,
-  SIMPLE_APP_SCRIPTS_PATH,
-  trySimpleScript,
-} from './simple';
+import { trySimpleScript } from './simple';
+
+import { simplePath } from './helpers';
 
 export const shortcutMap = new Map();
 
@@ -89,8 +87,8 @@ export const manageShortcuts = async () => {
   chokidar
     .watch(
       [
-        `${SIMPLE_SCRIPTS_PATH}${path.sep}*.js`,
-        `${SIMPLE_APP_SCRIPTS_PATH}${path.sep}*.js`,
+        `${simplePath('scripts')}${path.sep}*.js`,
+        `${simplePath('tray')}${path.sep}*.js`,
       ],
       { depth: 0 }
     )
