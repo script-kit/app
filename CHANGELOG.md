@@ -1,3 +1,10 @@
+# [1.1.0-beta.19](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.18...v1.1.0-beta.19) (2021-02-03)
+
+
+### Bug Fixes
+
+* **tray:** watching app path ([7c3ecbd](https://github.com/johnlindquist/simple/commit/7c3ecbd5fd327b475b8cbafa2505887ca0beeab3))
+
 # [1.1.0-beta.18](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.17...v1.1.0-beta.18) (2021-02-03)
 
 
