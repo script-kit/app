@@ -131,6 +131,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       SIMPLE_PATH: simplePath(),
       NODE_PATH: simplePath('node_modules'),
       DOTENV_CONFIG_PATH: simplePath('.env'),
+      SIMPLE_APP_VERSION: app.getVersion(),
     },
   });
   processMap.set(child.pid, scriptPath);
