@@ -88,7 +88,7 @@ export const manageShortcuts = async () => {
     .watch(
       [
         `${simplePath('scripts')}${path.sep}*.js`,
-        `${simplePath('tray')}${path.sep}*.js`,
+        `${simplePath('app')}${path.sep}*.js`,
       ],
       { depth: 0 }
     )
