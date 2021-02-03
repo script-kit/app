@@ -1,3 +1,11 @@
+
+# [1.1.0-beta.17](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.16...v1.1.0-beta.17) (2021-02-02)
+
+
+### Features
+
+* **prompt:** highlight, focus, and center ([8ee5e43](https://github.com/johnlindquist/simple/commit/8ee5e435c5c29104d13a0156cd14a9331b1e39e0))
+
 # [1.1.0-beta.16](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.15...v1.1.0-beta.16) (2021-01-30)
 
 
