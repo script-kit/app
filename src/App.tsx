@@ -220,6 +220,9 @@ export default function App() {
               onClick={(_event) => {
                 submit(choice.value);
               }}
+              onMouseEnter={() => {
+                setIndex(i);
+              }}
             >
               <div className="">
                 {inputValue
