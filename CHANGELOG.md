@@ -1,3 +1,15 @@
+# [1.1.0-beta.21](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.20...v1.1.0-beta.21) (2021-02-04)
+
+
+### Bug Fixes
+
+* **prompt:** setIndex when mouseover ([5367ac6](https://github.com/johnlindquist/simple/commit/5367ac60a60d42cc78f50c62d04fcb09bc63582f))
+
+
+### Features
+
+* **prompt:** save window position. Upgrade electron ([0247e74](https://github.com/johnlindquist/simple/commit/0247e7421aba519a331589bb0635dd2db8c2a9ef))
+
 # [1.1.0-beta.20](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.19...v1.1.0-beta.20) (2021-02-04)
 
 
