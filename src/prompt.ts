@@ -1,14 +1,21 @@
 /* eslint-disable import/prefer-default-export */
 import { BrowserWindow, screen, app } from 'electron';
 import log from 'electron-log';
+import Store from 'electron-store';
 import { getAssetPath } from './assets';
 
-let promptWindow: BrowserWindow | null = null;
+const promptStore = new Store({ name: 'prompt' });
 
+let promptWindow: BrowserWindow | null = null;
+let blurredByPreview = false;
 const clearPrompt = () => {
   promptWindow?.webContents.send('escape', {});
   // eslint-disable-next-line @typescript-eslint/no-use-before-define
-  hidePromptWindow();
+  if (!blurredByPreview) {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    hidePromptWindow();
+  }
+  blurredByPreview = false;
 };
 
 export const createPromptWindow = async () => {
@@ -23,13 +30,14 @@ export const createPromptWindow = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
+      devTools: false,
     },
     alwaysOnTop: true,
     closable: false,
     minimizable: false,
     maximizable: false,
+    resizable: false,
     skipTaskbar: true,
-    movable: false,
   });
 
   promptWindow.setAlwaysOnTop(true, 'floating', 1);
@@ -72,18 +80,28 @@ export const invokePromptWindow = (channel: string, data: any) => {
       y: cursor.y,
     });
 
-    const {
-      width: screenWidth,
-      height: screenHeight,
-    } = distScreen.workAreaSize;
+    const screenConfig = promptStore.get(`prompt.${String(distScreen.id)}`);
 
-    const height = Math.floor(screenHeight / 3);
-    const width = Math.floor(height * (4 / 3));
-    const { x: workX, y: workY } = distScreen.workArea;
-    const x = Math.floor(screenWidth / 2 - width / 2 + workX);
-    const y = Math.floor(workY + height / 10);
-    console.log({ screenWidth, screenHeight, width, height, x, y });
-    promptWindow?.setBounds({ x, y, width, height });
+    if (screenConfig) {
+      const currentScreenBounds = promptStore.get(
+        `prompt.${String(distScreen.id)}.bounds`
+      );
+
+      promptWindow.setBounds(currentScreenBounds as any);
+    } else {
+      const {
+        width: screenWidth,
+        height: screenHeight,
+      } = distScreen.workAreaSize;
+
+      const height = Math.floor(screenHeight / 3);
+      const width = Math.floor(height * (4 / 3));
+      const { x: workX, y: workY } = distScreen.workArea;
+      const x = Math.floor(screenWidth / 2 - width / 2 + workX);
+      const y = Math.floor(workY + height / 10);
+
+      promptWindow?.setBounds({ x, y, width, height });
+    }
 
     promptWindow?.show();
   }
@@ -93,6 +111,12 @@ export const invokePromptWindow = (channel: string, data: any) => {
 
 export const hidePromptWindow = () => {
   if (promptWindow && promptWindow?.isVisible()) {
+    const distScreen = screen.getDisplayNearestPoint({
+      x: promptWindow.getBounds().x,
+      y: promptWindow.getBounds().y,
+    });
+    const promptBounds = promptWindow.getBounds();
+    promptStore.set(`prompt.${String(distScreen.id)}.bounds`, promptBounds);
     log.info(`Hiding prompt`);
     app?.hide();
     promptWindow?.hide();
@@ -131,13 +155,14 @@ export const createPreview = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
+      devTools: false,
     },
     alwaysOnTop: true,
     closable: false,
     minimizable: false,
     maximizable: false,
+    resizable: false,
     skipTaskbar: true,
-    movable: false,
     focusable: false,
   });
 
@@ -177,19 +202,29 @@ export const showPreview = async (html: string) => {
       y: cursor.y,
     });
 
-    const {
-      width: screenWidth,
-      height: screenHeight,
-    } = distScreen.workAreaSize;
+    const screenConfig = promptStore.get(`preview.${String(distScreen.id)}`);
 
-    const height = Math.floor(screenHeight / 3);
-    const width = Math.floor(height * (4 / 3));
-    const { x: workX, y: workY } = distScreen.workArea;
-    const x = Math.floor(screenWidth / 2 - width / 2 + workX) - width;
-    const y = Math.floor(workY + height / 10);
-    previewWindow?.setBounds({ x, y, width, height });
+    if (screenConfig) {
+      const currentScreenBounds = promptStore.get(
+        `preview.${String(distScreen.id)}.bounds`
+      );
 
+      previewWindow.setBounds(currentScreenBounds as any);
+    } else {
+      const {
+        width: screenWidth,
+        height: screenHeight,
+      } = distScreen.workAreaSize;
+
+      const height = Math.floor(screenHeight / 3);
+      const width = Math.floor(height * (4 / 3));
+      const { x: workX, y: workY } = distScreen.workArea;
+      const x = Math.floor(screenWidth / 2 - width / 2 + workX) - width;
+      const y = Math.floor(workY + height / 10);
+      previewWindow?.setBounds({ x, y, width, height });
+    }
     previewWindow.setFocusable(false);
+    blurredByPreview = true;
     previewWindow?.show();
   }
 
@@ -198,6 +233,14 @@ export const showPreview = async (html: string) => {
 
 export const hidePreview = () => {
   if (previewWindow && previewWindow.isVisible()) {
+    const distScreen = screen.getDisplayNearestPoint({
+      x: previewWindow.getBounds().x,
+      y: previewWindow.getBounds().y,
+    });
+    promptStore.set(
+      `preview.${String(distScreen.id)}.bounds`,
+      previewWindow.getBounds()
+    );
     previewWindow?.hide();
     previewWindow.loadURL(`data:text/html;charset=UTF-8,`);
   }
