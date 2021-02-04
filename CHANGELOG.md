@@ -1,3 +1,10 @@
+# [1.1.0-beta.20](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.19...v1.1.0-beta.20) (2021-02-04)
+
+
+### Features
+
+* **prompt:** painting the prompt ([b4ddb24](https://github.com/johnlindquist/simple/commit/b4ddb24d9822325292980691c30a616ddb735407))
+
 # [1.1.0-beta.19](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.18...v1.1.0-beta.19) (2021-02-03)
 
 
