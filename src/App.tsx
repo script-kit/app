@@ -84,7 +84,10 @@ export default function App() {
         const itemHeight = el.scrollHeight / choices?.length;
         const itemY = newIndex * itemHeight;
 
-        if (itemY + itemHeight >= el.scrollTop + el.clientHeight) {
+        if (
+          itemY + itemHeight + itemHeight / 2 >=
+          el.scrollTop + el.clientHeight
+        ) {
           el.scrollTo({
             top: itemY - el.clientHeight + itemHeight,
             behavior: 'auto',
@@ -162,11 +165,11 @@ export default function App() {
   }, []);
 
   return (
-    <div className="flex flex-col w-full overflow-y-hidden h-full">
+    <div className="flex flex-col w-full overflow-y-hidden max-h-screen min-h-full bg-white dark:bg-black bg-opacity-90 border-purple-800 border-opacity-80 border-4 shadow-lg">
       <input
         ref={inputRef}
-        style={{ height: '12vh' }}
-        className="w-full bg-white dark:bg-black bg-opacity-80  text-black text-opacity-90  dark:text-white  focus:outline-none focus:border-transparent"
+        style={{ minHeight: '4rem' }}
+        className="w-full text-black  dark:text-white focus:outline-none outline-none text-3xl  bg-white dark:bg-black h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4"
         type="text"
         value={inputValue}
         onChange={onChange}
@@ -185,41 +188,65 @@ export default function App() {
       {choices?.length > 0 && (
         <div
           ref={scrollRef}
-          style={{ maxHeight: '88vh' }}
-          className="p-1 flex flex-col bg-white dark:bg-black bg-opacity-80  text-black text-opacity-90  dark:text-white overflow-y-scroll overflow-x-hidden"
+          // style={{ maxHeight: '85vh' }}
+          className="flex flex-col text-black   dark:text-white overflow-y-scroll overflow-x-hidden max-h-screen focus:border-none focus:outline-none outline-none"
         >
           {((choices as any[]) || []).map((choice, i) => (
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events
             <button
               type="button"
               key={choice.uuid}
+              style={{ minHeight: '4rem' }}
               className={`
+              h-16
+
               hover:bg-gray-400
               dark:hover:bg-black
-              dark:hover:bg-opacity-90
+              dark:hover:bg-opacity-100
               placeholder-gray-700
               dark:placeholder-gray-300
               whitespace-nowrap
               text-left
-              justify-start
+              flex
               flex-col
               text-xl
-
-              p-2
-              ${index === i ? `bg-black` : ``}`}
+              pl-4
+              justify-center
+              ${
+                index === i
+                  ? `dark:bg-black bg-white shadow-large shadow-inner border-black dark:border-white border-b-2 border-t-2 border-opacity-70`
+                  : ``
+              }`}
               onClick={(_event) => {
                 submit(choice.value);
               }}
             >
-              {reactStringReplace(choice?.name, inputValue, (match, ix) => (
-                <span key={ix} className=" text-yellow-500">
-                  {match}
-                </span>
-              ))}
+              <div className="">
+                {inputValue
+                  ? reactStringReplace(
+                      choice?.name,
+                      inputValue,
+                      (match, ix) => (
+                        <span
+                          key={ix}
+                          className=" dark:text-yellow-500 text-yellow-700"
+                        >
+                          {match}
+                        </span>
+                      )
+                    )
+                  : choice?.name}
+              </div>
 
-              <p className={`text-xs ${index === i && `font-semibold`}`}>
-                {(index === i && choice?.selected) || choice?.description}
-              </p>
+              {((index === i && choice?.selected) || choice?.description) && (
+                <div
+                  className={`text-xs ${
+                    index === i && `dark:text-yellow-500 text-yellow-700`
+                  }`}
+                >
+                  {(index === i && choice?.selected) || choice?.description}
+                </div>
+              )}
             </button>
           ))}
         </div>

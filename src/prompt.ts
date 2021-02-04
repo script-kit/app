@@ -60,6 +60,7 @@ export const focusPrompt = () => {
 
 export const invokePromptWindow = (channel: string, data: any) => {
   if (promptWindow && !promptWindow.isDestroyed()) {
+    promptWindow?.setBackgroundColor('#00FFFFFF');
     promptWindow?.webContents.send(channel, data);
   }
 
