@@ -12,14 +12,14 @@ import {
   focusPrompt,
   showPreview,
   hidePreview,
+  debugToggle,
+  debugLine,
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
-import { createDebug, killDebug } from './debug';
 import { simplePath } from './helpers';
 
 let child: ChildProcess | null = null;
-let debugWindow: BrowserWindow | null = null;
 
 export const processMap = new Map();
 
@@ -59,7 +59,6 @@ ipcMain.on(
 
       showPreview(choice.preview);
     } else {
-      log.info(`Hiding preview`);
       hidePreview();
     }
   }, 250)
@@ -74,19 +73,14 @@ const killChild = () => {
   }
 };
 
-let debugLineIndex = 0;
 export const debug = (...args: any) => {
   const line = args
     .map((arg: any) => JSON.stringify(arg))
     .join(' - ')
     .replace('\n', '');
   // log.info(line);
-  if (debugWindow && !debugWindow?.isDestroyed()) {
-    debugWindow.webContents.send('debug', {
-      line,
-      i: debugLineIndex += 1,
-    });
-  }
+
+  debugLine(line);
 
   if (line.startsWith('Error:')) {
     show(
@@ -140,10 +134,10 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   const tryClean = (on: string) => () => {
     try {
-      app?.hide();
       debug(on, scriptPath, '| PID:', child?.pid);
       processMap.delete(child?.pid);
-      hidePromptWindow();
+      log.info(`tryClean...`);
+      hidePromptWindow(true);
     } catch (error) {
       log.warn(error);
     }
@@ -152,7 +146,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   child.on('close', tryClean('CLOSE'));
   child.on('message', async (data: any) => {
     if (data.from === 'hide') {
-      app?.hide();
+      hidePromptWindow();
       return;
     }
     if (data.from === 'setLogin') {
@@ -242,22 +236,6 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   };
 
   (child as any).stdout.on('data', handleStdout);
-};
-
-export const debugToggle = () => {
-  debugWindow = createDebug();
-  if (debugWindow) {
-    debugWindow?.webContents.on(
-      'before-input-event',
-      (event: any, input: any) => {
-        if (input.key === 'Escape') {
-          // eslint-disable-next-line @typescript-eslint/no-use-before-define
-          killDebug();
-          debugWindow = null;
-        }
-      }
-    );
-  }
 };
 
 export const trySimpleScript = (filePath: string, runArgs: string[] = []) => {

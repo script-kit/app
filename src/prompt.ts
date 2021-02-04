@@ -7,16 +7,7 @@ import { getAssetPath } from './assets';
 const promptStore = new Store({ name: 'prompt' });
 
 let promptWindow: BrowserWindow | null = null;
-let blurredByPreview = false;
-const clearPrompt = () => {
-  promptWindow?.webContents.send('escape', {});
-  // eslint-disable-next-line @typescript-eslint/no-use-before-define
-  if (!blurredByPreview) {
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    hidePromptWindow();
-  }
-  blurredByPreview = false;
-};
+let blurredBySimple = false;
 
 export const createPromptWindow = async () => {
   promptWindow = new BrowserWindow({
@@ -36,7 +27,7 @@ export const createPromptWindow = async () => {
     closable: false,
     minimizable: false,
     maximizable: false,
-    resizable: false,
+    movable: true,
     skipTaskbar: true,
   });
 
@@ -53,11 +44,12 @@ export const createPromptWindow = async () => {
 
   promptWindow?.webContents.on('before-input-event', (event: any, input) => {
     if (input.key === 'Escape') {
-      clearPrompt();
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      hidePromptWindow();
     }
   });
 
-  promptWindow?.on('blur', clearPrompt);
+  promptWindow?.on('blur', hidePromptWindow);
 };
 
 export const focusPrompt = () => {
@@ -101,6 +93,8 @@ export const invokePromptWindow = (channel: string, data: any) => {
       const y = Math.floor(workY + height / 10);
 
       promptWindow?.setBounds({ x, y, width, height });
+      promptWindow?.setMaximumSize(width, height);
+      promptWindow?.setMinimumSize(width, height);
     }
 
     promptWindow?.show();
@@ -109,8 +103,15 @@ export const invokePromptWindow = (channel: string, data: any) => {
   return promptWindow;
 };
 
-export const hidePromptWindow = () => {
-  if (promptWindow && promptWindow?.isVisible()) {
+export const hidePromptWindow = (ignoreBlur = false) => {
+  log.info(`hidePromptWindow...`);
+  promptWindow?.webContents.send('escape', {});
+
+  if (ignoreBlur) {
+    blurredBySimple = false;
+  }
+
+  if (promptWindow && promptWindow?.isVisible() && !blurredBySimple) {
     const distScreen = screen.getDisplayNearestPoint({
       x: promptWindow.getBounds().x,
       y: promptWindow.getBounds().y,
@@ -118,11 +119,15 @@ export const hidePromptWindow = () => {
     const promptBounds = promptWindow.getBounds();
     promptStore.set(`prompt.${String(distScreen.id)}.bounds`, promptBounds);
     log.info(`Hiding prompt`);
-    app?.hide();
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    if (!debugWindow?.isVisible()) {
+      app?.hide();
+    }
     promptWindow?.hide();
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     hidePreview();
   }
+  blurredBySimple = false;
 };
 
 let previewWindow: BrowserWindow | null = null;
@@ -161,7 +166,7 @@ export const createPreview = async () => {
     closable: false,
     minimizable: false,
     maximizable: false,
-    resizable: false,
+    movable: true,
     skipTaskbar: true,
     focusable: false,
   });
@@ -222,9 +227,11 @@ export const showPreview = async (html: string) => {
       const x = Math.floor(screenWidth / 2 - width / 2 + workX) - width;
       const y = Math.floor(workY + height / 10);
       previewWindow?.setBounds({ x, y, width, height });
+      previewWindow?.setMaximumSize(width, height);
+      previewWindow?.setMinimumSize(width, height);
     }
     previewWindow.setFocusable(false);
-    blurredByPreview = true;
+    blurredBySimple = true;
     previewWindow?.show();
   }
 
@@ -242,6 +249,95 @@ export const hidePreview = () => {
       previewWindow.getBounds()
     );
     previewWindow?.hide();
+    // clear preview
     previewWindow.loadURL(`data:text/html;charset=UTF-8,`);
+  }
+};
+
+let debugWindow: BrowserWindow | null = null;
+
+export const killDebug = () => {
+  if (debugWindow) {
+    debugWindow?.close();
+    debugWindow = null;
+  }
+};
+
+export const createDebug = () => {
+  if (!debugWindow) {
+    const cursor = screen.getCursorScreenPoint();
+    // Get display with cursor
+    const distScreen = screen.getDisplayNearestPoint({
+      x: cursor.x,
+      y: cursor.y,
+    });
+
+    const {
+      width: screenWidth,
+      height: screenHeight,
+    } = distScreen.workAreaSize;
+    const width = Math.floor((screenWidth / 4) * distScreen.scaleFactor);
+    const height = Math.floor((screenHeight / 4) * distScreen.scaleFactor);
+    const x = distScreen.workArea.x + Math.floor(screenWidth / 2 - width / 2); // * distScreen.scaleFactor
+    const y = distScreen.workArea.y + Math.floor(screenHeight / 2 - height / 2);
+
+    debugWindow = new BrowserWindow({
+      show: false,
+      frame: true,
+      transparent: false,
+      backgroundColor: '#00000000',
+      icon: getAssetPath('icon.png'),
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false,
+      },
+      width,
+      height,
+      x,
+      y,
+    });
+
+    debugWindow.on('focus', () => {
+      blurredBySimple = true;
+      log.info(`Focus debug`);
+    });
+
+    debugWindow?.setMaxListeners(2);
+
+    debugWindow.webContents.once('did-finish-load', () => {
+      debugWindow?.webContents.closeDevTools();
+    });
+
+    debugWindow?.loadURL(`file://${__dirname}/debug.html`);
+    blurredBySimple = true;
+    log.info(`debugWindow.show`);
+    debugWindow?.show();
+  }
+  return debugWindow;
+};
+
+export const debugToggle = () => {
+  debugWindow = createDebug();
+  if (debugWindow) {
+    debugWindow?.webContents.on(
+      'before-input-event',
+      (event: any, input: any) => {
+        if (input.key === 'Escape') {
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
+          killDebug();
+          debugWindow = null;
+        }
+      }
+    );
+  }
+};
+
+let debugLineIndex = 0;
+export const debugLine = (line: string) => {
+  if (debugWindow && !debugWindow?.isDestroyed()) {
+    debugWindow.webContents.send('debug', {
+      line,
+      i: debugLineIndex += 1,
+    });
   }
 };
