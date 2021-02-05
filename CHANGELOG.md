@@ -1,3 +1,10 @@
+# [1.1.0-beta.22](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.21...v1.1.0-beta.22) (2021-02-05)
+
+
+### Bug Fixes
+
+* **build:** adding debug.html in ([21c6c6f](https://github.com/johnlindquist/simple/commit/21c6c6f4b486d356c4827502e762f90aa54bcad6))
+
 # [1.1.0-beta.21](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.20...v1.1.0-beta.21) (2021-02-04)
 
 
