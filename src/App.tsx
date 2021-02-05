@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { app, ipcRenderer, nativeTheme } from 'electron';
 import reactStringReplace from 'react-string-replace';
+import SimpleBar from 'simplebar-react';
 import { SimplePromptOptions } from './types';
 
 interface ChoiceData {
@@ -165,11 +166,11 @@ export default function App() {
   }, []);
 
   return (
-    <div className="flex flex-col w-full overflow-y-hidden max-h-screen min-h-full bg-white dark:bg-black bg-opacity-90 border-purple-800 border-opacity-80 border-4 shadow-lg">
+    <div className="flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl">
       <input
         ref={inputRef}
         style={{ minHeight: '4rem' }}
-        className="w-full text-black  dark:text-white focus:outline-none outline-none text-3xl  bg-white dark:bg-black h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4"
+        className="w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder:text-gray-300 placeholder:text-gray-500 bg-white dark:bg-gray-900 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4"
         type="text"
         value={inputValue}
         onChange={onChange}
@@ -186,37 +187,31 @@ export default function App() {
             .join('')};
         </div> */}
       {choices?.length > 0 && (
-        <div
-          ref={scrollRef}
+        <SimpleBar
+          scrollableNodeProps={{ ref: scrollRef }}
+          className="px-4 pb-4 flex flex-col text-black dark:text-white w-full max-h-screen focus:border-none focus:outline-none outline-none"
           // style={{ maxHeight: '85vh' }}
-          className="flex flex-col text-black   dark:text-white overflow-y-scroll overflow-x-hidden max-h-screen focus:border-none focus:outline-none outline-none"
         >
           {((choices as any[]) || []).map((choice, i) => (
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events
             <button
               type="button"
               key={choice.uuid}
-              style={{ minHeight: '4rem' }}
               className={`
+              w-full
+              my-1
               h-16
-
-              hover:bg-gray-400
-              dark:hover:bg-black
-              dark:hover:bg-opacity-100
-              placeholder-gray-700
-              dark:placeholder-gray-300
+              dark:hover:bg-gray-800
+              hover:bg-gray-100
               whitespace-nowrap
               text-left
               flex
               flex-col
               text-xl
               pl-4
+              rounded-lg
               justify-center
-              ${
-                index === i
-                  ? `dark:bg-black bg-white shadow-large shadow-inner border-black dark:border-white border-b-2 border-t-2 border-opacity-70`
-                  : ``
-              }`}
+              ${index === i ? `dark:bg-gray-800 bg-gray-100` : ``}`}
               onClick={(_event) => {
                 submit(choice.value);
               }}
@@ -252,7 +247,7 @@ export default function App() {
               )}
             </button>
           ))}
-        </div>
+        </SimpleBar>
       )}
     </div>
   );

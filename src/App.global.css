@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+@import '../node_modules/simplebar-react/dist/simplebar.min.css';
+
+.simplebar-scrollbar:before {
+  background: #808083; /* specify scrollbar color */
+  position: absolute;
+  content: '';
+  border-radius: 7px;
+  left: 2px;
+  right: 2px;
+  opacity: 0;
+  transition: opacity 0.2s 0.5s linear;
+}
+
 @layer base {
   h1 {
     @apply text-2xl;
