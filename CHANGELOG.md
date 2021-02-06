@@ -1,3 +1,10 @@
+# [1.1.0-beta.23](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.22...v1.1.0-beta.23) (2021-02-06)
+
+
+### Bug Fixes
+
+* **prompt:** scolling pin to top/bottom ([f6e129f](https://github.com/johnlindquist/simple/commit/f6e129f53e863795040c8bc77b938fd23b56a467))
+
 # [1.1.0-beta.22](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.21...v1.1.0-beta.22) (2021-02-05)
 
 
