@@ -6,8 +6,8 @@ import chokidar from 'chokidar';
 import path from 'path';
 
 import { trySimpleScript } from './simple';
-
 import { simplePath } from './helpers';
+import { cache } from './cache';
 
 export const shortcutMap = new Map();
 
@@ -37,6 +37,8 @@ const onFilesChanged = (
     }
   }
   if (event === 'add' || event === 'change') {
+    cache.clear();
+
     const shortcutMarker = 'Shortcut: ';
     const { stdout } = grep(shortcutMarker, filePath);
 

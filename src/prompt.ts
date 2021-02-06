@@ -1,13 +1,17 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import { BrowserWindow, screen, app } from 'electron';
 import log from 'electron-log';
 import Store from 'electron-store';
+import { EventEmitter } from 'events';
 import { getAssetPath } from './assets';
 
 const promptStore = new Store({ name: 'prompt' });
 
 let promptWindow: BrowserWindow | null = null;
 let blurredBySimple = false;
+
+export const hideEmitter = new EventEmitter();
 
 export const createPromptWindow = async () => {
   promptWindow = new BrowserWindow({
@@ -44,7 +48,6 @@ export const createPromptWindow = async () => {
 
   promptWindow?.webContents.on('before-input-event', (event: any, input) => {
     if (input.key === 'Escape') {
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
       hidePromptWindow();
     }
   });
@@ -104,7 +107,6 @@ export const invokePromptWindow = (channel: string, data: any) => {
 };
 
 export const hidePromptWindow = (ignoreBlur = false) => {
-  log.info(`hidePromptWindow...`);
   promptWindow?.webContents.send('escape', {});
 
   if (ignoreBlur) {
@@ -118,16 +120,14 @@ export const hidePromptWindow = (ignoreBlur = false) => {
     });
     const promptBounds = promptWindow.getBounds();
     promptStore.set(`prompt.${String(distScreen.id)}.bounds`, promptBounds);
-    log.info(`Hiding prompt`);
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
     if (!debugWindow?.isVisible()) {
       app?.hide();
     }
     promptWindow?.hide();
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
     hidePreview();
   }
   blurredBySimple = false;
+  hideEmitter.emit('hide');
 };
 
 let previewWindow: BrowserWindow | null = null;

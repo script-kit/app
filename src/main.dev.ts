@@ -74,7 +74,6 @@ app.on('window-all-closed', (e: Event) => e.preventDefault());
 app.on('web-contents-created', (_, contents) => {
   contents.on('will-navigate', (event, navigationUrl) => {
     const parsedUrl = new URL(navigationUrl);
-    console.log({ parsedUrl });
 
     if (parsedUrl.protocol.startsWith('http')) {
       event.preventDefault();

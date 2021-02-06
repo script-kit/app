@@ -8,7 +8,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { app, ipcRenderer, nativeTheme } from 'electron';
+import { ipcRenderer } from 'electron';
 import reactStringReplace from 'react-string-replace';
 import SimpleBar from 'simplebar-react';
 import { SimplePromptOptions } from './types';
@@ -34,7 +34,7 @@ export default function App() {
   }, [inputRef]);
 
   const submit = useCallback((submitValue: string) => {
-    ipcRenderer.send('prompt', submitValue);
+    ipcRenderer.send('prompt', { value: submitValue });
     setData({ type: 'clear', choices: [], message: 'Processing...' });
     setIndex(0);
     setInputValue('');
@@ -82,24 +82,29 @@ export default function App() {
 
       if (scrollRef.current) {
         const el = scrollRef.current;
-        const itemHeight = el.scrollHeight / choices?.length;
-        const itemY = newIndex * itemHeight;
-
-        if (
-          itemY + itemHeight + itemHeight / 2 >=
-          el.scrollTop + el.clientHeight
-        ) {
+        const selectedItem: any = el.firstElementChild?.children[newIndex];
+        const itemY = selectedItem?.offsetTop;
+        console.log({
+          itemY,
+          scrollTop: el.scrollTop,
+          clientHeight: el.clientHeight,
+          scrollHeight: el.scrollHeight,
+        });
+        if (itemY >= el.scrollTop + el.clientHeight) {
+          selectedItem?.scrollIntoView({ block: 'end', inline: 'nearest' });
           el.scrollTo({
-            top: itemY - el.clientHeight + itemHeight,
-            behavior: 'auto',
+            top:
+              el.scrollTop +
+              parseInt(
+                getComputedStyle(selectedItem as any)?.marginBottom.replace(
+                  'px',
+                  ''
+                ),
+                10
+              ),
           });
-        }
-
-        if (itemY < el.scrollTop) {
-          el.scrollTo({
-            top: itemY,
-            behavior: 'auto',
-          });
+        } else if (itemY < el.scrollTop) {
+          selectedItem?.scrollIntoView({ block: 'start', inline: 'nearest' });
         }
       }
     },
@@ -107,27 +112,27 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (data.type === 'lazy' && typeof inputValue === 'string') {
+    if (data.type === 'choices' && typeof inputValue === 'string') {
       ipcRenderer.send('input', inputValue);
     }
   }, [data, inputValue]);
 
   useEffect(() => {
-    const lazyHandler = (_event: any, lazyChoices: any) => {
-      setChoices(lazyChoices);
+    const choicesHandler = (_event: any, choicesChoices: any) => {
+      setChoices(choicesChoices);
       if (inputRef.current) {
         inputRef?.current.focus();
       }
     };
-    ipcRenderer.on('lazy', lazyHandler);
+    ipcRenderer.on('choices', choicesHandler);
 
     return () => {
-      ipcRenderer.off('lazy', lazyHandler);
+      ipcRenderer.off('choices', choicesHandler);
     };
   }, []);
 
   useEffect(() => {
-    if (data.type === 'lazy') return;
+    if (data.type === 'choices') return;
     const filtered = ((data?.choices as any[]) || [])?.filter((choice) => {
       try {
         return choice?.name.match(new RegExp(inputValue, 'i'));
@@ -189,7 +194,7 @@ export default function App() {
       {choices?.length > 0 && (
         <SimpleBar
           scrollableNodeProps={{ ref: scrollRef }}
-          className="px-4 pb-4 flex flex-col text-black dark:text-white w-full max-h-screen focus:border-none focus:outline-none outline-none"
+          className="px-4 pb-4 flex flex-col text-black dark:text-white w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
           // style={{ maxHeight: '85vh' }}
         >
           {((choices as any[]) || []).map((choice, i) => (
@@ -200,6 +205,7 @@ export default function App() {
               className={`
               w-full
               my-1
+
               h-16
               dark:hover:bg-gray-800
               hover:bg-gray-100
@@ -208,9 +214,10 @@ export default function App() {
               flex
               flex-col
               text-xl
-              pl-4
+              px-4
               rounded-lg
               justify-center
+              overflow-x-hidden
               ${index === i ? `dark:bg-gray-800 bg-gray-100` : ``}`}
               onClick={(_event) => {
                 submit(choice.value);
@@ -219,7 +226,15 @@ export default function App() {
                 setIndex(i);
               }}
             >
-              <div className="">
+              <div
+                className=""
+                style={{
+                  textShadow:
+                    index === i
+                      ? `-1px 0 black, 0 1px black, 1px 0 black, 0 -1px black`
+                      : ``,
+                }}
+              >
                 {inputValue
                   ? reactStringReplace(
                       choice?.name,

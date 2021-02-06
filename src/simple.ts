@@ -1,8 +1,8 @@
-import { app, BrowserWindow, ipcMain, screen } from 'electron';
+/* eslint-disable @typescript-eslint/no-use-before-define */
+import { app, ipcMain, screen } from 'electron';
 import { autoUpdater } from 'electron-updater';
 
 import path from 'path';
-import kill from 'tree-kill';
 import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
 import { debounce } from 'lodash';
@@ -14,49 +14,51 @@ import {
   hidePreview,
   debugToggle,
   debugLine,
+  hideEmitter,
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
-import { simplePath } from './helpers';
+import { simplePath, stringifyScriptArgsKey } from './helpers';
+import { cache } from './cache';
 
 let child: ChildProcess | null = null;
+let script = '';
+let key = '';
+let args: any[] = [];
 
 export const processMap = new Map();
 
 ipcMain.on('quit', () => {
-  console.log(`>>> QUIT <<<`);
-  if (child) {
-    log.info(`Exiting: ${child.pid}`);
-    child.removeAllListeners();
-    kill(child.pid);
-  }
+  log.warn(`>>> QUIT <<<`);
+  reset();
 
   app.quit();
 });
 
-ipcMain.on('prompt', (event, data) => {
-  console.log(`APP -> ${processMap.get(child?.pid).split('/').pop()}`);
-
+ipcMain.on('prompt', (_event, { input, value }) => {
+  args.push(value);
   if (child) {
-    child?.send(data);
+    child?.send(value);
+  } else {
+    trySimpleScript(script, args);
   }
 });
 
 ipcMain.on(
   'input',
-  debounce((event, input) => {
-    if (child) {
+  debounce((_event, input) => {
+    if (child && input) {
       child?.send({ from: 'input', input });
+    } else if (input) {
+      trySimpleScript(script, [...args, '--simple-input', input]);
     }
   }, 250)
 );
 
 ipcMain.on(
   'selected',
-  debounce((event, choice: any) => {
+  debounce((_event, choice: any) => {
     if (choice?.preview) {
-      log.info(`Showing`, choice.preview);
-
       showPreview(choice.preview);
     } else {
       hidePreview();
@@ -64,22 +66,23 @@ ipcMain.on(
   }, 250)
 );
 
-const killChild = () => {
-  console.log(`killChild`, child?.pid);
+const reset = () => {
   if (child) {
     log.info(`Exiting: ${child.pid}`);
-    kill(child.pid);
+    processMap.delete(child?.pid);
+    child?.removeAllListeners();
+    child?.kill();
     child = null;
+    script = '';
+    key = '';
+    args = [];
   }
 };
 
-export const debug = (...args: any) => {
-  const line = args
-    .map((arg: any) => JSON.stringify(arg))
-    .join(' - ')
-    .replace('\n', '');
-  // log.info(line);
+hideEmitter.on('hide', reset);
 
+export const debug = (...debugArgs: any) => {
+  const line = debugArgs.join(' ').replace(/\n/g, '');
   debugLine(line);
 
   if (line.startsWith('Error:')) {
@@ -90,10 +93,7 @@ export const debug = (...args: any) => {
 };
 
 const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
-  log.info(`\n--- SIMPLE SCRIPT ---`);
-  log.info('processMap:', [...processMap.entries()]);
-  log.info(`EXECUTING: ${scriptPath.split('/').pop()} ${runArgs.join(' ')}`);
-  // TODO: Support long-running scripts e.g. Crons
+  reset();
 
   const resolvePath = scriptPath.startsWith(path.sep)
     ? scriptPath
@@ -101,9 +101,16 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   const codePath = 'usr/local/bin/';
 
-  processMap.delete(child?.pid);
-  child?.removeAllListeners();
-  child?.kill();
+  ({ key, script } = stringifyScriptArgsKey(scriptPath, runArgs));
+
+  const cachedResult = cache.get(key);
+  if (cachedResult) {
+    invokePromptWindow('prompt', cachedResult);
+    return;
+  }
+
+  log.info(`FORK: ${resolvePath} ${[...runArgs, '--app']}`);
+
   child = fork(resolvePath, [...runArgs, '--app'], {
     silent: true,
     // stdio: 'inherit',
@@ -136,7 +143,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     try {
       debug(on, scriptPath, '| PID:', child?.pid);
       processMap.delete(child?.pid);
-      log.info(`tryClean...`);
+      log.info(`tryClean...`, scriptPath);
       hidePromptWindow(true);
     } catch (error) {
       log.warn(error);
@@ -145,6 +152,8 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   child.on('close', tryClean('CLOSE'));
   child.on('message', async (data: any) => {
+    log.info('> Message:', data.from, data.type);
+
     if (data.from === 'hide') {
       hidePromptWindow();
       return;
@@ -156,8 +165,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     if (data.from === 'quit') {
       if (child) {
         log.info(`Exiting: ${child.pid}`);
-        child.removeAllListeners();
-        kill(child.pid);
+        reset();
       }
       app.exit();
       return;
@@ -187,20 +195,20 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       }
       return;
     }
-    // console.log({ data });
     if (data.from === 'prompt') {
+      ({ script, key } = stringifyScriptArgsKey(script, args));
+      cache.set(key, data);
       invokePromptWindow('prompt', data);
 
       return;
     }
     if (data.from === 'choices') {
-      invokePromptWindow('lazy', data?.choices);
+      invokePromptWindow('choices', data?.choices);
 
       return;
     }
 
     if (data.from === 'run') {
-      console.log({ data });
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
       trySimpleScript(data.scriptPath, data.runArgs);
       return;
@@ -224,10 +232,8 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   });
 
   child.on('error', (error) => {
-    console.log({ error });
-    child?.send(error);
-    processMap.delete(child?.pid);
-    child?.kill();
+    log.warn({ error });
+    reset();
   });
 
   const handleStdout = (data: string) => {

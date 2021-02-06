@@ -90,8 +90,6 @@ export const showNotification = (html: string, options: any = {}) => {
 
 export const hidePromptWindow = () => {
   if (notificationWindow?.isVisible()) {
-    log.info(`Hiding prompt`);
-
     notificationWindow?.hide();
   }
 };
