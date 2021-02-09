@@ -1,3 +1,10 @@
+# [1.1.0-beta.25](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.24...v1.1.0-beta.25) (2021-02-09)
+
+
+### Bug Fixes
+
+* **cache:** Start choice script when cached ([e976010](https://github.com/johnlindquist/simple/commit/e976010470e9c3ee1565f72dec5ee23584104d4b))
+
 # [1.1.0-beta.24](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.23...v1.1.0-beta.24) (2021-02-09)
 
 
