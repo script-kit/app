@@ -1,3 +1,10 @@
+# [1.1.0-beta.27](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.26...v1.1.0-beta.27) (2021-02-09)
+
+
+### Bug Fixes
+
+* **prompt:** Allow dragging ([9d16684](https://github.com/johnlindquist/simple/commit/9d16684695ca1e44551411e34395fd2a7f4320a6))
+
 # [1.1.0-beta.26](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.25...v1.1.0-beta.26) (2021-02-09)
 
 
