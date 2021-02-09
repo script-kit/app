@@ -171,7 +171,13 @@ export default function App() {
   }, []);
 
   return (
-    <div className="flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl">
+    <div
+      className="flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl"
+      style={{
+        WebkitAppRegion: 'drag',
+        WebkitUserSelect: 'none',
+      }}
+    >
       <input
         ref={inputRef}
         style={{ minHeight: '4rem' }}
@@ -194,6 +200,10 @@ export default function App() {
       {choices?.length > 0 && (
         <SimpleBar
           scrollableNodeProps={{ ref: scrollRef }}
+          style={{
+            WebkitAppRegion: 'no-drag',
+            WebkitUserSelect: 'none',
+          }}
           className="px-4 pb-4 flex flex-col text-black dark:text-white w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
           // style={{ maxHeight: '85vh' }}
         >
