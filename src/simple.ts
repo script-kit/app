@@ -94,6 +94,7 @@ export const debug = (...debugArgs: any) => {
 
 const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   reset();
+  log.info(`simpleScript`, scriptPath, runArgs);
 
   const resolvePath = scriptPath.startsWith(path.sep)
     ? scriptPath
@@ -103,9 +104,18 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   ({ key, script } = stringifyScriptArgsKey(scriptPath, runArgs));
 
-  const cachedResult = cache.get(key);
+  const cachedResult: any = cache.get(key);
   if (cachedResult) {
+    log.info(`GOT CACHE:`, key);
     invokePromptWindow('prompt', cachedResult);
+    if (
+      !child &&
+      cachedResult.simpleScript &&
+      cachedResult.type === 'choices'
+    ) {
+      trySimpleScript(cachedResult.simpleScript, ['--prompt-exists']);
+    }
+
     return;
   }
 
@@ -137,12 +147,11 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   });
   processMap.set(child.pid, scriptPath);
 
-  log.info(`Starting ${child.pid}`);
+  log.info(`Starting ${child.pid} - ${scriptPath}`);
 
   const tryClean = (on: string) => () => {
     try {
       debug(on, scriptPath, '| PID:', child?.pid);
-      processMap.delete(child?.pid);
       log.info(`tryClean...`, scriptPath);
       hidePromptWindow(true);
     } catch (error) {
@@ -155,7 +164,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     log.info('> Message:', data.from, data.type);
 
     if (data.from === 'hide') {
-      hidePromptWindow();
+      app?.hide();
       return;
     }
     if (data.from === 'setLogin') {
@@ -198,18 +207,17 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     if (data.from === 'prompt') {
       ({ script, key } = stringifyScriptArgsKey(script, args));
       cache.set(key, data);
+
       invokePromptWindow('prompt', data);
 
       return;
     }
     if (data.from === 'choices') {
       invokePromptWindow('choices', data?.choices);
-
       return;
     }
 
     if (data.from === 'run') {
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
       trySimpleScript(data.scriptPath, data.runArgs);
       return;
     }
