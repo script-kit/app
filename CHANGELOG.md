@@ -1,195 +1,174 @@
-# [1.1.0-beta.22](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.21...v1.1.0-beta.22) (2021-02-05)
-
+# [1.1.0-beta.23](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.22...v1.1.0-beta.23) (2021-02-06)
 
 ### Bug Fixes
 
-* **build:** adding debug.html in ([21c6c6f](https://github.com/johnlindquist/simple/commit/21c6c6f4b486d356c4827502e762f90aa54bcad6))
+- **prompt:** scolling pin to top/bottom ([f6e129f](https://github.com/johnlindquist/simple/commit/f6e129f53e863795040c8bc77b938fd23b56a467))
+
+# [1.1.0-beta.22](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.21...v1.1.0-beta.22) (2021-02-05)
+
+### Bug Fixes
+
+- **build:** adding debug.html in ([21c6c6f](https://github.com/johnlindquist/simple/commit/21c6c6f4b486d356c4827502e762f90aa54bcad6))
 
 # [1.1.0-beta.21](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.20...v1.1.0-beta.21) (2021-02-04)
 
-
 ### Bug Fixes
 
-* **prompt:** setIndex when mouseover ([5367ac6](https://github.com/johnlindquist/simple/commit/5367ac60a60d42cc78f50c62d04fcb09bc63582f))
-
+- **prompt:** setIndex when mouseover ([5367ac6](https://github.com/johnlindquist/simple/commit/5367ac60a60d42cc78f50c62d04fcb09bc63582f))
 
 ### Features
 
-* **prompt:** save window position. Upgrade electron ([0247e74](https://github.com/johnlindquist/simple/commit/0247e7421aba519a331589bb0635dd2db8c2a9ef))
+- **prompt:** save window position. Upgrade electron ([0247e74](https://github.com/johnlindquist/simple/commit/0247e7421aba519a331589bb0635dd2db8c2a9ef))
 
 # [1.1.0-beta.20](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.19...v1.1.0-beta.20) (2021-02-04)
 
-
 ### Features
 
-* **prompt:** painting the prompt ([b4ddb24](https://github.com/johnlindquist/simple/commit/b4ddb24d9822325292980691c30a616ddb735407))
+- **prompt:** painting the prompt ([b4ddb24](https://github.com/johnlindquist/simple/commit/b4ddb24d9822325292980691c30a616ddb735407))
 
 # [1.1.0-beta.19](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.18...v1.1.0-beta.19) (2021-02-03)
 
-
 ### Bug Fixes
 
-* **tray:** watching app path ([7c3ecbd](https://github.com/johnlindquist/simple/commit/7c3ecbd5fd327b475b8cbafa2505887ca0beeab3))
+- **tray:** watching app path ([7c3ecbd](https://github.com/johnlindquist/simple/commit/7c3ecbd5fd327b475b8cbafa2505887ca0beeab3))
 
 # [1.1.0-beta.18](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.17...v1.1.0-beta.18) (2021-02-03)
 
-
 ### Features
 
-* **preview:** Separate preview from main. Main redesign ([94d6dec](https://github.com/johnlindquist/simple/commit/94d6decd6f9fef1a0cd437e9d0d558d2e3037f2e))
+- **preview:** Separate preview from main. Main redesign ([94d6dec](https://github.com/johnlindquist/simple/commit/94d6decd6f9fef1a0cd437e9d0d558d2e3037f2e))
 
 # [1.1.0-beta.17](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.16...v1.1.0-beta.17) (2021-02-02)
 
-
 ### Features
 
-* **prompt:** highlight, focus, and center ([8ee5e43](https://github.com/johnlindquist/simple/commit/8ee5e435c5c29104d13a0156cd14a9331b1e39e0))
+- **prompt:** highlight, focus, and center ([8ee5e43](https://github.com/johnlindquist/simple/commit/8ee5e435c5c29104d13a0156cd14a9331b1e39e0))
 
 # [1.1.0-beta.16](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.15...v1.1.0-beta.16) (2021-01-30)
 
-
 ### Bug Fixes
 
-* **app:** Add zip target for auto update ([d93de06](https://github.com/johnlindquist/simple/commit/d93de066da2e13a73ec87c9e457639c604007b70))
+- **app:** Add zip target for auto update ([d93de06](https://github.com/johnlindquist/simple/commit/d93de066da2e13a73ec87c9e457639c604007b70))
 
 # [1.1.0-beta.15](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.14...v1.1.0-beta.15) (2021-01-30)
 
-
 ### Features
 
-* **app:** Allow to set to launch at login ([78a6df8](https://github.com/johnlindquist/simple/commit/78a6df8dbaa4f82b70dc9dfb9a74648ef51847af))
+- **app:** Allow to set to launch at login ([78a6df8](https://github.com/johnlindquist/simple/commit/78a6df8dbaa4f82b70dc9dfb9a74648ef51847af))
 
 # [1.1.0-beta.14](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.13...v1.1.0-beta.14) (2021-01-30)
 
-
 ### Bug Fixes
 
-* **updater:** debug updater ([ea758a9](https://github.com/johnlindquist/simple/commit/ea758a9d8788c906b8627089fd606685e24859d9))
+- **updater:** debug updater ([ea758a9](https://github.com/johnlindquist/simple/commit/ea758a9d8788c906b8627089fd606685e24859d9))
 
 # [1.1.0-beta.13](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.12...v1.1.0-beta.13) (2021-01-30)
 
-
 ### Features
 
-* **debug:** Debug from anywhere ([5ca6050](https://github.com/johnlindquist/simple/commit/5ca6050aa67343ea46706cc3c1b8cbef27ca23d6))
+- **debug:** Debug from anywhere ([5ca6050](https://github.com/johnlindquist/simple/commit/5ca6050aa67343ea46706cc3c1b8cbef27ca23d6))
 
 # [1.1.0-beta.12](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.11...v1.1.0-beta.12) (2021-01-30)
 
-
 ### Bug Fixes
 
-* **shortcuts:** Allow whitespace in shortcuts ([1e8c2f4](https://github.com/johnlindquist/simple/commit/1e8c2f487c295f093b25fa8597e61a1c91e2980e))
-
+- **shortcuts:** Allow whitespace in shortcuts ([1e8c2f4](https://github.com/johnlindquist/simple/commit/1e8c2f487c295f093b25fa8597e61a1c91e2980e))
 
 ### Features
 
-* **app:** Implement auto update 🤞 ([695637b](https://github.com/johnlindquist/simple/commit/695637bbf84d50a95abb8172b03cffab6e648433))
+- **app:** Implement auto update 🤞 ([695637b](https://github.com/johnlindquist/simple/commit/695637bbf84d50a95abb8172b03cffab6e648433))
 
 # [1.1.0-beta.11](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.10...v1.1.0-beta.11) (2021-01-30)
 
-
 ### Bug Fixes
 
-* **app:** quit ([f6fda2d](https://github.com/johnlindquist/simpleapp/commit/f6fda2db990d4ab0e7c9b0273d78f2a920e021fe))
-* **prompt:** Fix positioning when displays side-by-side ([662914c](https://github.com/johnlindquist/simpleapp/commit/662914c15dc4b2c268e915a5f857ce4cdf3fb5aa))
+- **app:** quit ([f6fda2d](https://github.com/johnlindquist/simpleapp/commit/f6fda2db990d4ab0e7c9b0273d78f2a920e021fe))
+- **prompt:** Fix positioning when displays side-by-side ([662914c](https://github.com/johnlindquist/simpleapp/commit/662914c15dc4b2c268e915a5f857ce4cdf3fb5aa))
 
 # [1.1.0-beta.10](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.9...v1.1.0-beta.10) (2021-01-29)
 
-
 ### Bug Fixes
 
-* **prompt:** Fix top-right positioning logic ([b0593c8](https://github.com/johnlindquist/simpleapp/commit/b0593c810b9c6fa5768de7b7ee15d00d2d182c21))
-* **prompt:** fixing ratio sizing ([0369d69](https://github.com/johnlindquist/simpleapp/commit/0369d69df497903b4b7a1a22cd04d82910cb7a01))
+- **prompt:** Fix top-right positioning logic ([b0593c8](https://github.com/johnlindquist/simpleapp/commit/b0593c810b9c6fa5768de7b7ee15d00d2d182c21))
+- **prompt:** fixing ratio sizing ([0369d69](https://github.com/johnlindquist/simpleapp/commit/0369d69df497903b4b7a1a22cd04d82910cb7a01))
 
 # [1.1.0-beta.9](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.8...v1.1.0-beta.9) (2021-01-29)
 
-
 ### Bug Fixes
 
-* **prompt:** Always focus, no matter what :D ([78292eb](https://github.com/johnlindquist/simpleapp/commit/78292ebbc22015ee86191e148ac19a0341ac942b))
-* **prompt:** Guard against closed windows when quitting ([c95f38e](https://github.com/johnlindquist/simpleapp/commit/c95f38e0adbd6b52a8b830b4df07eabf78cfc1c2))
+- **prompt:** Always focus, no matter what :D ([78292eb](https://github.com/johnlindquist/simpleapp/commit/78292ebbc22015ee86191e148ac19a0341ac942b))
+- **prompt:** Guard against closed windows when quitting ([c95f38e](https://github.com/johnlindquist/simpleapp/commit/c95f38e0adbd6b52a8b830b4df07eabf78cfc1c2))
 
 # [1.1.0-beta.8](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.7...v1.1.0-beta.8) (2021-01-29)
 
-
 ### Features
 
-* **debug:** Add debug window when alt+click ([6b870b7](https://github.com/johnlindquist/simpleapp/commit/6b870b7cdcec02e1a43b5fa4a0b501c0c03bff74))
+- **debug:** Add debug window when alt+click ([6b870b7](https://github.com/johnlindquist/simpleapp/commit/6b870b7cdcec02e1a43b5fa4a0b501c0c03bff74))
 
 # [1.1.0-beta.7](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.6...v1.1.0-beta.7) (2021-01-28)
 
-
 ### Features
 
-* **prompt:** Proper scrolling! 🚀 ([1d6adf4](https://github.com/johnlindquist/simpleapp/commit/1d6adf4aa20cbcc766a9a87994fd98c341813872))
+- **prompt:** Proper scrolling! 🚀 ([1d6adf4](https://github.com/johnlindquist/simpleapp/commit/1d6adf4aa20cbcc766a9a87994fd98c341813872))
 
 # [1.1.0-beta.6](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.5...v1.1.0-beta.6) (2021-01-28)
 
-
 ### Bug Fixes
 
-* **css:** dark mode ([1f50dd3](https://github.com/johnlindquist/simpleapp/commit/1f50dd3bc382abed4d08b52e93bdc39917d70b02))
+- **css:** dark mode ([1f50dd3](https://github.com/johnlindquist/simpleapp/commit/1f50dd3bc382abed4d08b52e93bdc39917d70b02))
 
 # [1.1.0-beta.5](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.4...v1.1.0-beta.5) (2021-01-27)
 
-
 ### Bug Fixes
 
-* **scripts:** Pass SIMPLE_CONTEXT as 'app' ([b545bad](https://github.com/johnlindquist/simpleapp/commit/b545bad2d0d6ed58438cdfa48d52f6421e382965))
-
+- **scripts:** Pass SIMPLE_CONTEXT as 'app' ([b545bad](https://github.com/johnlindquist/simpleapp/commit/b545bad2d0d6ed58438cdfa48d52f6421e382965))
 
 ### Features
 
-* **css:** Dark mode first pass ([8352208](https://github.com/johnlindquist/simpleapp/commit/83522080f3fb06f7a869a2fa4dc5d3ef04f00749))
+- **css:** Dark mode first pass ([8352208](https://github.com/johnlindquist/simpleapp/commit/83522080f3fb06f7a869a2fa4dc5d3ef04f00749))
 
 # [1.1.0-beta.4](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.3...v1.1.0-beta.4) (2021-01-27)
 
-
 ### Bug Fixes
 
-* **css:** styling list elements ([60cca46](https://github.com/johnlindquist/simpleapp/commit/60cca46439fa3f72d41b9058f9c4d2398a71c21a))
-* **prompt:** clear on escape. Show info ([8bfa6ba](https://github.com/johnlindquist/simpleapp/commit/8bfa6bab436e0465dad2160cf063356b66bd6b5e))
-* **prompt:** removing shadow ([9c091ee](https://github.com/johnlindquist/simpleapp/commit/9c091ee7d8d33b8ca3c40dfe79353f7f79e44a88))
-* **simple:** Remove process timeout that closed prompt ([4d1392b](https://github.com/johnlindquist/simpleapp/commit/4d1392b4e0e3ffc9eb79b220bc2a8b37f5c26723))
-
+- **css:** styling list elements ([60cca46](https://github.com/johnlindquist/simpleapp/commit/60cca46439fa3f72d41b9058f9c4d2398a71c21a))
+- **prompt:** clear on escape. Show info ([8bfa6ba](https://github.com/johnlindquist/simpleapp/commit/8bfa6bab436e0465dad2160cf063356b66bd6b5e))
+- **prompt:** removing shadow ([9c091ee](https://github.com/johnlindquist/simpleapp/commit/9c091ee7d8d33b8ca3c40dfe79353f7f79e44a88))
+- **simple:** Remove process timeout that closed prompt ([4d1392b](https://github.com/johnlindquist/simpleapp/commit/4d1392b4e0e3ffc9eb79b220bc2a8b37f5c26723))
 
 ### Features
 
-* **url:** Open links in external browser, not electron ([8fd6fa1](https://github.com/johnlindquist/simpleapp/commit/8fd6fa18ba2faaab9930213fb54a7077041f0e46))
+- **url:** Open links in external browser, not electron ([8fd6fa1](https://github.com/johnlindquist/simpleapp/commit/8fd6fa18ba2faaab9930213fb54a7077041f0e46))
 
 # [1.1.0-beta.3](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.2...v1.1.0-beta.3) (2021-01-26)
 
-
 ### Bug Fixes
 
-* **css:** Adding base styles for show windows ([01abacc](https://github.com/johnlindquist/simpleapp/commit/01abacc39eee4dc3c268857c8bd8a816b65a4d4b))
-* **prompt:** Fixing size of prompt ([dbbceb1](https://github.com/johnlindquist/simpleapp/commit/dbbceb1243d0a01d1ce0945524c55524bceca802))
-* **prompt:** Hide the prompt unless interrupted by a message ([5712ba1](https://github.com/johnlindquist/simpleapp/commit/5712ba1a3a0b3f1679eb0ea15a2ded840fe570cd))
-* **yarn:** updaet yarn.lock ([75e3946](https://github.com/johnlindquist/simpleapp/commit/75e39469baab7e9ba0ac75660c5183008a7bd50e))
+- **css:** Adding base styles for show windows ([01abacc](https://github.com/johnlindquist/simpleapp/commit/01abacc39eee4dc3c268857c8bd8a816b65a4d4b))
+- **prompt:** Fixing size of prompt ([dbbceb1](https://github.com/johnlindquist/simpleapp/commit/dbbceb1243d0a01d1ce0945524c55524bceca802))
+- **prompt:** Hide the prompt unless interrupted by a message ([5712ba1](https://github.com/johnlindquist/simpleapp/commit/5712ba1a3a0b3f1679eb0ea15a2ded840fe570cd))
+- **yarn:** updaet yarn.lock ([75e3946](https://github.com/johnlindquist/simpleapp/commit/75e39469baab7e9ba0ac75660c5183008a7bd50e))
 
 # [1.1.0-beta.2](https://github.com/johnlindquist/simpleapp/compare/v1.1.0-beta.1...v1.1.0-beta.2) (2021-01-26)
 
-
 ### Features
 
-* **show:** Add show command to display arbitrary html ([5e602ff](https://github.com/johnlindquist/simpleapp/commit/5e602ff0eb4707dea76fb1e56eb3ee62f91ece6c))
+- **show:** Add show command to display arbitrary html ([5e602ff](https://github.com/johnlindquist/simpleapp/commit/5e602ff0eb4707dea76fb1e56eb3ee62f91ece6c))
 
 # [1.1.0-beta.1](https://github.com/johnlindquist/simpleapp/compare/v1.0.2-beta.1...v1.1.0-beta.1) (2021-01-26)
 
-
 ### Features
 
-* **notifications:** testing loading styles from a protocol ([0783a9a](https://github.com/johnlindquist/simpleapp/commit/0783a9a61b1625e06f90df170491a6a3367e13d4))
+- **notifications:** testing loading styles from a protocol ([0783a9a](https://github.com/johnlindquist/simpleapp/commit/0783a9a61b1625e06f90df170491a6a3367e13d4))
 
 ## [1.0.2-beta.1](https://github.com/johnlindquist/simpleapp/compare/v1.0.1...v1.0.2-beta.1) (2021-01-25)
 
-
 ### Bug Fixes
 
-* **build:** add publish to beta branch ([bab3bc2](https://github.com/johnlindquist/simpleapp/commit/bab3bc2fcd530a9df7b1cb3138af142ce175e083))
-* Add PATH to detect vs code and switch to mac ([f4c55e2](https://github.com/johnlindquist/simpleapp/commit/f4c55e29c874f36c55598980955014dad34ccf95))
-* adding PATH back so "which" works ([1b45e6b](https://github.com/johnlindquist/simpleapp/commit/1b45e6b52469a922f92dbf4611909257fa88dbee))
-* generating a changelog ([f9bcdf9](https://github.com/johnlindquist/simpleapp/commit/f9bcdf906e5f1b05f73f33a26b63c91a888c39d2))
+- **build:** add publish to beta branch ([bab3bc2](https://github.com/johnlindquist/simpleapp/commit/bab3bc2fcd530a9df7b1cb3138af142ce175e083))
+- Add PATH to detect vs code and switch to mac ([f4c55e2](https://github.com/johnlindquist/simpleapp/commit/f4c55e29c874f36c55598980955014dad34ccf95))
+- adding PATH back so "which" works ([1b45e6b](https://github.com/johnlindquist/simpleapp/commit/1b45e6b52469a922f92dbf4611909257fa88dbee))
+- generating a changelog ([f9bcdf9](https://github.com/johnlindquist/simpleapp/commit/f9bcdf906e5f1b05f73f33a26b63c91a888c39d2))
 
 # 1.4.0
 
