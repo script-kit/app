@@ -218,7 +218,7 @@ export default function App() {
               rounded-lg
               justify-center
               overflow-x-hidden
-              ${index === i ? `dark:bg-gray-800 bg-gray-100` : ``}`}
+              ${index === i ? `dark:bg-gray-800 bg-gray-100 shadow` : ``}`}
               onClick={(_event) => {
                 submit(choice.value);
               }}
@@ -226,15 +226,7 @@ export default function App() {
                 setIndex(i);
               }}
             >
-              <div
-                className=""
-                style={{
-                  textShadow:
-                    index === i
-                      ? `-1px 0 black, 0 1px black, 1px 0 black, 0 -1px black`
-                      : ``,
-                }}
-              >
+              <div>
                 {inputValue
                   ? reactStringReplace(
                       choice?.name,
