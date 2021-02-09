@@ -1,3 +1,10 @@
+# [1.1.0-beta.26](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.25...v1.1.0-beta.26) (2021-02-09)
+
+
+### Bug Fixes
+
+* **prompt:** remove outline, use shadow ([d4514c5](https://github.com/johnlindquist/simple/commit/d4514c54fb25f5bdeb4f56dca6c07ec319581a36))
+
 # [1.1.0-beta.25](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.24...v1.1.0-beta.25) (2021-02-09)
 
 
