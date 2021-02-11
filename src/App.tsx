@@ -35,7 +35,7 @@ export default function App() {
 
   const submit = useCallback((submitValue: string) => {
     ipcRenderer.send('prompt', { value: submitValue });
-    setData({ type: 'clear', choices: [], message: 'Processing...' });
+    setData({ type: 'clear', choices: [], message: 'Finishing script...' });
     setIndex(0);
     setInputValue('');
   }, []);
@@ -112,27 +112,31 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (data.type === 'choices' && typeof inputValue === 'string') {
+    if (
+      data.from === 'prompt' &&
+      !data.cache &&
+      typeof inputValue === 'string'
+    ) {
       ipcRenderer.send('input', inputValue);
     }
   }, [data, inputValue]);
 
   useEffect(() => {
-    const choicesHandler = (_event: any, choicesChoices: any) => {
-      setChoices(choicesChoices);
+    const updateHandler = (_event: any, updatedChoices: any) => {
+      setChoices(updatedChoices);
       if (inputRef.current) {
         inputRef?.current.focus();
       }
     };
-    ipcRenderer.on('choices', choicesHandler);
+    ipcRenderer.on('updateChoices', updateHandler);
 
     return () => {
-      ipcRenderer.off('choices', choicesHandler);
+      ipcRenderer.off('updateChoices', updateHandler);
     };
   }, []);
 
   useEffect(() => {
-    if (data.type === 'choices') return;
+    if (!data?.choices) return;
     const filtered = ((data?.choices as any[]) || [])?.filter((choice) => {
       try {
         return choice?.name.match(new RegExp(inputValue, 'i'));
@@ -146,7 +150,6 @@ export default function App() {
   useEffect(() => {
     if (ipcRenderer.listenerCount('prompt') === 0) {
       ipcRenderer.on('prompt', (_event, promptData: SimplePromptOptions) => {
-        // console.log(`setData`, promptData);
         setData(promptData);
         setIndex(0);
         if (inputRef.current) {
@@ -157,9 +160,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (ipcRenderer.listenerCount('escape') === 0) {
-      ipcRenderer.on('escape', () => {
-        console.log(`ESCAPE!!!`);
+    if (ipcRenderer.listenerCount('clear') === 0) {
+      ipcRenderer.on('clear', () => {
         if (inputRef.current) {
           inputRef?.current.focus();
         }
@@ -215,19 +217,19 @@ export default function App() {
               className={`
               w-full
               my-1
-
               h-16
               dark:hover:bg-gray-800
               hover:bg-gray-100
               whitespace-nowrap
               text-left
               flex
-              flex-col
+              flex-row
               text-xl
               px-4
               rounded-lg
-              justify-center
-              overflow-x-hidden
+              justify-between
+              items-center
+
               ${index === i ? `dark:bg-gray-800 bg-gray-100 shadow` : ``}`}
               onClick={(_event) => {
                 submit(choice.value);
@@ -236,31 +238,39 @@ export default function App() {
                 setIndex(i);
               }}
             >
-              <div>
-                {inputValue
-                  ? reactStringReplace(
-                      choice?.name,
-                      inputValue,
-                      (match, ix) => (
-                        <span
-                          key={ix}
-                          className=" dark:text-yellow-500 text-yellow-700"
-                        >
-                          {match}
-                        </span>
+              <div className="flex flex-col max-w-full mr-2 truncate">
+                <div className="truncate">
+                  {inputValue
+                    ? reactStringReplace(
+                        choice?.name,
+                        inputValue,
+                        (match, ix) => (
+                          <span
+                            key={ix}
+                            className=" dark:text-yellow-500 text-yellow-700"
+                          >
+                            {match}
+                          </span>
+                        )
                       )
-                    )
-                  : choice?.name}
-              </div>
-
-              {((index === i && choice?.selected) || choice?.description) && (
-                <div
-                  className={`text-xs ${
-                    index === i && `dark:text-yellow-500 text-yellow-700`
-                  }`}
-                >
-                  {(index === i && choice?.selected) || choice?.description}
+                    : choice?.name}
                 </div>
+                {((index === i && choice?.selected) || choice?.description) && (
+                  <div
+                    className={`text-xs truncate ${
+                      index === i && `dark:text-yellow-500 text-yellow-700`
+                    }`}
+                  >
+                    {(index === i && choice?.selected) || choice?.description}
+                  </div>
+                )}
+              </div>
+              {choice?.icon && (
+                <img
+                  src={choice.icon}
+                  alt={choice.name}
+                  className="py-2 h-full"
+                />
               )}
             </button>
           ))}

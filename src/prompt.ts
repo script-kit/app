@@ -25,7 +25,7 @@ export const createPromptWindow = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
-      devTools: false,
+      devTools: process.env.NODE_ENV === 'development',
     },
     alwaysOnTop: true,
     closable: false,
@@ -100,14 +100,17 @@ export const invokePromptWindow = (channel: string, data: any) => {
       promptWindow?.setMinimumSize(width, height);
     }
 
-    promptWindow?.show();
+    // TODO: Think through "show on every invoke" logic
+    if (!promptWindow?.isVisible() && channel !== 'clear') {
+      promptWindow?.show();
+    }
   }
 
   return promptWindow;
 };
 
 export const hidePromptWindow = (ignoreBlur = false) => {
-  promptWindow?.webContents.send('escape', {});
+  invokePromptWindow('clear', {});
 
   if (ignoreBlur) {
     blurredBySimple = false;
@@ -121,10 +124,11 @@ export const hidePromptWindow = (ignoreBlur = false) => {
     const promptBounds = promptWindow.getBounds();
     promptStore.set(`prompt.${String(distScreen.id)}.bounds`, promptBounds);
     if (!debugWindow?.isVisible()) {
-      app?.hide();
+      if (promptWindow.isVisible()) {
+        app?.hide();
+        promptWindow?.hide();
+      }
     }
-    promptWindow?.hide();
-    hidePreview();
   }
   blurredBySimple = false;
   hideEmitter.emit('hide');
@@ -160,7 +164,7 @@ export const createPreview = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
-      devTools: false,
+      devTools: process.env.NODE_ENV === 'development',
     },
     alwaysOnTop: true,
     closable: false,
@@ -299,7 +303,6 @@ export const createDebug = () => {
 
     debugWindow.on('focus', () => {
       blurredBySimple = true;
-      log.info(`Focus debug`);
     });
 
     debugWindow?.setMaxListeners(2);
@@ -310,7 +313,6 @@ export const createDebug = () => {
 
     debugWindow?.loadURL(`file://${__dirname}/debug.html`);
     blurredBySimple = true;
-    log.info(`debugWindow.show`);
     debugWindow?.show();
   }
   return debugWindow;

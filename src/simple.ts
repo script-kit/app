@@ -94,6 +94,7 @@ export const debug = (...debugArgs: any) => {
 
 const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   reset();
+  invokePromptWindow('clear', {});
   log.info(`simpleScript`, scriptPath, runArgs);
 
   const resolvePath = scriptPath.startsWith(path.sep)
@@ -108,13 +109,6 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   if (cachedResult) {
     log.info(`GOT CACHE:`, key);
     invokePromptWindow('prompt', cachedResult);
-    if (
-      !child &&
-      cachedResult.simpleScript &&
-      cachedResult.type === 'choices'
-    ) {
-      trySimpleScript(cachedResult.simpleScript, ['--prompt-exists']);
-    }
 
     return;
   }
@@ -161,7 +155,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   child.on('close', tryClean('CLOSE'));
   child.on('message', async (data: any) => {
-    log.info('> Message:', data.from, data.type);
+    log.info('> FROM:', data.from);
 
     if (data.from === 'hide') {
       app?.hide();
@@ -206,14 +200,14 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     }
     if (data.from === 'prompt') {
       ({ script, key } = stringifyScriptArgsKey(script, args));
-      cache.set(key, data);
-
+      if (data.cache) cache.set(key, data);
       invokePromptWindow('prompt', data);
 
       return;
     }
-    if (data.from === 'choices') {
-      invokePromptWindow('choices', data?.choices);
+
+    if (data.from === 'updateChoices') {
+      invokePromptWindow('updateChoices', data?.choices);
       return;
     }
 
