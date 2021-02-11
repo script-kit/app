@@ -1,3 +1,10 @@
+# [1.1.0-beta.29](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.28...v1.1.0-beta.29) (2021-02-11)
+
+
+### Bug Fixes
+
+* **prompt:** validation and messaging ([ccb9d3e](https://github.com/johnlindquist/simple/commit/ccb9d3e093a2db9ad6eb636f46dfeefdd883cfa5))
+
 # [1.1.0-beta.28](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.27...v1.1.0-beta.28) (2021-02-11)
 
 
