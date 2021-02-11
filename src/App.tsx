@@ -34,7 +34,7 @@ export default function App() {
   }, [inputRef]);
 
   const submit = useCallback((submitValue: string) => {
-    ipcRenderer.send('prompt', { value: submitValue });
+    ipcRenderer.send('VALUE_SUBMITTED', { value: submitValue });
     setData({ type: 'clear', choices: [], message: 'Finishing script...' });
     setIndex(0);
     setInputValue('');
@@ -48,10 +48,10 @@ export default function App() {
 
   useEffect(() => {
     if (choices?.length > 0 && choices?.[index]) {
-      ipcRenderer.send('selected', choices[index]);
+      ipcRenderer.send('VALUE_SELECTED', choices[index]);
     }
     if (choices?.length === 0) {
-      ipcRenderer.send('selected', null);
+      ipcRenderer.send('VALUE_SELECTED', null);
     }
   }, [choices, index]);
 
@@ -113,11 +113,11 @@ export default function App() {
 
   useEffect(() => {
     if (
-      data.from === 'prompt' &&
+      data.from === 'SHOW_PROMPT_WITH_DATA' &&
       !data.cache &&
       typeof inputValue === 'string'
     ) {
-      ipcRenderer.send('input', inputValue);
+      ipcRenderer.send('INPUT_CHANGED', inputValue);
     }
   }, [data, inputValue]);
 
@@ -128,10 +128,10 @@ export default function App() {
         inputRef?.current.focus();
       }
     };
-    ipcRenderer.on('updateChoices', updateHandler);
+    ipcRenderer.on('UPDATE_PROMPT_CHOICES', updateHandler);
 
     return () => {
-      ipcRenderer.off('updateChoices', updateHandler);
+      ipcRenderer.off('UPDATE_PROMPT_CHOICES', updateHandler);
     };
   }, []);
 
@@ -148,14 +148,17 @@ export default function App() {
   }, [data, inputValue]);
 
   useEffect(() => {
-    if (ipcRenderer.listenerCount('prompt') === 0) {
-      ipcRenderer.on('prompt', (_event, promptData: SimplePromptOptions) => {
-        setData(promptData);
-        setIndex(0);
-        if (inputRef.current) {
-          inputRef?.current.focus();
+    if (ipcRenderer.listenerCount('SHOW_PROMPT_WITH_DATA') === 0) {
+      ipcRenderer.on(
+        'SHOW_PROMPT_WITH_DATA',
+        (_event, promptData: SimplePromptOptions) => {
+          setData(promptData);
+          setIndex(0);
+          if (inputRef.current) {
+            inputRef?.current.focus();
+          }
         }
-      });
+      );
     }
   }, []);
 

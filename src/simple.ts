@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { app, ipcMain, screen } from 'electron';
 import { autoUpdater } from 'electron-updater';
@@ -28,14 +29,7 @@ let args: any[] = [];
 
 export const processMap = new Map();
 
-ipcMain.on('quit', () => {
-  log.warn(`>>> QUIT <<<`);
-  reset();
-
-  app.quit();
-});
-
-ipcMain.on('prompt', (_event, { input, value }) => {
+ipcMain.on('VALUE_SUBMITTED', (_event, { input, value }) => {
   args.push(value);
   if (child) {
     child?.send(value);
@@ -45,10 +39,10 @@ ipcMain.on('prompt', (_event, { input, value }) => {
 });
 
 ipcMain.on(
-  'input',
+  'INPUT_CHANGED',
   debounce((_event, input) => {
     if (child && input) {
-      child?.send({ from: 'input', input });
+      child?.send({ from: 'INPUT_CHANGED', input });
     } else if (input) {
       trySimpleScript(script, [...args, '--simple-input', input]);
     }
@@ -56,7 +50,7 @@ ipcMain.on(
 );
 
 ipcMain.on(
-  'selected',
+  'VALUE_SELECTED',
   debounce((_event, choice: any) => {
     if (choice?.preview) {
       showPreview(choice.preview);
@@ -108,7 +102,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   const cachedResult: any = cache.get(key);
   if (cachedResult) {
     log.info(`GOT CACHE:`, key);
-    invokePromptWindow('prompt', cachedResult);
+    invokePromptWindow('SHOW_PROMPT_WITH_DATA', cachedResult);
 
     return;
   }
@@ -157,79 +151,77 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   child.on('message', async (data: any) => {
     log.info('> FROM:', data.from);
 
-    if (data.from === 'hide') {
-      app?.hide();
-      return;
-    }
-    if (data.from === 'setLogin') {
-      app.setLoginItemSettings(data);
-      return;
-    }
-    if (data.from === 'quit') {
-      if (child) {
-        log.info(`Exiting: ${child.pid}`);
-        reset();
-      }
-      app.exit();
-      return;
-    }
-    if (data.from === 'update') {
-      autoUpdater.checkForUpdatesAndNotify();
-      return;
-    }
+    switch (data.from) {
+      case 'CLEAR_CACHE':
+        cache.clear();
+        break;
 
-    if (data.from === 'debug') {
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      debugToggle();
-      return;
-    }
-
-    if (data.from === 'notify') {
-      showNotification(data.html, data.options);
-      return;
-    }
-
-    if (data.from === 'show') {
-      const showWindow = show(data.html, data.options);
-      if (showWindow && !showWindow.isDestroyed()) {
-        showWindow.on('close', () => {
-          focusPrompt();
+      case 'GET_SCREEN_INFO':
+        const cursor = screen.getCursorScreenPoint();
+        // Get display with cursor
+        const activeScreen = screen.getDisplayNearestPoint({
+          x: cursor.x,
+          y: cursor.y,
         });
-      }
-      return;
-    }
-    if (data.from === 'prompt') {
-      ({ script, key } = stringifyScriptArgsKey(script, args));
-      if (data.cache) cache.set(key, data);
-      invokePromptWindow('prompt', data);
 
-      return;
-    }
+        child?.send({ from: 'SCREEN_INFO', activeScreen });
+        break;
 
-    if (data.from === 'updateChoices') {
-      invokePromptWindow('updateChoices', data?.choices);
-      return;
-    }
+      case 'HIDE_APP':
+        app?.hide();
+        break;
 
-    if (data.from === 'run') {
-      trySimpleScript(data.scriptPath, data.runArgs);
-      return;
-    }
+      case 'LOG_MESSAGE':
+        log.info(data.message);
+        break;
 
-    if (data.from === 'system') {
-      const cursor = screen.getCursorScreenPoint();
-      // Get display with cursor
-      const activeScreen = screen.getDisplayNearestPoint({
-        x: cursor.x,
-        y: cursor.y,
-      });
+      case 'QUIT_APP':
+        reset();
+        app.exit();
+        break;
 
-      child?.send({ from: 'system', activeScreen });
-      return;
-    }
+      case 'RUN_SCRIPT':
+        trySimpleScript(data.scriptPath, data.runArgs);
+        break;
 
-    if (data.from === 'log') {
-      log.info(data.message);
+      case 'SET_LOGIN':
+        app.setLoginItemSettings(data);
+        break;
+
+      case 'SHOW_NOTIFICATION':
+        showNotification(data.html, data.options);
+        break;
+
+      case 'SHOW_PROMPT_WITH_DATA':
+        ({ script, key } = stringifyScriptArgsKey(script, args));
+        if (data.cache) cache.set(key, data);
+        invokePromptWindow('SHOW_PROMPT_WITH_DATA', data);
+        break;
+
+      case 'SHOW_RESULTS':
+        const showWindow = show(data.html, data.options);
+        if (showWindow && !showWindow.isDestroyed()) {
+          showWindow.on('close', () => {
+            focusPrompt();
+          });
+        }
+        break;
+
+      case 'TOGGLE_DEBUGGER':
+        debugToggle();
+        break;
+
+      case 'UPDATE_APP':
+        autoUpdater.checkForUpdatesAndNotify();
+
+        break;
+
+      case 'UPDATE_PROMPT_CHOICES':
+        invokePromptWindow('UPDATE_PROMPT_CHOICES', data?.choices);
+        break;
+
+      default:
+        log.info(`Unknown message ${data.from}`);
     }
   });
 
@@ -238,12 +230,10 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     reset();
   });
 
-  const handleStdout = (data: string) => {
+  (child as any).stdout.on('data', (data: string) => {
     const line = data.toString();
     debug(line);
-  };
-
-  (child as any).stdout.on('data', handleStdout);
+  });
 };
 
 export const trySimpleScript = (filePath: string, runArgs: string[] = []) => {
