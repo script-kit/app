@@ -1,3 +1,10 @@
+# [1.1.0-beta.30](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.29...v1.1.0-beta.30) (2021-02-11)
+
+
+### Bug Fixes
+
+* **update:** auto install update ([24f5c7b](https://github.com/johnlindquist/simple/commit/24f5c7b08dda85c1f32662a50aaddf9788993eb4))
+
 # [1.1.0-beta.29](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.28...v1.1.0-beta.29) (2021-02-11)
 
 
