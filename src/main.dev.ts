@@ -69,6 +69,11 @@ autoUpdater.on('download-progress', (progressObj) => {
   logMessage = `${logMessage} (${progressObj.transferred}/${progressObj.total})`;
   debug(logMessage);
 });
+
+autoUpdater.on('update-downloaded', () => {
+  autoUpdater.quitAndInstall();
+});
+
 app.on('window-all-closed', (e: Event) => e.preventDefault());
 
 app.on('web-contents-created', (_, contents) => {
