@@ -1,3 +1,10 @@
+# [1.1.0-beta.28](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.27...v1.1.0-beta.28) (2021-02-11)
+
+
+### Bug Fixes
+
+* **prompt:** Hide/show/clear logic and passing choices properly ([de31eec](https://github.com/johnlindquist/simple/commit/de31eecc8fc06cb58c6758763d6840fd5c925e11))
+
 # [1.1.0-beta.27](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.26...v1.1.0-beta.27) (2021-02-09)
 
 
