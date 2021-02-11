@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import React, {
@@ -22,6 +23,7 @@ interface ChoiceData {
 export default function App() {
   const [data, setData]: any[] = useState({});
   const [inputValue, setInputValue] = useState('');
+  const [info, setInfo] = useState('');
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
@@ -35,13 +37,17 @@ export default function App() {
 
   const submit = useCallback((submitValue: string) => {
     ipcRenderer.send('VALUE_SUBMITTED', { value: submitValue });
-    setData({ type: 'clear', choices: [], message: 'Finishing script...' });
+    setData({
+      choices: [],
+      message: 'Finishing script...',
+    });
     setIndex(0);
     setInputValue('');
   }, []);
 
   const onChange = useCallback((event) => {
     if (event.key === 'Enter') return;
+    setInfo('');
     setIndex(0);
     setInputValue(event.currentTarget.value);
   }, []);
@@ -122,20 +128,6 @@ export default function App() {
   }, [data, inputValue]);
 
   useEffect(() => {
-    const updateHandler = (_event: any, updatedChoices: any) => {
-      setChoices(updatedChoices);
-      if (inputRef.current) {
-        inputRef?.current.focus();
-      }
-    };
-    ipcRenderer.on('UPDATE_PROMPT_CHOICES', updateHandler);
-
-    return () => {
-      ipcRenderer.off('UPDATE_PROMPT_CHOICES', updateHandler);
-    };
-  }, []);
-
-  useEffect(() => {
     if (!data?.choices) return;
     const filtered = ((data?.choices as any[]) || [])?.filter((choice) => {
       try {
@@ -148,31 +140,61 @@ export default function App() {
   }, [data, inputValue]);
 
   useEffect(() => {
-    if (ipcRenderer.listenerCount('SHOW_PROMPT_WITH_DATA') === 0) {
-      ipcRenderer.on(
-        'SHOW_PROMPT_WITH_DATA',
-        (_event, promptData: SimplePromptOptions) => {
-          setData(promptData);
-          setIndex(0);
-          if (inputRef.current) {
-            inputRef?.current.focus();
-          }
-        }
-      );
-    }
-  }, []);
+    const updateChoicesHandler = (_event: any, updatedChoices: any) => {
+      setChoices(updatedChoices);
+      if (inputRef.current) {
+        inputRef?.current.focus();
+      }
+    };
 
-  useEffect(() => {
-    if (ipcRenderer.listenerCount('clear') === 0) {
-      ipcRenderer.on('clear', () => {
-        if (inputRef.current) {
-          inputRef?.current.focus();
-        }
-        setData({ type: 'clear', choices: [], message: '' });
-        setIndex(0);
-        setInputValue('');
-      });
+    const showPromptHandler = (
+      _event: any,
+      promptData: SimplePromptOptions
+    ) => {
+      setData(promptData);
+      setIndex(0);
+      if (inputRef.current) {
+        inputRef?.current.focus();
+      }
+    };
+
+    const clearPromptHandler = () => {
+      if (inputRef.current) {
+        inputRef?.current.focus();
+      }
+      setData({ choices: [], message: '' });
+      setIndex(0);
+      setInputValue('');
+      setInfo('');
+    };
+
+    const updatePromptInfo = (_event: any, info: string) => {
+      setInputValue('');
+      setData({ message: info });
+    };
+
+    if (ipcRenderer.listenerCount('CLEAR_PROMPT') === 0) {
+      ipcRenderer.on('CLEAR_PROMPT', clearPromptHandler);
     }
+
+    if (ipcRenderer.listenerCount('SHOW_PROMPT_WITH_DATA') === 0) {
+      ipcRenderer.on('SHOW_PROMPT_WITH_DATA', showPromptHandler);
+    }
+
+    if (ipcRenderer.listenerCount('UPDATE_PROMPT_CHOICES') === 0) {
+      ipcRenderer.on('UPDATE_PROMPT_CHOICES', updateChoicesHandler);
+    }
+
+    if (ipcRenderer.listenerCount('UPDATE_PROMPT_INFO') === 0) {
+      ipcRenderer.on('UPDATE_PROMPT_INFO', updatePromptInfo);
+    }
+
+    return () => {
+      ipcRenderer.off('CLEAR_PROMPT', clearPromptHandler);
+      ipcRenderer.off('SHOW_PROMPT_WITH_DATA', showPromptHandler);
+      ipcRenderer.off('UPDATE_PROMPT_CHOICES', updateChoicesHandler);
+      ipcRenderer.off('UPDATE_PROMPT_INFO', updatePromptInfo);
+    };
   }, []);
 
   return (
@@ -194,6 +216,7 @@ export default function App() {
         placeholder={data?.message || ''}
         onKeyDown={onKeyDown}
       />
+      {info && <div className="text-sm text-black dark:text-white">{info}</div>}
       {/* <div className="bg-white">
           {index} : {choices[index]?.name}
         </div>

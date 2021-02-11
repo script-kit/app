@@ -101,7 +101,7 @@ export const invokePromptWindow = (channel: string, data: any) => {
     }
 
     // TODO: Think through "show on every invoke" logic
-    if (!promptWindow?.isVisible() && channel !== 'clear') {
+    if (!promptWindow?.isVisible() && channel !== 'CLEAR_PROMPT') {
       promptWindow?.show();
     }
   }
@@ -110,7 +110,7 @@ export const invokePromptWindow = (channel: string, data: any) => {
 };
 
 export const hidePromptWindow = (ignoreBlur = false) => {
-  invokePromptWindow('clear', {});
+  invokePromptWindow('CLEAR_PROMPT', {});
 
   if (ignoreBlur) {
     blurredBySimple = false;

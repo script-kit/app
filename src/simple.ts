@@ -88,7 +88,7 @@ export const debug = (...debugArgs: any) => {
 
 const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   reset();
-  invokePromptWindow('clear', {});
+  invokePromptWindow('CLEAR_PROMPT', {});
   log.info(`simpleScript`, scriptPath, runArgs);
 
   const resolvePath = scriptPath.startsWith(path.sep)
@@ -218,6 +218,14 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
       case 'UPDATE_PROMPT_CHOICES':
         invokePromptWindow('UPDATE_PROMPT_CHOICES', data?.choices);
+        break;
+
+      case 'UPDATE_PROMPT_INFO':
+        invokePromptWindow('UPDATE_PROMPT_INFO', data?.info);
+        break;
+
+      case 'UPDATE_PROMPT_MESSAGE':
+        invokePromptWindow('UPDATE_PROMPT_MESSAGE', data?.message);
         break;
 
       default:
