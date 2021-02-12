@@ -1,3 +1,10 @@
+# [1.1.0-beta.32](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.31...v1.1.0-beta.32) (2021-02-12)
+
+
+### Bug Fixes
+
+* **log:** adding console.log log ([b535c99](https://github.com/johnlindquist/simple/commit/b535c9983afa573fd6cb4d640f20d8ce8277854a))
+
 # [1.1.0-beta.31](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.30...v1.1.0-beta.31) (2021-02-12)
 
 
