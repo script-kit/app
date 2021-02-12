@@ -1,3 +1,10 @@
+# [1.1.0-beta.31](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.30...v1.1.0-beta.31) (2021-02-12)
+
+
+### Bug Fixes
+
+* **log:** Log to simple logs dir ([f988989](https://github.com/johnlindquist/simple/commit/f9889890417a342871ec3b1f9b7e8ce03c5f2781))
+
 # [1.1.0-beta.30](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.29...v1.1.0-beta.30) (2021-02-11)
 
 
