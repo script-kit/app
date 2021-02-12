@@ -22,6 +22,9 @@ import { getAssetPath } from './assets';
 import { trySimpleScript, debug } from './simple';
 import { createPromptWindow, createPreview } from './prompt';
 import { createNotification } from './notifications';
+import { simplePath } from './helpers';
+
+log.transports.file.resolvePath = () => simplePath('logs', 'simple.log');
 
 app.setName('Simple Scripts');
 app.requestSingleInstanceLock();
