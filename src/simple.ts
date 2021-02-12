@@ -16,6 +16,7 @@ import {
   debugToggle,
   debugLine,
   hideEmitter,
+  promptCache,
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
@@ -157,6 +158,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
     switch (data.from) {
       case 'CLEAR_CACHE':
+        promptCache.clear();
         cache.clear();
         break;
 

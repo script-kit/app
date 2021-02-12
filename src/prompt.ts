@@ -5,8 +5,12 @@ import log from 'electron-log';
 import Store from 'electron-store';
 import { EventEmitter } from 'events';
 import { getAssetPath } from './assets';
+import { simplePath } from './helpers';
 
-const promptStore = new Store({ name: 'prompt' });
+export const promptCache = new Store({
+  name: 'prompt',
+  cwd: simplePath('cache'),
+});
 
 let promptWindow: BrowserWindow | null = null;
 let blurredBySimple = false;
@@ -75,10 +79,10 @@ export const invokePromptWindow = (channel: string, data: any) => {
       y: cursor.y,
     });
 
-    const screenConfig = promptStore.get(`prompt.${String(distScreen.id)}`);
+    const screenConfig = promptCache.get(`prompt.${String(distScreen.id)}`);
 
     if (screenConfig) {
-      const currentScreenBounds = promptStore.get(
+      const currentScreenBounds = promptCache.get(
         `prompt.${String(distScreen.id)}.bounds`
       );
 
@@ -122,7 +126,7 @@ export const hidePromptWindow = (ignoreBlur = false) => {
       y: promptWindow.getBounds().y,
     });
     const promptBounds = promptWindow.getBounds();
-    promptStore.set(`prompt.${String(distScreen.id)}.bounds`, promptBounds);
+    promptCache.set(`prompt.${String(distScreen.id)}.bounds`, promptBounds);
     if (!debugWindow?.isVisible()) {
       if (promptWindow.isVisible()) {
         app?.hide();
@@ -211,10 +215,10 @@ export const showPreview = async (html: string) => {
       y: cursor.y,
     });
 
-    const screenConfig = promptStore.get(`preview.${String(distScreen.id)}`);
+    const screenConfig = promptCache.get(`preview.${String(distScreen.id)}`);
 
     if (screenConfig) {
-      const currentScreenBounds = promptStore.get(
+      const currentScreenBounds = promptCache.get(
         `preview.${String(distScreen.id)}.bounds`
       );
 
@@ -248,7 +252,7 @@ export const hidePreview = () => {
       x: previewWindow.getBounds().x,
       y: previewWindow.getBounds().y,
     });
-    promptStore.set(
+    promptCache.set(
       `preview.${String(distScreen.id)}.bounds`,
       previewWindow.getBounds()
     );
