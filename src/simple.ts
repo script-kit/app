@@ -27,6 +27,10 @@ let script = '';
 let key = '';
 let args: any[] = [];
 
+const consoleLog = log.create('consoleLog');
+consoleLog.transports.file.resolvePath = () =>
+  simplePath('logs', 'console.log');
+
 export const processMap = new Map();
 
 ipcMain.on('VALUE_SUBMITTED', (_event, { input, value }) => {
@@ -154,6 +158,10 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     switch (data.from) {
       case 'CLEAR_CACHE':
         cache.clear();
+        break;
+
+      case 'CONSOLE_LOG':
+        consoleLog.info(data.log);
         break;
 
       case 'GET_SCREEN_INFO':
