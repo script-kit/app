@@ -1,3 +1,10 @@
+# [1.1.0-beta.33](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.32...v1.1.0-beta.33) (2021-02-13)
+
+
+### Bug Fixes
+
+* **cache:** Improve caching when escaping prompt ([b06777b](https://github.com/johnlindquist/simple/commit/b06777b322f79cc254d0245acabb9b6a98091d78))
+
 # [1.1.0-beta.32](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.31...v1.1.0-beta.32) (2021-02-12)
 
 
