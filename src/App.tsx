@@ -10,7 +10,6 @@ import React, {
   useState,
 } from 'react';
 import { ipcRenderer } from 'electron';
-import reactStringReplace from 'react-string-replace';
 import SimpleBar from 'simplebar-react';
 import { SimplePromptOptions } from './types';
 
@@ -41,6 +40,7 @@ export default function App() {
       choices: [],
       message: 'Finishing script...',
     });
+    setChoices([]);
     setIndex(0);
     setInputValue('');
   }, []);
@@ -90,12 +90,7 @@ export default function App() {
         const el = scrollRef.current;
         const selectedItem: any = el.firstElementChild?.children[newIndex];
         const itemY = selectedItem?.offsetTop;
-        console.log({
-          itemY,
-          scrollTop: el.scrollTop,
-          clientHeight: el.clientHeight,
-          scrollHeight: el.scrollHeight,
-        });
+
         if (itemY >= el.scrollTop + el.clientHeight) {
           selectedItem?.scrollIntoView({ block: 'end', inline: 'nearest' });
           el.scrollTo({
@@ -128,14 +123,36 @@ export default function App() {
   }, [data, inputValue]);
 
   useEffect(() => {
-    if (!data?.choices) return;
-    const filtered = ((data?.choices as any[]) || [])?.filter((choice) => {
-      try {
-        return choice?.name.match(new RegExp(inputValue, 'i'));
-      } catch (error) {
-        return false;
-      }
-    });
+    if (!data?.choices?.length) return;
+
+    const bestFilter = (choice: any) =>
+      choice.name.toLowerCase().startsWith(inputValue.toLowerCase());
+
+    const normalFilter = (choice: any) =>
+      choice.name.toLowerCase().includes(inputValue.toLowerCase());
+
+    const regExFilter = (choice: any) =>
+      choice.name.match(new RegExp(inputValue.split('').join('.*'), 'i'));
+
+    const bestMatches = data.choices.filter(bestFilter);
+
+    const matches = data.choices.filter(
+      (choice: any) => !bestFilter(choice) && normalFilter(choice)
+    );
+
+    let regExMatches = [];
+
+    try {
+      regExMatches = data.choices.filter(
+        (choice: any) =>
+          !bestFilter(choice) && !normalFilter(choice) && regExFilter(choice)
+      );
+    } catch {
+      regExMatches = [];
+    }
+
+    const filtered = [...bestMatches, ...matches, ...regExMatches];
+
     setChoices(filtered);
   }, [data, inputValue]);
 
@@ -163,6 +180,7 @@ export default function App() {
         inputRef?.current.focus();
       }
       setData({ choices: [], message: '' });
+      setChoices([]);
       setIndex(0);
       setInputValue('');
       setInfo('');
@@ -266,20 +284,46 @@ export default function App() {
             >
               <div className="flex flex-col max-w-full mr-2 truncate">
                 <div className="truncate">
-                  {inputValue
-                    ? reactStringReplace(
-                        choice?.name,
-                        inputValue,
-                        (match, ix) => (
-                          <span
-                            key={ix}
-                            className=" dark:text-yellow-500 text-yellow-700"
-                          >
-                            {match}
-                          </span>
-                        )
-                      )
-                    : choice?.name}
+                  {choice?.name.toLowerCase().includes(inputValue.toLowerCase())
+                    ? [
+                        choice.name.slice(
+                          0,
+                          choice.name.toLowerCase().indexOf(inputValue)
+                        ),
+                        <span
+                          key={inputValue}
+                          className=" dark:text-yellow-500 text-yellow-700"
+                        >
+                          {choice.name.slice(
+                            choice.name.toLowerCase().indexOf(inputValue),
+                            choice.name.toLowerCase().indexOf(inputValue) +
+                              inputValue.length
+                          )}
+                        </span>,
+                        choice.name.slice(
+                          choice.name.toLowerCase().indexOf(inputValue) +
+                            inputValue.length
+                        ),
+                      ]
+                    : choice?.name.split('').reduce(
+                        (acc: any, char: string) => {
+                          const c = char.toLowerCase();
+
+                          if (acc.test.includes(c)) {
+                            acc.test = acc.test.slice(1);
+                            acc.result.push(
+                              <span className=" dark:text-yellow-500 text-yellow-700">
+                                {char}
+                              </span>
+                            );
+                            return acc;
+                          }
+
+                          acc.result.push(char);
+                          return acc;
+                        },
+                        { test: inputValue, result: [] }
+                      ).result}
                 </div>
                 {((index === i && choice?.selected) || choice?.description) && (
                   <div

@@ -26,7 +26,7 @@ import { cache } from './cache';
 let child: ChildProcess | null = null;
 let script = '';
 let key = '';
-let args: any[] = [];
+let cacheKeyParts: any[] = [];
 
 const consoleLog = log.create('consoleLog');
 consoleLog.transports.file.resolvePath = () =>
@@ -34,12 +34,12 @@ consoleLog.transports.file.resolvePath = () =>
 
 export const processMap = new Map();
 
-ipcMain.on('VALUE_SUBMITTED', (_event, { input, value }) => {
-  args.push(value);
+ipcMain.on('VALUE_SUBMITTED', (_event, { value }) => {
+  cacheKeyParts.push(value);
   if (child) {
     child?.send(value);
   } else {
-    trySimpleScript(script, args);
+    trySimpleScript(script, cacheKeyParts);
   }
 });
 
@@ -49,7 +49,7 @@ ipcMain.on(
     if (child && input) {
       child?.send({ from: 'INPUT_CHANGED', input });
     } else if (input) {
-      trySimpleScript(script, [...args, '--simple-input', input]);
+      trySimpleScript(script, [...cacheKeyParts, '--simple-input', input]);
     }
   }, 250)
 );
@@ -66,6 +66,8 @@ ipcMain.on(
 );
 
 const reset = () => {
+  log.info(`---RESET: ${cacheKeyParts}`);
+  cacheKeyParts = [];
   if (child) {
     log.info(`Exiting: ${child.pid}`);
     processMap.delete(child?.pid);
@@ -74,7 +76,6 @@ const reset = () => {
     child = null;
     script = '';
     key = '';
-    args = [];
   }
 };
 
@@ -92,9 +93,7 @@ export const debug = (...debugArgs: any) => {
 };
 
 const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
-  reset();
   invokePromptWindow('CLEAR_PROMPT', {});
-  log.info(`simpleScript`, scriptPath, runArgs);
 
   const resolvePath = scriptPath.startsWith(path.sep)
     ? scriptPath
@@ -104,9 +103,31 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   ({ key, script } = stringifyScriptArgsKey(scriptPath, runArgs));
 
+  log.info(`>>> GET: ${key}`);
   const cachedResult: any = cache.get(key);
   if (cachedResult) {
     log.info(`GOT CACHE:`, key);
+
+    // if (
+    //   key.endsWith(cacheKeyParts[cacheKeyParts.length - 1]) &&
+    //   cacheKeyParts.length > 1
+    // ) {
+    //   log.info(`Key:Parts ${key}:${cacheKeyParts}`);
+    //   key = '';
+    //   cacheKeyParts = cacheKeyParts.slice(1);
+    //   log.info(`Key:Parts ${key}:${cacheKeyParts}`);
+    // }
+
+    // if (
+    //   cacheKeyParts.includes(
+    //     key
+    //       .split('.')
+    //       .filter((part) => !part.startsWith('-'))
+    //       .pop()
+    //   )
+    // ) {
+    //   log.info(`Parts includes: ${key}:${cacheKeyParts}`);
+    // }
     invokePromptWindow('SHOW_PROMPT_WITH_DATA', cachedResult);
 
     return;
@@ -203,8 +224,12 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       case 'SHOW_PROMPT_WITH_DATA':
-        ({ script, key } = stringifyScriptArgsKey(script, args));
-        if (data.cache) cache.set(key, data);
+        ({ script, key } = stringifyScriptArgsKey(script, cacheKeyParts));
+
+        if (data.cache && !cache.get(key)) {
+          log.info(`>>>SET: ${key}`);
+          cache.set(key, data);
+        }
         invokePromptWindow('SHOW_PROMPT_WITH_DATA', data);
         break;
 
