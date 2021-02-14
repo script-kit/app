@@ -11,6 +11,7 @@ import React, {
 } from 'react';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
+import { partition } from 'lodash';
 import { SimplePromptOptions } from './types';
 
 interface ChoiceData {
@@ -63,7 +64,6 @@ export default function App() {
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
-      // console.log(event);
       if (event.key === 'Enter') {
         submit(choices?.[index]?.value || inputValue);
 
@@ -125,33 +125,49 @@ export default function App() {
   useEffect(() => {
     if (!data?.choices?.length) return;
 
-    const bestFilter = (choice: any) =>
-      choice.name.toLowerCase().startsWith(inputValue.toLowerCase());
+    const exactExpression = `^${inputValue}`;
+    const partialExpression = inputValue;
+    const weakExpression = inputValue.split('').join('.*');
+    const startExpression = `^${weakExpression}`;
 
-    const normalFilter = (choice: any) =>
-      choice.name.toLowerCase().includes(inputValue.toLowerCase());
-
-    const regExFilter = (choice: any) =>
-      choice.name.match(new RegExp(inputValue.split('').join('.*'), 'i'));
-
-    const bestMatches = data.choices.filter(bestFilter);
-
-    const matches = data.choices.filter(
-      (choice: any) => !bestFilter(choice) && normalFilter(choice)
-    );
-
-    let regExMatches = [];
-
+    let exactRegExp: RegExp;
+    let startRegExp: RegExp;
+    let partialRegExp: RegExp;
+    let weakRegExp: RegExp;
     try {
-      regExMatches = data.choices.filter(
-        (choice: any) =>
-          !bestFilter(choice) && !normalFilter(choice) && regExFilter(choice)
-      );
-    } catch {
-      regExMatches = [];
+      exactRegExp = new RegExp(exactExpression, 'i');
+      startRegExp = new RegExp(startExpression, 'i');
+      partialRegExp = new RegExp(partialExpression, 'i');
+      weakRegExp = new RegExp(weakExpression, 'i');
+    } catch (error) {
+      exactRegExp = new RegExp('');
+      startRegExp = new RegExp('');
+      partialRegExp = new RegExp('');
+      weakRegExp = new RegExp('');
     }
 
-    const filtered = [...bestMatches, ...matches, ...regExMatches];
+    const exactFilter = (choice: any) => choice.name.match(exactRegExp);
+    const startFilter = (choice: any) => choice.name.match(startRegExp);
+    const partialFilter = (choice: any) => choice.name.match(partialRegExp);
+    const weakestFilter = (choice: any) => choice.name.match(weakRegExp);
+
+    const [exactMatches, notBestMatches] = partition(data.choices, exactFilter);
+    const [startMatches, notStartMatches] = partition(
+      notBestMatches,
+      startFilter
+    );
+    const [partialMatches, notMatches] = partition(
+      notStartMatches,
+      partialFilter
+    );
+    const weakestMatches = notMatches.filter(weakestFilter);
+
+    const filtered = [
+      ...exactMatches,
+      ...startMatches,
+      ...partialMatches,
+      ...weakestMatches,
+    ];
 
     setChoices(filtered);
   }, [data, inputValue]);
@@ -253,12 +269,16 @@ export default function App() {
           className="px-4 pb-4 flex flex-col text-black dark:text-white w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
           // style={{ maxHeight: '85vh' }}
         >
-          {((choices as any[]) || []).map((choice, i) => (
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-            <button
-              type="button"
-              key={choice.uuid}
-              className={`
+          {((choices as any[]) || []).map((choice, i) => {
+            const input = inputValue.toLowerCase();
+            const name = choice?.name?.toLowerCase();
+
+            return (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+              <button
+                type="button"
+                key={choice.uuid}
+                className={`
               w-full
               my-1
               h-16
@@ -275,75 +295,72 @@ export default function App() {
               items-center
 
               ${index === i ? `dark:bg-gray-800 bg-gray-100 shadow` : ``}`}
-              onClick={(_event) => {
-                submit(choice.value);
-              }}
-              onMouseEnter={() => {
-                setIndex(i);
-              }}
-            >
-              <div className="flex flex-col max-w-full mr-2 truncate">
-                <div className="truncate">
-                  {choice?.name.toLowerCase().includes(inputValue.toLowerCase())
-                    ? [
-                        choice.name.slice(
-                          0,
-                          choice.name.toLowerCase().indexOf(inputValue)
-                        ),
-                        <span
-                          key={inputValue}
-                          className=" dark:text-yellow-500 text-yellow-700"
-                        >
-                          {choice.name.slice(
-                            choice.name.toLowerCase().indexOf(inputValue),
-                            choice.name.toLowerCase().indexOf(inputValue) +
-                              inputValue.length
-                          )}
-                        </span>,
-                        choice.name.slice(
-                          choice.name.toLowerCase().indexOf(inputValue) +
-                            inputValue.length
-                        ),
-                      ]
-                    : choice?.name.split('').reduce(
-                        (acc: any, char: string) => {
-                          const c = char.toLowerCase();
+                onClick={(_event) => {
+                  submit(choice.value);
+                }}
+                onMouseEnter={() => {
+                  setIndex(i);
+                }}
+              >
+                <div className="flex flex-col max-w-full mr-2 truncate">
+                  <div className="truncate">
+                    {name.includes(input)
+                      ? [
+                          choice.name.slice(0, name.indexOf(input)),
+                          <span
+                            key={input}
+                            className=" dark:text-yellow-500 text-yellow-700"
+                          >
+                            {choice.name.slice(
+                              name.indexOf(input),
+                              name.indexOf(input) + input.length
+                            )}
+                          </span>,
+                          choice.name.slice(name.indexOf(input) + input.length),
+                        ]
+                      : choice.name.split('').reduce(
+                          (acc: any, char: string) => {
+                            const c = char.toLowerCase();
+                            const testChar = acc.test.toLowerCase()[
+                              acc.testIndex
+                            ];
 
-                          if (acc.test.includes(c)) {
-                            acc.test = acc.test.slice(1);
-                            acc.result.push(
-                              <span className=" dark:text-yellow-500 text-yellow-700">
-                                {char}
-                              </span>
-                            );
+                            if (!testChar || testChar !== c) {
+                              acc.result.push(char);
+                            } else {
+                              acc.testIndex += 1;
+                              acc.result.push(
+                                <span className=" dark:text-yellow-500 text-yellow-700">
+                                  {char}
+                                </span>
+                              );
+                            }
                             return acc;
-                          }
-
-                          acc.result.push(char);
-                          return acc;
-                        },
-                        { test: inputValue, result: [] }
-                      ).result}
-                </div>
-                {((index === i && choice?.selected) || choice?.description) && (
-                  <div
-                    className={`text-xs truncate ${
-                      index === i && `dark:text-yellow-500 text-yellow-700`
-                    }`}
-                  >
-                    {(index === i && choice?.selected) || choice?.description}
+                          },
+                          { test: inputValue, testIndex: 0, result: [] }
+                        ).result}
                   </div>
+                  {((index === i && choice?.selected) ||
+                    choice?.description) && (
+                    <div
+                      className={`text-xs truncate ${
+                        index === i && `dark:text-yellow-500 text-yellow-700`
+                      }`}
+                    >
+                      {(index === i && choice?.selected) || choice?.description}
+                    </div>
+                  )}
+                </div>
+                {choice?.icon && (
+                  <img
+                    src={choice.icon}
+                    alt={choice.name}
+                    className="py-2 h-full"
+                  />
                 )}
-              </div>
-              {choice?.icon && (
-                <img
-                  src={choice.icon}
-                  alt={choice.name}
-                  className="py-2 h-full"
-                />
-              )}
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </SimpleBar>
       )}
     </div>
