@@ -1,3 +1,10 @@
+# [1.1.0-beta.34](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.33...v1.1.0-beta.34) (2021-02-14)
+
+
+### Bug Fixes
+
+* **prompt:** fixing search highlighting/results ([990faa7](https://github.com/johnlindquist/simple/commit/990faa7d4bf06513141257bd45f5f0c831b34ee2))
+
 # [1.1.0-beta.33](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.32...v1.1.0-beta.33) (2021-02-13)
 
 
