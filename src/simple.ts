@@ -5,7 +5,7 @@ import { autoUpdater } from 'electron-updater';
 
 import path from 'path';
 import { fork, ChildProcess } from 'child_process';
-import log from 'electron-log';
+import simpleLog from 'electron-log';
 import { debounce } from 'lodash';
 import {
   invokePromptWindow,
@@ -28,7 +28,7 @@ let script = '';
 let key = '';
 let cacheKeyParts: any[] = [];
 
-const consoleLog = log.create('consoleLog');
+const consoleLog = simpleLog.create('consoleLog');
 consoleLog.transports.file.resolvePath = () =>
   simplePath('logs', 'console.log');
 
@@ -66,10 +66,10 @@ ipcMain.on(
 );
 
 const reset = () => {
-  log.info(`---RESET: ${cacheKeyParts}`);
+  simpleLog.info(`---RESET: ${cacheKeyParts}`);
   cacheKeyParts = [];
   if (child) {
-    log.info(`Exiting: ${child.pid}`);
+    simpleLog.info(`Exiting: ${child.pid}`);
     processMap.delete(child?.pid);
     child?.removeAllListeners();
     child?.kill();
@@ -103,10 +103,10 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   ({ key, script } = stringifyScriptArgsKey(scriptPath, runArgs));
 
-  log.info(`>>> GET: ${key}`);
+  simpleLog.info(`>>> GET: ${key}`);
   const cachedResult: any = cache.get(key);
   if (cachedResult) {
-    log.info(`GOT CACHE:`, key);
+    simpleLog.info(`GOT CACHE:`, key);
 
     // if (
     //   key.endsWith(cacheKeyParts[cacheKeyParts.length - 1]) &&
@@ -133,7 +133,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
     return;
   }
 
-  log.info(`FORK: ${resolvePath} ${[...runArgs, '--app']}`);
+  simpleLog.info(`FORK: ${resolvePath} ${[...runArgs, '--app']}`);
 
   child = fork(resolvePath, [...runArgs, '--app'], {
     silent: true,
@@ -161,21 +161,21 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   });
   processMap.set(child.pid, scriptPath);
 
-  log.info(`Starting ${child.pid} - ${scriptPath}`);
+  simpleLog.info(`Starting ${child.pid} - ${scriptPath}`);
 
   const tryClean = (on: string) => () => {
     try {
       debug(on, scriptPath, '| PID:', child?.pid);
-      log.info(`tryClean...`, scriptPath);
+      simpleLog.info(`tryClean...`, scriptPath);
       hidePromptWindow(true);
     } catch (error) {
-      log.warn(error);
+      simpleLog.warn(error);
     }
   };
 
   child.on('close', tryClean('CLOSE'));
   child.on('message', async (data: any) => {
-    log.info('> FROM:', data.from);
+    simpleLog.info('> FROM:', data.from);
 
     switch (data.from) {
       case 'CLEAR_CACHE':
@@ -185,6 +185,10 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
       case 'CONSOLE_LOG':
         consoleLog.info(data.log);
+        break;
+
+      case 'CONSOLE_WARN':
+        consoleLog.warn(data.warn);
         break;
 
       case 'GET_SCREEN_INFO':
@@ -200,10 +204,6 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
       case 'HIDE_APP':
         app?.hide();
-        break;
-
-      case 'LOG_MESSAGE':
-        log.info(data.message);
         break;
 
       case 'QUIT_APP':
@@ -227,7 +227,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         ({ script, key } = stringifyScriptArgsKey(script, cacheKeyParts));
 
         if (data.cache && !cache.get(key)) {
-          log.info(`>>>SET: ${key}`);
+          simpleLog.info(`>>>SET: ${key}`);
           cache.set(key, data);
         }
         invokePromptWindow('SHOW_PROMPT_WITH_DATA', data);
@@ -256,6 +256,9 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       case 'UPDATE_PROMPT_INFO':
+        cache.delete(key);
+        consoleLog.warn(`Probably invalid. Deleting ${key} from cache`);
+
         invokePromptWindow('UPDATE_PROMPT_INFO', data?.info);
         break;
 
@@ -264,12 +267,13 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       default:
-        log.info(`Unknown message ${data.from}`);
+        simpleLog.info(`Unknown message ${data.from}`);
     }
   });
 
   child.on('error', (error) => {
-    log.warn({ error });
+    cache.delete(key);
+    consoleLog.warn(`Error ${error}. Deleting ${key} from cache`);
     reset();
   });
 
@@ -283,6 +287,6 @@ export const trySimpleScript = (filePath: string, runArgs: string[] = []) => {
   try {
     simpleScript(filePath, runArgs);
   } catch (error) {
-    log.error(error);
+    simpleLog.error(error);
   }
 };
