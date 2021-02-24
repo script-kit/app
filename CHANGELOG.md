@@ -1,3 +1,10 @@
+# [1.1.0-beta.35](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.34...v1.1.0-beta.35) (2021-02-16)
+
+
+### Bug Fixes
+
+* **log:** Adding console.warn ([9f887e0](https://github.com/johnlindquist/simple/commit/9f887e0149017dd110db28044360809426cb2385))
+
 # [1.1.0-beta.34](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.33...v1.1.0-beta.34) (2021-02-14)
 
 
