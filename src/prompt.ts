@@ -7,10 +7,18 @@ import { EventEmitter } from 'events';
 import { getAssetPath } from './assets';
 import { simplePath } from './helpers';
 
-export const promptCache = new Store({
-  name: 'prompt',
-  cwd: simplePath('cache'),
-});
+let promptCache: Store | null = null;
+export const getPromptCache = () => {
+  return promptCache;
+};
+
+export const createPromptCache = () => {
+  promptCache = new Store({
+    name: 'prompt',
+    cwd: simplePath('cache'),
+  });
+  promptCache.clear();
+};
 
 let promptWindow: BrowserWindow | null = null;
 let blurredBySimple = false;

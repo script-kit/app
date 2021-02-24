@@ -16,12 +16,12 @@ import {
   debugToggle,
   debugLine,
   hideEmitter,
-  promptCache,
+  getPromptCache,
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
-import { simplePath, stringifyScriptArgsKey } from './helpers';
-import { cache } from './cache';
+import { sdkPath, simplePath, stringifyScriptArgsKey } from './helpers';
+import { getCache } from './cache';
 
 let child: ChildProcess | null = null;
 let script = '';
@@ -104,7 +104,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   ({ key, script } = stringifyScriptArgsKey(scriptPath, runArgs));
 
   simpleLog.info(`>>> GET: ${key}`);
-  const cachedResult: any = cache.get(key);
+  const cachedResult: any = getCache()?.get(key);
   if (cachedResult) {
     simpleLog.info(`GOT CACHE:`, key);
 
@@ -138,23 +138,24 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   child = fork(resolvePath, [...runArgs, '--app'], {
     silent: true,
     // stdio: 'inherit',
-    execPath: simplePath('node', 'bin', 'node'),
+    execPath: sdkPath('node', 'bin', 'node'),
     execArgv: [
       '--require',
       'dotenv/config',
       '--require',
-      simplePath('preload', 'api.cjs'),
+      sdkPath('preload', 'api.cjs'),
       '--require',
-      simplePath('preload', 'simple.cjs'),
+      sdkPath('preload', 'simple.cjs'),
       '--require',
-      simplePath('preload', 'mac.cjs'),
+      sdkPath('preload', 'mac.cjs'),
     ],
     env: {
       SIMPLE_CONTEXT: 'app',
       SIMPLE_MAIN: resolvePath,
-      PATH: `${simplePath('node', 'bin')}:${codePath}:${process.env.PATH}`,
+      PATH: `${sdkPath('node', 'bin')}:${codePath}:${process.env.PATH}`,
       SIMPLE_PATH: simplePath(),
-      NODE_PATH: simplePath('node_modules'),
+      SIMPLE_SDK: sdkPath(),
+      NODE_PATH: `${simplePath('node_modules')}:${sdkPath('node_modules')}`,
       DOTENV_CONFIG_PATH: simplePath('.env'),
       SIMPLE_APP_VERSION: app.getVersion(),
     },
@@ -179,8 +180,8 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
     switch (data.from) {
       case 'CLEAR_CACHE':
-        promptCache.clear();
-        cache.clear();
+        getPromptCache()?.clear();
+        getCache()?.clear();
         break;
 
       case 'CONSOLE_LOG':
@@ -200,6 +201,12 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         });
 
         child?.send({ from: 'SCREEN_INFO', activeScreen });
+        break;
+
+      case 'GET_MOUSE':
+        const mouseCursor = screen.getCursorScreenPoint();
+
+        child?.send({ from: 'MOUSE', mouseCursor });
         break;
 
       case 'HIDE_APP':
@@ -226,9 +233,9 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       case 'SHOW_PROMPT_WITH_DATA':
         ({ script, key } = stringifyScriptArgsKey(script, cacheKeyParts));
 
-        if (data.cache && !cache.get(key)) {
+        if (data.cache && !getCache()?.get(key)) {
           simpleLog.info(`>>>SET: ${key}`);
-          cache.set(key, data);
+          // cache.set(key, data);
         }
         invokePromptWindow('SHOW_PROMPT_WITH_DATA', data);
         break;
@@ -256,7 +263,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       case 'UPDATE_PROMPT_INFO':
-        cache.delete(key);
+        getCache()?.delete(key);
         consoleLog.warn(`Probably invalid. Deleting ${key} from cache`);
 
         invokePromptWindow('UPDATE_PROMPT_INFO', data?.info);
@@ -272,7 +279,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   });
 
   child.on('error', (error) => {
-    cache.delete(key);
+    getCache()?.delete(key);
     consoleLog.warn(`Error ${error}. Deleting ${key} from cache`);
     reset();
   });

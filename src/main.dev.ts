@@ -20,11 +20,10 @@ import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
 import { trySimpleScript, debug } from './simple';
-import { createPromptWindow, createPreview } from './prompt';
+import { createPromptWindow, createPreview, createPromptCache } from './prompt';
 import { createNotification } from './notifications';
 import { simplePath } from './helpers';
-
-log.transports.file.resolvePath = () => simplePath('logs', 'simple.log');
+import { createCache } from './cache';
 
 app.setName('Simple Scripts');
 app.requestSingleInstanceLock();
@@ -117,7 +116,18 @@ const prepareProtocols = async () => {
   });
 };
 
+const createLogs = () => {
+  log.transports.file.resolvePath = () => simplePath('logs', 'simple.log');
+};
+
+const createCaches = () => {
+  createCache();
+  createPromptCache();
+};
+
 const ready = async () => {
+  createLogs();
+  createCaches();
   await prepareProtocols();
   await createTray();
   await manageShortcuts();
@@ -130,47 +140,54 @@ const ready = async () => {
 };
 
 const checkSimpleScripts = async () => {
+  const SIMPLE_SDK = path.join(app.getPath('home'), '.simplesdk');
   const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
 
   // eslint-disable-next-line jest/expect-expect
-  const simpleScriptsExists = test('-d', SIMPLE_PATH);
-  if (!simpleScriptsExists) {
-    log.info(`~/.simple not found. Installing...`);
+  const sdkExists = test('-d', SIMPLE_SDK);
+  if (!sdkExists) {
+    log.info(`~/.simplesdk not found. Installing...`);
 
     const options: SpawnSyncOptions = {
       stdio: 'inherit',
-      cwd: SIMPLE_PATH,
+      cwd: SIMPLE_SDK,
       env: {
+        SIMPLE_SDK,
         SIMPLE_PATH,
-        PATH: `${path.join(SIMPLE_PATH, 'node', 'bin')}:${process.env.PATH}`,
+        PATH: `${path.join(SIMPLE_SDK, 'node', 'bin')}:${process.env.PATH}`,
       },
     };
 
     const [
       git,
       ...gitArgs
-    ] = `git clone https://github.com/johnlindquist/simplescripts.git ${SIMPLE_PATH}`.split(
+    ] = `git clone https://github.com/johnlindquist/simplescripts.git ${SIMPLE_SDK}`.split(
       ' '
     );
 
     const [
       installNode,
       ...installNodeArgs
-    ] = `./config/install-node.sh --prefix node --platform darwin`.split(' ');
+    ] = `./setup/install-node.sh --prefix node --platform darwin`.split(' ');
 
+    // Step 1: Clone repo
     const gitResult = spawnSync(git, gitArgs, {
       ...options,
       cwd: app.getPath('home'),
     });
     console.log({ gitResult });
+
+    // Step 2: Install node into .simplesdk/node
     const installNodeResult = spawnSync(installNode, installNodeArgs, options);
     console.log({ installNodeResult });
+
+    // Step 3: npm install packages into .simplesdk/node_modules
     const npmResult = spawnSync(`npm`, [`i`], options);
     console.log({ npmResult });
-    const createEnvResult = spawnSync(`./config/create-env.sh`, [], options);
-    console.log({ createEnvResult });
-    const createBinResult = spawnSync(`./config/create-bins.sh`, [], options);
-    console.log({ createBinResult });
+
+    // Step 4: Use simple.sh wrapper to run setup.js script
+    const setupResult = spawnSync(`./simple.sh`, [`./setup/setup.js`], options);
+    console.log({ createEnvResult: setupResult });
   }
 
   await ready();

@@ -7,7 +7,7 @@ import path from 'path';
 
 import { trySimpleScript } from './simple';
 import { simplePath } from './helpers';
-import { cache } from './cache';
+import { getCache } from './cache';
 
 export const shortcutMap = new Map();
 
@@ -37,7 +37,7 @@ const onFilesChanged = (
     }
   }
   if (event === 'add' || event === 'change') {
-    cache.clear();
+    getCache()?.clear();
 
     const shortcutMarker = 'Shortcut: ';
     const { stdout } = grep(shortcutMarker, filePath);

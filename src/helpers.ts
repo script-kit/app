@@ -2,8 +2,12 @@ import { app } from 'electron';
 import path from 'path';
 
 const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
+const SDK_PATH = path.join(app.getPath('home'), '.simplesdk');
+
 export const simplePath = (...parts: string[]) =>
   path.join(SIMPLE_PATH, ...parts);
+
+export const sdkPath = (...parts: string[]) => path.join(SDK_PATH, ...parts);
 
 export const SIMPLE_SCRIPTS_PATH = simplePath('scripts');
 export const SIMPLE_APP_SCRIPTS_PATH = simplePath('app');
