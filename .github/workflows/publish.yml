@@ -41,3 +41,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           yarn postinstall && yarn build && yarn electron-builder --publish always --mac
+
+      - name: Clone simplescripts
+        run: |
+          git clone https://github.com/johnlindquist/simplescripts.git ~/.simplesdk
+
+      - name: Install Simple Scripts
+        run: |
+          cd ~/.simplesdk
+          bash ./setup/install-node.sh --prefix ./node
+          ./node/bin/npm install --prefix ./
+          ./node/bin/npm install @octokit/rest --prefix ./
+
+      - name: Tag Simple Scripts
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRET_TOKEN }}
+        run: |
+          cd ~/.simplesdk
+          bash ./simple.sh ./setup/create-tag.js ${{ steps.semantic.outputs.new_release_version }}
