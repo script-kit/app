@@ -29,7 +29,7 @@ import { getVersion } from './version';
 
 const setupLog = log.create('setup');
 
-app.setName('Simple Scripts');
+app.setName('Simple');
 app.requestSingleInstanceLock();
 app.setAsDefaultProtocolClient('simple');
 app.dock.hide();
