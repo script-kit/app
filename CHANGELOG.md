@@ -1,3 +1,10 @@
+# [1.1.0-beta.39](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.38...v1.1.0-beta.39) (2021-02-27)
+
+
+### Bug Fixes
+
+* **update:** Fixing version/tagging logic ([1f3856a](https://github.com/johnlindquist/simple/commit/1f3856a96f5f557ff073c12216c8f86f6c7de2d0))
+
 # [1.1.0-beta.38](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.37...v1.1.0-beta.38) (2021-02-27)
 
 
