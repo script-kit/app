@@ -24,7 +24,7 @@ import { showNotification } from './notifications';
 import { show } from './show';
 import { sdkPath, simplePath, stringifyScriptArgsKey } from './helpers';
 import { getCache } from './cache';
-import { NEEDS_RESTART, state } from './state';
+import { makeRestartNecessary } from './restart';
 
 let child: ChildProcess | null = null;
 let script = '';
@@ -189,7 +189,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       case 'NEEDS_RESTART':
-        state.set(NEEDS_RESTART, true);
+        makeRestartNecessary();
         break;
 
       case 'QUIT_APP':

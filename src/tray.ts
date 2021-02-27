@@ -1,18 +1,15 @@
 /* eslint-disable import/prefer-default-export */
-import { app, Tray } from 'electron';
+import { Tray } from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
 import { trySimpleScript } from './simple';
 import { getAssetPath } from './assets';
-import { NEEDS_RESTART, state } from './state';
+import { restartIfNecessary } from './restart';
 
 let tray: Tray | null = null;
 
 const leftClick = async (event: KeyboardEvent) => {
-  if (state.get(NEEDS_RESTART)) {
-    app.relaunch();
-    app.exit(0);
-  }
+  restartIfNecessary();
   if (event.metaKey) {
     trySimpleScript('app/command-click');
   } else if (event.shiftKey) {

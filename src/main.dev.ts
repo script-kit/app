@@ -24,7 +24,7 @@ import { createPromptWindow, createPreview, createPromptCache } from './prompt';
 import { createNotification } from './notifications';
 import { simplePath } from './helpers';
 import { createCache } from './cache';
-import { NEEDS_RESTART, state } from './state';
+import { makeRestartNecessary } from './restart';
 
 app.setName('Simple Scripts');
 app.requestSingleInstanceLock();
@@ -75,7 +75,7 @@ autoUpdater.on('download-progress', (progressObj) => {
 
 autoUpdater.on('update-downloaded', () => {
   log.info('update downloaded');
-  state.set(NEEDS_RESTART, true);
+  makeRestartNecessary();
   autoUpdater.quitAndInstall();
   app.quit();
 });
