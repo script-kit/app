@@ -28,6 +28,7 @@ jobs:
           yarn install --network-timeout 1000000
 
       - name: Semantic Release
+        id: semantic
         uses: cycjimmy/semantic-release-action@v2.5.3
 
       - name: Publish releases
