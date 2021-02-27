@@ -25,6 +25,7 @@ import { show } from './show';
 import { sdkPath, simplePath, stringifyScriptArgsKey } from './helpers';
 import { getCache } from './cache';
 import { makeRestartNecessary } from './restart';
+import { getVersion } from './version';
 
 let child: ChildProcess | null = null;
 let script = '';
@@ -128,7 +129,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
       SIMPLE_SDK: sdkPath(),
       NODE_PATH: `${simplePath('node_modules')}:${sdkPath('node_modules')}`,
       DOTENV_CONFIG_PATH: simplePath('.env'),
-      SIMPLE_APP_VERSION: app.getVersion(),
+      SIMPLE_APP_VERSION: getVersion(),
     },
   });
   processMap.set(child.pid, scriptPath);
@@ -147,10 +148,6 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   child.on('close', tryClean('CLOSE'));
   child.on('message', async (data: any) => {
-    if (state.get(NEEDS_RESTART)) {
-      app.relaunch();
-      app.exit(0);
-    }
     simpleLog.info('> FROM:', data.from);
 
     switch (data.from) {

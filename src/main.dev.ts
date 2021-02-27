@@ -25,6 +25,7 @@ import { createNotification } from './notifications';
 import { simplePath } from './helpers';
 import { createCache } from './cache';
 import { makeRestartNecessary } from './restart';
+import { getVersion } from './version';
 
 const setupLog = log.create('setup');
 
@@ -168,7 +169,7 @@ const checkoutSimpleScriptsTag = async () => {
 
   const gitCheckoutTagResult = spawnSync(
     'git',
-    `checkout tags/${app.getVersion()} -b main`.split(' '),
+    `checkout tags/${getVersion()}`.split(' '),
     options
   );
   setupLog.info({ gitCheckoutTagResult });
@@ -178,6 +179,7 @@ const checkSimpleScripts = async () => {
   // eslint-disable-next-line jest/expect-expect
   const sdkExists = test('-d', SIMPLE_SDK);
 
+  setupLog.info(`Checking if sdk exists`);
   if (!sdkExists) {
     setupLog.info(`~/.simplesdk not found. Installing...`);
 
