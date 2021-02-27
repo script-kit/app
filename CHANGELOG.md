@@ -1,3 +1,10 @@
+# [1.1.0-beta.40](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.39...v1.1.0-beta.40) (2021-02-27)
+
+
+### Bug Fixes
+
+* **project:** Simple app name ([11a96a3](https://github.com/johnlindquist/simple/commit/11a96a344ea397cdf1211069c2f41b23a2bcfbca))
+
 # [1.1.0-beta.39](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.38...v1.1.0-beta.39) (2021-02-27)
 
 
