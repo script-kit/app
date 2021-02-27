@@ -1,3 +1,10 @@
+# [1.1.0-beta.37](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.36...v1.1.0-beta.37) (2021-02-27)
+
+
+### Bug Fixes
+
+* **update:** Restart when required logic ([f166f29](https://github.com/johnlindquist/simple/commit/f166f2959d8b0c7a5f4fe5f8416e83ba77c8e1c0))
+
 # [1.1.0-beta.36](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.35...v1.1.0-beta.36) (2021-02-24)
 
 
