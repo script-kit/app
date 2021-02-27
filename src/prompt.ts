@@ -87,10 +87,12 @@ export const invokePromptWindow = (channel: string, data: any) => {
       y: cursor.y,
     });
 
-    const screenConfig = promptCache.get(`prompt.${String(distScreen.id)}`);
+    const screenConfig = getPromptCache()?.get(
+      `prompt.${String(distScreen.id)}`
+    );
 
     if (screenConfig) {
-      const currentScreenBounds = promptCache.get(
+      const currentScreenBounds = getPromptCache()?.get(
         `prompt.${String(distScreen.id)}.bounds`
       );
 
@@ -134,12 +136,13 @@ export const hidePromptWindow = (ignoreBlur = false) => {
       y: promptWindow.getBounds().y,
     });
     const promptBounds = promptWindow.getBounds();
-    promptCache.set(`prompt.${String(distScreen.id)}.bounds`, promptBounds);
-    if (!debugWindow?.isVisible()) {
-      if (promptWindow.isVisible()) {
-        app?.hide();
-        promptWindow?.hide();
-      }
+    getPromptCache()?.set(
+      `prompt.${String(distScreen.id)}.bounds`,
+      promptBounds
+    );
+    if (promptWindow.isVisible()) {
+      app?.hide();
+      promptWindow?.hide();
     }
   }
   blurredBySimple = false;
@@ -163,7 +166,7 @@ const page = (html: string) => `<!DOCTYPE html>
 </body>
 </html>`;
 
-const customProtocol = 'file2';
+const customProtocol = 'simple';
 
 export const createPreview = async () => {
   previewWindow = new BrowserWindow({
@@ -223,10 +226,12 @@ export const showPreview = async (html: string) => {
       y: cursor.y,
     });
 
-    const screenConfig = promptCache.get(`preview.${String(distScreen.id)}`);
+    const screenConfig = getPromptCache()?.get(
+      `preview.${String(distScreen.id)}`
+    );
 
     if (screenConfig) {
-      const currentScreenBounds = promptCache.get(
+      const currentScreenBounds = getPromptCache()?.get(
         `preview.${String(distScreen.id)}.bounds`
       );
 
@@ -260,98 +265,12 @@ export const hidePreview = () => {
       x: previewWindow.getBounds().x,
       y: previewWindow.getBounds().y,
     });
-    promptCache.set(
+    getPromptCache()?.set(
       `preview.${String(distScreen.id)}.bounds`,
       previewWindow.getBounds()
     );
     previewWindow?.hide();
     // clear preview
     previewWindow.loadURL(`data:text/html;charset=UTF-8,`);
-  }
-};
-
-let debugWindow: BrowserWindow | null = null;
-
-export const killDebug = () => {
-  if (debugWindow) {
-    debugWindow?.close();
-    debugWindow = null;
-  }
-};
-
-export const createDebug = () => {
-  if (!debugWindow) {
-    const cursor = screen.getCursorScreenPoint();
-    // Get display with cursor
-    const distScreen = screen.getDisplayNearestPoint({
-      x: cursor.x,
-      y: cursor.y,
-    });
-
-    const {
-      width: screenWidth,
-      height: screenHeight,
-    } = distScreen.workAreaSize;
-    const width = Math.floor((screenWidth / 4) * distScreen.scaleFactor);
-    const height = Math.floor((screenHeight / 4) * distScreen.scaleFactor);
-    const x = distScreen.workArea.x + Math.floor(screenWidth / 2 - width / 2); // * distScreen.scaleFactor
-    const y = distScreen.workArea.y + Math.floor(screenHeight / 2 - height / 2);
-
-    debugWindow = new BrowserWindow({
-      show: false,
-      frame: true,
-      transparent: false,
-      backgroundColor: '#00000000',
-      icon: getAssetPath('icon.png'),
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false,
-      },
-      width,
-      height,
-      x,
-      y,
-    });
-
-    debugWindow.on('focus', () => {
-      blurredBySimple = true;
-    });
-
-    debugWindow?.setMaxListeners(2);
-
-    debugWindow.webContents.once('did-finish-load', () => {
-      debugWindow?.webContents.closeDevTools();
-    });
-
-    debugWindow?.loadURL(`file://${__dirname}/debug.html`);
-    blurredBySimple = true;
-    debugWindow?.show();
-  }
-  return debugWindow;
-};
-
-export const debugToggle = () => {
-  debugWindow = createDebug();
-  if (debugWindow) {
-    debugWindow?.webContents.on(
-      'before-input-event',
-      (event: any, input: any) => {
-        if (input.key === 'Escape') {
-          // eslint-disable-next-line @typescript-eslint/no-use-before-define
-          killDebug();
-          debugWindow = null;
-        }
-      }
-    );
-  }
-};
-
-let debugLineIndex = 0;
-export const debugLine = (line: string) => {
-  if (debugWindow && !debugWindow?.isDestroyed()) {
-    debugWindow.webContents.send('debug', {
-      line,
-      i: debugLineIndex += 1,
-    });
   }
 };

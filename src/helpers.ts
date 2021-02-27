@@ -26,6 +26,6 @@ export const stringifyScriptArgsKey = (
   return {
     script: scriptString,
     args: argsString,
-    key: scriptString + (argsString ? `.${argsString}` : ``),
+    key: scriptString + (argsString ? `/${argsString}` : ``),
   };
 };

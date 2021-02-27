@@ -2,6 +2,10 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { app, ipcMain, screen } from 'electron';
 import { autoUpdater } from 'electron-updater';
+import url from 'url';
+import http from 'http';
+import https from 'https';
+import sizeOf from 'image-size';
 
 import path from 'path';
 import { fork, ChildProcess } from 'child_process';
@@ -13,8 +17,6 @@ import {
   focusPrompt,
   showPreview,
   hidePreview,
-  debugToggle,
-  debugLine,
   hideEmitter,
   getPromptCache,
 } from './prompt';
@@ -22,6 +24,7 @@ import { showNotification } from './notifications';
 import { show } from './show';
 import { sdkPath, simplePath, stringifyScriptArgsKey } from './helpers';
 import { getCache } from './cache';
+import { NEEDS_RESTART, state } from './state';
 
 let child: ChildProcess | null = null;
 let script = '';
@@ -81,17 +84,6 @@ const reset = () => {
 
 hideEmitter.on('hide', reset);
 
-export const debug = (...debugArgs: any) => {
-  const line = debugArgs.join(' ').replace(/\n/g, '');
-  debugLine(line);
-
-  if (line.startsWith('Error:')) {
-    show(
-      `<div class="bg-black text-green-500 font-mono h-screen">${line}</div>`
-    );
-  }
-};
-
 const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   invokePromptWindow('CLEAR_PROMPT', {});
 
@@ -107,27 +99,6 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
   const cachedResult: any = getCache()?.get(key);
   if (cachedResult) {
     simpleLog.info(`GOT CACHE:`, key);
-
-    // if (
-    //   key.endsWith(cacheKeyParts[cacheKeyParts.length - 1]) &&
-    //   cacheKeyParts.length > 1
-    // ) {
-    //   log.info(`Key:Parts ${key}:${cacheKeyParts}`);
-    //   key = '';
-    //   cacheKeyParts = cacheKeyParts.slice(1);
-    //   log.info(`Key:Parts ${key}:${cacheKeyParts}`);
-    // }
-
-    // if (
-    //   cacheKeyParts.includes(
-    //     key
-    //       .split('.')
-    //       .filter((part) => !part.startsWith('-'))
-    //       .pop()
-    //   )
-    // ) {
-    //   log.info(`Parts includes: ${key}:${cacheKeyParts}`);
-    // }
     invokePromptWindow('SHOW_PROMPT_WITH_DATA', cachedResult);
 
     return;
@@ -166,7 +137,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   const tryClean = (on: string) => () => {
     try {
-      debug(on, scriptPath, '| PID:', child?.pid);
+      simpleLog.info(on, scriptPath, '| PID:', child?.pid);
       simpleLog.info(`tryClean...`, scriptPath);
       hidePromptWindow(true);
     } catch (error) {
@@ -176,6 +147,10 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   child.on('close', tryClean('CLOSE'));
   child.on('message', async (data: any) => {
+    if (state.get(NEEDS_RESTART)) {
+      app.relaunch();
+      app.exit(0);
+    }
     simpleLog.info('> FROM:', data.from);
 
     switch (data.from) {
@@ -213,6 +188,10 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         app?.hide();
         break;
 
+      case 'NEEDS_RESTART':
+        state.set(NEEDS_RESTART, true);
+        break;
+
       case 'QUIT_APP':
         reset();
         app.exit();
@@ -226,6 +205,36 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         app.setLoginItemSettings(data);
         break;
 
+      case 'SHOW_IMAGE':
+        const { image, options } = data;
+        const imgOptions = url.parse(image.src);
+
+        const { width, height } = await new Promise((resolve, reject) => {
+          const proto = imgOptions.protocol?.startsWith('https') ? https : http;
+          proto.get(imgOptions, (response) => {
+            const chunks: any = [];
+            response
+              .on('data', (chunk) => {
+                chunks.push(chunk);
+              })
+              .on('end', () => {
+                const buffer = Buffer.concat(chunks);
+                resolve(sizeOf(buffer));
+              });
+          });
+        });
+
+        const imageWindow = show(
+          String.raw`<img src="${image?.src}" alt="${image?.alt}" title="${image?.title}" />`,
+          { width, height, ...options }
+        );
+        if (imageWindow && !imageWindow.isDestroyed()) {
+          imageWindow.on('close', () => {
+            focusPrompt();
+          });
+        }
+        break;
+
       case 'SHOW_NOTIFICATION':
         showNotification(data.html, data.options);
         break;
@@ -235,7 +244,9 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
         if (data.cache && !getCache()?.get(key)) {
           simpleLog.info(`>>>SET: ${key}`);
-          // cache.set(key, data);
+          if (key && data?.choices?.length > 0) {
+            getCache()?.set(key, data);
+          }
         }
         invokePromptWindow('SHOW_PROMPT_WITH_DATA', data);
         break;
@@ -249,10 +260,6 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         }
         break;
 
-      case 'TOGGLE_DEBUGGER':
-        debugToggle();
-        break;
-
       case 'UPDATE_APP':
         autoUpdater.checkForUpdatesAndNotify();
 
@@ -262,15 +269,15 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         invokePromptWindow('UPDATE_PROMPT_CHOICES', data?.choices);
         break;
 
-      case 'UPDATE_PROMPT_INFO':
+      case 'UPDATE_PROMPT_WARN':
         getCache()?.delete(key);
         consoleLog.warn(`Probably invalid. Deleting ${key} from cache`);
 
         invokePromptWindow('UPDATE_PROMPT_INFO', data?.info);
         break;
 
-      case 'UPDATE_PROMPT_MESSAGE':
-        invokePromptWindow('UPDATE_PROMPT_MESSAGE', data?.message);
+      case 'UPDATE_PROMPT_INFO':
+        invokePromptWindow('UPDATE_PROMPT_INFO', data?.info);
         break;
 
       default:
@@ -286,7 +293,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   (child as any).stdout.on('data', (data: string) => {
     const line = data.toString();
-    debug(line);
+    simpleLog.info(line);
   });
 };
 

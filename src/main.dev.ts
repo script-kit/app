@@ -19,11 +19,12 @@ import { test } from 'shelljs';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
-import { trySimpleScript, debug } from './simple';
+import { trySimpleScript } from './simple';
 import { createPromptWindow, createPreview, createPromptCache } from './prompt';
 import { createNotification } from './notifications';
 import { simplePath } from './helpers';
 import { createCache } from './cache';
+import { NEEDS_RESTART, state } from './state';
 
 app.setName('Simple Scripts');
 app.requestSingleInstanceLock();
@@ -57,23 +58,26 @@ const installExtensions = async () => {
 };
 
 autoUpdater.on('checking-for-update', () => {
-  debug('Checking for update...');
+  log.info('Checking for update...');
 });
 autoUpdater.on('update-available', (info) => {
-  debug('Update available.', info);
+  log.info('Update available.', info);
 });
 autoUpdater.on('update-not-available', (info) => {
-  debug('Update not available.', info);
+  log.info('Update not available.', info);
 });
 autoUpdater.on('download-progress', (progressObj) => {
   let logMessage = `Download speed: ${progressObj.bytesPerSecond}`;
   logMessage = `${logMessage} - Downloaded ${progressObj.percent}%`;
   logMessage = `${logMessage} (${progressObj.transferred}/${progressObj.total})`;
-  debug(logMessage);
+  log.info(logMessage);
 });
 
 autoUpdater.on('update-downloaded', () => {
+  log.info('update downloaded');
+  state.set(NEEDS_RESTART, true);
   autoUpdater.quitAndInstall();
+  app.quit();
 });
 
 app.on('window-all-closed', (e: Event) => e.preventDefault());
@@ -91,13 +95,13 @@ app.on('web-contents-created', (_, contents) => {
 
 const prepareProtocols = async () => {
   protocol.registerHttpProtocol('simple', (req, cb) => {
-    log.info(`FILE PROTOCOL`);
-    log.info(req);
+    log.info(`FILE PROTOCOL:`, req.url);
     const command = req.url.split(' ').slice(1);
     log.info(command);
   });
 
   app.on('open-url', (e, url) => {
+    log.info(`URL PROTOCOL`, url);
     e.preventDefault();
     const [command, ...runArgs] = decodeURI(url)
       .slice('simple://'.length)
@@ -106,7 +110,7 @@ const prepareProtocols = async () => {
     trySimpleScript(command, runArgs);
   });
 
-  const customProtocol = 'file2';
+  const customProtocol = 'simple';
 
   protocol.registerFileProtocol(customProtocol, (request, callback) => {
     const url = request.url.substr(customProtocol.length + 2);

@@ -4,12 +4,12 @@ import { getAssetPath } from './assets';
 
 const styles = 'dist/style.css';
 
-const page = (html: string) => `<!DOCTYPE html>
+const page = (html: string) =>
+  String.raw`<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Scripts</title>
     <link rel="stylesheet" href="${styles}">
 </head>
 <body>
@@ -17,7 +17,7 @@ const page = (html: string) => `<!DOCTYPE html>
 </body>
 </html>`;
 
-const customProtocol = 'file2';
+const customProtocol = 'simple';
 
 export const show = (html: string, options: any = {}) => {
   const cursor = screen.getCursorScreenPoint();
@@ -28,15 +28,16 @@ export const show = (html: string, options: any = {}) => {
   });
 
   const { width: screenWidth, height: screenHeight } = distScreen.workAreaSize;
-  const width = Math.floor((screenWidth / 4) * distScreen.scaleFactor);
-  const height = Math.floor((screenHeight / 4) * distScreen.scaleFactor);
+  const width =
+    options?.width || Math.floor((screenWidth / 4) * distScreen.scaleFactor);
+  const height =
+    options?.height || Math.floor((screenHeight / 4) * distScreen.scaleFactor);
   const x = distScreen.workArea.x + Math.floor(screenWidth / 2 - width / 2); // * distScreen.scaleFactor
   const y = distScreen.workArea.y + Math.floor(screenHeight / 2 - height / 2);
 
   const showWindow = new BrowserWindow({
-    frame: false,
-    transparent: true,
-    show: false,
+    frame: true,
+    transparent: false,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -63,14 +64,11 @@ export const show = (html: string, options: any = {}) => {
     }
   });
 
-  showWindow?.loadURL(
-    `data:text/html;charset=UTF-8,${encodeURIComponent(page(html))}`,
-    {
-      baseURLForDataURL: `${customProtocol}://${app
-        .getAppPath()
-        .replace('\\', '/')}/`,
-    }
-  );
+  showWindow?.loadURL(String.raw`data:text/html;charset=UTF-8,${page(html)}`, {
+    baseURLForDataURL: `${customProtocol}://${app
+      .getAppPath()
+      .replace('\\', '/')}/`,
+  });
 
   return showWindow;
 };

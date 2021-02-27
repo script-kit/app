@@ -1,7 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { app, BrowserWindow, protocol, screen } from 'electron';
-import log from 'electron-log';
-import path from 'path';
+import { app, BrowserWindow, screen } from 'electron';
 import { getAssetPath } from './assets';
 
 let notificationWindow: BrowserWindow | null = null;
@@ -53,7 +51,7 @@ const page = (html: string) => `<!DOCTYPE html>
 </body>
 </html>`;
 
-const customProtocol = 'file2';
+const customProtocol = 'simple';
 
 export const showNotification = (html: string, options: any = {}) => {
   notificationWindow?.loadURL(

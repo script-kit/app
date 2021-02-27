@@ -28,6 +28,7 @@ export default function App() {
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
+  const mainRef: RefObject<HTMLElement> = useRef(null);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -39,7 +40,6 @@ export default function App() {
     ipcRenderer.send('VALUE_SUBMITTED', { value: submitValue });
     setData({
       choices: [],
-      message: 'Finishing script...',
     });
     setChoices([]);
     setIndex(0);
@@ -90,19 +90,17 @@ export default function App() {
         const el = scrollRef.current;
         const selectedItem: any = el.firstElementChild?.children[newIndex];
         const itemY = selectedItem?.offsetTop;
-
-        if (itemY >= el.scrollTop + el.clientHeight) {
+        const marginBottom = parseInt(
+          getComputedStyle(selectedItem as any)?.marginBottom.replace('px', ''),
+          10
+        );
+        if (
+          itemY >=
+          el.scrollTop + el.clientHeight - selectedItem.clientHeight
+        ) {
           selectedItem?.scrollIntoView({ block: 'end', inline: 'nearest' });
           el.scrollTo({
-            top:
-              el.scrollTop +
-              parseInt(
-                getComputedStyle(selectedItem as any)?.marginBottom.replace(
-                  'px',
-                  ''
-                ),
-                10
-              ),
+            top: el.scrollTop + marginBottom,
           });
         } else if (itemY < el.scrollTop) {
           selectedItem?.scrollIntoView({ block: 'start', inline: 'nearest' });
@@ -238,6 +236,7 @@ export default function App() {
         WebkitAppRegion: 'drag',
         WebkitUserSelect: 'none',
       }}
+      ref={mainRef}
     >
       <input
         ref={inputRef}
@@ -282,8 +281,6 @@ export default function App() {
               w-full
               my-1
               h-16
-              dark:hover:bg-gray-800
-              hover:bg-gray-100
               whitespace-nowrap
               text-left
               flex

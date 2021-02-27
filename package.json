@@ -180,6 +180,7 @@
     "@types/chokidar": "^2.1.3",
     "@types/enzyme": "^3.10.5",
     "@types/enzyme-adapter-react-16": "^1.0.6",
+    "@types/he": "^1.1.1",
     "@types/history": "4.7.6",
     "@types/jest": "^26.0.15",
     "@types/lodash": "^4.14.167",
@@ -259,11 +260,14 @@
     "chokidar": "^3.5.0",
     "electron-debug": "^3.1.0",
     "electron-log": "^4.2.4",
-    "electron-store": "^7.0.1",
+    "electron-store": "^7.0.2",
     "electron-updater": "^4.3.4",
+    "he": "^1.2.0",
     "history": "^5.0.0",
+    "image-size": "^0.9.4",
     "iohook": "^0.7.2",
     "lodash": "^4.17.20",
+    "mdx-bundler": "^1.1.3",
     "node-ipc": "^9.1.3",
     "postcss": "^8.2.4",
     "react": "^17.0.1",
@@ -281,9 +285,6 @@
     "node": ">=10.x",
     "npm": ">=6.x",
     "yarn": ">=1.21.3"
-  },
-  "collective": {
-    "url": "https://opencollective.com/electron-react-boilerplate-594"
   },
   "browserslist": [],
   "prettier": {
