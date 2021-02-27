@@ -1,3 +1,10 @@
+# [1.1.0-beta.38](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.37...v1.1.0-beta.38) (2021-02-27)
+
+
+### Features
+
+* **update:** Checkout Simple Scripts tag ([9dea520](https://github.com/johnlindquist/simple/commit/9dea52058b1cbf6b5cf19193c56ec9e643759ea5))
+
 # [1.1.0-beta.37](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.36...v1.1.0-beta.37) (2021-02-27)
 
 
