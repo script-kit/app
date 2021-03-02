@@ -41,7 +41,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn postinstall && yarn build && yarn electron-builder --publish always --owner johnlindquist --repo kitapp --mac
+          yarn postinstall && yarn build && yarn electron-builder --publish always --mac
 
       - name: Clone kit
         run: |
