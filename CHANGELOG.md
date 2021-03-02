@@ -1,3 +1,10 @@
+# [1.1.0-beta.41](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.40...v1.1.0-beta.41) (2021-03-02)
+
+
+### Features
+
+* **project:** Match app tag to kit tag ([12cae5b](https://github.com/johnlindquist/kitapp/commit/12cae5b5a99d05dad3d02981ae1f253c98788733))
+
 # [1.1.0-beta.40](https://github.com/johnlindquist/simple/compare/v1.1.0-beta.39...v1.1.0-beta.40) (2021-02-27)
 
 
