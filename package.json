@@ -100,7 +100,7 @@
     "publish": {
       "provider": "github",
       "owner": "johnlindquist",
-      "repo": "kit"
+      "repo": "kitapp"
     }
   },
   "repository": {
