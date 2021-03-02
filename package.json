@@ -327,12 +327,5 @@
       "x64",
       "ia32"
     ]
-  },
-  "release": {
-    "branches": [
-      "beta",
-      "master",
-      "next"
-    ]
   }
 }
