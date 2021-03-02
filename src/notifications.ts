@@ -1,6 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { app, BrowserWindow, screen } from 'electron';
 import { getAssetPath } from './assets';
+import { KIT_PROTOCOL } from './helpers';
 
 let notificationWindow: BrowserWindow | null = null;
 
@@ -51,13 +52,11 @@ const page = (html: string) => `<!DOCTYPE html>
 </body>
 </html>`;
 
-const customProtocol = 'kit';
-
 export const showNotification = (html: string, options: any = {}) => {
   notificationWindow?.loadURL(
     `data:text/html;charset=UTF-8,${encodeURIComponent(page(html))}`,
     {
-      baseURLForDataURL: `${customProtocol}://${app
+      baseURLForDataURL: `${KIT_PROTOCOL}://${app
         .getAppPath()
         .replace('\\', '/')}/`,
     }

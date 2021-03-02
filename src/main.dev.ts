@@ -24,16 +24,16 @@ import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
 import { createPromptWindow, createPreview, createPromptCache } from './prompt';
 import { createNotification } from './notifications';
-import { sk, KIT, SKA } from './helpers';
+import { APP_NAME, sk, KIT, SKA, KIT_PROTOCOL } from './helpers';
 import { createCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
 
 const setupLog = log.create('setup');
 
-app.setName('Kit');
+app.setName(APP_NAME);
 app.requestSingleInstanceLock();
-app.setAsDefaultProtocolClient('kit');
+app.setAsDefaultProtocolClient(KIT_PROTOCOL);
 app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
 
@@ -99,7 +99,7 @@ app.on('web-contents-created', (_, contents) => {
 });
 
 const prepareProtocols = async () => {
-  protocol.registerHttpProtocol('kit', (req, cb) => {
+  protocol.registerHttpProtocol(KIT_PROTOCOL, (req, cb) => {
     log.info(`FILE PROTOCOL:`, req.url);
     const command = req.url.split(' ').slice(1);
     log.info(command);
@@ -115,10 +115,8 @@ const prepareProtocols = async () => {
     tryKitScript(command, runArgs);
   });
 
-  const customProtocol = 'kit';
-
-  protocol.registerFileProtocol(customProtocol, (request, callback) => {
-    const url = request.url.substr(customProtocol.length + 2);
+  protocol.registerFileProtocol(KIT_PROTOCOL, (request, callback) => {
+    const url = request.url.substr(KIT_PROTOCOL.length + 2);
     const file = { path: url };
 
     callback(file);
@@ -149,7 +147,6 @@ const ready = async () => {
 };
 
 const options: SpawnSyncOptions = {
-  stdio: 'inherit',
   cwd: KIT,
   env: {
     KIT,
@@ -191,9 +188,7 @@ const checkKit = async () => {
         cwd: app.getPath('home'),
       }
     );
-    setupLog.info({ gitResult });
-
-    await checkoutKitTag();
+    setupLog.info(gitResult.stdout.toString().trim());
 
     // Step 2: Install node into .kit/node
     const installNodeResult = spawnSync(
@@ -201,12 +196,25 @@ const checkKit = async () => {
       ` --prefix node --platform darwin`.split(' '),
       options
     );
-    setupLog.info({ installNodeResult });
+    setupLog.info(installNodeResult.stdout.toString().trim());
 
     // Step 3: npm install packages into .kit/node_modules
     const npmResult = spawnSync(`npm`, [`i`], options);
-    setupLog.info({ npmResult });
-  } else {
+    setupLog.info(npmResult.stdout.toString().trim());
+  }
+
+  const { stdout } = spawnSync(
+    `git`,
+    `describe --tags --exact-match HEAD`.split(' '),
+    options
+  );
+
+  const kitVersion = stdout.toString().trim();
+  console.log(`KIT ${kitVersion} - KIT APP ${getVersion()}`);
+  if (kitVersion !== getVersion()) {
+    // TODO: verify tag
+    // git show-ref --verify refs/tags/
+    console.log(`Checking out ${getVersion()}`);
     await checkoutKitTag();
   }
 

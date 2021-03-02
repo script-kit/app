@@ -1,6 +1,8 @@
 import { app } from 'electron';
 import path from 'path';
 
+export const APP_NAME = 'Kit';
+export const KIT_PROTOCOL = 'kit';
 export const SKA = path.join(app.getPath('home'), '.ska');
 export const KIT = path.join(app.getPath('home'), '.kit');
 

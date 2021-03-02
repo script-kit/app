@@ -1,6 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { app, BrowserWindow, screen } from 'electron';
 import { getAssetPath } from './assets';
+import { KIT_PROTOCOL } from './helpers';
 
 const styles = 'dist/style.css';
 
@@ -16,8 +17,6 @@ const page = (html: string) =>
     ${html}
 </body>
 </html>`;
-
-const customProtocol = 'kit';
 
 export const show = (html: string, options: any = {}) => {
   const cursor = screen.getCursorScreenPoint();
@@ -65,7 +64,7 @@ export const show = (html: string, options: any = {}) => {
   });
 
   showWindow?.loadURL(String.raw`data:text/html;charset=UTF-8,${page(html)}`, {
-    baseURLForDataURL: `${customProtocol}://${app
+    baseURLForDataURL: `${KIT_PROTOCOL}://${app
       .getAppPath()
       .replace('\\', '/')}/`,
   });

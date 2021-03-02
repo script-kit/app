@@ -5,7 +5,7 @@ import log from 'electron-log';
 import Store from 'electron-store';
 import { EventEmitter } from 'events';
 import { getAssetPath } from './assets';
-import { sk } from './helpers';
+import { KIT, KIT_PROTOCOL, sk } from './helpers';
 
 let promptCache: Store | null = null;
 export const getPromptCache = () => {
@@ -166,8 +166,6 @@ const page = (html: string) => `<!DOCTYPE html>
 </body>
 </html>`;
 
-const customProtocol = 'kit';
-
 export const createPreview = async () => {
   previewWindow = new BrowserWindow({
     frame: false,
@@ -207,7 +205,7 @@ export const showPreview = async (html: string) => {
       previewWindow.loadURL(
         `data:text/html;charset=UTF-8,${encodeURIComponent(page(html))}`,
         {
-          baseURLForDataURL: `${customProtocol}://${app
+          baseURLForDataURL: `${KIT_PROTOCOL}://${app
             .getAppPath()
             .replace('\\', '/')}/`,
         }
