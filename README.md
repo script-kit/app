@@ -1,5 +1,5 @@
-# Simple Scripts App
+# Script Kit App
 
-The companion app.
+The companion app to Script Kit.
 
-[https://simplescripts.dev](https://simplescripts.dev)
+[https://scriptkit.app](https://scriptkit.app)

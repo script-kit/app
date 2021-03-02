@@ -2,7 +2,7 @@
 import { Tray } from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
-import { trySimpleScript } from './simple';
+import { tryKitScript } from './kit';
 import { getAssetPath } from './assets';
 import { restartIfNecessary } from './restart';
 
@@ -11,20 +11,20 @@ let tray: Tray | null = null;
 const leftClick = async (event: KeyboardEvent) => {
   restartIfNecessary();
   if (event.metaKey) {
-    trySimpleScript('app/command-click');
+    tryKitScript('app/command-click');
   } else if (event.shiftKey) {
-    trySimpleScript('app/shift-click');
+    tryKitScript('app/shift-click');
   } else if (event.ctrlKey) {
-    trySimpleScript('app/control-click');
+    tryKitScript('app/control-click');
   } else if (event.altKey) {
-    trySimpleScript('app/alt-click');
+    tryKitScript('app/alt-click');
   } else {
-    trySimpleScript('app/left-click');
+    tryKitScript('app/left-click');
   }
 };
 
 const rightClick = async () => {
-  trySimpleScript('app/right-click');
+  tryKitScript('app/right-click');
 };
 
 const trayIcon = getAssetPath('IconTemplate.png');

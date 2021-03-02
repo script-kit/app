@@ -12,7 +12,7 @@ import React, {
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
-import { SimplePromptOptions } from './types';
+import { KitPromptOptions } from './types';
 
 interface ChoiceData {
   name: string;
@@ -178,10 +178,7 @@ export default function App() {
       }
     };
 
-    const showPromptHandler = (
-      _event: any,
-      promptData: SimplePromptOptions
-    ) => {
+    const showPromptHandler = (_event: any, promptData: KitPromptOptions) => {
       setData(promptData);
       setIndex(0);
       if (inputRef.current) {

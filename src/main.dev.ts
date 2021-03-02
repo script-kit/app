@@ -1,3 +1,5 @@
+/* eslint-disable jest/no-identical-title */
+/* eslint-disable jest/expect-expect */
 /* eslint global-require: off, no-console: off */
 
 /**
@@ -19,19 +21,19 @@ import { test } from 'shelljs';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
-import { trySimpleScript } from './simple';
+import { tryKitScript } from './kit';
 import { createPromptWindow, createPreview, createPromptCache } from './prompt';
 import { createNotification } from './notifications';
-import { simplePath } from './helpers';
+import { sk, KIT, SKA } from './helpers';
 import { createCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
 
 const setupLog = log.create('setup');
 
-app.setName('Simple');
+app.setName('Kit');
 app.requestSingleInstanceLock();
-app.setAsDefaultProtocolClient('simple');
+app.setAsDefaultProtocolClient('kit');
 app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
 
@@ -97,7 +99,7 @@ app.on('web-contents-created', (_, contents) => {
 });
 
 const prepareProtocols = async () => {
-  protocol.registerHttpProtocol('simple', (req, cb) => {
+  protocol.registerHttpProtocol('kit', (req, cb) => {
     log.info(`FILE PROTOCOL:`, req.url);
     const command = req.url.split(' ').slice(1);
     log.info(command);
@@ -107,13 +109,13 @@ const prepareProtocols = async () => {
     log.info(`URL PROTOCOL`, url);
     e.preventDefault();
     const [command, ...runArgs] = decodeURI(url)
-      .slice('simple://'.length)
+      .slice('kit://'.length)
       .split(' ');
 
-    trySimpleScript(command, runArgs);
+    tryKitScript(command, runArgs);
   });
 
-  const customProtocol = 'simple';
+  const customProtocol = 'kit';
 
   protocol.registerFileProtocol(customProtocol, (request, callback) => {
     const url = request.url.substr(customProtocol.length + 2);
@@ -124,7 +126,7 @@ const prepareProtocols = async () => {
 };
 
 const createLogs = () => {
-  log.transports.file.resolvePath = () => simplePath('logs', 'simple.log');
+  log.transports.file.resolvePath = () => sk('logs', 'kit.log');
 };
 
 const createCaches = () => {
@@ -146,20 +148,17 @@ const ready = async () => {
   autoUpdater.checkForUpdatesAndNotify();
 };
 
-const SIMPLE_SDK = path.join(app.getPath('home'), '.simplesdk');
-const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
-
 const options: SpawnSyncOptions = {
   stdio: 'inherit',
-  cwd: SIMPLE_SDK,
+  cwd: KIT,
   env: {
-    SIMPLE_SDK,
-    SIMPLE_PATH,
-    PATH: `${path.join(SIMPLE_SDK, 'node', 'bin')}:${process.env.PATH}`,
+    KIT,
+    SKA,
+    PATH: `${path.join(KIT, 'node', 'bin')}:${process.env.PATH}`,
   },
 };
 
-const checkoutSimpleScriptsTag = async () => {
+const checkoutKitTag = async () => {
   const gitFetchTagsResult = spawnSync(
     'git',
     `fetch --all --tags`.split(' '),
@@ -175,20 +174,18 @@ const checkoutSimpleScriptsTag = async () => {
   setupLog.info({ gitCheckoutTagResult });
 };
 
-const checkSimpleScripts = async () => {
+const checkKit = async () => {
   // eslint-disable-next-line jest/expect-expect
-  const sdkExists = test('-d', SIMPLE_SDK);
+  const kitExists = test('-d', KIT);
 
-  setupLog.info(`Checking if sdk exists`);
-  if (!sdkExists) {
-    setupLog.info(`~/.simplesdk not found. Installing...`);
+  setupLog.info(`Checking if kit exists`);
+  if (!kitExists) {
+    setupLog.info(`~/.kit not found. Installing...`);
 
     // Step 1: Clone repo
     const gitResult = spawnSync(
       'git',
-      `clone https://github.com/johnlindquist/simplescripts.git ${SIMPLE_SDK}`.split(
-        ' '
-      ),
+      `clone https://github.com/johnlindquist/kit.git ${KIT}`.split(' '),
       {
         ...options,
         cwd: app.getPath('home'),
@@ -196,9 +193,9 @@ const checkSimpleScripts = async () => {
     );
     setupLog.info({ gitResult });
 
-    await checkoutSimpleScriptsTag();
+    await checkoutKitTag();
 
-    // Step 2: Install node into .simplesdk/node
+    // Step 2: Install node into .kit/node
     const installNodeResult = spawnSync(
       `./setup/install-node.sh`,
       ` --prefix node --platform darwin`.split(' '),
@@ -206,18 +203,22 @@ const checkSimpleScripts = async () => {
     );
     setupLog.info({ installNodeResult });
 
-    // Step 3: npm install packages into .simplesdk/node_modules
+    // Step 3: npm install packages into .kit/node_modules
     const npmResult = spawnSync(`npm`, [`i`], options);
     setupLog.info({ npmResult });
-
-    // Step 4: Use simple.sh wrapper to run setup.js script
-    const setupResult = spawnSync(`./simple.sh`, [`./setup/setup.js`], options);
-    setupLog.info({ createEnvResult: setupResult });
   } else {
-    await checkoutSimpleScriptsTag();
+    await checkoutKitTag();
+  }
+
+  const skaExists = test('-d', SKA);
+
+  if (!skaExists) {
+    // Step 4: Use kit wrapper to run setup.js script
+    const setupResult = spawnSync(`./bin/kit`, [`./setup/setup.js`], options);
+    setupLog.info({ createEnvResult: setupResult });
   }
 
   await ready();
 };
 
-app.whenReady().then(checkSimpleScripts).catch(setupLog.warn);
+app.whenReady().then(checkKit).catch(setupLog.warn);

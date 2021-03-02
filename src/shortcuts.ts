@@ -5,8 +5,8 @@ import { globalShortcut } from 'electron';
 import chokidar from 'chokidar';
 import path from 'path';
 
-import { trySimpleScript } from './simple';
-import { simplePath } from './helpers';
+import { tryKitScript } from './kit';
+import { sk } from './helpers';
 import { getCache } from './cache';
 
 export const shortcutMap = new Map();
@@ -71,7 +71,7 @@ const onFilesChanged = (
     const ret = globalShortcut.register(shortcut, () => {
       // const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
 
-      trySimpleScript(filePath, []);
+      tryKitScript(filePath, []);
     });
 
     if (!ret) {
@@ -87,12 +87,8 @@ const onFilesChanged = (
 
 export const manageShortcuts = async () => {
   chokidar
-    .watch(
-      [
-        `${simplePath('scripts')}${path.sep}*.js`,
-        `${simplePath('app')}${path.sep}*.js`,
-      ],
-      { depth: 0 }
-    )
+    .watch([`${sk('scripts')}${path.sep}*.js`, `${sk('app')}${path.sep}*.js`], {
+      depth: 0,
+    })
     .on('all', onFilesChanged);
 };

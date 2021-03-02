@@ -1,25 +1,23 @@
 import { app } from 'electron';
 import path from 'path';
 
-const SIMPLE_PATH = path.join(app.getPath('home'), '.simple');
-const SDK_PATH = path.join(app.getPath('home'), '.simplesdk');
+export const SKA = path.join(app.getPath('home'), '.ska');
+export const KIT = path.join(app.getPath('home'), '.kit');
 
-export const simplePath = (...parts: string[]) =>
-  path.join(SIMPLE_PATH, ...parts);
+export const sk = (...parts: string[]) => path.join(SKA, ...parts);
 
-export const sdkPath = (...parts: string[]) => path.join(SDK_PATH, ...parts);
+export const kitPath = (...parts: string[]) => path.join(KIT, ...parts);
 
-export const SIMPLE_SCRIPTS_PATH = simplePath('scripts');
-export const SIMPLE_APP_SCRIPTS_PATH = simplePath('app');
-export const SIMPLE_BIN_PATH = simplePath('bin');
-export const SIMPLE_NODE_PATH = simplePath('node');
+export const SKA_SCRIPTS = sk('scripts');
+export const SKA_APP = sk('app');
+export const SKA_BIN = sk('bin');
 
 export const stringifyScriptArgsKey = (
   scriptPath: string,
   runArgs: string[]
 ): any => {
   const scriptString: string = scriptPath
-    .replace(simplePath() + path.sep, '')
+    .replace(sk() + path.sep, '')
     .replace('.js', '');
   const argsString: string = runArgs ? `${runArgs.join('.')}` : ``;
 

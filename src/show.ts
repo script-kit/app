@@ -17,7 +17,7 @@ const page = (html: string) =>
 </body>
 </html>`;
 
-const customProtocol = 'simple';
+const customProtocol = 'kit';
 
 export const show = (html: string, options: any = {}) => {
   const cursor = screen.getCursorScreenPoint();

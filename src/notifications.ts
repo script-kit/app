@@ -43,7 +43,7 @@ const page = (html: string) => `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Scripts Notification</title>
+    <title>Kit Notification</title>
     <link rel="stylesheet" href="${styles}">
 </head>
 <body>
@@ -51,7 +51,7 @@ const page = (html: string) => `<!DOCTYPE html>
 </body>
 </html>`;
 
-const customProtocol = 'simple';
+const customProtocol = 'kit';
 
 export const showNotification = (html: string, options: any = {}) => {
   notificationWindow?.loadURL(

@@ -2,3 +2,12 @@
 # yarn lockfile v1
 
 
+"@types/core-js@^2.5.4":
+  "integrity" "sha512-Xwy8o12ak+iYgFr/KCVaVK5Sy+jFMiiPAID3+ObvMlBzy26XQJw5xu+a6rlHsrJENXj/AwJOGsJpVohUjAzSKQ=="
+  "resolved" "https://registry.npmjs.org/@types/core-js/-/core-js-2.5.4.tgz"
+  "version" "2.5.4"
+
+"@types/regenerator-runtime@^0.13.0":
+  "integrity" "sha512-U5osy6qZU3lOPGQRHGDIAt/hC/jAE7zP4Aq258UMXnF8/htmZ+72ALrSsmWTtqML7lCztKkKaPz6Pb5XHJF0Vw=="
+  "resolved" "https://registry.npmjs.org/@types/regenerator-runtime/-/regenerator-runtime-0.13.0.tgz"
+  "version" "0.13.0"

@@ -9,7 +9,7 @@ import sizeOf from 'image-size';
 
 import path from 'path';
 import { fork, ChildProcess } from 'child_process';
-import simpleLog from 'electron-log';
+import kitLog from 'electron-log';
 import { debounce } from 'lodash';
 import {
   invokePromptWindow,
@@ -22,7 +22,7 @@ import {
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
-import { sdkPath, simplePath, stringifyScriptArgsKey } from './helpers';
+import { kitPath, sk, stringifyScriptArgsKey, KIT, SKA } from './helpers';
 import { getCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
@@ -32,9 +32,8 @@ let script = '';
 let key = '';
 let cacheKeyParts: any[] = [];
 
-const consoleLog = simpleLog.create('consoleLog');
-consoleLog.transports.file.resolvePath = () =>
-  simplePath('logs', 'console.log');
+const consoleLog = kitLog.create('consoleLog');
+consoleLog.transports.file.resolvePath = () => sk('logs', 'console.log');
 
 export const processMap = new Map();
 
@@ -43,7 +42,7 @@ ipcMain.on('VALUE_SUBMITTED', (_event, { value }) => {
   if (child) {
     child?.send(value);
   } else {
-    trySimpleScript(script, cacheKeyParts);
+    tryKitScript(script, cacheKeyParts);
   }
 });
 
@@ -53,7 +52,7 @@ ipcMain.on(
     if (child && input) {
       child?.send({ from: 'INPUT_CHANGED', input });
     } else if (input) {
-      trySimpleScript(script, [...cacheKeyParts, '--simple-input', input]);
+      tryKitScript(script, [...cacheKeyParts, '--kit-input', input]);
     }
   }, 250)
 );
@@ -70,10 +69,10 @@ ipcMain.on(
 );
 
 const reset = () => {
-  simpleLog.info(`---RESET: ${cacheKeyParts}`);
+  kitLog.info(`---RESET: ${cacheKeyParts}`);
   cacheKeyParts = [];
   if (child) {
-    simpleLog.info(`Exiting: ${child.pid}`);
+    kitLog.info(`Exiting: ${child.pid}`);
     processMap.delete(child?.pid);
     child?.removeAllListeners();
     child?.kill();
@@ -85,70 +84,70 @@ const reset = () => {
 
 hideEmitter.on('hide', reset);
 
-const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
+const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   invokePromptWindow('CLEAR_PROMPT', {});
 
   const resolvePath = scriptPath.startsWith(path.sep)
     ? scriptPath
-    : simplePath(scriptPath);
+    : sk(scriptPath);
 
   const codePath = 'usr/local/bin/';
 
   ({ key, script } = stringifyScriptArgsKey(scriptPath, runArgs));
 
-  simpleLog.info(`>>> GET: ${key}`);
+  kitLog.info(`>>> GET: ${key}`);
   const cachedResult: any = getCache()?.get(key);
   if (cachedResult) {
-    simpleLog.info(`GOT CACHE:`, key);
+    kitLog.info(`GOT CACHE:`, key);
     invokePromptWindow('SHOW_PROMPT_WITH_DATA', cachedResult);
 
     return;
   }
 
-  simpleLog.info(`FORK: ${resolvePath} ${[...runArgs, '--app']}`);
+  kitLog.info(`FORK: ${resolvePath} ${[...runArgs, '--app']}`);
 
   child = fork(resolvePath, [...runArgs, '--app'], {
     silent: true,
     // stdio: 'inherit',
-    execPath: sdkPath('node', 'bin', 'node'),
+    execPath: kitPath('node', 'bin', 'node'),
     execArgv: [
       '--require',
       'dotenv/config',
       '--require',
-      sdkPath('preload', 'api.cjs'),
+      kitPath('preload', 'api.cjs'),
       '--require',
-      sdkPath('preload', 'simple.cjs'),
+      kitPath('preload', 'kit.cjs'),
       '--require',
-      sdkPath('preload', 'mac.cjs'),
+      kitPath('preload', 'mac.cjs'),
     ],
     env: {
-      SIMPLE_CONTEXT: 'app',
-      SIMPLE_MAIN: resolvePath,
-      PATH: `${sdkPath('node', 'bin')}:${codePath}:${process.env.PATH}`,
-      SIMPLE_PATH: simplePath(),
-      SIMPLE_SDK: sdkPath(),
-      NODE_PATH: `${simplePath('node_modules')}:${sdkPath('node_modules')}`,
-      DOTENV_CONFIG_PATH: simplePath('.env'),
-      SIMPLE_APP_VERSION: getVersion(),
+      KIT_CONTEXT: 'app',
+      KIT_MAIN: resolvePath,
+      PATH: `${kitPath('node', 'bin')}:${codePath}:${process.env.PATH}`,
+      SKA,
+      KIT,
+      NODE_PATH: `${sk('node_modules')}:${kitPath('node_modules')}`,
+      DOTENV_CONFIG_PATH: sk('.env'),
+      KIT_APP_VERSION: getVersion(),
     },
   });
   processMap.set(child.pid, scriptPath);
 
-  simpleLog.info(`Starting ${child.pid} - ${scriptPath}`);
+  kitLog.info(`Starting ${child.pid} - ${scriptPath}`);
 
   const tryClean = (on: string) => () => {
     try {
-      simpleLog.info(on, scriptPath, '| PID:', child?.pid);
-      simpleLog.info(`tryClean...`, scriptPath);
+      kitLog.info(on, scriptPath, '| PID:', child?.pid);
+      kitLog.info(`tryClean...`, scriptPath);
       hidePromptWindow(true);
     } catch (error) {
-      simpleLog.warn(error);
+      kitLog.warn(error);
     }
   };
 
   child.on('close', tryClean('CLOSE'));
   child.on('message', async (data: any) => {
-    simpleLog.info('> FROM:', data.from);
+    kitLog.info('> FROM:', data.from);
 
     switch (data.from) {
       case 'CLEAR_CACHE':
@@ -195,7 +194,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       case 'RUN_SCRIPT':
-        trySimpleScript(data.scriptPath, data.runArgs);
+        tryKitScript(data.scriptPath, data.runArgs);
         break;
 
       case 'SET_LOGIN':
@@ -240,7 +239,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         ({ script, key } = stringifyScriptArgsKey(script, cacheKeyParts));
 
         if (data.cache && !getCache()?.get(key)) {
-          simpleLog.info(`>>>SET: ${key}`);
+          kitLog.info(`>>>SET: ${key}`);
           if (key && data?.choices?.length > 0) {
             getCache()?.set(key, data);
           }
@@ -278,7 +277,7 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       default:
-        simpleLog.info(`Unknown message ${data.from}`);
+        kitLog.info(`Unknown message ${data.from}`);
     }
   });
 
@@ -290,14 +289,14 @@ const simpleScript = (scriptPath: string, runArgs: string[] = []) => {
 
   (child as any).stdout.on('data', (data: string) => {
     const line = data.toString();
-    simpleLog.info(line);
+    kitLog.info(line);
   });
 };
 
-export const trySimpleScript = (filePath: string, runArgs: string[] = []) => {
+export const tryKitScript = (filePath: string, runArgs: string[] = []) => {
   try {
-    simpleScript(filePath, runArgs);
+    kitScript(filePath, runArgs);
   } catch (error) {
-    simpleLog.error(error);
+    kitLog.error(error);
   }
 };

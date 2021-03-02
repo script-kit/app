@@ -1,7 +1,7 @@
 {
-  "name": "simple",
-  "productName": "Simple",
-  "description": "A companion app for Simple Scripts",
+  "name": "kit",
+  "productName": "Kit",
+  "description": "The Script Kit App",
   "scripts": {
     "build": "concurrently \"yarn build:main\" \"yarn build:renderer\"",
     "build:main": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.babel.js",
@@ -30,8 +30,8 @@
     ]
   },
   "build": {
-    "productName": "Simple",
-    "appId": "dev.simplescripts",
+    "productName": "Kit",
+    "appId": "app.scriptkit",
     "files": [
       "dist/",
       "node_modules/",
@@ -45,10 +45,10 @@
     "afterSign": ".erb/scripts/Notarize.js",
     "protocols": [
       {
-        "name": "simple",
+        "name": "kit",
         "role": "Viewer",
         "schemes": [
-          "simple"
+          "kit"
         ]
       }
     ],
@@ -95,26 +95,26 @@
     },
     "extraResources": [
       "./assets/**",
-      "./simplescripts/**"
+      "./kit/**"
     ],
     "publish": {
       "provider": "github",
       "owner": "johnlindquist",
-      "repo": "simple"
+      "repo": "kit"
     }
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/johnlindquist/simple.git"
+    "url": "git+https://github.com/johnlindquist/kit.git"
   },
   "author": {
     "name": "John Lindquist",
     "email": "johnlindquist@gmail.com",
-    "url": "https://simplescripts.dev"
+    "url": "https://scriptkit.app"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/johnlindquist/simple/issues"
+    "url": "https://github.com/johnlindquist/kitapp/issues"
   },
   "keywords": [
     "electron",
@@ -122,7 +122,7 @@
     "typescript",
     "ts"
   ],
-  "homepage": "https://github.com/johnlindquist/simple#readme",
+  "homepage": "https://github.com/johnlindquist/kitapp#readme",
   "jest": {
     "testURL": "http://localhost/",
     "moduleNameMapper": {

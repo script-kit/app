@@ -43,20 +43,20 @@ jobs:
         run: |
           yarn postinstall && yarn build && yarn electron-builder --publish always --mac
 
-      - name: Clone simplescripts
+      - name: Clone kit
         run: |
-          git clone https://github.com/johnlindquist/simplescripts.git ~/.simplesdk
+          git clone https://github.com/johnlindquist/kit.git ~/.kit
 
-      - name: Install Simple Scripts
+      - name: Install Kit
         run: |
-          cd ~/.simplesdk
+          cd ~/.kit
           bash ./setup/install-node.sh --prefix ./node
           ./node/bin/npm install --prefix ./
           ./node/bin/npm install @octokit/rest --prefix ./
 
-      - name: Tag Simple Scripts
+      - name: Tag Kit
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_TOKEN }}
         run: |
-          cd ~/.simplesdk
-          bash ./simple.sh ./setup/create-tag.js ${{ steps.semantic.outputs.new_release_version }}
+          cd ~/.kit
+          bash ./bin/kit.sh ./ci/create-tag.js ${{ steps.semantic.outputs.new_release_version }}

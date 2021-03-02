@@ -5,7 +5,7 @@ import log from 'electron-log';
 import Store from 'electron-store';
 import { EventEmitter } from 'events';
 import { getAssetPath } from './assets';
-import { simplePath } from './helpers';
+import { sk } from './helpers';
 
 let promptCache: Store | null = null;
 export const getPromptCache = () => {
@@ -15,13 +15,13 @@ export const getPromptCache = () => {
 export const createPromptCache = () => {
   promptCache = new Store({
     name: 'prompt',
-    cwd: simplePath('cache'),
+    cwd: sk('cache'),
   });
   promptCache.clear();
 };
 
 let promptWindow: BrowserWindow | null = null;
-let blurredBySimple = false;
+let blurredByKit = false;
 
 export const hideEmitter = new EventEmitter();
 
@@ -127,10 +127,10 @@ export const hidePromptWindow = (ignoreBlur = false) => {
   invokePromptWindow('CLEAR_PROMPT', {});
 
   if (ignoreBlur) {
-    blurredBySimple = false;
+    blurredByKit = false;
   }
 
-  if (promptWindow && promptWindow?.isVisible() && !blurredBySimple) {
+  if (promptWindow && promptWindow?.isVisible() && !blurredByKit) {
     const distScreen = screen.getDisplayNearestPoint({
       x: promptWindow.getBounds().x,
       y: promptWindow.getBounds().y,
@@ -145,7 +145,7 @@ export const hidePromptWindow = (ignoreBlur = false) => {
       promptWindow?.hide();
     }
   }
-  blurredBySimple = false;
+  blurredByKit = false;
   hideEmitter.emit('hide');
 };
 
@@ -158,7 +158,7 @@ const page = (html: string) => `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Scripts</title>
+    <title>Kit</title>
     <link rel="stylesheet" href="${styles}">
 </head>
 <body class="flex flex-row-reverse">
@@ -166,7 +166,7 @@ const page = (html: string) => `<!DOCTYPE html>
 </body>
 </html>`;
 
-const customProtocol = 'simple';
+const customProtocol = 'kit';
 
 export const createPreview = async () => {
   previewWindow = new BrowserWindow({
@@ -252,7 +252,7 @@ export const showPreview = async (html: string) => {
       previewWindow?.setMinimumSize(width, height);
     }
     previewWindow.setFocusable(false);
-    blurredBySimple = true;
+    blurredByKit = true;
     previewWindow?.show();
   }
 
