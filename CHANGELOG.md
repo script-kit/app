@@ -1,3 +1,11 @@
+# [1.1.0-beta.43](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.42...v1.1.0-beta.43) (2021-03-02)
+
+
+### Bug Fixes
+
+* **tag:** builder options ([943f4c8](https://github.com/johnlindquist/kitapp/commit/943f4c83b0a766691b09a6fce0419d70623b7598))
+* **tag:** Target correct repo lol ([c3e7d05](https://github.com/johnlindquist/kitapp/commit/c3e7d0521de03d3813d7056fc03d2fa27d09f925))
+
 # [1.1.0-beta.42](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.41...v1.1.0-beta.42) (2021-03-02)
 
 
