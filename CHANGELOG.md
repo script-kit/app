@@ -1,3 +1,10 @@
+# [1.1.0-beta.42](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.41...v1.1.0-beta.42) (2021-03-02)
+
+
+### Bug Fixes
+
+* **tag:** Fixing scoped token ([a3e3848](https://github.com/johnlindquist/kitapp/commit/a3e3848113d6b6e882e083a4115fbab572367c42))
+
 # [1.1.0-beta.41](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.40...v1.1.0-beta.41) (2021-03-02)
 
 
