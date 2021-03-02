@@ -59,4 +59,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.SECRET_TOKEN }}
         run: |
           cd ~/.kit
-          bash ./bin/kit ./ci/create-tag.js ${{ steps.semantic.outputs.new_release_version }}
+          ./bin/kit ./ci/create-tag.js ${{ steps.semantic.outputs.new_release_version }}
