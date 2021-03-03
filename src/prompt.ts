@@ -5,7 +5,7 @@ import log from 'electron-log';
 import Store from 'electron-store';
 import { EventEmitter } from 'events';
 import { getAssetPath } from './assets';
-import { KIT, KIT_PROTOCOL, kenv } from './helpers';
+import { KIT_PROTOCOL, kenv } from './helpers';
 
 let promptCache: Store | null = null;
 export const getPromptCache = () => {

@@ -6,6 +6,7 @@ import url from 'url';
 import http from 'http';
 import https from 'https';
 import sizeOf from 'image-size';
+import minimist from 'minimist';
 
 import path from 'path';
 import { fork, ChildProcess } from 'child_process';
@@ -83,6 +84,13 @@ const reset = () => {
 };
 
 hideEmitter.on('hide', reset);
+
+app.on('second-instance', async (event, argv, workingDirectory) => {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const { _ } = minimist(argv);
+  const [, , argScript, ...argArgs] = _;
+  tryKitScript(argScript, argArgs);
+});
 
 const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   invokePromptWindow('CLEAR_PROMPT', {});

@@ -1,3 +1,4 @@
+/* eslint-disable import/first */
 /* eslint-disable jest/no-identical-title */
 /* eslint-disable jest/expect-expect */
 /* eslint global-require: off, no-console: off */
@@ -10,9 +11,15 @@
  * When running `yarn build` or `yarn build-main`, this file is compiled to
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
+
+import { app, protocol } from 'electron';
+
+if (!app.requestSingleInstanceLock()) {
+  app.exit();
+}
+
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
-import { app, protocol } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
@@ -32,7 +39,7 @@ import { getVersion } from './version';
 const setupLog = log.create('setup');
 
 app.setName(APP_NAME);
-app.requestSingleInstanceLock();
+
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
 app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
@@ -141,7 +148,6 @@ const ready = async () => {
   await createPromptWindow();
   await createPreview();
   await createNotification();
-
   autoUpdater.logger = log;
   autoUpdater.checkForUpdatesAndNotify();
 };
