@@ -6,7 +6,7 @@ import chokidar from 'chokidar';
 import path from 'path';
 
 import { tryKitScript } from './kit';
-import { sk } from './helpers';
+import { kenv } from './helpers';
 import { getCache } from './cache';
 
 export const shortcutMap = new Map();
@@ -87,8 +87,11 @@ const onFilesChanged = (
 
 export const manageShortcuts = async () => {
   chokidar
-    .watch([`${sk('scripts')}${path.sep}*.js`, `${sk('app')}${path.sep}*.js`], {
-      depth: 0,
-    })
+    .watch(
+      [`${kenv('scripts')}${path.sep}*.js`, `${kenv('app')}${path.sep}*.js`],
+      {
+        depth: 0,
+      }
+    )
     .on('all', onFilesChanged);
 };

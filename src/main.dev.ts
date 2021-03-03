@@ -24,7 +24,7 @@ import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
 import { createPromptWindow, createPreview, createPromptCache } from './prompt';
 import { createNotification } from './notifications';
-import { APP_NAME, sk, KIT, SKA, KIT_PROTOCOL } from './helpers';
+import { APP_NAME, kenv, KIT, KENV, KIT_PROTOCOL } from './helpers';
 import { createCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
@@ -124,7 +124,7 @@ const prepareProtocols = async () => {
 };
 
 const createLogs = () => {
-  log.transports.file.resolvePath = () => sk('logs', 'kit.log');
+  log.transports.file.resolvePath = () => kenv('logs', 'kit.log');
 };
 
 const createCaches = () => {
@@ -150,7 +150,7 @@ const options: SpawnSyncOptions = {
   cwd: KIT,
   env: {
     KIT,
-    SKA,
+    KENV,
     PATH: `${path.join(KIT, 'node', 'bin')}:${process.env.PATH}`,
   },
 };
@@ -211,16 +211,16 @@ const checkKit = async () => {
 
   const kitVersion = stdout.toString().trim();
   console.log(`KIT ${kitVersion} - KIT APP ${getVersion()}`);
-  if (kitVersion !== getVersion()) {
+  if (kitVersion !== getVersion() && process.env.NODE_ENV !== 'development') {
     // TODO: verify tag
     // git show-ref --verify refs/tags/
     console.log(`Checking out ${getVersion()}`);
     await checkoutKitTag();
   }
 
-  const skaExists = test('-d', SKA);
+  const kenvExists = test('-d', KENV);
 
-  if (!skaExists) {
+  if (!kenvExists) {
     // Step 4: Use kit wrapper to run setup.js script
     const setupResult = spawnSync(`./bin/kit`, [`./setup/setup.js`], options);
     setupLog.info({ createEnvResult: setupResult });

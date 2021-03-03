@@ -3,23 +3,23 @@ import path from 'path';
 
 export const APP_NAME = 'Kit';
 export const KIT_PROTOCOL = 'kit';
-export const SKA = path.join(app.getPath('home'), '.ska');
+export const KENV = path.join(app.getPath('home'), '.kenv');
 export const KIT = path.join(app.getPath('home'), '.kit');
 
-export const sk = (...parts: string[]) => path.join(SKA, ...parts);
+export const kenv = (...parts: string[]) => path.join(KENV, ...parts);
 
 export const kitPath = (...parts: string[]) => path.join(KIT, ...parts);
 
-export const SKA_SCRIPTS = sk('scripts');
-export const SKA_APP = sk('app');
-export const SKA_BIN = sk('bin');
+export const KENV_SCRIPTS = kenv('scripts');
+export const KENV_APP = kenv('app');
+export const KENV_BIN = kenv('bin');
 
 export const stringifyScriptArgsKey = (
   scriptPath: string,
   runArgs: string[]
 ): any => {
   const scriptString: string = scriptPath
-    .replace(sk() + path.sep, '')
+    .replace(kenv() + path.sep, '')
     .replace('.js', '');
   const argsString: string = runArgs ? `${runArgs.join('.')}` : ``;
 

@@ -1,9 +1,9 @@
 import Store from 'electron-store';
-import { sk } from './helpers';
+import { kenv } from './helpers';
 
 let cache: Store | null = null;
 export const getCache = () => cache;
 export const createCache = () => {
-  cache = new Store({ name: 'kit', cwd: sk('cache') });
+  cache = new Store({ name: 'kit', cwd: kenv('cache') });
   cache.clear();
 };

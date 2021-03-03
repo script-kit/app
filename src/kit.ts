@@ -22,7 +22,7 @@ import {
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
-import { kitPath, sk, stringifyScriptArgsKey, KIT, SKA } from './helpers';
+import { kitPath, kenv, stringifyScriptArgsKey, KIT, KENV } from './helpers';
 import { getCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
@@ -33,7 +33,7 @@ let key = '';
 let cacheKeyParts: any[] = [];
 
 const consoleLog = kitLog.create('consoleLog');
-consoleLog.transports.file.resolvePath = () => sk('logs', 'console.log');
+consoleLog.transports.file.resolvePath = () => kenv('logs', 'console.log');
 
 export const processMap = new Map();
 
@@ -89,7 +89,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
   const resolvePath = scriptPath.startsWith(path.sep)
     ? scriptPath
-    : sk(scriptPath);
+    : kenv(scriptPath);
 
   const codePath = 'usr/local/bin/';
 
@@ -124,10 +124,10 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
       KIT_CONTEXT: 'app',
       KIT_MAIN: resolvePath,
       PATH: `${kitPath('node', 'bin')}:${codePath}:${process.env.PATH}`,
-      SKA,
+      KENV,
       KIT,
-      NODE_PATH: `${sk('node_modules')}:${kitPath('node_modules')}`,
-      DOTENV_CONFIG_PATH: sk('.env'),
+      NODE_PATH: `${kenv('node_modules')}:${kitPath('node_modules')}`,
+      DOTENV_CONFIG_PATH: kenv('.env'),
       KIT_APP_VERSION: getVersion(),
     },
   });
