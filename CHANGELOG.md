@@ -1,3 +1,10 @@
+# [1.1.0-beta.44](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.43...v1.1.0-beta.44) (2021-03-03)
+
+
+### Features
+
+* **project:** Switching to kenv ([43e251c](https://github.com/johnlindquist/kitapp/commit/43e251c1c66c4a16b1f223d9fb8e209acbe6a327))
+
 # [1.1.0-beta.43](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.42...v1.1.0-beta.43) (2021-03-02)
 
 
