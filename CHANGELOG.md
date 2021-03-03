@@ -1,3 +1,10 @@
+# [1.1.0-beta.45](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.44...v1.1.0-beta.45) (2021-03-03)
+
+
+### Features
+
+* **cli:** Call app from command line ([ab4e2e2](https://github.com/johnlindquist/kitapp/commit/ab4e2e2203a5e8ee1cd84c7e7a55d39b286cdc61))
+
 # [1.1.0-beta.44](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.43...v1.1.0-beta.44) (2021-03-03)
 
 
