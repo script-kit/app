@@ -36,8 +36,6 @@ import { createCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
 
-const setupLog = log.create('setup');
-
 app.setName(APP_NAME);
 
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
@@ -66,7 +64,7 @@ const installExtensions = async () => {
       extensions.map((name) => installer[name]),
       forceDownload
     )
-    .catch(console.log);
+    .catch(log.info);
 };
 
 autoUpdater.on('checking-for-update', () => {
@@ -152,6 +150,7 @@ const ready = async () => {
 
 const options: SpawnSyncOptions = {
   cwd: KIT,
+  encoding: 'utf-8',
   env: {
     KIT,
     KENV,
@@ -165,23 +164,23 @@ const checkoutKitTag = async () => {
     `fetch --all --tags`.split(' '),
     options
   );
-  setupLog.info({ gitFetchTagsResult });
+  log.info('git fetch tags:', gitFetchTagsResult.output);
 
   const gitCheckoutTagResult = spawnSync(
     'git',
     `checkout tags/${getVersion()}`.split(' '),
     options
   );
-  setupLog.info({ gitCheckoutTagResult });
+  log.info('git checkout tag:', gitCheckoutTagResult.output);
 };
 
 const checkKit = async () => {
   // eslint-disable-next-line jest/expect-expect
   const kitExists = test('-d', KIT);
 
-  setupLog.info(`Checking if kit exists`);
+  log.info(`Checking if kit exists`);
   if (!kitExists) {
-    setupLog.info(`~/.kit not found. Installing...`);
+    log.info(`~/.kit not found. Installing...`);
 
     // Step 1: Clone repo
     const gitResult = spawnSync(
@@ -192,7 +191,7 @@ const checkKit = async () => {
         cwd: app.getPath('home'),
       }
     );
-    setupLog.info(gitResult.stdout.toString().trim());
+    log.info('git clone:', gitResult.output);
 
     // Step 2: Install node into .kit/node
     const installNodeResult = spawnSync(
@@ -200,11 +199,11 @@ const checkKit = async () => {
       ` --prefix node --platform darwin`.split(' '),
       options
     );
-    setupLog.info(installNodeResult.stdout.toString().trim());
+    log.info('install node', installNodeResult.output);
 
     // Step 3: npm install packages into .kit/node_modules
     const npmResult = spawnSync(`npm`, [`i`], options);
-    setupLog.info(npmResult.stdout.toString().trim());
+    log.info(npmResult.stdout.toString().trim());
   }
 
   const { stdout } = spawnSync(
@@ -214,11 +213,11 @@ const checkKit = async () => {
   );
 
   const kitVersion = stdout.toString().trim();
-  console.log(`KIT ${kitVersion} - KIT APP ${getVersion()}`);
+  log.info(`KIT ${kitVersion} - KIT APP ${getVersion()}`);
   if (kitVersion !== getVersion() && process.env.NODE_ENV !== 'development') {
     // TODO: verify tag
     // git show-ref --verify refs/tags/
-    console.log(`Checking out ${getVersion()}`);
+    log.info(`Checking out ${getVersion()}`);
     await checkoutKitTag();
   }
 
@@ -227,10 +226,10 @@ const checkKit = async () => {
   if (!kenvExists) {
     // Step 4: Use kit wrapper to run setup.js script
     const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
-    setupLog.info({ createEnvResult: setupResult });
+    log.info('setup .kenv:', setupResult.output);
   }
 
   await ready();
 };
 
-app.whenReady().then(checkKit).catch(setupLog.warn);
+app.whenReady().then(checkKit).catch(log.warn);
