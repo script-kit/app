@@ -104,16 +104,12 @@ app.on('web-contents-created', (_, contents) => {
 });
 
 const prepareProtocols = async () => {
-  protocol.registerHttpProtocol(KIT_PROTOCOL, (req, cb) => {
-    log.info(`FILE PROTOCOL:`, req.url);
-    const command = req.url.split(' ').slice(1);
-    log.info(command);
-  });
+  const PROTOCOL_START = `${KIT_PROTOCOL}://`;
 
   app.on('open-url', (e, url) => {
     log.info(`URL PROTOCOL`, url);
     e.preventDefault();
-    const newArgs = decodeURI(url).slice('kit://'.length).split(' ');
+    const newArgs = decodeURI(url).slice(PROTOCOL_START.length).split(' ');
 
     tryKitScript('kit/cli/new', newArgs);
   });
@@ -121,6 +117,8 @@ const prepareProtocols = async () => {
   protocol.registerFileProtocol(KIT_PROTOCOL, (request, callback) => {
     const url = request.url.substr(KIT_PROTOCOL.length + 2);
     const file = { path: url };
+
+    log.info(`fileProtocol loading:`, file);
 
     callback(file);
   });
@@ -225,7 +223,9 @@ const checkKit = async () => {
 
   log.info('Currently on branch:', branch);
 
-  const shouldCheckoutTag = kitVersion !== getVersion() || branch === 'main';
+  const shouldCheckoutTag =
+    (kitVersion !== getVersion() || branch === 'main') &&
+    process.env.NODE_ENV !== 'development';
 
   if (shouldCheckoutTag) {
     // TODO: verify tag

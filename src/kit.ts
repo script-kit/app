@@ -227,6 +227,14 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         app.setLoginItemSettings(data);
         break;
 
+      case 'SHOW_TEXT':
+        show(
+          String.raw`<div class="text-xs font-mono">${data.text}</div>`,
+          data.options
+        );
+
+        break;
+
       case 'SHOW_IMAGE':
         const { image, options } = data;
         const imgOptions = url.parse(image.src);
