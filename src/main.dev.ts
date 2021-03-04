@@ -226,7 +226,7 @@ const checkKit = async () => {
 
   if (!kenvExists) {
     // Step 4: Use kit wrapper to run setup.js script
-    const setupResult = spawnSync(`./bin/kit`, [`./setup/setup.js`], options);
+    const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
     setupLog.info({ createEnvResult: setupResult });
   }
 
