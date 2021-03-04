@@ -35,6 +35,7 @@ export const createNotification = async () => {
       }
     );
   }
+  return notificationWindow;
 };
 
 const styles = 'dist/style.css';

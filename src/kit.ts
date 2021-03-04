@@ -109,9 +109,12 @@ ipc.server.start();
 const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   invokePromptWindow('CLEAR_PROMPT', {});
 
+  // eslint-disable-next-line no-nested-ternary
   const resolvePath = scriptPath.startsWith(path.sep)
     ? scriptPath
-    : kenv(scriptPath);
+    : scriptPath.includes(path.sep)
+    ? kenv(scriptPath)
+    : kenv('scripts', scriptPath);
 
   const codePath = 'usr/local/bin/';
 

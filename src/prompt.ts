@@ -65,6 +65,8 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.on('blur', hidePromptWindow);
+
+  return promptWindow;
 };
 
 export const focusPrompt = () => {
@@ -197,6 +199,8 @@ export const createPreview = async () => {
   previewWindow?.setMaxListeners(2);
 
   previewWindow.setBackgroundColor('#00FFFFFF');
+
+  return previewWindow;
 };
 
 export const showPreview = async (html: string) => {
