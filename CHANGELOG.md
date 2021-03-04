@@ -1,3 +1,10 @@
+# [1.1.0-beta.50](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.49...v1.1.0-beta.50) (2021-03-04)
+
+
+### Bug Fixes
+
+* **setup:** Use script instead of bin/kit ([e76d632](https://github.com/johnlindquist/kitapp/commit/e76d63277ecbc52fa1d4a025a9f65622c9a370e3))
+
 # [1.1.0-beta.49](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.48...v1.1.0-beta.49) (2021-03-04)
 
 
