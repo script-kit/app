@@ -1,3 +1,10 @@
+# [1.1.0-beta.47](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.46...v1.1.0-beta.47) (2021-03-04)
+
+
+### Bug Fixes
+
+* **protocol:** Limit protocol to new scripts ([581b9f0](https://github.com/johnlindquist/kitapp/commit/581b9f041cc81f4a8e67a87b00b34b3c45286d99))
+
 # [1.1.0-beta.46](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.45...v1.1.0-beta.46) (2021-03-04)
 
 
