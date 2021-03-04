@@ -12,6 +12,7 @@ import path from 'path';
 import { fork, ChildProcess } from 'child_process';
 import kitLog from 'electron-log';
 import { debounce } from 'lodash';
+import ipc from 'node-ipc';
 import {
   invokePromptWindow,
   hidePromptWindow,
@@ -91,6 +92,19 @@ app.on('second-instance', async (event, argv, workingDirectory) => {
   const [, , argScript, ...argArgs] = _;
   tryKitScript(argScript, argArgs);
 });
+
+ipc.config.id = KIT;
+ipc.config.retry = 1500;
+ipc.config.silent = true;
+
+ipc.serve(kitPath('tmp', 'ipc'), () => {
+  ipc.server.on('message', (data, socket) => {
+    console.log(data.scriptPath, data.scriptArgs);
+    tryKitScript(data.scriptPath, data.scriptArgs);
+  });
+});
+
+ipc.server.start();
 
 const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   invokePromptWindow('CLEAR_PROMPT', {});
@@ -302,6 +316,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 };
 
 export const tryKitScript = (filePath: string, runArgs: string[] = []) => {
+  console.log(`trying ${filePath} ${runArgs}`);
   try {
     kitScript(filePath, runArgs);
   } catch (error) {
