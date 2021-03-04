@@ -1,3 +1,10 @@
+# [1.1.0-beta.52](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.51...v1.1.0-beta.52) (2021-03-04)
+
+
+### Bug Fixes
+
+* **update:** Check if on main branch then switch ([4d50123](https://github.com/johnlindquist/kitapp/commit/4d50123f07a7abce765f311dd6f27bb9c1944164))
+
 # [1.1.0-beta.51](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.50...v1.1.0-beta.51) (2021-03-04)
 
 
