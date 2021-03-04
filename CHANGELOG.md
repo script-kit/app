@@ -1,3 +1,10 @@
+# [1.1.0-beta.48](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.47...v1.1.0-beta.48) (2021-03-04)
+
+
+### Features
+
+* **app:** Startup launches prompt ([7171e5a](https://github.com/johnlindquist/kitapp/commit/7171e5aa76320d4e83abbceda0124e8c0e65ceb4))
+
 # [1.1.0-beta.47](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.46...v1.1.0-beta.47) (2021-03-04)
 
 
