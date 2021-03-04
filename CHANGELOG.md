@@ -1,3 +1,15 @@
+# [1.1.0-beta.49](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.48...v1.1.0-beta.49) (2021-03-04)
+
+
+### Bug Fixes
+
+* **tag:** point to script tool ([8aeb024](https://github.com/johnlindquist/kitapp/commit/8aeb0240a72828726533add508e7473dbc9ed322))
+
+
+### Features
+
+* **ipc:** Allow script names without path ([06ebf60](https://github.com/johnlindquist/kitapp/commit/06ebf602f3045a0394ac5c608cef9dd857989f3f))
+
 # [1.1.0-beta.48](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.47...v1.1.0-beta.48) (2021-03-04)
 
 
