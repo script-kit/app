@@ -171,6 +171,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   child.on('message', async (data: any) => {
     kitLog.info('> FROM:', data.from);
 
+    // TODO: Refactor into something better than this :D
     switch (data.from) {
       case 'CLEAR_CACHE':
         getPromptCache()?.clear();

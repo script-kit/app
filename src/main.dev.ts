@@ -115,11 +115,9 @@ const prepareProtocols = async () => {
   app.on('open-url', (e, url) => {
     log.info(`URL PROTOCOL`, url);
     e.preventDefault();
-    const [command, ...runArgs] = decodeURI(url)
-      .slice('kit://'.length)
-      .split(' ');
+    const newArgs = decodeURI(url).slice('kit://'.length).split(' ');
 
-    tryKitScript(command, runArgs);
+    tryKitScript('kit/cli/new', newArgs);
   });
 
   protocol.registerFileProtocol(KIT_PROTOCOL, (request, callback) => {
