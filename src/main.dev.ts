@@ -206,15 +206,28 @@ const checkKit = async () => {
     log.info(npmResult.stdout.toString().trim());
   }
 
-  const { stdout } = spawnSync(
+  const { stdout: tagMatch } = spawnSync(
     `git`,
     `describe --tags --exact-match HEAD`.split(' '),
     options
   );
 
-  const kitVersion = stdout.toString().trim();
+  const kitVersion = tagMatch.toString().trim();
   log.info(`KIT ${kitVersion} - KIT APP ${getVersion()}`);
-  if (kitVersion !== getVersion() && process.env.NODE_ENV !== 'development') {
+
+  const { stdout: branchOut } = spawnSync(
+    `git`,
+    `rev-parse --abbrev-ref HEAD`.split(' '),
+    options
+  );
+
+  const branch = branchOut.toString().trim();
+
+  log.info('Currently on branch:', branch);
+
+  const shouldCheckoutTag = kitVersion !== getVersion() || branch === 'main';
+
+  if (shouldCheckoutTag) {
     // TODO: verify tag
     // git show-ref --verify refs/tags/
     log.info(`Checking out ${getVersion()}`);
