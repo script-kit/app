@@ -290,7 +290,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
       case 'UPDATE_PROMPT_WARN':
         getCache()?.delete(key);
-        consoleLog.warn(`Probably invalid. Deleting ${key} from cache`);
+        consoleLog.warn(`Prompt received warning. Deleting ${key} from cache`);
 
         invokePromptWindow('UPDATE_PROMPT_INFO', data?.info);
         break;
