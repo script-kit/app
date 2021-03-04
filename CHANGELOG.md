@@ -1,3 +1,10 @@
+# [1.1.0-beta.46](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.45...v1.1.0-beta.46) (2021-03-04)
+
+
+### Features
+
+* **ipc:** Invoke app from terminal ([1c547f9](https://github.com/johnlindquist/kitapp/commit/1c547f97609874ec72d989a378945115377d9933))
+
 # [1.1.0-beta.45](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.44...v1.1.0-beta.45) (2021-03-03)
 
 
