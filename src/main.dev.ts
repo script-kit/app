@@ -148,6 +148,8 @@ const ready = async () => {
   await createNotification();
   autoUpdater.logger = log;
   autoUpdater.checkForUpdatesAndNotify();
+
+  tryKitScript('app/left-click');
 };
 
 const options: SpawnSyncOptions = {
