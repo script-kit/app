@@ -1,3 +1,10 @@
+# [1.1.0-beta.51](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.50...v1.1.0-beta.51) (2021-03-04)
+
+
+### Bug Fixes
+
+* **log:** Fixing setup logging ([bf73b84](https://github.com/johnlindquist/kitapp/commit/bf73b8408a0ab8d0b92cebeb0f6bfbd4d7a42e69))
+
 # [1.1.0-beta.50](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.49...v1.1.0-beta.50) (2021-03-04)
 
 
