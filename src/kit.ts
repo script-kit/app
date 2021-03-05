@@ -146,6 +146,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
       kitPath('preload', 'mac.cjs'),
     ],
     env: {
+      ...process.env,
       KIT_CONTEXT: 'app',
       KIT_MAIN: resolvePath,
       PATH: `${kitPath('node', 'bin')}:${codePath}:${process.env.PATH}`,
