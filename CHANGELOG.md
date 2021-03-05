@@ -1,3 +1,10 @@
+# [1.1.0-beta.53](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.52...v1.1.0-beta.53) (2021-03-04)
+
+
+### Bug Fixes
+
+* **window:** Fixing css loading ([fe9a217](https://github.com/johnlindquist/kitapp/commit/fe9a217f36c76176ba6a5ab32b08d012f51102b3))
+
 # [1.1.0-beta.52](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.51...v1.1.0-beta.52) (2021-03-04)
 
 
