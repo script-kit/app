@@ -171,7 +171,6 @@ export default function App() {
     const partialExpression = inputValue;
 
     let exactRegExp: RegExp;
-    let startRegExp: RegExp;
     let partialRegExp: RegExp;
     try {
       exactRegExp = new RegExp(exactExpression, 'i');
@@ -186,8 +185,6 @@ export default function App() {
       const words = choice.name
         .split(/\s|-|\+/)
         .map((word: string) => word.toLowerCase());
-
-      console.log(words);
 
       let chars = '';
       let wordIndex = 0;
