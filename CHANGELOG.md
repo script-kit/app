@@ -1,3 +1,10 @@
+# [1.1.0-beta.54](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.53...v1.1.0-beta.54) (2021-03-05)
+
+
+### Features
+
+* **env:** Adding process.env var to scripts ([7b35413](https://github.com/johnlindquist/kitapp/commit/7b3541341e726b950040fc70307652bb959dcf5c))
+
 # [1.1.0-beta.53](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.52...v1.1.0-beta.53) (2021-03-04)
 
 
