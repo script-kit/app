@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable jsx-a11y/label-has-associated-control */
@@ -13,6 +14,13 @@ import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
 import { KitPromptOptions } from './types';
+import {
+  CLEAR_PROMPT,
+  SHOW_PROMPT_WITH_DATA,
+  UPDATE_PROMPT_CHOICES,
+  UPDATE_PROMPT_INFO,
+} from './channels';
+import { IpcRendererEvent } from 'electron/main';
 
 interface ChoiceData {
   name: string;
@@ -20,11 +28,47 @@ interface ChoiceData {
   preview: string | null;
 }
 
+const noHightlight = (name: string, input: string) => {
+  return <span>{name}</span>;
+};
+
+const highlightExactMatch = (name: string, input: string) => {
+  const indexOfInput = name.toLowerCase().indexOf(input.toLowerCase());
+  return [
+    name.slice(0, indexOfInput),
+    <span key={input} className=" dark:text-yellow-500 text-yellow-700">
+      {name.slice(indexOfInput, indexOfInput + input.length)}
+    </span>,
+    name.slice(indexOfInput + input.length),
+  ];
+};
+
+const highlightRegexMatch = (name: string, input: string) => {
+  return name.split('').reduce(
+    (acc: any, char: string) => {
+      const c = char.toLowerCase();
+      const testChar = acc.test.toLowerCase()[acc.testIndex];
+
+      if (!testChar || testChar !== c) {
+        acc.result.push(char);
+      } else {
+        acc.testIndex += 1;
+        acc.result.push(
+          <span className=" dark:text-yellow-500 text-yellow-700">{char}</span>
+        );
+      }
+      return acc;
+    },
+    { test: input, testIndex: 0, result: [] }
+  ).result;
+};
+
 export default function App() {
   const [data, setData]: any[] = useState({});
   const [inputValue, setInputValue] = useState('');
   const [info, setInfo] = useState('');
   const [index, setIndex] = useState(0);
+  const [channel, setChannel] = useState('');
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
@@ -112,7 +156,7 @@ export default function App() {
 
   useEffect(() => {
     if (
-      data.from === 'SHOW_PROMPT_WITH_DATA' &&
+      data.from === SHOW_PROMPT_WITH_DATA &&
       !data.cache &&
       typeof inputValue === 'string'
     ) {
@@ -121,33 +165,50 @@ export default function App() {
   }, [data, inputValue]);
 
   useEffect(() => {
-    if (!data?.choices?.length) return;
+    if (!data?.choices?.length || data?.from === UPDATE_PROMPT_CHOICES) return;
 
     const exactExpression = `^${inputValue}`;
     const partialExpression = inputValue;
-    const weakExpression = inputValue.split('').join('.*');
-    const startExpression = `^${weakExpression}`;
 
     let exactRegExp: RegExp;
     let startRegExp: RegExp;
     let partialRegExp: RegExp;
-    let weakRegExp: RegExp;
     try {
       exactRegExp = new RegExp(exactExpression, 'i');
-      startRegExp = new RegExp(startExpression, 'i');
       partialRegExp = new RegExp(partialExpression, 'i');
-      weakRegExp = new RegExp(weakExpression, 'i');
     } catch (error) {
       exactRegExp = new RegExp('');
-      startRegExp = new RegExp('');
       partialRegExp = new RegExp('');
-      weakRegExp = new RegExp('');
     }
 
     const exactFilter = (choice: any) => choice.name.match(exactRegExp);
-    const startFilter = (choice: any) => choice.name.match(startRegExp);
+    const startFilter = (choice: any) => {
+      const words = choice.name
+        .split(/\s|-|\+/)
+        .map((word: string) => word.toLowerCase());
+
+      console.log(words);
+
+      let chars = '';
+      let wordIndex = 0;
+      return inputValue
+        .split('')
+        .map((char) => char.toLowerCase())
+        .every((char) => {
+          chars += char;
+
+          if (words[wordIndex].startsWith(chars)) {
+            return true;
+          }
+
+          wordIndex += 1;
+          chars = char;
+          if (!words[wordIndex]) return false;
+          return words[wordIndex].startsWith(chars);
+        });
+    };
+
     const partialFilter = (choice: any) => choice.name.match(partialRegExp);
-    const weakestFilter = (choice: any) => choice.name.match(weakRegExp);
 
     const [exactMatches, notBestMatches] = partition(data.choices, exactFilter);
     const [startMatches, notStartMatches] = partition(
@@ -158,20 +219,15 @@ export default function App() {
       notStartMatches,
       partialFilter
     );
-    const weakestMatches = notMatches.filter(weakestFilter);
 
-    const filtered = [
-      ...exactMatches,
-      ...startMatches,
-      ...partialMatches,
-      ...weakestMatches,
-    ];
+    const filtered = [...exactMatches, ...startMatches, ...partialMatches];
 
     setChoices(filtered);
   }, [data, inputValue]);
 
   useEffect(() => {
     const updateChoicesHandler = (_event: any, updatedChoices: any) => {
+      setChannel(UPDATE_PROMPT_CHOICES);
       setChoices(updatedChoices);
       if (inputRef.current) {
         inputRef?.current.focus();
@@ -179,6 +235,7 @@ export default function App() {
     };
 
     const showPromptHandler = (_event: any, promptData: KitPromptOptions) => {
+      setChannel(SHOW_PROMPT_WITH_DATA);
       setData(promptData);
       setIndex(0);
       if (inputRef.current) {
@@ -190,6 +247,7 @@ export default function App() {
       if (inputRef.current) {
         inputRef?.current.focus();
       }
+      setChannel(CLEAR_PROMPT);
       setData({ choices: [], message: '' });
       setChoices([]);
       setIndex(0);
@@ -198,31 +256,32 @@ export default function App() {
     };
 
     const updatePromptInfo = (_event: any, info: string) => {
+      setChannel(UPDATE_PROMPT_INFO);
       setInputValue('');
       setData({ message: info });
     };
 
-    if (ipcRenderer.listenerCount('CLEAR_PROMPT') === 0) {
-      ipcRenderer.on('CLEAR_PROMPT', clearPromptHandler);
+    if (ipcRenderer.listenerCount(CLEAR_PROMPT) === 0) {
+      ipcRenderer.on(CLEAR_PROMPT, clearPromptHandler);
     }
 
-    if (ipcRenderer.listenerCount('SHOW_PROMPT_WITH_DATA') === 0) {
-      ipcRenderer.on('SHOW_PROMPT_WITH_DATA', showPromptHandler);
+    if (ipcRenderer.listenerCount(SHOW_PROMPT_WITH_DATA) === 0) {
+      ipcRenderer.on(SHOW_PROMPT_WITH_DATA, showPromptHandler);
     }
 
-    if (ipcRenderer.listenerCount('UPDATE_PROMPT_CHOICES') === 0) {
-      ipcRenderer.on('UPDATE_PROMPT_CHOICES', updateChoicesHandler);
+    if (ipcRenderer.listenerCount(UPDATE_PROMPT_CHOICES) === 0) {
+      ipcRenderer.on(UPDATE_PROMPT_CHOICES, updateChoicesHandler);
     }
 
-    if (ipcRenderer.listenerCount('UPDATE_PROMPT_INFO') === 0) {
-      ipcRenderer.on('UPDATE_PROMPT_INFO', updatePromptInfo);
+    if (ipcRenderer.listenerCount(UPDATE_PROMPT_INFO) === 0) {
+      ipcRenderer.on(UPDATE_PROMPT_INFO, updatePromptInfo);
     }
 
     return () => {
-      ipcRenderer.off('CLEAR_PROMPT', clearPromptHandler);
-      ipcRenderer.off('SHOW_PROMPT_WITH_DATA', showPromptHandler);
-      ipcRenderer.off('UPDATE_PROMPT_CHOICES', updateChoicesHandler);
-      ipcRenderer.off('UPDATE_PROMPT_INFO', updatePromptInfo);
+      ipcRenderer.off(CLEAR_PROMPT, clearPromptHandler);
+      ipcRenderer.off(SHOW_PROMPT_WITH_DATA, showPromptHandler);
+      ipcRenderer.off(UPDATE_PROMPT_CHOICES, updateChoicesHandler);
+      ipcRenderer.off(UPDATE_PROMPT_INFO, updatePromptInfo);
     };
   }, []);
 
@@ -298,41 +357,11 @@ export default function App() {
               >
                 <div className="flex flex-col max-w-full mr-2 truncate">
                   <div className="truncate">
-                    {name.includes(input)
-                      ? [
-                          choice.name.slice(0, name.indexOf(input)),
-                          <span
-                            key={input}
-                            className=" dark:text-yellow-500 text-yellow-700"
-                          >
-                            {choice.name.slice(
-                              name.indexOf(input),
-                              name.indexOf(input) + input.length
-                            )}
-                          </span>,
-                          choice.name.slice(name.indexOf(input) + input.length),
-                        ]
-                      : choice.name.split('').reduce(
-                          (acc: any, char: string) => {
-                            const c = char.toLowerCase();
-                            const testChar = acc.test.toLowerCase()[
-                              acc.testIndex
-                            ];
-
-                            if (!testChar || testChar !== c) {
-                              acc.result.push(char);
-                            } else {
-                              acc.testIndex += 1;
-                              acc.result.push(
-                                <span className=" dark:text-yellow-500 text-yellow-700">
-                                  {char}
-                                </span>
-                              );
-                            }
-                            return acc;
-                          },
-                          { test: inputValue, testIndex: 0, result: [] }
-                        ).result}
+                    {channel === UPDATE_PROMPT_CHOICES
+                      ? noHightlight(choice.name, inputValue)
+                      : name.includes(input)
+                      ? highlightExactMatch(choice.name, inputValue)
+                      : highlightRegexMatch(choice.name, inputValue)}
                   </div>
                   {((index === i && choice?.selected) ||
                     choice?.description) && (
@@ -349,6 +378,13 @@ export default function App() {
                   <img
                     src={choice.icon}
                     alt={choice.name}
+                    className="py-2 h-full"
+                  />
+                )}
+                {choice?.html && (
+                  <div
+                    // eslint-disable-next-line react/no-danger
+                    dangerouslySetInnerHTML={{ __html: choice?.html }}
                     className="py-2 h-full"
                   />
                 )}

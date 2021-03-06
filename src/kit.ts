@@ -28,6 +28,12 @@ import { kitPath, kenv, stringifyScriptArgsKey, KIT, KENV } from './helpers';
 import { getCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
+import {
+  CLEAR_PROMPT,
+  SHOW_PROMPT_WITH_DATA,
+  UPDATE_PROMPT_CHOICES,
+  UPDATE_PROMPT_INFO,
+} from './channels';
 
 let child: ChildProcess | null = null;
 let script = '';
@@ -107,7 +113,7 @@ ipc.serve(kitPath('tmp', 'ipc'), () => {
 ipc.server.start();
 
 const kitScript = (scriptPath: string, runArgs: string[] = []) => {
-  invokePromptWindow('CLEAR_PROMPT', {});
+  invokePromptWindow(CLEAR_PROMPT, {});
 
   // eslint-disable-next-line no-nested-ternary
   const resolvePath = scriptPath.startsWith(path.sep)
@@ -124,7 +130,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   const cachedResult: any = getCache()?.get(key);
   if (cachedResult) {
     kitLog.info(`GOT CACHE:`, key);
-    invokePromptWindow('SHOW_PROMPT_WITH_DATA', cachedResult);
+    invokePromptWindow(SHOW_PROMPT_WITH_DATA, cachedResult);
 
     return;
   }
@@ -270,7 +276,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         showNotification(data.html, data.options);
         break;
 
-      case 'SHOW_PROMPT_WITH_DATA':
+      case SHOW_PROMPT_WITH_DATA:
         ({ script, key } = stringifyScriptArgsKey(script, cacheKeyParts));
 
         if (data.cache && !getCache()?.get(key)) {
@@ -279,7 +285,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
             getCache()?.set(key, data);
           }
         }
-        invokePromptWindow('SHOW_PROMPT_WITH_DATA', data);
+        invokePromptWindow(SHOW_PROMPT_WITH_DATA, data);
         break;
 
       case 'SHOW_RESULTS':
@@ -296,19 +302,19 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
         break;
 
-      case 'UPDATE_PROMPT_CHOICES':
-        invokePromptWindow('UPDATE_PROMPT_CHOICES', data?.choices);
+      case UPDATE_PROMPT_CHOICES:
+        invokePromptWindow(UPDATE_PROMPT_CHOICES, data?.choices);
         break;
 
       case 'UPDATE_PROMPT_WARN':
         getCache()?.delete(key);
         consoleLog.warn(`Prompt received warning. Deleting ${key} from cache`);
 
-        invokePromptWindow('UPDATE_PROMPT_INFO', data?.info);
+        invokePromptWindow(UPDATE_PROMPT_INFO, data?.info);
         break;
 
-      case 'UPDATE_PROMPT_INFO':
-        invokePromptWindow('UPDATE_PROMPT_INFO', data?.info);
+      case UPDATE_PROMPT_INFO:
+        invokePromptWindow(UPDATE_PROMPT_INFO, data?.info);
         break;
 
       default:

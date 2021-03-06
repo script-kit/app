@@ -126,6 +126,8 @@ export const invokePromptWindow = (channel: string, data: any) => {
 };
 
 export const hidePromptWindow = (ignoreBlur = false) => {
+  if (promptWindow?.webContents.isDevToolsFocused()) return;
+
   invokePromptWindow('CLEAR_PROMPT', {});
 
   if (ignoreBlur) {

@@ -27,6 +27,8 @@ const onFilesChanged = (
   event: 'add' | 'change' | 'unlink',
   filePath: string
 ) => {
+  getCache()?.clear();
+
   if (event === 'change') log.info({ event, filePath });
   if (event === 'unlink') {
     const oldShortcut = shortcutMap.get(filePath);
@@ -37,8 +39,6 @@ const onFilesChanged = (
     }
   }
   if (event === 'add' || event === 'change') {
-    getCache()?.clear();
-
     const shortcutMarker = 'Shortcut: ';
     const { stdout } = grep(shortcutMarker, filePath);
 
