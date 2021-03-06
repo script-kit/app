@@ -1,3 +1,11 @@
+# [1.1.0-beta.55](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.54...v1.1.0-beta.55) (2021-03-06)
+
+
+### Bug Fixes
+
+* **prompt:** improving prompt filter logic ([2e5a1e2](https://github.com/johnlindquist/kitapp/commit/2e5a1e2264ba1837c7f67cf5e084843dfa790ce0))
+* **prompt:** removing stray console.log ([f9872c6](https://github.com/johnlindquist/kitapp/commit/f9872c67a8626f94237040ad4e2ef6607cfc5667))
+
 # [1.1.0-beta.54](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.53...v1.1.0-beta.54) (2021-03-05)
 
 
