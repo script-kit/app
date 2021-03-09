@@ -11,10 +11,8 @@ const page = (body: string, styles: string) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>${styles}</style>
     <script>
-    console.log('SCRIPTING TIME!!!!')
-    const {ipcRenderer} = require("electron")
 
-    console.log(ipcRenderer)
+    const {ipcRenderer} = require("electron")
 
     ipcRenderer.on('MESSAGE', (event, message)=> {
       console.log(event, message)

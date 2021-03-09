@@ -27,6 +27,14 @@ jobs:
         run: |
           yarn install --network-timeout 1000000
 
+      - name: electron-build install
+        run: |
+          yarn install-electron-deps
+
+      - name: yarn build
+        run: |
+          yarn build
+
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v2.5.3
@@ -41,7 +49,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn postinstall && yarn build && yarn electron-builder --publish always --mac
+          yarn electron-builder --publish always --mac
 
       - name: Clone kit
         run: |
