@@ -20,7 +20,6 @@ import {
   UPDATE_PROMPT_CHOICES,
   UPDATE_PROMPT_INFO,
 } from './channels';
-import { IpcRendererEvent } from 'electron/main';
 
 interface ChoiceData {
   name: string;

@@ -12,7 +12,7 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
-import { app, protocol } from 'electron';
+import { app, protocol, BrowserWindow } from 'electron';
 
 if (!app.requestSingleInstanceLock()) {
   app.exit();
@@ -23,8 +23,16 @@ import 'regenerator-runtime/runtime';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
-import { spawnSync, SpawnSyncOptions, exec } from 'child_process';
-import { test } from 'shelljs';
+import {
+  spawnSync,
+  SpawnSyncOptions,
+  exec,
+  SpawnSyncReturns,
+} from 'child_process';
+import { test, which } from 'shelljs';
+import { homedir } from 'os';
+import { readFile } from 'fs/promises';
+import git from 'simple-git/promise';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
@@ -35,6 +43,12 @@ import { APP_NAME, kenv, KIT, KENV, KIT_PROTOCOL } from './helpers';
 import { createCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
+import { show } from './show';
+
+let configWindow: BrowserWindow | null = null;
+
+const KIT_REPO = `https://github.com/johnlindquist/kit.git`;
+const KENV_REPO = `https://github.com/johnlindquist/kenv.git`;
 
 app.setName(APP_NAME);
 
@@ -90,7 +104,9 @@ autoUpdater.on('update-downloaded', () => {
   app.quit();
 });
 
-app.on('window-all-closed', (e: Event) => e.preventDefault());
+app.on('window-all-closed', (e: Event) => {
+  e.preventDefault();
+});
 
 app.on('web-contents-created', (_, contents) => {
   contents.on('will-navigate', (event, navigationUrl) => {
@@ -144,6 +160,22 @@ const ready = async () => {
   await createNotification();
   autoUpdater.logger = log;
   autoUpdater.checkForUpdatesAndNotify();
+
+  configWindow?.webContents.send(
+    'MESSAGE',
+    `
+  <div class="flex flex-col justify-center items-center">
+    <h2>Ready!</h2>
+    <div><kbd>cmd</kbd>+<kbd>;</kbd> to launch main prompt (or click tray icon)</div>
+    <div><kbd>cmd</kbd>+<kbd>shift</kbd><kbd>;</kbd> to launch cli prompt (or right-click tray icon)</div>
+  </div>
+  `.trim()
+  );
+
+  configWindow?.on('blur', () => {
+    configWindow?.removeAllListeners();
+    configWindow?.destroy();
+  });
 };
 
 const options: SpawnSyncOptions = {
@@ -156,72 +188,146 @@ const options: SpawnSyncOptions = {
   },
 };
 
-const checkoutKitTag = async () => {
-  const gitFetchTagsResult = spawnSync(
-    'git',
-    `fetch --all --tags`.split(' '),
-    options
-  );
-  log.info('git fetch tags:', gitFetchTagsResult.output);
+const kitExists = () => test('-d', KIT);
+const kenvExists = () => test('-d', KENV);
 
-  const gitCheckoutTagResult = spawnSync(
-    'git',
-    `checkout tags/${getVersion()}`.split(' '),
-    options
+const verifyInstall = async () => {
+  const kitE = kitExists();
+  const kenvE = kenvExists();
+
+  if (![kitE, kenvE].every((x) => x)) {
+    throw new Error(`Couldn't verify install.`);
+  }
+};
+
+const handleSpawnReturns = async (
+  message: string,
+  result: SpawnSyncReturns<any>
+) => {
+  console.log(`HANDLE SPAWN RETURNS`);
+  console.log(`stdout:`, result.stdout.toString());
+  console.log(`stderr:`, result.stderr.toString());
+  const { stdout, stderr, error } = result;
+
+  if (stdout?.toString().length) {
+    log.info(message, stdout.toString());
+    configWindow?.webContents.send('MESSAGE', stdout.toString());
+  }
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (stderr?.toString().length) {
+    console.log({ stderr: stderr.toString() });
+    throw new Error(stderr.toString());
+  }
+
+  return result;
+};
+
+const setupLog = (message: string) => {
+  configWindow?.webContents.send('MESSAGE', message);
+  log.info(message);
+};
+
+const ohNo = async (error: Error) => {
+  log.warn(error.message);
+  log.warn(error.stack);
+  const mainLog = await readFile(
+    path.join(homedir(), `Library/Logs/Kit/main.log`),
+    {
+      encoding: 'utf8',
+    }
   );
-  log.info('git checkout tag:', gitCheckoutTagResult.output);
+
+  const clipboardy = await import('clipboardy');
+
+  await clipboardy.write(
+    `
+${error.message}
+${error.stack}
+${mainLog}
+  `.trim()
+  );
+
+  const showWindow = await show(
+    'install-error',
+    `
+  <body class="p-1 h-screen w-screen flex flex-col">
+  <h1>Kit failed to install</h1>
+  <div>Please share the logs below (already copied to clipboard): </div>
+  <div class="italic">Note: Kit exits when you close this window</div>
+  <div><a href="https://github.com/johnlindquist/kit/discussions/categories/errors">https://github.com/johnlindquist/kit/discussions/categories/errors</a></div>
+
+  <h2>Error: ${error.message}</h2>
+
+  <textarea class="font-mono w-full h-full text-xs">${mainLog}</textarea>
+  </body>
+  `
+  );
+
+  showWindow?.on('close', () => {
+    app.exit();
+  });
+};
+
+const checkoutKitTag = async () => {
+  setupLog(`git fetch all tags`);
+  await git(KIT).fetch('--all', '--tags').catch(ohNo);
+  setupLog(`git checkout tags/${getVersion()}`);
+  await git(KIT).checkout(`tags/${getVersion()}`).catch(ohNo);
 };
 
 const checkKit = async () => {
-  // eslint-disable-next-line jest/expect-expect
-  const kitExists = test('-d', KIT);
+  configWindow = await show(
+    'splash-setup',
+    `
+  <body class="h-screen w-screen flex flex-col justify-center items-center dark:bg-gray-800 dark:text-white">
+    <h1>Configuring ~/.kit and ~/.kenv...</h1>
+    <img src="${getAssetPath('icon.png')}" class="w-14 p-2"/>
+    <div class="message"></div>
+  </body>
+  `,
+    { frame: false, preventDestroy: true }
+  );
 
+  // eslint-disable-next-line jest/expect-expect
   log.info(`Checking if kit exists`);
-  if (!kitExists) {
-    log.info(`~/.kit not found. Installing...`);
+  if (!kitExists()) {
+    setupLog(`~/.kit not found. Installing...`);
 
     // Step 1: Clone repo
-    const gitResult = spawnSync(
-      'git',
-      `clone https://github.com/johnlindquist/kit.git ${KIT}`.split(' '),
-      {
-        ...options,
-        cwd: app.getPath('home'),
-      }
-    );
-    log.info('git clone:', gitResult.output);
+    await git(app.getPath('home')).clone(KIT_REPO, KIT).catch(ohNo);
 
     // Step 2: Install node into .kit/node
+    setupLog(`Adding node to ~/.kit...`);
     const installNodeResult = spawnSync(
       `./setup/install-node.sh`,
       ` --prefix node --platform darwin`.split(' '),
       options
     );
-    log.info('install node', installNodeResult.output);
+
+    await handleSpawnReturns(`install node`, installNodeResult);
 
     // Step 3: npm install packages into .kit/node_modules
+    setupLog(`adding ~/.kit packages...`);
     const npmResult = spawnSync(`npm`, [`i`], options);
-    log.info(npmResult.stdout.toString().trim());
+    await handleSpawnReturns(`npm`, npmResult);
   }
 
-  const { stdout: tagMatch } = spawnSync(
-    `git`,
-    `describe --tags --exact-match HEAD`.split(' '),
-    options
-  );
+  setupLog(`Comparing versions...`);
+  const kitVersion = await git(KIT)
+    .raw('describe', '--tags', '--abbrev=0')
+    .catch(ohNo);
 
-  const kitVersion = tagMatch.toString().trim();
-  log.info(`KIT ${kitVersion} - KIT APP ${getVersion()}`);
+  setupLog(`~/.kit: ${kitVersion} - Kit app: ${getVersion()}`);
 
-  const { stdout: branchOut } = spawnSync(
-    `git`,
-    `rev-parse --abbrev-ref HEAD`.split(' '),
-    options
-  );
+  const branch = await git(KIT)
+    .raw('rev-parse', '--abbrev-ref', 'HEAD')
+    .catch(ohNo);
 
-  const branch = branchOut.toString().trim();
-
-  log.info('Currently on branch:', branch);
+  setupLog(`Currently on branch: ${branch}`);
 
   const shouldCheckoutTag =
     (kitVersion !== getVersion() || branch === 'main') &&
@@ -230,19 +336,26 @@ const checkKit = async () => {
   if (shouldCheckoutTag) {
     // TODO: verify tag
     // git show-ref --verify refs/tags/
-    log.info(`Checking out ${getVersion()}`);
+    setupLog(`Checking out ${getVersion()}`);
     await checkoutKitTag();
   }
 
-  const kenvExists = test('-d', KENV);
-
-  if (!kenvExists) {
+  if (!kenvExists()) {
     // Step 4: Use kit wrapper to run setup.js script
-    const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
-    log.info('setup .kenv:', setupResult.output);
+    setupLog(`Run .kenv setup script...`);
+    await git(app.getPath('home')).clone(KENV_REPO, KENV);
+    const setupKenvResult = spawnSync(
+      `./script`,
+      [`./setup/setup.js`],
+      options
+    );
+
+    await handleSpawnReturns(`Setup .kenv:`, setupKenvResult);
   }
+
+  await verifyInstall();
 
   await ready();
 };
 
-app.whenReady().then(checkKit).catch(log.warn);
+app.whenReady().then(checkKit).catch(ohNo);

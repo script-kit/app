@@ -21,6 +21,7 @@ import {
   hidePreview,
   hideEmitter,
   getPromptCache,
+  setBlurredByKit,
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
@@ -288,8 +289,9 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         invokePromptWindow(SHOW_PROMPT_WITH_DATA, data);
         break;
 
-      case 'SHOW_RESULTS':
-        const showWindow = show(data.html, data.options);
+      case 'SHOW':
+        setBlurredByKit();
+        const showWindow = await show('show', data.html, data.options);
         if (showWindow && !showWindow.isDestroyed()) {
           showWindow.on('close', () => {
             focusPrompt();
@@ -324,7 +326,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
   child.on('error', (error) => {
     getCache()?.delete(key);
-    consoleLog.warn(`Error ${error}. Deleting ${key} from cache`);
+    consoleLog.warn(`Error ${error.message}. Deleting ${key} from cache`);
     reset();
   });
 

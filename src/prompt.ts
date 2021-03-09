@@ -23,6 +23,10 @@ export const createPromptCache = () => {
 let promptWindow: BrowserWindow | null = null;
 let blurredByKit = false;
 
+export const setBlurredByKit = () => {
+  blurredByKit = true;
+};
+
 export const hideEmitter = new EventEmitter();
 
 export const createPromptWindow = async () => {
@@ -145,12 +149,16 @@ export const hidePromptWindow = (ignoreBlur = false) => {
       promptBounds
     );
     if (promptWindow.isVisible()) {
-      app?.hide();
+      const allWindows = BrowserWindow.getAllWindows();
+      // Check if all other windows are hidden
       promptWindow?.hide();
+      if (allWindows.every((window) => !window.isVisible())) {
+        app?.hide();
+        hideEmitter.emit('hide');
+      }
     }
   }
   blurredByKit = false;
-  hideEmitter.emit('hide');
 };
 
 let previewWindow: BrowserWindow | null = null;
@@ -162,7 +170,7 @@ const page = (html: string) => `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kit</title>
+    <title>Kit Preview</title>
     <link rel="stylesheet" href="${styles}">
 </head>
 <body class="flex flex-row-reverse">
@@ -172,6 +180,7 @@ const page = (html: string) => `<!DOCTYPE html>
 
 export const createPreview = async () => {
   previewWindow = new BrowserWindow({
+    title: 'Kit Preview',
     frame: false,
     transparent: true,
     show: false,

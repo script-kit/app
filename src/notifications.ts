@@ -7,6 +7,7 @@ let notificationWindow: BrowserWindow | null = null;
 
 export const createNotification = async () => {
   notificationWindow = new BrowserWindow({
+    title: 'Kit Notification',
     frame: true,
     transparent: true,
     backgroundColor: '#00000000',
