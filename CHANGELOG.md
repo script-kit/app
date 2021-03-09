@@ -1,3 +1,10 @@
+# [1.1.0-beta.56](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.55...v1.1.0-beta.56) (2021-03-09)
+
+
+### Bug Fixes
+
+* **build:** Splitting build into more steps ([47c2540](https://github.com/johnlindquist/kitapp/commit/47c2540aea9be1d059eedd85ea3a908d009a087e))
+
 # [1.1.0-beta.55](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.54...v1.1.0-beta.55) (2021-03-06)
 
 
