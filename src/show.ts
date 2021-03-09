@@ -81,7 +81,7 @@ export const show = async (
   const baseURL = app.getAppPath().replace('\\', '/');
   const stylePath = `${baseURL}/dist/style.css`;
   const styles = await readFile(stylePath, { encoding: 'utf8' });
-  const showPath = `${baseURL}/dist/${name}.html`;
+  const showPath = `${app.getPath('appData')}/${name}.html`;
   await writeFile(showPath, page(html, styles));
 
   return new Promise((resolve, reject) => {
