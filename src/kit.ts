@@ -77,8 +77,8 @@ ipcMain.on(
   }, 250)
 );
 
+let appHidden = false;
 const reset = () => {
-  kitLog.info(`---RESET: ${cacheKeyParts}`);
   cacheKeyParts = [];
   if (child) {
     kitLog.info(`Exiting: ${child.pid}`);
@@ -88,10 +88,21 @@ const reset = () => {
     child = null;
     script = '';
     key = '';
+    appHidden = false;
   }
 };
 
-hideEmitter.on('hide', reset);
+// TODO: Work out states
+// Closed by user
+// Closed by script
+// Closed by need to copy/paste
+hideEmitter.on('hide', () => {
+  if (appHidden) {
+    appHidden = false;
+  } else {
+    reset();
+  }
+});
 
 app.on('second-instance', async (event, argv, workingDirectory) => {
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -173,6 +184,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
       kitLog.info(on, scriptPath, '| PID:', child?.pid);
       kitLog.info(`tryClean...`, scriptPath);
       hidePromptWindow(true);
+      reset();
     } catch (error) {
       kitLog.warn(error);
     }
@@ -215,6 +227,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       case 'HIDE_APP':
+        appHidden = true;
         app?.hide();
         break;
 
