@@ -210,7 +210,7 @@ const handleSpawnReturns = async (
 
   if (stdout?.toString().length) {
     log.info(message, stdout.toString());
-    configWindow?.webContents.send('MESSAGE', stdout.toString());
+    configWindow?.webContents.send('UPDATE', { message: stdout.toString() });
   }
 
   if (error) {
@@ -226,7 +226,7 @@ const handleSpawnReturns = async (
 };
 
 const setupLog = (message: string) => {
-  configWindow?.webContents.send('MESSAGE', message);
+  configWindow?.webContents.send('UPDATE', { message });
   log.info(message);
 };
 

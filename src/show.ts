@@ -17,8 +17,8 @@ const page = (body: string, styles: string) => {
 
     ipcRenderer.on('UPDATE', (event, {message, header})=> {
       console.log(event, header, message)
-      document.querySelector(".header").innerHTML = header
-      document.querySelector(".message").innerHTML = message
+      if(header) document.querySelector(".header").innerHTML = header
+      if(message) document.querySelector(".message").innerHTML = message
     })
     </script>
 </head>
@@ -81,7 +81,7 @@ export const show = async (
   const baseURL = app.getAppPath().replace('\\', '/');
   const stylePath = `${baseURL}/dist/style.css`;
   const styles = await readFile(stylePath, { encoding: 'utf8' });
-  const showParentDir = app.isReady()
+  const showParentDir = dirExists(kenv('tmp'))
     ? kenv('tmp', name)
     : app.getPath('appData');
 
