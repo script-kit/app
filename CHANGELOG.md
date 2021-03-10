@@ -1,3 +1,11 @@
+# [1.1.0-beta.60](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.59...v1.1.0-beta.60) (2021-03-10)
+
+
+### Features
+
+* **prompt:** Allow secret entry ([b99a228](https://github.com/johnlindquist/kitapp/commit/b99a22832042198e5f682bf268aab0144125bdb3))
+* **prompt:** prompt focus/updating/messaging ([6a779fc](https://github.com/johnlindquist/kitapp/commit/6a779fc9da124afc2c5acfc0e9b2f1101f8f7a30))
+
 # [1.1.0-beta.59](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.58...v1.1.0-beta.59) (2021-03-10)
 
 
