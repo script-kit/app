@@ -1,3 +1,10 @@
+# [1.1.0-beta.57](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.56...v1.1.0-beta.57) (2021-03-10)
+
+
+### Bug Fixes
+
+* **show:** showImage path fix to tmp ([29cb931](https://github.com/johnlindquist/kitapp/commit/29cb931651de609b41580e016ecb8a59e51827ca))
+
 # [1.1.0-beta.56](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.55...v1.1.0-beta.56) (2021-03-09)
 
 
