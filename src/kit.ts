@@ -81,7 +81,8 @@ let appHidden = false;
 const reset = () => {
   cacheKeyParts = [];
   if (child) {
-    kitLog.info(`Exiting: ${child.pid}`);
+    kitLog.info(`> end process id: ${child.pid} <
+`);
     processMap.delete(child?.pid);
     child?.removeAllListeners();
     child?.kill();
@@ -89,6 +90,7 @@ const reset = () => {
     script = '';
     key = '';
     appHidden = false;
+    hidePromptWindow();
   }
 };
 
@@ -138,7 +140,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
   ({ key, script } = stringifyScriptArgsKey(scriptPath, runArgs));
 
-  kitLog.info(`>>> GET: ${key}`);
+  // kitLog.info(`>>> GET: ${key}`);
   const cachedResult: any = getCache()?.get(key);
   if (cachedResult) {
     kitLog.info(`GOT CACHE:`, key);
@@ -147,7 +149,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
     return;
   }
 
-  kitLog.info(`FORK: ${resolvePath} ${[...runArgs, '--app']}`);
+  // kitLog.info(`FORK: ${resolvePath} ${[...runArgs, '--app']}`);
 
   child = fork(resolvePath, [...runArgs, '--app'], {
     silent: true,
@@ -177,12 +179,12 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   });
   processMap.set(child.pid, scriptPath);
 
-  kitLog.info(`Starting ${child.pid} - ${scriptPath}`);
+  kitLog.info(`> begin process id: ${child.pid} <`);
 
   const tryClean = (on: string) => () => {
     try {
-      kitLog.info(on, scriptPath, '| PID:', child?.pid);
-      kitLog.info(`tryClean...`, scriptPath);
+      // kitLog.info(on, scriptPath, '| PID:', child?.pid);
+      // kitLog.info(`tryClean...`, scriptPath);
       hidePromptWindow(true);
       reset();
     } catch (error) {
@@ -192,7 +194,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
   child.on('close', tryClean('CLOSE'));
   child.on('message', async (data: any) => {
-    kitLog.info('> FROM:', data.from, data?.kitScript);
+    kitLog.info(`${data.from} ${data?.kitScript ? data.kitScript : ''}`);
 
     // TODO: Refactor into something better than this :D
     switch (data.from) {
@@ -249,6 +251,8 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       case 'SHOW_TEXT':
+        setBlurredByKit();
+
         show(
           String.raw`<div class="text-xs font-mono">${data.text}</div>`,
           data.options
@@ -257,6 +261,8 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       case 'SHOW_IMAGE':
+        setBlurredByKit();
+
         const { image, options } = data;
         const imgOptions = url.parse(image.src);
 
@@ -288,6 +294,8 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       case 'SHOW_NOTIFICATION':
+        setBlurredByKit();
+
         showNotification(data.html, data.options);
         break;
 
@@ -295,7 +303,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         ({ script, key } = stringifyScriptArgsKey(script, cacheKeyParts));
 
         if (data.cache && !getCache()?.get(key)) {
-          kitLog.info(`>>>SET: ${key}`);
+          // kitLog.info(`>>>SET: ${key}`);
           if (key && data?.choices?.length > 0) {
             getCache()?.set(key, data);
           }
@@ -330,7 +338,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       case UPDATE_PROMPT_INFO:
-        invokePromptWindow(UPDATE_PROMPT_INFO, data?.info);
+        if (!appHidden) invokePromptWindow(UPDATE_PROMPT_INFO, data?.info);
         break;
 
       default:
@@ -351,7 +359,10 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 };
 
 export const tryKitScript = (filePath: string, runArgs: string[] = []) => {
-  console.log(`trying ${filePath} ${runArgs}`);
+  kitLog.info(
+    `
+*** ${filePath} ${runArgs} ***`.trim()
+  );
   try {
     kitScript(filePath, runArgs);
   } catch (error) {

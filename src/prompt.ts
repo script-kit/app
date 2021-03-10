@@ -64,11 +64,13 @@ export const createPromptWindow = async () => {
 
   promptWindow?.webContents.on('before-input-event', (event: any, input) => {
     if (input.key === 'Escape') {
-      hidePromptWindow();
+      if (promptWindow) escapePromptWindow(promptWindow);
     }
   });
 
-  promptWindow?.on('blur', hidePromptWindow);
+  promptWindow?.on('blur', () => {
+    hidePromptWindow();
+  });
 
   return promptWindow;
 };
@@ -77,6 +79,13 @@ export const focusPrompt = () => {
   if (promptWindow && !promptWindow.isDestroyed()) {
     promptWindow?.focus();
   }
+};
+
+export const escapePromptWindow = (bw: BrowserWindow) => {
+  invokePromptWindow('CLEAR_PROMPT', {});
+  cachePromptPosition(bw);
+  hideAppIfNoWindows(bw);
+  hideEmitter.emit('hide');
 };
 
 export const invokePromptWindow = (channel: string, data: any) => {
@@ -129,34 +138,37 @@ export const invokePromptWindow = (channel: string, data: any) => {
   return promptWindow;
 };
 
+const cachePromptPosition = (bw: BrowserWindow) => {
+  const distScreen = screen.getDisplayNearestPoint({
+    x: bw.getBounds().x,
+    y: bw.getBounds().y,
+  });
+  const promptBounds = bw.getBounds();
+  getPromptCache()?.set(`prompt.${String(distScreen.id)}.bounds`, promptBounds);
+};
+
+const hideAppIfNoWindows = (bw: BrowserWindow) => {
+  if (bw?.isVisible()) {
+    const allWindows = BrowserWindow.getAllWindows();
+    // Check if all other windows are hidden
+    bw?.hide();
+    if (allWindows.every((window) => !window.isVisible())) {
+      app?.hide();
+    }
+  }
+};
+
 export const hidePromptWindow = (ignoreBlur = false) => {
   if (promptWindow?.webContents.isDevToolsFocused()) return;
-
+  if (blurredByKit || ignoreBlur) {
+    blurredByKit = false;
+    return;
+  }
   invokePromptWindow('CLEAR_PROMPT', {});
 
-  if (ignoreBlur) {
-    blurredByKit = false;
-  }
-
-  if (promptWindow && promptWindow?.isVisible() && !blurredByKit) {
-    const distScreen = screen.getDisplayNearestPoint({
-      x: promptWindow.getBounds().x,
-      y: promptWindow.getBounds().y,
-    });
-    const promptBounds = promptWindow.getBounds();
-    getPromptCache()?.set(
-      `prompt.${String(distScreen.id)}.bounds`,
-      promptBounds
-    );
-    if (promptWindow.isVisible()) {
-      const allWindows = BrowserWindow.getAllWindows();
-      // Check if all other windows are hidden
-      promptWindow?.hide();
-      if (allWindows.every((window) => !window.isVisible())) {
-        app?.hide();
-        hideEmitter.emit('hide');
-      }
-    }
+  if (promptWindow && promptWindow?.isVisible()) {
+    cachePromptPosition(promptWindow);
+    hideAppIfNoWindows(promptWindow);
   }
   blurredByKit = false;
 };
