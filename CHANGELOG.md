@@ -1,3 +1,10 @@
+# [1.1.0-beta.59](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.58...v1.1.0-beta.59) (2021-03-10)
+
+
+### Bug Fixes
+
+* **startup:** Messaging and show location ([efa5d15](https://github.com/johnlindquist/kitapp/commit/efa5d15b0e1033935a476feeced744c2d42a078d))
+
 # [1.1.0-beta.58](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.57...v1.1.0-beta.58) (2021-03-10)
 
 
