@@ -161,16 +161,15 @@ const ready = async () => {
   autoUpdater.logger = log;
   autoUpdater.checkForUpdatesAndNotify();
 
-  configWindow?.webContents.send(
-    'MESSAGE',
-    `
+  configWindow?.webContents.send('UPDATE', {
+    header: `Welcome to Script Kit!`,
+    message: `
   <div class="flex flex-col justify-center items-center">
-    <h2>Ready!</h2>
     <div><kbd>cmd</kbd>+<kbd>;</kbd> to launch main prompt (or click tray icon)</div>
     <div><kbd>cmd</kbd>+<kbd>shift</kbd><kbd>;</kbd> to launch cli prompt (or right-click tray icon)</div>
   </div>
-  `.trim()
-  );
+  `.trim(),
+  });
 
   configWindow?.on('blur', () => {
     configWindow?.removeAllListeners();
@@ -283,10 +282,10 @@ const checkKit = async () => {
   configWindow = await show(
     'splash-setup',
     `
-  <body class="h-screen w-screen flex flex-col justify-center items-center dark:bg-gray-800 dark:text-white">
-    <h1>Configuring ~/.kit and ~/.kenv...</h1>
-    <img src="${getAssetPath('icon.png')}" class="w-14 p-2"/>
-    <div class="message"></div>
+  <body class="h-screen w-screen flex flex-col justify-evenly items-center dark:bg-gray-800 dark:text-white">
+    <h1 class="header pt-4">Configuring ~/.kit and ~/.kenv...</h1>
+    <img src="${getAssetPath('icon.png')}" class="w-20"/>
+    <div class="message pb-4"></div>
   </body>
   `,
     { frame: false, preventDestroy: true }

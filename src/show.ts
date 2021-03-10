@@ -15,8 +15,9 @@ const page = (body: string, styles: string) => {
 
     const {ipcRenderer} = require("electron")
 
-    ipcRenderer.on('MESSAGE', (event, message)=> {
-      console.log(event, message)
+    ipcRenderer.on('UPDATE', (event, {message, header})=> {
+      console.log(event, header, message)
+      document.querySelector(".header").innerHTML = header
       document.querySelector(".message").innerHTML = message
     })
     </script>
