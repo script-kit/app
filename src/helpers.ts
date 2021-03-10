@@ -1,5 +1,8 @@
+/* eslint-disable jest/no-export */
+/* eslint-disable jest/expect-expect */
 import { app } from 'electron';
 import path from 'path';
+import { test } from 'shelljs';
 
 export const APP_NAME = 'Kit';
 export const KIT_PROTOCOL = 'kit';
@@ -29,3 +32,5 @@ export const stringifyScriptArgsKey = (
     key: scriptString + (argsString ? `/${argsString}` : ``),
   };
 };
+
+export const dirExists = (dir: string) => test('-d', dir);

@@ -180,7 +180,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
   child.on('close', tryClean('CLOSE'));
   child.on('message', async (data: any) => {
-    kitLog.info('> FROM:', data.from);
+    kitLog.info('> FROM:', data.from, data?.kitScript);
 
     // TODO: Refactor into something better than this :D
     switch (data.from) {
@@ -262,7 +262,8 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
           });
         });
 
-        const imageWindow = show(
+        const imageWindow = await show(
+          data?.kitScript || 'show-image',
           String.raw`<img src="${image?.src}" alt="${image?.alt}" title="${image?.title}" />`,
           { width, height, ...options }
         );
