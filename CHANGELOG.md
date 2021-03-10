@@ -1,3 +1,15 @@
+# [1.1.0-beta.58](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.57...v1.1.0-beta.58) (2021-03-10)
+
+
+### Bug Fixes
+
+* **text:** Allow script to run when prompt hidden by script ([c6d46a5](https://github.com/johnlindquist/kitapp/commit/c6d46a56cf37d5bfd9532419732bef07f8a83dce))
+
+
+### Features
+
+* **show:** Allow header and message updates ([5c9fd4a](https://github.com/johnlindquist/kitapp/commit/5c9fd4a3398b9345e5f7460a12166d4a92312165))
+
 # [1.1.0-beta.57](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.56...v1.1.0-beta.57) (2021-03-10)
 
 
