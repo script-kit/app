@@ -1,3 +1,10 @@
+# [1.1.0-beta.62](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.61...v1.1.0-beta.62) (2021-03-11)
+
+
+### Bug Fixes
+
+* **update:** Attempting to fix the relaunch after install logic ([2509b62](https://github.com/johnlindquist/kitapp/commit/2509b6226bc28a0cb24cdbbb7afdce23625e1cd4))
+
 # [1.1.0-beta.61](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.60...v1.1.0-beta.61) (2021-03-11)
 
 
