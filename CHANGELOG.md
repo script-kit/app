@@ -1,3 +1,10 @@
+# [1.1.0-beta.61](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.60...v1.1.0-beta.61) (2021-03-11)
+
+
+### Bug Fixes
+
+* **update:** Fixing splash update and window focus ([2ee18c8](https://github.com/johnlindquist/kitapp/commit/2ee18c8d1b4746af0f49f67afa999f3cf26a519a))
+
 # [1.1.0-beta.60](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.59...v1.1.0-beta.60) (2021-03-10)
 
 
