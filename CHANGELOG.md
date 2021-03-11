@@ -1,3 +1,10 @@
+# [1.1.0-beta.63](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.62...v1.1.0-beta.63) (2021-03-11)
+
+
+### Bug Fixes
+
+* **splash:** displaying version on splash page ([eac76f7](https://github.com/johnlindquist/kitapp/commit/eac76f7b69947d8cd88cceab816fca9e43b54102))
+
 # [1.1.0-beta.62](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.61...v1.1.0-beta.62) (2021-03-11)
 
 
