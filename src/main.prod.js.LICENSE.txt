@@ -40,6 +40,8 @@
  * Released under the MIT License.
  */
 
+/*! arch. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+
 /*! http://mths.be/fromcodepoint v0.1.0 by @mathias */
 
 /**
@@ -50,3 +52,5 @@
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
  * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  */
+
+/** @license URI.js v4.4.0 (c) 2011 Gary Court. License: http://github.com/garycourt/uri-js */

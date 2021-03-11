@@ -12,7 +12,8 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
-import { app, protocol, BrowserWindow } from 'electron';
+import { app, protocol, BrowserWindow, powerMonitor } from 'electron';
+import clipboardy from 'clipboardy';
 
 if (!app.requestSingleInstanceLock()) {
   app.exit();
@@ -55,6 +56,10 @@ app.setName(APP_NAME);
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
 app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
+
+powerMonitor.on('resume', () => {
+  autoUpdater.checkForUpdatesAndNotify();
+});
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -101,7 +106,7 @@ autoUpdater.on('update-downloaded', () => {
   log.info('update downloaded');
   makeRestartNecessary();
   autoUpdater.quitAndInstall();
-  app.quit();
+  app.exit();
 });
 
 app.on('window-all-closed', (e: Event) => {
@@ -240,8 +245,6 @@ const ohNo = async (error: Error) => {
     }
   );
 
-  const clipboardy = await import('clipboardy');
-
   await clipboardy.write(
     `
 ${error.message}
@@ -249,6 +252,7 @@ ${error.stack}
 ${mainLog}
   `.trim()
   );
+  configWindow?.hide();
 
   const showWindow = await show(
     'install-error',
@@ -328,9 +332,7 @@ const checkKit = async () => {
 
   setupLog(`Currently on branch: ${branch}`);
 
-  const shouldCheckoutTag =
-    (kitVersion !== getVersion() || branch === 'main') &&
-    process.env.NODE_ENV !== 'development';
+  const shouldCheckoutTag = kitVersion !== getVersion() || branch === 'main'; // &&    process.env.NODE_ENV !== 'development';
 
   if (shouldCheckoutTag) {
     // TODO: verify tag

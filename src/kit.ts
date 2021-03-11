@@ -89,9 +89,9 @@ const reset = () => {
     child = null;
     script = '';
     key = '';
-    appHidden = false;
-    hidePromptWindow();
   }
+  appHidden = false;
+  hidePromptWindow();
 };
 
 // TODO: Work out states
