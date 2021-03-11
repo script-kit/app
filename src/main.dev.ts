@@ -167,11 +167,11 @@ const ready = async () => {
   autoUpdater.checkForUpdatesAndNotify();
 
   configWindow?.webContents.send('UPDATE', {
-    header: `Welcome to Script Kit!`,
+    header: `Script Kit ${getVersion()}`,
     message: `
   <div class="flex flex-col justify-center items-center">
-    <div><kbd>cmd</kbd>+<kbd>;</kbd> to launch main prompt (or click tray icon)</div>
-    <div><kbd>cmd</kbd>+<kbd>shift</kbd><kbd>;</kbd> to launch cli prompt (or right-click tray icon)</div>
+    <div><span class="font-bold"><kbd>cmd</kbd> <kbd>;</kbd></span> to launch main prompt (or click tray icon)</div>
+    <div><span class="font-bold"><kbd>cmd</kbd> <kbd>shift</kbd><kbd>;</kbd></span> to launch cli prompt (or right-click tray icon)</div>
   </div>
   `.trim(),
   });
