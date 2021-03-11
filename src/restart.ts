@@ -11,7 +11,6 @@ export const makeRestartNecessary = () => {
 export const restartIfNecessary = () => {
   if (state.get(NEEDS_RESTART)) {
     state.set(NEEDS_RESTART, false);
-    app.relaunch();
     app.exit(0);
   }
 };

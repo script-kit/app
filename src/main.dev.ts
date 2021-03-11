@@ -332,7 +332,9 @@ const checkKit = async () => {
 
   setupLog(`Currently on branch: ${branch}`);
 
-  const shouldCheckoutTag = kitVersion !== getVersion() || branch === 'main'; // &&    process.env.NODE_ENV !== 'development';
+  const shouldCheckoutTag =
+    (kitVersion !== getVersion() || branch === 'main') &&
+    process.env.NODE_ENV !== 'development';
 
   if (shouldCheckoutTag) {
     // TODO: verify tag
