@@ -13,6 +13,7 @@
  */
 
 import { app, protocol, BrowserWindow, powerMonitor } from 'electron';
+import queryString from 'query-string';
 import clipboardy from 'clipboardy';
 
 if (!app.requestSingleInstanceLock()) {
@@ -131,9 +132,15 @@ const prepareProtocols = async () => {
   app.on('open-url', (e, url) => {
     log.info(`URL PROTOCOL`, url);
     e.preventDefault();
-    const newArgs = decodeURI(url).slice(PROTOCOL_START.length).split(' ');
+    const [name, params] = url.slice(PROTOCOL_START.length).split('?');
+    const argObject = queryString.parse(params);
 
-    tryKitScript('kit/cli/new', newArgs);
+    const args = Object.entries(argObject)
+      .map(([key, value]) => `--${key} ${value}`)
+      .join(' ')
+      .split(' ');
+
+    tryKitScript('kit/cli/new', [name, ...args]);
   });
 
   protocol.registerFileProtocol(KIT_PROTOCOL, (request, callback) => {
