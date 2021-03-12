@@ -233,7 +233,7 @@ const handleSpawnReturns = async (
 
   if (stderr?.toString().length) {
     console.log({ stderr: stderr.toString() });
-    throw new Error(stderr.toString());
+    // throw new Error(stderr.toString());
   }
 
   return result;
@@ -280,6 +280,10 @@ ${mainLog}
   );
 
   showWindow?.on('close', () => {
+    app.exit();
+  });
+
+  showWindow?.on('blur', () => {
     app.exit();
   });
 };
