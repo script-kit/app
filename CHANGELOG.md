@@ -1,3 +1,10 @@
+# [1.1.0-beta.66](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.65...v1.1.0-beta.66) (2021-03-12)
+
+
+### Bug Fixes
+
+* **install:** ignore npm notices ([b2dc6c9](https://github.com/johnlindquist/kitapp/commit/b2dc6c95e83e54d4134e157e771e22a454be85d0))
+
 # [1.1.0-beta.65](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.64...v1.1.0-beta.65) (2021-03-12)
 
 
