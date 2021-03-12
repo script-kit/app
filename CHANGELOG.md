@@ -1,3 +1,10 @@
+# [1.1.0-beta.64](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.63...v1.1.0-beta.64) (2021-03-12)
+
+
+### Features
+
+* **server:** Adding kit.local so you can post messages ([7c1957a](https://github.com/johnlindquist/kitapp/commit/7c1957a8d0c87e04a2811e01eeb03b80fe9f8d31))
+
 # [1.1.0-beta.63](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.62...v1.1.0-beta.63) (2021-03-11)
 
 
