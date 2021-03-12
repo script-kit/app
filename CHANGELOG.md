@@ -1,3 +1,10 @@
+# [1.1.0-beta.65](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.64...v1.1.0-beta.65) (2021-03-12)
+
+
+### Features
+
+* **protocol:** Changed the format of the kit:// protocol ([d080afe](https://github.com/johnlindquist/kitapp/commit/d080afe1297b9332c490ca39624013aff2f319c9))
+
 # [1.1.0-beta.64](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.63...v1.1.0-beta.64) (2021-03-12)
 
 
