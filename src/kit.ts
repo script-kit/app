@@ -11,7 +11,7 @@ import minimist from 'minimist';
 import path from 'path';
 import { fork, ChildProcess } from 'child_process';
 import kitLog from 'electron-log';
-import { debounce } from 'lodash';
+import { debounce, isUndefined } from 'lodash';
 import ipc from 'node-ipc';
 import {
   invokePromptWindow,
@@ -47,10 +47,15 @@ consoleLog.transports.file.resolvePath = () => kenv('logs', 'console.log');
 
 export const processMap = new Map();
 
+const setPromptText = (text) => {
+  if (!appHidden) invokePromptWindow(UPDATE_PROMPT_INFO, text);
+};
+
 ipcMain.on('VALUE_SUBMITTED', (_event, { value }) => {
   cacheKeyParts.push(value);
   if (child) {
     child?.send(value);
+    setPromptText(`>_ ${script} ${value}...`);
   } else {
     tryKitScript(script, cacheKeyParts);
   }
@@ -320,7 +325,12 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         }
         if (data?.choices) {
           // validate choices
-          if (data?.choices.every(({ name, value }: any) => name && value)) {
+          if (
+            data?.choices.every(
+              ({ name, value }: any) =>
+                !isUndefined(name) && !isUndefined(value)
+            )
+          ) {
             invokePromptWindow(SHOW_PROMPT_WITH_DATA, data);
           } else {
             kitLog.warn(`Choices must have "name" and "value"`);
