@@ -1,3 +1,10 @@
+# [1.1.0-beta.69](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.68...v1.1.0-beta.69) (2021-03-13)
+
+
+### Bug Fixes
+
+* **prompt:** choices allow false values ([880780e](https://github.com/johnlindquist/kitapp/commit/880780e709e076db941e25afe7ed0485c64f3fd9))
+
 # [1.1.0-beta.68](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.67...v1.1.0-beta.68) (2021-03-13)
 
 
