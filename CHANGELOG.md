@@ -1,3 +1,10 @@
+# [1.1.0-beta.67](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.66...v1.1.0-beta.67) (2021-03-13)
+
+
+### Features
+
+* **server:** Adding server start/stop toggle ([3decf03](https://github.com/johnlindquist/kitapp/commit/3decf03aaadf87ace0c18b2fead717f4431ad030))
+
 # [1.1.0-beta.66](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.65...v1.1.0-beta.66) (2021-03-12)
 
 
