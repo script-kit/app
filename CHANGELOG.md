@@ -1,3 +1,10 @@
+# [1.1.0-beta.68](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.67...v1.1.0-beta.68) (2021-03-13)
+
+
+### Features
+
+* **error:** Adding in some basic error handling ([4c4a52c](https://github.com/johnlindquist/kitapp/commit/4c4a52c6f8d7c2cd8d71ac79b5e1be27dbcaacbd))
+
 # [1.1.0-beta.67](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.66...v1.1.0-beta.67) (2021-03-13)
 
 
