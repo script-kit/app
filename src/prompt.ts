@@ -4,6 +4,7 @@ import { BrowserWindow, screen, app } from 'electron';
 import log from 'electron-log';
 import Store from 'electron-store';
 import { EventEmitter } from 'events';
+import minimist from 'minimist';
 import { getAssetPath } from './assets';
 import { KIT_PROTOCOL, kenv } from './helpers';
 
@@ -29,6 +30,10 @@ export const setBlurredByKit = () => {
 
 export const hideEmitter = new EventEmitter();
 
+const miniArgs = minimist(process.argv);
+const { devTools } = miniArgs;
+log.info(process.argv.join(' '), devTools);
+
 export const createPromptWindow = async () => {
   promptWindow = new BrowserWindow({
     frame: false,
@@ -41,7 +46,7 @@ export const createPromptWindow = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
-      devTools: process.env.NODE_ENV === 'development',
+      devTools: process.env.NODE_ENV === 'development' || devTools,
     },
     alwaysOnTop: true,
     closable: false,
@@ -131,7 +136,9 @@ export const invokePromptWindow = (channel: string, data: any) => {
 
     // TODO: Think through "show on every invoke" logic
     if (!promptWindow?.isVisible() && channel !== 'CLEAR_PROMPT') {
+      promptWindow?.setResizable(true);
       promptWindow?.show();
+      if (devTools) promptWindow?.webContents.openDevTools();
     }
   }
 
@@ -202,7 +209,7 @@ export const createPreview = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
-      devTools: process.env.NODE_ENV === 'development',
+      devTools: process.env.NODE_ENV === 'development' || devTools,
     },
     alwaysOnTop: true,
     closable: false,
