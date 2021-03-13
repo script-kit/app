@@ -1,8 +1,10 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import React, {
+  ErrorInfo,
   KeyboardEvent,
   RefObject,
   useCallback,
@@ -25,6 +27,28 @@ interface ChoiceData {
   name: string;
   value: string;
   preview: string | null;
+}
+
+class ErrorBoundary extends React.Component {
+  // eslint-disable-next-line react/state-in-constructor
+  public state: { hasError: boolean } = { hasError: false };
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    // Display fallback UI
+    this.setState({ hasError: true });
+    // You can also log the error to an error reporting service
+    ipcRenderer.send('PROMPT_ERROR', error);
+  }
+
+  render() {
+    // eslint-disable-next-line react/destructuring-assignment
+    if (this.state.hasError) {
+      // You can render any custom fallback UI
+      return <h1>Something went wrong.</h1>;
+    }
+    // eslint-disable-next-line react/destructuring-assignment
+    return this.props.children;
+  }
 }
 
 const noHightlight = (name: string, input: string) => {
@@ -164,61 +188,69 @@ export default function App() {
   }, [data, inputValue]);
 
   useEffect(() => {
-    if (!data?.choices?.length || data?.from === UPDATE_PROMPT_CHOICES) return;
-
-    const exactExpression = `^${inputValue}`;
-    const partialExpression = inputValue;
-
-    let exactRegExp: RegExp;
-    let partialRegExp: RegExp;
     try {
-      exactRegExp = new RegExp(exactExpression, 'i');
-      partialRegExp = new RegExp(partialExpression, 'i');
+      if (!data?.choices?.length || data?.from === UPDATE_PROMPT_CHOICES)
+        return;
+
+      const exactExpression = `^${inputValue}`;
+      const partialExpression = inputValue;
+
+      let exactRegExp: RegExp;
+      let partialRegExp: RegExp;
+      try {
+        exactRegExp = new RegExp(exactExpression, 'i');
+        partialRegExp = new RegExp(partialExpression, 'i');
+      } catch (error) {
+        exactRegExp = new RegExp('');
+        partialRegExp = new RegExp('');
+      }
+
+      const exactFilter = (choice: any) => choice.name.match(exactRegExp);
+      const startFilter = (choice: any) => {
+        const words = choice.name
+          .split(/\s|-|\+/)
+          .map((word: string) => word.toLowerCase());
+
+        let chars = '';
+        let wordIndex = 0;
+        return inputValue
+          .split('')
+          .map((char) => char.toLowerCase())
+          .every((char) => {
+            chars += char;
+
+            if (words[wordIndex].startsWith(chars)) {
+              return true;
+            }
+
+            wordIndex += 1;
+            chars = char;
+            if (!words[wordIndex]) return false;
+            return words[wordIndex].startsWith(chars);
+          });
+      };
+
+      const partialFilter = (choice: any) => choice.name.match(partialRegExp);
+
+      const [exactMatches, notBestMatches] = partition(
+        data.choices,
+        exactFilter
+      );
+      const [startMatches, notStartMatches] = partition(
+        notBestMatches,
+        startFilter
+      );
+      const [partialMatches, notMatches] = partition(
+        notStartMatches,
+        partialFilter
+      );
+
+      const filtered = [...exactMatches, ...startMatches, ...partialMatches];
+
+      setChoices(filtered);
     } catch (error) {
-      exactRegExp = new RegExp('');
-      partialRegExp = new RegExp('');
+      ipcRenderer.send('PROMPT_ERROR', error);
     }
-
-    const exactFilter = (choice: any) => choice.name.match(exactRegExp);
-    const startFilter = (choice: any) => {
-      const words = choice.name
-        .split(/\s|-|\+/)
-        .map((word: string) => word.toLowerCase());
-
-      let chars = '';
-      let wordIndex = 0;
-      return inputValue
-        .split('')
-        .map((char) => char.toLowerCase())
-        .every((char) => {
-          chars += char;
-
-          if (words[wordIndex].startsWith(chars)) {
-            return true;
-          }
-
-          wordIndex += 1;
-          chars = char;
-          if (!words[wordIndex]) return false;
-          return words[wordIndex].startsWith(chars);
-        });
-    };
-
-    const partialFilter = (choice: any) => choice.name.match(partialRegExp);
-
-    const [exactMatches, notBestMatches] = partition(data.choices, exactFilter);
-    const [startMatches, notStartMatches] = partition(
-      notBestMatches,
-      startFilter
-    );
-    const [partialMatches, notMatches] = partition(
-      notStartMatches,
-      partialFilter
-    );
-
-    const filtered = [...exactMatches, ...startMatches, ...partialMatches];
-
-    setChoices(filtered);
   }, [data, inputValue]);
 
   useEffect(() => {
@@ -282,113 +314,116 @@ export default function App() {
   }, []);
 
   return (
-    <div
-      className="flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl"
-      style={{
-        WebkitAppRegion: 'drag',
-        WebkitUserSelect: 'none',
-      }}
-      ref={mainRef}
-    >
-      <input
-        ref={inputRef}
-        style={{ minHeight: '4rem' }}
-        className="w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder:text-gray-300 placeholder:text-gray-500 bg-white dark:bg-gray-900 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4"
-        type={data?.secret ? 'password' : 'text'}
-        value={inputValue}
-        onChange={onChange}
-        autoFocus
-        placeholder={data?.message || ''}
-        onKeyDown={onKeyDown}
-      />
-      {info && <div className="text-sm text-black dark:text-white">{info}</div>}
-      {/* <div className="bg-white">
-          {index} : {choices[index]?.name}
-        </div>
-        <div className="bg-white">
-          {Array.from(value)
-            .map((letter) => `${letter}.*`)
-            .join('')};
-        </div> */}
-      {choices?.length > 0 && (
-        <SimpleBar
-          scrollableNodeProps={{ ref: scrollRef }}
-          style={{
-            WebkitAppRegion: 'no-drag',
-            WebkitUserSelect: 'none',
-          }}
-          className="px-4 pb-4 flex flex-col text-black dark:text-white w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none bg-white dark:bg-gray-900"
-          // style={{ maxHeight: '85vh' }}
-        >
-          {((choices as any[]) || []).map((choice, i) => {
-            const input = inputValue.toLowerCase();
-            const name = choice?.name?.toLowerCase();
-
-            return (
-              // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-              <button
-                type="button"
-                key={choice.uuid}
-                className={`
-              w-full
-              my-1
-              h-16
-              whitespace-nowrap
-              text-left
-              flex
-              flex-row
-              text-xl
-              px-4
-              rounded-lg
-              justify-between
-              items-center
-
-              ${index === i ? `dark:bg-gray-800 bg-gray-100 shadow` : ``}`}
-                onClick={(_event) => {
-                  submit(choice.value);
-                }}
-                onMouseEnter={() => {
-                  setIndex(i);
-                }}
-              >
-                <div className="flex flex-col max-w-full mr-2 truncate">
-                  <div className="truncate">
-                    {channel === UPDATE_PROMPT_CHOICES
-                      ? noHightlight(choice.name, inputValue)
-                      : name.includes(input)
-                      ? highlightExactMatch(choice.name, inputValue)
-                      : highlightRegexMatch(choice.name, inputValue)}
-                  </div>
-                  {((index === i && choice?.selected) ||
-                    choice?.description) && (
-                    <div
-                      className={`text-xs truncate ${
-                        index === i && `dark:text-yellow-500 text-yellow-700`
-                      }`}
-                    >
-                      {(index === i && choice?.selected) || choice?.description}
+    <ErrorBoundary>
+      <div
+        className="flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl"
+        style={{
+          WebkitAppRegion: 'drag',
+          WebkitUserSelect: 'none',
+        }}
+        ref={mainRef}
+      >
+        <input
+          ref={inputRef}
+          style={{ minHeight: '4rem' }}
+          className="w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder:text-gray-300 placeholder:text-gray-500 bg-white dark:bg-gray-900 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4"
+          type={data?.secret ? 'password' : 'text'}
+          value={inputValue}
+          onChange={onChange}
+          autoFocus
+          placeholder={data?.message || ''}
+          onKeyDown={onKeyDown}
+        />
+        {info && (
+          <div className="text-sm text-black dark:text-white">{info}</div>
+        )}
+        {/* <div className="bg-white">
+            {index} : {choices[index]?.name}
+          </div>
+          <div className="bg-white">
+            {Array.from(value)
+              .map((letter) => `.*`)
+              .join('')};
+          </div> */}
+        {choices?.length > 0 && (
+          <SimpleBar
+            scrollableNodeProps={{ ref: scrollRef }}
+            style={{
+              WebkitAppRegion: 'no-drag',
+              WebkitUserSelect: 'none',
+            }}
+            className="px-4 pb-4 flex flex-col text-black dark:text-white w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none bg-white dark:bg-gray-900"
+            // style={{ maxHeight: '85vh' }}
+          >
+            {((choices as any[]) || []).map((choice, i) => {
+              const input = inputValue.toLowerCase();
+              const name = choice?.name?.toLowerCase();
+              return (
+                // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+                <button
+                  type="button"
+                  key={choice.uuid}
+                  className={`
+                w-full
+                my-1
+                h-16
+                whitespace-nowrap
+                text-left
+                flex
+                flex-row
+                text-xl
+                px-4
+                rounded-lg
+                justify-between
+                items-center
+                ${index === i ? `dark:bg-gray-800 bg-gray-100 shadow` : ``}`}
+                  onClick={(_event) => {
+                    submit(choice.value);
+                  }}
+                  onMouseEnter={() => {
+                    setIndex(i);
+                  }}
+                >
+                  <div className="flex flex-col max-w-full mr-2 truncate">
+                    <div className="truncate">
+                      {channel === UPDATE_PROMPT_CHOICES
+                        ? noHightlight(choice.name, inputValue)
+                        : name.includes(input)
+                        ? highlightExactMatch(choice.name, inputValue)
+                        : highlightRegexMatch(choice.name, inputValue)}
                     </div>
+                    {((index === i && choice?.selected) ||
+                      choice?.description) && (
+                      <div
+                        className={`text-xs truncate ${
+                          index === i && `dark:text-yellow-500 text-yellow-700`
+                        }`}
+                      >
+                        {(index === i && choice?.selected) ||
+                          choice?.description}
+                      </div>
+                    )}
+                  </div>
+                  {choice?.icon && (
+                    <img
+                      src={choice.icon}
+                      alt={choice.name}
+                      className="py-2 h-full"
+                    />
                   )}
-                </div>
-                {choice?.icon && (
-                  <img
-                    src={choice.icon}
-                    alt={choice.name}
-                    className="py-2 h-full"
-                  />
-                )}
-                {choice?.html && (
-                  <div
-                    // eslint-disable-next-line react/no-danger
-                    dangerouslySetInnerHTML={{ __html: choice?.html }}
-                    className="py-2 h-full"
-                  />
-                )}
-              </button>
-            );
-          })}
-        </SimpleBar>
-      )}
-    </div>
+                  {choice?.html && (
+                    <div
+                      // eslint-disable-next-line react/no-danger
+                      dangerouslySetInnerHTML={{ __html: choice?.html }}
+                      className="py-2 h-full"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </SimpleBar>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }

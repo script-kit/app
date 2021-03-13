@@ -67,6 +67,11 @@ ipcMain.on(
   }, 250)
 );
 
+ipcMain.on('PROMPT_ERROR', (_event, error: Error) => {
+  kitLog.warn(error);
+  if (!appHidden) invokePromptWindow(UPDATE_PROMPT_INFO, error.message);
+});
+
 ipcMain.on(
   'VALUE_SELECTED',
   debounce((_event, choice: any) => {
@@ -313,7 +318,23 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
             getCache()?.set(key, data);
           }
         }
-        invokePromptWindow(SHOW_PROMPT_WITH_DATA, data);
+        if (data?.choices) {
+          // validate choices
+          if (data?.choices.every(({ name, value }: any) => name && value)) {
+            invokePromptWindow(SHOW_PROMPT_WITH_DATA, data);
+          } else {
+            kitLog.warn(`Choices must have "name" and "value"`);
+            kitLog.warn(data?.choices);
+            if (!appHidden)
+              invokePromptWindow(
+                UPDATE_PROMPT_INFO,
+                `Warning: arg choices must have "name" and "value"`
+              );
+          }
+        } else {
+          invokePromptWindow(SHOW_PROMPT_WITH_DATA, data);
+        }
+
         break;
 
       case 'SHOW':
