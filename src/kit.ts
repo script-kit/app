@@ -35,6 +35,7 @@ import {
   UPDATE_PROMPT_CHOICES,
   UPDATE_PROMPT_INFO,
 } from './channels';
+import { serverState, startServer, stopServer } from './server';
 
 let child: ChildProcess | null = null;
 let script = '';
@@ -228,6 +229,10 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         child?.send({ from: 'MOUSE', mouseCursor });
         break;
 
+      case 'GET_SERVER_STATE':
+        child?.send({ from: 'SERVER', ...serverState });
+        break;
+
       case 'HIDE_APP':
         appHidden = true;
         app?.hide();
@@ -319,6 +324,17 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
             focusPrompt();
           });
         }
+        break;
+
+      case 'START_SERVER':
+        const serverCallback = (s: string, a: string[]) => {
+          tryKitScript(s, a);
+        };
+        startServer(data.host, parseInt(data.port, 10), serverCallback);
+        break;
+
+      case 'STOP_SERVER':
+        stopServer();
         break;
 
       case 'UPDATE_APP':

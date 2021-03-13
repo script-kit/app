@@ -317,7 +317,7 @@ export default function App() {
             WebkitAppRegion: 'no-drag',
             WebkitUserSelect: 'none',
           }}
-          className="px-4 pb-4 flex flex-col text-black dark:text-white w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
+          className="px-4 pb-4 flex flex-col text-black dark:text-white w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none bg-white dark:bg-gray-900"
           // style={{ maxHeight: '85vh' }}
         >
           {((choices as any[]) || []).map((choice, i) => {

@@ -46,7 +46,6 @@ import { createCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
 import { show } from './show';
-import { startServer } from './server';
 
 let configWindow: BrowserWindow | null = null;
 
@@ -171,7 +170,6 @@ const ready = async () => {
   await createPromptWindow();
   await createPreview();
   await createNotification();
-  startServer();
   autoUpdater.logger = log;
   autoUpdater.checkForUpdatesAndNotify();
 
