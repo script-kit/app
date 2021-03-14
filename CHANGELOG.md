@@ -1,3 +1,10 @@
+# [1.1.0-beta.70](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.69...v1.1.0-beta.70) (2021-03-13)
+
+
+### Features
+
+* **prompt:** enable devTools flag ([9dba06b](https://github.com/johnlindquist/kitapp/commit/9dba06b6c079bcf0c47ee831d770cc65a3b82015))
+
 # [1.1.0-beta.69](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.68...v1.1.0-beta.69) (2021-03-13)
 
 
