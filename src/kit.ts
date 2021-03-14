@@ -369,7 +369,10 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       case 'UPDATE_APP':
-        autoUpdater.checkForUpdatesAndNotify();
+        autoUpdater.checkForUpdatesAndNotify({
+          title: 'Script Kit Updated',
+          body: 'Relaunching...',
+        });
 
         break;
 

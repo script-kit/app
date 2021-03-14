@@ -130,13 +130,10 @@ export const invokePromptWindow = (channel: string, data: any) => {
       const y = Math.floor(workY + height / 10);
 
       promptWindow?.setBounds({ x, y, width, height });
-      promptWindow?.setMaximumSize(width, height);
-      promptWindow?.setMinimumSize(width, height);
     }
 
     // TODO: Think through "show on every invoke" logic
     if (!promptWindow?.isVisible() && channel !== 'CLEAR_PROMPT') {
-      promptWindow?.setResizable(true);
       promptWindow?.show();
       if (devTools) promptWindow?.webContents.openDevTools();
     }

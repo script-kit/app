@@ -59,7 +59,10 @@ app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
 
 powerMonitor.on('resume', () => {
-  autoUpdater.checkForUpdatesAndNotify();
+  autoUpdater.checkForUpdatesAndNotify({
+    title: 'Script Kit Updated',
+    body: 'Relaunching...',
+  });
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -71,7 +74,7 @@ if (
   process.env.NODE_ENV === 'development' ||
   process.env.DEBUG_PROD === 'true'
 ) {
-  require('electron-debug')();
+  require('electron-debug')({ showDevTools: false });
 }
 
 const installExtensions = async () => {
@@ -161,32 +164,47 @@ const createCaches = () => {
   createPromptCache();
 };
 
-const ready = async () => {
-  createLogs();
-  createCaches();
-  await prepareProtocols();
-  await createTray();
-  await manageShortcuts();
-  await createPromptWindow();
-  await createPreview();
-  await createNotification();
-  autoUpdater.logger = log;
-  autoUpdater.checkForUpdatesAndNotify();
-
-  configWindow?.webContents.send('UPDATE', {
-    header: `Script Kit ${getVersion()}`,
-    message: `
+const configWindowDone = () => {
+  if (configWindow?.isVisible()) {
+    configWindow?.webContents.send('UPDATE', {
+      header: `Script Kit ${getVersion()}`,
+      message: `
   <div class="flex flex-col justify-center items-center">
     <div><span class="font-bold"><kbd>cmd</kbd> <kbd>;</kbd></span> to launch main prompt (or click tray icon)</div>
     <div><span class="font-bold"><kbd>cmd</kbd> <kbd>shift</kbd><kbd>;</kbd></span> to launch cli prompt (or right-click tray icon)</div>
   </div>
   `.trim(),
-  });
-
-  configWindow?.on('blur', () => {
-    configWindow?.removeAllListeners();
+    });
+    configWindow?.on('blur', () => {
+      if (!configWindow?.webContents?.isDevToolsOpened()) {
+        configWindow?.destroy();
+      }
+    });
+  } else {
     configWindow?.destroy();
-  });
+  }
+};
+
+const ready = async () => {
+  try {
+    createLogs();
+    createCaches();
+    await prepareProtocols();
+    await createTray();
+    await manageShortcuts();
+    await createPromptWindow();
+    await createPreview();
+    await createNotification();
+    autoUpdater.logger = log;
+    autoUpdater.checkForUpdatesAndNotify({
+      title: 'Script Kit Updated',
+      body: 'Relaunching...',
+    });
+
+    configWindowDone();
+  } catch (error) {
+    log.warn(error);
+  }
 };
 
 const options: SpawnSyncOptions = {
@@ -211,6 +229,12 @@ const verifyInstall = async () => {
   }
 };
 
+const updateConfigWindow = (message: string) => {
+  if (configWindow?.isVisible()) {
+    configWindow?.webContents.send('UPDATE', { message });
+  }
+};
+
 const handleSpawnReturns = async (
   message: string,
   result: SpawnSyncReturns<any>
@@ -222,7 +246,7 @@ const handleSpawnReturns = async (
 
   if (stdout?.toString().length) {
     log.info(message, stdout.toString());
-    configWindow?.webContents.send('UPDATE', { message: stdout.toString() });
+    updateConfigWindow(stdout.toString());
   }
 
   if (error) {
@@ -238,7 +262,7 @@ const handleSpawnReturns = async (
 };
 
 const setupLog = (message: string) => {
-  configWindow?.webContents.send('UPDATE', { message });
+  updateConfigWindow(message);
   log.info(message);
 };
 
@@ -259,7 +283,7 @@ ${error.stack}
 ${mainLog}
   `.trim()
   );
-  configWindow?.hide();
+  configWindow?.destroy();
 
   const showWindow = await show(
     'install-error',
@@ -303,12 +327,14 @@ const checkKit = async () => {
     <div class="message pb-4"></div>
   </body>
   `,
-    { frame: false, preventDestroy: true }
+    { frame: false },
+    false
   );
 
   // eslint-disable-next-line jest/expect-expect
   log.info(`Checking if kit exists`);
   if (!kitExists()) {
+    configWindow?.show();
     setupLog(`~/.kit not found. Installing...`);
 
     // Step 1: Clone repo
@@ -356,7 +382,9 @@ const checkKit = async () => {
 
   if (!kenvExists()) {
     // Step 4: Use kit wrapper to run setup.js script
+    configWindow?.show();
     setupLog(`Run .kenv setup script...`);
+
     await git(app.getPath('home')).clone(KENV_REPO, KENV);
     const setupKenvResult = spawnSync(
       `./script`,

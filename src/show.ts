@@ -29,7 +29,8 @@ const page = (body: string, styles: string) => {
 export const show = async (
   name: string,
   html: string,
-  options: any = {}
+  options: any = {},
+  showOnLoad = true
 ): Promise<BrowserWindow> => {
   const cursor = screen.getCursorScreenPoint();
   // Get display with cursor
@@ -65,19 +66,18 @@ export const show = async (
 
   showWindow?.setMaxListeners(2);
 
-  if (!options?.preventDestroy) {
-    showWindow?.webContents.on('before-input-event', (event: any, input) => {
-      if (input.key === 'Escape') {
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        showWindow.destroy();
-        if (
-          BrowserWindow.getAllWindows().every((window) => !window.isVisible())
-        ) {
-          app?.hide();
-        }
+  showWindow?.webContents.on('before-input-event', (event: any, input) => {
+    if (input.key === 'Escape') {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      showWindow.destroy();
+      if (
+        BrowserWindow.getAllWindows().every((window) => !window.isVisible())
+      ) {
+        app?.hide();
       }
-    });
-  }
+    }
+  });
+
   const baseURL = app.getAppPath().replace('\\', '/');
   const stylePath = `${baseURL}/dist/style.css`;
   const styles = await readFile(stylePath, { encoding: 'utf8' });
@@ -94,8 +94,10 @@ export const show = async (
 
   return new Promise((resolve, reject) => {
     showWindow.webContents.once('did-finish-load', () => {
-      showWindow?.webContents.closeDevTools();
-      showWindow?.show();
+      if (showOnLoad && showWindow) {
+        showWindow?.show();
+      }
+
       resolve(showWindow);
     });
 
