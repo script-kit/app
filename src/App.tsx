@@ -317,15 +317,15 @@ export default function App() {
     <ErrorBoundary>
       <div
         className="flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl"
-        style={{
-          WebkitAppRegion: 'drag',
-          WebkitUserSelect: 'none',
-        }}
         ref={mainRef}
       >
         <input
           ref={inputRef}
-          style={{ minHeight: '4rem' }}
+          style={{
+            WebkitAppRegion: 'drag',
+            WebkitUserSelect: 'none',
+            minHeight: '4rem',
+          }}
           className="w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder:text-gray-300 placeholder:text-gray-500 bg-white dark:bg-gray-900 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4"
           type={data?.secret ? 'password' : 'text'}
           value={inputValue}
