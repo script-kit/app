@@ -1,3 +1,10 @@
+# [1.1.0-beta.72](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.71...v1.1.0-beta.72) (2021-03-15)
+
+
+### Bug Fixes
+
+* **prompt:** Disable native scrollbar ([65619ef](https://github.com/johnlindquist/kitapp/commit/65619ef59fac5a5bcae96970ed6ef38655cff3b9))
+
 # [1.1.0-beta.71](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.70...v1.1.0-beta.71) (2021-03-14)
 
 
