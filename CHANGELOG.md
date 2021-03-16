@@ -1,3 +1,17 @@
+# [1.1.0-beta.73](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.72...v1.1.0-beta.73) (2021-03-16)
+
+
+### Bug Fixes
+
+* **install:** guard against missing stdout ([c3b6e04](https://github.com/johnlindquist/kitapp/commit/c3b6e04a8fe3b7c422f6a8b4ecb7b5011dc78653))
+* **install:** guard against missing stdout ([6914b03](https://github.com/johnlindquist/kitapp/commit/6914b03fe228fd4e4565027fafa71c506a957e95))
+
+
+### Features
+
+* **kit:** Adding copy as image ([0421b22](https://github.com/johnlindquist/kitapp/commit/0421b22b5f1862b3f15fa4d59d4ce9a19f94c98b))
+* **prompt:** allow img icons ([305709f](https://github.com/johnlindquist/kitapp/commit/305709fd564329941e05d154439c4b27aee2a5e2))
+
 # [1.1.0-beta.72](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.71...v1.1.0-beta.72) (2021-03-15)
 
 
