@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { app, ipcMain, screen } from 'electron';
+import { app, clipboard, ipcMain, screen } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import url from 'url';
 import http from 'http';
@@ -222,6 +222,10 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         consoleLog.warn(data.warn);
         break;
 
+      case 'COPY_PATH_AS_PICTURE':
+        clipboard.writeImage(data?.path);
+        break;
+
       case 'GET_SCREEN_INFO':
         const cursor = screen.getCursorScreenPoint();
         // Get display with cursor
@@ -403,7 +407,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   });
 
   (child as any).stdout.on('data', (data: string) => {
-    const line = data.toString();
+    const line = data?.toString();
     kitLog.info(line);
   });
 };
