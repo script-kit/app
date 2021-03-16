@@ -1,3 +1,18 @@
+# [1.1.0-beta.72](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.71...v1.1.0-beta.72) (2021-03-15)
+
+
+### Bug Fixes
+
+* **prompt:** Disable native scrollbar ([65619ef](https://github.com/johnlindquist/kitapp/commit/65619ef59fac5a5bcae96970ed6ef38655cff3b9))
+
+# [1.1.0-beta.71](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.70...v1.1.0-beta.71) (2021-03-14)
+
+
+### Features
+
+* **prompt:** allow resizing ([0a95b76](https://github.com/johnlindquist/kitapp/commit/0a95b767233a7c633f7abd4b4c094da7a576e728))
+* **update:** Only show splash if .kit or .kenv don't exist ([d208c8f](https://github.com/johnlindquist/kitapp/commit/d208c8f6204fbf3de7a3fc1dee64e0bb90afaf29))
+
 # [1.1.0-beta.70](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.69...v1.1.0-beta.70) (2021-03-13)
 
 

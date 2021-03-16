@@ -15,6 +15,10 @@
   transition: opacity 0.2s 0.5s linear;
 }
 
+*::-webkit-scrollbar {
+  display: none !important;
+}
+
 @layer base {
   h1 {
     @apply text-2xl;
