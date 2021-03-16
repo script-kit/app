@@ -240,8 +240,8 @@ const handleSpawnReturns = async (
   result: SpawnSyncReturns<any>
 ) => {
   console.log(`HANDLE SPAWN RETURNS`);
-  console.log(`stdout:`, result.stdout.toString());
-  console.log(`stderr:`, result.stderr.toString());
+  console.log(`stdout:`, result.stdout?.toString());
+  console.log(`stderr:`, result.stderr?.toString());
   const { stdout, stderr, error } = result;
 
   if (stdout?.toString().length) {
