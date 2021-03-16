@@ -15,6 +15,7 @@ import React, {
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
+import isImage from 'is-image';
 import { KitPromptOptions } from './types';
 import {
   CLEAR_PROMPT,
@@ -404,9 +405,9 @@ export default function App() {
                       </div>
                     )}
                   </div>
-                  {choice?.icon && (
+                  {choice?.img && isImage(choice?.img || '') && (
                     <img
-                      src={choice.icon}
+                      src={choice.img}
                       alt={choice.name}
                       className="py-2 h-full"
                     />
