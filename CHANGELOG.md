@@ -1,3 +1,10 @@
+# [1.1.0-beta.74](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.73...v1.1.0-beta.74) (2021-03-17)
+
+
+### Features
+
+* **prompt:** Attribution and titles. Fixing install from site ([9cdacb6](https://github.com/johnlindquist/kitapp/commit/9cdacb6e0a44309dbbe9d2271121a1ecc63e52c4))
+
 # [1.1.0-beta.73](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.72...v1.1.0-beta.73) (2021-03-16)
 
 
