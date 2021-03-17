@@ -72,7 +72,7 @@ ipcMain.on(
   debounce((_event, input) => {
     if (child && input) {
       child?.send({ from: 'INPUT_CHANGED', input });
-    } else if (input) {
+    } else if (script && input) {
       tryKitScript(script, [...cacheKeyParts, '--kit-input', input]);
     }
   }, 250)
@@ -206,13 +206,13 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
       // kitLog.info(on, scriptPath, '| PID:', child?.pid);
       // kitLog.info(`tryClean...`, scriptPath);
       reset();
-      hidePromptWindow(true);
+      hidePromptWindow();
     } catch (error) {
       kitLog.warn(error);
     }
   };
 
-  child.on('close', tryClean('CLOSE'));
+  child.on('exit', tryClean('EXIT'));
   child.on('message', async (data: any) => {
     kitLog.info(`${data.from} ${data?.kitScript ? data.kitScript : ''}`);
 

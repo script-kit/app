@@ -162,9 +162,9 @@ const hideAppIfNoWindows = (bw: BrowserWindow) => {
   }
 };
 
-export const hidePromptWindow = (ignoreBlur = false) => {
+export const hidePromptWindow = () => {
   if (promptWindow?.webContents.isDevToolsFocused()) return;
-  if (blurredByKit || ignoreBlur) {
+  if (blurredByKit) {
     blurredByKit = false;
     return;
   }
