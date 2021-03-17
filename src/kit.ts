@@ -96,6 +96,8 @@ ipcMain.on(
 
 let appHidden = false;
 const reset = () => {
+  invokePromptWindow(CLEAR_PROMPT, {});
+
   cacheKeyParts = [];
   if (child) {
     kitLog.info(`> end process id: ${child.pid} <
@@ -108,7 +110,6 @@ const reset = () => {
     key = '';
   }
   appHidden = false;
-  hidePromptWindow();
 };
 
 // TODO: Work out states
@@ -120,6 +121,7 @@ hideEmitter.on('hide', () => {
     appHidden = false;
   } else {
     reset();
+    hidePromptWindow();
   }
 });
 
@@ -144,8 +146,7 @@ ipc.serve(kitPath('tmp', 'ipc'), () => {
 ipc.server.start();
 
 const kitScript = (scriptPath: string, runArgs: string[] = []) => {
-  invokePromptWindow(CLEAR_PROMPT, {});
-
+  reset();
   // eslint-disable-next-line no-nested-ternary
   let resolvePath = scriptPath.startsWith(path.sep)
     ? scriptPath
@@ -204,8 +205,8 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
     try {
       // kitLog.info(on, scriptPath, '| PID:', child?.pid);
       // kitLog.info(`tryClean...`, scriptPath);
-      hidePromptWindow(true);
       reset();
+      hidePromptWindow(true);
     } catch (error) {
       kitLog.warn(error);
     }
@@ -215,7 +216,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   child.on('message', async (data: any) => {
     kitLog.info(`${data.from} ${data?.kitScript ? data.kitScript : ''}`);
 
-    kitLog.log(data.scriptInfo);
+    // kitLog.log(data.scriptInfo);
 
     // TODO: Refactor into something better than this :D
     switch (data.from) {
@@ -414,6 +415,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
     getCache()?.delete(key);
     consoleLog.warn(`Error ${error.message}. Deleting ${key} from cache`);
     reset();
+    hidePromptWindow();
   });
 
   (child as any).stdout.on('data', (data: string) => {
