@@ -41,7 +41,14 @@ import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
 import { createPromptWindow, createPreview, createPromptCache } from './prompt';
 import { createNotification } from './notifications';
-import { APP_NAME, kenv, KIT, KENV, KIT_PROTOCOL } from './helpers';
+import {
+  APP_NAME,
+  kenvPath,
+  KIT,
+  KENV,
+  KIT_PROTOCOL,
+  kitPath,
+} from './helpers';
 import { createCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
@@ -142,7 +149,7 @@ const prepareProtocols = async () => {
       .join(' ')
       .split(' ');
 
-    tryKitScript('kit/cli/new', [name, ...args]);
+    tryKitScript(kitPath('cli/new.js'), [name, ...args]);
   });
 
   protocol.registerFileProtocol(KIT_PROTOCOL, (request, callback) => {
@@ -156,7 +163,7 @@ const prepareProtocols = async () => {
 };
 
 const createLogs = () => {
-  log.transports.file.resolvePath = () => kenv('logs', 'kit.log');
+  log.transports.file.resolvePath = () => kenvPath('logs', 'kit.log');
 };
 
 const createCaches = () => {

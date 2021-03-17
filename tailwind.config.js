@@ -13,6 +13,7 @@ module.exports = {
         /^justify/,
         /^items/,
         /^text/,
+        /^self/,
         /^italic/,
         /^\w{0,2}-(\d\/\d|\d\.\d|\d{1,3}|full|screen|auto)/,
       ],

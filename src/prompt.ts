@@ -6,7 +6,7 @@ import Store from 'electron-store';
 import { EventEmitter } from 'events';
 import minimist from 'minimist';
 import { getAssetPath } from './assets';
-import { KIT_PROTOCOL, kenv } from './helpers';
+import { KIT_PROTOCOL, kenvPath } from './helpers';
 
 let promptCache: Store | null = null;
 export const getPromptCache = () => {
@@ -16,7 +16,7 @@ export const getPromptCache = () => {
 export const createPromptCache = () => {
   promptCache = new Store({
     name: 'prompt',
-    cwd: kenv('cache'),
+    cwd: kenvPath('cache'),
   });
   promptCache.clear();
 };

@@ -320,6 +320,25 @@ export default function App() {
         className="flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl"
         ref={mainRef}
       >
+        <div className="flex flex-row text-xs dark:text-yellow-500 text-yellow-700 justify-between pt-2 px-4">
+          <span>{data?.scriptInfo?.description || ''}</span>
+
+          <span>
+            {data?.scriptInfo?.menu}
+            {data?.scriptInfo?.twitter && (
+              <span>
+                <span> - </span>
+                <a
+                  href={`https://twitter.com/${data?.scriptInfo?.twitter.slice(
+                    1
+                  )}`}
+                >
+                  {data?.scriptInfo?.twitter}
+                </a>
+              </span>
+            )}
+          </span>
+        </div>
         <input
           ref={inputRef}
           style={{

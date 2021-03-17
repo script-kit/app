@@ -25,7 +25,13 @@ import {
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
-import { kitPath, kenv, stringifyScriptArgsKey, KIT, KENV } from './helpers';
+import {
+  kitPath,
+  kenvPath,
+  stringifyScriptArgsKey,
+  KIT,
+  KENV,
+} from './helpers';
 import { getCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
@@ -43,7 +49,7 @@ let key = '';
 let cacheKeyParts: any[] = [];
 
 const consoleLog = kitLog.create('consoleLog');
-consoleLog.transports.file.resolvePath = () => kenv('logs', 'console.log');
+consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
 
 export const processMap = new Map();
 
@@ -141,11 +147,13 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   invokePromptWindow(CLEAR_PROMPT, {});
 
   // eslint-disable-next-line no-nested-ternary
-  const resolvePath = scriptPath.startsWith(path.sep)
+  let resolvePath = scriptPath.startsWith(path.sep)
     ? scriptPath
     : scriptPath.includes(path.sep)
-    ? kenv(scriptPath)
-    : kenv('scripts', scriptPath);
+    ? kenvPath(scriptPath)
+    : kenvPath('scripts', scriptPath);
+
+  if (!resolvePath.endsWith('.js')) resolvePath = `${resolvePath}.js`;
 
   const codePath = 'usr/local/bin/';
 
@@ -183,8 +191,8 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
       PATH: `${kitPath('node', 'bin')}:${codePath}:${process.env.PATH}`,
       KENV,
       KIT,
-      NODE_PATH: `${kenv('node_modules')}:${kitPath('node_modules')}`,
-      DOTENV_CONFIG_PATH: kenv('.env'),
+      NODE_PATH: `${kenvPath('node_modules')}:${kitPath('node_modules')}`,
+      DOTENV_CONFIG_PATH: kenvPath('.env'),
       KIT_APP_VERSION: getVersion(),
     },
   });
@@ -206,6 +214,8 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   child.on('close', tryClean('CLOSE'));
   child.on('message', async (data: any) => {
     kitLog.info(`${data.from} ${data?.kitScript ? data.kitScript : ''}`);
+
+    kitLog.log(data.scriptInfo);
 
     // TODO: Refactor into something better than this :D
     switch (data.from) {
