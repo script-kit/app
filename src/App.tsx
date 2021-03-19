@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 /* eslint-disable react/prop-types */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable @typescript-eslint/no-shadow */
@@ -57,34 +58,56 @@ const noHightlight = (name: string, input: string) => {
 };
 
 const highlightExactMatch = (name: string, input: string) => {
-  const indexOfInput = name.toLowerCase().indexOf(input.toLowerCase());
-  return [
-    name.slice(0, indexOfInput),
-    <span key={input} className=" dark:text-yellow-500 text-yellow-700">
-      {name.slice(indexOfInput, indexOfInput + input.length)}
-    </span>,
-    name.slice(indexOfInput + input.length),
-  ];
+  const inputLetters = input.split('');
+  let ili = 0;
+  let prevQualifies = true;
+
+  // TODO: Optimize
+  return name.split('').map((letter, i) => {
+    if (letter.toLowerCase() === inputLetters[ili] && prevQualifies) {
+      ili += 1;
+      prevQualifies = true;
+      return (
+        <span key={i} className=" dark:text-yellow-500 text-yellow-700">
+          {letter}
+        </span>
+      );
+    }
+
+    prevQualifies = Boolean(letter.match(/\W/));
+
+    return <span key={i}>{letter}</span>;
+  });
 };
 
-const highlightRegexMatch = (name: string, input: string) => {
-  return name.split('').reduce(
-    (acc: any, char: string) => {
-      const c = char.toLowerCase();
-      const testChar = acc.test.toLowerCase()[acc.testIndex];
+const highlightFirstLetters = (name: string, input: string) => {
+  const words = name.match(/\w+\W*/g);
 
-      if (!testChar || testChar !== c) {
-        acc.result.push(char);
-      } else {
-        acc.testIndex += 1;
-        acc.result.push(
-          <span className=" dark:text-yellow-500 text-yellow-700">{char}</span>
-        );
-      }
-      return acc;
-    },
-    { test: input, testIndex: 0, result: [] }
-  ).result;
+  return (words || []).map((word, i) => {
+    if (input[i]) {
+      return (
+        // eslint-disable-next-line react/no-array-index-key
+        <React.Fragment key={i}>
+          <span key={i} className=" dark:text-yellow-500 text-yellow-700">
+            {word[0]}
+          </span>
+          {word.slice(1)}
+        </React.Fragment>
+      );
+    }
+
+    return word;
+  });
+};
+
+const firstLettersMatch = (name: string, input: string) => {
+  const splitName = name.match(/\w+\W*/g) || [];
+  const inputLetters = input.split('');
+  if (inputLetters.length > splitName.length) return false;
+
+  return inputLetters.every((il, i) => {
+    return il === splitName[i][0];
+  });
 };
 
 export default function App() {
@@ -193,60 +216,85 @@ export default function App() {
       if (!data?.choices?.length || data?.from === UPDATE_PROMPT_CHOICES)
         return;
 
-      const exactExpression = `^${inputValue}`;
+      const input = inputValue.toLowerCase();
+      const startExactExpression = `^${inputValue}`;
       const partialExpression = inputValue;
 
       let exactRegExp: RegExp;
       let partialRegExp: RegExp;
       try {
-        exactRegExp = new RegExp(exactExpression, 'i');
+        exactRegExp = new RegExp(startExactExpression, 'i');
         partialRegExp = new RegExp(partialExpression, 'i');
       } catch (error) {
         exactRegExp = new RegExp('');
         partialRegExp = new RegExp('');
       }
 
-      const exactFilter = (choice: any) => choice.name.match(exactRegExp);
-      const startFilter = (choice: any) => {
-        const words = choice.name
-          .split(/\s|-|\+/)
-          .map((word: string) => word.toLowerCase());
+      const startExactFilter = (choice: any) =>
+        choice.name.toLowerCase().startsWith(input);
 
-        let chars = '';
+      const startEachWordFilter = (choice: any) => {
         let wordIndex = 0;
-        return inputValue
-          .split('')
-          .map((char) => char.toLowerCase())
-          .every((char) => {
-            chars += char;
+        let wordLetterIndex = 0;
+        const words = choice.name.toLowerCase().match(/\w+\W*/g);
+        const inputLetters: string[] = input.split('');
 
-            if (words[wordIndex].startsWith(chars)) {
-              return true;
-            }
+        const checkNextLetter = (inputLetter: string): boolean => {
+          const word = words[wordIndex];
+          const letter = word[wordLetterIndex];
 
-            wordIndex += 1;
-            chars = char;
-            if (!words[wordIndex]) return false;
-            return words[wordIndex].startsWith(chars);
-          });
+          if (inputLetter === letter) {
+            wordLetterIndex += 1;
+            return true;
+          }
+
+          return false;
+        };
+
+        const checkNextWord = (inputLetter: string): boolean => {
+          wordLetterIndex = 0;
+          wordIndex += 1;
+
+          const word = words[wordIndex];
+          if (!word) return false;
+          const letter = word[wordLetterIndex];
+          if (!letter) return false;
+
+          if (inputLetter === letter) {
+            wordLetterIndex += 1;
+            return true;
+          }
+
+          return checkNextWord(inputLetter);
+        };
+        return inputLetters.every((inputLetter: string) => {
+          if (checkNextLetter(inputLetter)) {
+            return true;
+          }
+          return checkNextWord(inputLetter);
+        });
       };
 
       const partialFilter = (choice: any) => choice.name.match(partialRegExp);
 
-      const [exactMatches, notBestMatches] = partition(
+      const [startExactMatches, notBestMatches] = partition(
         data.choices,
-        exactFilter
+        startExactFilter
       );
       const [startMatches, notStartMatches] = partition(
         notBestMatches,
-        startFilter
+        startEachWordFilter
       );
       const [partialMatches, notMatches] = partition(
         notStartMatches,
         partialFilter
       );
 
-      const filtered = [...exactMatches, ...startMatches, ...partialMatches];
+      const filtered = [
+        ...startExactMatches,
+        ...startMatches,
+        ...partialMatches,
+      ];
 
       setChoices(filtered);
     } catch (error) {
@@ -317,6 +365,10 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div
+        style={{
+          WebkitAppRegion: 'drag',
+          WebkitUserSelect: 'none',
+        }}
         className="flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl"
         ref={mainRef}
       >
@@ -357,14 +409,7 @@ export default function App() {
         {info && (
           <div className="text-sm text-black dark:text-white">{info}</div>
         )}
-        {/* <div className="bg-white">
-            {index} : {choices[index]?.name}
-          </div>
-          <div className="bg-white">
-            {Array.from(value)
-              .map((letter) => `.*`)
-              .join('')};
-          </div> */}
+
         {choices?.length > 0 && (
           <SimpleBar
             scrollableNodeProps={{ ref: scrollRef }}
@@ -408,9 +453,11 @@ export default function App() {
                     <div className="truncate">
                       {channel === UPDATE_PROMPT_CHOICES
                         ? noHightlight(choice.name, inputValue)
-                        : name.includes(input)
+                        : name.startsWith(input)
                         ? highlightExactMatch(choice.name, inputValue)
-                        : highlightRegexMatch(choice.name, inputValue)}
+                        : firstLettersMatch(name, input)
+                        ? highlightFirstLetters(choice.name, inputValue)
+                        : highlightExactMatch(choice.name, inputValue)}
                     </div>
                     {((index === i && choice?.selected) ||
                       choice?.description) && (
