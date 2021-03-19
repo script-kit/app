@@ -1,3 +1,11 @@
+# [1.1.0-beta.75](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.74...v1.1.0-beta.75) (2021-03-17)
+
+
+### Bug Fixes
+
+* **prompt:** cancelling previous process if new one started ([64f5849](https://github.com/johnlindquist/kitapp/commit/64f5849fa73e5ab636d4822f51f0ddec5d891609))
+* **prompt:** close prompt when script completes ([9ff31fd](https://github.com/johnlindquist/kitapp/commit/9ff31fd9b6e4194ce1dde139ea95b82d805001a6))
+
 # [1.1.0-beta.74](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.73...v1.1.0-beta.74) (2021-03-17)
 
 
