@@ -53,7 +53,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-const noHightlight = (name: string, input: string) => {
+const noHighlight = (name: string, input: string) => {
   return <span>{name}</span>;
 };
 
@@ -253,6 +253,7 @@ export default function App() {
         let wordIndex = 0;
         let wordLetterIndex = 0;
         const words = choice.name.toLowerCase().match(/\w+\W*/g);
+        if (!words) return false;
         const inputLetters: string[] = input.split('');
 
         const checkNextLetter = (inputLetter: string): boolean => {
@@ -483,9 +484,11 @@ export default function App() {
                   <div className="flex flex-col max-w-full mr-2 truncate">
                     <div className="truncate">
                       {channel === UPDATE_PROMPT_CHOICES
-                        ? noHightlight(choice.name, inputValue)
+                        ? noHighlight(choice.name, inputValue)
                         : name.startsWith(input)
                         ? highlightStartsWith(choice.name, inputValue)
+                        : !name.match(/\w/)
+                        ? noHighlight(choice.name, inputValue)
                         : firstLettersMatch(name, input)
                         ? highlightFirstLetters(choice.name, inputValue)
                         : name.includes(input)
