@@ -1,3 +1,10 @@
+# [1.1.0-beta.76](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.75...v1.1.0-beta.76) (2021-03-19)
+
+
+### Bug Fixes
+
+* **prompt:** proper highlighting ([0bd4bc7](https://github.com/johnlindquist/kitapp/commit/0bd4bc7afa189e2fe3bd0b5061f9cac96579e1c4))
+
 # [1.1.0-beta.75](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.74...v1.1.0-beta.75) (2021-03-17)
 
 
