@@ -57,8 +57,8 @@ const noHightlight = (name: string, input: string) => {
   return <span>{name}</span>;
 };
 
-const highlightExactMatch = (name: string, input: string) => {
-  const inputLetters = input.split('');
+const highlightAdjacentAndWordStart = (name: string, input: string) => {
+  const inputLetters = input.toLowerCase().split('');
   let ili = 0;
   let prevQualifies = true;
 
@@ -98,6 +98,34 @@ const highlightFirstLetters = (name: string, input: string) => {
 
     return word;
   });
+};
+const highlightIncludes = (name: string, input: string) => {
+  const index = name.toLowerCase().indexOf(input.toLowerCase());
+  const indexEnd = index + input.length;
+
+  const firstPart = name.slice(0, index);
+  const includesPart = name.slice(index, indexEnd);
+  const lastPart = name.slice(indexEnd);
+
+  return [
+    <span key={0}>{firstPart}</span>,
+    <span key={1} className=" dark:text-yellow-500 text-yellow-700">
+      {includesPart}
+    </span>,
+    <span key={2}>{lastPart}</span>,
+  ];
+};
+
+const highlightStartsWith = (name: string, input: string) => {
+  const firstPart = name.slice(0, input.length);
+  const lastPart = name.slice(input.length);
+
+  return [
+    <span key={0} className=" dark:text-yellow-500 text-yellow-700">
+      {firstPart}
+    </span>,
+    <span key={1}>{lastPart}</span>,
+  ];
 };
 
 const firstLettersMatch = (name: string, input: string) => {
@@ -217,18 +245,6 @@ export default function App() {
         return;
 
       const input = inputValue.toLowerCase();
-      const startExactExpression = `^${inputValue}`;
-      const partialExpression = inputValue;
-
-      let exactRegExp: RegExp;
-      let partialRegExp: RegExp;
-      try {
-        exactRegExp = new RegExp(startExactExpression, 'i');
-        partialRegExp = new RegExp(partialExpression, 'i');
-      } catch (error) {
-        exactRegExp = new RegExp('');
-        partialRegExp = new RegExp('');
-      }
 
       const startExactFilter = (choice: any) =>
         choice.name.toLowerCase().startsWith(input);
@@ -275,23 +291,38 @@ export default function App() {
         });
       };
 
-      const partialFilter = (choice: any) => choice.name.match(partialRegExp);
+      const startFirstAndEachWordFilter = (choice: any) => {
+        return (
+          choice.name.toLowerCase().startsWith(input[0]) &&
+          startEachWordFilter(choice)
+        );
+      };
+
+      const partialFilter = (choice: any) =>
+        choice.name.toLowerCase().includes(input);
 
       const [startExactMatches, notBestMatches] = partition(
         data.choices,
         startExactFilter
       );
-      const [startMatches, notStartMatches] = partition(
+
+      const [startAndFirstMatches, notStartMatches] = partition(
         notBestMatches,
+        startFirstAndEachWordFilter
+      );
+
+      const [startMatches, notStartAndFirstMatches] = partition(
+        notStartMatches,
         startEachWordFilter
       );
       const [partialMatches, notMatches] = partition(
-        notStartMatches,
+        notStartAndFirstMatches,
         partialFilter
       );
 
       const filtered = [
         ...startExactMatches,
+        ...startAndFirstMatches,
         ...startMatches,
         ...partialMatches,
       ];
@@ -454,10 +485,15 @@ export default function App() {
                       {channel === UPDATE_PROMPT_CHOICES
                         ? noHightlight(choice.name, inputValue)
                         : name.startsWith(input)
-                        ? highlightExactMatch(choice.name, inputValue)
+                        ? highlightStartsWith(choice.name, inputValue)
                         : firstLettersMatch(name, input)
                         ? highlightFirstLetters(choice.name, inputValue)
-                        : highlightExactMatch(choice.name, inputValue)}
+                        : name.includes(input)
+                        ? highlightIncludes(choice.name, inputValue)
+                        : highlightAdjacentAndWordStart(
+                            choice.name,
+                            inputValue
+                          )}
                     </div>
                     {((index === i && choice?.selected) ||
                       choice?.description) && (
