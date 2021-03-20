@@ -1,3 +1,10 @@
+# [1.1.0-beta.77](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.76...v1.1.0-beta.77) (2021-03-19)
+
+
+### Bug Fixes
+
+* **prompt:** polishing filtering ([fc1e601](https://github.com/johnlindquist/kitapp/commit/fc1e601c3282fc4661043b17f24b4f874ea72717))
+
 # [1.1.0-beta.76](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.75...v1.1.0-beta.76) (2021-03-19)
 
 
