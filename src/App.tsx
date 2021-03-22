@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable react/prop-types */
 /* eslint-disable no-nested-ternary */
@@ -20,9 +22,12 @@ import isImage from 'is-image';
 import { KitPromptOptions } from './types';
 import {
   CLEAR_PROMPT,
+  SET_PROMPT_TEXT,
+  SET_TAB_INDEX,
   SHOW_PROMPT_WITH_DATA,
   UPDATE_PROMPT_CHOICES,
   UPDATE_PROMPT_INFO,
+  VALUE_SUBMITTED,
 } from './channels';
 
 interface ChoiceData {
@@ -143,11 +148,13 @@ export default function App() {
   const [inputValue, setInputValue] = useState('');
   const [info, setInfo] = useState('');
   const [index, setIndex] = useState(0);
+  const [tabs, setTabs] = useState([]);
+  const [tabIndex, setTabIndex] = useState(0);
   const [channel, setChannel] = useState('');
   const [choices, setChoices] = useState<ChoiceData[]>([]);
+  const [promptText, setPromptText] = useState('');
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
-  const mainRef: RefObject<HTMLElement> = useRef(null);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -155,14 +162,12 @@ export default function App() {
     }
   }, [inputRef]);
 
+  useEffect(() => {
+    setTabs(data?.tabs || []);
+  }, [data?.tabs]);
+
   const submit = useCallback((submitValue: string) => {
-    ipcRenderer.send('VALUE_SUBMITTED', { value: submitValue });
-    setData({
-      choices: [],
-    });
-    setChoices([]);
-    setIndex(0);
-    setInputValue('');
+    ipcRenderer.send(VALUE_SUBMITTED, { value: submitValue });
   }, []);
 
   const onChange = useCallback((event) => {
@@ -181,11 +186,31 @@ export default function App() {
     }
   }, [choices, index]);
 
+  const onTabClick = useCallback(
+    (ti) => (_event: any) => {
+      setTabIndex(ti);
+      ipcRenderer.send('TAB_CHANGED', tabs[ti]);
+    },
+    [tabs]
+  );
+
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Enter') {
         submit(choices?.[index]?.value || inputValue);
 
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        event.preventDefault();
+        if (tabs?.length) {
+          const clamp = tabs.length;
+          const clampIndex = (tabIndex + (event.shiftKey ? -1 : 1)) % clamp;
+          const nextIndex = clampIndex < 0 ? clamp - 1 : clampIndex;
+          setTabIndex(nextIndex);
+          ipcRenderer.send('TAB_CHANGED', tabs[nextIndex]);
+        }
         return;
       }
 
@@ -226,7 +251,7 @@ export default function App() {
         }
       }
     },
-    [choices, index, submit, inputValue, scrollRef]
+    [index, choices, submit, inputValue, tabIndex, tabs]
   );
 
   useEffect(() => {
@@ -241,6 +266,10 @@ export default function App() {
 
   useEffect(() => {
     try {
+      if (data?.choices?.length === 0) {
+        setChoices([]);
+        return;
+      }
       if (!data?.choices?.length || data?.from === UPDATE_PROMPT_CHOICES)
         return;
 
@@ -332,7 +361,14 @@ export default function App() {
     } catch (error) {
       ipcRenderer.send('PROMPT_ERROR', error);
     }
-  }, [data, inputValue]);
+  }, [data, inputValue, tabs]);
+
+  useEffect(() => {
+    setInputValue('');
+    setPromptText('');
+    setIndex(0);
+    setChoices([]);
+  }, [data?.kitScript]);
 
   useEffect(() => {
     const updateChoicesHandler = (_event: any, updatedChoices: any) => {
@@ -345,8 +381,8 @@ export default function App() {
 
     const showPromptHandler = (_event: any, promptData: KitPromptOptions) => {
       setChannel(SHOW_PROMPT_WITH_DATA);
+      setPromptText('');
       setData(promptData);
-      setIndex(0);
       if (inputRef.current) {
         inputRef?.current.focus();
       }
@@ -357,17 +393,20 @@ export default function App() {
         inputRef?.current.focus();
       }
       setChannel(CLEAR_PROMPT);
-      setData({ choices: [], message: '' });
-      setChoices([]);
-      setIndex(0);
-      setInputValue('');
-      setInfo('');
     };
 
     const updatePromptInfo = (_event: any, info: string) => {
       setChannel(UPDATE_PROMPT_INFO);
       setInputValue('');
-      setData({ message: info });
+      // setData({ message: info });
+    };
+
+    const setTabIndexHandler = (_event: any, ti: number) => {
+      setTabIndex(ti);
+    };
+
+    const setPromptTextHandler = (_event: any, text: string) => {
+      setPromptText(text);
     };
 
     if (ipcRenderer.listenerCount(CLEAR_PROMPT) === 0) {
@@ -386,11 +425,21 @@ export default function App() {
       ipcRenderer.on(UPDATE_PROMPT_INFO, updatePromptInfo);
     }
 
+    if (ipcRenderer.listenerCount(SET_TAB_INDEX) === 0) {
+      ipcRenderer.on(SET_TAB_INDEX, setTabIndexHandler);
+    }
+
+    if (ipcRenderer.listenerCount(SET_PROMPT_TEXT) === 0) {
+      ipcRenderer.on(SET_PROMPT_TEXT, setPromptTextHandler);
+    }
+
     return () => {
       ipcRenderer.off(CLEAR_PROMPT, clearPromptHandler);
       ipcRenderer.off(SHOW_PROMPT_WITH_DATA, showPromptHandler);
       ipcRenderer.off(UPDATE_PROMPT_CHOICES, updateChoicesHandler);
       ipcRenderer.off(UPDATE_PROMPT_INFO, updatePromptInfo);
+      ipcRenderer.off(SET_TAB_INDEX, setTabIndexHandler);
+      ipcRenderer.off(SET_PROMPT_TEXT, setPromptTextHandler);
     };
   }, []);
 
@@ -402,7 +451,6 @@ export default function App() {
           WebkitUserSelect: 'none',
         }}
         className="flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl"
-        ref={mainRef}
       >
         <div className="flex flex-row text-xs dark:text-yellow-500 text-yellow-700 justify-between pt-2 px-4">
           <span>{data?.scriptInfo?.description || ''}</span>
@@ -435,11 +483,28 @@ export default function App() {
           value={inputValue}
           onChange={onChange}
           autoFocus
-          placeholder={data?.message || ''}
+          placeholder={promptText || data?.message}
           onKeyDown={onKeyDown}
         />
         {info && (
           <div className="text-sm text-black dark:text-white">{info}</div>
+        )}
+        {tabs?.length > 0 && (
+          <div className="flex flex-row pl-4">
+            {/* <span className="bg-white">{modeIndex}</span> */}
+            {tabs.map((tab: string, i: number) => (
+              // I need to research a11y for apps vs. "sites"
+              <div
+                className={` dark:text-yellow-500 text-yellow-700 text-xs p-1 mb-1 mx-1 hover:underline  ${
+                  i === tabIndex && 'underline'
+                }`}
+                key={tab}
+                onClick={onTabClick(i)}
+              >
+                {tab}
+              </div>
+            ))}
+          </div>
         )}
 
         {choices?.length > 0 && (

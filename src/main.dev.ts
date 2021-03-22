@@ -31,7 +31,7 @@ import {
   exec,
   SpawnSyncReturns,
 } from 'child_process';
-import { test, which } from 'shelljs';
+import { test } from 'shelljs';
 import { homedir } from 'os';
 import { readFile } from 'fs/promises';
 import git from 'simple-git/promise';

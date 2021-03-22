@@ -10,7 +10,7 @@ import minimist from 'minimist';
 
 import path from 'path';
 import { fork, ChildProcess } from 'child_process';
-import kitLog from 'electron-log';
+import log from 'electron-log';
 import { debounce, isUndefined } from 'lodash';
 import ipc from 'node-ipc';
 import {
@@ -40,6 +40,9 @@ import {
   SHOW_PROMPT_WITH_DATA,
   UPDATE_PROMPT_CHOICES,
   UPDATE_PROMPT_INFO,
+  SET_TAB_INDEX,
+  VALUE_SUBMITTED,
+  SET_PROMPT_TEXT,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 
@@ -48,7 +51,7 @@ let script = '';
 let key = '';
 let cacheKeyParts: any[] = [];
 
-const consoleLog = kitLog.create('consoleLog');
+const consoleLog = log.create('consoleLog');
 consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
 
 export const processMap = new Map();
@@ -57,7 +60,7 @@ const setPromptText = (text) => {
   if (!appHidden) invokePromptWindow(UPDATE_PROMPT_INFO, text);
 };
 
-ipcMain.on('VALUE_SUBMITTED', (_event, { value }) => {
+ipcMain.on(VALUE_SUBMITTED, (_event, { value }) => {
   cacheKeyParts.push(value);
   if (child) {
     child?.send(value);
@@ -79,7 +82,7 @@ ipcMain.on(
 );
 
 ipcMain.on('PROMPT_ERROR', (_event, error: Error) => {
-  kitLog.warn(error);
+  log.warn(error);
   if (!appHidden) invokePromptWindow(UPDATE_PROMPT_INFO, error.message);
 });
 
@@ -94,13 +97,19 @@ ipcMain.on(
   }, 250)
 );
 
+ipcMain.on('TAB_CHANGED', (event, tab) => {
+  if (child && tab) {
+    child?.send({ from: 'TAB_CHANGED', tab });
+  }
+});
+
 let appHidden = false;
 const reset = () => {
   invokePromptWindow(CLEAR_PROMPT, {});
 
   cacheKeyParts = [];
   if (child) {
-    kitLog.info(`> end process id: ${child.pid} <
+    log.info(`> end process id: ${child.pid} <
 `);
     processMap.delete(child?.pid);
     child?.removeAllListeners();
@@ -163,7 +172,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   // kitLog.info(`>>> GET: ${key}`);
   const cachedResult: any = getCache()?.get(key);
   if (cachedResult) {
-    kitLog.info(`GOT CACHE:`, key);
+    log.info(`GOT CACHE:`, key);
     invokePromptWindow(SHOW_PROMPT_WITH_DATA, cachedResult);
 
     return;
@@ -199,7 +208,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   });
   processMap.set(child.pid, scriptPath);
 
-  kitLog.info(`> begin process id: ${child.pid} <`);
+  log.info(`> begin process id: ${child.pid} <`);
 
   const tryClean = (on: string) => () => {
     try {
@@ -208,13 +217,13 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
       reset();
       hidePromptWindow();
     } catch (error) {
-      kitLog.warn(error);
+      log.warn(error);
     }
   };
 
   child.on('exit', tryClean('EXIT'));
   child.on('message', async (data: any) => {
-    kitLog.info(`${data.from} ${data?.kitScript ? data.kitScript : ''}`);
+    log.info(`${data.from} ${data?.kitScript ? data.kitScript : ''}`);
 
     // kitLog.log(data.scriptInfo);
 
@@ -280,6 +289,14 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         app.setLoginItemSettings(data);
         break;
 
+      case SET_PROMPT_TEXT:
+        invokePromptWindow(SET_PROMPT_TEXT, data?.text);
+        break;
+
+      case SET_TAB_INDEX:
+        invokePromptWindow(SET_TAB_INDEX, data?.tabIndex);
+        break;
+
       case 'SHOW_TEXT':
         setBlurredByKit();
 
@@ -332,7 +349,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
       case SHOW_PROMPT_WITH_DATA:
         ({ script, key } = stringifyScriptArgsKey(script, cacheKeyParts));
 
-        if (data.cache && !getCache()?.get(key)) {
+        if (data?.cache && !getCache()?.get(key)) {
           // kitLog.info(`>>>SET: ${key}`);
           if (key && data?.choices?.length > 0) {
             getCache()?.set(key, data);
@@ -348,8 +365,8 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
           ) {
             invokePromptWindow(SHOW_PROMPT_WITH_DATA, data);
           } else {
-            kitLog.warn(`Choices must have "name" and "value"`);
-            kitLog.warn(data?.choices);
+            log.warn(`Choices must have "name" and "value"`);
+            log.warn(data?.choices);
             if (!appHidden)
               invokePromptWindow(
                 UPDATE_PROMPT_INFO,
@@ -407,7 +424,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       default:
-        kitLog.info(`Unknown message ${data.from}`);
+        log.info(`Unknown message ${data.from}`);
     }
   });
 
@@ -420,18 +437,18 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
   (child as any).stdout.on('data', (data: string) => {
     const line = data?.toString();
-    kitLog.info(line);
+    log.info(line);
   });
 };
 
 export const tryKitScript = (filePath: string, runArgs: string[] = []) => {
-  kitLog.info(
+  log.info(
     `
 *** ${filePath} ${runArgs} ***`.trim()
   );
   try {
     kitScript(filePath, runArgs);
   } catch (error) {
-    kitLog.error(error);
+    log.error(error);
   }
 };
