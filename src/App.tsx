@@ -21,7 +21,6 @@ import { partition } from 'lodash';
 import isImage from 'is-image';
 import { KitPromptOptions } from './types';
 import {
-  CLEAR_PROMPT,
   SET_PROMPT_TEXT,
   SET_TAB_INDEX,
   SHOW_PROMPT_WITH_DATA,
@@ -167,6 +166,8 @@ export default function App() {
   }, [data?.tabs]);
 
   const submit = useCallback((submitValue: string) => {
+    setInputValue('');
+    setData({ choices: [], tabs: [] });
     ipcRenderer.send(VALUE_SUBMITTED, { value: submitValue });
   }, []);
 
@@ -364,13 +365,6 @@ export default function App() {
   }, [data, inputValue, tabs]);
 
   useEffect(() => {
-    setInputValue('');
-    setPromptText('');
-    setIndex(0);
-    setChoices([]);
-  }, [data?.kitScript]);
-
-  useEffect(() => {
     const updateChoicesHandler = (_event: any, updatedChoices: any) => {
       setChannel(UPDATE_PROMPT_CHOICES);
       setChoices(updatedChoices);
@@ -388,16 +382,9 @@ export default function App() {
       }
     };
 
-    const clearPromptHandler = () => {
-      if (inputRef.current) {
-        inputRef?.current.focus();
-      }
-      setChannel(CLEAR_PROMPT);
-    };
-
     const updatePromptInfo = (_event: any, info: string) => {
       setChannel(UPDATE_PROMPT_INFO);
-      setInputValue('');
+      // setInputValue('');
       // setData({ message: info });
     };
 
@@ -409,20 +396,12 @@ export default function App() {
       setPromptText(text);
     };
 
-    if (ipcRenderer.listenerCount(CLEAR_PROMPT) === 0) {
-      ipcRenderer.on(CLEAR_PROMPT, clearPromptHandler);
-    }
-
     if (ipcRenderer.listenerCount(SHOW_PROMPT_WITH_DATA) === 0) {
       ipcRenderer.on(SHOW_PROMPT_WITH_DATA, showPromptHandler);
     }
 
     if (ipcRenderer.listenerCount(UPDATE_PROMPT_CHOICES) === 0) {
       ipcRenderer.on(UPDATE_PROMPT_CHOICES, updateChoicesHandler);
-    }
-
-    if (ipcRenderer.listenerCount(UPDATE_PROMPT_INFO) === 0) {
-      ipcRenderer.on(UPDATE_PROMPT_INFO, updatePromptInfo);
     }
 
     if (ipcRenderer.listenerCount(SET_TAB_INDEX) === 0) {
@@ -434,7 +413,6 @@ export default function App() {
     }
 
     return () => {
-      ipcRenderer.off(CLEAR_PROMPT, clearPromptHandler);
       ipcRenderer.off(SHOW_PROMPT_WITH_DATA, showPromptHandler);
       ipcRenderer.off(UPDATE_PROMPT_CHOICES, updateChoicesHandler);
       ipcRenderer.off(UPDATE_PROMPT_INFO, updatePromptInfo);

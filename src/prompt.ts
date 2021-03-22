@@ -87,7 +87,6 @@ export const focusPrompt = () => {
 };
 
 export const escapePromptWindow = (bw: BrowserWindow) => {
-  invokePromptWindow('CLEAR_PROMPT', {});
   cachePromptPosition(bw);
   hideAppIfNoWindows(bw);
   hideEmitter.emit('hide');
@@ -134,7 +133,7 @@ export const invokePromptWindow = (channel: string, data: any) => {
     }
 
     // TODO: Think through "show on every invoke" logic
-    if (!promptWindow?.isVisible() && channel !== 'CLEAR_PROMPT') {
+    if (!promptWindow?.isVisible()) {
       promptWindow?.show();
       if (devTools) promptWindow?.webContents.openDevTools();
     }
@@ -169,7 +168,6 @@ export const hidePromptWindow = () => {
     blurredByKit = false;
     return;
   }
-  invokePromptWindow('CLEAR_PROMPT', {});
 
   if (promptWindow && promptWindow?.isVisible()) {
     cachePromptPosition(promptWindow);

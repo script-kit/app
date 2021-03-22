@@ -36,13 +36,13 @@ import { getCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
 import {
-  CLEAR_PROMPT,
   SHOW_PROMPT_WITH_DATA,
   UPDATE_PROMPT_CHOICES,
   UPDATE_PROMPT_INFO,
   SET_TAB_INDEX,
   VALUE_SUBMITTED,
   SET_PROMPT_TEXT,
+  RUN_SCRIPT,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 
@@ -105,8 +105,6 @@ ipcMain.on('TAB_CHANGED', (event, tab) => {
 
 let appHidden = false;
 const reset = () => {
-  invokePromptWindow(CLEAR_PROMPT, {});
-
   cacheKeyParts = [];
   if (child) {
     log.info(`> end process id: ${child.pid} <
@@ -279,10 +277,6 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
       case 'QUIT_APP':
         reset();
         app.exit();
-        break;
-
-      case 'RUN_SCRIPT':
-        tryKitScript(data.scriptPath, data.runArgs);
         break;
 
       case 'SET_LOGIN':
