@@ -152,6 +152,7 @@ export default function App() {
   const [channel, setChannel] = useState('');
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const [promptText, setPromptText] = useState('');
+  const [caretDisabled, setCaretDisabled] = useState(false);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
 
@@ -267,6 +268,7 @@ export default function App() {
 
   useEffect(() => {
     try {
+      setCaretDisabled(false);
       if (data?.choices?.length === 0) {
         setChoices([]);
         return;
@@ -394,6 +396,7 @@ export default function App() {
 
     const setPromptTextHandler = (_event: any, text: string) => {
       setPromptText(text);
+      setCaretDisabled(true);
     };
 
     if (ipcRenderer.listenerCount(SHOW_PROMPT_WITH_DATA) === 0) {
@@ -455,6 +458,7 @@ export default function App() {
             WebkitAppRegion: 'drag',
             WebkitUserSelect: 'none',
             minHeight: '4rem',
+            ...(caretDisabled && { caretColor: 'transparent' }),
           }}
           className="w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder:text-gray-300 placeholder:text-gray-500 bg-white dark:bg-gray-900 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4"
           type={data?.secret ? 'password' : 'text'}
