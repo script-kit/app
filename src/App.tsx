@@ -15,6 +15,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { useDebounce } from '@react-hook/debounce';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
@@ -151,7 +152,7 @@ export default function App() {
   const [tabIndex, setTabIndex] = useState(0);
   const [channel, setChannel] = useState('');
   const [choices, setChoices] = useState<ChoiceData[]>([]);
-  const [promptText, setPromptText] = useState('');
+  const [promptText, setPromptText] = useDebounce('');
   const [caretDisabled, setCaretDisabled] = useState(false);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
@@ -166,11 +167,20 @@ export default function App() {
     setTabs(data?.tabs || []);
   }, [data?.tabs]);
 
-  const submit = useCallback((submitValue: string) => {
-    setInputValue('');
-    setData({ choices: [], tabs: [] });
-    ipcRenderer.send(VALUE_SUBMITTED, { value: submitValue });
-  }, []);
+  const submit = useCallback(
+    (submitValue: string) => {
+      setInputValue('');
+      setPromptText(submitValue);
+
+      ipcRenderer.send(VALUE_SUBMITTED, { value: submitValue });
+    },
+    [setPromptText]
+  );
+
+  useEffect(() => {
+    if (index > choices?.length - 1) setIndex(choices?.length - 1);
+    if (choices?.length && index <= 0) setIndex(0);
+  }, [choices?.length, index]);
 
   const onChange = useCallback((event) => {
     if (event.key === 'Enter') return;
@@ -269,7 +279,7 @@ export default function App() {
   useEffect(() => {
     try {
       setCaretDisabled(false);
-      if (data?.choices?.length === 0) {
+      if (!data?.choices?.length) {
         setChoices([]);
         return;
       }
@@ -367,6 +377,10 @@ export default function App() {
   }, [data, inputValue, tabs]);
 
   useEffect(() => {
+    setInputValue('');
+  }, [data]);
+
+  useEffect(() => {
     const updateChoicesHandler = (_event: any, updatedChoices: any) => {
       setChannel(UPDATE_PROMPT_CHOICES);
       setChoices(updatedChoices);
@@ -386,8 +400,6 @@ export default function App() {
 
     const updatePromptInfo = (_event: any, info: string) => {
       setChannel(UPDATE_PROMPT_INFO);
-      // setInputValue('');
-      // setData({ message: info });
     };
 
     const setTabIndexHandler = (_event: any, ti: number) => {
