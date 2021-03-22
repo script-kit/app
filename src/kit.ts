@@ -97,9 +97,9 @@ ipcMain.on(
   }, 250)
 );
 
-ipcMain.on('TAB_CHANGED', (event, tab) => {
+ipcMain.on('TAB_CHANGED', (event, { tab, input = '' }) => {
   if (child && tab) {
-    child?.send({ from: 'TAB_CHANGED', tab });
+    child?.send({ from: 'TAB_CHANGED', tab, input });
   }
 });
 
@@ -277,6 +277,10 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
       case 'QUIT_APP':
         reset();
         app.exit();
+        break;
+
+      case RUN_SCRIPT:
+        invokePromptWindow(RUN_SCRIPT, data);
         break;
 
       case 'SET_LOGIN':

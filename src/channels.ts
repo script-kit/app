@@ -1,3 +1,4 @@
+export const RUN_SCRIPT = 'RUN_SCRIPT';
 export const SET_PROMPT_TEXT = 'SET_PROMPT_TEXT';
 export const SET_TAB_INDEX = 'SET_TAB_INDEX';
 export const SHOW_PROMPT_WITH_DATA = 'SHOW_PROMPT_WITH_DATA';

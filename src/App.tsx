@@ -22,6 +22,7 @@ import { partition } from 'lodash';
 import isImage from 'is-image';
 import { KitPromptOptions } from './types';
 import {
+  RUN_SCRIPT,
   SET_PROMPT_TEXT,
   SET_TAB_INDEX,
   SHOW_PROMPT_WITH_DATA,
@@ -153,6 +154,7 @@ export default function App() {
   const [channel, setChannel] = useState('');
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const [promptText, setPromptText] = useDebounce('');
+  const [scriptName, setScriptName] = useDebounce('');
   const [caretDisabled, setCaretDisabled] = useState(false);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
@@ -201,16 +203,20 @@ export default function App() {
   const onTabClick = useCallback(
     (ti) => (_event: any) => {
       setTabIndex(ti);
-      ipcRenderer.send('TAB_CHANGED', tabs[ti]);
+      ipcRenderer.send('TAB_CHANGED', { tab: tabs[ti], input: inputValue });
     },
     [tabs]
   );
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Escape') {
+        setInputValue('');
+        setData({});
+        return;
+      }
       if (event.key === 'Enter') {
         submit(choices?.[index]?.value || inputValue);
-
         return;
       }
 
@@ -221,7 +227,10 @@ export default function App() {
           const clampIndex = (tabIndex + (event.shiftKey ? -1 : 1)) % clamp;
           const nextIndex = clampIndex < 0 ? clamp - 1 : clampIndex;
           setTabIndex(nextIndex);
-          ipcRenderer.send('TAB_CHANGED', tabs[nextIndex]);
+          ipcRenderer.send('TAB_CHANGED', {
+            tab: tabs[nextIndex],
+            input: inputValue,
+          });
         }
         return;
       }
@@ -279,6 +288,7 @@ export default function App() {
   useEffect(() => {
     try {
       setCaretDisabled(false);
+      setScriptName(data?.kitScript);
       if (!data?.choices?.length) {
         setChoices([]);
         return;
@@ -377,10 +387,6 @@ export default function App() {
   }, [data, inputValue, tabs]);
 
   useEffect(() => {
-    setInputValue('');
-  }, [data]);
-
-  useEffect(() => {
     const updateChoicesHandler = (_event: any, updatedChoices: any) => {
       setChannel(UPDATE_PROMPT_CHOICES);
       setChoices(updatedChoices);
@@ -435,6 +441,34 @@ export default function App() {
       ipcRenderer.off(SET_PROMPT_TEXT, setPromptTextHandler);
     };
   }, []);
+
+  useEffect(() => {
+    const runScriptHandler = (
+      _event: any,
+      runData: { name: string; args: string[] }
+    ) => {
+      setPromptText(`>_ ${runData.name}`);
+      setCaretDisabled(true);
+      console.log(`>>>>> ${runData?.name}:${scriptName}`);
+      if (!scriptName.includes(runData?.name)) {
+        setScriptName(runData?.name);
+        console.log(`WHY AREN"T THE CHOICES DISAPPEARING?`);
+        setData({});
+        setInputValue('');
+      }
+    };
+
+    if (ipcRenderer.listenerCount(RUN_SCRIPT) === 0) {
+      console.log(
+        `>>>>>> ADDING RUN SCRIPT HANDLER <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<`
+      );
+      ipcRenderer.on(RUN_SCRIPT, runScriptHandler);
+    }
+
+    return () => {
+      ipcRenderer.off(RUN_SCRIPT, runScriptHandler);
+    };
+  }, [scriptName, setPromptText, setScriptName]);
 
   return (
     <ErrorBoundary>
