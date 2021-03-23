@@ -47,6 +47,7 @@ export const createPromptWindow = async () => {
       contextIsolation: false,
       enableRemoteModule: true,
       devTools: process.env.NODE_ENV === 'development' || devTools,
+      backgroundThrottling: false,
     },
     alwaysOnTop: true,
     closable: false,
