@@ -1,3 +1,10 @@
+# [1.1.0-beta.79](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.78...v1.1.0-beta.79) (2021-03-23)
+
+
+### Bug Fixes
+
+* **prompt:** Fixing onTabs removing UPDATE_PROMPT_INFO ([9669e65](https://github.com/johnlindquist/kitapp/commit/9669e655e91a86406d8bb5217099bc3513eb1712))
+
 # [1.1.0-beta.78](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.77...v1.1.0-beta.78) (2021-03-23)
 
 
