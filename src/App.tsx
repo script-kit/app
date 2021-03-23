@@ -449,19 +449,14 @@ export default function App() {
     ) => {
       setPromptText(`>_ ${runData.name}`);
       setCaretDisabled(true);
-      console.log(`>>>>> ${runData?.name}:${scriptName}`);
       if (!scriptName.includes(runData?.name)) {
         setScriptName(runData?.name);
-        console.log(`WHY AREN"T THE CHOICES DISAPPEARING?`);
         setData({});
         setInputValue('');
       }
     };
 
     if (ipcRenderer.listenerCount(RUN_SCRIPT) === 0) {
-      console.log(
-        `>>>>>> ADDING RUN SCRIPT HANDLER <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<`
-      );
       ipcRenderer.on(RUN_SCRIPT, runScriptHandler);
     }
 
