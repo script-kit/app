@@ -1,3 +1,21 @@
+# [1.1.0-beta.78](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.77...v1.1.0-beta.78) (2021-03-23)
+
+
+### Bug Fixes
+
+* **prompt:** clearning after submitting a value ([3f59a4f](https://github.com/johnlindquist/kitapp/commit/3f59a4f5a1967a28dea3b9800fe8ca565a19871b))
+* **prompt:** Fixing the prompt not clearing ([13b3603](https://github.com/johnlindquist/kitapp/commit/13b36036e7e48433a18a6332af9b011b7614b35a))
+* **prompt:** guard against null words ([31f8ce0](https://github.com/johnlindquist/kitapp/commit/31f8ce0ab0ec60ce3d94f2c5f87ef748ccc4d6a4))
+* **prompt:** handling the index and clearining better ([e46f81a](https://github.com/johnlindquist/kitapp/commit/e46f81ad1fab7229f906e3bbacba54bb6f4f6f4c))
+* **prompt:** remove stray console logs ([5410c99](https://github.com/johnlindquist/kitapp/commit/5410c999327ec77168129164b6c2b2c877bbd155))
+
+
+### Features
+
+* **prompt:** disable cursor when setPromptText ([43c5de5](https://github.com/johnlindquist/kitapp/commit/43c5de536f4c8e6ab1de9c74a1c7d9d9668a6b8b))
+* **prompt:** more work on tabs ([ffb9662](https://github.com/johnlindquist/kitapp/commit/ffb96625c10862ad8fddcc27a592c322102a7c9e))
+* **prompt:** tabs ([5429a63](https://github.com/johnlindquist/kitapp/commit/5429a6344316167c324586dd7040da121e7a65e7))
+
 # [1.1.0-beta.77](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.76...v1.1.0-beta.77) (2021-03-19)
 
 
