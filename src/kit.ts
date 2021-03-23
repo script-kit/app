@@ -38,7 +38,6 @@ import { getVersion } from './version';
 import {
   SHOW_PROMPT_WITH_DATA,
   UPDATE_PROMPT_CHOICES,
-  UPDATE_PROMPT_INFO,
   SET_TAB_INDEX,
   VALUE_SUBMITTED,
   SET_PROMPT_TEXT,
@@ -57,7 +56,7 @@ consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
 export const processMap = new Map();
 
 const setPromptText = (text) => {
-  if (!appHidden) invokePromptWindow(UPDATE_PROMPT_INFO, text);
+  if (!appHidden) invokePromptWindow(SET_PROMPT_TEXT, text);
 };
 
 ipcMain.on(VALUE_SUBMITTED, (_event, { value }) => {
@@ -83,7 +82,7 @@ ipcMain.on(
 
 ipcMain.on('PROMPT_ERROR', (_event, error: Error) => {
   log.warn(error);
-  if (!appHidden) invokePromptWindow(UPDATE_PROMPT_INFO, error.message);
+  if (!appHidden) setPromptText(error.message);
 });
 
 ipcMain.on(
@@ -366,8 +365,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
             log.warn(`Choices must have "name" and "value"`);
             log.warn(data?.choices);
             if (!appHidden)
-              invokePromptWindow(
-                UPDATE_PROMPT_INFO,
+              setPromptText(
                 `Warning: arg choices must have "name" and "value"`
               );
           }
@@ -414,11 +412,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         getCache()?.delete(key);
         consoleLog.warn(`Prompt received warning. Deleting ${key} from cache`);
 
-        invokePromptWindow(UPDATE_PROMPT_INFO, data?.info);
-        break;
-
-      case UPDATE_PROMPT_INFO:
-        if (!appHidden) invokePromptWindow(UPDATE_PROMPT_INFO, data?.info);
+        setPromptText(data?.info);
         break;
 
       default:

@@ -27,7 +27,6 @@ import {
   SET_TAB_INDEX,
   SHOW_PROMPT_WITH_DATA,
   UPDATE_PROMPT_CHOICES,
-  UPDATE_PROMPT_INFO,
   VALUE_SUBMITTED,
 } from './channels';
 
@@ -384,7 +383,7 @@ export default function App() {
     } catch (error) {
       ipcRenderer.send('PROMPT_ERROR', error);
     }
-  }, [data, inputValue, tabs]);
+  }, [data, inputValue, setScriptName, tabs]);
 
   useEffect(() => {
     const updateChoicesHandler = (_event: any, updatedChoices: any) => {
@@ -402,10 +401,6 @@ export default function App() {
       if (inputRef.current) {
         inputRef?.current.focus();
       }
-    };
-
-    const updatePromptInfo = (_event: any, info: string) => {
-      setChannel(UPDATE_PROMPT_INFO);
     };
 
     const setTabIndexHandler = (_event: any, ti: number) => {
@@ -436,7 +431,6 @@ export default function App() {
     return () => {
       ipcRenderer.off(SHOW_PROMPT_WITH_DATA, showPromptHandler);
       ipcRenderer.off(UPDATE_PROMPT_CHOICES, updateChoicesHandler);
-      ipcRenderer.off(UPDATE_PROMPT_INFO, updatePromptInfo);
       ipcRenderer.off(SET_TAB_INDEX, setTabIndexHandler);
       ipcRenderer.off(SET_PROMPT_TEXT, setPromptTextHandler);
     };
@@ -463,7 +457,7 @@ export default function App() {
     return () => {
       ipcRenderer.off(RUN_SCRIPT, runScriptHandler);
     };
-  }, [scriptName, setPromptText, setScriptName]);
+  }, [scriptName]);
 
   return (
     <ErrorBoundary>
