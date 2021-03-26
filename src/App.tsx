@@ -24,6 +24,7 @@ import { KitPromptOptions } from './types';
 import {
   RUN_SCRIPT,
   SET_PROMPT_TEXT,
+  SET_PANEL,
   SET_TAB_INDEX,
   SHOW_PROMPT_WITH_DATA,
   UPDATE_PROMPT_CHOICES,
@@ -153,6 +154,7 @@ export default function App() {
   const [channel, setChannel] = useState('');
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const [promptText, setPromptText] = useDebounce('');
+  const [panelHTML, setPanelHTML] = useState('');
   const [scriptName, setScriptName] = useDebounce('');
   const [caretDisabled, setCaretDisabled] = useState(false);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
@@ -168,9 +170,14 @@ export default function App() {
     setTabs(data?.tabs || []);
   }, [data?.tabs]);
 
+  useEffect(() => {
+    setIndex(0);
+  }, [choices]);
+
   const submit = useCallback(
     (submitValue: string) => {
       setInputValue('');
+      setPanelHTML('');
       setPromptText(submitValue);
 
       ipcRenderer.send(VALUE_SUBMITTED, { value: submitValue });
@@ -204,13 +211,14 @@ export default function App() {
       setTabIndex(ti);
       ipcRenderer.send('TAB_CHANGED', { tab: tabs[ti], input: inputValue });
     },
-    [tabs]
+    [inputValue, tabs]
   );
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Escape') {
         setInputValue('');
+        setPanelHTML('');
         setData({});
         return;
       }
@@ -412,27 +420,29 @@ export default function App() {
       setCaretDisabled(true);
     };
 
-    if (ipcRenderer.listenerCount(SHOW_PROMPT_WITH_DATA) === 0) {
-      ipcRenderer.on(SHOW_PROMPT_WITH_DATA, showPromptHandler);
-    }
+    const setPanelHandler = (_event: any, text: string) => {
+      setPanelHTML(text);
+    };
 
-    if (ipcRenderer.listenerCount(UPDATE_PROMPT_CHOICES) === 0) {
-      ipcRenderer.on(UPDATE_PROMPT_CHOICES, updateChoicesHandler);
-    }
+    const messageMap = {
+      [SHOW_PROMPT_WITH_DATA]: showPromptHandler,
+      [UPDATE_PROMPT_CHOICES]: updateChoicesHandler,
+      [SET_TAB_INDEX]: setTabIndexHandler,
+      [SET_PROMPT_TEXT]: setPromptTextHandler,
+      [SET_PANEL]: setPanelHandler,
+    };
 
-    if (ipcRenderer.listenerCount(SET_TAB_INDEX) === 0) {
-      ipcRenderer.on(SET_TAB_INDEX, setTabIndexHandler);
-    }
-
-    if (ipcRenderer.listenerCount(SET_PROMPT_TEXT) === 0) {
-      ipcRenderer.on(SET_PROMPT_TEXT, setPromptTextHandler);
-    }
+    Object.entries(messageMap).forEach(([key, value]: any) => {
+      console.log({ key, value });
+      if (ipcRenderer.listenerCount(key) === 0) {
+        ipcRenderer.on(key, value);
+      }
+    });
 
     return () => {
-      ipcRenderer.off(SHOW_PROMPT_WITH_DATA, showPromptHandler);
-      ipcRenderer.off(UPDATE_PROMPT_CHOICES, updateChoicesHandler);
-      ipcRenderer.off(SET_TAB_INDEX, setTabIndexHandler);
-      ipcRenderer.off(SET_PROMPT_TEXT, setPromptTextHandler);
+      Object.entries(messageMap).forEach(([key, value]: any) => {
+        ipcRenderer.off(key, value);
+      });
     };
   }, []);
 
@@ -447,6 +457,7 @@ export default function App() {
         setScriptName(runData?.name);
         setData({});
         setInputValue('');
+        setPanelHTML('');
       }
     };
 
@@ -521,6 +532,11 @@ export default function App() {
                 {tab}
               </div>
             ))}
+          </div>
+        )}
+        {panelHTML?.length > 0 && (
+          <div className="dark:text-yellow-500 text-yellow-700 text-base p-4">
+            <div dangerouslySetInnerHTML={{ __html: panelHTML }} />
           </div>
         )}
 

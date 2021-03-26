@@ -42,6 +42,7 @@ import {
   VALUE_SUBMITTED,
   SET_PROMPT_TEXT,
   RUN_SCRIPT,
+  SET_PANEL,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 
@@ -288,6 +289,10 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
       case SET_PROMPT_TEXT:
         invokePromptWindow(SET_PROMPT_TEXT, data?.text);
+        break;
+
+      case SET_PANEL:
+        invokePromptWindow(SET_PANEL, data?.html);
         break;
 
       case SET_TAB_INDEX:
