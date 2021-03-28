@@ -36,13 +36,19 @@ import { getCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
 import {
-  SHOW_PROMPT_WITH_DATA,
-  UPDATE_PROMPT_CHOICES,
+  SHOW_PROMPT,
   SET_TAB_INDEX,
   VALUE_SUBMITTED,
   SET_PROMPT_TEXT,
   RUN_SCRIPT,
   SET_PANEL,
+  SET_CHOICES,
+  SET_MODE,
+  GENERATE_CHOICES,
+  TAB_CHANGED,
+  VALUE_SELECTED,
+  RESET_PROMPT,
+  SET_HINT,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 
@@ -54,6 +60,7 @@ let cacheKeyParts: any[] = [];
 const consoleLog = log.create('consoleLog');
 consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
 
+let kitScriptName = '';
 export const processMap = new Map();
 
 const setPromptText = (text) => {
@@ -71,10 +78,10 @@ ipcMain.on(VALUE_SUBMITTED, (_event, { value }) => {
 });
 
 ipcMain.on(
-  'INPUT_CHANGED',
+  GENERATE_CHOICES,
   debounce((_event, input) => {
     if (child && input) {
-      child?.send({ from: 'INPUT_CHANGED', input });
+      child?.send({ channel: GENERATE_CHOICES, input });
     } else if (script && input) {
       tryKitScript(script, [...cacheKeyParts, '--kit-input', input]);
     }
@@ -87,7 +94,7 @@ ipcMain.on('PROMPT_ERROR', (_event, error: Error) => {
 });
 
 ipcMain.on(
-  'VALUE_SELECTED',
+  VALUE_SELECTED,
   debounce((_event, choice: any) => {
     if (choice?.preview) {
       showPreview(choice.preview);
@@ -97,14 +104,16 @@ ipcMain.on(
   }, 250)
 );
 
-ipcMain.on('TAB_CHANGED', (event, { tab, input = '' }) => {
+ipcMain.on(TAB_CHANGED, (event, { tab, input = '' }) => {
+  console.log(`SENDING TAB_CHANGED ${tab} ${input}`);
   if (child && tab) {
-    child?.send({ from: 'TAB_CHANGED', tab, input });
+    child?.send({ channel: TAB_CHANGED, tab, input });
   }
 });
 
 let appHidden = false;
 const reset = () => {
+  invokePromptWindow(RESET_PROMPT, { kitScript: kitScriptName });
   cacheKeyParts = [];
   if (child) {
     log.info(`> end process id: ${child.pid} <
@@ -153,6 +162,7 @@ ipc.serve(kitPath('tmp', 'ipc'), () => {
 ipc.server.start();
 
 const kitScript = (scriptPath: string, runArgs: string[] = []) => {
+  kitScriptName = scriptPath;
   reset();
   // eslint-disable-next-line no-nested-ternary
   let resolvePath = scriptPath.startsWith(path.sep)
@@ -171,7 +181,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
   const cachedResult: any = getCache()?.get(key);
   if (cachedResult) {
     log.info(`GOT CACHE:`, key);
-    invokePromptWindow(SHOW_PROMPT_WITH_DATA, cachedResult);
+    invokePromptWindow(SHOW_PROMPT, cachedResult);
 
     return;
   }
@@ -221,12 +231,16 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
   child.on('exit', tryClean('EXIT'));
   child.on('message', async (data: any) => {
-    log.info(`${data.from} ${data?.kitScript ? data.kitScript : ''}`);
+    log.info(
+      `${data.channel} ${
+        data?.kitScript ? data.kitScript : 'please attach kitScript'
+      }`
+    );
 
     // kitLog.log(data.scriptInfo);
 
     // TODO: Refactor into something better than this :D
-    switch (data.from) {
+    switch (data.channel) {
       case 'CLEAR_CACHE':
         getPromptCache()?.clear();
         getCache()?.clear();
@@ -252,17 +266,17 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
           y: cursor.y,
         });
 
-        child?.send({ from: 'SCREEN_INFO', activeScreen });
+        child?.send({ channel: 'SCREEN_INFO', activeScreen });
         break;
 
       case 'GET_MOUSE':
         const mouseCursor = screen.getCursorScreenPoint();
 
-        child?.send({ from: 'MOUSE', mouseCursor });
+        child?.send({ channel: 'MOUSE', mouseCursor });
         break;
 
       case 'GET_SERVER_STATE':
-        child?.send({ from: 'SERVER', ...serverState });
+        child?.send({ channel: 'SERVER', ...serverState });
         break;
 
       case 'HIDE_APP':
@@ -287,16 +301,24 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         app.setLoginItemSettings(data);
         break;
 
+      case SET_MODE:
+        invokePromptWindow(SET_MODE, data);
+        break;
+
+      case SET_HINT:
+        invokePromptWindow(SET_HINT, data);
+        break;
+
       case SET_PROMPT_TEXT:
-        invokePromptWindow(SET_PROMPT_TEXT, data?.text);
+        invokePromptWindow(SET_PROMPT_TEXT, data);
         break;
 
       case SET_PANEL:
-        invokePromptWindow(SET_PANEL, data?.html);
+        invokePromptWindow(SET_PANEL, data);
         break;
 
       case SET_TAB_INDEX:
-        invokePromptWindow(SET_TAB_INDEX, data?.tabIndex);
+        invokePromptWindow(SET_TAB_INDEX, data);
         break;
 
       case 'SHOW_TEXT':
@@ -348,7 +370,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         showNotification(data.html, data.options);
         break;
 
-      case SHOW_PROMPT_WITH_DATA:
+      case SHOW_PROMPT:
         ({ script, key } = stringifyScriptArgsKey(script, cacheKeyParts));
 
         if (data?.cache && !getCache()?.get(key)) {
@@ -365,7 +387,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
                 !isUndefined(name) && !isUndefined(value)
             )
           ) {
-            invokePromptWindow(SHOW_PROMPT_WITH_DATA, data);
+            invokePromptWindow(SHOW_PROMPT, data);
           } else {
             log.warn(`Choices must have "name" and "value"`);
             log.warn(data?.choices);
@@ -375,7 +397,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
               );
           }
         } else {
-          invokePromptWindow(SHOW_PROMPT_WITH_DATA, data);
+          invokePromptWindow(SHOW_PROMPT, data);
         }
 
         break;
@@ -409,8 +431,8 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
         break;
 
-      case UPDATE_PROMPT_CHOICES:
-        invokePromptWindow(UPDATE_PROMPT_CHOICES, data?.choices);
+      case SET_CHOICES:
+        invokePromptWindow(SET_CHOICES, data);
         break;
 
       case 'UPDATE_PROMPT_WARN':
@@ -421,7 +443,7 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
         break;
 
       default:
-        log.info(`Unknown message ${data.from}`);
+        log.info(`Unknown message ${data.channel}`);
     }
   });
 

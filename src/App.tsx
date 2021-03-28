@@ -26,15 +26,27 @@ import {
   SET_PROMPT_TEXT,
   SET_PANEL,
   SET_TAB_INDEX,
-  SHOW_PROMPT_WITH_DATA,
-  UPDATE_PROMPT_CHOICES,
+  SHOW_PROMPT,
+  RESET_PROMPT,
   VALUE_SUBMITTED,
+  SET_CHOICES,
+  SET_MODE,
+  GENERATE_CHOICES,
+  TAB_CHANGED,
+  VALUE_SELECTED,
+  SET_HINT,
 } from './channels';
 
 interface ChoiceData {
   name: string;
   value: string;
   preview: string | null;
+}
+
+enum MODE {
+  GENERATE = 'GENERATE',
+  FILTER = 'FILTER',
+  MANUAL = 'MANUAL',
 }
 
 class ErrorBoundary extends React.Component {
@@ -64,13 +76,13 @@ const noHighlight = (name: string, input: string) => {
 };
 
 const highlightAdjacentAndWordStart = (name: string, input: string) => {
-  const inputLetters = input.toLowerCase().split('');
+  const inputLetters = input?.toLowerCase().split('');
   let ili = 0;
   let prevQualifies = true;
 
   // TODO: Optimize
   return name.split('').map((letter, i) => {
-    if (letter.toLowerCase() === inputLetters[ili] && prevQualifies) {
+    if (letter?.toLowerCase() === inputLetters[ili] && prevQualifies) {
       ili += 1;
       prevQualifies = true;
       return (
@@ -106,7 +118,7 @@ const highlightFirstLetters = (name: string, input: string) => {
   });
 };
 const highlightIncludes = (name: string, input: string) => {
-  const index = name.toLowerCase().indexOf(input.toLowerCase());
+  const index = name?.toLowerCase().indexOf(input?.toLowerCase());
   const indexEnd = index + input.length;
 
   const firstPart = name.slice(0, index);
@@ -145,15 +157,19 @@ const firstLettersMatch = (name: string, input: string) => {
 };
 
 export default function App() {
-  const [data, setData]: any[] = useState({});
+  const [promptData, setPromptData]: any = useDebounce({});
   const [inputValue, setInputValue] = useState('');
-  const [info, setInfo] = useState('');
+  const [hint, setHint] = useState('');
+  const [mode, setMode] = useState(MODE.FILTER);
   const [index, setIndex] = useState(0);
   const [tabs, setTabs] = useState([]);
   const [tabIndex, setTabIndex] = useState(0);
-  const [channel, setChannel] = useState('');
+  const [unfilteredChoices, setUnfilteredChoices] = useDebounce<ChoiceData[]>(
+    [],
+    50
+  );
   const [choices, setChoices] = useState<ChoiceData[]>([]);
-  const [promptText, setPromptText] = useDebounce('');
+  const [promptText, setPromptText] = useState('');
   const [panelHTML, setPanelHTML] = useState('');
   const [scriptName, setScriptName] = useDebounce('');
   const [caretDisabled, setCaretDisabled] = useState(false);
@@ -167,12 +183,12 @@ export default function App() {
   }, [inputRef]);
 
   useEffect(() => {
-    setTabs(data?.tabs || []);
-  }, [data?.tabs]);
+    setTabs(promptData?.tabs || []);
+  }, [promptData?.tabs]);
 
   useEffect(() => {
     setIndex(0);
-  }, [choices]);
+  }, [unfilteredChoices]);
 
   const submit = useCallback(
     (submitValue: string) => {
@@ -192,24 +208,24 @@ export default function App() {
 
   const onChange = useCallback((event) => {
     if (event.key === 'Enter') return;
-    setInfo('');
+    setHint('');
     setIndex(0);
     setInputValue(event.currentTarget.value);
   }, []);
 
   useEffect(() => {
     if (choices?.length > 0 && choices?.[index]) {
-      ipcRenderer.send('VALUE_SELECTED', choices[index]);
+      ipcRenderer.send(VALUE_SELECTED, choices[index]);
     }
     if (choices?.length === 0) {
-      ipcRenderer.send('VALUE_SELECTED', null);
+      ipcRenderer.send(VALUE_SELECTED, null);
     }
   }, [choices, index]);
 
   const onTabClick = useCallback(
     (ti) => (_event: any) => {
       setTabIndex(ti);
-      ipcRenderer.send('TAB_CHANGED', { tab: tabs[ti], input: inputValue });
+      ipcRenderer.send(TAB_CHANGED, { tab: tabs[ti], input: inputValue });
     },
     [inputValue, tabs]
   );
@@ -217,9 +233,10 @@ export default function App() {
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Escape') {
+        setChoices([]);
         setInputValue('');
         setPanelHTML('');
-        setData({});
+        setPromptData({});
         return;
       }
       if (event.key === 'Enter') {
@@ -234,7 +251,7 @@ export default function App() {
           const clampIndex = (tabIndex + (event.shiftKey ? -1 : 1)) % clamp;
           const nextIndex = clampIndex < 0 ? clamp - 1 : clampIndex;
           setTabIndex(nextIndex);
-          ipcRenderer.send('TAB_CHANGED', {
+          ipcRenderer.send(TAB_CHANGED, {
             tab: tabs[nextIndex],
             input: inputValue,
           });
@@ -254,7 +271,7 @@ export default function App() {
       }
 
       if (newIndex < 0) newIndex = 0;
-      if (newIndex > choices.length - 1) newIndex = choices.length - 1;
+      if (newIndex > choices?.length - 1) newIndex = choices?.length - 1;
 
       setIndex(newIndex);
 
@@ -279,39 +296,39 @@ export default function App() {
         }
       }
     },
-    [index, choices, submit, inputValue, tabIndex, tabs]
+    [index, choices, setPromptData, submit, inputValue, tabs, tabIndex]
   );
 
   useEffect(() => {
-    if (
-      data.from === SHOW_PROMPT_WITH_DATA &&
-      !data.cache &&
-      typeof inputValue === 'string'
-    ) {
-      ipcRenderer.send('INPUT_CHANGED', inputValue);
+    if (mode === MODE.GENERATE) {
+      ipcRenderer.send(GENERATE_CHOICES, inputValue);
     }
-  }, [data, inputValue]);
+  }, [mode, inputValue, tabIndex]);
+
+  useEffect(() => {
+    setCaretDisabled(Boolean(!promptData?.message));
+  }, [promptData?.message]);
 
   useEffect(() => {
     try {
-      setCaretDisabled(false);
-      setScriptName(data?.kitScript);
-      if (!data?.choices?.length) {
+      if (mode === (MODE.GENERATE || MODE.MANUAL)) {
+        setChoices(unfilteredChoices);
+        return;
+      }
+      if (!unfilteredChoices?.length) {
         setChoices([]);
         return;
       }
-      if (!data?.choices?.length || data?.from === UPDATE_PROMPT_CHOICES)
-        return;
 
-      const input = inputValue.toLowerCase();
+      const input = inputValue?.toLowerCase() || '';
 
       const startExactFilter = (choice: any) =>
-        choice.name.toLowerCase().startsWith(input);
+        choice.name?.toLowerCase().startsWith(input);
 
       const startEachWordFilter = (choice: any) => {
         let wordIndex = 0;
         let wordLetterIndex = 0;
-        const words = choice.name.toLowerCase().match(/\w+\W*/g);
+        const words = choice.name?.toLowerCase().match(/\w+\W*/g);
         if (!words) return false;
         const inputLetters: string[] = input.split('');
 
@@ -353,16 +370,16 @@ export default function App() {
 
       const startFirstAndEachWordFilter = (choice: any) => {
         return (
-          choice.name.toLowerCase().startsWith(input[0]) &&
+          choice.name?.toLowerCase().startsWith(input[0]) &&
           startEachWordFilter(choice)
         );
       };
 
       const partialFilter = (choice: any) =>
-        choice.name.toLowerCase().includes(input);
+        choice.name?.toLowerCase().includes(input);
 
       const [startExactMatches, notBestMatches] = partition(
-        data.choices,
+        unfilteredChoices,
         startExactFilter
       );
 
@@ -391,51 +408,91 @@ export default function App() {
     } catch (error) {
       ipcRenderer.send('PROMPT_ERROR', error);
     }
-  }, [data, inputValue, setScriptName, tabs]);
+  }, [unfilteredChoices, inputValue, mode]);
+
+  const showPromptHandler = useCallback(
+    (_event: any, promptData: KitPromptOptions) => {
+      setPromptText('');
+      setPanelHTML('');
+      setPromptData(promptData);
+      if (inputRef.current) {
+        inputRef?.current.focus();
+      }
+    },
+    []
+  );
+
+  const setTabIndexHandler = useCallback(
+    (_event: any, { tabIndex: ti }: any) => {
+      setPanelHTML('');
+      setTabIndex(ti);
+    },
+    []
+  );
+
+  const setPromptTextHandler = useCallback((_event: any, { text }: any) => {
+    setPromptText(text);
+  }, []);
+
+  const setPanelHandler = useCallback((_event: any, { html }: any) => {
+    setPanelHTML(html);
+    setChoices([]);
+  }, []);
+
+  const setModeHandler = useCallback((_event: any, { mode }: any) => {
+    setMode(mode);
+  }, []);
+
+  const setHintHandler = useCallback((_event: any, { hint }: any) => {
+    setHint(hint);
+  }, []);
+
+  const setChoicesHandler = useCallback((_event: any, { choices }: any) => {
+    setPanelHTML('');
+    setUnfilteredChoices(choices);
+  }, []);
+
+  const resetPromptHandler = useCallback((event, data) => {
+    setChoices([]);
+    setHint('');
+    setInputValue('');
+    setPanelHTML('');
+    setPromptData({});
+    setPromptText('');
+    setTabs([]);
+    setUnfilteredChoices([]);
+  }, []);
+
+  // const runScriptHandler = useCallback(
+  //   (_event: any, runData: { name: string; args: string[] }) => {
+  //     setPromptText(`>_ ${runData.name}`);
+  //     console.log({ scriptName, name: runData.name });
+  //     if (runData?.name && !scriptName.includes(runData?.name)) {
+  //       setScriptName(runData?.name);
+  //     }
+  //   },
+  //   [scriptName, setPromptText, setScriptName]
+  // );
+
+  const messageMap = {
+    [RESET_PROMPT]: resetPromptHandler,
+    [RUN_SCRIPT]: resetPromptHandler,
+    [SET_CHOICES]: setChoicesHandler,
+    [SET_HINT]: setHintHandler,
+    [SET_MODE]: setModeHandler,
+    [SET_PANEL]: setPanelHandler,
+    [SET_PROMPT_TEXT]: setPromptTextHandler,
+    [SET_TAB_INDEX]: setTabIndexHandler,
+    [SHOW_PROMPT]: showPromptHandler,
+  };
 
   useEffect(() => {
-    const updateChoicesHandler = (_event: any, updatedChoices: any) => {
-      setChannel(UPDATE_PROMPT_CHOICES);
-      setChoices(updatedChoices);
-      if (inputRef.current) {
-        inputRef?.current.focus();
-      }
-    };
-
-    const showPromptHandler = (_event: any, promptData: KitPromptOptions) => {
-      setChannel(SHOW_PROMPT_WITH_DATA);
-      setPromptText('');
-      setData(promptData);
-      if (inputRef.current) {
-        inputRef?.current.focus();
-      }
-    };
-
-    const setTabIndexHandler = (_event: any, ti: number) => {
-      setTabIndex(ti);
-    };
-
-    const setPromptTextHandler = (_event: any, text: string) => {
-      setPromptText(text);
-      setCaretDisabled(true);
-    };
-
-    const setPanelHandler = (_event: any, text: string) => {
-      setPanelHTML(text);
-    };
-
-    const messageMap = {
-      [SHOW_PROMPT_WITH_DATA]: showPromptHandler,
-      [UPDATE_PROMPT_CHOICES]: updateChoicesHandler,
-      [SET_TAB_INDEX]: setTabIndexHandler,
-      [SET_PROMPT_TEXT]: setPromptTextHandler,
-      [SET_PANEL]: setPanelHandler,
-    };
-
     Object.entries(messageMap).forEach(([key, value]: any) => {
-      console.log({ key, value });
       if (ipcRenderer.listenerCount(key) === 0) {
-        ipcRenderer.on(key, value);
+        ipcRenderer.on(key, (event, data) => {
+          if (data?.kitScript) setScriptName(data?.kitScript);
+          value(event, data);
+        });
       }
     });
 
@@ -445,30 +502,6 @@ export default function App() {
       });
     };
   }, []);
-
-  useEffect(() => {
-    const runScriptHandler = (
-      _event: any,
-      runData: { name: string; args: string[] }
-    ) => {
-      setPromptText(`>_ ${runData.name}`);
-      setCaretDisabled(true);
-      if (!scriptName.includes(runData?.name)) {
-        setScriptName(runData?.name);
-        setData({});
-        setInputValue('');
-        setPanelHTML('');
-      }
-    };
-
-    if (ipcRenderer.listenerCount(RUN_SCRIPT) === 0) {
-      ipcRenderer.on(RUN_SCRIPT, runScriptHandler);
-    }
-
-    return () => {
-      ipcRenderer.off(RUN_SCRIPT, runScriptHandler);
-    };
-  }, [scriptName]);
 
   return (
     <ErrorBoundary>
@@ -480,19 +513,19 @@ export default function App() {
         className="flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl"
       >
         <div className="flex flex-row text-xs dark:text-yellow-500 text-yellow-700 justify-between pt-2 px-4">
-          <span>{data?.scriptInfo?.description || ''}</span>
+          <span>{promptData?.scriptInfo?.description || ''}</span>
 
           <span>
-            {data?.scriptInfo?.menu}
-            {data?.scriptInfo?.twitter && (
+            {promptData?.scriptInfo?.menu}
+            {promptData?.scriptInfo?.twitter && (
               <span>
                 <span> - </span>
                 <a
-                  href={`https://twitter.com/${data?.scriptInfo?.twitter.slice(
+                  href={`https://twitter.com/${promptData?.scriptInfo?.twitter.slice(
                     1
                   )}`}
                 >
-                  {data?.scriptInfo?.twitter}
+                  {promptData?.scriptInfo?.twitter}
                 </a>
               </span>
             )}
@@ -507,15 +540,17 @@ export default function App() {
             ...(caretDisabled && { caretColor: 'transparent' }),
           }}
           className="w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder:text-gray-300 placeholder:text-gray-500 bg-white dark:bg-gray-900 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4"
-          type={data?.secret ? 'password' : 'text'}
+          type={promptData?.secret ? 'password' : 'text'}
           value={inputValue}
           onChange={onChange}
           autoFocus
-          placeholder={promptText || data?.message}
+          placeholder={promptText || promptData?.message}
           onKeyDown={onKeyDown}
         />
-        {info && (
-          <div className="text-sm text-black dark:text-white">{info}</div>
+        {hint && (
+          <div className="pl-4 py-0.5 text-sm text-black dark:text-white">
+            {hint}
+          </div>
         )}
         {tabs?.length > 0 && (
           <div className="flex flex-row pl-4">
@@ -551,7 +586,7 @@ export default function App() {
             // style={{ maxHeight: '85vh' }}
           >
             {((choices as any[]) || []).map((choice, i) => {
-              const input = inputValue.toLowerCase();
+              const input = inputValue?.toLowerCase();
               const name = choice?.name?.toLowerCase();
               return (
                 // eslint-disable-next-line jsx-a11y/click-events-have-key-events
@@ -581,7 +616,7 @@ export default function App() {
                 >
                   <div className="flex flex-col max-w-full mr-2 truncate">
                     <div className="truncate">
-                      {channel === UPDATE_PROMPT_CHOICES
+                      {mode === (MODE.GENERATE || MODE.MANUAL)
                         ? noHighlight(choice.name, inputValue)
                         : name.startsWith(input)
                         ? highlightStartsWith(choice.name, inputValue)

@@ -94,7 +94,7 @@ export const escapePromptWindow = (bw: BrowserWindow) => {
 };
 
 export const invokePromptWindow = (channel: string, data: any) => {
-  log.info(`invokePromptWindow, ${channel}`);
+  log.info(`>_ ${channel} ${data?.kitScript}`);
   if (promptWindow && !promptWindow.isDestroyed()) {
     // promptWindow?.setBackgroundColor('#00FFFFFF');
     promptWindow?.webContents.send(channel, data);

@@ -1,7 +1,13 @@
+export const GENERATE_CHOICES = 'GENERATE_CHOICES';
+export const RESET_PROMPT = 'RESET_PROMPT';
 export const RUN_SCRIPT = 'RUN_SCRIPT';
-export const SET_PROMPT_TEXT = 'SET_PROMPT_TEXT';
+export const SET_CHOICES = 'SET_CHOICES';
+export const SET_HINT = 'SET_HINT';
+export const SET_MODE = 'SET_MODE';
 export const SET_PANEL = 'SET_PANEL';
+export const SET_PROMPT_TEXT = 'SET_PROMPT_TEXT';
 export const SET_TAB_INDEX = 'SET_TAB_INDEX';
-export const SHOW_PROMPT_WITH_DATA = 'SHOW_PROMPT_WITH_DATA';
-export const UPDATE_PROMPT_CHOICES = 'UPDATE_PROMPT_CHOICES';
+export const SHOW_PROMPT = 'SHOW_PROMPT';
+export const TAB_CHANGED = 'TAB_CHANGED';
+export const VALUE_SELECTED = 'VALUE_SELECTED';
 export const VALUE_SUBMITTED = 'VALUE_SUBMITTED';
