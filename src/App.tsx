@@ -33,7 +33,7 @@ import {
   SET_MODE,
   GENERATE_CHOICES,
   TAB_CHANGED,
-  VALUE_SELECTED,
+  CHOICE_FOCUSED,
   SET_HINT,
 } from './channels';
 
@@ -170,7 +170,7 @@ export default function App() {
   );
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const [promptText, setPromptText] = useState('');
-  const [panelHTML, setPanelHTML] = useState('');
+  const [panelHTML, setPanelHTML] = useDebounce('');
   const [scriptName, setScriptName] = useDebounce('');
   const [caretDisabled, setCaretDisabled] = useState(false);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
@@ -190,16 +190,14 @@ export default function App() {
     setIndex(0);
   }, [unfilteredChoices]);
 
-  const submit = useCallback(
-    (submitValue: string) => {
-      setInputValue('');
-      setPanelHTML('');
-      setPromptText(submitValue);
+  const submit = useCallback((submitValue: string) => {
+    setInputValue('');
+    setPanelHTML('');
+    setPromptText(submitValue);
+    setChoices([]);
 
-      ipcRenderer.send(VALUE_SUBMITTED, { value: submitValue });
-    },
-    [setPromptText]
-  );
+    ipcRenderer.send(VALUE_SUBMITTED, { value: submitValue });
+  }, []);
 
   useEffect(() => {
     if (index > choices?.length - 1) setIndex(choices?.length - 1);
@@ -208,17 +206,16 @@ export default function App() {
 
   const onChange = useCallback((event) => {
     if (event.key === 'Enter') return;
-    setHint('');
     setIndex(0);
     setInputValue(event.currentTarget.value);
   }, []);
 
   useEffect(() => {
     if (choices?.length > 0 && choices?.[index]) {
-      ipcRenderer.send(VALUE_SELECTED, choices[index]);
+      ipcRenderer.send(CHOICE_FOCUSED, choices[index]);
     }
     if (choices?.length === 0) {
-      ipcRenderer.send(VALUE_SELECTED, null);
+      ipcRenderer.send(CHOICE_FOCUSED, null);
     }
   }, [choices, index]);
 
@@ -552,6 +549,11 @@ export default function App() {
             {hint}
           </div>
         )}
+
+        {/* <div className="pl-4 py-0.5 text-sm text-black dark:text-white">
+          Mode: {mode}
+        </div> */}
+
         {tabs?.length > 0 && (
           <div className="flex flex-row pl-4">
             {/* <span className="bg-white">{modeIndex}</span> */}
@@ -570,9 +572,15 @@ export default function App() {
           </div>
         )}
         {panelHTML?.length > 0 && (
-          <div className="dark:text-yellow-500 text-yellow-700 text-base p-4">
+          <SimpleBar
+            style={{
+              WebkitAppRegion: 'no-drag',
+              WebkitUserSelect: 'text',
+            }}
+            className="px-4 py-1 flex flex-col dark:text-yellow-500 text-yellow-700 w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none bg-white dark:bg-gray-900"
+          >
             <div dangerouslySetInnerHTML={{ __html: panelHTML }} />
-          </div>
+          </SimpleBar>
         )}
 
         {choices?.length > 0 && (

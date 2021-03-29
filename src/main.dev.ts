@@ -39,7 +39,7 @@ import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
-import { createPromptWindow, createPreview, createPromptCache } from './prompt';
+import { createPromptWindow, createPromptCache } from './prompt';
 import { createNotification } from './notifications';
 import {
   APP_NAME,
@@ -200,7 +200,6 @@ const ready = async () => {
     await createTray();
     await manageShortcuts();
     await createPromptWindow();
-    await createPreview();
     await createNotification();
     autoUpdater.logger = log;
     autoUpdater.checkForUpdatesAndNotify({
@@ -385,6 +384,8 @@ const checkKit = async () => {
     // git show-ref --verify refs/tags/
     setupLog(`Checking out ${getVersion()}`);
     await checkoutKitTag();
+    const npmResult = spawnSync(`npm`, [`i`], options);
+    await handleSpawnReturns(`npm`, npmResult);
   }
 
   if (!kenvExists()) {

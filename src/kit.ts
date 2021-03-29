@@ -46,7 +46,7 @@ import {
   SET_MODE,
   GENERATE_CHOICES,
   TAB_CHANGED,
-  VALUE_SELECTED,
+  CHOICE_FOCUSED,
   RESET_PROMPT,
   SET_HINT,
 } from './channels';
@@ -85,7 +85,7 @@ ipcMain.on(
     } else if (script && input) {
       tryKitScript(script, [...cacheKeyParts, '--kit-input', input]);
     }
-  }, 250)
+  }, 100)
 );
 
 ipcMain.on('PROMPT_ERROR', (_event, error: Error) => {
@@ -93,16 +93,12 @@ ipcMain.on('PROMPT_ERROR', (_event, error: Error) => {
   if (!appHidden) setPromptText(error.message);
 });
 
-ipcMain.on(
-  VALUE_SELECTED,
-  debounce((_event, choice: any) => {
-    if (choice?.preview) {
-      showPreview(choice.preview);
-    } else {
-      hidePreview();
-    }
-  }, 250)
-);
+// ipcMain.on(
+//   CHOICE_FOCUSED,
+//   debounce((_event, choice: any) => {
+//     child?.send({ channel: CHOICE_FOCUSED, choice });
+//   }, 100)
+// );
 
 ipcMain.on(TAB_CHANGED, (event, { tab, input = '' }) => {
   console.log(`SENDING TAB_CHANGED ${tab} ${input}`);
