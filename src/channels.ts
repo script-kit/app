@@ -4,6 +4,7 @@ export const RESET_PROMPT = 'RESET_PROMPT';
 export const RUN_SCRIPT = 'RUN_SCRIPT';
 export const SET_CHOICES = 'SET_CHOICES';
 export const SET_HINT = 'SET_HINT';
+export const SET_INPUT = 'SET_INPUT';
 export const SET_MODE = 'SET_MODE';
 export const SET_PANEL = 'SET_PANEL';
 export const SET_PROMPT_TEXT = 'SET_PROMPT_TEXT';

@@ -49,6 +49,7 @@ import {
   CHOICE_FOCUSED,
   RESET_PROMPT,
   SET_HINT,
+  SET_INPUT,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 
@@ -303,6 +304,10 @@ const kitScript = (scriptPath: string, runArgs: string[] = []) => {
 
       case SET_HINT:
         invokePromptWindow(SET_HINT, data);
+        break;
+
+      case SET_INPUT:
+        invokePromptWindow(SET_INPUT, data);
         break;
 
       case SET_PROMPT_TEXT:

@@ -35,6 +35,7 @@ import {
   TAB_CHANGED,
   CHOICE_FOCUSED,
   SET_HINT,
+  SET_INPUT,
 } from './channels';
 
 interface ChoiceData {
@@ -444,6 +445,10 @@ export default function App() {
     setHint(hint);
   }, []);
 
+  const setInputHandler = useCallback((_event: any, { input }: any) => {
+    setInputValue(input);
+  }, []);
+
   const setChoicesHandler = useCallback((_event: any, { choices }: any) => {
     setPanelHTML('');
     setUnfilteredChoices(choices);
@@ -476,6 +481,7 @@ export default function App() {
     [RUN_SCRIPT]: resetPromptHandler,
     [SET_CHOICES]: setChoicesHandler,
     [SET_HINT]: setHintHandler,
+    [SET_INPUT]: setInputHandler,
     [SET_MODE]: setModeHandler,
     [SET_PANEL]: setPanelHandler,
     [SET_PROMPT_TEXT]: setPromptTextHandler,
