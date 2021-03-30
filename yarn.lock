@@ -1530,6 +1530,11 @@
     estree-walker "^1.0.1"
     picomatch "^2.2.2"
 
+"@rooks/use-previous@^4.10.0":
+  version "4.10.0"
+  resolved "https://registry.yarnpkg.com/@rooks/use-previous/-/use-previous-4.10.0.tgz#6dbe8e03df9adaa529a937b938c41fd7105d9118"
+  integrity sha512-7+7eukcABVygZPxtrQFlVKD5c4FJZgE2uYKFYYM7loZaoSoPFA0VkhQmzmKmGZu0dxdPCG10ExjV+r0Mpx+6XA==
+
 "@semantic-release/changelog@^5.0.1":
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/@semantic-release/changelog/-/changelog-5.0.1.tgz#50a84b63e5d391b7debfe021421589fa2bcdafe4"

@@ -264,6 +264,7 @@
   },
   "dependencies": {
     "@react-hook/debounce": "^3.0.0",
+    "@rooks/use-previous": "^4.10.0",
     "@tailwindcss/forms": "^0.2.1",
     "autoprefixer": "^10.2.1",
     "bonjour": "^3.5.0",

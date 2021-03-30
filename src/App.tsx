@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable guard-for-in */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/no-array-index-key */
@@ -20,22 +22,23 @@ import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
 import isImage from 'is-image';
+import usePrevious from '@rooks/use-previous';
 import { KitPromptOptions } from './types';
 import {
-  RUN_SCRIPT,
-  SET_PROMPT_TEXT,
-  SET_PANEL,
-  SET_TAB_INDEX,
-  SHOW_PROMPT,
-  RESET_PROMPT,
-  VALUE_SUBMITTED,
-  SET_CHOICES,
-  SET_MODE,
-  GENERATE_CHOICES,
-  TAB_CHANGED,
   CHOICE_FOCUSED,
+  GENERATE_CHOICES,
+  RESET_PROMPT,
+  RUN_SCRIPT,
+  SET_CHOICES,
   SET_HINT,
   SET_INPUT,
+  SET_MODE,
+  SET_PANEL,
+  SET_PROMPT_TEXT,
+  SET_TAB_INDEX,
+  SHOW_PROMPT,
+  TAB_CHANGED,
+  VALUE_SUBMITTED,
 } from './channels';
 
 interface ChoiceData {
@@ -171,6 +174,8 @@ export default function App() {
   );
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const [promptText, setPromptText] = useState('');
+  const previousPromptText: string | null = usePrevious(promptText);
+  const [dropReady, setDropReady] = useState(false);
   const [panelHTML, setPanelHTML] = useDebounce('');
   const [scriptName, setScriptName] = useDebounce('');
   const [caretDisabled, setCaretDisabled] = useState(false);
@@ -191,13 +196,32 @@ export default function App() {
     setIndex(0);
   }, [unfilteredChoices]);
 
-  const submit = useCallback((submitValue: string) => {
-    setInputValue('');
+  const submit = useCallback((value: any) => {
+    setUnfilteredChoices([]);
     setPanelHTML('');
-    setPromptText(submitValue);
-    setChoices([]);
+    setInputValue('');
+    setPromptText(
+      typeof value === 'string' ? `Submitting "${value}"` : 'Processing...'
+    );
 
-    ipcRenderer.send(VALUE_SUBMITTED, { value: submitValue });
+    if (Array.isArray(value)) {
+      const files = value.map((file) => {
+        const fileObject: any = {};
+
+        for (const key in file) {
+          const value = file[key];
+          const notFunction = typeof value !== 'function';
+          if (notFunction) fileObject[key] = value;
+        }
+
+        return fileObject;
+      });
+      console.log(files);
+      ipcRenderer.send(VALUE_SUBMITTED, { value: files });
+      return;
+    }
+
+    ipcRenderer.send(VALUE_SUBMITTED, { value });
   }, []);
 
   useEffect(() => {
@@ -209,6 +233,20 @@ export default function App() {
     if (event.key === 'Enter') return;
     setIndex(0);
     setInputValue(event.currentTarget.value);
+  }, []);
+
+  const onDragEnter = useCallback((event) => {
+    setDropReady(true);
+    setPromptText('Drop to submit');
+  }, []);
+  const onDragLeave = useCallback((event) => {
+    setDropReady(false);
+    setPromptText(previousPromptText);
+  }, []);
+  const onDrop = useCallback((event) => {
+    console.log(event);
+    setDropReady(false);
+    submit(Array.from(event?.dataTransfer?.files));
   }, []);
 
   useEffect(() => {
@@ -455,6 +493,7 @@ export default function App() {
   }, []);
 
   const resetPromptHandler = useCallback((event, data) => {
+    setDropReady(false);
     setChoices([]);
     setHint('');
     setInputValue('');
@@ -513,7 +552,13 @@ export default function App() {
           WebkitAppRegion: 'drag',
           WebkitUserSelect: 'none',
         }}
-        className="flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl"
+        className={`flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl
+        ${
+          dropReady
+            ? `border-b-4 border-green-500 border-solid border-opacity-50`
+            : `border-none`
+        }
+        `}
       >
         <div className="flex flex-row text-xs dark:text-yellow-500 text-yellow-700 justify-between pt-2 px-4">
           <span>{promptData?.scriptInfo?.description || ''}</span>
@@ -535,20 +580,25 @@ export default function App() {
           </span>
         </div>
         <input
-          ref={inputRef}
           style={{
             WebkitAppRegion: 'drag',
             WebkitUserSelect: 'none',
             minHeight: '4rem',
             ...(caretDisabled && { caretColor: 'transparent' }),
           }}
-          className="w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder:text-gray-300 placeholder:text-gray-500 bg-white dark:bg-gray-900 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4"
+          autoFocus
+          className={`w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder:text-gray-300 placeholder:text-gray-500 bg-white dark:bg-gray-900 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4
+          ${dropReady && `border border-green-500 border-2 border-solid`}
+          `}
+          onChange={onChange}
+          onDragEnter={onDragEnter}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+          onKeyDown={onKeyDown}
+          placeholder={promptText || promptData?.message}
+          ref={inputRef}
           type={promptData?.secret ? 'password' : 'text'}
           value={inputValue}
-          onChange={onChange}
-          autoFocus
-          placeholder={promptText || promptData?.message}
-          onKeyDown={onKeyDown}
         />
         {hint && (
           <div className="pl-4 py-0.5 text-sm text-black dark:text-white">
