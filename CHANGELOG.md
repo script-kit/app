@@ -1,3 +1,10 @@
+# [1.1.0-beta.81](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.80...v1.1.0-beta.81) (2021-03-30)
+
+
+### Features
+
+* **prompt:** adding drag and drop for input ([122d50c](https://github.com/johnlindquist/kitapp/commit/122d50c386c8ce20d115a179a0c183323472de03))
+
 # [1.1.0-beta.80](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.79...v1.1.0-beta.80) (2021-03-30)
 
 
