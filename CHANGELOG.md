@@ -1,3 +1,13 @@
+# [1.1.0-beta.80](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.79...v1.1.0-beta.80) (2021-03-30)
+
+
+### Features
+
+* **prompt:** Adding an HTML panel ([212ac4a](https://github.com/johnlindquist/kitapp/commit/212ac4a77a84a0d1e1986daae44b86dbe9b438a4))
+* **prompt:** adding setInput ([fd0f9dc](https://github.com/johnlindquist/kitapp/commit/fd0f9dcbd6e51bae8156486e38b60377c6417465))
+* **prompt:** finshing up the panel work. Removing old preview. ([f6dbdff](https://github.com/johnlindquist/kitapp/commit/f6dbdffe086ad313666647e12e17caa99a356b0f))
+* **prompt:** Legwork for supporting the panel ([589b566](https://github.com/johnlindquist/kitapp/commit/589b5661a1bfc7d57e01610546b617be1276e05a))
+
 # [1.1.0-beta.79](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.78...v1.1.0-beta.79) (2021-03-23)
 
 
