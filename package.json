@@ -296,7 +296,6 @@
     "simplebar-react": "^2.3.0",
     "source-map-support": "^0.5.19",
     "tailwindcss": "^2.0.2",
-    "trash": "^7.1.1",
     "tree-kill": "^1.2.2"
   },
   "devEngines": {
