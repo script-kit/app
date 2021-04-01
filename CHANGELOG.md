@@ -1,3 +1,10 @@
+# [1.1.0-beta.83](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.82...v1.1.0-beta.83) (2021-04-01)
+
+
+### Bug Fixes
+
+* **kenv:** move trash over to src ([015cf70](https://github.com/johnlindquist/kitapp/commit/015cf7068a4134ebec31630e855e21d80dfeb747))
+
 # [1.1.0-beta.82](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.81...v1.1.0-beta.82) (2021-04-01)
 
 
