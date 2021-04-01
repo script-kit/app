@@ -68,10 +68,10 @@ const onFilesChanged = (
     if (!shortcut) return;
     // At this point, we know it's a new shortcut, so register it
 
-    const ret = globalShortcut.register(shortcut, () => {
+    const ret = globalShortcut.register(shortcut, async () => {
       // const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
 
-      tryKitScript(filePath, []);
+      await tryKitScript(filePath, []);
     });
 
     if (!ret) {

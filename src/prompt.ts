@@ -93,13 +93,7 @@ export const escapePromptWindow = (bw: BrowserWindow) => {
   hideEmitter.emit('hide');
 };
 
-export const invokePromptWindow = (channel: string, data: any) => {
-  log.info(`>_ ${channel} ${data?.kitScript}`);
-  if (promptWindow && !promptWindow.isDestroyed()) {
-    // promptWindow?.setBackgroundColor('#00FFFFFF');
-    promptWindow?.webContents.send(channel, data);
-  }
-
+export const showPrompt = () => {
   if (promptWindow && !promptWindow?.isVisible()) {
     const cursor = screen.getCursorScreenPoint();
     // Get display with cursor
@@ -141,6 +135,14 @@ export const invokePromptWindow = (channel: string, data: any) => {
   }
 
   return promptWindow;
+};
+
+export const sendToPrompt = (channel: string, data: any) => {
+  // log.info(`>_ ${channel} ${data?.kitScript}`);
+  if (promptWindow && !promptWindow.isDestroyed()) {
+    // promptWindow?.setBackgroundColor('#00FFFFFF');
+    promptWindow?.webContents.send(channel, data);
+  }
 };
 
 const cachePromptPosition = (bw: BrowserWindow) => {

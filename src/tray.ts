@@ -12,20 +12,20 @@ let tray: Tray | null = null;
 const leftClick = async (event: KeyboardEvent) => {
   restartIfNecessary();
   if (event.metaKey) {
-    tryKitScript('tray/command-click');
+    await tryKitScript('tray/command-click');
   } else if (event.shiftKey) {
-    tryKitScript('tray/shift-click');
+    await tryKitScript('tray/shift-click');
   } else if (event.ctrlKey) {
-    tryKitScript('tray/control-click');
+    await tryKitScript('tray/control-click');
   } else if (event.altKey) {
-    tryKitScript('tray/alt-click');
+    await tryKitScript('tray/alt-click');
   } else {
-    tryKitScript(kitPath('main/index.js'));
+    await tryKitScript(kitPath('main/index.js'));
   }
 };
 
 const rightClick = async () => {
-  tryKitScript(kitPath('main/edit.js'));
+  await tryKitScript(kitPath('main/edit.js'));
 };
 
 const trayIcon = getAssetPath('IconTemplate.png');

@@ -138,7 +138,7 @@ app.on('web-contents-created', (_, contents) => {
 const prepareProtocols = async () => {
   const PROTOCOL_START = `${KIT_PROTOCOL}://`;
 
-  app.on('open-url', (e, url) => {
+  app.on('open-url', async (e, url) => {
     log.info(`URL PROTOCOL`, url);
     e.preventDefault();
     const [name, params] = url.slice(PROTOCOL_START.length).split('?');
@@ -149,7 +149,7 @@ const prepareProtocols = async () => {
       .join(' ')
       .split(' ');
 
-    tryKitScript(kitPath('cli/new.js'), [name, ...args]);
+    await tryKitScript(kitPath('cli/new.js'), [name, ...args]);
   });
 
   protocol.registerFileProtocol(KIT_PROTOCOL, (request, callback) => {

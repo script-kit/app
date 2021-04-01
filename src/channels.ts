@@ -2,6 +2,7 @@ export const CHOICE_FOCUSED = 'CHOICE_FOCUSED';
 export const GENERATE_CHOICES = 'GENERATE_CHOICES';
 export const RESET_PROMPT = 'RESET_PROMPT';
 export const RUN_SCRIPT = 'RUN_SCRIPT';
+export const SEND_RESPONSE = 'SEND_RESPONSE';
 export const SET_CHOICES = 'SET_CHOICES';
 export const SET_HINT = 'SET_HINT';
 export const SET_INPUT = 'SET_INPUT';
