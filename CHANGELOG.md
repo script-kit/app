@@ -1,3 +1,16 @@
+# [1.1.0-beta.82](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.81...v1.1.0-beta.82) (2021-04-01)
+
+
+### Bug Fixes
+
+* **prompt:** prompt text wasn't setting properly ([a618600](https://github.com/johnlindquist/kitapp/commit/a618600f237ba013b4baf6968c82bd204fe4a1bf))
+* **server:** Allowing the server to return a response ([a643256](https://github.com/johnlindquist/kitapp/commit/a64325627e4e5d489d9ae355871c958d8fb393fd))
+
+
+### Features
+
+* **kenv:** degit kenv after clone ([c227ad4](https://github.com/johnlindquist/kitapp/commit/c227ad4efd29a6ddc0d8f30d241659532c17127f))
+
 # [1.1.0-beta.81](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.80...v1.1.0-beta.81) (2021-03-30)
 
 
