@@ -197,12 +197,10 @@ export default function App() {
   }, [unfilteredChoices]);
 
   const submit = useCallback((value: any) => {
+    setPromptText(typeof value === 'string' ? value : 'Processing...');
     setUnfilteredChoices([]);
     setPanelHTML('');
     setInputValue('');
-    setPromptText(
-      typeof value === 'string' ? `Submitting "${value}"` : 'Processing...'
-    );
 
     if (Array.isArray(value)) {
       const files = value.map((file) => {
@@ -241,7 +239,7 @@ export default function App() {
   }, []);
   const onDragLeave = useCallback((event) => {
     setDropReady(false);
-    setPromptText(previousPromptText);
+    setPromptText(previousPromptText || '');
   }, []);
   const onDrop = useCallback((event) => {
     console.log(event);
@@ -493,27 +491,16 @@ export default function App() {
   }, []);
 
   const resetPromptHandler = useCallback((event, data) => {
+    setPromptText('');
     setDropReady(false);
     setChoices([]);
     setHint('');
     setInputValue('');
     setPanelHTML('');
     setPromptData({});
-    setPromptText('');
     setTabs([]);
     setUnfilteredChoices([]);
   }, []);
-
-  // const runScriptHandler = useCallback(
-  //   (_event: any, runData: { name: string; args: string[] }) => {
-  //     setPromptText(`>_ ${runData.name}`);
-  //     console.log({ scriptName, name: runData.name });
-  //     if (runData?.name && !scriptName.includes(runData?.name)) {
-  //       setScriptName(runData?.name);
-  //     }
-  //   },
-  //   [scriptName, setPromptText, setScriptName]
-  // );
 
   const messageMap = {
     [RESET_PROMPT]: resetPromptHandler,
