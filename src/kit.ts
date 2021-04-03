@@ -53,7 +53,7 @@ consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
 let kitScriptName = '';
 export const processMap = new Map();
 
-const setPromptText = (text) => {
+const setPlaceholder = (text) => {
   if (!appHidden) sendToPrompt(SET_PLACEHOLDER, text);
 };
 
@@ -76,7 +76,7 @@ ipcMain.on(
 
 ipcMain.on('PROMPT_ERROR', (_event, error: Error) => {
   log.warn(error);
-  if (!appHidden) setPromptText(error.message);
+  if (!appHidden) setPlaceholder(error.message);
 });
 
 // ipcMain.on(
@@ -361,7 +361,7 @@ const kitScript = (
             log.warn(`Choices must have "name" and "value"`);
             log.warn(data?.choices);
             if (!appHidden)
-              setPromptText(
+              setPlaceholder(
                 `Warning: arg choices must have "name" and "value"`
               );
           }
@@ -402,7 +402,7 @@ const kitScript = (
         break;
 
       case 'UPDATE_PROMPT_WARN':
-        setPromptText(data?.info);
+        setPlaceholder(data?.info);
         break;
 
       default:

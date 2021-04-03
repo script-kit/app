@@ -339,8 +339,8 @@ export default function App() {
   }, [mode, inputValue, tabIndex]);
 
   useEffect(() => {
-    setCaretDisabled(Boolean(!promptData?.message));
-  }, [promptData?.message]);
+    setCaretDisabled(Boolean(!promptData?.placeholder));
+  }, [promptData?.placeholder]);
 
   useEffect(() => {
     try {
@@ -581,7 +581,7 @@ export default function App() {
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           onKeyDown={onKeyDown}
-          placeholder={placeholder || promptData?.message}
+          placeholder={placeholder || promptData?.placeholder}
           ref={inputRef}
           type={promptData?.secret ? 'password' : 'text'}
           value={inputValue}
@@ -597,7 +597,7 @@ export default function App() {
         </div> */}
 
         {tabs?.length > 0 && (
-          <SimpleBar className="overflow-x-scroll overscroll-y-none">
+          <SimpleBar className="overscroll-y-none">
             <div className="flex flex-row pl-4 whitespace-nowrap">
               {/* <span className="bg-white">{modeIndex}</span> */}
               {tabs.map((tab: string, i: number) => (
