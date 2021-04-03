@@ -1,3 +1,11 @@
+# [1.1.0-beta.84](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.83...v1.1.0-beta.84) (2021-04-03)
+
+
+### Bug Fixes
+
+* **prompt:** refactor to setPlaceholder ([342e812](https://github.com/johnlindquist/kitapp/commit/342e812259d0373d6f3b2b86246d80841841493c))
+* **setup:** Moving setup out of app and over to kit ([ac2080b](https://github.com/johnlindquist/kitapp/commit/ac2080be3e8c0f9f7ad946664ed51342c5580b7f))
+
 # [1.1.0-beta.83](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.82...v1.1.0-beta.83) (2021-04-01)
 
 
