@@ -1,3 +1,10 @@
+# [1.1.0-beta.85](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.84...v1.1.0-beta.85) (2021-04-03)
+
+
+### Bug Fixes
+
+* **prompt:** fixing message to placeholder ([f7c1334](https://github.com/johnlindquist/kitapp/commit/f7c1334ba180ba51e026aee327ddab7309805fc7))
+
 # [1.1.0-beta.84](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.83...v1.1.0-beta.84) (2021-04-03)
 
 
