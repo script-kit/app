@@ -17,7 +17,5 @@
     "@types/core-js": "^2.5.4",
     "@types/regenerator-runtime": "^0.13.0"
   },
-  "dependencies": {
-    "trash": "^7.1.1"
-  }
+  "dependencies": {}
 }

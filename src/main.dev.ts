@@ -35,7 +35,6 @@ import { test } from 'shelljs';
 import { homedir } from 'os';
 import { readFile } from 'fs/promises';
 import git from 'simple-git/promise';
-import trash from 'trash';
 import { createTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
@@ -400,8 +399,6 @@ const checkKit = async () => {
       [`./setup/setup.js`],
       options
     );
-
-    await trash([kenvPath('.git')]);
 
     await handleSpawnReturns(`Setup .kenv:`, setupKenvResult);
   }
