@@ -31,7 +31,7 @@ import {
   SHOW_PROMPT,
   SET_TAB_INDEX,
   VALUE_SUBMITTED,
-  SET_PROMPT_TEXT,
+  SET_PLACEHOLDER,
   RUN_SCRIPT,
   SET_PANEL,
   SET_CHOICES,
@@ -54,7 +54,7 @@ let kitScriptName = '';
 export const processMap = new Map();
 
 const setPromptText = (text) => {
-  if (!appHidden) sendToPrompt(SET_PROMPT_TEXT, text);
+  if (!appHidden) sendToPrompt(SET_PLACEHOLDER, text);
 };
 
 let values: any[] = [];
@@ -280,8 +280,8 @@ const kitScript = (
         sendToPrompt(SET_INPUT, data);
         break;
 
-      case SET_PROMPT_TEXT:
-        sendToPrompt(SET_PROMPT_TEXT, data);
+      case SET_PLACEHOLDER:
+        sendToPrompt(SET_PLACEHOLDER, data);
         break;
 
       case SET_PANEL:

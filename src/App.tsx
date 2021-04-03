@@ -34,7 +34,7 @@ import {
   SET_INPUT,
   SET_MODE,
   SET_PANEL,
-  SET_PROMPT_TEXT,
+  SET_PLACEHOLDER,
   SET_TAB_INDEX,
   SHOW_PROMPT,
   TAB_CHANGED,
@@ -173,8 +173,8 @@ export default function App() {
     50
   );
   const [choices, setChoices] = useState<ChoiceData[]>([]);
-  const [promptText, setPromptText] = useState('');
-  const previousPromptText: string | null = usePrevious(promptText);
+  const [placeholder, setPlaceholder] = useState('');
+  const previousPlaceholder: string | null = usePrevious(placeholder);
   const [dropReady, setDropReady] = useState(false);
   const [panelHTML, setPanelHTML] = useDebounce('');
   const [scriptName, setScriptName] = useDebounce('');
@@ -197,7 +197,7 @@ export default function App() {
   }, [unfilteredChoices]);
 
   const submit = useCallback((value: any) => {
-    setPromptText(typeof value === 'string' ? value : 'Processing...');
+    setPlaceholder(typeof value === 'string' ? value : 'Processing...');
     setUnfilteredChoices([]);
     setPanelHTML('');
     setInputValue('');
@@ -235,14 +235,13 @@ export default function App() {
 
   const onDragEnter = useCallback((event) => {
     setDropReady(true);
-    setPromptText('Drop to submit');
+    setPlaceholder('Drop to submit');
   }, []);
   const onDragLeave = useCallback((event) => {
     setDropReady(false);
-    setPromptText(previousPromptText || '');
+    setPlaceholder(previousPlaceholder || '');
   }, []);
   const onDrop = useCallback((event) => {
-    console.log(event);
     setDropReady(false);
     submit(Array.from(event?.dataTransfer?.files));
   }, []);
@@ -446,7 +445,7 @@ export default function App() {
 
   const showPromptHandler = useCallback(
     (_event: any, promptData: KitPromptOptions) => {
-      setPromptText('');
+      setPlaceholder('');
       setPanelHTML('');
       setPromptData(promptData);
       if (inputRef.current) {
@@ -464,8 +463,8 @@ export default function App() {
     []
   );
 
-  const setPromptTextHandler = useCallback((_event: any, { text }: any) => {
-    setPromptText(text);
+  const setPlaceholderHandler = useCallback((_event: any, { text }: any) => {
+    setPlaceholder(text);
   }, []);
 
   const setPanelHandler = useCallback((_event: any, { html }: any) => {
@@ -491,7 +490,7 @@ export default function App() {
   }, []);
 
   const resetPromptHandler = useCallback((event, data) => {
-    setPromptText('');
+    setPlaceholder('');
     setDropReady(false);
     setChoices([]);
     setHint('');
@@ -510,7 +509,7 @@ export default function App() {
     [SET_INPUT]: setInputHandler,
     [SET_MODE]: setModeHandler,
     [SET_PANEL]: setPanelHandler,
-    [SET_PROMPT_TEXT]: setPromptTextHandler,
+    [SET_PLACEHOLDER]: setPlaceholderHandler,
     [SET_TAB_INDEX]: setTabIndexHandler,
     [SHOW_PROMPT]: showPromptHandler,
   };
@@ -582,7 +581,7 @@ export default function App() {
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           onKeyDown={onKeyDown}
-          placeholder={promptText || promptData?.message}
+          placeholder={placeholder || promptData?.message}
           ref={inputRef}
           type={promptData?.secret ? 'password' : 'text'}
           value={inputValue}
@@ -598,21 +597,23 @@ export default function App() {
         </div> */}
 
         {tabs?.length > 0 && (
-          <div className="flex flex-row pl-4">
-            {/* <span className="bg-white">{modeIndex}</span> */}
-            {tabs.map((tab: string, i: number) => (
-              // I need to research a11y for apps vs. "sites"
-              <div
-                className={` dark:text-yellow-500 text-yellow-700 text-xs p-1 mb-1 mx-1 hover:underline  ${
-                  i === tabIndex && 'underline'
-                }`}
-                key={tab}
-                onClick={onTabClick(i)}
-              >
-                {tab}
-              </div>
-            ))}
-          </div>
+          <SimpleBar className="overflow-x-scroll overscroll-y-none">
+            <div className="flex flex-row pl-4 whitespace-nowrap">
+              {/* <span className="bg-white">{modeIndex}</span> */}
+              {tabs.map((tab: string, i: number) => (
+                // I need to research a11y for apps vs. "sites"
+                <div
+                  className={` dark:text-yellow-500 text-yellow-700 text-xs p-1 mb-1 mx-1 hover:underline  ${
+                    i === tabIndex && 'underline'
+                  }`}
+                  key={tab}
+                  onClick={onTabClick(i)}
+                >
+                  {tab}
+                </div>
+              ))}
+            </div>
+          </SimpleBar>
         )}
         {panelHTML?.length > 0 && (
           <SimpleBar
@@ -665,48 +666,56 @@ export default function App() {
                     setIndex(i);
                   }}
                 >
-                  <div className="flex flex-col max-w-full mr-2 truncate">
-                    <div className="truncate">
-                      {mode === (MODE.GENERATE || MODE.MANUAL)
-                        ? noHighlight(choice.name, inputValue)
-                        : name.startsWith(input)
-                        ? highlightStartsWith(choice.name, inputValue)
-                        : !name.match(/\w/)
-                        ? noHighlight(choice.name, inputValue)
-                        : firstLettersMatch(name, input)
-                        ? highlightFirstLetters(choice.name, inputValue)
-                        : name.includes(input)
-                        ? highlightIncludes(choice.name, inputValue)
-                        : highlightAdjacentAndWordStart(
-                            choice.name,
-                            inputValue
-                          )}
-                    </div>
-                    {((index === i && choice?.selected) ||
-                      choice?.description) && (
-                      <div
-                        className={`text-xs truncate ${
-                          index === i && `dark:text-yellow-500 text-yellow-700`
-                        }`}
-                      >
-                        {(index === i && choice?.selected) ||
-                          choice?.description}
-                      </div>
-                    )}
-                  </div>
-                  {choice?.img && isImage(choice?.img || '') && (
-                    <img
-                      src={choice.img}
-                      alt={choice.name}
-                      className="py-2 h-full"
-                    />
-                  )}
                   {choice?.html && (
-                    <div
-                      // eslint-disable-next-line react/no-danger
-                      dangerouslySetInnerHTML={{ __html: choice?.html }}
-                      className="py-2 h-full"
-                    />
+                    <div>
+                      <h1>PARTY</h1>
+                      <div
+                        // eslint-disable-next-line react/no-danger
+                        dangerouslySetInnerHTML={{ __html: choice?.html }}
+                        className="py-2 h-full"
+                      />
+                    </div>
+                  )}
+                  {!choice?.html && (
+                    <div>
+                      <div className="flex flex-col max-w-full mr-2 truncate">
+                        <div className="truncate">
+                          {mode === (MODE.GENERATE || MODE.MANUAL)
+                            ? noHighlight(choice.name, inputValue)
+                            : name.startsWith(input)
+                            ? highlightStartsWith(choice.name, inputValue)
+                            : !name.match(/\w/)
+                            ? noHighlight(choice.name, inputValue)
+                            : firstLettersMatch(name, input)
+                            ? highlightFirstLetters(choice.name, inputValue)
+                            : name.includes(input)
+                            ? highlightIncludes(choice.name, inputValue)
+                            : highlightAdjacentAndWordStart(
+                                choice.name,
+                                inputValue
+                              )}
+                        </div>
+                        {((index === i && choice?.selected) ||
+                          choice?.description) && (
+                          <div
+                            className={`text-xs truncate ${
+                              index === i &&
+                              `dark:text-yellow-500 text-yellow-700`
+                            }`}
+                          >
+                            {(index === i && choice?.selected) ||
+                              choice?.description}
+                          </div>
+                        )}
+                      </div>
+                      {choice?.img && isImage(choice?.img || '') && (
+                        <img
+                          src={choice.img}
+                          alt={choice.name}
+                          className="py-2 h-full"
+                        />
+                      )}
+                    </div>
                   )}
                 </button>
               );
