@@ -204,6 +204,9 @@ const kitScript = (
 
     // TODO: Refactor into something better than this :D
     switch (data.channel) {
+      case '__FORCE_UPDATE':
+        console.log(`__FORCE_UPDATE`);
+        break;
       case 'CLEAR_CACHE':
         getPromptCache()?.clear();
         break;
