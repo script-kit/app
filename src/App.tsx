@@ -1,3 +1,5 @@
+/* eslint-disable react/no-danger */
+/* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable guard-for-in */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
@@ -17,6 +19,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import parse from 'html-react-parser';
+import { Element } from 'domhandler/lib/node';
 import { useDebounce } from '@react-hook/debounce';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
@@ -592,10 +596,6 @@ export default function App() {
           </div>
         )}
 
-        {/* <div className="pl-4 py-0.5 text-sm text-black dark:text-white">
-          Mode: {mode}
-        </div> */}
-
         {tabs?.length > 0 && (
           <SimpleBar className="overscroll-y-none">
             <div className="flex flex-row pl-4 whitespace-nowrap">
@@ -623,7 +623,7 @@ export default function App() {
             }}
             className="px-4 py-1 flex flex-col dark:text-yellow-500 text-yellow-700 w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none bg-white dark:bg-gray-900"
           >
-            <div dangerouslySetInnerHTML={{ __html: panelHTML }} />
+            {parse(panelHTML)}
           </SimpleBar>
         )}
 
@@ -666,17 +666,15 @@ export default function App() {
                     setIndex(i);
                   }}
                 >
-                  {choice?.html && (
-                    <div>
-                      <h1>PARTY</h1>
-                      <div
-                        // eslint-disable-next-line react/no-danger
-                        dangerouslySetInnerHTML={{ __html: choice?.html }}
-                        className="py-2 h-full"
-                      />
-                    </div>
-                  )}
-                  {!choice?.html && (
+                  {choice?.html ? (
+                    parse(choice?.html, {
+                      replace: (domNode: any) => {
+                        if (domNode?.attribs && index === i)
+                          domNode.attribs.class = 'selected';
+                        return domNode;
+                      },
+                    })
+                  ) : (
                     <div>
                       <div className="flex flex-col max-w-full mr-2 truncate">
                         <div className="truncate">

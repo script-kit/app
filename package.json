@@ -276,6 +276,7 @@
     "electron-updater": "^4.3.4",
     "he": "^1.2.0",
     "history": "^5.0.0",
+    "html-react-parser": "^1.2.4",
     "image-size": "^0.9.4",
     "iohook": "^0.7.2",
     "is-image": "^3.0.0",
