@@ -1,3 +1,10 @@
+# [1.1.0-beta.86](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.85...v1.1.0-beta.86) (2021-04-03)
+
+
+### Bug Fixes
+
+* **update:** forcing an update ([d0cf32a](https://github.com/johnlindquist/kitapp/commit/d0cf32a00b199f0f96c08059caf23b26932d3415))
+
 # [1.1.0-beta.85](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.84...v1.1.0-beta.85) (2021-04-03)
 
 
