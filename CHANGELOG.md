@@ -1,3 +1,10 @@
+# [1.1.0-beta.87](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.86...v1.1.0-beta.87) (2021-04-04)
+
+
+### Features
+
+* **prompt:** choice supports a full html override ([e3a7463](https://github.com/johnlindquist/kitapp/commit/e3a7463cc3ee336f1b7b3ca9151549bdd27e67e1))
+
 # [1.1.0-beta.86](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.85...v1.1.0-beta.86) (2021-04-03)
 
 
