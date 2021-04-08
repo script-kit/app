@@ -1,3 +1,10 @@
+# [1.1.0-beta.89](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.88...v1.1.0-beta.89) (2021-04-08)
+
+
+### Bug Fixes
+
+* **install:** Halt execution on error ([df18a38](https://github.com/johnlindquist/kitapp/commit/df18a382ecbc8ba1de815054feb573422fdbacf9))
+
 # [1.1.0-beta.88](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.87...v1.1.0-beta.88) (2021-04-08)
 
 
