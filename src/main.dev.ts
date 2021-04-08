@@ -314,6 +314,8 @@ ${mainLog}
   showWindow?.on('blur', () => {
     app.exit();
   });
+
+  throw new Error(error.message);
 };
 
 const checkoutKitTag = async () => {
