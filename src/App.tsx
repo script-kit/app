@@ -675,8 +675,8 @@ export default function App() {
                       },
                     })
                   ) : (
-                    <div>
-                      <div className="flex flex-col max-w-full mr-2 truncate">
+                    <div className="flex flex-row h-full w-full justify-between items-center">
+                      <div className="flex flex-col max-w-full truncate">
                         <div className="truncate">
                           {mode === (MODE.GENERATE || MODE.MANUAL)
                             ? noHighlight(choice.name, inputValue)
@@ -710,7 +710,7 @@ export default function App() {
                         <img
                           src={choice.img}
                           alt={choice.name}
-                          className="py-2 h-full"
+                          className="py-2 h-full w-16"
                         />
                       )}
                     </div>
