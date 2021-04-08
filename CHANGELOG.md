@@ -1,3 +1,12 @@
+# [1.1.0-beta.88](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.87...v1.1.0-beta.88) (2021-04-08)
+
+
+### Bug Fixes
+
+* **project:** link to new cjs script ([8035d0e](https://github.com/johnlindquist/kitapp/commit/8035d0e959fb782fc9d027c0a7f9a81ab88ed667))
+* **prompt:** fixing img placement ([bcd7ff8](https://github.com/johnlindquist/kitapp/commit/bcd7ff857a039a99ec9f01d7f9a4ed3fbdbe780b))
+* **setup:** install node path ([c45babd](https://github.com/johnlindquist/kitapp/commit/c45babd9a77d20e44ea8d1476b2a788359217305))
+
 # [1.1.0-beta.87](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.86...v1.1.0-beta.87) (2021-04-04)
 
 
