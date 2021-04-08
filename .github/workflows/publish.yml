@@ -58,7 +58,7 @@ jobs:
       - name: Install Kit
         run: |
           cd ~/.kit
-          bash ./setup/install-node.sh --prefix ./node
+          bash ./install-node.sh --prefix ./node
           ./node/bin/npm install --prefix ./
           ./node/bin/npm install @octokit/rest --prefix ./
 
