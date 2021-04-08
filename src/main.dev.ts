@@ -349,7 +349,7 @@ const checkKit = async () => {
     // Step 2: Install node into .kit/node
     setupLog(`Adding node to ~/.kit...`);
     const installNodeResult = spawnSync(
-      `./setup/install-node.sh`,
+      `./install-node.sh`,
       ` --prefix node --platform darwin`.split(' '),
       options
     );

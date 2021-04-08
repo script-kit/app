@@ -166,11 +166,7 @@ const kitScript = (
       '--require',
       'dotenv/config',
       '--require',
-      kitPath('preload', 'api.cjs'),
-      '--require',
-      kitPath('preload', 'kit.cjs'),
-      '--require',
-      kitPath('preload', 'mac.cjs'),
+      kitPath('preload', 'mac-app.cjs'),
     ],
     env: {
       ...process.env,
@@ -284,6 +280,7 @@ const kitScript = (
         break;
 
       case SET_PLACEHOLDER:
+        showPrompt();
         sendToPrompt(SET_PLACEHOLDER, data);
         break;
 
