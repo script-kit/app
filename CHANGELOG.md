@@ -1,3 +1,10 @@
+# [1.1.0-beta.90](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.89...v1.1.0-beta.90) (2021-04-09)
+
+
+### Features
+
+* **prompt:** Adding choice previews ([0dd4f98](https://github.com/johnlindquist/kitapp/commit/0dd4f98db0450b8f6051b89e8ee319da85027736))
+
 # [1.1.0-beta.89](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.88...v1.1.0-beta.89) (2021-04-08)
 
 
