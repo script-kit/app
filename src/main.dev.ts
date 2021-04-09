@@ -49,7 +49,6 @@ import {
   KIT_PROTOCOL,
   kitPath,
 } from './helpers';
-import { createCache } from './cache';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
 import { show } from './show';
@@ -169,7 +168,6 @@ const createLogs = () => {
 };
 
 const createCaches = () => {
-  createCache();
   createPromptCache();
 };
 

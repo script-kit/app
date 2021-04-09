@@ -7,7 +7,6 @@ import path from 'path';
 
 import { tryKitScript } from './kit';
 import { kenvPath, kitPath } from './helpers';
-import { getCache } from './cache';
 
 export const shortcutMap = new Map();
 
@@ -23,12 +22,10 @@ const shortcutNormalizer = (shortcut: string) =>
     .map((part) => (part[0].toUpperCase() + part.slice(1)).trim())
     .join('+');
 
-const onFilesChanged = (
+const onFilesChanged = async (
   event: 'add' | 'change' | 'unlink',
   filePath: string
 ) => {
-  getCache()?.clear();
-
   if (event === 'change') log.info({ event, filePath });
   if (event === 'unlink') {
     const oldShortcut = shortcutMap.get(filePath);
@@ -85,16 +82,27 @@ const onFilesChanged = (
   }
 };
 
+export const cacheMenu = async () => {
+  await tryKitScript(kitPath('cli/cache-menu'));
+};
+
 export const manageShortcuts = async () => {
-  chokidar
-    .watch(
-      [
-        `${kenvPath('scripts')}${path.sep}*.js`,
-        `${kitPath('main')}${path.sep}*.js`,
-      ],
-      {
-        depth: 0,
-      }
-    )
-    .on('all', onFilesChanged);
+  const watcher = chokidar.watch(
+    [
+      `${kenvPath('scripts')}${path.sep}*.js`,
+      `${kitPath('main')}${path.sep}*.js`,
+    ],
+    {
+      depth: 0,
+    }
+  );
+  watcher.on('all', onFilesChanged);
+
+  watcher.on('ready', async () => {
+    await cacheMenu();
+
+    watcher.on('add', cacheMenu);
+    watcher.on('change', cacheMenu);
+    watcher.on('unlink', cacheMenu);
+  });
 };

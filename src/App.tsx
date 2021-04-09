@@ -166,7 +166,7 @@ const firstLettersMatch = (name: string, input: string) => {
 
 export default function App() {
   const [prePromptData, setPromptData]: any = useState({});
-  const [promptData] = useDebounce(prePromptData, 100);
+  const [promptData] = useDebounce(prePromptData, 100, { leading: true });
   const [inputValue, setInputValue] = useState('');
   const [hint, setHint] = useState('');
   const [mode, setMode] = useState(MODE.FILTER);
@@ -176,13 +176,15 @@ export default function App() {
   const [preUnfilteredChoices, setUnfilteredChoices] = useState<ChoiceData[]>(
     []
   );
-  const [unfilteredChoices] = useDebounce(preUnfilteredChoices, 100);
+  const [unfilteredChoices] = useDebounce(preUnfilteredChoices, 100, {
+    leading: true,
+  });
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const [placeholder, setPlaceholder] = useState('');
   const previousPlaceholder: string | null = usePrevious(placeholder);
   const [dropReady, setDropReady] = useState(false);
   const [prePanelHTML, setPanelHTML] = useState('');
-  const [panelHTML] = useDebounce(prePanelHTML, 100);
+  const [panelHTML] = useDebounce(prePanelHTML, 100, { leading: true });
   const [scriptName, setScriptName] = useState('');
   const [caretDisabled, setCaretDisabled] = useState(false);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
