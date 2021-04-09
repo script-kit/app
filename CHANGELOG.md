@@ -1,3 +1,10 @@
+# [1.1.0-beta.91](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.90...v1.1.0-beta.91) (2021-04-09)
+
+
+### Features
+
+* **prompt:** first steps towards caching the main menu ([825d44b](https://github.com/johnlindquist/kitapp/commit/825d44b921bdd249052b650b74855d1ec3c46c76))
+
 # [1.1.0-beta.90](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.89...v1.1.0-beta.90) (2021-04-09)
 
 
