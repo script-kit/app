@@ -21,7 +21,7 @@ import React, {
 } from 'react';
 import parse from 'html-react-parser';
 import { Element } from 'domhandler/lib/node';
-import { useDebounce } from '@react-hook/debounce';
+import { useDebounce, useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
@@ -165,23 +165,25 @@ const firstLettersMatch = (name: string, input: string) => {
 };
 
 export default function App() {
-  const [promptData, setPromptData]: any = useDebounce({});
+  const [prePromptData, setPromptData]: any = useState({});
+  const [promptData] = useDebounce(prePromptData, 100);
   const [inputValue, setInputValue] = useState('');
   const [hint, setHint] = useState('');
   const [mode, setMode] = useState(MODE.FILTER);
   const [index, setIndex] = useState(0);
   const [tabs, setTabs] = useState([]);
   const [tabIndex, setTabIndex] = useState(0);
-  const [unfilteredChoices, setUnfilteredChoices] = useDebounce<ChoiceData[]>(
-    [],
-    50
+  const [preUnfilteredChoices, setUnfilteredChoices] = useState<ChoiceData[]>(
+    []
   );
+  const [unfilteredChoices] = useDebounce(preUnfilteredChoices, 100);
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const [placeholder, setPlaceholder] = useState('');
   const previousPlaceholder: string | null = usePrevious(placeholder);
   const [dropReady, setDropReady] = useState(false);
-  const [panelHTML, setPanelHTML] = useDebounce('');
-  const [scriptName, setScriptName] = useDebounce('');
+  const [prePanelHTML, setPanelHTML] = useState('');
+  const [panelHTML] = useDebounce(prePanelHTML, 100);
+  const [scriptName, setScriptName] = useState('');
   const [caretDisabled, setCaretDisabled] = useState(false);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
@@ -231,10 +233,9 @@ export default function App() {
     if (choices?.length && index <= 0) setIndex(0);
   }, [choices?.length, index]);
 
-  const onChange = useCallback((event) => {
-    if (event.key === 'Enter') return;
+  const onChange = useCallback((value) => {
     setIndex(0);
-    setInputValue(event.currentTarget.value);
+    setInputValue(value);
   }, []);
 
   const onDragEnter = useCallback((event) => {
@@ -336,10 +337,14 @@ export default function App() {
     [index, choices, setPromptData, submit, inputValue, tabs, tabIndex]
   );
 
-  useEffect(() => {
+  const generateChoices = useDebouncedCallback((value, mode, tab) => {
     if (mode === MODE.GENERATE) {
-      ipcRenderer.send(GENERATE_CHOICES, inputValue);
+      ipcRenderer.send(GENERATE_CHOICES, value);
     }
+  }, 150);
+
+  useEffect(() => {
+    generateChoices(inputValue, mode, tabIndex);
   }, [mode, inputValue, tabIndex]);
 
   useEffect(() => {
@@ -580,10 +585,10 @@ export default function App() {
           className={`w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder:text-gray-300 placeholder:text-gray-500 bg-white dark:bg-gray-900 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4
           ${dropReady && `border border-green-500 border-2 border-solid`}
           `}
-          onChange={onChange}
-          onDragEnter={onDragEnter}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
+          onChange={(e) => onChange(e.target.value)}
+          onDragEnter={promptData?.drop ? onDragEnter : undefined}
+          onDragLeave={promptData?.drop ? onDragLeave : undefined}
+          onDrop={promptData?.drop ? onDrop : undefined}
           onKeyDown={onKeyDown}
           placeholder={placeholder || promptData?.placeholder}
           ref={inputRef}
@@ -628,24 +633,27 @@ export default function App() {
         )}
 
         {choices?.length > 0 && (
-          <SimpleBar
-            scrollableNodeProps={{ ref: scrollRef }}
+          <div
+            className="flex flex-row w-full max-h-full overflow-y-hidden"
             style={{
               WebkitAppRegion: 'no-drag',
               WebkitUserSelect: 'none',
             }}
-            className="px-4 pb-4 flex flex-col text-black dark:text-white w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none bg-white dark:bg-gray-900"
-            // style={{ maxHeight: '85vh' }}
           >
-            {((choices as any[]) || []).map((choice, i) => {
-              const input = inputValue?.toLowerCase();
-              const name = choice?.name?.toLowerCase();
-              return (
-                // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-                <button
-                  type="button"
-                  key={choice.uuid}
-                  className={`
+            <SimpleBar
+              scrollableNodeProps={{ ref: scrollRef }}
+              className="px-4 pb-4 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none bg-white dark:bg-gray-900 flex-1"
+              // style={{ maxHeight: '85vh' }}
+            >
+              {((choices as any[]) || []).map((choice, i) => {
+                const input = inputValue?.toLowerCase();
+                const name = choice?.name?.toLowerCase();
+                return (
+                  // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+                  <button
+                    type="button"
+                    key={choice.uuid}
+                    className={`
                 w-full
                 my-1
                 h-16
@@ -659,66 +667,72 @@ export default function App() {
                 justify-between
                 items-center
                 ${index === i ? `dark:bg-gray-800 bg-gray-100 shadow` : ``}`}
-                  onClick={(_event) => {
-                    submit(choice.value);
-                  }}
-                  onMouseEnter={() => {
-                    setIndex(i);
-                  }}
-                >
-                  {choice?.html ? (
-                    parse(choice?.html, {
-                      replace: (domNode: any) => {
-                        if (domNode?.attribs && index === i)
-                          domNode.attribs.class = 'selected';
-                        return domNode;
-                      },
-                    })
-                  ) : (
-                    <div className="flex flex-row h-full w-full justify-between items-center">
-                      <div className="flex flex-col max-w-full truncate">
-                        <div className="truncate">
-                          {mode === (MODE.GENERATE || MODE.MANUAL)
-                            ? noHighlight(choice.name, inputValue)
-                            : name.startsWith(input)
-                            ? highlightStartsWith(choice.name, inputValue)
-                            : !name.match(/\w/)
-                            ? noHighlight(choice.name, inputValue)
-                            : firstLettersMatch(name, input)
-                            ? highlightFirstLetters(choice.name, inputValue)
-                            : name.includes(input)
-                            ? highlightIncludes(choice.name, inputValue)
-                            : highlightAdjacentAndWordStart(
-                                choice.name,
-                                inputValue
-                              )}
-                        </div>
-                        {((index === i && choice?.selected) ||
-                          choice?.description) && (
-                          <div
-                            className={`text-xs truncate ${
-                              index === i &&
-                              `dark:text-yellow-500 text-yellow-700`
-                            }`}
-                          >
-                            {(index === i && choice?.selected) ||
-                              choice?.description}
+                    onClick={(_event) => {
+                      submit(choice.value);
+                    }}
+                    onMouseEnter={() => {
+                      setIndex(i);
+                    }}
+                  >
+                    {choice?.html ? (
+                      parse(choice?.html, {
+                        replace: (domNode: any) => {
+                          if (domNode?.attribs && index === i)
+                            domNode.attribs.class = 'selected';
+                          return domNode;
+                        },
+                      })
+                    ) : (
+                      <div className="flex flex-row h-full w-full justify-between items-center">
+                        <div className="flex flex-col max-w-full truncate">
+                          <div className="truncate">
+                            {mode === (MODE.GENERATE || MODE.MANUAL)
+                              ? noHighlight(choice.name, inputValue)
+                              : name.startsWith(input)
+                              ? highlightStartsWith(choice.name, inputValue)
+                              : !name.match(/\w/)
+                              ? noHighlight(choice.name, inputValue)
+                              : firstLettersMatch(name, input)
+                              ? highlightFirstLetters(choice.name, inputValue)
+                              : name.includes(input)
+                              ? highlightIncludes(choice.name, inputValue)
+                              : highlightAdjacentAndWordStart(
+                                  choice.name,
+                                  inputValue
+                                )}
                           </div>
+                          {((index === i && choice?.selected) ||
+                            choice?.description) && (
+                            <div
+                              className={`text-xs truncate ${
+                                index === i &&
+                                `dark:text-yellow-500 text-yellow-700`
+                              }`}
+                            >
+                              {(index === i && choice?.selected) ||
+                                choice?.description}
+                            </div>
+                          )}
+                        </div>
+                        {choice?.img && isImage(choice?.img || '') && (
+                          <img
+                            src={choice.img}
+                            alt={choice.name}
+                            className="py-2 h-full w-16"
+                          />
                         )}
                       </div>
-                      {choice?.img && isImage(choice?.img || '') && (
-                        <img
-                          src={choice.img}
-                          alt={choice.name}
-                          className="py-2 h-full w-16"
-                        />
-                      )}
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </SimpleBar>
+                    )}
+                  </button>
+                );
+              })}
+            </SimpleBar>
+            {choices?.[index]?.preview && (
+              <div className="flex-1">
+                {parse(choices?.[index]?.preview as string)}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </ErrorBoundary>

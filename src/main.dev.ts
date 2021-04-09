@@ -117,7 +117,9 @@ autoUpdater.on('update-downloaded', () => {
   log.info('update downloaded');
   makeRestartNecessary();
   autoUpdater.quitAndInstall();
-  app.exit();
+  setTimeout(() => {
+    app.exit();
+  }, 3000);
 });
 
 app.on('window-all-closed', (e: Event) => {

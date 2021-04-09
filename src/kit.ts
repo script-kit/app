@@ -11,7 +11,7 @@ import minimist from 'minimist';
 import path from 'path';
 import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
-import { debounce, isUndefined } from 'lodash';
+import { isUndefined } from 'lodash';
 import ipc from 'node-ipc';
 import {
   sendToPrompt,
@@ -61,30 +61,24 @@ let values: any[] = [];
 ipcMain.on(VALUE_SUBMITTED, (_event, { value }) => {
   values = [...values, value];
   if (child) {
-    child?.send(value);
+    child?.send({ channel: VALUE_SUBMITTED, value });
   }
 });
 
-ipcMain.on(
-  GENERATE_CHOICES,
-  debounce((_event, input) => {
-    if (child && input) {
-      child?.send({ channel: GENERATE_CHOICES, input });
-    }
-  }, 100)
-);
+ipcMain.on(GENERATE_CHOICES, (_event, input) => {
+  if (child && input) {
+    child?.send({ channel: GENERATE_CHOICES, input });
+  }
+});
 
 ipcMain.on('PROMPT_ERROR', (_event, error: Error) => {
   log.warn(error);
   if (!appHidden) setPlaceholder(error.message);
 });
 
-// ipcMain.on(
-//   CHOICE_FOCUSED,
-//   debounce((_event, choice: any) => {
-//     child?.send({ channel: CHOICE_FOCUSED, choice });
-//   }, 100)
-// );
+ipcMain.on(CHOICE_FOCUSED, (_event, choice: any) => {
+  child?.send({ channel: CHOICE_FOCUSED, choice });
+});
 
 ipcMain.on(TAB_CHANGED, (event, { tab, input = '' }) => {
   if (child && tab) {

@@ -263,7 +263,6 @@
     "yarn-deduplicate": "^3.1.0"
   },
   "dependencies": {
-    "@react-hook/debounce": "^3.0.0",
     "@rooks/use-previous": "^4.10.0",
     "@tailwindcss/forms": "^0.2.1",
     "autoprefixer": "^10.2.1",
@@ -297,7 +296,8 @@
     "simplebar-react": "^2.3.0",
     "source-map-support": "^0.5.19",
     "tailwindcss": "^2.0.2",
-    "tree-kill": "^1.2.2"
+    "tree-kill": "^1.2.2",
+    "use-debounce": "^6.0.1"
   },
   "devEngines": {
     "node": ">=10.x",
