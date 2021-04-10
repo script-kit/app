@@ -1,3 +1,11 @@
+# [1.1.0-beta.92](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.91...v1.1.0-beta.92) (2021-04-10)
+
+
+### Bug Fixes
+
+* **prompt:** Fix clearing prompt and debouncing ([ebca31a](https://github.com/johnlindquist/kitapp/commit/ebca31a60a77afc4753018066d86c4f3abb2bdb4))
+* **update:** trying to force restart when update downloaded ([471b2e9](https://github.com/johnlindquist/kitapp/commit/471b2e9468038c16758d749082a08a9e365d4cb1))
+
 # [1.1.0-beta.91](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.90...v1.1.0-beta.91) (2021-04-09)
 
 
