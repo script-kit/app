@@ -14,11 +14,11 @@ import log from 'electron-log';
 import { isUndefined } from 'lodash';
 import ipc from 'node-ipc';
 import {
-  sendToPrompt,
-  hidePromptWindow,
   focusPrompt,
-  hideEmitter,
   getPromptCache,
+  hideEmitter,
+  hidePromptWindow,
+  sendToPrompt,
   setBlurredByKit,
   showPrompt,
 } from './prompt';
@@ -28,20 +28,21 @@ import { kitPath, kenvPath, KIT, KENV } from './helpers';
 import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
 import {
-  SHOW_PROMPT,
-  SET_TAB_INDEX,
-  VALUE_SUBMITTED,
-  SET_PLACEHOLDER,
-  RUN_SCRIPT,
-  SET_PANEL,
-  SET_CHOICES,
-  SET_MODE,
-  GENERATE_CHOICES,
-  TAB_CHANGED,
   CHOICE_FOCUSED,
+  GENERATE_CHOICES,
   RESET_PROMPT,
+  RUN_SCRIPT,
+  SET_CHOICES,
   SET_HINT,
+  SET_IGNORE_BLUR,
   SET_INPUT,
+  SET_MODE,
+  SET_PANEL,
+  SET_PLACEHOLDER,
+  SET_TAB_INDEX,
+  SHOW_PROMPT,
+  TAB_CHANGED,
+  VALUE_SUBMITTED,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 
@@ -267,6 +268,10 @@ const kitScript = (
 
       case SET_HINT:
         sendToPrompt(SET_HINT, data);
+        break;
+
+      case SET_IGNORE_BLUR:
+        setBlurredByKit(data?.ignore);
         break;
 
       case SET_INPUT:

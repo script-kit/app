@@ -24,8 +24,8 @@ export const createPromptCache = () => {
 let promptWindow: BrowserWindow | null = null;
 let blurredByKit = false;
 
-export const setBlurredByKit = () => {
-  blurredByKit = true;
+export const setBlurredByKit = (value = true) => {
+  blurredByKit = value;
 };
 
 export const hideEmitter = new EventEmitter();

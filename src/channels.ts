@@ -5,6 +5,7 @@ export const RUN_SCRIPT = 'RUN_SCRIPT';
 export const SEND_RESPONSE = 'SEND_RESPONSE';
 export const SET_CHOICES = 'SET_CHOICES';
 export const SET_HINT = 'SET_HINT';
+export const SET_IGNORE_BLUR = 'SET_IGNORE_BLUR';
 export const SET_INPUT = 'SET_INPUT';
 export const SET_MODE = 'SET_MODE';
 export const SET_PANEL = 'SET_PANEL';
