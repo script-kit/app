@@ -1,3 +1,10 @@
+# [1.1.0-beta.93](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.92...v1.1.0-beta.93) (2021-04-10)
+
+
+### Features
+
+* **prompt:** allow ignoreBlur ([2367d32](https://github.com/johnlindquist/kitapp/commit/2367d32d0071f8aae8783a018133029ce4b44d0c))
+
 # [1.1.0-beta.92](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.91...v1.1.0-beta.92) (2021-04-10)
 
 
