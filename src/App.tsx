@@ -20,8 +20,7 @@ import React, {
   useState,
 } from 'react';
 import parse from 'html-react-parser';
-import { Element } from 'domhandler/lib/node';
-import { useDebounce, useDebouncedCallback } from 'use-debounce';
+import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
@@ -165,26 +164,20 @@ const firstLettersMatch = (name: string, input: string) => {
 };
 
 export default function App() {
-  const [prePromptData, setPromptData]: any = useState({});
-  const [promptData] = useDebounce(prePromptData, 100, { leading: true });
+  const [promptData, setPromptData]: any = useState({});
+
   const [inputValue, setInputValue] = useState('');
   const [hint, setHint] = useState('');
   const [mode, setMode] = useState(MODE.FILTER);
   const [index, setIndex] = useState(0);
   const [tabs, setTabs] = useState([]);
   const [tabIndex, setTabIndex] = useState(0);
-  const [preUnfilteredChoices, setUnfilteredChoices] = useState<ChoiceData[]>(
-    []
-  );
-  const [unfilteredChoices] = useDebounce(preUnfilteredChoices, 100, {
-    leading: true,
-  });
+  const [unfilteredChoices, setUnfilteredChoices] = useState<ChoiceData[]>([]);
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const [placeholder, setPlaceholder] = useState('');
   const previousPlaceholder: string | null = usePrevious(placeholder);
   const [dropReady, setDropReady] = useState(false);
-  const [prePanelHTML, setPanelHTML] = useState('');
-  const [panelHTML] = useDebounce(prePanelHTML, 100, { leading: true });
+  const [panelHTML, setPanelHTML] = useState('');
   const [scriptName, setScriptName] = useState('');
   const [caretDisabled, setCaretDisabled] = useState(false);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);

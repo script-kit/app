@@ -66,7 +66,7 @@ ipcMain.on(VALUE_SUBMITTED, (_event, { value }) => {
 });
 
 ipcMain.on(GENERATE_CHOICES, (_event, input) => {
-  if (child && input) {
+  if (child && !isUndefined(input)) {
     child?.send({ channel: GENERATE_CHOICES, input });
   }
 });
