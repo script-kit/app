@@ -49,7 +49,6 @@ import {
   KIT_PROTOCOL,
   kitPath,
 } from './helpers';
-import { makeRestartNecessary } from './restart';
 import { getVersion } from './version';
 import { show } from './show';
 
@@ -112,17 +111,25 @@ autoUpdater.on('download-progress', (progressObj) => {
   log.info(logMessage);
 });
 
+let updateDownloaded = false;
 autoUpdater.on('update-downloaded', () => {
   log.info('update downloaded');
-  makeRestartNecessary();
+  log.info('attempting quitAndInstall');
+  updateDownloaded = true;
   autoUpdater.quitAndInstall();
+  const allWindows = BrowserWindow.getAllWindows();
+  allWindows.forEach((w) => {
+    w?.destroy();
+  });
   setTimeout(() => {
+    log.info('quit and exit');
+    app.quit();
     app.exit();
   }, 3000);
 });
 
 app.on('window-all-closed', (e: Event) => {
-  e.preventDefault();
+  if (!updateDownloaded) e.preventDefault();
 });
 
 app.on('web-contents-created', (_, contents) => {
