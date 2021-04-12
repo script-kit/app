@@ -133,6 +133,12 @@ export const showPrompt = () => {
     // TODO: Think through "show on every invoke" logic
     if (!promptWindow?.isVisible()) {
       promptWindow?.show();
+      promptWindow.setVibrancy(
+        nativeTheme.shouldUseDarkColors ? 'dark' : 'medium-light'
+      );
+      promptWindow.setBackgroundColor(
+        nativeTheme.shouldUseDarkColors ? '#33000000' : '#C0FFFFFF'
+      );
       if (devTools) promptWindow?.webContents.openDevTools();
     }
   }
