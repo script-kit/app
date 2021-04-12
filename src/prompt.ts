@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
-import { BrowserWindow, screen, app } from 'electron';
+import { BrowserWindow, screen, nativeTheme, app } from 'electron';
 import log from 'electron-log';
 import Store from 'electron-store';
 import { EventEmitter } from 'events';
@@ -38,9 +38,12 @@ export const createPromptWindow = async () => {
   promptWindow = new BrowserWindow({
     frame: false,
     transparent: true,
-    backgroundColor: '#00000000',
+    backgroundColor: nativeTheme.shouldUseDarkColors
+      ? '#33000000'
+      : '#C0FFFFFF',
+    vibrancy: nativeTheme.shouldUseDarkColors ? 'dark' : 'medium-light',
     show: false,
-    hasShadow: false,
+    hasShadow: true,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,

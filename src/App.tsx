@@ -93,7 +93,7 @@ const highlightAdjacentAndWordStart = (name: string, input: string) => {
       ili += 1;
       prevQualifies = true;
       return (
-        <span key={i} className=" dark:text-yellow-500 text-yellow-700">
+        <span key={i} className=" dark:text-amber-400 text-amber-600">
           {letter}
         </span>
       );
@@ -113,7 +113,7 @@ const highlightFirstLetters = (name: string, input: string) => {
       return (
         // eslint-disable-next-line react/no-array-index-key
         <React.Fragment key={i}>
-          <span key={i} className=" dark:text-yellow-500 text-yellow-700">
+          <span key={i} className=" dark:text-amber-400 text-amber-600">
             {word[0]}
           </span>
           {word.slice(1)}
@@ -134,7 +134,7 @@ const highlightIncludes = (name: string, input: string) => {
 
   return [
     <span key={0}>{firstPart}</span>,
-    <span key={1} className=" dark:text-yellow-500 text-yellow-700">
+    <span key={1} className=" dark:text-amber-400 text-amber-600">
       {includesPart}
     </span>,
     <span key={2}>{lastPart}</span>,
@@ -146,7 +146,7 @@ const highlightStartsWith = (name: string, input: string) => {
   const lastPart = name.slice(input.length);
 
   return [
-    <span key={0} className=" dark:text-yellow-500 text-yellow-700">
+    <span key={0} className=" dark:text-amber-400 text-amber-600">
       {firstPart}
     </span>,
     <span key={1}>{lastPart}</span>,
@@ -290,6 +290,20 @@ export default function App() {
           });
         }
         return;
+      }
+
+      if (tabs?.length) {
+        tabs.forEach((_tab, i) => {
+          // cmd+2, etc.
+          if (event.metaKey && event.key === `${i + 1}`) {
+            event.preventDefault();
+            setTabIndex(i);
+            ipcRenderer.send(TAB_CHANGED, {
+              tab: tabs[i],
+              input: inputValue,
+            });
+          }
+        });
       }
 
       let newIndex = index;
@@ -542,7 +556,7 @@ export default function App() {
           WebkitAppRegion: 'drag',
           WebkitUserSelect: 'none',
         }}
-        className={`flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl
+        className={`flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full
         ${
           dropReady
             ? `border-b-4 border-green-500 border-solid border-opacity-50`
@@ -550,25 +564,26 @@ export default function App() {
         }
         `}
       >
-        <div className="flex flex-row text-xs dark:text-yellow-500 text-yellow-700 justify-between pt-2 px-4">
-          <span>{promptData?.scriptInfo?.description || ''}</span>
-
-          <span>
-            {promptData?.scriptInfo?.menu}
-            {promptData?.scriptInfo?.twitter && (
-              <span>
-                <span> - </span>
-                <a
-                  href={`https://twitter.com/${promptData?.scriptInfo?.twitter.slice(
-                    1
-                  )}`}
-                >
-                  {promptData?.scriptInfo?.twitter}
-                </a>
-              </span>
-            )}
-          </span>
-        </div>
+        {promptData?.scriptInfo?.description && (
+          <div className="flex flex-row text-xs uppercase font-mono justify-between pt-3 px-4">
+            <span>{promptData?.scriptInfo?.description || ''}</span>
+            <span>
+              {promptData?.scriptInfo?.menu}
+              {promptData?.scriptInfo?.twitter && (
+                <span>
+                  <span> - </span>
+                  <a
+                    href={`https://twitter.com/${promptData?.scriptInfo?.twitter.slice(
+                      1
+                    )}`}
+                  >
+                    {promptData?.scriptInfo?.twitter}
+                  </a>
+                </span>
+              )}
+            </span>
+          </div>
+        )}
         <input
           style={{
             WebkitAppRegion: 'drag',
@@ -577,8 +592,8 @@ export default function App() {
             ...(caretDisabled && { caretColor: 'transparent' }),
           }}
           autoFocus
-          className={`w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder:text-gray-300 placeholder:text-gray-500 bg-white dark:bg-gray-900 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4
-          ${dropReady && `border border-green-500 border-2 border-solid`}
+          className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-70 placeholder-black placeholder-opacity-80 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4
+          ${dropReady && `border-2 border-green-500`}
           `}
           onChange={(e) => onChange(e.target.value)}
           onDragEnter={promptData?.drop ? onDragEnter : undefined}
@@ -591,27 +606,32 @@ export default function App() {
           value={inputValue}
         />
         {hint && (
-          <div className="pl-4 py-0.5 text-sm text-black dark:text-white">
+          <div className="pl-3 pb-3 text-sm text-black dark:text-white">
             {hint}
           </div>
         )}
-
         {tabs?.length > 0 && (
           <SimpleBar className="overscroll-y-none">
-            <div className="flex flex-row pl-4 whitespace-nowrap">
+            <div className="flex flex-row pl-2 pb-2 whitespace-nowrap">
               {/* <span className="bg-white">{modeIndex}</span> */}
-              {tabs.map((tab: string, i: number) => (
-                // I need to research a11y for apps vs. "sites"
-                <div
-                  className={` dark:text-yellow-500 text-yellow-700 text-xs p-1 mb-1 mx-1 hover:underline  ${
-                    i === tabIndex && 'underline'
-                  }`}
-                  key={tab}
-                  onClick={onTabClick(i)}
-                >
-                  {tab}
-                </div>
-              ))}
+              {tabs.map((tab: string, i: number) => {
+                return (
+                  // I need to research a11y for apps vs. "sites"
+                  <div
+                    className={`text-xs px-2 py-1 mb-1 mx-px dark:bg-o rounded-full font-medium cursor-pointer dark:bg-white bg-white hover:opacity-100 dark:hover:opacity-100 dark:hover:bg-opacity-10 hover:bg-opacity-80 ${
+                      i === tabIndex
+                        ? 'opacity-100 dark:bg-opacity-10 bg-opacity-80'
+                        : 'opacity-70 dark:bg-opacity-0 bg-opacity-0'
+                    }
+                  transition-all ease-in-out duration-100
+                  `}
+                    key={tab}
+                    onClick={onTabClick(i)}
+                  >
+                    {tab}
+                  </div>
+                );
+              })}
             </div>
           </SimpleBar>
         )}
@@ -621,7 +641,7 @@ export default function App() {
               WebkitAppRegion: 'no-drag',
               WebkitUserSelect: 'text',
             }}
-            className="px-4 py-1 flex flex-col dark:text-yellow-500 text-yellow-700 w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none bg-white dark:bg-gray-900"
+            className="px-4 py-1 flex flex-col prose dark:prose-dark w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
           >
             {parse(panelHTML)}
           </SimpleBar>
@@ -637,7 +657,7 @@ export default function App() {
           >
             <SimpleBar
               scrollableNodeProps={{ ref: scrollRef }}
-              className="px-4 pb-4 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none bg-white dark:bg-gray-900 flex-1"
+              className="px-0 pb-4 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20"
               // style={{ maxHeight: '85vh' }}
             >
               {((choices as any[]) || []).map((choice, i) => {
@@ -650,18 +670,24 @@ export default function App() {
                     key={choice.uuid}
                     className={`
                 w-full
-                my-1
                 h-16
                 whitespace-nowrap
                 text-left
                 flex
                 flex-row
-                text-xl
+                text-lg
                 px-4
-                rounded-lg
                 justify-between
                 items-center
-                ${index === i ? `dark:bg-gray-800 bg-gray-100 shadow` : ``}`}
+                focus:outline-none
+                transition-all
+                ease-in-out
+                duration-100
+                ${
+                  index === i
+                    ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-80 shadow-lg`
+                    : ``
+                }`}
                     onClick={(_event) => {
                       submit(choice.value);
                     }}
@@ -699,9 +725,8 @@ export default function App() {
                           {((index === i && choice?.selected) ||
                             choice?.description) && (
                             <div
-                              className={`text-xs truncate ${
-                                index === i &&
-                                `dark:text-yellow-500 text-yellow-700`
+                              className={`text-xs truncate transition-opacity ease-in-out duration-100 pb-1 ${
+                                index === i ? `opacity-90` : `opacity-60`
                               }`}
                             >
                               {(index === i && choice?.selected) ||
