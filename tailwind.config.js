@@ -27,8 +27,8 @@ module.exports = {
       ...colors,
       gray: colors.coolGray,
       primary: {
-        light: colors.amber['600'],
-        dark: colors.amber['400'],
+        dark: colors.amber['600'],
+        light: colors.amber['400'],
       },
     },
     extend: {
@@ -37,7 +37,7 @@ module.exports = {
           css: {
             color: theme('colors.black'),
             a: {
-              color: theme('colors.primary.light'),
+              color: theme('colors.primary.dark'),
             },
           },
         },
@@ -45,7 +45,7 @@ module.exports = {
           css: {
             color: theme('colors.white'),
             a: {
-              color: theme('colors.primary.dark'),
+              color: theme('colors.primary.light'),
             },
           },
         },

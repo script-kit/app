@@ -93,7 +93,7 @@ const highlightAdjacentAndWordStart = (name: string, input: string) => {
       ili += 1;
       prevQualifies = true;
       return (
-        <span key={i} className=" dark:text-amber-400 text-amber-600">
+        <span key={i} className="dark:text-primary-light text-primary-dark">
           {letter}
         </span>
       );
@@ -113,7 +113,7 @@ const highlightFirstLetters = (name: string, input: string) => {
       return (
         // eslint-disable-next-line react/no-array-index-key
         <React.Fragment key={i}>
-          <span key={i} className=" dark:text-amber-400 text-amber-600">
+          <span key={i} className=" dark:text-primary-light text-primary-dark">
             {word[0]}
           </span>
           {word.slice(1)}
@@ -134,7 +134,7 @@ const highlightIncludes = (name: string, input: string) => {
 
   return [
     <span key={0}>{firstPart}</span>,
-    <span key={1} className=" dark:text-amber-400 text-amber-600">
+    <span key={1} className="dark:text-primary-light text-primary-dark">
       {includesPart}
     </span>,
     <span key={2}>{lastPart}</span>,
@@ -146,7 +146,7 @@ const highlightStartsWith = (name: string, input: string) => {
   const lastPart = name.slice(input.length);
 
   return [
-    <span key={0} className=" dark:text-amber-400 text-amber-600">
+    <span key={0} className="dark:text-primary-light text-primary-dark">
       {firstPart}
     </span>,
     <span key={1}>{lastPart}</span>,
