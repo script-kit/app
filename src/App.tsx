@@ -711,7 +711,15 @@ export default function App() {
             </div>
           )}
           {tabs?.length > 0 && (
-            <SimpleBar className="overscroll-y-none">
+            <SimpleBar
+              className="overscroll-y-none"
+              style={
+                {
+                  WebkitAppRegion: 'no-drag',
+                  WebkitUserSelect: 'text',
+                } as any
+              }
+            >
               <div className="flex flex-row pl-2 pb-2 whitespace-nowrap">
                 {/* <span className="bg-white">{modeIndex}</span> */}
                 {tabs.map((tab: string, i: number) => {
@@ -745,7 +753,7 @@ export default function App() {
                 WebkitUserSelect: 'text',
               } as any
             }
-            className="border-t dark:border-white dark:border-opacity-10 border-black border-opacity-10 px-4 py-4 flex flex-col w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
+            className="border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5 px-4 py-4 flex flex-col w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
           >
             {parse(panelHTML)}
           </SimpleBar>
@@ -753,7 +761,7 @@ export default function App() {
 
         {choices?.length > 0 && (
           <div
-            className="flex flex-row w-full max-h-full overflow-y-hidden"
+            className="flex flex-row w-full max-h-full overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5"
             style={
               {
                 WebkitAppRegion: 'no-drag',
