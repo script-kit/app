@@ -5,7 +5,7 @@
 @import '../node_modules/simplebar-react/dist/simplebar.min.css';
 
 body {
-  @apply dark:bg-black dark:bg-opacity-30 bg-white bg-opacity-50;
+  @apply dark:bg-black dark:bg-opacity-50 bg-white bg-opacity-70;
 }
 
 .simplebar-scrollbar:before {

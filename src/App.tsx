@@ -662,7 +662,9 @@ export default function App() {
         <div ref={topRef}>
           {promptData?.scriptInfo?.description && (
             <div className="flex flex-row text-xs uppercase font-mono justify-between pt-3 px-4">
-              <span>{promptData?.scriptInfo?.description || ''}</span>
+              <span className="dark:text-primary-light text-primary-dark">
+                {promptData?.scriptInfo?.description || ''}
+              </span>
               <span>
                 {promptData?.scriptInfo?.menu}
                 {promptData?.scriptInfo?.twitter && (
@@ -716,9 +718,9 @@ export default function App() {
                   return (
                     // I need to research a11y for apps vs. "sites"
                     <div
-                      className={`text-xs px-2 py-1 mb-1 mx-px dark:bg-o rounded-full font-medium cursor-pointer dark:bg-white bg-white hover:opacity-100 dark:hover:opacity-100 dark:hover:bg-opacity-10 hover:bg-opacity-80 ${
+                      className={`text-xs px-2 py-1 mb-1 mx-px dark:bg-o rounded-full font-medium cursor-pointer dark:bg-primary-light dark:hover:bg-white bg-white hover:opacity-100 dark:hover:opacity-100 dark:hover:bg-opacity-10 hover:bg-opacity-80 ${
                         i === tabIndex
-                          ? 'opacity-100 dark:bg-opacity-10 bg-opacity-80'
+                          ? 'opacity-100 dark:bg-opacity-10 bg-opacity-80 dark:text-primary-light text-primary-dark'
                           : 'opacity-70 dark:bg-opacity-0 bg-opacity-0'
                       }
                   transition-all ease-in-out duration-100
@@ -737,10 +739,12 @@ export default function App() {
         {panelHTML?.length > 0 && (
           <SimpleBar
             scrollableNodeProps={{ ref: panelRef }}
-            style={{
-              WebkitAppRegion: 'no-drag',
-              WebkitUserSelect: 'text',
-            }}
+            style={
+              {
+                WebkitAppRegion: 'no-drag',
+                WebkitUserSelect: 'text',
+              } as any
+            }
             className="px-4 py-1 flex flex-col prose dark:prose-dark w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
           >
             {parse(panelHTML)}
@@ -750,10 +754,12 @@ export default function App() {
         {choices?.length > 0 && (
           <div
             className="flex flex-row w-full max-h-full overflow-y-hidden"
-            style={{
-              WebkitAppRegion: 'no-drag',
-              WebkitUserSelect: 'none',
-            }}
+            style={
+              {
+                WebkitAppRegion: 'no-drag',
+                WebkitUserSelect: 'none',
+              } as any
+            }
           >
             <SimpleBar
               scrollableNodeProps={{ ref: choicesRef }}
@@ -826,7 +832,9 @@ export default function App() {
                             choice?.description) && (
                             <div
                               className={`text-xs truncate transition-opacity ease-in-out duration-100 pb-1 ${
-                                index === i ? `opacity-90` : `opacity-60`
+                                index === i
+                                  ? `opacity-90 dark:text-primary-light text-primary-dark`
+                                  : `opacity-60`
                               }`}
                             >
                               {(index === i && choice?.selected) ||

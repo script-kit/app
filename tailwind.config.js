@@ -27,8 +27,8 @@ module.exports = {
       ...colors,
       gray: colors.coolGray,
       primary: {
-        dark: colors.amber['600'],
-        light: colors.amber['400'],
+        light: colors.yellow['400'],
+        dark: colors.indigo['600'],
       },
     },
     extend: {
