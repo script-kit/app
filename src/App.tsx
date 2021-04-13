@@ -665,7 +665,7 @@ export default function App() {
               <span className="dark:text-primary-light text-primary-dark">
                 {promptData?.scriptInfo?.description || ''}
               </span>
-              <span>
+              <span className="text-right">
                 {promptData?.scriptInfo?.menu}
                 {promptData?.scriptInfo?.twitter && (
                   <span>
@@ -745,7 +745,7 @@ export default function App() {
                 WebkitUserSelect: 'text',
               } as any
             }
-            className="px-4 py-1 flex flex-col prose dark:prose-dark w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
+            className="border-t dark:border-white dark:border-opacity-10 border-black border-opacity-10 px-4 py-4 flex flex-col w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
           >
             {parse(panelHTML)}
           </SimpleBar>
