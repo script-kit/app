@@ -23,6 +23,7 @@ import parse from 'html-react-parser';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
+import type SimpleBarProps from 'simplebar';
 import { partition } from 'lodash';
 import isImage from 'is-image';
 import usePrevious from '@rooks/use-previous';
@@ -42,6 +43,7 @@ import {
   SHOW_PROMPT,
   TAB_CHANGED,
   VALUE_SUBMITTED,
+  CONTENT_SIZE_UPDATED,
 } from './channels';
 
 interface ChoiceData {
@@ -55,6 +57,8 @@ enum MODE {
   FILTER = 'FILTER',
   MANUAL = 'MANUAL',
 }
+
+const WINDOW_MAX_HEIGHT = 600;
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -182,6 +186,8 @@ export default function App() {
   const [caretDisabled, setCaretDisabled] = useState(false);
   const scrollRef: RefObject<HTMLDivElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
+  const scrollContainerRef: RefObject<SimpleBarProps> = useRef(null);
+  const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -253,6 +259,20 @@ export default function App() {
     if (choices?.length === 0) {
       ipcRenderer.send(CHOICE_FOCUSED, null);
     }
+  }, [choices, index]);
+
+  useEffect(() => {
+    const {
+      width,
+      height,
+    }: any = windowContainerRef?.current?.getBoundingClientRect();
+    window.addEventListener('resize', () => {});
+    ipcRenderer.send(CONTENT_SIZE_UPDATED, width, height);
+
+    return () => {
+      window.removeEventListener('resize', () => {});
+      scrollContainerRef?.current?.recalculate();
+    };
   }, [choices, index]);
 
   const onTabClick = useCallback(
@@ -552,11 +572,13 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div
+        ref={windowContainerRef}
         style={{
           WebkitAppRegion: 'drag',
           WebkitUserSelect: 'none',
+          maxHeight: WINDOW_MAX_HEIGHT,
         }}
-        className={`flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full
+        className={`flex flex-col w-full rounded-lg relative h-full
         ${
           dropReady
             ? `border-b-4 border-green-500 border-solid border-opacity-50`
@@ -656,9 +678,9 @@ export default function App() {
             }}
           >
             <SimpleBar
+              ref={scrollContainerRef as any}
               scrollableNodeProps={{ ref: scrollRef }}
               className="px-0 pb-4 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20"
-              // style={{ maxHeight: '85vh' }}
             >
               {((choices as any[]) || []).map((choice, i) => {
                 const input = inputValue?.toLowerCase();
@@ -671,6 +693,7 @@ export default function App() {
                     className={`
                 w-full
                 h-16
+                flex-shrink-0
                 whitespace-nowrap
                 text-left
                 flex

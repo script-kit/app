@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { app, clipboard, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, clipboard, ipcMain, screen } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import url from 'url';
 import http from 'http';
@@ -43,6 +43,7 @@ import {
   SHOW_PROMPT,
   TAB_CHANGED,
   VALUE_SUBMITTED,
+  CONTENT_SIZE_UPDATED,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 
@@ -85,6 +86,11 @@ ipcMain.on(TAB_CHANGED, (event, { tab, input = '' }) => {
   if (child && tab) {
     child?.send({ channel: TAB_CHANGED, tab, input });
   }
+});
+
+ipcMain.on(CONTENT_SIZE_UPDATED, (event, width, height) => {
+  const browserWindow = BrowserWindow.fromWebContents(event.sender);
+  browserWindow?.setSize(width, height);
 });
 
 let appHidden = false;
