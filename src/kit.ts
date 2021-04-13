@@ -11,16 +11,18 @@ import minimist from 'minimist';
 import path from 'path';
 import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
-import { isUndefined } from 'lodash';
+import { debounce, isUndefined } from 'lodash';
 import ipc from 'node-ipc';
 import {
   focusPrompt,
   getPromptCache,
+  growPrompt,
   hideEmitter,
   hidePromptWindow,
   sendToPrompt,
   setBlurredByKit,
   showPrompt,
+  shrinkPrompt,
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
@@ -30,6 +32,7 @@ import { getVersion } from './version';
 import {
   CHOICE_FOCUSED,
   GENERATE_CHOICES,
+  SHRINK_PROMPT,
   RESET_PROMPT,
   RUN_SCRIPT,
   SET_CHOICES,
@@ -43,6 +46,7 @@ import {
   SHOW_PROMPT,
   TAB_CHANGED,
   VALUE_SUBMITTED,
+  GROW_PROMPT,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 
@@ -84,6 +88,20 @@ ipcMain.on(CHOICE_FOCUSED, (_event, choice: any) => {
 ipcMain.on(TAB_CHANGED, (event, { tab, input = '' }) => {
   if (child && tab) {
     child?.send({ channel: TAB_CHANGED, tab, input });
+  }
+});
+
+ipcMain.on(SHRINK_PROMPT, (event, size) => {
+  if (!isUndefined(size)) {
+    log.info(`SHRINK:`, size);
+    shrinkPrompt(size);
+  }
+});
+
+ipcMain.on(GROW_PROMPT, (event, size) => {
+  if (!isUndefined(size)) {
+    log.info(`GROW:`, size);
+    growPrompt(size);
   }
 });
 

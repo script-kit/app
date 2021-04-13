@@ -1,5 +1,7 @@
 export const CHOICE_FOCUSED = 'CHOICE_FOCUSED';
 export const GENERATE_CHOICES = 'GENERATE_CHOICES';
+export const GROW_PROMPT = 'GROW_PROMPT';
+export const PROMPT_BOUNDS_UPDATED = 'PROMPT_BOUNDS_UPDATED';
 export const RESET_PROMPT = 'RESET_PROMPT';
 export const RUN_SCRIPT = 'RUN_SCRIPT';
 export const SEND_RESPONSE = 'SEND_RESPONSE';
@@ -12,5 +14,6 @@ export const SET_PANEL = 'SET_PANEL';
 export const SET_PLACEHOLDER = 'SET_PLACEHOLDER';
 export const SET_TAB_INDEX = 'SET_TAB_INDEX';
 export const SHOW_PROMPT = 'SHOW_PROMPT';
+export const SHRINK_PROMPT = 'SHRINK_PROMPT';
 export const TAB_CHANGED = 'TAB_CHANGED';
 export const VALUE_SUBMITTED = 'VALUE_SUBMITTED';

@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 import minimist from 'minimist';
 import { getAssetPath } from './assets';
 import { kenvPath } from './helpers';
+import { PROMPT_BOUNDS_UPDATED } from './channels';
 
 let promptCache: Store | null = null;
 export const getPromptCache = () => {
@@ -81,6 +82,27 @@ export const createPromptWindow = async () => {
     hidePromptWindow();
   });
 
+  const resize = () => {
+    // if (!promptWindow) return;
+
+    // const distScreen = getCurrentScreen();
+    // const promptBounds = promptWindow.getBounds();
+
+    // console.log(`CACHE BY RESIZE`, promptBounds);
+    // getPromptCache()?.set(
+    //   `prompt.${String(distScreen.id)}.bounds`,
+    //   promptBounds
+    // );
+
+    // log.info(`CACHING PROMPT:`, promptBounds);
+
+    // sendToPrompt(PROMPT_BOUNDS_UPDATED, promptBounds);
+
+    cachePromptPosition(true);
+  };
+
+  promptWindow?.on('will-resize', resize);
+
   return promptWindow;
 };
 
@@ -91,43 +113,70 @@ export const focusPrompt = () => {
 };
 
 export const escapePromptWindow = (bw: BrowserWindow) => {
-  cachePromptPosition(bw);
+  cachePromptPosition();
   hideAppIfNoWindows(bw);
   hideEmitter.emit('hide');
 };
 
+const getCurrentScreen = () => {
+  const cursor = screen.getCursorScreenPoint();
+  // Get display with cursor
+  return screen.getDisplayNearestPoint({
+    x: cursor.x,
+    y: cursor.y,
+  });
+};
+
+export const getCurrentScreenPromptCache = () => {
+  const currentScreen = getCurrentScreen();
+  const currentPromptCache = getPromptCache()?.get(
+    `prompt.${String(currentScreen.id)}`
+  );
+
+  return (currentPromptCache as any)?.bounds as Size;
+};
+
+export const getCurrentScreenPromptBounds = () => {
+  const currentPromptCache = getCurrentScreenPromptCache();
+
+  if (!currentPromptCache) return null;
+
+  const currentScreen = getCurrentScreen();
+  const bounds = getPromptCache()?.get(
+    `prompt.${String(currentScreen.id)}.bounds`
+  );
+
+  return currentPromptCache ? bounds : null;
+};
+
+export const setDefaultBounds = () => {
+  const currentScreen = getCurrentScreen();
+
+  const {
+    width: screenWidth,
+    height: screenHeight,
+  } = currentScreen.workAreaSize;
+
+  const height = Math.round(screenHeight / 3);
+  const width = Math.round(height * (4 / 3));
+  const { x: workX, y: workY } = currentScreen.workArea;
+  const x = Math.round(screenWidth / 2 - width / 2 + workX);
+  const y = Math.round(workY + height / 10);
+
+  console.log(`SET DEFAULT BOUNDS`, height);
+  promptWindow?.setBounds({ x, y, width, height });
+};
+
 export const showPrompt = () => {
   if (promptWindow && !promptWindow?.isVisible()) {
-    const cursor = screen.getCursorScreenPoint();
-    // Get display with cursor
-    const distScreen = screen.getDisplayNearestPoint({
-      x: cursor.x,
-      y: cursor.y,
-    });
+    const currentScreenpPromptBounds = getCurrentScreenPromptBounds();
 
-    const screenConfig = getPromptCache()?.get(
-      `prompt.${String(distScreen.id)}`
-    );
+    if (currentScreenpPromptBounds) {
+      console.log(`SET CURRENT BOUNDS`, currentScreenpPromptBounds.height);
 
-    if (screenConfig) {
-      const currentScreenBounds = getPromptCache()?.get(
-        `prompt.${String(distScreen.id)}.bounds`
-      );
-
-      promptWindow.setBounds(currentScreenBounds as any);
+      promptWindow.setBounds(currentScreenpPromptBounds as any);
     } else {
-      const {
-        width: screenWidth,
-        height: screenHeight,
-      } = distScreen.workAreaSize;
-
-      const height = Math.floor(screenHeight / 3);
-      const width = Math.floor(height * (4 / 3));
-      const { x: workX, y: workY } = distScreen.workArea;
-      const x = Math.floor(screenWidth / 2 - width / 2 + workX);
-      const y = Math.floor(workY + height / 10);
-
-      promptWindow?.setBounds({ x, y, width, height });
+      setDefaultBounds();
     }
 
     // TODO: Think through "show on every invoke" logic
@@ -146,6 +195,27 @@ export const showPrompt = () => {
   return promptWindow;
 };
 
+type Size = {
+  width: number;
+  height: number;
+};
+export const shrinkPrompt = ({ height }: Size) => {
+  console.log(`SHRINK:`, height);
+  promptWindow?.setBounds({ height });
+};
+
+export const growPrompt = ({ height }: Size) => {
+  const bounds = getCurrentScreenPromptBounds() as { height: number };
+  let newHeight = height;
+
+  if (bounds && newHeight > bounds?.height) {
+    if (newHeight > bounds.height) newHeight = bounds.height;
+  }
+
+  console.log(`GROW:`, { newHeight, boundsHeight: bounds?.height });
+  promptWindow?.setBounds({ height: newHeight });
+};
+
 export const sendToPrompt = (channel: string, data: any) => {
   // log.info(`>_ ${channel} ${data?.kitScript}`);
   if (promptWindow && !promptWindow.isDestroyed()) {
@@ -154,13 +224,30 @@ export const sendToPrompt = (channel: string, data: any) => {
   }
 };
 
-const cachePromptPosition = (bw: BrowserWindow) => {
-  const distScreen = screen.getDisplayNearestPoint({
-    x: bw.getBounds().x,
-    y: bw.getBounds().y,
-  });
-  const promptBounds = bw.getBounds();
-  getPromptCache()?.set(`prompt.${String(distScreen.id)}.bounds`, promptBounds);
+const cachePromptPosition = (userResize = false) => {
+  if (!promptWindow) return;
+
+  const distScreen = getCurrentScreen();
+  const promptBounds = promptWindow.getBounds();
+
+  const currentPromptCache = getCurrentScreenPromptCache();
+
+  if (
+    !currentPromptCache ||
+    promptBounds.height > currentPromptCache?.height ||
+    userResize
+  ) {
+    getPromptCache()?.set(
+      `prompt.${String(distScreen.id)}.bounds`,
+      promptBounds
+    );
+
+    log.info(`CACHING PROMPT:`, promptBounds);
+    log.info(`PROMPT SIZE:`, promptWindow?.getSize());
+
+    const { width, height } = promptBounds;
+    sendToPrompt(PROMPT_BOUNDS_UPDATED, { height, width });
+  }
 };
 
 const hideAppIfNoWindows = (bw: BrowserWindow) => {
@@ -182,7 +269,7 @@ export const hidePromptWindow = () => {
   }
 
   if (promptWindow && promptWindow?.isVisible()) {
-    cachePromptPosition(promptWindow);
+    cachePromptPosition();
     hideAppIfNoWindows(promptWindow);
   }
   blurredByKit = false;

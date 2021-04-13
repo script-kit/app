@@ -23,13 +23,15 @@ import parse from 'html-react-parser';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
-import { partition } from 'lodash';
+import { debounce, partition } from 'lodash';
 import isImage from 'is-image';
 import usePrevious from '@rooks/use-previous';
 import { KitPromptOptions } from './types';
 import {
   CHOICE_FOCUSED,
   GENERATE_CHOICES,
+  PROMPT_BOUNDS_UPDATED,
+  SHRINK_PROMPT,
   RESET_PROMPT,
   RUN_SCRIPT,
   SET_CHOICES,
@@ -42,6 +44,7 @@ import {
   SHOW_PROMPT,
   TAB_CHANGED,
   VALUE_SUBMITTED,
+  GROW_PROMPT,
 } from './channels';
 
 interface ChoiceData {
@@ -179,9 +182,73 @@ export default function App() {
   const [dropReady, setDropReady] = useState(false);
   const [panelHTML, setPanelHTML] = useState('');
   const [scriptName, setScriptName] = useState('');
+  const [maxHeight, setMaxHeight] = useState(360);
   const [caretDisabled, setCaretDisabled] = useState(false);
-  const scrollRef: RefObject<HTMLDivElement> = useRef(null);
+  const choicesRef: RefObject<HTMLDivElement> = useRef(null);
+  const panelRef: RefObject<HTMLDivElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
+
+  const promptRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<ResizeObserver | null>(null);
+
+  useEffect(() => {
+    promptRef.current.style.height = window.innerHeight;
+  }, [promptRef]);
+
+  useEffect(() => {
+    const promptElement = promptRef?.current;
+    const choicesElement = choicesRef?.current;
+    const panelElement = panelRef?.current;
+
+    if (!promptElement) return;
+
+    if (promptRef?.current?.style?.height)
+      promptRef.current.style.removeProperty('height');
+
+    // if (observerRef.current) {
+    //   console.log(`Unobserving`);
+    //   observerRef.current.unobserve(promptElement);
+    // }
+
+    const resizeCallback = debounce(() => {
+      const scrollRect = promptElement.getBoundingClientRect();
+      const rect = promptElement.getBoundingClientRect();
+      const width = Math.round(rect.width);
+      const height = Math.round(rect.height);
+
+      if (height < 130) return;
+
+      console.log({
+        height,
+        windowHeight: window.innerHeight,
+        scrollRect: scrollRect.height,
+      });
+
+      // if promptRef is shorter than promptWindow, shrink the prompt
+      if (height < window.innerHeight && scrollRect?.height) {
+        ipcRenderer?.send(SHRINK_PROMPT, { width, height });
+        setMaxHeight(height);
+      }
+
+      // if promptRef is taller, grow the prompt to current max
+      // max is determined by default and user resize
+      if (height > window.innerHeight) {
+        ipcRenderer?.send(GROW_PROMPT, { width, height });
+        setMaxHeight(height);
+      }
+    }, 50);
+    // observerRef.current = new ResizeObserver(resizeCallback);
+    const observer = new ResizeObserver(resizeCallback);
+
+    console.log(`Observing`);
+    observer.observe(promptElement);
+    // observerRef.current.observe(promptElement);
+    // const size = {
+    //   width: window.innerWidth,
+    //   height: promptSize.height,
+    // };
+    // ipcRenderer.send(PROMPT_SIZE_UPDATED, size);
+  }, []);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -322,8 +389,8 @@ export default function App() {
 
       setIndex(newIndex);
 
-      if (scrollRef.current) {
-        const el = scrollRef.current;
+      if (choicesRef.current) {
+        const el = choicesRef.current;
         const selectedItem: any = el.firstElementChild?.children[newIndex];
         const itemY = selectedItem?.offsetTop;
         const marginBottom = parseInt(
@@ -519,7 +586,13 @@ export default function App() {
     setUnfilteredChoices([]);
   }, []);
 
+  const promptBoundsUpdated = useCallback((event, bounds) => {
+    console.log(`promptBoundsUpdated`, bounds, window.innerHeight);
+    setMaxHeight(window.innerHeight);
+  }, []);
+
   const messageMap = {
+    [PROMPT_BOUNDS_UPDATED]: promptBoundsUpdated,
     [RESET_PROMPT]: resetPromptHandler,
     [RUN_SCRIPT]: resetPromptHandler,
     [SET_CHOICES]: setChoicesHandler,
@@ -552,11 +625,13 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div
+        ref={promptRef}
         style={{
           WebkitAppRegion: 'drag',
           WebkitUserSelect: 'none',
+          maxHeight: `${maxHeight}px`,
         }}
-        className={`flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full
+        className={`flex flex-col w-full overflow-y-hidden rounded-lg
         ${
           dropReady
             ? `border-b-4 border-green-500 border-solid border-opacity-50`
@@ -637,6 +712,7 @@ export default function App() {
         )}
         {panelHTML?.length > 0 && (
           <SimpleBar
+            scrollableNodeProps={{ ref: panelRef }}
             style={{
               WebkitAppRegion: 'no-drag',
               WebkitUserSelect: 'text',
@@ -656,7 +732,7 @@ export default function App() {
             }}
           >
             <SimpleBar
-              scrollableNodeProps={{ ref: scrollRef }}
+              scrollableNodeProps={{ ref: choicesRef }}
               className="px-0 pb-4 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20"
               // style={{ maxHeight: '85vh' }}
             >
