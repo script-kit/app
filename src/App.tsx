@@ -661,11 +661,11 @@ export default function App() {
       >
         <div ref={topRef}>
           {promptData?.scriptInfo?.description && (
-            <div className="flex flex-row text-xs uppercase font-mono justify-between pt-3 px-4">
-              <span className="dark:text-primary-light text-primary-dark">
+            <div className="text-xxs uppercase font-mono justify-between pt-3 px-4 grid grid-cols-5">
+              <span className="dark:text-primary-light text-primary-dark col-span-3">
                 {promptData?.scriptInfo?.description || ''}
               </span>
-              <span className="text-right">
+              <span className="text-right col-span-2">
                 {promptData?.scriptInfo?.menu}
                 {promptData?.scriptInfo?.twitter && (
                   <span>

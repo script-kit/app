@@ -32,6 +32,9 @@ module.exports = {
       },
     },
     extend: {
+      fontSize: {
+        xxs: ['0.65rem', '0.75rem'],
+      },
       typography: (theme) => ({
         DEFAULT: {
           css: {
