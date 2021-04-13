@@ -163,7 +163,7 @@ export const setDefaultBounds = () => {
   const x = Math.round(screenWidth / 2 - width / 2 + workX);
   const y = Math.round(workY + height / 10);
 
-  console.log(`SET DEFAULT BOUNDS`, height);
+  console.log(`DEFAULT BOUNDS`, height);
   promptWindow?.setBounds({ x, y, width, height });
 };
 
@@ -174,7 +174,7 @@ export const showPrompt = () => {
     if (currentScreenpPromptBounds) {
       console.log(`SET CURRENT BOUNDS`, currentScreenpPromptBounds.height);
 
-      promptWindow.setBounds(currentScreenpPromptBounds as any);
+      // promptWindow.setBounds(currentScreenpPromptBounds as any);
     } else {
       setDefaultBounds();
     }
@@ -199,8 +199,8 @@ type Size = {
   width: number;
   height: number;
 };
-export const shrinkPrompt = ({ height }: Size) => {
-  console.log(`SHRINK:`, height);
+export const resizePrompt = ({ height }: Size) => {
+  console.log(`RESIZE:`, height);
   promptWindow?.setBounds({ height });
 };
 

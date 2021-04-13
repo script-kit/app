@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { app, clipboard, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, clipboard, ipcMain, screen } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import url from 'url';
 import http from 'http';
@@ -11,7 +11,7 @@ import minimist from 'minimist';
 import path from 'path';
 import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
-import { debounce, isUndefined } from 'lodash';
+import { isUndefined } from 'lodash';
 import ipc from 'node-ipc';
 import {
   focusPrompt,
@@ -22,7 +22,7 @@ import {
   sendToPrompt,
   setBlurredByKit,
   showPrompt,
-  shrinkPrompt,
+  resizePrompt,
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
@@ -47,10 +47,12 @@ import {
   TAB_CHANGED,
   VALUE_SUBMITTED,
   GROW_PROMPT,
+  CONTENT_SIZE_UPDATED,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 
 let child: ChildProcess | null = null;
+let appHidden = false;
 
 const consoleLog = log.create('consoleLog');
 consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
@@ -58,7 +60,7 @@ consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
 let kitScriptName = '';
 export const processMap = new Map();
 
-const setPlaceholder = (text) => {
+const setPlaceholder = (text: any) => {
   if (!appHidden) sendToPrompt(SET_PLACEHOLDER, text);
 };
 
@@ -91,21 +93,12 @@ ipcMain.on(TAB_CHANGED, (event, { tab, input = '' }) => {
   }
 });
 
-ipcMain.on(SHRINK_PROMPT, (event, size) => {
+ipcMain.on(CONTENT_SIZE_UPDATED, (event, size) => {
   if (!isUndefined(size)) {
-    log.info(`SHRINK:`, size);
-    shrinkPrompt(size);
+    resizePrompt(size);
   }
 });
 
-ipcMain.on(GROW_PROMPT, (event, size) => {
-  if (!isUndefined(size)) {
-    log.info(`GROW:`, size);
-    growPrompt(size);
-  }
-});
-
-let appHidden = false;
 const reset = () => {
   values = [];
   sendToPrompt(RESET_PROMPT, { kitScript: kitScriptName });

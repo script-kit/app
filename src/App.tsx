@@ -16,6 +16,7 @@ import React, {
   RefObject,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -23,15 +24,16 @@ import parse from 'html-react-parser';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
-import { debounce, partition } from 'lodash';
+import { partition } from 'lodash';
+import type SimpleBarProps from 'simplebar';
 import isImage from 'is-image';
 import usePrevious from '@rooks/use-previous';
+import useResizeObserver from '@react-hook/resize-observer';
 import { KitPromptOptions } from './types';
 import {
   CHOICE_FOCUSED,
   GENERATE_CHOICES,
   PROMPT_BOUNDS_UPDATED,
-  SHRINK_PROMPT,
   RESET_PROMPT,
   RUN_SCRIPT,
   SET_CHOICES,
@@ -44,7 +46,7 @@ import {
   SHOW_PROMPT,
   TAB_CHANGED,
   VALUE_SUBMITTED,
-  GROW_PROMPT,
+  CONTENT_SIZE_UPDATED,
 } from './channels';
 
 interface ChoiceData {
@@ -182,73 +184,76 @@ export default function App() {
   const [dropReady, setDropReady] = useState(false);
   const [panelHTML, setPanelHTML] = useState('');
   const [scriptName, setScriptName] = useState('');
-  const [maxHeight, setMaxHeight] = useState(360);
+  const [maxHeight, setMaxHeight] = useState(480);
+  const prevMaxHeight = usePrevious(maxHeight);
   const [caretDisabled, setCaretDisabled] = useState(false);
   const choicesRef: RefObject<HTMLDivElement> = useRef(null);
   const panelRef: RefObject<HTMLDivElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
+  const scrollContainerRef: RefObject<SimpleBarProps> = useRef(null);
+  const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
+  const topRef: RefObject<HTMLDivElement> = useRef(null);
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  // const [windowContainerHeight, setWindowContainerHeight] = useState(0);
+  // const prevWindowContainerHeight = usePrevious(windowContainerHeight);
 
-  const promptRef = useRef<HTMLDivElement>(null);
-  const observerRef = useRef<ResizeObserver | null>(null);
+  // useLayoutEffect(() => {
+  //   console.log(`USE LAYOUT EFFECT`);
+  //   // scrollContainerRef?.current?.recalculate();
+  //   const {
+  //     width,
+  //     height,
+  //   }: any = windowContainerRef?.current?.getBoundingClientRect();
 
+  //   if (height > 200) {
+  //     ipcRenderer.send(CONTENT_SIZE_UPDATED, {
+  //       width: Math.round(width),
+  //       height: Math.round(height),
+  //     });
+  //   }
+  // });
   useEffect(() => {
-    promptRef.current.style.height = window.innerHeight;
-  }, [promptRef]);
-
-  useEffect(() => {
-    const promptElement = promptRef?.current;
-    const choicesElement = choicesRef?.current;
-    const panelElement = panelRef?.current;
-
-    if (!promptElement) return;
-
-    if (promptRef?.current?.style?.height)
-      promptRef.current.style.removeProperty('height');
-
-    // if (observerRef.current) {
-    //   console.log(`Unobserving`);
-    //   observerRef.current.unobserve(promptElement);
-    // }
-
-    const resizeCallback = debounce(() => {
-      const scrollRect = promptElement.getBoundingClientRect();
-      const rect = promptElement.getBoundingClientRect();
-      const width = Math.round(rect.width);
-      const height = Math.round(rect.height);
-
-      if (height < 130) return;
-
-      console.log({
-        height,
-        windowHeight: window.innerHeight,
-        scrollRect: scrollRect.height,
-      });
-
-      // if promptRef is shorter than promptWindow, shrink the prompt
-      if (height < window.innerHeight && scrollRect?.height) {
-        ipcRenderer?.send(SHRINK_PROMPT, { width, height });
-        setMaxHeight(height);
-      }
-
-      // if promptRef is taller, grow the prompt to current max
-      // max is determined by default and user resize
-      if (height > window.innerHeight) {
-        ipcRenderer?.send(GROW_PROMPT, { width, height });
-        setMaxHeight(height);
-      }
-    }, 50);
-    // observerRef.current = new ResizeObserver(resizeCallback);
-    const observer = new ResizeObserver(resizeCallback);
-
-    console.log(`Observing`);
-    observer.observe(promptElement);
-    // observerRef.current.observe(promptElement);
-    // const size = {
-    //   width: window.innerWidth,
-    //   height: promptSize.height,
-    // };
-    // ipcRenderer.send(PROMPT_SIZE_UPDATED, size);
+    window.addEventListener('mousedown', () => {
+      setIsMouseDown(true);
+    });
+    window.addEventListener('mouseup', () => {
+      setIsMouseDown(false);
+    });
   }, []);
+
+  const sendResize = useDebouncedCallback((width: number, height: number) => {
+    scrollContainerRef?.current?.recalculate();
+    const {
+      height: topHeight,
+    } = topRef?.current?.getBoundingClientRect() as any;
+
+    console.log({ height, topHeight, isMouseDown });
+    if (height > topHeight + 32 && !isMouseDown) {
+      ipcRenderer.send(CONTENT_SIZE_UPDATED, {
+        width: Math.round(width),
+        height: Math.round(height - 32),
+      });
+    }
+  }, 25);
+
+  useLayoutEffect(() => {
+    const {
+      width,
+      height,
+    } = windowContainerRef?.current?.getBoundingClientRect() as any;
+
+    sendResize(width, height);
+
+    return () => {
+      scrollContainerRef?.current?.recalculate();
+    };
+  }, [windowContainerRef, topRef, choices, isMouseDown]);
+
+  // Where the magic happens
+  useResizeObserver(windowContainerRef, (entry) => {
+    const { width, height } = entry.contentRect;
+    sendResize(width, height);
+  });
 
   useEffect(() => {
     if (inputRef.current) {
@@ -321,6 +326,19 @@ export default function App() {
       ipcRenderer.send(CHOICE_FOCUSED, null);
     }
   }, [choices, index]);
+
+  // useEffect(() => {
+  //   const resize = () => {
+  //     scrollContainerRef?.current?.recalculate();
+
+  //   };
+  //   window.addEventListener('resize', resize);
+
+  //   return () => {
+  //     window.removeEventListener('resize', resize);
+  //     scrollContainerRef?.current?.recalculate();
+  //   };
+  // }, [choices, index]);
 
   const onTabClick = useCallback(
     (ti) => (_event: any) => {
@@ -588,7 +606,7 @@ export default function App() {
 
   const promptBoundsUpdated = useCallback((event, bounds) => {
     console.log(`promptBoundsUpdated`, bounds, window.innerHeight);
-    setMaxHeight(window.innerHeight);
+    setMaxHeight(document.body.clientHeight);
   }, []);
 
   const messageMap = {
@@ -625,13 +643,15 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div
-        ref={promptRef}
-        style={{
-          WebkitAppRegion: 'drag',
-          WebkitUserSelect: 'none',
-          maxHeight: `${maxHeight}px`,
-        }}
-        className={`flex flex-col w-full overflow-y-hidden rounded-lg
+        ref={windowContainerRef}
+        style={
+          {
+            WebkitAppRegion: 'drag',
+            WebkitUserSelect: 'none',
+            maxHeight,
+          } as any
+        }
+        className={`flex flex-col w-full rounded-lg relative h-full
         ${
           dropReady
             ? `border-b-4 border-green-500 border-solid border-opacity-50`
@@ -639,77 +659,81 @@ export default function App() {
         }
         `}
       >
-        {promptData?.scriptInfo?.description && (
-          <div className="flex flex-row text-xs uppercase font-mono justify-between pt-3 px-4">
-            <span>{promptData?.scriptInfo?.description || ''}</span>
-            <span>
-              {promptData?.scriptInfo?.menu}
-              {promptData?.scriptInfo?.twitter && (
-                <span>
-                  <span> - </span>
-                  <a
-                    href={`https://twitter.com/${promptData?.scriptInfo?.twitter.slice(
-                      1
-                    )}`}
-                  >
-                    {promptData?.scriptInfo?.twitter}
-                  </a>
-                </span>
-              )}
-            </span>
-          </div>
-        )}
-        <input
-          style={{
-            WebkitAppRegion: 'drag',
-            WebkitUserSelect: 'none',
-            minHeight: '4rem',
-            ...(caretDisabled && { caretColor: 'transparent' }),
-          }}
-          autoFocus
-          className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-70 placeholder-black placeholder-opacity-80 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4
+        <div ref={topRef}>
+          {promptData?.scriptInfo?.description && (
+            <div className="flex flex-row text-xs uppercase font-mono justify-between pt-3 px-4">
+              <span>{promptData?.scriptInfo?.description || ''}</span>
+              <span>
+                {promptData?.scriptInfo?.menu}
+                {promptData?.scriptInfo?.twitter && (
+                  <span>
+                    <span> - </span>
+                    <a
+                      href={`https://twitter.com/${promptData?.scriptInfo?.twitter.slice(
+                        1
+                      )}`}
+                    >
+                      {promptData?.scriptInfo?.twitter}
+                    </a>
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+          <input
+            style={
+              {
+                WebkitAppRegion: 'drag',
+                WebkitUserSelect: 'none',
+                minHeight: '4rem',
+                ...(caretDisabled && { caretColor: 'transparent' }),
+              } as any
+            }
+            autoFocus
+            className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-70 placeholder-black placeholder-opacity-80 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4
           ${dropReady && `border-2 border-green-500`}
           `}
-          onChange={(e) => onChange(e.target.value)}
-          onDragEnter={promptData?.drop ? onDragEnter : undefined}
-          onDragLeave={promptData?.drop ? onDragLeave : undefined}
-          onDrop={promptData?.drop ? onDrop : undefined}
-          onKeyDown={onKeyDown}
-          placeholder={placeholder || promptData?.placeholder}
-          ref={inputRef}
-          type={promptData?.secret ? 'password' : 'text'}
-          value={inputValue}
-        />
-        {hint && (
-          <div className="pl-3 pb-3 text-sm text-black dark:text-white">
-            {hint}
-          </div>
-        )}
-        {tabs?.length > 0 && (
-          <SimpleBar className="overscroll-y-none">
-            <div className="flex flex-row pl-2 pb-2 whitespace-nowrap">
-              {/* <span className="bg-white">{modeIndex}</span> */}
-              {tabs.map((tab: string, i: number) => {
-                return (
-                  // I need to research a11y for apps vs. "sites"
-                  <div
-                    className={`text-xs px-2 py-1 mb-1 mx-px dark:bg-o rounded-full font-medium cursor-pointer dark:bg-white bg-white hover:opacity-100 dark:hover:opacity-100 dark:hover:bg-opacity-10 hover:bg-opacity-80 ${
-                      i === tabIndex
-                        ? 'opacity-100 dark:bg-opacity-10 bg-opacity-80'
-                        : 'opacity-70 dark:bg-opacity-0 bg-opacity-0'
-                    }
+            onChange={(e) => onChange(e.target.value)}
+            onDragEnter={promptData?.drop ? onDragEnter : undefined}
+            onDragLeave={promptData?.drop ? onDragLeave : undefined}
+            onDrop={promptData?.drop ? onDrop : undefined}
+            onKeyDown={onKeyDown}
+            placeholder={placeholder || promptData?.placeholder}
+            ref={inputRef}
+            type={promptData?.secret ? 'password' : 'text'}
+            value={inputValue}
+          />
+          {hint && (
+            <div className="pl-3 pb-3 text-sm text-black dark:text-white">
+              {hint}
+            </div>
+          )}
+          {tabs?.length > 0 && (
+            <SimpleBar className="overscroll-y-none">
+              <div className="flex flex-row pl-2 pb-2 whitespace-nowrap">
+                {/* <span className="bg-white">{modeIndex}</span> */}
+                {tabs.map((tab: string, i: number) => {
+                  return (
+                    // I need to research a11y for apps vs. "sites"
+                    <div
+                      className={`text-xs px-2 py-1 mb-1 mx-px dark:bg-o rounded-full font-medium cursor-pointer dark:bg-white bg-white hover:opacity-100 dark:hover:opacity-100 dark:hover:bg-opacity-10 hover:bg-opacity-80 ${
+                        i === tabIndex
+                          ? 'opacity-100 dark:bg-opacity-10 bg-opacity-80'
+                          : 'opacity-70 dark:bg-opacity-0 bg-opacity-0'
+                      }
                   transition-all ease-in-out duration-100
                   `}
-                    key={tab}
-                    onClick={onTabClick(i)}
-                  >
-                    {tab}
-                  </div>
-                );
-              })}
-            </div>
-          </SimpleBar>
-        )}
+                      key={tab}
+                      onClick={onTabClick(i)}
+                    >
+                      {tab}
+                    </div>
+                  );
+                })}
+              </div>
+            </SimpleBar>
+          )}
+        </div>
         {panelHTML?.length > 0 && (
           <SimpleBar
             scrollableNodeProps={{ ref: panelRef }}
@@ -734,7 +758,6 @@ export default function App() {
             <SimpleBar
               scrollableNodeProps={{ ref: choicesRef }}
               className="px-0 pb-4 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20"
-              // style={{ maxHeight: '85vh' }}
             >
               {((choices as any[]) || []).map((choice, i) => {
                 const input = inputValue?.toLowerCase();
@@ -747,6 +770,7 @@ export default function App() {
                     className={`
                 w-full
                 h-16
+                flex-shrink-0
                 whitespace-nowrap
                 text-left
                 flex

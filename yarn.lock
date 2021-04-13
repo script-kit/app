@@ -1469,6 +1469,27 @@
     schema-utils "^2.6.5"
     source-map "^0.7.3"
 
+"@react-hook/latest@^1.0.2":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@react-hook/latest/-/latest-1.0.3.tgz#c2d1d0b0af8b69ec6e2b3a2412ba0768ac82db80"
+  integrity sha512-dy6duzl+JnAZcDbNTfmaP3xHiKtbXYOaz3G51MGVljh548Y8MWzTr+PHLOfvpypEVW9zwvl+VyKjbWKEVbV1Rg==
+
+"@react-hook/passive-layout-effect@^1.2.0":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@react-hook/passive-layout-effect/-/passive-layout-effect-1.2.1.tgz#c06dac2d011f36d61259aa1c6df4f0d5e28bc55e"
+  integrity sha512-IwEphTD75liO8g+6taS+4oqz+nnroocNfWVHWz7j+N+ZO2vYrc6PV1q7GQhuahL0IOR7JccFTsFKQ/mb6iZWAg==
+
+"@react-hook/resize-observer@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@react-hook/resize-observer/-/resize-observer-1.2.0.tgz#a44b385d998f4ab33aa9481a43c4ac33af21f7d7"
+  integrity sha512-7Cpy0aaZ3xXlSabQ43aZcfgzwYSidrshEKGDqpfvdx7pHnGDGskr8m1Ajb6yamJUSdTRgqCemYQcwouCqMmZoQ==
+  dependencies:
+    "@react-hook/latest" "^1.0.2"
+    "@react-hook/passive-layout-effect" "^1.2.0"
+    "@types/raf-schd" "^4.0.0"
+    raf-schd "^4.0.2"
+    resize-observer-polyfill "^1.5.1"
+
 "@rollup/plugin-babel@^5.2.3":
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/@rollup/plugin-babel/-/plugin-babel-5.3.0.tgz#9cb1c5146ddd6a4968ad96f209c50c62f92f9879"
@@ -1986,6 +2007,11 @@
   resolved "https://registry.yarnpkg.com/@types/q/-/q-1.5.4.tgz"
   integrity sha512-1HcDas8SEj4z1Wc696tH56G8OlRaH/sqZOynNNB+HF0WOeXPaxTtbYzJY2oEfiUxjSKjhCKr+MvR7dCHcEelug==
 
+"@types/raf-schd@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@types/raf-schd/-/raf-schd-4.0.0.tgz#0f3f7a68aa385cc0eb52d257b56fe526134261ff"
+  integrity sha512-EsXE+pu4MjOhU+H2Ut/8zOGUtictm87anwxOcNY1HjxkH8ipLR+SzYnCzT4lQvyKJdcMwIGxhb8w/KZhOy6vaQ==
+
 "@types/react-dom@^16.9.9":
   version "16.9.9"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-16.9.9.tgz"
@@ -2051,6 +2077,11 @@
   dependencies:
     "@types/glob" "*"
     "@types/node" "*"
+
+"@types/simplebar@^5.1.2":
+  version "5.1.2"
+  resolved "https://registry.yarnpkg.com/@types/simplebar/-/simplebar-5.1.2.tgz#abfea267a227e330f0603aa9361f46eda8b72ee6"
+  integrity sha512-U5UXkL8XR3NjAZ4LNyk9slJyS6V/hGCipWc5/uwZRbDGODetQH/XxSu7M5FPCyOxBprptZVmyMRVTHBd3j5UtA==
 
 "@types/stack-utils@^2.0.0":
   version "2.0.0"
@@ -12151,6 +12182,11 @@ qw@~1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/qw/-/qw-1.0.1.tgz#efbfdc740f9ad054304426acb183412cc8b996d4"
   integrity sha1-77/cdA+a0FQwRCassYNBLMi5ltQ=
+
+raf-schd@^4.0.2:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/raf-schd/-/raf-schd-4.0.3.tgz#5d6c34ef46f8b2a0e880a8fcdb743efc5bfdbc1a"
+  integrity sha512-tQkJl2GRWh83ui2DiPTJz9wEiMN20syf+5oKfB03yYP7ioZcJwsIK8FjrtLwH1m7C7e+Tt2yYBlrOpdT+dyeIQ==
 
 raf@^3.4.1:
   version "3.4.1"
