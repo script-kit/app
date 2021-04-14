@@ -16,7 +16,6 @@ import React, {
   RefObject,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -33,7 +32,7 @@ import { KitPromptOptions } from './types';
 import {
   CHOICE_FOCUSED,
   GENERATE_CHOICES,
-  PROMPT_BOUNDS_UPDATED,
+  ESCAPE_PRESSED,
   RESET_PROMPT,
   RUN_SCRIPT,
   SET_CHOICES,
@@ -188,56 +187,39 @@ export default function App() {
   const [maxHeight, setMaxHeight] = useState(480);
   const prevMaxHeight = usePrevious(maxHeight);
   const [caretDisabled, setCaretDisabled] = useState(false);
-  const choicesRef: RefObject<HTMLDivElement> = useRef(null);
-  const panelRef: RefObject<HTMLDivElement> = useRef(null);
+  const choicesSimpleBarRef: RefObject<SimpleBarProps> = useRef(null);
+  const choicesRef = useRef(null);
+  const panelRef = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
-  const scrollContainerRef: RefObject<SimpleBarProps> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
 
   const sendResize = useDebouncedCallback((width: number, height: number) => {
-    scrollContainerRef?.current?.recalculate();
     const {
       height: topHeight,
     } = topRef?.current?.getBoundingClientRect() as any;
 
+    if (!choicesRef.current) (choicesRef?.current as any)?.recalculate();
+    if (!panelRef.current) (panelRef?.current as any)?.recalculate();
     // RESIZE HACK PART #1
     // Send a smaller size than I actually want
-    const offset = Math.round((height / topHeight) * 10);
-    if (
-      height > topHeight &&
-      !isMouseDown &&
-      (choicesRef?.current || panelRef?.current)
-    ) {
+    const hasContent = choices?.length || panelHTML?.length;
+    if (height > topHeight && !isMouseDown && hasContent) {
       ipcRenderer.send(CONTENT_SIZE_UPDATED, {
         width: Math.round(width),
-        height: Math.round(height - offset),
+        height: Math.round(height),
       });
     }
 
-    if (!choicesRef?.current && !panelRef?.current) {
+    if (!hasContent) {
       ipcRenderer.send(CONTENT_SIZE_UPDATED, {
         width: Math.round(width),
         height: Math.round(topHeight),
       });
     }
-  }, 50);
+  }, 25);
 
-  // useLayoutEffect(() => {
-  //   const {
-  //     width,
-  //     height,
-  //   } = windowContainerRef?.current?.getBoundingClientRect() as any;
-
-  //   sendResize(width, height);
-
-  //   return () => {
-  //     scrollContainerRef?.current?.recalculate();
-  //   };
-  // }, [windowContainerRef, topRef, choices, isMouseDown]);
-
-  // Where the magic happens
   useResizeObserver(windowContainerRef, (entry) => {
     const { width, height } = entry.contentRect;
     sendResize(width, height);
@@ -315,19 +297,6 @@ export default function App() {
     }
   }, [choices, index]);
 
-  // useEffect(() => {
-  //   const resize = () => {
-  //     scrollContainerRef?.current?.recalculate();
-
-  //   };
-  //   window.addEventListener('resize', resize);
-
-  //   return () => {
-  //     window.removeEventListener('resize', resize);
-  //     scrollContainerRef?.current?.recalculate();
-  //   };
-  // }, [choices, index]);
-
   const onTabClick = useCallback(
     (ti) => (_event: any) => {
       setTabIndex(ti);
@@ -336,13 +305,19 @@ export default function App() {
     [inputValue, tabs]
   );
 
+  const onKeyUp = useCallback((event) => {
+    if (event.key === 'Escape') {
+      setChoices([]);
+      setInputValue('');
+      setPanelHTML('');
+      setPromptData({});
+      ipcRenderer.send(ESCAPE_PRESSED, {});
+    }
+  }, []);
+
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Escape') {
-        setChoices([]);
-        setInputValue('');
-        setPanelHTML('');
-        setPromptData({});
         return;
       }
       if (event.key === 'Enter') {
@@ -365,19 +340,19 @@ export default function App() {
         return;
       }
 
-      if (tabs?.length) {
-        tabs.forEach((_tab, i) => {
-          // cmd+2, etc.
-          if (event.metaKey && event.key === `${i + 1}`) {
-            event.preventDefault();
-            setTabIndex(i);
-            ipcRenderer.send(TAB_CHANGED, {
-              tab: tabs[i],
-              input: inputValue,
-            });
-          }
-        });
-      }
+      // if (tabs?.length) {
+      //   tabs.forEach((_tab, i) => {
+      //     // cmd+2, etc.
+      //     if (event.metaKey && event.key === `${i + 1}`) {
+      //       event.preventDefault();
+      //       setTabIndex(i);
+      //       ipcRenderer.send(TAB_CHANGED, {
+      //         tab: tabs[i],
+      //         input: inputValue,
+      //       });
+      //     }
+      //   });
+      // }
 
       let newIndex = index;
 
@@ -395,8 +370,8 @@ export default function App() {
 
       setIndex(newIndex);
 
-      if (choicesRef.current) {
-        const el = choicesRef.current;
+      if (choicesSimpleBarRef.current) {
+        const el = choicesSimpleBarRef.current;
         const selectedItem: any = el.firstElementChild?.children[newIndex];
         const itemY = selectedItem?.offsetTop;
         const marginBottom = parseInt(
@@ -694,13 +669,14 @@ export default function App() {
             onDragLeave={promptData?.drop ? onDragLeave : undefined}
             onDrop={promptData?.drop ? onDrop : undefined}
             onKeyDown={onKeyDown}
+            onKeyUp={onKeyUp}
             placeholder={placeholder || promptData?.placeholder}
             ref={inputRef}
             type={promptData?.secret ? 'password' : 'text'}
             value={inputValue}
           />
           {hint && (
-            <div className="pl-3 pb-3 text-sm text-black dark:text-white">
+            <div className="pl-3 pb-3 text-sm text-gray-800 dark:text-gray-200 italic">
               {hint}
             </div>
           )}
@@ -740,7 +716,7 @@ export default function App() {
         </div>
         {panelHTML?.length > 0 && (
           <SimpleBar
-            scrollableNodeProps={{ ref: panelRef }}
+            ref={panelRef}
             style={
               {
                 WebkitAppRegion: 'no-drag',
@@ -764,8 +740,9 @@ export default function App() {
             }
           >
             <SimpleBar
-              scrollableNodeProps={{ ref: choicesRef }}
-              className="px-0 pb-4 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20"
+              ref={choicesRef}
+              scrollableNodeProps={{ ref: choicesSimpleBarRef }}
+              className="px-0 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20"
             >
               {((choices as any[]) || []).map((choice, i) => {
                 const input = inputValue?.toLowerCase();

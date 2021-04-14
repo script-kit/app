@@ -5,7 +5,6 @@ import log from 'electron-log';
 import Store from 'electron-store';
 import { EventEmitter } from 'events';
 import minimist from 'minimist';
-import { debounce } from 'lodash';
 import { getAssetPath } from './assets';
 import { kenvPath } from './helpers';
 import { USER_RESIZED } from './channels';
@@ -39,6 +38,7 @@ log.info(process.argv.join(' '), devTools);
 let lastResizedByUser = false;
 export const createPromptWindow = async () => {
   promptWindow = new BrowserWindow({
+    useContentSize: true,
     frame: false,
     transparent: true,
     backgroundColor: nativeTheme.shouldUseDarkColors
@@ -74,11 +74,11 @@ export const createPromptWindow = async () => {
 
   promptWindow?.setMaxListeners(2);
 
-  promptWindow?.webContents.on('before-input-event', (event: any, input) => {
-    if (input.key === 'Escape') {
-      if (promptWindow) escapePromptWindow(promptWindow);
-    }
-  });
+  // promptWindow?.webContents.on('before-input-event', (event: any, input) => {
+  //   if (input.key === 'Escape') {
+  //     if (promptWindow) escapePromptWindow(promptWindow);
+  //   }
+  // });
 
   promptWindow?.on('blur', () => {
     hidePromptWindow();
@@ -98,9 +98,27 @@ export const createPromptWindow = async () => {
   promptWindow?.on('will-resize', userResize);
   promptWindow?.on('resized', () => {
     timeoutId = setTimeout(() => {
-      sendToPrompt(USER_RESIZED, false);
+      if (promptWindow?.isVisible()) sendToPrompt(USER_RESIZED, false);
     }, 500);
   });
+
+  // setInterval(() => {
+  //   const [, newHeight] = promptWindow?.getSize() as number[];
+  //   const { height: boundsHeight } = promptWindow?.getBounds() as Rectangle;
+  //   const {
+  //     height: normalBoundsHeight,
+  //   } = promptWindow?.getNormalBounds() as Rectangle;
+  //   const {
+  //     height: contentBoundsHeight,
+  //   } = promptWindow?.getContentBounds() as Rectangle;
+  //   log.info(
+  //     `REPORTING HEIGHT: `,
+  //     newHeight,
+  //     boundsHeight,
+  //     normalBoundsHeight,
+  //     contentBoundsHeight
+  //   );
+  // }, 2000);
 
   return promptWindow;
 };
@@ -144,15 +162,16 @@ export const setDefaultBounds = () => {
   const x = Math.round(screenWidth / 2 - width / 2 + workX);
   const y = Math.round(workY + height / 10);
 
+  log.info(`DEFAULT: setBounds`);
   promptWindow?.setBounds({ x, y, width, height });
 };
 
 export const showPrompt = () => {
   if (promptWindow && !promptWindow?.isVisible()) {
-    const currentScreenpPromptBounds = getCurrentScreenPromptCache();
+    const currentScreenPromptBounds = getCurrentScreenPromptCache();
 
-    if (currentScreenpPromptBounds) {
-      promptWindow.setBounds(currentScreenpPromptBounds as any);
+    if (currentScreenPromptBounds) {
+      promptWindow.setBounds({ ...currentScreenPromptBounds, height: 124 });
     } else {
       setDefaultBounds();
     }
@@ -178,24 +197,16 @@ type Size = {
   height: number;
 };
 export const resizePrompt = ({ height }: Size) => {
+  if (!promptWindow?.isVisible()) return;
   if (lastResizedByUser) {
     lastResizedByUser = false;
     return;
   }
   // RESIZE HACK PART #2. setBounds seems like it sets the height too tall
-  promptWindow?.setBounds({ height });
-};
+  const [width] = promptWindow?.getSize() as number[];
 
-export const growPrompt = ({ height }: Size) => {
-  const bounds = getCurrentScreenPromptCache() as { height: number };
-  let newHeight = height;
-
-  if (bounds && newHeight > bounds?.height) {
-    if (newHeight > bounds.height) newHeight = bounds.height;
-  }
-
-  console.log(`GROW:`, { newHeight, boundsHeight: bounds?.height });
-  promptWindow?.setBounds({ height: newHeight });
+  log.info(`RESIZE: setBounds`, height);
+  promptWindow?.setSize(width, height);
 };
 
 export const sendToPrompt = (channel: string, data: any) => {
@@ -218,8 +229,8 @@ const cachePromptPosition = () => {
 };
 
 const hideAppIfNoWindows = (bw: BrowserWindow) => {
-  cachePromptPosition();
   if (bw?.isVisible()) {
+    cachePromptPosition();
     const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden
     bw?.hide();
@@ -235,7 +246,6 @@ export const hidePromptWindow = () => {
     blurredByKit = false;
     return;
   }
-
   if (promptWindow && promptWindow?.isVisible()) {
     hideAppIfNoWindows(promptWindow);
   }

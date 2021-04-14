@@ -16,7 +16,6 @@ import ipc from 'node-ipc';
 import {
   focusPrompt,
   getPromptCache,
-  growPrompt,
   hideEmitter,
   hidePromptWindow,
   sendToPrompt,
@@ -32,7 +31,6 @@ import { getVersion } from './version';
 import {
   CHOICE_FOCUSED,
   GENERATE_CHOICES,
-  SHRINK_PROMPT,
   RESET_PROMPT,
   RUN_SCRIPT,
   SET_CHOICES,
@@ -46,8 +44,8 @@ import {
   SHOW_PROMPT,
   TAB_CHANGED,
   VALUE_SUBMITTED,
-  GROW_PROMPT,
   CONTENT_SIZE_UPDATED,
+  ESCAPE_PRESSED,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 
@@ -97,6 +95,11 @@ ipcMain.on(CONTENT_SIZE_UPDATED, (event, size) => {
   if (!isUndefined(size)) {
     resizePrompt(size);
   }
+});
+
+ipcMain.on(ESCAPE_PRESSED, (event) => {
+  reset();
+  hidePromptWindow();
 });
 
 const reset = () => {
