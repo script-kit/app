@@ -5,9 +5,10 @@ import log from 'electron-log';
 import Store from 'electron-store';
 import { EventEmitter } from 'events';
 import minimist from 'minimist';
+import { debounce } from 'lodash';
 import { getAssetPath } from './assets';
 import { kenvPath } from './helpers';
-import { PROMPT_BOUNDS_UPDATED } from './channels';
+import { USER_RESIZED } from './channels';
 
 let promptCache: Store | null = null;
 export const getPromptCache = () => {
@@ -35,6 +36,7 @@ const miniArgs = minimist(process.argv);
 const { devTools } = miniArgs;
 log.info(process.argv.join(' '), devTools);
 
+let lastResizedByUser = false;
 export const createPromptWindow = async () => {
   promptWindow = new BrowserWindow({
     frame: false,
@@ -82,26 +84,23 @@ export const createPromptWindow = async () => {
     hidePromptWindow();
   });
 
-  const resize = () => {
-    // if (!promptWindow) return;
+  let timeoutId: NodeJS.Timeout | null = null;
+  const userResize = () => {
+    lastResizedByUser = true;
+    if (timeoutId) clearTimeout(timeoutId);
+    if (!promptWindow) return;
+    const promptBounds = promptWindow?.getBounds();
 
-    // const distScreen = getCurrentScreen();
-    // const promptBounds = promptWindow.getBounds();
-
-    // console.log(`CACHE BY RESIZE`, promptBounds);
-    // getPromptCache()?.set(
-    //   `prompt.${String(distScreen.id)}.bounds`,
-    //   promptBounds
-    // );
-
-    // log.info(`CACHING PROMPT:`, promptBounds);
-
-    // sendToPrompt(PROMPT_BOUNDS_UPDATED, promptBounds);
-
-    cachePromptPosition(true);
+    const { width, height } = promptBounds;
+    sendToPrompt(USER_RESIZED, { height, width });
   };
 
-  promptWindow?.on('will-resize', resize);
+  promptWindow?.on('will-resize', userResize);
+  promptWindow?.on('resized', () => {
+    timeoutId = setTimeout(() => {
+      sendToPrompt(USER_RESIZED, false);
+    }, 500);
+  });
 
   return promptWindow;
 };
@@ -113,18 +112,12 @@ export const focusPrompt = () => {
 };
 
 export const escapePromptWindow = (bw: BrowserWindow) => {
-  cachePromptPosition();
   hideAppIfNoWindows(bw);
   hideEmitter.emit('hide');
 };
 
 const getCurrentScreen = () => {
-  const cursor = screen.getCursorScreenPoint();
-  // Get display with cursor
-  return screen.getDisplayNearestPoint({
-    x: cursor.x,
-    y: cursor.y,
-  });
+  return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
 };
 
 export const getCurrentScreenPromptCache = () => {
@@ -132,21 +125,9 @@ export const getCurrentScreenPromptCache = () => {
   const currentPromptCache = getPromptCache()?.get(
     `prompt.${String(currentScreen.id)}`
   );
+  console.log(currentScreen.id, { currentPromptCache });
 
   return (currentPromptCache as any)?.bounds as Size;
-};
-
-export const getCurrentScreenPromptBounds = () => {
-  const currentPromptCache = getCurrentScreenPromptCache();
-
-  if (!currentPromptCache) return null;
-
-  const currentScreen = getCurrentScreen();
-  const bounds = getPromptCache()?.get(
-    `prompt.${String(currentScreen.id)}.bounds`
-  );
-
-  return currentPromptCache ? bounds : null;
 };
 
 export const setDefaultBounds = () => {
@@ -163,18 +144,15 @@ export const setDefaultBounds = () => {
   const x = Math.round(screenWidth / 2 - width / 2 + workX);
   const y = Math.round(workY + height / 10);
 
-  console.log(`DEFAULT BOUNDS`, height);
   promptWindow?.setBounds({ x, y, width, height });
 };
 
 export const showPrompt = () => {
   if (promptWindow && !promptWindow?.isVisible()) {
-    const currentScreenpPromptBounds = getCurrentScreenPromptBounds();
+    const currentScreenpPromptBounds = getCurrentScreenPromptCache();
 
     if (currentScreenpPromptBounds) {
-      console.log(`SET CURRENT BOUNDS`, currentScreenpPromptBounds.height);
-
-      // promptWindow.setBounds(currentScreenpPromptBounds as any);
+      promptWindow.setBounds(currentScreenpPromptBounds as any);
     } else {
       setDefaultBounds();
     }
@@ -200,12 +178,16 @@ type Size = {
   height: number;
 };
 export const resizePrompt = ({ height }: Size) => {
-  console.log(`RESIZE:`, height);
+  if (lastResizedByUser) {
+    lastResizedByUser = false;
+    return;
+  }
+  // RESIZE HACK PART #2. setBounds seems like it sets the height too tall
   promptWindow?.setBounds({ height });
 };
 
 export const growPrompt = ({ height }: Size) => {
-  const bounds = getCurrentScreenPromptBounds() as { height: number };
+  const bounds = getCurrentScreenPromptCache() as { height: number };
   let newHeight = height;
 
   if (bounds && newHeight > bounds?.height) {
@@ -224,33 +206,19 @@ export const sendToPrompt = (channel: string, data: any) => {
   }
 };
 
-const cachePromptPosition = (userResize = false) => {
-  if (!promptWindow) return;
+const cachePromptPosition = () => {
+  const currentScreen = getCurrentScreen();
+  const promptBounds = promptWindow?.getBounds();
+  log.info(`CACHING SIZE:`, promptBounds);
 
-  const distScreen = getCurrentScreen();
-  const promptBounds = promptWindow.getBounds();
-
-  const currentPromptCache = getCurrentScreenPromptCache();
-
-  if (
-    !currentPromptCache ||
-    promptBounds.height > currentPromptCache?.height ||
-    userResize
-  ) {
-    getPromptCache()?.set(
-      `prompt.${String(distScreen.id)}.bounds`,
-      promptBounds
-    );
-
-    log.info(`CACHING PROMPT:`, promptBounds);
-    log.info(`PROMPT SIZE:`, promptWindow?.getSize());
-
-    const { width, height } = promptBounds;
-    sendToPrompt(PROMPT_BOUNDS_UPDATED, { height, width });
-  }
+  getPromptCache()?.set(
+    `prompt.${String(currentScreen.id)}.bounds`,
+    promptBounds
+  );
 };
 
 const hideAppIfNoWindows = (bw: BrowserWindow) => {
+  cachePromptPosition();
   if (bw?.isVisible()) {
     const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden
@@ -269,7 +237,6 @@ export const hidePromptWindow = () => {
   }
 
   if (promptWindow && promptWindow?.isVisible()) {
-    cachePromptPosition();
     hideAppIfNoWindows(promptWindow);
   }
   blurredByKit = false;

@@ -47,6 +47,7 @@ import {
   TAB_CHANGED,
   VALUE_SUBMITTED,
   CONTENT_SIZE_UPDATED,
+  USER_RESIZED,
 } from './channels';
 
 interface ChoiceData {
@@ -194,32 +195,6 @@ export default function App() {
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
-  // const [windowContainerHeight, setWindowContainerHeight] = useState(0);
-  // const prevWindowContainerHeight = usePrevious(windowContainerHeight);
-
-  // useLayoutEffect(() => {
-  //   console.log(`USE LAYOUT EFFECT`);
-  //   // scrollContainerRef?.current?.recalculate();
-  //   const {
-  //     width,
-  //     height,
-  //   }: any = windowContainerRef?.current?.getBoundingClientRect();
-
-  //   if (height > 200) {
-  //     ipcRenderer.send(CONTENT_SIZE_UPDATED, {
-  //       width: Math.round(width),
-  //       height: Math.round(height),
-  //     });
-  //   }
-  // });
-  useEffect(() => {
-    window.addEventListener('mousedown', () => {
-      setIsMouseDown(true);
-    });
-    window.addEventListener('mouseup', () => {
-      setIsMouseDown(false);
-    });
-  }, []);
 
   const sendResize = useDebouncedCallback((width: number, height: number) => {
     scrollContainerRef?.current?.recalculate();
@@ -227,27 +202,40 @@ export default function App() {
       height: topHeight,
     } = topRef?.current?.getBoundingClientRect() as any;
 
-    console.log({ height, topHeight, isMouseDown });
-    if (height > topHeight + 32 && !isMouseDown) {
+    // RESIZE HACK PART #1
+    // Send a smaller size than I actually want
+    const offset = Math.round((height / topHeight) * 10);
+    if (
+      height > topHeight &&
+      !isMouseDown &&
+      (choicesRef?.current || panelRef?.current)
+    ) {
       ipcRenderer.send(CONTENT_SIZE_UPDATED, {
         width: Math.round(width),
-        height: Math.round(height - 32),
+        height: Math.round(height - offset),
       });
     }
-  }, 25);
 
-  useLayoutEffect(() => {
-    const {
-      width,
-      height,
-    } = windowContainerRef?.current?.getBoundingClientRect() as any;
+    if (!choicesRef?.current && !panelRef?.current) {
+      ipcRenderer.send(CONTENT_SIZE_UPDATED, {
+        width: Math.round(width),
+        height: Math.round(topHeight),
+      });
+    }
+  }, 50);
 
-    sendResize(width, height);
+  // useLayoutEffect(() => {
+  //   const {
+  //     width,
+  //     height,
+  //   } = windowContainerRef?.current?.getBoundingClientRect() as any;
 
-    return () => {
-      scrollContainerRef?.current?.recalculate();
-    };
-  }, [windowContainerRef, topRef, choices, isMouseDown]);
+  //   sendResize(width, height);
+
+  //   return () => {
+  //     scrollContainerRef?.current?.recalculate();
+  //   };
+  // }, [windowContainerRef, topRef, choices, isMouseDown]);
 
   // Where the magic happens
   useResizeObserver(windowContainerRef, (entry) => {
@@ -604,13 +592,12 @@ export default function App() {
     setUnfilteredChoices([]);
   }, []);
 
-  const promptBoundsUpdated = useCallback((event, bounds) => {
-    console.log(`promptBoundsUpdated`, bounds, window.innerHeight);
-    setMaxHeight(document.body.clientHeight);
+  const userResizedHandler = useCallback((event, data) => {
+    setIsMouseDown(!!data);
+    setMaxHeight(window.innerHeight);
   }, []);
 
   const messageMap = {
-    [PROMPT_BOUNDS_UPDATED]: promptBoundsUpdated,
     [RESET_PROMPT]: resetPromptHandler,
     [RUN_SCRIPT]: resetPromptHandler,
     [SET_CHOICES]: setChoicesHandler,
@@ -621,6 +608,7 @@ export default function App() {
     [SET_PLACEHOLDER]: setPlaceholderHandler,
     [SET_TAB_INDEX]: setTabIndexHandler,
     [SHOW_PROMPT]: showPromptHandler,
+    [USER_RESIZED]: userResizedHandler,
   };
 
   useEffect(() => {
@@ -660,6 +648,12 @@ export default function App() {
         `}
       >
         <div ref={topRef}>
+          {/* <span>{maxHeight}</span>
+          {isMouseDown ? (
+            <div className="h2">DOWN</div>
+          ) : (
+            <div className="h2">UP</div>
+          )} */}
           {promptData?.scriptInfo?.description && (
             <div className="text-xxs uppercase font-mono justify-between pt-3 px-4 grid grid-cols-5">
               <span className="dark:text-primary-light text-primary-dark col-span-3">
