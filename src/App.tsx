@@ -173,6 +173,7 @@ export default function App() {
 
   const [inputValue, setInputValue] = useState('');
   const [hint, setHint] = useState('');
+  const previousHint = usePrevious(hint);
   const [mode, setMode] = useState(MODE.FILTER);
   const [index, setIndex] = useState(0);
   const [tabs, setTabs] = useState([]);
@@ -187,7 +188,7 @@ export default function App() {
   const [maxHeight, setMaxHeight] = useState(480);
   const prevMaxHeight = usePrevious(maxHeight);
   const [caretDisabled, setCaretDisabled] = useState(false);
-  const choicesSimpleBarRef: RefObject<SimpleBarProps> = useRef(null);
+  const choicesSimpleBarRef = useRef(null);
   const choicesRef = useRef(null);
   const panelRef = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
@@ -272,10 +273,13 @@ export default function App() {
 
   const onChange = useCallback((value) => {
     setIndex(0);
-    setInputValue(value);
+    if (typeof value === 'string') {
+      setInputValue(value);
+    }
   }, []);
 
   const onDragEnter = useCallback((event) => {
+    event.preventDefault();
     setDropReady(true);
     setPlaceholder('Drop to submit');
   }, []);
@@ -283,10 +287,34 @@ export default function App() {
     setDropReady(false);
     setPlaceholder(previousPlaceholder || '');
   }, []);
-  const onDrop = useCallback((event) => {
-    setDropReady(false);
-    submit(Array.from(event?.dataTransfer?.files));
-  }, []);
+  const onDrop = useCallback(
+    (event) => {
+      setDropReady(false);
+      const files = Array.from(event?.dataTransfer?.files);
+      if (files?.length > 0) {
+        submit(files);
+        return;
+      }
+
+      const data =
+        event?.dataTransfer?.getData('URL') ||
+        event?.dataTransfer?.getData('Text') ||
+        null;
+      if (data) {
+        submit(data);
+        return;
+      }
+      if (event.target.value) {
+        submit(event.target.value);
+        return;
+      }
+
+      setTimeout(() => {
+        submit(event.target.value);
+      }, 100);
+    },
+    [submit]
+  );
 
   useEffect(() => {
     if (choices?.length > 0 && choices?.[index]) {
@@ -305,13 +333,17 @@ export default function App() {
     [inputValue, tabs]
   );
 
+  const closePrompt = useCallback(() => {
+    setChoices([]);
+    setInputValue('');
+    setPanelHTML('');
+    setPromptData({});
+    ipcRenderer.send(ESCAPE_PRESSED, {});
+  }, []);
+
   const onKeyUp = useCallback((event) => {
     if (event.key === 'Escape') {
-      setChoices([]);
-      setInputValue('');
-      setPanelHTML('');
-      setPromptData({});
-      ipcRenderer.send(ESCAPE_PRESSED, {});
+      closePrompt();
     }
   }, []);
 
@@ -614,21 +646,9 @@ export default function App() {
             maxHeight,
           } as any
         }
-        className={`flex flex-col w-full rounded-lg relative h-full
-        ${
-          dropReady
-            ? `border-b-4 border-green-500 border-solid border-opacity-50`
-            : `border-none`
-        }
-        `}
+        className="flex flex-col w-full rounded-lg relative h-full"
       >
         <div ref={topRef}>
-          {/* <span>{maxHeight}</span>
-          {isMouseDown ? (
-            <div className="h2">DOWN</div>
-          ) : (
-            <div className="h2">UP</div>
-          )} */}
           {promptData?.scriptInfo?.description && (
             <div className="text-xxs uppercase font-mono justify-between pt-3 px-4 grid grid-cols-5">
               <span className="dark:text-primary-light text-primary-dark col-span-3">
@@ -661,19 +681,31 @@ export default function App() {
               } as any
             }
             autoFocus
-            className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-70 placeholder-black placeholder-opacity-80 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4
-          ${dropReady && `border-2 border-green-500`}
+            className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
+            ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4
+
+            ${
+              promptData?.drop
+                ? `
+            border-dashed border-4 rounded border-gray-500 focus:border-gray-500 text-opacity-50 ${
+              dropReady &&
+              `border-yellow-500 text-opacity-90 focus:border-yellow-500`
+            }`
+                : `            focus:border-none border-none`
+            }
           `}
-            onChange={(e) => onChange(e.target.value)}
-            onDragEnter={promptData?.drop ? onDragEnter : undefined}
-            onDragLeave={promptData?.drop ? onDragLeave : undefined}
-            onDrop={promptData?.drop ? onDrop : undefined}
+            onChange={(e) => {
+              onChange(e.target.value);
+            }}
             onKeyDown={onKeyDown}
             onKeyUp={onKeyUp}
             placeholder={placeholder || promptData?.placeholder}
             ref={inputRef}
             type={promptData?.secret ? 'password' : 'text'}
             value={inputValue}
+            onDragEnter={promptData?.drop ? onDragEnter : undefined}
+            onDragLeave={promptData?.drop ? onDragLeave : undefined}
+            onDrop={promptData?.drop ? onDrop : undefined}
           />
           {hint && (
             <div className="pl-3 pb-3 text-sm text-gray-800 dark:text-gray-200 italic">

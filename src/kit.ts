@@ -22,6 +22,7 @@ import {
   setBlurredByKit,
   showPrompt,
   resizePrompt,
+  escapePromptWindow,
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
@@ -99,7 +100,7 @@ ipcMain.on(CONTENT_SIZE_UPDATED, (event, size) => {
 
 ipcMain.on(ESCAPE_PRESSED, (event) => {
   reset();
-  hidePromptWindow();
+  escapePromptWindow();
 });
 
 const reset = () => {

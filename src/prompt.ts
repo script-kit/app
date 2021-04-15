@@ -129,8 +129,9 @@ export const focusPrompt = () => {
   }
 };
 
-export const escapePromptWindow = (bw: BrowserWindow) => {
-  hideAppIfNoWindows(bw);
+export const escapePromptWindow = () => {
+  blurredByKit = false;
+  hideAppIfNoWindows();
   hideEmitter.emit('hide');
 };
 
@@ -228,12 +229,12 @@ const cachePromptPosition = () => {
   );
 };
 
-const hideAppIfNoWindows = (bw: BrowserWindow) => {
-  if (bw?.isVisible()) {
+const hideAppIfNoWindows = () => {
+  if (promptWindow?.isVisible()) {
     cachePromptPosition();
     const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden
-    bw?.hide();
+    promptWindow?.hide();
     if (allWindows.every((window) => !window.isVisible())) {
       app?.hide();
     }
@@ -246,8 +247,8 @@ export const hidePromptWindow = () => {
     blurredByKit = false;
     return;
   }
-  if (promptWindow && promptWindow?.isVisible()) {
-    hideAppIfNoWindows(promptWindow);
-  }
+
+  hideAppIfNoWindows();
+
   blurredByKit = false;
 };
