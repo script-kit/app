@@ -24,7 +24,6 @@ import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
-import type SimpleBarProps from 'simplebar';
 import isImage from 'is-image';
 import usePrevious from '@rooks/use-previous';
 import useResizeObserver from '@react-hook/resize-observer';
@@ -59,6 +58,7 @@ enum MODE {
   GENERATE = 'GENERATE',
   FILTER = 'FILTER',
   MANUAL = 'MANUAL',
+  HOTKEY = 'HOTKEY',
 }
 
 class ErrorBoundary extends React.Component {
@@ -195,6 +195,7 @@ export default function App() {
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
+  const [hotkey, setHotkey] = useState({});
 
   const sendResize = useDebouncedCallback((width: number, height: number) => {
     const {
@@ -352,6 +353,49 @@ export default function App() {
       if (event.key === 'Escape') {
         return;
       }
+
+      if (mode === MODE.HOTKEY) {
+        const eventKeyData = {
+          key: event.key,
+          command: event.metaKey,
+          shift: event.shiftKey,
+          option: event.altKey,
+          control: event.ctrlKey,
+          fn: event.getModifierState('Fn'),
+          // fnLock: event.getModifierState('FnLock'),
+          // numLock: event.getModifierState('NumLock'),
+          hyper: event.getModifierState('Hyper'),
+          os: event.getModifierState('OS'),
+          super: event.getModifierState('Super'),
+          win: event.getModifierState('Win'),
+          // scrollLock: event.getModifierState('ScrollLock'),
+          // scroll: event.getModifierState('Scroll'),
+          // capsLock: event.getModifierState('CapsLock'),
+        };
+
+        setHotkey(eventKeyData);
+
+        const keyPlaceholder = Object.entries(eventKeyData).reduce(
+          (acc, [key, value]) =>
+            value === true ? (acc.length > 0 ? `${acc} + ${key}` : key) : acc,
+          ``
+        );
+
+        setPlaceholder(keyPlaceholder);
+
+        if (
+          event.key.length === 1 ||
+          ['Shift', 'Control', 'Alt', 'Meta'].every(
+            (m) => !event.key.includes(m)
+          )
+        ) {
+          submit(eventKeyData);
+          setHint(`Previous: ${keyPlaceholder} + ${event.key}`);
+        }
+        event.preventDefault();
+        return;
+      }
+
       if (event.key === 'Enter') {
         submit(choices?.[index]?.value || inputValue);
         return;
@@ -423,7 +467,17 @@ export default function App() {
         }
       }
     },
-    [index, choices, setPromptData, submit, inputValue, tabs, tabIndex]
+    [
+      index,
+      choices,
+      setPromptData,
+      submit,
+      inputValue,
+      tabs,
+      tabIndex,
+      mode,
+      hotkey,
+    ]
   );
 
   const generateChoices = useDebouncedCallback((value, mode, tab) => {
@@ -694,15 +748,19 @@ export default function App() {
                 : `            focus:border-none border-none`
             }
           `}
-            onChange={(e) => {
-              onChange(e.target.value);
-            }}
+            onChange={
+              mode !== MODE.HOTKEY
+                ? (e) => {
+                    onChange(e.target.value);
+                  }
+                : undefined
+            }
             onKeyDown={onKeyDown}
             onKeyUp={onKeyUp}
             placeholder={placeholder || promptData?.placeholder}
             ref={inputRef}
             type={promptData?.secret ? 'password' : 'text'}
-            value={inputValue}
+            value={mode !== MODE.HOTKEY ? inputValue : undefined}
             onDragEnter={promptData?.drop ? onDragEnter : undefined}
             onDragLeave={promptData?.drop ? onDragLeave : undefined}
             onDrop={promptData?.drop ? onDrop : undefined}

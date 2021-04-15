@@ -144,7 +144,7 @@ export const getCurrentScreenPromptCache = () => {
   const currentPromptCache = getPromptCache()?.get(
     `prompt.${String(currentScreen.id)}`
   );
-  console.log(currentScreen.id, { currentPromptCache });
+  // console.log(currentScreen.id, { currentPromptCache });
 
   return (currentPromptCache as any)?.bounds as Size;
 };
