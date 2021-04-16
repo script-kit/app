@@ -61,6 +61,43 @@ enum MODE {
   HOTKEY = 'HOTKEY',
 }
 
+const generateShortcut = ({
+  option,
+  command,
+  shift,
+  superKey,
+  control,
+}: any) => {
+  return `${command ? `command ` : ``}${shift ? `shift ` : ``}${
+    option ? `option ` : ``
+  }${control ? `control ` : ``}${superKey ? `super ` : ``}`;
+};
+
+const keyFromCode = (code: string) => {
+  const keyCode = code.replace(/Key|Digit/, '').toLowerCase();
+  const replaceAlts = (k: string) => {
+    const map: any = {
+      backslash: '\\',
+      slash: '/',
+      quote: `'`,
+      backquote: '`',
+      equal: `=`,
+      minus: `-`,
+      period: `.`,
+      comma: `,`,
+      bracketleft: `[`,
+      bracketright: `]`,
+      space: 'space',
+      semicolon: ';',
+    };
+
+    if (map[k]) return map[k];
+
+    return k;
+  };
+
+  return replaceAlts(keyCode);
+};
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
   public state: { hasError: boolean } = { hasError: false };
@@ -259,7 +296,7 @@ export default function App() {
 
         return fileObject;
       });
-      console.log(files);
+
       ipcRenderer.send(VALUE_SUBMITTED, { value: files });
       return;
     }
@@ -345,6 +382,27 @@ export default function App() {
   const onKeyUp = useCallback((event) => {
     if (event.key === 'Escape') {
       closePrompt();
+      return;
+    }
+
+    if (mode === MODE.HOTKEY) {
+      const {
+        code,
+        metaKey: command,
+        shiftKey: shift,
+        ctrlKey: control,
+        altKey: option,
+      } = event as any;
+      const superKey = event.getModifierState('Super');
+      const shortcut = generateShortcut({
+        code,
+        command,
+        shift,
+        control,
+        option,
+        superKey,
+      });
+      setPlaceholder(shortcut);
     }
   }, []);
 
@@ -355,33 +413,46 @@ export default function App() {
       }
 
       if (mode === MODE.HOTKEY) {
+        const {
+          key,
+          code,
+          metaKey: command,
+          shiftKey: shift,
+          ctrlKey: control,
+          altKey: option,
+        } = event as any;
+        const superKey = event.getModifierState('Super');
+        const shortcut = generateShortcut({
+          command,
+          shift,
+          control,
+          option,
+          superKey,
+        });
+
+        const normalKey = option ? keyFromCode(code) : key;
+
         const eventKeyData = {
-          key: event.key,
-          command: event.metaKey,
-          shift: event.shiftKey,
-          option: event.altKey,
-          control: event.ctrlKey,
+          key: normalKey,
+          command,
+          shift,
+          option,
+          control,
           fn: event.getModifierState('Fn'),
           // fnLock: event.getModifierState('FnLock'),
           // numLock: event.getModifierState('NumLock'),
           hyper: event.getModifierState('Hyper'),
           os: event.getModifierState('OS'),
-          super: event.getModifierState('Super'),
+          super: superKey,
           win: event.getModifierState('Win'),
           // scrollLock: event.getModifierState('ScrollLock'),
           // scroll: event.getModifierState('Scroll'),
           // capsLock: event.getModifierState('CapsLock'),
+          shortcut: `${shortcut}${normalKey}`,
         };
 
         setHotkey(eventKeyData);
-
-        const keyPlaceholder = Object.entries(eventKeyData).reduce(
-          (acc, [key, value]) =>
-            value === true ? (acc.length > 0 ? `${acc} + ${key}` : key) : acc,
-          ``
-        );
-
-        setPlaceholder(keyPlaceholder);
+        setPlaceholder(shortcut);
 
         if (
           event.key.length === 1 ||
@@ -390,7 +461,6 @@ export default function App() {
           )
         ) {
           submit(eventKeyData);
-          setHint(`Previous: ${keyPlaceholder} + ${event.key}`);
         }
         event.preventDefault();
         return;
