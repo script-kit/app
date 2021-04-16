@@ -1,3 +1,10 @@
+# [1.1.0-beta.96](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.95...v1.1.0-beta.96) (2021-04-16)
+
+
+### Bug Fixes
+
+* **prompt:** resize then show bug ([e06bc1a](https://github.com/johnlindquist/kitapp/commit/e06bc1aac8f4b8cf5690c90e098d69fa7182a898))
+
 # [1.1.0-beta.95](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.94...v1.1.0-beta.95) (2021-04-16)
 
 
