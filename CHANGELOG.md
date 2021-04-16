@@ -1,3 +1,10 @@
+# [1.1.0-beta.95](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.94...v1.1.0-beta.95) (2021-04-16)
+
+
+### Bug Fixes
+
+* **prompt:** Issues with resizing, running app scripts, update ([84b898f](https://github.com/johnlindquist/kitapp/commit/84b898f9a063fcb8ddbd6cdaf86ee348d37394ea))
+
 # [1.1.0-beta.94](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.93...v1.1.0-beta.94) (2021-04-16)
 
 
