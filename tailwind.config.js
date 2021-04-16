@@ -3,6 +3,7 @@ const colors = require('tailwindcss/colors');
 
 /* eslint-disable global-require */
 module.exports = {
+  mode: process.env.NODE_ENV === 'development' ? 'jit' : '',
   purge: {
     enabled: true,
     content: ['./src/**/*.html', './src/**/*.tsx', './src/*.ts'],
@@ -19,17 +20,40 @@ module.exports = {
       ],
     },
   },
-  darkMode: 'media', // or 'media' or 'class'
+  darkMode: 'media',
   theme: {
     colors: {
       ...defaultTheme.colors,
       ...colors,
-      gray: colors.trueGray, // colors.coolGray, colors.blueGray, etc.
+      gray: colors.coolGray,
+      primary: {
+        light: colors.yellow['400'],
+        dark: colors.indigo['600'],
+      },
     },
-    extend: {},
+    extend: {
+      fontSize: {
+        xxs: ['0.65rem', '0.75rem'],
+      },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            color: theme('colors.black'),
+            a: {
+              color: theme('colors.primary.dark'),
+            },
+          },
+        },
+        dark: {
+          css: {
+            color: theme('colors.white'),
+            a: {
+              color: theme('colors.primary.light'),
+            },
+          },
+        },
+      }),
+    },
   },
-  variants: {
-    extend: {},
-  },
-  plugins: [require('@tailwindcss/forms')],
+  plugins: [require('@tailwindcss/forms'), require('@tailwindcss/typography')],
 };

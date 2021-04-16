@@ -26,10 +26,12 @@ import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
 import isImage from 'is-image';
 import usePrevious from '@rooks/use-previous';
+import useResizeObserver from '@react-hook/resize-observer';
 import { KitPromptOptions } from './types';
 import {
   CHOICE_FOCUSED,
   GENERATE_CHOICES,
+  ESCAPE_PRESSED,
   RESET_PROMPT,
   RUN_SCRIPT,
   SET_CHOICES,
@@ -42,6 +44,8 @@ import {
   SHOW_PROMPT,
   TAB_CHANGED,
   VALUE_SUBMITTED,
+  CONTENT_SIZE_UPDATED,
+  USER_RESIZED,
 } from './channels';
 
 interface ChoiceData {
@@ -54,8 +58,46 @@ enum MODE {
   GENERATE = 'GENERATE',
   FILTER = 'FILTER',
   MANUAL = 'MANUAL',
+  HOTKEY = 'HOTKEY',
 }
 
+const generateShortcut = ({
+  option,
+  command,
+  shift,
+  superKey,
+  control,
+}: any) => {
+  return `${command ? `command ` : ``}${shift ? `shift ` : ``}${
+    option ? `option ` : ``
+  }${control ? `control ` : ``}${superKey ? `super ` : ``}`;
+};
+
+const keyFromCode = (code: string) => {
+  const keyCode = code.replace(/Key|Digit/, '').toLowerCase();
+  const replaceAlts = (k: string) => {
+    const map: any = {
+      backslash: '\\',
+      slash: '/',
+      quote: `'`,
+      backquote: '`',
+      equal: `=`,
+      minus: `-`,
+      period: `.`,
+      comma: `,`,
+      bracketleft: `[`,
+      bracketright: `]`,
+      space: 'space',
+      semicolon: ';',
+    };
+
+    if (map[k]) return map[k];
+
+    return k;
+  };
+
+  return replaceAlts(keyCode);
+};
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
   public state: { hasError: boolean } = { hasError: false };
@@ -93,7 +135,7 @@ const highlightAdjacentAndWordStart = (name: string, input: string) => {
       ili += 1;
       prevQualifies = true;
       return (
-        <span key={i} className=" dark:text-yellow-500 text-yellow-700">
+        <span key={i} className="dark:text-primary-light text-primary-dark">
           {letter}
         </span>
       );
@@ -113,7 +155,7 @@ const highlightFirstLetters = (name: string, input: string) => {
       return (
         // eslint-disable-next-line react/no-array-index-key
         <React.Fragment key={i}>
-          <span key={i} className=" dark:text-yellow-500 text-yellow-700">
+          <span key={i} className=" dark:text-primary-light text-primary-dark">
             {word[0]}
           </span>
           {word.slice(1)}
@@ -134,7 +176,7 @@ const highlightIncludes = (name: string, input: string) => {
 
   return [
     <span key={0}>{firstPart}</span>,
-    <span key={1} className=" dark:text-yellow-500 text-yellow-700">
+    <span key={1} className="dark:text-primary-light text-primary-dark">
       {includesPart}
     </span>,
     <span key={2}>{lastPart}</span>,
@@ -146,7 +188,7 @@ const highlightStartsWith = (name: string, input: string) => {
   const lastPart = name.slice(input.length);
 
   return [
-    <span key={0} className=" dark:text-yellow-500 text-yellow-700">
+    <span key={0} className="dark:text-primary-light text-primary-dark">
       {firstPart}
     </span>,
     <span key={1}>{lastPart}</span>,
@@ -168,6 +210,7 @@ export default function App() {
 
   const [inputValue, setInputValue] = useState('');
   const [hint, setHint] = useState('');
+  const previousHint = usePrevious(hint);
   const [mode, setMode] = useState(MODE.FILTER);
   const [index, setIndex] = useState(0);
   const [tabs, setTabs] = useState([]);
@@ -179,9 +222,47 @@ export default function App() {
   const [dropReady, setDropReady] = useState(false);
   const [panelHTML, setPanelHTML] = useState('');
   const [scriptName, setScriptName] = useState('');
+  const [maxHeight, setMaxHeight] = useState(480);
+  const prevMaxHeight = usePrevious(maxHeight);
   const [caretDisabled, setCaretDisabled] = useState(false);
-  const scrollRef: RefObject<HTMLDivElement> = useRef(null);
+  const choicesSimpleBarRef = useRef(null);
+  const choicesRef = useRef(null);
+  const panelRef = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
+  const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
+  const topRef: RefObject<HTMLDivElement> = useRef(null);
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const [hotkey, setHotkey] = useState({});
+
+  const sendResize = useDebouncedCallback((width: number, height: number) => {
+    const {
+      height: topHeight,
+    } = topRef?.current?.getBoundingClientRect() as any;
+
+    if (!choicesRef.current) (choicesRef?.current as any)?.recalculate();
+    if (!panelRef.current) (panelRef?.current as any)?.recalculate();
+    // RESIZE HACK PART #1
+    // Send a smaller size than I actually want
+    const hasContent = choices?.length || panelHTML?.length;
+    if (height > topHeight && !isMouseDown && hasContent) {
+      ipcRenderer.send(CONTENT_SIZE_UPDATED, {
+        width: Math.round(width),
+        height: Math.round(height),
+      });
+    }
+
+    if (!hasContent) {
+      ipcRenderer.send(CONTENT_SIZE_UPDATED, {
+        width: Math.round(width),
+        height: Math.round(topHeight),
+      });
+    }
+  }, 25);
+
+  useResizeObserver(windowContainerRef, (entry) => {
+    const { width, height } = entry.contentRect;
+    sendResize(width, height);
+  });
 
   useEffect(() => {
     if (inputRef.current) {
@@ -215,7 +296,7 @@ export default function App() {
 
         return fileObject;
       });
-      console.log(files);
+
       ipcRenderer.send(VALUE_SUBMITTED, { value: files });
       return;
     }
@@ -230,10 +311,13 @@ export default function App() {
 
   const onChange = useCallback((value) => {
     setIndex(0);
-    setInputValue(value);
+    if (typeof value === 'string') {
+      setInputValue(value);
+    }
   }, []);
 
   const onDragEnter = useCallback((event) => {
+    event.preventDefault();
     setDropReady(true);
     setPlaceholder('Drop to submit');
   }, []);
@@ -241,10 +325,34 @@ export default function App() {
     setDropReady(false);
     setPlaceholder(previousPlaceholder || '');
   }, []);
-  const onDrop = useCallback((event) => {
-    setDropReady(false);
-    submit(Array.from(event?.dataTransfer?.files));
-  }, []);
+  const onDrop = useCallback(
+    (event) => {
+      setDropReady(false);
+      const files = Array.from(event?.dataTransfer?.files);
+      if (files?.length > 0) {
+        submit(files);
+        return;
+      }
+
+      const data =
+        event?.dataTransfer?.getData('URL') ||
+        event?.dataTransfer?.getData('Text') ||
+        null;
+      if (data) {
+        submit(data);
+        return;
+      }
+      if (event.target.value) {
+        submit(event.target.value);
+        return;
+      }
+
+      setTimeout(() => {
+        submit(event.target.value);
+      }, 100);
+    },
+    [submit]
+  );
 
   useEffect(() => {
     if (choices?.length > 0 && choices?.[index]) {
@@ -263,15 +371,101 @@ export default function App() {
     [inputValue, tabs]
   );
 
+  const closePrompt = useCallback(() => {
+    setChoices([]);
+    setInputValue('');
+    setPanelHTML('');
+    setPromptData({});
+    ipcRenderer.send(ESCAPE_PRESSED, {});
+  }, []);
+
+  const onKeyUp = useCallback((event) => {
+    if (event.key === 'Escape') {
+      closePrompt();
+      return;
+    }
+
+    if (mode === MODE.HOTKEY) {
+      const {
+        code,
+        metaKey: command,
+        shiftKey: shift,
+        ctrlKey: control,
+        altKey: option,
+      } = event as any;
+      const superKey = event.getModifierState('Super');
+      const shortcut = generateShortcut({
+        code,
+        command,
+        shift,
+        control,
+        option,
+        superKey,
+      });
+      setPlaceholder(shortcut);
+    }
+  }, []);
+
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Escape') {
-        setChoices([]);
-        setInputValue('');
-        setPanelHTML('');
-        setPromptData({});
         return;
       }
+
+      if (mode === MODE.HOTKEY) {
+        const {
+          key,
+          code,
+          metaKey: command,
+          shiftKey: shift,
+          ctrlKey: control,
+          altKey: option,
+        } = event as any;
+        const superKey = event.getModifierState('Super');
+        const shortcut = generateShortcut({
+          command,
+          shift,
+          control,
+          option,
+          superKey,
+        });
+
+        const normalKey = option ? keyFromCode(code) : key;
+
+        const eventKeyData = {
+          key: normalKey,
+          command,
+          shift,
+          option,
+          control,
+          fn: event.getModifierState('Fn'),
+          // fnLock: event.getModifierState('FnLock'),
+          // numLock: event.getModifierState('NumLock'),
+          hyper: event.getModifierState('Hyper'),
+          os: event.getModifierState('OS'),
+          super: superKey,
+          win: event.getModifierState('Win'),
+          // scrollLock: event.getModifierState('ScrollLock'),
+          // scroll: event.getModifierState('Scroll'),
+          // capsLock: event.getModifierState('CapsLock'),
+          shortcut: `${shortcut}${normalKey}`,
+        };
+
+        setHotkey(eventKeyData);
+        setPlaceholder(shortcut);
+
+        if (
+          event.key.length === 1 ||
+          ['Shift', 'Control', 'Alt', 'Meta'].every(
+            (m) => !event.key.includes(m)
+          )
+        ) {
+          submit(eventKeyData);
+        }
+        event.preventDefault();
+        return;
+      }
+
       if (event.key === 'Enter') {
         submit(choices?.[index]?.value || inputValue);
         return;
@@ -292,6 +486,20 @@ export default function App() {
         return;
       }
 
+      // if (tabs?.length) {
+      //   tabs.forEach((_tab, i) => {
+      //     // cmd+2, etc.
+      //     if (event.metaKey && event.key === `${i + 1}`) {
+      //       event.preventDefault();
+      //       setTabIndex(i);
+      //       ipcRenderer.send(TAB_CHANGED, {
+      //         tab: tabs[i],
+      //         input: inputValue,
+      //       });
+      //     }
+      //   });
+      // }
+
       let newIndex = index;
 
       if (event.key === 'ArrowDown') {
@@ -308,8 +516,8 @@ export default function App() {
 
       setIndex(newIndex);
 
-      if (scrollRef.current) {
-        const el = scrollRef.current;
+      if (choicesSimpleBarRef.current) {
+        const el = choicesSimpleBarRef.current;
         const selectedItem: any = el.firstElementChild?.children[newIndex];
         const itemY = selectedItem?.offsetTop;
         const marginBottom = parseInt(
@@ -329,7 +537,17 @@ export default function App() {
         }
       }
     },
-    [index, choices, setPromptData, submit, inputValue, tabs, tabIndex]
+    [
+      index,
+      choices,
+      setPromptData,
+      submit,
+      inputValue,
+      tabs,
+      tabIndex,
+      mode,
+      hotkey,
+    ]
   );
 
   const generateChoices = useDebouncedCallback((value, mode, tab) => {
@@ -505,6 +723,11 @@ export default function App() {
     setUnfilteredChoices([]);
   }, []);
 
+  const userResizedHandler = useCallback((event, data) => {
+    setIsMouseDown(!!data);
+    setMaxHeight(window.innerHeight);
+  }, []);
+
   const messageMap = {
     [RESET_PROMPT]: resetPromptHandler,
     [RUN_SCRIPT]: resetPromptHandler,
@@ -516,6 +739,7 @@ export default function App() {
     [SET_PLACEHOLDER]: setPlaceholderHandler,
     [SET_TAB_INDEX]: setTabIndexHandler,
     [SHOW_PROMPT]: showPromptHandler,
+    [USER_RESIZED]: userResizedHandler,
   };
 
   useEffect(() => {
@@ -538,90 +762,128 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div
-        style={{
-          WebkitAppRegion: 'drag',
-          WebkitUserSelect: 'none',
-        }}
-        className={`flex flex-col w-full overflow-y-hidden rounded-lg max-h-screen min-h-full dark:bg-gray-900 bg-white shadow-xl
-        ${
-          dropReady
-            ? `border-b-4 border-green-500 border-solid border-opacity-50`
-            : `border-none`
-        }
-        `}
-      >
-        <div className="flex flex-row text-xs dark:text-yellow-500 text-yellow-700 justify-between pt-2 px-4">
-          <span>{promptData?.scriptInfo?.description || ''}</span>
-
-          <span>
-            {promptData?.scriptInfo?.menu}
-            {promptData?.scriptInfo?.twitter && (
-              <span>
-                <span> - </span>
-                <a
-                  href={`https://twitter.com/${promptData?.scriptInfo?.twitter.slice(
-                    1
-                  )}`}
-                >
-                  {promptData?.scriptInfo?.twitter}
-                </a>
-              </span>
-            )}
-          </span>
-        </div>
-        <input
-          style={{
+        ref={windowContainerRef}
+        style={
+          {
             WebkitAppRegion: 'drag',
             WebkitUserSelect: 'none',
-            minHeight: '4rem',
-            ...(caretDisabled && { caretColor: 'transparent' }),
-          }}
-          autoFocus
-          className={`w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder:text-gray-300 placeholder:text-gray-500 bg-white dark:bg-gray-900 h-16 focus:border-none border-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4
-          ${dropReady && `border border-green-500 border-2 border-solid`}
-          `}
-          onChange={(e) => onChange(e.target.value)}
-          onDragEnter={promptData?.drop ? onDragEnter : undefined}
-          onDragLeave={promptData?.drop ? onDragLeave : undefined}
-          onDrop={promptData?.drop ? onDrop : undefined}
-          onKeyDown={onKeyDown}
-          placeholder={placeholder || promptData?.placeholder}
-          ref={inputRef}
-          type={promptData?.secret ? 'password' : 'text'}
-          value={inputValue}
-        />
-        {hint && (
-          <div className="pl-4 py-0.5 text-sm text-black dark:text-white">
-            {hint}
-          </div>
-        )}
-
-        {tabs?.length > 0 && (
-          <SimpleBar className="overscroll-y-none">
-            <div className="flex flex-row pl-4 whitespace-nowrap">
-              {/* <span className="bg-white">{modeIndex}</span> */}
-              {tabs.map((tab: string, i: number) => (
-                // I need to research a11y for apps vs. "sites"
-                <div
-                  className={` dark:text-yellow-500 text-yellow-700 text-xs p-1 mb-1 mx-1 hover:underline  ${
-                    i === tabIndex && 'underline'
-                  }`}
-                  key={tab}
-                  onClick={onTabClick(i)}
-                >
-                  {tab}
-                </div>
-              ))}
+            maxHeight,
+          } as any
+        }
+        className="flex flex-col w-full rounded-lg relative h-full"
+      >
+        <div ref={topRef}>
+          {promptData?.scriptInfo?.description && (
+            <div className="text-xxs uppercase font-mono justify-between pt-3 px-4 grid grid-cols-5">
+              <span className="dark:text-primary-light text-primary-dark col-span-3">
+                {promptData?.scriptInfo?.description || ''}
+              </span>
+              <span className="text-right col-span-2">
+                {promptData?.scriptInfo?.menu}
+                {promptData?.scriptInfo?.twitter && (
+                  <span>
+                    <span> - </span>
+                    <a
+                      href={`https://twitter.com/${promptData?.scriptInfo?.twitter.slice(
+                        1
+                      )}`}
+                    >
+                      {promptData?.scriptInfo?.twitter}
+                    </a>
+                  </span>
+                )}
+              </span>
             </div>
-          </SimpleBar>
-        )}
+          )}
+          <input
+            style={
+              {
+                WebkitAppRegion: 'drag',
+                WebkitUserSelect: 'none',
+                minHeight: '4rem',
+                ...(caretDisabled && { caretColor: 'transparent' }),
+              } as any
+            }
+            autoFocus
+            className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
+            ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4
+
+            ${
+              promptData?.drop
+                ? `
+            border-dashed border-4 rounded border-gray-500 focus:border-gray-500 text-opacity-50 ${
+              dropReady &&
+              `border-yellow-500 text-opacity-90 focus:border-yellow-500`
+            }`
+                : `            focus:border-none border-none`
+            }
+          `}
+            onChange={
+              mode !== MODE.HOTKEY
+                ? (e) => {
+                    onChange(e.target.value);
+                  }
+                : undefined
+            }
+            onKeyDown={onKeyDown}
+            onKeyUp={onKeyUp}
+            placeholder={placeholder || promptData?.placeholder}
+            ref={inputRef}
+            type={promptData?.secret ? 'password' : 'text'}
+            value={mode !== MODE.HOTKEY ? inputValue : undefined}
+            onDragEnter={promptData?.drop ? onDragEnter : undefined}
+            onDragLeave={promptData?.drop ? onDragLeave : undefined}
+            onDrop={promptData?.drop ? onDrop : undefined}
+          />
+          {hint && (
+            <div className="pl-3 pb-3 text-sm text-gray-800 dark:text-gray-200 italic">
+              {hint}
+            </div>
+          )}
+          {tabs?.length > 0 && (
+            <SimpleBar
+              className="overscroll-y-none"
+              style={
+                {
+                  WebkitAppRegion: 'no-drag',
+                  WebkitUserSelect: 'text',
+                } as any
+              }
+            >
+              <div className="flex flex-row pl-2 pb-2 whitespace-nowrap">
+                {/* <span className="bg-white">{modeIndex}</span> */}
+                {tabs.map((tab: string, i: number) => {
+                  return (
+                    // I need to research a11y for apps vs. "sites"
+                    <div
+                      className={`text-xs px-2 py-1 mb-1 mx-px dark:bg-o rounded-full font-medium cursor-pointer dark:bg-primary-light dark:hover:bg-white bg-white hover:opacity-100 dark:hover:opacity-100 dark:hover:bg-opacity-10 hover:bg-opacity-80 ${
+                        i === tabIndex
+                          ? 'opacity-100 dark:bg-opacity-10 bg-opacity-80 dark:text-primary-light text-primary-dark'
+                          : 'opacity-70 dark:bg-opacity-0 bg-opacity-0'
+                      }
+                  transition-all ease-in-out duration-100
+                  `}
+                      key={tab}
+                      onClick={onTabClick(i)}
+                    >
+                      {tab}
+                    </div>
+                  );
+                })}
+              </div>
+            </SimpleBar>
+          )}
+        </div>
         {panelHTML?.length > 0 && (
           <SimpleBar
-            style={{
-              WebkitAppRegion: 'no-drag',
-              WebkitUserSelect: 'text',
-            }}
-            className="px-4 py-1 flex flex-col dark:text-yellow-500 text-yellow-700 w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none bg-white dark:bg-gray-900"
+            ref={panelRef}
+            style={
+              {
+                WebkitAppRegion: 'no-drag',
+                WebkitUserSelect: 'text',
+              } as any
+            }
+            className="border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5 px-4 py-4 flex flex-col w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
           >
             {parse(panelHTML)}
           </SimpleBar>
@@ -629,16 +891,18 @@ export default function App() {
 
         {choices?.length > 0 && (
           <div
-            className="flex flex-row w-full max-h-full overflow-y-hidden"
-            style={{
-              WebkitAppRegion: 'no-drag',
-              WebkitUserSelect: 'none',
-            }}
+            className="flex flex-row w-full max-h-full overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5"
+            style={
+              {
+                WebkitAppRegion: 'no-drag',
+                WebkitUserSelect: 'none',
+              } as any
+            }
           >
             <SimpleBar
-              scrollableNodeProps={{ ref: scrollRef }}
-              className="px-4 pb-4 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none bg-white dark:bg-gray-900 flex-1"
-              // style={{ maxHeight: '85vh' }}
+              ref={choicesRef}
+              scrollableNodeProps={{ ref: choicesSimpleBarRef }}
+              className="px-0 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20"
             >
               {((choices as any[]) || []).map((choice, i) => {
                 const input = inputValue?.toLowerCase();
@@ -650,18 +914,25 @@ export default function App() {
                     key={choice.uuid}
                     className={`
                 w-full
-                my-1
                 h-16
+                flex-shrink-0
                 whitespace-nowrap
                 text-left
                 flex
                 flex-row
-                text-xl
+                text-lg
                 px-4
-                rounded-lg
                 justify-between
                 items-center
-                ${index === i ? `dark:bg-gray-800 bg-gray-100 shadow` : ``}`}
+                focus:outline-none
+                transition-all
+                ease-in-out
+                duration-100
+                ${
+                  index === i
+                    ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-80 shadow-lg`
+                    : ``
+                }`}
                     onClick={(_event) => {
                       submit(choice.value);
                     }}
@@ -699,9 +970,10 @@ export default function App() {
                           {((index === i && choice?.selected) ||
                             choice?.description) && (
                             <div
-                              className={`text-xs truncate ${
-                                index === i &&
-                                `dark:text-yellow-500 text-yellow-700`
+                              className={`text-xs truncate transition-opacity ease-in-out duration-100 pb-1 ${
+                                index === i
+                                  ? `opacity-90 dark:text-primary-light text-primary-dark`
+                                  : `opacity-60`
                               }`}
                             >
                               {(index === i && choice?.selected) ||

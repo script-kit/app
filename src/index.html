@@ -25,7 +25,7 @@
     </style>
   </head>
   <body>
-    <div class="dark:bg-gray-900 bg-white" id="root"></div>
+    <div class="dark:text-white text-black" id="root"></div>
     <script>
       if (typeof process === 'object') {
         const scripts = [];
@@ -50,23 +50,6 @@
           );
         }
       }
-    </script>
-    <script>
-      setIgnoreMouseEvents = window
-        .require('electron')
-        .remote.getCurrentWindow().setIgnoreMouseEvents;
-
-      var t;
-
-      window.addEventListener('mousemove', (event) => {
-        if (event.target === document.documentElement) {
-          setIgnoreMouseEvents(true, { forward: true });
-          if (t) clearTimeout(t);
-          t = setTimeout(function () {
-            setIgnoreMouseEvents(false);
-          }, 150);
-        } else setIgnoreMouseEvents(false);
-      });
     </script>
   </body>
 </html>

@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { app, clipboard, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, clipboard, ipcMain, screen } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import url from 'url';
 import http from 'http';
@@ -21,6 +21,8 @@ import {
   sendToPrompt,
   setBlurredByKit,
   showPrompt,
+  resizePrompt,
+  escapePromptWindow,
 } from './prompt';
 import { showNotification } from './notifications';
 import { show } from './show';
@@ -43,10 +45,13 @@ import {
   SHOW_PROMPT,
   TAB_CHANGED,
   VALUE_SUBMITTED,
+  CONTENT_SIZE_UPDATED,
+  ESCAPE_PRESSED,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 
 let child: ChildProcess | null = null;
+let appHidden = false;
 
 const consoleLog = log.create('consoleLog');
 consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
@@ -54,7 +59,7 @@ consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
 let kitScriptName = '';
 export const processMap = new Map();
 
-const setPlaceholder = (text) => {
+const setPlaceholder = (text: any) => {
   if (!appHidden) sendToPrompt(SET_PLACEHOLDER, text);
 };
 
@@ -87,7 +92,17 @@ ipcMain.on(TAB_CHANGED, (event, { tab, input = '' }) => {
   }
 });
 
-let appHidden = false;
+ipcMain.on(CONTENT_SIZE_UPDATED, (event, size) => {
+  if (!isUndefined(size)) {
+    resizePrompt(size);
+  }
+});
+
+ipcMain.on(ESCAPE_PRESSED, (event) => {
+  reset();
+  escapePromptWindow();
+});
+
 const reset = () => {
   values = [];
   sendToPrompt(RESET_PROMPT, { kitScript: kitScriptName });

@@ -4,8 +4,12 @@
 
 @import '../node_modules/simplebar-react/dist/simplebar.min.css';
 
+body {
+  @apply dark:bg-black dark:bg-opacity-70 bg-white bg-opacity-70;
+}
+
 .simplebar-scrollbar:before {
-  background: #808083; /* specify scrollbar color */
+  @apply dark:bg-white bg-black bg-opacity-50;
   position: absolute;
   content: '';
   border-radius: 7px;

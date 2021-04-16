@@ -197,6 +197,7 @@
     "@types/react-router-dom": "^5.1.6",
     "@types/react-test-renderer": "^16.9.3",
     "@types/shelljs": "^0.8.8",
+    "@types/simplebar": "^5.1.2",
     "@types/webpack-env": "^1.15.2",
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
@@ -263,8 +264,10 @@
     "yarn-deduplicate": "^3.1.0"
   },
   "dependencies": {
+    "@react-hook/resize-observer": "^1.2.0",
     "@rooks/use-previous": "^4.10.0",
     "@tailwindcss/forms": "^0.2.1",
+    "@tailwindcss/typography": "^0.4.0",
     "autoprefixer": "^10.2.1",
     "bonjour": "^3.5.0",
     "chokidar": "^3.5.0",
@@ -295,7 +298,7 @@
     "simple-git": "^2.36.1",
     "simplebar-react": "^2.3.0",
     "source-map-support": "^0.5.19",
-    "tailwindcss": "^2.0.2",
+    "tailwindcss": "^2.1.1",
     "tree-kill": "^1.2.2",
     "use-debounce": "^6.0.1"
   },

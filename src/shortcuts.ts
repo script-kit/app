@@ -1,14 +1,19 @@
+/* eslint-disable jest/no-export */
 /* eslint-disable import/prefer-default-export */
-import { grep } from 'shelljs';
+import { grep, test } from 'shelljs';
 import log from 'electron-log';
 import { globalShortcut } from 'electron';
 import chokidar from 'chokidar';
 import path from 'path';
 
+import { readFile } from 'fs/promises';
 import { tryKitScript } from './kit';
 import { kenvPath, kitPath } from './helpers';
 
 export const shortcutMap = new Map();
+
+const settingsFile = kenvPath('db', 'kit.json');
+const mainFilePath = kitPath('main', 'index.js');
 
 const shortcutNormalizer = (shortcut: string) =>
   shortcut
@@ -17,12 +22,12 @@ const shortcutNormalizer = (shortcut: string) =>
       /(commandorcontrol|cmdorctrl|ctrl|ctl|command|cmd)/i,
       'CommandOrControl'
     )
-    .split(/\s|\+|-/)
+    .split(/\s/)
     .filter(Boolean)
     .map((part) => (part[0].toUpperCase() + part.slice(1)).trim())
     .join('+');
 
-const onFilesChanged = async (
+const onScriptsChanged = async (
   event: 'add' | 'change' | 'unlink',
   filePath: string
 ) => {
@@ -82,27 +87,69 @@ const onFilesChanged = async (
   }
 };
 
+export const onDbChanged = async (event, filePath) => {
+  if (filePath === settingsFile) {
+    log.info(`SETTINGS CHANGED:`, filePath);
+    const settings = JSON.parse(await readFile(filePath, 'utf-8'));
+    const rawShortcut = settings?.shortcuts?.kit?.main?.index;
+
+    const shortcut = rawShortcut ? shortcutNormalizer(rawShortcut) : '';
+
+    if (shortcut) {
+      const oldShortcut = shortcutMap.get(mainFilePath);
+
+      if (shortcut === oldShortcut) return;
+
+      if (oldShortcut) {
+        globalShortcut.unregister(oldShortcut);
+        shortcutMap.delete(mainFilePath);
+      }
+
+      const ret = globalShortcut.register(shortcut, async () => {
+        await tryKitScript(mainFilePath, []);
+      });
+
+      if (!ret) {
+        log.info(`Failed to register: ${shortcut} to ${mainFilePath}`);
+      }
+
+      if (ret && globalShortcut.isRegistered(shortcut)) {
+        log.info(`Registered ${shortcut} to ${mainFilePath}`);
+        shortcutMap.set(mainFilePath, shortcut);
+      }
+    }
+  }
+};
+
 export const cacheMenu = async () => {
-  await tryKitScript(kitPath('cli/cache-menu'));
+  await tryKitScript(kitPath('cli', 'cache-menu'));
 };
 
 export const manageShortcuts = async () => {
-  const watcher = chokidar.watch(
-    [
-      `${kenvPath('scripts')}${path.sep}*.js`,
-      `${kitPath('main')}${path.sep}*.js`,
-    ],
+  if (!test('-f', settingsFile)) {
+    await tryKitScript(kitPath('setup', 'create-settings'));
+  }
+
+  const dbWatcher = chokidar.watch([`${kenvPath('db')}${path.sep}*.json`], {
+    depth: 0,
+  });
+
+  dbWatcher.on('all', onDbChanged);
+
+  const scriptsWatcher = chokidar.watch(
+    [`${kenvPath('scripts')}${path.sep}*.js`],
     {
       depth: 0,
     }
   );
-  watcher.on('all', onFilesChanged);
 
-  watcher.on('ready', async () => {
+  scriptsWatcher.on('all', onScriptsChanged);
+
+  scriptsWatcher.on('ready', async () => {
     await cacheMenu();
 
-    watcher.on('add', cacheMenu);
-    watcher.on('change', cacheMenu);
-    watcher.on('unlink', cacheMenu);
+    scriptsWatcher.on('add', cacheMenu);
+    scriptsWatcher.on('change', cacheMenu);
+    scriptsWatcher.on('unlink', cacheMenu);
   });
 };
