@@ -43,3 +43,7 @@ export const createTray = async () => {
 
   return 'tray created';
 };
+
+export const destroyTray = () => {
+  tray = null;
+};

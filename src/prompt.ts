@@ -167,12 +167,30 @@ export const setDefaultBounds = () => {
   promptWindow?.setBounds({ x, y, width, height });
 };
 
-export const showPrompt = () => {
+const HEADER_HEIGHT = 24;
+const INPUT_HEIGHT = 64;
+const TABS_HEIGHT = 36;
+
+export const showPrompt = (options: any) => {
   if (promptWindow && !promptWindow?.isVisible()) {
     const currentScreenPromptBounds = getCurrentScreenPromptCache();
 
+    const headerHeight =
+      options?.scriptInfo?.menu ||
+      options?.scriptInfo?.twitter ||
+      options?.scriptInfo?.description
+        ? HEADER_HEIGHT
+        : 0;
+    const tabsHeight = options?.tabs?.length ? TABS_HEIGHT : 0;
+    const height = INPUT_HEIGHT + headerHeight + tabsHeight;
+
     if (currentScreenPromptBounds) {
-      promptWindow.setBounds({ ...currentScreenPromptBounds, height: 124 });
+      log.info(`SHOW_PROMPT`, { height });
+
+      promptWindow.setBounds({
+        ...currentScreenPromptBounds,
+        height,
+      });
     } else {
       setDefaultBounds();
     }
@@ -203,7 +221,7 @@ export const resizePrompt = ({ height }: Size) => {
     lastResizedByUser = false;
     return;
   }
-  // RESIZE HACK PART #2. setBounds seems like it sets the height too tall
+
   const [width] = promptWindow?.getSize() as number[];
 
   log.info(`RESIZE: setBounds`, height);

@@ -241,8 +241,7 @@ export default function App() {
 
     if (!choicesRef.current) (choicesRef?.current as any)?.recalculate();
     if (!panelRef.current) (panelRef?.current as any)?.recalculate();
-    // RESIZE HACK PART #1
-    // Send a smaller size than I actually want
+
     const hasContent = choices?.length || panelHTML?.length;
     if (height > topHeight && !isMouseDown && hasContent) {
       ipcRenderer.send(CONTENT_SIZE_UPDATED, {
@@ -379,32 +378,35 @@ export default function App() {
     ipcRenderer.send(ESCAPE_PRESSED, {});
   }, []);
 
-  const onKeyUp = useCallback((event) => {
-    if (event.key === 'Escape') {
-      closePrompt();
-      return;
-    }
+  const onKeyUp = useCallback(
+    (event) => {
+      if (event.key === 'Escape') {
+        closePrompt();
+        return;
+      }
 
-    if (mode === MODE.HOTKEY) {
-      const {
-        code,
-        metaKey: command,
-        shiftKey: shift,
-        ctrlKey: control,
-        altKey: option,
-      } = event as any;
-      const superKey = event.getModifierState('Super');
-      const shortcut = generateShortcut({
-        code,
-        command,
-        shift,
-        control,
-        option,
-        superKey,
-      });
-      setPlaceholder(shortcut);
-    }
-  }, []);
+      if (mode === MODE.HOTKEY) {
+        const {
+          code,
+          metaKey: command,
+          shiftKey: shift,
+          ctrlKey: control,
+          altKey: option,
+        } = event as any;
+        const superKey = event.getModifierState('Super');
+        const shortcut = generateShortcut({
+          code,
+          command,
+          shift,
+          control,
+          option,
+          superKey,
+        });
+        setPlaceholder(shortcut);
+      }
+    },
+    [mode]
+  );
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {

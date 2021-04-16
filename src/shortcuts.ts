@@ -7,7 +7,7 @@ import chokidar from 'chokidar';
 import path from 'path';
 
 import { readFile } from 'fs/promises';
-import { tryKitScript } from './kit';
+import { tryKitScript, appScript } from './kit';
 import { kenvPath, kitPath } from './helpers';
 
 export const shortcutMap = new Map();
@@ -122,12 +122,12 @@ export const onDbChanged = async (event, filePath) => {
 };
 
 export const cacheMenu = async () => {
-  await tryKitScript(kitPath('cli', 'cache-menu'));
+  await appScript(kitPath('cli', 'cache-menu.js'), []);
 };
 
 export const manageShortcuts = async () => {
   if (!test('-f', settingsFile)) {
-    await tryKitScript(kitPath('setup', 'create-settings'));
+    await appScript(kitPath('setup', 'create-settings.js'), []);
   }
 
   const dbWatcher = chokidar.watch([`${kenvPath('db')}${path.sep}*.json`], {

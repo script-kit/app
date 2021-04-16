@@ -83,7 +83,8 @@ ipcMain.on('PROMPT_ERROR', (_event, error: Error) => {
 });
 
 ipcMain.on(CHOICE_FOCUSED, (_event, choice: any) => {
-  child?.send({ channel: CHOICE_FOCUSED, choice });
+  // TODO: Think through "live selecting" choices
+  // child?.send({ channel: CHOICE_FOCUSED, choice });
 });
 
 ipcMain.on(TAB_CHANGED, (event, { tab, input = '' }) => {
@@ -149,6 +150,54 @@ ipc.serve(kitPath('tmp', 'ipc'), () => {
 
 ipc.server.start();
 
+const execPath = kitPath('node', 'bin', 'node');
+const DOTENV_CONFIG_PATH = kenvPath('.env');
+const KIT_MAC_APP = kitPath('preload', 'mac-app.cjs');
+const usrLocalBin = 'usr/local/bin/';
+const PATH = `${kitPath('node', 'bin')}:${usrLocalBin}:${process.env.PATH}`;
+const NODE_PATH = `${kenvPath('node_modules')}:${kitPath('node_modules')}`;
+
+process.on('unhandledRejection', (reason, p) => {
+  log.warn('Unhandled Rejection at: Promise', p, 'reason:', reason);
+
+  // application specific logging, throwing an error, or other logic here
+});
+
+process.on('uncaughtException', (error) => {
+  log.warn(error);
+});
+
+export const appScript = (scriptPath: string, runArgs: string[]) => {
+  log.info(`> start app process: ${scriptPath}`);
+  const appScriptChild = fork(scriptPath, [...runArgs], {
+    silent: true,
+    // stdio: 'inherit',
+    execPath,
+    execArgv: ['--require', 'dotenv/config', '--require', KIT_MAC_APP],
+    env: {
+      ...process.env,
+      KIT_CONTEXT: 'app',
+      KIT_MAIN: scriptPath,
+      PATH,
+      KENV,
+      KIT,
+      NODE_PATH,
+      DOTENV_CONFIG_PATH,
+      KIT_APP_VERSION: getVersion(),
+    },
+  });
+
+  const id = setTimeout(() => {
+    log.info(`> app process: ${scriptPath} took > 5 seconds. Ending...`);
+    appScriptChild?.kill();
+  }, 5000);
+
+  appScriptChild?.on('exit', () => {
+    if (id) clearTimeout(id);
+    log.info(`> end app process: ${scriptPath}`);
+  });
+};
+
 const kitScript = (
   scriptPath: string,
   runArgs: string[] = [],
@@ -166,27 +215,20 @@ const kitScript = (
 
   if (!resolvePath.endsWith('.js')) resolvePath = `${resolvePath}.js`;
 
-  const codePath = 'usr/local/bin/';
-
   child = fork(resolvePath, [...runArgs, '--app'], {
     silent: true,
     // stdio: 'inherit',
-    execPath: kitPath('node', 'bin', 'node'),
-    execArgv: [
-      '--require',
-      'dotenv/config',
-      '--require',
-      kitPath('preload', 'mac-app.cjs'),
-    ],
+    execPath,
+    execArgv: ['--require', 'dotenv/config', '--require', KIT_MAC_APP],
     env: {
       ...process.env,
       KIT_CONTEXT: 'app',
       KIT_MAIN: resolvePath,
-      PATH: `${kitPath('node', 'bin')}:${codePath}:${process.env.PATH}`,
+      PATH,
       KENV,
       KIT,
-      NODE_PATH: `${kenvPath('node_modules')}:${kitPath('node_modules')}`,
-      DOTENV_CONFIG_PATH: kenvPath('.env'),
+      NODE_PATH,
+      DOTENV_CONFIG_PATH,
       KIT_APP_VERSION: getVersion(),
     },
   });
@@ -361,7 +403,7 @@ const kitScript = (
         break;
 
       case SHOW_PROMPT:
-        showPrompt();
+        showPrompt(data);
         if (data?.choices) {
           // validate choices
           if (
@@ -425,7 +467,7 @@ const kitScript = (
   });
 
   child.on('error', (error) => {
-    reject();
+    reject(error);
     reset();
     hidePromptWindow();
   });

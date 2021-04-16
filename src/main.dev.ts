@@ -35,7 +35,7 @@ import { test } from 'shelljs';
 import { homedir } from 'os';
 import { readFile } from 'fs/promises';
 import git from 'simple-git/promise';
-import { createTray } from './tray';
+import { createTray, destroyTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
@@ -82,6 +82,19 @@ if (
   require('electron-debug')({ showDevTools: false });
 }
 
+const callBeforeQuitAndInstall = () => {
+  try {
+    destroyTray();
+    app.removeAllListeners('window-all-closed');
+    const browserWindows = BrowserWindow.getAllWindows();
+    browserWindows.forEach((browserWindow) => {
+      browserWindow.removeAllListeners('close');
+    });
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 const installExtensions = async () => {
   const installer = require('electron-devtools-installer');
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
@@ -116,6 +129,7 @@ autoUpdater.on('update-downloaded', () => {
   log.info('update downloaded');
   log.info('attempting quitAndInstall');
   updateDownloaded = true;
+  callBeforeQuitAndInstall();
   autoUpdater.quitAndInstall();
   const allWindows = BrowserWindow.getAllWindows();
   allWindows.forEach((w) => {
