@@ -1,3 +1,22 @@
+# [1.1.0-beta.94](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.93...v1.1.0-beta.94) (2021-04-16)
+
+
+### Bug Fixes
+
+* **prompt:** progress on resizing ([a0d8428](https://github.com/johnlindquist/kitapp/commit/a0d8428a3ca6077afbebac80342b9b48577d43ec))
+* **prompt:** removing mouse ignoring transpacency ([afbc355](https://github.com/johnlindquist/kitapp/commit/afbc355b1cbb78ead9a7f7ae088d9c91ea804b1a))
+
+
+### Features
+
+* **prompt:** Adding hotkey helper ([bc89697](https://github.com/johnlindquist/kitapp/commit/bc8969751cad7cf31f5c30ebb6a0a693462f4cef))
+* **prompt:** adding settings ([c1c71b4](https://github.com/johnlindquist/kitapp/commit/c1c71b458cf12b568f46b4b52b7e6def8dc1be1a))
+* **prompt:** Finishing up drag and drop ([77a919f](https://github.com/johnlindquist/kitapp/commit/77a919f806715448a65c81461b6db169dd242973))
+* **prompt:** Resize progress ([cbf07f8](https://github.com/johnlindquist/kitapp/commit/cbf07f8b8c7c214c453b5039362690e20a95a6de))
+* **prompt:** resizing feels solid ([d71dc53](https://github.com/johnlindquist/kitapp/commit/d71dc53994338dab87f5e5df987ea4f56f387ddb))
+* **prompt:** resizing native window ([df60497](https://github.com/johnlindquist/kitapp/commit/df60497ef3839c007fc88d5bce6f429e3682df75))
+* dynamic height based on content ([ce2262e](https://github.com/johnlindquist/kitapp/commit/ce2262e6fa2c9c5c18aef4a3613a6f46c90dda06))
+
 # [1.1.0-beta.93](https://github.com/johnlindquist/kitapp/compare/v1.1.0-beta.92...v1.1.0-beta.93) (2021-04-10)
 
 
