@@ -234,29 +234,34 @@ export default function App() {
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [hotkey, setHotkey] = useState({});
 
-  const sendResize = useDebouncedCallback((width: number, height: number) => {
-    const {
-      height: topHeight,
-    } = topRef?.current?.getBoundingClientRect() as any;
+  const sendResize = useDebouncedCallback(
+    useCallback(
+      (width: number, height: number) => {
+        if (isMouseDown) return;
+        const {
+          height: topHeight,
+        } = topRef?.current?.getBoundingClientRect() as any;
 
-    if (!choicesRef.current) (choicesRef?.current as any)?.recalculate();
-    if (!panelRef.current) (panelRef?.current as any)?.recalculate();
+        if (!choicesRef.current) (choicesRef?.current as any)?.recalculate();
+        if (!panelRef.current) (panelRef?.current as any)?.recalculate();
 
-    const hasContent = choices?.length || panelHTML?.length;
-    if (height > topHeight && !isMouseDown && hasContent) {
-      ipcRenderer.send(CONTENT_SIZE_UPDATED, {
-        width: Math.round(width),
-        height: Math.round(height),
-      });
-    }
-
-    if (!hasContent) {
-      ipcRenderer.send(CONTENT_SIZE_UPDATED, {
-        width: Math.round(width),
-        height: Math.round(topHeight),
-      });
-    }
-  }, 25);
+        const hasContent = choices?.length || panelHTML?.length;
+        if (height > topHeight && hasContent) {
+          ipcRenderer.send(CONTENT_SIZE_UPDATED, {
+            width: Math.round(width),
+            height: Math.round(height),
+          });
+        } else {
+          ipcRenderer.send(CONTENT_SIZE_UPDATED, {
+            width: Math.round(width),
+            height: Math.round(topHeight),
+          });
+        }
+      },
+      [choices?.length, isMouseDown, panelHTML?.length]
+    ),
+    25
+  );
 
   useResizeObserver(windowContainerRef, (entry) => {
     const { width, height } = entry.contentRect;
@@ -714,6 +719,7 @@ export default function App() {
   }, []);
 
   const resetPromptHandler = useCallback((event, data) => {
+    setIsMouseDown(false);
     setPlaceholder('');
     setDropReady(false);
     setChoices([]);
