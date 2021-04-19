@@ -167,7 +167,7 @@ process.on('uncaughtException', (error) => {
   log.warn(error);
 });
 
-export const appScript = (scriptPath: string, runArgs: string[]) => {
+export const appScript = async (scriptPath: string, runArgs: string[]) => {
   log.info(`> start app process: ${scriptPath}`);
   const appScriptChild = fork(scriptPath, [...runArgs], {
     silent: true,

@@ -2,4 +2,4 @@
 
 The companion app to Script Kit.
 
-[https://scriptkit.app](https://scriptkit.app)
+[https://scriptkit.com](https://scriptkit.com)

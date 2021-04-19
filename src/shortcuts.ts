@@ -122,6 +122,7 @@ export const onDbChanged = async (event, filePath) => {
 };
 
 export const cacheMenu = async () => {
+  log.info(`caching menu`);
   await appScript(kitPath('cli', 'cache-menu.js'), []);
 };
 

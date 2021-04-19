@@ -213,6 +213,10 @@ const configWindowDone = () => {
   }
 };
 
+const startTick = async () => {
+  await import('./tick');
+};
+
 const ready = async () => {
   try {
     createLogs();
@@ -222,6 +226,7 @@ const ready = async () => {
     await manageShortcuts();
     await createPromptWindow();
     await createNotification();
+    await startTick();
     autoUpdater.logger = log;
     autoUpdater.checkForUpdatesAndNotify({
       title: 'Script Kit Updated',
@@ -245,6 +250,13 @@ const options: SpawnSyncOptions = {
 };
 
 const kitExists = () => test('-d', KIT);
+const kitIsGit = () => test('-d', kitPath('.git'));
+const kitOnMain = async () => {
+  const HEADfile = await readFile(kitPath('.git', 'HEAD'), 'utf-8');
+  log.info(`HEAD:`, HEADfile);
+
+  return HEADfile.includes('ref: refs/heads/main');
+};
 const kenvExists = () => test('-d', KENV);
 
 const verifyInstall = async () => {
@@ -362,6 +374,16 @@ const checkKit = async () => {
 
   // eslint-disable-next-line jest/expect-expect
   log.info(`Checking if kit exists`);
+  if (kitExists()) {
+    log.info(`Checking if kit is a git repo`);
+
+    if (kitIsGit()) {
+      log.info(`Checking if kit is on main branch`);
+      const onMain = await kitOnMain();
+      log.info(onMain ? `kit is on main branch` : `kit is not on main`);
+    }
+  }
+
   if (!kitExists()) {
     configWindow?.show();
     setupLog(`~/.kit not found. Installing...`);

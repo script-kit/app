@@ -19,12 +19,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import parse from 'html-react-parser';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
-import isImage from 'is-image';
 import usePrevious from '@rooks/use-previous';
 import useResizeObserver from '@react-hook/resize-observer';
 import { KitPromptOptions } from './types';
@@ -47,18 +45,18 @@ import {
   CONTENT_SIZE_UPDATED,
   USER_RESIZED,
 } from './channels';
+import Tabs from './components/tabs';
+import ChoiceButton from './components/button';
+import Preview from './components/preview';
+import Panel from './components/panel';
+import Header from './components/header';
+import { MODE } from './enums';
 
 interface ChoiceData {
   name: string;
   value: string;
   preview: string | null;
-}
-
-enum MODE {
-  GENERATE = 'GENERATE',
-  FILTER = 'FILTER',
-  MANUAL = 'MANUAL',
-  HOTKEY = 'HOTKEY',
+  shortcode?: string;
 }
 
 const generateShortcut = ({
@@ -119,91 +117,6 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
-const noHighlight = (name: string, input: string) => {
-  return <span>{name}</span>;
-};
-
-const highlightAdjacentAndWordStart = (name: string, input: string) => {
-  const inputLetters = input?.toLowerCase().split('');
-  let ili = 0;
-  let prevQualifies = true;
-
-  // TODO: Optimize
-  return name.split('').map((letter, i) => {
-    if (letter?.toLowerCase() === inputLetters[ili] && prevQualifies) {
-      ili += 1;
-      prevQualifies = true;
-      return (
-        <span key={i} className="dark:text-primary-light text-primary-dark">
-          {letter}
-        </span>
-      );
-    }
-
-    prevQualifies = Boolean(letter.match(/\W/));
-
-    return <span key={i}>{letter}</span>;
-  });
-};
-
-const highlightFirstLetters = (name: string, input: string) => {
-  const words = name.match(/\w+\W*/g);
-
-  return (words || []).map((word, i) => {
-    if (input[i]) {
-      return (
-        // eslint-disable-next-line react/no-array-index-key
-        <React.Fragment key={i}>
-          <span key={i} className=" dark:text-primary-light text-primary-dark">
-            {word[0]}
-          </span>
-          {word.slice(1)}
-        </React.Fragment>
-      );
-    }
-
-    return word;
-  });
-};
-const highlightIncludes = (name: string, input: string) => {
-  const index = name?.toLowerCase().indexOf(input?.toLowerCase());
-  const indexEnd = index + input.length;
-
-  const firstPart = name.slice(0, index);
-  const includesPart = name.slice(index, indexEnd);
-  const lastPart = name.slice(indexEnd);
-
-  return [
-    <span key={0}>{firstPart}</span>,
-    <span key={1} className="dark:text-primary-light text-primary-dark">
-      {includesPart}
-    </span>,
-    <span key={2}>{lastPart}</span>,
-  ];
-};
-
-const highlightStartsWith = (name: string, input: string) => {
-  const firstPart = name.slice(0, input.length);
-  const lastPart = name.slice(input.length);
-
-  return [
-    <span key={0} className="dark:text-primary-light text-primary-dark">
-      {firstPart}
-    </span>,
-    <span key={1}>{lastPart}</span>,
-  ];
-};
-
-const firstLettersMatch = (name: string, input: string) => {
-  const splitName = name.match(/\w+\W*/g) || [];
-  const inputLetters = input.split('');
-  if (inputLetters.length > splitName.length) return false;
-
-  return inputLetters.every((il, i) => {
-    return il === splitName[i][0];
-  });
-};
 
 export default function App() {
   const [promptData, setPromptData]: any = useState({});
@@ -368,7 +281,7 @@ export default function App() {
   }, [choices, index]);
 
   const onTabClick = useCallback(
-    (ti) => (_event: any) => {
+    (ti: number) => (_event: any) => {
       setTabIndex(ti);
       ipcRenderer.send(TAB_CHANGED, { tab: tabs[ti], input: inputValue });
     },
@@ -476,6 +389,16 @@ export default function App() {
       if (event.key === 'Enter') {
         submit(choices?.[index]?.value || inputValue);
         return;
+      }
+
+      if (event.key === ' ') {
+        const shortcodeChoice = choices?.find(
+          (choice) => choice?.shortcode === inputValue.trim()
+        );
+        if (shortcodeChoice) {
+          submit(shortcodeChoice.value);
+          return;
+        }
       }
 
       if (event.key === 'Tab') {
@@ -781,27 +704,10 @@ export default function App() {
         className="flex flex-col w-full rounded-lg relative h-full"
       >
         <div ref={topRef}>
-          {promptData?.scriptInfo?.description && (
-            <div className="text-xxs uppercase font-mono justify-between pt-3 px-4 grid grid-cols-5">
-              <span className="dark:text-primary-light text-primary-dark col-span-3">
-                {promptData?.scriptInfo?.description || ''}
-              </span>
-              <span className="text-right col-span-2">
-                {promptData?.scriptInfo?.menu}
-                {promptData?.scriptInfo?.twitter && (
-                  <span>
-                    <span> - </span>
-                    <a
-                      href={`https://twitter.com/${promptData?.scriptInfo?.twitter.slice(
-                        1
-                      )}`}
-                    >
-                      {promptData?.scriptInfo?.twitter}
-                    </a>
-                  </span>
-                )}
-              </span>
-            </div>
+          {(promptData?.scriptInfo?.description ||
+            promptData?.scriptInfo?.twitter ||
+            promptData?.scriptInfo?.menu) && (
+            <Header scriptInfo={promptData?.scriptInfo} />
           )}
           <input
             style={
@@ -849,52 +755,11 @@ export default function App() {
             </div>
           )}
           {tabs?.length > 0 && (
-            <SimpleBar
-              className="overscroll-y-none"
-              style={
-                {
-                  WebkitAppRegion: 'no-drag',
-                  WebkitUserSelect: 'text',
-                } as any
-              }
-            >
-              <div className="flex flex-row pl-2 pb-2 whitespace-nowrap">
-                {/* <span className="bg-white">{modeIndex}</span> */}
-                {tabs.map((tab: string, i: number) => {
-                  return (
-                    // I need to research a11y for apps vs. "sites"
-                    <div
-                      className={`text-xs px-2 py-1 mb-1 mx-px dark:bg-o rounded-full font-medium cursor-pointer dark:bg-primary-light dark:hover:bg-white bg-white hover:opacity-100 dark:hover:opacity-100 dark:hover:bg-opacity-10 hover:bg-opacity-80 ${
-                        i === tabIndex
-                          ? 'opacity-100 dark:bg-opacity-10 bg-opacity-80 dark:text-primary-light text-primary-dark'
-                          : 'opacity-70 dark:bg-opacity-0 bg-opacity-0'
-                      }
-                  transition-all ease-in-out duration-100
-                  `}
-                      key={tab}
-                      onClick={onTabClick(i)}
-                    >
-                      {tab}
-                    </div>
-                  );
-                })}
-              </div>
-            </SimpleBar>
+            <Tabs tabs={tabs} tabIndex={tabIndex} onTabClick={onTabClick} />
           )}
         </div>
         {panelHTML?.length > 0 && (
-          <SimpleBar
-            ref={panelRef}
-            style={
-              {
-                WebkitAppRegion: 'no-drag',
-                WebkitUserSelect: 'text',
-              } as any
-            }
-            className="border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5 px-4 py-4 flex flex-col w-full max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none"
-          >
-            {parse(panelHTML)}
-          </SimpleBar>
+          <Panel ref={panelRef} panelHTML={panelHTML} />
         )}
 
         {choices?.length > 0 && (
@@ -912,100 +777,21 @@ export default function App() {
               scrollableNodeProps={{ ref: choicesSimpleBarRef }}
               className="px-0 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20"
             >
-              {((choices as any[]) || []).map((choice, i) => {
-                const input = inputValue?.toLowerCase();
-                const name = choice?.name?.toLowerCase();
-                return (
-                  // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-                  <button
-                    type="button"
-                    key={choice.uuid}
-                    className={`
-                w-full
-                h-16
-                flex-shrink-0
-                whitespace-nowrap
-                text-left
-                flex
-                flex-row
-                text-lg
-                px-4
-                justify-between
-                items-center
-                focus:outline-none
-                transition-all
-                ease-in-out
-                duration-100
-                ${
-                  index === i
-                    ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-80 shadow-lg`
-                    : ``
-                }`}
-                    onClick={(_event) => {
-                      submit(choice.value);
-                    }}
-                    onMouseEnter={() => {
-                      setIndex(i);
-                    }}
-                  >
-                    {choice?.html ? (
-                      parse(choice?.html, {
-                        replace: (domNode: any) => {
-                          if (domNode?.attribs && index === i)
-                            domNode.attribs.class = 'selected';
-                          return domNode;
-                        },
-                      })
-                    ) : (
-                      <div className="flex flex-row h-full w-full justify-between items-center">
-                        <div className="flex flex-col max-w-full truncate">
-                          <div className="truncate">
-                            {mode === (MODE.GENERATE || MODE.MANUAL)
-                              ? noHighlight(choice.name, inputValue)
-                              : name.startsWith(input)
-                              ? highlightStartsWith(choice.name, inputValue)
-                              : !name.match(/\w/)
-                              ? noHighlight(choice.name, inputValue)
-                              : firstLettersMatch(name, input)
-                              ? highlightFirstLetters(choice.name, inputValue)
-                              : name.includes(input)
-                              ? highlightIncludes(choice.name, inputValue)
-                              : highlightAdjacentAndWordStart(
-                                  choice.name,
-                                  inputValue
-                                )}
-                          </div>
-                          {((index === i && choice?.selected) ||
-                            choice?.description) && (
-                            <div
-                              className={`text-xs truncate transition-opacity ease-in-out duration-100 pb-1 ${
-                                index === i
-                                  ? `opacity-90 dark:text-primary-light text-primary-dark`
-                                  : `opacity-60`
-                              }`}
-                            >
-                              {(index === i && choice?.selected) ||
-                                choice?.description}
-                            </div>
-                          )}
-                        </div>
-                        {choice?.img && isImage(choice?.img || '') && (
-                          <img
-                            src={choice.img}
-                            alt={choice.name}
-                            className="py-2 h-full w-16"
-                          />
-                        )}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+              {((choices as any[]) || []).map((choice, i) => (
+                <ChoiceButton
+                  key={choice.id}
+                  choice={choice}
+                  i={i}
+                  submit={submit}
+                  mode={mode}
+                  index={index}
+                  inputValue={inputValue}
+                  setIndex={setIndex}
+                />
+              ))}
             </SimpleBar>
             {choices?.[index]?.preview && (
-              <div className="flex-1">
-                {parse(choices?.[index]?.preview as string)}
-              </div>
+              <Preview preview={choices?.[index]?.preview || ''} />
             )}
           </div>
         )}
