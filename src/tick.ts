@@ -15,5 +15,5 @@ const clipboardImage$ = tick$.pipe(
 );
 
 merge(clipboardText$, clipboardImage$).subscribe((value) => {
-  console.log(value.slice(0, 10));
+  console.log(value.slice(0, 20));
 });
