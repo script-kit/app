@@ -153,8 +153,7 @@ ipc.server.start();
 const execPath = kitPath('node', 'bin', 'node');
 const DOTENV_CONFIG_PATH = kenvPath('.env');
 const KIT_MAC_APP = kitPath('preload', 'mac-app.cjs');
-const usrLocalBin = 'usr/local/bin/';
-const PATH = `${kitPath('node', 'bin')}:${usrLocalBin}:${process.env.PATH}`;
+const PATH = `${kitPath('node', 'bin')}:${process.env.PATH}`;
 const NODE_PATH = `${kenvPath('node_modules')}:${kitPath('node_modules')}`;
 
 process.on('unhandledRejection', (reason, p) => {
