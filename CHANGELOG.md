@@ -1,3 +1,25 @@
+# [1.2.0](https://github.com/johnlindquist/kitapp/compare/v1.1.0...v1.2.0) (2021-04-20)
+
+
+### Bug Fixes
+
+* **build:** fixing assets path ([a9a2ef4](https://github.com/johnlindquist/kitapp/commit/a9a2ef436ca53844b2d7f18104ac74c66bf73271))
+* **build:** fixing zip path ([546b2f8](https://github.com/johnlindquist/kitapp/commit/546b2f8cda34845f1ef3677d4ffca7fe67eec30c))
+* **build:** I think I understand the asset path ([6c3cd23](https://github.com/johnlindquist/kitapp/commit/6c3cd23143d2960439046da4ef0fedef509921e1))
+* **build:** I'll get this some day, I swear ([d0b11c5](https://github.com/johnlindquist/kitapp/commit/d0b11c57f639f5c123fe20399d1be29efe34fb30))
+* **build:** kit zip ([f2d3800](https://github.com/johnlindquist/kitapp/commit/f2d3800e05869d0481eeef845578dd619248350b))
+* **build:** still finding zips ([b25f578](https://github.com/johnlindquist/kitapp/commit/b25f5782c2463f04de5dcf09afb1a7a678af6dd7))
+* **build:** trying to find zips ([f6f43d3](https://github.com/johnlindquist/kitapp/commit/f6f43d3d72944c9d7ff942caf07e3165be87f6f2))
+* **build:** trying to move .zips up a dir ([f3c5206](https://github.com/johnlindquist/kitapp/commit/f3c52065bd98cdc45089aff7cbbd470812f4e6b3))
+
+
+### Features
+
+* **build:** attempting to bundle .zips ([1b39a68](https://github.com/johnlindquist/kitapp/commit/1b39a68e7c829b85f1b65813ce9a1a6acd8186ea))
+* **build:** still fighting the asset path ([9cc4177](https://github.com/johnlindquist/kitapp/commit/9cc417751eaa510de4b0b168148ae84c4c77aea2))
+* **build:** trying to find zip ([8bd7786](https://github.com/johnlindquist/kitapp/commit/8bd7786b8a1e2b28fe882f223d6addf470d92354))
+* **build:** zipping myself ([fbae9b1](https://github.com/johnlindquist/kitapp/commit/fbae9b178e37f0b6aabffd57bb06a119e0391f5b))
+
 # [1.1.0](https://github.com/johnlindquist/kitapp/compare/v1.0.2...v1.1.0) (2021-04-19)
 
 ### Bug Fixes
