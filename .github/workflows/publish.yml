@@ -40,6 +40,17 @@ jobs:
         run: |
           zip kenv.zip .kenv -r -x "*.git*" "src/**/*"
 
+      - name: Find .zips
+        run: |
+          find -name "kit-mac.zip"
+
+      - name: ls parent paths
+        run: |
+          pwd
+          ls ./
+          ls ./../
+          ls ./../../
+
       - name: Checkout git repo
         uses: actions/checkout@v2
 
@@ -55,12 +66,6 @@ jobs:
       - name: electron-build install
         run: |
           yarn install-electron-deps
-
-      - name: ls parent paths
-        run: |
-          ls .
-          ls ../
-          ls ../../
 
       - name: Bundle kit and kenv in assets
         run: |
