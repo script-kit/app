@@ -27,11 +27,8 @@ jobs:
           bash .kit/install-node.sh --prefix .kit/node --platform darwin
 
       - name: Create kit.zip
-        uses: thedoctor0/zip-release@master
-        with:
-          directory: '.kit'
-          filename: 'kit-mac.zip'
-          exclusions: '*.git* /*node_modules/* .editorconfig /*src/*'
+        run: |
+          zip kit-mac.zip .kit -r
 
       - name: Checkout kenv repo
         uses: actions/checkout@v2
@@ -39,12 +36,9 @@ jobs:
           repository: 'johnlindquist/kenv'
           path: .kenv
 
-      - name: Create kenv.zip
-        uses: thedoctor0/zip-release@master
-        with:
-          directory: '.kenv'
-          filename: 'kenv.zip'
-          exclusions: '*.git* /*node_modules/* .editorconfig'
+      - name: Create kit.zip
+        run: |
+          zip kenv.zip .kenv -r
 
       - name: Checkout git repo
         uses: actions/checkout@v2
