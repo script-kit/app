@@ -56,9 +56,19 @@ jobs:
         run: |
           yarn install-electron-deps
 
+      - name: ls dirs
+        run: |
+          pwd
+          ls .
+          ls .kit
+          ls .kenv
+          ls kitapp
+          ls kitapp/kitapp
+          ls kitapp/kitapp/assets
+
       - name: Bundle kit and kenv in assets
         run: |
-          mv kit-mac.zip kitapp/kitapp/assets/kit-mac.zip && mv kenv.zip kitapp/kitapp/assets/kenv.zip
+          mv kit-mac.zip /Users/runner/work/kitapp/kitapp/assets/kit-mac.zip && mv kenv.zip /Users/runner/work/kitapp/kitapp/assets/kenv.zip
 
       - name: Semantic Release
         id: semantic
