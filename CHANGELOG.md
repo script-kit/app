@@ -1,3 +1,16 @@
+# [1.3.0-alpha.1](https://github.com/johnlindquist/kitapp/compare/v1.2.1-alpha.1...v1.3.0-alpha.1) (2021-04-20)
+
+
+### Bug Fixes
+
+* **kit:** remove unnecessary path ([a3b238b](https://github.com/johnlindquist/kitapp/commit/a3b238b997e8104d9da1a776c8bf20c9c7dffe29))
+* **prompt:** remove choice transition fix focused ([0e84f30](https://github.com/johnlindquist/kitapp/commit/0e84f3029378aafa0f48d141f972b694cabc3acf))
+
+
+### Features
+
+* **build:** checking out proper kit and kenv refs ([24dba16](https://github.com/johnlindquist/kitapp/commit/24dba160060d0e4b01dc4d8bee80b58f7474afb1))
+
 ## [1.2.1-alpha.1](https://github.com/johnlindquist/kitapp/compare/v1.2.0...v1.2.1-alpha.1) (2021-04-20)
 
 
