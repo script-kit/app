@@ -28,7 +28,7 @@ jobs:
 
       - name: Create kit.zip
         run: |
-          zip kit-mac.zip .kit -r -x "*.git*"
+          zip kit-mac.zip .kit -r -x "*.git*" "src/**/*"
 
       - name: Checkout kenv repo
         uses: actions/checkout@v2
@@ -36,13 +36,13 @@ jobs:
           repository: 'johnlindquist/kenv'
           path: .kenv
 
-      - name: Create kit.zip
+      - name: Create kenv.zip
         run: |
           zip kenv.zip .kenv -r -x "*.git*" "src/**/*"
 
       - name: Find .zips
         run: |
-          find / -name "kit-mac.zip"
+          find ./ -name "kit-mac.zip"
 
       - name: ls parent paths
         run: |
@@ -69,7 +69,7 @@ jobs:
 
       - name: Bundle kit and kenv in assets
         run: |
-          mv ../../../kit-mac.zip assets/kit-mac.zip && mv ../../../kenv.zip assets/kenv.zip
+          mv ~/kit-mac.zip ./assets/kit-mac.zip && mv ~/kenv.zip ./assets/kenv.zip
 
       - name: Semantic Release
         id: semantic
