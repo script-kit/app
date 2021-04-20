@@ -129,9 +129,6 @@ export default function ChoiceButton({
   justify-between
   items-center
   focus:outline-none
-  transition-all
-  ease-in-out
-  duration-100
   ${
     index === i
       ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-80 shadow-lg`
@@ -148,7 +145,7 @@ export default function ChoiceButton({
         parse(choice?.html, {
           replace: (domNode: any) => {
             if (domNode?.attribs && index === i)
-              domNode.attribs.class = 'selected';
+              domNode.attribs.class = 'focused';
             return domNode;
           },
         })
@@ -168,7 +165,7 @@ export default function ChoiceButton({
                 ? highlightIncludes(choice.name, inputValue)
                 : highlightAdjacentAndWordStart(choice.name, inputValue)}
             </div>
-            {((index === i && choice?.selected) || choice?.description) && (
+            {(choice?.focused || choice?.description) && (
               <div
                 className={`text-xs truncate transition-opacity ease-in-out duration-100 pb-1 ${
                   index === i
@@ -176,8 +173,7 @@ export default function ChoiceButton({
                     : `opacity-60`
                 }`}
               >
-                {(index === i && choice?.selected) ||
-                  `${choice?.description}${choice?.shortcode}`}
+                {(index === i && choice?.description) || choice?.description}
               </div>
             )}
           </div>
