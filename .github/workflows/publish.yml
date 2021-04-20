@@ -42,7 +42,7 @@ jobs:
 
       - name: Find .zips
         run: |
-          find -name "kit-mac.zip"
+          find / -name "kit-mac.zip"
 
       - name: ls parent paths
         run: |
