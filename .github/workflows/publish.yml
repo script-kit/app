@@ -40,16 +40,10 @@ jobs:
         run: |
           zip kenv.zip .kenv -r -x "*.git*" "src/**/*"
 
-      - name: Find .zips
-        run: |
-          find ./ -name "kit-mac.zip"
-
       - name: ls parent paths
         run: |
           pwd
           ls ./
-          ls ./../
-          ls ./../../
 
       - name: Checkout git repo
         uses: actions/checkout@v2
@@ -67,9 +61,17 @@ jobs:
         run: |
           yarn install-electron-deps
 
+      - name: Checking current dir
+        run: |
+          ls ./
+
+      - name: Find .zips
+        run: |
+          find ./ -name "kit-mac.zip"
+
       - name: Bundle kit and kenv in assets
         run: |
-          mv ~/kit-mac.zip ./assets/kit-mac.zip && mv ~/kenv.zip ./assets/kenv.zip
+          mv /Users/runner/work/kitapp/kitapp/kit-mac.zip /Users/runner/work/kitapp/kitapp/assets/kit-mac.zip && mv /Users/runner/work/kitapp/kitapp/kenv.zip /Users/runner/work/kitapp/kitapp/assets/kenv.zip
 
       - name: Semantic Release
         id: semantic
