@@ -16,6 +16,36 @@ jobs:
         os: [macos-latest]
 
     steps:
+      - name: Checkout kit repo
+        uses: actions/checkout@v2
+        with:
+          repository: 'johnlindquist/kit'
+          path: '.kit'
+
+      - name: Bundle Latest Node
+        run: |
+          bash .kit/install-node.sh --prefix .kit/node --platform darwin
+
+      - name: Create kit.zip
+        uses: thedoctor0/zip-release@master
+        with:
+          directory: '.kit'
+          filename: 'kit-mac.zip'
+          exclusions: '*.git* /*node_modules/* .editorconfig /*src/*'
+
+      - name: Checkout kenv repo
+        uses: actions/checkout@v2
+        with:
+          repository: 'johnlindquist/kenv'
+          path: .kenv
+
+      - name: Create kenv.zip
+        uses: thedoctor0/zip-release@master
+        with:
+          directory: '.kenv'
+          filename: 'kenv.zip'
+          exclusions: '*.git* /*node_modules/* .editorconfig'
+
       - name: Checkout git repo
         uses: actions/checkout@v2
 
@@ -32,13 +62,17 @@ jobs:
         run: |
           yarn install-electron-deps
 
-      - name: yarn build
+      - name: Bundle kit and kenv in assets
         run: |
-          yarn build
+          mv kit-mac.zip kitapp/assets/kit-mac.zip && mv kenv.zip kitapp/assets/kenv.zip
 
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v2.5.3
+
+      - name: yarn build
+        run: |
+          yarn build
 
       - name: Publish releases
         env:
@@ -51,21 +85,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           yarn electron-builder --publish always --mac
-
-      - name: Clone kit
-        run: |
-          git clone https://github.com/johnlindquist/kit.git ~/.kit
-
-      - name: Install Kit
-        run: |
-          cd ~/.kit
-          bash ./install-node.sh --prefix ./node
-          ./node/bin/npm install --prefix ./
-          ./node/bin/npm install @octokit/rest --prefix ./
-
-      - name: Tag Kit
-        env:
-          GITHUB_TOKEN: ${{ secrets.SECRET_TOKEN }}
-        run: |
-          cd ~/.kit
-          ./script ./ci/create-tag.js ${{ steps.semantic.outputs.new_release_version }}
