@@ -1,3 +1,10 @@
+## [1.2.1-alpha.1](https://github.com/johnlindquist/kitapp/compare/v1.2.0...v1.2.1-alpha.1) (2021-04-20)
+
+
+### Bug Fixes
+
+* **build:** trying to add in alpha and beta tags ([e097587](https://github.com/johnlindquist/kitapp/commit/e097587eddec35384a39370e02825b935c1a6cd3))
+
 # [1.2.0](https://github.com/johnlindquist/kitapp/compare/v1.1.0...v1.2.0) (2021-04-20)
 
 
