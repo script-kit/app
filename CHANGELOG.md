@@ -1,3 +1,10 @@
+# [1.3.0-alpha.10](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.9...v1.3.0-alpha.10) (2021-04-21)
+
+
+### Bug Fixes
+
+* **install:** existsSync and local node install ([708638e](https://github.com/johnlindquist/kitapp/commit/708638e5725b71ea19302cf5e738898d1484b870))
+
 # [1.3.0-alpha.9](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.8...v1.3.0-alpha.9) (2021-04-21)
 
 
