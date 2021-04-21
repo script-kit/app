@@ -1,3 +1,10 @@
+# [1.3.0-alpha.7](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.6...v1.3.0-alpha.7) (2021-04-21)
+
+
+### Bug Fixes
+
+* **install:** fixing isContributor kit dir check ([76770a2](https://github.com/johnlindquist/kitapp/commit/76770a2c9f1b355d299b1a7849ad4de84ae2f452))
+
 # [1.3.0-alpha.6](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.5...v1.3.0-alpha.6) (2021-04-21)
 
 
