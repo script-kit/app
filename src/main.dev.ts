@@ -266,11 +266,8 @@ const kitNotTag = async () => {
 };
 
 const isContributor = async () => {
-  const exists = kitExists();
-  const isGit = kitIsGit();
-  const isNotTag = await kitNotTag();
-
-  return exists && isGit && isNotTag;
+  // eslint-disable-next-line no-return-await
+  return kitExists() && kitIsGit() && (await kitNotTag());
 };
 
 const kenvExists = () => test('-d', KENV);
