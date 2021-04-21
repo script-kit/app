@@ -25,16 +25,21 @@ import 'regenerator-runtime/runtime';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
-import { spawnSync, exec, SpawnSyncOptions } from 'child_process';
+import {
+  spawnSync,
+  exec,
+  SpawnSyncOptions,
+  SpawnSyncReturns,
+} from 'child_process';
 import { homedir } from 'os';
 import { existsSync } from 'fs';
-import { readFile, rmdir } from 'fs/promises';
+import { chmod, readdir, readFile, rename, rmdir } from 'fs/promises';
+import { Open } from 'unzipper';
 import { createTray, destroyTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
 import { createPromptWindow, createPromptCache } from './prompt';
-import { createNotification } from './notifications';
 import {
   APP_NAME,
   kenvPath,
@@ -206,32 +211,6 @@ const configWindowDone = () => {
   }
 };
 
-const startTick = async () => {
-  await import('./tick');
-};
-
-const ready = async () => {
-  try {
-    createLogs();
-    createCaches();
-    await prepareProtocols();
-    await createTray();
-    await manageShortcuts();
-    await createPromptWindow();
-    await createNotification();
-    await startTick();
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify({
-      title: 'Script Kit Updated',
-      body: 'Relaunching...',
-    });
-
-    configWindowDone();
-  } catch (error) {
-    log.warn(error);
-  }
-};
-
 const updateConfigWindow = (message: string) => {
   if (configWindow?.isVisible()) {
     configWindow?.webContents.send('UPDATE', { message });
@@ -243,9 +222,70 @@ const setupLog = (message: string) => {
   log.info(message);
 };
 
+const ready = async () => {
+  try {
+    createLogs();
+    createCaches();
+    await prepareProtocols();
+    setupLog(`Protocols Prepared`);
+    await createTray();
+    setupLog(`Tray created`);
+    await manageShortcuts();
+    setupLog(`Shortcuts Assigned`);
+    await createPromptWindow();
+    setupLog(`Prompt window created`);
+    try {
+      const tick = await import('./tick');
+      setupLog(JSON.stringify({ tick }));
+      setupLog(`Tick started`);
+    } catch (error) {
+      setupLog(error.message);
+    }
+
+    setupLog(`Kit.app is ready...`);
+    configWindowDone();
+
+    autoUpdater.logger = log;
+    autoUpdater.checkForUpdatesAndNotify({
+      title: 'Script Kit Updated',
+      body: 'Relaunching...',
+    });
+  } catch (error) {
+    log.warn(error);
+  }
+};
+
+const handleSpawnReturns = async (
+  message: string,
+  result: SpawnSyncReturns<any>
+) => {
+  console.log(`HANDLE SPAWN RETURNS`);
+  console.log(`stdout:`, result?.stdout?.toString());
+  console.log(`stderr:`, result?.stderr?.toString());
+  const { stdout, stderr, error } = result;
+
+  if (stdout?.toString().length) {
+    log.info(message, stdout.toString());
+    updateConfigWindow(stdout.toString());
+  }
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (stderr?.toString().length) {
+    console.log({ stderr: stderr.toString() });
+    // throw new Error(stderr.toString());
+  }
+
+  return result;
+};
+
 const kitExists = () => {
+  setupLog(KIT);
   const doesKitExist = existsSync(KIT);
-  setupLog(`kit${doesKitExist ? ` not` : ``} found`);
+
+  setupLog(`kit${doesKitExist ? `` : ` not`} found`);
 
   return doesKitExist;
 };
@@ -272,7 +312,7 @@ const isContributor = async () => {
 
 const kenvExists = () => {
   const doesKenvExist = existsSync(KENV);
-  setupLog(`kenv${doesKenvExist ? ` not` : ``} found`);
+  setupLog(`kenv${doesKenvExist ? `` : ` not`} found`);
 
   return doesKenvExist;
 };
@@ -283,12 +323,20 @@ const verifyInstall = async () => {
   setupLog(`Verifying ~/.kenv exists:`);
   const kenvE = kenvExists();
 
-  if (kitE && kenvE) {
+  const nodeExists = await existsSync(kitPath('node', 'bin', 'node'));
+  setupLog(nodeExists ? `node found` : `node missing`);
+
+  const nodeModulesExist = await existsSync(kitPath('node_modules'));
+  setupLog(nodeModulesExist ? `node_modules found` : `node_modules missing`);
+
+  if (kitE && kenvE && nodeExists && nodeModulesExist) {
     // throw new Error(`Couldn't verify install.`);
-    setupLog(`Found ~/.kit and ~/.kenv`);
-  } else {
-    setupLog(`Couldn't verify both dirs exist...`);
+    setupLog(`Install verified`);
+    return true;
   }
+
+  setupLog(`Couldn't verify both dirs exist...`);
+  return false;
 };
 
 const ohNo = async (error: Error) => {
@@ -347,6 +395,21 @@ const options: SpawnSyncOptions = {
   },
 };
 
+const unzipToHome = async (zipFile: string, outDir: string) => {
+  const tmpDir = path.join(app.getPath('home'), '.kit-install-tmp');
+  const file = await Open.file(zipFile);
+  await file.extract({ path: tmpDir, concurrency: 5 });
+
+  const [zipDir] = await readdir(tmpDir);
+  const targetDir = path.join(path.join(app.getPath('home'), outDir));
+
+  setupLog(`Renaming ${zipDir} to ${targetDir}`);
+
+  await rename(path.join(tmpDir, zipDir), targetDir);
+
+  await rmdir(tmpDir);
+};
+
 const checkKit = async () => {
   if (getRequiresSetup()) {
     configWindow = await show(
@@ -362,6 +425,8 @@ const checkKit = async () => {
       false
     );
 
+    configWindow?.show();
+
     if (!(await isContributor())) {
       if (kitExists()) {
         setupLog(`Rm'ing previous .kit`);
@@ -369,31 +434,23 @@ const checkKit = async () => {
       }
       const kitZip = getAssetPath('kit.zip');
       setupLog(`.kit doesn't exist or isn't on a contributor branch`);
-      setupLog(`Unzipping ${kitZip} to ${homedir()}...`);
 
-      exec(`unzip ${kitZip}`, {
-        cwd: homedir(),
-      });
-
-      kitExists();
-
-      if (existsSync(path.join(homedir(), 'kit'))) {
-        setupLog(`mv'ing kit to .kit`);
-        exec(`mv kit .kit`, {
-          cwd: homedir(),
-        });
-      }
+      await unzipToHome(kitZip, '.kit');
 
       if (kitExists()) {
         setupLog(`Adding node to ~/.kit...`);
-        spawnSync(
-          `./install-node.sh`,
+        const installScript = `./install-node.sh`;
+        await chmod(kitPath(installScript), 0o755);
+        const nodeInstallResult = spawnSync(
+          installScript,
           ` --prefix node --platform darwin`.split(' '),
           options
         );
+        await handleSpawnReturns(`npm`, nodeInstallResult);
 
         setupLog(`adding ~/.kit packages...`);
-        spawnSync(`npm`, [`i`], options);
+        const npmResult = spawnSync(`npm`, [`i`], options);
+        await handleSpawnReturns(`npm`, npmResult);
       }
     } else {
       setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
@@ -403,21 +460,9 @@ const checkKit = async () => {
       // Step 4: Use kit wrapper to run setup.js script
       configWindow?.show();
       const kenvZip = getAssetPath('kenv.zip');
-      setupLog(`Unzipping ${kenvZip} to ${homedir()}...`);
-
-      exec(`unzip ${kenvZip}`, {
-        cwd: homedir(),
-      });
+      await unzipToHome(kenvZip, '.kenv');
 
       kenvExists();
-
-      if (existsSync(path.join(homedir(), 'kenv'))) {
-        setupLog(`mv'ing kenv to .kenv`);
-
-        exec(`mv kenv .kenv`, {
-          cwd: homedir(),
-        });
-      }
 
       if (kenvExists()) {
         setupLog(`Run .kenv setup script...`);

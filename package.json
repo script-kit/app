@@ -199,6 +199,7 @@
     "@types/react-virtualized-auto-sizer": "^1.0.0",
     "@types/shelljs": "^0.8.8",
     "@types/simplebar": "^5.1.2",
+    "@types/unzipper": "^0.10.3",
     "@types/webpack-env": "^1.15.2",
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
@@ -304,6 +305,7 @@
     "source-map-support": "^0.5.19",
     "tailwindcss": "^2.1.1",
     "tree-kill": "^1.2.2",
+    "unzipper": "^0.10.11",
     "use-debounce": "^6.0.1"
   },
   "devEngines": {
