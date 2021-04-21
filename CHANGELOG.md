@@ -1,3 +1,10 @@
+# [1.3.0-alpha.6](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.5...v1.3.0-alpha.6) (2021-04-21)
+
+
+### Bug Fixes
+
+* **install:** isContributor is a promise ([354c2e3](https://github.com/johnlindquist/kitapp/commit/354c2e375f84de827f92cda35b586eeb99f60297))
+
 # [1.3.0-alpha.5](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.4...v1.3.0-alpha.5) (2021-04-21)
 
 
