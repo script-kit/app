@@ -1,3 +1,10 @@
+# [1.3.0-alpha.3](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.2...v1.3.0-alpha.3) (2021-04-21)
+
+
+### Features
+
+* **build:** push on alpha, pr on beta and main ([768b41a](https://github.com/johnlindquist/kitapp/commit/768b41afa91fe85aae8c9b13ae7b813f797027db))
+
 # [1.3.0-alpha.2](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.1...v1.3.0-alpha.2) (2021-04-21)
 
 
