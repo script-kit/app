@@ -1,3 +1,11 @@
+# [1.3.0-alpha.4](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.3...v1.3.0-alpha.4) (2021-04-21)
+
+
+### Features
+
+* **build:** fixing ref on pr ([efdce54](https://github.com/johnlindquist/kitapp/commit/efdce54aa854eed11578a673fe69ce3a547fc9aa))
+* **build:** updating build checking kit dir ([ce3903c](https://github.com/johnlindquist/kitapp/commit/ce3903c288fd2ca4e423af478227bb9244c28c0d))
+
 # [1.3.0-alpha.3](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.2...v1.3.0-alpha.3) (2021-04-21)
 
 
