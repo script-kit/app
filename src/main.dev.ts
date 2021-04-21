@@ -26,8 +26,8 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
 import { spawnSync, exec, SpawnSyncOptions } from 'child_process';
-import { test } from 'shelljs';
 import { homedir } from 'os';
+import { existsSync } from 'fs';
 import { readFile, rmdir } from 'fs/promises';
 import { createTray, destroyTray } from './tray';
 import { manageShortcuts } from './shortcuts';
@@ -244,13 +244,13 @@ const setupLog = (message: string) => {
 };
 
 const kitExists = () => {
-  const doesKitExist = test('-d', KIT);
+  const doesKitExist = existsSync(KIT);
   setupLog(`kit${doesKitExist ? ` not` : ``} found`);
 
   return doesKitExist;
 };
 const kitIsGit = () => {
-  const isGit = test('-d', kitPath('.git'));
+  const isGit = existsSync(KENV);
   setupLog(`kit is${isGit ? ` not` : ``} a .git repo`);
   return isGit;
 };
@@ -271,7 +271,7 @@ const isContributor = async () => {
 };
 
 const kenvExists = () => {
-  const doesKenvExist = test('-d', KENV);
+  const doesKenvExist = existsSync(KENV);
   setupLog(`kenv${doesKenvExist ? ` not` : ``} found`);
 
   return doesKenvExist;
@@ -283,9 +283,11 @@ const verifyInstall = async () => {
   setupLog(`Verifying ~/.kenv exists:`);
   const kenvE = kenvExists();
 
-  if (!(kitE && kenvE)) {
-    setupLog(`Couldn't verify both dirs exist...`);
+  if (kitE && kenvE) {
     // throw new Error(`Couldn't verify install.`);
+    setupLog(`Found ~/.kit and ~/.kenv`);
+  } else {
+    setupLog(`Couldn't verify both dirs exist...`);
   }
 };
 
@@ -375,7 +377,7 @@ const checkKit = async () => {
 
       kitExists();
 
-      if (test('-d', path.resolve(homedir(), 'kit'))) {
+      if (existsSync(path.join(homedir(), 'kit'))) {
         setupLog(`mv'ing kit to .kit`);
         exec(`mv kit .kit`, {
           cwd: homedir(),
@@ -383,8 +385,15 @@ const checkKit = async () => {
       }
 
       if (kitExists()) {
+        setupLog(`Adding node to ~/.kit...`);
+        spawnSync(
+          `./install-node.sh`,
+          ` --prefix node --platform darwin`.split(' '),
+          options
+        );
+
         setupLog(`adding ~/.kit packages...`);
-        const npmResult = spawnSync(`npm`, [`i`], options);
+        spawnSync(`npm`, [`i`], options);
       }
     } else {
       setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
@@ -402,7 +411,7 @@ const checkKit = async () => {
 
       kenvExists();
 
-      if (test('-d', path.resolve(homedir(), 'kenv'))) {
+      if (existsSync(path.join(homedir(), 'kenv'))) {
         setupLog(`mv'ing kenv to .kenv`);
 
         exec(`mv kenv .kenv`, {

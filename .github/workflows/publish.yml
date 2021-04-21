@@ -39,13 +39,9 @@ jobs:
           ref: ${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}
           path: '.kit'
 
-      - name: Bundle Latest Node
-        run: |
-          bash .kit/install-node.sh --prefix .kit/node --platform darwin
-
       - name: Create kit.zip
         run: |
-          zip kit.zip .kit -r -x "*.git*" "src/**/*"
+          zip kit.zip .kit -r -x "*.git*" "*src*"
           mv kit.zip ./../kit.zip
 
       - name: Checkout kenv repo
@@ -57,7 +53,7 @@ jobs:
 
       - name: Create kenv.zip
         run: |
-          zip kenv.zip .kenv -r -x "*.git*" "src/**/*"
+          zip kenv.zip .kenv -r -x "*.git*"
           mv kenv.zip ./../kenv.zip
 
       - name: ls parent paths
