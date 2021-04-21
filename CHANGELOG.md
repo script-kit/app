@@ -1,3 +1,10 @@
+# [1.3.0-alpha.11](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.10...v1.3.0-alpha.11) (2021-04-21)
+
+
+### Bug Fixes
+
+* **install:** fixing zipping and setup ([1591b82](https://github.com/johnlindquist/kitapp/commit/1591b827efb7fe3d4d9f49142ab68cabb2ee8386))
+
 # [1.3.0-alpha.10](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.9...v1.3.0-alpha.10) (2021-04-21)
 
 
