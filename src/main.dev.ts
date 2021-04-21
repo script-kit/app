@@ -232,17 +232,46 @@ const ready = async () => {
   }
 };
 
-const kitExists = () => test('-d', KIT);
-const kitIsGit = () => test('-d', kitPath('.git'));
-const kitNotTag = async () => {
-  const HEADfile = await readFile(kitPath('.git', 'HEAD'), 'utf-8');
-  log.info(`HEAD:`, HEADfile);
-  return HEADfile.match(/alpha|beta|main/);
+const updateConfigWindow = (message: string) => {
+  if (configWindow?.isVisible()) {
+    configWindow?.webContents.send('UPDATE', { message });
+  }
 };
 
-const isContributor = async () =>
-  // eslint-disable-next-line no-return-await
-  kitExists() && kitIsGit() && (await kitNotTag());
+const setupLog = (message: string) => {
+  updateConfigWindow(message);
+  log.info(message);
+};
+
+const kitExists = () => {
+  const doesKitExist = test('-d', KIT);
+  setupLog(`kit${doesKitExist && ` not`} found`);
+
+  return doesKitExist;
+};
+const kitIsGit = () => {
+  const isGit = test('-d', kitPath('.git'));
+  setupLog(`kit is${isGit && ` not a .git repo`}`);
+  return isGit;
+};
+const kitNotTag = async () => {
+  const HEADfile = await readFile(kitPath('.git', 'HEAD'), 'utf-8');
+  setupLog(`HEAD: ${HEADfile}`);
+
+  const isReleaseBranch = HEADfile.match(/alpha|beta|main/);
+
+  setupLog(`.kit is${isReleaseBranch && ` not`} a release branch`);
+
+  return isReleaseBranch;
+};
+
+const isContributor = async () => {
+  const exists = kitExists();
+  const isGit = kitIsGit();
+  const isNotTag = await kitNotTag();
+
+  return exists && isGit && isNotTag;
+};
 
 const kenvExists = () => test('-d', KENV);
 
@@ -253,17 +282,6 @@ const verifyInstall = async () => {
   if (![kitE, kenvE].every((x) => x)) {
     throw new Error(`Couldn't verify install.`);
   }
-};
-
-const updateConfigWindow = (message: string) => {
-  if (configWindow?.isVisible()) {
-    configWindow?.webContents.send('UPDATE', { message });
-  }
-};
-
-const setupLog = (message: string) => {
-  updateConfigWindow(message);
-  log.info(message);
 };
 
 const ohNo = async (error: Error) => {
