@@ -1,3 +1,10 @@
+# [1.3.0-alpha.14](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.13...v1.3.0-alpha.14) (2021-04-21)
+
+
+### Bug Fixes
+
+* **install:** verify kenv setup ([5e77e38](https://github.com/johnlindquist/kitapp/commit/5e77e38b3a9cff87cb9cab4fccc047803641af96))
+
 # [1.3.0-alpha.13](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.12...v1.3.0-alpha.13) (2021-04-21)
 
 
