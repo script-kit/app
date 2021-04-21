@@ -33,6 +33,7 @@
     ]
   },
   "build": {
+    "generateUpdatesFilesForAllChannels": true,
     "productName": "Kit",
     "appId": "app.scriptkit",
     "files": [

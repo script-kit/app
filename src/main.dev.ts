@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-continue */
 /* eslint-disable import/first */
 /* eslint-disable jest/no-identical-title */
 /* eslint-disable jest/expect-expect */
@@ -32,9 +34,18 @@ import {
   SpawnSyncReturns,
 } from 'child_process';
 import { homedir } from 'os';
-import { existsSync } from 'fs';
-import { chmod, readdir, readFile, rename, rmdir } from 'fs/promises';
-import { Open } from 'unzipper';
+import { createReadStream, createWriteStream, existsSync } from 'fs';
+import {
+  chmod,
+  lstat,
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  rmdir,
+} from 'fs/promises';
+import { Open, Parse } from 'unzipper';
 import { createTray, destroyTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
@@ -321,19 +332,33 @@ const kenvExists = () => {
   return doesKenvExist;
 };
 
+const nodeExists = () => {
+  const doesNodeExist = existsSync(kitPath('node', 'bin', 'node'));
+  setupLog(`node${doesNodeExist ? `` : ` not`} found`);
+
+  return doesNodeExist;
+};
+
+const nodeModulesExists = () => {
+  const doesNodeModulesExist = existsSync(kitPath('node_modules'));
+  setupLog(`node_modules${doesNodeModulesExist ? `` : ` not`} found`);
+
+  return doesNodeModulesExist;
+};
+
 const verifyInstall = async () => {
   setupLog(`Verifying ~/.kit exists:`);
-  const kitE = kitExists();
+  const checkKit = kitExists();
   setupLog(`Verifying ~/.kenv exists:`);
-  const kenvE = kenvExists();
+  const checkKenv = kenvExists();
 
-  const nodeExists = existsSync(kitPath('node', 'bin', 'node'));
-  setupLog(nodeExists ? `node found` : `node missing`);
+  const checkNode = nodeExists();
+  setupLog(checkNode ? `node found` : `node missing`);
 
-  const nodeModulesExist = existsSync(kitPath('node_modules'));
-  setupLog(nodeModulesExist ? `node_modules found` : `node_modules missing`);
+  const checkNodeModules = nodeModulesExists();
+  setupLog(checkNodeModules ? `node_modules found` : `node_modules missing`);
 
-  if (kitE && kenvE && nodeExists && nodeModulesExist) {
+  if (checkKit && checkKenv && checkNode && checkNodeModules) {
     // throw new Error(`Couldn't verify install.`);
     setupLog(`Install verified`);
     return true;
@@ -414,8 +439,51 @@ const unzipToHome = async (zipFile: string, outDir: string) => {
   await rmdir(tmpDir);
 };
 
+const unzipKit = async () => {
+  setupLog(`Unzipping kit into ${kitPath()}`);
+  await mkdir(kitPath()).catch((error) => setupLog(error.message));
+  const kitZip = getAssetPath('kit.zip');
+
+  const zip = createReadStream(kitZip).pipe(Parse({ forceStream: true }));
+
+  for await (const entry of zip) {
+    const fileName = entry.path;
+    const innerFile = fileName.replace(/^(.*?)\//, '');
+    const { type } = entry;
+    const kitPathName = kitPath(innerFile);
+    const notDot = innerFile.match(/^\w/);
+
+    if (type === 'Directory' && notDot) {
+      await mkdir(kitPathName).catch((error) => console.log(error.message));
+    } else if (type === 'File' && notDot) {
+      entry.pipe(createWriteStream(kitPathName));
+    } else {
+      entry.autodrain();
+    }
+  }
+};
+
 const requiresSetup = () => {
   return getVersion() !== getStoredVersion();
+};
+
+const cleanKit = async () => {
+  const pathToClean = kitPath();
+
+  const keep = (file: string) => file.startsWith('node');
+
+  // eslint-disable-next-line no-restricted-syntax
+  for await (const file of await readdir(pathToClean)) {
+    if (keep(file)) continue;
+
+    const filePath = path.join(pathToClean, file);
+    const stat = await lstat(filePath);
+    if (stat.isDirectory()) {
+      await rmdir(filePath, { recursive: true });
+    } else {
+      await rm(filePath);
+    }
+  }
 };
 
 const checkKit = async () => {
@@ -433,21 +501,20 @@ const checkKit = async () => {
       false
     );
 
-    configWindow?.show();
-
     if (await isContributor()) {
       setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
     } else {
+      configWindow?.show();
+
       if (kitExists()) {
-        setupLog(`Rm'ing previous .kit`);
-        await rmdir(KIT, { recursive: true });
+        setupLog(`Cleaning previous .kit`);
+        await cleanKit();
       }
-      const kitZip = getAssetPath('kit.zip');
+
       setupLog(`.kit doesn't exist or isn't on a contributor branch`);
+      await unzipKit();
 
-      await unzipToHome(kitZip, '.kit');
-
-      if (kitExists()) {
+      if (!nodeExists()) {
         setupLog(`Adding node to ~/.kit...`);
         const installScript = `./install-node.sh`;
         await chmod(kitPath(installScript), 0o755);
@@ -457,7 +524,9 @@ const checkKit = async () => {
           options
         );
         await handleSpawnReturns(`npm`, nodeInstallResult);
+      }
 
+      if (!nodeModulesExists()) {
         setupLog(`adding ~/.kit packages...`);
         const npmResult = spawnSync(`npm`, [`i`], options);
         await handleSpawnReturns(`npm`, npmResult);
