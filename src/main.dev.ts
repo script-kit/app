@@ -25,7 +25,7 @@ import 'regenerator-runtime/runtime';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
-import { spawnSync, exec } from 'child_process';
+import { spawnSync, exec, SpawnSyncOptions } from 'child_process';
 import { test } from 'shelljs';
 import { homedir } from 'os';
 import { readFile, rmdir } from 'fs/promises';
@@ -270,7 +270,12 @@ const isContributor = async () => {
   return kitExists() && kitIsGit() && (await kitNotTag());
 };
 
-const kenvExists = () => test('-d', KENV);
+const kenvExists = () => {
+  const doesKenvExist = test('-d', KENV);
+  setupLog(`kenv${doesKenvExist ? ` not` : ``} found`);
+
+  return doesKenvExist;
+};
 
 const verifyInstall = async () => {
   setupLog(`Verifying ~/.kit exists:`);
@@ -278,8 +283,9 @@ const verifyInstall = async () => {
   setupLog(`Verifying ~/.kenv exists:`);
   const kenvE = kenvExists();
 
-  if (![kitE, kenvE].every((x) => x)) {
-    throw new Error(`Couldn't verify install.`);
+  if (!(kitE && kenvE)) {
+    setupLog(`Couldn't verify both dirs exist...`);
+    // throw new Error(`Couldn't verify install.`);
   }
 };
 
@@ -370,6 +376,7 @@ const checkKit = async () => {
       kitExists();
 
       if (test('-d', path.resolve(homedir(), 'kit'))) {
+        setupLog(`mv'ing kit to .kit`);
         exec(`mv kit .kit`, {
           cwd: homedir(),
         });
@@ -396,6 +403,8 @@ const checkKit = async () => {
       kenvExists();
 
       if (test('-d', path.resolve(homedir(), 'kenv'))) {
+        setupLog(`mv'ing kenv to .kenv`);
+
         exec(`mv kenv .kenv`, {
           cwd: homedir(),
         });
