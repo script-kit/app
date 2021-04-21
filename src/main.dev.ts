@@ -50,7 +50,7 @@ import {
 } from './helpers';
 import { getVersion } from './version';
 import { show } from './show';
-import { getRequiresSetup, setRequiresSetup } from './state';
+import { getStoredVersion, storeVersion } from './state';
 
 let configWindow: BrowserWindow | null = null;
 
@@ -126,7 +126,7 @@ autoUpdater.on('update-downloaded', () => {
   log.info('update downloaded');
   log.info('attempting quitAndInstall');
   updateDownloaded = true;
-  setRequiresSetup(true);
+  storeVersion(getVersion());
   callBeforeQuitAndInstall();
   autoUpdater.quitAndInstall();
   const allWindows = BrowserWindow.getAllWindows();
@@ -294,8 +294,12 @@ const kitIsGit = () => {
   setupLog(`kit is${isGit ? ` not` : ``} a .git repo`);
   return isGit;
 };
-const kitNotTag = async () => {
-  const HEADfile = await readFile(kitPath('.git', 'HEAD'), 'utf-8');
+const kitIsReleaseBranch = async () => {
+  const HEADpath = kitPath('.git', 'HEAD');
+  if (!existsSync(HEADpath)) {
+    return false;
+  }
+  const HEADfile = await readFile(HEADpath, 'utf-8');
   setupLog(`HEAD: ${HEADfile}`);
 
   const isReleaseBranch = HEADfile.match(/alpha|beta|main/);
@@ -307,7 +311,7 @@ const kitNotTag = async () => {
 
 const isContributor = async () => {
   // eslint-disable-next-line no-return-await
-  return kitExists() && kitIsGit() && (await kitNotTag());
+  return kitExists() && kitIsGit() && (await kitIsReleaseBranch());
 };
 
 const kenvExists = () => {
@@ -323,10 +327,10 @@ const verifyInstall = async () => {
   setupLog(`Verifying ~/.kenv exists:`);
   const kenvE = kenvExists();
 
-  const nodeExists = await existsSync(kitPath('node', 'bin', 'node'));
+  const nodeExists = existsSync(kitPath('node', 'bin', 'node'));
   setupLog(nodeExists ? `node found` : `node missing`);
 
-  const nodeModulesExist = await existsSync(kitPath('node_modules'));
+  const nodeModulesExist = existsSync(kitPath('node_modules'));
   setupLog(nodeModulesExist ? `node_modules found` : `node_modules missing`);
 
   if (kitE && kenvE && nodeExists && nodeModulesExist) {
@@ -410,8 +414,12 @@ const unzipToHome = async (zipFile: string, outDir: string) => {
   await rmdir(tmpDir);
 };
 
+const requiresSetup = () => {
+  return getVersion() !== getStoredVersion();
+};
+
 const checkKit = async () => {
-  if (getRequiresSetup()) {
+  if (requiresSetup()) {
     configWindow = await show(
       'splash-setup',
       `
@@ -427,7 +435,9 @@ const checkKit = async () => {
 
     configWindow?.show();
 
-    if (!(await isContributor())) {
+    if (await isContributor()) {
+      setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
+    } else {
       if (kitExists()) {
         setupLog(`Rm'ing previous .kit`);
         await rmdir(KIT, { recursive: true });
@@ -452,8 +462,6 @@ const checkKit = async () => {
         const npmResult = spawnSync(`npm`, [`i`], options);
         await handleSpawnReturns(`npm`, npmResult);
       }
-    } else {
-      setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
     }
 
     if (!kenvExists()) {
@@ -474,7 +482,7 @@ const checkKit = async () => {
     await verifyInstall();
   }
 
-  setRequiresSetup(false);
+  storeVersion(getVersion());
   await ready();
 };
 

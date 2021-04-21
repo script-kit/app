@@ -16,10 +16,10 @@ export const restartIfNecessary = () => {
   }
 };
 
-export const setRequiresSetup = (updated: boolean) => {
-  state.set(REQUIRES_SETUP, updated);
+export const storeVersion = (version: string) => {
+  state.set(REQUIRES_SETUP, version);
 };
 
-export const getRequiresSetup = () => {
-  return state.get(REQUIRES_SETUP, true);
+export const getStoredVersion = () => {
+  return state.get(REQUIRES_SETUP, '0.0.0');
 };
