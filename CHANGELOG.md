@@ -1,3 +1,10 @@
+# [1.3.0-alpha.9](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.8...v1.3.0-alpha.9) (2021-04-21)
+
+
+### Bug Fixes
+
+* **install:** fixing dir checking ([7c9eead](https://github.com/johnlindquist/kitapp/commit/7c9eeadc0f9e4a2fb64f66483a83a7c60abdc4d9))
+
 # [1.3.0-alpha.8](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.7...v1.3.0-alpha.8) (2021-04-21)
 
 
