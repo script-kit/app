@@ -4,7 +4,7 @@ import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
 import { tryKitScript } from './kit';
 import { getAssetPath } from './assets';
-import { restartIfNecessary } from './restart';
+import { restartIfNecessary } from './state';
 import { kitPath } from './helpers';
 
 let tray: Tray | null = null;

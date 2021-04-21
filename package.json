@@ -35,7 +35,6 @@
   "build": {
     "productName": "Kit",
     "appId": "app.scriptkit",
-    "generateUpdatesFilesForAllChannels": true,
     "files": [
       "dist/",
       "node_modules/",
@@ -301,7 +300,6 @@
     "regenerator-runtime": "^0.13.5",
     "rxjs": "^6.6.7",
     "shelljs": "^0.8.4",
-    "simple-git": "^2.36.1",
     "simplebar-react": "^2.3.0",
     "source-map-support": "^0.5.19",
     "tailwindcss": "^2.1.1",

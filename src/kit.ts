@@ -27,7 +27,7 @@ import {
 import { showNotification } from './notifications';
 import { show } from './show';
 import { kitPath, kenvPath, KIT, KENV } from './helpers';
-import { makeRestartNecessary } from './restart';
+import { makeRestartNecessary } from './state';
 import { getVersion } from './version';
 import {
   CHOICE_FOCUSED,
