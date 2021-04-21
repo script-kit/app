@@ -332,6 +332,13 @@ const kenvExists = () => {
   return doesKenvExist;
 };
 
+const kenvConfigured = () => {
+  const isKenvConfigured = existsSync(kenvPath('.env'));
+  setupLog(`kenv is${isKenvConfigured ? `` : ` not`} configured`);
+
+  return isKenvConfigured;
+};
+
 const nodeExists = () => {
   const doesNodeExist = existsSync(kitPath('node', 'bin', 'node'));
   setupLog(`node${doesNodeExist ? `` : ` not`} found`);
@@ -358,14 +365,21 @@ const verifyInstall = async () => {
   const checkNodeModules = nodeModulesExists();
   setupLog(checkNodeModules ? `node_modules found` : `node_modules missing`);
 
-  if (checkKit && checkKenv && checkNode && checkNodeModules) {
-    // throw new Error(`Couldn't verify install.`);
+  const isKenvConfigured = kenvConfigured();
+  setupLog(isKenvConfigured ? `kenv .env found` : `kenv .env missinag`);
+
+  if (
+    checkKit &&
+    checkKenv &&
+    checkNode &&
+    checkNodeModules &&
+    isKenvConfigured
+  ) {
     setupLog(`Install verified`);
     return true;
   }
 
-  setupLog(`Couldn't verify both dirs exist...`);
-  return false;
+  throw new Error(`Install not verified...`);
 };
 
 const ohNo = async (error: Error) => {
@@ -425,6 +439,7 @@ const options: SpawnSyncOptions = {
 };
 
 const unzipToHome = async (zipFile: string, outDir: string) => {
+  setupLog(`Unzipping ${zipFile} to ${outDir}`);
   const tmpDir = path.join(app.getPath('home'), '.kit-install-tmp');
   const file = await Open.file(zipFile);
   await file.extract({ path: tmpDir, concurrency: 5 });
@@ -540,12 +555,14 @@ const checkKit = async () => {
       await unzipToHome(kenvZip, '.kenv');
 
       kenvExists();
+    }
 
-      if (kenvExists()) {
-        setupLog(`Run .kenv setup script...`);
+    if (!kenvConfigured()) {
+      setupLog(`Run .kenv setup script...`);
 
-        spawnSync(`./script`, [`./setup/setup.js`], options);
-      }
+      spawnSync(`./script`, [`./setup/setup.js`], options);
+
+      kenvConfigured();
     }
 
     await verifyInstall();

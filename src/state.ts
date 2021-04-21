@@ -2,7 +2,7 @@ import { app } from 'electron';
 import Store from 'electron-store';
 
 const NEEDS_RESTART = 'NEEDS_RESTART';
-const REQUIRES_SETUP = 'UPDATED';
+const STORE_VERSION = 'version';
 
 const state = new Store({ name: 'state' });
 
@@ -17,9 +17,9 @@ export const restartIfNecessary = () => {
 };
 
 export const storeVersion = (version: string) => {
-  state.set(REQUIRES_SETUP, version);
+  state.set(STORE_VERSION, version);
 };
 
 export const getStoredVersion = () => {
-  return state.get(REQUIRES_SETUP, '0.0.0');
+  return state.get(STORE_VERSION, '0.0.0');
 };
