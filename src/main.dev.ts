@@ -345,7 +345,7 @@ const checkKit = async () => {
       false
     );
 
-    if (!isContributor()) {
+    if (!(await isContributor())) {
       const kitZip = getAssetPath('kit.zip');
       setupLog(`.kit doesn't exist or isn't on a contributor branch`);
       setupLog(`Unzipping ${kitZip} to ${homedir()}...`);
