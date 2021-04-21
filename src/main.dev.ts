@@ -28,7 +28,7 @@ import path from 'path';
 import { spawnSync, exec } from 'child_process';
 import { test } from 'shelljs';
 import { homedir } from 'os';
-import { readFile } from 'fs/promises';
+import { readFile, rmdir } from 'fs/promises';
 import { createTray, destroyTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
@@ -245,13 +245,13 @@ const setupLog = (message: string) => {
 
 const kitExists = () => {
   const doesKitExist = test('-d', KIT);
-  setupLog(`kit${doesKitExist && ` not`} found`);
+  setupLog(`kit${doesKitExist ? ` not` : ``} found`);
 
   return doesKitExist;
 };
 const kitIsGit = () => {
   const isGit = test('-d', kitPath('.git'));
-  setupLog(`kit is${isGit && ` not a .git repo`}`);
+  setupLog(`kit is${isGit ? ` not` : ``} a .git repo`);
   return isGit;
 };
 const kitNotTag = async () => {
@@ -260,7 +260,7 @@ const kitNotTag = async () => {
 
   const isReleaseBranch = HEADfile.match(/alpha|beta|main/);
 
-  setupLog(`.kit is${isReleaseBranch && ` not`} a release branch`);
+  setupLog(`.kit is${isReleaseBranch ? ` not` : ``} a release branch`);
 
   return isReleaseBranch;
 };
@@ -273,7 +273,9 @@ const isContributor = async () => {
 const kenvExists = () => test('-d', KENV);
 
 const verifyInstall = async () => {
+  setupLog(`Verifying ~/.kit exists:`);
   const kitE = kitExists();
+  setupLog(`Verifying ~/.kenv exists:`);
   const kenvE = kenvExists();
 
   if (![kitE, kenvE].every((x) => x)) {
@@ -327,6 +329,16 @@ ${mainLog}
   throw new Error(error.message);
 };
 
+const options: SpawnSyncOptions = {
+  cwd: KIT,
+  encoding: 'utf-8',
+  env: {
+    KIT,
+    KENV,
+    PATH: `${path.join(KIT, 'node', 'bin')}:${process.env.PATH}`,
+  },
+};
+
 const checkKit = async () => {
   if (getRequiresSetup()) {
     configWindow = await show(
@@ -343,13 +355,30 @@ const checkKit = async () => {
     );
 
     if (!(await isContributor())) {
+      if (kitExists()) {
+        setupLog(`Rm'ing previous .kit`);
+        await rmdir(KIT, { recursive: true });
+      }
       const kitZip = getAssetPath('kit.zip');
       setupLog(`.kit doesn't exist or isn't on a contributor branch`);
       setupLog(`Unzipping ${kitZip} to ${homedir()}...`);
 
-      spawnSync(`unzip ${kitZip} && mv kit .kit`, {
+      exec(`unzip ${kitZip}`, {
         cwd: homedir(),
       });
+
+      kitExists();
+
+      if (test('-d', path.resolve(homedir(), 'kit'))) {
+        exec(`mv kit .kit`, {
+          cwd: homedir(),
+        });
+      }
+
+      if (kitExists()) {
+        setupLog(`adding ~/.kit packages...`);
+        const npmResult = spawnSync(`npm`, [`i`], options);
+      }
     } else {
       setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
     }
@@ -360,9 +389,23 @@ const checkKit = async () => {
       const kenvZip = getAssetPath('kenv.zip');
       setupLog(`Unzipping ${kenvZip} to ${homedir()}...`);
 
-      spawnSync(`unzip ${kenvZip} && mv kenv .kenv`, {
+      exec(`unzip ${kenvZip}`, {
         cwd: homedir(),
       });
+
+      kenvExists();
+
+      if (test('-d', path.resolve(homedir(), 'kenv'))) {
+        exec(`mv kenv .kenv`, {
+          cwd: homedir(),
+        });
+      }
+
+      if (kenvExists()) {
+        setupLog(`Run .kenv setup script...`);
+
+        spawnSync(`./script`, [`./setup/setup.js`], options);
+      }
     }
 
     await verifyInstall();
