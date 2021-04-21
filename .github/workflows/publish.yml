@@ -32,29 +32,13 @@ jobs:
         run: |
           echo "${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}"
 
-      - name: Checkout kit repo
-        uses: actions/checkout@v2
-        with:
-          repository: 'johnlindquist/kit'
-          ref: ${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}
-          path: '.kit'
-
-      - name: Create kit.zip
+      - name: Curl kit.zip
         run: |
-          zip kit.zip .kit -r -x "*.git*" "*src*"
-          mv kit.zip ./../kit.zip
+          curl -L https://github.com/johnlindquist/kit/archive/refs/heads/${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}.zip -o ./../kit.zip
 
-      - name: Checkout kenv repo
-        uses: actions/checkout@v2
-        with:
-          repository: 'johnlindquist/kenv'
-          ref: ${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}
-          path: .kenv
-
-      - name: Create kenv.zip
+      - name: Curl kenv.zip
         run: |
-          zip kenv.zip .kenv -r -x "*.git*"
-          mv kenv.zip ./../kenv.zip
+          curl -L https://github.com/johnlindquist/kenv/archive/refs/heads/${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}.zip -o ./../kenv.zip
 
       - name: ls parent paths
         run: |
