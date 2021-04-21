@@ -1,3 +1,10 @@
+# [1.3.0-alpha.5](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.4...v1.3.0-alpha.5) (2021-04-21)
+
+
+### Features
+
+* **build:** guessing configuration settings ([fb6b187](https://github.com/johnlindquist/kitapp/commit/fb6b1870876f8c70d88bbedf16181f0fcaa488d6))
+
 # [1.3.0-alpha.4](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.3...v1.3.0-alpha.4) (2021-04-21)
 
 
