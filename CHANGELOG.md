@@ -1,3 +1,10 @@
+# [1.3.0-alpha.13](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.12...v1.3.0-alpha.13) (2021-04-21)
+
+
+### Bug Fixes
+
+* **publish:** using curl instead of manually zipping ([5701966](https://github.com/johnlindquist/kitapp/commit/5701966396d0d293daa0c0882c60d16850def3b6))
+
 # [1.3.0-alpha.12](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.11...v1.3.0-alpha.12) (2021-04-21)
 
 
