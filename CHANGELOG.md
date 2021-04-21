@@ -1,3 +1,15 @@
+# [1.3.0-alpha.2](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.1...v1.3.0-alpha.2) (2021-04-21)
+
+
+### Bug Fixes
+
+* **build:** renaming to kit.zip ([8b54303](https://github.com/johnlindquist/kitapp/commit/8b54303832446d78dd92afcf5aa06c30e8e70256))
+
+
+### Features
+
+* **build:** Updating setup process to unzip bundled zips ([a7c4bad](https://github.com/johnlindquist/kitapp/commit/a7c4bad98a713a70d6e9badd64191791ff33d43d))
+
 # [1.3.0-alpha.1](https://github.com/johnlindquist/kitapp/compare/v1.2.1-alpha.1...v1.3.0-alpha.1) (2021-04-20)
 
 
