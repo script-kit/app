@@ -1,3 +1,12 @@
+# [1.3.0-beta.2](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.1...v1.3.0-beta.2) (2021-04-22)
+
+
+### Bug Fixes
+
+* **clipboard:** attempting to make tokens in clipboard secret ([736d707](https://github.com/johnlindquist/kitapp/commit/736d7072e70a5644e8854c6a965d43413ac1f18b))
+* **install:** fix script permissions ([1d38626](https://github.com/johnlindquist/kitapp/commit/1d386261e0fc7e1e6091b7f9e72f201e953f2093))
+* **install:** verify settings file exists ([128d32e](https://github.com/johnlindquist/kitapp/commit/128d32e180da551cda85362927f2b62da4811155))
+
 # [1.3.0-alpha.22](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.21...v1.3.0-alpha.22) (2021-04-22)
 
 
