@@ -578,6 +578,7 @@ const checkKit = async () => {
     const settingsFile = kenvPath('db', 'kit.json');
 
     if (!existsSync(settingsFile)) {
+      await chmod(kitPath('script'), 0o755);
       const settingsResult = spawnSync(
         `./script`,
         [`./setup/create-settings.js`],
