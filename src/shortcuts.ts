@@ -7,6 +7,7 @@ import chokidar from 'chokidar';
 import path from 'path';
 
 import { readFile } from 'fs/promises';
+import { existsSync } from 'fs';
 import { tryKitScript, appScript } from './kit';
 import { kenvPath, kitPath } from './helpers';
 
@@ -127,7 +128,7 @@ export const cacheMenu = async () => {
 };
 
 export const manageShortcuts = async () => {
-  if (!test('-f', settingsFile)) {
+  if (!existsSync(settingsFile)) {
     await appScript(kitPath('setup', 'create-settings.js'), []);
   }
 
