@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { clipboard, NativeImage } from 'electron';
 import { interval, merge } from 'rxjs';
-import { distinctUntilChanged, map, share, tap } from 'rxjs/operators';
+import { distinctUntilChanged, map, share, skip, tap } from 'rxjs/operators';
 import { format } from 'date-fns';
 import { writeFile, mkdir } from 'fs/promises';
 import low from 'lowdb';
@@ -25,6 +25,7 @@ export const tick = async () => {
 
   const clipboardText$ = tick$.pipe(
     map(() => clipboard.readText()),
+    skip(1),
     distinctUntilChanged()
   );
 
@@ -33,6 +34,7 @@ export const tick = async () => {
     tap(() => {
       image = clipboard.readImage();
     }),
+    skip(1),
     map(() => image?.toDataURL()),
     distinctUntilChanged(),
     map(() => image)
