@@ -1,3 +1,11 @@
+# [1.3.0-alpha.19](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.18...v1.3.0-alpha.19) (2021-04-22)
+
+
+### Bug Fixes
+
+* **build:** build on push to beta ([934ff04](https://github.com/johnlindquist/kitapp/commit/934ff046c0867da34734ab64d8f1cf839b628869))
+* **prompt:** padding ([7c6d6ad](https://github.com/johnlindquist/kitapp/commit/7c6d6adec389e603a9315781ae06069324556e00))
+
 # [1.3.0-alpha.18](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.17...v1.3.0-alpha.18) (2021-04-22)
 
 

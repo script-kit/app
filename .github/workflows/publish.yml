@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - alpha
-
-  pull_request:
-    types: [closed]
-    branches:
       - beta
       - main
 
