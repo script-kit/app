@@ -247,8 +247,8 @@ const ready = async () => {
     setupLog(`Prompt window created`);
     try {
       const tick = await import('./tick');
-      setupLog(JSON.stringify({ tick }));
-      setupLog(`Tick started`);
+      console.log(JSON.stringify({ tick }));
+      console.log(`Tick started`);
     } catch (error) {
       setupLog(error.message);
     }
