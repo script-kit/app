@@ -34,6 +34,7 @@
   },
   "build": {
     "generateUpdatesFilesForAllChannels": true,
+    "detectUpdateChannel": "true",
     "productName": "Kit",
     "appId": "app.scriptkit",
     "files": [
