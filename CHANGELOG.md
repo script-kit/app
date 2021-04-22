@@ -1,3 +1,10 @@
+# [1.3.0-alpha.16](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.15...v1.3.0-alpha.16) (2021-04-22)
+
+
+### Bug Fixes
+
+* **clipboard:** startup ([f72845a](https://github.com/johnlindquist/kitapp/commit/f72845a026e847af08b59d928f5622afa0d06189))
+
 # [1.3.0-alpha.15](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.14...v1.3.0-alpha.15) (2021-04-22)
 
 
