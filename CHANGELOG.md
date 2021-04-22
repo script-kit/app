@@ -1,3 +1,15 @@
+# [1.3.0-alpha.15](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.14...v1.3.0-alpha.15) (2021-04-22)
+
+
+### Bug Fixes
+
+* **install:** chmod'ing kit/script ([47d2380](https://github.com/johnlindquist/kitapp/commit/47d2380eb3944db13e9cc1bd17573888d4dca4fe))
+
+
+### Features
+
+* **clipboard:** adding clipboard history ([b9fb607](https://github.com/johnlindquist/kitapp/commit/b9fb607757a0948a011221f45b15e3d97b454379))
+
 # [1.3.0-alpha.14](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.13...v1.3.0-alpha.14) (2021-04-21)
 
 
