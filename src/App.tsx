@@ -19,7 +19,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useDebouncedCallback } from 'use-debounce';
+import { useDebounce, useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
@@ -131,6 +131,7 @@ export default function App() {
   const [unfilteredChoices, setUnfilteredChoices] = useState<ChoiceData[]>([]);
   const [choices, setChoices] = useState<ChoiceData[]>([]);
   const [placeholder, setPlaceholder] = useState('');
+  const [debouncedPlaceholder] = useDebounce(placeholder, 10);
   const previousPlaceholder: string | null = usePrevious(placeholder);
   const [dropReady, setDropReady] = useState(false);
   const [panelHTML, setPanelHTML] = useState('');
@@ -741,7 +742,7 @@ export default function App() {
             }
             onKeyDown={onKeyDown}
             onKeyUp={onKeyUp}
-            placeholder={placeholder || promptData?.placeholder}
+            placeholder={debouncedPlaceholder || promptData?.placeholder}
             ref={inputRef}
             type={promptData?.secret ? 'password' : 'text'}
             value={mode !== MODE.HOTKEY ? inputValue : undefined}
