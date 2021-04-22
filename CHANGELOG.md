@@ -1,3 +1,10 @@
+# [1.3.0-alpha.21](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.20...v1.3.0-alpha.21) (2021-04-22)
+
+
+### Bug Fixes
+
+* **install:** fix script permissions ([1d38626](https://github.com/johnlindquist/kitapp/commit/1d386261e0fc7e1e6091b7f9e72f201e953f2093))
+
 # [1.3.0-alpha.20](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.19...v1.3.0-alpha.20) (2021-04-22)
 
 
