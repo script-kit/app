@@ -745,7 +745,7 @@ export default function App() {
             onDrop={promptData?.drop ? onDrop : undefined}
           />
           {hint && (
-            <div className="pl-3 text-sm text-gray-800 dark:text-gray-200">
+            <div className="pl-3 pb-2 text-xs text-gray-800 dark:text-gray-200">
               {parse(hint)}
             </div>
           )}

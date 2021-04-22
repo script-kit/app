@@ -20,7 +20,7 @@ export default function KitTabs({ tabs, tabIndex, onTabClick }: KitTabsProps) {
         } as any
       }
     >
-      <div className="flex flex-row pl-2 pb-2 whitespace-nowrap">
+      <div className="flex flex-row pl-2 whitespace-nowrap">
         {/* <span className="bg-white">{modeIndex}</span> */}
         {tabs.map((tab: string, i: number) => {
           return (
