@@ -3,6 +3,7 @@
 import React from 'react';
 import parse from 'html-react-parser';
 import isImage from 'is-image';
+import { ChoiceData } from '../types';
 import { MODE } from '../enums';
 
 interface ChoiceButtonProps {
@@ -100,6 +101,26 @@ const firstLettersMatch = (name: string, input: string) => {
   });
 };
 
+const highlightChoiceName = (
+  mode: MODE,
+  choice: ChoiceData,
+  input: string,
+  name: string,
+  inputValue: string
+) => {
+  return mode === (MODE.GENERATE || MODE.MANUAL)
+    ? noHighlight(choice.name, inputValue)
+    : name.startsWith(input)
+    ? highlightStartsWith(choice.name, inputValue)
+    : !name.match(/\w/)
+    ? noHighlight(choice.name, inputValue)
+    : firstLettersMatch(name, input)
+    ? highlightFirstLetters(choice.name, inputValue)
+    : name.includes(input)
+    ? highlightIncludes(choice.name, inputValue)
+    : highlightAdjacentAndWordStart(choice.name, inputValue);
+};
+
 export default function ChoiceButton({
   choice,
   i,
@@ -153,17 +174,7 @@ export default function ChoiceButton({
         <div className="flex flex-row h-full w-full justify-between items-center">
           <div className="flex flex-col max-w-full truncate">
             <div className="truncate">
-              {mode === (MODE.GENERATE || MODE.MANUAL)
-                ? noHighlight(choice.name, inputValue)
-                : name.startsWith(input)
-                ? highlightStartsWith(choice.name, inputValue)
-                : !name.match(/\w/)
-                ? noHighlight(choice.name, inputValue)
-                : firstLettersMatch(name, input)
-                ? highlightFirstLetters(choice.name, inputValue)
-                : name.includes(input)
-                ? highlightIncludes(choice.name, inputValue)
-                : highlightAdjacentAndWordStart(choice.name, inputValue)}
+              {highlightChoiceName(mode, choice, input, name, inputValue)}
             </div>
             {(choice?.focused || choice?.description) && (
               <div

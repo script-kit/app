@@ -504,6 +504,8 @@ const cleanKit = async () => {
 };
 
 const checkKit = async () => {
+  setupLog(`\n\n---------------------------------`);
+  setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`channel: ${autoUpdater.channel}`);
   setupLog(`feed: ${autoUpdater.getFeedURL()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);

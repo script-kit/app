@@ -25,7 +25,8 @@ import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
 import usePrevious from '@rooks/use-previous';
 import useResizeObserver from '@react-hook/resize-observer';
-import { KitPromptOptions } from './types';
+import parse from 'html-react-parser';
+import { KitPromptOptions, ChoiceData } from './types';
 import {
   CHOICE_FOCUSED,
   GENERATE_CHOICES,
@@ -51,13 +52,6 @@ import Preview from './components/preview';
 import Panel from './components/panel';
 import Header from './components/header';
 import { MODE } from './enums';
-
-interface ChoiceData {
-  name: string;
-  value: string;
-  preview: string | null;
-  shortcode?: string;
-}
 
 const generateShortcut = ({
   option,
@@ -751,8 +745,8 @@ export default function App() {
             onDrop={promptData?.drop ? onDrop : undefined}
           />
           {hint && (
-            <div className="pl-3 pb-3 text-sm text-gray-800 dark:text-gray-200 italic">
-              {hint}
+            <div className="pl-3 text-sm text-gray-800 dark:text-gray-200">
+              {parse(hint)}
             </div>
           )}
           {tabs?.length > 0 && (

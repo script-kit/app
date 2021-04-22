@@ -6,6 +6,7 @@ on:
       - alpha
 
   pull_request:
+    types: [closed]
     branches:
       - beta
       - main
