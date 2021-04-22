@@ -1,3 +1,13 @@
+# [1.3.0-alpha.17](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.16...v1.3.0-alpha.17) (2021-04-22)
+
+
+### Bug Fixes
+
+* **clipboard:** skip first clipboard value ([de4d88a](https://github.com/johnlindquist/kitapp/commit/de4d88a0f0906ca00d48d638feb9b8b7ef48348b))
+* **prompt:** debouncing placeholder ([e991a28](https://github.com/johnlindquist/kitapp/commit/e991a280dde0f184153d895307c244c73cc60c87))
+* **update:** logging more info ([7d2d8c5](https://github.com/johnlindquist/kitapp/commit/7d2d8c5b819ba0a2fb5775b96aa10d1fe458455e))
+* **updater:** detect channel ([65ab5d7](https://github.com/johnlindquist/kitapp/commit/65ab5d75ae00444164a05aa79cab3b9bd409aa14))
+
 # [1.3.0-alpha.16](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.15...v1.3.0-alpha.16) (2021-04-22)
 
 
