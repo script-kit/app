@@ -559,8 +559,11 @@ const checkKit = async () => {
 
     if (!kenvConfigured()) {
       setupLog(`Run .kenv setup script...`);
+      await chmod(kitPath('script'), 0o755);
+      await chmod(kitPath('kar'), 0o755);
 
-      spawnSync(`./script`, [`./setup/setup.js`], options);
+      const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
+      await handleSpawnReturns(`setup`, setupResult);
 
       kenvConfigured();
     }
