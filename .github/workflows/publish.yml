@@ -3,8 +3,18 @@ name: Publish
 on:
   push:
     branches:
-      - master
+      - alpha
+
+  pull_request:
+    branches:
       - beta
+      - main
+
+  workflow_dispatch:
+    branches:
+      - alpha
+      - beta
+      - main
 
 jobs:
   publish:
@@ -15,6 +25,26 @@ jobs:
         os: [macos-latest]
 
     steps:
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Show ref
+        run: |
+          echo "${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}"
+
+      - name: Curl kit.zip
+        run: |
+          curl -L https://github.com/johnlindquist/kit/archive/refs/heads/${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}.zip -o ./../kit.zip
+
+      - name: Curl kenv.zip
+        run: |
+          curl -L https://github.com/johnlindquist/kenv/archive/refs/heads/${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}.zip -o ./../kenv.zip
+
+      - name: ls parent paths
+        run: |
+          pwd
+          ls ./
+
       - name: Checkout git repo
         uses: actions/checkout@v2
 
@@ -31,13 +61,45 @@ jobs:
         run: |
           yarn install-electron-deps
 
-      - name: yarn build
+      - name: pwd
         run: |
-          yarn build
+          pwd
+
+      - name: ls cwd
+        run: |
+          ls ./
+          ls ./../
+
+      - name: Find .zips
+        run: |
+          find ./../../ -name "kit.zip"
+
+      - name: Bundle kit and kenv in assets
+        run: |
+          mv /Users/runner/work/kitapp/kit.zip ./assets/kit.zip && mv /Users/runner/work/kitapp/kenv.zip ./assets/kenv.zip
 
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v2.5.3
+        with:
+          semantic_version: 16
+          branches: |
+            [
+              '+([0-9])?(.{+([0-9]),x}).x',
+              'main',
+              {
+                name: 'beta',
+                prerelease: true
+              },
+              {
+                name: 'alpha',
+                prerelease: true
+              }
+            ]
+
+      - name: yarn build
+        run: |
+          yarn build
 
       - name: Publish releases
         env:
@@ -50,21 +112,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           yarn electron-builder --publish always --mac
-
-      - name: Clone kit
-        run: |
-          git clone https://github.com/johnlindquist/kit.git ~/.kit
-
-      - name: Install Kit
-        run: |
-          cd ~/.kit
-          bash ./install-node.sh --prefix ./node
-          ./node/bin/npm install --prefix ./
-          ./node/bin/npm install @octokit/rest --prefix ./
-
-      - name: Tag Kit
-        env:
-          GITHUB_TOKEN: ${{ secrets.SECRET_TOKEN }}
-        run: |
-          cd ~/.kit
-          ./script ./ci/create-tag.js ${{ steps.semantic.outputs.new_release_version }}

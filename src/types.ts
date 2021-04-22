@@ -6,7 +6,9 @@ export interface KitPromptOptions extends BasePromptOptions {
   choices: any;
   detail: string | null;
   scriptInfo: {
-    menu: string;
+    menu?: string;
+    description?: string;
+    twitter?: string;
   };
 }
 export interface KitArrayPromptOptions extends ArrayPromptOptions {

@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-continue */
 /* eslint-disable import/first */
 /* eslint-disable jest/no-identical-title */
 /* eslint-disable jest/expect-expect */
@@ -27,20 +29,29 @@ import log from 'electron-log';
 import path from 'path';
 import {
   spawnSync,
-  SpawnSyncOptions,
   exec,
+  SpawnSyncOptions,
   SpawnSyncReturns,
 } from 'child_process';
-import { test } from 'shelljs';
 import { homedir } from 'os';
-import { readFile } from 'fs/promises';
-import git from 'simple-git/promise';
+import { createReadStream, createWriteStream, existsSync } from 'fs';
+import {
+  chmod,
+  lstat,
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  rmdir,
+} from 'fs/promises';
+import { Open, Parse } from 'unzipper';
 import { createTray, destroyTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
+import { tick } from './tick';
 import { createPromptWindow, createPromptCache } from './prompt';
-import { createNotification } from './notifications';
 import {
   APP_NAME,
   kenvPath,
@@ -51,11 +62,9 @@ import {
 } from './helpers';
 import { getVersion } from './version';
 import { show } from './show';
+import { getStoredVersion, storeVersion } from './state';
 
 let configWindow: BrowserWindow | null = null;
-
-const KIT_REPO = `https://github.com/johnlindquist/kit.git`;
-const KENV_REPO = `https://github.com/johnlindquist/kenv.git`;
 
 app.setName(APP_NAME);
 
@@ -129,6 +138,7 @@ autoUpdater.on('update-downloaded', () => {
   log.info('update downloaded');
   log.info('attempting quitAndInstall');
   updateDownloaded = true;
+  storeVersion(getVersion());
   callBeforeQuitAndInstall();
   autoUpdater.quitAndInstall();
   const allWindows = BrowserWindow.getAllWindows();
@@ -213,52 +223,43 @@ const configWindowDone = () => {
   }
 };
 
+const updateConfigWindow = (message: string) => {
+  if (configWindow?.isVisible()) {
+    configWindow?.webContents.send('UPDATE', { message });
+  }
+};
+
+const setupLog = (message: string) => {
+  updateConfigWindow(message);
+  log.info(message);
+};
+
 const ready = async () => {
   try {
     createLogs();
     createCaches();
     await prepareProtocols();
+    setupLog(`Protocols Prepared`);
     await createTray();
+    setupLog(`Tray created`);
     await manageShortcuts();
+    setupLog(`Shortcuts Assigned`);
     await createPromptWindow();
-    await createNotification();
+    setupLog(`Prompt window created`);
+
+    await tick();
+    console.log(`Tick started`);
+
+    setupLog(`Kit.app is ready...`);
+    configWindowDone();
+
     autoUpdater.logger = log;
     autoUpdater.checkForUpdatesAndNotify({
       title: 'Script Kit Updated',
       body: 'Relaunching...',
     });
-
-    configWindowDone();
   } catch (error) {
     log.warn(error);
-  }
-};
-
-const options: SpawnSyncOptions = {
-  cwd: KIT,
-  encoding: 'utf-8',
-  env: {
-    KIT,
-    KENV,
-    PATH: `${path.join(KIT, 'node', 'bin')}:${process.env.PATH}`,
-  },
-};
-
-const kitExists = () => test('-d', KIT);
-const kenvExists = () => test('-d', KENV);
-
-const verifyInstall = async () => {
-  const kitE = kitExists();
-  const kenvE = kenvExists();
-
-  if (![kitE, kenvE].every((x) => x)) {
-    throw new Error(`Couldn't verify install.`);
-  }
-};
-
-const updateConfigWindow = (message: string) => {
-  if (configWindow?.isVisible()) {
-    configWindow?.webContents.send('UPDATE', { message });
   }
 };
 
@@ -288,9 +289,94 @@ const handleSpawnReturns = async (
   return result;
 };
 
-const setupLog = (message: string) => {
-  updateConfigWindow(message);
-  log.info(message);
+const kitExists = () => {
+  setupLog(KIT);
+  const doesKitExist = existsSync(KIT);
+
+  setupLog(`kit${doesKitExist ? `` : ` not`} found`);
+
+  return doesKitExist;
+};
+const kitIsGit = () => {
+  const isGit = existsSync(KENV);
+  setupLog(`kit is${isGit ? ` not` : ``} a .git repo`);
+  return isGit;
+};
+const kitIsReleaseBranch = async () => {
+  const HEADpath = kitPath('.git', 'HEAD');
+  if (!existsSync(HEADpath)) {
+    return false;
+  }
+  const HEADfile = await readFile(HEADpath, 'utf-8');
+  setupLog(`HEAD: ${HEADfile}`);
+
+  const isReleaseBranch = HEADfile.match(/alpha|beta|main/);
+
+  setupLog(`.kit is${isReleaseBranch ? ` not` : ``} a release branch`);
+
+  return isReleaseBranch;
+};
+
+const isContributor = async () => {
+  // eslint-disable-next-line no-return-await
+  return kitExists() && kitIsGit() && (await kitIsReleaseBranch());
+};
+
+const kenvExists = () => {
+  const doesKenvExist = existsSync(KENV);
+  setupLog(`kenv${doesKenvExist ? `` : ` not`} found`);
+
+  return doesKenvExist;
+};
+
+const kenvConfigured = () => {
+  const isKenvConfigured = existsSync(kenvPath('.env'));
+  setupLog(`kenv is${isKenvConfigured ? `` : ` not`} configured`);
+
+  return isKenvConfigured;
+};
+
+const nodeExists = () => {
+  const doesNodeExist = existsSync(kitPath('node', 'bin', 'node'));
+  setupLog(`node${doesNodeExist ? `` : ` not`} found`);
+
+  return doesNodeExist;
+};
+
+const nodeModulesExists = () => {
+  const doesNodeModulesExist = existsSync(kitPath('node_modules'));
+  setupLog(`node_modules${doesNodeModulesExist ? `` : ` not`} found`);
+
+  return doesNodeModulesExist;
+};
+
+const verifyInstall = async () => {
+  setupLog(`Verifying ~/.kit exists:`);
+  const checkKit = kitExists();
+  setupLog(`Verifying ~/.kenv exists:`);
+  const checkKenv = kenvExists();
+
+  const checkNode = nodeExists();
+  setupLog(checkNode ? `node found` : `node missing`);
+
+  const checkNodeModules = nodeModulesExists();
+  setupLog(checkNodeModules ? `node_modules found` : `node_modules missing`);
+
+  const isKenvConfigured = kenvConfigured();
+  setupLog(isKenvConfigured ? `kenv .env found` : `kenv .env missinag`);
+
+  if (
+    checkKit &&
+    checkKenv &&
+    checkNode &&
+    checkNodeModules &&
+    isKenvConfigured
+  ) {
+    setupLog(`Install verified`);
+    return true;
+  }
+
+  throw new Error(`Install not verified...`);
 };
 
 const ohNo = async (error: Error) => {
@@ -339,95 +425,158 @@ ${mainLog}
   throw new Error(error.message);
 };
 
-const checkoutKitTag = async () => {
-  setupLog(`git fetch all tags`);
-  await git(KIT).fetch('--all', '--tags').catch(ohNo);
-  setupLog(`git checkout tags/${getVersion()}`);
-  await git(KIT).checkout(`tags/${getVersion()}`).catch(ohNo);
+const options: SpawnSyncOptions = {
+  cwd: KIT,
+  encoding: 'utf-8',
+  env: {
+    KIT,
+    KENV,
+    PATH: `${path.join(KIT, 'node', 'bin')}:${process.env.PATH}`,
+  },
+};
+
+const unzipToHome = async (zipFile: string, outDir: string) => {
+  setupLog(`Unzipping ${zipFile} to ${outDir}`);
+  const tmpDir = path.join(app.getPath('home'), '.kit-install-tmp');
+  const file = await Open.file(zipFile);
+  await file.extract({ path: tmpDir, concurrency: 5 });
+
+  const [zipDir] = await readdir(tmpDir);
+  const targetDir = path.join(path.join(app.getPath('home'), outDir));
+
+  setupLog(`Renaming ${zipDir} to ${targetDir}`);
+
+  await rename(path.join(tmpDir, zipDir), targetDir);
+
+  await rmdir(tmpDir);
+};
+
+const unzipKit = async () => {
+  setupLog(`Unzipping kit into ${kitPath()}`);
+  await mkdir(kitPath()).catch((error) => setupLog(error.message));
+  const kitZip = getAssetPath('kit.zip');
+
+  const zip = createReadStream(kitZip).pipe(Parse({ forceStream: true }));
+
+  for await (const entry of zip) {
+    const fileName = entry.path;
+    const innerFile = fileName.replace(/^(.*?)\//, '');
+    const { type } = entry;
+    const kitPathName = kitPath(innerFile);
+    const notDot = innerFile.match(/^\w/);
+
+    if (type === 'Directory' && notDot) {
+      await mkdir(kitPathName).catch((error) => console.log(error.message));
+    } else if (type === 'File' && notDot) {
+      entry.pipe(createWriteStream(kitPathName));
+    } else {
+      entry.autodrain();
+    }
+  }
+};
+
+const requiresSetup = () => {
+  const currentVersion = getVersion();
+  setupLog(`App version: ${currentVersion}`);
+
+  const previousVersion = getStoredVersion();
+  setupLog(`Previous version: ${previousVersion}`);
+  return currentVersion !== previousVersion;
+};
+
+const cleanKit = async () => {
+  const pathToClean = kitPath();
+
+  const keep = (file: string) => file.startsWith('node');
+
+  // eslint-disable-next-line no-restricted-syntax
+  for await (const file of await readdir(pathToClean)) {
+    if (keep(file)) continue;
+
+    const filePath = path.join(pathToClean, file);
+    const stat = await lstat(filePath);
+    if (stat.isDirectory()) {
+      await rmdir(filePath, { recursive: true });
+    } else {
+      await rm(filePath);
+    }
+  }
 };
 
 const checkKit = async () => {
-  configWindow = await show(
-    'splash-setup',
-    `
+  setupLog(`channel: ${autoUpdater.channel}`);
+  setupLog(`feed: ${autoUpdater.getFeedURL()}`);
+  setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
+  if (requiresSetup()) {
+    configWindow = await show(
+      'splash-setup',
+      `
   <body class="h-screen w-screen flex flex-col justify-evenly items-center dark:bg-gray-800 dark:text-white">
     <h1 class="header pt-4">Configuring ~/.kit and ~/.kenv...</h1>
     <img src="${getAssetPath('icon.png')}" class="w-20"/>
     <div class="message pb-4"></div>
   </body>
   `,
-    { frame: false },
-    false
-  );
-
-  // eslint-disable-next-line jest/expect-expect
-  log.info(`Checking if kit exists`);
-  if (!kitExists()) {
-    configWindow?.show();
-    setupLog(`~/.kit not found. Installing...`);
-
-    // Step 1: Clone repo
-    await git(app.getPath('home')).clone(KIT_REPO, KIT).catch(ohNo);
-
-    // Step 2: Install node into .kit/node
-    setupLog(`Adding node to ~/.kit...`);
-    const installNodeResult = spawnSync(
-      `./install-node.sh`,
-      ` --prefix node --platform darwin`.split(' '),
-      options
+      { frame: false },
+      false
     );
 
-    await handleSpawnReturns(`install node`, installNodeResult);
+    if (await isContributor()) {
+      setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
+    } else {
+      configWindow?.show();
 
-    // Step 3: npm install packages into .kit/node_modules
-    setupLog(`adding ~/.kit packages...`);
-    const npmResult = spawnSync(`npm`, [`i`], options);
-    await handleSpawnReturns(`npm`, npmResult);
+      if (kitExists()) {
+        setupLog(`Cleaning previous .kit`);
+        await cleanKit();
+      }
+
+      setupLog(`.kit doesn't exist or isn't on a contributor branch`);
+      await unzipKit();
+
+      if (!nodeExists()) {
+        setupLog(`Adding node to ~/.kit...`);
+        const installScript = `./install-node.sh`;
+        await chmod(kitPath(installScript), 0o755);
+        const nodeInstallResult = spawnSync(
+          installScript,
+          ` --prefix node --platform darwin`.split(' '),
+          options
+        );
+        await handleSpawnReturns(`npm`, nodeInstallResult);
+      }
+
+      if (!nodeModulesExists()) {
+        setupLog(`adding ~/.kit packages...`);
+        const npmResult = spawnSync(`npm`, [`i`], options);
+        await handleSpawnReturns(`npm`, npmResult);
+      }
+    }
+
+    if (!kenvExists()) {
+      // Step 4: Use kit wrapper to run setup.js script
+      configWindow?.show();
+      const kenvZip = getAssetPath('kenv.zip');
+      await unzipToHome(kenvZip, '.kenv');
+
+      kenvExists();
+    }
+
+    if (!kenvConfigured()) {
+      setupLog(`Run .kenv setup script...`);
+      await chmod(kitPath('script'), 0o755);
+      await chmod(kitPath('kar'), 0o755);
+
+      const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
+      await handleSpawnReturns(`setup`, setupResult);
+
+      kenvConfigured();
+    }
+
+    await verifyInstall();
   }
 
-  setupLog(`Comparing versions...`);
-  const kitVersion = await git(KIT)
-    .raw('describe', '--tags', '--abbrev=0')
-    .catch(ohNo);
-
-  setupLog(`~/.kit: ${kitVersion} - Kit app: ${getVersion()}`);
-
-  const branch = await git(KIT)
-    .raw('rev-parse', '--abbrev-ref', 'HEAD')
-    .catch(ohNo);
-
-  setupLog(`Currently on branch: ${branch}`);
-
-  const shouldCheckoutTag =
-    (kitVersion !== getVersion() || branch === 'main') &&
-    process.env.NODE_ENV !== 'development';
-
-  if (shouldCheckoutTag) {
-    // TODO: verify tag
-    // git show-ref --verify refs/tags/
-    setupLog(`Checking out ${getVersion()}`);
-    await checkoutKitTag();
-    const npmResult = spawnSync(`npm`, [`i`], options);
-    await handleSpawnReturns(`npm`, npmResult);
-  }
-
-  if (!kenvExists()) {
-    // Step 4: Use kit wrapper to run setup.js script
-    configWindow?.show();
-    setupLog(`Run .kenv setup script...`);
-
-    await git(app.getPath('home')).clone(KENV_REPO, KENV);
-    const setupKenvResult = spawnSync(
-      `./script`,
-      [`./setup/setup.js`],
-      options
-    );
-
-    await handleSpawnReturns(`Setup .kenv:`, setupKenvResult);
-  }
-
-  await verifyInstall();
-
+  storeVersion(getVersion());
   await ready();
 };
 
