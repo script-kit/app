@@ -15,3 +15,10 @@ export interface KitArrayPromptOptions extends ArrayPromptOptions {
   kitScript: string;
   detail: string | null;
 }
+
+export interface ChoiceData {
+  name: string;
+  value: string;
+  preview: string | null;
+  shortcode?: string;
+}
