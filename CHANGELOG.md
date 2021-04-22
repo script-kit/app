@@ -1,3 +1,10 @@
+# [1.3.0-alpha.20](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.19...v1.3.0-alpha.20) (2021-04-22)
+
+
+### Bug Fixes
+
+* **install:** verify settings file exists ([128d32e](https://github.com/johnlindquist/kitapp/commit/128d32e180da551cda85362927f2b62da4811155))
+
 # [1.3.0-alpha.19](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.18...v1.3.0-alpha.19) (2021-04-22)
 
 
