@@ -1,3 +1,10 @@
+# [1.3.0-alpha.18](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.17...v1.3.0-alpha.18) (2021-04-22)
+
+
+### Bug Fixes
+
+* **hint:** allowing clickable urls in hint ([a6f0fd8](https://github.com/johnlindquist/kitapp/commit/a6f0fd8af8f26715cfe114bc9dc550c0544c69c3))
+
 # [1.3.0-alpha.17](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.16...v1.3.0-alpha.17) (2021-04-22)
 
 
