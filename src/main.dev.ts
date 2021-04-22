@@ -50,6 +50,7 @@ import { createTray, destroyTray } from './tray';
 import { manageShortcuts } from './shortcuts';
 import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
+import { tick } from './tick';
 import { createPromptWindow, createPromptCache } from './prompt';
 import {
   APP_NAME,
@@ -245,13 +246,9 @@ const ready = async () => {
     setupLog(`Shortcuts Assigned`);
     await createPromptWindow();
     setupLog(`Prompt window created`);
-    try {
-      const tick = await import('./tick');
-      console.log(JSON.stringify({ tick }));
-      console.log(`Tick started`);
-    } catch (error) {
-      setupLog(error.message);
-    }
+
+    await tick();
+    console.log(`Tick started`);
 
     setupLog(`Kit.app is ready...`);
     configWindowDone();
@@ -479,7 +476,12 @@ const unzipKit = async () => {
 };
 
 const requiresSetup = () => {
-  return getVersion() !== getStoredVersion();
+  const currentVersion = getVersion();
+  setupLog(`App version: ${currentVersion}`);
+
+  const previousVersion = getStoredVersion();
+  setupLog(`Previous version: ${previousVersion}`);
+  return currentVersion !== previousVersion;
 };
 
 const cleanKit = async () => {
