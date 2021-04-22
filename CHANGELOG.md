@@ -1,8 +1,21 @@
-# [1.3.0-beta.1](https://github.com/johnlindquist/kitapp/compare/v1.2.0...v1.3.0-beta.1) (2021-04-22)
+# [1.3.0-alpha.22](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.21...v1.3.0-alpha.22) (2021-04-22)
 
 
 ### Bug Fixes
 
+* **clipboard:** attempting to make tokens in clipboard secret ([736d707](https://github.com/johnlindquist/kitapp/commit/736d7072e70a5644e8854c6a965d43413ac1f18b))
+
+### Bug Fixes
+
+* **install:** fix script permissions ([1d38626](https://github.com/johnlindquist/kitapp/commit/1d386261e0fc7e1e6091b7f9e72f201e953f2093))
+
+# [1.3.0-alpha.20](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.19...v1.3.0-alpha.20) (2021-04-22)
+
+
+### Bug Fixes
+
+* **install:** verify settings file exists ([128d32e](https://github.com/johnlindquist/kitapp/commit/128d32e180da551cda85362927f2b62da4811155))
+=======
 * **build:** build on push to beta ([934ff04](https://github.com/johnlindquist/kitapp/commit/934ff046c0867da34734ab64d8f1cf839b628869))
 * **build:** renaming to kit.zip ([8b54303](https://github.com/johnlindquist/kitapp/commit/8b54303832446d78dd92afcf5aa06c30e8e70256))
 * **build:** trying to add in alpha and beta tags ([e097587](https://github.com/johnlindquist/kitapp/commit/e097587eddec35384a39370e02825b935c1a6cd3))
@@ -37,6 +50,7 @@
 * **build:** updating build checking kit dir ([ce3903c](https://github.com/johnlindquist/kitapp/commit/ce3903c288fd2ca4e423af478227bb9244c28c0d))
 * **build:** Updating setup process to unzip bundled zips ([a7c4bad](https://github.com/johnlindquist/kitapp/commit/a7c4bad98a713a70d6e9badd64191791ff33d43d))
 * **clipboard:** adding clipboard history ([b9fb607](https://github.com/johnlindquist/kitapp/commit/b9fb607757a0948a011221f45b15e3d97b454379))
+
 
 # [1.3.0-alpha.19](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.18...v1.3.0-alpha.19) (2021-04-22)
 

@@ -54,8 +54,12 @@ export const tick = async () => {
       await writeFile(value, (textOrImage as NativeImage).toPNG());
     }
 
+    const secret = Boolean(
+      type === 'text' &&
+        value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-z0-9-]{5,})$/gi)
+    );
     db.update('history', (history) =>
-      [{ value, type, timestamp }, ...history].slice(0, 50)
+      [{ value, type, timestamp, secret }, ...history].slice(0, 50)
     ).write();
   });
 };

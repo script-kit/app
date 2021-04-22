@@ -575,6 +575,19 @@ const checkKit = async () => {
       kenvConfigured();
     }
 
+    const settingsFile = kenvPath('db', 'kit.json');
+
+    if (!existsSync(settingsFile)) {
+      await chmod(kitPath('script'), 0o755);
+      const settingsResult = spawnSync(
+        `./script`,
+        [`./setup/create-settings.js`],
+        options
+      );
+
+      await handleSpawnReturns(`settings`, settingsResult);
+    }
+
     await verifyInstall();
   }
 
