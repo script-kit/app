@@ -1,6 +1,3 @@
-# [1.3.0-alpha.21](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.20...v1.3.0-alpha.21) (2021-04-22)
-
-
 ### Bug Fixes
 
 * **install:** fix script permissions ([1d38626](https://github.com/johnlindquist/kitapp/commit/1d386261e0fc7e1e6091b7f9e72f201e953f2093))
@@ -11,6 +8,42 @@
 ### Bug Fixes
 
 * **install:** verify settings file exists ([128d32e](https://github.com/johnlindquist/kitapp/commit/128d32e180da551cda85362927f2b62da4811155))
+=======
+* **build:** build on push to beta ([934ff04](https://github.com/johnlindquist/kitapp/commit/934ff046c0867da34734ab64d8f1cf839b628869))
+* **build:** renaming to kit.zip ([8b54303](https://github.com/johnlindquist/kitapp/commit/8b54303832446d78dd92afcf5aa06c30e8e70256))
+* **build:** trying to add in alpha and beta tags ([e097587](https://github.com/johnlindquist/kitapp/commit/e097587eddec35384a39370e02825b935c1a6cd3))
+* **clipboard:** skip first clipboard value ([de4d88a](https://github.com/johnlindquist/kitapp/commit/de4d88a0f0906ca00d48d638feb9b8b7ef48348b))
+* **clipboard:** startup ([f72845a](https://github.com/johnlindquist/kitapp/commit/f72845a026e847af08b59d928f5622afa0d06189))
+* **hint:** allowing clickable urls in hint ([a6f0fd8](https://github.com/johnlindquist/kitapp/commit/a6f0fd8af8f26715cfe114bc9dc550c0544c69c3))
+* **install:** chmod'ing kit/script ([47d2380](https://github.com/johnlindquist/kitapp/commit/47d2380eb3944db13e9cc1bd17573888d4dca4fe))
+* **install:** comparing versions and check branch exists ([2a48a1a](https://github.com/johnlindquist/kitapp/commit/2a48a1af616d3bdbe7a3f02ed2b5629bd73cb435))
+* **install:** existsSync and local node install ([708638e](https://github.com/johnlindquist/kitapp/commit/708638e5725b71ea19302cf5e738898d1484b870))
+* **install:** fixing .kit dir setup ([17f3eed](https://github.com/johnlindquist/kitapp/commit/17f3eeda9e8c46697427a9d2488cd9567d7d8896))
+* **install:** fixing dir checking ([7c9eead](https://github.com/johnlindquist/kitapp/commit/7c9eeadc0f9e4a2fb64f66483a83a7c60abdc4d9))
+* **install:** fixing isContributor kit dir check ([76770a2](https://github.com/johnlindquist/kitapp/commit/76770a2c9f1b355d299b1a7849ad4de84ae2f452))
+* **install:** fixing zipping and setup ([1591b82](https://github.com/johnlindquist/kitapp/commit/1591b827efb7fe3d4d9f49142ab68cabb2ee8386))
+* **install:** isContributor is a promise ([354c2e3](https://github.com/johnlindquist/kitapp/commit/354c2e375f84de827f92cda35b586eeb99f60297))
+* **install:** proper unzipping ([590e068](https://github.com/johnlindquist/kitapp/commit/590e0680ca72e606e12af0311b3dc7ccd4a02959))
+* **install:** verify kenv setup ([5e77e38](https://github.com/johnlindquist/kitapp/commit/5e77e38b3a9cff87cb9cab4fccc047803641af96))
+* **kit:** remove unnecessary path ([a3b238b](https://github.com/johnlindquist/kitapp/commit/a3b238b997e8104d9da1a776c8bf20c9c7dffe29))
+* **prompt:** debouncing placeholder ([e991a28](https://github.com/johnlindquist/kitapp/commit/e991a280dde0f184153d895307c244c73cc60c87))
+* **prompt:** padding ([7c6d6ad](https://github.com/johnlindquist/kitapp/commit/7c6d6adec389e603a9315781ae06069324556e00))
+* **prompt:** remove choice transition fix focused ([0e84f30](https://github.com/johnlindquist/kitapp/commit/0e84f3029378aafa0f48d141f972b694cabc3acf))
+* **publish:** using curl instead of manually zipping ([5701966](https://github.com/johnlindquist/kitapp/commit/5701966396d0d293daa0c0882c60d16850def3b6))
+* **update:** logging more info ([7d2d8c5](https://github.com/johnlindquist/kitapp/commit/7d2d8c5b819ba0a2fb5775b96aa10d1fe458455e))
+* **updater:** detect channel ([65ab5d7](https://github.com/johnlindquist/kitapp/commit/65ab5d75ae00444164a05aa79cab3b9bd409aa14))
+
+
+### Features
+
+* **build:** checking out proper kit and kenv refs ([24dba16](https://github.com/johnlindquist/kitapp/commit/24dba160060d0e4b01dc4d8bee80b58f7474afb1))
+* **build:** fixing ref on pr ([efdce54](https://github.com/johnlindquist/kitapp/commit/efdce54aa854eed11578a673fe69ce3a547fc9aa))
+* **build:** guessing configuration settings ([fb6b187](https://github.com/johnlindquist/kitapp/commit/fb6b1870876f8c70d88bbedf16181f0fcaa488d6))
+* **build:** push on alpha, pr on beta and main ([768b41a](https://github.com/johnlindquist/kitapp/commit/768b41afa91fe85aae8c9b13ae7b813f797027db))
+* **build:** updating build checking kit dir ([ce3903c](https://github.com/johnlindquist/kitapp/commit/ce3903c288fd2ca4e423af478227bb9244c28c0d))
+* **build:** Updating setup process to unzip bundled zips ([a7c4bad](https://github.com/johnlindquist/kitapp/commit/a7c4bad98a713a70d6e9badd64191791ff33d43d))
+* **clipboard:** adding clipboard history ([b9fb607](https://github.com/johnlindquist/kitapp/commit/b9fb607757a0948a011221f45b15e3d97b454379))
+
 
 # [1.3.0-alpha.19](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.18...v1.3.0-alpha.19) (2021-04-22)
 
