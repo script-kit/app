@@ -504,6 +504,9 @@ const cleanKit = async () => {
 };
 
 const checkKit = async () => {
+  setupLog(`channel: ${autoUpdater.channel}`);
+  setupLog(`feed: ${autoUpdater.getFeedURL()}`);
+  setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
   if (requiresSetup()) {
     configWindow = await show(
       'splash-setup',
