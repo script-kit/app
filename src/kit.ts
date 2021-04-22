@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { app, BrowserWindow, clipboard, ipcMain, screen } from 'electron';
+import { app, clipboard, ipcMain, screen } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import url from 'url';
 import http from 'http';
@@ -59,9 +59,11 @@ consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
 let kitScriptName = '';
 export const processMap = new Map();
 
-const setPlaceholder = (text: any) => {
+const setPlaceholder = (text: string) => {
   if (!appHidden) sendToPrompt(SET_PLACEHOLDER, text);
 };
+
+const setChoices = (data: any) => sendToPrompt(SET_CHOICES, data);
 
 let values: any[] = [];
 ipcMain.on(VALUE_SUBMITTED, (_event, { value }) => {
@@ -453,7 +455,7 @@ const kitScript = (
         break;
 
       case SET_CHOICES:
-        sendToPrompt(SET_CHOICES, data);
+        setChoices(data);
         break;
 
       case 'UPDATE_PROMPT_WARN':
