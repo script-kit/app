@@ -715,7 +715,7 @@ export default function App() {
             }
             autoFocus
             className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
-            ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4
+            ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
 
             ${
               promptData?.drop
@@ -745,7 +745,7 @@ export default function App() {
             onDrop={promptData?.drop ? onDrop : undefined}
           />
           {hint && (
-            <div className="pl-3 pb-2 text-xs text-gray-800 dark:text-gray-200">
+            <div className="pl-3 pb-1 text-xs text-gray-800 dark:text-gray-200 italic">
               {parse(hint)}
             </div>
           )}

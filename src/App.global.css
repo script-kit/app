@@ -51,7 +51,6 @@ body {
     @apply no-underline;
   }
 
-  p,
   ul,
   ol {
     @apply mb-4;
@@ -70,5 +69,9 @@ body {
   ul li {
     list-style-type: disc;
     list-style-position: outside;
+  }
+
+  p {
+    @apply mb-0;
   }
 }
