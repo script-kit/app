@@ -1,3 +1,10 @@
+# [1.3.0-alpha.23](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.22...v1.3.0-alpha.23) (2021-04-23)
+
+
+### Features
+
+* **prompt:** spacing and feat version bump ([ce96dd0](https://github.com/johnlindquist/kitapp/commit/ce96dd008f8707222b133150d68336443f885246))
+
 # [1.3.0-beta.2](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.1...v1.3.0-beta.2) (2021-04-22)
 
 
