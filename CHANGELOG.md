@@ -1,3 +1,10 @@
+# [1.3.0-alpha.24](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.23...v1.3.0-alpha.24) (2021-04-24)
+
+
+### Features
+
+* **watcher:** cron, system events, and change shortcut ([b719a84](https://github.com/johnlindquist/kitapp/commit/b719a84fd5a9d2a4abcf9575a5845d841bdd0867))
+
 # [1.3.0-beta.3](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.2...v1.3.0-beta.3) (2021-04-23)
 
 
