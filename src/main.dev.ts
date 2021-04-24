@@ -47,7 +47,7 @@ import {
 } from 'fs/promises';
 import { Open, Parse } from 'unzipper';
 import { createTray, destroyTray } from './tray';
-import { manageShortcuts } from './shortcuts';
+import { manageShortcuts } from './watcher';
 import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
 import { tick } from './tick';
