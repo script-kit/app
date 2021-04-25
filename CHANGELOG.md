@@ -1,3 +1,10 @@
+# [1.3.0-alpha.25](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.24...v1.3.0-alpha.25) (2021-04-25)
+
+
+### Features
+
+* **schedule:** schedule and events cleanup ([794d6cd](https://github.com/johnlindquist/kitapp/commit/794d6cdd50fe908b47a64f18fb8bb0865bfe15d0))
+
 # [1.3.0-alpha.24](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.23...v1.3.0-alpha.24) (2021-04-24)
 
 
