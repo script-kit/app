@@ -51,6 +51,7 @@ import {
 import { serverState, startServer, stopServer } from './server';
 import { MODE } from './enums';
 import { emitter, EVENT } from './events';
+import { getSchedule } from './schedule';
 
 const APP_SCRIPT_TIMEOUT = 10000;
 
@@ -196,7 +197,11 @@ export const appScript = async (scriptPath: string, runArgs: string[]) => {
   });
 
   const id = setTimeout(() => {
-    log.info(`> app process: ${scriptPath} took > 5 seconds. Ending...`);
+    log.info(
+      `> app process: ${scriptPath} took > ${
+        APP_SCRIPT_TIMEOUT / 1000
+      } seconds. Ending...`
+    );
     appScriptChild?.kill();
   }, APP_SCRIPT_TIMEOUT);
 
@@ -277,6 +282,10 @@ const kitScript = (
 
       case 'COPY_PATH_AS_PICTURE':
         clipboard.writeImage(data?.path);
+        break;
+
+      case 'GET_SCHEDULE':
+        child?.send({ channel: 'SCHEDULE', schedule: getSchedule() });
         break;
 
       case 'GET_SCREEN_INFO':
@@ -506,3 +515,7 @@ export const tryKitScript = async (
     return Promise.resolve(error);
   }
 };
+
+emitter.on(EVENT.RUN_APP_SCRIPT, async (filePath) => {
+  await appScript(filePath, []);
+});

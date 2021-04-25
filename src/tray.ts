@@ -25,7 +25,7 @@ const leftClick = async (event: KeyboardEvent) => {
 };
 
 const rightClick = async () => {
-  await tryKitScript(kitPath('main/edit.js'));
+  await tryKitScript(kitPath('main', 'help.js'));
 };
 
 const trayIcon = getAssetPath('IconTemplate.png');

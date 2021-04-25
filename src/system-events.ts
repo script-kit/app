@@ -44,7 +44,7 @@ export const updateEvents = (filePath: string) => {
     systemEventMap.delete(filePath);
   }
 
-  const { stdout } = grep(systemMarker, filePath);
+  const { stdout } = grep(`^//\\s*${systemMarker}\\s*`, filePath);
 
   const systemEventsString = stdout
     .substring(0, stdout.indexOf('\n'))

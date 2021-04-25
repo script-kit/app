@@ -13,7 +13,7 @@ import {
   updateShortcuts,
 } from './shortcuts';
 
-import { unlinkCron, updateCron } from './cron';
+import { cancelSchedule, updateSchedule } from './schedule';
 import { unlinkEvents, updateEvents } from './system-events';
 
 const onScriptsChanged = async (
@@ -23,12 +23,12 @@ const onScriptsChanged = async (
   if (event === 'change') log.info({ event, filePath });
   if (event === 'unlink') {
     unlinkShortcuts(filePath);
-    unlinkCron(filePath);
+    cancelSchedule(filePath);
     unlinkEvents(filePath);
   }
   if (event === 'add' || event === 'change') {
     updateShortcuts(filePath);
-    updateCron(filePath);
+    updateSchedule(filePath);
     updateEvents(filePath);
   }
 };

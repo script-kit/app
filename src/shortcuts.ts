@@ -11,10 +11,8 @@ export const shortcutMap = new Map();
 const shortcutNormalizer = (shortcut: string) =>
   shortcut
     .replace(/(option|opt)/i, 'Alt')
-    .replace(
-      /(commandorcontrol|cmdorctrl|ctrl|ctl|command|cmd)/i,
-      'CommandOrControl'
-    )
+    .replace(/(command|cmd)/i, 'CommandOrControl')
+    .replace(/(ctl|cntrl|ctrl)/, 'Control')
     .split(/\s/)
     .filter(Boolean)
     .map((part) => (part[0].toUpperCase() + part.slice(1)).trim())
@@ -31,7 +29,7 @@ export const unlinkShortcuts = (filePath: string) => {
 
 export const updateShortcuts = (filePath: string) => {
   const shortcutMarker = 'Shortcut: ';
-  const { stdout } = grep(shortcutMarker, filePath);
+  const { stdout } = grep(`^//\\s*${shortcutMarker}\\s*`, filePath);
 
   const rawShortcut = stdout
     .substring(0, stdout.indexOf('\n'))
