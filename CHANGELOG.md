@@ -1,3 +1,10 @@
+# [1.3.0-alpha.26](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.25...v1.3.0-alpha.26) (2021-04-25)
+
+
+### Bug Fixes
+
+* **install:** fixing npm i ([d33f168](https://github.com/johnlindquist/kitapp/commit/d33f1683585656a74950b5fa7000b694a3250d70))
+
 # [1.3.0-alpha.25](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.24...v1.3.0-alpha.25) (2021-04-25)
 
 
