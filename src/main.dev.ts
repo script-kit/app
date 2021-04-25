@@ -47,7 +47,7 @@ import {
 } from 'fs/promises';
 import { Open, Parse } from 'unzipper';
 import { createTray, destroyTray } from './tray';
-import { manageShortcuts } from './shortcuts';
+import { manageShortcuts } from './watcher';
 import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
 import { tick } from './tick';
@@ -506,8 +506,6 @@ const cleanKit = async () => {
 const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
   setupLog(`Launching Script Kit  ${getVersion()}`);
-  setupLog(`channel: ${autoUpdater.channel}`);
-  setupLog(`feed: ${autoUpdater.getFeedURL()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
   if (requiresSetup()) {
     configWindow = await show(
@@ -548,11 +546,9 @@ const checkKit = async () => {
         await handleSpawnReturns(`npm`, nodeInstallResult);
       }
 
-      if (!nodeModulesExists()) {
-        setupLog(`adding ~/.kit packages...`);
-        const npmResult = spawnSync(`npm`, [`i`], options);
-        await handleSpawnReturns(`npm`, npmResult);
-      }
+      setupLog(`updating ~/.kit packages...`);
+      const npmResult = spawnSync(`npm`, [`i`], options);
+      await handleSpawnReturns(`npm`, npmResult);
     }
 
     if (!kenvExists()) {

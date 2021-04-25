@@ -191,7 +191,8 @@ export default function App() {
   }, [unfilteredChoices]);
 
   const submit = useCallback((value: any) => {
-    setPlaceholder(typeof value === 'string' ? value : 'Processing...');
+    if (mode !== MODE.HOTKEY)
+      setPlaceholder(typeof value === 'string' ? value : 'Processing...');
     setUnfilteredChoices([]);
     setPanelHTML('');
     setInputValue('');
@@ -299,6 +300,7 @@ export default function App() {
       }
 
       if (mode === MODE.HOTKEY) {
+        event.preventDefault();
         const {
           code,
           metaKey: command,

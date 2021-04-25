@@ -49,6 +49,11 @@ import {
   ESCAPE_PRESSED,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
+import { MODE } from './enums';
+import { emitter, EVENT } from './events';
+import { getSchedule } from './schedule';
+
+const APP_SCRIPT_TIMEOUT = 10000;
 
 let child: ChildProcess | null = null;
 let appHidden = false;
@@ -67,6 +72,7 @@ const setChoices = (data: any) => sendToPrompt(SET_CHOICES, data);
 
 let values: any[] = [];
 ipcMain.on(VALUE_SUBMITTED, (_event, { value }) => {
+  emitter.emit(EVENT.RESUME_SHORTCUTS);
   values = [...values, value];
   if (child) {
     child?.send({ channel: VALUE_SUBMITTED, value });
@@ -90,6 +96,7 @@ ipcMain.on(CHOICE_FOCUSED, (_event, choice: any) => {
 });
 
 ipcMain.on(TAB_CHANGED, (event, { tab, input = '' }) => {
+  emitter.emit(EVENT.RESUME_SHORTCUTS);
   if (child && tab) {
     child?.send({ channel: TAB_CHANGED, tab, input });
   }
@@ -108,6 +115,7 @@ ipcMain.on(ESCAPE_PRESSED, (event) => {
 
 const reset = () => {
   values = [];
+  emitter.emit(EVENT.RESUME_SHORTCUTS);
   sendToPrompt(RESET_PROMPT, { kitScript: kitScriptName });
   if (child) {
     log.info(`> end process ${kitScriptName} - id: ${child.pid} <\n`);
@@ -189,9 +197,13 @@ export const appScript = async (scriptPath: string, runArgs: string[]) => {
   });
 
   const id = setTimeout(() => {
-    log.info(`> app process: ${scriptPath} took > 5 seconds. Ending...`);
+    log.info(
+      `> app process: ${scriptPath} took > ${
+        APP_SCRIPT_TIMEOUT / 1000
+      } seconds. Ending...`
+    );
     appScriptChild?.kill();
-  }, 5000);
+  }, APP_SCRIPT_TIMEOUT);
 
   appScriptChild?.on('exit', () => {
     if (id) clearTimeout(id);
@@ -272,6 +284,10 @@ const kitScript = (
         clipboard.writeImage(data?.path);
         break;
 
+      case 'GET_SCHEDULE':
+        child?.send({ channel: 'SCHEDULE', schedule: getSchedule() });
+        break;
+
       case 'GET_SCREEN_INFO':
         const cursor = screen.getCursorScreenPoint();
         // Get display with cursor
@@ -321,6 +337,9 @@ const kitScript = (
         break;
 
       case SET_MODE:
+        if (data.mode === MODE.HOTKEY) {
+          emitter.emit(EVENT.PAUSE_SHORTCUTS);
+        }
         sendToPrompt(SET_MODE, data);
         break;
 
@@ -496,3 +515,7 @@ export const tryKitScript = async (
     return Promise.resolve(error);
   }
 };
+
+emitter.on(EVENT.RUN_APP_SCRIPT, async (filePath) => {
+  await appScript(filePath, []);
+});
