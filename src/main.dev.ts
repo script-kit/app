@@ -506,8 +506,6 @@ const cleanKit = async () => {
 const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
   setupLog(`Launching Script Kit  ${getVersion()}`);
-  setupLog(`channel: ${autoUpdater.channel}`);
-  setupLog(`feed: ${autoUpdater.getFeedURL()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
   if (requiresSetup()) {
     configWindow = await show(
@@ -548,11 +546,9 @@ const checkKit = async () => {
         await handleSpawnReturns(`npm`, nodeInstallResult);
       }
 
-      if (!nodeModulesExists()) {
-        setupLog(`adding ~/.kit packages...`);
-        const npmResult = spawnSync(`npm`, [`i`], options);
-        await handleSpawnReturns(`npm`, npmResult);
-      }
+      setupLog(`updating ~/.kit packages...`);
+      const npmResult = spawnSync(`npm`, [`i`], options);
+      await handleSpawnReturns(`npm`, npmResult);
     }
 
     if (!kenvExists()) {
