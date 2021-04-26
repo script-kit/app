@@ -1,9 +1,19 @@
-# [1.3.0-alpha.27](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.26...v1.3.0-alpha.27) (2021-04-26)
+# [1.3.0-beta.4](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.3...v1.3.0-beta.4) (2021-04-25)
+
+
+### Bug Fixes
+
+* **install:** fixing npm i ([d33f168](https://github.com/johnlindquist/kitapp/commit/d33f1683585656a74950b5fa7000b694a3250d70))
+
 
 
 ### Features
 
+
 * **prompt:** shortcodes and cleaning preview ([d9ac011](https://github.com/johnlindquist/kitapp/commit/d9ac01154522485287ed8b389884500d72379544))
+* **schedule:** schedule and events cleanup ([794d6cd](https://github.com/johnlindquist/kitapp/commit/794d6cdd50fe908b47a64f18fb8bb0865bfe15d0))
+* **watcher:** cron, system events, and change shortcut ([b719a84](https://github.com/johnlindquist/kitapp/commit/b719a84fd5a9d2a4abcf9575a5845d841bdd0867))
+
 
 # [1.3.0-alpha.26](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.25...v1.3.0-alpha.26) (2021-04-25)
 
