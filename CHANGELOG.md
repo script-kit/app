@@ -1,3 +1,4 @@
+
 # [1.3.0-alpha.28](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.27...v1.3.0-alpha.28) (2021-04-26)
 
 
@@ -5,6 +6,14 @@
 
 * **build:** Node 16 didn't work ([1d2e295](https://github.com/johnlindquist/kitapp/commit/1d2e2958dc750c9cde6112ba3d3128fdd5f5301f))
 * **build:** trying to cache yarn packages ([3ec1094](https://github.com/johnlindquist/kitapp/commit/3ec1094da1ba61ca8ff1c3160f27f00820240ae2))
+
+# [1.3.0-beta.5](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.4...v1.3.0-beta.5) (2021-04-26)
+
+
+### Features
+
+* **prompt:** shortcodes and cleaning preview ([d9ac011](https://github.com/johnlindquist/kitapp/commit/d9ac01154522485287ed8b389884500d72379544))
+
 
 # [1.3.0-beta.4](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.3...v1.3.0-beta.4) (2021-04-25)
 
