@@ -16,6 +16,8 @@ module.exports = {
         /^text/,
         /^self/,
         /^italic/,
+        /^min/,
+        /^max/,
         /^\w{0,2}-(\d\/\d|\d\.\d|\d{1,3}|full|screen|auto)/,
       ],
     },
@@ -32,6 +34,13 @@ module.exports = {
       },
     },
     extend: {
+      minWidth: {
+        '0': '0',
+        '1/4': '25%',
+        '1/2': '50%',
+        '3/4': '75%',
+        full: '100%',
+      },
       fontSize: {
         xxs: ['0.65rem', '0.75rem'],
       },

@@ -2,7 +2,6 @@
 /* eslint-disable no-nested-ternary */
 import React from 'react';
 import parse from 'html-react-parser';
-import isImage from 'is-image';
 import { ChoiceData } from '../types';
 import { MODE } from '../enums';
 
@@ -188,12 +187,8 @@ export default function ChoiceButton({
               </div>
             )}
           </div>
-          {choice?.img && isImage(choice?.img || '') && (
-            <img
-              src={choice.img}
-              alt={choice.name}
-              className="py-2 h-full w-16"
-            />
+          {choice?.img && (
+            <img src={choice.img} alt={choice.name} className="py-2 h-full" />
           )}
         </div>
       )}
