@@ -389,11 +389,12 @@ export default function App() {
       }
 
       if (event.key === ' ') {
-        const shortcodeChoice = choices?.find(
+        const shortcodeChoice = unfilteredChoices?.find(
           (choice) => choice?.shortcode === inputValue.trim()
         );
         if (shortcodeChoice) {
           submit(shortcodeChoice.value);
+          event.preventDefault();
           return;
         }
       }
@@ -761,7 +762,7 @@ export default function App() {
 
         {choices?.length > 0 && (
           <div
-            className="flex flex-row w-full max-h-full overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5"
+            className="flex flex-row w-full max-h-full overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5 min-w-1/2"
             style={
               {
                 WebkitAppRegion: 'no-drag',
@@ -772,7 +773,7 @@ export default function App() {
             <SimpleBar
               ref={choicesRef}
               scrollableNodeProps={{ ref: choicesSimpleBarRef }}
-              className="px-0 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20"
+              className="px-0 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20 min-w-1/2"
             >
               {((choices as any[]) || []).map((choice, i) => (
                 <ChoiceButton
