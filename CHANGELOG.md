@@ -1,3 +1,10 @@
+# [1.3.0-alpha.27](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.26...v1.3.0-alpha.27) (2021-04-26)
+
+
+### Features
+
+* **prompt:** shortcodes and cleaning preview ([d9ac011](https://github.com/johnlindquist/kitapp/commit/d9ac01154522485287ed8b389884500d72379544))
+
 # [1.3.0-alpha.26](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.25...v1.3.0-alpha.26) (2021-04-25)
 
 
