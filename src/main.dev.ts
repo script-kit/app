@@ -524,7 +524,9 @@ const checkKit = async () => {
     if (await isContributor()) {
       setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
     } else {
-      configWindow?.show();
+      if (getStoredVersion() === '0.0.0') {
+        configWindow?.show();
+      }
 
       if (kitExists()) {
         setupLog(`Cleaning previous .kit`);
