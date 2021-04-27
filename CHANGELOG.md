@@ -1,3 +1,10 @@
+# [1.3.0-beta.7](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.6...v1.3.0-beta.7) (2021-04-27)
+
+
+### Features
+
+* **update:** don't show config window on update ([3b8fa52](https://github.com/johnlindquist/kitapp/commit/3b8fa522b80b556b591a84fc41c12273323dad2d))
+
 # [1.3.0-alpha.29](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.28...v1.3.0-alpha.29) (2021-04-27)
 
 
