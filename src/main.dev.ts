@@ -317,6 +317,13 @@ const kitIsReleaseBranch = async () => {
   return isReleaseBranch;
 };
 
+const kitUserDataExists = () => {
+  const userDataExists = existsSync(app.getPath('userData'));
+  setupLog(`kit user data ${userDataExists ? `` : ` not`} found`);
+
+  return userDataExists;
+};
+
 const isContributor = async () => {
   // eslint-disable-next-line no-return-await
   return kitExists() && kitIsGit() && (await kitIsReleaseBranch());
@@ -475,7 +482,7 @@ const unzipKit = async () => {
   }
 };
 
-const requiresSetup = () => {
+const versionMismatch = () => {
   const currentVersion = getVersion();
   setupLog(`App version: ${currentVersion}`);
 
@@ -503,11 +510,16 @@ const cleanKit = async () => {
   }
 };
 
+const cleanUserData = async () => {
+  const pathToClean = app.getPath('userData');
+  await rmdir(pathToClean, { recursive: true });
+};
+
 const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
-  if (requiresSetup()) {
+  if (versionMismatch() || !kitExists()) {
     configWindow = await show(
       'splash-setup',
       `

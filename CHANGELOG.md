@@ -1,3 +1,10 @@
+# [1.3.0-alpha.30](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.29...v1.3.0-alpha.30) (2021-04-28)
+
+
+### Features
+
+* **metadata:** watch first pass ([4ff63dc](https://github.com/johnlindquist/kitapp/commit/4ff63dccdedc656b1b1873b78e73e15badf971cd))
+
 # [1.3.0-beta.7](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.6...v1.3.0-beta.7) (2021-04-27)
 
 
