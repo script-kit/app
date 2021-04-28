@@ -15,6 +15,7 @@ import {
 
 import { cancelSchedule, updateSchedule } from './schedule';
 import { unlinkEvents, updateEvents } from './system-events';
+import { removeWatch, checkWatch } from './watch';
 
 const onScriptsChanged = async (
   event: 'add' | 'change' | 'unlink',
@@ -25,11 +26,13 @@ const onScriptsChanged = async (
     unlinkShortcuts(filePath);
     cancelSchedule(filePath);
     unlinkEvents(filePath);
+    removeWatch(filePath);
   }
   if (event === 'add' || event === 'change') {
     updateShortcuts(filePath);
     updateSchedule(filePath);
     updateEvents(filePath);
+    checkWatch(filePath);
   }
 };
 
