@@ -1,3 +1,10 @@
+# [1.3.0-beta.9](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.8...v1.3.0-beta.9) (2021-04-30)
+
+
+### Bug Fixes
+
+* **prompt:** prompt open under mouse focus choice ([9ef777f](https://github.com/johnlindquist/kitapp/commit/9ef777f71e1b277ae6b57c47cc49f6898019ef82))
+
 # [1.3.0-alpha.31](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.30...v1.3.0-alpha.31) (2021-04-30)
 
 
