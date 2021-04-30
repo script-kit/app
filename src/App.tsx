@@ -141,6 +141,7 @@ export default function App() {
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [hotkey, setHotkey] = useState({});
+  const [mouseEnabled, setMouseEnabled] = useState(false);
 
   const sendResize = useDebouncedCallback(
     useCallback(
@@ -639,6 +640,16 @@ export default function App() {
     setUnfilteredChoices(choices);
   }, []);
 
+  useEffect(() => {
+    if (Object.keys(promptData).length === 0) {
+      setMouseEnabled(false);
+    } else {
+      setTimeout(() => {
+        setMouseEnabled(true);
+      }, 500);
+    }
+  }, [promptData]);
+
   const resetPromptHandler = useCallback((event, data) => {
     setIsMouseDown(false);
     setPlaceholder('');
@@ -785,6 +796,7 @@ export default function App() {
                   index={index}
                   inputValue={inputValue}
                   setIndex={setIndex}
+                  mouseEnabled={mouseEnabled}
                 />
               ))}
             </SimpleBar>

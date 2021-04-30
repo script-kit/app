@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
 import React from 'react';
@@ -13,6 +14,7 @@ interface ChoiceButtonProps {
   index: number;
   setIndex: (i: number) => void;
   mode: MODE;
+  mouseEnabled: boolean;
 }
 
 const noHighlight = (name: string, input: string) => {
@@ -128,9 +130,11 @@ export default function ChoiceButton({
   index,
   setIndex,
   mode,
+  mouseEnabled,
 }: ChoiceButtonProps) {
   const input = inputValue?.toLowerCase();
   const name = choice?.name?.toLowerCase();
+
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button
@@ -157,8 +161,8 @@ export default function ChoiceButton({
       onClick={(_event) => {
         submit(choice.value);
       }}
-      onMouseEnter={() => {
-        setIndex(i);
+      onMouseOver={() => {
+        if (mouseEnabled) setIndex(i);
       }}
     >
       {choice?.html ? (
