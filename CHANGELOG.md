@@ -1,3 +1,10 @@
+# [1.3.0-alpha.34](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.33...v1.3.0-alpha.34) (2021-05-01)
+
+
+### Features
+
+* **launch:** allow KIT and KENV to be env vars ([a416b13](https://github.com/johnlindquist/kitapp/commit/a416b134eae8b38e912a49eea124a2dc946675b4))
+
 # [1.3.0-alpha.33](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.32...v1.3.0-alpha.33) (2021-05-01)
 
 
