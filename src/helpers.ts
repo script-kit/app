@@ -6,8 +6,8 @@ import { test } from 'shelljs';
 
 export const APP_NAME = 'Kit';
 export const KIT_PROTOCOL = 'kit';
-export const KENV = path.join(app.getPath('home'), '.kenv');
-export const KIT = path.join(app.getPath('home'), '.kit');
+export const KENV = process.env.KENV || path.join(app.getPath('home'), '.kenv');
+export const KIT = process.env.KIT || path.join(app.getPath('home'), '.kit');
 
 export const kenvPath = (...parts: string[]) => path.join(KENV, ...parts);
 export const kitPath = (...parts: string[]) => path.join(KIT, ...parts);
