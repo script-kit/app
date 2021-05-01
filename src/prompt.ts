@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 import minimist from 'minimist';
 import { execSync } from 'child_process';
 import { getAssetPath } from './assets';
-import { kenvPath } from './helpers';
+import { kenvPath, kitPath } from './helpers';
 import { USER_RESIZED } from './channels';
 
 let promptCache: Store | null = null;
@@ -134,14 +134,6 @@ export const escapePromptWindow = () => {
   blurredByKit = false;
   hideAppIfNoWindows();
   hideEmitter.emit('hide');
-};
-
-const getBoundsOfFrontApp = () => {
-  const execBuffer = execSync(
-    `osascript -e 'tell application "System Events" to get position of (first window of (first application process whose frontmost is true))'`
-  );
-
-  return execBuffer.toString();
 };
 
 const getCurrentScreen = () => {
