@@ -1,3 +1,10 @@
+# [1.3.0-alpha.32](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.31...v1.3.0-alpha.32) (2021-05-01)
+
+
+### Bug Fixes
+
+* **share:** fixing share scripts ([b18f19b](https://github.com/johnlindquist/kitapp/commit/b18f19b9827d481f469cc130d508a12b4ccad5cd))
+
 # [1.3.0-beta.9](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.8...v1.3.0-beta.9) (2021-04-30)
 
 
