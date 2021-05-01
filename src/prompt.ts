@@ -136,16 +136,6 @@ export const escapePromptWindow = () => {
   hideEmitter.emit('hide');
 };
 
-const getBoundsOfFrontApp = () => {
-  // const execBuffer = execSync(
-  //   `osascript -e 'tell application "System Events" to get position of (first window of (first application process whose frontmost is true))'`
-  // );
-
-  const execBuffer = execSync(kitPath('swift/get-frontmost-application'));
-
-  return execBuffer.toString();
-};
-
 const getCurrentScreen = () => {
   return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
 };
