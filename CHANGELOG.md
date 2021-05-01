@@ -1,3 +1,10 @@
+# [1.3.0-alpha.33](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.32...v1.3.0-alpha.33) (2021-05-01)
+
+
+### Bug Fixes
+
+* **build:** notarize failed... ([537bd7d](https://github.com/johnlindquist/kitapp/commit/537bd7d0f256a25e962caa2358fe888cf1431435))
+
 # [1.3.0-alpha.32](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.31...v1.3.0-alpha.32) (2021-05-01)
 
 
