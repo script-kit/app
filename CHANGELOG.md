@@ -1,7 +1,14 @@
+
+# [1.3.0-alpha.35](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.34...v1.3.0-alpha.35) (2021-05-01)
+
 # [1.3.0-beta.10](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.9...v1.3.0-beta.10) (2021-05-01)
 
 
+
 ### Bug Fixes
+
+
+* **ipc:** passing all argv ([e87c87c](https://github.com/johnlindquist/kitapp/commit/e87c87c7df1a9b77ab93d3fea3ba14c473afa44b))
 
 * **build:** notarize failed... ([537bd7d](https://github.com/johnlindquist/kitapp/commit/537bd7d0f256a25e962caa2358fe888cf1431435))
 * **share:** fixing share scripts ([b18f19b](https://github.com/johnlindquist/kitapp/commit/b18f19b9827d481f469cc130d508a12b4ccad5cd))
@@ -10,6 +17,7 @@
 ### Features
 
 * **launch:** allow KIT and KENV to be env vars ([a416b13](https://github.com/johnlindquist/kitapp/commit/a416b134eae8b38e912a49eea124a2dc946675b4))
+
 
 # [1.3.0-alpha.34](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.33...v1.3.0-alpha.34) (2021-05-01)
 
