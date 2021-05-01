@@ -1,3 +1,9 @@
+# [1.3.0-beta.11](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.10...v1.3.0-beta.11) (2021-05-01)
+
+
+### Bug Fixes
+
+* **ipc:** passing all argv ([e87c87c](https://github.com/johnlindquist/kitapp/commit/e87c87c7df1a9b77ab93d3fea3ba14c473afa44b))
 
 # [1.3.0-alpha.35](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.34...v1.3.0-alpha.35) (2021-05-01)
 
