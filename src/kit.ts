@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { app, clipboard, ipcMain, screen } from 'electron';
@@ -141,7 +142,6 @@ hideEmitter.on('hide', () => {
 });
 
 app.on('second-instance', async (event, argv, workingDirectory) => {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { _ } = minimist(argv);
   const [, , argScript, ...argArgs] = _;
   await tryKitScript(argScript, argArgs);
@@ -152,9 +152,11 @@ ipc.config.retry = 1500;
 ipc.config.silent = true;
 
 ipc.serve(kitPath('tmp', 'ipc'), () => {
-  ipc.server.on('message', async (data, socket) => {
-    log.info(`ipc message:`, data.scriptPath, data.scriptArgs);
-    await tryKitScript(data.scriptPath, data.scriptArgs);
+  ipc.server.on('message', async (argv, socket) => {
+    log.info(`ipc message:`, argv);
+    const { _ } = minimist(argv);
+    const [, , argScript, ...argArgs] = _;
+    await tryKitScript(argScript, argArgs);
   });
 });
 
