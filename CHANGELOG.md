@@ -1,3 +1,10 @@
+# [1.3.0-beta.12](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.11...v1.3.0-beta.12) (2021-05-06)
+
+
+### Features
+
+* **background:** adding background task support ([7009d81](https://github.com/johnlindquist/kitapp/commit/7009d810fa69c517bcd95f386e49bbbe02e76491))
+
 # [1.3.0-alpha.36](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.35...v1.3.0-alpha.36) (2021-05-06)
 
 
