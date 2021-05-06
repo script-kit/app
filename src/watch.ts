@@ -36,7 +36,7 @@ const resolvePath = (path: string) => {
 
 const addWatch = (watchString: string, filePath: string) => {
   try {
-    log.info(`Watch: ${watchString}:${filePath}`);
+    log.info(`Watch: ${watchString} - from - ${filePath}`);
 
     const [pathsString] = watchString.split('|');
     const paths = pathsString.startsWith('[')
@@ -49,7 +49,9 @@ const addWatch = (watchString: string, filePath: string) => {
       emitter.emit(EVENT.RUN_APP_SCRIPT, filePath);
     });
 
-    log.info(`Watching: ${JSON.stringify(watcher.getWatched())}`);
+    const watched = watcher.getWatched();
+
+    log.info(`Watching: ${Object.keys(watched).join(', ')}`);
     watchMap.set(filePath, watcher);
   } catch (error) {
     removeWatch(filePath);

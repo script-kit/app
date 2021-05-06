@@ -175,7 +175,7 @@ export default function ChoiceButton({
         })
       ) : (
         <div className="flex flex-row h-full w-full justify-between items-center">
-          <div className="flex flex-col max-w-full truncate">
+          <div className="flex flex-col max-w-full">
             <div className="truncate">
               {highlightChoiceName(mode, choice, input, name, inputValue)}
             </div>
