@@ -25,9 +25,20 @@ import {
   resizePrompt,
   escapePromptWindow,
 } from './prompt';
+import { consoleLog, getLog } from './logs';
 import { showNotification } from './notifications';
 import { show } from './show';
-import { kitPath, kenvPath, KIT, KENV } from './helpers';
+import {
+  kitPath,
+  kenvPath,
+  KIT,
+  KENV,
+  execPath,
+  NODE_PATH,
+  PATH,
+  DOTENV_CONFIG_PATH,
+  KIT_MAC_APP,
+} from './helpers';
 import { makeRestartNecessary } from './state';
 import { getVersion } from './version';
 import {
@@ -53,14 +64,12 @@ import { serverState, startServer, stopServer } from './server';
 import { MODE } from './enums';
 import { emitter, EVENT } from './events';
 import { getSchedule } from './schedule';
+import { getBackgroundTasks, toggleBackground } from './background';
 
 const APP_SCRIPT_TIMEOUT = 10000;
 
 let child: ChildProcess | null = null;
 let appHidden = false;
-
-const consoleLog = log.create('consoleLog');
-consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
 
 let kitScriptName = '';
 export const processMap = new Map();
@@ -162,12 +171,6 @@ ipc.serve(kitPath('tmp', 'ipc'), () => {
 
 ipc.server.start();
 
-const execPath = kitPath('node', 'bin', 'node');
-const DOTENV_CONFIG_PATH = kenvPath('.env');
-const KIT_MAC_APP = kitPath('preload', 'mac-app.cjs');
-const PATH = `${kitPath('node', 'bin')}:${process.env.PATH}`;
-const NODE_PATH = `${kenvPath('node_modules')}:${kitPath('node_modules')}`;
-
 process.on('unhandledRejection', (reason, p) => {
   log.warn('Unhandled Rejection at: Promise', p, 'reason:', reason);
 
@@ -206,6 +209,18 @@ export const appScript = async (scriptPath: string, runArgs: string[]) => {
     );
     appScriptChild?.kill();
   }, APP_SCRIPT_TIMEOUT);
+
+  appScriptChild?.on('message', (data: any) => {
+    switch (data?.channel) {
+      case 'CONSOLE_LOG':
+        consoleLog.info(data.log);
+        break;
+      default:
+        consoleLog.info(
+          `appScriptChild: Unknown message ${data.channel} from ${data?.kitScript}`
+        );
+    }
+  });
 
   appScriptChild?.on('exit', () => {
     if (id) clearTimeout(id);
@@ -275,19 +290,36 @@ const kitScript = (
         break;
 
       case 'CONSOLE_LOG':
-        consoleLog.info(data.log);
+        getLog(data.kitScript).info(data.log);
         break;
 
       case 'CONSOLE_WARN':
-        consoleLog.warn(data.warn);
+        getLog(data.kitScript).warn(data.log);
         break;
 
       case 'COPY_PATH_AS_PICTURE':
         clipboard.writeImage(data?.path);
         break;
 
+      case 'GET_SCRIPTS_STATE':
+        child?.send({
+          channel: 'SCRIPTS_STATE',
+          schedule: getSchedule(),
+          tasks: getBackgroundTasks(),
+        });
+
+        break;
+
       case 'GET_SCHEDULE':
         child?.send({ channel: 'SCHEDULE', schedule: getSchedule() });
+        break;
+
+      case 'GET_BACKGROUND':
+        child?.send({ channel: 'BACKGROUND', tasks: getBackgroundTasks() });
+        break;
+
+      case 'TOGGLE_BACKGROUND':
+        toggleBackground(data?.filePath);
         break;
 
       case 'GET_SCREEN_INFO':
@@ -484,7 +516,7 @@ const kitScript = (
         break;
 
       default:
-        log.info(`Unknown message ${data.channel}`);
+        log.info(`kit.ts: Unknown message ${data.channel}`);
     }
   });
 
