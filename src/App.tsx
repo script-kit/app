@@ -131,7 +131,7 @@ export default function App() {
   const [panelHTML, setPanelHTML] = useState('');
   const [scriptName, setScriptName] = useState('');
   const [maxHeight, setMaxHeight] = useState(480);
-  const prevMaxHeight = usePrevious(maxHeight);
+
   const [caretDisabled, setCaretDisabled] = useState(false);
   const choicesSimpleBarRef = useRef(null);
   const choicesRef = useRef(null);
@@ -191,32 +191,40 @@ export default function App() {
     setIndex(0);
   }, [unfilteredChoices]);
 
-  const submit = useCallback((value: any) => {
-    if (mode !== MODE.HOTKEY)
-      setPlaceholder(typeof value === 'string' ? value : 'Processing...');
-    setUnfilteredChoices([]);
-    setPanelHTML('');
-    setInputValue('');
+  const submit = useCallback(
+    (value: any) => {
+      if (mode !== MODE.HOTKEY) {
+        setPlaceholder(
+          typeof value === 'string' && !promptData?.secret
+            ? value
+            : 'Processing...'
+        );
+      }
+      setUnfilteredChoices([]);
+      setPanelHTML('');
+      setInputValue('');
 
-    if (Array.isArray(value)) {
-      const files = value.map((file) => {
-        const fileObject: any = {};
+      if (Array.isArray(value)) {
+        const files = value.map((file) => {
+          const fileObject: any = {};
 
-        for (const key in file) {
-          const value = file[key];
-          const notFunction = typeof value !== 'function';
-          if (notFunction) fileObject[key] = value;
-        }
+          for (const key in file) {
+            const value = file[key];
+            const notFunction = typeof value !== 'function';
+            if (notFunction) fileObject[key] = value;
+          }
 
-        return fileObject;
-      });
+          return fileObject;
+        });
 
-      ipcRenderer.send(VALUE_SUBMITTED, { value: files });
-      return;
-    }
+        ipcRenderer.send(VALUE_SUBMITTED, { value: files });
+        return;
+      }
 
-    ipcRenderer.send(VALUE_SUBMITTED, { value });
-  }, []);
+      ipcRenderer.send(VALUE_SUBMITTED, { value });
+    },
+    [mode, promptData?.secret]
+  );
 
   useEffect(() => {
     if (index > choices?.length - 1) setIndex(choices?.length - 1);
