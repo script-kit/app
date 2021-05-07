@@ -66,7 +66,7 @@ import { emitter, EVENT } from './events';
 import { getSchedule } from './schedule';
 import { getBackgroundTasks, toggleBackground } from './background';
 
-const APP_SCRIPT_TIMEOUT = 10000;
+const APP_SCRIPT_TIMEOUT = 30000;
 
 let child: ChildProcess | null = null;
 let appHidden = false;
@@ -213,10 +213,15 @@ export const appScript = async (scriptPath: string, runArgs: string[]) => {
   appScriptChild?.on('message', (data: any) => {
     switch (data?.channel) {
       case 'CONSOLE_LOG':
-        consoleLog.info(data.log);
+        getLog(data.kitScript).info(data.log);
         break;
+
+      case 'CONSOLE_WARN':
+        getLog(data.kitScript).warn(data.log);
+        break;
+
       default:
-        consoleLog.info(
+        consoleLog.warn(
           `appScriptChild: Unknown message ${data.channel} from ${data?.kitScript}`
         );
     }
