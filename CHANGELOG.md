@@ -1,3 +1,11 @@
+# [1.3.0-alpha.37](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.36...v1.3.0-alpha.37) (2021-05-07)
+
+
+### Bug Fixes
+
+* **log:** app scripts now log to their own file ([1d4f80b](https://github.com/johnlindquist/kitapp/commit/1d4f80b0986cdf836a564da332985172e833e049))
+* **prompt:** hiding commit value when secret ([f3f3c7f](https://github.com/johnlindquist/kitapp/commit/f3f3c7f60aa15fa441cec6bf66f8caf875eae119))
+
 # [1.3.0-beta.12](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.11...v1.3.0-beta.12) (2021-05-06)
 
 
