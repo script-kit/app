@@ -13,6 +13,7 @@ import path from 'path';
 import log from 'electron-log';
 import { isUndefined } from 'lodash';
 import ipc from 'node-ipc';
+import { ChildProcess } from 'child_process';
 import {
   focusPrompt,
   getPromptCache,
@@ -151,7 +152,7 @@ const kitScript = (
 
   if (!resolvePath.endsWith('.js')) resolvePath = `${resolvePath}.js`;
 
-  const child = createChild(resolvePath, ...runArgs);
+  const child: ChildProcess = createChild(resolvePath, ...runArgs);
 
   processMap.set(child.pid, {
     child,
@@ -427,9 +428,11 @@ const kitScript = (
     hidePromptWindow();
   });
 
+  // child.stdout.setEncoding('utf8');
   // (child as any).stdout.on('data', (data: string) => {
-  //   const line = data?.toString();
-  //   log.info(line);
+  //   const hint = data?.toString();
+  //   console.log(`STDOUT`, { hint });
+  //   sendToPrompt(SET_HINT, { hint });
   // });
 };
 

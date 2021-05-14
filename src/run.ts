@@ -1,14 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import { fork } from 'child_process';
-import {
-  KIT,
-  KENV,
-  execPath,
-  NODE_PATH,
-  PATH,
-  DOTENV,
-  KIT_MAC_APP,
-} from './helpers';
+import { KIT, KENV, execPath, PATH, DOTENV, KIT_MAC_APP } from './helpers';
 import { getVersion } from './version';
 
 export const createChild = (script: string, ...args: string[]) => {

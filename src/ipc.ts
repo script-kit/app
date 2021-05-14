@@ -74,11 +74,9 @@ ipcMain.on(VALUE_SUBMITTED, (_event, { value, pid }) => {
 });
 
 ipcMain.on(GENERATE_CHOICES, (_event, { input, pid }) => {
-  console.log({ input, pid });
   if (processMap.has(pid)) {
     const { child } = processMap.get(pid) as ChildInfo;
 
-    console.log();
     if (child && !isUndefined(input)) {
       child?.send({ channel: GENERATE_CHOICES, input });
     }
