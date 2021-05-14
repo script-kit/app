@@ -7,11 +7,11 @@ import {
   execPath,
   NODE_PATH,
   PATH,
-  DOTENV_CONFIG_PATH,
+  DOTENV,
   KIT_MAC_APP,
 } from './helpers';
 import { getVersion } from './version';
-import { consoleLog, getLog } from './logs';
+import { backgroundMessage, MessageData } from './messages';
 
 const backgroundMarker = 'Background: ';
 
@@ -33,11 +33,10 @@ export const removeBackground = (filePath: string) => {
 };
 
 export const backgroundScript = (filePath: string, runArgs: string[]) => {
-  const child = fork(filePath, [...runArgs], {
+  const child = fork(KIT_MAC_APP, [filePath, ...runArgs], {
     silent: true,
     // stdio: 'inherit',
     execPath,
-    execArgv: ['--require', 'dotenv/config', '--require', KIT_MAC_APP],
     env: {
       ...process.env,
       KIT_CONTEXT: 'app',
@@ -46,7 +45,7 @@ export const backgroundScript = (filePath: string, runArgs: string[]) => {
       KENV,
       KIT,
       NODE_PATH,
-      DOTENV_CONFIG_PATH,
+      DOTENV,
       KIT_APP_VERSION: getVersion(),
     },
   });
@@ -59,19 +58,7 @@ export const backgroundScript = (filePath: string, runArgs: string[]) => {
     }
   });
 
-  child?.on('message', (data: any) => {
-    switch (data?.channel) {
-      case 'CONSOLE_LOG':
-        console.log(data);
-        getLog(data?.kitScript).info(data.log);
-        break;
-      case 'CONSOLE_WARN':
-        getLog(data?.kitScript).warn(data.log);
-        break;
-      default:
-        consoleLog.info(`background: Unknown message ${data.channel}`);
-    }
-  });
+  child?.on('message', backgroundMessage);
 
   log.info(`> start background process: ${filePath} ${child.pid}`);
 

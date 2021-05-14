@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import { app, clipboard, ipcMain, screen } from 'electron';
+import { app, clipboard, screen } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import url from 'url';
 import http from 'http';
@@ -10,41 +10,26 @@ import sizeOf from 'image-size';
 import minimist from 'minimist';
 
 import path from 'path';
-import { fork, ChildProcess } from 'child_process';
 import log from 'electron-log';
 import { isUndefined } from 'lodash';
 import ipc from 'node-ipc';
 import {
   focusPrompt,
   getPromptCache,
-  hideEmitter,
   hidePromptWindow,
   sendToPrompt,
   setBlurredByKit,
+  setPlaceholder,
   showPrompt,
-  resizePrompt,
-  escapePromptWindow,
 } from './prompt';
 import { consoleLog, getLog } from './logs';
 import { showNotification } from './notifications';
 import { show } from './show';
-import {
-  kitPath,
-  kenvPath,
-  KIT,
-  KENV,
-  execPath,
-  NODE_PATH,
-  PATH,
-  DOTENV_CONFIG_PATH,
-  KIT_MAC_APP,
-} from './helpers';
+import { kitPath, kenvPath, KIT } from './helpers';
 import { makeRestartNecessary } from './state';
-import { getVersion } from './version';
 import {
-  CHOICE_FOCUSED,
-  GENERATE_CHOICES,
-  RESET_PROMPT,
+  CONSOLE_LOG,
+  CONSOLE_WARN,
   RUN_SCRIPT,
   SET_CHOICES,
   SET_HINT,
@@ -55,100 +40,27 @@ import {
   SET_PLACEHOLDER,
   SET_TAB_INDEX,
   SHOW_PROMPT,
-  TAB_CHANGED,
-  VALUE_SUBMITTED,
-  CONTENT_SIZE_UPDATED,
-  ESCAPE_PRESSED,
 } from './channels';
 import { serverState, startServer, stopServer } from './server';
 import { MODE } from './enums';
 import { emitter, EVENT } from './events';
 import { getSchedule } from './schedule';
 import { getBackgroundTasks, toggleBackground } from './background';
+import { createChild } from './run';
+import { ChildInfo, processMap } from './process';
+import { reset } from './ipc';
+import { setAppHidden, getAppHidden } from './appHidden';
 
 const APP_SCRIPT_TIMEOUT = 30000;
 
-let child: ChildProcess | null = null;
-let appHidden = false;
-
 let kitScriptName = '';
-export const processMap = new Map();
-
-const setPlaceholder = (text: string) => {
-  if (!appHidden) sendToPrompt(SET_PLACEHOLDER, text);
-};
 
 const setChoices = (data: any) => sendToPrompt(SET_CHOICES, data);
-
-let values: any[] = [];
-ipcMain.on(VALUE_SUBMITTED, (_event, { value }) => {
-  emitter.emit(EVENT.RESUME_SHORTCUTS);
-  values = [...values, value];
-  if (child) {
-    child?.send({ channel: VALUE_SUBMITTED, value });
-  }
-});
-
-ipcMain.on(GENERATE_CHOICES, (_event, input) => {
-  if (child && !isUndefined(input)) {
-    child?.send({ channel: GENERATE_CHOICES, input });
-  }
-});
-
-ipcMain.on('PROMPT_ERROR', (_event, error: Error) => {
-  log.warn(error);
-  if (!appHidden) setPlaceholder(error.message);
-});
-
-ipcMain.on(CHOICE_FOCUSED, (_event, choice: any) => {
-  // TODO: Think through "live selecting" choices
-  // child?.send({ channel: CHOICE_FOCUSED, choice });
-});
-
-ipcMain.on(TAB_CHANGED, (event, { tab, input = '' }) => {
-  emitter.emit(EVENT.RESUME_SHORTCUTS);
-  if (child && tab) {
-    child?.send({ channel: TAB_CHANGED, tab, input });
-  }
-});
-
-ipcMain.on(CONTENT_SIZE_UPDATED, (event, size) => {
-  if (!isUndefined(size)) {
-    resizePrompt(size);
-  }
-});
-
-ipcMain.on(ESCAPE_PRESSED, (event) => {
-  reset();
-  escapePromptWindow();
-});
-
-const reset = () => {
-  values = [];
-  emitter.emit(EVENT.RESUME_SHORTCUTS);
-  sendToPrompt(RESET_PROMPT, { kitScript: kitScriptName });
-  if (child) {
-    log.info(`> end process ${kitScriptName} - id: ${child.pid} <\n`);
-    processMap.delete(child?.pid);
-    child?.removeAllListeners();
-    child?.kill();
-    child = null;
-  }
-  appHidden = false;
-};
 
 // TODO: Work out states
 // Closed by user
 // Closed by script
 // Closed by need to copy/paste
-hideEmitter.on('hide', () => {
-  if (appHidden) {
-    appHidden = false;
-  } else {
-    reset();
-    hidePromptWindow();
-  }
-});
 
 app.on('second-instance', async (event, argv, workingDirectory) => {
   const { _ } = minimist(argv);
@@ -164,7 +76,7 @@ ipc.serve(kitPath('tmp', 'ipc'), () => {
   ipc.server.on('message', async (argv, socket) => {
     log.info(`ipc message:`, argv);
     const { _ } = minimist(argv);
-    const [, , argScript, ...argArgs] = _;
+    const [, , , argScript, ...argArgs] = _;
     await tryKitScript(argScript, argArgs);
   });
 });
@@ -178,28 +90,13 @@ process.on('unhandledRejection', (reason, p) => {
 });
 
 process.on('uncaughtException', (error) => {
+  log.warn(`Uncaught Exception: ${error.message}`);
   log.warn(error);
 });
 
 export const appScript = async (scriptPath: string, runArgs: string[]) => {
   log.info(`> start app process: ${scriptPath}`);
-  const appScriptChild = fork(scriptPath, [...runArgs], {
-    silent: true,
-    // stdio: 'inherit',
-    execPath,
-    execArgv: ['--require', 'dotenv/config', '--require', KIT_MAC_APP],
-    env: {
-      ...process.env,
-      KIT_CONTEXT: 'app',
-      KIT_MAIN: scriptPath,
-      PATH,
-      KENV,
-      KIT,
-      NODE_PATH,
-      DOTENV_CONFIG_PATH,
-      KIT_APP_VERSION: getVersion(),
-    },
-  });
+  const appScriptChild = createChild(scriptPath, ...runArgs);
 
   const id = setTimeout(() => {
     log.info(
@@ -212,12 +109,16 @@ export const appScript = async (scriptPath: string, runArgs: string[]) => {
 
   appScriptChild?.on('message', (data: any) => {
     switch (data?.channel) {
-      case 'CONSOLE_LOG':
+      case CONSOLE_LOG:
         getLog(data.kitScript).info(data.log);
         break;
 
-      case 'CONSOLE_WARN':
+      case CONSOLE_WARN:
         getLog(data.kitScript).warn(data.log);
+        break;
+
+      case RUN_SCRIPT:
+        console.log(`RUN_SCRIPT`, data);
         break;
 
       default:
@@ -250,33 +151,29 @@ const kitScript = (
 
   if (!resolvePath.endsWith('.js')) resolvePath = `${resolvePath}.js`;
 
-  child = fork(resolvePath, [...runArgs, '--app'], {
-    silent: true,
-    // stdio: 'inherit',
-    execPath,
-    execArgv: ['--require', 'dotenv/config', '--require', KIT_MAC_APP],
-    env: {
-      ...process.env,
-      KIT_CONTEXT: 'app',
-      KIT_MAIN: resolvePath,
-      PATH,
-      KENV,
-      KIT,
-      NODE_PATH,
-      DOTENV_CONFIG_PATH,
-      KIT_APP_VERSION: getVersion(),
-    },
+  const child = createChild(resolvePath, ...runArgs);
+
+  processMap.set(child.pid, {
+    child,
+    scriptPath,
+    kitScriptName,
+    from: 'kit',
+    values: [],
   });
-  processMap.set(child.pid, scriptPath);
 
   log.info(`\n> begin process ${kitScriptName} id: ${child.pid} <`);
 
   const tryClean = (on: string) => () => {
     try {
-      resolve(values);
+      if (processMap.has(child.pid)) {
+        const { values } = processMap.get(child.pid) as ChildInfo;
+        resolve(values);
+      }
+
       reset();
       hidePromptWindow();
     } catch (error) {
+      log.warn(`Error: ${error.message}`);
       log.warn(error);
     }
   };
@@ -294,12 +191,12 @@ const kitScript = (
         getPromptCache()?.clear();
         break;
 
-      case 'CONSOLE_LOG':
+      case CONSOLE_LOG:
         getLog(data.kitScript).info(data.log);
         break;
 
-      case 'CONSOLE_WARN':
-        getLog(data.kitScript).warn(data.log);
+      case CONSOLE_WARN:
+        getLog(data.kitScript).warn(data.warn);
         break;
 
       case 'COPY_PATH_AS_PICTURE':
@@ -349,8 +246,7 @@ const kitScript = (
         break;
 
       case 'HIDE_APP':
-        appHidden = true;
-        app?.hide();
+        setAppHidden(true);
         break;
 
       case 'NEEDS_RESTART':
@@ -475,7 +371,7 @@ const kitScript = (
           } else {
             log.warn(`Choices must have "name" and "value"`);
             log.warn(data?.choices);
-            if (!appHidden)
+            if (!getAppHidden())
               setPlaceholder(
                 `Warning: arg choices must have "name" and "value"`
               );
@@ -531,10 +427,10 @@ const kitScript = (
     hidePromptWindow();
   });
 
-  (child as any).stdout.on('data', (data: string) => {
-    const line = data?.toString();
-    log.info(line);
-  });
+  // (child as any).stdout.on('data', (data: string) => {
+  //   const line = data?.toString();
+  //   log.info(line);
+  // });
 };
 
 export const tryKitScript = async (

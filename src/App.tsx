@@ -98,7 +98,7 @@ class ErrorBoundary extends React.Component {
     // Display fallback UI
     this.setState({ hasError: true });
     // You can also log the error to an error reporting service
-    ipcRenderer.send('PROMPT_ERROR', error);
+    ipcRenderer.send('PROMPT_ERROR', { error });
   }
 
   render() {
@@ -192,11 +192,12 @@ export default function App() {
   }, [unfilteredChoices]);
 
   const submit = useCallback(
-    (value: any) => {
+    (submitValue: any) => {
+      let value = submitValue;
       if (mode !== MODE.HOTKEY) {
         setPlaceholder(
-          typeof value === 'string' && !promptData?.secret
-            ? value
+          typeof submitValue === 'string' && !promptData?.secret
+            ? submitValue
             : 'Processing...'
         );
       }
@@ -204,8 +205,8 @@ export default function App() {
       setPanelHTML('');
       setInputValue('');
 
-      if (Array.isArray(value)) {
-        const files = value.map((file) => {
+      if (Array.isArray(submitValue)) {
+        const files = submitValue.map((file) => {
           const fileObject: any = {};
 
           for (const key in file) {
@@ -217,13 +218,12 @@ export default function App() {
           return fileObject;
         });
 
-        ipcRenderer.send(VALUE_SUBMITTED, { value: files });
-        return;
+        value = files;
       }
 
-      ipcRenderer.send(VALUE_SUBMITTED, { value });
+      ipcRenderer.send(VALUE_SUBMITTED, { value, pid: promptData?.pid });
     },
-    [mode, promptData?.secret]
+    [mode, promptData?.pid, promptData?.secret]
   );
 
   useEffect(() => {
@@ -278,19 +278,27 @@ export default function App() {
 
   useEffect(() => {
     if (choices?.length > 0 && choices?.[index]) {
-      ipcRenderer.send(CHOICE_FOCUSED, choices[index]);
+      ipcRenderer.send(CHOICE_FOCUSED, {
+        index: choices[index],
+        pid: promptData?.pid,
+      });
     }
     if (choices?.length === 0) {
-      ipcRenderer.send(CHOICE_FOCUSED, null);
+      ipcRenderer.send(CHOICE_FOCUSED, { index: null, pid: promptData?.pid });
     }
-  }, [choices, index]);
+  }, [choices, index, promptData?.pid]);
 
   const onTabClick = useCallback(
     (ti: number) => (_event: any) => {
       setTabIndex(ti);
-      ipcRenderer.send(TAB_CHANGED, { tab: tabs[ti], input: inputValue });
+
+      ipcRenderer.send(TAB_CHANGED, {
+        tab: tabs[ti],
+        input: inputValue,
+        pid: promptData?.pid,
+      });
     },
-    [inputValue, tabs]
+    [inputValue, promptData?.pid, tabs]
   );
 
   const closePrompt = useCallback(() => {
@@ -298,7 +306,7 @@ export default function App() {
     setInputValue('');
     setPanelHTML('');
     setPromptData({});
-    ipcRenderer.send(ESCAPE_PRESSED, {});
+    ipcRenderer.send(ESCAPE_PRESSED, { pid: promptData?.pid });
   }, []);
 
   const onKeyUp = useCallback(
@@ -418,6 +426,7 @@ export default function App() {
           ipcRenderer.send(TAB_CHANGED, {
             tab: tabs[nextIndex],
             input: inputValue,
+            pid: promptData?.pid,
           });
         }
         return;
@@ -487,9 +496,10 @@ export default function App() {
     ]
   );
 
-  const generateChoices = useDebouncedCallback((value, mode, tab) => {
+  const generateChoices = useDebouncedCallback((input, mode, tab) => {
     if (mode === MODE.GENERATE) {
-      ipcRenderer.send(GENERATE_CHOICES, value);
+      console.log(`GENERATE_CHOICES`, { input, pid: promptData?.pid });
+      ipcRenderer.send(GENERATE_CHOICES, { input, pid: promptData?.pid });
     }
   }, 150);
 
@@ -598,15 +608,16 @@ export default function App() {
 
       setChoices(filtered);
     } catch (error) {
-      ipcRenderer.send('PROMPT_ERROR', error);
+      ipcRenderer.send('PROMPT_ERROR', { error, pid: promptData?.id });
     }
-  }, [unfilteredChoices, inputValue, mode]);
+  }, [unfilteredChoices, inputValue, mode, promptData?.id]);
 
   const showPromptHandler = useCallback(
     (_event: any, promptData: KitPromptOptions) => {
       setPlaceholder('');
       setPanelHTML('');
       setPromptData(promptData);
+
       if (inputRef.current) {
         inputRef?.current.focus();
       }
@@ -648,18 +659,9 @@ export default function App() {
     setUnfilteredChoices(choices);
   }, []);
 
-  useEffect(() => {
-    if (Object.keys(promptData).length === 0) {
-      setMouseEnabled(false);
-    } else {
-      setTimeout(() => {
-        setMouseEnabled(true);
-      }, 500);
-    }
-  }, [promptData]);
-
   const resetPromptHandler = useCallback((event, data) => {
     setIsMouseDown(false);
+    setMouseEnabled(false);
     setPlaceholder('');
     setDropReady(false);
     setChoices([]);
@@ -792,6 +794,7 @@ export default function App() {
             <SimpleBar
               ref={choicesRef}
               scrollableNodeProps={{ ref: choicesSimpleBarRef }}
+              onMouseEnter={() => setMouseEnabled(true)}
               className="px-0 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20 min-w-1/2"
             >
               {((choices as any[]) || []).map((choice, i) => (

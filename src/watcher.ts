@@ -39,7 +39,7 @@ const onScriptsChanged = async (
   }
 };
 
-export const onDbChanged = async (event, filePath: string) => {
+export const onDbChanged = async (event: any, filePath: string) => {
   updateMainShortcut(filePath);
 };
 
