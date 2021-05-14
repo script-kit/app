@@ -1,3 +1,10 @@
+# [1.3.0-alpha.38](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.37...v1.3.0-alpha.38) (2021-05-14)
+
+
+### Features
+
+* **kit:** Support new ESM setup ([01812df](https://github.com/johnlindquist/kitapp/commit/01812dfc78cad26f36fd11fd288816d409fd79f1))
+
 # [1.3.0-beta.13](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.12...v1.3.0-beta.13) (2021-05-08)
 
 
