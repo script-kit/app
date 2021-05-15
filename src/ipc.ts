@@ -29,6 +29,8 @@ import { setAppHidden, getAppHidden } from './appHidden';
 
 export const reset = (resetPid?: number) => {
   let mapPid = resetPid || 0;
+
+  // only 'kit' scripts will cancel previous kit scripts
   if (!mapPid) {
     for (const [pid, value] of processMap.entries()) {
       if (value.from === 'kit') {
@@ -37,14 +39,11 @@ export const reset = (resetPid?: number) => {
     }
   }
   if (processMap.has(mapPid)) {
-    const { child, kitScriptName } = processMap.get(mapPid) as ChildInfo;
+    const { child, scriptPath } = processMap.get(mapPid) as ChildInfo;
 
     emitter.emit(EVENT.RESUME_SHORTCUTS);
-    sendToPrompt(RESET_PROMPT, { kitScript: kitScriptName });
+    sendToPrompt(RESET_PROMPT, { kitScript: scriptPath });
 
-    log.info(`> end process ${kitScriptName} - id: ${child.pid} <\n`);
-
-    processMap.delete(child?.pid);
     child?.removeAllListeners();
     child?.kill();
   }
@@ -95,7 +94,6 @@ ipcMain.on(CHOICE_FOCUSED, (_event, choice: any) => {
 
 ipcMain.on(TAB_CHANGED, (event, { tab, input = '', pid }) => {
   emitter.emit(EVENT.RESUME_SHORTCUTS);
-  console.log({ tab, pid });
   if (processMap.has(pid)) {
     const { child } = processMap.get(pid) as ChildInfo;
     if (child && tab) {

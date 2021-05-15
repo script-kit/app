@@ -2,7 +2,6 @@ import { ChildProcess } from 'child_process';
 
 export interface ChildInfo {
   scriptPath: string;
-  kitScriptName: string;
   child: ChildProcess;
   from: string;
   values: any[];

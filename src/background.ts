@@ -1,26 +1,14 @@
 import { grep } from 'shelljs';
 import log from 'electron-log';
-import { ChildProcess, fork } from 'child_process';
-import {
-  KIT,
-  KENV,
-  execPath,
-  NODE_PATH,
-  PATH,
-  DOTENV,
-  KIT_MAC_APP,
-} from './helpers';
-import { getVersion } from './version';
-import { backgroundMessage, MessageData } from './messages';
+
+import { createMessageHandler } from './messages';
+import { TOGGLE_BACKGROUND } from './channels';
+import { emitter } from './events';
+import { backgroundMap, Background } from './state';
+import { processMap } from './process';
+import { createChild } from './run';
 
 const backgroundMarker = 'Background: ';
-
-interface Background {
-  child: ChildProcess;
-  start: string;
-}
-
-export const backgroundMap = new Map<string, Background>();
 
 export const removeBackground = (filePath: string) => {
   if (backgroundMap.get(filePath)) {
@@ -32,35 +20,21 @@ export const removeBackground = (filePath: string) => {
   }
 };
 
-export const backgroundScript = (filePath: string, runArgs: string[]) => {
-  const child = fork(KIT_MAC_APP, [filePath, ...runArgs], {
-    silent: true,
-    // stdio: 'inherit',
-    execPath,
-    env: {
-      ...process.env,
-      KIT_CONTEXT: 'app',
-      KIT_MAIN: filePath,
-      PATH,
-      KENV,
-      KIT,
-      NODE_PATH,
-      DOTENV,
-      KIT_APP_VERSION: getVersion(),
-    },
+export const backgroundScript = (scriptPath: string, runArgs: string[]) => {
+  const child = createChild({
+    from: 'background',
+    scriptPath,
+    runArgs,
   });
 
   const pid = child?.pid;
   child?.on('exit', () => {
-    if (backgroundMap.get(filePath)?.child?.pid === pid) {
-      log.info(`> exit background process: ${filePath} ${pid}`);
-      backgroundMap.delete(filePath);
+    if (backgroundMap.get(scriptPath)?.child?.pid === pid) {
+      backgroundMap.delete(scriptPath);
     }
   });
 
-  child?.on('message', backgroundMessage);
-
-  log.info(`> start background process: ${filePath} ${child.pid}`);
+  child?.on('message', createMessageHandler('background'));
 
   return child;
 };
@@ -98,23 +72,6 @@ export const updateBackground = (filePath: string, fileChange = false) => {
   }
 };
 
-export const getBackgroundTasks = () => {
-  const tasks = Array.from(backgroundMap.entries()).map(
-    ([filePath, { child, start }]: [string, Background]) => {
-      return {
-        filePath,
-        process: {
-          spawnargs: child?.spawnargs,
-          pid: child?.pid,
-          start,
-        },
-      };
-    }
-  );
-
-  return tasks;
-};
-
 export const toggleBackground = (filePath: string) => {
   if (backgroundMap.get(filePath)) {
     removeBackground(filePath);
@@ -122,3 +79,7 @@ export const toggleBackground = (filePath: string) => {
     updateBackground(filePath);
   }
 };
+
+emitter.on(TOGGLE_BACKGROUND, (data) => {
+  toggleBackground(data.filePath as string);
+});

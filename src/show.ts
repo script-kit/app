@@ -10,7 +10,7 @@ const page = (body: string, styles: string) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>${styles}</style>
+    <script src="https://cdn.skypack.dev/twind/shim" type="module"></script>
     <script>
 
     const {ipcRenderer} = require("electron")

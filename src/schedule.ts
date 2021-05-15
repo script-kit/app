@@ -3,6 +3,7 @@ import schedule, { Job } from 'node-schedule';
 import { grep } from 'shelljs';
 import log from 'electron-log';
 import { EVENT, emitter } from './events';
+import { createChild } from './run';
 
 const scheduleMarker = 'Schedule: ';
 
@@ -36,7 +37,7 @@ export const updateSchedule = (filePath: string) => {
       log.info(`Schedule string ${scheduleString}:${filePath}`);
 
       const job = schedule.scheduleJob(filePath, scheduleString, () => {
-        emitter.emit(EVENT.RUN_APP_SCRIPT, filePath);
+        createChild({ from: 'schedule', scriptPath: filePath, runArgs: [] });
       });
 
       log.info(`Scheduling: ${filePath} for ${scheduleString}`);
