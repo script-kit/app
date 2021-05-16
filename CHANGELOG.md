@@ -1,3 +1,10 @@
+# [1.3.0-alpha.39](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.38...v1.3.0-alpha.39) (2021-05-16)
+
+
+### Features
+
+* **process:** separating how processes run ([8e5f9a6](https://github.com/johnlindquist/kitapp/commit/8e5f9a6512471ef511e0271eef09a73c57a436dc))
+
 # [1.3.0-alpha.38](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.37...v1.3.0-alpha.38) (2021-05-14)
 
 
