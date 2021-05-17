@@ -12,7 +12,7 @@ import {
   KIT_MAC_APP,
   kenvPath,
 } from './helpers';
-import { ChildInfo, processMap } from './process';
+import { ChildInfo, processMap } from './state';
 import { getVersion } from './version';
 
 interface CreateChildInfo {

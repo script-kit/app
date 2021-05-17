@@ -2,7 +2,6 @@ import schedule, { Job } from 'node-schedule';
 
 import { grep } from 'shelljs';
 import log from 'electron-log';
-import { EVENT, emitter } from './events';
 import { createChild } from './run';
 
 const scheduleMarker = 'Schedule: ';

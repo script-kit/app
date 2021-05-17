@@ -5,7 +5,6 @@ import { createMessageHandler } from './messages';
 import { TOGGLE_BACKGROUND } from './channels';
 import { emitter } from './events';
 import { backgroundMap, Background } from './state';
-import { processMap } from './process';
 import { createChild } from './run';
 
 const backgroundMarker = 'Background: ';

@@ -29,10 +29,15 @@ import {
   SET_INPUT,
   TOGGLE_BACKGROUND,
 } from './channels';
-import { ChildInfo, processMap } from './process';
 import { getSchedule } from './schedule';
 import { getAppHidden, setAppHidden } from './appHidden';
-import { makeRestartNecessary, serverState, getBackgroundTasks } from './state';
+import {
+  makeRestartNecessary,
+  serverState,
+  getBackgroundTasks,
+  ChildInfo,
+  processMap,
+} from './state';
 import { reset } from './ipc';
 import { emitter, EVENT } from './events';
 import { MODE } from './enums';

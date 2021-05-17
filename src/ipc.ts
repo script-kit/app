@@ -16,7 +16,7 @@ import {
   ESCAPE_PRESSED,
 } from './channels';
 
-import { processMap, ChildInfo } from './process';
+import { processMap, ChildInfo } from './state';
 import {
   escapePromptWindow,
   resizePrompt,
