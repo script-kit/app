@@ -1,3 +1,10 @@
+# [1.3.0-alpha.42](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.41...v1.3.0-alpha.42) (2021-05-17)
+
+
+### Bug Fixes
+
+* **setup:** moving chmod to .kit ([e10ebfa](https://github.com/johnlindquist/kitapp/commit/e10ebfa66b6688a90fd530cfb6abc2b290387958))
+
 # [1.3.0-alpha.41](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.40...v1.3.0-alpha.41) (2021-05-17)
 
 
