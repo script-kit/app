@@ -565,6 +565,14 @@ const checkKit = async () => {
       await handleSpawnReturns(`npm`, npmResult);
     }
 
+    await chmod(kitPath('script'), 0o755);
+    const chmodResult = spawnSync(
+      `./script`,
+      [`./setup/chmod-helpers.js`],
+      options
+    );
+    await handleSpawnReturns(`chmod`, chmodResult);
+
     if (!kenvExists()) {
       // Step 4: Use kit wrapper to run setup.js script
       configWindow?.show();
