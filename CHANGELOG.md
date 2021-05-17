@@ -1,3 +1,10 @@
+# [1.3.0-alpha.40](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.39...v1.3.0-alpha.40) (2021-05-17)
+
+
+### Features
+
+* **ipc:** Fixing bin and ipcs message ([2b50d56](https://github.com/johnlindquist/kitapp/commit/2b50d561a9fbd53b2396a981d146bd9061dfc0df))
+
 # [1.3.0-alpha.39](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.38...v1.3.0-alpha.39) (2021-05-16)
 
 
