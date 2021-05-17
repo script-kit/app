@@ -1,3 +1,10 @@
+# [1.3.0-alpha.43](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.42...v1.3.0-alpha.43) (2021-05-17)
+
+
+### Bug Fixes
+
+* **setup:** chmod helpers ([6d2a4cd](https://github.com/johnlindquist/kitapp/commit/6d2a4cdff12570db7d6fd39f9760e516f5dd143a))
+
 # [1.3.0-alpha.42](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.41...v1.3.0-alpha.42) (2021-05-17)
 
 
