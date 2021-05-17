@@ -9,7 +9,6 @@ import ipc from 'node-ipc';
 import { ChildProcess } from 'child_process';
 import { hidePromptWindow } from './prompt';
 import { kitPath, KIT } from './helpers';
-import { emitter, EVENT } from './events';
 import { createChild } from './run';
 import { reset } from './ipc';
 import { createMessageHandler } from './messages';
@@ -30,7 +29,7 @@ ipc.serve(kitPath('tmp', 'ipc'), () => {
   ipc.server.on('message', async (argv) => {
     log.info(`ipc message:`, argv);
     const { _ } = minimist(argv);
-    const [, , , argScript, ...argArgs] = _;
+    const [argScript, ...argArgs] = _;
     await tryKitScript(argScript, argArgs);
   });
 });
