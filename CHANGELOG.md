@@ -1,3 +1,10 @@
+# [1.3.0-alpha.41](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.40...v1.3.0-alpha.41) (2021-05-17)
+
+
+### Bug Fixes
+
+* **state:** merge processMap into state ([ab6f752](https://github.com/johnlindquist/kitapp/commit/ab6f752874b63aa7f835bded761763017413e3cb))
+
 # [1.3.0-alpha.40](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.39...v1.3.0-alpha.40) (2021-05-17)
 
 
