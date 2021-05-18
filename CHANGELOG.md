@@ -1,3 +1,10 @@
+# [1.3.0-beta.16](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.15...v1.3.0-beta.16) (2021-05-18)
+
+
+### Bug Fixes
+
+* **setup:** refreshing kenv bin files on new version ([a04a634](https://github.com/johnlindquist/kitapp/commit/a04a6344b9da68e77ed71fbb81fef8920e58ef69))
+
 # [1.3.0-alpha.45](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.44...v1.3.0-alpha.45) (2021-05-18)
 
 
