@@ -11,7 +11,7 @@ export const KIT = process.env.KIT || path.join(app.getPath('home'), '.kit');
 export const kenvPath = (...parts: string[]) => path.join(KENV, ...parts);
 export const kitPath = (...parts: string[]) => path.join(KIT, ...parts);
 
-export const DOTENV = process.env.KIT_DOTENV || kenvPath('.env');
+export const KIT_DOTENV = process.env.KIT_DOTENV || kenvPath('.env');
 
 export const settingsFile = kenvPath('db', 'kit.json');
 export const mainFilePath = kitPath('main', 'index.js');
