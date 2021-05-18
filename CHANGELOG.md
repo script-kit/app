@@ -1,3 +1,10 @@
+# [1.3.0-alpha.46](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.45...v1.3.0-alpha.46) (2021-05-18)
+
+
+### Bug Fixes
+
+* **setup:** KIT_DOTENV fix. Yarn upgrade ([8319517](https://github.com/johnlindquist/kitapp/commit/83195170a599f5405276e6e13ee043b609e1de9d))
+
 # [1.3.0-beta.16](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.15...v1.3.0-beta.16) (2021-05-18)
 
 

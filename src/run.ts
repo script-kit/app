@@ -49,7 +49,7 @@ export const createChild = ({
       PATH,
       KENV,
       KIT,
-      DOTENV: KIT_DOTENV,
+      KIT_DOTENV,
       KIT_APP_VERSION: getVersion(),
     },
   });
