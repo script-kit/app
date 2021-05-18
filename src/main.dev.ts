@@ -267,7 +267,6 @@ const handleSpawnReturns = async (
   message: string,
   result: SpawnSyncReturns<any>
 ) => {
-  console.log(`HANDLE SPAWN RETURNS`);
   console.log(`stdout:`, result?.stdout?.toString());
   console.log(`stderr:`, result?.stderr?.toString());
   const { stdout, stderr, error } = result;
@@ -604,6 +603,13 @@ const checkKit = async () => {
 
       await handleSpawnReturns(`settings`, settingsResult);
     }
+
+    const createAllBins = spawnSync(
+      `./script`,
+      [`./cli/create-all-bins.js`],
+      options
+    );
+    await handleSpawnReturns(`create-all-bins`, createAllBins);
 
     await verifyInstall();
   }
