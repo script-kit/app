@@ -8,7 +8,7 @@ import {
   KENV,
   execPath,
   PATH,
-  DOTENV,
+  KIT_DOTENV,
   KIT_MAC_APP,
   kenvPath,
 } from './helpers';
@@ -49,7 +49,7 @@ export const createChild = ({
       PATH,
       KENV,
       KIT,
-      DOTENV,
+      DOTENV: KIT_DOTENV,
       KIT_APP_VERSION: getVersion(),
     },
   });

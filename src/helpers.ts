@@ -8,9 +8,11 @@ export const APP_NAME = 'Kit';
 export const KIT_PROTOCOL = 'kit';
 export const KENV = process.env.KENV || path.join(app.getPath('home'), '.kenv');
 export const KIT = process.env.KIT || path.join(app.getPath('home'), '.kit');
-
 export const kenvPath = (...parts: string[]) => path.join(KENV, ...parts);
 export const kitPath = (...parts: string[]) => path.join(KIT, ...parts);
+
+export const KIT_DOTENV = process.env.KIT_DOTENV || kenvPath('.env');
+
 export const settingsFile = kenvPath('db', 'kit.json');
 export const mainFilePath = kitPath('main', 'index.js');
 
@@ -20,12 +22,8 @@ export const KENV_BIN = kenvPath('bin');
 
 export const execPath = kitPath('node', 'bin', 'node');
 
-export const DOTENV = kenvPath('.env');
 export const KIT_MAC_APP = kitPath('mac-app.js');
 export const PATH = `${kitPath('node', 'bin')}:${process.env.PATH}`;
-export const NODE_PATH = `${kenvPath('node_modules')}:${kitPath(
-  'node_modules'
-)}`;
 
 export const stringifyScriptArgsKey = (
   scriptPath: string,
