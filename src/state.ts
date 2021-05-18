@@ -1,3 +1,4 @@
+import { ChildProcess } from 'child_process';
 import { app } from 'electron';
 import Store from 'electron-store';
 
@@ -23,3 +24,42 @@ export const storeVersion = (version: string) => {
 export const getStoredVersion = () => {
   return state.get(STORE_VERSION, '0.0.0');
 };
+
+export const serverState = {
+  running: false,
+  host: '',
+  port: 0,
+};
+
+export interface Background {
+  child: ChildProcess;
+  start: string;
+}
+export const backgroundMap = new Map<string, Background>();
+
+export const getBackgroundTasks = () => {
+  const tasks = Array.from(backgroundMap.entries()).map(
+    ([filePath, { child, start }]: [string, Background]) => {
+      return {
+        filePath,
+        process: {
+          spawnargs: child?.spawnargs,
+          pid: child?.pid,
+          start,
+        },
+      };
+    }
+  );
+
+  return tasks;
+};
+
+export interface ChildInfo {
+  scriptPath: string;
+  child: ChildProcess;
+  from: string;
+  values: any[];
+}
+
+/* eslint-disable import/prefer-default-export */
+export const processMap: Map<number, ChildInfo> = new Map();

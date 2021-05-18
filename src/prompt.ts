@@ -5,10 +5,10 @@ import log from 'electron-log';
 import Store from 'electron-store';
 import { EventEmitter } from 'events';
 import minimist from 'minimist';
-import { execSync } from 'child_process';
 import { getAssetPath } from './assets';
-import { kenvPath, kitPath } from './helpers';
-import { USER_RESIZED } from './channels';
+import { kenvPath } from './helpers';
+import { SET_PLACEHOLDER, USER_RESIZED } from './channels';
+import { getAppHidden } from './appHidden';
 
 let promptCache: Store | null = null;
 export const getPromptCache = () => {
@@ -270,4 +270,8 @@ export const hidePromptWindow = () => {
   hideAppIfNoWindows();
 
   blurredByKit = false;
+};
+
+export const setPlaceholder = (text: string) => {
+  if (!getAppHidden()) sendToPrompt(SET_PLACEHOLDER, text);
 };

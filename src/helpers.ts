@@ -20,8 +20,8 @@ export const KENV_BIN = kenvPath('bin');
 
 export const execPath = kitPath('node', 'bin', 'node');
 
-export const DOTENV_CONFIG_PATH = kenvPath('.env');
-export const KIT_MAC_APP = kitPath('preload', 'mac-app.cjs');
+export const DOTENV = kenvPath('.env');
+export const KIT_MAC_APP = kitPath('mac-app.js');
 export const PATH = `${kitPath('node', 'bin')}:${process.env.PATH}`;
 export const NODE_PATH = `${kenvPath('node_modules')}:${kitPath(
   'node_modules'

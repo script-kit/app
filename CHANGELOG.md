@@ -1,3 +1,45 @@
+# [1.3.0-alpha.43](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.42...v1.3.0-alpha.43) (2021-05-17)
+
+
+### Bug Fixes
+
+* **setup:** chmod helpers ([6d2a4cd](https://github.com/johnlindquist/kitapp/commit/6d2a4cdff12570db7d6fd39f9760e516f5dd143a))
+
+# [1.3.0-alpha.42](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.41...v1.3.0-alpha.42) (2021-05-17)
+
+
+### Bug Fixes
+
+* **setup:** moving chmod to .kit ([e10ebfa](https://github.com/johnlindquist/kitapp/commit/e10ebfa66b6688a90fd530cfb6abc2b290387958))
+
+# [1.3.0-alpha.41](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.40...v1.3.0-alpha.41) (2021-05-17)
+
+
+### Bug Fixes
+
+* **state:** merge processMap into state ([ab6f752](https://github.com/johnlindquist/kitapp/commit/ab6f752874b63aa7f835bded761763017413e3cb))
+
+# [1.3.0-alpha.40](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.39...v1.3.0-alpha.40) (2021-05-17)
+
+
+### Features
+
+* **ipc:** Fixing bin and ipcs message ([2b50d56](https://github.com/johnlindquist/kitapp/commit/2b50d561a9fbd53b2396a981d146bd9061dfc0df))
+
+# [1.3.0-alpha.39](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.38...v1.3.0-alpha.39) (2021-05-16)
+
+
+### Features
+
+* **process:** separating how processes run ([8e5f9a6](https://github.com/johnlindquist/kitapp/commit/8e5f9a6512471ef511e0271eef09a73c57a436dc))
+
+# [1.3.0-alpha.38](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.37...v1.3.0-alpha.38) (2021-05-14)
+
+
+### Features
+
+* **kit:** Support new ESM setup ([01812df](https://github.com/johnlindquist/kitapp/commit/01812dfc78cad26f36fd11fd288816d409fd79f1))
+
 # [1.3.0-beta.13](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.12...v1.3.0-beta.13) (2021-05-08)
 
 

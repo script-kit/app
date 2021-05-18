@@ -5,6 +5,7 @@ import chokidar from 'chokidar';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
 import { EVENT, emitter } from './events';
+import { createChild } from './run';
 
 const watchMarker = 'Watch: ';
 
@@ -46,7 +47,7 @@ const addWatch = (watchString: string, filePath: string) => {
     const watcher = chokidar.watch(paths);
     watcher.on('change', () => {
       console.log({ paths }, 'changed');
-      emitter.emit(EVENT.RUN_APP_SCRIPT, filePath);
+      createChild({ from: 'watch', scriptPath: filePath, runArgs: [] });
     });
 
     const watched = watcher.getWatched();

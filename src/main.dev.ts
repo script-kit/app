@@ -565,6 +565,14 @@ const checkKit = async () => {
       await handleSpawnReturns(`npm`, npmResult);
     }
 
+    await chmod(kitPath('script'), 0o755);
+    const chmodResult = spawnSync(
+      `./script`,
+      [`./setup/chmod-helpers.js`],
+      options
+    );
+    await handleSpawnReturns(`chmod`, chmodResult);
+
     if (!kenvExists()) {
       // Step 4: Use kit wrapper to run setup.js script
       configWindow?.show();
@@ -577,7 +585,6 @@ const checkKit = async () => {
     if (!kenvConfigured()) {
       setupLog(`Run .kenv setup script...`);
       await chmod(kitPath('script'), 0o755);
-      await chmod(kitPath('kar'), 0o755);
 
       const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
       await handleSpawnReturns(`setup`, setupResult);
