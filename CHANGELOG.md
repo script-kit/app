@@ -1,3 +1,11 @@
+# [1.3.0-alpha.44](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.43...v1.3.0-alpha.44) (2021-05-18)
+
+
+### Bug Fixes
+
+* **kit:** Fixing inspect and tmp ([b49d964](https://github.com/johnlindquist/kitapp/commit/b49d9647e4561dbcace73f03decd4518ae4d08ed))
+* **kit:** Fixing KIT_DOTENV ([8566504](https://github.com/johnlindquist/kitapp/commit/8566504ae6b95466c67eaa15c29322c51080ba42))
+
 # [1.3.0-beta.14](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.13...v1.3.0-beta.14) (2021-05-18)
 
 
