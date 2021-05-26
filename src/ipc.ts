@@ -63,7 +63,7 @@ hideEmitter.on('hide', () => {
 ipcMain.on(VALUE_SUBMITTED, (_event, { value, pid }) => {
   if (processMap.has(pid)) {
     const { child, values } = processMap.get(pid) as ChildInfo;
-    console.log(`PID CHECK:`, child?.pid, { pid });
+    console.log(`PID CHECK:`, child?.pid, { pid, value });
     emitter.emit(EVENT.RESUME_SHORTCUTS);
     values.push(value);
     if (child) {

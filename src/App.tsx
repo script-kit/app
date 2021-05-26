@@ -116,6 +116,7 @@ export default function App() {
   const [promptData, setPromptData]: any = useState({});
 
   const [inputValue, setInputValue] = useState('');
+  const [textAreaValue, setTextAreaValue] = useState('');
   const [hint, setHint] = useState('');
   const previousHint = usePrevious(hint);
   const [mode, setMode] = useState(MODE.FILTER);
@@ -137,6 +138,7 @@ export default function App() {
   const choicesRef = useRef(null);
   const panelRef = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
+  const textAreaRef: RefObject<HTMLTextAreaElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -147,14 +149,14 @@ export default function App() {
     useCallback(
       (width: number, height: number) => {
         if (isMouseDown) return;
-        const {
-          height: topHeight,
-        } = topRef?.current?.getBoundingClientRect() as any;
+        const { height: topHeight } =
+          topRef?.current?.getBoundingClientRect() as any;
 
         if (!choicesRef.current) (choicesRef?.current as any)?.recalculate();
         if (!panelRef.current) (panelRef?.current as any)?.recalculate();
 
-        const hasContent = choices?.length || panelHTML?.length;
+        const hasContent =
+          choices?.length || panelHTML?.length || textAreaRef?.current;
         if (height > topHeight && hasContent) {
           ipcRenderer.send(CONTENT_SIZE_UPDATED, {
             width: Math.round(width),
@@ -167,7 +169,7 @@ export default function App() {
           });
         }
       },
-      [choices?.length, isMouseDown, panelHTML?.length]
+      [choices?.length, isMouseDown, panelHTML?.length, textAreaRef?.current]
     ),
     25
   );
@@ -177,11 +179,11 @@ export default function App() {
     sendResize(width, height);
   });
 
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef?.current.focus();
-    }
-  }, [inputRef]);
+  // useEffect(() => {
+  //   if (inputRef.current) {
+  //     inputRef?.current.focus();
+  //   }
+  // }, [inputRef]);
 
   useEffect(() => {
     setTabs(promptData?.tabs || []);
@@ -201,9 +203,11 @@ export default function App() {
             : 'Processing...'
         );
       }
+
       setUnfilteredChoices([]);
       setPanelHTML('');
       setInputValue('');
+      setTextAreaValue('');
 
       if (Array.isArray(submitValue)) {
         const files = submitValue.map((file) => {
@@ -495,6 +499,22 @@ export default function App() {
       hotkey,
     ]
   );
+  const onTextAreaKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLTextAreaElement>) => {
+      const { key, metaKey: command } = event as any;
+
+      if (key === 'Escape') {
+        event.preventDefault();
+        closePrompt();
+        return;
+      }
+      if (key === 'Enter' && command) {
+        event.preventDefault();
+        submit(textAreaValue);
+      }
+    },
+    [textAreaValue]
+  );
 
   const generateChoices = useDebouncedCallback((input, mode, tab) => {
     if (mode === MODE.GENERATE) {
@@ -621,6 +641,10 @@ export default function App() {
       if (inputRef.current) {
         inputRef?.current.focus();
       }
+
+      if (textAreaRef.current) {
+        textAreaRef?.current.focus();
+      }
     },
     []
   );
@@ -728,17 +752,18 @@ export default function App() {
             promptData?.scriptInfo?.menu) && (
             <Header scriptInfo={promptData?.scriptInfo} />
           )}
-          <input
-            style={
-              {
-                WebkitAppRegion: 'drag',
-                WebkitUserSelect: 'none',
-                minHeight: '4rem',
-                ...(caretDisabled && { caretColor: 'transparent' }),
-              } as any
-            }
-            autoFocus
-            className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
+          {!promptData?.textarea && (
+            <input
+              style={
+                {
+                  WebkitAppRegion: 'drag',
+                  WebkitUserSelect: 'none',
+                  minHeight: '4rem',
+                  ...(caretDisabled && { caretColor: 'transparent' }),
+                } as any
+              }
+              autoFocus
+              className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
             ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
 
             ${
@@ -751,23 +776,24 @@ export default function App() {
                 : `            focus:border-none border-none`
             }
           `}
-            onChange={
-              mode !== MODE.HOTKEY
-                ? (e) => {
-                    onChange(e.target.value);
-                  }
-                : undefined
-            }
-            onKeyDown={onKeyDown}
-            onKeyUp={onKeyUp}
-            placeholder={debouncedPlaceholder || promptData?.placeholder}
-            ref={inputRef}
-            type={promptData?.secret ? 'password' : 'text'}
-            value={mode !== MODE.HOTKEY ? inputValue : undefined}
-            onDragEnter={promptData?.drop ? onDragEnter : undefined}
-            onDragLeave={promptData?.drop ? onDragLeave : undefined}
-            onDrop={promptData?.drop ? onDrop : undefined}
-          />
+              onChange={
+                mode !== MODE.HOTKEY
+                  ? (e) => {
+                      onChange(e.target.value);
+                    }
+                  : undefined
+              }
+              onKeyDown={onKeyDown}
+              onKeyUp={onKeyUp}
+              placeholder={debouncedPlaceholder || promptData?.placeholder}
+              ref={inputRef}
+              type={promptData?.secret ? 'password' : 'text'}
+              value={mode !== MODE.HOTKEY ? inputValue : undefined}
+              onDragEnter={promptData?.drop ? onDragEnter : undefined}
+              onDragLeave={promptData?.drop ? onDragLeave : undefined}
+              onDrop={promptData?.drop ? onDrop : undefined}
+            />
+          )}
           {hint && (
             <div className="pl-3 pb-1 text-xs text-gray-800 dark:text-gray-200 italic">
               {parse(hint)}
@@ -777,6 +803,31 @@ export default function App() {
             <Tabs tabs={tabs} tabIndex={tabIndex} onTabClick={onTabClick} />
           )}
         </div>
+        {promptData?.textarea && (
+          <textarea
+            ref={textAreaRef}
+            style={
+              {
+                WebkitAppRegion: 'no-drag',
+                WebkitUserSelect: 'text',
+                height: maxHeight,
+              } as any
+            }
+            onKeyDown={onTextAreaKeyDown}
+            onChange={(e) => {
+              setTextAreaValue(e.target.value);
+            }}
+            value={textAreaValue}
+            placeholder={promptData?.placeholder}
+            className={`
+            min-h-32
+
+              bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-md dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40
+              ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-4
+              focus:border-none border-none
+              `}
+          />
+        )}
         {panelHTML?.length > 0 && (
           <Panel ref={panelRef} panelHTML={panelHTML} />
         )}

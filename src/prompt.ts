@@ -25,9 +25,14 @@ export const createPromptCache = () => {
 
 let promptWindow: BrowserWindow | null = null;
 let blurredByKit = false;
+let ignoreBlur = false;
 
 export const setBlurredByKit = (value = true) => {
   blurredByKit = value;
+};
+
+export const setIgnoreBlur = (value = true) => {
+  ignoreBlur = value;
 };
 
 export const hideEmitter = new EventEmitter();
@@ -82,7 +87,7 @@ export const createPromptWindow = async () => {
   // });
 
   promptWindow?.on('blur', () => {
-    hidePromptWindow();
+    if (!ignoreBlur) hidePromptWindow();
   });
 
   let timeoutId: NodeJS.Timeout | null = null;
@@ -153,10 +158,8 @@ export const getCurrentScreenPromptCache = () => {
 export const setDefaultBounds = () => {
   const currentScreen = getCurrentScreen();
 
-  const {
-    width: screenWidth,
-    height: screenHeight,
-  } = currentScreen.workAreaSize;
+  const { width: screenWidth, height: screenHeight } =
+    currentScreen.workAreaSize;
 
   const height = Math.round(screenHeight / 3);
   const width = Math.round(height * (4 / 3));

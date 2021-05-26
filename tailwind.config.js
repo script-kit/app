@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
 
@@ -35,11 +36,14 @@ module.exports = {
     },
     extend: {
       minWidth: {
-        '0': '0',
+        0: '0',
         '1/4': '25%',
         '1/2': '50%',
         '3/4': '75%',
         full: '100%',
+      },
+      minHeight: {
+        64: '16rem',
       },
       fontSize: {
         xxs: ['0.65rem', '0.75rem'],

@@ -3,7 +3,8 @@ import { clipboard, NativeImage } from 'electron';
 import { interval, merge } from 'rxjs';
 import { distinctUntilChanged, map, share, skip, tap } from 'rxjs/operators';
 import { format } from 'date-fns';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile } from 'fs/promises';
+import { mkdir } from 'shelljs';
 import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
 import { existsSync } from 'fs';
@@ -13,7 +14,7 @@ import { kenvPath } from './helpers';
 export const tick = async () => {
   const tmpClipboardDir = kenvPath('tmp', 'clipboard');
   if (!existsSync(tmpClipboardDir)) {
-    await mkdir(tmpClipboardDir);
+    mkdir('-p', tmpClipboardDir);
   }
 
   const adapter = new FileSync(kenvPath('db', 'clipboard-history.json'));

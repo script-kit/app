@@ -14,6 +14,7 @@ import {
   getPromptCache,
   sendToPrompt,
   setBlurredByKit,
+  setIgnoreBlur,
   setPlaceholder,
   showPrompt,
 } from './prompt';
@@ -50,6 +51,36 @@ export type ChannelHandler = {
   [Property in keyof typeof import('./channels')]?: (data: MessageData) => void;
 };
 
+interface Choice<Value> {
+  name: string;
+  value: Value;
+  description?: string;
+  focused?: string;
+  img?: string;
+  html?: string;
+  preview?: string;
+  id?: string;
+}
+
+interface Script extends Choice<any> {
+  file: string;
+  filePath: string;
+  command: string;
+  menu?: string;
+  shortcut?: string;
+  description?: string;
+  shortcode?: string;
+  alias?: string;
+  author?: string;
+  twitter?: string;
+  exclude?: string;
+  schedule?: string;
+  system?: string;
+  watch?: string;
+  background?: string;
+  isRunning?: boolean;
+}
+
 export type MessageData = {
   channel: keyof typeof import('./channels');
   kitScript: string;
@@ -68,6 +99,7 @@ export type MessageData = {
   html?: string;
   choices?: any[];
   info?: any;
+  scriptInfo: Script;
 };
 
 const SHOW_IMAGE = async (data: MessageData) => {
@@ -93,7 +125,7 @@ const SHOW_IMAGE = async (data: MessageData) => {
   });
 
   const imageWindow = await show(
-    data?.kitScript || 'show-image',
+    data?.scriptInfo?.command || 'show-image',
     String.raw`<img src="${image?.src}" alt="${image?.alt}" title="${image?.title}" />`,
     { width, height, ...options }
   );
@@ -207,7 +239,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_IGNORE_BLUR: (data) => {
-    setBlurredByKit(data?.ignore);
+    setIgnoreBlur(data?.ignore);
   },
 
   SET_INPUT: (data) => {

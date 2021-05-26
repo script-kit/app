@@ -5,10 +5,8 @@ import { app } from 'electron';
 import minimist from 'minimist';
 
 import log from 'electron-log';
-import ipc from 'node-ipc';
 import { ChildProcess } from 'child_process';
 import { hidePromptWindow } from './prompt';
-import { kitPath, KIT } from './helpers';
 import { createChild } from './run';
 import { reset } from './ipc';
 import { createMessageHandler } from './messages';
@@ -20,21 +18,6 @@ app.on('second-instance', async (_event, argv) => {
   const [, , argScript, ...argArgs] = _;
   await tryKitScript(argScript, argArgs);
 });
-
-ipc.config.id = KIT;
-ipc.config.retry = 1500;
-ipc.config.silent = true;
-
-ipc.serve(kitPath('tmp', 'ipc'), () => {
-  ipc.server.on('message', async (argv) => {
-    log.info(`ipc message:`, argv);
-    const { _ } = minimist(argv);
-    const [argScript, ...argArgs] = _;
-    await tryKitScript(argScript, argArgs);
-  });
-});
-
-ipc.server.start();
 
 process.on('unhandledRejection', (reason, p) => {
   log.warn('Unhandled Rejection at: Promise', p, 'reason:', reason);
@@ -111,7 +94,7 @@ export const tryKitScript = async (
 *** ${filePath} ${runArgs} ***`.trim()
   );
   try {
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       kitScript(filePath, runArgs, resolve, reject);
     });
   } catch (error) {

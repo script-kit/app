@@ -63,6 +63,7 @@ import {
 import { getVersion } from './version';
 import { show } from './show';
 import { getStoredVersion, storeVersion } from './state';
+import { startSK } from './sk';
 
 let configWindow: BrowserWindow | null = null;
 
@@ -252,6 +253,8 @@ const ready = async () => {
 
     setupLog(`Kit.app is ready...`);
     configWindowDone();
+
+    startSK();
 
     autoUpdater.logger = log;
     autoUpdater.checkForUpdatesAndNotify({

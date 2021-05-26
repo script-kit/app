@@ -12,6 +12,7 @@ import {
   KIT_MAC_APP,
   kenvPath,
 } from './helpers';
+import { setIgnoreBlur } from './prompt';
 import { ChildInfo, processMap } from './state';
 import { getVersion } from './version';
 
@@ -64,6 +65,7 @@ export const createChild = ({
   });
 
   child.on('exit', () => {
+    setIgnoreBlur(false);
     const { values } = processMap.get(child.pid) as ChildInfo;
     if (resolve) {
       resolve(values);
