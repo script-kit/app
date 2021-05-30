@@ -118,7 +118,7 @@ export default function App() {
   const [inputValue, setInputValue] = useState('');
   const [textAreaValue, setTextAreaValue] = useState('');
   const [hint, setHint] = useState('');
-  const previousHint = usePrevious(hint);
+  // const previousHint = usePrevious(hint);
   const [mode, setMode] = useState(MODE.FILTER);
   const [index, setIndex] = useState(0);
   const [tabs, setTabs] = useState([]);
@@ -130,7 +130,7 @@ export default function App() {
   const previousPlaceholder: string | null = usePrevious(placeholder);
   const [dropReady, setDropReady] = useState(false);
   const [panelHTML, setPanelHTML] = useState('');
-  const [scriptName, setScriptName] = useState('');
+  // const [scriptName, setScriptName] = useState('');
   const [maxHeight, setMaxHeight] = useState(480);
 
   const [caretDisabled, setCaretDisabled] = useState(false);
@@ -280,17 +280,17 @@ export default function App() {
     [submit]
   );
 
-  useEffect(() => {
-    if (choices?.length > 0 && choices?.[index]) {
-      ipcRenderer.send(CHOICE_FOCUSED, {
-        index: choices[index],
-        pid: promptData?.pid,
-      });
-    }
-    if (choices?.length === 0) {
-      ipcRenderer.send(CHOICE_FOCUSED, { index: null, pid: promptData?.pid });
-    }
-  }, [choices, index, promptData?.pid]);
+  // useEffect(() => {
+  //   if (choices?.length > 0 && choices?.[index]) {
+  //     ipcRenderer.send(CHOICE_FOCUSED, {
+  //       index,
+  //       pid: promptData?.pid,
+  //     });
+  //   }
+  //   if (choices?.length === 0) {
+  //     ipcRenderer.send(CHOICE_FOCUSED, { index: null, pid: promptData?.pid });
+  //   }
+  // }, [choices, index, promptData?.pid]);
 
   const onTabClick = useCallback(
     (ti: number) => (_event: any) => {
@@ -720,7 +720,7 @@ export default function App() {
     Object.entries(messageMap).forEach(([key, value]: any) => {
       if (ipcRenderer.listenerCount(key) === 0) {
         ipcRenderer.on(key, (event, data) => {
-          if (data?.kitScript) setScriptName(data?.kitScript);
+          // if (data?.kitScript) setScriptName(data?.kitScript);
           value(event, data);
         });
       }

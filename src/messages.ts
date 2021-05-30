@@ -8,10 +8,11 @@ import sizeOf from 'image-size';
 
 import { isUndefined } from 'lodash';
 import { autoUpdater } from 'electron-updater';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { getLog } from './logs';
 import {
+  clearPromptDb,
   focusPrompt,
-  getPromptCache,
   sendToPrompt,
   setBlurredByKit,
   setIgnoreBlur,
@@ -44,14 +45,63 @@ import { emitter, EVENT } from './events';
 import { MODE } from './enums';
 import { show } from './show';
 import { showNotification } from './notifications';
+import { setKenv, createKenv } from './helpers';
 
-const setChoices = (data: MessageData) => sendToPrompt(SET_CHOICES, data);
+const setChoices = (data: MessageData) => {
+  if (data?.scripts) {
+    const choices: Script[] = (
+      (data as { choices: Script[] })?.choices || []
+    ).map((script) => {
+      if (script.background) {
+        const backgroundScript = getBackgroundTasks().find(
+          (t) => t.filePath === script.filePath
+        );
+
+        script.description = `${script.description || ''}${
+          backgroundScript
+            ? `🟢  Uptime: ${formatDistanceToNowStrict(
+                new Date(backgroundScript.process.start)
+              )} PID: ${backgroundScript.process.pid}`
+            : "🛑 isn't running"
+        }`;
+      }
+
+      if (script.schedule) {
+        const scheduleScript = getSchedule().find(
+          (s) => s.filePath === script.filePath
+        );
+
+        if (scheduleScript) {
+          const date = new Date(scheduleScript.date);
+          const next = `Next ${formatDistanceToNowStrict(date)}`;
+          const cal = `${format(date, 'MMM eo, h:mm:ssa ')}`;
+
+          script.description = `${
+            script.description || ``
+          } ${next} - ${cal} - ${script.schedule}`;
+        }
+      }
+
+      if (script.watch) {
+        script.description = `${script.description || ``} Watching: ${
+          script.watch
+        }`;
+      }
+
+      return script;
+    });
+
+    sendToPrompt(SET_CHOICES, { choices });
+  } else {
+    sendToPrompt(SET_CHOICES, data);
+  }
+};
 
 export type ChannelHandler = {
   [Property in keyof typeof import('./channels')]?: (data: MessageData) => void;
 };
 
-interface Choice<Value> {
+interface Choice<Value = unknown> {
   name: string;
   value: Value;
   description?: string;
@@ -62,7 +112,7 @@ interface Choice<Value> {
   id?: string;
 }
 
-interface Script extends Choice<any> {
+interface Script extends Choice {
   file: string;
   filePath: string;
   command: string;
@@ -99,7 +149,9 @@ export type MessageData = {
   html?: string;
   choices?: any[];
   info?: any;
-  scriptInfo: Script;
+  scripts?: boolean;
+  scriptInfo?: Script;
+  kenvPath?: string;
 };
 
 const SHOW_IMAGE = async (data: MessageData) => {
@@ -138,7 +190,7 @@ const SHOW_IMAGE = async (data: MessageData) => {
 
 const kitMessageMap: ChannelHandler = {
   CLEAR_CACHE: (data) => {
-    getPromptCache()?.clear();
+    clearPromptDb();
   },
 
   CONSOLE_LOG: (data) => {
@@ -151,6 +203,10 @@ const kitMessageMap: ChannelHandler = {
 
   COPY_PATH_AS_PICTURE: (data) => {
     clipboard.writeImage(data.path as any);
+  },
+
+  CREATE_KENV: (data) => {
+    if (data.kenvPath) createKenv(data.kenvPath);
   },
 
   GET_SCRIPTS_STATE: (data) => {
@@ -312,6 +368,9 @@ const kitMessageMap: ChannelHandler = {
   },
   SET_CHOICES: (data) => {
     setChoices(data);
+  },
+  SWITCH_KENV: (data) => {
+    if (data.kenvPath) setKenv(data.kenvPath);
   },
   UPDATE_PROMPT_WARN: (data) => {
     setPlaceholder(data.info);

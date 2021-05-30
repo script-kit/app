@@ -5,12 +5,12 @@ import log from 'electron-log';
 import path from 'path';
 import {
   KIT,
-  KENV,
   execPath,
   PATH,
   KIT_DOTENV,
   KIT_MAC_APP,
   kenvPath,
+  getKenv,
 } from './helpers';
 import { setIgnoreBlur } from './prompt';
 import { ChildInfo, processMap } from './state';
@@ -48,7 +48,7 @@ export const createChild = ({
       KIT_CONTEXT: 'app',
       KIT_MAIN: scriptPath,
       PATH,
-      KENV,
+      KENV: getKenv(),
       KIT,
       KIT_DOTENV,
       KIT_APP_VERSION: getVersion(),

@@ -87,9 +87,15 @@ ipcMain.on(PROMPT_ERROR, (_event, { error }) => {
   if (!getAppHidden()) setPlaceholder(error.message);
 });
 
-ipcMain.on(CHOICE_FOCUSED, (_event, choice: any) => {
-  // TODO: Think through "live selecting" choices
-  // child?.send({ channel: CHOICE_FOCUSED, choice });
+ipcMain.on(CHOICE_FOCUSED, (_event, { index, pid }) => {
+  if (processMap.has(pid)) {
+    const { child } = processMap.get(pid) as ChildInfo;
+
+    if (child && !isUndefined(index)) {
+      console.log(`Sending CHOICE_FOCUSED ${index}`);
+      child?.send({ channel: CHOICE_FOCUSED, index });
+    }
+  }
 });
 
 ipcMain.on(TAB_CHANGED, (event, { tab, input = '', pid }) => {

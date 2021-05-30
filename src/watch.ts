@@ -4,7 +4,6 @@ import log from 'electron-log';
 import chokidar from 'chokidar';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
-import { EVENT, emitter } from './events';
 import { createChild } from './run';
 
 const watchMarker = 'Watch: ';

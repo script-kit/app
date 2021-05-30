@@ -2,25 +2,22 @@
 /* eslint-disable import/prefer-default-export */
 import { BrowserWindow, screen, nativeTheme, app } from 'electron';
 import log from 'electron-log';
-import Store from 'electron-store';
+import low from 'lowdb';
+import FileSync from 'lowdb/adapters/FileSync';
 import { EventEmitter } from 'events';
 import minimist from 'minimist';
 import { getAssetPath } from './assets';
-import { kenvPath } from './helpers';
+import { promptDbPath } from './helpers';
 import { SET_PLACEHOLDER, USER_RESIZED } from './channels';
 import { getAppHidden } from './appHidden';
 
-let promptCache: Store | null = null;
-export const getPromptCache = () => {
-  return promptCache;
-};
+const adapter = new FileSync(promptDbPath);
+const promptDb = low(adapter);
 
-export const createPromptCache = () => {
-  promptCache = new Store({
-    name: 'prompt',
-    cwd: kenvPath('cache'),
-  });
-  promptCache.clear();
+promptDb.defaults({ screens: {} }).write();
+
+export const clearPromptDb = () => {
+  promptDb.set(`screens`, {}).write();
 };
 
 let promptWindow: BrowserWindow | null = null;
@@ -147,12 +144,13 @@ const getCurrentScreen = () => {
 
 export const getCurrentScreenPromptCache = () => {
   const currentScreen = getCurrentScreen();
-  const currentPromptCache = getPromptCache()?.get(
-    `prompt.${String(currentScreen.id)}`
-  );
+
+  const currentPromptCache = promptDb
+    .get(`screens.${String(currentScreen.id)}`)
+    .value();
   // console.log(currentScreen.id, { currentPromptCache });
 
-  return (currentPromptCache as any)?.bounds as Size;
+  return currentPromptCache as Size;
 };
 
 export const setDefaultBounds = () => {
@@ -245,10 +243,7 @@ const cachePromptPosition = () => {
   const promptBounds = promptWindow?.getBounds();
   log.info(`CACHING SIZE:`, promptBounds);
 
-  getPromptCache()?.set(
-    `prompt.${String(currentScreen.id)}.bounds`,
-    promptBounds
-  );
+  promptDb.set(`screens.${String(currentScreen.id)}`, promptBounds).write();
 };
 
 const hideAppIfNoWindows = () => {

@@ -3,7 +3,7 @@ import { grep } from 'shelljs';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { tryKitScript } from './kit';
-import { mainFilePath, settingsFile } from './helpers';
+import { mainScriptPath, prefsPath, shortcutsPath } from './helpers';
 import { emitter, EVENT } from './events';
 
 export const shortcutMap = new Map();
@@ -74,34 +74,34 @@ export const updateShortcuts = (filePath: string) => {
 };
 
 export const updateMainShortcut = async (filePath: string) => {
-  if (filePath === settingsFile) {
-    log.info(`SETTINGS CHANGED:`, filePath);
+  if (filePath === shortcutsPath) {
+    log.info(`SHORTCUTS DB CHANGED:`, filePath);
     const settings = JSON.parse(await readFile(filePath, 'utf-8'));
-    const rawShortcut = settings?.shortcuts?.kit?.main?.index;
+    const rawShortcut = settings?.shortcuts?.[mainScriptPath];
 
     const shortcut = rawShortcut ? shortcutNormalizer(rawShortcut) : '';
 
     if (shortcut) {
-      const oldShortcut = shortcutMap.get(mainFilePath);
+      const oldShortcut = shortcutMap.get(mainScriptPath);
 
       if (shortcut === oldShortcut) return;
 
       if (oldShortcut) {
         globalShortcut.unregister(oldShortcut);
-        shortcutMap.delete(mainFilePath);
+        shortcutMap.delete(mainScriptPath);
       }
 
       const ret = globalShortcut.register(shortcut, async () => {
-        await tryKitScript(mainFilePath, []);
+        await tryKitScript(mainScriptPath, []);
       });
 
       if (!ret) {
-        log.info(`Failed to register: ${shortcut} to ${mainFilePath}`);
+        log.info(`Failed to register: ${shortcut} to ${mainScriptPath}`);
       }
 
       if (ret && globalShortcut.isRegistered(shortcut)) {
-        log.info(`Registered ${shortcut} to ${mainFilePath}`);
-        shortcutMap.set(mainFilePath, shortcut);
+        log.info(`Registered ${shortcut} to ${mainScriptPath}`);
+        shortcutMap.set(mainScriptPath, shortcut);
       }
     }
   }

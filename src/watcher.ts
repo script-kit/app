@@ -6,7 +6,7 @@ import path from 'path';
 
 import { existsSync } from 'fs';
 import { appScript } from './kit';
-import { kenvPath, kitPath, settingsFile } from './helpers';
+import { kenvPath, kitAppPath, kitPath, prefsPath } from './helpers';
 import {
   unlinkShortcuts,
   updateMainShortcut,
@@ -49,22 +49,22 @@ export const cacheMenu = async () => {
 };
 
 export const manageShortcuts = async () => {
-  if (!existsSync(settingsFile)) {
-    await appScript(kitPath('setup', 'create-settings.js'), []);
-  }
+  const kitAppDb = `${kitAppPath('db', 'app.json')}`;
+  const kitAppShortcuts = `${kitAppPath('db', 'shortcuts.json')}`;
+  const kenvScripts = `${kenvPath('scripts')}${path.sep}*.js`;
 
-  const dbWatcher = chokidar.watch([`${kenvPath('db')}${path.sep}*.json`], {
-    depth: 0,
+  const shortcutsDbWatcher = chokidar.watch([kitAppShortcuts]);
+
+  shortcutsDbWatcher.on('all', onDbChanged);
+
+  const kitAppDbWatcher = chokidar.watch([kitAppDb]);
+  kitAppDbWatcher.on('change', async () => {
+    await cacheMenu();
   });
 
-  dbWatcher.on('all', onDbChanged);
-
-  const scriptsWatcher = chokidar.watch(
-    [`${kenvPath('scripts')}${path.sep}*.js`],
-    {
-      depth: 0,
-    }
-  );
+  const scriptsWatcher = chokidar.watch([kenvScripts], {
+    depth: 0,
+  });
 
   scriptsWatcher.on('all', onScriptsChanged);
 

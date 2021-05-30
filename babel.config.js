@@ -33,6 +33,7 @@ module.exports = (api) => {
       require('@babel/plugin-proposal-export-default-from'),
       require('@babel/plugin-proposal-logical-assignment-operators'),
       [require('@babel/plugin-proposal-optional-chaining'), { loose: false }],
+      [require('@babel/plugin-proposal-private-methods'), { loose: true }],
       [
         require('@babel/plugin-proposal-pipeline-operator'),
         { proposal: 'minimal' },

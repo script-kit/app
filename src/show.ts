@@ -2,7 +2,7 @@
 import { app, BrowserWindow, screen } from 'electron';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { getAssetPath } from './assets';
-import { kenvPath, dirExists } from './helpers';
+import { kenvPath, isDir } from './helpers';
 
 const page = (body: string, styles: string) => {
   return `<!DOCTYPE html>
@@ -81,11 +81,11 @@ export const show = async (
   const baseURL = app.getAppPath().replace('\\', '/');
   const stylePath = `${baseURL}/dist/style.css`;
   const styles = await readFile(stylePath, { encoding: 'utf8' });
-  const showParentDir = dirExists(kenvPath('tmp'))
+  const showParentDir = isDir(kenvPath('tmp'))
     ? kenvPath('tmp', name)
     : app.getPath('appData');
 
-  if (!dirExists(showParentDir)) {
+  if (!isDir(showParentDir)) {
     await mkdir(showParentDir, { recursive: true });
   }
 

@@ -51,19 +51,22 @@ import { manageShortcuts } from './watcher';
 import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
 import { tick } from './tick';
-import { createPromptWindow, createPromptCache } from './prompt';
+import { createPromptWindow } from './prompt';
 import {
   APP_NAME,
   kenvPath,
   KIT,
-  KENV,
   KIT_PROTOCOL,
   kitPath,
+  kitAppPath,
+  createPathIfNotExists,
+  getKenv,
 } from './helpers';
 import { getVersion } from './version';
 import { show } from './show';
 import { getStoredVersion, storeVersion } from './state';
 import { startSK } from './sk';
+import { setupPrefs } from './prefs';
 
 let configWindow: BrowserWindow | null = null;
 
@@ -196,11 +199,8 @@ const prepareProtocols = async () => {
 };
 
 const createLogs = () => {
-  log.transports.file.resolvePath = () => kenvPath('logs', 'kit.log');
-};
-
-const createCaches = () => {
-  createPromptCache();
+  createPathIfNotExists(kitAppPath('logs'));
+  log.transports.file.resolvePath = () => kitAppPath('logs', 'kit.log');
 };
 
 const configWindowDone = () => {
@@ -238,7 +238,6 @@ const setupLog = (message: string) => {
 const ready = async () => {
   try {
     createLogs();
-    createCaches();
     await prepareProtocols();
     setupLog(`Protocols Prepared`);
     await createTray();
@@ -300,7 +299,7 @@ const kitExists = () => {
   return doesKitExist;
 };
 const kitIsGit = () => {
-  const isGit = existsSync(KENV);
+  const isGit = existsSync(getKenv());
   setupLog(`kit is${isGit ? ` not` : ``} a .git repo`);
   return isGit;
 };
@@ -332,7 +331,7 @@ const isContributor = async () => {
 };
 
 const kenvExists = () => {
-  const doesKenvExist = existsSync(KENV);
+  const doesKenvExist = existsSync(getKenv());
   setupLog(`kenv${doesKenvExist ? `` : ` not`} found`);
 
   return doesKenvExist;
@@ -439,7 +438,7 @@ const options: SpawnSyncOptions = {
   encoding: 'utf-8',
   env: {
     KIT,
-    KENV,
+    KENV: getKenv(),
     PATH: `${path.join(KIT, 'node', 'bin')}:${process.env.PATH}`,
   },
 };
@@ -521,6 +520,9 @@ const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
+
+  setupPrefs();
+
   if (versionMismatch() || !kitExists()) {
     configWindow = await show(
       'splash-setup',
@@ -592,19 +594,6 @@ const checkKit = async () => {
       await handleSpawnReturns(`setup`, setupResult);
 
       kenvConfigured();
-    }
-
-    const settingsFile = kenvPath('db', 'kit.json');
-
-    if (!existsSync(settingsFile)) {
-      await chmod(kitPath('script'), 0o755);
-      const settingsResult = spawnSync(
-        `./script`,
-        [`./setup/create-settings.js`],
-        options
-      );
-
-      await handleSpawnReturns(`settings`, settingsResult);
     }
 
     const createAllBins = spawnSync(

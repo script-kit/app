@@ -1,28 +1,23 @@
 import { ChildProcess } from 'child_process';
 import { app } from 'electron';
-import Store from 'electron-store';
-
-const NEEDS_RESTART = 'NEEDS_RESTART';
-const STORE_VERSION = 'version';
-
-const state = new Store({ name: 'state' });
+import { appDb } from './helpers';
 
 export const makeRestartNecessary = () => {
-  state.set(NEEDS_RESTART, true);
+  appDb.set('needsRestart', true);
 };
 export const restartIfNecessary = () => {
-  if (state.get(NEEDS_RESTART)) {
-    state.set(NEEDS_RESTART, false);
+  if (appDb.get('needsRestart').value()) {
+    appDb.set('needsRestart', false).write();
     app.exit(0);
   }
 };
 
 export const storeVersion = (version: string) => {
-  state.set(STORE_VERSION, version);
+  appDb.set('version', version).write();
 };
 
 export const getStoredVersion = () => {
-  return state.get(STORE_VERSION, '0.0.0');
+  return appDb.get('version').value();
 };
 
 export const serverState = {
