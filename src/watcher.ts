@@ -1,12 +1,12 @@
+/* eslint-disable no-restricted-syntax */
 /* eslint-disable jest/no-export */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
-import chokidar from 'chokidar';
+import chokidar, { FSWatcher } from 'chokidar';
 import path from 'path';
 
-import { existsSync } from 'fs';
 import { appScript } from './kit';
-import { kenvPath, kitAppPath, kitPath, prefsPath } from './helpers';
+import { appDbPath, kenvPath, kitPath, shortcutsPath } from './helpers';
 import {
   unlinkShortcuts,
   updateMainShortcut,
@@ -17,6 +17,7 @@ import { cancelSchedule, updateSchedule } from './schedule';
 import { unlinkEvents, updateEvents } from './system-events';
 import { removeWatch, checkWatch } from './watch';
 import { removeBackground, updateBackground } from './background';
+import { emitter, EVENT } from './events';
 
 const onScriptsChanged = async (
   event: 'add' | 'change' | 'unlink',
@@ -48,22 +49,25 @@ export const cacheMenu = async () => {
   await appScript(kitPath('cli', 'cache-menu.js'), []);
 };
 
-export const manageShortcuts = async () => {
-  const kitAppDb = `${kitAppPath('db', 'app.json')}`;
-  const kitAppShortcuts = `${kitAppPath('db', 'shortcuts.json')}`;
-  const kenvScripts = `${kenvPath('scripts')}${path.sep}*.js`;
+let watchers: FSWatcher[] = [];
 
-  const shortcutsDbWatcher = chokidar.watch([kitAppShortcuts]);
-
+export const setupWatchers = async () => {
+  watchers = [];
+  const shortcutsDbWatcher = chokidar.watch([shortcutsPath]);
+  watchers.push(shortcutsDbWatcher);
   shortcutsDbWatcher.on('all', onDbChanged);
 
-  const kitAppDbWatcher = chokidar.watch([kitAppDb]);
-  kitAppDbWatcher.on('change', async () => {
-    await cacheMenu();
-  });
-
+  const kenvScripts = `${kenvPath('scripts')}${path.sep}*.js`;
   const scriptsWatcher = chokidar.watch([kenvScripts], {
     depth: 0,
+  });
+  watchers.push(scriptsWatcher);
+
+  const kitAppDbWatcher = chokidar.watch([appDbPath]);
+  watchers.push(kitAppDbWatcher);
+
+  kitAppDbWatcher.on('change', async () => {
+    await cacheMenu();
   });
 
   scriptsWatcher.on('all', onScriptsChanged);
@@ -76,3 +80,15 @@ export const manageShortcuts = async () => {
     scriptsWatcher.on('unlink', cacheMenu);
   });
 };
+
+export const resetWatchers = async () => {
+  for await (const watcher of watchers) {
+    await watcher.close();
+  }
+
+  await setupWatchers();
+};
+
+emitter.on(EVENT.SET_KENV, async () => {
+  await resetWatchers();
+});

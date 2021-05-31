@@ -52,7 +52,7 @@ export const getBackgroundTasks = () => {
 export interface ChildInfo {
   scriptPath: string;
   child: ChildProcess;
-  from: string;
+  type: string;
   values: any[];
 }
 

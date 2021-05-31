@@ -27,31 +27,12 @@ import usePrevious from '@rooks/use-previous';
 import useResizeObserver from '@react-hook/resize-observer';
 import parse from 'html-react-parser';
 import { KitPromptOptions, ChoiceData } from './types';
-import {
-  CHOICE_FOCUSED,
-  GENERATE_CHOICES,
-  ESCAPE_PRESSED,
-  RESET_PROMPT,
-  RUN_SCRIPT,
-  SET_CHOICES,
-  SET_HINT,
-  SET_INPUT,
-  SET_MODE,
-  SET_PANEL,
-  SET_PLACEHOLDER,
-  SET_TAB_INDEX,
-  SHOW_PROMPT,
-  TAB_CHANGED,
-  VALUE_SUBMITTED,
-  CONTENT_SIZE_UPDATED,
-  USER_RESIZED,
-} from './channels';
 import Tabs from './components/tabs';
 import ChoiceButton from './components/button';
 import Preview from './components/preview';
 import Panel from './components/panel';
 import Header from './components/header';
-import { MODE } from './enums';
+import { Channel, Mode } from './enums';
 
 const generateShortcut = ({
   option,
@@ -119,7 +100,7 @@ export default function App() {
   const [textAreaValue, setTextAreaValue] = useState('');
   const [hint, setHint] = useState('');
   // const previousHint = usePrevious(hint);
-  const [mode, setMode] = useState(MODE.FILTER);
+  const [mode, setMode] = useState(Mode.FILTER);
   const [index, setIndex] = useState(0);
   const [tabs, setTabs] = useState([]);
   const [tabIndex, setTabIndex] = useState(0);
@@ -158,12 +139,12 @@ export default function App() {
         const hasContent =
           choices?.length || panelHTML?.length || textAreaRef?.current;
         if (height > topHeight && hasContent) {
-          ipcRenderer.send(CONTENT_SIZE_UPDATED, {
+          ipcRenderer.send(Channel.CONTENT_SIZE_UPDATED, {
             width: Math.round(width),
             height: Math.round(height),
           });
         } else {
-          ipcRenderer.send(CONTENT_SIZE_UPDATED, {
+          ipcRenderer.send(Channel.CONTENT_SIZE_UPDATED, {
             width: Math.round(width),
             height: Math.round(topHeight),
           });
@@ -196,7 +177,7 @@ export default function App() {
   const submit = useCallback(
     (submitValue: any) => {
       let value = submitValue;
-      if (mode !== MODE.HOTKEY) {
+      if (mode !== Mode.HOTKEY) {
         setPlaceholder(
           typeof submitValue === 'string' && !promptData?.secret
             ? submitValue
@@ -225,7 +206,10 @@ export default function App() {
         value = files;
       }
 
-      ipcRenderer.send(VALUE_SUBMITTED, { value, pid: promptData?.pid });
+      ipcRenderer.send(Channel.VALUE_SUBMITTED, {
+        value,
+        pid: promptData?.pid,
+      });
     },
     [mode, promptData?.pid, promptData?.secret]
   );
@@ -296,7 +280,7 @@ export default function App() {
     (ti: number) => (_event: any) => {
       setTabIndex(ti);
 
-      ipcRenderer.send(TAB_CHANGED, {
+      ipcRenderer.send(Channel.TAB_CHANGED, {
         tab: tabs[ti],
         input: inputValue,
         pid: promptData?.pid,
@@ -310,7 +294,7 @@ export default function App() {
     setInputValue('');
     setPanelHTML('');
     setPromptData({});
-    ipcRenderer.send(ESCAPE_PRESSED, { pid: promptData?.pid });
+    ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: promptData?.pid });
   }, []);
 
   const onKeyUp = useCallback(
@@ -320,7 +304,7 @@ export default function App() {
         return;
       }
 
-      if (mode === MODE.HOTKEY) {
+      if (mode === Mode.HOTKEY) {
         event.preventDefault();
         const {
           code,
@@ -350,7 +334,7 @@ export default function App() {
         return;
       }
 
-      if (mode === MODE.HOTKEY) {
+      if (mode === Mode.HOTKEY) {
         const {
           key,
           code,
@@ -427,7 +411,7 @@ export default function App() {
           const clampIndex = (tabIndex + (event.shiftKey ? -1 : 1)) % clamp;
           const nextIndex = clampIndex < 0 ? clamp - 1 : clampIndex;
           setTabIndex(nextIndex);
-          ipcRenderer.send(TAB_CHANGED, {
+          ipcRenderer.send(Channel.TAB_CHANGED, {
             tab: tabs[nextIndex],
             input: inputValue,
             pid: promptData?.pid,
@@ -517,9 +501,12 @@ export default function App() {
   );
 
   const generateChoices = useDebouncedCallback((input, mode, tab) => {
-    if (mode === MODE.GENERATE) {
+    if (mode === Mode.GENERATE) {
       console.log(`GENERATE_CHOICES`, { input, pid: promptData?.pid });
-      ipcRenderer.send(GENERATE_CHOICES, { input, pid: promptData?.pid });
+      ipcRenderer.send(Channel.GENERATE_CHOICES, {
+        input,
+        pid: promptData?.pid,
+      });
     }
   }, 150);
 
@@ -533,7 +520,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      if (mode === (MODE.GENERATE || MODE.MANUAL)) {
+      if (mode === (Mode.GENERATE || Mode.MANUAL)) {
         setChoices(unfilteredChoices);
         return;
       }
@@ -703,17 +690,17 @@ export default function App() {
   }, []);
 
   const messageMap = {
-    [RESET_PROMPT]: resetPromptHandler,
-    [RUN_SCRIPT]: resetPromptHandler,
-    [SET_CHOICES]: setChoicesHandler,
-    [SET_HINT]: setHintHandler,
-    [SET_INPUT]: setInputHandler,
-    [SET_MODE]: setModeHandler,
-    [SET_PANEL]: setPanelHandler,
-    [SET_PLACEHOLDER]: setPlaceholderHandler,
-    [SET_TAB_INDEX]: setTabIndexHandler,
-    [SHOW_PROMPT]: showPromptHandler,
-    [USER_RESIZED]: userResizedHandler,
+    [Channel.RESET_PROMPT]: resetPromptHandler,
+    [Channel.RUN_SCRIPT]: resetPromptHandler,
+    [Channel.SET_CHOICES]: setChoicesHandler,
+    [Channel.SET_HINT]: setHintHandler,
+    [Channel.SET_INPUT]: setInputHandler,
+    [Channel.SET_MODE]: setModeHandler,
+    [Channel.SET_PANEL]: setPanelHandler,
+    [Channel.SET_PLACEHOLDER]: setPlaceholderHandler,
+    [Channel.SET_TAB_INDEX]: setTabIndexHandler,
+    [Channel.SHOW_PROMPT]: showPromptHandler,
+    [Channel.USER_RESIZED]: userResizedHandler,
   };
 
   useEffect(() => {
@@ -777,7 +764,7 @@ export default function App() {
             }
           `}
               onChange={
-                mode !== MODE.HOTKEY
+                mode !== Mode.HOTKEY
                   ? (e) => {
                       onChange(e.target.value);
                     }
@@ -788,7 +775,7 @@ export default function App() {
               placeholder={debouncedPlaceholder || promptData?.placeholder}
               ref={inputRef}
               type={promptData?.secret ? 'password' : 'text'}
-              value={mode !== MODE.HOTKEY ? inputValue : undefined}
+              value={mode !== Mode.HOTKEY ? inputValue : undefined}
               onDragEnter={promptData?.drop ? onDragEnter : undefined}
               onDragLeave={promptData?.drop ? onDragLeave : undefined}
               onDrop={promptData?.drop ? onDrop : undefined}

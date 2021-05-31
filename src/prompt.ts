@@ -8,7 +8,7 @@ import { EventEmitter } from 'events';
 import minimist from 'minimist';
 import { getAssetPath } from './assets';
 import { promptDbPath } from './helpers';
-import { SET_PLACEHOLDER, USER_RESIZED } from './channels';
+import { Channel } from './enums';
 import { getAppHidden } from './appHidden';
 
 const adapter = new FileSync(promptDbPath);
@@ -95,13 +95,13 @@ export const createPromptWindow = async () => {
     const promptBounds = promptWindow?.getBounds();
 
     const { width, height } = promptBounds;
-    sendToPrompt(USER_RESIZED, { height, width });
+    sendToPrompt(Channel.USER_RESIZED, { height, width });
   };
 
   promptWindow?.on('will-resize', userResize);
   promptWindow?.on('resized', () => {
     timeoutId = setTimeout(() => {
-      if (promptWindow?.isVisible()) sendToPrompt(USER_RESIZED, false);
+      if (promptWindow?.isVisible()) sendToPrompt(Channel.USER_RESIZED, false);
     }, 500);
   });
 
@@ -271,5 +271,5 @@ export const hidePromptWindow = () => {
 };
 
 export const setPlaceholder = (text: string) => {
-  if (!getAppHidden()) sendToPrompt(SET_PLACEHOLDER, text);
+  if (!getAppHidden()) sendToPrompt(Channel.SET_PLACEHOLDER, text);
 };

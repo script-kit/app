@@ -4,7 +4,7 @@
 import React from 'react';
 import parse from 'html-react-parser';
 import { ChoiceData } from '../types';
-import { MODE } from '../enums';
+import { Mode } from '../enums';
 
 interface ChoiceButtonProps {
   choice: any;
@@ -13,7 +13,7 @@ interface ChoiceButtonProps {
   inputValue: string;
   index: number;
   setIndex: (i: number) => void;
-  mode: MODE;
+  mode: Mode;
   mouseEnabled: boolean;
 }
 
@@ -103,13 +103,13 @@ const firstLettersMatch = (name: string, input: string) => {
 };
 
 const highlightChoiceName = (
-  mode: MODE,
+  mode: Mode,
   choice: ChoiceData,
   input: string,
   name: string,
   inputValue: string
 ) => {
-  return mode === (MODE.GENERATE || MODE.MANUAL)
+  return mode === (Mode.GENERATE || Mode.MANUAL)
     ? noHighlight(choice.name, inputValue)
     : name.startsWith(input)
     ? highlightStartsWith(choice.name, inputValue)

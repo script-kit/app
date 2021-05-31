@@ -46,7 +46,7 @@ const addWatch = (watchString: string, filePath: string) => {
     const watcher = chokidar.watch(paths);
     watcher.on('change', () => {
       console.log({ paths }, 'changed');
-      createChild({ from: 'watch', scriptPath: filePath, runArgs: [] });
+      createChild({ type: 'watch', scriptPath: filePath, runArgs: [] });
     });
 
     const watched = watcher.getWatched();

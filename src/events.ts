@@ -4,6 +4,8 @@ import { EventEmitter } from 'events';
 export enum EVENT {
   PAUSE_SHORTCUTS = 'PAUSE_SHORTCUTS',
   RESUME_SHORTCUTS = 'RESUME_SHORTCUTS',
+  TRY_KIT_SCRIPT = 'TRY_KIT_SCRIPT',
+  SET_KENV = 'SET_KENV',
 }
 
 export const emitter = new EventEmitter();

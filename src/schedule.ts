@@ -36,7 +36,7 @@ export const updateSchedule = (filePath: string) => {
       log.info(`Schedule string ${scheduleString}:${filePath}`);
 
       const job = schedule.scheduleJob(filePath, scheduleString, () => {
-        createChild({ from: 'schedule', scriptPath: filePath, runArgs: [] });
+        createChild({ type: 'schedule', scriptPath: filePath, runArgs: [] });
       });
 
       log.info(`Scheduling: ${filePath} for ${scheduleString}`);

@@ -7,17 +7,17 @@ import {
   KIT,
   execPath,
   PATH,
-  KIT_DOTENV,
   KIT_MAC_APP,
   kenvPath,
   getKenv,
+  getKenvDotEnv,
 } from './helpers';
 import { setIgnoreBlur } from './prompt';
 import { ChildInfo, processMap } from './state';
 import { getVersion } from './version';
 
 interface CreateChildInfo {
-  from: string;
+  type: string;
   scriptPath: string;
   runArgs: string[];
   resolve?: (data: any) => void;
@@ -25,7 +25,7 @@ interface CreateChildInfo {
 }
 
 export const createChild = ({
-  from,
+  type,
   scriptPath,
   runArgs,
   resolve,
@@ -50,15 +50,16 @@ export const createChild = ({
       PATH,
       KENV: getKenv(),
       KIT,
-      KIT_DOTENV,
+      KIT_DOTENV: getKenvDotEnv(),
       KIT_APP_VERSION: getVersion(),
+      KIT_SCRIPT_TYPE: type,
     },
   });
 
-  log.info(`\n> begin ${from} process ${scriptPath} id: ${child.pid}`);
+  log.info(`\n> begin ${type} process ${scriptPath} id: ${child.pid}`);
 
   processMap.set(child.pid, {
-    from,
+    type,
     child,
     scriptPath,
     values: [],
@@ -70,7 +71,7 @@ export const createChild = ({
     if (resolve) {
       resolve(values);
     }
-    log.info(`end ${from} process ${scriptPath} id: ${child.pid}\n`);
+    log.info(`end ${type} process ${scriptPath} id: ${child.pid}\n`);
     processMap.delete(child.pid);
   });
 

@@ -2,7 +2,7 @@ import { grep } from 'shelljs';
 import log from 'electron-log';
 
 import { createMessageHandler } from './messages';
-import { TOGGLE_BACKGROUND } from './channels';
+import { Channel } from './enums';
 import { emitter } from './events';
 import { backgroundMap, Background } from './state';
 import { createChild } from './run';
@@ -21,7 +21,7 @@ export const removeBackground = (filePath: string) => {
 
 export const backgroundScript = (scriptPath: string, runArgs: string[]) => {
   const child = createChild({
-    from: 'background',
+    type: 'background',
     scriptPath,
     runArgs,
   });
@@ -79,6 +79,6 @@ export const toggleBackground = (filePath: string) => {
   }
 };
 
-emitter.on(TOGGLE_BACKGROUND, (data) => {
+emitter.on(Channel.TOGGLE_BACKGROUND, (data) => {
   toggleBackground(data.filePath as string);
 });

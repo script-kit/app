@@ -3,7 +3,7 @@ import { grep } from 'shelljs';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { tryKitScript } from './kit';
-import { mainScriptPath, prefsPath, shortcutsPath } from './helpers';
+import { mainScriptPath, shortcutsPath } from './helpers';
 import { emitter, EVENT } from './events';
 
 export const shortcutMap = new Map();

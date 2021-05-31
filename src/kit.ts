@@ -10,6 +10,8 @@ import { hidePromptWindow } from './prompt';
 import { createChild } from './run';
 import { reset } from './ipc';
 import { createMessageHandler } from './messages';
+import { emitter, EVENT } from './events';
+import { mainScriptPath } from './helpers';
 
 const APP_SCRIPT_TIMEOUT = 30000;
 
@@ -32,7 +34,7 @@ process.on('uncaughtException', (error) => {
 
 export const appScript = async (scriptPath: string, runArgs: string[]) => {
   const child = createChild({
-    from: 'app',
+    type: 'app',
     scriptPath,
     runArgs,
   });
@@ -63,7 +65,7 @@ const kitScript = (
   // eslint-disable-next-line no-nested-ternary
 
   const child: ChildProcess = createChild({
-    from: 'kit',
+    type: 'prompt',
     scriptPath,
     runArgs,
     resolve,
@@ -102,3 +104,11 @@ export const tryKitScript = async (
     return Promise.resolve(error);
   }
 };
+
+emitter.on(EVENT.TRY_KIT_SCRIPT, ({ filePath, runArgs }) =>
+  tryKitScript(filePath, runArgs)
+);
+
+emitter.on(EVENT.SET_KENV, async () => {
+  await tryKitScript(mainScriptPath);
+});

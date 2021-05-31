@@ -19,18 +19,6 @@ import {
   setPlaceholder,
   showPrompt,
 } from './prompt';
-import {
-  RUN_SCRIPT,
-  SET_CHOICES,
-  SET_HINT,
-  SET_MODE,
-  SHOW_PROMPT,
-  SET_PLACEHOLDER,
-  SET_PANEL,
-  SET_TAB_INDEX,
-  SET_INPUT,
-  TOGGLE_BACKGROUND,
-} from './channels';
 import { getSchedule } from './schedule';
 import { getAppHidden, setAppHidden } from './appHidden';
 import {
@@ -42,7 +30,7 @@ import {
 } from './state';
 import { reset } from './ipc';
 import { emitter, EVENT } from './events';
-import { MODE } from './enums';
+import { Channel, Mode } from './enums';
 import { show } from './show';
 import { showNotification } from './notifications';
 import { setKenv, createKenv } from './helpers';
@@ -91,14 +79,14 @@ const setChoices = (data: MessageData) => {
       return script;
     });
 
-    sendToPrompt(SET_CHOICES, { choices });
+    sendToPrompt(Channel.SET_CHOICES, { choices });
   } else {
-    sendToPrompt(SET_CHOICES, data);
+    sendToPrompt(Channel.SET_CHOICES, data);
   }
 };
 
 export type ChannelHandler = {
-  [Property in keyof typeof import('./channels')]?: (data: MessageData) => void;
+  [key in Channel]?: (data: MessageData) => void;
 };
 
 interface Choice<Value = unknown> {
@@ -132,7 +120,7 @@ interface Script extends Choice {
 }
 
 export type MessageData = {
-  channel: keyof typeof import('./channels');
+  channel: Channel;
   kitScript: string;
   pid: number;
   log?: string;
@@ -236,7 +224,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   TOGGLE_BACKGROUND: (data) => {
-    emitter.emit(TOGGLE_BACKGROUND, data);
+    emitter.emit(Channel.TOGGLE_BACKGROUND, data);
   },
 
   GET_SCREEN_INFO: (data) => {
@@ -277,21 +265,21 @@ const kitMessageMap: ChannelHandler = {
     app.exit();
   },
   RUN_SCRIPT: (data) => {
-    sendToPrompt(RUN_SCRIPT, data);
+    sendToPrompt(Channel.RUN_SCRIPT, data);
   },
 
   SET_LOGIN: (data) => {
     app.setLoginItemSettings(data);
   },
   SET_MODE: (data) => {
-    if (data.mode === MODE.HOTKEY) {
+    if (data.mode === Mode.HOTKEY) {
       emitter.emit(EVENT.PAUSE_SHORTCUTS);
     }
-    sendToPrompt(SET_MODE, data);
+    sendToPrompt(Channel.SET_MODE, data);
   },
 
   SET_HINT: (data) => {
-    sendToPrompt(SET_HINT, data);
+    sendToPrompt(Channel.SET_HINT, data);
   },
 
   SET_IGNORE_BLUR: (data) => {
@@ -299,19 +287,19 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_INPUT: (data) => {
-    sendToPrompt(SET_INPUT, data);
+    sendToPrompt(Channel.SET_INPUT, data);
   },
 
   SET_PLACEHOLDER: (data) => {
     showPrompt();
-    sendToPrompt(SET_PLACEHOLDER, data);
+    sendToPrompt(Channel.SET_PLACEHOLDER, data);
   },
 
   SET_PANEL: (data) => {
-    sendToPrompt(SET_PANEL, data);
+    sendToPrompt(Channel.SET_PANEL, data);
   },
   SET_TAB_INDEX: (data) => {
-    sendToPrompt(SET_TAB_INDEX, data);
+    sendToPrompt(Channel.SET_TAB_INDEX, data);
   },
   SHOW_TEXT: (data) => {
     setBlurredByKit();
@@ -335,7 +323,7 @@ const kitMessageMap: ChannelHandler = {
           ({ name, value }: any) => !isUndefined(name) && !isUndefined(value)
         )
       ) {
-        sendToPrompt(SHOW_PROMPT, data);
+        sendToPrompt(Channel.SHOW_PROMPT, data);
       } else {
         log.warn(`Choices must have "name" and "value"`);
         log.warn(data?.choices);
@@ -343,7 +331,7 @@ const kitMessageMap: ChannelHandler = {
           setPlaceholder(`Warning: arg choices must have "name" and "value"`);
       }
     } else {
-      sendToPrompt(SHOW_PROMPT, data);
+      sendToPrompt(Channel.SHOW_PROMPT, data);
     }
   },
   SHOW_IMAGE,

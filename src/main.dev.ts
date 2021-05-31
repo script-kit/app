@@ -47,7 +47,7 @@ import {
 } from 'fs/promises';
 import { Open, Parse } from 'unzipper';
 import { createTray, destroyTray } from './tray';
-import { manageShortcuts } from './watcher';
+import { setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
 import { tryKitScript } from './kit';
 import { tick } from './tick';
@@ -58,7 +58,6 @@ import {
   KIT,
   KIT_PROTOCOL,
   kitPath,
-  kitAppPath,
   createPathIfNotExists,
   getKenv,
 } from './helpers';
@@ -199,8 +198,8 @@ const prepareProtocols = async () => {
 };
 
 const createLogs = () => {
-  createPathIfNotExists(kitAppPath('logs'));
-  log.transports.file.resolvePath = () => kitAppPath('logs', 'kit.log');
+  createPathIfNotExists(kitPath('logs'));
+  log.transports.file.resolvePath = () => kitPath('logs', 'kit.log');
 };
 
 const configWindowDone = () => {
@@ -242,7 +241,7 @@ const ready = async () => {
     setupLog(`Protocols Prepared`);
     await createTray();
     setupLog(`Tray created`);
-    await manageShortcuts();
+    await setupWatchers();
     setupLog(`Shortcuts Assigned`);
     await createPromptWindow();
     setupLog(`Prompt window created`);
@@ -495,7 +494,8 @@ const versionMismatch = () => {
 const cleanKit = async () => {
   const pathToClean = kitPath();
 
-  const keep = (file: string) => file.startsWith('node');
+  const keep = (file: string) =>
+    file.startsWith('node') || file.startsWith('db');
 
   // eslint-disable-next-line no-restricted-syntax
   for await (const file of await readdir(pathToClean)) {

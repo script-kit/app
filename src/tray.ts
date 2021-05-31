@@ -5,7 +5,7 @@ import { KeyboardEvent } from 'electron/main';
 import { tryKitScript } from './kit';
 import { getAssetPath } from './assets';
 import { restartIfNecessary } from './state';
-import { kitPath } from './helpers';
+import { kitPath, mainScriptPath } from './helpers';
 
 let tray: Tray | null = null;
 
@@ -20,7 +20,7 @@ const leftClick = async (event: KeyboardEvent) => {
   } else if (event.altKey) {
     await tryKitScript('tray/alt-click');
   } else {
-    await tryKitScript(kitPath('main/index.js'));
+    await tryKitScript(mainScriptPath);
   }
 };
 

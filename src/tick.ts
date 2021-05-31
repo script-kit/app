@@ -16,15 +16,15 @@ import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
 import { existsSync } from 'fs';
 import path from 'path';
-import { kitAppPath } from './helpers';
+import { kitPath } from './helpers';
 
 export const tick = async () => {
-  const tmpClipboardDir = kitAppPath('tmp', 'clipboard');
+  const tmpClipboardDir = kitPath('tmp', 'clipboard');
   if (!existsSync(tmpClipboardDir)) {
     mkdir('-p', tmpClipboardDir);
   }
 
-  const adapter = new FileSync(kitAppPath('tmp', 'clipboard-history.json'));
+  const adapter = new FileSync(kitPath('db', 'clipboard-history.json'));
   const db = low(adapter);
 
   db.defaults({ history: [] }).write();
