@@ -21,6 +21,12 @@ export const KIT_PROTOCOL = 'kit';
 export const KIT = process.env.KIT || path.join(app.getPath('home'), '.kit');
 export const kitPath = (...parts: string[]) => path.join(KIT, ...parts);
 
+export const kitAppTmp = kitPath('tmp');
+export const kitAppDb = kitPath('db');
+
+createPathIfNotExists(kitAppTmp);
+createPathIfNotExists(kitAppDb);
+
 export const appDbPath = kitPath('db', 'app.json');
 
 const adapter = new FileSync(appDbPath);
@@ -107,9 +113,3 @@ export const stringifyScriptArgsKey = (
     key: scriptString + (argsString ? `/${argsString}` : ``),
   };
 };
-
-export const kitAppTmp = kitPath('tmp');
-export const kitAppDb = kitPath('db');
-
-createPathIfNotExists(kitAppTmp);
-createPathIfNotExists(kitAppDb);
