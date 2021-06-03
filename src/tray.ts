@@ -2,7 +2,7 @@
 import { Tray } from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
-import { tryKitScript } from './kit';
+import { tryPromptScript } from './kit';
 import { getAssetPath } from './assets';
 import { restartIfNecessary } from './state';
 import { kitPath, mainScriptPath } from './helpers';
@@ -12,20 +12,20 @@ let tray: Tray | null = null;
 const leftClick = async (event: KeyboardEvent) => {
   restartIfNecessary();
   if (event.metaKey) {
-    await tryKitScript('tray/command-click');
+    await tryPromptScript('tray/command-click');
   } else if (event.shiftKey) {
-    await tryKitScript('tray/shift-click');
+    await tryPromptScript('tray/shift-click');
   } else if (event.ctrlKey) {
-    await tryKitScript('tray/control-click');
+    await tryPromptScript('tray/control-click');
   } else if (event.altKey) {
-    await tryKitScript('tray/alt-click');
+    await tryPromptScript('tray/alt-click');
   } else {
-    await tryKitScript(mainScriptPath);
+    await tryPromptScript(mainScriptPath);
   }
 };
 
 const rightClick = async () => {
-  await tryKitScript(kitPath('main', 'help.js'));
+  await tryPromptScript(kitPath('main', 'help.js'));
 };
 
 const trayIcon = getAssetPath('IconTemplate.png');

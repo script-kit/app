@@ -10,8 +10,7 @@ import { getAssetPath } from './assets';
 import { promptDbPath } from './helpers';
 import { Channel } from './enums';
 import { getAppHidden } from './appHidden';
-import { KitPromptOptions } from './types';
-import { getCurrentPromptScript } from './state';
+import { Script } from './types';
 
 export enum PromptEvent {
   Blur = 'Blur',
@@ -26,7 +25,7 @@ export const clearPromptDb = () => {
   promptDb.set(`screens`, {}).write();
 };
 
-let promptWindow: BrowserWindow | null = null;
+let promptWindow: BrowserWindow;
 let blurredByKit = false;
 let ignoreBlur = false;
 
@@ -184,20 +183,35 @@ const HEADER_HEIGHT = 24;
 const INPUT_HEIGHT = 64;
 const TABS_HEIGHT = 36;
 
-export const showPrompt = (options: KitPromptOptions) => {
+interface ShowPromptOptions {
+  tabs: string[];
+  script: Script;
+}
+
+export const showPrompt = () => {
+  if (!promptWindow?.isVisible()) {
+    promptWindow?.show();
+    promptWindow.setVibrancy(
+      nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light'
+    );
+    promptWindow.setBackgroundColor(
+      nativeTheme.shouldUseDarkColors ? '#66000000' : '#C0FFFFFF'
+    );
+    if (devTools) promptWindow?.webContents.openDevTools();
+  }
+};
+
+export const resizeAndShowPrompt = ({ tabs, script }: ShowPromptOptions) => {
   if (promptWindow && !promptWindow?.isVisible()) {
     const currentScreenPromptBounds = getCurrentScreenPromptCache();
-    const script = getCurrentPromptScript();
     const headerHeight =
       script?.menu || script?.twitter || script?.description
         ? HEADER_HEIGHT
         : 0;
-    const tabsHeight = options.tabs.length ? TABS_HEIGHT : 0;
+    const tabsHeight = tabs.length ? TABS_HEIGHT : 0;
     const height = INPUT_HEIGHT + headerHeight + tabsHeight;
 
     if (currentScreenPromptBounds) {
-      log.info(`SHOW_PROMPT`, { height });
-
       promptWindow.setBounds({
         ...currentScreenPromptBounds,
         height,
@@ -206,17 +220,7 @@ export const showPrompt = (options: KitPromptOptions) => {
       setDefaultBounds();
     }
 
-    // TODO: Think through "show on every invoke" logic
-    if (!promptWindow?.isVisible()) {
-      promptWindow?.show();
-      promptWindow.setVibrancy(
-        nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light'
-      );
-      promptWindow.setBackgroundColor(
-        nativeTheme.shouldUseDarkColors ? '#66000000' : '#C0FFFFFF'
-      );
-      if (devTools) promptWindow?.webContents.openDevTools();
-    }
+    showPrompt();
   }
 
   return promptWindow;
@@ -250,7 +254,7 @@ export const sendToPrompt = (channel: string, data: any) => {
 const cachePromptPosition = () => {
   const currentScreen = getCurrentScreen();
   const promptBounds = promptWindow?.getBounds();
-  log.info(`CACHING SIZE:`, promptBounds);
+  log.info(`Cache prompt:`, { screen: currentScreen.id, ...promptBounds });
 
   promptDb.set(`screens.${String(currentScreen.id)}`, promptBounds).write();
 };

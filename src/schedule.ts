@@ -2,10 +2,8 @@ import schedule, { Job } from 'node-schedule';
 
 import { grep } from 'shelljs';
 import log from 'electron-log';
-import { createChild } from './run';
-import { ProcessType } from './enums';
 import { scheduleMap } from './state';
-import { createMessageHandler } from './messages';
+import { runScheduleScript } from './kit';
 
 const scheduleMarker = 'Schedule: ';
 
@@ -37,13 +35,7 @@ export const updateSchedule = (filePath: string) => {
       // log.info(`Schedule string ${scheduleString}:${filePath}`);
 
       const job = schedule.scheduleJob(filePath, scheduleString, () => {
-        const child = createChild({
-          type: ProcessType.Schedule,
-          scriptPath: filePath,
-          runArgs: [],
-        });
-
-        child?.on('message', createMessageHandler(ProcessType.Schedule));
+        runScheduleScript(filePath);
       });
 
       log.info(`Scheduling: ${filePath} for ${scheduleString}`);

@@ -73,4 +73,5 @@ export type MessageData = {
   scripts?: boolean;
   script?: Script;
   kenvPath?: string;
+  tabs: string[];
 };

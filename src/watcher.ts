@@ -46,7 +46,7 @@ export const onDbChanged = async (event: any, filePath: string) => {
 
 export const cacheMenu = async () => {
   log.info(`caching menu`);
-  await appScript(kitPath('cli', 'cache-menu.js'), []);
+  await appScript(kitPath('cli', 'refresh-scripts-db.js'), []);
 };
 
 let watchers: FSWatcher[] = [];

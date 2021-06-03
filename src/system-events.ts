@@ -1,7 +1,7 @@
 import { powerMonitor } from 'electron';
 import log from 'electron-log';
 import { grep } from 'shelljs';
-import { appScript } from './kit';
+import { runSystemScript } from './kit';
 
 const systemMarker = 'System: ';
 
@@ -23,10 +23,10 @@ const systemEventMap = new Map();
 // type SystemEvent = typeof validSystemEvents[number];
 validSystemEvents.forEach((systemEvent: any) => {
   const systemEventHandler = () => {
-    systemEventMap.forEach((eventList, filePath) => {
+    systemEventMap.forEach((eventList, scriptPath) => {
       eventList.forEach((mappedEvent: string) => {
         if (mappedEvent === systemEvent) {
-          appScript(filePath, []);
+          runSystemScript(scriptPath);
         }
       });
     });

@@ -1,11 +1,10 @@
 import { grep } from 'shelljs';
 import log from 'electron-log';
 
-import { createMessageHandler } from './messages';
-import { Channel, ProcessType } from './enums';
+import { Channel } from './enums';
 import { emitter } from './events';
 import { backgroundMap, Background } from './state';
-import { createChild } from './run';
+import { runBackgroundScript } from './kit';
 
 const backgroundMarker = 'Background: ';
 
@@ -19,25 +18,6 @@ export const removeBackground = (filePath: string) => {
   }
 };
 
-export const backgroundScript = (scriptPath: string, runArgs: string[]) => {
-  const child = createChild({
-    type: ProcessType.Background,
-    scriptPath,
-    runArgs,
-  });
-
-  const pid = child?.pid;
-  child?.on('exit', () => {
-    if (backgroundMap.get(scriptPath)?.child?.pid === pid) {
-      backgroundMap.delete(scriptPath);
-    }
-  });
-
-  child?.on('message', createMessageHandler(ProcessType.Background));
-
-  return child;
-};
-
 export const updateBackground = (filePath: string, fileChange = false) => {
   const { stdout } = grep(backgroundMarker, filePath);
 
@@ -47,7 +27,7 @@ export const updateBackground = (filePath: string, fileChange = false) => {
     .trim();
 
   const startTask = () => {
-    const child = backgroundScript(filePath, []);
+    const child = runBackgroundScript(filePath, []);
     backgroundMap.set(filePath, {
       start: new Date().toString(),
       child,

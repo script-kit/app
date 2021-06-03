@@ -49,7 +49,7 @@ import { Open, Parse } from 'unzipper';
 import { createTray, destroyTray } from './tray';
 import { setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
-import { tryKitScript } from './kit';
+import { tryPromptScript } from './kit';
 import { tick } from './tick';
 import { createPromptWindow } from './prompt';
 import {
@@ -184,7 +184,7 @@ const prepareProtocols = async () => {
       .join(' ')
       .split(' ');
 
-    await tryKitScript(kitPath('cli/new.js'), [name, ...args]);
+    await tryPromptScript(kitPath('cli/new.js'), [name, ...args]);
   });
 
   protocol.registerFileProtocol(KIT_PROTOCOL, (request, callback) => {

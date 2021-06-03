@@ -4,7 +4,7 @@ import ipc from 'node-ipc';
 import minimist from 'minimist';
 import log from 'electron-log';
 import { kitPath, KIT } from './helpers';
-import { tryKitScript } from './kit';
+import { tryPromptScript } from './kit';
 
 export const startSK = () => {
   ipc.config.id = KIT;
@@ -16,7 +16,7 @@ export const startSK = () => {
       log.info(`ipc message:`, argv);
       const { _ } = minimist(argv);
       const [argScript, ...argArgs] = _;
-      await tryKitScript(argScript, argArgs);
+      await tryPromptScript(argScript, argArgs);
     });
   });
 

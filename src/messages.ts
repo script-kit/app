@@ -17,6 +17,7 @@ import {
   setBlurredByKit,
   setIgnoreBlur,
   setPlaceholder,
+  resizeAndShowPrompt,
   showPrompt,
 } from './prompt';
 import { getAppHidden, setAppHidden } from './appHidden';
@@ -28,6 +29,7 @@ import {
   processMap,
   getSchedule,
   setCurrentPromptScript,
+  getCurrentPromptScript,
 } from './state';
 import { reset } from './ipc';
 import { emitter, AppEvent } from './events';
@@ -265,7 +267,8 @@ const kitMessageMap: ChannelHandler = {
     showNotification(data.html || 'You forgot html', data.options);
   },
   SHOW_PROMPT: (data) => {
-    showPrompt(data);
+    const script = getCurrentPromptScript();
+    resizeAndShowPrompt({ tabs: data.tabs, script });
     if (data?.choices) {
       // validate choices
       if (

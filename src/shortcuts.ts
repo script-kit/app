@@ -2,7 +2,7 @@ import { globalShortcut } from 'electron';
 import { grep } from 'shelljs';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
-import { tryKitScript } from './kit';
+import { tryPromptScript } from './kit';
 import { mainScriptPath, shortcutsPath } from './helpers';
 import { emitter, AppEvent } from './events';
 
@@ -60,7 +60,7 @@ export const updateShortcuts = (filePath: string) => {
   const ret = globalShortcut.register(shortcut, async () => {
     // const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
 
-    await tryKitScript(filePath, []);
+    await tryPromptScript(filePath, []);
   });
 
   if (!ret) {
@@ -92,7 +92,7 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       const ret = globalShortcut.register(shortcut, async () => {
-        await tryKitScript(mainScriptPath, []);
+        await tryPromptScript(mainScriptPath, []);
       });
 
       if (!ret) {
@@ -124,7 +124,7 @@ const resumeShortcuts = () => {
       const ret = globalShortcut.register(shortcut, async () => {
         // const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
 
-        await tryKitScript(filePath, []);
+        await tryPromptScript(filePath, []);
       });
 
       if (!ret) {

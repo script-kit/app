@@ -13,13 +13,15 @@ import { createMessageHandler } from './messages';
 import { emitter, AppEvent } from './events';
 import { mainScriptPath } from './helpers';
 import { ProcessType } from './enums';
+import { backgroundMap } from './state';
 
 const APP_SCRIPT_TIMEOUT = 30000;
+const SYSTEM_SCRIPT_TIMEOUT = 10000;
 
 app.on('second-instance', async (_event, argv) => {
   const { _ } = minimist(argv);
   const [, , argScript, ...argArgs] = _;
-  await tryKitScript(argScript, argArgs);
+  await tryPromptScript(argScript, argArgs);
 });
 
 process.on('unhandledRejection', (reason, p) => {
@@ -42,7 +44,7 @@ export const appScript = async (scriptPath: string, runArgs: string[]) => {
 
   const id = setTimeout(() => {
     log.info(
-      `> app process: ${scriptPath} took > ${
+      `> ${ProcessType.App} process: ${scriptPath} took > ${
         APP_SCRIPT_TIMEOUT / 1000
       } seconds. Ending...`
     );
@@ -54,9 +56,11 @@ export const appScript = async (scriptPath: string, runArgs: string[]) => {
   child?.on('exit', () => {
     if (id) clearTimeout(id);
   });
+
+  return child;
 };
 
-const kitScript = (
+const promptScript = (
   scriptPath: string,
   runArgs: string[] = [],
   resolve: any,
@@ -86,9 +90,11 @@ const kitScript = (
   child.on('message', createMessageHandler(ProcessType.Prompt));
   child.on('exit', tryClean('EXIT'));
   child.on('error', tryClean('EXIT'));
+
+  return child;
 };
 
-export const tryKitScript = async (
+export const tryPromptScript = async (
   filePath: string,
   runArgs: string[] = []
 ) => {
@@ -98,7 +104,7 @@ export const tryKitScript = async (
   );
   try {
     return await new Promise((resolve, reject) => {
-      kitScript(filePath, runArgs, resolve, reject);
+      promptScript(filePath, runArgs, resolve, reject);
     });
   } catch (error) {
     log.error(error);
@@ -106,10 +112,92 @@ export const tryKitScript = async (
   }
 };
 
-emitter.on(AppEvent.TRY_KIT_SCRIPT, ({ filePath, runArgs }) =>
-  tryKitScript(filePath, runArgs)
+export const runSystemScript = (scriptPath: string) => {
+  const child = createChild({
+    type: ProcessType.System,
+    scriptPath,
+    runArgs: [],
+  });
+
+  const id = setTimeout(() => {
+    log.info(
+      `⚠️ ${ProcessType.System} process took > ${
+        SYSTEM_SCRIPT_TIMEOUT / 1000
+      } seconds. Ending... ${scriptPath}`
+    );
+    child?.kill();
+  }, SYSTEM_SCRIPT_TIMEOUT);
+
+  child?.on('message', createMessageHandler(ProcessType.System));
+
+  child?.on('exit', () => {
+    if (id) clearTimeout(id);
+  });
+
+  return child;
+};
+
+const SCHEDULE_SCRIPT_TIMEOUT = 10000;
+
+export const runScheduleScript = (scriptPath: string) => {
+  const child = createChild({
+    type: ProcessType.Schedule,
+    scriptPath,
+    runArgs: [],
+  });
+
+  const id = setTimeout(() => {
+    log.info(
+      `⚠️ ${ProcessType.Schedule} process took > ${
+        SCHEDULE_SCRIPT_TIMEOUT / 1000
+      } seconds. Ending... ${scriptPath}`
+    );
+    child?.kill();
+  }, SCHEDULE_SCRIPT_TIMEOUT);
+
+  child?.on('message', createMessageHandler(ProcessType.Schedule));
+
+  child?.on('exit', () => {
+    if (id) clearTimeout(id);
+  });
+
+  return child;
+};
+
+// never times out
+export const runBackgroundScript = (scriptPath: string, runArgs: string[]) => {
+  const child = createChild({
+    type: ProcessType.Background,
+    scriptPath,
+    runArgs,
+  });
+
+  const pid = child?.pid;
+  child?.on('exit', () => {
+    if (backgroundMap.get(scriptPath)?.child?.pid === pid) {
+      backgroundMap.delete(scriptPath);
+    }
+  });
+
+  child?.on('message', createMessageHandler(ProcessType.Background));
+
+  return child;
+};
+
+export const runWatchScript = (scriptPath: string) => {
+  const child = createChild({
+    type: ProcessType.Watch,
+    scriptPath,
+    runArgs: [],
+  });
+
+  return child;
+};
+
+emitter.on(AppEvent.TRY_PROMPT_SCRIPT, ({ filePath, runArgs }) =>
+  tryPromptScript(filePath, runArgs)
 );
 
 emitter.on(AppEvent.SET_KENV, async () => {
-  await tryKitScript(mainScriptPath);
+  await tryPromptScript(mainScriptPath);
 });
