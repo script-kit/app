@@ -3,10 +3,11 @@ import schedule, { Job } from 'node-schedule';
 import { grep } from 'shelljs';
 import log from 'electron-log';
 import { createChild } from './run';
+import { ProcessType } from './enums';
+import { scheduleMap } from './state';
+import { createMessageHandler } from './messages';
 
 const scheduleMarker = 'Schedule: ';
-
-export const scheduleMap = new Map();
 
 export const cancelJob = (filePath: string) => {
   log.info(`Unscheduling: ${filePath}`);
@@ -33,10 +34,16 @@ export const updateSchedule = (filePath: string) => {
 
   try {
     if (scheduleString) {
-      log.info(`Schedule string ${scheduleString}:${filePath}`);
+      // log.info(`Schedule string ${scheduleString}:${filePath}`);
 
       const job = schedule.scheduleJob(filePath, scheduleString, () => {
-        createChild({ type: 'schedule', scriptPath: filePath, runArgs: [] });
+        const child = createChild({
+          type: ProcessType.Schedule,
+          scriptPath: filePath,
+          runArgs: [],
+        });
+
+        child?.on('message', createMessageHandler(ProcessType.Schedule));
       });
 
       log.info(`Scheduling: ${filePath} for ${scheduleString}`);
@@ -45,17 +52,4 @@ export const updateSchedule = (filePath: string) => {
   } catch (error) {
     log.warn(error.message);
   }
-};
-
-export const getSchedule = () => {
-  return Array.from(scheduleMap.entries())
-    .filter(([filePath, job]) => {
-      return schedule.scheduledJobs?.[filePath] === job;
-    })
-    .map(([filePath, job]: [string, Job]) => {
-      return {
-        filePath,
-        date: job.nextInvocation(),
-      };
-    });
 };

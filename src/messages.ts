@@ -19,7 +19,6 @@ import {
   setPlaceholder,
   showPrompt,
 } from './prompt';
-import { getSchedule } from './schedule';
 import { getAppHidden, setAppHidden } from './appHidden';
 import {
   makeRestartNecessary,
@@ -27,13 +26,16 @@ import {
   getBackgroundTasks,
   ChildInfo,
   processMap,
+  getSchedule,
+  setCurrentPromptScript,
 } from './state';
 import { reset } from './ipc';
-import { emitter, EVENT } from './events';
+import { emitter, AppEvent } from './events';
 import { Channel, Mode } from './enums';
 import { show } from './show';
 import { showNotification } from './notifications';
 import { setKenv, createKenv } from './helpers';
+import { MessageData, Script } from './types';
 
 const setChoices = (data: MessageData) => {
   if (data?.scripts) {
@@ -89,59 +91,6 @@ export type ChannelHandler = {
   [key in Channel]?: (data: MessageData) => void;
 };
 
-interface Choice<Value = unknown> {
-  name: string;
-  value: Value;
-  description?: string;
-  focused?: string;
-  img?: string;
-  html?: string;
-  preview?: string;
-  id?: string;
-}
-
-interface Script extends Choice {
-  file: string;
-  filePath: string;
-  command: string;
-  menu?: string;
-  shortcut?: string;
-  description?: string;
-  shortcode?: string;
-  alias?: string;
-  author?: string;
-  twitter?: string;
-  exclude?: string;
-  schedule?: string;
-  system?: string;
-  watch?: string;
-  background?: string;
-  isRunning?: boolean;
-}
-
-export type MessageData = {
-  channel: Channel;
-  kitScript: string;
-  pid: number;
-  log?: string;
-  warn?: string;
-  path?: string;
-  filePath?: string;
-  name?: string;
-  args?: string[];
-  mode?: string;
-  ignore?: boolean;
-  text?: string;
-  options?: any;
-  image?: any;
-  html?: string;
-  choices?: any[];
-  info?: any;
-  scripts?: boolean;
-  scriptInfo?: Script;
-  kenvPath?: string;
-};
-
 const SHOW_IMAGE = async (data: MessageData) => {
   setBlurredByKit();
 
@@ -165,7 +114,7 @@ const SHOW_IMAGE = async (data: MessageData) => {
   });
 
   const imageWindow = await show(
-    data?.scriptInfo?.command || 'show-image',
+    data?.script?.command || 'show-image',
     String.raw`<img src="${image?.src}" alt="${image?.alt}" title="${image?.title}" />`,
     { width, height, ...options }
   );
@@ -264,8 +213,9 @@ const kitMessageMap: ChannelHandler = {
     reset();
     app.exit();
   },
-  RUN_SCRIPT: (data) => {
-    sendToPrompt(Channel.RUN_SCRIPT, data);
+  PROMPT_INFO: (data) => {
+    setCurrentPromptScript(data.script as Script);
+    sendToPrompt(Channel.PROMPT_INFO, data);
   },
 
   SET_LOGIN: (data) => {
@@ -273,7 +223,7 @@ const kitMessageMap: ChannelHandler = {
   },
   SET_MODE: (data) => {
     if (data.mode === Mode.HOTKEY) {
-      emitter.emit(EVENT.PAUSE_SHORTCUTS);
+      emitter.emit(AppEvent.PAUSE_SHORTCUTS);
     }
     sendToPrompt(Channel.SET_MODE, data);
   },

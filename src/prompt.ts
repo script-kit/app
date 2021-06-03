@@ -4,12 +4,18 @@ import { BrowserWindow, screen, nativeTheme, app } from 'electron';
 import log from 'electron-log';
 import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
-import { EventEmitter } from 'events';
 import minimist from 'minimist';
+import { EventEmitter } from 'events';
 import { getAssetPath } from './assets';
 import { promptDbPath } from './helpers';
 import { Channel } from './enums';
 import { getAppHidden } from './appHidden';
+import { KitPromptOptions } from './types';
+import { getCurrentPromptScript } from './state';
+
+export enum PromptEvent {
+  Blur = 'Blur',
+}
 
 const adapter = new FileSync(promptDbPath);
 const promptDb = low(adapter);
@@ -32,11 +38,11 @@ export const setIgnoreBlur = (value = true) => {
   ignoreBlur = value;
 };
 
-export const hideEmitter = new EventEmitter();
-
 const miniArgs = minimist(process.argv);
 const { devTools } = miniArgs;
 log.info(process.argv.join(' '), devTools);
+
+export const promptEmitter = new EventEmitter();
 
 let lastResizedByUser = false;
 export const createPromptWindow = async () => {
@@ -84,7 +90,13 @@ export const createPromptWindow = async () => {
   // });
 
   promptWindow?.on('blur', () => {
-    if (!ignoreBlur) hidePromptWindow();
+    if (!ignoreBlur) {
+      hidePromptWindow();
+    }
+
+    if (!ignoreBlur && !getAppHidden()) {
+      promptEmitter.emit(PromptEvent.Blur);
+    }
   });
 
   let timeoutId: NodeJS.Timeout | null = null;
@@ -135,7 +147,6 @@ export const focusPrompt = () => {
 export const escapePromptWindow = () => {
   blurredByKit = false;
   hideAppIfNoWindows();
-  hideEmitter.emit('hide');
 };
 
 const getCurrentScreen = () => {
@@ -173,17 +184,15 @@ const HEADER_HEIGHT = 24;
 const INPUT_HEIGHT = 64;
 const TABS_HEIGHT = 36;
 
-export const showPrompt = (options: any = {}) => {
+export const showPrompt = (options: KitPromptOptions) => {
   if (promptWindow && !promptWindow?.isVisible()) {
     const currentScreenPromptBounds = getCurrentScreenPromptCache();
-
+    const script = getCurrentPromptScript();
     const headerHeight =
-      options?.scriptInfo?.menu ||
-      options?.scriptInfo?.twitter ||
-      options?.scriptInfo?.description
+      script?.menu || script?.twitter || script?.description
         ? HEADER_HEIGHT
         : 0;
-    const tabsHeight = options?.tabs?.length ? TABS_HEIGHT : 0;
+    const tabsHeight = options.tabs.length ? TABS_HEIGHT : 0;
     const height = INPUT_HEIGHT + headerHeight + tabsHeight;
 
     if (currentScreenPromptBounds) {

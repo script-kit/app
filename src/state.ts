@@ -1,6 +1,9 @@
 import { ChildProcess } from 'child_process';
 import { app } from 'electron';
+import schedule, { Job } from 'node-schedule';
+import { ProcessType } from './enums';
 import { appDb } from './helpers';
+import { Script } from './types';
 
 export const makeRestartNecessary = () => {
   appDb.set('needsRestart', true);
@@ -49,12 +52,36 @@ export const getBackgroundTasks = () => {
   return tasks;
 };
 
+export const scheduleMap = new Map();
+
+export const getSchedule = () => {
+  return Array.from(scheduleMap.entries())
+    .filter(([filePath, job]) => {
+      return schedule.scheduledJobs?.[filePath] === job;
+    })
+    .map(([filePath, job]: [string, Job]) => {
+      return {
+        filePath,
+        date: job.nextInvocation(),
+      };
+    });
+};
+
 export interface ChildInfo {
   scriptPath: string;
   child: ChildProcess;
-  type: string;
+  type: ProcessType;
   values: any[];
 }
 
 /* eslint-disable import/prefer-default-export */
 export const processMap: Map<number, ChildInfo> = new Map();
+
+let currentPromptScript: Script;
+export const setCurrentPromptScript = (script: Script) => {
+  currentPromptScript = script;
+};
+
+export const getCurrentPromptScript = () => {
+  return currentPromptScript;
+};

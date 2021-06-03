@@ -5,7 +5,7 @@ import path from 'path';
 import { mkdir, test } from 'shelljs';
 import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
-import { emitter, EVENT } from './events';
+import { emitter, AppEvent } from './events';
 
 export const isDir = (dir: string) => test('-d', dir);
 export const isFile = (file: string) => test('-f', file);
@@ -80,7 +80,7 @@ export const setKenv = (setKenvPath: string) => {
     console.log(`Switching to ${setKenvPath}`);
 
     appDb.set('KENV', setKenvPath).write();
-    emitter.emit(EVENT.SET_KENV);
+    emitter.emit(AppEvent.SET_KENV);
     // emitter.emit(EVENT.TRY_KIT_SCRIPT, { filePath: mainScriptPath });
   }
 };

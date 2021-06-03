@@ -5,6 +5,7 @@ import chokidar from 'chokidar';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
 import { createChild } from './run';
+import { ProcessType } from './enums';
 
 const watchMarker = 'Watch: ';
 
@@ -46,7 +47,11 @@ const addWatch = (watchString: string, filePath: string) => {
     const watcher = chokidar.watch(paths);
     watcher.on('change', () => {
       console.log({ paths }, 'changed');
-      createChild({ type: 'watch', scriptPath: filePath, runArgs: [] });
+      createChild({
+        type: ProcessType.Watch,
+        scriptPath: filePath,
+        runArgs: [],
+      });
     });
 
     const watched = watcher.getWatched();

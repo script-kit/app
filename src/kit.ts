@@ -10,8 +10,9 @@ import { hidePromptWindow } from './prompt';
 import { createChild } from './run';
 import { reset } from './ipc';
 import { createMessageHandler } from './messages';
-import { emitter, EVENT } from './events';
+import { emitter, AppEvent } from './events';
 import { mainScriptPath } from './helpers';
+import { ProcessType } from './enums';
 
 const APP_SCRIPT_TIMEOUT = 30000;
 
@@ -34,7 +35,7 @@ process.on('uncaughtException', (error) => {
 
 export const appScript = async (scriptPath: string, runArgs: string[]) => {
   const child = createChild({
-    type: 'app',
+    type: ProcessType.App,
     scriptPath,
     runArgs,
   });
@@ -48,7 +49,7 @@ export const appScript = async (scriptPath: string, runArgs: string[]) => {
     child?.kill();
   }, APP_SCRIPT_TIMEOUT);
 
-  child?.on('message', createMessageHandler('app'));
+  child?.on('message', createMessageHandler(ProcessType.App));
 
   child?.on('exit', () => {
     if (id) clearTimeout(id);
@@ -65,7 +66,7 @@ const kitScript = (
   // eslint-disable-next-line no-nested-ternary
 
   const child: ChildProcess = createChild({
-    type: 'prompt',
+    type: ProcessType.Prompt,
     scriptPath,
     runArgs,
     resolve,
@@ -82,7 +83,7 @@ const kitScript = (
     }
   };
 
-  child.on('message', createMessageHandler('kit'));
+  child.on('message', createMessageHandler(ProcessType.Prompt));
   child.on('exit', tryClean('EXIT'));
   child.on('error', tryClean('EXIT'));
 };
@@ -105,10 +106,10 @@ export const tryKitScript = async (
   }
 };
 
-emitter.on(EVENT.TRY_KIT_SCRIPT, ({ filePath, runArgs }) =>
+emitter.on(AppEvent.TRY_KIT_SCRIPT, ({ filePath, runArgs }) =>
   tryKitScript(filePath, runArgs)
 );
 
-emitter.on(EVENT.SET_KENV, async () => {
+emitter.on(AppEvent.SET_KENV, async () => {
   await tryKitScript(mainScriptPath);
 });

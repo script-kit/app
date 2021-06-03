@@ -3,6 +3,7 @@
 import { fork } from 'child_process';
 import log from 'electron-log';
 import path from 'path';
+import { ProcessType } from './enums';
 import {
   KIT,
   execPath,
@@ -17,7 +18,7 @@ import { ChildInfo, processMap } from './state';
 import { getVersion } from './version';
 
 interface CreateChildInfo {
-  type: string;
+  type: ProcessType;
   scriptPath: string;
   runArgs: string[];
   resolve?: (data: any) => void;
@@ -52,11 +53,11 @@ export const createChild = ({
       KIT,
       KIT_DOTENV: getKenvDotEnv(),
       KIT_APP_VERSION: getVersion(),
-      KIT_SCRIPT_TYPE: type,
+      PROCESS_TYPE: type,
     },
   });
 
-  log.info(`\n> begin ${type} process ${scriptPath} id: ${child.pid}`);
+  log.info(`🟢 begin ${type} process ${scriptPath} id: ${child.pid}`);
 
   processMap.set(child.pid, {
     type,
@@ -71,7 +72,7 @@ export const createChild = ({
     if (resolve) {
       resolve(values);
     }
-    log.info(`end ${type} process ${scriptPath} id: ${child.pid}\n`);
+    log.info(`🟡 end ${type} process ${scriptPath} id: ${child.pid}`);
     processMap.delete(child.pid);
   });
 

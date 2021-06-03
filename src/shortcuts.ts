@@ -4,7 +4,7 @@ import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { tryKitScript } from './kit';
 import { mainScriptPath, shortcutsPath } from './helpers';
-import { emitter, EVENT } from './events';
+import { emitter, AppEvent } from './events';
 
 export const shortcutMap = new Map();
 
@@ -134,5 +134,5 @@ const resumeShortcuts = () => {
   }
 };
 
-emitter.on(EVENT.PAUSE_SHORTCUTS, pauseShortcuts);
-emitter.on(EVENT.RESUME_SHORTCUTS, resumeShortcuts);
+emitter.on(AppEvent.PAUSE_SHORTCUTS, pauseShortcuts);
+emitter.on(AppEvent.RESUME_SHORTCUTS, resumeShortcuts);

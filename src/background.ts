@@ -2,7 +2,7 @@ import { grep } from 'shelljs';
 import log from 'electron-log';
 
 import { createMessageHandler } from './messages';
-import { Channel } from './enums';
+import { Channel, ProcessType } from './enums';
 import { emitter } from './events';
 import { backgroundMap, Background } from './state';
 import { createChild } from './run';
@@ -21,7 +21,7 @@ export const removeBackground = (filePath: string) => {
 
 export const backgroundScript = (scriptPath: string, runArgs: string[]) => {
   const child = createChild({
-    type: 'background',
+    type: ProcessType.Background,
     scriptPath,
     runArgs,
   });
@@ -33,7 +33,7 @@ export const backgroundScript = (scriptPath: string, runArgs: string[]) => {
     }
   });
 
-  child?.on('message', createMessageHandler('background'));
+  child?.on('message', createMessageHandler(ProcessType.Background));
 
   return child;
 };

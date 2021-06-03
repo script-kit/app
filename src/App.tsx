@@ -26,7 +26,7 @@ import { partition } from 'lodash';
 import usePrevious from '@rooks/use-previous';
 import useResizeObserver from '@react-hook/resize-observer';
 import parse from 'html-react-parser';
-import { KitPromptOptions, ChoiceData } from './types';
+import { KitPromptOptions, ChoiceData, Script } from './types';
 import Tabs from './components/tabs';
 import ChoiceButton from './components/button';
 import Preview from './components/preview';
@@ -94,6 +94,7 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
+  const [script, setScript] = useState<Script>();
   const [promptData, setPromptData]: any = useState({});
 
   const [inputValue, setInputValue] = useState('');
@@ -290,12 +291,13 @@ export default function App() {
   );
 
   const closePrompt = useCallback(() => {
+    console.log({ promptData });
+    ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: promptData?.pid });
     setChoices([]);
     setInputValue('');
     setPanelHTML('');
     setPromptData({});
-    ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: promptData?.pid });
-  }, []);
+  }, [promptData]);
 
   const onKeyUp = useCallback(
     (event) => {
@@ -325,7 +327,7 @@ export default function App() {
         setPlaceholder(shortcut);
       }
     },
-    [mode]
+    [closePrompt, mode]
   );
 
   const onKeyDown = useCallback(
@@ -472,15 +474,15 @@ export default function App() {
       }
     },
     [
+      mode,
       index,
       choices,
-      setPromptData,
       submit,
       inputValue,
+      unfilteredChoices,
       tabs,
       tabIndex,
-      mode,
-      hotkey,
+      promptData?.pid,
     ]
   );
   const onTextAreaKeyDown = useCallback(
@@ -684,6 +686,10 @@ export default function App() {
     setUnfilteredChoices([]);
   }, []);
 
+  const promptInfoHandler = useCallback((event, data) => {
+    setScript(data.script);
+  }, []);
+
   const userResizedHandler = useCallback((event, data) => {
     setIsMouseDown(!!data);
     setMaxHeight(window.innerHeight);
@@ -691,7 +697,7 @@ export default function App() {
 
   const messageMap = {
     [Channel.RESET_PROMPT]: resetPromptHandler,
-    [Channel.RUN_SCRIPT]: resetPromptHandler,
+    [Channel.PROMPT_INFO]: promptInfoHandler,
     [Channel.SET_CHOICES]: setChoicesHandler,
     [Channel.SET_HINT]: setHintHandler,
     [Channel.SET_INPUT]: setInputHandler,
@@ -734,10 +740,8 @@ export default function App() {
         className="flex flex-col w-full rounded-lg relative h-full"
       >
         <div ref={topRef}>
-          {(promptData?.scriptInfo?.description ||
-            promptData?.scriptInfo?.twitter ||
-            promptData?.scriptInfo?.menu) && (
-            <Header scriptInfo={promptData?.scriptInfo} />
+          {(script?.description || script?.twitter || script?.menu) && (
+            <Header script={script} />
           )}
           {!promptData?.textarea && (
             <input

@@ -17,7 +17,7 @@ import { cancelSchedule, updateSchedule } from './schedule';
 import { unlinkEvents, updateEvents } from './system-events';
 import { removeWatch, checkWatch } from './watch';
 import { removeBackground, updateBackground } from './background';
-import { emitter, EVENT } from './events';
+import { emitter, AppEvent } from './events';
 
 const onScriptsChanged = async (
   event: 'add' | 'change' | 'unlink',
@@ -89,6 +89,6 @@ export const resetWatchers = async () => {
   await setupWatchers();
 };
 
-emitter.on(EVENT.SET_KENV, async () => {
+emitter.on(AppEvent.SET_KENV, async () => {
   await resetWatchers();
 });
