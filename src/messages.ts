@@ -33,7 +33,7 @@ import {
 } from './state';
 import { reset } from './ipc';
 import { emitter, AppEvent } from './events';
-import { Channel, Mode } from './enums';
+import { Channel, Mode, ProcessType } from './enums';
 import { show } from './show';
 import { showNotification } from './notifications';
 import { setKenv, createKenv } from './helpers';
@@ -318,13 +318,19 @@ const kitMessageMap: ChannelHandler = {
   },
 };
 
-export const createMessageHandler = (from: string) => (data: MessageData) => {
-  log.info(`${data?.channel} ${data?.kitScript}`);
+export const createMessageHandler =
+  (type: ProcessType) => (data: MessageData) => {
+    log.info(
+      `${data.channel} ${type} process ${data.kitScript.replace(
+        /.*\//gi,
+        ''
+      )} id: ${data.pid}`
+    );
 
-  if (kitMessageMap[data?.channel]) {
-    const channelFn = kitMessageMap[data.channel] as (data: any) => void;
-    channelFn(data);
-  } else {
-    console.warn(`Channel ${data?.channel} not found on ${from}.`);
-  }
-};
+    if (kitMessageMap[data?.channel]) {
+      const channelFn = kitMessageMap[data.channel] as (data: any) => void;
+      channelFn(data);
+    } else {
+      console.warn(`Channel ${data?.channel} not found on ${type}.`);
+    }
+  };

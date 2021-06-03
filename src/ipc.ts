@@ -37,7 +37,7 @@ export const reset = (resetPid?: number) => {
     child?.removeAllListeners();
 
     child?.kill();
-    log.info(`🛑 kill process ${scriptPath} id: ${child.pid}`);
+    log.info(`🛑 kill process: ${scriptPath} id: ${child.pid}`);
     processMap.delete(mapPid);
   }
 

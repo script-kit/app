@@ -3,20 +3,101 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import { app } from 'electron';
 import minimist from 'minimist';
-
+import path from 'path';
 import log from 'electron-log';
-import { ChildProcess } from 'child_process';
-import { hidePromptWindow } from './prompt';
-import { createChild } from './run';
+import { ChildProcess, fork } from 'child_process';
+
+import { hidePromptWindow, setIgnoreBlur } from './prompt';
 import { reset } from './ipc';
 import { createMessageHandler } from './messages';
 import { emitter, AppEvent } from './events';
-import { mainScriptPath } from './helpers';
 import { ProcessType } from './enums';
-import { backgroundMap } from './state';
+
+/* eslint-disable no-nested-ternary */
+/* eslint-disable import/prefer-default-export */
+import {
+  KIT,
+  execPath,
+  PATH,
+  KIT_MAC_APP,
+  kenvPath,
+  getKenv,
+  getKenvDotEnv,
+  mainScriptPath,
+} from './helpers';
+
+import { ChildInfo, processMap, backgroundMap } from './state';
+import { getVersion } from './version';
+
+interface CreateChildInfo {
+  type: ProcessType;
+  scriptPath: string;
+  runArgs: string[];
+  resolve?: (data: any) => void;
+  reject?: (error: any) => void;
+}
 
 const APP_SCRIPT_TIMEOUT = 30000;
-const SYSTEM_SCRIPT_TIMEOUT = 10000;
+const SYSTEM_SCRIPT_TIMEOUT = 30000;
+const SCHEDULE_SCRIPT_TIMEOUT = 30000;
+
+const createChild = ({
+  type,
+  scriptPath,
+  runArgs,
+  resolve,
+  reject,
+}: CreateChildInfo) => {
+  let resolvePath = scriptPath.startsWith(path.sep)
+    ? scriptPath
+    : scriptPath.includes(path.sep)
+    ? kenvPath(scriptPath)
+    : kenvPath('scripts', scriptPath);
+
+  if (!resolvePath.endsWith('.js')) resolvePath = `${resolvePath}.js`;
+
+  const child = fork(KIT_MAC_APP, [resolvePath, ...runArgs, '--app'], {
+    silent: false,
+    // stdio: 'inherit',
+    execPath,
+    env: {
+      ...process.env,
+      KIT_CONTEXT: 'app',
+      KIT_MAIN: scriptPath,
+      PATH,
+      KENV: getKenv(),
+      KIT,
+      KIT_DOTENV: getKenvDotEnv(),
+      KIT_APP_VERSION: getVersion(),
+      PROCESS_TYPE: type,
+    },
+  });
+
+  log.info(`🟢 start ${type} process: ${scriptPath} id: ${child.pid}`);
+
+  processMap.set(child.pid, {
+    type,
+    child,
+    scriptPath,
+    values: [],
+  });
+
+  child.on('exit', () => {
+    setIgnoreBlur(false);
+    const { values } = processMap.get(child.pid) as ChildInfo;
+    if (resolve) {
+      resolve(values);
+    }
+    log.info(`🟡 end ${type} process: ${scriptPath} id: ${child.pid}`);
+    processMap.delete(child.pid);
+  });
+
+  child.on('error', (error) => {
+    if (reject) reject(error);
+  });
+
+  return child;
+};
 
 app.on('second-instance', async (_event, argv) => {
   const { _ } = minimist(argv);
@@ -60,6 +141,7 @@ export const appScript = async (scriptPath: string, runArgs: string[]) => {
   return child;
 };
 
+// TODO: Refactor to decorating createChild
 const promptScript = (
   scriptPath: string,
   runArgs: string[] = [],
@@ -136,8 +218,6 @@ export const runSystemScript = (scriptPath: string) => {
 
   return child;
 };
-
-const SCHEDULE_SCRIPT_TIMEOUT = 10000;
 
 export const runScheduleScript = (scriptPath: string) => {
   const child = createChild({

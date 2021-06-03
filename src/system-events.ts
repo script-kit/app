@@ -26,6 +26,7 @@ validSystemEvents.forEach((systemEvent: any) => {
     systemEventMap.forEach((eventList, scriptPath) => {
       eventList.forEach((mappedEvent: string) => {
         if (mappedEvent === systemEvent) {
+          console.log({ mappedEvent, scriptPath });
           runSystemScript(scriptPath);
         }
       });
@@ -51,7 +52,6 @@ export const updateEvents = (filePath: string) => {
     .substring(stdout.indexOf(systemMarker) + systemMarker.length)
     .trim();
   if (systemEventsString) {
-    log.info({ systemEventsString });
     const systemEvents = systemEventsString.split(' ');
 
     const valid = systemEvents.every((event) =>
@@ -59,7 +59,7 @@ export const updateEvents = (filePath: string) => {
     );
 
     if (valid) {
-      log.info(`${systemEvents} will trigger ${filePath}`);
+      log.info(`🖥 ${systemEvents} will trigger ${filePath}`);
       systemEventMap.set(filePath, systemEvents);
     } else {
       systemEvents.forEach((event) => {
