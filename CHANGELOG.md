@@ -1,3 +1,10 @@
+# [1.3.0-alpha.48](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.47...v1.3.0-alpha.48) (2021-06-03)
+
+
+### Bug Fixes
+
+* **app:** create kitdb dir before using ([58226e3](https://github.com/johnlindquist/kitapp/commit/58226e32b5d6792de432a45796ea658a1a7e8078))
+
 # [1.3.0-alpha.47](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.46...v1.3.0-alpha.47) (2021-06-03)
 
 
