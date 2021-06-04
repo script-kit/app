@@ -1,3 +1,10 @@
+# [1.3.0-alpha.50](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.49...v1.3.0-alpha.50) (2021-06-04)
+
+
+### Bug Fixes
+
+* **app:** fixing tabs loading ([5421dc4](https://github.com/johnlindquist/kitapp/commit/5421dc470dadd2dc48e1cf87392b21151104aec6))
+
 # [1.3.0-alpha.49](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.48...v1.3.0-alpha.49) (2021-06-04)
 
 
