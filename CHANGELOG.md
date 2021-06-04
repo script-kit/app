@@ -1,3 +1,22 @@
+# [1.3.0-beta.18](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.17...v1.3.0-beta.18) (2021-06-04)
+
+
+### Bug Fixes
+
+* **app:** cleaning logs ([62f6fac](https://github.com/johnlindquist/kitapp/commit/62f6fac62d7f34cc9f75091fe4a11feb333f22e5))
+* **app:** controlling processes ([b6498e5](https://github.com/johnlindquist/kitapp/commit/b6498e550830f1cc1e0629fea634cac29b2bce13))
+* **app:** create kitdb dir before using ([58226e3](https://github.com/johnlindquist/kitapp/commit/58226e32b5d6792de432a45796ea658a1a7e8078))
+* **app:** fixing tabs loading ([5421dc4](https://github.com/johnlindquist/kitapp/commit/5421dc470dadd2dc48e1cf87392b21151104aec6))
+* **app:** read script file once on watch ([bf77121](https://github.com/johnlindquist/kitapp/commit/bf77121a385678dcf1b92fb53ff5e1e0ed156a70))
+* **prompt:** cleaning prompt control ([226ef2e](https://github.com/johnlindquist/kitapp/commit/226ef2e6bf9e1289990500c69203f2bad7c73edb))
+
+
+### Features
+
+* **app:** Decoupling kenv ([d38b736](https://github.com/johnlindquist/kitapp/commit/d38b73658ed487025c2b1e7e35fa0db9bceba1d9))
+* **kenv:** live switch kenvs ([28e359e](https://github.com/johnlindquist/kitapp/commit/28e359eb3dcb951f2d8f9be90ab65fe50123e584))
+* **prompt:** adding textarea ([a9175a2](https://github.com/johnlindquist/kitapp/commit/a9175a24937369921add41ac8886a548aab986c2))
+
 # [1.3.0-alpha.50](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.49...v1.3.0-alpha.50) (2021-06-04)
 
 
