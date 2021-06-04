@@ -1,11 +1,9 @@
 import schedule, { Job } from 'node-schedule';
 
-import { grep } from 'shelljs';
 import log from 'electron-log';
 import { scheduleMap } from './state';
 import { runScheduleScript } from './kit';
-
-const scheduleMarker = 'Schedule: ';
+import { Script } from './types';
 
 export const cancelJob = (filePath: string) => {
   log.info(`Unscheduling: ${filePath}`);
@@ -18,14 +16,10 @@ export const cancelSchedule = (filePath: string) => {
   cancelJob(filePath);
 };
 
-export const updateSchedule = (filePath: string) => {
-  const { stdout } = grep(scheduleMarker, filePath);
-
-  const scheduleString = stdout
-    .substring(0, stdout.indexOf('\n'))
-    .substring(stdout.indexOf(scheduleMarker) + scheduleMarker.length)
-    .trim();
-
+export const scheduleScriptChanged = ({
+  filePath,
+  schedule: scheduleString,
+}: Script) => {
   if (scheduleMap.get(filePath)) {
     cancelJob(filePath);
   }

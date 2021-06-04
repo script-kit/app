@@ -1,23 +1,12 @@
 /* eslint-disable no-nested-ternary */
-import { grep } from 'shelljs';
 import log from 'electron-log';
 import chokidar from 'chokidar';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
 import { runWatchScript } from './kit';
-
-const watchMarker = 'Watch: ';
+import { Script } from './types';
 
 export const watchMap = new Map();
-
-const getWatchString = (filePath: string) => {
-  const { stdout } = grep(watchMarker, filePath);
-
-  return stdout
-    .substring(0, stdout.indexOf('\n'))
-    .substring(stdout.indexOf(watchMarker) + watchMarker.length)
-    .trim();
-};
 
 export const removeWatch = (filePath: string) => {
   log.info(`Remove watch: ${filePath}`);
@@ -59,9 +48,10 @@ const addWatch = (watchString: string, filePath: string) => {
   }
 };
 
-export const checkWatch = (filePath: string) => {
-  const watchString = getWatchString(filePath);
-
+export const watchScriptChanged = ({
+  filePath,
+  watch: watchString,
+}: Script) => {
   if (!watchString && watchMap.get(filePath)) {
     removeWatch(filePath);
     return;

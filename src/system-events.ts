@@ -1,9 +1,7 @@
 import { powerMonitor } from 'electron';
 import log from 'electron-log';
-import { grep } from 'shelljs';
 import { runSystemScript } from './kit';
-
-const systemMarker = 'System: ';
+import { Script } from './types';
 
 const validSystemEvents = [
   'suspend',
@@ -39,18 +37,15 @@ export const unlinkEvents = (filePath: string) => {
   log.info(`Removed ${systemEventMap.get(filePath)}from ${filePath}`);
   systemEventMap.delete(filePath);
 };
-export const updateEvents = (filePath: string) => {
+export const systemScriptChanged = ({
+  filePath,
+  system: systemEventsString,
+}: Script) => {
   if (systemEventMap.get(filePath)) {
     log.info(`Clearing ${systemEventMap.get(filePath)} from ${filePath}`);
     systemEventMap.delete(filePath);
   }
 
-  const { stdout } = grep(`^//\\s*${systemMarker}\\s*`, filePath);
-
-  const systemEventsString = stdout
-    .substring(0, stdout.indexOf('\n'))
-    .substring(stdout.indexOf(systemMarker) + systemMarker.length)
-    .trim();
   if (systemEventsString) {
     const systemEvents = systemEventsString.split(' ');
 
@@ -59,7 +54,7 @@ export const updateEvents = (filePath: string) => {
     );
 
     if (valid) {
-      log.info(`🖥 ${systemEvents} will trigger ${filePath}`);
+      log.info(`🖥  ${systemEvents} will trigger ${filePath}`);
       systemEventMap.set(filePath, systemEvents);
     } else {
       systemEvents.forEach((event) => {

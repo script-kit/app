@@ -1,11 +1,16 @@
+/* eslint-disable no-useless-escape */
+/* eslint-disable no-nested-ternary */
 /* eslint-disable jest/no-export */
 /* eslint-disable jest/expect-expect */
 import { app } from 'electron';
 import path from 'path';
-import { mkdir, test } from 'shelljs';
+import { grep, mkdir, test } from 'shelljs';
 import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
+import { readFile } from 'fs/promises';
 import { emitter, AppEvent } from './events';
+import { Script } from './types';
+import { ProcessType } from './enums';
 
 export const isDir = (dir: string) => test('-d', dir);
 export const isFile = (file: string) => test('-f', file);
@@ -111,5 +116,88 @@ export const stringifyScriptArgsKey = (
     script: scriptString,
     args: argsString,
     key: scriptString + (argsString ? `/${argsString}` : ``),
+  };
+};
+
+export const grepMetadata = (meta: string, filePath: string) =>
+  grep(`^//\\s*${meta}\\s*`, filePath)?.stdout;
+
+const getByMarker = (marker: string) => (lines: string[]) =>
+  lines
+    ?.find((line) => line.match(new RegExp(`^\/\/\\s*${marker}\\s*`, 'gim')))
+    ?.split(marker)[1]
+    ?.trim();
+
+export const shortcutNormalizer = (shortcut: string) =>
+  shortcut
+    .replace(/(option|opt)/i, 'Alt')
+    .replace(/(command|cmd)/i, 'CommandOrControl')
+    .replace(/(ctl|cntrl|ctrl)/, 'Control')
+    .split(/\s/)
+    .filter(Boolean)
+    .map((part) => (part[0].toUpperCase() + part.slice(1)).trim())
+    .join('+');
+
+export const info = async (file: string): Promise<Script> => {
+  const filePath = file.startsWith('/scripts')
+    ? kenvPath(file)
+    : file.startsWith(path.sep)
+    ? file
+    : kenvPath(file.includes('/') ? '' : 'scripts', file);
+
+  const fileContents = await readFile(filePath, 'utf8');
+  // console.log(fileContents);
+
+  const fileLines = fileContents.split('\n');
+
+  const command = file.replace('.js', '');
+  const rawShortcut = getByMarker('Shortcut:')(fileLines);
+  const shortcut = rawShortcut && shortcutNormalizer(rawShortcut);
+
+  const menu = getByMarker('Menu:')(fileLines);
+  const twitter = getByMarker('Twitter:')(fileLines);
+  const schedule = getByMarker('Schedule:')(fileLines);
+  const watch = getByMarker('Watch:')(fileLines);
+  const system = getByMarker('System:')(fileLines);
+  const background = getByMarker('Background:')(fileLines);
+  const timeout = parseInt(getByMarker('Timeout:')(fileLines) || '0', 10);
+
+  const requiresPrompt = Boolean(
+    fileLines.find((line) =>
+      line.match(/await arg|await drop|await textarea|await hotkey|await main/g)
+    )
+  );
+
+  const type = schedule
+    ? ProcessType.Schedule
+    : watch
+    ? ProcessType.Watch
+    : system
+    ? ProcessType.System
+    : background
+    ? ProcessType.Background
+    : ProcessType.Prompt;
+
+  return {
+    command,
+    type,
+    shortcut,
+    menu,
+    name: (menu || command) + (shortcut ? `: ${shortcut}` : ``),
+    description: getByMarker('Description:')(fileLines),
+    alias: getByMarker('Alias:')(fileLines),
+    author: getByMarker('Author:')(fileLines),
+    twitter,
+    shortcode: getByMarker('Shortcode:')(fileLines),
+    exclude: getByMarker('Exclude:')(fileLines),
+    schedule,
+    watch,
+    system,
+    background,
+    file,
+    id: filePath,
+    filePath,
+    requiresPrompt,
+    timeout,
   };
 };

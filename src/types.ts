@@ -21,7 +21,9 @@ export interface ChoiceData {
   shortcode?: string;
 }
 
-export interface Script extends Choice {
+export interface Script {
+  id: string;
+  name: string;
   file: string;
   type: ProcessType;
   filePath: string;
@@ -39,7 +41,8 @@ export interface Script extends Choice {
   watch?: string;
   background?: string;
   isRunning?: boolean;
-  hasTabs: boolean;
+  requiresPrompt: boolean;
+  timeout?: number;
 }
 export interface Choice<Value = any> {
   name: string;

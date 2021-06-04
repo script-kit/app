@@ -6,17 +6,17 @@ import chokidar, { FSWatcher } from 'chokidar';
 import path from 'path';
 
 import { appScript } from './kit';
-import { appDbPath, kenvPath, kitPath, shortcutsPath } from './helpers';
+import { appDbPath, info, kenvPath, kitPath, shortcutsPath } from './helpers';
 import {
   unlinkShortcuts,
   updateMainShortcut,
-  updateShortcuts,
+  shortcutScriptChanged,
 } from './shortcuts';
 
-import { cancelSchedule, updateSchedule } from './schedule';
-import { unlinkEvents, updateEvents } from './system-events';
-import { removeWatch, checkWatch } from './watch';
-import { removeBackground, updateBackground } from './background';
+import { cancelSchedule, scheduleScriptChanged } from './schedule';
+import { unlinkEvents, systemScriptChanged } from './system-events';
+import { removeWatch, watchScriptChanged } from './watch';
+import { backgroundScriptChanged, removeBackground } from './background';
 import { emitter, AppEvent } from './events';
 
 const onScriptsChanged = async (
@@ -32,11 +32,13 @@ const onScriptsChanged = async (
     removeBackground(filePath);
   }
   if (event === 'add' || event === 'change') {
-    updateShortcuts(filePath);
-    updateSchedule(filePath);
-    updateEvents(filePath);
-    checkWatch(filePath);
-    updateBackground(filePath, true);
+    const script = await info(filePath);
+
+    shortcutScriptChanged(script);
+    scheduleScriptChanged(script);
+    systemScriptChanged(script);
+    watchScriptChanged(script);
+    backgroundScriptChanged(script);
   }
 };
 
@@ -45,7 +47,6 @@ export const onDbChanged = async (event: any, filePath: string) => {
 };
 
 export const cacheMenu = async () => {
-  log.info(`caching menu`);
   await appScript(kitPath('cli', 'refresh-scripts-db.js'), []);
 };
 

@@ -5,6 +5,7 @@ import { Channel } from './enums';
 import { emitter } from './events';
 import { backgroundMap, Background } from './state';
 import { runBackgroundScript } from './kit';
+import { Script } from './types';
 
 const backgroundMarker = 'Background: ';
 
@@ -15,6 +16,25 @@ export const removeBackground = (filePath: string) => {
 
     log.info(`> kill background process: ${filePath} ${child?.pid}`);
     child?.kill();
+  }
+};
+
+export const backgroundScriptChanged = ({
+  filePath,
+  background: backgroundString,
+}: Script) => {
+  const startTask = () => {
+    const child = runBackgroundScript(filePath, []);
+    backgroundMap.set(filePath, {
+      start: new Date().toString(),
+      child,
+    });
+  };
+
+  // Task running. File changed
+  if (backgroundMap.get(filePath)) {
+    if (backgroundString === 'auto') removeBackground(filePath);
+    startTask();
   }
 };
 

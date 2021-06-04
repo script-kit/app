@@ -1,22 +1,12 @@
 import { globalShortcut } from 'electron';
-import { grep } from 'shelljs';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { tryPromptScript } from './kit';
-import { mainScriptPath, shortcutsPath } from './helpers';
+import { mainScriptPath, shortcutsPath, shortcutNormalizer } from './helpers';
 import { emitter, AppEvent } from './events';
+import { Script } from './types';
 
 export const shortcutMap = new Map();
-
-const shortcutNormalizer = (shortcut: string) =>
-  shortcut
-    .replace(/(option|opt)/i, 'Alt')
-    .replace(/(command|cmd)/i, 'CommandOrControl')
-    .replace(/(ctl|cntrl|ctrl)/, 'Control')
-    .split(/\s/)
-    .filter(Boolean)
-    .map((part) => (part[0].toUpperCase() + part.slice(1)).trim())
-    .join('+');
 
 export const unlinkShortcuts = (filePath: string) => {
   const oldShortcut = shortcutMap.get(filePath);
@@ -27,17 +17,7 @@ export const unlinkShortcuts = (filePath: string) => {
   }
 };
 
-export const updateShortcuts = (filePath: string) => {
-  const shortcutMarker = 'Shortcut: ';
-  const { stdout } = grep(`^//\\s*${shortcutMarker}\\s*`, filePath);
-
-  const rawShortcut = stdout
-    .substring(0, stdout.indexOf('\n'))
-    .substring(stdout.indexOf(shortcutMarker) + shortcutMarker.length)
-    .trim();
-
-  const shortcut = rawShortcut ? shortcutNormalizer(rawShortcut) : '';
-
+export const shortcutScriptChanged = ({ shortcut, filePath }: Script) => {
   const oldShortcut = shortcutMap.get(filePath);
 
   // Handle existing shortcuts
