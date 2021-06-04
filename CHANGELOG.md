@@ -1,3 +1,10 @@
+# [1.3.0-alpha.49](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.48...v1.3.0-alpha.49) (2021-06-04)
+
+
+### Bug Fixes
+
+* **app:** read script file once on watch ([bf77121](https://github.com/johnlindquist/kitapp/commit/bf77121a385678dcf1b92fb53ff5e1e0ed156a70))
+
 # [1.3.0-alpha.48](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.47...v1.3.0-alpha.48) (2021-06-03)
 
 
