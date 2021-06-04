@@ -1,11 +1,11 @@
 import { grep } from 'shelljs';
 import log from 'electron-log';
 
-import { createMessageHandler } from './messages';
-import { TOGGLE_BACKGROUND } from './channels';
+import { Channel } from './enums';
 import { emitter } from './events';
 import { backgroundMap, Background } from './state';
-import { createChild } from './run';
+import { runBackgroundScript } from './kit';
+import { Script } from './types';
 
 const backgroundMarker = 'Background: ';
 
@@ -19,23 +19,23 @@ export const removeBackground = (filePath: string) => {
   }
 };
 
-export const backgroundScript = (scriptPath: string, runArgs: string[]) => {
-  const child = createChild({
-    from: 'background',
-    scriptPath,
-    runArgs,
-  });
+export const backgroundScriptChanged = ({
+  filePath,
+  background: backgroundString,
+}: Script) => {
+  const startTask = () => {
+    const child = runBackgroundScript(filePath, []);
+    backgroundMap.set(filePath, {
+      start: new Date().toString(),
+      child,
+    });
+  };
 
-  const pid = child?.pid;
-  child?.on('exit', () => {
-    if (backgroundMap.get(scriptPath)?.child?.pid === pid) {
-      backgroundMap.delete(scriptPath);
-    }
-  });
-
-  child?.on('message', createMessageHandler('background'));
-
-  return child;
+  // Task running. File changed
+  if (backgroundMap.get(filePath)) {
+    if (backgroundString === 'auto') removeBackground(filePath);
+    startTask();
+  }
 };
 
 export const updateBackground = (filePath: string, fileChange = false) => {
@@ -47,7 +47,7 @@ export const updateBackground = (filePath: string, fileChange = false) => {
     .trim();
 
   const startTask = () => {
-    const child = backgroundScript(filePath, []);
+    const child = runBackgroundScript(filePath, []);
     backgroundMap.set(filePath, {
       start: new Date().toString(),
       child,
@@ -79,6 +79,6 @@ export const toggleBackground = (filePath: string) => {
   }
 };
 
-emitter.on(TOGGLE_BACKGROUND, (data) => {
+emitter.on(Channel.TOGGLE_BACKGROUND, (data) => {
   toggleBackground(data.filePath as string);
 });

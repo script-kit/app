@@ -1,22 +1,12 @@
 import { globalShortcut } from 'electron';
-import { grep } from 'shelljs';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
-import { tryKitScript } from './kit';
-import { mainFilePath, settingsFile } from './helpers';
-import { emitter, EVENT } from './events';
+import { tryPromptScript } from './kit';
+import { mainScriptPath, shortcutsPath, shortcutNormalizer } from './helpers';
+import { emitter, AppEvent } from './events';
+import { Script } from './types';
 
 export const shortcutMap = new Map();
-
-const shortcutNormalizer = (shortcut: string) =>
-  shortcut
-    .replace(/(option|opt)/i, 'Alt')
-    .replace(/(command|cmd)/i, 'CommandOrControl')
-    .replace(/(ctl|cntrl|ctrl)/, 'Control')
-    .split(/\s/)
-    .filter(Boolean)
-    .map((part) => (part[0].toUpperCase() + part.slice(1)).trim())
-    .join('+');
 
 export const unlinkShortcuts = (filePath: string) => {
   const oldShortcut = shortcutMap.get(filePath);
@@ -27,17 +17,7 @@ export const unlinkShortcuts = (filePath: string) => {
   }
 };
 
-export const updateShortcuts = (filePath: string) => {
-  const shortcutMarker = 'Shortcut: ';
-  const { stdout } = grep(`^//\\s*${shortcutMarker}\\s*`, filePath);
-
-  const rawShortcut = stdout
-    .substring(0, stdout.indexOf('\n'))
-    .substring(stdout.indexOf(shortcutMarker) + shortcutMarker.length)
-    .trim();
-
-  const shortcut = rawShortcut ? shortcutNormalizer(rawShortcut) : '';
-
+export const shortcutScriptChanged = ({ shortcut, filePath }: Script) => {
   const oldShortcut = shortcutMap.get(filePath);
 
   // Handle existing shortcuts
@@ -60,7 +40,7 @@ export const updateShortcuts = (filePath: string) => {
   const ret = globalShortcut.register(shortcut, async () => {
     // const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
 
-    await tryKitScript(filePath, []);
+    await tryPromptScript(filePath, []);
   });
 
   if (!ret) {
@@ -74,34 +54,34 @@ export const updateShortcuts = (filePath: string) => {
 };
 
 export const updateMainShortcut = async (filePath: string) => {
-  if (filePath === settingsFile) {
-    log.info(`SETTINGS CHANGED:`, filePath);
+  if (filePath === shortcutsPath) {
+    log.info(`SHORTCUTS DB CHANGED:`, filePath);
     const settings = JSON.parse(await readFile(filePath, 'utf-8'));
-    const rawShortcut = settings?.shortcuts?.kit?.main?.index;
+    const rawShortcut = settings?.shortcuts?.[mainScriptPath];
 
     const shortcut = rawShortcut ? shortcutNormalizer(rawShortcut) : '';
 
     if (shortcut) {
-      const oldShortcut = shortcutMap.get(mainFilePath);
+      const oldShortcut = shortcutMap.get(mainScriptPath);
 
       if (shortcut === oldShortcut) return;
 
       if (oldShortcut) {
         globalShortcut.unregister(oldShortcut);
-        shortcutMap.delete(mainFilePath);
+        shortcutMap.delete(mainScriptPath);
       }
 
       const ret = globalShortcut.register(shortcut, async () => {
-        await tryKitScript(mainFilePath, []);
+        await tryPromptScript(mainScriptPath, []);
       });
 
       if (!ret) {
-        log.info(`Failed to register: ${shortcut} to ${mainFilePath}`);
+        log.info(`Failed to register: ${shortcut} to ${mainScriptPath}`);
       }
 
       if (ret && globalShortcut.isRegistered(shortcut)) {
-        log.info(`Registered ${shortcut} to ${mainFilePath}`);
-        shortcutMap.set(mainFilePath, shortcut);
+        log.info(`Registered ${shortcut} to ${mainScriptPath}`);
+        shortcutMap.set(mainScriptPath, shortcut);
       }
     }
   }
@@ -124,7 +104,7 @@ const resumeShortcuts = () => {
       const ret = globalShortcut.register(shortcut, async () => {
         // const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
 
-        await tryKitScript(filePath, []);
+        await tryPromptScript(filePath, []);
       });
 
       if (!ret) {
@@ -134,5 +114,5 @@ const resumeShortcuts = () => {
   }
 };
 
-emitter.on(EVENT.PAUSE_SHORTCUTS, pauseShortcuts);
-emitter.on(EVENT.RESUME_SHORTCUTS, resumeShortcuts);
+emitter.on(AppEvent.PAUSE_SHORTCUTS, pauseShortcuts);
+emitter.on(AppEvent.RESUME_SHORTCUTS, resumeShortcuts);

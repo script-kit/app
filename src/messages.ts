@@ -8,28 +8,18 @@ import sizeOf from 'image-size';
 
 import { isUndefined } from 'lodash';
 import { autoUpdater } from 'electron-updater';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { getLog } from './logs';
 import {
+  clearPromptDb,
   focusPrompt,
-  getPromptCache,
   sendToPrompt,
   setBlurredByKit,
+  setIgnoreBlur,
   setPlaceholder,
+  resizeAndShowPrompt,
   showPrompt,
 } from './prompt';
-import {
-  RUN_SCRIPT,
-  SET_CHOICES,
-  SET_HINT,
-  SET_MODE,
-  SHOW_PROMPT,
-  SET_PLACEHOLDER,
-  SET_PANEL,
-  SET_TAB_INDEX,
-  SET_INPUT,
-  TOGGLE_BACKGROUND,
-} from './channels';
-import { getSchedule } from './schedule';
 import { getAppHidden, setAppHidden } from './appHidden';
 import {
   makeRestartNecessary,
@@ -37,37 +27,70 @@ import {
   getBackgroundTasks,
   ChildInfo,
   processMap,
+  getSchedule,
+  setCurrentPromptScript,
+  getCurrentPromptScript,
 } from './state';
 import { reset } from './ipc';
-import { emitter, EVENT } from './events';
-import { MODE } from './enums';
+import { emitter, AppEvent } from './events';
+import { Channel, Mode, ProcessType } from './enums';
 import { show } from './show';
 import { showNotification } from './notifications';
+import { setKenv, createKenv } from './helpers';
+import { MessageData, Script } from './types';
 
-const setChoices = (data: MessageData) => sendToPrompt(SET_CHOICES, data);
+const setChoices = (data: MessageData) => {
+  if (data?.scripts) {
+    const choices: Script[] = (
+      (data as { choices: Script[] })?.choices || []
+    ).map((script) => {
+      if (script.background) {
+        const backgroundScript = getBackgroundTasks().find(
+          (t) => t.filePath === script.filePath
+        );
 
-export type ChannelHandler = {
-  [Property in keyof typeof import('./channels')]?: (data: MessageData) => void;
+        script.description = `${script.description || ''}${
+          backgroundScript
+            ? `🟢  Uptime: ${formatDistanceToNowStrict(
+                new Date(backgroundScript.process.start)
+              )} PID: ${backgroundScript.process.pid}`
+            : "🛑 isn't running"
+        }`;
+      }
+
+      if (script.schedule) {
+        const scheduleScript = getSchedule().find(
+          (s) => s.filePath === script.filePath
+        );
+
+        if (scheduleScript) {
+          const date = new Date(scheduleScript.date);
+          const next = `Next ${formatDistanceToNowStrict(date)}`;
+          const cal = `${format(date, 'MMM eo, h:mm:ssa ')}`;
+
+          script.description = `${
+            script.description || ``
+          } ${next} - ${cal} - ${script.schedule}`;
+        }
+      }
+
+      if (script.watch) {
+        script.description = `${script.description || ``} Watching: ${
+          script.watch
+        }`;
+      }
+
+      return script;
+    });
+
+    sendToPrompt(Channel.SET_CHOICES, { choices });
+  } else {
+    sendToPrompt(Channel.SET_CHOICES, data);
+  }
 };
 
-export type MessageData = {
-  channel: keyof typeof import('./channels');
-  kitScript: string;
-  pid: number;
-  log?: string;
-  warn?: string;
-  path?: string;
-  filePath?: string;
-  name?: string;
-  args?: string[];
-  mode?: string;
-  ignore?: boolean;
-  text?: string;
-  options?: any;
-  image?: any;
-  html?: string;
-  choices?: any[];
-  info?: any;
+export type ChannelHandler = {
+  [key in Channel]?: (data: MessageData) => void;
 };
 
 const SHOW_IMAGE = async (data: MessageData) => {
@@ -93,7 +116,7 @@ const SHOW_IMAGE = async (data: MessageData) => {
   });
 
   const imageWindow = await show(
-    data?.kitScript || 'show-image',
+    data?.script?.command || 'show-image',
     String.raw`<img src="${image?.src}" alt="${image?.alt}" title="${image?.title}" />`,
     { width, height, ...options }
   );
@@ -106,7 +129,7 @@ const SHOW_IMAGE = async (data: MessageData) => {
 
 const kitMessageMap: ChannelHandler = {
   CLEAR_CACHE: (data) => {
-    getPromptCache()?.clear();
+    clearPromptDb();
   },
 
   CONSOLE_LOG: (data) => {
@@ -119,6 +142,10 @@ const kitMessageMap: ChannelHandler = {
 
   COPY_PATH_AS_PICTURE: (data) => {
     clipboard.writeImage(data.path as any);
+  },
+
+  CREATE_KENV: (data) => {
+    if (data.kenvPath) createKenv(data.kenvPath);
   },
 
   GET_SCRIPTS_STATE: (data) => {
@@ -148,7 +175,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   TOGGLE_BACKGROUND: (data) => {
-    emitter.emit(TOGGLE_BACKGROUND, data);
+    emitter.emit(Channel.TOGGLE_BACKGROUND, data);
   },
 
   GET_SCREEN_INFO: (data) => {
@@ -188,42 +215,43 @@ const kitMessageMap: ChannelHandler = {
     reset();
     app.exit();
   },
-  RUN_SCRIPT: (data) => {
-    sendToPrompt(RUN_SCRIPT, data);
+  PROMPT_INFO: (data) => {
+    setCurrentPromptScript(data.script as Script);
+    sendToPrompt(Channel.PROMPT_INFO, data);
   },
 
   SET_LOGIN: (data) => {
     app.setLoginItemSettings(data);
   },
   SET_MODE: (data) => {
-    if (data.mode === MODE.HOTKEY) {
-      emitter.emit(EVENT.PAUSE_SHORTCUTS);
+    if (data.mode === Mode.HOTKEY) {
+      emitter.emit(AppEvent.PAUSE_SHORTCUTS);
     }
-    sendToPrompt(SET_MODE, data);
+    sendToPrompt(Channel.SET_MODE, data);
   },
 
   SET_HINT: (data) => {
-    sendToPrompt(SET_HINT, data);
+    sendToPrompt(Channel.SET_HINT, data);
   },
 
   SET_IGNORE_BLUR: (data) => {
-    setBlurredByKit(data?.ignore);
+    setIgnoreBlur(data?.ignore);
   },
 
   SET_INPUT: (data) => {
-    sendToPrompt(SET_INPUT, data);
+    sendToPrompt(Channel.SET_INPUT, data);
   },
 
   SET_PLACEHOLDER: (data) => {
     showPrompt();
-    sendToPrompt(SET_PLACEHOLDER, data);
+    sendToPrompt(Channel.SET_PLACEHOLDER, data);
   },
 
   SET_PANEL: (data) => {
-    sendToPrompt(SET_PANEL, data);
+    sendToPrompt(Channel.SET_PANEL, data);
   },
   SET_TAB_INDEX: (data) => {
-    sendToPrompt(SET_TAB_INDEX, data);
+    sendToPrompt(Channel.SET_TAB_INDEX, data);
   },
   SHOW_TEXT: (data) => {
     setBlurredByKit();
@@ -239,7 +267,8 @@ const kitMessageMap: ChannelHandler = {
     showNotification(data.html || 'You forgot html', data.options);
   },
   SHOW_PROMPT: (data) => {
-    showPrompt(data);
+    const script = getCurrentPromptScript();
+    resizeAndShowPrompt({ tabs: data.tabs, script });
     if (data?.choices) {
       // validate choices
       if (
@@ -247,7 +276,7 @@ const kitMessageMap: ChannelHandler = {
           ({ name, value }: any) => !isUndefined(name) && !isUndefined(value)
         )
       ) {
-        sendToPrompt(SHOW_PROMPT, data);
+        sendToPrompt(Channel.SHOW_PROMPT, data);
       } else {
         log.warn(`Choices must have "name" and "value"`);
         log.warn(data?.choices);
@@ -255,7 +284,7 @@ const kitMessageMap: ChannelHandler = {
           setPlaceholder(`Warning: arg choices must have "name" and "value"`);
       }
     } else {
-      sendToPrompt(SHOW_PROMPT, data);
+      sendToPrompt(Channel.SHOW_PROMPT, data);
     }
   },
   SHOW_IMAGE,
@@ -281,18 +310,27 @@ const kitMessageMap: ChannelHandler = {
   SET_CHOICES: (data) => {
     setChoices(data);
   },
+  SWITCH_KENV: (data) => {
+    if (data.kenvPath) setKenv(data.kenvPath);
+  },
   UPDATE_PROMPT_WARN: (data) => {
     setPlaceholder(data.info);
   },
 };
 
-export const createMessageHandler = (from: string) => (data: MessageData) => {
-  log.info(`${data?.channel} ${data?.kitScript}`);
+export const createMessageHandler =
+  (type: ProcessType) => (data: MessageData) => {
+    log.info(
+      `${data.channel} ${type} process ${data.kitScript.replace(
+        /.*\//gi,
+        ''
+      )} id: ${data.pid}`
+    );
 
-  if (kitMessageMap[data?.channel]) {
-    const channelFn = kitMessageMap[data.channel] as (data: any) => void;
-    channelFn(data);
-  } else {
-    console.warn(`Channel ${data?.channel} not found on ${from}.`);
-  }
-};
+    if (kitMessageMap[data?.channel]) {
+      const channelFn = kitMessageMap[data.channel] as (data: any) => void;
+      channelFn(data);
+    } else {
+      console.warn(`Channel ${data?.channel} not found on ${type}.`);
+    }
+  };

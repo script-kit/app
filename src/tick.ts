@@ -1,22 +1,30 @@
 /* eslint-disable import/prefer-default-export */
 import { clipboard, NativeImage } from 'electron';
 import { interval, merge } from 'rxjs';
-import { distinctUntilChanged, map, share, skip, tap } from 'rxjs/operators';
+import {
+  distinctUntilChanged,
+  filter,
+  map,
+  share,
+  skip,
+  tap,
+} from 'rxjs/operators';
 import { format } from 'date-fns';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile } from 'fs/promises';
+import { mkdir } from 'shelljs';
 import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
 import { existsSync } from 'fs';
 import path from 'path';
-import { kenvPath } from './helpers';
+import { kitPath } from './helpers';
 
 export const tick = async () => {
-  const tmpClipboardDir = kenvPath('tmp', 'clipboard');
+  const tmpClipboardDir = kitPath('tmp', 'clipboard');
   if (!existsSync(tmpClipboardDir)) {
-    await mkdir(tmpClipboardDir);
+    mkdir('-p', tmpClipboardDir);
   }
 
-  const adapter = new FileSync(kenvPath('db', 'clipboard-history.json'));
+  const adapter = new FileSync(kitPath('db', 'clipboard-history.json'));
   const db = low(adapter);
 
   db.defaults({ history: [] }).write();
@@ -25,6 +33,7 @@ export const tick = async () => {
 
   const clipboardText$ = tick$.pipe(
     map(() => clipboard.readText()),
+    filter(Boolean),
     skip(1),
     distinctUntilChanged()
   );
@@ -34,8 +43,10 @@ export const tick = async () => {
     tap(() => {
       image = clipboard.readImage();
     }),
+    filter(() => Boolean(image)),
     skip(1),
     map(() => image?.toDataURL()),
+    filter((dataUrl) => !dataUrl?.endsWith(',')),
     distinctUntilChanged(),
     map(() => image)
   );

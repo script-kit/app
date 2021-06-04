@@ -26,32 +26,13 @@ import { partition } from 'lodash';
 import usePrevious from '@rooks/use-previous';
 import useResizeObserver from '@react-hook/resize-observer';
 import parse from 'html-react-parser';
-import { KitPromptOptions, ChoiceData } from './types';
-import {
-  CHOICE_FOCUSED,
-  GENERATE_CHOICES,
-  ESCAPE_PRESSED,
-  RESET_PROMPT,
-  RUN_SCRIPT,
-  SET_CHOICES,
-  SET_HINT,
-  SET_INPUT,
-  SET_MODE,
-  SET_PANEL,
-  SET_PLACEHOLDER,
-  SET_TAB_INDEX,
-  SHOW_PROMPT,
-  TAB_CHANGED,
-  VALUE_SUBMITTED,
-  CONTENT_SIZE_UPDATED,
-  USER_RESIZED,
-} from './channels';
+import { KitPromptOptions, ChoiceData, Script } from './types';
 import Tabs from './components/tabs';
 import ChoiceButton from './components/button';
 import Preview from './components/preview';
 import Panel from './components/panel';
 import Header from './components/header';
-import { MODE } from './enums';
+import { Channel, Mode } from './enums';
 
 const generateShortcut = ({
   option,
@@ -113,14 +94,16 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
+  const [script, setScript] = useState<Script>();
   const [promptData, setPromptData]: any = useState({});
 
   const [inputValue, setInputValue] = useState('');
+  const [textAreaValue, setTextAreaValue] = useState('');
   const [hint, setHint] = useState('');
-  const previousHint = usePrevious(hint);
-  const [mode, setMode] = useState(MODE.FILTER);
+  // const previousHint = usePrevious(hint);
+  const [mode, setMode] = useState(Mode.FILTER);
   const [index, setIndex] = useState(0);
-  const [tabs, setTabs] = useState([]);
+  const [tabs, setTabs] = useState<string[]>([]);
   const [tabIndex, setTabIndex] = useState(0);
   const [unfilteredChoices, setUnfilteredChoices] = useState<ChoiceData[]>([]);
   const [choices, setChoices] = useState<ChoiceData[]>([]);
@@ -129,7 +112,7 @@ export default function App() {
   const previousPlaceholder: string | null = usePrevious(placeholder);
   const [dropReady, setDropReady] = useState(false);
   const [panelHTML, setPanelHTML] = useState('');
-  const [scriptName, setScriptName] = useState('');
+  // const [scriptName, setScriptName] = useState('');
   const [maxHeight, setMaxHeight] = useState(480);
 
   const [caretDisabled, setCaretDisabled] = useState(false);
@@ -137,6 +120,7 @@ export default function App() {
   const choicesRef = useRef(null);
   const panelRef = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
+  const textAreaRef: RefObject<HTMLTextAreaElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -147,27 +131,27 @@ export default function App() {
     useCallback(
       (width: number, height: number) => {
         if (isMouseDown) return;
-        const {
-          height: topHeight,
-        } = topRef?.current?.getBoundingClientRect() as any;
+        const { height: topHeight } =
+          topRef?.current?.getBoundingClientRect() as any;
 
         if (!choicesRef.current) (choicesRef?.current as any)?.recalculate();
         if (!panelRef.current) (panelRef?.current as any)?.recalculate();
 
-        const hasContent = choices?.length || panelHTML?.length;
+        const hasContent =
+          choices?.length || panelHTML?.length || textAreaRef?.current;
         if (height > topHeight && hasContent) {
-          ipcRenderer.send(CONTENT_SIZE_UPDATED, {
+          ipcRenderer.send(Channel.CONTENT_SIZE_UPDATED, {
             width: Math.round(width),
             height: Math.round(height),
           });
         } else {
-          ipcRenderer.send(CONTENT_SIZE_UPDATED, {
+          ipcRenderer.send(Channel.CONTENT_SIZE_UPDATED, {
             width: Math.round(width),
             height: Math.round(topHeight),
           });
         }
       },
-      [choices?.length, isMouseDown, panelHTML?.length]
+      [choices?.length, isMouseDown, panelHTML?.length, textAreaRef?.current]
     ),
     25
   );
@@ -177,15 +161,11 @@ export default function App() {
     sendResize(width, height);
   });
 
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef?.current.focus();
-    }
-  }, [inputRef]);
-
-  useEffect(() => {
-    setTabs(promptData?.tabs || []);
-  }, [promptData?.tabs]);
+  // useEffect(() => {
+  //   if (inputRef.current) {
+  //     inputRef?.current.focus();
+  //   }
+  // }, [inputRef]);
 
   useEffect(() => {
     setIndex(0);
@@ -194,16 +174,18 @@ export default function App() {
   const submit = useCallback(
     (submitValue: any) => {
       let value = submitValue;
-      if (mode !== MODE.HOTKEY) {
+      if (mode !== Mode.HOTKEY) {
         setPlaceholder(
           typeof submitValue === 'string' && !promptData?.secret
             ? submitValue
             : 'Processing...'
         );
       }
+
       setUnfilteredChoices([]);
       setPanelHTML('');
       setInputValue('');
+      setTextAreaValue('');
 
       if (Array.isArray(submitValue)) {
         const files = submitValue.map((file) => {
@@ -221,7 +203,10 @@ export default function App() {
         value = files;
       }
 
-      ipcRenderer.send(VALUE_SUBMITTED, { value, pid: promptData?.pid });
+      ipcRenderer.send(Channel.VALUE_SUBMITTED, {
+        value,
+        pid: promptData?.pid,
+      });
     },
     [mode, promptData?.pid, promptData?.secret]
   );
@@ -276,23 +261,23 @@ export default function App() {
     [submit]
   );
 
-  useEffect(() => {
-    if (choices?.length > 0 && choices?.[index]) {
-      ipcRenderer.send(CHOICE_FOCUSED, {
-        index: choices[index],
-        pid: promptData?.pid,
-      });
-    }
-    if (choices?.length === 0) {
-      ipcRenderer.send(CHOICE_FOCUSED, { index: null, pid: promptData?.pid });
-    }
-  }, [choices, index, promptData?.pid]);
+  // useEffect(() => {
+  //   if (choices?.length > 0 && choices?.[index]) {
+  //     ipcRenderer.send(CHOICE_FOCUSED, {
+  //       index,
+  //       pid: promptData?.pid,
+  //     });
+  //   }
+  //   if (choices?.length === 0) {
+  //     ipcRenderer.send(CHOICE_FOCUSED, { index: null, pid: promptData?.pid });
+  //   }
+  // }, [choices, index, promptData?.pid]);
 
   const onTabClick = useCallback(
     (ti: number) => (_event: any) => {
       setTabIndex(ti);
 
-      ipcRenderer.send(TAB_CHANGED, {
+      ipcRenderer.send(Channel.TAB_CHANGED, {
         tab: tabs[ti],
         input: inputValue,
         pid: promptData?.pid,
@@ -302,12 +287,12 @@ export default function App() {
   );
 
   const closePrompt = useCallback(() => {
+    ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: promptData?.pid });
     setChoices([]);
     setInputValue('');
     setPanelHTML('');
     setPromptData({});
-    ipcRenderer.send(ESCAPE_PRESSED, { pid: promptData?.pid });
-  }, []);
+  }, [promptData]);
 
   const onKeyUp = useCallback(
     (event) => {
@@ -316,7 +301,7 @@ export default function App() {
         return;
       }
 
-      if (mode === MODE.HOTKEY) {
+      if (mode === Mode.HOTKEY) {
         event.preventDefault();
         const {
           code,
@@ -337,7 +322,7 @@ export default function App() {
         setPlaceholder(shortcut);
       }
     },
-    [mode]
+    [closePrompt, mode]
   );
 
   const onKeyDown = useCallback(
@@ -346,7 +331,7 @@ export default function App() {
         return;
       }
 
-      if (mode === MODE.HOTKEY) {
+      if (mode === Mode.HOTKEY) {
         const {
           key,
           code,
@@ -423,7 +408,7 @@ export default function App() {
           const clampIndex = (tabIndex + (event.shiftKey ? -1 : 1)) % clamp;
           const nextIndex = clampIndex < 0 ? clamp - 1 : clampIndex;
           setTabIndex(nextIndex);
-          ipcRenderer.send(TAB_CHANGED, {
+          ipcRenderer.send(Channel.TAB_CHANGED, {
             tab: tabs[nextIndex],
             input: inputValue,
             pid: promptData?.pid,
@@ -484,22 +469,40 @@ export default function App() {
       }
     },
     [
+      mode,
       index,
       choices,
-      setPromptData,
       submit,
       inputValue,
+      unfilteredChoices,
       tabs,
       tabIndex,
-      mode,
-      hotkey,
+      promptData?.pid,
     ]
+  );
+  const onTextAreaKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLTextAreaElement>) => {
+      const { key, metaKey: command } = event as any;
+
+      if (key === 'Escape') {
+        event.preventDefault();
+        closePrompt();
+        return;
+      }
+      if (key === 'Enter' && command) {
+        event.preventDefault();
+        submit(textAreaValue);
+      }
+    },
+    [textAreaValue]
   );
 
   const generateChoices = useDebouncedCallback((input, mode, tab) => {
-    if (mode === MODE.GENERATE) {
-      console.log(`GENERATE_CHOICES`, { input, pid: promptData?.pid });
-      ipcRenderer.send(GENERATE_CHOICES, { input, pid: promptData?.pid });
+    if (mode === Mode.GENERATE) {
+      ipcRenderer.send(Channel.GENERATE_CHOICES, {
+        input,
+        pid: promptData?.pid,
+      });
     }
   }, 150);
 
@@ -513,7 +516,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      if (mode === (MODE.GENERATE || MODE.MANUAL)) {
+      if (mode === (Mode.GENERATE || Mode.MANUAL)) {
         setChoices(unfilteredChoices);
         return;
       }
@@ -617,9 +620,14 @@ export default function App() {
       setPlaceholder('');
       setPanelHTML('');
       setPromptData(promptData);
+      if (promptData?.tabs?.length) setTabs(promptData?.tabs);
 
       if (inputRef.current) {
         inputRef?.current.focus();
+      }
+
+      if (textAreaRef.current) {
+        textAreaRef?.current.focus();
       }
     },
     []
@@ -673,30 +681,35 @@ export default function App() {
     setUnfilteredChoices([]);
   }, []);
 
+  const promptInfoHandler = useCallback((event, data) => {
+    setScript(data.script);
+    setTabs([]);
+  }, []);
+
   const userResizedHandler = useCallback((event, data) => {
     setIsMouseDown(!!data);
     setMaxHeight(window.innerHeight);
   }, []);
 
   const messageMap = {
-    [RESET_PROMPT]: resetPromptHandler,
-    [RUN_SCRIPT]: resetPromptHandler,
-    [SET_CHOICES]: setChoicesHandler,
-    [SET_HINT]: setHintHandler,
-    [SET_INPUT]: setInputHandler,
-    [SET_MODE]: setModeHandler,
-    [SET_PANEL]: setPanelHandler,
-    [SET_PLACEHOLDER]: setPlaceholderHandler,
-    [SET_TAB_INDEX]: setTabIndexHandler,
-    [SHOW_PROMPT]: showPromptHandler,
-    [USER_RESIZED]: userResizedHandler,
+    [Channel.RESET_PROMPT]: resetPromptHandler,
+    [Channel.PROMPT_INFO]: promptInfoHandler,
+    [Channel.SET_CHOICES]: setChoicesHandler,
+    [Channel.SET_HINT]: setHintHandler,
+    [Channel.SET_INPUT]: setInputHandler,
+    [Channel.SET_MODE]: setModeHandler,
+    [Channel.SET_PANEL]: setPanelHandler,
+    [Channel.SET_PLACEHOLDER]: setPlaceholderHandler,
+    [Channel.SET_TAB_INDEX]: setTabIndexHandler,
+    [Channel.SHOW_PROMPT]: showPromptHandler,
+    [Channel.USER_RESIZED]: userResizedHandler,
   };
 
   useEffect(() => {
     Object.entries(messageMap).forEach(([key, value]: any) => {
       if (ipcRenderer.listenerCount(key) === 0) {
         ipcRenderer.on(key, (event, data) => {
-          if (data?.kitScript) setScriptName(data?.kitScript);
+          // if (data?.kitScript) setScriptName(data?.kitScript);
           value(event, data);
         });
       }
@@ -723,22 +736,21 @@ export default function App() {
         className="flex flex-col w-full rounded-lg relative h-full"
       >
         <div ref={topRef}>
-          {(promptData?.scriptInfo?.description ||
-            promptData?.scriptInfo?.twitter ||
-            promptData?.scriptInfo?.menu) && (
-            <Header scriptInfo={promptData?.scriptInfo} />
+          {(script?.description || script?.twitter || script?.menu) && (
+            <Header script={script} />
           )}
-          <input
-            style={
-              {
-                WebkitAppRegion: 'drag',
-                WebkitUserSelect: 'none',
-                minHeight: '4rem',
-                ...(caretDisabled && { caretColor: 'transparent' }),
-              } as any
-            }
-            autoFocus
-            className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
+          {!promptData?.textarea && (
+            <input
+              style={
+                {
+                  WebkitAppRegion: 'drag',
+                  WebkitUserSelect: 'none',
+                  minHeight: '4rem',
+                  ...(caretDisabled && { caretColor: 'transparent' }),
+                } as any
+              }
+              autoFocus
+              className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
             ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
 
             ${
@@ -751,23 +763,24 @@ export default function App() {
                 : `            focus:border-none border-none`
             }
           `}
-            onChange={
-              mode !== MODE.HOTKEY
-                ? (e) => {
-                    onChange(e.target.value);
-                  }
-                : undefined
-            }
-            onKeyDown={onKeyDown}
-            onKeyUp={onKeyUp}
-            placeholder={debouncedPlaceholder || promptData?.placeholder}
-            ref={inputRef}
-            type={promptData?.secret ? 'password' : 'text'}
-            value={mode !== MODE.HOTKEY ? inputValue : undefined}
-            onDragEnter={promptData?.drop ? onDragEnter : undefined}
-            onDragLeave={promptData?.drop ? onDragLeave : undefined}
-            onDrop={promptData?.drop ? onDrop : undefined}
-          />
+              onChange={
+                mode !== Mode.HOTKEY
+                  ? (e) => {
+                      onChange(e.target.value);
+                    }
+                  : undefined
+              }
+              onKeyDown={onKeyDown}
+              onKeyUp={onKeyUp}
+              placeholder={debouncedPlaceholder || promptData?.placeholder}
+              ref={inputRef}
+              type={promptData?.secret ? 'password' : 'text'}
+              value={mode !== Mode.HOTKEY ? inputValue : undefined}
+              onDragEnter={promptData?.drop ? onDragEnter : undefined}
+              onDragLeave={promptData?.drop ? onDragLeave : undefined}
+              onDrop={promptData?.drop ? onDrop : undefined}
+            />
+          )}
           {hint && (
             <div className="pl-3 pb-1 text-xs text-gray-800 dark:text-gray-200 italic">
               {parse(hint)}
@@ -777,6 +790,31 @@ export default function App() {
             <Tabs tabs={tabs} tabIndex={tabIndex} onTabClick={onTabClick} />
           )}
         </div>
+        {promptData?.textarea && (
+          <textarea
+            ref={textAreaRef}
+            style={
+              {
+                WebkitAppRegion: 'no-drag',
+                WebkitUserSelect: 'text',
+                height: maxHeight,
+              } as any
+            }
+            onKeyDown={onTextAreaKeyDown}
+            onChange={(e) => {
+              setTextAreaValue(e.target.value);
+            }}
+            value={textAreaValue}
+            placeholder={promptData?.placeholder}
+            className={`
+            min-h-32
+
+              bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-md dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40
+              ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-4
+              focus:border-none border-none
+              `}
+          />
+        )}
         {panelHTML?.length > 0 && (
           <Panel ref={panelRef} panelHTML={panelHTML} />
         )}

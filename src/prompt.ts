@@ -2,39 +2,46 @@
 /* eslint-disable import/prefer-default-export */
 import { BrowserWindow, screen, nativeTheme, app } from 'electron';
 import log from 'electron-log';
-import Store from 'electron-store';
-import { EventEmitter } from 'events';
+import low from 'lowdb';
+import FileSync from 'lowdb/adapters/FileSync';
 import minimist from 'minimist';
+import { EventEmitter } from 'events';
 import { getAssetPath } from './assets';
-import { kenvPath } from './helpers';
-import { SET_PLACEHOLDER, USER_RESIZED } from './channels';
+import { promptDbPath } from './helpers';
+import { Channel } from './enums';
 import { getAppHidden } from './appHidden';
+import { Script } from './types';
 
-let promptCache: Store | null = null;
-export const getPromptCache = () => {
-  return promptCache;
+export enum PromptEvent {
+  Blur = 'Blur',
+}
+
+const adapter = new FileSync(promptDbPath);
+const promptDb = low(adapter);
+
+promptDb.defaults({ screens: {} }).write();
+
+export const clearPromptDb = () => {
+  promptDb.set(`screens`, {}).write();
 };
 
-export const createPromptCache = () => {
-  promptCache = new Store({
-    name: 'prompt',
-    cwd: kenvPath('cache'),
-  });
-  promptCache.clear();
-};
-
-let promptWindow: BrowserWindow | null = null;
+let promptWindow: BrowserWindow;
 let blurredByKit = false;
+let ignoreBlur = false;
 
 export const setBlurredByKit = (value = true) => {
   blurredByKit = value;
 };
 
-export const hideEmitter = new EventEmitter();
+export const setIgnoreBlur = (value = true) => {
+  ignoreBlur = value;
+};
 
 const miniArgs = minimist(process.argv);
 const { devTools } = miniArgs;
 log.info(process.argv.join(' '), devTools);
+
+export const promptEmitter = new EventEmitter();
 
 let lastResizedByUser = false;
 export const createPromptWindow = async () => {
@@ -82,7 +89,13 @@ export const createPromptWindow = async () => {
   // });
 
   promptWindow?.on('blur', () => {
-    hidePromptWindow();
+    if (!ignoreBlur) {
+      hidePromptWindow();
+    }
+
+    if (!ignoreBlur && !getAppHidden()) {
+      promptEmitter.emit(PromptEvent.Blur);
+    }
   });
 
   let timeoutId: NodeJS.Timeout | null = null;
@@ -93,13 +106,13 @@ export const createPromptWindow = async () => {
     const promptBounds = promptWindow?.getBounds();
 
     const { width, height } = promptBounds;
-    sendToPrompt(USER_RESIZED, { height, width });
+    sendToPrompt(Channel.USER_RESIZED, { height, width });
   };
 
   promptWindow?.on('will-resize', userResize);
   promptWindow?.on('resized', () => {
     timeoutId = setTimeout(() => {
-      if (promptWindow?.isVisible()) sendToPrompt(USER_RESIZED, false);
+      if (promptWindow?.isVisible()) sendToPrompt(Channel.USER_RESIZED, false);
     }, 500);
   });
 
@@ -133,7 +146,6 @@ export const focusPrompt = () => {
 export const escapePromptWindow = () => {
   blurredByKit = false;
   hideAppIfNoWindows();
-  hideEmitter.emit('hide');
 };
 
 const getCurrentScreen = () => {
@@ -142,21 +154,20 @@ const getCurrentScreen = () => {
 
 export const getCurrentScreenPromptCache = () => {
   const currentScreen = getCurrentScreen();
-  const currentPromptCache = getPromptCache()?.get(
-    `prompt.${String(currentScreen.id)}`
-  );
+
+  const currentPromptCache = promptDb
+    .get(`screens.${String(currentScreen.id)}`)
+    .value();
   // console.log(currentScreen.id, { currentPromptCache });
 
-  return (currentPromptCache as any)?.bounds as Size;
+  return currentPromptCache as Size;
 };
 
 export const setDefaultBounds = () => {
   const currentScreen = getCurrentScreen();
 
-  const {
-    width: screenWidth,
-    height: screenHeight,
-  } = currentScreen.workAreaSize;
+  const { width: screenWidth, height: screenHeight } =
+    currentScreen.workAreaSize;
 
   const height = Math.round(screenHeight / 3);
   const width = Math.round(height * (4 / 3));
@@ -172,22 +183,35 @@ const HEADER_HEIGHT = 24;
 const INPUT_HEIGHT = 64;
 const TABS_HEIGHT = 36;
 
-export const showPrompt = (options: any = {}) => {
+interface ShowPromptOptions {
+  tabs: string[];
+  script: Script;
+}
+
+export const showPrompt = () => {
+  if (!promptWindow?.isVisible()) {
+    promptWindow?.show();
+    promptWindow.setVibrancy(
+      nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light'
+    );
+    promptWindow.setBackgroundColor(
+      nativeTheme.shouldUseDarkColors ? '#66000000' : '#C0FFFFFF'
+    );
+    if (devTools) promptWindow?.webContents.openDevTools();
+  }
+};
+
+export const resizeAndShowPrompt = ({ tabs, script }: ShowPromptOptions) => {
   if (promptWindow && !promptWindow?.isVisible()) {
     const currentScreenPromptBounds = getCurrentScreenPromptCache();
-
     const headerHeight =
-      options?.scriptInfo?.menu ||
-      options?.scriptInfo?.twitter ||
-      options?.scriptInfo?.description
+      script?.menu || script?.twitter || script?.description
         ? HEADER_HEIGHT
         : 0;
-    const tabsHeight = options?.tabs?.length ? TABS_HEIGHT : 0;
+    const tabsHeight = tabs.length ? TABS_HEIGHT : 0;
     const height = INPUT_HEIGHT + headerHeight + tabsHeight;
 
     if (currentScreenPromptBounds) {
-      log.info(`SHOW_PROMPT`, { height });
-
       promptWindow.setBounds({
         ...currentScreenPromptBounds,
         height,
@@ -196,17 +220,7 @@ export const showPrompt = (options: any = {}) => {
       setDefaultBounds();
     }
 
-    // TODO: Think through "show on every invoke" logic
-    if (!promptWindow?.isVisible()) {
-      promptWindow?.show();
-      promptWindow.setVibrancy(
-        nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light'
-      );
-      promptWindow.setBackgroundColor(
-        nativeTheme.shouldUseDarkColors ? '#66000000' : '#C0FFFFFF'
-      );
-      if (devTools) promptWindow?.webContents.openDevTools();
-    }
+    showPrompt();
   }
 
   return promptWindow;
@@ -240,12 +254,9 @@ export const sendToPrompt = (channel: string, data: any) => {
 const cachePromptPosition = () => {
   const currentScreen = getCurrentScreen();
   const promptBounds = promptWindow?.getBounds();
-  log.info(`CACHING SIZE:`, promptBounds);
+  log.info(`Cache prompt:`, { screen: currentScreen.id, ...promptBounds });
 
-  getPromptCache()?.set(
-    `prompt.${String(currentScreen.id)}.bounds`,
-    promptBounds
-  );
+  promptDb.set(`screens.${String(currentScreen.id)}`, promptBounds).write();
 };
 
 const hideAppIfNoWindows = () => {
@@ -273,5 +284,5 @@ export const hidePromptWindow = () => {
 };
 
 export const setPlaceholder = (text: string) => {
-  if (!getAppHidden()) sendToPrompt(SET_PLACEHOLDER, text);
+  if (!getAppHidden()) sendToPrompt(Channel.SET_PLACEHOLDER, text);
 };

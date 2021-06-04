@@ -1,23 +1,23 @@
 import React from 'react';
-import { KitPromptOptions } from '../types';
+import { Script } from '../types';
 
 interface HeaderProps {
-  scriptInfo: KitPromptOptions['scriptInfo'];
+  script: Script;
 }
 
-export default function Header({ scriptInfo }: HeaderProps) {
+export default function Header({ script }: HeaderProps) {
   return (
     <div className="text-xxs uppercase font-mono justify-between pt-3 px-4 grid grid-cols-5">
       <span className="dark:text-primary-light text-primary-dark col-span-3">
-        {scriptInfo?.description || ''}
+        {script?.description || ''}
       </span>
       <span className="text-right col-span-2">
-        {scriptInfo?.menu}
-        {scriptInfo?.twitter && (
+        {script?.menu}
+        {script?.twitter && (
           <span>
             <span> - </span>
-            <a href={`https://twitter.com/${scriptInfo?.twitter.slice(1)}`}>
-              {scriptInfo?.twitter}
+            <a href={`https://twitter.com/${script?.twitter.slice(1)}`}>
+              {script?.twitter}
             </a>
           </span>
         )}
