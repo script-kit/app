@@ -103,7 +103,7 @@ export default function App() {
   // const previousHint = usePrevious(hint);
   const [mode, setMode] = useState(Mode.FILTER);
   const [index, setIndex] = useState(0);
-  const [tabs, setTabs] = useState([]);
+  const [tabs, setTabs] = useState<string[]>([]);
   const [tabIndex, setTabIndex] = useState(0);
   const [unfilteredChoices, setUnfilteredChoices] = useState<ChoiceData[]>([]);
   const [choices, setChoices] = useState<ChoiceData[]>([]);
@@ -166,10 +166,6 @@ export default function App() {
   //     inputRef?.current.focus();
   //   }
   // }, [inputRef]);
-
-  useEffect(() => {
-    setTabs(promptData?.tabs || []);
-  }, [promptData?.tabs]);
 
   useEffect(() => {
     setIndex(0);
@@ -291,7 +287,6 @@ export default function App() {
   );
 
   const closePrompt = useCallback(() => {
-    console.log({ promptData });
     ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: promptData?.pid });
     setChoices([]);
     setInputValue('');
@@ -504,7 +499,6 @@ export default function App() {
 
   const generateChoices = useDebouncedCallback((input, mode, tab) => {
     if (mode === Mode.GENERATE) {
-      console.log(`GENERATE_CHOICES`, { input, pid: promptData?.pid });
       ipcRenderer.send(Channel.GENERATE_CHOICES, {
         input,
         pid: promptData?.pid,
@@ -626,6 +620,7 @@ export default function App() {
       setPlaceholder('');
       setPanelHTML('');
       setPromptData(promptData);
+      if (promptData?.tabs?.length) setTabs(promptData?.tabs);
 
       if (inputRef.current) {
         inputRef?.current.focus();
@@ -688,6 +683,7 @@ export default function App() {
 
   const promptInfoHandler = useCallback((event, data) => {
     setScript(data.script);
+    setTabs([]);
   }, []);
 
   const userResizedHandler = useCallback((event, data) => {
