@@ -1,3 +1,10 @@
+# [1.3.0-alpha.51](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.50...v1.3.0-alpha.51) (2021-06-06)
+
+
+### Features
+
+* **app:** speed, validation, quick tabs ([c0a62e7](https://github.com/johnlindquist/kitapp/commit/c0a62e7988b34ba04c530717083626ed3778ea77))
+
 # [1.3.0-beta.18](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.17...v1.3.0-beta.18) (2021-06-04)
 
 
