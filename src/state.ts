@@ -1,8 +1,9 @@
 import { ChildProcess } from 'child_process';
 import { app } from 'electron';
 import schedule, { Job } from 'node-schedule';
+import { readFile } from 'fs/promises';
 import { ProcessType } from './enums';
-import { appDb } from './helpers';
+import { appDb, info, kenvPath, mainScriptPath } from './helpers';
 import { Script } from './types';
 
 export const makeRestartNecessary = () => {
@@ -84,4 +85,36 @@ export const setCurrentPromptScript = (script: Script) => {
 
 export const getCurrentPromptScript = () => {
   return currentPromptScript;
+};
+
+let scripts: Script[] = [];
+
+export const updateScripts = async () => {
+  const scriptsJSON = JSON.parse(
+    await readFile(kenvPath('db', 'scripts.json'), 'utf-8')
+  );
+  scripts = scriptsJSON.scripts;
+};
+
+export const getScripts = (): Script[] => {
+  return scripts;
+};
+
+export const getScript = (filePath: string): Script => {
+  return scripts.find((script) => script.filePath === filePath) as Script;
+};
+
+const kitScripts: Script[] = [];
+
+export const cacheKitScripts = async () => {
+  const mainScript = await info(mainScriptPath);
+  kitScripts.push(mainScript);
+};
+
+export const getKitScripts = (): Script[] => {
+  return kitScripts;
+};
+
+export const getKitScript = (filePath: string): Script => {
+  return kitScripts.find((script) => script.filePath === filePath) as Script;
 };

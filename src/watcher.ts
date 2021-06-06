@@ -18,12 +18,12 @@ import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
 import { emitter, AppEvent } from './events';
+import { updateScripts } from './state';
 
 const onScriptsChanged = async (
   event: 'add' | 'change' | 'unlink',
   filePath: string
 ) => {
-  if (event === 'change') log.info({ event, filePath });
   if (event === 'unlink') {
     unlinkShortcuts(filePath);
     cancelSchedule(filePath);
@@ -48,6 +48,7 @@ export const onDbChanged = async (event: any, filePath: string) => {
 
 export const cacheMenu = async () => {
   await appScript(kitPath('cli', 'refresh-scripts-db.js'), []);
+  await updateScripts();
 };
 
 let watchers: FSWatcher[] = [];

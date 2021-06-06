@@ -63,11 +63,11 @@ import {
 } from './helpers';
 import { getVersion } from './version';
 import { show } from './show';
-import { getStoredVersion, storeVersion } from './state';
+import { cacheKitScripts, getStoredVersion, storeVersion } from './state';
 import { startSK } from './sk';
 import { setupPrefs } from './prefs';
 
-let configWindow: BrowserWindow | null = null;
+let configWindow: BrowserWindow;
 
 app.setName(APP_NAME);
 
@@ -253,6 +253,7 @@ const ready = async () => {
     configWindowDone();
 
     startSK();
+    await cacheKitScripts();
 
     autoUpdater.logger = log;
     autoUpdater.checkForUpdatesAndNotify({

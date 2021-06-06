@@ -9,7 +9,7 @@ import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
 import { readFile } from 'fs/promises';
 import { emitter, AppEvent } from './events';
-import { Script } from './types';
+import { InputType, Script } from './types';
 import { ProcessType } from './enums';
 
 export const isDir = (dir: string) => test('-d', dir);
@@ -146,20 +146,22 @@ export const info = async (file: string): Promise<Script> => {
     : kenvPath(file.includes('/') ? '' : 'scripts', file);
 
   const fileContents = await readFile(filePath, 'utf8');
-  // console.log(fileContents);
 
   const fileLines = fileContents.split('\n');
 
-  const command = file.replace('.js', '');
+  const command = filePath.split(path.sep)?.pop()?.replace('.js', '') as string;
   const rawShortcut = getByMarker('Shortcut:')(fileLines);
   const shortcut = rawShortcut && shortcutNormalizer(rawShortcut);
 
   const menu = getByMarker('Menu:')(fileLines);
+  const placeholder = (getByMarker('Placeholder:')(fileLines) ||
+    menu) as string;
   const twitter = getByMarker('Twitter:')(fileLines);
   const schedule = getByMarker('Schedule:')(fileLines);
   const watch = getByMarker('Watch:')(fileLines);
   const system = getByMarker('System:')(fileLines);
   const background = getByMarker('Background:')(fileLines);
+  const input = (getByMarker('Input:')(fileLines) || 'text') as InputType;
   const timeout = parseInt(getByMarker('Timeout:')(fileLines) || '0', 10);
 
   const requiresPrompt = Boolean(
@@ -167,6 +169,10 @@ export const info = async (file: string): Promise<Script> => {
       line.match(/await arg|await drop|await textarea|await hotkey|await main/g)
     )
   );
+
+  const tabs =
+    fileContents.match(new RegExp(`(?<=onTab[(]['"]).*(?=\s*['"])`, 'gim')) ||
+    [];
 
   const type = schedule
     ? ProcessType.Schedule
@@ -184,6 +190,7 @@ export const info = async (file: string): Promise<Script> => {
     shortcut,
     menu,
     name: (menu || command) + (shortcut ? `: ${shortcut}` : ``),
+    placeholder,
     description: getByMarker('Description:')(fileLines),
     alias: getByMarker('Alias:')(fileLines),
     author: getByMarker('Author:')(fileLines),
@@ -199,5 +206,7 @@ export const info = async (file: string): Promise<Script> => {
     filePath,
     requiresPrompt,
     timeout,
+    tabs,
+    input,
   };
 };

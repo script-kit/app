@@ -12,13 +12,13 @@ let tray: Tray | null = null;
 const leftClick = async (event: KeyboardEvent) => {
   restartIfNecessary();
   if (event.metaKey) {
-    await tryPromptScript('tray/command-click');
+    await tryPromptScript('app/command-click');
   } else if (event.shiftKey) {
-    await tryPromptScript('tray/shift-click');
+    await tryPromptScript('app/shift-click');
   } else if (event.ctrlKey) {
-    await tryPromptScript('tray/control-click');
+    await tryPromptScript('app/control-click');
   } else if (event.altKey) {
-    await tryPromptScript('tray/alt-click');
+    await tryPromptScript('app/alt-click');
   } else {
     await tryPromptScript(mainScriptPath);
   }

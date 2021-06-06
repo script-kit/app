@@ -1,10 +1,10 @@
 /* eslint-disable import/prefer-default-export */
 import { app, BrowserWindow, screen } from 'electron';
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { getAssetPath } from './assets';
 import { kenvPath, isDir } from './helpers';
 
-const page = (body: string, styles: string) => {
+const page = (body: string) => {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,7 +16,6 @@ const page = (body: string, styles: string) => {
     const {ipcRenderer} = require("electron")
 
     ipcRenderer.on('UPDATE', (event, {message, header})=> {
-      console.log(event, header, message)
       if(header) document.querySelector(".header").innerHTML = header
       if(message) document.querySelector(".message").innerHTML = message
     })
@@ -78,9 +77,6 @@ export const show = async (
     }
   });
 
-  const baseURL = app.getAppPath().replace('\\', '/');
-  const stylePath = `${baseURL}/dist/style.css`;
-  const styles = await readFile(stylePath, { encoding: 'utf8' });
   const showParentDir = isDir(kenvPath('tmp'))
     ? kenvPath('tmp', name)
     : app.getPath('appData');
@@ -90,7 +86,7 @@ export const show = async (
   }
 
   const showPath = `${showParentDir}/${name}.html`;
-  await writeFile(showPath, page(html, styles));
+  await writeFile(showPath, page(html));
 
   return new Promise((resolve, reject) => {
     showWindow.webContents.once('did-finish-load', () => {

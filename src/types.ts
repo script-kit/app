@@ -1,19 +1,12 @@
-import { BasePromptOptions, ArrayPromptOptions } from './enquirer';
-import { Channel, ProcessType } from './enums';
+import { Mode, Channel, ProcessType } from './enums';
 
-export interface KitPromptOptions extends BasePromptOptions {
+export interface PromptData {
   script: Script;
   placeholder: string;
   kitScript: string;
-  choices: any;
-  detail: string | null;
+  choices: Choice[];
   tabs: string[];
 }
-export interface KitArrayPromptOptions extends ArrayPromptOptions {
-  kitScript: string;
-  detail: string | null;
-}
-
 export interface ChoiceData {
   name: string;
   value: string;
@@ -21,7 +14,7 @@ export interface ChoiceData {
   shortcode?: string;
 }
 
-export interface Script {
+export interface Script extends Choice {
   id: string;
   name: string;
   file: string;
@@ -43,6 +36,9 @@ export interface Script {
   isRunning?: boolean;
   requiresPrompt: boolean;
   timeout?: number;
+  tabs: string[];
+  placeholder: string;
+  input: InputType;
 }
 export interface Choice<Value = any> {
   name: string;
@@ -53,11 +49,11 @@ export interface Choice<Value = any> {
   html?: string;
   preview?: string;
   id?: string;
+  shortcode?: string;
 }
 
-export type MessageData = {
+export interface MessageData extends PromptData {
   channel: Channel;
-  kitScript: string;
   pid: number;
   log?: string;
   warn?: string;
@@ -65,16 +61,16 @@ export type MessageData = {
   filePath?: string;
   name?: string;
   args?: string[];
-  mode?: string;
+  mode?: Mode;
   ignore?: boolean;
   text?: string;
   options?: any;
   image?: any;
   html?: string;
-  choices?: any[];
-  info?: any;
+  info?: string;
+  input?: string;
   scripts?: boolean;
-  script?: Script;
   kenvPath?: string;
-  tabs: string[];
-};
+  hint?: string;
+  tabIndex?: number;
+}

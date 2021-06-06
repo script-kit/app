@@ -19,20 +19,20 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useDebounce, useDebouncedCallback } from 'use-debounce';
+import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
 import usePrevious from '@rooks/use-previous';
 import useResizeObserver from '@react-hook/resize-observer';
 import parse from 'html-react-parser';
-import { KitPromptOptions, ChoiceData, Script } from './types';
+import { PromptData, Script, Choice } from './types';
 import Tabs from './components/tabs';
 import ChoiceButton from './components/button';
 import Preview from './components/preview';
 import Panel from './components/panel';
 import Header from './components/header';
-import { Channel, Mode } from './enums';
+import { Channel, Mode, InputType } from './enums';
 
 const generateShortcut = ({
   option,
@@ -93,11 +93,15 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+const DEFAULT_MAX_HEIGHT = 480;
+
 export default function App() {
   const [script, setScript] = useState<Script>();
+  const [submitted, setSubmitted] = useState<boolean>(false);
   const [promptData, setPromptData]: any = useState({});
 
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState<string>('');
+  const [inputType, setInputType] = useState<InputType>(InputType.text);
   const [textAreaValue, setTextAreaValue] = useState('');
   const [hint, setHint] = useState('');
   // const previousHint = usePrevious(hint);
@@ -105,15 +109,15 @@ export default function App() {
   const [index, setIndex] = useState(0);
   const [tabs, setTabs] = useState<string[]>([]);
   const [tabIndex, setTabIndex] = useState(0);
-  const [unfilteredChoices, setUnfilteredChoices] = useState<ChoiceData[]>([]);
-  const [choices, setChoices] = useState<ChoiceData[]>([]);
+  const [unfilteredChoices, setUnfilteredChoices] = useState<Choice[]>([]);
+  const [choices, setChoices] = useState<Choice[]>([]);
   const [placeholder, setPlaceholder] = useState('');
-  const [debouncedPlaceholder] = useDebounce(placeholder, 10);
+  // const [debouncedPlaceholder] = useDebounce(placeholder, 10);
   const previousPlaceholder: string | null = usePrevious(placeholder);
   const [dropReady, setDropReady] = useState(false);
   const [panelHTML, setPanelHTML] = useState('');
   // const [scriptName, setScriptName] = useState('');
-  const [maxHeight, setMaxHeight] = useState(480);
+  const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HEIGHT);
 
   const [caretDisabled, setCaretDisabled] = useState(false);
   const choicesSimpleBarRef = useRef(null);
@@ -138,22 +142,20 @@ export default function App() {
         if (!panelRef.current) (panelRef?.current as any)?.recalculate();
 
         const hasContent =
-          choices?.length || panelHTML?.length || textAreaRef?.current;
-        if (height > topHeight && hasContent) {
-          ipcRenderer.send(Channel.CONTENT_SIZE_UPDATED, {
-            width: Math.round(width),
-            height: Math.round(height),
-          });
-        } else {
-          ipcRenderer.send(Channel.CONTENT_SIZE_UPDATED, {
-            width: Math.round(width),
-            height: Math.round(topHeight),
-          });
-        }
+          unfilteredChoices?.length ||
+          panelHTML?.length ||
+          textAreaRef?.current;
+        const promptHeight =
+          height > topHeight && hasContent ? height : topHeight;
+
+        ipcRenderer.send(Channel.CONTENT_SIZE_UPDATED, {
+          width: Math.round(width),
+          height: Math.round(promptHeight),
+        });
       },
-      [choices?.length, isMouseDown, panelHTML?.length, textAreaRef?.current]
+      [unfilteredChoices?.length, isMouseDown, panelHTML?.length]
     ),
-    25
+    10
   );
 
   useResizeObserver(windowContainerRef, (entry) => {
@@ -167,10 +169,6 @@ export default function App() {
   //   }
   // }, [inputRef]);
 
-  useEffect(() => {
-    setIndex(0);
-  }, [unfilteredChoices]);
-
   const submit = useCallback(
     (submitValue: any) => {
       let value = submitValue;
@@ -182,10 +180,8 @@ export default function App() {
         );
       }
 
-      setUnfilteredChoices([]);
-      setPanelHTML('');
-      setInputValue('');
-      setTextAreaValue('');
+      // setUnfilteredChoices([]);
+      // setPanelHTML('');
 
       if (Array.isArray(submitValue)) {
         const files = submitValue.map((file) => {
@@ -207,6 +203,11 @@ export default function App() {
         value,
         pid: promptData?.pid,
       });
+
+      setSubmitted(true);
+      setInputValue('');
+      setTextAreaValue('');
+      setHint('');
     },
     [mode, promptData?.pid, promptData?.secret]
   );
@@ -289,9 +290,12 @@ export default function App() {
   const closePrompt = useCallback(() => {
     ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: promptData?.pid });
     setChoices([]);
+    setTabIndex(0);
+    setUnfilteredChoices([]);
     setInputValue('');
     setPanelHTML('');
     setPromptData({});
+    setHint('');
   }, [promptData]);
 
   const onKeyUp = useCallback(
@@ -391,6 +395,23 @@ export default function App() {
       }
 
       if (event.key === ' ') {
+        const tab = tabs.find((tab) =>
+          tab.toLowerCase().startsWith(inputValue.toLowerCase())
+        );
+
+        if (tab) {
+          const ti = tabs.indexOf(tab);
+          setTabIndex(ti);
+          setInputValue('');
+          ipcRenderer.send(Channel.TAB_CHANGED, {
+            tab,
+            input: inputValue,
+            pid: promptData?.pid,
+          });
+          event.preventDefault();
+          return;
+        }
+
         const shortcodeChoice = unfilteredChoices?.find(
           (choice) => choice?.shortcode === inputValue.trim()
         );
@@ -507,8 +528,8 @@ export default function App() {
   }, 150);
 
   useEffect(() => {
-    generateChoices(inputValue, mode, tabIndex);
-  }, [mode, inputValue, tabIndex]);
+    if (!submitted) generateChoices(inputValue, mode, tabIndex);
+  }, [mode, inputValue, tabIndex, submitted]);
 
   useEffect(() => {
     setCaretDisabled(Boolean(!promptData?.placeholder));
@@ -524,6 +545,8 @@ export default function App() {
         setChoices([]);
         return;
       }
+
+      if (submitted) return;
 
       const input = inputValue?.toLowerCase() || '';
 
@@ -610,17 +633,28 @@ export default function App() {
       ];
 
       setChoices(filtered);
+      const { width, height } =
+        windowContainerRef?.current?.getBoundingClientRect() as DOMRect;
+      sendResize(width, height);
     } catch (error) {
       ipcRenderer.send('PROMPT_ERROR', { error, pid: promptData?.id });
     }
-  }, [unfilteredChoices, inputValue, mode, promptData?.id]);
+  }, [
+    unfilteredChoices,
+    inputValue,
+    mode,
+    promptData?.id,
+    sendResize,
+    submitted,
+  ]);
 
-  const showPromptHandler = useCallback(
-    (_event: any, promptData: KitPromptOptions) => {
-      setPlaceholder('');
+  const setPromptDataHandler = useCallback(
+    (_event: any, promptData: PromptData) => {
       setPanelHTML('');
       setPromptData(promptData);
-      if (promptData?.tabs?.length) setTabs(promptData?.tabs);
+      setPlaceholder(promptData.placeholder);
+
+      setTabs(promptData?.tabs || []);
 
       if (inputRef.current) {
         inputRef?.current.focus();
@@ -633,41 +667,46 @@ export default function App() {
     []
   );
 
-  const setTabIndexHandler = useCallback(
-    (_event: any, { tabIndex: ti }: any) => {
-      setPanelHTML('');
-      setTabIndex(ti);
-    },
-    []
-  );
+  const setTabIndexHandler = useCallback((_event: any, ti: number) => {
+    setSubmitted(false);
 
-  const setPlaceholderHandler = useCallback((_event: any, { text }: any) => {
+    setPanelHTML('');
+    setTabIndex(ti);
+  }, []);
+
+  const setPlaceholderHandler = useCallback((_event: any, text: string) => {
     setPlaceholder(text);
   }, []);
 
-  const setPanelHandler = useCallback((_event: any, { html }: any) => {
-    setPanelHTML(html);
+  const setPanelHandler = useCallback((_event: any, html: string) => {
     setChoices([]);
+    setUnfilteredChoices([]);
+
+    setPanelHTML(html);
   }, []);
 
-  const setModeHandler = useCallback((_event: any, { mode }: any) => {
+  const setModeHandler = useCallback((_event: any, mode: Mode) => {
     setMode(mode);
   }, []);
 
-  const setHintHandler = useCallback((_event: any, { hint }: any) => {
+  const setHintHandler = useCallback((_event: any, hint: string) => {
     setHint(hint);
   }, []);
 
-  const setInputHandler = useCallback((_event: any, { input }: any) => {
+  const setInputHandler = useCallback((_event: any, input: string) => {
+    setSubmitted(false);
+
     setInputValue(input);
   }, []);
 
-  const setChoicesHandler = useCallback((_event: any, { choices }: any) => {
+  const setChoicesHandler = useCallback((_event: any, choices: Choice[]) => {
+    setSubmitted(false);
+    setIndex(0);
     setPanelHTML('');
     setUnfilteredChoices(choices);
   }, []);
 
-  const resetPromptHandler = useCallback((event, data) => {
+  const resetPromptHandler = useCallback(() => {
     setIsMouseDown(false);
     setMouseEnabled(false);
     setPlaceholder('');
@@ -681,9 +720,14 @@ export default function App() {
     setUnfilteredChoices([]);
   }, []);
 
-  const promptInfoHandler = useCallback((event, data) => {
-    setScript(data.script);
-    setTabs([]);
+  const setScriptHandler = useCallback((_event, script: Script) => {
+    // resetPromptHandler();
+    setSubmitted(false);
+    setScript(script);
+    setInputType(script.input);
+    setPlaceholder(script.placeholder);
+    setTabs(script.tabs || []);
+    setTabIndex(0);
   }, []);
 
   const userResizedHandler = useCallback((event, data) => {
@@ -691,9 +735,10 @@ export default function App() {
     setMaxHeight(window.innerHeight);
   }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const messageMap = {
-    [Channel.RESET_PROMPT]: resetPromptHandler,
-    [Channel.PROMPT_INFO]: promptInfoHandler,
+    // [Channel.RESET_PROMPT]: resetPromptHandler,
+    [Channel.SET_SCRIPT]: setScriptHandler,
     [Channel.SET_CHOICES]: setChoicesHandler,
     [Channel.SET_HINT]: setHintHandler,
     [Channel.SET_INPUT]: setInputHandler,
@@ -701,7 +746,7 @@ export default function App() {
     [Channel.SET_PANEL]: setPanelHandler,
     [Channel.SET_PLACEHOLDER]: setPlaceholderHandler,
     [Channel.SET_TAB_INDEX]: setTabIndexHandler,
-    [Channel.SHOW_PROMPT]: showPromptHandler,
+    [Channel.SET_PROMPT_DATA]: setPromptDataHandler,
     [Channel.USER_RESIZED]: userResizedHandler,
   };
 
@@ -720,7 +765,7 @@ export default function App() {
         ipcRenderer.off(key, value);
       });
     };
-  }, []);
+  }, [messageMap]);
 
   return (
     <ErrorBoundary>
@@ -739,7 +784,7 @@ export default function App() {
           {(script?.description || script?.twitter || script?.menu) && (
             <Header script={script} />
           )}
-          {!promptData?.textarea && (
+          {inputType === InputType.text && (
             <input
               style={
                 {
@@ -772,7 +817,7 @@ export default function App() {
               }
               onKeyDown={onKeyDown}
               onKeyUp={onKeyUp}
-              placeholder={debouncedPlaceholder || promptData?.placeholder}
+              placeholder={placeholder}
               ref={inputRef}
               type={promptData?.secret ? 'password' : 'text'}
               value={mode !== Mode.HOTKEY ? inputValue : undefined}
@@ -790,7 +835,7 @@ export default function App() {
             <Tabs tabs={tabs} tabIndex={tabIndex} onTabClick={onTabClick} />
           )}
         </div>
-        {promptData?.textarea && (
+        {inputType === InputType.textarea && (
           <textarea
             ref={textAreaRef}
             style={
@@ -805,7 +850,7 @@ export default function App() {
               setTextAreaValue(e.target.value);
             }}
             value={textAreaValue}
-            placeholder={promptData?.placeholder}
+            placeholder={placeholder}
             className={`
             min-h-32
 
