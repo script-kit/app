@@ -7,6 +7,7 @@ export enum Mode {
 }
 
 /* eslint-disable import/prefer-default-export */
+
 export enum Channel {
   CHOICE_FOCUSED = 'CHOICE_FOCUSED',
   CLEAR_CACHE = 'CLEAR_CACHE',
@@ -56,6 +57,7 @@ export enum Channel {
   USER_RESIZED = 'USER_RESIZED',
   VALUE_SUBMITTED = 'VALUE_SUBMITTED',
   SET_PREVIEW = 'SET_PREVIEW',
+  PROMPT_BLURRED = 'PROMPT_BLURRED',
 }
 
 export enum ProcessType {

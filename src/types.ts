@@ -1,4 +1,4 @@
-import { Mode, Channel, ProcessType } from './enums';
+import { Mode, Channel, ProcessType, InputType } from './enums';
 
 export interface PromptData {
   script: Script;
@@ -6,6 +6,7 @@ export interface PromptData {
   kitScript: string;
   choices: Choice[];
   tabs: string[];
+  ignoreBlur: boolean;
 }
 export interface ChoiceData {
   name: string;

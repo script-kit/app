@@ -300,7 +300,7 @@ export const setScript = (script: Script) => {
 
     showPrompt(script);
 
-    const maybeCachedChoices = kenvPath('db', `${script.command}.json`);
+    const maybeCachedChoices = kenvPath('db', `_${script.command}.json`);
 
     if (isFile(maybeCachedChoices)) {
       const choicesFile = readFileSync(maybeCachedChoices, 'utf-8');
