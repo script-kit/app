@@ -1,3 +1,11 @@
+# [1.3.0-beta.19](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.18...v1.3.0-beta.19) (2021-06-07)
+
+
+### Features
+
+* **app:** handling blur ([3dff41d](https://github.com/johnlindquist/kitapp/commit/3dff41d3a7bff330911d26e97719eb8235ca4970))
+* **app:** speed, validation, quick tabs ([c0a62e7](https://github.com/johnlindquist/kitapp/commit/c0a62e7988b34ba04c530717083626ed3778ea77))
+
 # [1.3.0-alpha.52](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.51...v1.3.0-alpha.52) (2021-06-07)
 
 
