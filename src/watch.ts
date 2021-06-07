@@ -34,7 +34,7 @@ const addWatch = (watchString: string, filePath: string) => {
 
     const watcher = chokidar.watch(paths);
     watcher.on('change', () => {
-      console.log({ paths }, 'changed');
+      log.info(`👀 ${paths} changed`);
       runWatchScript(filePath);
     });
 

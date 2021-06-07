@@ -6,10 +6,12 @@ import { runScheduleScript } from './kit';
 import { Script } from './types';
 
 export const cancelJob = (filePath: string) => {
-  log.info(`Unscheduling: ${filePath}`);
-  const job = scheduleMap.get(filePath) as Job;
-  job.cancel();
-  scheduleMap.delete(filePath);
+  if (scheduleMap.has(filePath)) {
+    log.info(`Unscheduling: ${filePath}`);
+    const job = scheduleMap.get(filePath) as Job;
+    job.cancel();
+    scheduleMap.delete(filePath);
+  }
 };
 
 export const cancelSchedule = (filePath: string) => {

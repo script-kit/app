@@ -5,6 +5,23 @@ import { tryPromptScript } from './kit';
 import { mainScriptPath, shortcutsPath, shortcutNormalizer } from './helpers';
 import { emitter, AppEvent } from './events';
 import { Script } from './types';
+import { setScript } from './prompt';
+import { getScript, getKitScript } from './state';
+
+const registerShortcut = (shortcut: string, filePath: string) => {
+  const success = globalShortcut.register(shortcut, async () => {
+    const script = getScript(filePath);
+    setScript(script);
+
+    await tryPromptScript(filePath, []);
+  });
+
+  if (!success) {
+    log.info(`Failed to register: ${shortcut} to ${filePath}`);
+  }
+
+  return success;
+};
 
 export const shortcutMap = new Map();
 
@@ -37,17 +54,9 @@ export const shortcutScriptChanged = ({ shortcut, filePath }: Script) => {
   if (!shortcut) return;
   // At this point, we know it's a new shortcut, so register it
 
-  const ret = globalShortcut.register(shortcut, async () => {
-    // const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
+  const registerSuccess = registerShortcut(shortcut, filePath);
 
-    await tryPromptScript(filePath, []);
-  });
-
-  if (!ret) {
-    log.info(`Failed to register: ${shortcut} to ${filePath}`);
-  }
-
-  if (ret && globalShortcut.isRegistered(shortcut)) {
+  if (registerSuccess && globalShortcut.isRegistered(shortcut)) {
     log.info(`Registered ${shortcut} to ${filePath}`);
     shortcutMap.set(filePath, shortcut);
   }
@@ -72,6 +81,9 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       const ret = globalShortcut.register(shortcut, async () => {
+        const mainScript = getKitScript(mainScriptPath);
+        setScript(mainScript);
+
         await tryPromptScript(mainScriptPath, []);
       });
 
@@ -100,17 +112,7 @@ const resumeShortcuts = () => {
 
     log.info(`RESUMING GLOBAL SHORTCUTS`);
 
-    shortcutMap.forEach((shortcut, filePath) => {
-      const ret = globalShortcut.register(shortcut, async () => {
-        // const execPath = filePath.replace('scripts', 'bin').replace('.js', '');
-
-        await tryPromptScript(filePath, []);
-      });
-
-      if (!ret) {
-        log.info(`Failed to register: ${shortcut} to ${filePath}`);
-      }
-    });
+    shortcutMap.forEach(registerShortcut);
   }
 };
 

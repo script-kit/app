@@ -7,9 +7,11 @@ export enum Mode {
 }
 
 /* eslint-disable import/prefer-default-export */
+
 export enum Channel {
   CHOICE_FOCUSED = 'CHOICE_FOCUSED',
   CLEAR_CACHE = 'CLEAR_CACHE',
+  CLEAR_PROMPT_CACHE = 'CLEAR_PROMPT_CACHE',
   CONSOLE_LOG = 'CONSOLE_LOG',
   CONSOLE_WARN = 'CONSOLE_WARN',
   CONTENT_SIZE_UPDATED = 'CONTENT_SIZE_UPDATED',
@@ -30,7 +32,7 @@ export enum Channel {
   PROMPT_ERROR = 'PROMPT_ERROR',
   QUIT_APP = 'QUIT_APP',
   RESET_PROMPT = 'RESET_PROMPT',
-  PROMPT_INFO = 'PROMPT_INFO',
+  SET_SCRIPT = 'SET_SCRIPT',
   SEND_RESPONSE = 'SEND_RESPONSE',
   SET_CHOICES = 'SET_CHOICES',
   SET_HINT = 'SET_HINT',
@@ -44,7 +46,7 @@ export enum Channel {
   SHOW = 'SHOW',
   SHOW_IMAGE = 'SHOW_IMAGE',
   SHOW_NOTIFICATION = 'SHOW_NOTIFICATION',
-  SHOW_PROMPT = 'SHOW_PROMPT',
+  SET_PROMPT_DATA = 'SET_PROMPT_DATA',
   SHOW_TEXT = 'SHOW_TEXT',
   SHRINK_PROMPT = 'SHRINK_PROMPT',
   SWITCH_KENV = 'SWITCH_KENV',
@@ -55,6 +57,7 @@ export enum Channel {
   USER_RESIZED = 'USER_RESIZED',
   VALUE_SUBMITTED = 'VALUE_SUBMITTED',
   SET_PREVIEW = 'SET_PREVIEW',
+  PROMPT_BLURRED = 'PROMPT_BLURRED',
 }
 
 export enum ProcessType {
@@ -64,4 +67,11 @@ export enum ProcessType {
   Prompt = 'Prompt',
   Watch = 'Watch',
   System = 'System',
+}
+
+export enum InputType {
+  text = 'text',
+  textarea = 'textarea',
+  hotkey = 'hotkey',
+  drop = 'drop',
 }

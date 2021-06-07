@@ -6,11 +6,13 @@ import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
 import minimist from 'minimist';
 import { EventEmitter } from 'events';
+import { Mode, readFileSync } from 'fs';
 import { getAssetPath } from './assets';
-import { promptDbPath } from './helpers';
-import { Channel } from './enums';
+import { mainScriptPath, isFile, kenvPath, promptDbPath } from './helpers';
+import { Channel, InputType } from './enums';
 import { getAppHidden } from './appHidden';
-import { Script } from './types';
+import { Choice, PromptData, Script } from './types';
+import { setCurrentPromptScript, getScripts } from './state';
 
 export enum PromptEvent {
   Blur = 'Blur',
@@ -19,15 +21,12 @@ export enum PromptEvent {
 const adapter = new FileSync(promptDbPath);
 const promptDb = low(adapter);
 
-promptDb.defaults({ screens: {} }).write();
-
-export const clearPromptDb = () => {
-  promptDb.set(`screens`, {}).write();
-};
+promptDb.defaults({ screens: {}, clear: false }).write();
 
 let promptWindow: BrowserWindow;
 let blurredByKit = false;
 let ignoreBlur = false;
+let clearPrompt = false;
 
 export const setBlurredByKit = (value = true) => {
   blurredByKit = value;
@@ -183,33 +182,18 @@ const HEADER_HEIGHT = 24;
 const INPUT_HEIGHT = 64;
 const TABS_HEIGHT = 36;
 
-interface ShowPromptOptions {
-  tabs: string[];
-  script: Script;
-}
-
-export const showPrompt = () => {
-  if (!promptWindow?.isVisible()) {
-    promptWindow?.show();
-    promptWindow.setVibrancy(
-      nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light'
-    );
-    promptWindow.setBackgroundColor(
-      nativeTheme.shouldUseDarkColors ? '#66000000' : '#C0FFFFFF'
-    );
-    if (devTools) promptWindow?.webContents.openDevTools();
-  }
-};
-
-export const resizeAndShowPrompt = ({ tabs, script }: ShowPromptOptions) => {
+export const showPrompt = (script: Script) => {
   if (promptWindow && !promptWindow?.isVisible()) {
     const currentScreenPromptBounds = getCurrentScreenPromptCache();
     const headerHeight =
       script?.menu || script?.twitter || script?.description
         ? HEADER_HEIGHT
         : 0;
-    const tabsHeight = tabs.length ? TABS_HEIGHT : 0;
-    const height = INPUT_HEIGHT + headerHeight + tabsHeight;
+    const tabsHeight = script.tabs.length ? TABS_HEIGHT : 0;
+    const height =
+      script.input === InputType.textarea
+        ? 480
+        : INPUT_HEIGHT + headerHeight + tabsHeight;
 
     if (currentScreenPromptBounds) {
       promptWindow.setBounds({
@@ -220,7 +204,16 @@ export const resizeAndShowPrompt = ({ tabs, script }: ShowPromptOptions) => {
       setDefaultBounds();
     }
 
-    showPrompt();
+    if (!promptWindow?.isVisible()) {
+      promptWindow?.show();
+      promptWindow.setVibrancy(
+        nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light'
+      );
+      promptWindow.setBackgroundColor(
+        nativeTheme.shouldUseDarkColors ? '#66000000' : '#C0FFFFFF'
+      );
+      if (devTools) promptWindow?.webContents.openDevTools();
+    }
   }
 
   return promptWindow;
@@ -239,7 +232,7 @@ export const resizePrompt = ({ height }: Size) => {
 
   const [width] = promptWindow?.getSize() as number[];
 
-  log.info(`RESIZE: setBounds`, height);
+  log.info(`↕ RESIZE: ${width} x ${height}`);
   promptWindow?.setSize(width, height);
 };
 
@@ -261,7 +254,11 @@ const cachePromptPosition = () => {
 
 const hideAppIfNoWindows = () => {
   if (promptWindow?.isVisible()) {
-    cachePromptPosition();
+    if (clearPrompt) {
+      clearPrompt = false;
+    } else {
+      cachePromptPosition();
+    }
     const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden
     promptWindow?.hide();
@@ -284,5 +281,70 @@ export const hidePromptWindow = () => {
 };
 
 export const setPlaceholder = (text: string) => {
-  if (!getAppHidden()) sendToPrompt(Channel.SET_PLACEHOLDER, text);
+  // if (!getAppHidden())
+  sendToPrompt(Channel.SET_PLACEHOLDER, text);
+};
+
+export const setScript = (script: Script) => {
+  if (script.filePath === mainScriptPath) {
+    setChoices(getScripts());
+
+    script.tabs = script.tabs.filter((tab) => !tab.match(/join|live/i));
+    setCurrentPromptScript(script as Script);
+    sendToPrompt(Channel.SET_SCRIPT, script);
+
+    showPrompt(script);
+  } else if (script.requiresPrompt) {
+    setCurrentPromptScript(script as Script);
+    sendToPrompt(Channel.SET_SCRIPT, script);
+
+    showPrompt(script);
+
+    const maybeCachedChoices = kenvPath('db', `_${script.command}.json`);
+
+    if (isFile(maybeCachedChoices)) {
+      const choicesFile = readFileSync(maybeCachedChoices, 'utf-8');
+      const { items } = JSON.parse(choicesFile);
+      log.info(`📦 Setting choices from ${maybeCachedChoices}`);
+      const choices = items.map((item: string | Choice, id: number) =>
+        typeof item === 'string' ? { name: item, id } : item
+      );
+      setChoices(choices);
+    } else {
+      setChoices([]);
+    }
+  }
+};
+
+export const setMode = (mode: Mode) => {
+  sendToPrompt(Channel.SET_MODE, mode);
+};
+
+export const setInput = (input: string) => {
+  sendToPrompt(Channel.SET_INPUT, input);
+};
+
+export const setPanel = (html: string) => {
+  sendToPrompt(Channel.SET_PANEL, html);
+};
+
+export const setHint = (hint: string) => {
+  sendToPrompt(Channel.SET_HINT, hint);
+};
+
+export const setTabIndex = (tabIndex: number) => {
+  sendToPrompt(Channel.SET_TAB_INDEX, tabIndex);
+};
+
+export const setPromptData = (promptData: PromptData) => {
+  sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
+};
+
+export const setChoices = (choices: Choice[]) => {
+  sendToPrompt(Channel.SET_CHOICES, choices);
+};
+
+export const clearPromptCache = () => {
+  clearPrompt = true;
+  promptDb.set('screens', {}).write();
 };

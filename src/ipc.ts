@@ -102,6 +102,27 @@ ipcMain.on(Channel.ESCAPE_PRESSED, (event, { pid }) => {
   escapePromptWindow();
 });
 
+const getPromptProcessChildInfo = () => {
+  const processEntry: [number, ChildInfo] | undefined = Array.from(
+    processMap.entries()
+  ).find(([_, value]) => value.type === ProcessType.Prompt);
+
+  return processEntry?.[1];
+};
+
 promptEmitter.on(PromptEvent.Blur, () => {
-  reset();
+  const promptProcessInfo = getPromptProcessChildInfo();
+
+  if (promptProcessInfo) {
+    const { child, scriptPath } = promptProcessInfo;
+
+    emitter.emit(AppEvent.RESUME_SHORTCUTS);
+
+    log.info(`🙈 blurred process: ${scriptPath} id: ${child.pid}`);
+    if (child) {
+      child?.send({ channel: Channel.PROMPT_BLURRED });
+    }
+  }
+
+  setAppHidden(false);
 });
