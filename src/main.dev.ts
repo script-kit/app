@@ -49,7 +49,7 @@ import { Open, Parse } from 'unzipper';
 import { createTray, destroyTray } from './tray';
 import { setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
-import { tryPromptScript } from './kit';
+import { prepPromptProcess, tryPromptScript } from './kit';
 import { tick } from './tick';
 import { createPromptWindow } from './prompt';
 import {
@@ -254,6 +254,8 @@ const ready = async () => {
 
     startSK();
     await cacheKitScripts();
+
+    prepPromptProcess();
 
     autoUpdater.logger = log;
     autoUpdater.checkForUpdatesAndNotify({

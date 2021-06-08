@@ -1,7 +1,7 @@
 import { globalShortcut } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
-import { tryPromptScript } from './kit';
+import { runPromptProcess, tryPromptScript } from './kit';
 import { mainScriptPath, shortcutsPath, shortcutNormalizer } from './helpers';
 import { emitter, AppEvent } from './events';
 import { Script } from './types';
@@ -13,7 +13,7 @@ const registerShortcut = (shortcut: string, filePath: string) => {
     const script = getScript(filePath);
     setScript(script);
 
-    await tryPromptScript(filePath, []);
+    await runPromptProcess(filePath);
   });
 
   if (!success) {
@@ -84,7 +84,7 @@ export const updateMainShortcut = async (filePath: string) => {
         const mainScript = getKitScript(mainScriptPath);
         setScript(mainScript);
 
-        await tryPromptScript(mainScriptPath, []);
+        await runPromptProcess(mainScriptPath);
       });
 
       if (!ret) {

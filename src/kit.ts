@@ -11,7 +11,7 @@ import { hidePromptWindow, setIgnoreBlur } from './prompt';
 import { reset } from './ipc';
 import { createMessageHandler } from './messages';
 import { emitter, AppEvent } from './events';
-import { ProcessType } from './enums';
+import { Channel, ProcessType } from './enums';
 
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
@@ -20,19 +20,20 @@ import {
   execPath,
   PATH,
   KIT_MAC_APP,
+  KIT_MAC_APP_PROMPT,
   kenvPath,
   getKenv,
   getKenvDotEnv,
   mainScriptPath,
 } from './helpers';
 
-import { ChildInfo, processMap, backgroundMap } from './state';
+import { ProcessInfo, processes, backgroundMap } from './state';
 import { getVersion } from './version';
 
 interface CreateChildInfo {
   type: ProcessType;
-  scriptPath: string;
-  runArgs: string[];
+  scriptPath?: string;
+  runArgs?: string[];
   resolve?: (data: any) => void;
   reject?: (error: any) => void;
 }
@@ -43,20 +44,26 @@ const SCHEDULE_SCRIPT_TIMEOUT = 30000;
 
 const createChild = ({
   type,
-  scriptPath,
-  runArgs,
+  scriptPath = 'kit',
+  runArgs = [],
   resolve,
   reject,
 }: CreateChildInfo) => {
-  let resolvePath = scriptPath.startsWith(path.sep)
-    ? scriptPath
-    : scriptPath.includes(path.sep)
-    ? kenvPath(scriptPath)
-    : kenvPath('scripts', scriptPath);
+  let args = [];
+  if (!scriptPath) {
+    args = ['--app'];
+  } else {
+    let resolvePath = scriptPath.startsWith(path.sep)
+      ? scriptPath
+      : scriptPath.includes(path.sep)
+      ? kenvPath(scriptPath)
+      : kenvPath('scripts', scriptPath);
 
-  if (!resolvePath.endsWith('.js')) resolvePath = `${resolvePath}.js`;
+    if (!resolvePath.endsWith('.js')) resolvePath = `${resolvePath}.js`;
+    args = [resolvePath, ...runArgs, '--app'];
+  }
 
-  const child = fork(KIT_MAC_APP, [resolvePath, ...runArgs, '--app'], {
+  const child = fork(KIT_MAC_APP, args, {
     silent: false,
     // stdio: 'inherit',
     execPath,
@@ -75,21 +82,17 @@ const createChild = ({
 
   log.info(`🟢 start ${type} process: ${scriptPath} id: ${child.pid}`);
 
-  processMap.set(child.pid, {
-    type,
-    child,
-    scriptPath,
-    values: [],
-  });
+  processes.add(child, type, scriptPath);
 
+  const { pid } = child;
   child.on('exit', () => {
     setIgnoreBlur(false);
-    const { values } = processMap.get(child.pid) as ChildInfo;
+    const { values } = processes.getByPid(pid) as ProcessInfo;
     if (resolve) {
       resolve(values);
     }
     log.info(`🟡 end ${type} process: ${scriptPath} id: ${child.pid}`);
-    processMap.delete(child.pid);
+    processes.removeByPid(pid);
   });
 
   child.on('error', (error) => {
@@ -281,3 +284,56 @@ emitter.on(AppEvent.TRY_PROMPT_SCRIPT, ({ filePath, runArgs }) =>
 emitter.on(AppEvent.SET_KENV, async () => {
   await tryPromptScript(mainScriptPath);
 });
+
+export const prepPromptProcess = () => {
+  const promptProcess = fork(KIT_MAC_APP_PROMPT, ['--app'], {
+    silent: false,
+    stdio: 'inherit',
+    execPath,
+    env: {
+      ...process.env,
+      KIT_CONTEXT: 'app',
+      PATH,
+      KENV: getKenv(),
+      KIT,
+      KIT_DOTENV: getKenvDotEnv(),
+      KIT_APP_VERSION: getVersion(),
+    },
+  });
+  promptProcess?.on('message', createMessageHandler(ProcessType.Prompt));
+  promptProcess.on('exit', (data) => {
+    processes.ifPid(promptProcess.pid, ({ child, type, scriptPath }) => {
+      log.info(
+        `🟡 end ${type} process: ${scriptPath} id: ${promptProcess.pid}`
+      );
+      processes.removeByPid(promptProcess.pid);
+    });
+  });
+
+  promptProcess.on('error', (error) => {
+    log.warn(`🤕`, error);
+  });
+
+  processes.add(promptProcess, ProcessType.Prompt);
+};
+
+export const runPromptProcess = (promptScriptPath: string) => {
+  log.info(`🙏 Run ${promptScriptPath}`);
+  const { child, pid } = processes.findPromptProcess();
+
+  child?.send({
+    channel: Channel.VALUE_SUBMITTED,
+    value: promptScriptPath,
+  });
+
+  log.info(
+    processes.map(({ scriptPath, type, pid: id }) => ({
+      pid: id,
+      scriptPath,
+      type,
+    }))
+  );
+  processes.patchByPid(pid, { scriptPath: promptScriptPath });
+
+  prepPromptProcess();
+};

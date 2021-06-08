@@ -635,7 +635,7 @@ export default function App() {
       setChoices(filtered);
       const { width, height } =
         windowContainerRef?.current?.getBoundingClientRect() as DOMRect;
-      sendResize(width, height);
+      // sendResize(width, height);
     } catch (error) {
       ipcRenderer.send('PROMPT_ERROR', { error, pid: promptData?.id });
     }

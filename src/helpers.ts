@@ -83,6 +83,7 @@ export const KENV_BIN = kenvPath('bin');
 export const execPath = kitPath('node', 'bin', 'node');
 
 export const KIT_MAC_APP = kitPath('mac-app.js');
+export const KIT_MAC_APP_PROMPT = kitPath('mac-app-prompt.js');
 export const PATH = `${kitPath('node', 'bin')}:${process.env.PATH}`;
 
 export const setKenv = (setKenvPath: string) => {

@@ -31,10 +31,9 @@ import {
   makeRestartNecessary,
   serverState,
   getBackgroundTasks,
-  ChildInfo,
-  processMap,
   getSchedule,
   getCurrentPromptScript,
+  ifProcess,
 } from './state';
 import { reset } from './ipc';
 import { emitter, AppEvent } from './events';
@@ -149,29 +148,25 @@ const kitMessageMap: ChannelHandler = {
   },
 
   GET_SCRIPTS_STATE: (data) => {
-    if (processMap.has(data.pid)) {
-      const { child } = processMap.get(data.pid) as ChildInfo;
-
+    ifProcess(data.pid, ({ child }) => {
       child?.send({
         channel: 'SCRIPTS_STATE',
         schedule: getSchedule(),
         tasks: getBackgroundTasks(),
       });
-    }
+    });
   },
 
   GET_SCHEDULE: (data) => {
-    if (processMap.has(data.pid)) {
-      const { child } = processMap.get(data.pid) as ChildInfo;
+    ifProcess(data.pid, ({ child }) => {
       child?.send({ channel: 'SCHEDULE', schedule: getSchedule() });
-    }
+    });
   },
 
   GET_BACKGROUND: (data) => {
-    if (processMap.has(data.pid)) {
-      const { child } = processMap.get(data.pid) as ChildInfo;
+    ifProcess(data.pid, ({ child }) => {
       child?.send({ channel: 'BACKGROUND', tasks: getBackgroundTasks() });
-    }
+    });
   },
 
   TOGGLE_BACKGROUND: (data) => {
@@ -179,7 +174,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   GET_SCREEN_INFO: (data) => {
-    if (processMap.has(data.pid)) {
+    ifProcess(data.pid, ({ child }) => {
       const cursor = screen.getCursorScreenPoint();
       // Get display with cursor
       const activeScreen = screen.getDisplayNearestPoint({
@@ -187,23 +182,20 @@ const kitMessageMap: ChannelHandler = {
         y: cursor.y,
       });
 
-      const { child } = processMap.get(data.pid) as ChildInfo;
       child?.send({ channel: 'SCREEN_INFO', activeScreen });
-    }
+    });
   },
 
   GET_MOUSE: (data) => {
-    if (processMap.has(data.pid)) {
+    ifProcess(data.pid, ({ child }) => {
       const mouseCursor = screen.getCursorScreenPoint();
-      const { child } = processMap.get(data.pid) as ChildInfo;
       child?.send({ channel: 'MOUSE', mouseCursor });
-    }
+    });
   },
   GET_SERVER_STATE: (data) => {
-    if (processMap.has(data.pid)) {
-      const { child } = processMap.get(data.pid) as ChildInfo;
+    ifProcess(data.pid, ({ child }) => {
       child?.send({ channel: 'SERVER', ...serverState });
-    }
+    });
   },
   HIDE_APP: () => {
     setAppHidden(true);

@@ -67,6 +67,12 @@ export enum ProcessType {
   Prompt = 'Prompt',
   Watch = 'Watch',
   System = 'System',
+  KIT_PROCESS = 'KIT_PROCESS',
+}
+
+export enum ProcessState {
+  Idle = 'Idle',
+  Active = 'Active',
 }
 
 export enum InputType {

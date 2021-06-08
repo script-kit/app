@@ -2,6 +2,7 @@ import { ChildProcess } from 'child_process';
 import { app } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readFile } from 'fs/promises';
+import log from 'electron-log';
 import { ProcessType } from './enums';
 import { appDb, info, kenvPath, mainScriptPath } from './helpers';
 import { Script } from './types';
@@ -68,15 +69,97 @@ export const getSchedule = () => {
     });
 };
 
-export interface ChildInfo {
+export interface ProcessInfo {
+  pid: number;
   scriptPath: string;
   child: ChildProcess;
   type: ProcessType;
   values: any[];
+  date: Date;
 }
 
 /* eslint-disable import/prefer-default-export */
-export const processMap: Map<number, ChildInfo> = new Map();
+class Processes extends Array<ProcessInfo> {
+  public add(child: ChildProcess, type: ProcessType, scriptPath = '') {
+    this.push({
+      pid: child.pid,
+      child,
+      type,
+      scriptPath,
+      values: [],
+      date: new Date(),
+    });
+  }
+
+  public findPromptProcess() {
+    const promptProcess = this.find(
+      (processInfo) => processInfo.type === ProcessType.Prompt
+    );
+    if (promptProcess) return promptProcess;
+
+    throw new Error(`☠️ Can't find Prompt Process`);
+  }
+
+  public getByPid(pid: number) {
+    return this.find((processInfo) => processInfo.pid === pid);
+  }
+
+  public removeByPid(pid: number) {
+    this.find(
+      (processInfo) => processInfo.pid === pid
+    )?.child?.removeAllListeners();
+
+    this.splice(
+      this.findIndex((processInfo) => processInfo.pid === pid),
+      1
+    );
+  }
+
+  public ifPid(pid: number, callback: (info: ProcessInfo) => void) {
+    const processInfo = this.getByPid(pid);
+    if (processInfo) {
+      callback(processInfo);
+    } else {
+      log.warn(`⚠️ Can't find ${pid}`);
+    }
+  }
+
+  public patchByPid(pid: number, patch: { scriptPath?: string }) {
+    const index = this.findIndex((processInfo) => processInfo.pid === pid);
+    if (index !== -1) {
+      this[index] = { ...this[index], ...patch };
+    } else {
+      log.warn(`⚠️ pid ${pid} not found. Can't patch`, patch);
+    }
+  }
+}
+
+export const processes = new Processes();
+// export const processesGetByBy = (pid: number) => {
+//   return processes.find((processInfo) => processInfo.pid === pid);
+// };
+// export const processesRemoveByPid = (pid: number) => {
+//   processes
+//     .find((processInfo) => processInfo.pid === pid)
+//     ?.child?.removeAllListeners();
+
+//   processes.splice(
+//     processes.findIndex((processInfo) => processInfo.pid === pid),
+//     1
+//   );
+// };
+
+export const ifProcess = (
+  pid: number,
+  callback: (info: ProcessInfo) => void
+) => {
+  const processInfo = processes.getByPid(pid);
+  if (processInfo) {
+    callback(processInfo);
+  } else {
+    log.warn(`⚠️ Can't find ${pid}`);
+  }
+};
 
 let currentPromptScript: Script;
 export const setCurrentPromptScript = (script: Script) => {
