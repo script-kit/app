@@ -317,13 +317,19 @@ export const prepPromptProcess = () => {
   processes.add(promptProcess, ProcessType.Prompt);
 };
 
-export const runPromptProcess = (promptScriptPath: string) => {
+export const runPromptProcess = (
+  promptScriptPath: string,
+  args: string[] = []
+) => {
   log.info(`🙏 Run ${promptScriptPath}`);
   const { child, pid } = processes.findPromptProcess();
 
   child?.send({
     channel: Channel.VALUE_SUBMITTED,
-    value: promptScriptPath,
+    value: {
+      script: promptScriptPath,
+      args,
+    },
   });
 
   log.info(
