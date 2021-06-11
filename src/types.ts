@@ -8,12 +8,6 @@ export interface PromptData {
   tabs: string[];
   ignoreBlur: boolean;
 }
-export interface ChoiceData {
-  name: string;
-  value: string;
-  preview: string | null;
-  shortcode?: string;
-}
 
 export interface Script extends Choice {
   id: string;
@@ -42,8 +36,8 @@ export interface Script extends Choice {
   input: InputType;
 }
 export interface Choice<Value = any> {
-  name: string;
-  value: Value;
+  name: string | JSX.Element[];
+  value?: Value;
   description?: string;
   focused?: string;
   img?: string;
@@ -51,6 +45,7 @@ export interface Choice<Value = any> {
   preview?: string;
   id?: string;
   shortcode?: string;
+  uuid?: string;
 }
 
 export interface MessageData extends PromptData {
@@ -74,4 +69,17 @@ export interface MessageData extends PromptData {
   kenvPath?: string;
   hint?: string;
   tabIndex?: number;
+}
+
+export interface ChoiceButtonProps {
+  data: {
+    choices: Choice[];
+    currentIndex: number;
+    submit: (data: any) => void;
+    inputValue: string;
+    setIndex: (i: number) => void;
+    mouseEnabled: boolean;
+  };
+  index: number;
+  style: any;
 }

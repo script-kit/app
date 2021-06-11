@@ -1,3 +1,5 @@
+/* eslint-disable no-nested-ternary */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
 import { app, clipboard, screen } from 'electron';
@@ -5,10 +7,12 @@ import http from 'http';
 import https from 'https';
 import url from 'url';
 import sizeOf from 'image-size';
+import path from 'path';
 
 import { isUndefined } from 'lodash';
 import { autoUpdater } from 'electron-updater';
 import { format, formatDistanceToNowStrict } from 'date-fns';
+import { ChildProcess, fork } from 'child_process';
 import { getLog } from './logs';
 import {
   focusPrompt,
@@ -26,27 +30,36 @@ import {
   setChoices,
   clearPromptCache,
 } from './prompt';
-import { getAppHidden, setAppHidden } from './appHidden';
+import { setAppHidden } from './appHidden';
 import {
   makeRestartNecessary,
   serverState,
   getBackgroundTasks,
   getSchedule,
-  getCurrentPromptScript,
-  ifProcess,
 } from './state';
-import { reset } from './ipc';
-import { emitter, AppEvent } from './events';
+
+import { emitter, KitEvent } from './events';
 import { Channel, Mode, ProcessType } from './enums';
 import { show } from './show';
 import { showNotification } from './notifications';
-import { setKenv, createKenv } from './helpers';
+import {
+  setKenv,
+  createKenv,
+  kenvPath,
+  KIT_MAC_APP,
+  KIT_MAC_APP_PROMPT,
+  PATH,
+  execPath,
+  KIT,
+  getKenv,
+  getKenvDotEnv,
+} from './helpers';
 import { Choice, MessageData, Script, PromptData } from './types';
+import { getVersion } from './version';
 
 export const prepChoices = (data: MessageData) => {
   if (data?.scripts) {
-    // TODO: Figure out if Scripts as Choices
-    const dataChoices: Script[] = (data?.choices || []) as unknown as Script[];
+    const dataChoices: Script[] = (data?.choices || []) as Script[];
     const choices = dataChoices.map((script) => {
       if (script.background) {
         const backgroundScript = getBackgroundTasks().find(
@@ -87,8 +100,9 @@ export const prepChoices = (data: MessageData) => {
       return script;
     });
 
-    data.choices = choices as unknown as Choice[];
+    data.choices = choices as Choice[];
   }
+
   setChoices(data.choices as Choice[]);
 };
 
@@ -148,7 +162,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   GET_SCRIPTS_STATE: (data) => {
-    ifProcess(data.pid, ({ child }) => {
+    processes.ifPid(data.pid, ({ child }) => {
       child?.send({
         channel: 'SCRIPTS_STATE',
         schedule: getSchedule(),
@@ -158,23 +172,23 @@ const kitMessageMap: ChannelHandler = {
   },
 
   GET_SCHEDULE: (data) => {
-    ifProcess(data.pid, ({ child }) => {
+    processes.ifPid(data.pid, ({ child }) => {
       child?.send({ channel: 'SCHEDULE', schedule: getSchedule() });
     });
   },
 
   GET_BACKGROUND: (data) => {
-    ifProcess(data.pid, ({ child }) => {
+    processes.ifPid(data.pid, ({ child }) => {
       child?.send({ channel: 'BACKGROUND', tasks: getBackgroundTasks() });
     });
   },
 
   TOGGLE_BACKGROUND: (data) => {
-    emitter.emit(Channel.TOGGLE_BACKGROUND, data);
+    emitter.emit(KitEvent.ToggleBackground, data);
   },
 
   GET_SCREEN_INFO: (data) => {
-    ifProcess(data.pid, ({ child }) => {
+    processes.ifPid(data.pid, ({ child }) => {
       const cursor = screen.getCursorScreenPoint();
       // Get display with cursor
       const activeScreen = screen.getDisplayNearestPoint({
@@ -187,13 +201,13 @@ const kitMessageMap: ChannelHandler = {
   },
 
   GET_MOUSE: (data) => {
-    ifProcess(data.pid, ({ child }) => {
+    processes.ifPid(data.pid, ({ child }) => {
       const mouseCursor = screen.getCursorScreenPoint();
       child?.send({ channel: 'MOUSE', mouseCursor });
     });
   },
   GET_SERVER_STATE: (data) => {
-    ifProcess(data.pid, ({ child }) => {
+    processes.ifPid(data.pid, ({ child }) => {
       child?.send({ channel: 'SERVER', ...serverState });
     });
   },
@@ -204,11 +218,15 @@ const kitMessageMap: ChannelHandler = {
     makeRestartNecessary();
   },
   QUIT_APP: () => {
-    reset();
     app.exit();
   },
   SET_SCRIPT: (data) => {
-    setScript(data.script as Script);
+    processes.ifPid(data.pid, ({ type }) => {
+      log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.script);
+      if (type === ProcessType.Prompt) {
+        setScript(data.script as Script);
+      }
+    });
   },
 
   SET_LOGIN: (data) => {
@@ -216,7 +234,7 @@ const kitMessageMap: ChannelHandler = {
   },
   SET_MODE: (data) => {
     if (data.mode === Mode.HOTKEY) {
-      emitter.emit(AppEvent.PAUSE_SHORTCUTS);
+      emitter.emit(KitEvent.PauseShortcuts);
     }
     setMode(data.mode as Mode);
   },
@@ -235,7 +253,9 @@ const kitMessageMap: ChannelHandler = {
 
   SET_PLACEHOLDER: (data) => {
     setPlaceholder(data.text as string);
-    showPrompt(getCurrentPromptScript());
+    processes.ifPid(data.pid, () => {
+      showPrompt();
+    });
   },
 
   SET_PANEL: (data) => {
@@ -258,25 +278,7 @@ const kitMessageMap: ChannelHandler = {
     showNotification(data.html || 'You forgot html', data.options);
   },
   SET_PROMPT_DATA: (data) => {
-    const script = getCurrentPromptScript();
-    showPrompt(script);
-    if (data?.choices) {
-      // validate choices
-      if (
-        data?.choices.every(
-          ({ name, value }: any) => !isUndefined(name) && !isUndefined(value)
-        )
-      ) {
-        setPromptData(data as PromptData);
-      } else {
-        log.warn(`Choices must have "name" and "value"`);
-        log.warn(data?.choices);
-        if (!getAppHidden())
-          setPlaceholder(`Warning: arg choices must have "name" and "value"`);
-      }
-    } else {
-      setPromptData(data);
-    }
+    setPromptData(data as PromptData);
   },
   SHOW_IMAGE,
   SHOW: async (data) => {
@@ -329,3 +331,203 @@ export const createMessageHandler =
       console.warn(`Channel ${data?.channel} not found on ${type}.`);
     }
   };
+
+export interface ProcessInfo {
+  pid: number;
+  scriptPath: string;
+  child: ChildProcess;
+  type: ProcessType;
+  values: any[];
+  date: Date;
+}
+
+interface CreateChildInfo {
+  type: ProcessType;
+  scriptPath?: string;
+  runArgs?: string[];
+  resolve?: (data: any) => void;
+  reject?: (error: any) => void;
+}
+
+const DEFAULT_TIMEOUT = 15000;
+
+const createChild = ({
+  type,
+  scriptPath = 'kit',
+  runArgs = [],
+}: CreateChildInfo) => {
+  let args = [];
+  if (!scriptPath) {
+    args = ['--app'];
+  } else {
+    let resolvePath = scriptPath.startsWith(path.sep)
+      ? scriptPath
+      : scriptPath.includes(path.sep)
+      ? kenvPath(scriptPath)
+      : kenvPath('scripts', scriptPath);
+
+    if (!resolvePath.endsWith('.js')) resolvePath = `${resolvePath}.js`;
+    args = [resolvePath, ...runArgs, '--app'];
+  }
+
+  const entry = type === ProcessType.Prompt ? KIT_MAC_APP_PROMPT : KIT_MAC_APP;
+  const child = fork(entry, args, {
+    silent: false,
+    // stdio: 'inherit',
+    execPath,
+    env: {
+      ...process.env,
+      KIT_CONTEXT: 'app',
+      KIT_MAIN: scriptPath,
+      PATH,
+      KENV: getKenv(),
+      KIT,
+      KIT_DOTENV: getKenvDotEnv(),
+      KIT_APP_VERSION: getVersion(),
+      PROCESS_TYPE: type,
+    },
+  });
+
+  return child;
+};
+
+/* eslint-disable import/prefer-default-export */
+
+interface ProcessHandlers {
+  onExit?: () => void;
+  onError?: (error: Error) => void;
+  onMessage?: (data: MessageData) => void;
+  resolve?: (values: any[]) => any;
+  reject?: (value: any) => any;
+}
+
+class Processes extends Array<ProcessInfo> {
+  public endPreviousPromptProcess() {
+    const previousPromptProcess = this.find(
+      (info) => info.type === ProcessType.Prompt && info.scriptPath
+    );
+
+    if (previousPromptProcess) {
+      this.removeByPid(previousPromptProcess.pid);
+    }
+  }
+
+  public getAllProcessInfo() {
+    return this.map(({ scriptPath, type, pid }) => ({
+      type,
+      scriptPath,
+      pid,
+    }));
+  }
+
+  public add(
+    type: ProcessType,
+    scriptPath = '',
+    args: string[] = [],
+    { resolve, reject }: ProcessHandlers = {}
+  ) {
+    const child = createChild({
+      type,
+      scriptPath,
+      runArgs: args,
+    });
+
+    this.push({
+      pid: child.pid,
+      child,
+      type,
+      scriptPath,
+      values: [],
+      date: new Date(),
+    });
+
+    log.info(`🟢 start ${type} process: ${scriptPath} id: ${child.pid}`);
+
+    const id =
+      ![ProcessType.Background, ProcessType.Prompt].includes(type) &&
+      setTimeout(() => {
+        log.info(
+          `> ${type} process: ${scriptPath} took > ${DEFAULT_TIMEOUT} seconds. Ending...`
+        );
+        child?.kill();
+      }, DEFAULT_TIMEOUT);
+
+    child?.on('message', createMessageHandler(type));
+
+    const { pid } = child;
+    child.on('exit', () => {
+      if (id) clearTimeout(id);
+      if (type === ProcessType.Prompt) {
+        setAppHidden(false);
+        emitter.emit(KitEvent.ExitPrompt);
+        emitter.emit(KitEvent.ResumeShortcuts);
+      }
+
+      const { values } = processes.getByPid(pid) as ProcessInfo;
+      if (resolve) {
+        resolve(values);
+      }
+      log.info(`🟡 end ${type} process: ${scriptPath} id: ${child.pid}`);
+      processes.removeByPid(pid);
+    });
+
+    child.on('error', (error) => {
+      if (reject) reject(error);
+    });
+
+    return child;
+  }
+
+  public findPromptProcess() {
+    const promptProcess = this.find(
+      (processInfo) => processInfo.type === ProcessType.Prompt
+    );
+    if (promptProcess) return promptProcess;
+
+    throw new Error(`☠️ Can't find Prompt Process`);
+  }
+
+  public getByPid(pid: number) {
+    return this.find((processInfo) => processInfo.pid === pid);
+  }
+
+  public removeByPid(pid: number) {
+    const processInfo = this.find((info) => info.pid === pid);
+
+    if (processInfo) {
+      const { child, type, scriptPath } = processInfo;
+      if (child) {
+        child?.removeAllListeners();
+        child?.kill();
+        log.info(`🛑 kill ${type} process: ${scriptPath} id: ${child.pid}`);
+      }
+      this.splice(
+        this.findIndex((info) => info.pid === pid),
+        1
+      );
+    }
+  }
+
+  public ifPid(pid: number, callback: (info: ProcessInfo) => void) {
+    const processInfo = this.getByPid(pid);
+    if (processInfo) {
+      callback(processInfo);
+    } else {
+      log.warn(`⚠️ Can't find ${pid}`);
+    }
+  }
+
+  public assignScriptToProcess(
+    scriptPath: ProcessInfo['scriptPath'],
+    pid: number
+  ) {
+    const index = this.findIndex((processInfo) => processInfo.pid === pid);
+    if (index !== -1) {
+      this[index] = { ...this[index], scriptPath };
+    } else {
+      log.warn(`⚠️ pid ${pid} not found. Can't run`, scriptPath);
+    }
+  }
+}
+
+export const processes = new Processes();

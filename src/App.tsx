@@ -19,20 +19,32 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { FixedSizeList as List } from 'react-window';
+import memoize from 'memoize-one';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
-import SimpleBar from 'simplebar-react';
 import { partition } from 'lodash';
 import usePrevious from '@rooks/use-previous';
-import useResizeObserver from '@react-hook/resize-observer';
 import parse from 'html-react-parser';
-import { PromptData, Script, Choice } from './types';
+import { PromptData, Choice, Script, ChoiceButtonProps } from './types';
 import Tabs from './components/tabs';
 import ChoiceButton from './components/button';
 import Preview from './components/preview';
 import Panel from './components/panel';
 import Header from './components/header';
 import { Channel, Mode, InputType } from './enums';
+import { highlightChoiceName } from './highlight';
+
+const createItemData = memoize(
+  (choices, currentIndex, mouseEnabled, setIndex, submit) =>
+    ({
+      choices,
+      currentIndex,
+      mouseEnabled,
+      setIndex,
+      submit,
+    } as ChoiceButtonProps['data'])
+);
 
 const generateShortcut = ({
   option,
@@ -73,29 +85,33 @@ const keyFromCode = (code: string) => {
 };
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
-  public state: { hasError: boolean } = { hasError: false };
+  public state: { hasError: boolean; info: ErrorInfo } = {
+    hasError: false,
+    info: { componentStack: '' },
+  };
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Display fallback UI
-    this.setState({ hasError: true });
+    this.setState({ hasError: true, info });
     // You can also log the error to an error reporting service
     ipcRenderer.send('PROMPT_ERROR', { error });
   }
 
   render() {
-    // eslint-disable-next-line react/destructuring-assignment
-    if (this.state.hasError) {
-      // You can render any custom fallback UI
-      return <h1>Something went wrong.</h1>;
+    const { hasError, info } = this.state;
+    const { children } = this.props;
+    if (hasError) {
+      return <div>{info.componentStack}</div>;
     }
-    // eslint-disable-next-line react/destructuring-assignment
-    return this.props.children;
+
+    return children;
   }
 }
 
 const DEFAULT_MAX_HEIGHT = 480;
 
 export default function App() {
+  const [pid, setPid] = useState(0);
   const [script, setScript] = useState<Script>();
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [promptData, setPromptData]: any = useState({});
@@ -110,7 +126,7 @@ export default function App() {
   const [tabs, setTabs] = useState<string[]>([]);
   const [tabIndex, setTabIndex] = useState(0);
   const [unfilteredChoices, setUnfilteredChoices] = useState<Choice[]>([]);
-  const [choices, setChoices] = useState<Choice[]>([]);
+  const [filteredChoices, setFilteredChoices] = useState<Choice[]>([]);
   const [placeholder, setPlaceholder] = useState('');
   // const [debouncedPlaceholder] = useDebounce(placeholder, 10);
   const previousPlaceholder: string | null = usePrevious(placeholder);
@@ -118,9 +134,11 @@ export default function App() {
   const [panelHTML, setPanelHTML] = useState('');
   // const [scriptName, setScriptName] = useState('');
   const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HEIGHT);
+  const [listHeight, setListHeight] = useState(DEFAULT_MAX_HEIGHT);
+  const [listItemHeight, setListItemHeight] = useState(64);
 
   const [caretDisabled, setCaretDisabled] = useState(false);
-  const choicesSimpleBarRef = useRef(null);
+  const choicesListRef = useRef(null);
   const choicesRef = useRef(null);
   const panelRef = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
@@ -131,37 +149,61 @@ export default function App() {
   const [hotkey, setHotkey] = useState({});
   const [mouseEnabled, setMouseEnabled] = useState(false);
 
-  const sendResize = useDebouncedCallback(
-    useCallback(
-      (width: number, height: number) => {
-        if (isMouseDown) return;
-        const { height: topHeight } =
-          topRef?.current?.getBoundingClientRect() as any;
+  const sendResize = useCallback(
+    (width: number, height: number) => {
+      if (isMouseDown) return;
 
-        if (!choicesRef.current) (choicesRef?.current as any)?.recalculate();
-        if (!panelRef.current) (panelRef?.current as any)?.recalculate();
+      if (!choicesRef.current) (choicesRef?.current as any)?.recalculate();
+      if (!panelRef.current) (panelRef?.current as any)?.recalculate();
 
-        const hasContent =
-          unfilteredChoices?.length ||
-          panelHTML?.length ||
-          textAreaRef?.current;
-        const promptHeight =
-          height > topHeight && hasContent ? height : topHeight;
+      const { height: topHeight } =
+        topRef?.current?.getBoundingClientRect() as any;
 
-        ipcRenderer.send(Channel.CONTENT_SIZE_UPDATED, {
-          width: Math.round(width),
-          height: Math.round(promptHeight),
-        });
-      },
-      [unfilteredChoices?.length, isMouseDown, panelHTML?.length]
-    ),
-    10
+      const hasContent =
+        unfilteredChoices?.length || panelHTML?.length || textAreaRef?.current;
+      const promptHeight =
+        height > topHeight && hasContent ? height : topHeight;
+
+      const newWidth = Math.round(width);
+      const newHeight = Math.round(promptHeight);
+
+      ipcRenderer.send(Channel.CONTENT_SIZE_UPDATED, {
+        width: newWidth,
+        height: newHeight,
+      });
+    },
+    [unfilteredChoices?.length, isMouseDown, panelHTML?.length]
   );
 
-  useResizeObserver(windowContainerRef, (entry) => {
-    const { width, height } = entry.contentRect;
+  // useResizeObserver(windowContainerRef, (entry) => {
+  //   setListHeight(maxHeight - topRef?.current?.clientHeight);
+
+  //   const { width, height } = entry.contentRect;
+  //   sendResize(width, height);
+  // });
+
+  const onItemsRendered = useCallback(() => {
+    const { width } =
+      windowContainerRef?.current?.getBoundingClientRect() as DOMRect;
+
+    const top: any = topRef?.current;
+
+    const topAndItems =
+      top?.clientHeight + filteredChoices.length * listItemHeight;
+    const height = topAndItems < maxHeight ? topAndItems : maxHeight;
+
     sendResize(width, height);
-  });
+  }, [maxHeight, filteredChoices.length, listItemHeight, sendResize]);
+
+  useEffect(() => {
+    const { width, height } = topRef?.current?.getBoundingClientRect() as any;
+
+    setListHeight(maxHeight - height);
+
+    if (!unfilteredChoices.length || !filteredChoices.length) {
+      sendResize(width, height);
+    }
+  }, [sendResize, unfilteredChoices, filteredChoices, maxHeight]);
 
   // useEffect(() => {
   //   if (inputRef.current) {
@@ -201,7 +243,7 @@ export default function App() {
 
       ipcRenderer.send(Channel.VALUE_SUBMITTED, {
         value,
-        pid: promptData?.pid,
+        pid,
       });
 
       setSubmitted(true);
@@ -209,13 +251,14 @@ export default function App() {
       setTextAreaValue('');
       setHint('');
     },
-    [mode, promptData?.pid, promptData?.secret]
+    [mode, pid, promptData?.secret]
   );
 
   useEffect(() => {
-    if (index > choices?.length - 1) setIndex(choices?.length - 1);
-    if (choices?.length && index <= 0) setIndex(0);
-  }, [choices?.length, index]);
+    if (index > filteredChoices?.length - 1)
+      setIndex(filteredChoices?.length - 1);
+    if (filteredChoices?.length && index <= 0) setIndex(0);
+  }, [filteredChoices?.length, index]);
 
   const onChange = useCallback((value) => {
     setIndex(0);
@@ -266,13 +309,13 @@ export default function App() {
   //   if (choices?.length > 0 && choices?.[index]) {
   //     ipcRenderer.send(CHOICE_FOCUSED, {
   //       index,
-  //       pid: promptData?.pid,
+  //       pid,
   //     });
   //   }
   //   if (choices?.length === 0) {
-  //     ipcRenderer.send(CHOICE_FOCUSED, { index: null, pid: promptData?.pid });
+  //     ipcRenderer.send(CHOICE_FOCUSED, { index: null, pid });
   //   }
-  // }, [choices, index, promptData?.pid]);
+  // }, [choices, index, pid]);
 
   const onTabClick = useCallback(
     (ti: number) => (_event: any) => {
@@ -281,22 +324,22 @@ export default function App() {
       ipcRenderer.send(Channel.TAB_CHANGED, {
         tab: tabs[ti],
         input: inputValue,
-        pid: promptData?.pid,
+        pid,
       });
     },
-    [inputValue, promptData?.pid, tabs]
+    [inputValue, pid, tabs]
   );
 
   const closePrompt = useCallback(() => {
-    ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: promptData?.pid });
-    setChoices([]);
-    setTabIndex(0);
+    ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid });
+    // setChoices([]);
     setUnfilteredChoices([]);
+    setTabIndex(0);
     setInputValue('');
     setPanelHTML('');
     setPromptData({});
     setHint('');
-  }, [promptData]);
+  }, [pid]);
 
   const onKeyUp = useCallback(
     (event) => {
@@ -390,13 +433,13 @@ export default function App() {
       }
 
       if (event.key === 'Enter') {
-        submit(choices?.[index]?.value || inputValue);
+        submit(filteredChoices?.[index]?.value || inputValue);
         return;
       }
 
       if (event.key === ' ') {
         const tab = tabs.find((tab) =>
-          tab.toLowerCase().startsWith(inputValue.toLowerCase())
+          tab.toLowerCase().startsWith(inputValue?.toLowerCase())
         );
 
         if (tab) {
@@ -406,7 +449,7 @@ export default function App() {
           ipcRenderer.send(Channel.TAB_CHANGED, {
             tab,
             input: inputValue,
-            pid: promptData?.pid,
+            pid,
           });
           event.preventDefault();
           return;
@@ -432,7 +475,7 @@ export default function App() {
           ipcRenderer.send(Channel.TAB_CHANGED, {
             tab: tabs[nextIndex],
             input: inputValue,
-            pid: promptData?.pid,
+            pid,
           });
         }
         return;
@@ -464,41 +507,46 @@ export default function App() {
       }
 
       if (newIndex < 0) newIndex = 0;
-      if (newIndex > choices?.length - 1) newIndex = choices?.length - 1;
+      if (newIndex > filteredChoices?.length - 1)
+        newIndex = filteredChoices?.length - 1;
 
       setIndex(newIndex);
 
-      if (choicesSimpleBarRef.current) {
-        const el = choicesSimpleBarRef.current;
-        const selectedItem: any = el.firstElementChild?.children[newIndex];
-        const itemY = selectedItem?.offsetTop;
-        const marginBottom = parseInt(
-          getComputedStyle(selectedItem as any)?.marginBottom.replace('px', ''),
-          10
-        );
-        if (
-          itemY >=
-          el.scrollTop + el.clientHeight - selectedItem.clientHeight
-        ) {
-          selectedItem?.scrollIntoView({ block: 'end', inline: 'nearest' });
-          el.scrollTo({
-            top: el.scrollTop + marginBottom,
-          });
-        } else if (itemY < el.scrollTop) {
-          selectedItem?.scrollIntoView({ block: 'start', inline: 'nearest' });
-        }
+      if (choicesListRef.current) {
+        choicesListRef?.current.scrollToItem(newIndex);
       }
+
+      // if (choicesListRef.current) {
+      //   const el = choicesListRef.current;
+      //   const selectedItem: any = el.firstElementChild?.children[newIndex];
+      //   const itemY = selectedItem?.offsetTop;
+      //   const marginBottom = parseInt(
+      //     getComputedStyle(selectedItem as any)?.marginBottom.replace('px', ''),
+      //     10
+      //   );
+      //   if (
+      //     itemY >=
+      //     el.scrollTop + el.clientHeight - selectedItem.clientHeight
+      //   ) {
+      //     selectedItem?.scrollIntoView({ block: 'end', inline: 'nearest' });
+      //     el.scrollTo({
+      //       top: el.scrollTop + marginBottom,
+      //     });
+      //   } else if (itemY < el.scrollTop) {
+      //     selectedItem?.scrollIntoView({ block: 'start', inline: 'nearest' });
+      //   }
+      // }
     },
     [
       mode,
       index,
-      choices,
+      filteredChoices,
       submit,
       inputValue,
       unfilteredChoices,
       tabs,
       tabIndex,
-      promptData?.pid,
+      pid,
     ]
   );
   const onTextAreaKeyDown = useCallback(
@@ -522,14 +570,14 @@ export default function App() {
     if (mode === Mode.GENERATE) {
       ipcRenderer.send(Channel.GENERATE_CHOICES, {
         input,
-        pid: promptData?.pid,
+        pid,
       });
     }
   }, 150);
 
   useEffect(() => {
     if (!submitted) generateChoices(inputValue, mode, tabIndex);
-  }, [mode, inputValue, tabIndex, submitted]);
+  }, [mode, inputValue, tabIndex, submitted, generateChoices]);
 
   useEffect(() => {
     setCaretDisabled(Boolean(!promptData?.placeholder));
@@ -537,12 +585,16 @@ export default function App() {
 
   useEffect(() => {
     try {
+      if (inputValue === '') {
+        setFilteredChoices(unfilteredChoices);
+        return;
+      }
       if (mode === (Mode.GENERATE || Mode.MANUAL)) {
-        setChoices(unfilteredChoices);
+        setFilteredChoices(unfilteredChoices);
         return;
       }
       if (!unfilteredChoices?.length) {
-        setChoices([]);
+        setFilteredChoices([]);
         return;
       }
 
@@ -550,13 +602,14 @@ export default function App() {
 
       const input = inputValue?.toLowerCase() || '';
 
-      const startExactFilter = (choice: any) =>
-        choice.name?.toLowerCase().startsWith(input);
+      const startExactFilter = (choice: Choice) => {
+        return (choice.name as string)?.toLowerCase().startsWith(input);
+      };
 
-      const startEachWordFilter = (choice: any) => {
+      const startEachWordFilter = (choice: Choice) => {
         let wordIndex = 0;
         let wordLetterIndex = 0;
-        const words = choice.name?.toLowerCase().match(/\w+\W*/g);
+        const words = (choice.name as string)?.toLowerCase().match(/\w+\W*/g);
         if (!words) return false;
         const inputLetters: string[] = input.split('');
 
@@ -632,10 +685,13 @@ export default function App() {
         ...partialMatches,
       ];
 
-      setChoices(filtered);
-      const { width, height } =
-        windowContainerRef?.current?.getBoundingClientRect() as DOMRect;
-      // sendResize(width, height);
+      const highlightedChoices = filtered.map((choice) => {
+        return {
+          ...choice,
+          name: highlightChoiceName(choice.name as string, inputValue),
+        };
+      });
+      setFilteredChoices(highlightedChoices);
     } catch (error) {
       ipcRenderer.send('PROMPT_ERROR', { error, pid: promptData?.id });
     }
@@ -679,7 +735,7 @@ export default function App() {
   }, []);
 
   const setPanelHandler = useCallback((_event: any, html: string) => {
-    setChoices([]);
+    setFilteredChoices([]);
     setUnfilteredChoices([]);
 
     setPanelHTML(html);
@@ -699,11 +755,11 @@ export default function App() {
     setInputValue(input);
   }, []);
 
-  const setChoicesHandler = useCallback((_event: any, choices: Choice[]) => {
+  const setChoicesHandler = useCallback((_event: any, rawChoices: Choice[]) => {
     setSubmitted(false);
     setIndex(0);
     setPanelHTML('');
-    setUnfilteredChoices(choices);
+    setUnfilteredChoices(rawChoices);
   }, []);
 
   const resetPromptHandler = useCallback(() => {
@@ -711,13 +767,17 @@ export default function App() {
     setMouseEnabled(false);
     setPlaceholder('');
     setDropReady(false);
-    setChoices([]);
+    setFilteredChoices([]);
     setHint('');
     setInputValue('');
     setPanelHTML('');
     setPromptData({});
     setTabs([]);
     setUnfilteredChoices([]);
+  }, []);
+
+  const setPidHandler = useCallback((_event, pid: number) => {
+    setPid(pid);
   }, []);
 
   const setScriptHandler = useCallback((_event, script: Script) => {
@@ -728,6 +788,7 @@ export default function App() {
     setPlaceholder(script.placeholder);
     setTabs(script.tabs || []);
     setTabIndex(0);
+    setInputValue('');
   }, []);
 
   const userResizedHandler = useCallback((event, data) => {
@@ -738,6 +799,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const messageMap = {
     // [Channel.RESET_PROMPT]: resetPromptHandler,
+    [Channel.SET_PID]: setPidHandler,
     [Channel.SET_SCRIPT]: setScriptHandler,
     [Channel.SET_CHOICES]: setChoicesHandler,
     [Channel.SET_HINT]: setHintHandler,
@@ -767,6 +829,20 @@ export default function App() {
     };
   }, [messageMap]);
 
+  const itemData = createItemData(
+    filteredChoices,
+    index,
+    mouseEnabled,
+    setIndex,
+    submit
+  );
+
+  const itemKey = (index: number, data: { choices: Choice[] }) => {
+    const choice = data.choices[index];
+
+    return choice.id as string;
+  };
+
   return (
     <ErrorBoundary>
       <div
@@ -782,7 +858,7 @@ export default function App() {
       >
         <div ref={topRef}>
           {(script?.description || script?.twitter || script?.menu) && (
-            <Header script={script} />
+            <Header script={script} pid={pid} />
           )}
           {inputType === InputType.text && (
             <input
@@ -864,7 +940,7 @@ export default function App() {
           <Panel ref={panelRef} panelHTML={panelHTML} />
         )}
 
-        {choices?.length > 0 && (
+        {filteredChoices?.length > 0 && (
           <div
             className="flex flex-row w-full max-h-full overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5 min-w-1/2"
             style={
@@ -873,29 +949,23 @@ export default function App() {
                 WebkitUserSelect: 'none',
               } as any
             }
+            // TODO: FIGURE OUT MOUSE INTERACTION 🐭
+            onMouseEnter={() => setMouseEnabled(true)}
           >
-            <SimpleBar
-              ref={choicesRef}
-              scrollableNodeProps={{ ref: choicesSimpleBarRef }}
-              onMouseEnter={() => setMouseEnabled(true)}
+            <List
+              ref={choicesListRef}
+              height={listHeight}
+              itemCount={filteredChoices?.length}
+              itemSize={listItemHeight}
+              width="100%"
+              itemData={itemData}
               className="px-0 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20 min-w-1/2"
+              onItemsRendered={onItemsRendered}
             >
-              {((choices as any[]) || []).map((choice, i) => (
-                <ChoiceButton
-                  key={choice.id}
-                  choice={choice}
-                  i={i}
-                  submit={submit}
-                  mode={mode}
-                  index={index}
-                  inputValue={inputValue}
-                  setIndex={setIndex}
-                  mouseEnabled={mouseEnabled}
-                />
-              ))}
-            </SimpleBar>
-            {choices?.[index]?.preview && (
-              <Preview preview={choices?.[index]?.preview || ''} />
+              {ChoiceButton}
+            </List>
+            {filteredChoices?.[index]?.preview && (
+              <Preview preview={filteredChoices?.[index]?.preview || ''} />
             )}
           </div>
         )}

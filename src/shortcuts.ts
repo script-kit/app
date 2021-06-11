@@ -1,18 +1,13 @@
 import { globalShortcut } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
-import { runPromptProcess, tryPromptScript } from './kit';
+import { runPromptProcess } from './kit';
 import { mainScriptPath, shortcutsPath, shortcutNormalizer } from './helpers';
-import { emitter, AppEvent } from './events';
+import { emitter, KitEvent } from './events';
 import { Script } from './types';
-import { setScript } from './prompt';
-import { getScript, getKitScript } from './state';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
   const success = globalShortcut.register(shortcut, async () => {
-    const script = getScript(filePath);
-    setScript(script);
-
     await runPromptProcess(filePath);
   });
 
@@ -81,9 +76,6 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       const ret = globalShortcut.register(shortcut, async () => {
-        const mainScript = getKitScript(mainScriptPath);
-        setScript(mainScript);
-
         await runPromptProcess(mainScriptPath);
       });
 
@@ -116,5 +108,5 @@ const resumeShortcuts = () => {
   }
 };
 
-emitter.on(AppEvent.PAUSE_SHORTCUTS, pauseShortcuts);
-emitter.on(AppEvent.RESUME_SHORTCUTS, resumeShortcuts);
+emitter.on(KitEvent.PauseShortcuts, pauseShortcuts);
+emitter.on(KitEvent.ResumeShortcuts, resumeShortcuts);

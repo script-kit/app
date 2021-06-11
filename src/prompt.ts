@@ -5,18 +5,16 @@ import log from 'electron-log';
 import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
 import minimist from 'minimist';
-import { EventEmitter } from 'events';
 import { Mode, readFileSync } from 'fs';
 import { getAssetPath } from './assets';
 import { mainScriptPath, isFile, kenvPath, promptDbPath } from './helpers';
 import { Channel, InputType } from './enums';
 import { getAppHidden } from './appHidden';
 import { Choice, PromptData, Script } from './types';
-import { setCurrentPromptScript, getScripts } from './state';
+import { getScripts } from './state';
+import { emitter, KitEvent } from './events';
 
-export enum PromptEvent {
-  Blur = 'Blur',
-}
+let promptScript: Script | null;
 
 const adapter = new FileSync(promptDbPath);
 const promptDb = low(adapter);
@@ -39,8 +37,6 @@ export const setIgnoreBlur = (value = true) => {
 const miniArgs = minimist(process.argv);
 const { devTools } = miniArgs;
 log.info(process.argv.join(' '), devTools);
-
-export const promptEmitter = new EventEmitter();
 
 let lastResizedByUser = false;
 export const createPromptWindow = async () => {
@@ -92,8 +88,12 @@ export const createPromptWindow = async () => {
       hidePromptWindow();
     }
 
-    if (!ignoreBlur && !getAppHidden()) {
-      promptEmitter.emit(PromptEvent.Blur);
+    if (
+      !ignoreBlur &&
+      !getAppHidden() &&
+      !promptWindow?.webContents.isDevToolsOpened()
+    ) {
+      emitter.emit(KitEvent.Blur);
     }
   });
 
@@ -182,29 +182,37 @@ const HEADER_HEIGHT = 24;
 const INPUT_HEIGHT = 64;
 const TABS_HEIGHT = 36;
 
-export const showPrompt = (script: Script) => {
+const calcHeight = () => {
+  const script = promptScript;
+  const headerHeight =
+    script?.menu || script?.twitter || script?.description ? HEADER_HEIGHT : 0;
+  const tabsHeight = script?.tabs.length ? TABS_HEIGHT : 0;
+  const height =
+    script?.input === InputType.textarea
+      ? 480
+      : INPUT_HEIGHT + headerHeight + tabsHeight;
+
+  return height;
+};
+
+const setPromptBounds = () => {
+  const currentScreenPromptBounds = getCurrentScreenPromptCache();
+
+  const height = calcHeight();
+  if (currentScreenPromptBounds) {
+    promptWindow.setBounds({
+      ...currentScreenPromptBounds,
+      height,
+    });
+  } else {
+    setDefaultBounds();
+  }
+};
+
+export const showPrompt = () => {
   if (promptWindow && !promptWindow?.isVisible()) {
-    const currentScreenPromptBounds = getCurrentScreenPromptCache();
-    const headerHeight =
-      script?.menu || script?.twitter || script?.description
-        ? HEADER_HEIGHT
-        : 0;
-    const tabsHeight = script.tabs.length ? TABS_HEIGHT : 0;
-    const height =
-      script.input === InputType.textarea
-        ? 480
-        : INPUT_HEIGHT + headerHeight + tabsHeight;
-
-    if (currentScreenPromptBounds) {
-      promptWindow.setBounds({
-        ...currentScreenPromptBounds,
-        height,
-      });
-    } else {
-      setDefaultBounds();
-    }
-
     if (!promptWindow?.isVisible()) {
+      setPromptBounds();
       promptWindow?.show();
       promptWindow.setVibrancy(
         nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light'
@@ -230,16 +238,20 @@ export const resizePrompt = ({ height }: Size) => {
     return;
   }
 
-  const [width] = promptWindow?.getSize() as number[];
+  const [promptWidth, promptHeight] = promptWindow?.getSize() as number[];
 
-  log.info(`↕ RESIZE: ${width} x ${height}`);
-  promptWindow?.setSize(width, height);
+  if (height !== promptHeight) {
+    log.info(`↕ RESIZE: ${promptWidth} x ${height}`);
+    promptWindow?.setSize(promptWidth, height);
+  }
 };
 
 export const sendToPrompt = (channel: string, data: any) => {
+  if (channel === Channel.SET_SCRIPT) {
+    promptScript = data as Script;
+  }
   // log.info(`>_ ${channel} ${data?.kitScript}`);
   if (promptWindow && !promptWindow.isDestroyed()) {
-    // promptWindow?.setBackgroundColor('#00FFFFFF');
     promptWindow?.webContents.send(channel, data);
   }
 };
@@ -261,7 +273,10 @@ const hideAppIfNoWindows = () => {
     }
     const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden
+    promptScript = null;
     promptWindow?.hide();
+    setPromptBounds();
+
     if (allWindows.every((window) => !window.isVisible())) {
       app?.hide();
     }
@@ -285,21 +300,25 @@ export const setPlaceholder = (text: string) => {
   sendToPrompt(Channel.SET_PLACEHOLDER, text);
 };
 
+export const setPromptPid = (pid: number) => {
+  sendToPrompt(Channel.SET_PID, pid);
+};
+
 export const setScript = (script: Script) => {
+  if (promptScript?.id === script.id) return;
+  log.info(script);
+
+  if (script.filePath === mainScriptPath) {
+    script.tabs = script.tabs.filter((tab) => !tab.match(/join|live/i));
+  }
+
+  sendToPrompt(Channel.SET_SCRIPT, script);
+
+  showPrompt();
+
   if (script.filePath === mainScriptPath) {
     setChoices(getScripts());
-
-    script.tabs = script.tabs.filter((tab) => !tab.match(/join|live/i));
-    setCurrentPromptScript(script as Script);
-    sendToPrompt(Channel.SET_SCRIPT, script);
-
-    showPrompt(script);
   } else if (script.requiresPrompt) {
-    setCurrentPromptScript(script as Script);
-    sendToPrompt(Channel.SET_SCRIPT, script);
-
-    showPrompt(script);
-
     const maybeCachedChoices = kenvPath('db', `_${script.command}.json`);
 
     if (isFile(maybeCachedChoices)) {
@@ -348,3 +367,7 @@ export const clearPromptCache = () => {
   clearPrompt = true;
   promptDb.set('screens', {}).write();
 };
+
+emitter.on(KitEvent.ExitPrompt, () => {
+  escapePromptWindow();
+});

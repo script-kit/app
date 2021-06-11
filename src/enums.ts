@@ -58,6 +58,7 @@ export enum Channel {
   VALUE_SUBMITTED = 'VALUE_SUBMITTED',
   SET_PREVIEW = 'SET_PREVIEW',
   PROMPT_BLURRED = 'PROMPT_BLURRED',
+  SET_PID = 'SET_PID',
 }
 
 export enum ProcessType {

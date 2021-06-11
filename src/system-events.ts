@@ -1,6 +1,7 @@
 import { powerMonitor } from 'electron';
 import log from 'electron-log';
-import { runSystemScript } from './kit';
+import { ProcessType } from './enums';
+import { processes } from './process';
 import { Script } from './types';
 
 const validSystemEvents = [
@@ -25,7 +26,7 @@ validSystemEvents.forEach((systemEvent: any) => {
       eventList.forEach((mappedEvent: string) => {
         if (mappedEvent === systemEvent) {
           console.log({ mappedEvent, scriptPath });
-          runSystemScript(scriptPath);
+          processes.add(ProcessType.System, scriptPath);
         }
       });
     });
