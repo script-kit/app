@@ -19,32 +19,20 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { FixedSizeList as List } from 'react-window';
-import memoize from 'memoize-one';
+
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import { partition } from 'lodash';
 import usePrevious from '@rooks/use-previous';
 import parse from 'html-react-parser';
-import { PromptData, Choice, Script, ChoiceButtonProps } from './types';
+import { PromptData, Choice, Script } from './types';
 import Tabs from './components/tabs';
-import ChoiceButton from './components/button';
-import Preview from './components/preview';
+import ChoiceList from './components/list';
+import TextArea from './components/textarea';
 import Panel from './components/panel';
 import Header from './components/header';
 import { Channel, Mode, InputType } from './enums';
 import { highlightChoiceName } from './highlight';
-
-const createItemData = memoize(
-  (choices, currentIndex, mouseEnabled, setIndex, submit) =>
-    ({
-      choices,
-      currentIndex,
-      mouseEnabled,
-      setIndex,
-      submit,
-    } as ChoiceButtonProps['data'])
-);
 
 const generateShortcut = ({
   option,
@@ -118,11 +106,10 @@ export default function App() {
 
   const [inputValue, setInputValue] = useState<string>('');
   const [inputType, setInputType] = useState<InputType>(InputType.text);
-  const [textAreaValue, setTextAreaValue] = useState('');
   const [hint, setHint] = useState('');
+  const [listValue, setListValue] = useState({});
   // const previousHint = usePrevious(hint);
   const [mode, setMode] = useState(Mode.FILTER);
-  const [index, setIndex] = useState(0);
   const [tabs, setTabs] = useState<string[]>([]);
   const [tabIndex, setTabIndex] = useState(0);
   const [unfilteredChoices, setUnfilteredChoices] = useState<Choice[]>([]);
@@ -134,8 +121,7 @@ export default function App() {
   const [panelHTML, setPanelHTML] = useState('');
   // const [scriptName, setScriptName] = useState('');
   const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HEIGHT);
-  const [listHeight, setListHeight] = useState(DEFAULT_MAX_HEIGHT);
-  const [listItemHeight, setListItemHeight] = useState(64);
+  const [listHeight, setListHeight] = useState(0);
 
   const [caretDisabled, setCaretDisabled] = useState(false);
   const choicesListRef = useRef(null);
@@ -147,10 +133,9 @@ export default function App() {
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [hotkey, setHotkey] = useState({});
-  const [mouseEnabled, setMouseEnabled] = useState(false);
 
-  const sendResize = useCallback(
-    (width: number, height: number) => {
+  const resizeHeight = useCallback(
+    (height: number) => {
       if (isMouseDown) return;
 
       if (!choicesRef.current) (choicesRef?.current as any)?.recalculate();
@@ -164,46 +149,39 @@ export default function App() {
       const promptHeight =
         height > topHeight && hasContent ? height : topHeight;
 
-      const newWidth = Math.round(width);
       const newHeight = Math.round(promptHeight);
 
-      ipcRenderer.send(Channel.CONTENT_SIZE_UPDATED, {
-        width: newWidth,
-        height: newHeight,
-      });
+      ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
     },
     [unfilteredChoices?.length, isMouseDown, panelHTML?.length]
   );
 
-  // useResizeObserver(windowContainerRef, (entry) => {
-  //   setListHeight(maxHeight - topRef?.current?.clientHeight);
+  const onListHeightChanged = useCallback(
+    (fullListHeight) => {
+      const { height: topHeight } =
+        topRef?.current?.getBoundingClientRect() as any;
 
-  //   const { width, height } = entry.contentRect;
-  //   sendResize(width, height);
-  // });
+      const fullHeight = topHeight + fullListHeight;
+      const height = fullHeight < maxHeight ? fullHeight : maxHeight;
 
-  const onItemsRendered = useCallback(() => {
-    const { width } =
-      windowContainerRef?.current?.getBoundingClientRect() as DOMRect;
-
-    const top: any = topRef?.current;
-
-    const topAndItems =
-      top?.clientHeight + filteredChoices.length * listItemHeight;
-    const height = topAndItems < maxHeight ? topAndItems : maxHeight;
-
-    sendResize(width, height);
-  }, [maxHeight, filteredChoices.length, listItemHeight, sendResize]);
+      resizeHeight(height);
+      setListHeight(maxHeight - topHeight);
+    },
+    [maxHeight, resizeHeight]
+  );
 
   useEffect(() => {
-    const { width, height } = topRef?.current?.getBoundingClientRect() as any;
+    const { height } = topRef?.current?.getBoundingClientRect() as any;
 
     setListHeight(maxHeight - height);
 
-    if (!unfilteredChoices.length || !filteredChoices.length) {
-      sendResize(width, height);
+    if (
+      (!unfilteredChoices.length || !filteredChoices.length) &&
+      inputType !== InputType.textarea
+    ) {
+      resizeHeight(height);
     }
-  }, [sendResize, unfilteredChoices, filteredChoices, maxHeight]);
+  }, [resizeHeight, unfilteredChoices, filteredChoices, maxHeight, inputType]);
 
   // useEffect(() => {
   //   if (inputRef.current) {
@@ -248,20 +226,13 @@ export default function App() {
 
       setSubmitted(true);
       setInputValue('');
-      setTextAreaValue('');
       setHint('');
     },
     [mode, pid, promptData?.secret]
   );
 
-  useEffect(() => {
-    if (index > filteredChoices?.length - 1)
-      setIndex(filteredChoices?.length - 1);
-    if (filteredChoices?.length && index <= 0) setIndex(0);
-  }, [filteredChoices?.length, index]);
-
   const onChange = useCallback((value) => {
-    setIndex(0);
+    // setIndex(0);
     if (typeof value === 'string') {
       setInputValue(value);
     }
@@ -433,7 +404,7 @@ export default function App() {
       }
 
       if (event.key === 'Enter') {
-        submit(filteredChoices?.[index]?.value || inputValue);
+        submit(listValue || inputValue);
         return;
       }
 
@@ -495,25 +466,13 @@ export default function App() {
       //   });
       // }
 
-      let newIndex = index;
-
       if (event.key === 'ArrowDown') {
         event.preventDefault();
-        newIndex += 1;
+        choicesListRef?.current?.down();
       }
       if (event.key === 'ArrowUp') {
         event.preventDefault();
-        newIndex -= 1;
-      }
-
-      if (newIndex < 0) newIndex = 0;
-      if (newIndex > filteredChoices?.length - 1)
-        newIndex = filteredChoices?.length - 1;
-
-      setIndex(newIndex);
-
-      if (choicesListRef.current) {
-        choicesListRef?.current.scrollToItem(newIndex);
+        choicesListRef?.current?.up();
       }
 
       // if (choicesListRef.current) {
@@ -539,31 +498,14 @@ export default function App() {
     },
     [
       mode,
-      index,
-      filteredChoices,
       submit,
+      listValue,
       inputValue,
-      unfilteredChoices,
       tabs,
-      tabIndex,
+      unfilteredChoices,
       pid,
+      tabIndex,
     ]
-  );
-  const onTextAreaKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      const { key, metaKey: command } = event as any;
-
-      if (key === 'Escape') {
-        event.preventDefault();
-        closePrompt();
-        return;
-      }
-      if (key === 'Enter' && command) {
-        event.preventDefault();
-        submit(textAreaValue);
-      }
-    },
-    [textAreaValue]
   );
 
   const generateChoices = useDebouncedCallback((input, mode, tab) => {
@@ -700,7 +642,7 @@ export default function App() {
     inputValue,
     mode,
     promptData?.id,
-    sendResize,
+    resizeHeight,
     submitted,
   ]);
 
@@ -757,14 +699,12 @@ export default function App() {
 
   const setChoicesHandler = useCallback((_event: any, rawChoices: Choice[]) => {
     setSubmitted(false);
-    setIndex(0);
     setPanelHTML('');
     setUnfilteredChoices(rawChoices);
   }, []);
 
   const resetPromptHandler = useCallback(() => {
     setIsMouseDown(false);
-    setMouseEnabled(false);
     setPlaceholder('');
     setDropReady(false);
     setFilteredChoices([]);
@@ -828,20 +768,6 @@ export default function App() {
       });
     };
   }, [messageMap]);
-
-  const itemData = createItemData(
-    filteredChoices,
-    index,
-    mouseEnabled,
-    setIndex,
-    submit
-  );
-
-  const itemKey = (index: number, data: { choices: Choice[] }) => {
-    const choice = data.choices[index];
-
-    return choice.id as string;
-  };
 
   return (
     <ErrorBoundary>
@@ -912,28 +838,11 @@ export default function App() {
           )}
         </div>
         {inputType === InputType.textarea && (
-          <textarea
-            ref={textAreaRef}
-            style={
-              {
-                WebkitAppRegion: 'no-drag',
-                WebkitUserSelect: 'text',
-                height: maxHeight,
-              } as any
-            }
-            onKeyDown={onTextAreaKeyDown}
-            onChange={(e) => {
-              setTextAreaValue(e.target.value);
-            }}
-            value={textAreaValue}
+          <TextArea
+            height={DEFAULT_MAX_HEIGHT}
+            onSubmit={submit}
+            onEscape={closePrompt}
             placeholder={placeholder}
-            className={`
-            min-h-32
-
-              bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-md dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40
-              ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-4
-              focus:border-none border-none
-              `}
           />
         )}
         {panelHTML?.length > 0 && (
@@ -941,33 +850,14 @@ export default function App() {
         )}
 
         {filteredChoices?.length > 0 && (
-          <div
-            className="flex flex-row w-full max-h-full overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5 min-w-1/2"
-            style={
-              {
-                WebkitAppRegion: 'no-drag',
-                WebkitUserSelect: 'none',
-              } as any
-            }
-            // TODO: FIGURE OUT MOUSE INTERACTION 🐭
-            onMouseEnter={() => setMouseEnabled(true)}
-          >
-            <List
-              ref={choicesListRef}
-              height={listHeight}
-              itemCount={filteredChoices?.length}
-              itemSize={listItemHeight}
-              width="100%"
-              itemData={itemData}
-              className="px-0 flex flex-col text-black dark:text-white max-h-full overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20 min-w-1/2"
-              onItemsRendered={onItemsRendered}
-            >
-              {ChoiceButton}
-            </List>
-            {filteredChoices?.[index]?.preview && (
-              <Preview preview={filteredChoices?.[index]?.preview || ''} />
-            )}
-          </div>
+          <ChoiceList
+            ref={choicesListRef}
+            listHeight={listHeight}
+            filteredChoices={filteredChoices}
+            onListHeightChanged={onListHeightChanged}
+            onSubmit={submit}
+            setValue={setListValue}
+          />
         )}
       </div>
     </ErrorBoundary>

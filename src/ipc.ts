@@ -7,7 +7,11 @@ import { emitter, KitEvent } from './events';
 
 import { processes } from './process';
 
-import { escapePromptWindow, resizePrompt, setPlaceholder } from './prompt';
+import {
+  escapePromptWindow,
+  resizePromptHeight,
+  setPlaceholder,
+} from './prompt';
 import { setAppHidden, getAppHidden } from './appHidden';
 import { Channel } from './enums';
 
@@ -52,9 +56,9 @@ ipcMain.on(Channel.TAB_CHANGED, (event, { tab, input = '', pid }) => {
   });
 });
 
-ipcMain.on(Channel.CONTENT_SIZE_UPDATED, (event, size) => {
-  if (!isUndefined(size)) {
-    resizePrompt(size);
+ipcMain.on(Channel.CONTENT_HEIGHT_UPDATED, (event, height) => {
+  if (!isUndefined(height)) {
+    resizePromptHeight(height);
   }
 });
 

@@ -231,7 +231,7 @@ type Size = {
   width: number;
   height: number;
 };
-export const resizePrompt = ({ height }: Size) => {
+export const resizePromptHeight = (height: number) => {
   if (!promptWindow?.isVisible()) return;
   if (lastResizedByUser) {
     lastResizedByUser = false;
