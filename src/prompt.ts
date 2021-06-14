@@ -8,7 +8,7 @@ import minimist from 'minimist';
 import { Mode, readFileSync } from 'fs';
 import { getAssetPath } from './assets';
 import { mainScriptPath, isFile, kenvPath, promptDbPath } from './helpers';
-import { Channel, InputType } from './enums';
+import { Channel, UI } from './enums';
 import { getAppHidden } from './appHidden';
 import { Choice, PromptData, Script } from './types';
 import { getScripts } from './state';
@@ -181,18 +181,22 @@ export const setDefaultBounds = () => {
 const HEADER_HEIGHT = 24;
 const INPUT_HEIGHT = 64;
 const TABS_HEIGHT = 36;
+const DEFAULT_HEIGHT = 480;
 
 const calcHeight = () => {
   const script = promptScript;
-  const headerHeight =
-    script?.menu || script?.twitter || script?.description ? HEADER_HEIGHT : 0;
-  const tabsHeight = script?.tabs.length ? TABS_HEIGHT : 0;
-  const height =
-    script?.input === InputType.textarea
-      ? 480
-      : INPUT_HEIGHT + headerHeight + tabsHeight;
 
-  return height;
+  if (script?.ui === UI.arg) {
+    const headerHeight =
+      script?.menu || script?.twitter || script?.description
+        ? HEADER_HEIGHT
+        : 0;
+    const tabsHeight = script?.tabs.length ? TABS_HEIGHT : 0;
+
+    return INPUT_HEIGHT + headerHeight + tabsHeight;
+  }
+
+  return DEFAULT_HEIGHT;
 };
 
 const setPromptBounds = () => {

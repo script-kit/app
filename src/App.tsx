@@ -22,55 +22,21 @@ import React, {
 
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
-import { partition } from 'lodash';
+import { clamp, partition } from 'lodash';
 import usePrevious from '@rooks/use-previous';
 import parse from 'html-react-parser';
 import { PromptData, Choice, Script } from './types';
 import Tabs from './components/tabs';
-import ChoiceList from './components/list';
+import List from './components/list';
+import Input from './components/input';
+import Drop from './components/drop';
+import Hotkey from './components/hotkey';
 import TextArea from './components/textarea';
 import Panel from './components/panel';
 import Header from './components/header';
-import { Channel, Mode, InputType } from './enums';
+import { Channel, Mode, UI } from './enums';
 import { highlightChoiceName } from './highlight';
 
-const generateShortcut = ({
-  option,
-  command,
-  shift,
-  superKey,
-  control,
-}: any) => {
-  return `${command ? `command ` : ``}${shift ? `shift ` : ``}${
-    option ? `option ` : ``
-  }${control ? `control ` : ``}${superKey ? `super ` : ``}`;
-};
-
-const keyFromCode = (code: string) => {
-  const keyCode = code.replace(/Key|Digit/, '').toLowerCase();
-  const replaceAlts = (k: string) => {
-    const map: any = {
-      backslash: '\\',
-      slash: '/',
-      quote: `'`,
-      backquote: '`',
-      equal: `=`,
-      minus: `-`,
-      period: `.`,
-      comma: `,`,
-      bracketleft: `[`,
-      bracketright: `]`,
-      space: 'space',
-      semicolon: ';',
-    };
-
-    if (map[k]) return map[k];
-
-    return k;
-  };
-
-  return replaceAlts(keyCode);
-};
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
   public state: { hasError: boolean; info: ErrorInfo } = {
@@ -101,13 +67,14 @@ const DEFAULT_MAX_HEIGHT = 480;
 export default function App() {
   const [pid, setPid] = useState(0);
   const [script, setScript] = useState<Script>();
+
+  const [index, setIndex] = useState<number>(0);
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [promptData, setPromptData]: any = useState({});
 
   const [inputValue, setInputValue] = useState<string>('');
-  const [inputType, setInputType] = useState<InputType>(InputType.text);
+  const [ui, setUI] = useState<UI>(UI.arg);
   const [hint, setHint] = useState('');
-  const [listValue, setListValue] = useState({});
   // const previousHint = usePrevious(hint);
   const [mode, setMode] = useState(Mode.FILTER);
   const [tabs, setTabs] = useState<string[]>([]);
@@ -117,13 +84,11 @@ export default function App() {
   const [placeholder, setPlaceholder] = useState('');
   // const [debouncedPlaceholder] = useDebounce(placeholder, 10);
   const previousPlaceholder: string | null = usePrevious(placeholder);
-  const [dropReady, setDropReady] = useState(false);
   const [panelHTML, setPanelHTML] = useState('');
   // const [scriptName, setScriptName] = useState('');
   const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HEIGHT);
   const [listHeight, setListHeight] = useState(0);
 
-  const [caretDisabled, setCaretDisabled] = useState(false);
   const choicesListRef = useRef(null);
   const choicesRef = useRef(null);
   const panelRef = useRef(null);
@@ -132,7 +97,6 @@ export default function App() {
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
-  const [hotkey, setHotkey] = useState({});
 
   const resizeHeight = useCallback(
     (height: number) => {
@@ -177,11 +141,11 @@ export default function App() {
 
     if (
       (!unfilteredChoices.length || !filteredChoices.length) &&
-      inputType !== InputType.textarea
+      ui !== UI.textarea
     ) {
       resizeHeight(height);
     }
-  }, [resizeHeight, unfilteredChoices, filteredChoices, maxHeight, inputType]);
+  }, [resizeHeight, unfilteredChoices, filteredChoices, maxHeight, ui]);
 
   // useEffect(() => {
   //   if (inputRef.current) {
@@ -189,16 +153,23 @@ export default function App() {
   //   }
   // }, [inputRef]);
 
+  const clampIndex = useCallback(
+    (i) => {
+      const clampedIndex = clamp(i, 0, filteredChoices.length - 1);
+      setIndex(clampedIndex);
+    },
+    [filteredChoices.length]
+  );
+
   const submit = useCallback(
     (submitValue: any) => {
       let value = submitValue;
-      if (mode !== Mode.HOTKEY) {
-        setPlaceholder(
-          typeof submitValue === 'string' && !promptData?.secret
-            ? submitValue
-            : 'Processing...'
-        );
-      }
+
+      setPlaceholder(
+        typeof submitValue === 'string' && !promptData?.secret
+          ? submitValue
+          : 'Processing...'
+      );
 
       // setUnfilteredChoices([]);
       // setPanelHTML('');
@@ -228,53 +199,22 @@ export default function App() {
       setInputValue('');
       setHint('');
     },
-    [mode, pid, promptData?.secret]
+    [pid, promptData?.secret]
   );
 
-  const onChange = useCallback((value) => {
-    // setIndex(0);
-    if (typeof value === 'string') {
-      setInputValue(value);
-    }
-  }, []);
+  const onIndexSubmit = useCallback(
+    (i) => {
+      const choice = filteredChoices[i];
 
-  const onDragEnter = useCallback((event) => {
-    event.preventDefault();
-    setDropReady(true);
-    setPlaceholder('Drop to submit');
-  }, []);
-  const onDragLeave = useCallback((event) => {
-    setDropReady(false);
-    setPlaceholder(previousPlaceholder || '');
-  }, []);
-  const onDrop = useCallback(
-    (event) => {
-      setDropReady(false);
-      const files = Array.from(event?.dataTransfer?.files);
-      if (files?.length > 0) {
-        submit(files);
-        return;
-      }
-
-      const data =
-        event?.dataTransfer?.getData('URL') ||
-        event?.dataTransfer?.getData('Text') ||
-        null;
-      if (data) {
-        submit(data);
-        return;
-      }
-      if (event.target.value) {
-        submit(event.target.value);
-        return;
-      }
-
-      setTimeout(() => {
-        submit(event.target.value);
-      }, 100);
+      submit(choice.value);
     },
-    [submit]
+    [filteredChoices, submit]
   );
+
+  const onChange = useCallback((event) => {
+    // setIndex(0);
+    setInputValue(event.target.value);
+  }, []);
 
   // useEffect(() => {
   //   if (choices?.length > 0 && choices?.[index]) {
@@ -312,99 +252,16 @@ export default function App() {
     setHint('');
   }, [pid]);
 
-  const onKeyUp = useCallback(
-    (event) => {
-      if (event.key === 'Escape') {
-        closePrompt();
-        return;
-      }
-
-      if (mode === Mode.HOTKEY) {
-        event.preventDefault();
-        const {
-          code,
-          metaKey: command,
-          shiftKey: shift,
-          ctrlKey: control,
-          altKey: option,
-        } = event as any;
-        const superKey = event.getModifierState('Super');
-        const shortcut = generateShortcut({
-          code,
-          command,
-          shift,
-          control,
-          option,
-          superKey,
-        });
-        setPlaceholder(shortcut);
-      }
-    },
-    [closePrompt, mode]
-  );
-
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Escape') {
-        return;
-      }
+        closePrompt();
 
-      if (mode === Mode.HOTKEY) {
-        const {
-          key,
-          code,
-          metaKey: command,
-          shiftKey: shift,
-          ctrlKey: control,
-          altKey: option,
-        } = event as any;
-        const superKey = event.getModifierState('Super');
-        const shortcut = generateShortcut({
-          command,
-          shift,
-          control,
-          option,
-          superKey,
-        });
-
-        const normalKey = option ? keyFromCode(code) : key;
-
-        const eventKeyData = {
-          key: normalKey,
-          command,
-          shift,
-          option,
-          control,
-          fn: event.getModifierState('Fn'),
-          // fnLock: event.getModifierState('FnLock'),
-          // numLock: event.getModifierState('NumLock'),
-          hyper: event.getModifierState('Hyper'),
-          os: event.getModifierState('OS'),
-          super: superKey,
-          win: event.getModifierState('Win'),
-          // scrollLock: event.getModifierState('ScrollLock'),
-          // scroll: event.getModifierState('Scroll'),
-          // capsLock: event.getModifierState('CapsLock'),
-          shortcut: `${shortcut}${normalKey}`,
-        };
-
-        setHotkey(eventKeyData);
-        setPlaceholder(shortcut);
-
-        if (
-          event.key.length === 1 ||
-          ['Shift', 'Control', 'Alt', 'Meta'].every(
-            (m) => !event.key.includes(m)
-          )
-        ) {
-          submit(eventKeyData);
-        }
-        event.preventDefault();
         return;
       }
 
       if (event.key === 'Enter') {
-        submit(listValue || inputValue);
+        submit(filteredChoices[index].value || inputValue);
         return;
       }
 
@@ -439,9 +296,9 @@ export default function App() {
       if (event.key === 'Tab') {
         event.preventDefault();
         if (tabs?.length) {
-          const clamp = tabs.length;
-          const clampIndex = (tabIndex + (event.shiftKey ? -1 : 1)) % clamp;
-          const nextIndex = clampIndex < 0 ? clamp - 1 : clampIndex;
+          const maxTab = tabs.length;
+          const clampTabIndex = (tabIndex + (event.shiftKey ? -1 : 1)) % maxTab;
+          const nextIndex = clampTabIndex < 0 ? maxTab - 1 : clampTabIndex;
           setTabIndex(nextIndex);
           ipcRenderer.send(Channel.TAB_CHANGED, {
             tab: tabs[nextIndex],
@@ -468,11 +325,11 @@ export default function App() {
 
       if (event.key === 'ArrowDown') {
         event.preventDefault();
-        choicesListRef?.current?.down();
+        clampIndex(index + 1);
       }
       if (event.key === 'ArrowUp') {
         event.preventDefault();
-        choicesListRef?.current?.up();
+        clampIndex(index - 1);
       }
 
       // if (choicesListRef.current) {
@@ -497,14 +354,15 @@ export default function App() {
       // }
     },
     [
-      mode,
       submit,
-      listValue,
+      filteredChoices,
+      index,
       inputValue,
       tabs,
       unfilteredChoices,
       pid,
       tabIndex,
+      clampIndex,
     ]
   );
 
@@ -520,10 +378,6 @@ export default function App() {
   useEffect(() => {
     if (!submitted) generateChoices(inputValue, mode, tabIndex);
   }, [mode, inputValue, tabIndex, submitted, generateChoices]);
-
-  useEffect(() => {
-    setCaretDisabled(Boolean(!promptData?.placeholder));
-  }, [promptData?.placeholder]);
 
   useEffect(() => {
     try {
@@ -651,6 +505,7 @@ export default function App() {
       setPanelHTML('');
       setPromptData(promptData);
       setPlaceholder(promptData.placeholder);
+      setUI(promptData.ui);
 
       setTabs(promptData?.tabs || []);
 
@@ -706,7 +561,7 @@ export default function App() {
   const resetPromptHandler = useCallback(() => {
     setIsMouseDown(false);
     setPlaceholder('');
-    setDropReady(false);
+
     setFilteredChoices([]);
     setHint('');
     setInputValue('');
@@ -724,7 +579,7 @@ export default function App() {
     // resetPromptHandler();
     setSubmitted(false);
     setScript(script);
-    setInputType(script.input);
+    setUI(script.ui);
     setPlaceholder(script.placeholder);
     setTabs(script.tabs || []);
     setTabIndex(0);
@@ -786,46 +641,16 @@ export default function App() {
           {(script?.description || script?.twitter || script?.menu) && (
             <Header script={script} pid={pid} />
           )}
-          {inputType === InputType.text && (
-            <input
-              style={
-                {
-                  WebkitAppRegion: 'drag',
-                  WebkitUserSelect: 'none',
-                  minHeight: '4rem',
-                  ...(caretDisabled && { caretColor: 'transparent' }),
-                } as any
-              }
-              autoFocus
-              className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
-            ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
-
-            ${
-              promptData?.drop
-                ? `
-            border-dashed border-4 rounded border-gray-500 focus:border-gray-500 text-opacity-50 ${
-              dropReady &&
-              `border-yellow-500 text-opacity-90 focus:border-yellow-500`
-            }`
-                : `            focus:border-none border-none`
-            }
-          `}
-              onChange={
-                mode !== Mode.HOTKEY
-                  ? (e) => {
-                      onChange(e.target.value);
-                    }
-                  : undefined
-              }
+          {ui === UI.hotkey && <Hotkey submit={submit} />}
+          {ui === UI.drop && <Drop placeholder={placeholder} submit={submit} />}
+          {ui === UI.arg && (
+            <Input
               onKeyDown={onKeyDown}
-              onKeyUp={onKeyUp}
+              onChange={onChange}
               placeholder={placeholder}
               ref={inputRef}
-              type={promptData?.secret ? 'password' : 'text'}
-              value={mode !== Mode.HOTKEY ? inputValue : undefined}
-              onDragEnter={promptData?.drop ? onDragEnter : undefined}
-              onDragLeave={promptData?.drop ? onDragLeave : undefined}
-              onDrop={promptData?.drop ? onDrop : undefined}
+              secret={promptData?.secret}
+              value={inputValue}
             />
           )}
           {hint && (
@@ -837,9 +662,10 @@ export default function App() {
             <Tabs tabs={tabs} tabIndex={tabIndex} onTabClick={onTabClick} />
           )}
         </div>
-        {inputType === InputType.textarea && (
+        {ui === UI.textarea && (
           <TextArea
-            height={DEFAULT_MAX_HEIGHT}
+            ref={textAreaRef}
+            height={maxHeight}
             onSubmit={submit}
             onEscape={closePrompt}
             placeholder={placeholder}
@@ -849,14 +675,15 @@ export default function App() {
           <Panel ref={panelRef} panelHTML={panelHTML} />
         )}
 
-        {filteredChoices?.length > 0 && (
-          <ChoiceList
+        {ui === UI.arg && filteredChoices?.length > 0 && (
+          <List
             ref={choicesListRef}
             listHeight={listHeight}
-            filteredChoices={filteredChoices}
+            choices={filteredChoices}
             onListHeightChanged={onListHeightChanged}
-            onSubmit={submit}
-            setValue={setListValue}
+            index={index}
+            onIndexChange={clampIndex}
+            onIndexSubmit={onIndexSubmit}
           />
         )}
       </div>

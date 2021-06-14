@@ -4,86 +4,57 @@ import React, {
   useState,
   forwardRef,
   useEffect,
-  useImperativeHandle,
   useRef,
 } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import memoize from 'memoize-one';
 import Preview from './preview';
 import ChoiceButton from './button';
-import { Choice, ChoiceButtonProps } from '../types';
-
-interface ListProps {
-  listHeight: number;
-  filteredChoices: Choice[];
-  onListHeightChanged: (listHeight: number) => void;
-  onSubmit: (value: any) => void;
-  setValue: (value: any) => void;
-}
+import { ChoiceButtonProps, ListProps } from '../types';
 
 const createItemData = memoize(
-  (choices, currentIndex, mouseEnabled, setIndex, submit) =>
+  (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>
     ({
       choices,
       currentIndex,
       mouseEnabled,
-      setIndex,
-      submit,
+      onIndexChange,
+      onIndexSubmit,
     } as ChoiceButtonProps['data'])
 );
 
 export default forwardRef<any, ListProps>(function ChoiceList(
   {
     listHeight,
-    filteredChoices,
-    onSubmit,
+    choices,
     onListHeightChanged,
-    setValue,
+    index,
+    onIndexChange,
+    onIndexSubmit,
   }: ListProps,
   ref
 ) {
   const listRef = useRef(null);
-  const [index, setIndex] = useState(0);
   const [mouseEnabled, setMouseEnabled] = useState(false);
+  // TODO: In case items ever have dynamic height
   const [listItemHeight, setListItemHeight] = useState(64);
 
   const itemData = createItemData(
-    filteredChoices,
+    choices,
     index,
     mouseEnabled,
-    setIndex,
-    onSubmit
+    onIndexChange,
+    onIndexSubmit
   );
 
-  useEffect(() => {
-    if (index > filteredChoices?.length - 1)
-      setIndex(filteredChoices?.length - 1);
-    if (filteredChoices?.length && index <= 0) setIndex(0);
-  }, [filteredChoices?.length, index]);
-
   const onItemsRendered = useCallback(() => {
-    const newListHeight = filteredChoices.length * listItemHeight;
+    const newListHeight = choices.length * listItemHeight;
     onListHeightChanged(newListHeight);
-  }, [filteredChoices.length, listItemHeight, onListHeightChanged]);
+  }, [choices.length, listItemHeight, onListHeightChanged]);
 
   useEffect(() => {
-    setValue(filteredChoices[index].value);
-  }, [filteredChoices, index, setValue]);
-
-  useImperativeHandle(ref, () => ({
-    down: () => {
-      if (index < filteredChoices.length - 1) {
-        (listRef as any).current.scrollToItem(index + 1);
-        setIndex(index + 1);
-      }
-    },
-    up: () => {
-      if (index > 0) {
-        (listRef as any).current.scrollToItem(index - 1);
-        setIndex(index - 1);
-      }
-    },
-  }));
+    (listRef as any).current.scrollToItem(index);
+  }, [choices, index]);
 
   return (
     <div
@@ -102,7 +73,7 @@ export default forwardRef<any, ListProps>(function ChoiceList(
       <List
         ref={listRef}
         height={listHeight}
-        itemCount={filteredChoices?.length}
+        itemCount={choices?.length}
         itemSize={listItemHeight}
         width="100%"
         itemData={itemData}
@@ -111,8 +82,8 @@ export default forwardRef<any, ListProps>(function ChoiceList(
       >
         {ChoiceButton}
       </List>
-      {filteredChoices?.[index]?.preview && (
-        <Preview preview={filteredChoices?.[index]?.preview || ''} />
+      {choices?.[index]?.preview && (
+        <Preview preview={choices?.[index]?.preview || ''} />
       )}
     </div>
   );

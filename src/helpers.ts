@@ -9,8 +9,8 @@ import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
 import { readFile } from 'fs/promises';
 import { emitter, KitEvent } from './events';
-import { InputType, Script } from './types';
-import { ProcessType } from './enums';
+import { Script } from './types';
+import { UI, ProcessType } from './enums';
 
 export const isDir = (dir: string) => test('-d', dir);
 export const isFile = (file: string) => test('-f', file);
@@ -123,24 +123,20 @@ export const stringifyScriptArgsKey = (
 export const grepMetadata = (meta: string, filePath: string) =>
   grep(`^//\\s*${meta}\\s*`, filePath)?.stdout;
 
-const getByMarker = (marker: string) => (lines: string[]) =>
-  lines
-    ?.find((line) => line.match(new RegExp(`^\/\/\\s*${marker}\\s*`, 'gim')))
-    ?.split(marker)[1]
-    ?.trim();
-
 export const shortcutNormalizer = (shortcut: string) =>
   shortcut
-    .replace(/(option|opt)/i, 'Alt')
-    .replace(/(command|cmd)/i, 'CommandOrControl')
-    .replace(/(ctl|cntrl|ctrl)/, 'Control')
-    .split(/\s/)
-    .filter(Boolean)
-    .map((part) => (part[0].toUpperCase() + part.slice(1)).trim())
-    .join('+');
+    ? shortcut
+        .replace(/(option|opt)/i, 'Alt')
+        .replace(/(command|cmd)/i, 'CommandOrControl')
+        .replace(/(ctl|cntrl|ctrl)/, 'Control')
+        .split(/\s/)
+        .filter(Boolean)
+        .map((part) => (part[0].toUpperCase() + part.slice(1)).trim())
+        .join('+')
+    : '';
 
 export const info = async (file: string): Promise<Script> => {
-  const filePath = file.startsWith('/scripts')
+  const filePath: string = file.startsWith('/scripts')
     ? kenvPath(file)
     : file.startsWith(path.sep)
     ? file
@@ -148,32 +144,33 @@ export const info = async (file: string): Promise<Script> => {
 
   const fileContents = await readFile(filePath, 'utf8');
 
-  const fileLines = fileContents.split('\n');
+  const getByMarker = (marker: string) =>
+    fileContents
+      .match(new RegExp(`(?<=^//\\s*${marker}\\s*).*`, 'gim'))?.[0]
+      .trim() || '';
 
   const command = filePath.split(path.sep)?.pop()?.replace('.js', '') as string;
-  const rawShortcut = getByMarker('Shortcut:')(fileLines);
-  const shortcut = rawShortcut && shortcutNormalizer(rawShortcut);
-
-  const menu = getByMarker('Menu:')(fileLines);
-  const placeholder = (getByMarker('Placeholder:')(fileLines) ||
-    menu) as string;
-  const twitter = getByMarker('Twitter:')(fileLines);
-  const schedule = getByMarker('Schedule:')(fileLines);
-  const watch = getByMarker('Watch:')(fileLines);
-  const system = getByMarker('System:')(fileLines);
-  const background = getByMarker('Background:')(fileLines);
-  const input = (getByMarker('Input:')(fileLines) || 'text') as InputType;
-  const timeout = parseInt(getByMarker('Timeout:')(fileLines) || '0', 10);
-
-  const requiresPrompt = Boolean(
-    fileLines.find((line) =>
-      line.match(/await arg|await drop|await textarea|await hotkey|await main/g)
-    )
-  );
+  const shortcut = shortcutNormalizer(getByMarker('Shortcut:'));
+  const menu = getByMarker('Menu:');
+  const placeholder = getByMarker('Placeholder:') || menu;
+  const schedule = getByMarker('Schedule:');
+  const watch = getByMarker('Watch:');
+  const system = getByMarker('System:');
+  const background = getByMarker('Background:');
+  const input = getByMarker('Input:') || 'text';
+  const timeout = parseInt(getByMarker('Timeout:'), 10);
 
   const tabs =
     fileContents.match(new RegExp(`(?<=onTab[(]['"]).*(?=\s*['"])`, 'gim')) ||
     [];
+
+  const ui = (fileContents
+    .match(/(?<=await )arg|textarea|hotkey|drop/g)?.[0]
+    .trim() ||
+    getByMarker('UI:') ||
+    UI.none) as UI;
+
+  const requiresPrompt = Boolean(ui);
 
   const type = schedule
     ? ProcessType.Schedule
@@ -192,12 +189,13 @@ export const info = async (file: string): Promise<Script> => {
     menu,
     name: (menu || command) + (shortcut ? `: ${shortcut}` : ``),
     placeholder,
-    description: getByMarker('Description:')(fileLines),
-    alias: getByMarker('Alias:')(fileLines),
-    author: getByMarker('Author:')(fileLines),
-    twitter,
-    shortcode: getByMarker('Shortcode:')(fileLines),
-    exclude: getByMarker('Exclude:')(fileLines),
+
+    description: getByMarker('Description:'),
+    alias: getByMarker('Alias:'),
+    author: getByMarker('Author:'),
+    twitter: getByMarker('Twitter:'),
+    shortcode: getByMarker('Shortcode:'),
+    exclude: getByMarker('Exclude:'),
     schedule,
     watch,
     system,
@@ -209,5 +207,6 @@ export const info = async (file: string): Promise<Script> => {
     timeout,
     tabs,
     input,
+    ui,
   };
 };

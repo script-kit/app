@@ -76,9 +76,10 @@ export enum ProcessState {
   Active = 'Active',
 }
 
-export enum InputType {
-  text = 'text',
+export enum UI {
+  arg = 'arg',
   textarea = 'textarea',
   hotkey = 'hotkey',
   drop = 'drop',
+  none = 'none',
 }

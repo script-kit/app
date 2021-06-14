@@ -10,7 +10,8 @@ export default function ChoiceButton({
   index,
   style,
 }: ChoiceButtonProps) {
-  const { choices, currentIndex, mouseEnabled, setIndex, submit } = data;
+  const { choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit } =
+    data;
   const choice = choices[index];
 
   return (
@@ -38,10 +39,10 @@ export default function ChoiceButton({
   }
 `}
       onClick={(_event) => {
-        submit(choice.value);
+        onIndexSubmit(index);
       }}
       onMouseOver={() => {
-        if (mouseEnabled) setIndex(index);
+        if (mouseEnabled) onIndexChange(index);
       }}
     >
       {choice?.html ? (
