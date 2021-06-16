@@ -10,11 +10,11 @@ import log from 'electron-log';
 import { emitter, KitEvent } from './events';
 import { Channel, ProcessType } from './enums';
 
-import { mainScriptPath } from './helpers';
+import { info, kenvPath, kitPath, mainScriptPath } from './helpers';
 
 import { processes } from './process';
 import { setPromptPid, setScript } from './prompt';
-import { getKitScript, getScript } from './state';
+import { getKitScript, getKenvScript } from './state';
 
 app.on('second-instance', async (_event, argv) => {
   const { _ } = minimist(argv);
@@ -37,16 +37,32 @@ emitter.on(KitEvent.SetKenv, () => {
   runPromptProcess(mainScriptPath);
 });
 
-export const runPromptProcess = (
+const findScript = async (scriptPath: string) => {
+  if (scriptPath === mainScriptPath) {
+    return getKitScript(mainScriptPath);
+  }
+
+  if (scriptPath.startsWith(kitPath())) {
+    return getKitScript(scriptPath);
+  }
+
+  if (scriptPath.startsWith(kenvPath())) {
+    return getKenvScript(scriptPath);
+  }
+
+  const script = await info(scriptPath);
+
+  return script;
+};
+
+export const runPromptProcess = async (
   promptScriptPath: string,
   args: string[] = []
 ) => {
   processes.endPreviousPromptProcess();
 
-  const script =
-    promptScriptPath === mainScriptPath
-      ? getKitScript(mainScriptPath)
-      : getScript(promptScriptPath);
+  const script = await findScript(promptScriptPath);
+  log.info(script);
 
   setScript(script);
 

@@ -1,10 +1,12 @@
+/* eslint-disable no-restricted-syntax */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
 import { ChildProcess } from 'child_process';
 import { app } from 'electron';
+import log from 'electron-log';
 import schedule, { Job } from 'node-schedule';
-import { readFile } from 'fs/promises';
-import { appDb, info, kenvPath, mainScriptPath } from './helpers';
+import { readdir, readFile } from 'fs/promises';
+import { appDb, info, kenvPath, kitPath, mainScriptPath } from './helpers';
 import { Script } from './types';
 
 export const makeRestartNecessary = () => {
@@ -82,7 +84,8 @@ export const getScripts = (): Script[] => {
   return scripts;
 };
 
-export const getScript = (filePath: string): Script => {
+export const getKenvScript = (filePath: string): Script => {
+  log.info(`💉 getKenvScript ${filePath}`);
   return scripts.find((script) => script.filePath === filePath) as Script;
 };
 
@@ -91,6 +94,12 @@ const kitScripts: Script[] = [];
 export const cacheKitScripts = async () => {
   const mainScript = await info(mainScriptPath);
   kitScripts.push(mainScript);
+
+  const kitCliScripts = await readdir(kitPath('cli'));
+  for await (const cli of kitCliScripts) {
+    const cliScript = await info(kitPath('cli', cli));
+    kitScripts.push(cliScript);
+  }
 };
 
 export const getKitScripts = (): Script[] => {

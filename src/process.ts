@@ -53,6 +53,7 @@ import {
   KIT,
   getKenv,
   getKenvDotEnv,
+  resolveScriptPath,
 } from './helpers';
 import { Choice, MessageData, Script, PromptData } from './types';
 import { getVersion } from './version';
@@ -222,7 +223,7 @@ const kitMessageMap: ChannelHandler = {
   },
   SET_SCRIPT: (data) => {
     processes.ifPid(data.pid, ({ type }) => {
-      log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.script);
+      // log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.script.filePath);
       if (type === ProcessType.Prompt) {
         setScript(data.script as Script);
       }
@@ -253,9 +254,6 @@ const kitMessageMap: ChannelHandler = {
 
   SET_PLACEHOLDER: (data) => {
     setPlaceholder(data.text as string);
-    processes.ifPid(data.pid, () => {
-      showPrompt();
-    });
   },
 
   SET_PANEL: (data) => {
@@ -360,13 +358,7 @@ const createChild = ({
   if (!scriptPath) {
     args = ['--app'];
   } else {
-    let resolvePath = scriptPath.startsWith(path.sep)
-      ? scriptPath
-      : scriptPath.includes(path.sep)
-      ? kenvPath(scriptPath)
-      : kenvPath('scripts', scriptPath);
-
-    if (!resolvePath.endsWith('.js')) resolvePath = `${resolvePath}.js`;
+    const resolvePath = resolveScriptPath(scriptPath);
     args = [resolvePath, ...runArgs, '--app'];
   }
 

@@ -207,6 +207,17 @@ export const info = async (file: string): Promise<Script> => {
     timeout,
     tabs,
     input,
-    ui,
   };
+};
+
+export const resolveScriptPath = (scriptPath: string) => {
+  let resolvePath = scriptPath.startsWith(path.sep)
+    ? scriptPath
+    : scriptPath.includes(path.sep)
+    ? kenvPath(scriptPath)
+    : kenvPath('scripts', scriptPath);
+
+  if (!resolvePath.endsWith('.js')) resolvePath = `${resolvePath}.js`;
+
+  return resolvePath;
 };

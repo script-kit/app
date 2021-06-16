@@ -4,7 +4,7 @@ import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
 import { getAssetPath } from './assets';
 import { restartIfNecessary } from './state';
-import { kitPath, mainScriptPath } from './helpers';
+import { kenvPath, kitPath, mainScriptPath } from './helpers';
 import { runPromptProcess } from './kit';
 
 let tray: Tray | null = null;
@@ -12,13 +12,13 @@ let tray: Tray | null = null;
 const leftClick = async (event: KeyboardEvent) => {
   restartIfNecessary();
   if (event.metaKey) {
-    runPromptProcess('app/command-click');
+    runPromptProcess(kenvPath('app', 'command-click.js'));
   } else if (event.shiftKey) {
-    runPromptProcess('app/shift-click');
+    runPromptProcess(kenvPath('app', 'shift-click.js'));
   } else if (event.ctrlKey) {
-    runPromptProcess('app/control-click');
+    runPromptProcess(kenvPath('app', 'control-click.js'));
   } else if (event.altKey) {
-    runPromptProcess('app/alt-click');
+    runPromptProcess(kenvPath('app', 'alt-click.js'));
   } else {
     runPromptProcess(mainScriptPath);
   }

@@ -23,11 +23,11 @@ const createItemData = memoize(
     } as ChoiceButtonProps['data'])
 );
 
-export default forwardRef<any, ListProps>(function ChoiceList(
+export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
   {
     listHeight,
     choices,
-    onListHeightChanged,
+    onListChoicesChanged,
     index,
     onIndexChange,
     onIndexSubmit,
@@ -47,10 +47,10 @@ export default forwardRef<any, ListProps>(function ChoiceList(
     onIndexSubmit
   );
 
-  const onItemsRendered = useCallback(() => {
+  useEffect(() => {
     const newListHeight = choices.length * listItemHeight;
-    onListHeightChanged(newListHeight);
-  }, [choices.length, listItemHeight, onListHeightChanged]);
+    onListChoicesChanged(newListHeight);
+  }, [choices.length, listItemHeight, onListChoicesChanged]);
 
   useEffect(() => {
     (listRef as any).current.scrollToItem(index);
@@ -59,12 +59,14 @@ export default forwardRef<any, ListProps>(function ChoiceList(
   return (
     <div
       ref={ref}
-      className="flex flex-row w-full overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5 min-w-1/2"
+      className={`flex flex-row
+      w-full h-full min-w-1/2
+      overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5
+      `}
       style={
         {
           WebkitAppRegion: 'no-drag',
           WebkitUserSelect: 'none',
-          height: listHeight,
         } as any
       }
       // TODO: FIGURE OUT MOUSE INTERACTION 🐭
@@ -77,8 +79,12 @@ export default forwardRef<any, ListProps>(function ChoiceList(
         itemSize={listItemHeight}
         width="100%"
         itemData={itemData}
-        className="px-0 flex flex-col text-black dark:text-white overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20 min-w-1/2"
-        onItemsRendered={onItemsRendered}
+        className={`
+        h-full
+        px-0 flex flex-col
+        text-black dark:text-white
+        overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20 min-w-1/2`}
+        // onItemsRendered={onItemsRendered}
       >
         {ChoiceButton}
       </List>

@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
 import React, { useCallback, KeyboardEvent, useState, forwardRef } from 'react';
 
@@ -36,6 +37,7 @@ export default forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
     <div>
       <textarea
         ref={ref}
+        autoFocus
         style={
           {
             WebkitAppRegion: 'no-drag',

@@ -81,7 +81,10 @@ const getKeyData = (event: KeyboardEvent<HTMLInputElement>) => {
   return { modifierString, keyData };
 };
 
-export default forwardRef<any, HotkeyProps>(function Hotkey({ submit }, ref) {
+export default forwardRef<HTMLInputElement, HotkeyProps>(function Hotkey(
+  { submit, onEscape },
+  ref
+) {
   const [placeholder, setPlaceholder] = useState('');
 
   const onKeyUp = useCallback((event) => {
@@ -94,6 +97,11 @@ export default forwardRef<any, HotkeyProps>(function Hotkey({ submit }, ref) {
     (event) => {
       event.preventDefault();
 
+      if (event.key === 'Escape') {
+        onEscape();
+        return;
+      }
+
       const { keyData, modifierString } = getKeyData(event);
 
       setPlaceholder(modifierString);
@@ -105,7 +113,7 @@ export default forwardRef<any, HotkeyProps>(function Hotkey({ submit }, ref) {
         submit(keyData);
       }
     },
-    [submit]
+    [onEscape, submit]
   );
 
   return (

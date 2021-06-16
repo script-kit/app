@@ -37,7 +37,6 @@ export interface Script extends Choice {
   tabs: string[];
   placeholder: string;
   input: string;
-  ui: UI;
 }
 export interface Choice<Value = any> {
   name: string | JSX.Element[];
@@ -102,16 +101,18 @@ export interface InputProps {
 }
 export interface HotkeyProps {
   submit(data: any): void;
+  onEscape(): void;
 }
 
 export interface DropProps {
   placeholder: string;
   submit(data: any): void;
+  onEscape(): void;
 }
 
 export interface ListProps {
   listHeight: number;
-  onListHeightChanged: (listHeight: number) => void;
+  onListChoicesChanged: (listHeight: number) => void;
   index: number;
   choices: ChoiceButtonData['choices'];
   onIndexChange: ChoiceButtonData['onIndexChange'];

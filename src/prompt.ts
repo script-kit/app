@@ -5,16 +5,17 @@ import log from 'electron-log';
 import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
 import minimist from 'minimist';
-import { Mode, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { getAssetPath } from './assets';
 import { mainScriptPath, isFile, kenvPath, promptDbPath } from './helpers';
-import { Channel, UI } from './enums';
+import { Channel, Mode, UI } from './enums';
 import { getAppHidden } from './appHidden';
 import { Choice, PromptData, Script } from './types';
 import { getScripts } from './state';
 import { emitter, KitEvent } from './events';
 
 let promptScript: Script | null;
+let prevUI: UI = UI.none;
 
 const adapter = new FileSync(promptDbPath);
 const promptDb = low(adapter);
@@ -183,10 +184,13 @@ const INPUT_HEIGHT = 64;
 const TABS_HEIGHT = 36;
 const DEFAULT_HEIGHT = 480;
 
-const calcHeight = () => {
+const getHeightByScript = (ui: UI, cacheHeight: number) => {
   const script = promptScript;
+  if (script?.filePath === mainScriptPath) {
+    return cacheHeight;
+  }
 
-  if (script?.ui === UI.arg) {
+  if (ui === UI.arg || ui === UI.drop) {
     const headerHeight =
       script?.menu || script?.twitter || script?.description
         ? HEADER_HEIGHT
@@ -196,14 +200,15 @@ const calcHeight = () => {
     return INPUT_HEIGHT + headerHeight + tabsHeight;
   }
 
-  return DEFAULT_HEIGHT;
+  return cacheHeight;
 };
 
-const setPromptBounds = () => {
+const setBoundsByUI = (ui: UI) => {
+  log.info(`💐 Set bounds for ${ui}`);
   const currentScreenPromptBounds = getCurrentScreenPromptCache();
 
-  const height = calcHeight();
   if (currentScreenPromptBounds) {
+    const height = getHeightByScript(ui, currentScreenPromptBounds.height);
     promptWindow.setBounds({
       ...currentScreenPromptBounds,
       height,
@@ -213,10 +218,13 @@ const setPromptBounds = () => {
   }
 };
 
-export const showPrompt = () => {
-  if (promptWindow && !promptWindow?.isVisible()) {
+export const showPrompt = (ui: UI) => {
+  if (ui !== prevUI) {
+    setBoundsByUI(ui);
+  }
+  prevUI = ui as UI;
+  if (promptWindow && !promptWindow?.isVisible() && ui !== UI.none) {
     if (!promptWindow?.isVisible()) {
-      setPromptBounds();
       promptWindow?.show();
       promptWindow.setVibrancy(
         nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light'
@@ -279,7 +287,7 @@ const hideAppIfNoWindows = () => {
     // Check if all other windows are hidden
     promptScript = null;
     promptWindow?.hide();
-    setPromptBounds();
+    // setPromptBounds();
 
     if (allWindows.every((window) => !window.isVisible())) {
       app?.hide();
@@ -309,16 +317,14 @@ export const setPromptPid = (pid: number) => {
 };
 
 export const setScript = (script: Script) => {
-  if (promptScript?.id === script.id) return;
-  log.info(script);
+  if (promptScript?.id === script?.id) return;
+  // log.info(script);
 
   if (script.filePath === mainScriptPath) {
     script.tabs = script.tabs.filter((tab) => !tab.match(/join|live/i));
   }
 
   sendToPrompt(Channel.SET_SCRIPT, script);
-
-  showPrompt();
 
   if (script.filePath === mainScriptPath) {
     setChoices(getScripts());
@@ -361,6 +367,7 @@ export const setTabIndex = (tabIndex: number) => {
 
 export const setPromptData = (promptData: PromptData) => {
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
+  showPrompt(promptData.ui);
 };
 
 export const setChoices = (choices: Choice[]) => {

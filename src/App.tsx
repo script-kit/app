@@ -23,7 +23,6 @@ import React, {
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
-import usePrevious from '@rooks/use-previous';
 import parse from 'html-react-parser';
 import { PromptData, Choice, Script } from './types';
 import Tabs from './components/tabs';
@@ -83,75 +82,54 @@ export default function App() {
   const [filteredChoices, setFilteredChoices] = useState<Choice[]>([]);
   const [placeholder, setPlaceholder] = useState('');
   // const [debouncedPlaceholder] = useDebounce(placeholder, 10);
-  const previousPlaceholder: string | null = usePrevious(placeholder);
+  // const previousPlaceholder: string | null = usePrevious(placeholder);
   const [panelHTML, setPanelHTML] = useState('');
   // const [scriptName, setScriptName] = useState('');
   const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HEIGHT);
   const [listHeight, setListHeight] = useState(0);
 
   const choicesListRef = useRef(null);
-  const choicesRef = useRef(null);
   const panelRef = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
   const textAreaRef: RefObject<HTMLTextAreaElement> = useRef(null);
+  const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
 
-  const resizeHeight = useCallback(
-    (height: number) => {
-      if (isMouseDown) return;
+  const resizeHeight = useDebouncedCallback(
+    useCallback(
+      (height: number) => {
+        if (isMouseDown) return;
 
-      if (!choicesRef.current) (choicesRef?.current as any)?.recalculate();
-      if (!panelRef.current) (panelRef?.current as any)?.recalculate();
+        const { height: topHeight } =
+          topRef?.current?.getBoundingClientRect() as any;
 
-      const { height: topHeight } =
-        topRef?.current?.getBoundingClientRect() as any;
+        const promptHeight = height > topHeight ? height : topHeight;
 
-      const hasContent =
-        unfilteredChoices?.length || panelHTML?.length || textAreaRef?.current;
-      const promptHeight =
-        height > topHeight && hasContent ? height : topHeight;
+        const newHeight = Math.round(promptHeight);
 
-      const newHeight = Math.round(promptHeight);
-
-      ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
-    },
-    [unfilteredChoices?.length, isMouseDown, panelHTML?.length]
+        if (ui === UI.arg)
+          ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
+      },
+      [isMouseDown, ui]
+    ),
+    10
   );
 
-  const onListHeightChanged = useCallback(
-    (fullListHeight) => {
+  const onListChoicesChanged = useCallback(
+    (listHeight) => {
       const { height: topHeight } =
         topRef?.current?.getBoundingClientRect() as any;
 
-      const fullHeight = topHeight + fullListHeight;
+      const fullHeight =
+        topHeight + (filteredChoices.length === 0 ? 0 : listHeight);
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
-
       resizeHeight(height);
       setListHeight(maxHeight - topHeight);
     },
-    [maxHeight, resizeHeight]
+    [maxHeight, resizeHeight, filteredChoices.length]
   );
-
-  useEffect(() => {
-    const { height } = topRef?.current?.getBoundingClientRect() as any;
-
-    setListHeight(maxHeight - height);
-
-    if (
-      (!unfilteredChoices.length || !filteredChoices.length) &&
-      ui !== UI.textarea
-    ) {
-      resizeHeight(height);
-    }
-  }, [resizeHeight, unfilteredChoices, filteredChoices, maxHeight, ui]);
-
-  // useEffect(() => {
-  //   if (inputRef.current) {
-  //     inputRef?.current.focus();
-  //   }
-  // }, [inputRef]);
 
   const clampIndex = useCallback(
     (i) => {
@@ -163,6 +141,9 @@ export default function App() {
 
   const submit = useCallback(
     (submitValue: any) => {
+      setFilteredChoices([]);
+      setUnfilteredChoices([]);
+
       let value = submitValue;
 
       setPlaceholder(
@@ -204,15 +185,17 @@ export default function App() {
 
   const onIndexSubmit = useCallback(
     (i) => {
-      const choice = filteredChoices[i];
+      if (filteredChoices.length) {
+        const choice = filteredChoices[i];
 
-      submit(choice.value);
+        submit(choice.value);
+      }
     },
     [filteredChoices, submit]
   );
 
   const onChange = useCallback((event) => {
-    // setIndex(0);
+    setIndex(0);
     setInputValue(event.target.value);
   }, []);
 
@@ -255,13 +238,18 @@ export default function App() {
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
         closePrompt();
 
         return;
       }
 
       if (event.key === 'Enter') {
-        submit(filteredChoices[index].value || inputValue);
+        if (filteredChoices.length) {
+          submit(filteredChoices?.[index].value);
+        } else {
+          submit(inputValue);
+        }
         return;
       }
 
@@ -309,51 +297,19 @@ export default function App() {
         return;
       }
 
-      // if (tabs?.length) {
-      //   tabs.forEach((_tab, i) => {
-      //     // cmd+2, etc.
-      //     if (event.metaKey && event.key === `${i + 1}`) {
-      //       event.preventDefault();
-      //       setTabIndex(i);
-      //       ipcRenderer.send(TAB_CHANGED, {
-      //         tab: tabs[i],
-      //         input: inputValue,
-      //       });
-      //     }
-      //   });
-      // }
-
       if (event.key === 'ArrowDown') {
         event.preventDefault();
         clampIndex(index + 1);
+        return;
       }
       if (event.key === 'ArrowUp') {
         event.preventDefault();
         clampIndex(index - 1);
+        // return;
       }
-
-      // if (choicesListRef.current) {
-      //   const el = choicesListRef.current;
-      //   const selectedItem: any = el.firstElementChild?.children[newIndex];
-      //   const itemY = selectedItem?.offsetTop;
-      //   const marginBottom = parseInt(
-      //     getComputedStyle(selectedItem as any)?.marginBottom.replace('px', ''),
-      //     10
-      //   );
-      //   if (
-      //     itemY >=
-      //     el.scrollTop + el.clientHeight - selectedItem.clientHeight
-      //   ) {
-      //     selectedItem?.scrollIntoView({ block: 'end', inline: 'nearest' });
-      //     el.scrollTo({
-      //       top: el.scrollTop + marginBottom,
-      //     });
-      //   } else if (itemY < el.scrollTop) {
-      //     selectedItem?.scrollIntoView({ block: 'start', inline: 'nearest' });
-      //   }
-      // }
     },
     [
+      closePrompt,
       submit,
       filteredChoices,
       index,
@@ -498,6 +454,7 @@ export default function App() {
     promptData?.id,
     resizeHeight,
     submitted,
+    onListChoicesChanged,
   ]);
 
   const setPromptDataHandler = useCallback(
@@ -506,7 +463,6 @@ export default function App() {
       setPromptData(promptData);
       setPlaceholder(promptData.placeholder);
       setUI(promptData.ui);
-
       setTabs(promptData?.tabs || []);
 
       if (inputRef.current) {
@@ -558,19 +514,6 @@ export default function App() {
     setUnfilteredChoices(rawChoices);
   }, []);
 
-  const resetPromptHandler = useCallback(() => {
-    setIsMouseDown(false);
-    setPlaceholder('');
-
-    setFilteredChoices([]);
-    setHint('');
-    setInputValue('');
-    setPanelHTML('');
-    setPromptData({});
-    setTabs([]);
-    setUnfilteredChoices([]);
-  }, []);
-
   const setPidHandler = useCallback((_event, pid: number) => {
     setPid(pid);
   }, []);
@@ -579,7 +522,6 @@ export default function App() {
     // resetPromptHandler();
     setSubmitted(false);
     setScript(script);
-    setUI(script.ui);
     setPlaceholder(script.placeholder);
     setTabs(script.tabs || []);
     setTabIndex(0);
@@ -637,12 +579,20 @@ export default function App() {
         }
         className="flex flex-col w-full rounded-lg relative h-full"
       >
-        <div ref={topRef}>
+        <header ref={topRef}>
           {(script?.description || script?.twitter || script?.menu) && (
             <Header script={script} pid={pid} />
           )}
-          {ui === UI.hotkey && <Hotkey submit={submit} />}
-          {ui === UI.drop && <Drop placeholder={placeholder} submit={submit} />}
+          {ui === UI.hotkey && (
+            <Hotkey submit={submit} onEscape={closePrompt} />
+          )}
+          {ui === UI.drop && (
+            <Drop
+              placeholder={placeholder}
+              submit={submit}
+              onEscape={closePrompt}
+            />
+          )}
           {ui === UI.arg && (
             <Input
               onKeyDown={onKeyDown}
@@ -661,31 +611,38 @@ export default function App() {
           {tabs?.length > 0 && (
             <Tabs tabs={tabs} tabIndex={tabIndex} onTabClick={onTabClick} />
           )}
-        </div>
-        {ui === UI.textarea && (
-          <TextArea
-            ref={textAreaRef}
-            height={maxHeight}
-            onSubmit={submit}
-            onEscape={closePrompt}
-            placeholder={placeholder}
-          />
-        )}
-        {panelHTML?.length > 0 && (
-          <Panel ref={panelRef} panelHTML={panelHTML} />
-        )}
+        </header>
+        <main
+          ref={mainRef}
+          className={`
+        h-full
+        `}
+        >
+          {ui === UI.textarea && (
+            <TextArea
+              ref={textAreaRef}
+              height={maxHeight}
+              onSubmit={submit}
+              onEscape={closePrompt}
+              placeholder={placeholder}
+            />
+          )}
+          {panelHTML?.length > 0 && (
+            <Panel ref={panelRef} panelHTML={panelHTML} />
+          )}
 
-        {ui === UI.arg && filteredChoices?.length > 0 && (
-          <List
-            ref={choicesListRef}
-            listHeight={listHeight}
-            choices={filteredChoices}
-            onListHeightChanged={onListHeightChanged}
-            index={index}
-            onIndexChange={clampIndex}
-            onIndexSubmit={onIndexSubmit}
-          />
-        )}
+          {ui === UI.arg && (
+            <List
+              ref={choicesListRef}
+              listHeight={listHeight}
+              choices={filteredChoices}
+              onListChoicesChanged={onListChoicesChanged}
+              index={index}
+              onIndexChange={clampIndex}
+              onIndexSubmit={onIndexSubmit}
+            />
+          )}
+        </main>
       </div>
     </ErrorBoundary>
   );
