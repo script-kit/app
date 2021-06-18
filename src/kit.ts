@@ -59,6 +59,7 @@ export const runPromptProcess = async (
   promptScriptPath: string,
   args: string[] = []
 ) => {
+  log.info(`💨 ${promptScriptPath}`);
   processes.endPreviousPromptProcess();
 
   const script = await findScript(promptScriptPath);
@@ -68,6 +69,10 @@ export const runPromptProcess = async (
 
   log.info(processes.getAllProcessInfo());
   const { child, pid } = processes.findPromptProcess();
+  setPromptPid(pid);
+
+  processes.assignScriptToProcess(promptScriptPath, pid);
+  processes.add(ProcessType.Prompt);
 
   child?.send({
     channel: Channel.VALUE_SUBMITTED,
@@ -76,8 +81,4 @@ export const runPromptProcess = async (
       args,
     },
   });
-
-  setPromptPid(pid);
-  processes.assignScriptToProcess(promptScriptPath, pid);
-  processes.add(ProcessType.Prompt);
 };

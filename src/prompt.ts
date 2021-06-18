@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
-import { BrowserWindow, screen, nativeTheme, app } from 'electron';
+import { BrowserWindow, screen, nativeTheme, app, Rectangle } from 'electron';
 import log from 'electron-log';
 import low from 'lowdb';
+import { debounce, throttle } from 'lodash';
 import FileSync from 'lowdb/adapters/FileSync';
 import minimist from 'minimist';
 import { readFileSync } from 'fs';
@@ -98,23 +99,25 @@ export const createPromptWindow = async () => {
     }
   });
 
-  let timeoutId: NodeJS.Timeout | null = null;
-  const userResize = () => {
+  const userResize = (event: Event, rect: Rectangle) => {
     lastResizedByUser = true;
-    if (timeoutId) clearTimeout(timeoutId);
-    if (!promptWindow) return;
-    const promptBounds = promptWindow?.getBounds();
-
-    const { width, height } = promptBounds;
-    sendToPrompt(Channel.USER_RESIZED, { height, width });
+    sendToPrompt(Channel.USER_RESIZED, rect);
   };
 
-  promptWindow?.on('will-resize', userResize);
-  promptWindow?.on('resized', () => {
-    timeoutId = setTimeout(() => {
+  const userMove = (event: Event) => {
+    cachePromptBounds();
+  };
+
+  promptWindow?.on('will-resize', throttle(userResize, 500));
+  promptWindow?.on(
+    'resized',
+    debounce((event: Event, rect: Rectangle) => {
       if (promptWindow?.isVisible()) sendToPrompt(Channel.USER_RESIZED, false);
-    }, 500);
-  });
+      cachePromptBounds();
+    }, 500)
+  );
+
+  promptWindow?.on('move', debounce(userMove, 500));
 
   // setInterval(() => {
   //   const [, newHeight] = promptWindow?.getSize() as number[];
@@ -200,6 +203,8 @@ const getHeightByScript = (ui: UI, cacheHeight: number) => {
     return INPUT_HEIGHT + headerHeight + tabsHeight;
   }
 
+  if (ui === UI.editor) return DEFAULT_HEIGHT;
+
   return cacheHeight;
 };
 
@@ -268,7 +273,7 @@ export const sendToPrompt = (channel: string, data: any) => {
   }
 };
 
-const cachePromptPosition = () => {
+const cachePromptBounds = () => {
   const currentScreen = getCurrentScreen();
   const promptBounds = promptWindow?.getBounds();
   log.info(`Cache prompt:`, { screen: currentScreen.id, ...promptBounds });
@@ -281,7 +286,7 @@ const hideAppIfNoWindows = () => {
     if (clearPrompt) {
       clearPrompt = false;
     } else {
-      cachePromptPosition();
+      // cachePromptPosition();
     }
     const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden

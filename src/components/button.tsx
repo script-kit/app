@@ -42,7 +42,10 @@ export default function ChoiceButton({
         onIndexSubmit(index);
       }}
       onMouseOver={() => {
-        if (mouseEnabled) onIndexChange(index);
+        if (mouseEnabled) {
+          console.log(`💩 poop`);
+          onIndexChange(index);
+        }
       }}
     >
       {choice?.html ? (

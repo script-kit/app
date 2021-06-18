@@ -7,9 +7,7 @@ import http from 'http';
 import https from 'https';
 import url from 'url';
 import sizeOf from 'image-size';
-import path from 'path';
 
-import { isUndefined } from 'lodash';
 import { autoUpdater } from 'electron-updater';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
@@ -19,7 +17,6 @@ import {
   setBlurredByKit,
   setIgnoreBlur,
   setPlaceholder,
-  showPrompt,
   setScript,
   setMode,
   setInput,
@@ -29,6 +26,7 @@ import {
   setPromptData,
   setChoices,
   clearPromptCache,
+  sendToPrompt,
 } from './prompt';
 import { setAppHidden } from './appHidden';
 import {
@@ -45,7 +43,6 @@ import { showNotification } from './notifications';
 import {
   setKenv,
   createKenv,
-  kenvPath,
   KIT_MAC_APP,
   KIT_MAC_APP_PROMPT,
   PATH,
@@ -309,6 +306,9 @@ const kitMessageMap: ChannelHandler = {
   },
   CLEAR_PROMPT_CACHE: () => {
     clearPromptCache();
+  },
+  SET_EDITOR_CONFIG: (data) => {
+    sendToPrompt(Channel.SET_EDITOR_CONFIG, data.options);
   },
 };
 

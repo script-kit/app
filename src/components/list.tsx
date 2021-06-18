@@ -31,6 +31,7 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
     index,
     onIndexChange,
     onIndexSubmit,
+    inputValue,
   }: ListProps,
   ref
 ) {
@@ -46,6 +47,20 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
     onIndexChange,
     onIndexSubmit
   );
+
+  useEffect(() => {
+    setMouseEnabled(false);
+  }, [inputValue, choices]);
+
+  useEffect(() => {
+    if (choices.length) {
+      setTimeout(() => {
+        setMouseEnabled(true);
+      }, 500);
+    } else {
+      setMouseEnabled(false);
+    }
+  }, [choices.length]);
 
   useEffect(() => {
     const newListHeight = choices.length * listItemHeight;
@@ -69,8 +84,6 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
           WebkitUserSelect: 'none',
         } as any
       }
-      // TODO: FIGURE OUT MOUSE INTERACTION 🐭
-      onMouseEnter={() => setMouseEnabled(true)}
     >
       <List
         ref={listRef}

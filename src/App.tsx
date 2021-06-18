@@ -24,11 +24,13 @@ import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
 import parse from 'html-react-parser';
-import { PromptData, Choice, Script } from './types';
+import { KeyCode } from 'monaco-editor';
+import { PromptData, Choice, Script, EditorConfig, EditorRef } from './types';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
 import Drop from './components/drop';
+import Editor from './components/editor';
 import Hotkey from './components/hotkey';
 import TextArea from './components/textarea';
 import Panel from './components/panel';
@@ -72,6 +74,7 @@ export default function App() {
   const [promptData, setPromptData]: any = useState({});
 
   const [inputValue, setInputValue] = useState<string>('');
+  const [editorValue, setEditorValue] = useState<string>('');
   const [ui, setUI] = useState<UI>(UI.arg);
   const [hint, setHint] = useState('');
   // const previousHint = usePrevious(hint);
@@ -84,6 +87,7 @@ export default function App() {
   // const [debouncedPlaceholder] = useDebounce(placeholder, 10);
   // const previousPlaceholder: string | null = usePrevious(placeholder);
   const [panelHTML, setPanelHTML] = useState('');
+  const [editorConfig, setEditorConfig] = useState<EditorConfig>({});
   // const [scriptName, setScriptName] = useState('');
   const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HEIGHT);
   const [listHeight, setListHeight] = useState(0);
@@ -95,6 +99,7 @@ export default function App() {
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const topRef: RefObject<HTMLDivElement> = useRef(null);
+  const editorRef: RefObject<EditorRef> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
 
   const resizeHeight = useDebouncedCallback(
@@ -179,6 +184,7 @@ export default function App() {
       setSubmitted(true);
       setInputValue('');
       setHint('');
+      setEditorConfig({});
     },
     [pid, promptData?.secret]
   );
@@ -229,6 +235,7 @@ export default function App() {
     // setChoices([]);
     setUnfilteredChoices([]);
     setTabIndex(0);
+    setIndex(0);
     setInputValue('');
     setPanelHTML('');
     setPromptData({});
@@ -509,12 +516,21 @@ export default function App() {
   }, []);
 
   const setChoicesHandler = useCallback((_event: any, rawChoices: Choice[]) => {
+    setIndex(0);
     setSubmitted(false);
     setPanelHTML('');
     setUnfilteredChoices(rawChoices);
   }, []);
 
+  const setEditorConfigHandler = useCallback(
+    (_event: any, config: EditorConfig) => {
+      setEditorConfig(config);
+    },
+    []
+  );
+
   const setPidHandler = useCallback((_event, pid: number) => {
+    console.log({ pid });
     setPid(pid);
   }, []);
 
@@ -539,6 +555,7 @@ export default function App() {
     [Channel.SET_PID]: setPidHandler,
     [Channel.SET_SCRIPT]: setScriptHandler,
     [Channel.SET_CHOICES]: setChoicesHandler,
+    [Channel.SET_EDITOR_CONFIG]: setEditorConfigHandler,
     [Channel.SET_HINT]: setHintHandler,
     [Channel.SET_INPUT]: setInputHandler,
     [Channel.SET_MODE]: setModeHandler,
@@ -566,6 +583,41 @@ export default function App() {
     };
   }, [messageMap]);
 
+  const [editor, setEditor] = useState<EditorRef | null>(null);
+
+  useEffect(() => {
+    if (editor) {
+      editor?.focus();
+
+      console.log(`Save to ${pid}`);
+      const keyDown = editor.onKeyDown((event) => {
+        if (event.ctrlKey || event.metaKey) {
+          switch (event.keyCode) {
+            case KeyCode.KEY_S:
+              event.preventDefault();
+              submit(editor.getValue());
+              break;
+
+            case KeyCode.KEY_W:
+              event.preventDefault();
+              closePrompt();
+              break;
+
+            default:
+              break;
+          }
+        }
+      });
+
+      return () => {
+        console.log(`Stop ${pid}`);
+        keyDown.dispose();
+      };
+    }
+
+    return () => {};
+  }, [closePrompt, submit, editor, pid]);
+
   return (
     <ErrorBoundary>
       <div
@@ -585,6 +637,9 @@ export default function App() {
           )}
           {ui === UI.hotkey && (
             <Hotkey submit={submit} onEscape={closePrompt} />
+          )}
+          {ui === UI.editor && (
+            <Editor ref={setEditor} options={editorConfig} />
           )}
           {ui === UI.drop && (
             <Drop
@@ -640,6 +695,7 @@ export default function App() {
               index={index}
               onIndexChange={clampIndex}
               onIndexSubmit={onIndexSubmit}
+              inputValue={inputValue}
             />
           )}
         </main>

@@ -35,6 +35,7 @@ export enum Channel {
   SET_SCRIPT = 'SET_SCRIPT',
   SEND_RESPONSE = 'SEND_RESPONSE',
   SET_CHOICES = 'SET_CHOICES',
+  SET_EDITOR_CONFIG = 'SET_EDITOR_CONFIG',
   SET_HINT = 'SET_HINT',
   SET_IGNORE_BLUR = 'SET_IGNORE_BLUR',
   SET_INPUT = 'SET_INPUT',
@@ -80,6 +81,7 @@ export enum UI {
   arg = 'arg',
   textarea = 'textarea',
   hotkey = 'hotkey',
+  editor = 'editor',
   drop = 'drop',
   none = 'none',
 }

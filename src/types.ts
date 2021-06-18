@@ -1,4 +1,5 @@
 import { ChangeEvent, KeyboardEvent } from 'react';
+import { editor } from 'monaco-editor';
 import { Mode, Channel, ProcessType, UI } from './enums';
 
 export interface PromptData {
@@ -117,4 +118,16 @@ export interface ListProps {
   choices: ChoiceButtonData['choices'];
   onIndexChange: ChoiceButtonData['onIndexChange'];
   onIndexSubmit: ChoiceButtonData['onIndexSubmit'];
+  inputValue: string;
 }
+
+export interface EditorProps {
+  options: EditorConfig;
+}
+
+export type EditorConfig = editor.IStandaloneEditorConstructionOptions & {
+  language?: string;
+  content?: string;
+};
+
+export type EditorRef = editor.IStandaloneCodeEditor;

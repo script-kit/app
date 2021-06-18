@@ -1493,6 +1493,22 @@
   resolved "https://registry.npmjs.org/@mdx-js/util/-/util-1.6.22.tgz"
   integrity sha512-H1rQc1ZOHANWBvPcW+JpGwr+juXSxM8Q8YCkm3GhZd8REu1fHR3z99CErO1p9pkcfcxZnMdIZdIsXkOHY0NilA==
 
+"@monaco-editor/loader@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@monaco-editor/loader/-/loader-1.1.0.tgz#24106ea29201f2fd1d8eeb769b4d067c77d7e7b5"
+  integrity sha512-ovAId70jC5k7cYYPC9M/nhANI9pgB/+WD7FC0xWy1bcO/D0/3qIb7iU4mYw7xLqW5dKXfoyT1V8cIWfRSE0wag==
+  dependencies:
+    state-local "^1.0.6"
+
+"@monaco-editor/react@^4.2.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@monaco-editor/react/-/react-4.2.0.tgz#55bb8e533f43aa4cdc0cb0e0a7cbaf5e6bfe204d"
+  integrity sha512-p0kMtWAGuGGyKcdVP/La1QfmOW9HqIhQ63w2gbYwMw8k0v6Pu2VR8nr+OA5CK70q9Zy4yWqfnilpK5eYaUNxHQ==
+  dependencies:
+    "@monaco-editor/loader" "^1.1.0"
+    prop-types "^15.7.2"
+    state-local "^1.0.7"
+
 "@nodelib/fs.scandir@2.1.4":
   version "2.1.4"
   resolved "https://registry.npmjs.org/@nodelib/fs.scandir/-/fs.scandir-2.1.4.tgz"
@@ -9859,6 +9875,11 @@ moment@>=2.14.0:
   resolved "https://registry.npmjs.org/moment/-/moment-2.29.1.tgz"
   integrity sha512-kHmoybcPV8Sqy59DwNDY3Jefr64lK/by/da0ViFcuA4DH0vQg5Q6Ze5VimxkfQNSC+Mls/Kx53s7TjP1RhFEDQ==
 
+monaco-editor@^0.25.1:
+  version "0.25.1"
+  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.25.1.tgz#bba1de27d85cfe1cc5536b138371bf7811717d47"
+  integrity sha512-JAuG7btKSZIjcyNlKD6jCV8eHR/y4uyMJ3NHmCb5BKj+zdl1C67BPQ03hgkIz+3t51oaQiqa8DgM9bO4Q2Lskw==
+
 moo@^0.5.0:
   version "0.5.1"
   resolved "https://registry.npmjs.org/moo/-/moo-0.5.1.tgz"
@@ -13226,6 +13247,11 @@ stat-mode@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/stat-mode/-/stat-mode-1.0.0.tgz"
   integrity sha512-jH9EhtKIjuXZ2cWxmXS8ZP80XyC3iasQxMDV8jzhNJpfDb7VbQLVW4Wvsxz9QZvzV+G4YoSfBUVKDOyxLzi/sg==
+
+state-local@^1.0.6, state-local@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/state-local/-/state-local-1.0.7.tgz#da50211d07f05748d53009bee46307a37db386d5"
+  integrity sha512-HTEHMNieakEnoe33shBYcZ7NX83ACUjCu8c40iOGEZsngj9zRnkqS9j1pqQPXwobB0ZcVTk27REb7COQ0UR59w==
 
 state-toggle@^1.0.0:
   version "1.0.3"
