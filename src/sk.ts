@@ -37,6 +37,6 @@ export const startSK = () => {
   });
 
   const socketPath = kitPath('kit.sock');
-  fs.unlinkSync(socketPath);
+  if (fs.existsSync(socketPath)) fs.unlinkSync(socketPath);
   server.listen(socketPath);
 };
