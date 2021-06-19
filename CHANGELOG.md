@@ -1,3 +1,10 @@
+# [1.3.0-alpha.56](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.55...v1.3.0-alpha.56) (2021-06-19)
+
+
+### Features
+
+* **fix:** adding monaco to assets ([25f7036](https://github.com/johnlindquist/kitapp/commit/25f70360ff36a5b73a74d30a21d3c74893a1fbd0))
+
 # [1.3.0-alpha.55](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.54...v1.3.0-alpha.55) (2021-06-19)
 
 
