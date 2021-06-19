@@ -1,3 +1,17 @@
+# [1.3.0-alpha.53](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.52...v1.3.0-alpha.53) (2021-06-19)
+
+
+### Features
+
+* **app:** adding editor and cleaning ui ([59a9de1](https://github.com/johnlindquist/kitapp/commit/59a9de1d65267d96604c64803ae28559dcfb1ed9))
+* **app:** Fixing up the editor ([795c766](https://github.com/johnlindquist/kitapp/commit/795c76660795f6053832f2be228b9a4f1b30e5cc))
+* **app:** prep process for speed ([63ae22e](https://github.com/johnlindquist/kitapp/commit/63ae22ef814e34f03b720554f5d6fb9eff069ee0))
+* **app:** resizing and sk ([94570e4](https://github.com/johnlindquist/kitapp/commit/94570e4ddea7cc66c131a7a4d144ef1ada76fd43))
+* **app:** speed with virtualize and process prep ([143154e](https://github.com/johnlindquist/kitapp/commit/143154ea7cc22f3ca9babef1dd82c8f7102537e8))
+* **app:** splitting textarea and list for resize ([5cc1594](https://github.com/johnlindquist/kitapp/commit/5cc159498e8a382f04e574c0fb69aa6c912382eb))
+* **app:** switching to unix socket ([e05e267](https://github.com/johnlindquist/kitapp/commit/e05e267f93f6bea9f9ada44474f1afd83886383d))
+* **app:** Using ui for prompt switching ([e92dbb7](https://github.com/johnlindquist/kitapp/commit/e92dbb74147da74dbabfe91091aae3b7bb6d34a8))
+
 # [1.3.0-beta.19](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.18...v1.3.0-beta.19) (2021-06-07)
 
 
