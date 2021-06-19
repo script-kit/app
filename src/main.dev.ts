@@ -67,6 +67,7 @@ import { startSK } from './sk';
 import { setupPrefs } from './prefs';
 import { ProcessType } from './enums';
 import { processes } from './process';
+import { startIpc } from './ipc';
 
 let configWindow: BrowserWindow;
 
@@ -259,7 +260,7 @@ const ready = async () => {
     startSK();
     await cacheKitScripts();
 
-    await import('./ipc');
+    startIpc();
     processes.add(ProcessType.Prompt);
 
     autoUpdater.logger = log;

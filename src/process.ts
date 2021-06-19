@@ -424,14 +424,16 @@ class Processes extends Array<ProcessInfo> {
       runArgs: args,
     });
 
-    this.push({
+    const info = {
       pid: child.pid,
       child,
       type,
       scriptPath,
       values: [],
       date: new Date(),
-    });
+    };
+
+    this.push(info);
 
     log.info(`🟢 start ${type} process: ${scriptPath} id: ${child.pid}`);
 
@@ -467,7 +469,7 @@ class Processes extends Array<ProcessInfo> {
       if (reject) reject(error);
     });
 
-    return child;
+    return info;
   }
 
   public findPromptProcess() {
@@ -476,7 +478,9 @@ class Processes extends Array<ProcessInfo> {
     );
     if (promptProcess) return promptProcess;
 
-    throw new Error(`☠️ Can't find Prompt Process`);
+    log.warn(`☠️ Can't find Prompt Process. Starting another`);
+
+    return processes.add(ProcessType.Prompt);
   }
 
   public getByPid(pid: number) {
