@@ -1,3 +1,10 @@
+# [1.3.0-alpha.54](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.53...v1.3.0-alpha.54) (2021-06-19)
+
+
+### Features
+
+* **fix:** Unlinking socket file ([9c886c3](https://github.com/johnlindquist/kitapp/commit/9c886c39391aeb856aa0d3c04942899c9de208e0))
+
 # [1.3.0-alpha.53](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.52...v1.3.0-alpha.53) (2021-06-19)
 
 
