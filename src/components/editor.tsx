@@ -16,9 +16,7 @@ function uriFromPath(_path: string) {
 
 loader.config({
   paths: {
-    vs: uriFromPath(
-      path.join(__dirname, '../node_modules/monaco-editor/min/vs')
-    ),
+    vs: uriFromPath(path.join(__dirname, '../assets/vs')),
   },
 });
 
