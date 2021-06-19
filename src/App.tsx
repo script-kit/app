@@ -90,7 +90,7 @@ export default function App() {
   const [editorConfig, setEditorConfig] = useState<EditorConfig>({});
   // const [scriptName, setScriptName] = useState('');
   const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HEIGHT);
-  const [listHeight, setListHeight] = useState(0);
+  const [mainHeight, setMainHeight] = useState(0);
 
   const choicesListRef = useRef(null);
   const panelRef = useRef(null);
@@ -131,7 +131,7 @@ export default function App() {
         topHeight + (filteredChoices.length === 0 ? 0 : listHeight);
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
       resizeHeight(height);
-      setListHeight(maxHeight - topHeight);
+      setMainHeight(maxHeight - topHeight);
     },
     [maxHeight, resizeHeight, filteredChoices.length]
   );
@@ -638,9 +638,6 @@ export default function App() {
           {ui === UI.hotkey && (
             <Hotkey submit={submit} onEscape={closePrompt} />
           )}
-          {ui === UI.editor && (
-            <Editor ref={setEditor} options={editorConfig} />
-          )}
           {ui === UI.drop && (
             <Drop
               placeholder={placeholder}
@@ -689,13 +686,21 @@ export default function App() {
           {ui === UI.arg && (
             <List
               ref={choicesListRef}
-              listHeight={listHeight}
+              listHeight={mainRef?.current?.clientHeight || DEFAULT_MAX_HEIGHT}
               choices={filteredChoices}
               onListChoicesChanged={onListChoicesChanged}
               index={index}
               onIndexChange={clampIndex}
               onIndexSubmit={onIndexSubmit}
               inputValue={inputValue}
+            />
+          )}
+
+          {ui === UI.editor && (
+            <Editor
+              ref={setEditor}
+              options={editorConfig}
+              height={mainHeight}
             />
           )}
         </main>

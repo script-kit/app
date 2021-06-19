@@ -1,6 +1,6 @@
 import React, { forwardRef, useCallback, useEffect, useState } from 'react';
 import path from 'path';
-import MonacoEditor, { loader, useMonaco } from '@monaco-editor/react';
+import MonacoEditor, { loader } from '@monaco-editor/react';
 import { editor, KeyCode } from 'monaco-editor';
 import { useThemeDetector } from '../hooks';
 import { EditorProps } from '../types';
@@ -27,14 +27,11 @@ const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   minimap: {
     enabled: false,
   },
-  padding: {
-    top: 16,
-  },
   wordWrap: 'on',
 };
 
 export default forwardRef<any, any>(function Editor(
-  { options }: EditorProps,
+  { options, height }: EditorProps,
   ref: any
 ) {
   useEffect(() => {
@@ -42,26 +39,60 @@ export default forwardRef<any, any>(function Editor(
       ref(null);
     };
   }, [ref]);
+
+  const beforeMount = useCallback((monaco) => {
+    monaco.editor.defineTheme('kit-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#00000000',
+      },
+    });
+    monaco.editor.defineTheme('kit-light', {
+      base: 'vs',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#FFFFFF00',
+      },
+    });
+  }, []);
   const onMount = useCallback(
     (editorInstance: editor.IStandaloneCodeEditor) => {
       ref(editorInstance);
       if (editorInstance?.getDomNode())
         (editorInstance.getDomNode() as HTMLElement).style.webkitAppRegion =
           'no-drag';
+
+      const lineNumber = editorInstance.getModel()?.getLineCount() || 0;
+      const column =
+        (editorInstance?.getModel()?.getLineContent(lineNumber).length || 0) +
+        1;
+      editorInstance.setPosition({ lineNumber, column });
+      if (lineNumber > 5) {
+        editorInstance.revealLineInCenter(lineNumber - 3);
+      }
     },
     [ref]
   );
 
   const isDark = useThemeDetector();
-
   return (
-    <MonacoEditor
-      onMount={onMount}
-      language={options.language || 'markdown'}
-      height="100vh"
-      theme={isDark ? 'vs-dark' : 'light'}
-      options={{ ...DEFAULT_OPTIONS, ...options }}
-      value={options.content || ''}
-    />
+    <div
+      className={`
+    pt-3
+    h-full`}
+    >
+      <MonacoEditor
+        beforeMount={beforeMount}
+        onMount={onMount}
+        language={options.language || 'markdown'}
+        height="100%"
+        theme={isDark ? 'kit-dark' : 'kit-light'}
+        options={{ ...DEFAULT_OPTIONS, ...options }}
+        value={options.content || ''}
+      />
+    </div>
   );
 });

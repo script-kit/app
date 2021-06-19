@@ -123,6 +123,7 @@ export interface ListProps {
 
 export interface EditorProps {
   options: EditorConfig;
+  height: number;
 }
 
 export type EditorConfig = editor.IStandaloneEditorConstructionOptions & {
