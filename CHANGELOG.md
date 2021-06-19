@@ -1,3 +1,10 @@
+# [1.3.0-alpha.55](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.54...v1.3.0-alpha.55) (2021-06-19)
+
+
+### Features
+
+* **fix:** Create a prompt process if one doesn't exist ([e7ed270](https://github.com/johnlindquist/kitapp/commit/e7ed27002e8bb3aedefd82c53a157985b9c9f771))
+
 # [1.3.0-alpha.54](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.53...v1.3.0-alpha.54) (2021-06-19)
 
 
