@@ -1,3 +1,10 @@
+# [1.3.0-alpha.57](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.56...v1.3.0-alpha.57) (2021-06-22)
+
+
+### Features
+
+* **fix:** using AutoSizer for list resizing ([db64acb](https://github.com/johnlindquist/kitapp/commit/db64acb70b45cdaf8e56f544d7314dc3b6c5efc3))
+
 # [1.3.0-alpha.56](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.55...v1.3.0-alpha.56) (2021-06-19)
 
 
