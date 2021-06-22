@@ -112,7 +112,8 @@ export interface DropProps {
 }
 
 export interface ListProps {
-  listHeight: number;
+  height: number;
+  width: number;
   onListChoicesChanged: (listHeight: number) => void;
   index: number;
   choices: ChoiceButtonData['choices'];
@@ -124,6 +125,7 @@ export interface ListProps {
 export interface EditorProps {
   options: EditorConfig;
   height: number;
+  width: number;
 }
 
 export type EditorConfig = editor.IStandaloneEditorConstructionOptions & {

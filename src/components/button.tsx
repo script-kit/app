@@ -43,7 +43,6 @@ export default function ChoiceButton({
       }}
       onMouseOver={() => {
         if (mouseEnabled) {
-          console.log(`💩 poop`);
           onIndexChange(index);
         }
       }}

@@ -20,6 +20,7 @@ import React, {
   useState,
 } from 'react';
 
+import AutoSizer from 'react-virtualized-auto-sizer';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
@@ -668,41 +669,52 @@ export default function App() {
           ref={mainRef}
           className={`
         h-full
+        border
+        border-transparent
         `}
         >
-          {ui === UI.textarea && (
-            <TextArea
-              ref={textAreaRef}
-              height={maxHeight}
-              onSubmit={submit}
-              onEscape={closePrompt}
-              placeholder={placeholder}
-            />
-          )}
-          {panelHTML?.length > 0 && (
-            <Panel ref={panelRef} panelHTML={panelHTML} />
-          )}
+          <AutoSizer>
+            {({ width, height }) => (
+              <>
+                {ui === UI.textarea && (
+                  <TextArea
+                    ref={textAreaRef}
+                    height={height}
+                    width={width}
+                    onSubmit={submit}
+                    onEscape={closePrompt}
+                    placeholder={placeholder}
+                  />
+                )}
+                {panelHTML?.length > 0 && (
+                  <Panel ref={panelRef} panelHTML={panelHTML} />
+                )}
 
-          {ui === UI.arg && (
-            <List
-              ref={choicesListRef}
-              listHeight={mainRef?.current?.clientHeight || DEFAULT_MAX_HEIGHT}
-              choices={filteredChoices}
-              onListChoicesChanged={onListChoicesChanged}
-              index={index}
-              onIndexChange={clampIndex}
-              onIndexSubmit={onIndexSubmit}
-              inputValue={inputValue}
-            />
-          )}
+                {ui === UI.arg && (
+                  <List
+                    ref={choicesListRef}
+                    height={height}
+                    width={width}
+                    choices={filteredChoices}
+                    onListChoicesChanged={onListChoicesChanged}
+                    index={index}
+                    onIndexChange={clampIndex}
+                    onIndexSubmit={onIndexSubmit}
+                    inputValue={inputValue}
+                  />
+                )}
 
-          {ui === UI.editor && (
-            <Editor
-              ref={setEditor}
-              options={editorConfig}
-              height={mainHeight}
-            />
-          )}
+                {ui === UI.editor && (
+                  <Editor
+                    ref={setEditor}
+                    options={editorConfig}
+                    height={height}
+                    width={width}
+                  />
+                )}
+              </>
+            )}
+          </AutoSizer>
         </main>
       </div>
     </ErrorBoundary>

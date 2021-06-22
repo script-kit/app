@@ -25,7 +25,8 @@ const createItemData = memoize(
 
 export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
   {
-    listHeight,
+    width,
+    height,
     choices,
     onListChoicesChanged,
     index,
@@ -53,13 +54,17 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
   }, [inputValue, choices]);
 
   useEffect(() => {
+    let id: any = 0;
     if (choices.length) {
-      setTimeout(() => {
+      id = setTimeout(() => {
         setMouseEnabled(true);
       }, 500);
     } else {
       setMouseEnabled(false);
     }
+    return () => {
+      clearTimeout(id);
+    };
   }, [choices.length]);
 
   useEffect(() => {
@@ -75,11 +80,13 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
     <div
       ref={ref}
       className={`flex flex-row
-      w-full h-full min-w-1/2
+      w-full min-w-1/2
       overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5
       `}
       style={
         {
+          width,
+          height,
           WebkitAppRegion: 'no-drag',
           WebkitUserSelect: 'none',
         } as any
@@ -87,8 +94,8 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
     >
       <List
         ref={listRef}
-        height={listHeight}
-        itemCount={choices?.length}
+        height={height}
+        itemCount={choices?.length || 0}
         itemSize={listItemHeight}
         width="100%"
         itemData={itemData}

@@ -6,11 +6,12 @@ interface TextAreaProps {
   onSubmit: (value: any) => void;
   onEscape: (value: any) => void;
   height: number;
+  width: number;
   placeholder: string;
 }
 
 export default forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
-  { onSubmit, onEscape, height, placeholder }: TextAreaProps,
+  { onSubmit, onEscape, height, width, placeholder }: TextAreaProps,
   ref
 ) {
   const [textAreaValue, setTextAreaValue] = useState('');
@@ -43,6 +44,7 @@ export default forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
             WebkitAppRegion: 'no-drag',
             WebkitUserSelect: 'text',
             height,
+            width,
           } as any
         }
         onKeyDown={onTextAreaKeyDown}

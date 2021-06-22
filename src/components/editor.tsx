@@ -29,7 +29,7 @@ const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
 };
 
 export default forwardRef<any, any>(function Editor(
-  { options, height }: EditorProps,
+  { options, height, width }: EditorProps,
   ref: any
 ) {
   useEffect(() => {
@@ -86,7 +86,8 @@ export default forwardRef<any, any>(function Editor(
         beforeMount={beforeMount}
         onMount={onMount}
         language={options.language || 'markdown'}
-        height="100%"
+        height={height}
+        width={width}
         theme={isDark ? 'kit-dark' : 'kit-light'}
         options={{ ...DEFAULT_OPTIONS, ...options }}
         value={options.content || ''}
