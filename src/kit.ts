@@ -63,7 +63,7 @@ export const runPromptProcess = async (
   processes.endPreviousPromptProcess();
 
   const script = await findScript(promptScriptPath);
-  log.info(script);
+  // log.info(script);
 
   setScript(script);
 

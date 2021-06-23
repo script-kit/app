@@ -103,25 +103,22 @@ export default function App() {
   const editorRef: RefObject<EditorRef> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
 
-  const resizeHeight = useDebouncedCallback(
-    useCallback(
-      (height: number) => {
-        if (isMouseDown) return;
+  const resizeHeight = useCallback(
+    (height: number) => {
+      if (isMouseDown) return;
 
-        const { height: topHeight } =
-          topRef?.current?.getBoundingClientRect() as any;
+      const { height: topHeight } =
+        topRef?.current?.getBoundingClientRect() as any;
 
-        const promptHeight = height > topHeight ? height : topHeight;
+      const promptHeight = height > topHeight ? height : topHeight;
 
-        const newHeight = Math.round(promptHeight);
+      const newHeight = Math.round(promptHeight);
 
-        if (ui === UI.arg) {
-          ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
-        }
-      },
-      [isMouseDown, ui]
-    ),
-    75
+      if (ui === UI.arg) {
+        ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
+      }
+    },
+    [isMouseDown, ui]
   );
 
   const onListChoicesChanged = useCallback(

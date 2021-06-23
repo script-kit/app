@@ -242,6 +242,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_IGNORE_BLUR: (data) => {
+    console.log({ ignore: data.ignore });
     setIgnoreBlur(data?.ignore);
   },
 

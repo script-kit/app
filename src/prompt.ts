@@ -48,8 +48,8 @@ export const createPromptWindow = async () => {
     transparent: true,
     backgroundColor: nativeTheme.shouldUseDarkColors
       ? '#33000000'
-      : '#C0FFFFFF',
-    vibrancy: nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light',
+      : '#C0FFFF00',
+    vibrancy: 'hud',
     show: false,
     hasShadow: true,
     icon: getAssetPath('icon.png'),
@@ -57,7 +57,7 @@ export const createPromptWindow = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
-      devTools: true, // process.env.NODE_ENV === 'development' || devTools,
+      devTools: process.env.NODE_ENV === 'development' || devTools,
       backgroundThrottling: false,
     },
     alwaysOnTop: true,
@@ -157,7 +157,6 @@ const getCurrentScreen = () => {
 
 export const getCurrentScreenPromptCache = () => {
   const currentScreen = getCurrentScreen();
-  const { filePath } = promptScript as Script;
 
   const currentPromptCache = promptDb
     .get(`screens.${String(currentScreen.id)}`)
@@ -190,6 +189,7 @@ const DEFAULT_HEIGHT = 480;
 
 const getHeightByPromptData = (promptData: PromptData, cacheHeight: number) => {
   const script = promptScript;
+  // console.log({ filePath: script?.filePath, ui: promptData.ui });
   if (script?.filePath === mainScriptPath) {
     return cacheHeight;
   }
@@ -218,6 +218,7 @@ const setBoundsByPromptData = (promptData: PromptData) => {
       promptData,
       currentScreenPromptBounds.height
     );
+    sendToPrompt(Channel.USER_RESIZED, height);
     promptWindow.setBounds({
       ...currentScreenPromptBounds,
       height,
@@ -228,9 +229,9 @@ const setBoundsByPromptData = (promptData: PromptData) => {
 };
 
 export const showPrompt = (promptData: PromptData) => {
-  if (promptData.ui !== prevUI) {
-    setBoundsByPromptData(promptData);
-  }
+  // if (promptData.ui !== prevUI) {
+  setBoundsByPromptData(promptData);
+  // }
   prevUI = promptData.ui as UI;
   if (promptWindow && !promptWindow?.isVisible() && promptData.ui !== UI.none) {
     if (!promptWindow?.isVisible()) {
@@ -278,7 +279,6 @@ export const sendToPrompt = (channel: string, data: any) => {
 };
 
 const cachePromptBounds = () => {
-  const { filePath } = promptScript as Script;
   const currentScreen = getCurrentScreen();
   const promptBounds = promptWindow?.getBounds();
   log.info(`Cache prompt:`, {
