@@ -1,3 +1,10 @@
+# [1.3.0-alpha.58](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.57...v1.3.0-alpha.58) (2021-06-23)
+
+
+### Features
+
+* **fix:** change textarea submit shortcut ([9b5995f](https://github.com/johnlindquist/kitapp/commit/9b5995f43f5bdfb91c309706bfc6c349e2f3e3ab))
+
 # [1.3.0-alpha.57](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.56...v1.3.0-alpha.57) (2021-06-22)
 
 
