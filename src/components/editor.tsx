@@ -1,7 +1,14 @@
-import React, { forwardRef, useCallback, useEffect, useState } from 'react';
+import React, {
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import path from 'path';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { editor, KeyCode } from 'monaco-editor';
+import memoize from 'memoize-one';
 import { useThemeDetector } from '../hooks';
 import { EditorProps } from '../types';
 

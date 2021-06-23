@@ -91,7 +91,7 @@ export default function App() {
   const [editorConfig, setEditorConfig] = useState<EditorConfig>({});
   // const [scriptName, setScriptName] = useState('');
   const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HEIGHT);
-  const [mainHeight, setMainHeight] = useState(0);
+  // const [mainHeight, setMainHeight] = useState(0);
 
   const choicesListRef = useRef(null);
   const panelRef = useRef(null);
@@ -115,12 +115,13 @@ export default function App() {
 
         const newHeight = Math.round(promptHeight);
 
-        if (ui === UI.arg)
+        if (ui === UI.arg) {
           ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
+        }
       },
       [isMouseDown, ui]
     ),
-    10
+    75
   );
 
   const onListChoicesChanged = useCallback(
@@ -132,7 +133,7 @@ export default function App() {
         topHeight + (filteredChoices.length === 0 ? 0 : listHeight);
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
       resizeHeight(height);
-      setMainHeight(maxHeight - topHeight);
+      // setMainHeight(maxHeight - topHeight);
     },
     [maxHeight, resizeHeight, filteredChoices.length]
   );
@@ -531,7 +532,6 @@ export default function App() {
   );
 
   const setPidHandler = useCallback((_event, pid: number) => {
-    console.log({ pid });
     setPid(pid);
   }, []);
 
@@ -586,11 +586,11 @@ export default function App() {
 
   const [editor, setEditor] = useState<EditorRef | null>(null);
 
+  // I hate this hack
   useEffect(() => {
     if (editor) {
       editor?.focus();
 
-      console.log(`Save to ${pid}`);
       const keyDown = editor.onKeyDown((event) => {
         if (event.ctrlKey || event.metaKey) {
           switch (event.keyCode) {
@@ -611,7 +611,6 @@ export default function App() {
       });
 
       return () => {
-        console.log(`Stop ${pid}`);
         keyDown.dispose();
       };
     }

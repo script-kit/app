@@ -157,6 +157,7 @@ const getCurrentScreen = () => {
 
 export const getCurrentScreenPromptCache = () => {
   const currentScreen = getCurrentScreen();
+  const { filePath } = promptScript as Script;
 
   const currentPromptCache = promptDb
     .get(`screens.${String(currentScreen.id)}`)
@@ -187,13 +188,13 @@ const INPUT_HEIGHT = 64;
 const TABS_HEIGHT = 36;
 const DEFAULT_HEIGHT = 480;
 
-const getHeightByScript = (ui: UI, cacheHeight: number) => {
+const getHeightByPromptData = (promptData: PromptData, cacheHeight: number) => {
   const script = promptScript;
   if (script?.filePath === mainScriptPath) {
     return cacheHeight;
   }
 
-  if (ui === UI.arg || ui === UI.drop) {
+  if (promptData.ui === UI.arg || promptData.ui === UI.drop) {
     const headerHeight =
       script?.menu || script?.twitter || script?.description
         ? HEADER_HEIGHT
@@ -203,17 +204,20 @@ const getHeightByScript = (ui: UI, cacheHeight: number) => {
     return INPUT_HEIGHT + headerHeight + tabsHeight;
   }
 
-  if (ui === UI.editor) return DEFAULT_HEIGHT;
+  if (promptData.ui === UI.editor) return DEFAULT_HEIGHT;
 
   return cacheHeight;
 };
 
-const setBoundsByUI = (ui: UI) => {
-  log.info(`💐 Set bounds for ${ui}`);
+const setBoundsByPromptData = (promptData: PromptData) => {
+  log.info(`💐 Set bounds for ${promptData.ui} ${promptData.kitScript}`);
   const currentScreenPromptBounds = getCurrentScreenPromptCache();
 
   if (currentScreenPromptBounds) {
-    const height = getHeightByScript(ui, currentScreenPromptBounds.height);
+    const height = getHeightByPromptData(
+      promptData,
+      currentScreenPromptBounds.height
+    );
     promptWindow.setBounds({
       ...currentScreenPromptBounds,
       height,
@@ -223,12 +227,12 @@ const setBoundsByUI = (ui: UI) => {
   }
 };
 
-export const showPrompt = (ui: UI) => {
-  if (ui !== prevUI) {
-    setBoundsByUI(ui);
+export const showPrompt = (promptData: PromptData) => {
+  if (promptData.ui !== prevUI) {
+    setBoundsByPromptData(promptData);
   }
-  prevUI = ui as UI;
-  if (promptWindow && !promptWindow?.isVisible() && ui !== UI.none) {
+  prevUI = promptData.ui as UI;
+  if (promptWindow && !promptWindow?.isVisible() && promptData.ui !== UI.none) {
     if (!promptWindow?.isVisible()) {
       promptWindow?.show();
       promptWindow.setVibrancy(
@@ -274,9 +278,13 @@ export const sendToPrompt = (channel: string, data: any) => {
 };
 
 const cachePromptBounds = () => {
+  const { filePath } = promptScript as Script;
   const currentScreen = getCurrentScreen();
   const promptBounds = promptWindow?.getBounds();
-  log.info(`Cache prompt:`, { screen: currentScreen.id, ...promptBounds });
+  log.info(`Cache prompt:`, {
+    screen: currentScreen.id,
+    ...promptBounds,
+  });
 
   promptDb.set(`screens.${String(currentScreen.id)}`, promptBounds).write();
 };
@@ -372,7 +380,7 @@ export const setTabIndex = (tabIndex: number) => {
 
 export const setPromptData = (promptData: PromptData) => {
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
-  showPrompt(promptData.ui);
+  showPrompt(promptData);
 };
 
 export const setChoices = (choices: Choice[]) => {

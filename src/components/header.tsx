@@ -11,7 +11,6 @@ export default function Header({ script, pid }: HeaderProps) {
     <div className="text-xxs uppercase font-mono justify-between pt-3 px-4 grid grid-cols-5">
       <span className="dark:text-primary-light text-primary-dark col-span-3">
         {script?.description || ''}
-        {pid}
       </span>
       <span className="text-right col-span-2">
         {script?.menu}

@@ -18,17 +18,22 @@ export default forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
 
   const onTextAreaKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      const { key, metaKey: command } = event as any;
+      if (event.ctrlKey || event.metaKey) {
+        switch (event.key) {
+          case 's':
+            event.preventDefault();
+            onSubmit(textAreaValue);
+            setTextAreaValue('');
+            break;
 
-      if (key === 'Escape') {
-        event.preventDefault();
-        onEscape(event);
-        return;
-      }
-      if (key === 'Enter' && command) {
-        event.preventDefault();
-        onSubmit(textAreaValue);
-        setTextAreaValue('');
+          case 'w':
+            event.preventDefault();
+            onEscape(event);
+            break;
+
+          default:
+            break;
+        }
       }
     },
     [onEscape, onSubmit, textAreaValue]
