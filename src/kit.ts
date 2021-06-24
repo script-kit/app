@@ -59,7 +59,6 @@ export const runPromptProcess = async (
   promptScriptPath: string,
   args: string[] = []
 ) => {
-  log.info(`💨 ${promptScriptPath}`);
   processes.endPreviousPromptProcess();
 
   const script = await findScript(promptScriptPath);
@@ -67,7 +66,7 @@ export const runPromptProcess = async (
 
   setScript(script);
 
-  log.info(processes.getAllProcessInfo());
+  log.info(`📦`, processes.getAllProcessInfo());
   const { child, pid } = processes.findPromptProcess();
 
   setPromptPid(pid);

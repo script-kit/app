@@ -129,6 +129,7 @@ export default function App() {
       const fullHeight =
         topHeight + (filteredChoices.length === 0 ? 0 : listHeight);
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
+
       resizeHeight(height);
       // setMainHeight(maxHeight - topHeight);
     },
@@ -519,6 +520,7 @@ export default function App() {
     setSubmitted(false);
     setPanelHTML('');
     setUnfilteredChoices(rawChoices);
+    // setMaxHeight(window.innerHeight);
   }, []);
 
   const setEditorConfigHandler = useCallback(
@@ -623,7 +625,6 @@ export default function App() {
           {
             WebkitAppRegion: 'drag',
             WebkitUserSelect: 'none',
-            maxHeight,
           } as any
         }
         className="flex flex-col w-full rounded-lg relative h-full"

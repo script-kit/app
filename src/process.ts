@@ -242,7 +242,6 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_IGNORE_BLUR: (data) => {
-    console.log({ ignore: data.ignore });
     setIgnoreBlur(data?.ignore);
   },
 
@@ -436,7 +435,7 @@ class Processes extends Array<ProcessInfo> {
 
     this.push(info);
 
-    log.info(`🟢 start ${type} process: ${scriptPath} id: ${child.pid}`);
+    log.info(`🟢 start ${type} ${scriptPath || 'idle'} id: ${child.pid}`);
 
     const id =
       ![ProcessType.Background, ProcessType.Prompt].includes(type) &&

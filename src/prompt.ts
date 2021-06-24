@@ -16,7 +16,6 @@ import { getScripts } from './state';
 import { emitter, KitEvent } from './events';
 
 let promptScript: Script | null;
-let prevUI: UI = UI.none;
 
 const adapter = new FileSync(promptDbPath);
 const promptDb = low(adapter);
@@ -49,7 +48,7 @@ export const createPromptWindow = async () => {
     backgroundColor: nativeTheme.shouldUseDarkColors
       ? '#33000000'
       : '#C0FFFF00',
-    vibrancy: 'hud',
+    vibrancy: 'window',
     show: false,
     hasShadow: true,
     icon: getAssetPath('icon.png'),
@@ -166,7 +165,7 @@ export const getCurrentScreenPromptCache = () => {
   return currentPromptCache as Size;
 };
 
-export const setDefaultBounds = () => {
+export const getDefaultBounds = () => {
   const currentScreen = getCurrentScreen();
 
   const { width: screenWidth, height: screenHeight } =
@@ -178,8 +177,7 @@ export const setDefaultBounds = () => {
   const x = Math.round(screenWidth / 2 - width / 2 + workX);
   const y = Math.round(workY + height / 10);
 
-  log.info(`DEFAULT: setBounds`);
-  promptWindow?.setBounds({ x, y, width, height });
+  return { x, y, width, height };
 };
 
 const HEADER_HEIGHT = 24;
@@ -191,6 +189,11 @@ const getHeightByPromptData = (promptData: PromptData, cacheHeight: number) => {
   const script = promptScript;
   // console.log({ filePath: script?.filePath, ui: promptData.ui });
   if (script?.filePath === mainScriptPath) {
+    return cacheHeight;
+  }
+
+  const maybeCachedChoices = kenvPath('db', `_${script?.command}.json`);
+  if (isFile(maybeCachedChoices)) {
     return cacheHeight;
   }
 
@@ -210,38 +213,37 @@ const getHeightByPromptData = (promptData: PromptData, cacheHeight: number) => {
 };
 
 const setBoundsByPromptData = (promptData: PromptData) => {
-  log.info(`💐 Set bounds for ${promptData.ui} ${promptData.kitScript}`);
   const currentScreenPromptBounds = getCurrentScreenPromptCache();
 
+  let bounds = {};
   if (currentScreenPromptBounds) {
     const height = getHeightByPromptData(
       promptData,
       currentScreenPromptBounds.height
     );
-    sendToPrompt(Channel.USER_RESIZED, height);
-    promptWindow.setBounds({
+    // sendToPrompt(Channel.USER_RESIZED, height);
+
+    bounds = {
       ...currentScreenPromptBounds,
       height,
-    });
+    };
   } else {
-    setDefaultBounds();
+    bounds = getDefaultBounds();
   }
+
+  log.info(
+    `↖ Position and Size: ${promptData.ui} ${promptData.kitScript}`,
+    bounds
+  );
+  promptWindow.setBounds(bounds);
 };
 
 export const showPrompt = (promptData: PromptData) => {
-  // if (promptData.ui !== prevUI) {
   setBoundsByPromptData(promptData);
-  // }
-  prevUI = promptData.ui as UI;
+
   if (promptWindow && !promptWindow?.isVisible() && promptData.ui !== UI.none) {
     if (!promptWindow?.isVisible()) {
       promptWindow?.show();
-      promptWindow.setVibrancy(
-        nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light'
-      );
-      promptWindow.setBackgroundColor(
-        nativeTheme.shouldUseDarkColors ? '#66000000' : '#C0FFFFFF'
-      );
       if (devTools) promptWindow?.webContents.openDevTools();
     }
   }
@@ -343,7 +345,6 @@ export const setScript = (script: Script) => {
     setChoices(getScripts());
   } else if (script.requiresPrompt) {
     const maybeCachedChoices = kenvPath('db', `_${script.command}.json`);
-
     if (isFile(maybeCachedChoices)) {
       const choicesFile = readFileSync(maybeCachedChoices, 'utf-8');
       const { items } = JSON.parse(choicesFile);
@@ -353,7 +354,7 @@ export const setScript = (script: Script) => {
       );
       setChoices(choices);
     } else {
-      setChoices([]);
+      // setChoices([]);
     }
   }
 };

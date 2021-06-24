@@ -25,7 +25,7 @@ validSystemEvents.forEach((systemEvent: any) => {
     systemEventMap.forEach((eventList, scriptPath) => {
       eventList.forEach((mappedEvent: string) => {
         if (mappedEvent === systemEvent) {
-          console.log({ mappedEvent, scriptPath });
+          log.info(`🗺`, { mappedEvent, scriptPath });
           processes.add(ProcessType.System, scriptPath);
         }
       });
