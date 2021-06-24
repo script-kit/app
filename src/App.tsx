@@ -134,15 +134,7 @@ export default function App() {
       const fullHeight =
         topHeight + (filteredChoices.length === 0 ? 0 : listHeight);
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
-
-      console.log(`🎧 List choices`, {
-        listHeight,
-        height,
-        maxHeight,
-        fullHeight,
-      });
       resizeHeight(height);
-      // setMainHeight(maxHeight - topHeight);
     },
     [maxHeight, resizeHeight, filteredChoices.length]
   );
@@ -559,21 +551,15 @@ export default function App() {
     setPid(pid);
   }, []);
 
-  const setScriptHandler = useCallback(
-    (_event, script: Script) => {
-      // resetPromptHandler();
-      setSubmitted(false);
-      setScript(script);
-      setPlaceholder(script.placeholder);
-      setTabs(script.tabs || []);
-      setTabIndex(0);
-      setInputValue('');
-      const topHeight = (topRef.current as HTMLElement).clientHeight;
-
-      resizeHeight(topHeight);
-    },
-    [resizeHeight]
-  );
+  const setScriptHandler = useCallback((_event, script: Script) => {
+    // resetPromptHandler();
+    setSubmitted(false);
+    setScript(script);
+    setPlaceholder(script.placeholder);
+    setTabs(script.tabs || []);
+    setTabIndex(0);
+    setInputValue('');
+  }, []);
 
   const setMaxHeightHandler = useCallback((event, height) => {
     setMaxHeight(height);

@@ -180,41 +180,26 @@ export const getDefaultBounds = () => {
 };
 
 const MIN_HEIGHT = 320;
-const DEFAULT_HEIGHT = 480;
 
-const getHeightByPromptData = (promptData: PromptData, cacheHeight: number) => {
-  if (promptData.ui === UI.editor) return DEFAULT_HEIGHT;
-
-  return cacheHeight;
-};
-
-const setBoundsByPromptData = (promptData: PromptData) => {
+const setBounds = () => {
   const currentScreenPromptBounds = getCurrentScreenPromptCache();
 
-  let bounds = {};
+  let bounds;
   if (currentScreenPromptBounds) {
-    const height = getHeightByPromptData(
-      promptData,
-      currentScreenPromptBounds.height
-    );
-    sendToPrompt(Channel.SET_MAX_HEIGHT, height);
-
-    bounds = {
-      ...currentScreenPromptBounds,
-      height,
-    };
+    bounds = currentScreenPromptBounds;
   } else {
     bounds = getDefaultBounds();
   }
 
-  log.info(`↖ BOUNDS: ${promptData.ui} ${promptData.kitScript}`, bounds);
+  log.info(`↖ BOUNDS:`, bounds);
+  sendToPrompt(Channel.SET_MAX_HEIGHT, bounds.height);
   promptWindow.setBounds(bounds);
 };
 
-export const showPrompt = (promptData: PromptData) => {
-  setBoundsByPromptData(promptData);
+export const showPrompt = () => {
+  setBounds();
 
-  if (promptWindow && !promptWindow?.isVisible() && promptData.ui !== UI.none) {
+  if (promptWindow && !promptWindow?.isVisible()) {
     if (!promptWindow?.isVisible()) {
       promptWindow?.show();
       if (devTools) promptWindow?.webContents.openDevTools();
@@ -229,7 +214,6 @@ type Size = {
   height: number;
 };
 export const resizePromptHeight = (height: number) => {
-  if (!promptWindow?.isVisible()) return;
   if (lastResizedByUser) {
     lastResizedByUser = false;
     return;
