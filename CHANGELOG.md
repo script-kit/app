@@ -1,3 +1,10 @@
+# [1.3.0-alpha.60](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.59...v1.3.0-alpha.60) (2021-06-24)
+
+
+### Features
+
+* **fix:** blur and resizing ([e2f20be](https://github.com/johnlindquist/kitapp/commit/e2f20be44d8bc5e8e9972ecd24f44c4a5f75e9b8))
+
 # [1.3.0-alpha.59](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.58...v1.3.0-alpha.59) (2021-06-23)
 
 
