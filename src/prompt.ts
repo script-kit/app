@@ -111,7 +111,6 @@ export const createPromptWindow = async () => {
   promptWindow?.on(
     'resized',
     debounce((event: Event, rect: Rectangle) => {
-      if (promptWindow?.isVisible()) sendToPrompt(Channel.USER_RESIZED, false);
       cachePromptBounds();
     }, 500)
   );
@@ -180,33 +179,10 @@ export const getDefaultBounds = () => {
   return { x, y, width, height };
 };
 
-const HEADER_HEIGHT = 24;
-const INPUT_HEIGHT = 64;
-const TABS_HEIGHT = 36;
+const MIN_HEIGHT = 320;
 const DEFAULT_HEIGHT = 480;
 
 const getHeightByPromptData = (promptData: PromptData, cacheHeight: number) => {
-  const script = promptScript;
-  // console.log({ filePath: script?.filePath, ui: promptData.ui });
-  if (script?.filePath === mainScriptPath) {
-    return cacheHeight;
-  }
-
-  const maybeCachedChoices = kenvPath('db', `_${script?.command}.json`);
-  if (isFile(maybeCachedChoices)) {
-    return cacheHeight;
-  }
-
-  if (promptData.ui === UI.arg || promptData.ui === UI.drop) {
-    const headerHeight =
-      script?.menu || script?.twitter || script?.description
-        ? HEADER_HEIGHT
-        : 0;
-    const tabsHeight = script?.tabs.length ? TABS_HEIGHT : 0;
-
-    return INPUT_HEIGHT + headerHeight + tabsHeight;
-  }
-
   if (promptData.ui === UI.editor) return DEFAULT_HEIGHT;
 
   return cacheHeight;
@@ -221,7 +197,7 @@ const setBoundsByPromptData = (promptData: PromptData) => {
       promptData,
       currentScreenPromptBounds.height
     );
-    // sendToPrompt(Channel.USER_RESIZED, height);
+    sendToPrompt(Channel.SET_MAX_HEIGHT, height);
 
     bounds = {
       ...currentScreenPromptBounds,
@@ -231,10 +207,7 @@ const setBoundsByPromptData = (promptData: PromptData) => {
     bounds = getDefaultBounds();
   }
 
-  log.info(
-    `↖ Position and Size: ${promptData.ui} ${promptData.kitScript}`,
-    bounds
-  );
+  log.info(`↖ BOUNDS: ${promptData.ui} ${promptData.kitScript}`, bounds);
   promptWindow.setBounds(bounds);
 };
 
@@ -282,12 +255,18 @@ export const sendToPrompt = (channel: string, data: any) => {
 
 const cachePromptBounds = () => {
   const currentScreen = getCurrentScreen();
-  const promptBounds = promptWindow?.getBounds();
+  const bounds = promptWindow?.getBounds();
+  const height = bounds.height < MIN_HEIGHT ? MIN_HEIGHT : bounds.height;
+  const promptBounds = {
+    ...bounds,
+    height,
+  };
   log.info(`Cache prompt:`, {
     screen: currentScreen.id,
     ...promptBounds,
   });
 
+  sendToPrompt(Channel.SET_MAX_HEIGHT, height);
   promptDb.set(`screens.${String(currentScreen.id)}`, promptBounds).write();
 };
 

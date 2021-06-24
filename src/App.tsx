@@ -20,7 +20,8 @@ import React, {
   useState,
 } from 'react';
 
-import AutoSizer from 'react-virtualized-auto-sizer';
+import AutoSizer, { Size } from 'react-virtualized-auto-sizer';
+import useResizeObserver from '@react-hook/resize-observer';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
@@ -102,23 +103,27 @@ export default function App() {
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const editorRef: RefObject<EditorRef> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
+  const [mainSize, setMainSize] = useState<Size>();
 
-  const resizeHeight = useCallback(
-    (height: number) => {
-      if (isMouseDown) return;
+  const resizeHeight = useDebouncedCallback(
+    useCallback(
+      (height: number) => {
+        if (isMouseDown) return;
 
-      const { height: topHeight } =
-        topRef?.current?.getBoundingClientRect() as any;
+        const { height: topHeight } =
+          topRef?.current?.getBoundingClientRect() as any;
 
-      const promptHeight = height > topHeight ? height : topHeight;
+        const promptHeight = height > topHeight ? height : topHeight;
 
-      const newHeight = Math.round(promptHeight);
+        const newHeight = Math.round(promptHeight);
 
-      if (ui === UI.arg) {
-        ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
-      }
-    },
-    [isMouseDown, ui]
+        if (ui === UI.arg) {
+          ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
+        }
+      },
+      [isMouseDown, ui]
+    ),
+    50
   );
 
   const onListChoicesChanged = useCallback(
@@ -130,6 +135,12 @@ export default function App() {
         topHeight + (filteredChoices.length === 0 ? 0 : listHeight);
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
 
+      console.log(`🎧 List choices`, {
+        listHeight,
+        height,
+        maxHeight,
+        fullHeight,
+      });
       resizeHeight(height);
       // setMainHeight(maxHeight - topHeight);
     },
@@ -515,13 +526,27 @@ export default function App() {
     setInputValue(input);
   }, []);
 
-  const setChoicesHandler = useCallback((_event: any, rawChoices: Choice[]) => {
-    setIndex(0);
-    setSubmitted(false);
-    setPanelHTML('');
-    setUnfilteredChoices(rawChoices);
-    // setMaxHeight(window.innerHeight);
-  }, []);
+  const setChoicesHandler = useCallback(
+    (_event: any, rawChoices: Choice[]) => {
+      setIndex(0);
+      setSubmitted(false);
+      setPanelHTML('');
+      setUnfilteredChoices(rawChoices);
+      const topHeight = (topRef.current as HTMLElement).clientHeight;
+      const mainHeight = (mainRef.current as HTMLElement).clientHeight;
+
+      if (rawChoices.length === 0) {
+        resizeHeight(topHeight);
+      }
+
+      if (filteredChoices.length > 0 && mainHeight < topHeight * 2) {
+        console.log(`TOO SMALL`, { mainHeight, topHeight });
+        resizeHeight(topHeight * 4);
+      }
+      // setMaxHeight(window.innerHeight);
+    },
+    [filteredChoices.length, resizeHeight]
+  );
 
   const setEditorConfigHandler = useCallback(
     (_event: any, config: EditorConfig) => {
@@ -534,19 +559,24 @@ export default function App() {
     setPid(pid);
   }, []);
 
-  const setScriptHandler = useCallback((_event, script: Script) => {
-    // resetPromptHandler();
-    setSubmitted(false);
-    setScript(script);
-    setPlaceholder(script.placeholder);
-    setTabs(script.tabs || []);
-    setTabIndex(0);
-    setInputValue('');
-  }, []);
+  const setScriptHandler = useCallback(
+    (_event, script: Script) => {
+      // resetPromptHandler();
+      setSubmitted(false);
+      setScript(script);
+      setPlaceholder(script.placeholder);
+      setTabs(script.tabs || []);
+      setTabIndex(0);
+      setInputValue('');
+      const topHeight = (topRef.current as HTMLElement).clientHeight;
 
-  const userResizedHandler = useCallback((event, data) => {
-    setIsMouseDown(!!data);
-    setMaxHeight(window.innerHeight);
+      resizeHeight(topHeight);
+    },
+    [resizeHeight]
+  );
+
+  const setMaxHeightHandler = useCallback((event, height) => {
+    setMaxHeight(height);
   }, []);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -563,7 +593,7 @@ export default function App() {
     [Channel.SET_PLACEHOLDER]: setPlaceholderHandler,
     [Channel.SET_TAB_INDEX]: setTabIndexHandler,
     [Channel.SET_PROMPT_DATA]: setPromptDataHandler,
-    [Channel.USER_RESIZED]: userResizedHandler,
+    [Channel.SET_MAX_HEIGHT]: setMaxHeightHandler,
   };
 
   useEffect(() => {

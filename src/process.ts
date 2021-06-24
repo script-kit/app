@@ -435,7 +435,11 @@ class Processes extends Array<ProcessInfo> {
 
     this.push(info);
 
-    log.info(`🟢 start ${type} ${scriptPath || 'idle'} id: ${child.pid}`);
+    if (scriptPath) {
+      log.info(`🟢 start ${type} ${scriptPath} id: ${child.pid}`);
+    } else {
+      log.info(`🟢 start idle ${type} id: ${child.pid}`);
+    }
 
     const id =
       ![ProcessType.Background, ProcessType.Prompt].includes(type) &&

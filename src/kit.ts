@@ -71,6 +71,7 @@ export const runPromptProcess = async (
 
   setPromptPid(pid);
 
+  log.info(`🏎 ${promptScriptPath} ${pid}`);
   processes.assignScriptToProcess(promptScriptPath, pid);
   processes.add(ProcessType.Prompt);
 
