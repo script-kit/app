@@ -48,7 +48,7 @@ export const createPromptWindow = async () => {
     backgroundColor: nativeTheme.shouldUseDarkColors
       ? '#33000000'
       : '#C0FFFF00',
-    vibrancy: 'window',
+    vibrancy: 'popover',
     show: false,
     hasShadow: true,
     icon: getAssetPath('icon.png'),
@@ -198,12 +198,12 @@ const setBounds = () => {
 };
 
 export const showPrompt = () => {
-  if (promptWindow && !promptWindow?.isVisible()) {
+  if (!promptWindow?.isVisible() || requiresMaxHeight) {
     setBounds();
-    if (!promptWindow?.isVisible()) {
-      promptWindow?.show();
-      if (devTools) promptWindow?.webContents.openDevTools();
-    }
+  }
+  if (!promptWindow?.isVisible()) {
+    promptWindow?.show();
+    if (devTools) promptWindow?.webContents.openDevTools();
   }
 
   return promptWindow;

@@ -262,6 +262,8 @@ const ready = async () => {
 
     startIpc();
     processes.add(ProcessType.Prompt);
+    processes.add(ProcessType.Prompt);
+    processes.add(ProcessType.Prompt);
 
     autoUpdater.logger = log;
     autoUpdater.checkForUpdatesAndNotify({
@@ -536,7 +538,7 @@ const checkKit = async () => {
     configWindow = await show(
       'splash-setup',
       `
-  <body class="h-screen w-screen flex flex-col justify-evenly items-center dark:bg-gray-800 dark:text-white">
+  <body class="h-screen w-screen flex flex-col justify-evenly items-center dark:bg-gray-800 dark:text-white bg-opacity-70">
     <h1 class="header pt-4">Configuring ~/.kit and ~/.kenv...</h1>
     <img src="${getAssetPath('icon.png')}" class="w-20"/>
     <div class="message pb-4"></div>
