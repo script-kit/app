@@ -199,6 +199,7 @@ const setBounds = () => {
 
 export const showPrompt = () => {
   if (promptWindow && !promptWindow?.isVisible()) {
+    setBounds();
     if (!promptWindow?.isVisible()) {
       promptWindow?.show();
       if (devTools) promptWindow?.webContents.openDevTools();
@@ -220,7 +221,7 @@ export const resizePromptHeight = (height: number) => {
 
   const [promptWidth, promptHeight] = promptWindow?.getSize() as number[];
 
-  if (height !== promptHeight) {
+  if (height !== promptHeight && promptWindow?.isVisible()) {
     log.info(`↕ RESIZE: ${promptWidth} x ${height}`);
     promptWindow?.setSize(promptWidth, height);
   }
@@ -349,7 +350,6 @@ export const setPromptData = (promptData: PromptData) => {
     promptData.ui === UI.editor ||
     promptData.ui === UI.textarea;
 
-  setBounds();
   showPrompt();
 };
 

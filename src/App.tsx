@@ -21,7 +21,6 @@ import React, {
 } from 'react';
 
 import AutoSizer, { Size } from 'react-virtualized-auto-sizer';
-import useResizeObserver from '@react-hook/resize-observer';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
