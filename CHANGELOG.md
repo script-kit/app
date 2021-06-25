@@ -1,3 +1,10 @@
+# [1.3.0-alpha.62](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.61...v1.3.0-alpha.62) (2021-06-25)
+
+
+### Features
+
+* **prompt:** requires max height logic ([dceb516](https://github.com/johnlindquist/kitapp/commit/dceb516b349fb75e82c7f41a338f9017744a9113))
+
 # [1.3.0-alpha.61](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.60...v1.3.0-alpha.61) (2021-06-25)
 
 
