@@ -181,11 +181,13 @@ export const getDefaultBounds = () => {
 
 const INPUT_HEIGHT = 88;
 const MIN_HEIGHT = 320;
+let requiresMaxHeight = false;
 
-const setBounds = (hasChoices = false) => {
+const setBounds = () => {
   let bounds = getCurrentScreenPromptCache() || getDefaultBounds();
 
-  if (hasChoices) {
+  if (requiresMaxHeight) {
+    requiresMaxHeight = false;
     sendToPrompt(Channel.SET_MAX_HEIGHT, bounds.height);
   } else {
     bounds = { ...bounds, height: INPUT_HEIGHT };
@@ -317,8 +319,7 @@ export const setScript = (script: Script) => {
   }
 
   setChoices(instantChoices);
-  setBounds(instantChoices.length);
-  showPrompt();
+  requiresMaxHeight = instantChoices.length > 0;
 };
 
 export const setMode = (mode: Mode) => {
@@ -343,6 +344,13 @@ export const setTabIndex = (tabIndex: number) => {
 
 export const setPromptData = (promptData: PromptData) => {
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
+  requiresMaxHeight =
+    requiresMaxHeight ||
+    promptData.ui === UI.editor ||
+    promptData.ui === UI.textarea;
+
+  setBounds();
+  showPrompt();
 };
 
 export const setChoices = (choices: Choice[]) => {
