@@ -1,3 +1,15 @@
+# [1.3.0-alpha.64](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.63...v1.3.0-alpha.64) (2021-06-25)
+
+
+### Bug Fixes
+
+* **build:** upgrade electron ([1dfb3b0](https://github.com/johnlindquist/kitapp/commit/1dfb3b0f4dd5a97f46d69917bcaf9afba1319bb6))
+
+
+### Features
+
+* **prompt:** allow panel to be styled however. Button truncate. ([1697350](https://github.com/johnlindquist/kitapp/commit/1697350e7a9d9804decd042a8b4b207894c643ec))
+
 # [1.3.0-alpha.63](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.62...v1.3.0-alpha.63) (2021-06-25)
 
 
