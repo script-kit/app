@@ -1,3 +1,12 @@
+# [1.3.0-alpha.61](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.60...v1.3.0-alpha.61) (2021-06-25)
+
+
+### Features
+
+* **fix:** resizing instant progress ([fdc6f0a](https://github.com/johnlindquist/kitapp/commit/fdc6f0a7b99152da9ed90ade2d18a2fc103a26fb))
+* **fix:** resizing instant progress ([90289d7](https://github.com/johnlindquist/kitapp/commit/90289d70315d302499bf381e042ab23b33365d83))
+* **prompt:** prompt bounds. panel resizing. ([defd836](https://github.com/johnlindquist/kitapp/commit/defd83670e1844c4497dd7227b70d39684440a84))
+
 # [1.3.0-alpha.60](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.59...v1.3.0-alpha.60) (2021-06-24)
 
 
