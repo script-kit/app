@@ -1,3 +1,10 @@
+# [1.3.0-alpha.63](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.62...v1.3.0-alpha.63) (2021-06-25)
+
+
+### Features
+
+* **prompt:** only setBounds when not visible. Only resize when visible. ([ace5f94](https://github.com/johnlindquist/kitapp/commit/ace5f9457e136888ad7d0236f5a31c5316f79ef6))
+
 # [1.3.0-alpha.62](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.61...v1.3.0-alpha.62) (2021-06-25)
 
 
