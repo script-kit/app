@@ -179,26 +179,23 @@ export const getDefaultBounds = () => {
   return { x, y, width, height };
 };
 
+const INPUT_HEIGHT = 88;
 const MIN_HEIGHT = 320;
 
-const setBounds = () => {
-  const currentScreenPromptBounds = getCurrentScreenPromptCache();
+const setBounds = (hasChoices = false) => {
+  let bounds = getCurrentScreenPromptCache() || getDefaultBounds();
 
-  let bounds;
-  if (currentScreenPromptBounds) {
-    bounds = currentScreenPromptBounds;
+  if (hasChoices) {
+    sendToPrompt(Channel.SET_MAX_HEIGHT, bounds.height);
   } else {
-    bounds = getDefaultBounds();
+    bounds = { ...bounds, height: INPUT_HEIGHT };
   }
 
   log.info(`↖ BOUNDS:`, bounds);
-  sendToPrompt(Channel.SET_MAX_HEIGHT, bounds.height);
   promptWindow.setBounds(bounds);
 };
 
 export const showPrompt = () => {
-  setBounds();
-
   if (promptWindow && !promptWindow?.isVisible()) {
     if (!promptWindow?.isVisible()) {
       promptWindow?.show();
@@ -304,22 +301,24 @@ export const setScript = (script: Script) => {
 
   sendToPrompt(Channel.SET_SCRIPT, script);
 
+  let instantChoices = [];
   if (script.filePath === mainScriptPath) {
-    setChoices(getScripts());
+    instantChoices = getScripts();
   } else if (script.requiresPrompt) {
     const maybeCachedChoices = kenvPath('db', `_${script.command}.json`);
     if (isFile(maybeCachedChoices)) {
       const choicesFile = readFileSync(maybeCachedChoices, 'utf-8');
       const { items } = JSON.parse(choicesFile);
       log.info(`📦 Setting choices from ${maybeCachedChoices}`);
-      const choices = items.map((item: string | Choice, id: number) =>
+      instantChoices = items.map((item: string | Choice, id: number) =>
         typeof item === 'string' ? { name: item, id } : item
       );
-      setChoices(choices);
-    } else {
-      // setChoices([]);
     }
   }
+
+  setChoices(instantChoices);
+  setBounds(instantChoices.length);
+  showPrompt();
 };
 
 export const setMode = (mode: Mode) => {
@@ -344,7 +343,6 @@ export const setTabIndex = (tabIndex: number) => {
 
 export const setPromptData = (promptData: PromptData) => {
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
-  showPrompt(promptData);
 };
 
 export const setChoices = (choices: Choice[]) => {

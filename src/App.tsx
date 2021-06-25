@@ -95,7 +95,7 @@ export default function App() {
   // const [mainHeight, setMainHeight] = useState(0);
 
   const choicesListRef = useRef(null);
-  const panelRef = useRef(null);
+  const panelRef: RefObject<HTMLElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
   const textAreaRef: RefObject<HTMLTextAreaElement> = useRef(null);
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
@@ -103,7 +103,6 @@ export default function App() {
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const editorRef: RefObject<EditorRef> = useRef(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
-  const [mainSize, setMainSize] = useState<Size>();
 
   const resizeHeight = useDebouncedCallback(
     useCallback(
@@ -126,17 +125,19 @@ export default function App() {
     50
   );
 
-  const onListChoicesChanged = useCallback(
-    (listHeight) => {
+  const setMainHeight = useCallback(
+    (mainHeight) => {
       const { height: topHeight } =
         topRef?.current?.getBoundingClientRect() as any;
 
-      const fullHeight =
-        topHeight + (filteredChoices.length === 0 ? 0 : listHeight);
+      const bottomHeight =
+        filteredChoices.length === 0 && panelHTML === '' ? 0 : mainHeight;
+      const fullHeight = topHeight + bottomHeight;
+
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
       resizeHeight(height);
     },
-    [maxHeight, resizeHeight, filteredChoices.length]
+    [filteredChoices.length, panelHTML, maxHeight, resizeHeight]
   );
 
   const clampIndex = useCallback(
@@ -464,7 +465,7 @@ export default function App() {
     promptData?.id,
     resizeHeight,
     submitted,
-    onListChoicesChanged,
+    setMainHeight,
   ]);
 
   const setPromptDataHandler = useCallback(
@@ -500,7 +501,6 @@ export default function App() {
   const setPanelHandler = useCallback((_event: any, html: string) => {
     setFilteredChoices([]);
     setUnfilteredChoices([]);
-
     setPanelHTML(html);
   }, []);
 
@@ -532,7 +532,6 @@ export default function App() {
       }
 
       if (filteredChoices.length > 0 && mainHeight < topHeight * 2) {
-        console.log(`TOO SMALL`, { mainHeight, topHeight });
         resizeHeight(topHeight * 4);
       }
       // setMaxHeight(window.innerHeight);
@@ -699,17 +698,22 @@ export default function App() {
                     placeholder={placeholder}
                   />
                 )}
-                {panelHTML?.length > 0 && (
-                  <Panel ref={panelRef} panelHTML={panelHTML} />
+                {ui === UI.arg && panelHTML?.length > 0 && (
+                  <Panel
+                    width={width}
+                    height={height}
+                    onPanelHeightChanged={setMainHeight}
+                    panelHTML={panelHTML}
+                  />
                 )}
 
-                {ui === UI.arg && (
+                {ui === UI.arg && panelHTML?.length === 0 && (
                   <List
                     ref={choicesListRef}
                     height={height}
                     width={width}
                     choices={filteredChoices}
-                    onListChoicesChanged={onListChoicesChanged}
+                    onListChoicesChanged={setMainHeight}
                     index={index}
                     onIndexChange={clampIndex}
                     onIndexSubmit={onIndexSubmit}

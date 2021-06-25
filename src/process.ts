@@ -476,15 +476,31 @@ class Processes extends Array<ProcessInfo> {
     return info;
   }
 
-  public findPromptProcess() {
+  public async findPromptProcess(): Promise<ProcessInfo> {
     const promptProcess = this.find(
       (processInfo) => processInfo.type === ProcessType.Prompt
     );
     if (promptProcess) return promptProcess;
 
     log.warn(`☠️ Can't find Prompt Process. Starting another`);
+    const newProcess = processes.add(ProcessType.Prompt);
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve(newProcess);
+      }, 1000);
+    });
+  }
 
-    return processes.add(ProcessType.Prompt);
+  public resetIdlePromptProcess() {
+    const idleProcess = this.find(
+      (processInfo) =>
+        processInfo.type === ProcessType.Prompt && processInfo.scriptPath === ''
+    );
+
+    if (idleProcess?.pid) {
+      log.info(`Found idle ${idleProcess.pid}. Removing`);
+      this.removeByPid(idleProcess.pid);
+    }
   }
 
   public getByPid(pid: number) {
@@ -498,8 +514,10 @@ class Processes extends Array<ProcessInfo> {
       const { child, type, scriptPath } = processInfo;
       if (child) {
         child?.removeAllListeners();
-        child?.kill();
-        log.info(`🛑 kill ${type} process: ${scriptPath} id: ${child.pid}`);
+        if (!child?.killed) {
+          child?.kill();
+          log.info(`🛑 kill ${type} ${scriptPath || 'idle'} id: ${child.pid}`);
+        }
       }
       this.splice(
         this.findIndex((info) => info.pid === pid),

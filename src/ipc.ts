@@ -67,8 +67,8 @@ export const startIpc = () => {
     escapePromptWindow();
   });
 
-  emitter.on(KitEvent.Blur, () => {
-    const promptProcessInfo = processes.findPromptProcess();
+  emitter.on(KitEvent.Blur, async () => {
+    const promptProcessInfo = await processes.findPromptProcess();
 
     if (promptProcessInfo) {
       const { child, scriptPath } = promptProcessInfo;

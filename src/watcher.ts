@@ -64,6 +64,14 @@ export const setupWatchers = async () => {
   watchers.push(shortcutsDbWatcher);
   shortcutsDbWatcher.on('all', onDbChanged);
 
+  // const kenvEnvWatcher = chokidar.watch([kenvPath('.env')]);
+  // watchers.push(kenvEnvWatcher);
+
+  // kenvEnvWatcher.on('all', () => {
+  //   log.info(`🌳 ${kenvPath('.env')} changed. Restarting idle process.`);
+  //   processes.resetIdlePromptProcess();
+  // });
+
   const kenvScripts = `${kenvPath('scripts')}${path.sep}*.js`;
   const scriptsWatcher = chokidar.watch([kenvScripts], {
     depth: 0,
