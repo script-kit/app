@@ -33,11 +33,6 @@ export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
           height,
         } as any
       }
-      className={`
-      border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5
-      flex flex-col
-      overflow-y-scroll focus:border-none
-      focus:outline-none outline-none`}
     >
       {parse(`<div>${panelHTML}</div>`)}
     </div>
