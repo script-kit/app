@@ -1,3 +1,10 @@
+# [1.3.0-alpha.65](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.64...v1.3.0-alpha.65) (2021-06-25)
+
+
+### Bug Fixes
+
+* **prompt:** editor resize. vibrancy. process pool. ([491f94e](https://github.com/johnlindquist/kitapp/commit/491f94ec3b9364f6467fd460960858a8ef215b65))
+
 # [1.3.0-alpha.64](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.63...v1.3.0-alpha.64) (2021-06-25)
 
 
