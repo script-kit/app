@@ -1,3 +1,36 @@
+# [1.3.0-beta.20](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.19...v1.3.0-beta.20) (2021-06-26)
+
+
+### Bug Fixes
+
+* **build:** upgrade electron ([1dfb3b0](https://github.com/johnlindquist/kitapp/commit/1dfb3b0f4dd5a97f46d69917bcaf9afba1319bb6))
+* **prompt:** editor resize. vibrancy. process pool. ([491f94e](https://github.com/johnlindquist/kitapp/commit/491f94ec3b9364f6467fd460960858a8ef215b65))
+
+
+### Features
+
+* **app:** adding editor and cleaning ui ([59a9de1](https://github.com/johnlindquist/kitapp/commit/59a9de1d65267d96604c64803ae28559dcfb1ed9))
+* **app:** Fixing up the editor ([795c766](https://github.com/johnlindquist/kitapp/commit/795c76660795f6053832f2be228b9a4f1b30e5cc))
+* **app:** prep process for speed ([63ae22e](https://github.com/johnlindquist/kitapp/commit/63ae22ef814e34f03b720554f5d6fb9eff069ee0))
+* **app:** resizing and sk ([94570e4](https://github.com/johnlindquist/kitapp/commit/94570e4ddea7cc66c131a7a4d144ef1ada76fd43))
+* **app:** speed with virtualize and process prep ([143154e](https://github.com/johnlindquist/kitapp/commit/143154ea7cc22f3ca9babef1dd82c8f7102537e8))
+* **app:** splitting textarea and list for resize ([5cc1594](https://github.com/johnlindquist/kitapp/commit/5cc159498e8a382f04e574c0fb69aa6c912382eb))
+* **app:** switching to unix socket ([e05e267](https://github.com/johnlindquist/kitapp/commit/e05e267f93f6bea9f9ada44474f1afd83886383d))
+* **app:** Using ui for prompt switching ([e92dbb7](https://github.com/johnlindquist/kitapp/commit/e92dbb74147da74dbabfe91091aae3b7bb6d34a8))
+* **fix:** adding monaco to assets ([25f7036](https://github.com/johnlindquist/kitapp/commit/25f70360ff36a5b73a74d30a21d3c74893a1fbd0))
+* **fix:** blur and resizing ([e2f20be](https://github.com/johnlindquist/kitapp/commit/e2f20be44d8bc5e8e9972ecd24f44c4a5f75e9b8))
+* **fix:** blur and resizing ([117ad15](https://github.com/johnlindquist/kitapp/commit/117ad15ce70121ab896c949a8cd1c59f0fad2efd))
+* **fix:** change textarea submit shortcut ([9b5995f](https://github.com/johnlindquist/kitapp/commit/9b5995f43f5bdfb91c309706bfc6c349e2f3e3ab))
+* **fix:** Create a prompt process if one doesn't exist ([e7ed270](https://github.com/johnlindquist/kitapp/commit/e7ed27002e8bb3aedefd82c53a157985b9c9f771))
+* **fix:** resizing instant progress ([fdc6f0a](https://github.com/johnlindquist/kitapp/commit/fdc6f0a7b99152da9ed90ade2d18a2fc103a26fb))
+* **fix:** resizing instant progress ([90289d7](https://github.com/johnlindquist/kitapp/commit/90289d70315d302499bf381e042ab23b33365d83))
+* **fix:** Unlinking socket file ([9c886c3](https://github.com/johnlindquist/kitapp/commit/9c886c39391aeb856aa0d3c04942899c9de208e0))
+* **fix:** using AutoSizer for list resizing ([db64acb](https://github.com/johnlindquist/kitapp/commit/db64acb70b45cdaf8e56f544d7314dc3b6c5efc3))
+* **prompt:** allow panel to be styled however. Button truncate. ([1697350](https://github.com/johnlindquist/kitapp/commit/1697350e7a9d9804decd042a8b4b207894c643ec))
+* **prompt:** only setBounds when not visible. Only resize when visible. ([ace5f94](https://github.com/johnlindquist/kitapp/commit/ace5f9457e136888ad7d0236f5a31c5316f79ef6))
+* **prompt:** prompt bounds. panel resizing. ([defd836](https://github.com/johnlindquist/kitapp/commit/defd83670e1844c4497dd7227b70d39684440a84))
+* **prompt:** requires max height logic ([dceb516](https://github.com/johnlindquist/kitapp/commit/dceb516b349fb75e82c7f41a338f9017744a9113))
+
 # [1.3.0-alpha.65](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.64...v1.3.0-alpha.65) (2021-06-25)
 
 
