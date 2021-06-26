@@ -2,30 +2,30 @@
 import { Tray } from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
-import { tryPromptScript } from './kit';
 import { getAssetPath } from './assets';
 import { restartIfNecessary } from './state';
-import { kitPath, mainScriptPath } from './helpers';
+import { kenvPath, kitPath, mainScriptPath } from './helpers';
+import { runPromptProcess } from './kit';
 
 let tray: Tray | null = null;
 
 const leftClick = async (event: KeyboardEvent) => {
   restartIfNecessary();
   if (event.metaKey) {
-    await tryPromptScript('app/command-click');
+    runPromptProcess(kenvPath('app', 'command-click.js'));
   } else if (event.shiftKey) {
-    await tryPromptScript('app/shift-click');
+    runPromptProcess(kenvPath('app', 'shift-click.js'));
   } else if (event.ctrlKey) {
-    await tryPromptScript('app/control-click');
+    runPromptProcess(kenvPath('app', 'control-click.js'));
   } else if (event.altKey) {
-    await tryPromptScript('app/alt-click');
+    runPromptProcess(kenvPath('app', 'alt-click.js'));
   } else {
-    await tryPromptScript(mainScriptPath);
+    runPromptProcess(mainScriptPath);
   }
 };
 
 const rightClick = async () => {
-  await tryPromptScript(kitPath('main', 'help.js'));
+  runPromptProcess(kitPath('main', 'help.js'));
 };
 
 const trayIcon = getAssetPath('IconTemplate.png');

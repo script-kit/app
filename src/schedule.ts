@@ -2,8 +2,10 @@ import schedule, { Job } from 'node-schedule';
 
 import log from 'electron-log';
 import { scheduleMap } from './state';
-import { runScheduleScript } from './kit';
+import { processes } from './process';
+
 import { Script } from './types';
+import { ProcessType } from './enums';
 
 export const cancelJob = (filePath: string) => {
   if (scheduleMap.has(filePath)) {
@@ -31,7 +33,7 @@ export const scheduleScriptChanged = ({
       // log.info(`Schedule string ${scheduleString}:${filePath}`);
 
       const job = schedule.scheduleJob(filePath, scheduleString, () => {
-        runScheduleScript(filePath);
+        processes.add(ProcessType.Schedule, filePath);
       });
 
       log.info(`Scheduling: ${filePath} for ${scheduleString}`);

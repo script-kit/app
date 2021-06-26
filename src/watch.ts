@@ -3,8 +3,9 @@ import log from 'electron-log';
 import chokidar from 'chokidar';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
-import { runWatchScript } from './kit';
 import { Script } from './types';
+import { processes } from './process';
+import { ProcessType } from './enums';
 
 export const watchMap = new Map();
 
@@ -35,7 +36,7 @@ const addWatch = (watchString: string, filePath: string) => {
     const watcher = chokidar.watch(paths);
     watcher.on('change', () => {
       log.info(`👀 ${paths} changed`);
-      runWatchScript(filePath);
+      processes.add(ProcessType.Watch, filePath);
     });
 
     const watched = watcher.getWatched();

@@ -1,22 +1,21 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
-import { BrowserWindow, screen, nativeTheme, app } from 'electron';
+import { BrowserWindow, screen, nativeTheme, app, Rectangle } from 'electron';
 import log from 'electron-log';
 import low from 'lowdb';
+import { debounce, throttle } from 'lodash';
 import FileSync from 'lowdb/adapters/FileSync';
 import minimist from 'minimist';
-import { EventEmitter } from 'events';
-import { Mode, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { getAssetPath } from './assets';
 import { mainScriptPath, isFile, kenvPath, promptDbPath } from './helpers';
-import { Channel, InputType } from './enums';
+import { Channel, Mode, UI } from './enums';
 import { getAppHidden } from './appHidden';
 import { Choice, PromptData, Script } from './types';
-import { setCurrentPromptScript, getScripts } from './state';
+import { getScripts } from './state';
+import { emitter, KitEvent } from './events';
 
-export enum PromptEvent {
-  Blur = 'Blur',
-}
+let promptScript: Script | null;
 
 const adapter = new FileSync(promptDbPath);
 const promptDb = low(adapter);
@@ -40,8 +39,6 @@ const miniArgs = minimist(process.argv);
 const { devTools } = miniArgs;
 log.info(process.argv.join(' '), devTools);
 
-export const promptEmitter = new EventEmitter();
-
 let lastResizedByUser = false;
 export const createPromptWindow = async () => {
   promptWindow = new BrowserWindow({
@@ -50,8 +47,8 @@ export const createPromptWindow = async () => {
     transparent: true,
     backgroundColor: nativeTheme.shouldUseDarkColors
       ? '#33000000'
-      : '#C0FFFFFF',
-    vibrancy: nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light',
+      : '#C0FFFF00',
+    vibrancy: 'popover',
     show: false,
     hasShadow: true,
     icon: getAssetPath('icon.png'),
@@ -92,28 +89,33 @@ export const createPromptWindow = async () => {
       hidePromptWindow();
     }
 
-    if (!ignoreBlur && !getAppHidden()) {
-      promptEmitter.emit(PromptEvent.Blur);
+    if (
+      !ignoreBlur &&
+      !getAppHidden() &&
+      !promptWindow?.webContents.isDevToolsOpened()
+    ) {
+      emitter.emit(KitEvent.Blur);
     }
   });
 
-  let timeoutId: NodeJS.Timeout | null = null;
-  const userResize = () => {
+  const userResize = (event: Event, rect: Rectangle) => {
     lastResizedByUser = true;
-    if (timeoutId) clearTimeout(timeoutId);
-    if (!promptWindow) return;
-    const promptBounds = promptWindow?.getBounds();
-
-    const { width, height } = promptBounds;
-    sendToPrompt(Channel.USER_RESIZED, { height, width });
+    sendToPrompt(Channel.USER_RESIZED, rect);
   };
 
-  promptWindow?.on('will-resize', userResize);
-  promptWindow?.on('resized', () => {
-    timeoutId = setTimeout(() => {
-      if (promptWindow?.isVisible()) sendToPrompt(Channel.USER_RESIZED, false);
-    }, 500);
-  });
+  const userMove = (event: Event) => {
+    cachePromptBounds();
+  };
+
+  promptWindow?.on('will-resize', throttle(userResize, 500));
+  promptWindow?.on(
+    'resized',
+    debounce((event: Event, rect: Rectangle) => {
+      cachePromptBounds();
+    }, 500)
+  );
+
+  promptWindow?.on('move', debounce(userMove, 500));
 
   // setInterval(() => {
   //   const [, newHeight] = promptWindow?.getSize() as number[];
@@ -162,7 +164,7 @@ export const getCurrentScreenPromptCache = () => {
   return currentPromptCache as Size;
 };
 
-export const setDefaultBounds = () => {
+export const getDefaultBounds = () => {
   const currentScreen = getCurrentScreen();
 
   const { width: screenWidth, height: screenHeight } =
@@ -174,46 +176,34 @@ export const setDefaultBounds = () => {
   const x = Math.round(screenWidth / 2 - width / 2 + workX);
   const y = Math.round(workY + height / 10);
 
-  log.info(`DEFAULT: setBounds`);
-  promptWindow?.setBounds({ x, y, width, height });
+  return { x, y, width, height };
 };
 
-const HEADER_HEIGHT = 24;
-const INPUT_HEIGHT = 64;
-const TABS_HEIGHT = 36;
+const INPUT_HEIGHT = 88;
+const MIN_HEIGHT = 320;
+let requiresMaxHeight = false;
 
-export const showPrompt = (script: Script) => {
-  if (promptWindow && !promptWindow?.isVisible()) {
-    const currentScreenPromptBounds = getCurrentScreenPromptCache();
-    const headerHeight =
-      script?.menu || script?.twitter || script?.description
-        ? HEADER_HEIGHT
-        : 0;
-    const tabsHeight = script.tabs.length ? TABS_HEIGHT : 0;
-    const height =
-      script.input === InputType.textarea
-        ? 480
-        : INPUT_HEIGHT + headerHeight + tabsHeight;
+const setBounds = () => {
+  let bounds = getCurrentScreenPromptCache() || getDefaultBounds();
 
-    if (currentScreenPromptBounds) {
-      promptWindow.setBounds({
-        ...currentScreenPromptBounds,
-        height,
-      });
-    } else {
-      setDefaultBounds();
-    }
+  if (requiresMaxHeight) {
+    requiresMaxHeight = false;
+    sendToPrompt(Channel.SET_MAX_HEIGHT, bounds.height);
+  } else {
+    bounds = { ...bounds, height: INPUT_HEIGHT };
+  }
 
-    if (!promptWindow?.isVisible()) {
-      promptWindow?.show();
-      promptWindow.setVibrancy(
-        nativeTheme.shouldUseDarkColors ? 'ultra-dark' : 'medium-light'
-      );
-      promptWindow.setBackgroundColor(
-        nativeTheme.shouldUseDarkColors ? '#66000000' : '#C0FFFFFF'
-      );
-      if (devTools) promptWindow?.webContents.openDevTools();
-    }
+  log.info(`↖ BOUNDS:`, bounds);
+  promptWindow.setBounds(bounds);
+};
+
+export const showPrompt = () => {
+  if (!promptWindow?.isVisible() || requiresMaxHeight) {
+    setBounds();
+  }
+  if (!promptWindow?.isVisible()) {
+    promptWindow?.show();
+    if (devTools) promptWindow?.webContents.openDevTools();
   }
 
   return promptWindow;
@@ -223,32 +213,44 @@ type Size = {
   width: number;
   height: number;
 };
-export const resizePrompt = ({ height }: Size) => {
-  if (!promptWindow?.isVisible()) return;
+export const resizePromptHeight = (height: number) => {
   if (lastResizedByUser) {
     lastResizedByUser = false;
     return;
   }
 
-  const [width] = promptWindow?.getSize() as number[];
+  const [promptWidth, promptHeight] = promptWindow?.getSize() as number[];
 
-  log.info(`↕ RESIZE: ${width} x ${height}`);
-  promptWindow?.setSize(width, height);
+  if (height !== promptHeight && promptWindow?.isVisible()) {
+    log.info(`↕ RESIZE: ${promptWidth} x ${height}`);
+    promptWindow?.setSize(promptWidth, height);
+  }
 };
 
 export const sendToPrompt = (channel: string, data: any) => {
+  if (channel === Channel.SET_SCRIPT) {
+    promptScript = data as Script;
+  }
   // log.info(`>_ ${channel} ${data?.kitScript}`);
   if (promptWindow && !promptWindow.isDestroyed()) {
-    // promptWindow?.setBackgroundColor('#00FFFFFF');
     promptWindow?.webContents.send(channel, data);
   }
 };
 
-const cachePromptPosition = () => {
+const cachePromptBounds = () => {
   const currentScreen = getCurrentScreen();
-  const promptBounds = promptWindow?.getBounds();
-  log.info(`Cache prompt:`, { screen: currentScreen.id, ...promptBounds });
+  const bounds = promptWindow?.getBounds();
+  const height = bounds.height < MIN_HEIGHT ? MIN_HEIGHT : bounds.height;
+  const promptBounds = {
+    ...bounds,
+    height,
+  };
+  log.info(`Cache prompt:`, {
+    screen: currentScreen.id,
+    ...promptBounds,
+  });
 
+  sendToPrompt(Channel.SET_MAX_HEIGHT, height);
   promptDb.set(`screens.${String(currentScreen.id)}`, promptBounds).write();
 };
 
@@ -257,11 +259,14 @@ const hideAppIfNoWindows = () => {
     if (clearPrompt) {
       clearPrompt = false;
     } else {
-      cachePromptPosition();
+      // cachePromptPosition();
     }
     const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden
+    promptScript = null;
     promptWindow?.hide();
+    // setPromptBounds();
+
     if (allWindows.every((window) => !window.isVisible())) {
       app?.hide();
     }
@@ -285,35 +290,37 @@ export const setPlaceholder = (text: string) => {
   sendToPrompt(Channel.SET_PLACEHOLDER, text);
 };
 
+export const setPromptPid = (pid: number) => {
+  sendToPrompt(Channel.SET_PID, pid);
+};
+
 export const setScript = (script: Script) => {
+  if (promptScript?.id === script?.id) return;
+  // log.info(script);
+
   if (script.filePath === mainScriptPath) {
-    setChoices(getScripts());
-
     script.tabs = script.tabs.filter((tab) => !tab.match(/join|live/i));
-    setCurrentPromptScript(script as Script);
-    sendToPrompt(Channel.SET_SCRIPT, script);
+  }
 
-    showPrompt(script);
+  sendToPrompt(Channel.SET_SCRIPT, script);
+
+  let instantChoices = [];
+  if (script.filePath === mainScriptPath) {
+    instantChoices = getScripts();
   } else if (script.requiresPrompt) {
-    setCurrentPromptScript(script as Script);
-    sendToPrompt(Channel.SET_SCRIPT, script);
-
-    showPrompt(script);
-
     const maybeCachedChoices = kenvPath('db', `_${script.command}.json`);
-
     if (isFile(maybeCachedChoices)) {
       const choicesFile = readFileSync(maybeCachedChoices, 'utf-8');
       const { items } = JSON.parse(choicesFile);
       log.info(`📦 Setting choices from ${maybeCachedChoices}`);
-      const choices = items.map((item: string | Choice, id: number) =>
+      instantChoices = items.map((item: string | Choice, id: number) =>
         typeof item === 'string' ? { name: item, id } : item
       );
-      setChoices(choices);
-    } else {
-      setChoices([]);
     }
   }
+
+  setChoices(instantChoices);
+  requiresMaxHeight = instantChoices.length > 0;
 };
 
 export const setMode = (mode: Mode) => {
@@ -338,6 +345,12 @@ export const setTabIndex = (tabIndex: number) => {
 
 export const setPromptData = (promptData: PromptData) => {
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
+  requiresMaxHeight =
+    requiresMaxHeight ||
+    promptData.ui === UI.editor ||
+    promptData.ui === UI.textarea;
+
+  showPrompt();
 };
 
 export const setChoices = (choices: Choice[]) => {
@@ -348,3 +361,7 @@ export const clearPromptCache = () => {
   clearPrompt = true;
   promptDb.set('screens', {}).write();
 };
+
+emitter.on(KitEvent.ExitPrompt, () => {
+  escapePromptWindow();
+});

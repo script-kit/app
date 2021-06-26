@@ -14,7 +14,7 @@ export enum Channel {
   CLEAR_PROMPT_CACHE = 'CLEAR_PROMPT_CACHE',
   CONSOLE_LOG = 'CONSOLE_LOG',
   CONSOLE_WARN = 'CONSOLE_WARN',
-  CONTENT_SIZE_UPDATED = 'CONTENT_SIZE_UPDATED',
+  CONTENT_HEIGHT_UPDATED = 'CONTENT_HEIGHT_UPDATED',
   COPY_PATH_AS_PICTURE = 'COPY_PATH_AS_PICTURE',
   CREATE_KENV = 'CREATE_KENV',
   ESCAPE_PRESSED = 'ESCAPE_PRESSED',
@@ -35,10 +35,12 @@ export enum Channel {
   SET_SCRIPT = 'SET_SCRIPT',
   SEND_RESPONSE = 'SEND_RESPONSE',
   SET_CHOICES = 'SET_CHOICES',
+  SET_EDITOR_CONFIG = 'SET_EDITOR_CONFIG',
   SET_HINT = 'SET_HINT',
   SET_IGNORE_BLUR = 'SET_IGNORE_BLUR',
   SET_INPUT = 'SET_INPUT',
   SET_LOGIN = 'SET_LOGIN',
+  SET_MAX_HEIGHT = 'SET_MAX_HEIGHT',
   SET_MODE = 'SET_MODE',
   SET_PANEL = 'SET_PANEL',
   SET_PLACEHOLDER = 'SET_PLACEHOLDER',
@@ -58,6 +60,7 @@ export enum Channel {
   VALUE_SUBMITTED = 'VALUE_SUBMITTED',
   SET_PREVIEW = 'SET_PREVIEW',
   PROMPT_BLURRED = 'PROMPT_BLURRED',
+  SET_PID = 'SET_PID',
 }
 
 export enum ProcessType {
@@ -67,11 +70,19 @@ export enum ProcessType {
   Prompt = 'Prompt',
   Watch = 'Watch',
   System = 'System',
+  KIT_PROCESS = 'KIT_PROCESS',
 }
 
-export enum InputType {
-  text = 'text',
+export enum ProcessState {
+  Idle = 'Idle',
+  Active = 'Active',
+}
+
+export enum UI {
+  arg = 'arg',
   textarea = 'textarea',
   hotkey = 'hotkey',
+  editor = 'editor',
   drop = 'drop',
+  none = 'none',
 }

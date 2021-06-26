@@ -14,7 +14,7 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
-import { app, protocol, BrowserWindow, powerMonitor } from 'electron';
+import { app, protocol, BrowserWindow, powerMonitor, session } from 'electron';
 import queryString from 'query-string';
 import clipboardy from 'clipboardy';
 
@@ -49,7 +49,6 @@ import { Open, Parse } from 'unzipper';
 import { createTray, destroyTray } from './tray';
 import { setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
-import { tryPromptScript } from './kit';
 import { tick } from './tick';
 import { createPromptWindow } from './prompt';
 import {
@@ -66,6 +65,9 @@ import { show } from './show';
 import { cacheKitScripts, getStoredVersion, storeVersion } from './state';
 import { startSK } from './sk';
 import { setupPrefs } from './prefs';
+import { ProcessType } from './enums';
+import { processes } from './process';
+import { startIpc } from './ipc';
 
 let configWindow: BrowserWindow;
 
@@ -107,17 +109,16 @@ const callBeforeQuitAndInstall = () => {
   }
 };
 
+// fmkadmapgofadopljbjfkapdkoienihi
 const installExtensions = async () => {
-  const installer = require('electron-devtools-installer');
-  const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
+  const reactDevToolsPath = path.join(
+    homedir(),
+    'Library/Application Support/Google/Chrome/Default/Extensions/fmkadmapgofadopljbjfkapdkoienihi/4.13.5_0'
+  );
 
-  return installer
-    .default(
-      extensions.map((name) => installer[name]),
-      forceDownload
-    )
-    .catch(log.info);
+  await session.defaultSession.loadExtension(reactDevToolsPath, {
+    allowFileAccess: true,
+  });
 };
 
 autoUpdater.on('checking-for-update', () => {
@@ -184,7 +185,7 @@ const prepareProtocols = async () => {
       .join(' ')
       .split(' ');
 
-    await tryPromptScript(kitPath('cli/new.js'), [name, ...args]);
+    processes.add(ProcessType.App, kitPath('cli/new.js'), [name, ...args]);
   });
 
   protocol.registerFileProtocol(KIT_PROTOCOL, (request, callback) => {
@@ -236,6 +237,10 @@ const setupLog = (message: string) => {
 
 const ready = async () => {
   try {
+    if (process.env.NODE_ENV === 'development') {
+      await installExtensions();
+    }
+
     createLogs();
     await prepareProtocols();
     setupLog(`Protocols Prepared`);
@@ -254,6 +259,11 @@ const ready = async () => {
 
     startSK();
     await cacheKitScripts();
+
+    startIpc();
+    processes.add(ProcessType.Prompt);
+    processes.add(ProcessType.Prompt);
+    processes.add(ProcessType.Prompt);
 
     autoUpdater.logger = log;
     autoUpdater.checkForUpdatesAndNotify({
@@ -528,7 +538,7 @@ const checkKit = async () => {
     configWindow = await show(
       'splash-setup',
       `
-  <body class="h-screen w-screen flex flex-col justify-evenly items-center dark:bg-gray-800 dark:text-white">
+  <body class="h-screen w-screen flex flex-col justify-evenly items-center dark:bg-gray-800 dark:text-white bg-opacity-70">
     <h1 class="header pt-4">Configuring ~/.kit and ~/.kenv...</h1>
     <img src="${getAssetPath('icon.png')}" class="w-20"/>
     <div class="message pb-4"></div>

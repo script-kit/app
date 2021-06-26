@@ -1,24 +1,42 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable import/prefer-default-export */
-import ipc from 'node-ipc';
-import minimist from 'minimist';
+import net from 'net';
+import fs from 'fs';
 import log from 'electron-log';
-import { kitPath, KIT } from './helpers';
-import { tryPromptScript } from './kit';
+import { kitPath, resolveScriptPath } from './helpers';
+import { runPromptProcess } from './kit';
 
 export const startSK = () => {
-  ipc.config.id = KIT;
-  ipc.config.retry = 1500;
-  ipc.config.silent = true;
+  const server = net.createServer((stream) => {
+    stream.on('data', async (data) => {
+      const value = data.toString();
+      log.info(value);
+      const json = value.match(new RegExp(`^{.*}$`, 'gm'))?.[0] || '';
+      log.info(json);
+      const object = JSON.parse(json);
+      log.info(object);
+      const { script, args } = object;
 
-  ipc.serve(kitPath('tmp', 'ipc'), () => {
-    ipc.server.on('message', async (argv) => {
-      log.info(`ipc message:`, argv);
-      const { _ } = minimist(argv);
-      const [argScript, ...argArgs] = _;
-      await tryPromptScript(argScript, argArgs);
+      const scriptPath = resolveScriptPath(script);
+      log.info(`🇦🇷 ${scriptPath} ${args}`);
+      if (scriptPath) {
+        await runPromptProcess(
+          scriptPath,
+          args.map((s: string) => s.replaceAll('$newline$', '\n'))
+        );
+        const message = `🕹 sk ${script} ${args}`;
+        log.info(message);
+        stream.write(message);
+      } else {
+        const message = `🕹 sk needs a script!`;
+        log.info(message);
+        stream.write(message);
+      }
+      stream.end();
     });
   });
 
-  ipc.server.start();
+  const socketPath = kitPath('kit.sock');
+  if (fs.existsSync(socketPath)) fs.unlinkSync(socketPath);
+  server.listen(socketPath);
 };

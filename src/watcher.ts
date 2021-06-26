@@ -5,7 +5,6 @@ import log from 'electron-log';
 import chokidar, { FSWatcher } from 'chokidar';
 import path from 'path';
 
-import { appScript } from './kit';
 import { appDbPath, info, kenvPath, kitPath, shortcutsPath } from './helpers';
 import {
   unlinkShortcuts,
@@ -17,8 +16,10 @@ import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
-import { emitter, AppEvent } from './events';
+import { emitter, KitEvent } from './events';
 import { updateScripts } from './state';
+import { processes } from './process';
+import { ProcessType } from './enums';
 
 const onScriptsChanged = async (
   event: 'add' | 'change' | 'unlink',
@@ -47,7 +48,11 @@ export const onDbChanged = async (event: any, filePath: string) => {
 };
 
 export const cacheMenu = async () => {
-  await appScript(kitPath('cli', 'refresh-scripts-db.js'), []);
+  processes.add(
+    ProcessType.Background,
+    kitPath('cli', 'refresh-scripts-db.js'),
+    []
+  );
   await updateScripts();
 };
 
@@ -58,6 +63,14 @@ export const setupWatchers = async () => {
   const shortcutsDbWatcher = chokidar.watch([shortcutsPath]);
   watchers.push(shortcutsDbWatcher);
   shortcutsDbWatcher.on('all', onDbChanged);
+
+  // const kenvEnvWatcher = chokidar.watch([kenvPath('.env')]);
+  // watchers.push(kenvEnvWatcher);
+
+  // kenvEnvWatcher.on('all', () => {
+  //   log.info(`🌳 ${kenvPath('.env')} changed. Restarting idle process.`);
+  //   processes.resetIdlePromptProcess();
+  // });
 
   const kenvScripts = `${kenvPath('scripts')}${path.sep}*.js`;
   const scriptsWatcher = chokidar.watch([kenvScripts], {
@@ -91,6 +104,6 @@ export const resetWatchers = async () => {
   await setupWatchers();
 };
 
-emitter.on(AppEvent.SET_KENV, async () => {
+emitter.on(KitEvent.SetKenv, async () => {
   await resetWatchers();
 });

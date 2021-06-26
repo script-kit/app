@@ -60,6 +60,7 @@ export const show = async (
     x,
     y,
     show: false,
+    vibrancy: 'popover',
     ...options,
   });
 

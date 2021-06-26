@@ -1,10 +1,10 @@
 import { grep } from 'shelljs';
 import log from 'electron-log';
 
-import { Channel } from './enums';
-import { emitter } from './events';
+import { ProcessType } from './enums';
+import { emitter, KitEvent } from './events';
 import { backgroundMap, Background } from './state';
-import { runBackgroundScript } from './kit';
+import { processes } from './process';
 import { Script } from './types';
 
 const backgroundMarker = 'Background: ';
@@ -24,7 +24,7 @@ export const backgroundScriptChanged = ({
   background: backgroundString,
 }: Script) => {
   const startTask = () => {
-    const child = runBackgroundScript(filePath, []);
+    const child = processes.add(ProcessType.Background, filePath);
     backgroundMap.set(filePath, {
       start: new Date().toString(),
       child,
@@ -47,7 +47,7 @@ export const updateBackground = (filePath: string, fileChange = false) => {
     .trim();
 
   const startTask = () => {
-    const child = runBackgroundScript(filePath, []);
+    const child = processes.add(ProcessType.Background, filePath);
     backgroundMap.set(filePath, {
       start: new Date().toString(),
       child,
@@ -79,6 +79,6 @@ export const toggleBackground = (filePath: string) => {
   }
 };
 
-emitter.on(Channel.TOGGLE_BACKGROUND, (data) => {
+emitter.on(KitEvent.ToggleBackground, (data) => {
   toggleBackground(data.filePath as string);
 });
