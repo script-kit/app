@@ -36,6 +36,9 @@ export default {
   resolve: {
     extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     modules: [path.join(__dirname, '../src'), 'node_modules'],
+    // alias: {
+    //   '@fonts': path.resolve(__dirname, '../src/fonts'),
+    // },
   },
 
   plugins: [

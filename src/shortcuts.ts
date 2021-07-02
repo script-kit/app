@@ -76,6 +76,7 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       const ret = globalShortcut.register(shortcut, async () => {
+        log.info(`🏚 main shortcut`);
         await runPromptProcess(mainScriptPath);
       });
 

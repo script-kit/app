@@ -16,7 +16,6 @@ export interface PromptData {
 export interface Script extends Choice {
   id: string;
   name: string;
-  file: string;
   type: ProcessType;
   filePath: string;
   command: string;
@@ -36,8 +35,9 @@ export interface Script extends Choice {
   requiresPrompt: boolean;
   timeout?: number;
   tabs: string[];
-  placeholder: string;
-  input: string;
+  kenv: string;
+  image?: string;
+  icon?: string;
 }
 export interface Choice<Value = any> {
   name: string | JSX.Element[];
@@ -50,6 +50,8 @@ export interface Choice<Value = any> {
   id?: string;
   shortcode?: string;
   uuid?: string;
+  tag?: string;
+  icon?: string;
 }
 
 export interface MessageData extends PromptData {
@@ -130,7 +132,11 @@ export interface EditorProps {
 
 export type EditorConfig = editor.IStandaloneEditorConstructionOptions & {
   language?: string;
-  content?: string;
+  value?: string;
+};
+
+export type TextareaConfig = {
+  value?: string;
 };
 
 export type EditorRef = editor.IStandaloneCodeEditor;

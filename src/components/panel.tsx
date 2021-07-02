@@ -1,4 +1,5 @@
 import React, { RefObject, useEffect, useRef } from 'react';
+import SimpleBar from 'simplebar-react';
 import parse from 'html-react-parser';
 
 interface PanelProps {
@@ -23,8 +24,8 @@ export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
   }, [onPanelHeightChanged, containerRef?.current?.firstElementChild]);
 
   return (
-    <div
-      ref={containerRef}
+    <SimpleBar
+      scrollableNodeProps={{ ref: containerRef }}
       style={
         {
           WebkitAppRegion: 'no-drag',
@@ -35,6 +36,6 @@ export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
       }
     >
       {parse(`<div>${panelHTML}</div>`)}
-    </div>
+    </SimpleBar>
   );
 });

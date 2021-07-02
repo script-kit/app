@@ -61,6 +61,7 @@ export enum Channel {
   SET_PREVIEW = 'SET_PREVIEW',
   PROMPT_BLURRED = 'PROMPT_BLURRED',
   SET_PID = 'SET_PID',
+  SET_TEXTAREA_CONFIG = 'SET_TEXTAREA_CONFIG',
 }
 
 export enum ProcessType {

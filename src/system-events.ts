@@ -35,8 +35,10 @@ validSystemEvents.forEach((systemEvent: any) => {
 });
 
 export const unlinkEvents = (filePath: string) => {
-  log.info(`Removed ${systemEventMap.get(filePath)}from ${filePath}`);
-  systemEventMap.delete(filePath);
+  if (systemEventMap.get(filePath)) {
+    log.info(`Removed ${systemEventMap.get(filePath)}from ${filePath}`);
+    systemEventMap.delete(filePath);
+  }
 };
 export const systemScriptChanged = ({
   filePath,

@@ -152,12 +152,10 @@ export const info = async (file: string): Promise<Script> => {
   const command = filePath.split(path.sep)?.pop()?.replace('.js', '') as string;
   const shortcut = shortcutNormalizer(getByMarker('Shortcut:'));
   const menu = getByMarker('Menu:');
-  const placeholder = getByMarker('Placeholder:') || menu;
   const schedule = getByMarker('Schedule:');
   const watch = getByMarker('Watch:');
   const system = getByMarker('System:');
   const background = getByMarker('Background:');
-  const input = getByMarker('Input:') || 'text';
   const timeout = parseInt(getByMarker('Timeout:'), 10);
 
   const tabs =
@@ -182,13 +180,21 @@ export const info = async (file: string): Promise<Script> => {
     ? ProcessType.Background
     : ProcessType.Prompt;
 
+  const kenv =
+    filePath.match(
+      new RegExp(`(?<=${kenvPath('kenvs')}\/)[^\/]+\/[^\/]+`)
+    )?.[0] || '';
+
+  const iconPath = kenv ? kenvPath('kenvs', kenv, 'icon.png') : '';
+
+  const icon = kenv && (await isFile(iconPath)) ? iconPath : '';
+
   return {
     command,
     type,
     shortcut,
     menu,
     name: (menu || command) + (shortcut ? `: ${shortcut}` : ``),
-    placeholder,
 
     description: getByMarker('Description:'),
     alias: getByMarker('Alias:'),
@@ -200,13 +206,14 @@ export const info = async (file: string): Promise<Script> => {
     watch,
     system,
     background,
-    file,
     id: filePath,
     filePath,
     requiresPrompt,
     timeout,
     tabs,
-    input,
+    kenv,
+    image: getByMarker('Image:'),
+    icon,
   };
 };
 

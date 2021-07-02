@@ -75,7 +75,7 @@ let scripts: Script[] = [];
 
 export const updateScripts = async () => {
   const scriptsJSON = JSON.parse(
-    await readFile(kenvPath('db', 'scripts.json'), 'utf-8')
+    await readFile(kitPath('db', 'scripts.json'), 'utf-8')
   );
   scripts = scriptsJSON.scripts;
 };

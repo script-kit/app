@@ -2,7 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@import 'jetbrains-mono';
+@import 'typeface-lato';
+
 @import '../node_modules/simplebar-react/dist/simplebar.min.css';
+
+.lato {
+  font-family: 'Lato';
+}
 
 body {
   --tw-bg-opacity: 0.4 !important;

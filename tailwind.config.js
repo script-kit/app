@@ -34,6 +34,10 @@ module.exports = {
         dark: colors.indigo['600'],
       },
     },
+    fontFamily: {
+      mono: ['JetBrains Mono'],
+      sans: ['Lato'],
+    },
     extend: {
       minWidth: {
         0: '0',

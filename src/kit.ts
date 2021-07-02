@@ -66,7 +66,6 @@ export const runPromptProcess = async (
 
   setScript(script);
 
-  log.info(`📦`, processes.getAllProcessInfo());
   const { child, pid } = await processes.findPromptProcess();
 
   setPromptPid(pid);

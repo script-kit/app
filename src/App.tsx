@@ -26,7 +26,14 @@ import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
 import parse from 'html-react-parser';
 import { KeyCode } from 'monaco-editor';
-import { PromptData, Choice, Script, EditorConfig, EditorRef } from './types';
+import {
+  PromptData,
+  Choice,
+  Script,
+  EditorConfig,
+  EditorRef,
+  TextareaConfig,
+} from './types';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
@@ -88,7 +95,10 @@ export default function App() {
   // const [debouncedPlaceholder] = useDebounce(placeholder, 10);
   // const previousPlaceholder: string | null = usePrevious(placeholder);
   const [panelHTML, setPanelHTML] = useState('');
-  const [editorConfig, setEditorConfig] = useState<EditorConfig>({});
+  const [editorConfig, setEditorConfig] = useState<EditorConfig>();
+  const [textareaConfig, setTextareaConfig] = useState<TextareaConfig>({
+    value: '',
+  });
   // const [scriptName, setScriptName] = useState('');
   const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HEIGHT);
   // const [mainHeight, setMainHeight] = useState(0);
@@ -101,13 +111,10 @@ export default function App() {
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const editorRef: RefObject<EditorRef> = useRef(null);
-  const [isMouseDown, setIsMouseDown] = useState(false);
 
   const resizeHeight = useDebouncedCallback(
     useCallback(
       (height: number) => {
-        if (isMouseDown) return;
-
         const { height: topHeight } =
           topRef?.current?.getBoundingClientRect() as any;
 
@@ -119,7 +126,7 @@ export default function App() {
           ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
         }
       },
-      [isMouseDown, ui]
+      [ui]
     ),
     50
   );
@@ -538,8 +545,16 @@ export default function App() {
     [filteredChoices.length, resizeHeight]
   );
 
+  const setTextareaConfigHandler = useCallback(
+    (_event: any, config: EditorConfig) => {
+      setTextareaConfig(config);
+    },
+    []
+  );
+
   const setEditorConfigHandler = useCallback(
     (_event: any, config: EditorConfig) => {
+      console.log(config);
       setEditorConfig(config);
     },
     []
@@ -570,6 +585,7 @@ export default function App() {
     [Channel.SET_SCRIPT]: setScriptHandler,
     [Channel.SET_CHOICES]: setChoicesHandler,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfigHandler,
+    [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfigHandler,
     [Channel.SET_HINT]: setHintHandler,
     [Channel.SET_INPUT]: setInputHandler,
     [Channel.SET_MODE]: setModeHandler,
@@ -694,7 +710,7 @@ export default function App() {
                     width={width}
                     onSubmit={submit}
                     onEscape={closePrompt}
-                    placeholder={placeholder}
+                    options={textareaConfig}
                   />
                 )}
                 {ui === UI.arg && panelHTML?.length > 0 && (
@@ -703,6 +719,20 @@ export default function App() {
                     height={height}
                     onPanelHeightChanged={setMainHeight}
                     panelHTML={panelHTML}
+                  />
+                )}
+
+                {ui === UI.arg && panelHTML?.length === 0 && (
+                  <List
+                    ref={choicesListRef}
+                    height={height}
+                    width={width}
+                    choices={filteredChoices}
+                    onListChoicesChanged={setMainHeight}
+                    index={index}
+                    onIndexChange={clampIndex}
+                    onIndexSubmit={onIndexSubmit}
+                    inputValue={inputValue}
                   />
                 )}
 

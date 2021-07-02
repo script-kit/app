@@ -8634,6 +8634,11 @@ jest@^26.1.0:
     import-local "^3.0.2"
     jest-cli "^26.6.3"
 
+jetbrains-mono@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/jetbrains-mono/-/jetbrains-mono-1.0.3.tgz#1fedbc12da7344d60fa5db5f63d5c548127ee5d1"
+  integrity sha512-KPSN7H30C3j0+/LEenZ6rY1TfL7C0fgxIzGs8xW1G2Oa1rZAQ1zOocSXLF/dvShJzI8z1egDHGovrsjtiP87HA==
+
 js-message@1.0.7:
   version "1.0.7"
   resolved "https://registry.npmjs.org/js-message/-/js-message-1.0.7.tgz"
@@ -12823,6 +12828,11 @@ setprototypeof@1.1.1:
   resolved "https://registry.npmjs.org/setprototypeof/-/setprototypeof-1.1.1.tgz"
   integrity sha512-JvdAWfbXeIGaZ9cILp38HntZSFSo3mWg6xGcJJsd+d4aRMOqauag1C63dJfDw7OaMYwEbHMOxEZ1lqVRYP2OAw==
 
+sf-font@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/sf-font/-/sf-font-1.0.0.tgz#7b0053161d475e9fe0525c2551172cdf7d6e6006"
+  integrity sha512-lEHKv0nO76MOg30JebEo6iIUn7VoD5nH+Jrgy34I1wV2pHXenpe3Uotck6f2nsR0+MUKHjjEM/zRJVOMRUnKhw==
+
 shallow-clone@^3.0.0:
   version "3.0.1"
   resolved "https://registry.npmjs.org/shallow-clone/-/shallow-clone-3.0.1.tgz"
@@ -14072,6 +14082,16 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
+
+typeface-lato@^1.1.13:
+  version "1.1.13"
+  resolved "https://registry.yarnpkg.com/typeface-lato/-/typeface-lato-1.1.13.tgz#630ec75394d7fd2c63148005e6e23f2d8014e931"
+  integrity sha512-sTn5k3+fagGOi8FQfN2MPeUiTdvG0Z3LVqCaQdsg2sYa0fzNteFZussizdwiPxF45OoFN3zdU/ci+PtjolNSPQ==
+
+typeface-roboto@^1.1.13:
+  version "1.1.13"
+  resolved "https://registry.yarnpkg.com/typeface-roboto/-/typeface-roboto-1.1.13.tgz#9c4517cb91e311706c74823e857b4bac9a764ae5"
+  integrity sha512-YXvbd3a1QTREoD+FJoEkl0VQNJoEjewR2H11IjVv4bp6ahuIcw0yyw/3udC4vJkHw3T3cUh85FTg8eWef3pSaw==
 
 typescript@^4.0.5:
   version "4.2.4"

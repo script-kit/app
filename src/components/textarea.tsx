@@ -1,20 +1,21 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
 import React, { useCallback, KeyboardEvent, useState, forwardRef } from 'react';
+import { EditorConfig } from '../types';
 
 interface TextAreaProps {
   onSubmit: (value: any) => void;
   onEscape: (value: any) => void;
   height: number;
   width: number;
-  placeholder: string;
+  options: EditorConfig;
 }
 
 export default forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
-  { onSubmit, onEscape, height, width, placeholder }: TextAreaProps,
+  { onSubmit, onEscape, height, width, options }: TextAreaProps,
   ref
 ) {
-  const [textAreaValue, setTextAreaValue] = useState('');
+  const [textAreaValue, setTextAreaValue] = useState(options.value);
 
   const onTextAreaKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -57,7 +58,7 @@ export default forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
           setTextAreaValue(e.target.value);
         }}
         value={textAreaValue}
-        placeholder={placeholder}
+        placeholder={options.placeholder}
         className={`
         min-h-32
       bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-md dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40

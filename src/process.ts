@@ -95,6 +95,10 @@ export const prepChoices = (data: MessageData) => {
         }`;
       }
 
+      if (script.kenv) {
+        script.tag = script.kenv;
+      }
+
       return script;
     });
 
@@ -309,6 +313,9 @@ const kitMessageMap: ChannelHandler = {
   },
   SET_EDITOR_CONFIG: (data) => {
     sendToPrompt(Channel.SET_EDITOR_CONFIG, data.options);
+  },
+  SET_TEXTAREA_CONFIG: (data) => {
+    sendToPrompt(Channel.SET_TEXTAREA_CONFIG, data.options);
   },
 };
 
