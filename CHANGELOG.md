@@ -1,3 +1,10 @@
+# [1.3.0-alpha.66](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.65...v1.3.0-alpha.66) (2021-07-02)
+
+
+### Features
+
+* **prompt:** handle kenvs ([30c0723](https://github.com/johnlindquist/kitapp/commit/30c072372387864792bd3df47bfe7c8ba7e89795))
+
 # [1.3.0-beta.20](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.19...v1.3.0-beta.20) (2021-06-26)
 
 
