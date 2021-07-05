@@ -16,7 +16,7 @@ import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
 import { existsSync } from 'fs';
 import path from 'path';
-import { kitPath } from './helpers';
+import { kitPath } from 'kit-bridge/cjs/util';
 
 export const tick = async () => {
   const tmpClipboardDir = kitPath('tmp', 'clipboard');

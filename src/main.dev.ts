@@ -34,6 +34,7 @@ import {
   SpawnSyncReturns,
 } from 'child_process';
 import { homedir } from 'os';
+import { ensureDir } from 'fs-extra';
 import { createReadStream, createWriteStream, existsSync } from 'fs';
 import {
   chmod,
@@ -47,25 +48,18 @@ import {
 } from 'fs/promises';
 import { Open, Parse } from 'unzipper';
 import { ProcessType } from 'kit-bridge/cjs/enum';
+import { kenvPath, kitPath, PATH } from 'kit-bridge/cjs/util';
+import { getPrefsDb, getShortcutsDb } from 'kit-bridge/cjs/db';
 import { createTray, destroyTray } from './tray';
 import { setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
 import { tick } from './tick';
 import { createPromptWindow } from './prompt';
-import {
-  APP_NAME,
-  kenvPath,
-  KIT,
-  KIT_PROTOCOL,
-  kitPath,
-  createPathIfNotExists,
-  getKenv,
-} from './helpers';
+import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion } from './version';
 import { show } from './show';
 import { cacheKitScripts, getStoredVersion, storeVersion } from './state';
 import { startSK } from './sk';
-import { setupPrefs } from './prefs';
 import { processes } from './process';
 import { startIpc } from './ipc';
 
@@ -138,11 +132,11 @@ autoUpdater.on('download-progress', (progressObj) => {
 });
 
 let updateDownloaded = false;
-autoUpdater.on('update-downloaded', () => {
+autoUpdater.on('update-downloaded', async () => {
   log.info('update downloaded');
   log.info('attempting quitAndInstall');
   updateDownloaded = true;
-  storeVersion(getVersion());
+  await storeVersion(getVersion());
   callBeforeQuitAndInstall();
   autoUpdater.quitAndInstall();
   const allWindows = BrowserWindow.getAllWindows();
@@ -199,7 +193,6 @@ const prepareProtocols = async () => {
 };
 
 const createLogs = () => {
-  createPathIfNotExists(kitPath('logs'));
   log.transports.file.resolvePath = () => kitPath('logs', 'kit.log');
 };
 
@@ -235,12 +228,19 @@ const setupLog = (message: string) => {
   log.info(message);
 };
 
+const ensureDirs = async () => {
+  await ensureDir(kitPath('logs'));
+  await ensureDir(kitPath('tmp'));
+  await ensureDir(kitPath('db'));
+};
+
 const ready = async () => {
   try {
     if (process.env.NODE_ENV === 'development') {
       await installExtensions();
     }
 
+    await ensureDirs();
     createLogs();
     await prepareProtocols();
     setupLog(`Protocols Prepared`);
@@ -280,6 +280,7 @@ const handleSpawnReturns = async (
   message: string,
   result: SpawnSyncReturns<any>
 ) => {
+  console.log({ message });
   console.log(`stdout:`, result?.stdout?.toString());
   console.log(`stderr:`, result?.stderr?.toString());
   const { stdout, stderr, error } = result;
@@ -302,16 +303,16 @@ const handleSpawnReturns = async (
 };
 
 const kitExists = () => {
-  setupLog(KIT);
-  const doesKitExist = existsSync(KIT);
+  setupLog(kitPath());
+  const doesKitExist = existsSync(kitPath());
 
   setupLog(`kit${doesKitExist ? `` : ` not`} found`);
 
   return doesKitExist;
 };
 const kitIsGit = () => {
-  const isGit = existsSync(getKenv());
-  setupLog(`kit is${isGit ? ` not` : ``} a .git repo`);
+  const isGit = existsSync(kitPath('.git'));
+  setupLog(`kit is${isGit ? `` : ` not`} a .git repo`);
   return isGit;
 };
 const kitIsReleaseBranch = async () => {
@@ -342,7 +343,7 @@ const isContributor = async () => {
 };
 
 const kenvExists = () => {
-  const doesKenvExist = existsSync(getKenv());
+  const doesKenvExist = existsSync(kenvPath());
   setupLog(`kenv${doesKenvExist ? `` : ` not`} found`);
 
   return doesKenvExist;
@@ -444,13 +445,14 @@ ${mainLog}
   throw new Error(error.message);
 };
 
+const KIT = kitPath();
 const options: SpawnSyncOptions = {
   cwd: KIT,
   encoding: 'utf-8',
   env: {
     KIT,
-    KENV: getKenv(),
-    PATH: `${path.join(KIT, 'node', 'bin')}:${process.env.PATH}`,
+    KENV: kenvPath(),
+    PATH,
   },
 };
 
@@ -494,11 +496,11 @@ const unzipKit = async () => {
   }
 };
 
-const versionMismatch = () => {
+const versionMismatch = async () => {
   const currentVersion = getVersion();
   setupLog(`App version: ${currentVersion}`);
 
-  const previousVersion = getStoredVersion();
+  const previousVersion = await getStoredVersion();
   setupLog(`Previous version: ${previousVersion}`);
   return currentVersion !== previousVersion;
 };
@@ -533,9 +535,10 @@ const checkKit = async () => {
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
 
-  setupPrefs();
+  await getPrefsDb();
+  await getShortcutsDb();
 
-  if (versionMismatch() || !kitExists()) {
+  if ((await versionMismatch()) || !kitExists()) {
     configWindow = await show(
       'splash-setup',
       `
@@ -552,7 +555,7 @@ const checkKit = async () => {
     if (await isContributor()) {
       setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
     } else {
-      if (getStoredVersion() === '0.0.0') {
+      if ((await getStoredVersion()) === '0.0.0') {
         configWindow?.show();
       }
 
@@ -618,7 +621,7 @@ const checkKit = async () => {
     await verifyInstall();
   }
 
-  storeVersion(getVersion());
+  await storeVersion(getVersion());
   await ready();
 };
 

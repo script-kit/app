@@ -2,8 +2,12 @@ import { globalShortcut } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { Script } from 'kit-bridge/cjs/type';
+import {
+  mainScriptPath,
+  shortcutsPath,
+  shortcutNormalizer,
+} from 'kit-bridge/cjs/util';
 import { runPromptProcess } from './kit';
-import { mainScriptPath, shortcutsPath, shortcutNormalizer } from './helpers';
 import { emitter, KitEvent } from './events';
 
 const registerShortcut = (shortcut: string, filePath: string) => {

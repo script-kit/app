@@ -1,8 +1,8 @@
 /* eslint-disable import/prefer-default-export */
 import { app, BrowserWindow, screen } from 'electron';
 import { writeFile, mkdir } from 'fs/promises';
+import { kenvPath, isDir } from 'kit-bridge/cjs/util';
 import { getAssetPath } from './assets';
-import { kenvPath, isDir } from './helpers';
 
 const page = (body: string) => {
   return `<!DOCTYPE html>

@@ -20,10 +20,10 @@ import {
   KIT_MAC_APP_PROMPT,
   PATH,
   kitPath,
+  kenvPath,
+  kitDotEnv,
   execPath,
 } from 'kit-bridge/cjs/util';
-
-import { setKenv, createKenv, getKenv, getKenvDotEnv } from './helpers';
 
 import { getLog } from './logs';
 import {
@@ -160,10 +160,6 @@ const kitMessageMap: ChannelHandler = {
     clipboard.writeImage(data.path as any);
   },
 
-  CREATE_KENV: (data) => {
-    if (data.kenvPath) createKenv(data.kenvPath);
-  },
-
   GET_SCRIPTS_STATE: (data) => {
     processes.ifPid(data.pid, ({ child }) => {
       child?.send({
@@ -217,8 +213,8 @@ const kitMessageMap: ChannelHandler = {
   HIDE_APP: () => {
     setAppHidden(true);
   },
-  NEEDS_RESTART: () => {
-    makeRestartNecessary();
+  NEEDS_RESTART: async () => {
+    await makeRestartNecessary();
   },
   QUIT_APP: () => {
     app.exit();
@@ -303,9 +299,7 @@ const kitMessageMap: ChannelHandler = {
   SET_CHOICES: (data) => {
     prepChoices(data);
   },
-  SWITCH_KENV: (data) => {
-    if (data.kenvPath) setKenv(data.kenvPath);
-  },
+
   UPDATE_PROMPT_WARN: (data) => {
     setPlaceholder(data.info as string);
   },
@@ -380,9 +374,9 @@ const createChild = ({
       KIT_CONTEXT: 'app',
       KIT_MAIN: scriptPath,
       PATH,
-      KENV: getKenv(),
+      KENV: kenvPath(),
       KIT: kitPath(),
-      KIT_DOTENV: getKenvDotEnv(),
+      KIT_DOTENV: kitDotEnv(),
       KIT_APP_VERSION: getVersion(),
       PROCESS_TYPE: type,
     },

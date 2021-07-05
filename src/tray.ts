@@ -2,15 +2,15 @@
 import { Tray } from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
+import { kenvPath, kitPath, mainScriptPath } from 'kit-bridge/cjs/util';
 import { getAssetPath } from './assets';
 import { restartIfNecessary } from './state';
-import { kenvPath, kitPath, mainScriptPath } from './helpers';
 import { runPromptProcess } from './kit';
 
 let tray: Tray | null = null;
 
 const leftClick = async (event: KeyboardEvent) => {
-  restartIfNecessary();
+  await restartIfNecessary();
   if (event.metaKey) {
     runPromptProcess(kenvPath('app', 'command-click.js'));
   } else if (event.shiftKey) {

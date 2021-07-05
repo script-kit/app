@@ -286,6 +286,7 @@
     "electron-log": "^4.2.4",
     "electron-store": "^7.0.2",
     "electron-updater": "^4.3.4",
+    "fs-extra": "^10.0.0",
     "he": "^1.2.0",
     "history": "^5.0.0",
     "html-react-parser": "^1.2.4",

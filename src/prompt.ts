@@ -10,11 +10,16 @@ import { debounce, throttle } from 'lodash';
 import FileSync from 'lowdb/adapters/FileSync';
 import minimist from 'minimist';
 import { readFileSync } from 'fs';
+import {
+  mainScriptPath,
+  isFile,
+  kenvPath,
+  promptDbPath,
+} from 'kit-bridge/cjs/util';
 import { getAssetPath } from './assets';
-import { mainScriptPath, isFile, kenvPath, promptDbPath } from './helpers';
 // import { Channel, Mode, UI } from 'kit-bridge/cjs/type';
 import { getAppHidden } from './appHidden';
-import { getScriptsSync } from './state';
+import { getScriptsMemory } from './state';
 import { emitter, KitEvent } from './events';
 
 let promptScript: Script | null;
@@ -308,7 +313,7 @@ export const setScript = (script: Script) => {
 
   let instantChoices = [];
   if (script.filePath === mainScriptPath) {
-    instantChoices = getScriptsSync();
+    instantChoices = getScriptsMemory();
   } else if (script.requiresPrompt) {
     const maybeCachedChoices = kenvPath('db', `_${script.command}.json`);
     if (isFile(maybeCachedChoices)) {
