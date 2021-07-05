@@ -1,8 +1,8 @@
 import { powerMonitor } from 'electron';
 import log from 'electron-log';
-import { ProcessType } from './enums';
+import { ProcessType } from 'kit-bridge/cjs/enum';
+import { Script } from 'kit-bridge/cjs/type';
 import { processes } from './process';
-import { Script } from './types';
 
 const validSystemEvents = [
   'suspend',

@@ -46,6 +46,7 @@ import {
   rmdir,
 } from 'fs/promises';
 import { Open, Parse } from 'unzipper';
+import { ProcessType } from 'kit-bridge/cjs/enum';
 import { createTray, destroyTray } from './tray';
 import { setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
@@ -65,7 +66,6 @@ import { show } from './show';
 import { cacheKitScripts, getStoredVersion, storeVersion } from './state';
 import { startSK } from './sk';
 import { setupPrefs } from './prefs';
-import { ProcessType } from './enums';
 import { processes } from './process';
 import { startIpc } from './ipc';
 
@@ -258,6 +258,7 @@ const ready = async () => {
     configWindowDone();
 
     startSK();
+    console.log(`🍭 BEFORE CACHE KIT SCRIPTS`);
     await cacheKitScripts();
 
     startIpc();

@@ -3,6 +3,7 @@
 import { ipcMain } from 'electron';
 import log from 'electron-log';
 import { isUndefined } from 'lodash';
+import { Channel } from 'kit-bridge/cjs/enum';
 import { emitter, KitEvent } from './events';
 
 import { processes } from './process';
@@ -13,7 +14,6 @@ import {
   setPlaceholder,
 } from './prompt';
 import { setAppHidden, getAppHidden } from './appHidden';
-import { Channel } from './enums';
 
 export const startIpc = () => {
   ipcMain.on(Channel.VALUE_SUBMITTED, (_event, { value, pid }) => {

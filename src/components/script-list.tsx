@@ -8,9 +8,9 @@ import React, {
 } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import memoize from 'memoize-one';
+import { ChoiceButtonProps, ListProps } from 'kit-bridge/cjs/type';
 import Preview from './preview';
 import ChoiceButton from './button';
-import { ChoiceButtonProps, ListProps } from '../types';
 
 const createItemData = memoize(
   (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>

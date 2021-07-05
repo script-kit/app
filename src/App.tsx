@@ -26,6 +26,7 @@ import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
 import parse from 'html-react-parser';
 import { KeyCode } from 'monaco-editor';
+import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
 import {
   PromptData,
   Choice,
@@ -33,7 +34,7 @@ import {
   EditorConfig,
   EditorRef,
   TextareaConfig,
-} from './types';
+} from '';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
@@ -43,8 +44,9 @@ import Hotkey from './components/hotkey';
 import TextArea from './components/textarea';
 import Panel from './components/panel';
 import Header from './components/header';
-import { Channel, Mode, UI } from './enums';
 import { highlightChoiceName } from './highlight';
+
+console.log({ Channel, Mode, UI });
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor

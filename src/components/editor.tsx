@@ -2,8 +2,8 @@ import React, { forwardRef, useCallback, useEffect } from 'react';
 import path from 'path';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
+import { EditorProps } from 'kit-bridge/cjs/type';
 import { useThemeDetector } from '../hooks';
-import { EditorProps } from '../types';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;

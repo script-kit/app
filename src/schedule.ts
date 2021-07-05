@@ -1,11 +1,10 @@
 import schedule, { Job } from 'node-schedule';
 
 import log from 'electron-log';
+import { Script } from 'kit-bridge/cjs/type';
+import { ProcessType } from 'kit-bridge/cjs/enum';
 import { scheduleMap } from './state';
 import { processes } from './process';
-
-import { Script } from './types';
-import { ProcessType } from './enums';
 
 export const cancelJob = (filePath: string) => {
   if (scheduleMap.has(filePath)) {

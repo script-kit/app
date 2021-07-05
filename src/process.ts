@@ -11,6 +11,22 @@ import sizeOf from 'image-size';
 import { autoUpdater } from 'electron-updater';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
+import { Channel, Mode, ProcessType } from 'kit-bridge/cjs/enum';
+import { Choice, MessageData, Script, PromptData } from 'kit-bridge/cjs/type';
+
+import {
+  resolveToScriptPath,
+  KIT_MAC_APP,
+  KIT_MAC_APP_PROMPT,
+  PATH,
+  kitPath,
+  execPath,
+  setKenv,
+  createKenv,
+  getKenv,
+  getKenvDotEnv,
+  resolveScriptPath,
+} from './helpers';
 import { getLog } from './logs';
 import {
   focusPrompt,
@@ -37,22 +53,9 @@ import {
 } from './state';
 
 import { emitter, KitEvent } from './events';
-import { Channel, Mode, ProcessType } from './enums';
 import { show } from './show';
 import { showNotification } from './notifications';
-import {
-  setKenv,
-  createKenv,
-  KIT_MAC_APP,
-  KIT_MAC_APP_PROMPT,
-  PATH,
-  execPath,
-  KIT,
-  getKenv,
-  getKenvDotEnv,
-  resolveScriptPath,
-} from './helpers';
-import { Choice, MessageData, Script, PromptData } from './types';
+
 import { getVersion } from './version';
 
 export const prepChoices = (data: MessageData) => {
@@ -380,7 +383,7 @@ const createChild = ({
       KIT_MAIN: scriptPath,
       PATH,
       KENV: getKenv(),
-      KIT,
+      KIT: kitPath(),
       KIT_DOTENV: getKenvDotEnv(),
       KIT_APP_VERSION: getVersion(),
       PROCESS_TYPE: type,

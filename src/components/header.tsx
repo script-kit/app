@@ -1,5 +1,5 @@
 import React from 'react';
-import { Script } from '../types';
+import { Script } from 'kit-bridge/cjs/type';
 
 interface HeaderProps {
   script: Script;

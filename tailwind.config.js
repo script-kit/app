@@ -36,7 +36,7 @@ module.exports = {
     },
     fontFamily: {
       mono: ['JetBrains Mono'],
-      sans: ['Lato'],
+      // sans: ['Lato'],
     },
     extend: {
       minWidth: {

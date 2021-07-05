@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
+import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
+import { Choice, Script, PromptData } from 'kit-bridge/cjs/type';
+
 import { BrowserWindow, screen, nativeTheme, app, Rectangle } from 'electron';
 import log from 'electron-log';
 import low from 'lowdb';
@@ -9,10 +12,9 @@ import minimist from 'minimist';
 import { readFileSync } from 'fs';
 import { getAssetPath } from './assets';
 import { mainScriptPath, isFile, kenvPath, promptDbPath } from './helpers';
-import { Channel, Mode, UI } from './enums';
+// import { Channel, Mode, UI } from 'kit-bridge/cjs/type';
 import { getAppHidden } from './appHidden';
-import { Choice, PromptData, Script } from './types';
-import { getScripts } from './state';
+import { getScriptsSync } from './state';
 import { emitter, KitEvent } from './events';
 
 let promptScript: Script | null;
@@ -306,7 +308,7 @@ export const setScript = (script: Script) => {
 
   let instantChoices = [];
   if (script.filePath === mainScriptPath) {
-    instantChoices = getScripts();
+    instantChoices = getScriptsSync();
   } else if (script.requiresPrompt) {
     const maybeCachedChoices = kenvPath('db', `_${script.command}.json`);
     if (isFile(maybeCachedChoices)) {

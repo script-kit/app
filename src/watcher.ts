@@ -2,6 +2,8 @@
 import chokidar, { FSWatcher } from 'chokidar';
 
 import { debounce } from 'lodash';
+import { ProcessType } from 'kit-bridge/cjs/enum';
+import { getScripts } from 'kit-bridge/cjs/db';
 import { appDbPath, info, kenvPath, kitPath, shortcutsPath } from './helpers';
 import {
   unlinkShortcuts,
@@ -16,7 +18,6 @@ import { backgroundScriptChanged, removeBackground } from './background';
 import { emitter, KitEvent } from './events';
 import { updateScripts } from './state';
 import { processes } from './process';
-import { ProcessType } from './enums';
 
 const onScriptsChanged = async (
   event: 'add' | 'change' | 'unlink',
@@ -45,11 +46,6 @@ export const onDbChanged = async (event: any, filePath: string) => {
 };
 
 export const cacheMenu = debounce(async () => {
-  processes.add(
-    ProcessType.Background,
-    kitPath('cli', 'refresh-scripts-db.js'),
-    []
-  );
   await updateScripts();
 }, 200);
 

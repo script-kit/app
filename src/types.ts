@@ -1,6 +1,6 @@
 import { ChangeEvent, KeyboardEvent } from 'react';
 import { editor } from 'monaco-editor';
-import { Mode, Channel, ProcessType, UI } from './enums';
+import { Mode, Channel, ProcessType, UI } from 'kit-bridge/cjs/enum';
 
 export interface PromptData {
   script: Script;

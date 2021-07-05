@@ -1,11 +1,11 @@
 import { grep } from 'shelljs';
 import log from 'electron-log';
 
-import { ProcessType } from './enums';
+import { ProcessType } from 'kit-bridge/cjs/enum';
+import { Script } from 'kit-bridge/cjs/type';
 import { emitter, KitEvent } from './events';
 import { backgroundMap, Background } from './state';
 import { processes } from './process';
-import { Script } from './types';
 
 const backgroundMarker = 'Background: ';
 

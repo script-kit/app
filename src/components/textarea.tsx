@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
 import React, { useCallback, KeyboardEvent, useState, forwardRef } from 'react';
-import { EditorConfig } from '../types';
+import { EditorConfig } from 'kit-bridge/cjs/type';
 
 interface TextAreaProps {
   onSubmit: (value: any) => void;

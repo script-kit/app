@@ -2,7 +2,7 @@
 /* eslint-disable react/prop-types */
 import React, { forwardRef } from 'react';
 
-import { InputProps } from '../types';
+import { InputProps } from 'kit-bridge/cjs/type';
 
 export default forwardRef<HTMLInputElement, InputProps>(function Input(
   { onKeyDown, onKeyUp, onChange, placeholder, secret, value },

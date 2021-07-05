@@ -8,9 +8,9 @@ import { grep, mkdir, test } from 'shelljs';
 import low from 'lowdb';
 import FileSync from 'lowdb/adapters/FileSync';
 import { readFile } from 'fs/promises';
+import { Script } from 'kit-bridge/cjs/type';
+import { UI, ProcessType } from 'kit-bridge/cjs/enum';
 import { emitter, KitEvent } from './events';
-import { Script } from './types';
-import { UI, ProcessType } from './enums';
 
 export const isDir = (dir: string) => test('-d', dir);
 export const isFile = (file: string) => test('-f', file);
@@ -75,12 +75,11 @@ export const prefsPath = kitPath('db', 'prefs.json');
 export const shortcutsPath = kitPath('db', 'shortcuts.json');
 export const promptDbPath = kitPath('db', 'prompt.json');
 export const mainScriptPath = kitPath('main', 'index.js');
+export const execPath = kitPath('node', 'bin', 'node');
 
 export const KENV_SCRIPTS = kenvPath('scripts');
 export const KENV_APP = kenvPath('app');
 export const KENV_BIN = kenvPath('bin');
-
-export const execPath = kitPath('node', 'bin', 'node');
 
 export const KIT_MAC_APP = kitPath('mac-app.js');
 export const KIT_MAC_APP_PROMPT = kitPath('mac-app-prompt.js');

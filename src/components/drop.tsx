@@ -4,7 +4,7 @@
 /* eslint-disable react/prop-types */
 import React, { forwardRef, KeyboardEvent, useCallback, useState } from 'react';
 
-import { DropProps } from '../types';
+import { DropProps } from 'kit-bridge/cjs/type';
 
 export default forwardRef<HTMLDivElement, DropProps>(function Drop(
   { placeholder, submit, onEscape },

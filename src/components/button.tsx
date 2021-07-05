@@ -3,7 +3,7 @@
 /* eslint-disable no-nested-ternary */
 import React from 'react';
 import parse from 'html-react-parser';
-import { ChoiceButtonProps } from '../types';
+import { ChoiceButtonProps } from 'kit-bridge/cjs/type';
 
 export default function ChoiceButton({
   data,
