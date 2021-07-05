@@ -8,7 +8,7 @@ import minimist from 'minimist';
 import log from 'electron-log';
 
 import { Channel, ProcessType } from 'kit-bridge/cjs/enum';
-import { info, kenvPath, kitPath, mainScriptPath } from './helpers';
+import { info, kenvPath, kitPath, mainScriptPath } from 'kit-bridge/cjs/util';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 import { setPromptPid, setScript } from './prompt';
