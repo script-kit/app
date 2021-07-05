@@ -220,10 +220,10 @@ const kitMessageMap: ChannelHandler = {
     app.exit();
   },
   SET_SCRIPT: (data) => {
-    processes.ifPid(data.pid, ({ type }) => {
+    processes.ifPid(data.pid, async ({ type }) => {
       // log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.script.filePath);
       if (type === ProcessType.Prompt) {
-        setScript(data.script as Script);
+        await setScript(data.script as Script);
       }
     });
   },
@@ -303,8 +303,8 @@ const kitMessageMap: ChannelHandler = {
   UPDATE_PROMPT_WARN: (data) => {
     setPlaceholder(data.info as string);
   },
-  CLEAR_PROMPT_CACHE: () => {
-    clearPromptCache();
+  CLEAR_PROMPT_CACHE: async () => {
+    await clearPromptCache();
   },
   SET_EDITOR_CONFIG: (data) => {
     sendToPrompt(Channel.SET_EDITOR_CONFIG, data.options);

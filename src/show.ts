@@ -78,11 +78,11 @@ export const show = async (
     }
   });
 
-  const showParentDir = isDir(kenvPath('tmp'))
+  const showParentDir = (await isDir(kenvPath('tmp')))
     ? kenvPath('tmp', name)
     : app.getPath('appData');
 
-  if (!isDir(showParentDir)) {
+  if (!(await isDir(showParentDir))) {
     await mkdir(showParentDir, { recursive: true });
   }
 

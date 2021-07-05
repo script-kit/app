@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
-import { kenvPath } from './helpers';
+import { kenvPath } from 'kit-bridge/cjs/util';
 
 export const consoleLog = log.create('consoleLog');
 consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');

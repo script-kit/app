@@ -10,9 +10,7 @@ export const startSK = () => {
   const server = net.createServer((stream) => {
     stream.on('data', async (data) => {
       const value = data.toString();
-      log.info(value);
       const json = value.match(new RegExp(`^{.*}$`, 'gm'))?.[0] || '';
-      log.info(json);
       const object = JSON.parse(json);
       log.info(object);
       const { script, args } = object;
