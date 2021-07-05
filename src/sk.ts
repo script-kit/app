@@ -3,7 +3,7 @@
 import net from 'net';
 import fs from 'fs';
 import log from 'electron-log';
-import { kitPath, resolveScriptPath } from './helpers';
+import { kitPath, resolveToScriptPath } from 'kit-bridge/cjs/util';
 import { runPromptProcess } from './kit';
 
 export const startSK = () => {
@@ -17,7 +17,7 @@ export const startSK = () => {
       log.info(object);
       const { script, args } = object;
 
-      const scriptPath = resolveScriptPath(script);
+      const scriptPath = resolveToScriptPath(script);
       log.info(`🇦🇷 ${scriptPath} ${args}`);
       if (scriptPath) {
         await runPromptProcess(

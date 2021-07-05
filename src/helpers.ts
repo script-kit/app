@@ -133,15 +133,3 @@ export const shortcutNormalizer = (shortcut: string) =>
         .map((part) => (part[0].toUpperCase() + part.slice(1)).trim())
         .join('+')
     : '';
-
-export const resolveScriptPath = (scriptPath: string) => {
-  let resolvePath = scriptPath.startsWith(path.sep)
-    ? scriptPath
-    : scriptPath.includes(path.sep)
-    ? kenvPath(scriptPath)
-    : kenvPath('scripts', scriptPath);
-
-  if (!resolvePath.endsWith('.js')) resolvePath = `${resolvePath}.js`;
-
-  return resolvePath;
-};

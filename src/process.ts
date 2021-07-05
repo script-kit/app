@@ -21,12 +21,10 @@ import {
   PATH,
   kitPath,
   execPath,
-  setKenv,
-  createKenv,
-  getKenv,
-  getKenvDotEnv,
-  resolveScriptPath,
-} from './helpers';
+} from 'kit-bridge/cjs/util';
+
+import { setKenv, createKenv, getKenv, getKenvDotEnv } from './helpers';
+
 import { getLog } from './logs';
 import {
   focusPrompt,
@@ -368,7 +366,7 @@ const createChild = ({
   if (!scriptPath) {
     args = ['--app'];
   } else {
-    const resolvePath = resolveScriptPath(scriptPath);
+    const resolvePath = resolveToScriptPath(scriptPath);
     args = [resolvePath, ...runArgs, '--app'];
   }
 
