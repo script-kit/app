@@ -48,7 +48,7 @@ import {
 } from 'fs/promises';
 import { Open, Parse } from 'unzipper';
 import { ProcessType } from 'kit-bridge/cjs/enum';
-import { kenvPath, kitPath, PATH } from 'kit-bridge/cjs/util';
+import { kenvPath, kitPath, tmpClipboardDir, PATH } from 'kit-bridge/cjs/util';
 import { getPrefsDb, getShortcutsDb } from 'kit-bridge/cjs/db';
 import { createTray, destroyTray } from './tray';
 import { setupWatchers } from './watcher';
@@ -230,8 +230,8 @@ const setupLog = (message: string) => {
 
 const ensureDirs = async () => {
   await ensureDir(kitPath('logs'));
-  await ensureDir(kitPath('tmp'));
   await ensureDir(kitPath('db'));
+  await ensureDir(tmpClipboardDir);
 };
 
 const ready = async () => {

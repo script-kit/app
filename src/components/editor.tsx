@@ -1,9 +1,11 @@
 import React, { forwardRef, useCallback, useEffect } from 'react';
 import path from 'path';
+import { useAtom } from 'jotai';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
 import { EditorProps } from 'kit-bridge/cjs/type';
 import { useThemeDetector } from '../hooks';
+import { editorConfigAtom } from '../jotai';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -30,9 +32,11 @@ const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
 };
 
 export default forwardRef<any, any>(function Editor(
-  { options, height, width }: EditorProps,
+  { height, width }: EditorProps,
   ref: any
 ) {
+  const [options] = useAtom(editorConfigAtom);
+
   useEffect(() => {
     return () => {
       ref(null);

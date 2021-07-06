@@ -45,7 +45,7 @@ export const createPromptWindow = async () => {
     backgroundColor: nativeTheme.shouldUseDarkColors
       ? '#33000000'
       : '#C0FFFF00',
-    vibrancy: 'popover',
+    vibrancy: 'hud',
     show: false,
     hasShadow: true,
     icon: getAssetPath('icon.png'),

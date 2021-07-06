@@ -19,7 +19,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-
+import { useAtom } from 'jotai';
 import AutoSizer, { Size } from 'react-virtualized-auto-sizer';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
@@ -33,8 +33,7 @@ import {
   Script,
   EditorConfig,
   EditorRef,
-  TextareaConfig,
-} from '';
+} from 'kit-bridge/esm/type';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
@@ -45,8 +44,26 @@ import TextArea from './components/textarea';
 import Panel from './components/panel';
 import Header from './components/header';
 import { highlightChoiceName } from './highlight';
-
-console.log({ Channel, Mode, UI });
+import {
+  choicesAtom,
+  editorConfigAtom,
+  hintAtom,
+  indexAtom,
+  inputAtom,
+  maxHeightAtom,
+  modeAtom,
+  panelHTMLAtom,
+  pidAtom,
+  placeholderAtom,
+  promptDataAtom,
+  scriptAtom,
+  submittedAtom,
+  tabIndexAtom,
+  tabsAtom,
+  textareaConfigAtom,
+  uiAtom,
+  unfilteredChoicesAtom,
+} from './jotai';
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -73,37 +90,33 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-const DEFAULT_MAX_HEIGHT = 480;
-
 export default function App() {
-  const [pid, setPid] = useState(0);
-  const [script, setScript] = useState<Script>();
+  const [pid, setPid] = useAtom(pidAtom);
+  const [script, setScript] = useAtom(scriptAtom);
 
-  const [index, setIndex] = useState<number>(0);
-  const [submitted, setSubmitted] = useState<boolean>(false);
-  const [promptData, setPromptData]: any = useState({});
+  const [index, setIndex] = useAtom(indexAtom);
+  const [inputValue, setInputValue] = useAtom(inputAtom);
+  const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
+  const [promptData, setPromptData] = useAtom(promptDataAtom);
+  const [submitted, setSubmitted] = useAtom(submittedAtom);
 
-  const [inputValue, setInputValue] = useState<string>('');
-  const [editorValue, setEditorValue] = useState<string>('');
-  const [ui, setUI] = useState<UI>(UI.arg);
-  const [hint, setHint] = useState('');
-  // const previousHint = usePrevious(hint);
-  const [mode, setMode] = useState(Mode.FILTER);
-  const [tabs, setTabs] = useState<string[]>([]);
-  const [tabIndex, setTabIndex] = useState(0);
-  const [unfilteredChoices, setUnfilteredChoices] = useState<Choice[]>([]);
-  const [filteredChoices, setFilteredChoices] = useState<Choice[]>([]);
-  const [placeholder, setPlaceholder] = useState('');
-  // const [debouncedPlaceholder] = useDebounce(placeholder, 10);
-  // const previousPlaceholder: string | null = usePrevious(placeholder);
-  const [panelHTML, setPanelHTML] = useState('');
-  const [editorConfig, setEditorConfig] = useState<EditorConfig>();
-  const [textareaConfig, setTextareaConfig] = useState<TextareaConfig>({
-    value: '',
-  });
-  // const [scriptName, setScriptName] = useState('');
-  const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HEIGHT);
-  // const [mainHeight, setMainHeight] = useState(0);
+  const [unfilteredChoices, setUnfilteredChoices] = useAtom(
+    unfilteredChoicesAtom
+  );
+  const [filteredChoices, setFilteredChoices] = useAtom(choicesAtom);
+
+  const [ui, setUI] = useAtom(uiAtom);
+  const [hint, setHint] = useAtom(hintAtom);
+  const [mode, setMode] = useAtom(modeAtom);
+
+  const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
+  const [tabs, setTabs] = useAtom(tabsAtom);
+
+  const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
+  const [editorConfig, setEditorConfig] = useAtom(editorConfigAtom);
+  const [textareaConfig, setTextareaConfig] = useAtom(textareaConfigAtom);
+
+  const [maxHeight, setMaxHeight] = useAtom(maxHeightAtom);
 
   const choicesListRef = useRef(null);
   const panelRef: RefObject<HTMLElement> = useRef(null);
@@ -211,11 +224,6 @@ export default function App() {
     },
     [filteredChoices, submit]
   );
-
-  const onChange = useCallback((event) => {
-    setIndex(0);
-    setInputValue(event.target.value);
-  }, []);
 
   // useEffect(() => {
   //   if (choices?.length > 0 && choices?.[index]) {
@@ -570,7 +578,6 @@ export default function App() {
     // resetPromptHandler();
     setSubmitted(false);
     setScript(script);
-    setPlaceholder(script.placeholder);
     setTabs(script.tabs || []);
     setTabIndex(0);
     setInputValue('');
@@ -678,11 +685,9 @@ export default function App() {
           {ui === UI.arg && (
             <Input
               onKeyDown={onKeyDown}
-              onChange={onChange}
               placeholder={placeholder}
               ref={inputRef}
               secret={promptData?.secret}
-              value={inputValue}
             />
           )}
           {hint && (
@@ -712,7 +717,6 @@ export default function App() {
                     width={width}
                     onSubmit={submit}
                     onEscape={closePrompt}
-                    options={textareaConfig}
                   />
                 )}
                 {ui === UI.arg && panelHTML?.length > 0 && (
@@ -729,36 +733,14 @@ export default function App() {
                     ref={choicesListRef}
                     height={height}
                     width={width}
-                    choices={filteredChoices}
                     onListChoicesChanged={setMainHeight}
-                    index={index}
                     onIndexChange={clampIndex}
                     onIndexSubmit={onIndexSubmit}
-                    inputValue={inputValue}
-                  />
-                )}
-
-                {ui === UI.arg && panelHTML?.length === 0 && (
-                  <List
-                    ref={choicesListRef}
-                    height={height}
-                    width={width}
-                    choices={filteredChoices}
-                    onListChoicesChanged={setMainHeight}
-                    index={index}
-                    onIndexChange={clampIndex}
-                    onIndexSubmit={onIndexSubmit}
-                    inputValue={inputValue}
                   />
                 )}
 
                 {ui === UI.editor && (
-                  <Editor
-                    ref={setEditor}
-                    options={editorConfig}
-                    height={height}
-                    width={width}
-                  />
+                  <Editor ref={setEditor} height={height} width={width} />
                 )}
               </>
             )}

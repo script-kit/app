@@ -12,7 +12,7 @@
 }
 
 body {
-  --tw-bg-opacity: 0.4 !important;
+  --tw-bg-opacity: 0.3 !important;
   @apply dark:bg-black  bg-white;
 }
 

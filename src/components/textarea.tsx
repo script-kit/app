@@ -1,20 +1,22 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
 import React, { useCallback, KeyboardEvent, useState, forwardRef } from 'react';
-import { EditorConfig } from 'kit-bridge/cjs/type';
+import { useAtom } from 'jotai';
+import { textareaConfigAtom } from '../jotai';
 
 interface TextAreaProps {
   onSubmit: (value: any) => void;
   onEscape: (value: any) => void;
   height: number;
   width: number;
-  options: EditorConfig;
 }
 
 export default forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
-  { onSubmit, onEscape, height, width, options }: TextAreaProps,
+  { onSubmit, onEscape, height, width }: TextAreaProps,
   ref
 ) {
+  const [options, setOptions] = useAtom(textareaConfigAtom);
+
   const [textAreaValue, setTextAreaValue] = useState(options.value);
 
   const onTextAreaKeyDown = useCallback(

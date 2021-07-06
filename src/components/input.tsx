@@ -1,13 +1,26 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { forwardRef } from 'react';
-
+import React, { forwardRef, useCallback } from 'react';
+import { useAtom } from 'jotai';
 import { InputProps } from 'kit-bridge/cjs/type';
+import { inputAtom, placeholderAtom } from '../jotai';
 
 export default forwardRef<HTMLInputElement, InputProps>(function Input(
-  { onKeyDown, onKeyUp, onChange, placeholder, secret, value },
+  { onKeyDown, secret },
   ref
 ) {
+  const [inputValue, setInputValue] = useAtom(inputAtom);
+  const [index, setIndex] = useAtom(inputAtom);
+  const [placeholder] = useAtom(placeholderAtom);
+
+  const onChange = useCallback(
+    (event) => {
+      setIndex(0);
+      setInputValue(event.target.value);
+    },
+    [setIndex, setInputValue]
+  );
+
   return (
     <input
       style={
@@ -27,7 +40,7 @@ export default forwardRef<HTMLInputElement, InputProps>(function Input(
       placeholder={placeholder}
       ref={ref}
       type={secret ? 'password' : 'text'}
-      value={value}
+      value={inputValue}
     />
   );
 });

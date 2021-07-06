@@ -7,10 +7,12 @@ import React, {
   useRef,
 } from 'react';
 import { FixedSizeList as List } from 'react-window';
+import { useAtom } from 'jotai';
 import memoize from 'memoize-one';
 import { ChoiceButtonProps, ListProps } from 'kit-bridge/cjs/type';
 import Preview from './preview';
 import ChoiceButton from './button';
+import { choicesAtom, indexAtom, inputAtom } from '../jotai';
 
 const createItemData = memoize(
   (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>
@@ -27,12 +29,9 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
   {
     width,
     height,
-    choices,
     onListChoicesChanged,
-    index,
     onIndexChange,
     onIndexSubmit,
-    inputValue,
   }: ListProps,
   ref
 ) {
@@ -40,6 +39,9 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
   const [mouseEnabled, setMouseEnabled] = useState(false);
   // TODO: In case items ever have dynamic height
   const [listItemHeight, setListItemHeight] = useState(64);
+  const [choices] = useAtom(choicesAtom);
+  const [index] = useAtom(indexAtom);
+  const [inputValue] = useAtom(inputAtom);
 
   const itemData = createItemData(
     choices,

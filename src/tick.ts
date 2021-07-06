@@ -11,23 +11,14 @@ import {
 } from 'rxjs/operators';
 import { format } from 'date-fns';
 import { writeFile } from 'fs/promises';
-import { mkdir } from 'shelljs';
-import low from 'lowdb';
-import FileSync from 'lowdb/adapters/FileSync';
-import { existsSync } from 'fs';
 import path from 'path';
-import { kitPath } from 'kit-bridge/cjs/util';
+import { db } from 'kit-bridge/cjs/db';
+import { kitPath, tmpClipboardDir } from 'kit-bridge/cjs/util';
 
 export const tick = async () => {
-  const tmpClipboardDir = kitPath('tmp', 'clipboard');
-  if (!existsSync(tmpClipboardDir)) {
-    mkdir('-p', tmpClipboardDir);
-  }
-
-  const adapter = new FileSync(kitPath('db', 'clipboard-history.json'));
-  const db = low(adapter);
-
-  db.defaults({ history: [] }).write();
+  const clipboardHistory = await db(kitPath('db', 'clipboard-history.json'), {
+    history: [],
+  });
 
   const tick$ = interval(1000).pipe(share());
 
@@ -69,8 +60,8 @@ export const tick = async () => {
       type === 'text' &&
         value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-z0-9-]{5,})$/gi)
     );
-    db.update('history', (history) =>
-      [{ value, type, timestamp, secret }, ...history].slice(0, 50)
-    ).write();
+    clipboardHistory.history.unshift({ value, type, timestamp, secret });
+    clipboardHistory.history.pop();
+    await clipboardHistory.write();
   });
 };
