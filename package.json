@@ -295,7 +295,7 @@
     "is-image": "^3.0.0",
     "jetbrains-mono": "^1.0.3",
     "jotai": "^1.1.2",
-    "kit-bridge": "1.0.2",
+    "kit-bridge": "1.0.4",
     "lodash": "^4.17.20",
     "lowdb": "^1.0.0",
     "mdx-bundler": "^1.1.3",
