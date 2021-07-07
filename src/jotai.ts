@@ -37,3 +37,6 @@ export const editorConfigAtom = atom<EditorConfig>({
 export const textareaConfigAtom = atom<TextareaConfig>({ value: '' });
 
 export const maxHeightAtom = atom(DEFAULT_MAX_HEIGHT);
+
+export const formHTMLAtom = atom('');
+export const formDataAtom = atom({});

@@ -1,3 +1,5 @@
+/* eslint-disable no-nested-ternary */
+/* eslint-disable no-bitwise */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
@@ -45,7 +47,7 @@ export const createPromptWindow = async () => {
     backgroundColor: nativeTheme.shouldUseDarkColors
       ? '#33000000'
       : '#C0FFFF00',
-    vibrancy: 'hud',
+    vibrancy: 'sheet',
     show: false,
     hasShadow: true,
     icon: getAssetPath('icon.png'),
@@ -101,14 +103,14 @@ export const createPromptWindow = async () => {
   };
 
   const userMove = async (event: Event) => {
-    await cachePromptBounds();
+    await cachePromptBounds(Bounds.Position);
   };
 
   promptWindow?.on('will-resize', throttle(userResize, 500));
   promptWindow?.on(
     'resized',
     debounce(async (event: Event, rect: Rectangle) => {
-      await cachePromptBounds();
+      await cachePromptBounds(Bounds.Size);
     }, 500)
   );
 
@@ -133,6 +135,10 @@ export const createPromptWindow = async () => {
   // }, 2000);
 
   return promptWindow;
+};
+
+export const setPromptProp = (key: string, value: any) => {
+  (promptWindow as any)[key](value);
 };
 
 export const focusPrompt = () => {
@@ -179,6 +185,7 @@ export const getDefaultBounds = (currentScreen: Display) => {
 
 const INPUT_HEIGHT = 88;
 const MIN_HEIGHT = 320;
+const MIN_WIDTH = 320;
 let requiresMaxHeight = false;
 
 const setBounds = async () => {
@@ -195,9 +202,9 @@ const setBounds = async () => {
   promptWindow.setBounds(bounds);
 };
 
-export const showPrompt = () => {
+export const showPrompt = async () => {
   if (!promptWindow?.isVisible() || requiresMaxHeight) {
-    setBounds();
+    await setBounds();
   }
   if (!promptWindow?.isVisible()) {
     promptWindow?.show();
@@ -235,13 +242,29 @@ export const sendToPrompt = (channel: string, data: any) => {
   }
 };
 
-const cachePromptBounds = async () => {
+enum Bounds {
+  Position = 1 << 0,
+  Size = 1 << 1,
+}
+
+const cachePromptBounds = async (b = Bounds.Position | Bounds.Size) => {
   const currentScreen = getCurrentScreen();
+  const promptDb = await getPromptDb();
+  const prevBounds = promptDb.screens?.[String(currentScreen.id)];
   const bounds = promptWindow?.getBounds();
-  const height = bounds.height < MIN_HEIGHT ? MIN_HEIGHT : bounds.height;
+  // Ignore if flag
+  const size = b & Bounds.Size;
+  const position = b & Bounds.Position;
+
+  console.log({ b, size, position });
+  const { x, y } = position ? bounds : prevBounds;
+  const { width, height } = size ? bounds : prevBounds;
+
   const promptBounds = {
-    ...bounds,
-    height,
+    x,
+    y,
+    width: width < MIN_WIDTH ? MIN_WIDTH : width,
+    height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
   };
   log.info(`Cache prompt:`, {
     screen: currentScreen.id,
@@ -249,7 +272,6 @@ const cachePromptBounds = async () => {
   });
 
   sendToPrompt(Channel.SET_MAX_HEIGHT, height);
-  const promptDb = await getPromptDb();
   promptDb.screens[String(currentScreen.id)] = promptBounds;
   await promptDb.write();
 };
@@ -343,14 +365,16 @@ export const setTabIndex = (tabIndex: number) => {
   sendToPrompt(Channel.SET_TAB_INDEX, tabIndex);
 };
 
-export const setPromptData = (promptData: PromptData) => {
+let currentPromptData: any;
+export const setPromptData = async (promptData: PromptData) => {
+  currentPromptData = promptData;
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
   requiresMaxHeight =
     requiresMaxHeight ||
     promptData.ui === UI.editor ||
     promptData.ui === UI.textarea;
 
-  showPrompt();
+  await showPrompt();
 };
 
 export const setChoices = (choices: Choice[]) => {

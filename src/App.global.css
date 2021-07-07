@@ -82,4 +82,8 @@ body {
   p {
     @apply mb-0;
   }
+
+  .kit-form * {
+    @apply dark:bg-black dark:text-white  dark:bg-opacity-0 bg-white text-black     bg-opacity-0;
+  }
 }

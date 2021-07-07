@@ -34,7 +34,7 @@ export default function ChoiceButton({
   focus:outline-none
   ${
     index === currentIndex
-      ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-80 shadow-lg`
+      ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-50 shadow-lg`
       : ``
   }
 `}

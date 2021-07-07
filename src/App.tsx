@@ -43,10 +43,13 @@ import Hotkey from './components/hotkey';
 import TextArea from './components/textarea';
 import Panel from './components/panel';
 import Header from './components/header';
+import Form from './components/form';
 import { highlightChoiceName } from './highlight';
 import {
   choicesAtom,
   editorConfigAtom,
+  formDataAtom,
+  formHTMLAtom,
   hintAtom,
   indexAtom,
   inputAtom,
@@ -115,6 +118,8 @@ export default function App() {
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
   const [editorConfig, setEditorConfig] = useAtom(editorConfigAtom);
   const [textareaConfig, setTextareaConfig] = useAtom(textareaConfigAtom);
+  const [formHTML, setFormHTML] = useAtom(formHTMLAtom);
+  const [formData, setFormData] = useAtom(formDataAtom);
 
   const [maxHeight, setMaxHeight] = useAtom(maxHeightAtom);
 
@@ -137,7 +142,7 @@ export default function App() {
 
         const newHeight = Math.round(promptHeight);
 
-        if (ui === UI.arg) {
+        if (ui === UI.arg || ui === UI.form) {
           ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
         }
       },
@@ -152,13 +157,17 @@ export default function App() {
         topRef?.current?.getBoundingClientRect() as any;
 
       const bottomHeight =
-        filteredChoices.length === 0 && panelHTML === '' ? 0 : mainHeight;
+        filteredChoices.length === 0 && panelHTML === '' && formHTML === ''
+          ? 0
+          : mainHeight;
       const fullHeight = topHeight + bottomHeight;
 
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
+      console.log({ height });
+
       resizeHeight(height);
     },
-    [filteredChoices.length, panelHTML, maxHeight, resizeHeight]
+    [filteredChoices.length, panelHTML, formHTML, maxHeight, resizeHeight]
   );
 
   const clampIndex = useCallback(
@@ -166,13 +175,13 @@ export default function App() {
       const clampedIndex = clamp(i, 0, filteredChoices.length - 1);
       setIndex(clampedIndex);
     },
-    [filteredChoices.length]
+    [filteredChoices.length, setIndex]
   );
 
   const submit = useCallback(
     (submitValue: any) => {
-      setFilteredChoices([]);
-      setUnfilteredChoices([]);
+      // setFilteredChoices([]);
+      // setUnfilteredChoices([]);
 
       let value = submitValue;
 
@@ -208,7 +217,6 @@ export default function App() {
 
       setSubmitted(true);
       setInputValue('');
-      setHint('');
       setEditorConfig({});
     },
     [pid, promptData?.secret]
@@ -258,6 +266,7 @@ export default function App() {
     setIndex(0);
     setInputValue('');
     setPanelHTML('');
+    setFormHTML('');
     setPromptData({});
     setHint('');
   }, [pid]);
@@ -486,6 +495,7 @@ export default function App() {
 
   const setPromptDataHandler = useCallback(
     (_event: any, promptData: PromptData) => {
+      setIndex(0);
       setPanelHTML('');
       setPromptData(promptData);
       setPlaceholder(promptData.placeholder);
@@ -559,42 +569,68 @@ export default function App() {
     (_event: any, config: EditorConfig) => {
       setTextareaConfig(config);
     },
-    []
+    [setTextareaConfig]
   );
 
   const setEditorConfigHandler = useCallback(
     (_event: any, config: EditorConfig) => {
-      console.log(config);
       setEditorConfig(config);
     },
-    []
+    [setEditorConfig]
   );
 
-  const setPidHandler = useCallback((_event, pid: number) => {
-    setPid(pid);
-  }, []);
+  const setPidHandler = useCallback(
+    (_event, pid: number) => {
+      setPid(pid);
+    },
+    [setPid]
+  );
 
-  const setScriptHandler = useCallback((_event, script: Script) => {
-    // resetPromptHandler();
-    setSubmitted(false);
-    setScript(script);
-    setTabs(script.tabs || []);
-    setTabIndex(0);
-    setInputValue('');
-  }, []);
+  const setScriptHandler = useCallback(
+    (_event, script: Script) => {
+      // resetPromptHandler();
+      setSubmitted(false);
+      setScript(script);
+      setTabs(script.tabs || []);
+      setTabIndex(0);
+      setInputValue('');
+    },
+    [setInputValue, setScript, setSubmitted, setTabIndex, setTabs]
+  );
 
-  const setMaxHeightHandler = useCallback((event, height) => {
-    setMaxHeight(height);
-  }, []);
+  const setMaxHeightHandler = useCallback(
+    (event, height) => {
+      setMaxHeight(height);
+    },
+    [setMaxHeight]
+  );
+
+  const setFormHTMLHandler = useCallback(
+    (event, { html, formData }) => {
+      setFormHTML(html);
+      setFormData(formData);
+    },
+    [setFormHTML]
+  );
+
+  const exitHandler = useCallback(
+    (event) => {
+      setIndex(0);
+      console.log(`EXITING ${pid}`);
+    },
+    [pid, setIndex]
+  );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const messageMap = {
     // [Channel.RESET_PROMPT]: resetPromptHandler,
+    [Channel.EXIT]: exitHandler,
     [Channel.SET_PID]: setPidHandler,
     [Channel.SET_SCRIPT]: setScriptHandler,
     [Channel.SET_CHOICES]: setChoicesHandler,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfigHandler,
     [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfigHandler,
+    [Channel.SET_FORM_HTML]: setFormHTMLHandler,
     [Channel.SET_HINT]: setHintHandler,
     [Channel.SET_INPUT]: setInputHandler,
     [Channel.SET_MODE]: setModeHandler,
@@ -724,7 +760,6 @@ export default function App() {
                     width={width}
                     height={height}
                     onPanelHeightChanged={setMainHeight}
-                    panelHTML={panelHTML}
                   />
                 )}
 
@@ -741,6 +776,16 @@ export default function App() {
 
                 {ui === UI.editor && (
                   <Editor ref={setEditor} height={height} width={width} />
+                )}
+
+                {ui === UI.form && (
+                  <Form
+                    onSubmit={submit}
+                    onEscape={closePrompt}
+                    height={height}
+                    width={width}
+                    onFormHeightChanged={setMainHeight}
+                  />
                 )}
               </>
             )}

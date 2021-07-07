@@ -41,6 +41,7 @@ import {
   setChoices,
   clearPromptCache,
   sendToPrompt,
+  setPromptProp,
 } from './prompt';
 import { setAppHidden } from './appHidden';
 import {
@@ -257,6 +258,10 @@ const kitMessageMap: ChannelHandler = {
   SET_PANEL: (data) => {
     setPanel(data.html as string);
   },
+
+  SET_PROMPT_PROP: (data) => {
+    setPromptProp(data.prop.key, data.prop.value);
+  },
   SET_TAB_INDEX: (data) => {
     setTabIndex(data.tabIndex as number);
   },
@@ -273,8 +278,8 @@ const kitMessageMap: ChannelHandler = {
 
     showNotification(data.html || 'You forgot html', data.options);
   },
-  SET_PROMPT_DATA: (data) => {
-    setPromptData(data as PromptData);
+  SET_PROMPT_DATA: async (data) => {
+    await setPromptData(data as PromptData);
   },
   SHOW_IMAGE,
   SHOW: async (data) => {
@@ -311,6 +316,9 @@ const kitMessageMap: ChannelHandler = {
   },
   SET_TEXTAREA_CONFIG: (data) => {
     sendToPrompt(Channel.SET_TEXTAREA_CONFIG, data.options);
+  },
+  SET_FORM_HTML: (data) => {
+    sendToPrompt(Channel.SET_FORM_HTML, data);
   },
 };
 
@@ -461,6 +469,7 @@ class Processes extends Array<ProcessInfo> {
         setAppHidden(false);
         emitter.emit(KitEvent.ExitPrompt);
         emitter.emit(KitEvent.ResumeShortcuts);
+        sendToPrompt(Channel.EXIT);
       }
 
       const { values } = processes.getByPid(pid) as ProcessInfo;
