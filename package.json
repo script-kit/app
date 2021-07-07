@@ -328,7 +328,7 @@
     "use-debounce": "^6.0.1"
   },
   "devEngines": {
-    "node": ">=10.x",
+    "node": ">=14.x",
     "npm": ">=6.x",
     "yarn": ">=1.21.3"
   },
