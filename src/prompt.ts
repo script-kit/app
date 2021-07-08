@@ -256,7 +256,6 @@ const cachePromptBounds = async (b = Bounds.Position | Bounds.Size) => {
   const size = b & Bounds.Size;
   const position = b & Bounds.Position;
 
-  console.log({ b, size, position });
   const { x, y } = position ? bounds : prevBounds;
   const { width, height } = size ? bounds : prevBounds;
 
@@ -372,6 +371,7 @@ export const setPromptData = async (promptData: PromptData) => {
   requiresMaxHeight =
     requiresMaxHeight ||
     promptData.ui === UI.editor ||
+    promptData.ui === UI.form ||
     promptData.ui === UI.textarea;
 
   await showPrompt();

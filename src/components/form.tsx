@@ -14,7 +14,7 @@ import React, {
 import parse from 'html-react-parser';
 import SimpleBar from 'simplebar-react';
 import { useAtom } from 'jotai';
-import { formDataAtom, formHTMLAtom } from '../jotai';
+import { formDataAtom, formHTMLAtom, pidAtom } from '../jotai';
 
 type FormProps = {
   width: number;
@@ -39,22 +39,25 @@ export default function Form({
   const [formData] = useAtom(formDataAtom);
 
   useEffect(() => {
-    formRef?.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    formRef?.current?.elements?.[0]?.focus();
-  }, [formRef?.current?.elements]);
-
-  useEffect(() => {
     if (containerRef?.current?.firstElementChild) {
       const clientHeight =
         containerRef?.current?.firstElementChild?.clientHeight;
       const formHeight =
         clientHeight < MIN_FORM_HEIGHT ? MIN_FORM_HEIGHT : clientHeight;
+
       onFormHeightChanged(formHeight);
+
+      if (formRef?.current?.elements?.[0]) {
+        formRef?.current?.elements?.[0]?.focus();
+      } else {
+        formRef?.current?.focus();
+      }
     }
-  }, [onFormHeightChanged, formRef?.current?.firstElementChild]);
+  }, [
+    onFormHeightChanged,
+    formRef?.current?.firstElementChild,
+    formRef?.current?.elements,
+  ]);
 
   useEffect(() => {
     if (formData) {
