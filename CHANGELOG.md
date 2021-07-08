@@ -1,3 +1,10 @@
+# [1.3.0-alpha.70](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.69...v1.3.0-alpha.70) (2021-07-08)
+
+
+### Features
+
+* **app:** extracting kit-bridge ([6df6372](https://github.com/johnlindquist/kitapp/commit/6df6372d16c1ee59d14666dd003f2afcd88b0570))
+
 # [1.3.0-alpha.69](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.68...v1.3.0-alpha.69) (2021-07-08)
 
 
