@@ -14,6 +14,7 @@
 body {
   --tw-bg-opacity: 0.3 !important;
   @apply dark:bg-black  bg-white subpixel-antialiased;
+  @apply overflow-hidden;
 }
 
 .simplebar-scrollbar:before {
