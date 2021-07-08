@@ -101,6 +101,12 @@ export const prepChoices = (data: MessageData) => {
         script.tag = script.kenv;
       }
 
+      if (script.image) {
+        script.img = script.image.match(/(^http)|^\//)
+          ? script.image
+          : kenvPath('assets', script.image);
+      }
+
       return script;
     });
 

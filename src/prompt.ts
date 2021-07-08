@@ -41,6 +41,7 @@ log.info(process.argv.join(' '), devTools);
 let lastResizedByUser = false;
 export const createPromptWindow = async () => {
   promptWindow = new BrowserWindow({
+    paintWhenInitiallyHidden: true,
     useContentSize: true,
     frame: false,
     transparent: true,
@@ -54,7 +55,6 @@ export const createPromptWindow = async () => {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true,
       devTools: process.env.NODE_ENV === 'development' || devTools,
       backgroundThrottling: false,
     },

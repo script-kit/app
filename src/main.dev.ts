@@ -228,10 +228,15 @@ const setupLog = (message: string) => {
   log.info(message);
 };
 
-const ensureDirs = async () => {
+const ensureKitDirs = async () => {
   await ensureDir(kitPath('logs'));
   await ensureDir(kitPath('db'));
   await ensureDir(tmpClipboardDir);
+};
+
+const ensureKenvDirs = async () => {
+  await ensureDir(kenvPath('kenvs'));
+  await ensureDir(kenvPath('assets'));
 };
 
 const ready = async () => {
@@ -240,7 +245,8 @@ const ready = async () => {
       await installExtensions();
     }
 
-    await ensureDirs();
+    await ensureKitDirs();
+    await ensureKenvDirs();
     createLogs();
     await prepareProtocols();
     setupLog(`Protocols Prepared`);
