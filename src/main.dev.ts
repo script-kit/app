@@ -258,7 +258,7 @@ const ready = async () => {
     setupLog(`Prompt window created`);
 
     await tick();
-    console.log(`Tick started`);
+    setupLog(`Tick started`);
 
     setupLog(`Kit.app is ready...`);
     configWindowDone();
@@ -286,7 +286,6 @@ const handleSpawnReturns = async (
   message: string,
   result: SpawnSyncReturns<any>
 ) => {
-  console.log({ message });
   console.log(`stdout:`, result?.stdout?.toString());
   console.log(`stderr:`, result?.stderr?.toString());
   const { stdout, stderr, error } = result;

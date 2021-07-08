@@ -166,7 +166,6 @@ export default function App() {
       const fullHeight = topHeight + bottomHeight;
 
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
-      console.log({ mainHeight, height });
 
       resizeHeight(height);
     },
@@ -593,6 +592,7 @@ export default function App() {
     (_event, script: Script) => {
       // resetPromptHandler();
       setSubmitted(false);
+      console.log({ script });
       setScript(script);
       setTabs(script.tabs || []);
       setTabIndex(0);
