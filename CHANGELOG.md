@@ -1,3 +1,10 @@
+# [1.3.0-alpha.72](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.71...v1.3.0-alpha.72) (2021-07-08)
+
+
+### Bug Fixes
+
+* **prompt:** textarea api. Prompt initial size. ([b0fc710](https://github.com/johnlindquist/kitapp/commit/b0fc710a3204a8ac25d68d807c0fadeb3f1ab73a))
+
 # [1.3.0-alpha.71](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.70...v1.3.0-alpha.71) (2021-07-08)
 
 ### Bug Fixes
