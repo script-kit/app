@@ -1,3 +1,18 @@
+# [1.3.0-alpha.67](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.66...v1.3.0-alpha.67) (2021-07-08)
+
+
+### Features
+
+* **app:** extracting kit-bridge ([051a51a](https://github.com/johnlindquist/kitapp/commit/051a51add580b89d5613c252477f889993413d8b))
+* **app:** extracting kit-bridge ([3fb52e5](https://github.com/johnlindquist/kitapp/commit/3fb52e5d89457d29a602d486e0b800e89cc33feb))
+* **app:** extracting kit-bridge ([aae0849](https://github.com/johnlindquist/kitapp/commit/aae0849ab0951113c245c47d2d2b3b8bde8dfc03))
+* **app:** extracting kit-bridge ([6b0cead](https://github.com/johnlindquist/kitapp/commit/6b0cead8cf791fbae50d6fbe1c46c7d293334db4))
+* **app:** extracting kit-bridge ([6872f50](https://github.com/johnlindquist/kitapp/commit/6872f5041d065f3df4efb55327497f9240e77100))
+* **app:** extracting kit-bridge ([70348c1](https://github.com/johnlindquist/kitapp/commit/70348c12932ec1b3673ddab8018d4efa6e8965b8))
+* **app:** extracting kit-bridge ([a185c3d](https://github.com/johnlindquist/kitapp/commit/a185c3d72b96ce265e1ba8adaa3ca046ee1c8f83))
+* **app:** extracting kit-bridge ([de3d24a](https://github.com/johnlindquist/kitapp/commit/de3d24aecfd6d20977348c486b86481c1617dfce))
+* **app:** extracting kit-bridge ([27d20f4](https://github.com/johnlindquist/kitapp/commit/27d20f45986e1e4b5dc57dcb3df5c7d983ab2969))
+
 # [1.3.0-alpha.66](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.65...v1.3.0-alpha.66) (2021-07-02)
 
 
