@@ -3,21 +3,19 @@
 import net from 'net';
 import fs from 'fs';
 import log from 'electron-log';
-import { kitPath, resolveScriptPath } from './helpers';
+import { kitPath, resolveToScriptPath } from 'kit-bridge/cjs/util';
 import { runPromptProcess } from './kit';
 
 export const startSK = () => {
   const server = net.createServer((stream) => {
     stream.on('data', async (data) => {
       const value = data.toString();
-      log.info(value);
       const json = value.match(new RegExp(`^{.*}$`, 'gm'))?.[0] || '';
-      log.info(json);
       const object = JSON.parse(json);
       log.info(object);
       const { script, args } = object;
 
-      const scriptPath = resolveScriptPath(script);
+      const scriptPath = resolveToScriptPath(script);
       log.info(`🇦🇷 ${scriptPath} ${args}`);
       if (scriptPath) {
         await runPromptProcess(

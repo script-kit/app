@@ -160,6 +160,11 @@ export default merge(baseConfig, {
       },
     ],
   },
+  // resolve: {
+  //   alias: {
+  //     '@assets': path.resolve(__dirname, '..', '..', 'assets'),
+  //   },
+  // },
   plugins: [
     requiredByDLLConfig
       ? null

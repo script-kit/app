@@ -7,11 +7,9 @@ import { app } from 'electron';
 import minimist from 'minimist';
 import log from 'electron-log';
 
+import { Channel, ProcessType } from 'kit-bridge/cjs/enum';
+import { info, kenvPath, kitPath, mainScriptPath } from 'kit-bridge/cjs/util';
 import { emitter, KitEvent } from './events';
-import { Channel, ProcessType } from './enums';
-
-import { info, kenvPath, kitPath, mainScriptPath } from './helpers';
-
 import { processes } from './process';
 import { setPromptPid, setScript } from './prompt';
 import { getKitScript, getKenvScript } from './state';
@@ -22,11 +20,11 @@ app.on('second-instance', async (_event, argv) => {
   processes.add(ProcessType.Background, argScript, argArgs);
 });
 
-process.on('unhandledRejection', (reason, p) => {
-  log.warn('Unhandled Rejection at: Promise', p, 'reason:', reason);
+// process.on('unhandledRejection', (reason, p) => {
+//   log.warn('Unhandled Rejection at: Promise', p, 'reason:', reason);
 
-  // application specific logging, throwing an error, or other logic here
-});
+//   // application specific logging, throwing an error, or other logic here
+// });
 
 process.on('uncaughtException', (error) => {
   log.warn(`Uncaught Exception: ${error.message}`);
@@ -64,9 +62,8 @@ export const runPromptProcess = async (
   const script = await findScript(promptScriptPath);
   // log.info(script);
 
-  setScript(script);
+  await setScript(script);
 
-  log.info(`📦`, processes.getAllProcessInfo());
   const { child, pid } = await processes.findPromptProcess();
 
   setPromptPid(pid);

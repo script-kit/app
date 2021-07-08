@@ -1,7 +1,7 @@
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
 import React from 'react';
-import { Choice } from './types';
+import { Choice } from 'kit-bridge/cjs/type';
 
 export const highlightAdjacentAndWordStart = (name: string, input: string) => {
   const inputLetters = input?.toLowerCase().split('');

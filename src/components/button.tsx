@@ -3,7 +3,7 @@
 /* eslint-disable no-nested-ternary */
 import React from 'react';
 import parse from 'html-react-parser';
-import { ChoiceButtonProps } from '../types';
+import { ChoiceButtonProps } from 'kit-bridge/cjs/type';
 
 export default function ChoiceButton({
   data,
@@ -34,7 +34,7 @@ export default function ChoiceButton({
   focus:outline-none
   ${
     index === currentIndex
-      ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-80 shadow-lg`
+      ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-50 shadow-lg`
       : ``
   }
 `}
@@ -72,6 +72,29 @@ export default function ChoiceButton({
               </div>
             )}
           </div>
+          {(choice?.tag || choice?.icon) &&
+            (choice?.icon ? (
+              <img
+                alt="icon"
+                className={`
+              border-2 border-black dark:border-white border-opacity-50
+              rounded-full
+
+              w-6 h-6
+              `}
+                src={choice?.icon}
+              />
+            ) : (
+              <div
+                className={`
+            text-xxs font-mono
+            ${index === currentIndex ? `opacity-40` : `opacity-20`}
+            `}
+              >
+                {choice.tag}
+              </div>
+            ))}
+
           {choice?.img && (
             <img
               src={choice.img}

@@ -3,17 +3,19 @@ import log from 'electron-log';
 import chokidar from 'chokidar';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
-import { Script } from './types';
+import { Script } from 'kit-bridge/cjs/type';
+import { ProcessType } from 'kit-bridge/cjs/enum';
 import { processes } from './process';
-import { ProcessType } from './enums';
 
 export const watchMap = new Map();
 
 export const removeWatch = (filePath: string) => {
   log.info(`Remove watch: ${filePath}`);
   const watcher = watchMap.get(filePath) as FSWatcher;
-  watcher.close();
-  watchMap.delete(filePath);
+  if (watcher) {
+    watcher.close();
+    watchMap.delete(filePath);
+  }
 };
 
 const resolvePath = (path: string) => {

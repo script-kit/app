@@ -19,14 +19,21 @@ import React, {
   useRef,
   useState,
 } from 'react';
-
+import { useAtom } from 'jotai';
 import AutoSizer, { Size } from 'react-virtualized-auto-sizer';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
 import parse from 'html-react-parser';
 import { KeyCode } from 'monaco-editor';
-import { PromptData, Choice, Script, EditorConfig, EditorRef } from './types';
+import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
+import {
+  PromptData,
+  Choice,
+  Script,
+  EditorConfig,
+  EditorRef,
+} from 'kit-bridge/esm/type';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
@@ -36,8 +43,30 @@ import Hotkey from './components/hotkey';
 import TextArea from './components/textarea';
 import Panel from './components/panel';
 import Header from './components/header';
-import { Channel, Mode, UI } from './enums';
+import Form from './components/form';
 import { highlightChoiceName } from './highlight';
+import {
+  choicesAtom,
+  editorConfigAtom,
+  formDataAtom,
+  formHTMLAtom,
+  hintAtom,
+  indexAtom,
+  inputAtom,
+  maxHeightAtom,
+  modeAtom,
+  panelHTMLAtom,
+  pidAtom,
+  placeholderAtom,
+  promptDataAtom,
+  scriptAtom,
+  submittedAtom,
+  tabIndexAtom,
+  tabsAtom,
+  textareaConfigAtom,
+  uiAtom,
+  unfilteredChoicesAtom,
+} from './jotai';
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -64,34 +93,35 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-const DEFAULT_MAX_HEIGHT = 480;
-
 export default function App() {
-  const [pid, setPid] = useState(0);
-  const [script, setScript] = useState<Script>();
+  const [pid, setPid] = useAtom(pidAtom);
+  const [script, setScript] = useAtom(scriptAtom);
 
-  const [index, setIndex] = useState<number>(0);
-  const [submitted, setSubmitted] = useState<boolean>(false);
-  const [promptData, setPromptData]: any = useState({});
+  const [index, setIndex] = useAtom(indexAtom);
+  const [inputValue, setInputValue] = useAtom(inputAtom);
+  const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
+  const [promptData, setPromptData] = useAtom(promptDataAtom);
+  const [submitted, setSubmitted] = useAtom(submittedAtom);
 
-  const [inputValue, setInputValue] = useState<string>('');
-  const [editorValue, setEditorValue] = useState<string>('');
-  const [ui, setUI] = useState<UI>(UI.arg);
-  const [hint, setHint] = useState('');
-  // const previousHint = usePrevious(hint);
-  const [mode, setMode] = useState(Mode.FILTER);
-  const [tabs, setTabs] = useState<string[]>([]);
-  const [tabIndex, setTabIndex] = useState(0);
-  const [unfilteredChoices, setUnfilteredChoices] = useState<Choice[]>([]);
-  const [filteredChoices, setFilteredChoices] = useState<Choice[]>([]);
-  const [placeholder, setPlaceholder] = useState('');
-  // const [debouncedPlaceholder] = useDebounce(placeholder, 10);
-  // const previousPlaceholder: string | null = usePrevious(placeholder);
-  const [panelHTML, setPanelHTML] = useState('');
-  const [editorConfig, setEditorConfig] = useState<EditorConfig>({});
-  // const [scriptName, setScriptName] = useState('');
-  const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HEIGHT);
-  // const [mainHeight, setMainHeight] = useState(0);
+  const [unfilteredChoices, setUnfilteredChoices] = useAtom(
+    unfilteredChoicesAtom
+  );
+  const [filteredChoices, setFilteredChoices] = useAtom(choicesAtom);
+
+  const [ui, setUI] = useAtom(uiAtom);
+  const [hint, setHint] = useAtom(hintAtom);
+  const [mode, setMode] = useAtom(modeAtom);
+
+  const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
+  const [tabs, setTabs] = useAtom(tabsAtom);
+
+  const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
+  const [editorConfig, setEditorConfig] = useAtom(editorConfigAtom);
+  const [textareaConfig, setTextareaConfig] = useAtom(textareaConfigAtom);
+  const [formHTML, setFormHTML] = useAtom(formHTMLAtom);
+  const [formData, setFormData] = useAtom(formDataAtom);
+
+  const [maxHeight, setMaxHeight] = useAtom(maxHeightAtom);
 
   const choicesListRef = useRef(null);
   const panelRef: RefObject<HTMLElement> = useRef(null);
@@ -101,25 +131,24 @@ export default function App() {
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const topRef: RefObject<HTMLDivElement> = useRef(null);
   const editorRef: RefObject<EditorRef> = useRef(null);
-  const [isMouseDown, setIsMouseDown] = useState(false);
 
   const resizeHeight = useDebouncedCallback(
     useCallback(
       (height: number) => {
-        if (isMouseDown) return;
-
         const { height: topHeight } =
           topRef?.current?.getBoundingClientRect() as any;
+
+        if (height === topHeight && ui === UI.form) return;
 
         const promptHeight = height > topHeight ? height : topHeight;
 
         const newHeight = Math.round(promptHeight);
 
-        if (ui === UI.arg) {
+        if (ui === UI.arg || ui === UI.form) {
           ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
         }
       },
-      [isMouseDown, ui]
+      [ui]
     ),
     50
   );
@@ -130,13 +159,17 @@ export default function App() {
         topRef?.current?.getBoundingClientRect() as any;
 
       const bottomHeight =
-        filteredChoices.length === 0 && panelHTML === '' ? 0 : mainHeight;
+        filteredChoices.length === 0 && panelHTML === '' && formHTML === ''
+          ? 0
+          : mainHeight;
       const fullHeight = topHeight + bottomHeight;
 
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
+      console.log({ mainHeight, height });
+
       resizeHeight(height);
     },
-    [filteredChoices.length, panelHTML, maxHeight, resizeHeight]
+    [filteredChoices.length, panelHTML, formHTML, maxHeight, resizeHeight]
   );
 
   const clampIndex = useCallback(
@@ -144,13 +177,13 @@ export default function App() {
       const clampedIndex = clamp(i, 0, filteredChoices.length - 1);
       setIndex(clampedIndex);
     },
-    [filteredChoices.length]
+    [filteredChoices.length, setIndex]
   );
 
   const submit = useCallback(
     (submitValue: any) => {
-      setFilteredChoices([]);
-      setUnfilteredChoices([]);
+      // setFilteredChoices([]);
+      // setUnfilteredChoices([]);
 
       let value = submitValue;
 
@@ -186,8 +219,6 @@ export default function App() {
 
       setSubmitted(true);
       setInputValue('');
-      setHint('');
-      setEditorConfig({});
     },
     [pid, promptData?.secret]
   );
@@ -202,11 +233,6 @@ export default function App() {
     },
     [filteredChoices, submit]
   );
-
-  const onChange = useCallback((event) => {
-    setIndex(0);
-    setInputValue(event.target.value);
-  }, []);
 
   // useEffect(() => {
   //   if (choices?.length > 0 && choices?.[index]) {
@@ -241,6 +267,7 @@ export default function App() {
     setIndex(0);
     setInputValue('');
     setPanelHTML('');
+    setFormHTML('');
     setPromptData({});
     setHint('');
   }, [pid]);
@@ -455,13 +482,13 @@ export default function App() {
       });
       setFilteredChoices(highlightedChoices);
     } catch (error) {
-      ipcRenderer.send('PROMPT_ERROR', { error, pid: promptData?.id });
+      ipcRenderer.send('PROMPT_ERROR', { error, pid });
     }
   }, [
     unfilteredChoices,
     inputValue,
     mode,
-    promptData?.id,
+    pid,
     resizeHeight,
     submitted,
     setMainHeight,
@@ -469,6 +496,7 @@ export default function App() {
 
   const setPromptDataHandler = useCallback(
     (_event: any, promptData: PromptData) => {
+      setIndex(0);
       setPanelHTML('');
       setPromptData(promptData);
       setPlaceholder(promptData.placeholder);
@@ -519,6 +547,7 @@ export default function App() {
 
   const setChoicesHandler = useCallback(
     (_event: any, rawChoices: Choice[]) => {
+      if (ui !== UI.arg) return;
       setIndex(0);
       setSubmitted(false);
       setPanelHTML('');
@@ -538,38 +567,73 @@ export default function App() {
     [filteredChoices.length, resizeHeight]
   );
 
+  const setTextareaConfigHandler = useCallback(
+    (_event: any, config: EditorConfig) => {
+      setTextareaConfig(config);
+    },
+    [setTextareaConfig]
+  );
+
   const setEditorConfigHandler = useCallback(
     (_event: any, config: EditorConfig) => {
       setEditorConfig(config);
     },
-    []
+    [setEditorConfig]
   );
 
-  const setPidHandler = useCallback((_event, pid: number) => {
-    setPid(pid);
-  }, []);
+  const setPidHandler = useCallback(
+    (_event, pid: number) => {
+      setPid(pid);
+    },
+    [setPid]
+  );
 
-  const setScriptHandler = useCallback((_event, script: Script) => {
-    // resetPromptHandler();
-    setSubmitted(false);
-    setScript(script);
-    setPlaceholder(script.placeholder);
-    setTabs(script.tabs || []);
-    setTabIndex(0);
-    setInputValue('');
-  }, []);
+  const setScriptHandler = useCallback(
+    (_event, script: Script) => {
+      // resetPromptHandler();
+      setSubmitted(false);
+      setScript(script);
+      setTabs(script.tabs || []);
+      setTabIndex(0);
+      setInputValue('');
+    },
+    [setInputValue, setScript, setSubmitted, setTabIndex, setTabs]
+  );
 
-  const setMaxHeightHandler = useCallback((event, height) => {
-    setMaxHeight(height);
-  }, []);
+  const setMaxHeightHandler = useCallback(
+    (event, height) => {
+      setMaxHeight(height);
+    },
+    [setMaxHeight]
+  );
+
+  const setFormHTMLHandler = useCallback(
+    (event, { html, formData }) => {
+      setFormHTML(html);
+      setFormData(formData);
+    },
+    [setFormHTML]
+  );
+
+  const exitHandler = useCallback(
+    (event) => {
+      setIndex(0);
+
+      console.log(`EXITING ${pid}`);
+    },
+    [pid, setIndex]
+  );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const messageMap = {
     // [Channel.RESET_PROMPT]: resetPromptHandler,
+    [Channel.EXIT]: exitHandler,
     [Channel.SET_PID]: setPidHandler,
     [Channel.SET_SCRIPT]: setScriptHandler,
     [Channel.SET_CHOICES]: setChoicesHandler,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfigHandler,
+    [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfigHandler,
+    [Channel.SET_FORM_HTML]: setFormHTMLHandler,
     [Channel.SET_HINT]: setHintHandler,
     [Channel.SET_INPUT]: setInputHandler,
     [Channel.SET_MODE]: setModeHandler,
@@ -650,21 +714,12 @@ export default function App() {
           {ui === UI.hotkey && (
             <Hotkey submit={submit} onEscape={closePrompt} />
           )}
-          {ui === UI.drop && (
-            <Drop
-              placeholder={placeholder}
-              submit={submit}
-              onEscape={closePrompt}
-            />
-          )}
           {ui === UI.arg && (
             <Input
               onKeyDown={onKeyDown}
-              onChange={onChange}
               placeholder={placeholder}
               ref={inputRef}
               secret={promptData?.secret}
-              value={inputValue}
             />
           )}
           {hint && (
@@ -687,6 +742,15 @@ export default function App() {
           <AutoSizer>
             {({ width, height }) => (
               <>
+                {ui === UI.drop && (
+                  <Drop
+                    placeholder={placeholder}
+                    submit={submit}
+                    onEscape={closePrompt}
+                    width={width}
+                    height={height}
+                  />
+                )}
                 {ui === UI.textarea && (
                   <TextArea
                     ref={textAreaRef}
@@ -694,7 +758,6 @@ export default function App() {
                     width={width}
                     onSubmit={submit}
                     onEscape={closePrompt}
-                    placeholder={placeholder}
                   />
                 )}
                 {ui === UI.arg && panelHTML?.length > 0 && (
@@ -702,7 +765,6 @@ export default function App() {
                     width={width}
                     height={height}
                     onPanelHeightChanged={setMainHeight}
-                    panelHTML={panelHTML}
                   />
                 )}
 
@@ -711,21 +773,23 @@ export default function App() {
                     ref={choicesListRef}
                     height={height}
                     width={width}
-                    choices={filteredChoices}
                     onListChoicesChanged={setMainHeight}
-                    index={index}
                     onIndexChange={clampIndex}
                     onIndexSubmit={onIndexSubmit}
-                    inputValue={inputValue}
                   />
                 )}
 
                 {ui === UI.editor && (
-                  <Editor
-                    ref={setEditor}
-                    options={editorConfig}
+                  <Editor ref={setEditor} height={height} width={width} />
+                )}
+
+                {ui === UI.form && (
+                  <Form
+                    onSubmit={submit}
+                    onEscape={closePrompt}
                     height={height}
                     width={width}
+                    onFormHeightChanged={setMainHeight}
                   />
                 )}
               </>

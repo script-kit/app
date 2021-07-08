@@ -19,6 +19,7 @@ module.exports = {
         /^italic/,
         /^min/,
         /^max/,
+        /^grid/,
         /^\w{0,2}-(\d\/\d|\d\.\d|\d{1,3}|full|screen|auto)/,
       ],
     },
@@ -33,6 +34,10 @@ module.exports = {
         light: colors.yellow['400'],
         dark: colors.indigo['600'],
       },
+    },
+    fontFamily: {
+      mono: ['JetBrains Mono'],
+      // sans: ['Lato'],
     },
     extend: {
       minWidth: {

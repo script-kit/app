@@ -2,7 +2,7 @@
 /* eslint-disable react/prop-types */
 import React, { forwardRef, KeyboardEvent, useCallback, useState } from 'react';
 
-import { HotkeyProps } from '../types';
+import { HotkeyProps } from 'kit-bridge/cjs/type';
 
 const DEFAULT_PLACEHOLDER = 'Press a combination of keys';
 

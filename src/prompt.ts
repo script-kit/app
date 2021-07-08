@@ -1,26 +1,25 @@
+/* eslint-disable no-nested-ternary */
+/* eslint-disable no-bitwise */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
+import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
+import { Choice, Script, PromptData } from 'kit-bridge/cjs/type';
+
 import { BrowserWindow, screen, nativeTheme, app, Rectangle } from 'electron';
 import log from 'electron-log';
-import low from 'lowdb';
 import { debounce, throttle } from 'lodash';
-import FileSync from 'lowdb/adapters/FileSync';
 import minimist from 'minimist';
 import { readFileSync } from 'fs';
+import { mainScriptPath, isFile, kenvPath } from 'kit-bridge/cjs/util';
+import { getPromptDb } from 'kit-bridge/cjs/db';
+import { Display } from 'electron/main';
 import { getAssetPath } from './assets';
-import { mainScriptPath, isFile, kenvPath, promptDbPath } from './helpers';
-import { Channel, Mode, UI } from './enums';
+// import { Channel, Mode, UI } from 'kit-bridge/cjs/type';
 import { getAppHidden } from './appHidden';
-import { Choice, PromptData, Script } from './types';
-import { getScripts } from './state';
+import { getScriptsMemory } from './state';
 import { emitter, KitEvent } from './events';
 
 let promptScript: Script | null;
-
-const adapter = new FileSync(promptDbPath);
-const promptDb = low(adapter);
-
-promptDb.defaults({ screens: {}, clear: false }).write();
 
 let promptWindow: BrowserWindow;
 let blurredByKit = false;
@@ -42,6 +41,7 @@ log.info(process.argv.join(' '), devTools);
 let lastResizedByUser = false;
 export const createPromptWindow = async () => {
   promptWindow = new BrowserWindow({
+    paintWhenInitiallyHidden: true,
     useContentSize: true,
     frame: false,
     transparent: true,
@@ -55,7 +55,6 @@ export const createPromptWindow = async () => {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true,
       devTools: process.env.NODE_ENV === 'development' || devTools,
       backgroundThrottling: false,
     },
@@ -103,15 +102,15 @@ export const createPromptWindow = async () => {
     sendToPrompt(Channel.USER_RESIZED, rect);
   };
 
-  const userMove = (event: Event) => {
-    cachePromptBounds();
+  const userMove = async (event: Event) => {
+    await cachePromptBounds(Bounds.Position);
   };
 
   promptWindow?.on('will-resize', throttle(userResize, 500));
   promptWindow?.on(
     'resized',
-    debounce((event: Event, rect: Rectangle) => {
-      cachePromptBounds();
+    debounce(async (event: Event, rect: Rectangle) => {
+      await cachePromptBounds(Bounds.Size);
     }, 500)
   );
 
@@ -138,6 +137,10 @@ export const createPromptWindow = async () => {
   return promptWindow;
 };
 
+export const setPromptProp = (key: string, value: any) => {
+  (promptWindow as any)[key](value);
+};
+
 export const focusPrompt = () => {
   if (promptWindow && !promptWindow.isDestroyed()) {
     promptWindow?.focus();
@@ -149,42 +152,44 @@ export const escapePromptWindow = () => {
   hideAppIfNoWindows();
 };
 
-const getCurrentScreen = () => {
+const getCurrentScreen = (): Display => {
   return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
 };
 
-export const getCurrentScreenPromptCache = () => {
+export const getCurrentScreenPromptCache = async () => {
   const currentScreen = getCurrentScreen();
+  const promptDb = await getPromptDb();
+  const currentPromptCache = promptDb.screens?.[String(currentScreen.id)];
 
-  const currentPromptCache = promptDb
-    .get(`screens.${String(currentScreen.id)}`)
-    .value();
-  // console.log(currentScreen.id, { currentPromptCache });
+  if (currentPromptCache) return currentPromptCache;
 
-  return currentPromptCache as Size;
+  const { id, bounds } = getDefaultBounds(currentScreen);
+  promptDb.screens[id] = bounds;
+  await promptDb.write();
+
+  return promptDb.screens[id];
 };
 
-export const getDefaultBounds = () => {
-  const currentScreen = getCurrentScreen();
-
+export const getDefaultBounds = (currentScreen: Display) => {
   const { width: screenWidth, height: screenHeight } =
     currentScreen.workAreaSize;
 
-  const height = Math.round(screenHeight / 3);
+  const height = Math.round(screenHeight / 2);
   const width = Math.round(height * (4 / 3));
   const { x: workX, y: workY } = currentScreen.workArea;
   const x = Math.round(screenWidth / 2 - width / 2 + workX);
   const y = Math.round(workY + height / 10);
 
-  return { x, y, width, height };
+  return { id: currentScreen.id, bounds: { x, y, width, height } };
 };
 
 const INPUT_HEIGHT = 88;
 const MIN_HEIGHT = 320;
+const MIN_WIDTH = 320;
 let requiresMaxHeight = false;
 
-const setBounds = () => {
-  let bounds = getCurrentScreenPromptCache() || getDefaultBounds();
+const setBounds = async () => {
+  let bounds = await getCurrentScreenPromptCache();
 
   if (requiresMaxHeight) {
     requiresMaxHeight = false;
@@ -197,9 +202,15 @@ const setBounds = () => {
   promptWindow.setBounds(bounds);
 };
 
-export const showPrompt = () => {
-  if (!promptWindow?.isVisible() || requiresMaxHeight) {
-    setBounds();
+export const showPrompt = async (ui: UI) => {
+  requiresMaxHeight =
+    requiresMaxHeight ||
+    ui === UI.editor ||
+    ui === UI.form ||
+    ui === UI.textarea;
+
+  if (!promptWindow?.isVisible() || requiresMaxHeight || ui === UI.drop) {
+    await setBounds();
   }
   if (!promptWindow?.isVisible()) {
     promptWindow?.show();
@@ -209,10 +220,6 @@ export const showPrompt = () => {
   return promptWindow;
 };
 
-type Size = {
-  width: number;
-  height: number;
-};
 export const resizePromptHeight = (height: number) => {
   if (lastResizedByUser) {
     lastResizedByUser = false;
@@ -237,13 +244,28 @@ export const sendToPrompt = (channel: string, data: any) => {
   }
 };
 
-const cachePromptBounds = () => {
+enum Bounds {
+  Position = 1 << 0,
+  Size = 1 << 1,
+}
+
+const cachePromptBounds = async (b = Bounds.Position | Bounds.Size) => {
   const currentScreen = getCurrentScreen();
+  const promptDb = await getPromptDb();
+  const prevBounds = promptDb.screens?.[String(currentScreen.id)];
   const bounds = promptWindow?.getBounds();
-  const height = bounds.height < MIN_HEIGHT ? MIN_HEIGHT : bounds.height;
+  // Ignore if flag
+  const size = b & Bounds.Size;
+  const position = b & Bounds.Position;
+
+  const { x, y } = position ? bounds : prevBounds;
+  const { width, height } = size ? bounds : prevBounds;
+
   const promptBounds = {
-    ...bounds,
-    height,
+    x,
+    y,
+    width: width < MIN_WIDTH ? MIN_WIDTH : width,
+    height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
   };
   log.info(`Cache prompt:`, {
     screen: currentScreen.id,
@@ -251,7 +273,8 @@ const cachePromptBounds = () => {
   });
 
   sendToPrompt(Channel.SET_MAX_HEIGHT, height);
-  promptDb.set(`screens.${String(currentScreen.id)}`, promptBounds).write();
+  promptDb.screens[String(currentScreen.id)] = promptBounds;
+  await promptDb.write();
 };
 
 const hideAppIfNoWindows = () => {
@@ -294,7 +317,7 @@ export const setPromptPid = (pid: number) => {
   sendToPrompt(Channel.SET_PID, pid);
 };
 
-export const setScript = (script: Script) => {
+export const setScript = async (script: Script) => {
   if (promptScript?.id === script?.id) return;
   // log.info(script);
 
@@ -306,10 +329,10 @@ export const setScript = (script: Script) => {
 
   let instantChoices = [];
   if (script.filePath === mainScriptPath) {
-    instantChoices = getScripts();
+    instantChoices = getScriptsMemory();
   } else if (script.requiresPrompt) {
     const maybeCachedChoices = kenvPath('db', `_${script.command}.json`);
-    if (isFile(maybeCachedChoices)) {
+    if (await isFile(maybeCachedChoices)) {
       const choicesFile = readFileSync(maybeCachedChoices, 'utf-8');
       const { items } = JSON.parse(choicesFile);
       log.info(`📦 Setting choices from ${maybeCachedChoices}`);
@@ -343,23 +366,20 @@ export const setTabIndex = (tabIndex: number) => {
   sendToPrompt(Channel.SET_TAB_INDEX, tabIndex);
 };
 
-export const setPromptData = (promptData: PromptData) => {
+export const setPromptData = async (promptData: PromptData) => {
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
-  requiresMaxHeight =
-    requiresMaxHeight ||
-    promptData.ui === UI.editor ||
-    promptData.ui === UI.textarea;
-
-  showPrompt();
+  await showPrompt(promptData.ui);
 };
 
 export const setChoices = (choices: Choice[]) => {
   sendToPrompt(Channel.SET_CHOICES, choices);
 };
 
-export const clearPromptCache = () => {
+export const clearPromptCache = async () => {
   clearPrompt = true;
-  promptDb.set('screens', {}).write();
+  const promptDb = await getPromptDb();
+  promptDb.screens = {};
+  await promptDb.write();
 };
 
 emitter.on(KitEvent.ExitPrompt, () => {

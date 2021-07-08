@@ -5,26 +5,33 @@ import { ChildProcess } from 'child_process';
 import { app } from 'electron';
 import log from 'electron-log';
 import schedule, { Job } from 'node-schedule';
-import { readdir, readFile } from 'fs/promises';
-import { appDb, info, kenvPath, kitPath, mainScriptPath } from './helpers';
-import { Script } from './types';
+import { readdir } from 'fs/promises';
+import { Script } from 'kit-bridge/cjs/type';
+import { getScripts, getAppDb } from 'kit-bridge/cjs/db';
+import { info, kitPath, mainScriptPath } from 'kit-bridge/cjs/util';
 
-export const makeRestartNecessary = () => {
-  appDb.set('needsRestart', true);
+export const makeRestartNecessary = async () => {
+  const appDb = await getAppDb();
+  appDb.needsRestart = true;
+  await appDb.write();
 };
-export const restartIfNecessary = () => {
-  if (appDb.get('needsRestart').value()) {
-    appDb.set('needsRestart', false).write();
+export const restartIfNecessary = async () => {
+  const appDb = await getAppDb();
+  if (appDb.needsRestart) {
+    appDb.needsRestart = false;
+    await appDb.write();
     app.exit(0);
   }
 };
 
-export const storeVersion = (version: string) => {
-  appDb.set('version', version).write();
+export const storeVersion = async (version: string) => {
+  const appDb = await getAppDb();
+  appDb.version = version;
+  await appDb.write();
 };
 
-export const getStoredVersion = () => {
-  return appDb.get('version').value();
+export const getStoredVersion = async () => {
+  return (await getAppDb()).version;
 };
 
 export const serverState = {
@@ -74,13 +81,10 @@ export const getSchedule = () => {
 let scripts: Script[] = [];
 
 export const updateScripts = async () => {
-  const scriptsJSON = JSON.parse(
-    await readFile(kenvPath('db', 'scripts.json'), 'utf-8')
-  );
-  scripts = scriptsJSON.scripts;
+  scripts = await getScripts(false);
 };
 
-export const getScripts = (): Script[] => {
+export const getScriptsMemory = (): Script[] => {
   return scripts;
 };
 
@@ -95,7 +99,8 @@ export const cacheKitScripts = async () => {
   const mainScript = await info(mainScriptPath);
   kitScripts.push(mainScript);
 
-  const kitCliScripts = await readdir(kitPath('cli'));
+  const kitCliPath = kitPath('cli');
+  const kitCliScripts = await readdir(kitCliPath);
   for await (const cli of kitCliScripts) {
     const cliScript = await info(kitPath('cli', cli));
     kitScripts.push(cliScript);

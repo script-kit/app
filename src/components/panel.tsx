@@ -1,18 +1,22 @@
 import React, { RefObject, useEffect, useRef } from 'react';
+import SimpleBar from 'simplebar-react';
 import parse from 'html-react-parser';
+import { useAtom } from 'jotai';
+import { panelHTMLAtom } from '../jotai';
 
 interface PanelProps {
-  panelHTML: string;
   onPanelHeightChanged: (height: number) => void;
   width: number;
   height: number;
 }
 
 export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
-  { panelHTML, onPanelHeightChanged, width, height }: PanelProps,
+  { onPanelHeightChanged, width, height }: PanelProps,
   ref
 ) {
   const containerRef: RefObject<any> = useRef(null);
+
+  const [panelHTML] = useAtom(panelHTMLAtom);
 
   useEffect(() => {
     if (containerRef?.current?.firstElementChild) {
@@ -23,8 +27,8 @@ export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
   }, [onPanelHeightChanged, containerRef?.current?.firstElementChild]);
 
   return (
-    <div
-      ref={containerRef}
+    <SimpleBar
+      scrollableNodeProps={{ ref: containerRef }}
       style={
         {
           WebkitAppRegion: 'no-drag',
@@ -35,6 +39,6 @@ export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
       }
     >
       {parse(`<div>${panelHTML}</div>`)}
-    </div>
+    </SimpleBar>
   );
 });

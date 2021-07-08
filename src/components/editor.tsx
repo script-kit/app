@@ -1,16 +1,11 @@
-import React, {
-  forwardRef,
-  memo,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import React, { forwardRef, useCallback, useEffect } from 'react';
 import path from 'path';
+import { useAtom } from 'jotai';
 import MonacoEditor, { loader } from '@monaco-editor/react';
-import { editor, KeyCode } from 'monaco-editor';
-import memoize from 'memoize-one';
+import { editor } from 'monaco-editor';
+import { EditorProps } from 'kit-bridge/cjs/type';
 import { useThemeDetector } from '../hooks';
-import { EditorProps } from '../types';
+import { editorConfigAtom } from '../jotai';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -28,6 +23,7 @@ loader.config({
 });
 
 const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
+  fontFamily: 'JetBrains Mono',
   fontSize: 16,
   minimap: {
     enabled: false,
@@ -36,9 +32,11 @@ const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
 };
 
 export default forwardRef<any, any>(function Editor(
-  { options, height, width }: EditorProps,
+  { height, width }: EditorProps,
   ref: any
 ) {
+  const [options] = useAtom(editorConfigAtom);
+
   useEffect(() => {
     return () => {
       ref(null);
@@ -97,7 +95,7 @@ export default forwardRef<any, any>(function Editor(
         width={width}
         theme={isDark ? 'kit-dark' : 'kit-light'}
         options={{ ...DEFAULT_OPTIONS, ...options }}
-        value={options.content || ''}
+        value={options.value || ''}
       />
     </div>
   );

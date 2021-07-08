@@ -11,6 +11,20 @@ import sizeOf from 'image-size';
 import { autoUpdater } from 'electron-updater';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
+import { Channel, Mode, ProcessType } from 'kit-bridge/cjs/enum';
+import { Choice, MessageData, Script, PromptData } from 'kit-bridge/cjs/type';
+
+import {
+  resolveToScriptPath,
+  KIT_MAC_APP,
+  KIT_MAC_APP_PROMPT,
+  PATH,
+  kitPath,
+  kenvPath,
+  kitDotEnv,
+  execPath,
+} from 'kit-bridge/cjs/util';
+
 import { getLog } from './logs';
 import {
   focusPrompt,
@@ -27,6 +41,7 @@ import {
   setChoices,
   clearPromptCache,
   sendToPrompt,
+  setPromptProp,
 } from './prompt';
 import { setAppHidden } from './appHidden';
 import {
@@ -37,22 +52,9 @@ import {
 } from './state';
 
 import { emitter, KitEvent } from './events';
-import { Channel, Mode, ProcessType } from './enums';
 import { show } from './show';
 import { showNotification } from './notifications';
-import {
-  setKenv,
-  createKenv,
-  KIT_MAC_APP,
-  KIT_MAC_APP_PROMPT,
-  PATH,
-  execPath,
-  KIT,
-  getKenv,
-  getKenvDotEnv,
-  resolveScriptPath,
-} from './helpers';
-import { Choice, MessageData, Script, PromptData } from './types';
+
 import { getVersion } from './version';
 
 export const prepChoices = (data: MessageData) => {
@@ -93,6 +95,16 @@ export const prepChoices = (data: MessageData) => {
         script.description = `${script.description || ``} Watching: ${
           script.watch
         }`;
+      }
+
+      if (script.kenv) {
+        script.tag = script.kenv;
+      }
+
+      if (script.image) {
+        script.img = script.image.match(/(^http)|^\//)
+          ? script.image
+          : kenvPath('assets', script.image);
       }
 
       return script;
@@ -155,10 +167,6 @@ const kitMessageMap: ChannelHandler = {
     clipboard.writeImage(data.path as any);
   },
 
-  CREATE_KENV: (data) => {
-    if (data.kenvPath) createKenv(data.kenvPath);
-  },
-
   GET_SCRIPTS_STATE: (data) => {
     processes.ifPid(data.pid, ({ child }) => {
       child?.send({
@@ -212,17 +220,17 @@ const kitMessageMap: ChannelHandler = {
   HIDE_APP: () => {
     setAppHidden(true);
   },
-  NEEDS_RESTART: () => {
-    makeRestartNecessary();
+  NEEDS_RESTART: async () => {
+    await makeRestartNecessary();
   },
   QUIT_APP: () => {
     app.exit();
   },
   SET_SCRIPT: (data) => {
-    processes.ifPid(data.pid, ({ type }) => {
+    processes.ifPid(data.pid, async ({ type }) => {
       // log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.script.filePath);
       if (type === ProcessType.Prompt) {
-        setScript(data.script as Script);
+        await setScript(data.script as Script);
       }
     });
   },
@@ -256,6 +264,10 @@ const kitMessageMap: ChannelHandler = {
   SET_PANEL: (data) => {
     setPanel(data.html as string);
   },
+
+  SET_PROMPT_PROP: (data) => {
+    setPromptProp(data.prop.key, data.prop.value);
+  },
   SET_TAB_INDEX: (data) => {
     setTabIndex(data.tabIndex as number);
   },
@@ -272,8 +284,8 @@ const kitMessageMap: ChannelHandler = {
 
     showNotification(data.html || 'You forgot html', data.options);
   },
-  SET_PROMPT_DATA: (data) => {
-    setPromptData(data as PromptData);
+  SET_PROMPT_DATA: async (data) => {
+    await setPromptData(data as PromptData);
   },
   SHOW_IMAGE,
   SHOW: async (data) => {
@@ -298,17 +310,21 @@ const kitMessageMap: ChannelHandler = {
   SET_CHOICES: (data) => {
     prepChoices(data);
   },
-  SWITCH_KENV: (data) => {
-    if (data.kenvPath) setKenv(data.kenvPath);
-  },
+
   UPDATE_PROMPT_WARN: (data) => {
     setPlaceholder(data.info as string);
   },
-  CLEAR_PROMPT_CACHE: () => {
-    clearPromptCache();
+  CLEAR_PROMPT_CACHE: async () => {
+    await clearPromptCache();
   },
   SET_EDITOR_CONFIG: (data) => {
     sendToPrompt(Channel.SET_EDITOR_CONFIG, data.options);
+  },
+  SET_TEXTAREA_CONFIG: (data) => {
+    sendToPrompt(Channel.SET_TEXTAREA_CONFIG, data.options);
+  },
+  SET_FORM_HTML: (data) => {
+    sendToPrompt(Channel.SET_FORM_HTML, data);
   },
 };
 
@@ -358,7 +374,7 @@ const createChild = ({
   if (!scriptPath) {
     args = ['--app'];
   } else {
-    const resolvePath = resolveScriptPath(scriptPath);
+    const resolvePath = resolveToScriptPath(scriptPath);
     args = [resolvePath, ...runArgs, '--app'];
   }
 
@@ -372,9 +388,9 @@ const createChild = ({
       KIT_CONTEXT: 'app',
       KIT_MAIN: scriptPath,
       PATH,
-      KENV: getKenv(),
-      KIT,
-      KIT_DOTENV: getKenvDotEnv(),
+      KENV: kenvPath(),
+      KIT: kitPath(),
+      KIT_DOTENV: kitDotEnv(),
       KIT_APP_VERSION: getVersion(),
       PROCESS_TYPE: type,
     },
@@ -417,7 +433,7 @@ class Processes extends Array<ProcessInfo> {
     scriptPath = '',
     args: string[] = [],
     { resolve, reject }: ProcessHandlers = {}
-  ) {
+  ): ProcessInfo {
     const child = createChild({
       type,
       scriptPath,
@@ -459,6 +475,7 @@ class Processes extends Array<ProcessInfo> {
         setAppHidden(false);
         emitter.emit(KitEvent.ExitPrompt);
         emitter.emit(KitEvent.ResumeShortcuts);
+        sendToPrompt(Channel.EXIT, {});
       }
 
       const { values } = processes.getByPid(pid) as ProcessInfo;

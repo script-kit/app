@@ -2,11 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+@import 'jetbrains-mono';
+@import 'typeface-lato';
+
 @import '../node_modules/simplebar-react/dist/simplebar.min.css';
 
+.lato {
+  font-family: 'Lato';
+}
+
 body {
-  --tw-bg-opacity: 0.4 !important;
-  @apply dark:bg-black  bg-white;
+  --tw-bg-opacity: 0.3 !important;
+  @apply dark:bg-black  bg-white subpixel-antialiased;
 }
 
 .simplebar-scrollbar:before {
@@ -74,5 +81,9 @@ body {
 
   p {
     @apply mb-0;
+  }
+
+  .kit-form * {
+    @apply dark:bg-black dark:text-white  dark:bg-opacity-0 bg-white text-black     bg-opacity-0;
   }
 }

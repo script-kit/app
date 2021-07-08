@@ -1,13 +1,11 @@
-import { grep } from 'shelljs';
 import log from 'electron-log';
 
-import { ProcessType } from './enums';
+import { ProcessType } from 'kit-bridge/cjs/enum';
+import { info } from 'kit-bridge/cjs/util';
+import { Script } from 'kit-bridge/cjs/type';
 import { emitter, KitEvent } from './events';
 import { backgroundMap, Background } from './state';
 import { processes } from './process';
-import { Script } from './types';
-
-const backgroundMarker = 'Background: ';
 
 export const removeBackground = (filePath: string) => {
   if (backgroundMap.get(filePath)) {
@@ -24,7 +22,7 @@ export const backgroundScriptChanged = ({
   background: backgroundString,
 }: Script) => {
   const startTask = () => {
-    const child = processes.add(ProcessType.Background, filePath);
+    const { child } = processes.add(ProcessType.Background, filePath);
     backgroundMap.set(filePath, {
       start: new Date().toString(),
       child,
@@ -38,16 +36,14 @@ export const backgroundScriptChanged = ({
   }
 };
 
-export const updateBackground = (filePath: string, fileChange = false) => {
-  const { stdout } = grep(backgroundMarker, filePath);
-
-  const backgroundString = stdout
-    .substring(0, stdout.indexOf('\n'))
-    .substring(stdout.indexOf(backgroundMarker) + backgroundMarker.length)
-    .trim();
+export const updateBackground = async (
+  filePath: string,
+  fileChange = false
+) => {
+  const { background: backgroundString } = await info(filePath);
 
   const startTask = () => {
-    const child = processes.add(ProcessType.Background, filePath);
+    const { child } = processes.add(ProcessType.Background, filePath);
     backgroundMap.set(filePath, {
       start: new Date().toString(),
       child,
@@ -71,14 +67,14 @@ export const updateBackground = (filePath: string, fileChange = false) => {
   }
 };
 
-export const toggleBackground = (filePath: string) => {
+export const toggleBackground = async (filePath: string) => {
   if (backgroundMap.get(filePath)) {
     removeBackground(filePath);
   } else {
-    updateBackground(filePath);
+    await updateBackground(filePath);
   }
 };
 
-emitter.on(KitEvent.ToggleBackground, (data) => {
-  toggleBackground(data.filePath as string);
+emitter.on(KitEvent.ToggleBackground, async (data) => {
+  await toggleBackground(data.filePath as string);
 });

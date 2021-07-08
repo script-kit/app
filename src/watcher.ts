@@ -1,11 +1,8 @@
 /* eslint-disable no-restricted-syntax */
-/* eslint-disable jest/no-export */
-/* eslint-disable import/prefer-default-export */
-import log from 'electron-log';
 import chokidar, { FSWatcher } from 'chokidar';
-import path from 'path';
 
-import { appDbPath, info, kenvPath, kitPath, shortcutsPath } from './helpers';
+import { debounce } from 'lodash';
+import { appDbPath, info, kenvPath, shortcutsPath } from 'kit-bridge/cjs/util';
 import {
   unlinkShortcuts,
   updateMainShortcut,
@@ -18,8 +15,6 @@ import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
 import { emitter, KitEvent } from './events';
 import { updateScripts } from './state';
-import { processes } from './process';
-import { ProcessType } from './enums';
 
 const onScriptsChanged = async (
   event: 'add' | 'change' | 'unlink',
@@ -47,14 +42,9 @@ export const onDbChanged = async (event: any, filePath: string) => {
   updateMainShortcut(filePath);
 };
 
-export const cacheMenu = async () => {
-  processes.add(
-    ProcessType.Background,
-    kitPath('cli', 'refresh-scripts-db.js'),
-    []
-  );
+export const cacheMenu = debounce(async () => {
   await updateScripts();
-};
+}, 200);
 
 let watchers: FSWatcher[] = [];
 
@@ -72,10 +62,11 @@ export const setupWatchers = async () => {
   //   processes.resetIdlePromptProcess();
   // });
 
-  const kenvScripts = `${kenvPath('scripts')}${path.sep}*.js`;
-  const scriptsWatcher = chokidar.watch([kenvScripts], {
-    depth: 0,
-  });
+  const kenvScripts = kenvPath('scripts', '*.js');
+  const repos = kenvPath('kenvs', '*');
+  const repoScripts = kenvPath('kenvs', '*', 'scripts', '*.js');
+
+  const scriptsWatcher = chokidar.watch([kenvScripts, repos, repoScripts]);
   watchers.push(scriptsWatcher);
 
   const kitAppDbWatcher = chokidar.watch([appDbPath]);

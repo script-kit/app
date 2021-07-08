@@ -14,9 +14,12 @@ import DeleteSourceMaps from '../scripts/DeleteSourceMaps';
 CheckNodeEnv('production');
 DeleteSourceMaps();
 
-const devtoolsConfig = process.env.DEBUG_PROD === 'true' ? {
-  devtool: 'source-map'
-} : {};
+const devtoolsConfig =
+  process.env.DEBUG_PROD === 'true'
+    ? {
+        devtool: 'source-map',
+      }
+    : {};
 
 export default merge(baseConfig, {
   ...devtoolsConfig,
@@ -37,14 +40,23 @@ export default merge(baseConfig, {
       new TerserPlugin({
         parallel: true,
       }),
-    ]
+    ],
   },
+
+  // resolve: {
+  //   alias: {
+  //     '@assets': path.resolve(__dirname, 'assets'),
+  //   },
+  // },
 
   plugins: [
     new BundleAnalyzerPlugin({
       analyzerMode:
         process.env.OPEN_ANALYZER === 'true' ? 'server' : 'disabled',
       openAnalyzer: process.env.OPEN_ANALYZER === 'true',
+    }),
+    new webpack.optimize.LimitChunkCountPlugin({
+      maxChunks: 1,
     }),
 
     /**
