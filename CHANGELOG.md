@@ -1,3 +1,10 @@
+# [1.3.0-alpha.73](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.72...v1.3.0-alpha.73) (2021-07-08)
+
+
+### Bug Fixes
+
+* **prompt:** textarea hint. Input value submit. ([a793727](https://github.com/johnlindquist/kitapp/commit/a7937279b33673f2b858a9b33ac1dad55ef558a5))
+
 # [1.3.0-beta.22](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.21...v1.3.0-beta.22) (2021-07-08)
 
 
