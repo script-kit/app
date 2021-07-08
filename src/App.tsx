@@ -182,6 +182,8 @@ export default function App() {
 
   const submit = useCallback(
     (submitValue: any) => {
+      setSubmitted(true);
+      setInputValue('');
       // setFilteredChoices([]);
       // setUnfilteredChoices([]);
 
@@ -216,9 +218,6 @@ export default function App() {
         value,
         pid,
       });
-
-      setSubmitted(true);
-      setInputValue('');
     },
     [pid, promptData?.secret]
   );
@@ -373,6 +372,7 @@ export default function App() {
   }, [mode, inputValue, tabIndex, submitted, generateChoices]);
 
   useEffect(() => {
+    if (submitted) return;
     try {
       if (inputValue === '') {
         setFilteredChoices(unfilteredChoices);
@@ -618,6 +618,7 @@ export default function App() {
 
   const exitHandler = useCallback(
     (event) => {
+      setInputValue('');
       setIndex(0);
 
       console.log(`EXITING ${pid}`);

@@ -84,7 +84,7 @@ export default forwardRef<HTMLDivElement, DropProps>(function Drop(
       dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40
       text-black dark:text-white text-xl
       focus:outline-none outline-none
-      ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
+      ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0
       border-4 rounded border-gray-500 focus:border-gray-500 text-opacity-50 ${
         dropReady && `border-yellow-500 text-opacity-90 focus:border-yellow-500`
       }
@@ -96,7 +96,7 @@ export default forwardRef<HTMLDivElement, DropProps>(function Drop(
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
     >
-      <h2 className="pointer-events-none">{dropMessage || placeholder}</h2>
+      <h2 className="pointer-events-none mb-0">{dropMessage || placeholder}</h2>
     </div>
   );
 });
