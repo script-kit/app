@@ -33,6 +33,7 @@ import {
   Script,
   EditorConfig,
   EditorRef,
+  TextareaConfig,
 } from 'kit-bridge/esm/type';
 import Tabs from './components/tabs';
 import List from './components/list';
@@ -568,7 +569,7 @@ export default function App() {
   );
 
   const setTextareaConfigHandler = useCallback(
-    (_event: any, config: EditorConfig) => {
+    (_event: any, config: TextareaConfig) => {
       setTextareaConfig(config);
     },
     [setTextareaConfig]

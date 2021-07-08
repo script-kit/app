@@ -34,7 +34,10 @@ export const editorConfigAtom = atom<EditorConfig>({
   value: '',
   language: 'markdown',
 });
-export const textareaConfigAtom = atom<TextareaConfig>({ value: '' });
+export const textareaConfigAtom = atom<TextareaConfig>({
+  value: '',
+  placeholder: '',
+});
 
 export const maxHeightAtom = atom(DEFAULT_MAX_HEIGHT);
 

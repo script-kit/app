@@ -104,7 +104,11 @@ export const prepChoices = (data: MessageData) => {
       if (script.image) {
         script.img = script.image.match(/(^http)|^\//)
           ? script.image
-          : kenvPath('assets', script.image);
+          : kenvPath(
+              script.kenv && `kenvs/${script.kenv}`,
+              'assets',
+              script.image
+            );
       }
 
       return script;

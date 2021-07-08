@@ -96,8 +96,13 @@ export const getKenvScript = (filePath: string): Script => {
 const kitScripts: Script[] = [];
 
 export const cacheKitScripts = async () => {
-  const mainScript = await info(mainScriptPath);
-  kitScripts.push(mainScript);
+  const kitMainPath = kitPath('main');
+  const kitMainScripts = await readdir(kitMainPath);
+
+  for await (const main of kitMainScripts) {
+    const mainScript = await info(kitPath('main', main));
+    kitScripts.push(mainScript);
+  }
 
   const kitCliPath = kitPath('cli');
   const kitCliScripts = await readdir(kitCliPath);

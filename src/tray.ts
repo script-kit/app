@@ -25,7 +25,7 @@ const leftClick = async (event: KeyboardEvent) => {
 };
 
 const rightClick = async () => {
-  runPromptProcess(kitPath('main', 'help.js'));
+  runPromptProcess(kitPath('main', 'kit.js'));
 };
 
 const trayIcon = getAssetPath('IconTemplate.png');

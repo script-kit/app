@@ -174,8 +174,9 @@ export const getDefaultBounds = (currentScreen: Display) => {
   const { width: screenWidth, height: screenHeight } =
     currentScreen.workAreaSize;
 
-  const height = Math.round(screenHeight / 2);
-  const width = Math.round(height * (4 / 3));
+  const DEFAULT_WIDTH = 370;
+  const height = Math.round((DEFAULT_WIDTH * 11) / 8.5); // Math.round(screenHeight / 1.5);
+  const width = DEFAULT_WIDTH; // Math.round(height * (8.5 / 11));
   const { x: workX, y: workY } = currentScreen.workArea;
   const x = Math.round(screenWidth / 2 - width / 2 + workX);
   const y = Math.round(workY + height / 10);
