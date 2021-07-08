@@ -138,6 +138,8 @@ export default function App() {
         const { height: topHeight } =
           topRef?.current?.getBoundingClientRect() as any;
 
+        if (height === topHeight && ui === UI.form) return;
+
         const promptHeight = height > topHeight ? height : topHeight;
 
         const newHeight = Math.round(promptHeight);
@@ -163,7 +165,7 @@ export default function App() {
       const fullHeight = topHeight + bottomHeight;
 
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
-      console.log({ height });
+      console.log({ mainHeight, height });
 
       resizeHeight(height);
     },
@@ -217,7 +219,6 @@ export default function App() {
 
       setSubmitted(true);
       setInputValue('');
-      setEditorConfig({});
     },
     [pid, promptData?.secret]
   );
@@ -481,13 +482,13 @@ export default function App() {
       });
       setFilteredChoices(highlightedChoices);
     } catch (error) {
-      ipcRenderer.send('PROMPT_ERROR', { error, pid: promptData?.id });
+      ipcRenderer.send('PROMPT_ERROR', { error, pid });
     }
   }, [
     unfilteredChoices,
     inputValue,
     mode,
-    promptData?.id,
+    pid,
     resizeHeight,
     submitted,
     setMainHeight,
@@ -546,6 +547,7 @@ export default function App() {
 
   const setChoicesHandler = useCallback(
     (_event: any, rawChoices: Choice[]) => {
+      if (ui !== UI.arg) return;
       setIndex(0);
       setSubmitted(false);
       setPanelHTML('');
@@ -616,6 +618,7 @@ export default function App() {
   const exitHandler = useCallback(
     (event) => {
       setIndex(0);
+
       console.log(`EXITING ${pid}`);
     },
     [pid, setIndex]
@@ -711,13 +714,6 @@ export default function App() {
           {ui === UI.hotkey && (
             <Hotkey submit={submit} onEscape={closePrompt} />
           )}
-          {ui === UI.drop && (
-            <Drop
-              placeholder={placeholder}
-              submit={submit}
-              onEscape={closePrompt}
-            />
-          )}
           {ui === UI.arg && (
             <Input
               onKeyDown={onKeyDown}
@@ -746,6 +742,15 @@ export default function App() {
           <AutoSizer>
             {({ width, height }) => (
               <>
+                {ui === UI.drop && (
+                  <Drop
+                    placeholder={placeholder}
+                    submit={submit}
+                    onEscape={closePrompt}
+                    width={width}
+                    height={height}
+                  />
+                )}
                 {ui === UI.textarea && (
                   <TextArea
                     ref={textAreaRef}

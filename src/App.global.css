@@ -13,7 +13,7 @@
 
 body {
   --tw-bg-opacity: 0.3 !important;
-  @apply dark:bg-black  bg-white;
+  @apply dark:bg-black  bg-white subpixel-antialiased;
 }
 
 .simplebar-scrollbar:before {

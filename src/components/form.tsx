@@ -95,9 +95,6 @@ export default function Form({
         }
       }
 
-      // console.log(names);
-      // console.log(arrays);
-
       const formJSON = Object.fromEntries(data.entries());
 
       for (const [key, value] of Object.entries(names)) {

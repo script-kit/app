@@ -427,7 +427,7 @@ class Processes extends Array<ProcessInfo> {
     scriptPath = '',
     args: string[] = [],
     { resolve, reject }: ProcessHandlers = {}
-  ) {
+  ): ProcessInfo {
     const child = createChild({
       type,
       scriptPath,
@@ -469,7 +469,7 @@ class Processes extends Array<ProcessInfo> {
         setAppHidden(false);
         emitter.emit(KitEvent.ExitPrompt);
         emitter.emit(KitEvent.ResumeShortcuts);
-        sendToPrompt(Channel.EXIT);
+        sendToPrompt(Channel.EXIT, {});
       }
 
       const { values } = processes.getByPid(pid) as ProcessInfo;

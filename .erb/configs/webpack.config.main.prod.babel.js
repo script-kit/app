@@ -55,6 +55,9 @@ export default merge(baseConfig, {
         process.env.OPEN_ANALYZER === 'true' ? 'server' : 'disabled',
       openAnalyzer: process.env.OPEN_ANALYZER === 'true',
     }),
+    new webpack.optimize.LimitChunkCountPlugin({
+      maxChunks: 1,
+    }),
 
     /**
      * Create global constants which can be configured at compile time.

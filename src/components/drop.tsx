@@ -7,7 +7,7 @@ import React, { forwardRef, KeyboardEvent, useCallback, useState } from 'react';
 import { DropProps } from 'kit-bridge/cjs/type';
 
 export default forwardRef<HTMLDivElement, DropProps>(function Drop(
-  { placeholder, submit, onEscape },
+  { placeholder, submit, onEscape, width, height },
   ref
 ) {
   const [dropReady, setDropReady] = useState(false);
@@ -75,6 +75,8 @@ export default forwardRef<HTMLDivElement, DropProps>(function Drop(
           WebkitAppRegion: 'drag',
           WebkitUserSelect: 'none',
           minHeight: '4rem',
+          width,
+          height,
         } as any
       }
       className={`bg-transparent
@@ -82,7 +84,6 @@ export default forwardRef<HTMLDivElement, DropProps>(function Drop(
       dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40
       text-black dark:text-white text-xl
       focus:outline-none outline-none
-      w-full h-screen
       ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
       border-4 rounded border-gray-500 focus:border-gray-500 text-opacity-50 ${
         dropReady && `border-yellow-500 text-opacity-90 focus:border-yellow-500`

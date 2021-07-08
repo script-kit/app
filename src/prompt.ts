@@ -202,8 +202,14 @@ const setBounds = async () => {
   promptWindow.setBounds(bounds);
 };
 
-export const showPrompt = async () => {
-  if (!promptWindow?.isVisible() || requiresMaxHeight) {
+export const showPrompt = async (ui: UI) => {
+  requiresMaxHeight =
+    requiresMaxHeight ||
+    ui === UI.editor ||
+    ui === UI.form ||
+    ui === UI.textarea;
+
+  if (!promptWindow?.isVisible() || requiresMaxHeight || ui === UI.drop) {
     await setBounds();
   }
   if (!promptWindow?.isVisible()) {
@@ -214,10 +220,6 @@ export const showPrompt = async () => {
   return promptWindow;
 };
 
-type Size = {
-  width: number;
-  height: number;
-};
 export const resizePromptHeight = (height: number) => {
   if (lastResizedByUser) {
     lastResizedByUser = false;
@@ -364,17 +366,9 @@ export const setTabIndex = (tabIndex: number) => {
   sendToPrompt(Channel.SET_TAB_INDEX, tabIndex);
 };
 
-let currentPromptData: any;
 export const setPromptData = async (promptData: PromptData) => {
-  currentPromptData = promptData;
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
-  requiresMaxHeight =
-    requiresMaxHeight ||
-    promptData.ui === UI.editor ||
-    promptData.ui === UI.form ||
-    promptData.ui === UI.textarea;
-
-  await showPrompt();
+  await showPrompt(promptData.ui);
 };
 
 export const setChoices = (choices: Choice[]) => {

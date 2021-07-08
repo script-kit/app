@@ -19,6 +19,7 @@ module.exports = {
         /^italic/,
         /^min/,
         /^max/,
+        /^grid/,
         /^\w{0,2}-(\d\/\d|\d\.\d|\d{1,3}|full|screen|auto)/,
       ],
     },
