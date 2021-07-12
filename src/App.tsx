@@ -307,8 +307,10 @@ export default function App() {
           return;
         }
 
-        const shortcodeChoice = unfilteredChoices?.find(
-          (choice) => choice?.shortcode === inputValue.trim()
+        const shortcodeChoice = unfilteredChoices?.find((choice: Choice) =>
+          choice?.shortcode?.find(
+            (sc: string) => sc === inputValue.trim().toLowerCase()
+          )
         );
         if (shortcodeChoice) {
           submit(shortcodeChoice.value);
