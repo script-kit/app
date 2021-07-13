@@ -1,4 +1,4 @@
-# [1.3.0-alpha.74](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.73...v1.3.0-alpha.74) (2021-07-13)
+# [1.3.0-beta.24](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.23...v1.3.0-beta.24) (2021-07-13)
 
 ### Bug Fixes
 
