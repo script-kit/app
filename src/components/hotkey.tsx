@@ -144,7 +144,9 @@ export default function Hotkey({
         } as any
       }
       autoFocus
-      className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
+      className={`
+      hotkey-component
+      bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
   ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
   focus:border-none border-none`}
       onKeyDown={onKeyDown}

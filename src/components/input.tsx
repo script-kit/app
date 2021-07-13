@@ -43,7 +43,9 @@ export default forwardRef<HTMLInputElement, InputProps>(function Input(
         } as any
       }
       autoFocus
-      className={`bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
+      className={`
+      input-component
+      bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
   ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
   focus:border-none border-none`}
       onChange={onChange}

@@ -11,7 +11,7 @@ import React, {
   useEffect,
   RefObject,
 } from 'react';
-import parse from 'html-react-parser';
+import parse, { attributesToProps, domToReact } from 'html-react-parser';
 import SimpleBar from 'simplebar-react';
 import { useAtom } from 'jotai';
 import { formDataAtom, formHTMLAtom, pidAtom } from '../jotai';
@@ -98,7 +98,7 @@ export default function Form({
       const formJSON = Object.fromEntries(data.entries());
 
       for (const [key, value] of Object.entries(names)) {
-        if (value) {
+        if (key && value) {
           formJSON[key] = data.getAll(key);
         }
       }
@@ -135,6 +135,8 @@ export default function Form({
     [onEscape, onLocalSubmit]
   );
 
+  const onFormChange = useCallback(() => {}, []);
+
   return (
     <SimpleBar
       scrollableNodeProps={{ ref: containerRef }}
@@ -148,17 +150,31 @@ export default function Form({
       }
     >
       <form
+        onChange={onFormChange}
         tabIndex={0}
         ref={formRef}
         onKeyDown={onFormKeyDown}
         onSubmit={onLocalSubmit}
         className={`
+        form-component
         kit-form
         border-none
         outline-none
       `}
       >
-        {parse(formHTML)}
+        {parse(formHTML, {
+          replace: (domNode: any) => {
+            if (
+              domNode.attribs &&
+              ['input', 'textarea', 'select'].includes(domNode.name)
+            ) {
+              domNode.attribs.onChange = () => {};
+              return domToReact(domNode);
+            }
+
+            return domNode;
+          },
+        })}
       </form>
     </SimpleBar>
   );

@@ -1,3 +1,4 @@
+/* eslint-disable no-bitwise */
 /* eslint-disable react/no-danger */
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable no-restricted-syntax */
@@ -132,6 +133,15 @@ export default function App() {
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const headerRef: RefObject<HTMLDivElement> = useRef(null);
 
+  const isMainEmpty = useCallback(() => {
+    return !(
+      filteredChoices?.length ||
+      panelHTML?.length ||
+      formHTML?.length ||
+      !!(ui & (UI.textarea | UI.editor))
+    );
+  }, [filteredChoices?.length, formHTML?.length, ui, panelHTML?.length]);
+
   const resizeHeight = useDebouncedCallback(
     useCallback(
       (height: number) => {
@@ -165,13 +175,18 @@ export default function App() {
       const { height: topHeight } =
         headerRef?.current?.getBoundingClientRect() as any;
 
-      const bottomHeight = mainHeight;
-      const fullHeight = topHeight + bottomHeight;
+      const fullHeight = topHeight + mainHeight;
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
 
-      resizeHeight(height);
+      if (isMainEmpty()) {
+        console.log(`MAIN IS EMPTY ${topHeight}`);
+        resizeHeight(topHeight);
+      } else {
+        console.log(`MAIN ${height}`);
+        resizeHeight(height);
+      }
     },
-    [maxHeight, resizeHeight]
+    [isMainEmpty, maxHeight, resizeHeight]
   );
 
   const clampIndex = useCallback(
@@ -501,6 +516,7 @@ export default function App() {
   const setPromptDataHandler = useCallback(
     (_event: any, promptData: PromptData) => {
       setUI(promptData.ui);
+      console.log(`Set ui ${promptData.ui}`);
       setIndex(0);
       setPanelHTML('');
       setPromptData(promptData);
@@ -724,14 +740,14 @@ export default function App() {
           {(script?.description || script?.twitter || script?.menu) && (
             <Header />
           )}
-          {ui === UI.hotkey && (
+          {!!(ui & UI.hotkey) && (
             <Hotkey
               submit={submit}
               onEscape={closePrompt}
               onHotkeyHeightChanged={setMainHeight}
             />
           )}
-          {ui === UI.arg && (
+          {!!(ui & UI.arg) && (
             <Input
               onKeyDown={onKeyDown}
               placeholder={placeholder}
@@ -758,7 +774,7 @@ export default function App() {
           <AutoSizer>
             {({ width, height }) => (
               <>
-                {ui === UI.drop && (
+                {!!(ui & UI.drop) && (
                   <Drop
                     placeholder={placeholder}
                     submit={submit}
@@ -768,7 +784,7 @@ export default function App() {
                     onDropHeightChanged={setMainHeight}
                   />
                 )}
-                {ui === UI.textarea && (
+                {!!(ui & UI.textarea) && (
                   <TextArea
                     ref={textAreaRef}
                     height={height}
@@ -777,18 +793,16 @@ export default function App() {
                     onEscape={closePrompt}
                   />
                 )}
-                {(ui === UI.arg || ui === UI.hotkey) &&
-                  panelHTML?.length > 0 && (
-                    <Panel
-                      width={width}
-                      height={height}
-                      onPanelHeightChanged={setMainHeight}
-                    />
-                  )}
+                {!!(ui & (UI.arg | UI.hotkey)) && panelHTML?.length > 0 && (
+                  <Panel
+                    width={width}
+                    height={height}
+                    onPanelHeightChanged={setMainHeight}
+                  />
+                )}
 
-                {ui === UI.arg && panelHTML?.length === 0 && (
+                {!!(ui & UI.arg) && panelHTML?.length === 0 && (
                   <List
-                    ref={choicesListRef}
                     height={height}
                     width={width}
                     onListChoicesChanged={setMainHeight}
@@ -797,11 +811,11 @@ export default function App() {
                   />
                 )}
 
-                {ui === UI.editor && (
+                {!!(ui & UI.editor) && (
                   <Editor ref={setEditor} height={height} width={width} />
                 )}
 
-                {ui === UI.form && (
+                {!!(ui & UI.form) && (
                   <Form
                     onSubmit={submit}
                     onEscape={closePrompt}

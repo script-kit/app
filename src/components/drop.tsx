@@ -102,12 +102,14 @@ export default function Drop({
         {
           WebkitAppRegion: 'drag',
           WebkitUserSelect: 'none',
-          minHeight: '4rem',
+          minHeight: '8rem',
+          minWidth: '8rem',
           width,
           height,
         } as any
       }
       className={`
+      drop-component
       flex flex-col justify-center items-center
       text-black dark:text-white text-xl
       focus:outline-none outline-none
