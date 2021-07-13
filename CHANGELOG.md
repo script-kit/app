@@ -1,3 +1,11 @@
+# [1.3.0-alpha.76](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.75...v1.3.0-alpha.76) (2021-07-13)
+
+
+### Bug Fixes
+
+* **app:** resizing ([f476675](https://github.com/johnlindquist/kitapp/commit/f47667578efac9680cd5cb2a7c10081620d500b2))
+* **app:** resizing ([0796c92](https://github.com/johnlindquist/kitapp/commit/0796c92f8c391913a69c9d291f49d7534215592c))
+
 # [1.3.0-alpha.75](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.74...v1.3.0-alpha.75) (2021-07-13)
 
 
