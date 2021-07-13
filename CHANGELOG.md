@@ -1,6 +1,5 @@
 # [1.3.0-beta.24](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.23...v1.3.0-beta.24) (2021-07-13)
 
-
 ### Bug Fixes
 
 * **app:** install and resizing ([de58852](https://github.com/johnlindquist/kitapp/commit/de58852b97b3cee630a6489276965cc185fcc7be))
@@ -12,10 +11,17 @@
 
 # [1.3.0-beta.23](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.22...v1.3.0-beta.23) (2021-07-08)
 
+- **app:** install and resizing ([de58852](https://github.com/johnlindquist/kitapp/commit/de58852b97b3cee630a6489276965cc185fcc7be))
+
+### Features
+
+- **prompt:** multiple shortcodes ([aa2c5f1](https://github.com/johnlindquist/kitapp/commit/aa2c5f1afe06f46b60a6cb9b5c25d45b998e530f))
+
+# [1.3.0-beta.23](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.22...v1.3.0-beta.23) (2021-07-08)
 
 ### Bug Fixes
 
-* **prompt:** textarea hint. Input value submit. ([a793727](https://github.com/johnlindquist/kitapp/commit/a7937279b33673f2b858a9b33ac1dad55ef558a5))
+- **prompt:** textarea hint. Input value submit. ([a793727](https://github.com/johnlindquist/kitapp/commit/a7937279b33673f2b858a9b33ac1dad55ef558a5))
 
 # [1.3.0-beta.22](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.21...v1.3.0-beta.22) (2021-07-08)
 
