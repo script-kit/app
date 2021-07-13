@@ -17,11 +17,13 @@ import React, {
   RefObject,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
 import { useAtom } from 'jotai';
 import AutoSizer, { Size } from 'react-virtualized-auto-sizer';
+import useResizeObserver from '@react-hook/resize-observer';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
@@ -56,6 +58,7 @@ import {
   hintAtom,
   indexAtom,
   inputAtom,
+  mainHeightAtom,
   maxHeightAtom,
   modeAtom,
   panelHTMLAtom,
@@ -67,6 +70,7 @@ import {
   tabIndexAtom,
   tabsAtom,
   textareaConfigAtom,
+  topHeightAtom,
   uiAtom,
   unfilteredChoicesAtom,
 } from './jotai';
@@ -125,6 +129,8 @@ export default function App() {
   const [formData, setFormData] = useAtom(formDataAtom);
 
   const [maxHeight, setMaxHeight] = useAtom(maxHeightAtom);
+  const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
+  const [topHeight, setTopHeight] = useAtom(topHeightAtom);
 
   const choicesListRef = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
@@ -132,6 +138,12 @@ export default function App() {
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const headerRef: RefObject<HTMLDivElement> = useRef(null);
+
+  useResizeObserver(headerRef, (entry) => {
+    if (entry?.contentRect?.height) {
+      setTopHeight(entry.contentRect.height);
+    }
+  });
 
   const isMainEmpty = useCallback(() => {
     return !(
@@ -145,9 +157,6 @@ export default function App() {
   const resizeHeight = useDebouncedCallback(
     useCallback(
       (height: number) => {
-        const { height: topHeight } =
-          headerRef?.current?.getBoundingClientRect() as any;
-
         if (height === topHeight && ui === UI.form) return;
 
         const promptHeight = height > topHeight ? height : topHeight;
@@ -170,24 +179,16 @@ export default function App() {
     50
   );
 
-  const setMainHeight = useCallback(
-    (mainHeight) => {
-      const { height: topHeight } =
-        headerRef?.current?.getBoundingClientRect() as any;
+  useEffect(() => {
+    const fullHeight = topHeight + mainHeight;
+    const height = fullHeight < maxHeight ? fullHeight : maxHeight;
 
-      const fullHeight = topHeight + mainHeight;
-      const height = fullHeight < maxHeight ? fullHeight : maxHeight;
-
-      if (isMainEmpty()) {
-        console.log(`MAIN IS EMPTY ${topHeight}`);
-        resizeHeight(topHeight);
-      } else {
-        console.log(`MAIN ${height}`);
-        resizeHeight(height);
-      }
-    },
-    [isMainEmpty, maxHeight, resizeHeight]
-  );
+    if (isMainEmpty()) {
+      resizeHeight(topHeight);
+    } else {
+      resizeHeight(height);
+    }
+  }, [mainHeight, maxHeight, isMainEmpty, resizeHeight, topHeight]);
 
   const clampIndex = useCallback(
     (i) => {
@@ -284,7 +285,7 @@ export default function App() {
     setInputValue('');
     setPanelHTML('');
     setFormHTML('');
-    setPromptData({});
+    setPromptData(null);
     setHint('');
   }, [pid]);
 
@@ -516,7 +517,6 @@ export default function App() {
   const setPromptDataHandler = useCallback(
     (_event: any, promptData: PromptData) => {
       setUI(promptData.ui);
-      console.log(`Set ui ${promptData.ui}`);
       setIndex(0);
       setPanelHTML('');
       setPromptData(promptData);
@@ -571,16 +571,6 @@ export default function App() {
       setSubmitted(false);
       setPanelHTML('');
       setUnfilteredChoices(rawChoices);
-      const headerHeight = (headerRef.current as HTMLElement).clientHeight;
-      const mainHeight = (mainRef.current as HTMLElement).clientHeight;
-
-      if (rawChoices.length === 0) {
-        resizeHeight(headerHeight);
-      }
-
-      if (filteredChoices.length > 0 && mainHeight < headerHeight * 2) {
-        resizeHeight(headerHeight + 64 * 4);
-      }
       // setMaxHeight(window.innerHeight);
     },
     [
@@ -803,7 +793,7 @@ export default function App() {
 
                 {!!(ui & UI.arg) && panelHTML?.length === 0 && (
                   <List
-                    height={height}
+                    height={filteredChoices?.length ? height : 0}
                     width={width}
                     onListChoicesChanged={setMainHeight}
                     onIndexChange={clampIndex}

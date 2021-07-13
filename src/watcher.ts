@@ -66,7 +66,9 @@ export const setupWatchers = async () => {
   const repos = kenvPath('kenvs', '*');
   const repoScripts = kenvPath('kenvs', '*', 'scripts', '*.js');
 
-  const scriptsWatcher = chokidar.watch([kenvScripts, repos, repoScripts]);
+  const scriptsWatcher = chokidar.watch([kenvScripts, repos, repoScripts], {
+    depth: 0,
+  });
   watchers.push(scriptsWatcher);
 
   const kitAppDbWatcher = chokidar.watch([appDbPath]);
