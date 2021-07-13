@@ -191,7 +191,7 @@ const prepareProtocols = async () => {
       .join(' ')
       .split(' ');
 
-    processes.add(ProcessType.App, kitPath('cli/new.js'), [name, ...args]);
+    runPromptProcess(kitPath('cli/new.js'), [name, ...args]);
   });
 
   protocol.registerFileProtocol(KIT_PROTOCOL, (request, callback) => {
