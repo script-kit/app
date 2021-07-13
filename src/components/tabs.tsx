@@ -34,7 +34,7 @@ export default function KitTabs({ tabs, tabIndex, onTabClick }: KitTabsProps) {
           transition-all ease-in-out duration-100
           `}
               key={tab}
-              onClick={onTabClick(i)}
+              onMouseDown={onTabClick(i)}
             >
               {tab}
             </div>

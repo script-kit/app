@@ -1,8 +1,15 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { forwardRef, KeyboardEvent, useCallback, useState } from 'react';
+import React, { KeyboardEvent, useCallback, useEffect, useRef } from 'react';
 
-import { HotkeyProps } from 'kit-bridge/cjs/type';
+import { useAtom } from 'jotai';
+import { placeholderAtom } from '../jotai';
+
+interface HotkeyProps {
+  submit(data: any): void;
+  onEscape(): void;
+  onHotkeyHeightChanged: (height: number) => void;
+}
 
 const DEFAULT_PLACEHOLDER = 'Press a combination of keys';
 
@@ -81,11 +88,13 @@ const getKeyData = (event: KeyboardEvent<HTMLInputElement>) => {
   return { modifierString, keyData };
 };
 
-export default forwardRef<HTMLInputElement, HotkeyProps>(function Hotkey(
-  { submit, onEscape },
-  ref
-) {
-  const [placeholder, setPlaceholder] = useState('');
+export default function Hotkey({
+  submit,
+  onEscape,
+  onHotkeyHeightChanged,
+}: HotkeyProps) {
+  const containerRef = useRef<HTMLInputElement>(null);
+  const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
 
   const onKeyUp = useCallback((event) => {
     event.preventDefault();
@@ -116,8 +125,16 @@ export default forwardRef<HTMLInputElement, HotkeyProps>(function Hotkey(
     [onEscape, submit]
   );
 
+  useEffect(() => {
+    if (containerRef?.current) {
+      // const clientHeight = containerRef?.current?.clientHeight;
+      onHotkeyHeightChanged(0);
+    }
+  }, [onHotkeyHeightChanged]);
+
   return (
     <input
+      ref={containerRef}
       style={
         {
           WebkitAppRegion: 'drag',
@@ -133,7 +150,6 @@ export default forwardRef<HTMLInputElement, HotkeyProps>(function Hotkey(
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
       placeholder={placeholder || DEFAULT_PLACEHOLDER}
-      ref={ref}
     />
   );
-});
+}

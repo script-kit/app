@@ -9,10 +9,31 @@ import React, {
 import { FixedSizeList as List } from 'react-window';
 import { useAtom } from 'jotai';
 import memoize from 'memoize-one';
-import { ChoiceButtonProps, ListProps } from 'kit-bridge/cjs/type';
+import { Choice } from 'kit-bridge/cjs/type';
 import Preview from './preview';
 import ChoiceButton from './button';
 import { choicesAtom, indexAtom, inputAtom } from '../jotai';
+
+interface ChoiceButtonData {
+  choices: Choice[];
+  currentIndex: number;
+  inputValue: string;
+  mouseEnabled: boolean;
+  onIndexChange: (index: number) => void;
+  onIndexSubmit: (index: number) => void;
+}
+interface ChoiceButtonProps {
+  data: ChoiceButtonData;
+  index: number;
+  style: any;
+}
+interface ListProps {
+  height: number;
+  width: number;
+  onListChoicesChanged: (listHeight: number) => void;
+  onIndexChange: ChoiceButtonData['onIndexChange'];
+  onIndexSubmit: ChoiceButtonData['onIndexSubmit'];
+}
 
 const createItemData = memoize(
   (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>

@@ -1,17 +1,28 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { forwardRef, useCallback } from 'react';
+import React, { forwardRef, useCallback, KeyboardEvent } from 'react';
+
 import { useAtom } from 'jotai';
-import { InputProps } from 'kit-bridge/cjs/type';
-import { inputAtom, placeholderAtom } from '../jotai';
+import {
+  indexAtom,
+  inputAtom,
+  placeholderAtom,
+  promptDataAtom,
+} from '../jotai';
+
+interface InputProps {
+  onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
+  placeholder: string;
+}
 
 export default forwardRef<HTMLInputElement, InputProps>(function Input(
-  { onKeyDown, secret },
+  { onKeyDown },
   ref
 ) {
   const [inputValue, setInputValue] = useAtom(inputAtom);
-  const [index, setIndex] = useAtom(inputAtom);
+  const [index, setIndex] = useAtom(indexAtom);
   const [placeholder] = useAtom(placeholderAtom);
+  const [promptData] = useAtom(promptDataAtom);
 
   const onChange = useCallback(
     (event) => {
@@ -39,7 +50,7 @@ export default forwardRef<HTMLInputElement, InputProps>(function Input(
       onKeyDown={onKeyDown}
       placeholder={placeholder}
       ref={ref}
-      type={secret ? 'password' : 'text'}
+      type={promptData?.secret || 'text'}
       value={inputValue}
     />
   );

@@ -57,7 +57,7 @@ import { showNotification } from './notifications';
 
 import { getVersion } from './version';
 
-export const prepChoices = (data: MessageData) => {
+export const checkScriptChoices = (data: MessageData) => {
   if (data?.scripts) {
     const dataChoices: Script[] = (data?.choices || []) as Script[];
     const choices = dataChoices.map((script) => {
@@ -117,7 +117,7 @@ export const prepChoices = (data: MessageData) => {
     data.choices = choices as Choice[];
   }
 
-  setChoices(data.choices as Choice[]);
+  setChoices(data.choices);
 };
 
 export type ChannelHandler = {
@@ -312,7 +312,7 @@ const kitMessageMap: ChannelHandler = {
     });
   },
   SET_CHOICES: (data) => {
-    prepChoices(data);
+    checkScriptChoices(data);
   },
 
   UPDATE_PROMPT_WARN: (data) => {
