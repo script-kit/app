@@ -1,3 +1,4 @@
+/* eslint-disable no-bitwise */
 /* eslint-disable react/no-danger */
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable no-restricted-syntax */
@@ -16,11 +17,13 @@ import React, {
   RefObject,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
 import { useAtom } from 'jotai';
 import AutoSizer, { Size } from 'react-virtualized-auto-sizer';
+import useResizeObserver from '@react-hook/resize-observer';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
@@ -55,6 +58,7 @@ import {
   hintAtom,
   indexAtom,
   inputAtom,
+  mainHeightAtom,
   maxHeightAtom,
   modeAtom,
   panelHTMLAtom,
@@ -66,6 +70,7 @@ import {
   tabIndexAtom,
   tabsAtom,
   textareaConfigAtom,
+  topHeightAtom,
   uiAtom,
   unfilteredChoicesAtom,
 } from './jotai';
@@ -124,6 +129,8 @@ export default function App() {
   const [formData, setFormData] = useAtom(formDataAtom);
 
   const [maxHeight, setMaxHeight] = useAtom(maxHeightAtom);
+  const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
+  const [topHeight, setTopHeight] = useAtom(topHeightAtom);
 
   const choicesListRef = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
@@ -132,12 +139,24 @@ export default function App() {
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const headerRef: RefObject<HTMLDivElement> = useRef(null);
 
+  useResizeObserver(headerRef, (entry) => {
+    if (entry?.contentRect?.height) {
+      setTopHeight(entry.contentRect.height);
+    }
+  });
+
+  const isMainEmpty = useCallback(() => {
+    return !(
+      filteredChoices?.length ||
+      panelHTML?.length ||
+      formHTML?.length ||
+      !!(ui & (UI.textarea | UI.editor))
+    );
+  }, [filteredChoices?.length, formHTML?.length, ui, panelHTML?.length]);
+
   const resizeHeight = useDebouncedCallback(
     useCallback(
       (height: number) => {
-        const { height: topHeight } =
-          headerRef?.current?.getBoundingClientRect() as any;
-
         if (height === topHeight && ui === UI.form) return;
 
         const promptHeight = height > topHeight ? height : topHeight;
@@ -160,19 +179,16 @@ export default function App() {
     50
   );
 
-  const setMainHeight = useCallback(
-    (mainHeight) => {
-      const { height: topHeight } =
-        headerRef?.current?.getBoundingClientRect() as any;
+  useEffect(() => {
+    const fullHeight = topHeight + mainHeight;
+    const height = fullHeight < maxHeight ? fullHeight : maxHeight;
 
-      const bottomHeight = mainHeight;
-      const fullHeight = topHeight + bottomHeight;
-      const height = fullHeight < maxHeight ? fullHeight : maxHeight;
-
+    if (isMainEmpty()) {
+      resizeHeight(topHeight);
+    } else {
       resizeHeight(height);
-    },
-    [maxHeight, resizeHeight]
-  );
+    }
+  }, [mainHeight, maxHeight, isMainEmpty, resizeHeight, topHeight]);
 
   const clampIndex = useCallback(
     (i) => {
@@ -269,7 +285,7 @@ export default function App() {
     setInputValue('');
     setPanelHTML('');
     setFormHTML('');
-    setPromptData({});
+    setPromptData(null);
     setHint('');
   }, [pid]);
 
@@ -555,16 +571,6 @@ export default function App() {
       setSubmitted(false);
       setPanelHTML('');
       setUnfilteredChoices(rawChoices);
-      const headerHeight = (headerRef.current as HTMLElement).clientHeight;
-      const mainHeight = (mainRef.current as HTMLElement).clientHeight;
-
-      if (rawChoices.length === 0) {
-        resizeHeight(headerHeight);
-      }
-
-      if (filteredChoices.length > 0 && mainHeight < headerHeight * 2) {
-        resizeHeight(headerHeight + 64 * 4);
-      }
       // setMaxHeight(window.innerHeight);
     },
     [
@@ -724,14 +730,14 @@ export default function App() {
           {(script?.description || script?.twitter || script?.menu) && (
             <Header />
           )}
-          {ui === UI.hotkey && (
+          {!!(ui & UI.hotkey) && (
             <Hotkey
               submit={submit}
               onEscape={closePrompt}
               onHotkeyHeightChanged={setMainHeight}
             />
           )}
-          {ui === UI.arg && (
+          {!!(ui & UI.arg) && (
             <Input
               onKeyDown={onKeyDown}
               placeholder={placeholder}
@@ -758,7 +764,7 @@ export default function App() {
           <AutoSizer>
             {({ width, height }) => (
               <>
-                {ui === UI.drop && (
+                {!!(ui & UI.drop) && (
                   <Drop
                     placeholder={placeholder}
                     submit={submit}
@@ -768,7 +774,7 @@ export default function App() {
                     onDropHeightChanged={setMainHeight}
                   />
                 )}
-                {ui === UI.textarea && (
+                {!!(ui & UI.textarea) && (
                   <TextArea
                     ref={textAreaRef}
                     height={height}
@@ -777,19 +783,17 @@ export default function App() {
                     onEscape={closePrompt}
                   />
                 )}
-                {(ui === UI.arg || ui === UI.hotkey) &&
-                  panelHTML?.length > 0 && (
-                    <Panel
-                      width={width}
-                      height={height}
-                      onPanelHeightChanged={setMainHeight}
-                    />
-                  )}
-
-                {ui === UI.arg && panelHTML?.length === 0 && (
-                  <List
-                    ref={choicesListRef}
+                {!!(ui & (UI.arg | UI.hotkey)) && panelHTML?.length > 0 && (
+                  <Panel
+                    width={width}
                     height={height}
+                    onPanelHeightChanged={setMainHeight}
+                  />
+                )}
+
+                {!!(ui & UI.arg) && panelHTML?.length === 0 && (
+                  <List
+                    height={filteredChoices?.length ? height : 0}
                     width={width}
                     onListChoicesChanged={setMainHeight}
                     onIndexChange={clampIndex}
@@ -797,11 +801,11 @@ export default function App() {
                   />
                 )}
 
-                {ui === UI.editor && (
+                {!!(ui & UI.editor) && (
                   <Editor ref={setEditor} height={height} width={width} />
                 )}
 
-                {ui === UI.form && (
+                {!!(ui & UI.form) && (
                   <Form
                     onSubmit={submit}
                     onEscape={closePrompt}

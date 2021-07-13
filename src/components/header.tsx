@@ -7,7 +7,11 @@ export default function Header() {
   const [pid] = useAtom(pidAtom);
 
   return (
-    <div className="text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 grid grid-cols-5">
+    <div
+      className={`
+    header-component
+    text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 grid grid-cols-5`}
+    >
       <span className="dark:text-primary-light text-primary-dark col-span-3">
         {script?.description || ''}
       </span>

@@ -1,3 +1,10 @@
+# [1.3.0-alpha.75](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.74...v1.3.0-alpha.75) (2021-07-13)
+
+
+### Bug Fixes
+
+* **app:** install from link ([09781fa](https://github.com/johnlindquist/kitapp/commit/09781fa9a8420c4087593cbda01d631caab8454d))
+
 # [1.3.0-beta.24](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.23...v1.3.0-beta.24) (2021-07-13)
 
 

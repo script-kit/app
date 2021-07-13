@@ -215,7 +215,7 @@ const configWindowDone = () => {
       message: `
   <div class="flex flex-col justify-center items-center">
     <div><span class="font-bold"><kbd>cmd</kbd> <kbd>;</kbd></span> to launch main prompt (or click tray icon)</div>
-    <div><span class="font-bold"><kbd>cmd</kbd> <kbd>shift</kbd><kbd>;</kbd></span> to launch cli prompt (or right-click tray icon)</div>
+    <div><span class="font-bold">Right-click tray icon for options</div>
   </div>
   `.trim(),
     });
@@ -547,7 +547,6 @@ const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
-  setupLog(`Feed: ${autoUpdater.getFeedURL()}`);
   autoUpdater.logger = log;
   autoUpdater.checkForUpdatesAndNotify({
     title: 'Script Kit Updated',

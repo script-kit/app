@@ -9092,10 +9092,10 @@ kind-of@^6.0.0, kind-of@^6.0.2, kind-of@^6.0.3:
   resolved "https://registry.npmjs.org/kind-of/-/kind-of-6.0.3.tgz"
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
-kit-bridge@1.0.10:
-  version "1.0.10"
-  resolved "https://registry.yarnpkg.com/kit-bridge/-/kit-bridge-1.0.10.tgz#f5d946278a32bbe72e20ac7d99aad20278a4be96"
-  integrity sha512-UOfq14LDbDKGWPgGjBiTpw1MH0AdIMxgdzSnyTkyrrtK/bUrif4PZnSozNltEzcfoyb9gmICKTQz2CDizNqy4Q==
+kit-bridge@1.0.14:
+  version "1.0.14"
+  resolved "https://registry.yarnpkg.com/kit-bridge/-/kit-bridge-1.0.14.tgz#1404913884ec180eac68076553b3683edd18a496"
+  integrity sha512-I3zLDp5o5Phr2dSMfmTtYASArPEmyPSdV3RtNO27l2khwiIxCLMb6iShxqgJbPNJXX7RF1I5efUNBrvDAmrccw==
   dependencies:
     fs-extra "^10.0.0"
     lowdb "^2.1.0"

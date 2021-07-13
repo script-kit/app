@@ -102,7 +102,9 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
   return (
     <div
       ref={ref}
-      className={`flex flex-row
+      className={`
+      list-component
+      flex flex-row
       w-full min-w-1/2
       overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5
       `}
