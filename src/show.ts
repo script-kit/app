@@ -1,16 +1,19 @@
 /* eslint-disable import/prefer-default-export */
-import { app, BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, nativeTheme, screen } from 'electron';
 import { writeFile, mkdir } from 'fs/promises';
 import { kenvPath, isDir } from 'kit-bridge/cjs/util';
 import { getAssetPath } from './assets';
 
 const page = (body: string) => {
+  const baseURL = app.getAppPath().replace('\\', '/');
+  const stylePath = `${baseURL}/dist/style.css`;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.skypack.dev/twind/shim" type="module"></script>
+    <link rel="stylesheet" href="${stylePath}">
     <script>
 
     const {ipcRenderer} = require("electron")
@@ -48,8 +51,12 @@ export const show = async (
 
   const showWindow = new BrowserWindow({
     title: name,
-    frame: true,
-    transparent: false,
+    frame: false,
+    transparent: true,
+    backgroundColor: nativeTheme.shouldUseDarkColors
+      ? '#33000000'
+      : '#C0FFFF00',
+    vibrancy: 'popover',
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -60,7 +67,6 @@ export const show = async (
     x,
     y,
     show: false,
-    vibrancy: 'popover',
     ...options,
   });
 

@@ -48,7 +48,14 @@ import {
 } from 'fs/promises';
 import { Open, Parse } from 'unzipper';
 import { ProcessType } from 'kit-bridge/cjs/enum';
-import { kenvPath, kitPath, tmpClipboardDir, PATH } from 'kit-bridge/cjs/util';
+import {
+  kenvPath,
+  kitPath,
+  tmpClipboardDir,
+  PATH,
+  isDir,
+  mainScriptPath,
+} from 'kit-bridge/cjs/util';
 import { getPrefsDb, getShortcutsDb } from 'kit-bridge/cjs/db';
 import { createTray, destroyTray } from './tray';
 import { setupWatchers } from './watcher';
@@ -62,6 +69,7 @@ import { cacheKitScripts, getStoredVersion, storeVersion } from './state';
 import { startSK } from './sk';
 import { processes } from './process';
 import { startIpc } from './ipc';
+import { runPromptProcess } from './kit';
 
 let configWindow: BrowserWindow;
 
@@ -136,7 +144,11 @@ autoUpdater.on('update-downloaded', async () => {
   log.info('update downloaded');
   log.info('attempting quitAndInstall');
   updateDownloaded = true;
-  await storeVersion(getVersion());
+  try {
+    await storeVersion(getVersion());
+  } catch {
+    log.warn(`Couldn't store previous version`);
+  }
   callBeforeQuitAndInstall();
   autoUpdater.quitAndInstall();
   const allWindows = BrowserWindow.getAllWindows();
@@ -232,6 +244,8 @@ const ensureKitDirs = async () => {
   await ensureDir(kitPath('logs'));
   await ensureDir(kitPath('db'));
   await ensureDir(tmpClipboardDir);
+  await getPrefsDb();
+  await getShortcutsDb();
 };
 
 const ensureKenvDirs = async () => {
@@ -271,12 +285,6 @@ const ready = async () => {
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);
-
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify({
-      title: 'Script Kit Updated',
-      body: 'Relaunching...',
-    });
   } catch (error) {
     log.warn(error);
   }
@@ -539,18 +547,21 @@ const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
+  setupLog(`Feed: ${autoUpdater.getFeedURL()}`);
+  autoUpdater.logger = log;
+  autoUpdater.checkForUpdatesAndNotify({
+    title: 'Script Kit Updated',
+    body: 'Relaunching...',
+  });
 
-  await getPrefsDb();
-  await getShortcutsDb();
-
-  if ((await versionMismatch()) || !kitExists()) {
+  if (!kitExists() || (await versionMismatch())) {
     configWindow = await show(
       'splash-setup',
       `
   <body class="h-screen w-screen flex flex-col justify-evenly items-center dark:bg-gray-800 dark:text-white bg-opacity-70">
     <h1 class="header pt-4">Configuring ~/.kit and ~/.kenv...</h1>
     <img src="${getAssetPath('icon.png')}" class="w-20"/>
-    <div class="message pb-4"></div>
+    <div class="message p-4"></div>
   </body>
   `,
       { frame: false },

@@ -1,9 +1,11 @@
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-bitwise */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
-import { Choice, Script, PromptData } from 'kit-bridge/cjs/type';
+import { Choice, Script, PromptData, PromptBounds } from 'kit-bridge/cjs/type';
 
 import { BrowserWindow, screen, nativeTheme, app, Rectangle } from 'electron';
 import log from 'electron-log';
@@ -24,7 +26,6 @@ let promptScript: Script | null;
 let promptWindow: BrowserWindow;
 let blurredByKit = false;
 let ignoreBlur = false;
-let clearPrompt = false;
 
 export const setBlurredByKit = (value = true) => {
   blurredByKit = value;
@@ -39,9 +40,9 @@ const { devTools } = miniArgs;
 log.info(process.argv.join(' '), devTools);
 
 let lastResizedByUser = false;
+
 export const createPromptWindow = async () => {
   promptWindow = new BrowserWindow({
-    paintWhenInitiallyHidden: true,
     useContentSize: true,
     frame: false,
     transparent: true,
@@ -159,15 +160,20 @@ const getCurrentScreen = (): Display => {
 export const getCurrentScreenPromptCache = async () => {
   const currentScreen = getCurrentScreen();
   const promptDb = await getPromptDb();
-  const currentPromptCache = promptDb.screens?.[String(currentScreen.id)];
+
+  const screenCache = promptDb.screens?.[String(currentScreen.id)];
+
+  const currentPromptCache =
+    screenCache?.[promptScript?.id as string] || screenCache?.[mainScriptPath];
 
   if (currentPromptCache) return currentPromptCache;
 
   const { id, bounds } = getDefaultBounds(currentScreen);
-  promptDb.screens[id] = bounds;
+  if (!promptDb.screens[id]) promptDb.screens[id] = {};
+  promptDb.screens[id][mainScriptPath] = bounds;
   await promptDb.write();
 
-  return promptDb.screens[id];
+  return promptDb.screens[id][mainScriptPath];
 };
 
 export const getDefaultBounds = (currentScreen: Display) => {
@@ -253,8 +259,12 @@ enum Bounds {
 const cachePromptBounds = async (b = Bounds.Position | Bounds.Size) => {
   const currentScreen = getCurrentScreen();
   const promptDb = await getPromptDb();
-  const prevBounds = promptDb.screens?.[String(currentScreen.id)];
+
   const bounds = promptWindow?.getBounds();
+  const prevBounds =
+    promptDb.screens?.[String(currentScreen.id)]?.[
+      promptScript?.id || mainScriptPath
+    ] || bounds;
   // Ignore if flag
   const size = b & Bounds.Size;
   const position = b & Bounds.Position;
@@ -262,29 +272,30 @@ const cachePromptBounds = async (b = Bounds.Position | Bounds.Size) => {
   const { x, y } = position ? bounds : prevBounds;
   const { width, height } = size ? bounds : prevBounds;
 
-  const promptBounds = {
+  const promptBounds: PromptBounds = {
     x,
     y,
     width: width < MIN_WIDTH ? MIN_WIDTH : width,
     height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
   };
+
+  sendToPrompt(Channel.SET_MAX_HEIGHT, height);
+
+  promptDb.screens[String(currentScreen.id)][
+    promptScript?.id || mainScriptPath
+  ] = promptBounds;
+
   log.info(`Cache prompt:`, {
+    script: promptScript?.id,
     screen: currentScreen.id,
     ...promptBounds,
   });
 
-  sendToPrompt(Channel.SET_MAX_HEIGHT, height);
-  promptDb.screens[String(currentScreen.id)] = promptBounds;
   await promptDb.write();
 };
 
 const hideAppIfNoWindows = () => {
   if (promptWindow?.isVisible()) {
-    if (clearPrompt) {
-      clearPrompt = false;
-    } else {
-      // cachePromptPosition();
-    }
     const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden
     promptScript = null;
@@ -343,7 +354,7 @@ export const setScript = async (script: Script) => {
     }
   }
 
-  setChoices(instantChoices);
+  if (instantChoices.length) setChoices(instantChoices);
   requiresMaxHeight = instantChoices.length > 0;
 };
 
@@ -377,7 +388,6 @@ export const setChoices = (choices: Choice[]) => {
 };
 
 export const clearPromptCache = async () => {
-  clearPrompt = true;
   const promptDb = await getPromptDb();
   promptDb.screens = {};
   await promptDb.write();

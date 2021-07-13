@@ -22,7 +22,7 @@ export const submittedAtom = atom(false);
 export const unfilteredChoicesAtom = atom<Choice[]>([]);
 export const choicesAtom = atom<Choice[]>([]);
 
-export const uiAtom = atom<UI>(UI.arg);
+export const uiAtom = atom<UI>(UI.none);
 export const hintAtom = atom('');
 export const modeAtom = atom<Mode>(Mode.FILTER);
 

@@ -2,14 +2,33 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/no-noninteractive-tabindex */
 /* eslint-disable react/prop-types */
-import React, { forwardRef, KeyboardEvent, useCallback, useState } from 'react';
+import React, {
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
-import { DropProps } from 'kit-bridge/cjs/type';
+interface DropProps {
+  placeholder: string;
+  submit(data: any): void;
+  onEscape(): void;
+  width: number;
+  height: number;
+  onDropHeightChanged: (height: number) => void;
+}
 
-export default forwardRef<HTMLDivElement, DropProps>(function Drop(
-  { placeholder, submit, onEscape, width, height },
-  ref
-) {
+export default function Drop({
+  placeholder,
+  submit,
+  onEscape,
+  width,
+  height,
+  onDropHeightChanged,
+}: DropProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const [dropReady, setDropReady] = useState(false);
   const [dropMessage, setDropMessage] = useState('');
 
@@ -64,8 +83,17 @@ export default forwardRef<HTMLDivElement, DropProps>(function Drop(
     },
     [submit]
   );
+
+  useEffect(() => {
+    if (containerRef?.current) {
+      const clientHeight = containerRef?.current?.clientHeight;
+      onDropHeightChanged(clientHeight);
+    }
+  }, [onDropHeightChanged]);
+
   return (
     <div
+      ref={containerRef}
       tabIndex={0}
       role="region"
       aria-label="droppable area"
@@ -79,18 +107,21 @@ export default forwardRef<HTMLDivElement, DropProps>(function Drop(
           height,
         } as any
       }
-      className={`bg-transparent
+      className={`
       flex flex-col justify-center items-center
-      dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40
       text-black dark:text-white text-xl
       focus:outline-none outline-none
       ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0
-      border-4 rounded border-gray-500 focus:border-gray-500 text-opacity-50 ${
-        dropReady && `border-yellow-500 text-opacity-90 focus:border-yellow-500`
+      bg-white dark:bg-black
+      transition ease-in-out duration-200 ${
+        dropReady ? `opacity-90` : `opacity-50`
       }
+
+
+      px-20
+      py-14
 `}
       placeholder={placeholder}
-      ref={ref}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
       onDragOver={(event) => event.preventDefault()}
@@ -99,4 +130,4 @@ export default forwardRef<HTMLDivElement, DropProps>(function Drop(
       <h2 className="pointer-events-none mb-0">{dropMessage || placeholder}</h2>
     </div>
   );
-});
+}

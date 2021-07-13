@@ -34,7 +34,8 @@ import {
   EditorConfig,
   EditorRef,
   TextareaConfig,
-} from 'kit-bridge/esm/type';
+  Secret,
+} from 'kit-bridge/cjs/type';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
@@ -125,19 +126,17 @@ export default function App() {
   const [maxHeight, setMaxHeight] = useAtom(maxHeightAtom);
 
   const choicesListRef = useRef(null);
-  const panelRef: RefObject<HTMLElement> = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
   const textAreaRef: RefObject<HTMLTextAreaElement> = useRef(null);
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
-  const topRef: RefObject<HTMLDivElement> = useRef(null);
-  const editorRef: RefObject<EditorRef> = useRef(null);
+  const headerRef: RefObject<HTMLDivElement> = useRef(null);
 
   const resizeHeight = useDebouncedCallback(
     useCallback(
       (height: number) => {
         const { height: topHeight } =
-          topRef?.current?.getBoundingClientRect() as any;
+          headerRef?.current?.getBoundingClientRect() as any;
 
         if (height === topHeight && ui === UI.form) return;
 
@@ -145,8 +144,15 @@ export default function App() {
 
         const newHeight = Math.round(promptHeight);
 
-        if (ui === UI.arg || ui === UI.form) {
+        if (ui === UI.arg || ui === UI.form || ui === UI.hotkey) {
           ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
+        }
+
+        if (ui === UI.drop) {
+          ipcRenderer.send(
+            Channel.CONTENT_HEIGHT_UPDATED,
+            newHeight < 200 ? 200 : newHeight
+          );
         }
       },
       [ui]
@@ -157,19 +163,15 @@ export default function App() {
   const setMainHeight = useCallback(
     (mainHeight) => {
       const { height: topHeight } =
-        topRef?.current?.getBoundingClientRect() as any;
+        headerRef?.current?.getBoundingClientRect() as any;
 
-      const bottomHeight =
-        filteredChoices.length === 0 && panelHTML === '' && formHTML === ''
-          ? 0
-          : mainHeight;
+      const bottomHeight = mainHeight;
       const fullHeight = topHeight + bottomHeight;
-
       const height = fullHeight < maxHeight ? fullHeight : maxHeight;
 
       resizeHeight(height);
     },
-    [filteredChoices.length, panelHTML, formHTML, maxHeight, resizeHeight]
+    [maxHeight, resizeHeight]
   );
 
   const clampIndex = useCallback(
@@ -191,7 +193,7 @@ export default function App() {
 
       setPlaceholder(
         typeof submitValue === 'string' && !promptData?.secret
-          ? submitValue
+          ? `Processing ${submitValue}...`
           : 'Processing...'
       );
 
@@ -307,8 +309,10 @@ export default function App() {
           return;
         }
 
-        const shortcodeChoice = unfilteredChoices?.find(
-          (choice) => choice?.shortcode === inputValue.trim()
+        const shortcodeChoice = unfilteredChoices?.find((choice: Choice) =>
+          choice?.shortcode?.find(
+            (sc: string) => sc === inputValue.trim().toLowerCase()
+          )
         );
         if (shortcodeChoice) {
           submit(shortcodeChoice.value);
@@ -496,11 +500,11 @@ export default function App() {
 
   const setPromptDataHandler = useCallback(
     (_event: any, promptData: PromptData) => {
+      setUI(promptData.ui);
       setIndex(0);
       setPanelHTML('');
       setPromptData(promptData);
       setPlaceholder(promptData.placeholder);
-      setUI(promptData.ui);
       setTabs(promptData?.tabs || []);
 
       if (inputRef.current) {
@@ -511,7 +515,7 @@ export default function App() {
         textAreaRef?.current.focus();
       }
     },
-    []
+    [setIndex, setPanelHTML, setPlaceholder, setPromptData, setTabs, setUI]
   );
 
   const setTabIndexHandler = useCallback((_event: any, ti: number) => {
@@ -546,25 +550,32 @@ export default function App() {
   }, []);
 
   const setChoicesHandler = useCallback(
-    (_event: any, rawChoices: Choice[]) => {
-      if (ui !== UI.arg) return;
+    (_event: any, rawChoices) => {
       setIndex(0);
       setSubmitted(false);
       setPanelHTML('');
       setUnfilteredChoices(rawChoices);
-      const topHeight = (topRef.current as HTMLElement).clientHeight;
+      const headerHeight = (headerRef.current as HTMLElement).clientHeight;
       const mainHeight = (mainRef.current as HTMLElement).clientHeight;
 
       if (rawChoices.length === 0) {
-        resizeHeight(topHeight);
+        resizeHeight(headerHeight);
       }
 
-      if (filteredChoices.length > 0 && mainHeight < topHeight * 2) {
-        resizeHeight(topHeight * 4);
+      if (filteredChoices.length > 0 && mainHeight < headerHeight * 2) {
+        resizeHeight(headerHeight + 64 * 4);
       }
       // setMaxHeight(window.innerHeight);
     },
-    [filteredChoices.length, resizeHeight]
+    [
+      filteredChoices.length,
+      resizeHeight,
+      setIndex,
+      setPanelHTML,
+      setSubmitted,
+      setUnfilteredChoices,
+      ui,
+    ]
   );
 
   const setTextareaConfigHandler = useCallback(
@@ -592,11 +603,11 @@ export default function App() {
     (_event, script: Script) => {
       // resetPromptHandler();
       setSubmitted(false);
-      console.log({ script });
       setScript(script);
       setTabs(script.tabs || []);
       setTabIndex(0);
       setInputValue('');
+      setUnfilteredChoices([]);
     },
     [setInputValue, setScript, setSubmitted, setTabIndex, setTabs]
   );
@@ -709,19 +720,22 @@ export default function App() {
         }
         className="flex flex-col w-full rounded-lg relative h-full"
       >
-        <header ref={topRef}>
+        <header ref={headerRef}>
           {(script?.description || script?.twitter || script?.menu) && (
-            <Header script={script} pid={pid} />
+            <Header />
           )}
           {ui === UI.hotkey && (
-            <Hotkey submit={submit} onEscape={closePrompt} />
+            <Hotkey
+              submit={submit}
+              onEscape={closePrompt}
+              onHotkeyHeightChanged={setMainHeight}
+            />
           )}
           {ui === UI.arg && (
             <Input
               onKeyDown={onKeyDown}
               placeholder={placeholder}
               ref={inputRef}
-              secret={promptData?.secret}
             />
           )}
           {hint && (
@@ -751,6 +765,7 @@ export default function App() {
                     onEscape={closePrompt}
                     width={width}
                     height={height}
+                    onDropHeightChanged={setMainHeight}
                   />
                 )}
                 {ui === UI.textarea && (
@@ -762,13 +777,14 @@ export default function App() {
                     onEscape={closePrompt}
                   />
                 )}
-                {ui === UI.arg && panelHTML?.length > 0 && (
-                  <Panel
-                    width={width}
-                    height={height}
-                    onPanelHeightChanged={setMainHeight}
-                  />
-                )}
+                {(ui === UI.arg || ui === UI.hotkey) &&
+                  panelHTML?.length > 0 && (
+                    <Panel
+                      width={width}
+                      height={height}
+                      onPanelHeightChanged={setMainHeight}
+                    />
+                  )}
 
                 {ui === UI.arg && panelHTML?.length === 0 && (
                   <List

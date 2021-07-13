@@ -16,7 +16,8 @@
     "start:main": "cross-env NODE_ENV=development electron -r ./.erb/scripts/BabelRegister ./src/main.dev.ts",
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
     "test": "jest",
-    "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css"
+    "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
+    "refresh-zips": "rm ./assets/*.zip || true && download https://github.com/johnlindquist/kit/archive/refs/heads/alpha.zip > ./assets/kit.zip && download https://github.com/johnlindquist/kenv/archive/refs/heads/alpha.zip > ./assets/kenv.zip"
   },
   "lint-staged": {
     "*.{jsx,ts,tsx}": [
@@ -221,6 +222,7 @@
     "cross-env": "^7.0.2",
     "css-loader": "^5.0.1",
     "detect-port": "^1.3.0",
+    "download-cli": "^1.1.1",
     "electron": "^13.1.6",
     "electron-builder": "^22.11.7",
     "electron-devtools-installer": "^3.1.1",
@@ -293,7 +295,7 @@
     "is-image": "^3.0.0",
     "jetbrains-mono": "^1.0.3",
     "jotai": "^1.1.2",
-    "kit-bridge": "1.0.4",
+    "kit-bridge": "1.0.10",
     "lodash": "^4.17.20",
     "mdx-bundler": "^1.1.3",
     "memoize-one": "^5.2.1",
