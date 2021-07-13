@@ -1,3 +1,15 @@
+# [1.3.0-alpha.74](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.73...v1.3.0-alpha.74) (2021-07-13)
+
+
+### Bug Fixes
+
+* **app:** install and resizing ([de58852](https://github.com/johnlindquist/kitapp/commit/de58852b97b3cee630a6489276965cc185fcc7be))
+
+
+### Features
+
+* **prompt:** multiple shortcodes ([aa2c5f1](https://github.com/johnlindquist/kitapp/commit/aa2c5f1afe06f46b60a6cb9b5c25d45b998e530f))
+
 # [1.3.0-beta.23](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.22...v1.3.0-beta.23) (2021-07-08)
 
 
