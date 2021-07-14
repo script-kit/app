@@ -278,7 +278,6 @@ const ready = async () => {
     configWindowDone();
 
     startSK();
-    console.log(`🍭 BEFORE CACHE KIT SCRIPTS`);
     await cacheKitScripts();
 
     startIpc();
