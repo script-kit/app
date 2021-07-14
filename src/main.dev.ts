@@ -278,6 +278,7 @@ const ready = async () => {
     configWindowDone();
 
     startSK();
+    console.log(`🍭 BEFORE CACHE KIT SCRIPTS`);
     await cacheKitScripts();
 
     startIpc();
@@ -293,8 +294,8 @@ const handleSpawnReturns = async (
   message: string,
   result: SpawnSyncReturns<any>
 ) => {
-  // console.log(`stdout:`, result?.stdout?.toString());
-  // console.log(`stderr:`, result?.stderr?.toString());
+  console.log(`stdout:`, result?.stdout?.toString());
+  console.log(`stderr:`, result?.stderr?.toString());
   const { stdout, stderr, error } = result;
 
   if (stdout?.toString().length) {
