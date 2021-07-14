@@ -18,7 +18,6 @@ import { setAppHidden, getAppHidden } from './appHidden';
 export const startIpc = () => {
   ipcMain.on(Channel.VALUE_SUBMITTED, (_event, { value, pid }) => {
     processes.ifPid(pid, ({ child, values }) => {
-      // console.log(`PID CHECK:`, child?.pid, { pid, value });
       emitter.emit(KitEvent.ResumeShortcuts);
       values.push(value);
       if (child) {
