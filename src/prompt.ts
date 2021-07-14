@@ -350,7 +350,7 @@ export const setScript = async (script: Script) => {
       );
     }
   }
-  console.log({ length: instantChoices.length, path: script.filePath });
+  // log.info({ length: instantChoices.length, path: script.filePath });
 
   if (instantChoices.length) setChoices(instantChoices);
   requiresMaxHeight = instantChoices.length > 0;

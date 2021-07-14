@@ -58,7 +58,7 @@ import {
 } from 'kit-bridge/cjs/util';
 import { getPrefsDb, getShortcutsDb } from 'kit-bridge/cjs/db';
 import { createTray, destroyTray } from './tray';
-import { setupWatchers } from './watcher';
+import { cacheMenu, setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
 import { tick } from './tick';
 import { createPromptWindow } from './prompt';
@@ -279,6 +279,7 @@ const ready = async () => {
 
     startSK();
     await cacheKitScripts();
+    await cacheMenu();
 
     startIpc();
     processes.add(ProcessType.Prompt);
