@@ -293,8 +293,8 @@ const handleSpawnReturns = async (
   message: string,
   result: SpawnSyncReturns<any>
 ) => {
-  // console.log(`stdout:`, result?.stdout?.toString());
-  // console.log(`stderr:`, result?.stderr?.toString());
+  console.log(`stdout:`, result?.stdout?.toString());
+  console.log(`stderr:`, result?.stderr?.toString());
   const { stdout, stderr, error } = result;
 
   if (stdout?.toString().length) {
