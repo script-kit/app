@@ -5,6 +5,23 @@
 
 * **app:** install and resizing ([de58852](https://github.com/johnlindquist/kitapp/commit/de58852b97b3cee630a6489276965cc185fcc7be))
 * **app:** install from link ([09781fa](https://github.com/johnlindquist/kitapp/commit/09781fa9a8420c4087593cbda01d631caab8454d))
+* **app:** removing logs ([8f3ebd7](https://github.com/johnlindquist/kitapp/commit/8f3ebd7e6ae1c5219c92de093e02a452b4a0be2c))
+* **app:** resizing ([f476675](https://github.com/johnlindquist/kitapp/commit/f47667578efac9680cd5cb2a7c10081620d500b2))
+* **app:** resizing ([0796c92](https://github.com/johnlindquist/kitapp/commit/0796c92f8c391913a69c9d291f49d7534215592c))
+* **app:** trigger a build ([a20a742](https://github.com/johnlindquist/kitapp/commit/a20a74222556581f293548ee8bb842c841e4778c))
+
+
+### Features
+
+* **prompt:** multiple shortcodes ([aa2c5f1](https://github.com/johnlindquist/kitapp/commit/aa2c5f1afe06f46b60a6cb9b5c25d45b998e530f))
+
+# [1.3.0-beta.24](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.23...v1.3.0-beta.24) (2021-07-14)
+
+
+### Bug Fixes
+
+* **app:** install and resizing ([de58852](https://github.com/johnlindquist/kitapp/commit/de58852b97b3cee630a6489276965cc185fcc7be))
+* **app:** install from link ([09781fa](https://github.com/johnlindquist/kitapp/commit/09781fa9a8420c4087593cbda01d631caab8454d))
 * **app:** resizing ([f476675](https://github.com/johnlindquist/kitapp/commit/f47667578efac9680cd5cb2a7c10081620d500b2))
 * **app:** resizing ([0796c92](https://github.com/johnlindquist/kitapp/commit/0796c92f8c391913a69c9d291f49d7534215592c))
 * **app:** trigger a build ([a20a742](https://github.com/johnlindquist/kitapp/commit/a20a74222556581f293548ee8bb842c841e4778c))
