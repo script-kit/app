@@ -1,3 +1,10 @@
+# [1.3.0-alpha.77](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.76...v1.3.0-alpha.77) (2021-07-14)
+
+
+### Bug Fixes
+
+* **app:** trigger a build ([a20a742](https://github.com/johnlindquist/kitapp/commit/a20a74222556581f293548ee8bb842c841e4778c))
+
 # [1.3.0-beta.24](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.23...v1.3.0-beta.24) (2021-07-13)
 
 
