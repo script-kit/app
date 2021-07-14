@@ -52,25 +52,6 @@ jobs:
 
       - uses: c-hive/gha-yarn-cache@v1
 
-      - name: Semantic Release
-        id: semantic
-        uses: cycjimmy/semantic-release-action@v2.5.3
-        with:
-          semantic_version: 16
-          branches: |
-            [
-              '+([0-9])?(.{+([0-9]),x}).x',
-              'main',
-              {
-                name: 'beta',
-                prerelease: true
-              },
-              {
-                name: 'alpha',
-                prerelease: true
-              }
-            ]
-
       - name: Install dependencies
         run: |
           yarn install --network-timeout 1000000
@@ -95,6 +76,25 @@ jobs:
       - name: Bundle kit and kenv in assets
         run: |
           mv /Users/runner/work/kitapp/kit.zip ./assets/kit.zip && mv /Users/runner/work/kitapp/kenv.zip ./assets/kenv.zip
+
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v2.5.3
+        with:
+          semantic_version: 16
+          branches: |
+            [
+              '+([0-9])?(.{+([0-9]),x}).x',
+              'main',
+              {
+                name: 'beta',
+                prerelease: true
+              },
+              {
+                name: 'alpha',
+                prerelease: true
+              }
+            ]
 
       - name: yarn build
         run: |
