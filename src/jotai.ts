@@ -6,6 +6,7 @@ import {
   Script,
   TextareaConfig,
   PromptData,
+  EditorOptions,
 } from 'kit-bridge/cjs/type';
 
 const DEFAULT_MAX_HEIGHT = 480;
@@ -33,7 +34,7 @@ export const panelHTMLAtom = atom('');
 export const editorConfigAtom = atom<EditorConfig>({
   value: '',
   language: 'markdown',
-});
+} as EditorOptions);
 export const textareaConfigAtom = atom<TextareaConfig>({
   value: '',
   placeholder: '',

@@ -3,7 +3,7 @@ import path from 'path';
 import { useAtom } from 'jotai';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
-import { EditorProps } from 'kit-bridge/cjs/type';
+import { EditorOptions, EditorProps } from 'kit-bridge/cjs/type';
 import { useThemeDetector } from '../hooks';
 import { editorConfigAtom } from '../jotai';
 
@@ -24,7 +24,7 @@ loader.config({
 
 const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   fontFamily: 'JetBrains Mono',
-  fontSize: 16,
+  fontSize: 18,
   minimap: {
     enabled: false,
   },
@@ -69,15 +69,21 @@ export default forwardRef<any, any>(function Editor(
           'no-drag';
 
       const lineNumber = editorInstance.getModel()?.getLineCount() || 0;
-      const column =
-        (editorInstance?.getModel()?.getLineContent(lineNumber).length || 0) +
-        1;
-      editorInstance.setPosition({ lineNumber, column });
-      if (lineNumber > 5) {
-        editorInstance.revealLineInCenter(lineNumber - 3);
+      if ((options as EditorOptions).scrollTo === 'bottom') {
+        const column =
+          (editorInstance?.getModel()?.getLineContent(lineNumber).length || 0) +
+          1;
+        editorInstance.setPosition({ lineNumber, column });
+        if (lineNumber > 5) {
+          editorInstance.revealLineInCenter(lineNumber - 3);
+        }
+      }
+
+      if ((options as EditorOptions).scrollTo === 'center') {
+        editorInstance.revealLineInCenter(Math.floor(lineNumber / 2));
       }
     },
-    [ref]
+    [options, ref]
   );
 
   const isDark = useThemeDetector();
@@ -90,12 +96,12 @@ export default forwardRef<any, any>(function Editor(
       <MonacoEditor
         beforeMount={beforeMount}
         onMount={onMount}
-        language={options.language || 'markdown'}
+        language={(options as EditorOptions)?.language || 'markdown'}
         height={height}
         width={width}
         theme={isDark ? 'kit-dark' : 'kit-light'}
-        options={{ ...DEFAULT_OPTIONS, ...options }}
-        value={options.value || ''}
+        options={{ ...DEFAULT_OPTIONS, ...(options as EditorOptions) }}
+        value={(options as EditorOptions)?.value || ''}
       />
     </div>
   );

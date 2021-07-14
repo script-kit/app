@@ -28,10 +28,10 @@ export default function KitTabs({ tabs, tabIndex, onTabClick }: KitTabsProps) {
             <div
               className={`text-xs px-2 py-1 mb-1 mx-px dark:bg-o rounded-full font-medium cursor-pointer dark:bg-primary-light dark:hover:bg-white bg-white hover:opacity-100 dark:hover:opacity-100 dark:hover:bg-opacity-10 hover:bg-opacity-80 ${
                 i === tabIndex
-                  ? 'opacity-100 dark:bg-opacity-10 bg-opacity-70 dark:text-primary-light text-primary-dark'
-                  : 'opacity-70 dark:bg-opacity-0 bg-opacity-0'
+                  ? 'opacity-100 dark:bg-opacity-10 bg-opacity-60 dark:text-primary-light text-primary-dark'
+                  : 'opacity-60 dark:bg-opacity-0 bg-opacity-0'
               }
-          transition-all ease-in-out duration-100
+
           `}
               key={tab}
               onMouseDown={onTabClick(i)}

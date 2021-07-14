@@ -1,5 +1,6 @@
 import React, { RefObject, useEffect, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
+import useResizeObserver from '@react-hook/resize-observer';
 import parse from 'html-react-parser';
 import { useAtom } from 'jotai';
 import { panelHTMLAtom } from '../jotai';
@@ -15,8 +16,15 @@ export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
   ref
 ) {
   const containerRef: RefObject<any> = useRef(null);
+  const divRef: RefObject<any> = useRef(null);
 
   const [panelHTML] = useAtom(panelHTMLAtom);
+
+  useResizeObserver(divRef, (entry) => {
+    if (entry?.contentRect?.height) {
+      onPanelHeightChanged(entry.contentRect.height);
+    }
+  });
 
   useEffect(() => {
     if (containerRef?.current?.firstElementChild) {
@@ -38,7 +46,7 @@ export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
         } as any
       }
     >
-      {parse(`<div>${panelHTML}</div>`)}
+      <div ref={divRef}>{parse(`<div>${panelHTML}</div>`)}</div>
     </SimpleBar>
   );
 });

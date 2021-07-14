@@ -96,8 +96,10 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
   }, [choices.length, listItemHeight, onListChoicesChanged]);
 
   useEffect(() => {
-    (listRef as any).current.scrollToItem(index);
-  }, [index]);
+    if (choices.length && height) {
+      (listRef as any).current.scrollToItem(index);
+    }
+  }, [index, choices.length, height]);
 
   return (
     <div
