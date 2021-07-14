@@ -1,3 +1,11 @@
+# [1.3.0-beta.25](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.24...v1.3.0-beta.25) (2021-07-14)
+
+
+### Bug Fixes
+
+* **app:** instant choices and resizing ([9df2cf9](https://github.com/johnlindquist/kitapp/commit/9df2cf9d7f1daecd1b4e62cfd0d0326636d6145b))
+* **app:** instant choices and resizing ([9684571](https://github.com/johnlindquist/kitapp/commit/9684571bdcaaa8f4bc6eedfde4c8dd30c2ca6ddd))
+
 # [1.3.0-alpha.85](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.84...v1.3.0-alpha.85) (2021-07-14)
 
 
