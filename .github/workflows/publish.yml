@@ -50,6 +50,8 @@ jobs:
         with:
           node-version: 14.17.0
 
+      - uses: c-hive/gha-yarn-cache@v1
+
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v2.5.3
@@ -68,8 +70,6 @@ jobs:
                 prerelease: true
               }
             ]
-
-      - uses: c-hive/gha-yarn-cache@v1
 
       - name: Install dependencies
         run: |
