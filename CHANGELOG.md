@@ -9,6 +9,29 @@
 * **app:** resizing ([f476675](https://github.com/johnlindquist/kitapp/commit/f47667578efac9680cd5cb2a7c10081620d500b2))
 * **app:** resizing ([0796c92](https://github.com/johnlindquist/kitapp/commit/0796c92f8c391913a69c9d291f49d7534215592c))
 * **app:** trigger a build ([a20a742](https://github.com/johnlindquist/kitapp/commit/a20a74222556581f293548ee8bb842c841e4778c))
+* **app:** trying to fix build ([ab2033e](https://github.com/johnlindquist/kitapp/commit/ab2033e5c31d5143569d2de3bcfda2758fc442d4))
+* **app:** trying to fix build ([00c30f8](https://github.com/johnlindquist/kitapp/commit/00c30f801c737f79e43bd1b86f1c6a0c5bfbbd70))
+* **app:** trying to fix build ([cc5e863](https://github.com/johnlindquist/kitapp/commit/cc5e8630bfea737d98a8aa4d1181aaf332017532))
+* **app:** trying to fix build ([1830335](https://github.com/johnlindquist/kitapp/commit/1830335083868e75c1ad0ca75551d67dc1d87bc1))
+* **app:** trying to fix changelog ([06fb138](https://github.com/johnlindquist/kitapp/commit/06fb1388cb21cac9b54ba5fb0cef53ce7be46f68))
+* **app:** trying to fix changelog ([8216e28](https://github.com/johnlindquist/kitapp/commit/8216e28970f5994cac0220d2182e02783b7a0bb8))
+
+
+### Features
+
+* **prompt:** multiple shortcodes ([aa2c5f1](https://github.com/johnlindquist/kitapp/commit/aa2c5f1afe06f46b60a6cb9b5c25d45b998e530f))
+
+# [1.3.0-beta.24](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.23...v1.3.0-beta.24) (2021-07-14)
+
+
+### Bug Fixes
+
+* **app:** install and resizing ([de58852](https://github.com/johnlindquist/kitapp/commit/de58852b97b3cee630a6489276965cc185fcc7be))
+* **app:** install from link ([09781fa](https://github.com/johnlindquist/kitapp/commit/09781fa9a8420c4087593cbda01d631caab8454d))
+* **app:** removing logs ([8f3ebd7](https://github.com/johnlindquist/kitapp/commit/8f3ebd7e6ae1c5219c92de093e02a452b4a0be2c))
+* **app:** resizing ([f476675](https://github.com/johnlindquist/kitapp/commit/f47667578efac9680cd5cb2a7c10081620d500b2))
+* **app:** resizing ([0796c92](https://github.com/johnlindquist/kitapp/commit/0796c92f8c391913a69c9d291f49d7534215592c))
+* **app:** trigger a build ([a20a742](https://github.com/johnlindquist/kitapp/commit/a20a74222556581f293548ee8bb842c841e4778c))
 * **app:** trying to fix build ([00c30f8](https://github.com/johnlindquist/kitapp/commit/00c30f801c737f79e43bd1b86f1c6a0c5bfbbd70))
 * **app:** trying to fix build ([cc5e863](https://github.com/johnlindquist/kitapp/commit/cc5e8630bfea737d98a8aa4d1181aaf332017532))
 * **app:** trying to fix build ([1830335](https://github.com/johnlindquist/kitapp/commit/1830335083868e75c1ad0ca75551d67dc1d87bc1))
