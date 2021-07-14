@@ -1,3 +1,10 @@
+# [1.3.0-alpha.83](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.82...v1.3.0-alpha.83) (2021-07-14)
+
+
+### Bug Fixes
+
+* **app:** trying to fix build ([73699b3](https://github.com/johnlindquist/kitapp/commit/73699b3742b6b22f469b5ab1a2ad0afec7557fb0))
+
 # [1.3.0-alpha.82](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.81...v1.3.0-alpha.82) (2021-07-14)
 
 
