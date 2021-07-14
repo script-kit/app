@@ -58,7 +58,7 @@ import {
 } from 'kit-bridge/cjs/util';
 import { getPrefsDb, getShortcutsDb } from 'kit-bridge/cjs/db';
 import { createTray, destroyTray } from './tray';
-import { setupWatchers } from './watcher';
+import { cacheMenu, setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
 import { tick } from './tick';
 import { createPromptWindow } from './prompt';
@@ -215,7 +215,7 @@ const configWindowDone = () => {
       message: `
   <div class="flex flex-col justify-center items-center">
     <div><span class="font-bold"><kbd>cmd</kbd> <kbd>;</kbd></span> to launch main prompt (or click tray icon)</div>
-    <div><span class="font-bold">Right-click tray icon for options</div>
+    <div>Right-click tray icon for options</div>
   </div>
   `.trim(),
     });
@@ -279,6 +279,7 @@ const ready = async () => {
 
     startSK();
     await cacheKitScripts();
+    await cacheMenu();
 
     startIpc();
     processes.add(ProcessType.Prompt);

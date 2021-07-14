@@ -62,12 +62,11 @@ export const setupWatchers = async () => {
   //   processes.resetIdlePromptProcess();
   // });
 
-  const kenvScripts = kenvPath('scripts', '*.js');
-  const repos = kenvPath('kenvs', '*');
-  const repoScripts = kenvPath('kenvs', '*', 'scripts', '*.js');
+  const kenvScripts = kenvPath('scripts/*.js');
+  const kenvsScripts = kenvPath('kenvs/*/scripts/.*js');
 
-  const scriptsWatcher = chokidar.watch([kenvScripts, repos, repoScripts], {
-    depth: 0,
+  const scriptsWatcher = chokidar.watch([kenvScripts, kenvsScripts], {
+    depth: 1,
   });
   watchers.push(scriptsWatcher);
 
