@@ -29,25 +29,6 @@ jobs:
         run: |
           echo "${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}"
 
-      - name: Semantic Release
-        id: semantic
-        uses: cycjimmy/semantic-release-action@v2.5.3
-        with:
-          semantic_version: 16
-          branches: |
-            [
-              '+([0-9])?(.{+([0-9]),x}).x',
-              'main',
-              {
-                name: 'beta',
-                prerelease: true
-              },
-              {
-                name: 'alpha',
-                prerelease: true
-              }
-            ]
-
       - name: Curl kit.zip
         run: |
           curl -L https://github.com/johnlindquist/kit/archive/refs/heads/${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}.zip -o ./../kit.zip
@@ -68,6 +49,25 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 14.17.0
+
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v2.5.3
+        with:
+          semantic_version: 16
+          branches: |
+            [
+              '+([0-9])?(.{+([0-9]),x}).x',
+              'main',
+              {
+                name: 'beta',
+                prerelease: true
+              },
+              {
+                name: 'alpha',
+                prerelease: true
+              }
+            ]
 
       - uses: c-hive/gha-yarn-cache@v1
 
