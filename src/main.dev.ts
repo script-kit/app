@@ -215,7 +215,7 @@ const configWindowDone = () => {
       message: `
   <div class="flex flex-col justify-center items-center">
     <div><span class="font-bold"><kbd>cmd</kbd> <kbd>;</kbd></span> to launch main prompt (or click tray icon)</div>
-    <div><span class="font-bold">Right-click tray icon for options</div>
+    <div>Right-click tray icon for options</div>
   </div>
   `.trim(),
     });

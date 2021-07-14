@@ -39,7 +39,7 @@ export const textareaConfigAtom = atom<TextareaConfig>({
   placeholder: '',
 });
 
-export const topHeightAtom = atom(0);
+export const topHeightAtom = atom(88);
 export const mainHeightAtom = atom(0);
 export const maxHeightAtom = atom(DEFAULT_MAX_HEIGHT);
 

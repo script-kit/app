@@ -211,10 +211,7 @@ const setBounds = async () => {
 
 export const showPrompt = async (ui: UI) => {
   requiresMaxHeight =
-    requiresMaxHeight ||
-    ui === UI.editor ||
-    ui === UI.form ||
-    ui === UI.textarea;
+    requiresMaxHeight || !!(ui & (UI.editor | UI.form | UI.textarea));
 
   if (!promptWindow?.isVisible() || requiresMaxHeight || ui === UI.drop) {
     await setBounds();
@@ -353,6 +350,7 @@ export const setScript = async (script: Script) => {
       );
     }
   }
+  console.log({ length: instantChoices.length, path: script.filePath });
 
   if (instantChoices.length) setChoices(instantChoices);
   requiresMaxHeight = instantChoices.length > 0;

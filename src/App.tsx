@@ -157,20 +157,14 @@ export default function App() {
   const resizeHeight = useDebouncedCallback(
     useCallback(
       (height: number) => {
-        if (height === topHeight && ui === UI.form) return;
-
-        const promptHeight = height > topHeight ? height : topHeight;
-
-        const newHeight = Math.round(promptHeight);
-
         if (ui === UI.arg || ui === UI.form || ui === UI.hotkey) {
-          ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, newHeight);
+          ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, height);
         }
 
         if (ui === UI.drop) {
           ipcRenderer.send(
             Channel.CONTENT_HEIGHT_UPDATED,
-            newHeight < 200 ? 200 : newHeight
+            height < 200 ? 200 : height
           );
         }
       },
@@ -181,13 +175,16 @@ export default function App() {
 
   useEffect(() => {
     const fullHeight = topHeight + mainHeight;
-    const height = fullHeight < maxHeight ? fullHeight : maxHeight;
+    const clampedHeight =
+      fullHeight < maxHeight
+        ? fullHeight < topHeight
+          ? topHeight
+          : fullHeight
+        : maxHeight;
 
-    if (isMainEmpty()) {
-      resizeHeight(topHeight);
-    } else {
-      resizeHeight(height);
-    }
+    const newHeight = isMainEmpty() ? topHeight : clampedHeight;
+
+    resizeHeight(Math.round(newHeight));
   }, [mainHeight, maxHeight, isMainEmpty, resizeHeight, topHeight]);
 
   const clampIndex = useCallback(
