@@ -1,3 +1,10 @@
+# [1.3.0-beta.26](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.25...v1.3.0-beta.26) (2021-07-14)
+
+
+### Bug Fixes
+
+* **prompt:** scroll bug. Editor bugs. ([d18f934](https://github.com/johnlindquist/kitapp/commit/d18f934117e81d727e1fc53b74bb80824b7da55c))
+
 # [1.3.0-alpha.86](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.85...v1.3.0-alpha.86) (2021-07-14)
 
 
