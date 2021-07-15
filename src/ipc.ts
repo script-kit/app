@@ -73,7 +73,7 @@ export const startIpc = () => {
       const { child, scriptPath } = promptProcessInfo;
       emitter.emit(KitEvent.ResumeShortcuts);
 
-      log.info(`🙈 blurred process: ${scriptPath} id: ${child.pid}`);
+      log.info(`🙈 Blur process: ${scriptPath} id: ${child.pid}`);
       if (child) {
         child?.send({ channel: Channel.PROMPT_BLURRED });
       }
