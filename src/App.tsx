@@ -108,7 +108,7 @@ export default function App() {
   const [inputValue, setInputValue] = useAtom(inputAtom);
   const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
   const [promptData, setPromptData] = useAtom(promptDataAtom);
-  const [submitted, setSubmitted] = useAtom(submittedAtom);
+  const [submitted, setSubmittedAtom] = useAtom(submittedAtom);
 
   const [unfilteredChoices, setUnfilteredChoices] = useAtom(
     unfilteredChoicesAtom
@@ -153,6 +153,17 @@ export default function App() {
       !!(ui & (UI.textarea | UI.editor))
     );
   }, [filteredChoices?.length, formHTML?.length, ui, panelHTML?.length]);
+
+  const setSubmitted = useDebouncedCallback(
+    useCallback(
+      (b: boolean) => {
+        console.log({ b });
+        setSubmittedAtom(b);
+      },
+      [setSubmittedAtom]
+    ),
+    100
+  );
 
   const resizeHeight = useDebouncedCallback(
     useCallback(
@@ -284,6 +295,7 @@ export default function App() {
     setFormHTML('');
     setPromptData(null);
     setHint('');
+    setSubmitted(false);
   }, [pid]);
 
   const onKeyDown = useCallback(
@@ -513,6 +525,7 @@ export default function App() {
 
   const setPromptDataHandler = useCallback(
     (_event: any, promptData: PromptData) => {
+      setSubmitted(false);
       setUI(promptData.ui);
       setIndex(0);
       setPanelHTML('');
@@ -634,6 +647,7 @@ export default function App() {
     (event) => {
       setInputValue('');
       setIndex(0);
+      setSubmitted(false);
 
       console.log(`EXITING ${pid}`);
     },
