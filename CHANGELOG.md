@@ -1,3 +1,10 @@
+# [1.3.0-beta.27](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.26...v1.3.0-beta.27) (2021-07-15)
+
+
+### Features
+
+* **prompt:** Adding spinner and logs ([9e8158a](https://github.com/johnlindquist/kitapp/commit/9e8158accfe61cff0369804811c697ef2e5dd495))
+
 # [1.3.0-alpha.87](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.86...v1.3.0-alpha.87) (2021-07-15)
 
 
