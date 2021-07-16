@@ -62,8 +62,10 @@ export const startIpc = () => {
     }
   });
 
-  ipcMain.on(Channel.ESCAPE_PRESSED, (event, { pid }) => {
+  ipcMain.on(Channel.ESCAPE_PRESSED, async (event, { pid }) => {
     escapePromptWindow();
+
+    processes.removeByPid(pid);
   });
 
   emitter.on(KitEvent.Blur, async () => {

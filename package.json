@@ -62,7 +62,15 @@
     "mac": {
       "target": [
         "dmg",
-        "zip"
+        "zip",
+        {
+          "target": "dmg",
+          "arch": "arm64"
+        },
+        {
+          "target": "zip",
+          "arch": "arm64"
+        }
       ],
       "type": "distribution",
       "hardenedRuntime": true,

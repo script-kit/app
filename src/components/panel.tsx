@@ -46,7 +46,7 @@ export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
         } as any
       }
     >
-      <div ref={divRef}>{parse(`<div>${panelHTML}</div>`)}</div>
+      <div ref={divRef}>{parse(`${panelHTML}`)}</div>
     </SimpleBar>
   );
 });

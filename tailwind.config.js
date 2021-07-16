@@ -15,6 +15,7 @@ module.exports = {
         /^justify/,
         /^items/,
         /^text/,
+        /^bg/,
         /^self/,
         /^italic/,
         /^min/,
