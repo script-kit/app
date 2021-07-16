@@ -1,3 +1,10 @@
+# [1.3.0-beta.28](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.27...v1.3.0-beta.28) (2021-07-16)
+
+
+### Bug Fixes
+
+* **prompt:** resize border. escape child. ([4bdb059](https://github.com/johnlindquist/kitapp/commit/4bdb0598250143f61d1cfa9f5a02733ce2cb2b5b))
+
 # [1.3.0-alpha.88](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.87...v1.3.0-alpha.88) (2021-07-16)
 
 
