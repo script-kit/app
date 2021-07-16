@@ -1,3 +1,10 @@
+# [1.3.0-alpha.89](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.88...v1.3.0-alpha.89) (2021-07-16)
+
+
+### Bug Fixes
+
+* **install:** resize config window ([f63accc](https://github.com/johnlindquist/kitapp/commit/f63accc8bda033aab499c90f762923f60e7dab19))
+
 # [1.3.0-beta.28](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.27...v1.3.0-beta.28) (2021-07-16)
 
 

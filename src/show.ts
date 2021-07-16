@@ -42,10 +42,8 @@ export const show = async (
   });
 
   const { width: screenWidth, height: screenHeight } = distScreen.workAreaSize;
-  const width =
-    options?.width || Math.floor((screenWidth / 4) * distScreen.scaleFactor);
-  const height =
-    options?.height || Math.floor((screenHeight / 4) * distScreen.scaleFactor);
+  const width = options?.width || 480;
+  const height = options?.height || 360;
   const x = distScreen.workArea.x + Math.floor(screenWidth / 2 - width / 2); // * distScreen.scaleFactor
   const y = distScreen.workArea.y + Math.floor(screenHeight / 2 - height / 2);
 
