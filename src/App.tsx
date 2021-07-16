@@ -141,6 +141,7 @@ export default function App() {
 
   useResizeObserver(headerRef, (entry) => {
     if (entry?.contentRect?.height) {
+      // console.log({ setTopHeight: entry.contentRect.height });
       setTopHeight(entry.contentRect.height);
     }
   });
@@ -157,7 +158,6 @@ export default function App() {
   const setSubmitted = useDebouncedCallback(
     useCallback(
       (b: boolean) => {
-        console.log({ b });
         setSubmittedAtom(b);
       },
       [setSubmittedAtom]
@@ -194,6 +194,14 @@ export default function App() {
         : maxHeight;
 
     const newHeight = isMainEmpty() ? topHeight : clampedHeight;
+
+    // console.log({
+    //   fullHeight,
+    //   topHeight,
+    //   mainHeight,
+    //   maxHeight,
+    //   empty: isMainEmpty(),
+    // });
 
     resizeHeight(Math.round(newHeight));
   }, [mainHeight, maxHeight, isMainEmpty, resizeHeight, topHeight]);
@@ -768,7 +776,7 @@ export default function App() {
           ref={mainRef}
           className={`
         h-full
-        border
+        border-t
         border-transparent
         `}
         >
@@ -802,7 +810,7 @@ export default function App() {
                   />
                 )}
 
-                {!!(ui & UI.arg) && panelHTML?.length === 0 && (
+                {!!(ui & UI.arg) && (
                   <List
                     height={filteredChoices?.length ? height : 0}
                     width={width}
