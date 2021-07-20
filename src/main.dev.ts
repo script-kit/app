@@ -113,10 +113,14 @@ const callBeforeQuitAndInstall = () => {
 
 // fmkadmapgofadopljbjfkapdkoienihi
 const installExtensions = async () => {
-  const reactDevToolsPath = path.join(
+  const reactDevToolsDir = path.join(
     homedir(),
-    'Library/Application Support/Google/Chrome/Default/Extensions/fmkadmapgofadopljbjfkapdkoienihi/4.13.5_0'
+    'Library/Application Support/Google/Chrome/Default/Extensions/fmkadmapgofadopljbjfkapdkoienihi/'
   );
+
+  const [version] = await readdir(reactDevToolsDir);
+
+  const reactDevToolsPath = path.resolve(reactDevToolsDir, version);
 
   await session.defaultSession.loadExtension(reactDevToolsPath, {
     allowFileAccess: true,

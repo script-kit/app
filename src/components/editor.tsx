@@ -1,4 +1,10 @@
-import React, { forwardRef, useCallback, useEffect } from 'react';
+import React, {
+  forwardRef,
+  RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import path from 'path';
 import { useAtom } from 'jotai';
 import MonacoEditor, { loader } from '@monaco-editor/react';
@@ -6,6 +12,7 @@ import { editor } from 'monaco-editor';
 import { EditorOptions, EditorProps } from 'kit-bridge/cjs/type';
 import { useThemeDetector } from '../hooks';
 import { editorConfigAtom } from '../jotai';
+import useMountHeight from './hooks/useMountHeight';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -65,8 +72,9 @@ export default forwardRef<any, any>(function Editor(
     (editorInstance: editor.IStandaloneCodeEditor) => {
       ref(editorInstance);
       if (editorInstance?.getDomNode())
-        (editorInstance.getDomNode() as HTMLElement).style.webkitAppRegion =
-          'no-drag';
+        (
+          (editorInstance.getDomNode() as HTMLElement).style as any
+        ).webkitAppRegion = 'no-drag';
 
       const lineNumber = editorInstance.getModel()?.getLineCount() || 0;
       if ((options as EditorOptions).scrollTo === 'bottom') {
@@ -87,18 +95,19 @@ export default forwardRef<any, any>(function Editor(
   );
 
   const isDark = useThemeDetector();
+  const containerRef = useMountHeight();
+
   return (
     <div
+      ref={containerRef}
       className={`
     pt-3
-    h-full`}
+    w-full h-full min-h-64`}
     >
       <MonacoEditor
         beforeMount={beforeMount}
         onMount={onMount}
         language={(options as EditorOptions)?.language || 'markdown'}
-        height={height}
-        width={width}
         theme={isDark ? 'kit-dark' : 'kit-light'}
         options={{ ...DEFAULT_OPTIONS, ...(options as EditorOptions) }}
         value={(options as EditorOptions)?.value || ''}

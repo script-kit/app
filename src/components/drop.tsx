@@ -2,33 +2,17 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/no-noninteractive-tabindex */
 /* eslint-disable react/prop-types */
-import React, {
-  KeyboardEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+
+import React, { KeyboardEvent, useCallback, useRef, useState } from 'react';
+import useMountHeight from './hooks/useMountHeight';
 
 interface DropProps {
   placeholder: string;
   submit(data: any): void;
   onEscape(): void;
-  width: number;
-  height: number;
-  onDropHeightChanged: (height: number) => void;
 }
 
-export default function Drop({
-  placeholder,
-  submit,
-  onEscape,
-  width,
-  height,
-  onDropHeightChanged,
-}: DropProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
+export default function Drop({ placeholder, submit, onEscape }: DropProps) {
   const [dropReady, setDropReady] = useState(false);
   const [dropMessage, setDropMessage] = useState('');
 
@@ -84,52 +68,44 @@ export default function Drop({
     [submit]
   );
 
-  useEffect(() => {
-    if (containerRef?.current) {
-      const clientHeight = containerRef?.current?.clientHeight;
-      onDropHeightChanged(clientHeight);
-    }
-  }, [onDropHeightChanged]);
+  const containerRef = useMountHeight();
 
   return (
-    <div
-      ref={containerRef}
-      tabIndex={0}
-      role="region"
-      aria-label="droppable area"
-      onKeyDown={onKeyDown}
-      style={
-        {
-          WebkitAppRegion: 'drag',
-          WebkitUserSelect: 'none',
-          minHeight: '8rem',
-          minWidth: '8rem',
-          width,
-          height,
-        } as any
-      }
-      className={`
-      drop-component
-      flex flex-col justify-center items-center
-      text-black dark:text-white text-xl
-      focus:outline-none outline-none
-      ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0
-      bg-white dark:bg-black
-      transition ease-in-out duration-200 ${
-        dropReady ? `opacity-90` : `opacity-50`
-      }
-
-
-      px-20
-      py-14
-`}
-      placeholder={placeholder}
-      onDragEnter={onDragEnter}
-      onDragLeave={onDragLeave}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={onDrop}
-    >
-      <h2 className="pointer-events-none mb-0">{dropMessage || placeholder}</h2>
+    <div ref={containerRef}>
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label="droppable area"
+        onKeyDown={onKeyDown}
+        style={
+          {
+            WebkitAppRegion: 'drag',
+            WebkitUserSelect: 'none',
+          } as any
+        }
+        className={`
+        min-h-64 w-full h-full
+        drop-component
+        flex flex-col justify-center items-center
+        text-black dark:text-white text-xl
+        focus:outline-none outline-none
+        ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0
+        bg-white dark:bg-black
+        transition ease-in-out duration-200 ${
+          dropReady ? `opacity-75` : `opacity-25`
+        }
+        w-full h-52
+      `}
+        placeholder={placeholder}
+        onDragEnter={onDragEnter}
+        onDragLeave={onDragLeave}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={onDrop}
+      >
+        <h2 className="pointer-events-none mb-0">
+          {dropMessage || placeholder}
+        </h2>
+      </div>
     </div>
   );
 }

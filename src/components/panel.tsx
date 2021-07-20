@@ -6,13 +6,11 @@ import { useAtom } from 'jotai';
 import { panelHTMLAtom } from '../jotai';
 
 interface PanelProps {
-  onPanelHeightChanged: (height: number) => void;
-  width: number;
-  height: number;
+  onContainerHeightChanged: (height: number) => void;
 }
 
 export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
-  { onPanelHeightChanged, width, height }: PanelProps,
+  { onContainerHeightChanged }: PanelProps,
   ref
 ) {
   const containerRef: RefObject<any> = useRef(null);
@@ -22,27 +20,26 @@ export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
 
   useResizeObserver(divRef, (entry) => {
     if (entry?.contentRect?.height) {
-      onPanelHeightChanged(entry.contentRect.height);
+      onContainerHeightChanged(entry.contentRect.height);
     }
   });
 
   useEffect(() => {
     if (containerRef?.current?.firstElementChild) {
-      onPanelHeightChanged(
+      onContainerHeightChanged(
         containerRef?.current?.firstElementChild?.clientHeight
       );
     }
-  }, [onPanelHeightChanged, containerRef?.current?.firstElementChild]);
+  }, [onContainerHeightChanged, containerRef?.current?.firstElementChild]);
 
   return (
     <SimpleBar
+      className="w-full h-full"
       scrollableNodeProps={{ ref: containerRef }}
       style={
         {
           WebkitAppRegion: 'no-drag',
           WebkitUserSelect: 'text',
-          width,
-          height,
         } as any
       }
     >
