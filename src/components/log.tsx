@@ -55,7 +55,9 @@ export default function Log() {
       <SimpleBar
         forceVisible="y"
         className="log
-        w-full h-16 bg-black text-white dark:bg-white dark:text-black bg-opacity-80 dark:bg-opacity-60
+        w-full h-16
+        bg-black text-white dark:bg-white dark:text-black
+        bg-opacity-90 dark:bg-opacity-90
         font-mono text-xs"
         scrollableNodeProps={{ ref: containerRef }}
         style={
@@ -75,11 +77,16 @@ export default function Log() {
         </div>
       </SimpleBar>
       <EditFileIcon
-        className={`absolute top-4 right-3  text-primary-dark dark:text-primary-light h-6 w-6
+        className={`
+        absolute
+        top-4 right-3
+        h-6 w-6
         fill-current
-        ${
-          mouseOver ? 'text-opacity-100' : 'text-opacity-20'
-        } hover:cursor-pointer
+        ${mouseOver ? 'opacity-50' : 'opacity-20'}
+        transition ease-in
+        hover:cursor-pointer
+        hover:opacity-100
+        text-white dark:text-black
         `}
         onClick={editLog}
         viewBox="0 0 32 32"

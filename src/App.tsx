@@ -22,7 +22,7 @@ import React, {
   useState,
 } from 'react';
 import { useAtom } from 'jotai';
-import { useWhatChanged } from '@simbathesailor/use-what-changed';
+// import { useWhatChanged } from '@simbathesailor/use-what-changed';
 import AutoSizer, { Size } from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { useDebouncedCallback } from 'use-debounce';
@@ -66,6 +66,7 @@ import {
   mainHeightAtom,
   maxHeightAtom,
   modeAtom,
+  mouseEnabledAtom,
   panelHTMLAtom,
   pidAtom,
   placeholderAtom,
@@ -146,6 +147,8 @@ export default function App() {
   const [topHeight, setTopHeight] = useAtom(topHeightAtom);
   const [logHeight, setLogHeight] = useAtom(logHeightAtom);
 
+  const [mouseEnabled, setMouseEnabled] = useAtom(mouseEnabledAtom);
+
   const choicesListRef = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
   const textAreaRef: RefObject<HTMLTextAreaElement> = useRef(null);
@@ -207,14 +210,14 @@ export default function App() {
     topHeight,
   ];
 
-  useWhatChanged(
-    sizeDeps,
-    `mainHeight,
-    maxHeight,
-    isMainEmpty,
-    resizeHeight,
-    topHeight,`
-  );
+  // useWhatChanged(
+  //   sizeDeps,
+  //   `mainHeight,
+  //   maxHeight,
+  //   isMainEmpty,
+  //   resizeHeight,
+  //   topHeight,`
+  // );
 
   useLayoutEffect(() => {
     const mainEmpty = isMainEmpty();
@@ -345,6 +348,7 @@ export default function App() {
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
+      setMouseEnabled(false);
       if (event.key === 'Escape') {
         event.preventDefault();
         closePrompt();
@@ -662,7 +666,7 @@ export default function App() {
 
   const setScriptHandler = useCallback(
     (_event, script: Script) => {
-      console.log({ script });
+      // console.log({ script });
       // resetPromptHandler();
       setSubmitted(false);
       setScript(script);
