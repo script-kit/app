@@ -125,13 +125,6 @@ export default function Hotkey({
     [onEscape, submit]
   );
 
-  useEffect(() => {
-    if (containerRef?.current) {
-      // const clientHeight = containerRef?.current?.clientHeight;
-      onHotkeyHeightChanged(0);
-    }
-  }, [onHotkeyHeightChanged]);
-
   return (
     <input
       ref={containerRef}

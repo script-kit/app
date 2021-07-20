@@ -22,6 +22,7 @@ import React, {
   useState,
 } from 'react';
 import { useAtom } from 'jotai';
+import { useWhatChanged } from '@simbathesailor/use-what-changed';
 import AutoSizer, { Size } from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { useDebouncedCallback } from 'use-debounce';
@@ -29,6 +30,7 @@ import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
 import parse from 'html-react-parser';
 import { KeyCode } from 'monaco-editor';
+
 import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
 import {
   PromptData,
@@ -47,6 +49,7 @@ import Editor from './components/editor';
 import Hotkey from './components/hotkey';
 import TextArea from './components/textarea';
 import Panel from './components/panel';
+import Log from './components/log';
 import Header from './components/header';
 import Form from './components/form';
 import { highlightChoiceName } from './highlight';
@@ -58,6 +61,8 @@ import {
   hintAtom,
   indexAtom,
   inputAtom,
+  logHeightAtom,
+  logHTMLAtom,
   mainHeightAtom,
   maxHeightAtom,
   modeAtom,
@@ -93,7 +98,14 @@ class ErrorBoundary extends React.Component {
     const { hasError, info } = this.state;
     const { children } = this.props;
     if (hasError) {
-      return <div>{info.componentStack}</div>;
+      return (
+        <div className="p-2 font-mono">
+          <div className="text-base text-red-500">
+            Rendering Error. Opening logs.
+          </div>
+          <div className="text-xs">{info.componentStack}</div>
+        </div>
+      );
     }
 
     return children;
@@ -123,6 +135,7 @@ export default function App() {
   const [tabs, setTabs] = useAtom(tabsAtom);
 
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
+  const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
   const [editorConfig, setEditorConfig] = useAtom(editorConfigAtom);
   const [textareaConfig, setTextareaConfig] = useAtom(textareaConfigAtom);
   const [formHTML, setFormHTML] = useAtom(formHTMLAtom);
@@ -131,6 +144,7 @@ export default function App() {
   const [maxHeight, setMaxHeight] = useAtom(maxHeightAtom);
   const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
   const [topHeight, setTopHeight] = useAtom(topHeightAtom);
+  const [logHeight, setLogHeight] = useAtom(logHeightAtom);
 
   const choicesListRef = useRef(null);
   const inputRef: RefObject<HTMLInputElement> = useRef(null);
@@ -140,10 +154,7 @@ export default function App() {
   const headerRef: RefObject<HTMLDivElement> = useRef(null);
 
   useResizeObserver(headerRef, (entry) => {
-    if (entry?.contentRect?.height) {
-      // console.log({ setTopHeight: entry.contentRect.height });
-      setTopHeight(entry.contentRect.height);
-    }
+    setTopHeight(entry.contentRect.height);
   });
 
   const isMainEmpty = useCallback(() => {
@@ -151,7 +162,7 @@ export default function App() {
       filteredChoices?.length ||
       panelHTML?.length ||
       formHTML?.length ||
-      !!(ui & (UI.textarea | UI.editor))
+      !!(ui & (UI.textarea | UI.editor | UI.drop))
     );
   }, [filteredChoices?.length, formHTML?.length, ui, panelHTML?.length]);
 
@@ -165,26 +176,49 @@ export default function App() {
     100
   );
 
+  // const setPlaceholder = useDebouncedCallback(
+  //   useCallback(
+  //     (text: string) => {
+  //       setPlaceholderDebounced(text);
+  //     },
+  //     [setPlaceholderDebounced]
+  //   ),
+  //   25
+  // );
+
   const resizeHeight = useDebouncedCallback(
     useCallback(
       (height: number) => {
-        if (ui === UI.arg || ui === UI.form || ui === UI.hotkey) {
-          ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, height);
-        }
-
-        if (ui === UI.drop) {
-          ipcRenderer.send(
-            Channel.CONTENT_HEIGHT_UPDATED,
-            height < 200 ? 200 : height
-          );
-        }
+        ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, {
+          height,
+          cache: ui !== UI.arg,
+        });
       },
       [ui]
     ),
     50
   );
 
-  useEffect(() => {
+  const sizeDeps = [
+    mainHeight,
+    maxHeight,
+    isMainEmpty,
+    resizeHeight,
+    topHeight,
+  ];
+
+  useWhatChanged(
+    sizeDeps,
+    `mainHeight,
+    maxHeight,
+    isMainEmpty,
+    resizeHeight,
+    topHeight,`
+  );
+
+  useLayoutEffect(() => {
+    const mainEmpty = isMainEmpty();
+
     const fullHeight = topHeight + mainHeight;
     const clampedHeight =
       fullHeight < maxHeight
@@ -193,7 +227,7 @@ export default function App() {
           : fullHeight
         : maxHeight;
 
-    const newHeight = isMainEmpty() ? topHeight : clampedHeight;
+    const newHeight = mainEmpty ? topHeight : clampedHeight;
 
     // console.log({
     //   fullHeight,
@@ -201,10 +235,11 @@ export default function App() {
     //   mainHeight,
     //   maxHeight,
     //   empty: isMainEmpty(),
+    //   clampedHeight,
     // });
 
     resizeHeight(Math.round(newHeight));
-  }, [mainHeight, maxHeight, isMainEmpty, resizeHeight, topHeight]);
+  }, sizeDeps);
 
   const clampIndex = useCallback(
     (i) => {
@@ -304,6 +339,8 @@ export default function App() {
     setPromptData(null);
     setHint('');
     setSubmitted(false);
+    setLogHtml('');
+    setUI(UI.none);
   }, [pid]);
 
   const onKeyDown = useCallback(
@@ -535,7 +572,6 @@ export default function App() {
     (_event: any, promptData: PromptData) => {
       setSubmitted(false);
       setUI(promptData.ui);
-      setIndex(0);
       setPanelHTML('');
       setPromptData(promptData);
       setPlaceholder(promptData.placeholder);
@@ -564,9 +600,11 @@ export default function App() {
   }, []);
 
   const setPanelHandler = useCallback((_event: any, html: string) => {
-    setFilteredChoices([]);
-    setUnfilteredChoices([]);
     setPanelHTML(html);
+  }, []);
+
+  const setLogHandler = useCallback((_event: any, log: string) => {
+    setLogHtml(log);
   }, []);
 
   const setModeHandler = useCallback((_event: any, mode: Mode) => {
@@ -585,7 +623,6 @@ export default function App() {
 
   const setChoicesHandler = useCallback(
     (_event: any, rawChoices) => {
-      setIndex(0);
       setSubmitted(false);
       setPanelHTML('');
       setUnfilteredChoices(rawChoices);
@@ -625,22 +662,35 @@ export default function App() {
 
   const setScriptHandler = useCallback(
     (_event, script: Script) => {
+      console.log({ script });
       // resetPromptHandler();
       setSubmitted(false);
       setScript(script);
       setTabs(script.tabs || []);
       setTabIndex(0);
+      setIndex(0);
       setInputValue('');
       setUnfilteredChoices([]);
+      setLogHtml('');
     },
-    [setInputValue, setScript, setSubmitted, setTabIndex, setTabs]
+    [
+      setIndex,
+      setInputValue,
+      setLogHtml,
+      setScript,
+      setSubmitted,
+      setTabIndex,
+      setTabs,
+      setUnfilteredChoices,
+    ]
   );
 
   const setMaxHeightHandler = useCallback(
     (event, height) => {
       setMaxHeight(height);
+      setMainHeight(height - headerRef?.current?.clientHeight);
     },
-    [setMaxHeight]
+    [setMainHeight, setMaxHeight]
   );
 
   const setFormHTMLHandler = useCallback(
@@ -676,6 +726,7 @@ export default function App() {
     [Channel.SET_INPUT]: setInputHandler,
     [Channel.SET_MODE]: setModeHandler,
     [Channel.SET_PANEL]: setPanelHandler,
+    [Channel.SET_LOG]: setLogHandler,
     [Channel.SET_PLACEHOLDER]: setPlaceholderHandler,
     [Channel.SET_TAB_INDEX]: setTabIndexHandler,
     [Channel.SET_PROMPT_DATA]: setPromptDataHandler,
@@ -771,45 +822,38 @@ export default function App() {
           {tabs?.length > 0 && (
             <Tabs tabs={tabs} tabIndex={tabIndex} onTabClick={onTabClick} />
           )}
+          {logHtml?.length > 0 && <Log />}
         </header>
         <main
           ref={mainRef}
           className={`
-        h-full
-        border-t
+        h-full w-full
         border-transparent
+        border-b
         `}
         >
+          {!!(ui & UI.drop) && (
+            <Drop
+              placeholder={placeholder}
+              submit={submit}
+              onEscape={closePrompt}
+            />
+          )}
+          {!!(ui & UI.textarea) && (
+            <TextArea onSubmit={submit} onEscape={closePrompt} />
+          )}
+          {!!(ui & UI.editor) && <Editor ref={setEditor} />}
+
+          {!!(ui & UI.form) && (
+            <Form onSubmit={submit} onEscape={closePrompt} />
+          )}
+
+          {!!(ui & (UI.arg | UI.hotkey)) && panelHTML?.length > 0 && (
+            <Panel onContainerHeightChanged={setMainHeight} />
+          )}
           <AutoSizer>
             {({ width, height }) => (
               <>
-                {!!(ui & UI.drop) && (
-                  <Drop
-                    placeholder={placeholder}
-                    submit={submit}
-                    onEscape={closePrompt}
-                    width={width}
-                    height={height}
-                    onDropHeightChanged={setMainHeight}
-                  />
-                )}
-                {!!(ui & UI.textarea) && (
-                  <TextArea
-                    ref={textAreaRef}
-                    height={height}
-                    width={width}
-                    onSubmit={submit}
-                    onEscape={closePrompt}
-                  />
-                )}
-                {!!(ui & (UI.arg | UI.hotkey)) && panelHTML?.length > 0 && (
-                  <Panel
-                    width={width}
-                    height={height}
-                    onPanelHeightChanged={setMainHeight}
-                  />
-                )}
-
                 {!!(ui & UI.arg) && (
                   <List
                     height={filteredChoices?.length ? height : 0}
@@ -817,20 +861,6 @@ export default function App() {
                     onListChoicesChanged={setMainHeight}
                     onIndexChange={clampIndex}
                     onIndexSubmit={onIndexSubmit}
-                  />
-                )}
-
-                {!!(ui & UI.editor) && (
-                  <Editor ref={setEditor} height={height} width={width} />
-                )}
-
-                {!!(ui & UI.form) && (
-                  <Form
-                    onSubmit={submit}
-                    onEscape={closePrompt}
-                    height={height}
-                    width={width}
-                    onFormHeightChanged={setMainHeight}
                   />
                 )}
               </>

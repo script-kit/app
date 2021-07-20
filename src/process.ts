@@ -42,6 +42,7 @@ import {
   clearPromptCache,
   sendToPrompt,
   setPromptProp,
+  setLog,
 } from './prompt';
 import { setAppHidden } from './appHidden';
 import {
@@ -161,10 +162,12 @@ const SHOW_IMAGE = async (data: MessageData) => {
 const kitMessageMap: ChannelHandler = {
   CONSOLE_LOG: (data) => {
     getLog(data.kitScript).info(data.log);
+    setLog(data.log as string);
   },
 
   CONSOLE_WARN: (data) => {
     getLog(data.kitScript).warn(data.warn);
+    setLog(data.warn as string);
   },
 
   COPY_PATH_AS_PICTURE: (data) => {
@@ -269,9 +272,10 @@ const kitMessageMap: ChannelHandler = {
     setPanel(data.html as string);
   },
 
-  SET_PROMPT_PROP: (data) => {
-    setPromptProp(data.prop.key, data.prop.value);
+  CONSOLE_CLEAR: () => {
+    setLog(Channel.CONSOLE_CLEAR);
   },
+
   SET_TAB_INDEX: (data) => {
     setTabIndex(data.tabIndex as number);
   },
@@ -397,6 +401,7 @@ const createChild = ({
       KIT_DOTENV: kitDotEnv(),
       KIT_APP_VERSION: getVersion(),
       PROCESS_TYPE: type,
+      FORCE_COLOR: '1',
     },
   });
 

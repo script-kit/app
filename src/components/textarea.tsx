@@ -1,20 +1,24 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
-import React, { useCallback, KeyboardEvent, useState, forwardRef } from 'react';
+import React, {
+  useCallback,
+  KeyboardEvent,
+  useState,
+  useRef,
+  RefObject,
+  useLayoutEffect,
+} from 'react';
 import { useAtom } from 'jotai';
+
 import { textareaConfigAtom } from '../jotai';
+import useMountHeight from './hooks/useMountHeight';
 
 interface TextAreaProps {
   onSubmit: (value: any) => void;
   onEscape: (value: any) => void;
-  height: number;
-  width: number;
 }
 
-export default forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
-  { onSubmit, onEscape, height, width }: TextAreaProps,
-  ref
-) {
+export default function TextArea({ onSubmit, onEscape }: TextAreaProps) {
   const [options, setOptions] = useAtom(textareaConfigAtom);
 
   const [textAreaValue, setTextAreaValue] = useState(options.value);
@@ -26,7 +30,6 @@ export default forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
           case 's':
             event.preventDefault();
             onSubmit(textAreaValue);
-            setTextAreaValue('');
             break;
 
           case 'w':
@@ -41,18 +44,17 @@ export default forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
     },
     [onEscape, onSubmit, textAreaValue]
   );
+  const containerRef = useMountHeight();
 
   return (
-    <div>
+    <div ref={containerRef}>
       <textarea
-        ref={ref}
         autoFocus
         style={
           {
             WebkitAppRegion: 'no-drag',
             WebkitUserSelect: 'text',
-            height,
-            width,
+            resize: 'none',
           } as any
         }
         onKeyDown={onTextAreaKeyDown}
@@ -62,12 +64,15 @@ export default forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
         value={textAreaValue}
         placeholder={options.placeholder}
         className={`
-        min-h-32
-      bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-md dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40
-      ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-4
-      focus:border-none border-none
-      `}
+        visible-scrollbar
+        min-h-64
+        w-full h-full
+        bg-transparent text-black dark:text-white focus:outline-none outline-none text-md
+        dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40
+        ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-4
+        focus:border-none border-none
+        `}
       />
     </div>
   );
-});
+}

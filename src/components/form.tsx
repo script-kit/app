@@ -15,49 +15,25 @@ import parse, { attributesToProps, domToReact } from 'html-react-parser';
 import SimpleBar from 'simplebar-react';
 import { useAtom } from 'jotai';
 import { formDataAtom, formHTMLAtom, pidAtom } from '../jotai';
+import useMountHeight from './hooks/useMountHeight';
 
 type FormProps = {
-  width: number;
-  height: number;
   onSubmit: (value: any) => void;
   onEscape: (value: any) => void;
-  onFormHeightChanged: (value: number) => void;
 };
 
-const MIN_FORM_HEIGHT = 180;
-
-export default function Form({
-  width,
-  height,
-  onSubmit,
-  onEscape,
-  onFormHeightChanged,
-}: FormProps) {
-  const containerRef: RefObject<any> = useRef(null);
+export default function Form({ onSubmit, onEscape }: FormProps) {
   const formRef = useRef<any>();
   const [formHTML] = useAtom(formHTMLAtom);
   const [formData] = useAtom(formDataAtom);
 
   useEffect(() => {
-    if (containerRef?.current?.firstElementChild) {
-      const clientHeight =
-        containerRef?.current?.firstElementChild?.clientHeight;
-      const formHeight =
-        clientHeight < MIN_FORM_HEIGHT ? MIN_FORM_HEIGHT : clientHeight;
-
-      onFormHeightChanged(formHeight);
-
-      if (formRef?.current?.elements?.[0]) {
-        formRef?.current?.elements?.[0]?.focus();
-      } else {
-        formRef?.current?.focus();
-      }
+    if (formRef?.current?.elements?.[0]) {
+      formRef?.current?.elements?.[0]?.focus();
+    } else {
+      formRef?.current?.focus();
     }
-  }, [
-    onFormHeightChanged,
-    formRef?.current?.firstElementChild,
-    formRef?.current?.elements,
-  ]);
+  }, [formRef?.current?.firstElementChild, formRef?.current?.elements]);
 
   useEffect(() => {
     if (formData) {
@@ -137,6 +113,8 @@ export default function Form({
 
   const onFormChange = useCallback(() => {}, []);
 
+  const containerRef = useMountHeight();
+
   return (
     <SimpleBar
       scrollableNodeProps={{ ref: containerRef }}
@@ -144,8 +122,6 @@ export default function Form({
         {
           WebkitAppRegion: 'no-drag',
           WebkitUserSelect: 'text',
-          width,
-          height,
         } as any
       }
     >
@@ -156,6 +132,7 @@ export default function Form({
         onKeyDown={onFormKeyDown}
         onSubmit={onLocalSubmit}
         className={`
+        w-full h-full
         form-component
         kit-form
         border-none

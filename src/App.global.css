@@ -28,8 +28,12 @@ body {
   transition: opacity 0.2s 0.5s linear;
 }
 
-*::-webkit-scrollbar {
-  display: none !important;
+.log .simplebar-scrollbar:before {
+  @apply opacity-100 dark:bg-primary-light bg-primary-dark bg-opacity-60;
+}
+
+*:not(textarea)::-webkit-scrollbar {
+  display: none;
 }
 
 @layer base {

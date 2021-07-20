@@ -3,17 +3,19 @@
 import { ipcMain } from 'electron';
 import log from 'electron-log';
 import { isUndefined } from 'lodash';
-import { Channel } from 'kit-bridge/cjs/enum';
+import { Channel, ProcessType } from 'kit-bridge/cjs/enum';
+import { kitPath } from 'kit-bridge/cjs/util';
+import { Script } from 'kit-bridge/cjs/type';
 import { emitter, KitEvent } from './events';
 
 import { processes } from './process';
 
-import {
-  escapePromptWindow,
-  resizePromptHeight,
-  setPlaceholder,
-} from './prompt';
+import { escapePromptWindow, resizePromptHeight, reload } from './prompt';
 import { setAppHidden, getAppHidden } from './appHidden';
+
+export const getLogFromScriptPath = (filePath: string) => {
+  return filePath.replace('scripts', 'logs').replace(/\.js$/, '.log');
+};
 
 export const startIpc = () => {
   ipcMain.on(Channel.VALUE_SUBMITTED, (_event, { value, pid }) => {
@@ -36,7 +38,13 @@ export const startIpc = () => {
 
   ipcMain.on(Channel.PROMPT_ERROR, (_event, { error }) => {
     log.warn(error);
-    if (!getAppHidden()) setPlaceholder(error.message);
+    if (!getAppHidden()) {
+      setTimeout(() => {
+        reload();
+        processes.add(ProcessType.App, kitPath('cli/kit-log.js'), []);
+        escapePromptWindow();
+      }, 3000);
+    }
   });
 
   ipcMain.on(Channel.CHOICE_FOCUSED, (_event, { index, pid }) => {
@@ -56,16 +64,21 @@ export const startIpc = () => {
     });
   });
 
-  ipcMain.on(Channel.CONTENT_HEIGHT_UPDATED, (event, height) => {
-    if (!isUndefined(height)) {
-      resizePromptHeight(height);
+  ipcMain.on(Channel.CONTENT_HEIGHT_UPDATED, (event, heightAndCache) => {
+    if (!isUndefined(heightAndCache)) {
+      resizePromptHeight(heightAndCache);
     }
   });
 
   ipcMain.on(Channel.ESCAPE_PRESSED, async (event, { pid }) => {
     escapePromptWindow();
-
     processes.removeByPid(pid);
+  });
+
+  ipcMain.on(Channel.OPEN_SCRIPT_LOG, async (event, script: Script) => {
+    processes.add(ProcessType.App, kitPath('cli/edit-file.js'), [
+      getLogFromScriptPath(script.filePath),
+    ]);
   });
 
   emitter.on(KitEvent.Blur, async () => {
@@ -75,8 +88,8 @@ export const startIpc = () => {
       const { child, scriptPath } = promptProcessInfo;
       emitter.emit(KitEvent.ResumeShortcuts);
 
-      log.info(`🙈 Blur process: ${scriptPath} id: ${child.pid}`);
       if (child) {
+        log.info(`🙈 Blur process: ${scriptPath} id: ${child.pid}`);
         child?.send({ channel: Channel.PROMPT_BLURRED });
       }
     }
