@@ -1,3 +1,10 @@
+# [1.3.0-beta.31](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.30...v1.3.0-beta.31) (2021-07-20)
+
+
+### Bug Fixes
+
+* **prompt:** console.log, mouseOver ([15d42b3](https://github.com/johnlindquist/kitapp/commit/15d42b33449ebf9a35507c41bbcbb7510ef94463))
+
 # [1.3.0-alpha.91](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.90...v1.3.0-alpha.91) (2021-07-20)
 
 
