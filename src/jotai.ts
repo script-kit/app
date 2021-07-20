@@ -18,8 +18,6 @@ const DEFAULT_MAX_HEIGHT = 480;
 export const pidAtom = atom(0);
 export const scriptAtom = atom<null | Script>(null);
 
-export const indexAtom = atom(0);
-export const inputAtom = atom('');
 const placeholder = atom('');
 export const placeholderAtom = atom(
   (g) => g(placeholder),
@@ -29,7 +27,6 @@ export const promptDataAtom = atom<null | PromptData>(null);
 export const submittedAtom = atom(false);
 
 export const unfilteredChoicesAtom = atom<Choice[]>([]);
-export const choicesAtom = atom<Choice[]>([]);
 
 export const uiAtom = atom<UI>(UI.none);
 export const hintAtom = atom('');
@@ -44,8 +41,8 @@ const log = atom<string[]>([]);
 export const logHTMLAtom = atom(
   (g) =>
     g(log)
-      .map((line) => `${convert.toHtml(line)}`)
-      .join(`<br>`),
+      .map((line) => `<br>${convert.toHtml(line)}`)
+      .join(``),
   (g, s, a: string) => {
     if (a === Channel.CONSOLE_CLEAR || a === '') {
       s(log, []);
@@ -80,3 +77,49 @@ export const maxHeightAtom = atom(DEFAULT_MAX_HEIGHT);
 
 export const formHTMLAtom = atom('');
 export const formDataAtom = atom({});
+
+const mouseEnabled = atom(true);
+
+let mouseEnabledId: any;
+export const mouseEnabledAtom = atom(
+  (g) => g(mouseEnabled),
+  (g, s, a: boolean) => {
+    s(mouseEnabled, a);
+
+    if (a === false) {
+      if (mouseEnabledId) clearTimeout(mouseEnabledId);
+      mouseEnabledId = setTimeout(() => {
+        s(mouseEnabled, true);
+      }, 200);
+    }
+  }
+);
+
+const choices = atom<Choice[]>([]);
+export const choicesAtom = atom(
+  (g) => g(choices),
+  (g, s, a: Choice[]) => {
+    s(mouseEnabledAtom, false);
+
+    s(choices, a);
+  }
+);
+
+export const inputAtom = atom('');
+// export const inputAtom = atom(
+//   (g) => g(input),
+//   (g, s, a: string) => {
+//     s(mouseEnabledAtom, false);
+
+//     s(input, a);
+//   }
+// );
+
+export const indexAtom = atom(0);
+// export const indexAtom = atom(
+//   (g) => g(index),
+//   (g, s, a: number) => {
+//     s(mouseEnabledAtom, false);
+//     s(index, a);
+//   }
+// );

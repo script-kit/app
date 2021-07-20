@@ -29,7 +29,7 @@ body {
 }
 
 .log .simplebar-scrollbar:before {
-  @apply opacity-100 dark:bg-primary-light bg-primary-dark bg-opacity-60;
+  @apply opacity-100 dark:bg-black bg-white bg-opacity-60;
 }
 
 *:not(textarea)::-webkit-scrollbar {

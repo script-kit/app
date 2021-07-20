@@ -3,7 +3,7 @@
 /* eslint-disable no-nested-ternary */
 import React from 'react';
 import parse from 'html-react-parser';
-import { ChoiceButtonProps } from 'kit-bridge/cjs/type';
+import { ChoiceButtonProps } from '../types';
 
 export default function ChoiceButton({
   data,
@@ -37,6 +37,8 @@ export default function ChoiceButton({
       ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-50 shadow-lg`
       : ``
   }
+  hover:shadow-xl
+  transition-shadow ease-in-out duration-500
 `}
       onClick={(_event) => {
         onIndexSubmit(index);
@@ -61,11 +63,13 @@ export default function ChoiceButton({
             <div className="truncate">{choice.name}</div>
             {(choice?.focused || choice?.description) && (
               <div
-                className={`text-xs truncate transition-opacity ease-in-out duration-100 pb-1 ${
+                className={`text-xs truncate transition-opacity ease-in-out duration-500 pb-1 ${
                   index === currentIndex
                     ? `opacity-90 dark:text-primary-light text-primary-dark`
                     : `opacity-60`
-                }`}
+                }
+                hover:opacity-100
+                `}
               >
                 {(index === currentIndex && choice?.description) ||
                   choice?.description}

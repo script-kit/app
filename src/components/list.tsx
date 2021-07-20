@@ -1,39 +1,12 @@
 /* eslint-disable react/require-default-props */
-import React, {
-  useCallback,
-  useState,
-  forwardRef,
-  useEffect,
-  useRef,
-} from 'react';
+import React, { useState, forwardRef, useEffect, useRef } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { useAtom } from 'jotai';
 import memoize from 'memoize-one';
-import { Choice } from 'kit-bridge/cjs/type';
 import Preview from './preview';
 import ChoiceButton from './button';
-import { choicesAtom, indexAtom, inputAtom } from '../jotai';
-
-interface ChoiceButtonData {
-  choices: Choice[];
-  currentIndex: number;
-  inputValue: string;
-  mouseEnabled: boolean;
-  onIndexChange: (index: number) => void;
-  onIndexSubmit: (index: number) => void;
-}
-interface ChoiceButtonProps {
-  data: ChoiceButtonData;
-  index: number;
-  style: any;
-}
-interface ListProps {
-  height: number;
-  width: number;
-  onListChoicesChanged: (listHeight: number) => void;
-  onIndexChange: ChoiceButtonData['onIndexChange'];
-  onIndexSubmit: ChoiceButtonData['onIndexSubmit'];
-}
+import { choicesAtom, indexAtom, inputAtom, mouseEnabledAtom } from '../jotai';
+import { ChoiceButtonProps, ListProps } from '../types';
 
 const createItemData = memoize(
   (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>
@@ -57,7 +30,7 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
   ref
 ) {
   const listRef = useRef(null);
-  const [mouseEnabled, setMouseEnabled] = useState(false);
+  const [mouseEnabled, setMouseEnabled] = useAtom(mouseEnabledAtom);
   // TODO: In case items ever have dynamic height
   const [listItemHeight, setListItemHeight] = useState(64);
   const [choices] = useAtom(choicesAtom);
@@ -71,24 +44,6 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
     onIndexChange,
     onIndexSubmit
   );
-
-  useEffect(() => {
-    setMouseEnabled(false);
-  }, [inputValue, choices]);
-
-  useEffect(() => {
-    let id: any = 0;
-    if (choices.length) {
-      id = setTimeout(() => {
-        setMouseEnabled(true);
-      }, 500);
-    } else {
-      setMouseEnabled(false);
-    }
-    return () => {
-      clearTimeout(id);
-    };
-  }, [choices.length]);
 
   useEffect(() => {
     const newListHeight = choices.length * listItemHeight;
