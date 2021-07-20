@@ -1,3 +1,10 @@
+# [1.3.0-alpha.90](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.89...v1.3.0-alpha.90) (2021-07-20)
+
+
+### Features
+
+* **prompt:** console.log, resizing/positioning fixes ([2aeedc2](https://github.com/johnlindquist/kitapp/commit/2aeedc28ea68b5092d2e1d8dc6640a0f7edd058d))
+
 # [1.3.0-beta.29](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.28...v1.3.0-beta.29) (2021-07-16)
 
 
