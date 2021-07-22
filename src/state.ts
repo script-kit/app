@@ -85,7 +85,7 @@ export const updateScripts = async () => {
 };
 
 export const getScriptsMemory = (): Script[] => {
-  return scripts;
+  return scripts.filter((script) => !script?.exclude);
 };
 
 export const getKenvScript = (filePath: string): Script => {
