@@ -1,3 +1,10 @@
+# [1.3.0-beta.32](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.31...v1.3.0-beta.32) (2021-07-22)
+
+
+### Bug Fixes
+
+* **app:** watch kenvs scripts, exclude. Edit hotkeys. ([96996fa](https://github.com/johnlindquist/kitapp/commit/96996faf544d5d452bf84f773f70ab01ce49aa23))
+
 # [1.3.0-alpha.92](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.91...v1.3.0-alpha.92) (2021-07-22)
 
 
