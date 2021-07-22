@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React from 'react';
+import React, { useState } from 'react';
 import parse from 'html-react-parser';
 import { ChoiceButtonProps } from '../types';
 
@@ -14,10 +14,14 @@ export default function ChoiceButton({
     data;
   const choice = choices[index];
 
+  const [mouseDown, setMouseDown] = useState(false);
+
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button
       type="button"
+      onMouseDown={() => setMouseDown(true)}
+      onMouseUp={() => setMouseDown(false)}
       style={style}
       className={`
   w-full
@@ -34,11 +38,15 @@ export default function ChoiceButton({
   focus:outline-none
   ${
     index === currentIndex
-      ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-50 shadow-lg`
+      ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-50
+      ${mouseDown ? `shadow-sm bg-opacity-25` : `shadow-lg hover:shadow-xl`}
+      `
       : ``
   }
-  hover:shadow-xl
-  transition-shadow ease-in-out duration-500
+
+
+
+  transition-shadow ease-in-out duration-250
 `}
       onClick={(_event) => {
         onIndexSubmit(index);

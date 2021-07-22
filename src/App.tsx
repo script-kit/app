@@ -30,6 +30,7 @@ import { ipcRenderer } from 'electron';
 import { clamp, partition } from 'lodash';
 import parse from 'html-react-parser';
 import { KeyCode } from 'monaco-editor';
+import { Options, useHotkeys } from 'react-hotkeys-hook';
 
 import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
 import {
@@ -155,6 +156,35 @@ export default function App() {
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const headerRef: RefObject<HTMLDivElement> = useRef(null);
+
+  const hotkeysOptions: Options = {
+    enableOnTags: ['INPUT'],
+  };
+  useHotkeys(
+    'ctrl+o,cmd+o',
+    () => {
+      const filePath = (filteredChoices?.[index] as any)?.filePath;
+      if (filePath) {
+        ipcRenderer.send(Channel.OPEN_FILE, filePath);
+      } else {
+        ipcRenderer.send(Channel.OPEN_SCRIPT, script);
+      }
+    },
+    hotkeysOptions
+  );
+
+  useHotkeys(
+    'ctrl+e,cmd+e',
+    () => {
+      const filePath = (filteredChoices?.[index] as any)?.filePath;
+      if (filePath) {
+        ipcRenderer.send(Channel.EDIT_SCRIPT, filePath);
+      } else {
+        ipcRenderer.send(Channel.EDIT_SCRIPT, script?.filePath);
+      }
+    },
+    hotkeysOptions
+  );
 
   useResizeObserver(headerRef, (entry) => {
     setTopHeight(entry.contentRect.height);

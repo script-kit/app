@@ -4,7 +4,7 @@ import { ipcMain } from 'electron';
 import log from 'electron-log';
 import { isUndefined } from 'lodash';
 import { Channel, ProcessType } from 'kit-bridge/cjs/enum';
-import { kitPath } from 'kit-bridge/cjs/util';
+import { kitPath, getLogFromScriptPath } from 'kit-bridge/cjs/util';
 import { Script } from 'kit-bridge/cjs/type';
 import { emitter, KitEvent } from './events';
 
@@ -12,10 +12,7 @@ import { processes } from './process';
 
 import { escapePromptWindow, resizePromptHeight, reload } from './prompt';
 import { setAppHidden, getAppHidden } from './appHidden';
-
-export const getLogFromScriptPath = (filePath: string) => {
-  return filePath.replace('scripts', 'logs').replace(/\.js$/, '.log');
-};
+import { runPromptProcess } from './kit';
 
 export const startIpc = () => {
   ipcMain.on(Channel.VALUE_SUBMITTED, (_event, { value, pid }) => {
@@ -79,6 +76,22 @@ export const startIpc = () => {
     processes.add(ProcessType.App, kitPath('cli/edit-file.js'), [
       getLogFromScriptPath(script.filePath),
     ]);
+  });
+
+  ipcMain.on(Channel.OPEN_SCRIPT, async (event, script: Script) => {
+    if (script.filePath.startsWith(kitPath())) return;
+    processes.add(ProcessType.App, kitPath('cli/edit-file.js'), [
+      script.filePath,
+    ]);
+  });
+
+  ipcMain.on(Channel.EDIT_SCRIPT, async (event, filePath: string) => {
+    if (filePath.startsWith(kitPath())) return;
+    await runPromptProcess(kitPath('main/edit.js'), [filePath]);
+  });
+
+  ipcMain.on(Channel.OPEN_FILE, async (event, filePath: string) => {
+    processes.add(ProcessType.App, kitPath('cli/edit-file.js'), [filePath]);
   });
 
   emitter.on(KitEvent.Blur, async () => {

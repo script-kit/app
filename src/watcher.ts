@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 import chokidar, { FSWatcher } from 'chokidar';
-
+import log from 'electron-log';
 import { debounce } from 'lodash';
 import { appDbPath, info, kenvPath, shortcutsPath } from 'kit-bridge/cjs/util';
 import {
@@ -16,8 +16,13 @@ import { backgroundScriptChanged, removeBackground } from './background';
 import { emitter, KitEvent } from './events';
 import { updateScripts } from './state';
 
+export const cacheMenu = debounce(async () => {
+  await updateScripts();
+}, 200);
+
+const updateEventNames = ['add', 'change', 'unlink', 'ready'];
 const onScriptsChanged = async (
-  event: 'add' | 'change' | 'unlink',
+  event: 'add' | 'change' | 'unlink' | 'ready',
   filePath: string
 ) => {
   if (event === 'unlink') {
@@ -36,15 +41,15 @@ const onScriptsChanged = async (
     watchScriptChanged(script);
     backgroundScriptChanged(script);
   }
+
+  if (updateEventNames.includes(event)) {
+    await cacheMenu();
+  }
 };
 
 export const onDbChanged = async (event: any, filePath: string) => {
   updateMainShortcut(filePath);
 };
-
-export const cacheMenu = debounce(async () => {
-  await updateScripts();
-}, 200);
 
 let watchers: FSWatcher[] = [];
 
@@ -54,21 +59,32 @@ export const setupWatchers = async () => {
   watchers.push(shortcutsDbWatcher);
   shortcutsDbWatcher.on('all', onDbChanged);
 
-  // const kenvEnvWatcher = chokidar.watch([kenvPath('.env')]);
-  // watchers.push(kenvEnvWatcher);
-
-  // kenvEnvWatcher.on('all', () => {
-  //   log.info(`🌳 ${kenvPath('.env')} changed. Restarting idle process.`);
-  //   processes.resetIdlePromptProcess();
-  // });
-
   const kenvScripts = kenvPath('scripts/*.js');
-  const kenvsScripts = kenvPath('kenvs/*/scripts/.*js');
 
-  const scriptsWatcher = chokidar.watch([kenvScripts, kenvsScripts], {
+  const scriptsWatcher = chokidar.watch([kenvScripts], {
     depth: 1,
   });
   watchers.push(scriptsWatcher);
+
+  const kenvsWatcher = chokidar.watch(kenvPath('kenvs/*'), {
+    depth: 0,
+  });
+
+  kenvsWatcher.on('all', async (eventName, addPath) => {
+    const scriptsPath = `${addPath}/scripts/*.js`;
+
+    if (eventName.includes('addDir') && addPath.match(/kenvs\/[^/]+$/)) {
+      log.info(`👀 Watch ${scriptsPath}`);
+      scriptsWatcher.add([scriptsPath]);
+    }
+
+    if (eventName === 'unlinkDir') {
+      log.info(`🧹 Unwatch ${scriptsPath}`);
+      scriptsWatcher.unwatch([scriptsPath]);
+    }
+  });
+
+  watchers.push(kenvsWatcher);
 
   const kitAppDbWatcher = chokidar.watch([appDbPath]);
   watchers.push(kitAppDbWatcher);
@@ -78,14 +94,6 @@ export const setupWatchers = async () => {
   });
 
   scriptsWatcher.on('all', onScriptsChanged);
-
-  scriptsWatcher.on('ready', async () => {
-    await cacheMenu();
-
-    scriptsWatcher.on('add', cacheMenu);
-    scriptsWatcher.on('change', cacheMenu);
-    scriptsWatcher.on('unlink', cacheMenu);
-  });
 };
 
 export const resetWatchers = async () => {

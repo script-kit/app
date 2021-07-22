@@ -95,27 +95,34 @@ export const mouseEnabledAtom = atom(
   }
 );
 
+export const indexAtom = atom(0);
+
 const choices = atom<Choice[]>([]);
 export const choicesAtom = atom(
   (g) => g(choices),
   (g, s, a: Choice[]) => {
     s(mouseEnabledAtom, false);
 
+    const prevChoices = g(choices);
+    const prevIndex = g(indexAtom);
+    const prevChoice = prevChoices[prevIndex]?.id;
+    const nextChoice = a[prevIndex]?.id;
+    if (prevChoice !== nextChoice) {
+      s(indexAtom, 0);
+    }
     s(choices, a);
   }
 );
 
-export const inputAtom = atom('');
-// export const inputAtom = atom(
-//   (g) => g(input),
-//   (g, s, a: string) => {
-//     s(mouseEnabledAtom, false);
+export const input = atom('');
+export const inputAtom = atom(
+  (g) => g(input),
+  (g, s, a: string) => {
+    s(indexAtom, 0);
+    s(input, a);
+  }
+);
 
-//     s(input, a);
-//   }
-// );
-
-export const indexAtom = atom(0);
 // export const indexAtom = atom(
 //   (g) => g(index),
 //   (g, s, a: number) => {
