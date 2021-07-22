@@ -73,16 +73,13 @@ export const startIpc = () => {
   });
 
   ipcMain.on(Channel.OPEN_SCRIPT_LOG, async (event, script: Script) => {
-    processes.add(ProcessType.App, kitPath('cli/edit-file.js'), [
-      getLogFromScriptPath(script.filePath),
-    ]);
+    const filePath = getLogFromScriptPath(script.filePath);
+    await runPromptProcess(kitPath('cli/edit-file.js'), [filePath]);
   });
 
   ipcMain.on(Channel.OPEN_SCRIPT, async (event, script: Script) => {
     if (script.filePath.startsWith(kitPath())) return;
-    processes.add(ProcessType.App, kitPath('cli/edit-file.js'), [
-      script.filePath,
-    ]);
+    await runPromptProcess(kitPath('cli/edit-file.js'), [script.filePath]);
   });
 
   ipcMain.on(Channel.EDIT_SCRIPT, async (event, filePath: string) => {
@@ -91,7 +88,7 @@ export const startIpc = () => {
   });
 
   ipcMain.on(Channel.OPEN_FILE, async (event, filePath: string) => {
-    processes.add(ProcessType.App, kitPath('cli/edit-file.js'), [filePath]);
+    await runPromptProcess(kitPath('cli/edit-file.js'), [filePath]);
   });
 
   emitter.on(KitEvent.Blur, async () => {
