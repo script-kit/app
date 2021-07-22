@@ -3,6 +3,7 @@
 /* eslint-disable no-nested-ternary */
 import React, { useState } from 'react';
 import parse from 'html-react-parser';
+import { overrideTailwindClasses } from 'tailwind-override';
 import { ChoiceButtonProps } from '../types';
 
 export default function ChoiceButton({
@@ -23,31 +24,32 @@ export default function ChoiceButton({
       onMouseDown={() => setMouseDown(true)}
       onMouseUp={() => setMouseDown(false)}
       style={style}
-      className={`
-  w-full
-  h-16
-  flex-shrink-0
-  whitespace-nowrap
-  text-left
-  flex
-  flex-row
-  text-lg
-  px-4
-  justify-between
-  items-center
-  focus:outline-none
-  ${
-    index === currentIndex
-      ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-50
-      ${mouseDown ? `shadow-sm bg-opacity-25` : `shadow-lg hover:shadow-xl`}
-      `
-      : ``
-  }
-
-
-
-  transition-shadow ease-in-out duration-250
-`}
+      className={`  ${
+        index === currentIndex
+          ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-50
+            ${
+              mouseDown
+                ? `shadow-sm bg-opacity-25`
+                : `shadow-lg hover:shadow-xl`
+            }
+            `
+          : ``
+      } ${overrideTailwindClasses(`
+        w-full
+        h-16
+        flex-shrink-0
+        whitespace-nowrap
+        text-left
+        flex
+        flex-row
+        text-lg
+        px-4
+        justify-between
+        items-center
+        focus:outline-none
+        transition-shadow ease-in-out duration-250
+        ${choice?.className}
+      `)}`}
       onClick={(_event) => {
         onIndexSubmit(index);
       }}
