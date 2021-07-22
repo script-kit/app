@@ -1,3 +1,10 @@
+# [1.3.0-beta.33](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.32...v1.3.0-beta.33) (2021-07-22)
+
+
+### Bug Fixes
+
+* **app:** Open/edit as prompt scripts. Adding className ([81ae97c](https://github.com/johnlindquist/kitapp/commit/81ae97c73462894ac792ea6e2f012a8eb906551c))
+
 # [1.3.0-alpha.93](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.92...v1.3.0-alpha.93) (2021-07-22)
 
 
