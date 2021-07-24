@@ -41,8 +41,9 @@ import {
   setChoices,
   clearPromptCache,
   sendToPrompt,
-  setPromptProp,
   setLog,
+  hidePromptWindow,
+  getPromptPid,
 } from './prompt';
 import { setAppHidden } from './appHidden';
 import {
@@ -419,7 +420,7 @@ interface ProcessHandlers {
 }
 
 class Processes extends Array<ProcessInfo> {
-  public endPreviousPromptProcess() {
+  public endPreviousPromptProcess(promptScriptPath: string) {
     const previousPromptProcess = this.find(
       (info) => info.type === ProcessType.Prompt && info.scriptPath
     );
@@ -427,6 +428,8 @@ class Processes extends Array<ProcessInfo> {
     if (previousPromptProcess) {
       this.removeByPid(previousPromptProcess.pid);
     }
+
+    return previousPromptProcess?.scriptPath === promptScriptPath;
   }
 
   public getAllProcessInfo() {
@@ -543,6 +546,9 @@ class Processes extends Array<ProcessInfo> {
         if (!child?.killed) {
           child?.kill();
           log.info(`🛑 kill ${type} ${scriptPath || 'idle'} id: ${child.pid}`);
+          if (getPromptPid() === child.pid) {
+            hidePromptWindow();
+          }
         }
       }
       this.splice(

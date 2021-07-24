@@ -6,6 +6,7 @@
 @import 'typeface-lato';
 
 @import '../node_modules/simplebar-react/dist/simplebar.min.css';
+@import '../node_modules/highlight.js/styles/night-owl.css';
 
 .lato {
   font-family: 'Lato';
@@ -33,6 +34,10 @@ body {
 }
 
 *:not(textarea)::-webkit-scrollbar {
+  display: none;
+}
+
+*::-webkit-resizer {
   display: none;
 }
 

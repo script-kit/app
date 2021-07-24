@@ -22,7 +22,6 @@ import { getScriptsMemory } from './state';
 import { emitter, KitEvent } from './events';
 
 let promptScript: Script;
-
 let promptWindow: BrowserWindow;
 let blurredByKit = false;
 let ignoreBlur = false;
@@ -89,8 +88,12 @@ export const createPromptWindow = async () => {
     promptWindow.setVibrancy('popover');
   });
 
+  promptWindow.on('hide', () => {
+    ignoreBlur = false;
+  });
+
   promptWindow?.on('blur', () => {
-    if (ignoreBlur) {
+    if (promptScript.filePath !== mainScriptPath && ignoreBlur) {
       promptWindow.setVibrancy('hud');
     } else {
       hidePromptWindow();
@@ -350,6 +353,7 @@ const hideAppIfNoWindows = () => {
 
 export const hidePromptWindow = () => {
   if (promptWindow?.webContents.isDevToolsFocused()) return;
+
   if (blurredByKit) {
     blurredByKit = false;
     return;
@@ -365,7 +369,12 @@ export const setPlaceholder = (text: string) => {
   sendToPrompt(Channel.SET_PLACEHOLDER, text);
 };
 
+let promptPid = 0;
+
+export const getPromptPid = () => promptPid;
+
 export const setPromptPid = (pid: number) => {
+  promptPid = pid;
   sendToPrompt(Channel.SET_PID, pid);
 };
 

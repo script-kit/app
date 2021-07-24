@@ -1,9 +1,12 @@
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import parse from 'html-react-parser';
 import { overrideTailwindClasses } from 'tailwind-override';
+import { kenvPath } from 'kit-bridge/cjs/util';
+import { Channel } from 'kit-bridge/cjs/enum';
+import { ipcRenderer } from 'electron';
 import { ChoiceButtonProps } from '../types';
 
 export default function ChoiceButton({
@@ -16,6 +19,13 @@ export default function ChoiceButton({
   const choice = choices[index];
 
   const [mouseDown, setMouseDown] = useState(false);
+
+  const editScript = useCallback(() => {
+    const filePath = (choice as any)?.filePath;
+    if (filePath?.includes(kenvPath())) {
+      ipcRenderer.send(Channel.EDIT_SCRIPT, filePath);
+    }
+  }, [choice]);
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
@@ -53,6 +63,7 @@ export default function ChoiceButton({
       onClick={(_event) => {
         onIndexSubmit(index);
       }}
+      onContextMenu={editScript}
       onMouseOver={() => {
         if (mouseEnabled) {
           onIndexChange(index);
