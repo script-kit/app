@@ -1,3 +1,10 @@
+# [1.3.0-alpha.94](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.93...v1.3.0-alpha.94) (2021-07-24)
+
+
+### Bug Fixes
+
+* **app:** sk anywhere, shortcut toggles, code syntax highlight ([5ea2948](https://github.com/johnlindquist/kitapp/commit/5ea2948a77d19bc77753343d693e6b97a836e177))
+
 # [1.3.0-beta.33](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.32...v1.3.0-beta.33) (2021-07-22)
 
 
