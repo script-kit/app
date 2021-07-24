@@ -1,7 +1,7 @@
 import React, { RefObject, useEffect, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
 import useResizeObserver from '@react-hook/resize-observer';
-import parse from 'html-react-parser';
+import Highlight from 'react-highlight';
 import { useAtom } from 'jotai';
 import { panelHTMLAtom } from '../jotai';
 
@@ -43,7 +43,9 @@ export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
         } as any
       }
     >
-      <div ref={divRef}>{parse(`${panelHTML}`)}</div>
+      <div ref={divRef}>
+        <Highlight innerHTML>{panelHTML}</Highlight>
+      </div>
     </SimpleBar>
   );
 });

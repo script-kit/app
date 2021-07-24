@@ -3217,6 +3217,13 @@
   dependencies:
     "@types/react" "*"
 
+"@types/react-highlight@^0.12.3":
+  version "0.12.3"
+  resolved "https://registry.yarnpkg.com/@types/react-highlight/-/react-highlight-0.12.3.tgz#2e9212a89d666e014028b9a4fcffc81c44b5e358"
+  integrity sha512-mfhuHdE3dUjvRv1lvZIvda2B+VW7rkG1ufnFLKbDcRUp/L73bGUmEuEfpnjgdLgeWYho88ahQZRcMSh9GsZA0g==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-router-dom@^5.1.6":
   version "5.1.7"
   resolved "https://registry.npmjs.org/@types/react-router-dom/-/react-router-dom-5.1.7.tgz"
@@ -8292,6 +8299,11 @@ hex-color-regex@^1.1.0:
   resolved "https://registry.npmjs.org/hex-color-regex/-/hex-color-regex-1.1.0.tgz"
   integrity sha512-l9sfDFsuqtOqKDsQdqrMRk0U85RZc0RtOR9yPI7mRVOa4FsR/BVnZ0shmQRM96Ji99kYZP/7hn1cedc1+ApsTQ==
 
+highlight.js@^10.5.0:
+  version "10.7.3"
+  resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-10.7.3.tgz#697272e3991356e40c3cac566a74eef681756531"
+  integrity sha512-tzcUFauisWKNHaRkN4Wjl/ZA07gENAjFl3J/c480dprkGTg5EQstgaNFqBfUqCq54kZRIEcreTsAgF/m2quD7A==
+
 history@^4.9.0:
   version "4.10.1"
   resolved "https://registry.npmjs.org/history/-/history-4.10.1.tgz"
@@ -10072,10 +10084,10 @@ kind-of@^6.0.0, kind-of@^6.0.2, kind-of@^6.0.3:
   resolved "https://registry.npmjs.org/kind-of/-/kind-of-6.0.3.tgz"
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
-kit-bridge@4.0.5:
-  version "4.0.5"
-  resolved "https://registry.yarnpkg.com/kit-bridge/-/kit-bridge-4.0.5.tgz#fd748ef3b513aaa6b10dd1590c2ad018c54869a9"
-  integrity sha512-Znge3/NERetIITbMunFhdwG8c3L0e+9d/pkdBb3FdNjxjTf8QhKZRsbxnOFVOEHruBpdnFMvvSBFm10Qr6M4/w==
+kit-bridge@5.0.2:
+  version "5.0.2"
+  resolved "https://registry.yarnpkg.com/kit-bridge/-/kit-bridge-5.0.2.tgz#b5581eb018bad8abcd64e8829a360a1544007c99"
+  integrity sha512-P/ERyQSMvXCgTPn4CS1/177xx3uvPAQ3nhxm+YAIbfGt6lg+jahiXC5IQVEBGnBVDbBPIGwhbKr318oUF46WQA==
   dependencies:
     fs-extra "^10.0.0"
     lowdb "^2.1.0"
@@ -12715,6 +12727,11 @@ pretty-hrtime@^1.0.3:
   resolved "https://registry.npmjs.org/pretty-hrtime/-/pretty-hrtime-1.0.3.tgz"
   integrity sha1-t+PqQkNaTJsnWdmeDyAesZWALuE=
 
+prismjs@^1.24.1:
+  version "1.24.1"
+  resolved "https://registry.yarnpkg.com/prismjs/-/prismjs-1.24.1.tgz#c4d7895c4d6500289482fa8936d9cdd192684036"
+  integrity sha512-mNPsedLuk90RVJioIky8ANZEwYm5w9LcvCXrxHlwf4fNVSn8jEipMybMkWUyyF0JhnC+C4VcOVSBuHRKs1L5Ow==
+
 proc-log@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/proc-log/-/proc-log-1.0.0.tgz"
@@ -12993,6 +13010,13 @@ react-dom@^18.0.0-alpha-01be61c12:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
     scheduler "0.21.0-alpha-01be61c12"
+
+react-highlight@^0.14.0:
+  version "0.14.0"
+  resolved "https://registry.yarnpkg.com/react-highlight/-/react-highlight-0.14.0.tgz#5aefa5518baa580f96b68d48129d7a5d2dc0c9ef"
+  integrity sha512-kWE+KXOXidS7SABhVopOgMnowbI3RAfeGZbnrduLNlWrYAED8sycL9l/Fvw3w0PFpIIawB7mRDnyhDcM/cIIGA==
+  dependencies:
+    highlight.js "^10.5.0"
 
 react-hotkeys-hook@^3.3.2:
   version "3.3.2"

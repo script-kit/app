@@ -12,25 +12,32 @@ export const startSK = () => {
       const value = data.toString();
       const json = value.match(new RegExp(`^{.*}$`, 'gm'))?.[0] || '';
       const object = JSON.parse(json);
-      log.info(object);
-      const { script, args } = object;
 
-      const scriptPath = resolveToScriptPath(script);
-      log.info(`🇦🇷 ${scriptPath} ${args}`);
-      if (scriptPath) {
-        await runPromptProcess(
-          scriptPath,
-          args.map((s: string) => s.replaceAll('$newline$', '\n'))
-        );
-        const message = `🕹 sk ${script} ${args}`;
-        log.info(message);
+      const { script, args, cwd } = object;
+
+      try {
+        const scriptPath = resolveToScriptPath(script, cwd);
+        if (scriptPath) {
+          log.info(`🇦🇷 ${scriptPath} ${args}`);
+          await runPromptProcess(
+            scriptPath,
+            args.map((s: string) => s.replaceAll('$newline$', '\n'))
+          );
+          const message = `🕹 sk ${script} ${args}`;
+          log.info(message);
+          stream.write(message);
+        } else {
+          const message = `🕹 sk needs a script!`;
+          log.info(message);
+          stream.write(message);
+        }
+        stream.end();
+      } catch (error) {
+        const message = `😱 ${error}`;
+        log.warn(message);
         stream.write(message);
-      } else {
-        const message = `🕹 sk needs a script!`;
-        log.info(message);
-        stream.write(message);
+        stream.end();
       }
-      stream.end();
     });
   });
 

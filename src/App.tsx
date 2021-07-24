@@ -158,7 +158,7 @@ export default function App() {
   const headerRef: RefObject<HTMLDivElement> = useRef(null);
 
   const hotkeysOptions: Options = {
-    enableOnTags: ['INPUT'],
+    enableOnTags: ['INPUT', 'TEXTAREA'],
   };
   useHotkeys(
     'ctrl+o,cmd+o',

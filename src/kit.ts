@@ -40,7 +40,10 @@ const findScript = async (scriptPath: string) => {
     return getKitScript(mainScriptPath);
   }
 
-  if (scriptPath.startsWith(kitPath())) {
+  if (
+    scriptPath.startsWith(kitPath()) &&
+    !scriptPath.startsWith(kitPath('tmp'))
+  ) {
     return getKitScript(scriptPath);
   }
 
@@ -57,7 +60,9 @@ export const runPromptProcess = async (
   promptScriptPath: string,
   args: string[] = []
 ) => {
-  processes.endPreviousPromptProcess();
+  const same = processes.endPreviousPromptProcess(promptScriptPath);
+
+  if (same) return;
 
   const script = await findScript(promptScriptPath);
   // log.info(script);
