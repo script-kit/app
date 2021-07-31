@@ -1,16 +1,10 @@
-import React, {
-  forwardRef,
-  RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-} from 'react';
+import React, { useCallback, useRef } from 'react';
 import path from 'path';
 import { useAtom } from 'jotai';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
-import { EditorOptions, EditorProps } from 'kit-bridge/cjs/type';
-import { useThemeDetector } from '../hooks';
+import { EditorOptions } from 'kit-bridge/cjs/type';
+import { useClose, useFocus, useSave, useThemeDetector } from '../hooks';
 import { editorConfigAtom } from '../jotai';
 import useMountHeight from './hooks/useMountHeight';
 
@@ -38,17 +32,16 @@ const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   wordWrap: 'on',
 };
 
-export default forwardRef<any, any>(function Editor(
-  { height, width }: EditorProps,
-  ref: any
-) {
+export default function Editor() {
+  const editorRef = useRef<editor.IStandaloneCodeEditor>();
+
   const [options] = useAtom(editorConfigAtom);
 
-  useEffect(() => {
-    return () => {
-      ref(null);
-    };
-  }, [ref]);
+  useSave(() => editorRef.current?.getValue());
+  useClose();
+
+  const isDark = useThemeDetector();
+  const containerRef = useMountHeight();
 
   const beforeMount = useCallback((monaco) => {
     monaco.editor.defineTheme('kit-dark', {
@@ -70,7 +63,9 @@ export default forwardRef<any, any>(function Editor(
   }, []);
   const onMount = useCallback(
     (editorInstance: editor.IStandaloneCodeEditor) => {
-      ref(editorInstance);
+      editorInstance.focus();
+      editorRef.current = editorInstance;
+
       if (editorInstance?.getDomNode())
         (
           (editorInstance.getDomNode() as HTMLElement).style as any
@@ -91,11 +86,8 @@ export default forwardRef<any, any>(function Editor(
         editorInstance.revealLineInCenter(Math.floor(lineNumber / 2));
       }
     },
-    [options, ref]
+    [options]
   );
-
-  const isDark = useThemeDetector();
-  const containerRef = useMountHeight();
 
   return (
     <div
@@ -114,4 +106,4 @@ export default forwardRef<any, any>(function Editor(
       />
     </div>
   );
-});
+}

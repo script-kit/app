@@ -1,10 +1,21 @@
 import React from 'react';
 import { useAtom } from 'jotai';
-import { scriptAtom, pidAtom } from '../jotai';
+import {
+  scriptAtom,
+  pidAtom,
+  mainHeightAtom,
+  maxHeightAtom,
+  topHeightAtom,
+  indexAtom,
+} from '../jotai';
 
 export default function Header() {
   const [script] = useAtom(scriptAtom);
   const [pid] = useAtom(pidAtom);
+  const [mainHeight] = useAtom(mainHeightAtom);
+  const [maxHeight] = useAtom(maxHeightAtom);
+  const [topHeight] = useAtom(topHeightAtom);
+  const [index] = useAtom(indexAtom);
 
   return (
     <div
@@ -15,6 +26,10 @@ export default function Header() {
       <span className="dark:text-primary-light text-primary-dark col-span-3">
         {script?.description || ''}
       </span>
+
+      {/* <span className="dark:text-primary-light text-primary-dark col-span-3">
+        {`top: ${topHeight} - main: ${mainHeight} - max: ${maxHeight} -`}
+      </span> */}
       <span className="text-right col-span-2">
         {script?.menu}
         {script?.twitter && (

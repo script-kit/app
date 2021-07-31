@@ -241,9 +241,8 @@ const setBounds = async () => {
   const bounds = await getCurrentScreenPromptCache();
 
   if (!promptWindow?.isVisible()) {
-    // sendToPrompt(Channel.SET_MAX_HEIGHT, bounds.height);
-
     log.info(`↖ BOUNDS:`, bounds);
+    sendToPrompt(Channel.SET_MAX_HEIGHT, bounds.height);
     promptWindow.setBounds(bounds);
   }
 };
@@ -335,6 +334,8 @@ const cachePromptBounds = async (b = Bounds.Position | Bounds.Size) => {
   });
 
   await promptDb.write();
+
+  sendToPrompt(Channel.SET_MAX_HEIGHT, promptBounds.height);
 };
 
 const hideAppIfNoWindows = () => {
@@ -393,7 +394,11 @@ export const setScript = async (script: Script) => {
   if (script.filePath === mainScriptPath) {
     instantChoices = getScriptsMemory();
   } else if (script.requiresPrompt) {
-    const maybeCachedChoices = kenvPath('db', `_${script.command}.json`);
+    const maybeCachedChoices = kenvPath(
+      script?.kenv ? `kenvs/${script.kenv}` : ``,
+      'db',
+      `_${script.command}.json`
+    );
     if (await isFile(maybeCachedChoices)) {
       const choicesFile = readFileSync(maybeCachedChoices, 'utf-8');
       const { items } = JSON.parse(choicesFile);

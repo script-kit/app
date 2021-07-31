@@ -7,7 +7,6 @@ import { placeholderAtom } from '../jotai';
 
 interface HotkeyProps {
   submit(data: any): void;
-  onEscape(): void;
   onHotkeyHeightChanged: (height: number) => void;
 }
 
@@ -88,11 +87,7 @@ const getKeyData = (event: KeyboardEvent<HTMLInputElement>) => {
   return { modifierString, keyData };
 };
 
-export default function Hotkey({
-  submit,
-  onEscape,
-  onHotkeyHeightChanged,
-}: HotkeyProps) {
+export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
   const containerRef = useRef<HTMLInputElement>(null);
   const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
 
@@ -106,11 +101,6 @@ export default function Hotkey({
     (event) => {
       event.preventDefault();
 
-      if (event.key === 'Escape') {
-        onEscape();
-        return;
-      }
-
       const { keyData, modifierString } = getKeyData(event);
 
       setPlaceholder(modifierString);
@@ -122,7 +112,7 @@ export default function Hotkey({
         submit(keyData);
       }
     },
-    [onEscape, submit]
+    [submit]
   );
 
   return (

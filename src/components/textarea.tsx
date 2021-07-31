@@ -1,55 +1,27 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
-import React, {
-  useCallback,
-  KeyboardEvent,
-  useState,
-  useRef,
-  RefObject,
-  useLayoutEffect,
-} from 'react';
+import React, { useCallback, KeyboardEvent, useState } from 'react';
 import { useAtom } from 'jotai';
 
-import { textareaConfigAtom } from '../jotai';
+import { submitValueAtom, textareaConfigAtom } from '../jotai';
 import useMountHeight from './hooks/useMountHeight';
+import { useClose, useFocus, useSave } from '../hooks';
 
-interface TextAreaProps {
-  onSubmit: (value: any) => void;
-  onEscape: (value: any) => void;
-}
+export default function TextArea() {
+  const textareaRef = useFocus();
 
-export default function TextArea({ onSubmit, onEscape }: TextAreaProps) {
   const [options, setOptions] = useAtom(textareaConfigAtom);
+  const [, submit] = useAtom(submitValueAtom);
 
   const [textAreaValue, setTextAreaValue] = useState(options.value);
-
-  const onTextAreaKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.ctrlKey || event.metaKey) {
-        switch (event.key) {
-          case 's':
-            event.preventDefault();
-            onSubmit(textAreaValue);
-            break;
-
-          case 'w':
-            event.preventDefault();
-            onEscape(event);
-            break;
-
-          default:
-            break;
-        }
-      }
-    },
-    [onEscape, onSubmit, textAreaValue]
-  );
+  useSave(() => textAreaValue);
+  useClose();
   const containerRef = useMountHeight();
 
   return (
     <div ref={containerRef}>
       <textarea
-        autoFocus
+        ref={textareaRef}
         style={
           {
             WebkitAppRegion: 'no-drag',
@@ -57,7 +29,6 @@ export default function TextArea({ onSubmit, onEscape }: TextAreaProps) {
             resize: 'none',
           } as any
         }
-        onKeyDown={onTextAreaKeyDown}
         onChange={(e) => {
           setTextAreaValue(e.target.value);
         }}

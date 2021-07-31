@@ -15,12 +15,12 @@ import { setAppHidden, getAppHidden } from './appHidden';
 import { runPromptProcess } from './kit';
 
 export const startIpc = () => {
-  ipcMain.on(Channel.VALUE_SUBMITTED, (_event, { value, pid }) => {
+  ipcMain.on(Channel.VALUE_SUBMITTED, (_event, { value, pid, flag }) => {
     processes.ifPid(pid, ({ child, values }) => {
       emitter.emit(KitEvent.ResumeShortcuts);
       values.push(value);
       if (child) {
-        child?.send({ channel: Channel.VALUE_SUBMITTED, value });
+        child?.send({ channel: Channel.VALUE_SUBMITTED, value, flag });
       }
     });
   });
@@ -94,7 +94,7 @@ export const startIpc = () => {
   emitter.on(KitEvent.Blur, async () => {
     const promptProcessInfo = await processes.findPromptProcess();
 
-    if (promptProcessInfo) {
+    if (promptProcessInfo && promptProcessInfo.scriptPath) {
       const { child, scriptPath } = promptProcessInfo;
       emitter.emit(KitEvent.ResumeShortcuts);
 

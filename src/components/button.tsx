@@ -20,13 +20,6 @@ export default function ChoiceButton({
 
   const [mouseDown, setMouseDown] = useState(false);
 
-  const editScript = useCallback(() => {
-    const filePath = (choice as any)?.filePath;
-    if (filePath?.includes(kenvPath())) {
-      ipcRenderer.send(Channel.EDIT_SCRIPT, filePath);
-    }
-  }, [choice]);
-
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button
@@ -63,7 +56,7 @@ export default function ChoiceButton({
       onClick={(_event) => {
         onIndexSubmit(index);
       }}
-      onContextMenu={editScript}
+      // onContextMenu={editScript}
       onMouseOver={() => {
         if (mouseEnabled) {
           onIndexChange(index);
@@ -97,28 +90,30 @@ export default function ChoiceButton({
               </div>
             )}
           </div>
-          {(choice?.tag || choice?.icon) &&
-            (choice?.icon ? (
-              <img
-                alt="icon"
-                className={`
+
+          {choice?.tag && (
+            <div
+              className={`
+            text-xxs font-mono font-bold
+            ${index === currentIndex ? `opacity-70` : `opacity-40`}
+            `}
+            >
+              {choice.tag}
+            </div>
+          )}
+
+          {choice?.icon && (
+            <img
+              alt="icon"
+              className={`
               border-2 border-black dark:border-white border-opacity-50
               rounded-full
 
               w-6 h-6
               `}
-                src={choice?.icon}
-              />
-            ) : (
-              <div
-                className={`
-            text-xxs font-mono
-            ${index === currentIndex ? `opacity-40` : `opacity-20`}
-            `}
-              >
-                {choice.tag}
-              </div>
-            ))}
+              src={choice?.icon}
+            />
+          )}
 
           {choice?.img && (
             <img

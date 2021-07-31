@@ -3,28 +3,20 @@
 /* eslint-disable jsx-a11y/no-noninteractive-tabindex */
 /* eslint-disable react/prop-types */
 
+import { useAtom } from 'jotai';
 import React, { KeyboardEvent, useCallback, useRef, useState } from 'react';
+import { useEscape } from '../hooks';
+import { placeholderAtom, submitValueAtom } from '../jotai';
 import useMountHeight from './hooks/useMountHeight';
 
-interface DropProps {
-  placeholder: string;
-  submit(data: any): void;
-  onEscape(): void;
-}
+export default function Drop() {
+  useEscape();
 
-export default function Drop({ placeholder, submit, onEscape }: DropProps) {
   const [dropReady, setDropReady] = useState(false);
   const [dropMessage, setDropMessage] = useState('');
 
-  const onKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onEscape();
-      }
-    },
-    [onEscape]
-  );
+  const [placeholder] = useAtom(placeholderAtom);
+  const [, submit] = useAtom(submitValueAtom);
 
   const onDragEnter = useCallback((event) => {
     event.preventDefault();
@@ -76,7 +68,6 @@ export default function Drop({ placeholder, submit, onEscape }: DropProps) {
         tabIndex={0}
         role="region"
         aria-label="droppable area"
-        onKeyDown={onKeyDown}
         style={
           {
             WebkitAppRegion: 'drag',

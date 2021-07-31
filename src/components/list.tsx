@@ -1,11 +1,25 @@
 /* eslint-disable react/require-default-props */
-import React, { useState, forwardRef, useEffect, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useLayoutEffect,
+} from 'react';
+
 import { FixedSizeList as List } from 'react-window';
 import { useAtom } from 'jotai';
 import memoize from 'memoize-one';
 import Preview from './preview';
 import ChoiceButton from './button';
-import { choicesAtom, indexAtom, inputAtom, mouseEnabledAtom } from '../jotai';
+import {
+  choicesAtom,
+  indexAtom,
+  inputAtom,
+  mainHeightAtom,
+  mouseEnabledAtom,
+  submitValueAtom,
+} from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 
 const createItemData = memoize(
@@ -19,23 +33,28 @@ const createItemData = memoize(
     } as ChoiceButtonProps['data'])
 );
 
-export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
-  {
-    width,
-    height,
-    onListChoicesChanged,
-    onIndexChange,
-    onIndexSubmit,
-  }: ListProps,
-  ref
-) {
+export default function ChoiceList({ width, height }: ListProps) {
   const listRef = useRef(null);
+  const innerRef = useRef(null);
   const [mouseEnabled, setMouseEnabled] = useAtom(mouseEnabledAtom);
   // TODO: In case items ever have dynamic height
   const [listItemHeight, setListItemHeight] = useState(64);
   const [choices] = useAtom(choicesAtom);
-  const [index] = useAtom(indexAtom);
+  const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
+  const [index, onIndexChange] = useAtom(indexAtom);
   const [inputValue] = useAtom(inputAtom);
+  const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
+
+  const onIndexSubmit = useCallback(
+    (i) => {
+      if (choices.length) {
+        const choice = choices[i];
+
+        setSubmitValue(choice.value);
+      }
+    },
+    [choices, setSubmitValue]
+  );
 
   const itemData = createItemData(
     choices,
@@ -45,10 +64,16 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
     onIndexSubmit
   );
 
-  useEffect(() => {
+  // useResizeObserver(innerRef, (entry) => {
+  //   if (entry?.contentRect?.height) {
+  //     setMainHeight(entry.contentRect.height);
+  //   }
+  // });
+
+  useLayoutEffect(() => {
     const newListHeight = choices.length * listItemHeight;
-    onListChoicesChanged(newListHeight);
-  }, [choices.length, listItemHeight, onListChoicesChanged]);
+    setMainHeight(newListHeight);
+  }, [choices, listItemHeight, setMainHeight]);
 
   useEffect(() => {
     if (choices.length && height) {
@@ -58,7 +83,6 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
 
   return (
     <div
-      ref={ref}
       className={`
       list-component
       flex flex-row
@@ -76,6 +100,7 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
     >
       <List
         ref={listRef}
+        innerRef={innerRef}
         height={height}
         itemCount={choices?.length || 0}
         itemSize={listItemHeight}
@@ -95,4 +120,4 @@ export default forwardRef<HTMLDivElement, ListProps>(function ChoiceList(
       )}
     </div>
   );
-});
+}

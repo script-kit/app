@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-bitwise */
 /* eslint-disable react/no-danger */
 /* eslint-disable react/jsx-props-no-spreading */
@@ -13,50 +14,38 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import React, {
   ErrorInfo,
-  KeyboardEvent,
   RefObject,
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
-  useState,
 } from 'react';
 import { useAtom } from 'jotai';
 // import { useWhatChanged } from '@simbathesailor/use-what-changed';
-import AutoSizer, { Size } from 'react-virtualized-auto-sizer';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
-import { clamp, partition } from 'lodash';
-import parse from 'html-react-parser';
-import { KeyCode } from 'monaco-editor';
-import { Options, useHotkeys } from 'react-hotkeys-hook';
 
 import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
-import {
-  PromptData,
-  Choice,
-  Script,
-  EditorConfig,
-  EditorRef,
-  TextareaConfig,
-  Secret,
-} from 'kit-bridge/cjs/type';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
 import Drop from './components/drop';
 import Editor from './components/editor';
 import Hotkey from './components/hotkey';
+import Hint from './components/hint';
+import Selected from './components/selected';
 import TextArea from './components/textarea';
 import Panel from './components/panel';
 import Log from './components/log';
 import Header from './components/header';
 import Form from './components/form';
-import { highlightChoiceName } from './highlight';
 import {
   choicesAtom,
   editorConfigAtom,
+  flagsAtom,
+  flagValueAtom,
   formDataAtom,
   formHTMLAtom,
   hintAtom,
@@ -67,13 +56,14 @@ import {
   mainHeightAtom,
   maxHeightAtom,
   modeAtom,
-  mouseEnabledAtom,
+  openAtom,
   panelHTMLAtom,
   pidAtom,
   placeholderAtom,
   promptDataAtom,
   scriptAtom,
   submittedAtom,
+  submitValueAtom,
   tabIndexAtom,
   tabsAtom,
   textareaConfigAtom,
@@ -81,6 +71,9 @@ import {
   uiAtom,
   unfilteredChoicesAtom,
 } from './jotai';
+import { useChoices } from './hooks';
+
+const second = (fn: (value: any) => void) => (_: any, x: any) => fn(x);
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -116,75 +109,42 @@ class ErrorBoundary extends React.Component {
 
 export default function App() {
   const [pid, setPid] = useAtom(pidAtom);
+  const [, setOpen] = useAtom(openAtom);
   const [script, setScript] = useAtom(scriptAtom);
 
-  const [index, setIndex] = useAtom(indexAtom);
-  const [inputValue, setInputValue] = useAtom(inputAtom);
-  const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
-  const [promptData, setPromptData] = useAtom(promptDataAtom);
-  const [submitted, setSubmittedAtom] = useAtom(submittedAtom);
+  const [inputValue, setInput] = useAtom(inputAtom);
+  const [, setPlaceholder] = useAtom(placeholderAtom);
+  const [, setPromptData] = useAtom(promptDataAtom);
+  const [submitted] = useAtom(submittedAtom);
 
-  const [unfilteredChoices, setUnfilteredChoices] = useAtom(
-    unfilteredChoicesAtom
-  );
-  const [filteredChoices, setFilteredChoices] = useAtom(choicesAtom);
+  const [, setUnfilteredChoices] = useAtom(unfilteredChoicesAtom);
+  const [filteredChoices] = useAtom(choicesAtom);
 
-  const [ui, setUI] = useAtom(uiAtom);
+  const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
   const [mode, setMode] = useAtom(modeAtom);
 
   const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
-  const [tabs, setTabs] = useAtom(tabsAtom);
+  const [tabs] = useAtom(tabsAtom);
 
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
   const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
-  const [editorConfig, setEditorConfig] = useAtom(editorConfigAtom);
-  const [textareaConfig, setTextareaConfig] = useAtom(textareaConfigAtom);
+  const [, setEditorConfig] = useAtom(editorConfigAtom);
+  const [, setTextareaConfig] = useAtom(textareaConfigAtom);
+  const [, setFlags] = useAtom(flagsAtom);
   const [formHTML, setFormHTML] = useAtom(formHTMLAtom);
-  const [formData, setFormData] = useAtom(formDataAtom);
+  const [, setFormData] = useAtom(formDataAtom);
 
   const [maxHeight, setMaxHeight] = useAtom(maxHeightAtom);
   const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
   const [topHeight, setTopHeight] = useAtom(topHeightAtom);
-  const [logHeight, setLogHeight] = useAtom(logHeightAtom);
 
-  const [mouseEnabled, setMouseEnabled] = useAtom(mouseEnabledAtom);
+  const [, setSubmitValue] = useAtom(submitValueAtom);
+  const [flagValue] = useAtom(flagValueAtom);
 
-  const choicesListRef = useRef(null);
-  const inputRef: RefObject<HTMLInputElement> = useRef(null);
-  const textAreaRef: RefObject<HTMLTextAreaElement> = useRef(null);
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const headerRef: RefObject<HTMLDivElement> = useRef(null);
-
-  const hotkeysOptions: Options = {
-    enableOnTags: ['INPUT', 'TEXTAREA'],
-  };
-  useHotkeys(
-    'ctrl+o,cmd+o',
-    () => {
-      const filePath = (filteredChoices?.[index] as any)?.filePath;
-      if (filePath) {
-        ipcRenderer.send(Channel.OPEN_FILE, filePath);
-      } else {
-        ipcRenderer.send(Channel.OPEN_SCRIPT, script);
-      }
-    },
-    hotkeysOptions
-  );
-
-  useHotkeys(
-    'ctrl+e,cmd+e',
-    () => {
-      const filePath = (filteredChoices?.[index] as any)?.filePath;
-      if (filePath) {
-        ipcRenderer.send(Channel.EDIT_SCRIPT, filePath);
-      } else {
-        ipcRenderer.send(Channel.EDIT_SCRIPT, script?.filePath);
-      }
-    },
-    hotkeysOptions
-  );
 
   useResizeObserver(headerRef, (entry) => {
     setTopHeight(entry.contentRect.height);
@@ -198,26 +158,6 @@ export default function App() {
       !!(ui & (UI.textarea | UI.editor | UI.drop))
     );
   }, [filteredChoices?.length, formHTML?.length, ui, panelHTML?.length]);
-
-  const setSubmitted = useDebouncedCallback(
-    useCallback(
-      (b: boolean) => {
-        setSubmittedAtom(b);
-      },
-      [setSubmittedAtom]
-    ),
-    100
-  );
-
-  // const setPlaceholder = useDebouncedCallback(
-  //   useCallback(
-  //     (text: string) => {
-  //       setPlaceholderDebounced(text);
-  //     },
-  //     [setPlaceholderDebounced]
-  //   ),
-  //   25
-  // );
 
   const resizeHeight = useDebouncedCallback(
     useCallback(
@@ -274,67 +214,6 @@ export default function App() {
     resizeHeight(Math.round(newHeight));
   }, sizeDeps);
 
-  const clampIndex = useCallback(
-    (i) => {
-      const clampedIndex = clamp(i, 0, filteredChoices.length - 1);
-      setIndex(clampedIndex);
-    },
-    [filteredChoices.length, setIndex]
-  );
-
-  const submit = useCallback(
-    (submitValue: any) => {
-      setSubmitted(true);
-      setInputValue('');
-      // setFilteredChoices([]);
-      // setUnfilteredChoices([]);
-
-      let value = submitValue;
-
-      setPlaceholder(
-        typeof submitValue === 'string' && !promptData?.secret
-          ? `Processing ${submitValue}...`
-          : 'Processing...'
-      );
-
-      // setUnfilteredChoices([]);
-      // setPanelHTML('');
-
-      if (Array.isArray(submitValue)) {
-        const files = submitValue.map((file) => {
-          const fileObject: any = {};
-
-          for (const key in file) {
-            const value = file[key];
-            const notFunction = typeof value !== 'function';
-            if (notFunction) fileObject[key] = value;
-          }
-
-          return fileObject;
-        });
-
-        value = files;
-      }
-
-      ipcRenderer.send(Channel.VALUE_SUBMITTED, {
-        value,
-        pid,
-      });
-    },
-    [pid, promptData?.secret]
-  );
-
-  const onIndexSubmit = useCallback(
-    (i) => {
-      if (filteredChoices.length) {
-        const choice = filteredChoices[i];
-
-        submit(choice.value);
-      }
-    },
-    [filteredChoices, submit]
-  );
-
   // useEffect(() => {
   //   if (choices?.length > 0 && choices?.[index]) {
   //     ipcRenderer.send(CHOICE_FOCUSED, {
@@ -347,124 +226,7 @@ export default function App() {
   //   }
   // }, [choices, index, pid]);
 
-  const onTabClick = useCallback(
-    (ti: number) => (_event: any) => {
-      setTabIndex(ti);
-
-      ipcRenderer.send(Channel.TAB_CHANGED, {
-        tab: tabs[ti],
-        input: inputValue,
-        pid,
-      });
-    },
-    [inputValue, pid, tabs]
-  );
-
-  const closePrompt = useCallback(() => {
-    ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid });
-    // setChoices([]);
-    setUnfilteredChoices([]);
-    setTabIndex(0);
-    setIndex(0);
-    setInputValue('');
-    setPanelHTML('');
-    setFormHTML('');
-    setPromptData(null);
-    setHint('');
-    setSubmitted(false);
-    setLogHtml('');
-    setUI(UI.none);
-  }, [pid]);
-
-  const onKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLInputElement>) => {
-      setMouseEnabled(false);
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closePrompt();
-
-        return;
-      }
-
-      if (event.key === 'Enter') {
-        if (filteredChoices.length) {
-          submit(filteredChoices?.[index].value);
-        } else {
-          submit(inputValue);
-        }
-        return;
-      }
-
-      if (event.key === ' ') {
-        const tab = tabs.find((tab) =>
-          tab.toLowerCase().startsWith(inputValue?.toLowerCase())
-        );
-
-        if (tab) {
-          const ti = tabs.indexOf(tab);
-          setTabIndex(ti);
-          setInputValue('');
-          ipcRenderer.send(Channel.TAB_CHANGED, {
-            tab,
-            input: inputValue,
-            pid,
-          });
-          event.preventDefault();
-          return;
-        }
-
-        const shortcodeChoice = unfilteredChoices?.find((choice: Choice) =>
-          choice?.shortcode?.find(
-            (sc: string) => sc === inputValue.trim().toLowerCase()
-          )
-        );
-        if (shortcodeChoice) {
-          submit(shortcodeChoice.value);
-          event.preventDefault();
-          return;
-        }
-      }
-
-      if (event.key === 'Tab') {
-        event.preventDefault();
-        if (tabs?.length) {
-          const maxTab = tabs.length;
-          const clampTabIndex = (tabIndex + (event.shiftKey ? -1 : 1)) % maxTab;
-          const nextIndex = clampTabIndex < 0 ? maxTab - 1 : clampTabIndex;
-          setTabIndex(nextIndex);
-          ipcRenderer.send(Channel.TAB_CHANGED, {
-            tab: tabs[nextIndex],
-            input: inputValue,
-            pid,
-          });
-        }
-        return;
-      }
-
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        clampIndex(index + 1);
-        return;
-      }
-      if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        clampIndex(index - 1);
-        // return;
-      }
-    },
-    [
-      closePrompt,
-      submit,
-      filteredChoices,
-      index,
-      inputValue,
-      tabs,
-      unfilteredChoices,
-      pid,
-      tabIndex,
-      clampIndex,
-    ]
-  );
+  useChoices();
 
   const generateChoices = useDebouncedCallback((input, mode, tab) => {
     if (mode === Mode.GENERATE) {
@@ -479,292 +241,29 @@ export default function App() {
     if (!submitted) generateChoices(inputValue, mode, tabIndex);
   }, [mode, inputValue, tabIndex, submitted, generateChoices]);
 
-  useEffect(() => {
-    if (submitted) return;
-    try {
-      if (inputValue === '') {
-        setFilteredChoices(unfilteredChoices);
-        return;
-      }
-      if (mode === (Mode.GENERATE || Mode.MANUAL)) {
-        setFilteredChoices(unfilteredChoices);
-        return;
-      }
-      if (!unfilteredChoices?.length) {
-        setFilteredChoices([]);
-        return;
-      }
-
-      if (submitted) return;
-
-      const input = inputValue?.toLowerCase() || '';
-
-      const startExactFilter = (choice: Choice) => {
-        return (choice.name as string)?.toLowerCase().startsWith(input);
-      };
-
-      const startEachWordFilter = (choice: Choice) => {
-        let wordIndex = 0;
-        let wordLetterIndex = 0;
-        const words = (choice.name as string)?.toLowerCase().match(/\w+\W*/g);
-        if (!words) return false;
-        const inputLetters: string[] = input.split('');
-
-        const checkNextLetter = (inputLetter: string): boolean => {
-          const word = words[wordIndex];
-          const letter = word[wordLetterIndex];
-
-          if (inputLetter === letter) {
-            wordLetterIndex += 1;
-            return true;
-          }
-
-          return false;
-        };
-
-        const checkNextWord = (inputLetter: string): boolean => {
-          wordLetterIndex = 0;
-          wordIndex += 1;
-
-          const word = words[wordIndex];
-          if (!word) return false;
-          const letter = word[wordLetterIndex];
-          if (!letter) return false;
-
-          if (inputLetter === letter) {
-            wordLetterIndex += 1;
-            return true;
-          }
-
-          return checkNextWord(inputLetter);
-        };
-        return inputLetters.every((inputLetter: string) => {
-          if (checkNextLetter(inputLetter)) {
-            return true;
-          }
-          return checkNextWord(inputLetter);
-        });
-      };
-
-      const startFirstAndEachWordFilter = (choice: any) => {
-        return (
-          choice.name?.toLowerCase().startsWith(input[0]) &&
-          startEachWordFilter(choice)
-        );
-      };
-
-      const partialFilter = (choice: any) =>
-        choice.name?.toLowerCase().includes(input);
-
-      const [startExactMatches, notBestMatches] = partition(
-        unfilteredChoices,
-        startExactFilter
-      );
-
-      const [startAndFirstMatches, notStartMatches] = partition(
-        notBestMatches,
-        startFirstAndEachWordFilter
-      );
-
-      const [startMatches, notStartAndFirstMatches] = partition(
-        notStartMatches,
-        startEachWordFilter
-      );
-      const [partialMatches, notMatches] = partition(
-        notStartAndFirstMatches,
-        partialFilter
-      );
-
-      const filtered = [
-        ...startExactMatches,
-        ...startAndFirstMatches,
-        ...startMatches,
-        ...partialMatches,
-      ];
-
-      const highlightedChoices = filtered.map((choice) => {
-        return {
-          ...choice,
-          name: highlightChoiceName(choice.name as string, inputValue),
-        };
-      });
-      setFilteredChoices(highlightedChoices);
-    } catch (error) {
-      ipcRenderer.send('PROMPT_ERROR', { error, pid });
-    }
-  }, [
-    unfilteredChoices,
-    inputValue,
-    mode,
-    pid,
-    resizeHeight,
-    submitted,
-    setMainHeight,
-  ]);
-
-  const setPromptDataHandler = useCallback(
-    (_event: any, promptData: PromptData) => {
-      setSubmitted(false);
-      setUI(promptData.ui);
-      setPanelHTML('');
-      setPromptData(promptData);
-      setPlaceholder(promptData.placeholder);
-      setTabs(promptData?.tabs || []);
-
-      if (inputRef.current) {
-        inputRef?.current.focus();
-      }
-
-      if (textAreaRef.current) {
-        textAreaRef?.current.focus();
-      }
-    },
-    [setIndex, setPanelHTML, setPlaceholder, setPromptData, setTabs, setUI]
-  );
-
-  const setTabIndexHandler = useCallback((_event: any, ti: number) => {
-    setSubmitted(false);
-
-    setPanelHTML('');
-    setTabIndex(ti);
-  }, []);
-
-  const setPlaceholderHandler = useCallback((_event: any, text: string) => {
-    setPlaceholder(text);
-  }, []);
-
-  const setPanelHandler = useCallback((_event: any, html: string) => {
-    setPanelHTML(html);
-  }, []);
-
-  const setLogHandler = useCallback((_event: any, log: string) => {
-    setLogHtml(log);
-  }, []);
-
-  const setModeHandler = useCallback((_event: any, mode: Mode) => {
-    setMode(mode);
-  }, []);
-
-  const setHintHandler = useCallback((_event: any, hint: string) => {
-    setHint(hint);
-  }, []);
-
-  const setInputHandler = useCallback((_event: any, input: string) => {
-    setSubmitted(false);
-
-    setInputValue(input);
-  }, []);
-
-  const setChoicesHandler = useCallback(
-    (_event: any, rawChoices) => {
-      setSubmitted(false);
-      setPanelHTML('');
-      setUnfilteredChoices(rawChoices);
-      // setMaxHeight(window.innerHeight);
-    },
-    [
-      filteredChoices.length,
-      resizeHeight,
-      setIndex,
-      setPanelHTML,
-      setSubmitted,
-      setUnfilteredChoices,
-      ui,
-    ]
-  );
-
-  const setTextareaConfigHandler = useCallback(
-    (_event: any, config: TextareaConfig) => {
-      setTextareaConfig(config);
-    },
-    [setTextareaConfig]
-  );
-
-  const setEditorConfigHandler = useCallback(
-    (_event: any, config: EditorConfig) => {
-      setEditorConfig(config);
-    },
-    [setEditorConfig]
-  );
-
-  const setPidHandler = useCallback(
-    (_event, pid: number) => {
-      setPid(pid);
-    },
-    [setPid]
-  );
-
-  const setScriptHandler = useCallback(
-    (_event, script: Script) => {
-      // console.log({ script });
-      // resetPromptHandler();
-      setSubmitted(false);
-      setScript(script);
-      setTabs(script.tabs || []);
-      setTabIndex(0);
-      setIndex(0);
-      setInputValue('');
-      setUnfilteredChoices([]);
-      setLogHtml('');
-    },
-    [
-      setIndex,
-      setInputValue,
-      setLogHtml,
-      setScript,
-      setSubmitted,
-      setTabIndex,
-      setTabs,
-      setUnfilteredChoices,
-    ]
-  );
-
-  const setMaxHeightHandler = useCallback(
-    (event, height) => {
-      setMaxHeight(height);
-      setMainHeight(height - headerRef?.current?.clientHeight);
-    },
-    [setMainHeight, setMaxHeight]
-  );
-
-  const setFormHTMLHandler = useCallback(
-    (event, { html, formData }) => {
-      setFormHTML(html);
-      setFormData(formData);
-    },
-    [setFormHTML]
-  );
-
-  const exitHandler = useCallback(
-    (event) => {
-      setInputValue('');
-      setIndex(0);
-      setSubmitted(false);
-
-      console.log(`EXITING ${pid}`);
-    },
-    [pid, setIndex]
-  );
-
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const messageMap = {
     // [Channel.RESET_PROMPT]: resetPromptHandler,
-    [Channel.EXIT]: exitHandler,
-    [Channel.SET_PID]: setPidHandler,
-    [Channel.SET_SCRIPT]: setScriptHandler,
-    [Channel.SET_CHOICES]: setChoicesHandler,
-    [Channel.SET_EDITOR_CONFIG]: setEditorConfigHandler,
-    [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfigHandler,
-    [Channel.SET_FORM_HTML]: setFormHTMLHandler,
-    [Channel.SET_HINT]: setHintHandler,
-    [Channel.SET_INPUT]: setInputHandler,
-    [Channel.SET_MODE]: setModeHandler,
-    [Channel.SET_PANEL]: setPanelHandler,
-    [Channel.SET_LOG]: setLogHandler,
-    [Channel.SET_PLACEHOLDER]: setPlaceholderHandler,
-    [Channel.SET_TAB_INDEX]: setTabIndexHandler,
-    [Channel.SET_PROMPT_DATA]: setPromptDataHandler,
-    [Channel.SET_MAX_HEIGHT]: setMaxHeightHandler,
+    [Channel.EXIT]: second(setOpen),
+    [Channel.SET_PID]: second(setPid),
+    [Channel.SET_SCRIPT]: second(setScript),
+    [Channel.SET_CHOICES]: second(setUnfilteredChoices),
+    [Channel.SET_EDITOR_CONFIG]: second(setEditorConfig),
+    [Channel.SET_TEXTAREA_CONFIG]: second(setTextareaConfig),
+    [Channel.SET_FLAGS]: second(setFlags),
+    [Channel.SET_FORM_HTML]: (event: any, { html, formData }: any) => {
+      setFormHTML(html);
+      setFormData(formData);
+    },
+    [Channel.SET_HINT]: second(setHint),
+    [Channel.SET_INPUT]: second(setInput),
+    [Channel.SET_MODE]: second(setMode),
+    [Channel.SET_PANEL]: second(setPanelHTML),
+    [Channel.SET_LOG]: second(setLogHtml),
+    [Channel.SET_PLACEHOLDER]: second(setPlaceholder),
+    [Channel.SET_TAB_INDEX]: second(setTabIndex),
+    [Channel.SET_PROMPT_DATA]: second(setPromptData),
+    [Channel.SET_MAX_HEIGHT]: second(setMaxHeight),
   };
 
   useEffect(() => {
@@ -784,40 +283,6 @@ export default function App() {
     };
   }, [messageMap]);
 
-  const [editor, setEditor] = useState<EditorRef | null>(null);
-
-  // I hate this hack
-  useEffect(() => {
-    if (editor) {
-      editor?.focus();
-
-      const keyDown = editor.onKeyDown((event) => {
-        if (event.ctrlKey || event.metaKey) {
-          switch (event.keyCode) {
-            case KeyCode.KEY_S:
-              event.preventDefault();
-              submit(editor.getValue());
-              break;
-
-            case KeyCode.KEY_W:
-              event.preventDefault();
-              closePrompt();
-              break;
-
-            default:
-              break;
-          }
-        }
-      });
-
-      return () => {
-        keyDown.dispose();
-      };
-    }
-
-    return () => {};
-  }, [closePrompt, submit, editor, pid]);
-
   return (
     <ErrorBoundary>
       <div
@@ -836,27 +301,15 @@ export default function App() {
           )}
           {!!(ui & UI.hotkey) && (
             <Hotkey
-              submit={submit}
-              onEscape={closePrompt}
+              submit={setSubmitValue}
               onHotkeyHeightChanged={setMainHeight}
             />
           )}
-          {!!(ui & UI.arg) && (
-            <Input
-              onKeyDown={onKeyDown}
-              placeholder={placeholder}
-              ref={inputRef}
-            />
-          )}
-          {hint && (
-            <div className="pl-3 pb-1 text-xs text-gray-800 dark:text-gray-200 italic">
-              {parse(hint)}
-            </div>
-          )}
-          {tabs?.length > 0 && (
-            <Tabs tabs={tabs} tabIndex={tabIndex} onTabClick={onTabClick} />
-          )}
-          {logHtml?.length > 0 && <Log />}
+          {!!(ui & UI.arg) && <Input />}
+          {hint && <Hint />}
+          {tabs?.length > 0 && <Tabs />}
+          {logHtml?.length > 0 && script.log && <Log />}
+          {flagValue && <Selected />}
         </header>
         <main
           ref={mainRef}
@@ -866,35 +319,22 @@ export default function App() {
         border-b
         `}
         >
-          {!!(ui & UI.drop) && (
-            <Drop
-              placeholder={placeholder}
-              submit={submit}
-              onEscape={closePrompt}
-            />
-          )}
-          {!!(ui & UI.textarea) && (
-            <TextArea onSubmit={submit} onEscape={closePrompt} />
-          )}
-          {!!(ui & UI.editor) && <Editor ref={setEditor} />}
+          {!!(ui & UI.drop) && <Drop />}
+          {!!(ui & UI.textarea) && <TextArea />}
+          {!!(ui & UI.editor) && <Editor />}
+          {!!(ui & UI.form) && <Form />}
 
-          {!!(ui & UI.form) && (
-            <Form onSubmit={submit} onEscape={closePrompt} />
-          )}
-
-          {!!(ui & (UI.arg | UI.hotkey)) && panelHTML?.length > 0 && (
-            <Panel onContainerHeightChanged={setMainHeight} />
-          )}
           <AutoSizer>
             {({ width, height }) => (
               <>
-                {!!(ui & UI.arg) && (
+                {!!(ui & (UI.arg | UI.hotkey)) && panelHTML?.length > 0 && (
+                  <Panel width={width} height={height} />
+                )}
+
+                {!!(ui & UI.arg) && panelHTML?.length === 0 && (
                   <List
                     height={filteredChoices?.length ? height : 0}
                     width={width}
-                    onListChoicesChanged={setMainHeight}
-                    onIndexChange={clampIndex}
-                    onIndexSubmit={onIndexSubmit}
                   />
                 )}
               </>

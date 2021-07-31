@@ -16,7 +16,4 @@ export interface ChoiceButtonProps {
 export interface ListProps {
   height: number;
   width: number;
-  onListChoicesChanged: (listHeight: number) => void;
-  onIndexChange: ChoiceButtonData['onIndexChange'];
-  onIndexSubmit: ChoiceButtonData['onIndexSubmit'];
 }

@@ -14,18 +14,17 @@ import React, {
 import parse, { attributesToProps, domToReact } from 'html-react-parser';
 import SimpleBar from 'simplebar-react';
 import { useAtom } from 'jotai';
-import { formDataAtom, formHTMLAtom, pidAtom } from '../jotai';
+import { formDataAtom, formHTMLAtom, pidAtom, submitValueAtom } from '../jotai';
 import useMountHeight from './hooks/useMountHeight';
+import { useEscape } from '../hooks';
 
-type FormProps = {
-  onSubmit: (value: any) => void;
-  onEscape: (value: any) => void;
-};
+export default function Form() {
+  useEscape();
 
-export default function Form({ onSubmit, onEscape }: FormProps) {
   const formRef = useRef<any>();
   const [formHTML] = useAtom(formHTMLAtom);
   const [formData] = useAtom(formDataAtom);
+  const [, submit] = useAtom(submitValueAtom);
 
   useEffect(() => {
     if (formRef?.current?.elements?.[0]) {
@@ -55,41 +54,34 @@ export default function Form({ onSubmit, onEscape }: FormProps) {
     }
   }, [formData]);
 
-  const onLocalSubmit = useCallback(
-    (event) => {
-      event.preventDefault();
+  const onLocalSubmit = useCallback((event) => {
+    event.preventDefault();
 
-      const data: any = new FormData(formRef?.current);
+    const data: any = new FormData(formRef?.current);
 
-      const names: any = {};
-      // const arrays: any = [];
-      for (const el of formRef?.current?.elements) {
-        if (names[el.name] === false) {
-          names[el.name] = true;
-        } else {
-          names[el.name] = false;
-        }
+    const names: any = {};
+    // const arrays: any = [];
+    for (const el of formRef?.current?.elements) {
+      if (names[el.name] === false) {
+        names[el.name] = true;
+      } else {
+        names[el.name] = false;
       }
+    }
 
-      const formJSON = Object.fromEntries(data.entries());
+    const formJSON = Object.fromEntries(data.entries());
 
-      for (const [key, value] of Object.entries(names)) {
-        if (key && value) {
-          formJSON[key] = data.getAll(key);
-        }
+    for (const [key, value] of Object.entries(names)) {
+      if (key && value) {
+        formJSON[key] = data.getAll(key);
       }
+    }
 
-      onSubmit(formJSON);
-    },
-    [onSubmit]
-  );
+    submit(formJSON);
+  }, []);
 
   const onFormKeyDown = useCallback(
     (event: KeyboardEvent<HTMLFormElement>) => {
-      if (event.key === 'Escape') {
-        onEscape(event);
-        return;
-      }
       if (event.ctrlKey || event.metaKey) {
         switch (event.key) {
           case 's':
@@ -98,17 +90,12 @@ export default function Form({ onSubmit, onEscape }: FormProps) {
             onLocalSubmit(event);
             break;
 
-          case 'w':
-            event.preventDefault();
-            onEscape(event);
-            break;
-
           default:
             break;
         }
       }
     },
-    [onEscape, onLocalSubmit]
+    [onLocalSubmit]
   );
 
   const onFormChange = useCallback(() => {}, []);
@@ -117,6 +104,7 @@ export default function Form({ onSubmit, onEscape }: FormProps) {
 
   return (
     <SimpleBar
+      className="w-full h-full"
       scrollableNodeProps={{ ref: containerRef }}
       style={
         {

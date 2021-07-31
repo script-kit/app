@@ -246,6 +246,7 @@ const kitMessageMap: ChannelHandler = {
   SET_LOGIN: (data) => {
     app.setLoginItemSettings(data);
   },
+
   SET_MODE: (data) => {
     if (data.mode === Mode.HOTKEY) {
       emitter.emit(KitEvent.PauseShortcuts);
@@ -334,6 +335,9 @@ const kitMessageMap: ChannelHandler = {
   },
   SET_FORM_HTML: (data) => {
     sendToPrompt(Channel.SET_FORM_HTML, data);
+  },
+  SET_FLAGS: (data: any) => {
+    sendToPrompt(Channel.SET_FLAGS, data.flags);
   },
 };
 
@@ -481,13 +485,14 @@ class Processes extends Array<ProcessInfo> {
     child?.on('message', createMessageHandler(type));
 
     const { pid } = child;
+
     child.on('exit', () => {
+      sendToPrompt(Channel.EXIT, false);
       if (id) clearTimeout(id);
       if (type === ProcessType.Prompt) {
         setAppHidden(false);
         emitter.emit(KitEvent.ExitPrompt);
         emitter.emit(KitEvent.ResumeShortcuts);
-        sendToPrompt(Channel.EXIT, {});
       }
 
       const { values } = processes.getByPid(pid) as ProcessInfo;

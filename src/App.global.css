@@ -41,6 +41,18 @@ body {
   display: none;
 }
 
+.kit-docs > h1 {
+  @apply px-2 pt-2;
+}
+
+.kit-docs > h2 {
+  @apply px-2 pt-2;
+}
+
+.kit-docs > p {
+  @apply px-2;
+}
+
 @layer base {
   h1 {
     @apply text-2xl;
@@ -91,6 +103,10 @@ body {
 
   p {
     @apply mb-0;
+  }
+
+  pre {
+    @apply py-2;
   }
 
   .kit-form * {
