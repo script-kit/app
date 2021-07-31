@@ -1,3 +1,10 @@
+# [1.3.0-alpha.95](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.94...v1.3.0-alpha.95) (2021-07-31)
+
+
+### Features
+
+* **app:** adding setFlags ([f0b8f42](https://github.com/johnlindquist/kitapp/commit/f0b8f42945779821e9626025d5edb6ad0a921cd6))
+
 # [1.3.0-beta.34](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.33...v1.3.0-beta.34) (2021-07-24)
 
 
