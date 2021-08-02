@@ -1,3 +1,11 @@
+# [1.3.0-alpha.96](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.95...v1.3.0-alpha.96) (2021-08-02)
+
+
+### Features
+
+* **app:** script context menu ([ff53596](https://github.com/johnlindquist/kitapp/commit/ff535962d09dcc1e09c5f72da7a8fc129b9a01db))
+* **app:** script context menu ([7bd01e3](https://github.com/johnlindquist/kitapp/commit/7bd01e3f2a8e3fd083c16ce20703acc1ee5d8042))
+
 # [1.3.0-alpha.95](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.94...v1.3.0-alpha.95) (2021-07-31)
 
 ### Features
