@@ -182,7 +182,8 @@ export const useFlag = () => {
   );
 
   const flagsWithShortcuts = Object.entries(flags).filter(
-    ([key, value]) => value?.shortcut
+    ([key, value]) =>
+      value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter'
   );
 
   const shortcuts = flagsWithShortcuts

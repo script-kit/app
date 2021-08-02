@@ -119,7 +119,7 @@ export const indexAtom = atom(
   }
 );
 
-export const flaggedValue = atom<Choice | string>('');
+const flaggedValueAtom = atom<Choice | string>('');
 
 export const choicesAtom = atom(
   (g) => g(choices),
@@ -131,7 +131,7 @@ export const choicesAtom = atom(
     const prevIndex = g(index);
     const prevChoice = prevChoices[prevIndex]?.id;
     const nextChoice = a[prevIndex]?.id;
-    if (prevChoice !== nextChoice && !g(flaggedValue)) {
+    if (prevChoice !== nextChoice && !g(flaggedValueAtom)) {
       // s(indexAtom, 0);
     }
     s(choices, a);
@@ -163,7 +163,7 @@ export const tabIndexAtom = atom(
     s(submittedAtom, false);
     s(tabIndex, a);
     s(flagsAtom, {});
-    s(flaggedValue, '');
+    s(flaggedValueAtom, '');
     ipcRenderer.send(Channel.TAB_CHANGED, {
       tab: g(tabsAtom)[a],
       input: g(rawInputAtom),
@@ -243,7 +243,7 @@ export const promptDataAtom = atom(
 );
 
 export const flagValueAtom = atom(
-  (g) => g(flaggedValue),
+  (g) => g(flaggedValueAtom),
   (g, s, a: any) => {
     if (a === '') {
       s(unfilteredChoicesAtom, g(prevChoicesAtom));
@@ -258,7 +258,7 @@ export const flagValueAtom = atom(
         ([key, value]: [key: string, value: any]) => {
           return {
             name: value?.name || key,
-            tag: value?.shortcut || '',
+            shortcut: value?.shortcut || '',
             description: value?.description || '',
             value: key,
           };
@@ -269,7 +269,7 @@ export const flagValueAtom = atom(
       s(unfilteredChoicesAtom, flagChoices);
     }
 
-    s(flaggedValue, a);
+    s(flaggedValueAtom, a);
   }
 );
 
@@ -289,8 +289,8 @@ export const submitValueAtom = atom(
         : 'Processing...'
     );
 
-    const fValue = g(flaggedValue);
-    s(flaggedValue, ''); // clear after getting
+    const fValue = g(flaggedValueAtom);
+    s(flaggedValueAtom, ''); // clear after getting
     const f = g(flagAtom);
     const flag = fValue ? a : f || '';
     s(flagAtom, '');
@@ -324,7 +324,7 @@ export const openAtom = atom(
       s(logHTMLAtom, '');
       s(uiAtom, UI.none);
       s(flagsAtom, {});
-      s(flaggedValue, '');
+      s(flaggedValueAtom, '');
     }
     s(rawOpen, a);
   }

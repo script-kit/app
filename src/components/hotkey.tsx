@@ -4,6 +4,7 @@ import React, { KeyboardEvent, useCallback, useEffect, useRef } from 'react';
 
 import { useAtom } from 'jotai';
 import { placeholderAtom } from '../jotai';
+import { useEscape } from '../hooks';
 
 interface HotkeyProps {
   submit(data: any): void;
@@ -91,11 +92,16 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
   const containerRef = useRef<HTMLInputElement>(null);
   const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
 
-  const onKeyUp = useCallback((event) => {
-    event.preventDefault();
-    const modifierString = getModifierString(event);
-    setPlaceholder(modifierString);
-  }, []);
+  useEscape();
+
+  const onKeyUp = useCallback(
+    (event) => {
+      event.preventDefault();
+      const modifierString = getModifierString(event);
+      setPlaceholder(modifierString);
+    },
+    [setPlaceholder]
+  );
 
   const onKeyDown = useCallback(
     (event) => {
@@ -105,6 +111,10 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
 
       setPlaceholder(modifierString);
 
+      if (event.key === 'Escape') {
+        return;
+      }
+
       if (
         event.key.length === 1 ||
         ['Shift', 'Control', 'Alt', 'Meta'].every((m) => !event.key.includes(m))
@@ -112,7 +122,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
         submit(keyData);
       }
     },
-    [submit]
+    [setPlaceholder, submit]
   );
 
   return (
