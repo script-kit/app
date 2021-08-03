@@ -119,6 +119,16 @@ export default function ChoiceButton({
                   {friendlyShortcut(choice.shortcut)}
                 </div>
               )}
+              {choice?.kenv && (
+                <div
+                  className={`
+              text-xxs font-mono font-bold
+              ${index === currentIndex ? `opacity-70` : `opacity-40`}
+              `}
+                >
+                  {choice.kenv}
+                </div>
+              )}
               {choice?.tag && (
                 <div
                   className={`
@@ -149,10 +159,15 @@ export default function ChoiceButton({
               />
             )}
 
-            {index === currentIndex && flags && !flaggedValue && (
-              <div className="pl-2 hover:cursor-pointer" onClick={onRightClick}>
-                <MoreThanIcon
-                  className={`
+            {index === currentIndex &&
+              Boolean(Object.keys(flags).length) &&
+              !flaggedValue && (
+                <div
+                  className="pl-2 hover:cursor-pointer"
+                  onClick={onRightClick}
+                >
+                  <MoreThanIcon
+                    className={`
         h-4 w-3
         fill-current
         transition ease-in
@@ -160,10 +175,10 @@ export default function ChoiceButton({
         hover:opacity-100
         dark:text-white text-black
         `}
-                  viewBox="0 0 32 32"
-                />
-              </div>
-            )}
+                    viewBox="0 0 32 32"
+                  />
+                </div>
+              )}
           </div>
         </div>
       )}

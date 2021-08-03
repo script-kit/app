@@ -181,7 +181,9 @@ export const useFlag = () => {
     unfilteredChoicesAtom
   );
 
-  const flagsWithShortcuts = Object.entries(flags).filter(
+  const flagsArray = Object.entries(flags);
+
+  const flagsWithShortcuts = flagsArray.filter(
     ([key, value]) =>
       value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter'
   );
@@ -207,7 +209,7 @@ export const useFlag = () => {
   );
 
   useHotkeys(
-    shortcuts.length ? 'right' : 'f18',
+    flagsArray.length ? 'right' : 'f18',
     (event) => {
       if (selectionStart === input.length) {
         event.preventDefault();
@@ -220,7 +222,7 @@ export const useFlag = () => {
   );
 
   useHotkeys(
-    shortcuts.length ? 'left' : 'f17',
+    flagsArray.length ? 'left' : 'f17',
     (event) => {
       if (selectionStart === 0) {
         event.preventDefault();

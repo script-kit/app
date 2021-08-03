@@ -64,6 +64,19 @@ export default function Input() {
         (event.target as HTMLInputElement).selectionStart as number
       );
       if (event.key === ' ') {
+        const shortcodeChoice = unfilteredChoices?.find((choice: Choice) => {
+          const iv = inputValue.trim().toLowerCase();
+          if (typeof choice?.shortcode === 'string') {
+            return choice.shortcode === iv;
+          }
+          return choice?.shortcode?.find((sc: string) => sc === iv);
+        });
+        if (shortcodeChoice) {
+          setSubmitValue(shortcodeChoice.value);
+          event.preventDefault();
+          return;
+        }
+
         const tab = tabs.find((t) =>
           t.toLowerCase().startsWith(inputValue?.toLowerCase())
         );
@@ -77,17 +90,6 @@ export default function Input() {
             input: inputValue,
             pid,
           });
-          event.preventDefault();
-          return;
-        }
-
-        const shortcodeChoice = unfilteredChoices?.find((choice: Choice) =>
-          choice?.shortcode?.find(
-            (sc: string) => sc === inputValue.trim().toLowerCase()
-          )
-        );
-        if (shortcodeChoice) {
-          setSubmitValue(shortcodeChoice.value);
           event.preventDefault();
         }
       }

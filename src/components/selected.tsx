@@ -2,8 +2,9 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useCallback } from 'react';
 import { Choice } from 'kit-bridge/cjs/type';
-
 import { useAtom } from 'jotai';
+
+import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
 import { flagValueAtom, hintAtom } from '../jotai';
 
 export default function Hint() {
@@ -23,18 +24,29 @@ export default function Hint() {
       }
       onClick={onClick}
       className={`
-    pl-3 py-1
-      cursor-pointer
-    text-md font-mono font-bold
-    text-white dark:text-black
-    dark:bg-primary-light bg-primary-dark
-    hover:shadow-lg shadow-inner
-
+    py-1
+    cursor-pointer
+    text-sm
+    primary-invert
+    flex flex-row
+    items-center
     `}
     >
-      {`< ${
-        typeof flagValue === 'string' ? flagValue : (flagValue as Choice).name
-      }`}
+      <div className="px-2 hover:cursor-pointer">
+        <MoreThanIcon
+          className={`
+h-2 w-2
+fill-current
+transition ease-in
+opacity-75
+hover:opacity-100
+text-white dark:text-black
+`}
+          viewBox="0 0 32 32"
+          transform="rotate(180)"
+        />
+      </div>
+      {typeof flagValue === 'string' ? flagValue : (flagValue as Choice).name}
     </div>
   );
 }

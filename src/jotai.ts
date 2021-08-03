@@ -34,7 +34,7 @@ export const placeholderAtom = atom(
 export const unfilteredChoicesAtom = atom<Choice[]>([]);
 export const prevChoicesAtom = atom<Choice[]>([]);
 
-export const uiAtom = atom<UI>(UI.none);
+export const uiAtom = atom<UI>(UI.arg);
 export const hintAtom = atom('');
 export const modeAtom = atom<Mode>(Mode.FILTER);
 
@@ -193,6 +193,7 @@ export const scriptAtom = atom(
     s(submittedAtom, false);
     s(tabsAtom, a?.tabs || []);
     s(flagsAtom, {});
+    s(flaggedValueAtom, '');
   }
 );
 
@@ -322,7 +323,7 @@ export const openAtom = atom(
       s(hintAtom, '');
       s(submittedAtom, false);
       s(logHTMLAtom, '');
-      s(uiAtom, UI.none);
+      s(uiAtom, UI.arg);
       s(flagsAtom, {});
       s(flaggedValueAtom, '');
     }

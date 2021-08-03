@@ -99,10 +99,6 @@ export const checkScriptChoices = (data: MessageData) => {
         }`;
       }
 
-      if (script.kenv) {
-        script.tag = script.kenv;
-      }
-
       if (script.img) {
         script.img = script.img.match(/(^http)|^\//)
           ? script.img
