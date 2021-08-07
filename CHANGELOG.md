@@ -1,3 +1,10 @@
+# [1.3.0-alpha.98](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.97...v1.3.0-alpha.98) (2021-08-07)
+
+
+### Features
+
+* **app:** Resizing fixes. Extracting hooks. Handle ipc/channel ([cee0df8](https://github.com/johnlindquist/kitapp/commit/cee0df861917fefddbb8365f7b7f4b11e133b0bc))
+
 # [1.3.0-alpha.97](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.96...v1.3.0-alpha.97) (2021-08-03)
 
 
