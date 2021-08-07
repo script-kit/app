@@ -1,3 +1,10 @@
+# [1.3.0-alpha.97](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.96...v1.3.0-alpha.97) (2021-08-03)
+
+
+### Features
+
+* **app:** validating flags ([dfcc28a](https://github.com/johnlindquist/kitapp/commit/dfcc28a0b3658a7ed8a52a5dd7229646ba5262b7))
+
 # [1.3.0-alpha.96](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.95...v1.3.0-alpha.96) (2021-08-02)
 
 
