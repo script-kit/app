@@ -49,9 +49,8 @@ import {
   formDataAtom,
   formHTMLAtom,
   hintAtom,
-  indexAtom,
   inputAtom,
-  logHeightAtom,
+  isMouseDownAtom,
   logHTMLAtom,
   mainHeightAtom,
   maxHeightAtom,
@@ -71,7 +70,15 @@ import {
   uiAtom,
   unfilteredChoicesAtom,
 } from './jotai';
-import { useChoices } from './hooks';
+
+import {
+  DEFAULT_HEIGHT,
+  heightMap,
+  MIN_HEIGHT,
+  MIN_TEXTAREA_HEIGHT,
+} from './defaults';
+import useChoices from './hooks/useChoices';
+import { AppChannel } from './enums';
 
 const second = (fn: (value: any) => void) => (_: any, x: any) => fn(x);
 
@@ -109,16 +116,16 @@ class ErrorBoundary extends React.Component {
 
 export default function App() {
   const [pid, setPid] = useAtom(pidAtom);
-  const [, setOpen] = useAtom(openAtom);
+  const [open, setOpen] = useAtom(openAtom);
   const [script, setScript] = useAtom(scriptAtom);
 
   const [inputValue, setInput] = useAtom(inputAtom);
   const [, setPlaceholder] = useAtom(placeholderAtom);
-  const [, setPromptData] = useAtom(promptDataAtom);
+  const [promptData, setPromptData] = useAtom(promptDataAtom);
   const [submitted] = useAtom(submittedAtom);
 
   const [, setUnfilteredChoices] = useAtom(unfilteredChoicesAtom);
-  const [filteredChoices] = useAtom(choicesAtom);
+  const [choices] = useAtom(choicesAtom);
 
   const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
@@ -150,68 +157,95 @@ export default function App() {
     setTopHeight(entry.contentRect.height);
   });
 
-  const isMainEmpty = useCallback(() => {
-    return !(
-      filteredChoices?.length ||
-      panelHTML?.length ||
-      formHTML?.length ||
-      !!(ui & (UI.textarea | UI.editor | UI.drop))
-    );
-  }, [filteredChoices?.length, formHTML?.length, ui, panelHTML?.length]);
-
-  const resizeHeight = useDebouncedCallback(
-    useCallback(
-      (height: number) => {
-        ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, {
-          height,
-          cache: ui !== UI.arg,
-        });
-      },
-      [ui]
-    ),
-    50
+  const [isMouseDown, setIsMouseDown] = useAtom(isMouseDownAtom);
+  const resizeHeight = useCallback(
+    (height: number) => {
+      ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, {
+        height,
+        ui,
+      });
+    },
+    [ui]
   );
+
+  const resetBounds = useCallback(() => {
+    ipcRenderer.send(AppChannel.PROMPT_HEIGHT_RESET, {});
+  }, []);
 
   const sizeDeps = [
     mainHeight,
     maxHeight,
-    isMainEmpty,
     resizeHeight,
     topHeight,
+    ui,
+    mode,
+    open,
+    choices?.length,
+    panelHTML,
   ];
 
   // useWhatChanged(
   //   sizeDeps,
-  //   `mainHeight,
+  //   `    mainHeight,
   //   maxHeight,
-  //   isMainEmpty,
   //   resizeHeight,
-  //   topHeight,`
+  //   topHeight,
+  //   ui,
+  //   mode,
+  //   open,
+  //   choices?.length,`
   // );
 
   useLayoutEffect(() => {
-    const mainEmpty = isMainEmpty();
+    if (!open) return;
 
-    const fullHeight = topHeight + mainHeight;
-    const clampedHeight =
-      fullHeight < maxHeight
-        ? fullHeight < topHeight
-          ? topHeight
-          : fullHeight
-        : maxHeight;
+    if (ui === UI.arg) {
+      const hasMain = choices?.length || panelHTML?.length;
+      let newHeight = topHeight;
 
-    const newHeight = mainEmpty ? topHeight : clampedHeight;
+      if (panelHTML?.length) {
+        newHeight += mainHeight;
+      } else if (mode === Mode.FILTER) {
+        if (hasMain) newHeight += mainHeight;
+        if (newHeight > maxHeight) newHeight = maxHeight;
+      } else if (mode === Mode.GENERATE) {
+        if (hasMain) newHeight += mainHeight;
+        if (newHeight > DEFAULT_HEIGHT) newHeight = DEFAULT_HEIGHT;
+      }
+      if (newHeight < topHeight && !hasMain) newHeight = topHeight;
+      // console.log({
+      //   hasMain,
+      //   newHeight,
+      //   topHeight,
+      // });
+      if (newHeight < topHeight && hasMain) {
+        resetBounds();
+      } else {
+        resizeHeight(Math.round(newHeight));
+      }
+    }
 
-    // console.log({
-    //   fullHeight,
-    //   topHeight,
-    //   mainHeight,
-    //   maxHeight,
-    //   empty: isMainEmpty(),
-    //   clampedHeight,
-    // });
+    if (ui & (UI.textarea | UI.editor)) {
+      if (maxHeight < MIN_TEXTAREA_HEIGHT) {
+        resetBounds();
+      }
+    }
 
-    resizeHeight(Math.round(newHeight));
+    if (ui & UI.div) {
+      let newHeight = topHeight;
+      newHeight += mainHeight;
+      if (newHeight < MIN_HEIGHT) {
+        resetBounds();
+      } else {
+        resizeHeight(Math.round(newHeight));
+      }
+    }
+    if (ui & UI.form) {
+      let newHeight = topHeight;
+      newHeight += mainHeight;
+
+      resizeHeight(Math.round(newHeight));
+    }
   }, sizeDeps);
 
   // useEffect(() => {
@@ -251,6 +285,7 @@ export default function App() {
     [Channel.SET_EDITOR_CONFIG]: second(setEditorConfig),
     [Channel.SET_TEXTAREA_CONFIG]: second(setTextareaConfig),
     [Channel.SET_FLAGS]: second(setFlags),
+    [Channel.SET_DIV_HTML]: second(setPanelHTML),
     [Channel.SET_FORM_HTML]: (event: any, { html, formData }: any) => {
       setFormHTML(html);
       setFormData(formData);
@@ -283,6 +318,13 @@ export default function App() {
     };
   }, [messageMap]);
 
+  const onMouseDown = useCallback(() => {
+    setIsMouseDown(true);
+  }, [setIsMouseDown]);
+  const onMouseUp = useCallback(() => {
+    setIsMouseDown(false);
+  }, [setIsMouseDown]);
+
   return (
     <ErrorBoundary>
       <div
@@ -294,6 +336,8 @@ export default function App() {
           } as any
         }
         className="flex flex-col w-full rounded-lg relative h-full"
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
       >
         <header ref={headerRef}>
           {(script?.description || script?.twitter || script?.menu) && (
@@ -327,15 +371,13 @@ export default function App() {
           <AutoSizer>
             {({ width, height }) => (
               <>
-                {!!(ui & (UI.arg | UI.hotkey)) && panelHTML?.length > 0 && (
-                  <Panel width={width} height={height} />
-                )}
+                {!!(ui & (UI.arg | UI.hotkey | UI.div)) &&
+                  panelHTML?.length > 0 && (
+                    <Panel width={width} height={height} />
+                  )}
 
                 {!!(ui & UI.arg) && panelHTML?.length === 0 && (
-                  <List
-                    height={filteredChoices?.length ? height : 0}
-                    width={width}
-                  />
+                  <List height={choices?.length ? height : 0} width={width} />
                 )}
               </>
             )}

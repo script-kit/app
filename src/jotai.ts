@@ -249,7 +249,7 @@ export const flagValueAtom = atom(
     if (a === '') {
       s(unfilteredChoicesAtom, g(prevChoicesAtom));
       s(rawInputAtom, g(prevInputAtom));
-      s(indexAtom, g(prevIndexAtom));
+      s(index, g(prevIndexAtom));
     } else {
       s(prevIndexAtom, g(indexAtom));
       s(prevInputAtom, g(inputAtom));
@@ -332,3 +332,4 @@ export const openAtom = atom(
 );
 
 export const selectionStartAtom = atom(0);
+export const isMouseDownAtom = atom(false);

@@ -5,9 +5,9 @@ import { Choice } from 'kit-bridge/cjs/type';
 import { useAtom } from 'jotai';
 
 import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
-import { flagValueAtom, hintAtom } from '../jotai';
+import { flagValueAtom } from '../jotai';
 
-export default function Hint() {
+export default function Selected() {
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
 
   const onClick = useCallback(() => {

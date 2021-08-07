@@ -1,22 +1,27 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
-import React, { useCallback, KeyboardEvent, useState } from 'react';
+import React, { useState } from 'react';
 import { useAtom } from 'jotai';
 
-import { submitValueAtom, textareaConfigAtom } from '../jotai';
-import useMountHeight from './hooks/useMountHeight';
-import { useClose, useFocus, useSave } from '../hooks';
+import { textareaConfigAtom } from '../jotai';
+import {
+  useClose,
+  useFocus,
+  useSave,
+  useOpen,
+  useMountMainHeight,
+} from '../hooks';
 
 export default function TextArea() {
   const textareaRef = useFocus();
+  useOpen();
 
-  const [options, setOptions] = useAtom(textareaConfigAtom);
-  const [, submit] = useAtom(submitValueAtom);
+  const [options] = useAtom(textareaConfigAtom);
 
   const [textAreaValue, setTextAreaValue] = useState(options.value);
-  useSave(() => textAreaValue);
+  useSave(textAreaValue);
   useClose();
-  const containerRef = useMountHeight();
+  const containerRef = useMountMainHeight();
 
   return (
     <div ref={containerRef}>

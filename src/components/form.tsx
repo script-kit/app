@@ -4,40 +4,37 @@
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, {
-  useCallback,
-  useRef,
-  KeyboardEvent,
-  useEffect,
-  RefObject,
-} from 'react';
-import parse, { attributesToProps, domToReact } from 'html-react-parser';
+import React, { useCallback, useRef, KeyboardEvent, useEffect } from 'react';
+import parse, { domToReact } from 'html-react-parser';
 import SimpleBar from 'simplebar-react';
 import { useAtom } from 'jotai';
-import { formDataAtom, formHTMLAtom, pidAtom, submitValueAtom } from '../jotai';
-import useMountHeight from './hooks/useMountHeight';
-import { useEscape } from '../hooks';
+import { formDataAtom, formHTMLAtom, submitValueAtom } from '../jotai';
+import { useEscape, useMountMainHeight, useObserveMainHeight } from '../hooks';
 
 export default function Form() {
   useEscape();
 
-  const formRef = useRef<any>();
+  const formRef = useObserveMainHeight<HTMLFormElement>();
   const [formHTML] = useAtom(formHTMLAtom);
   const [formData] = useAtom(formDataAtom);
   const [, submit] = useAtom(submitValueAtom);
 
   useEffect(() => {
     if (formRef?.current?.elements?.[0]) {
-      formRef?.current?.elements?.[0]?.focus();
+      (formRef?.current?.elements as any)?.[0]?.focus();
     } else {
       formRef?.current?.focus();
     }
-  }, [formRef?.current?.firstElementChild, formRef?.current?.elements]);
+  }, [
+    formRef?.current?.firstElementChild,
+    formRef?.current?.elements,
+    formRef,
+  ]);
 
   useEffect(() => {
     if (formData) {
       const data: any = formData;
-      for (const el of formRef?.current?.elements) {
+      for (const el of formRef?.current?.elements as any) {
         if (data[el.name]) {
           const value = data[el.name];
           if (Array.isArray(value)) {
@@ -54,31 +51,34 @@ export default function Form() {
     }
   }, [formData]);
 
-  const onLocalSubmit = useCallback((event) => {
-    event.preventDefault();
+  const onLocalSubmit = useCallback(
+    (event) => {
+      event.preventDefault();
 
-    const data: any = new FormData(formRef?.current);
+      const data: any = new FormData(formRef?.current);
 
-    const names: any = {};
-    // const arrays: any = [];
-    for (const el of formRef?.current?.elements) {
-      if (names[el.name] === false) {
-        names[el.name] = true;
-      } else {
-        names[el.name] = false;
+      const names: any = {};
+      // const arrays: any = [];
+      for (const el of formRef?.current?.elements) {
+        if (names[el.name] === false) {
+          names[el.name] = true;
+        } else {
+          names[el.name] = false;
+        }
       }
-    }
 
-    const formJSON = Object.fromEntries(data.entries());
+      const formJSON = Object.fromEntries(data.entries());
 
-    for (const [key, value] of Object.entries(names)) {
-      if (key && value) {
-        formJSON[key] = data.getAll(key);
+      for (const [key, value] of Object.entries(names)) {
+        if (key && value) {
+          formJSON[key] = data.getAll(key);
+        }
       }
-    }
 
-    submit(formJSON);
-  }, []);
+      submit(formJSON);
+    },
+    [submit]
+  );
 
   const onFormKeyDown = useCallback(
     (event: KeyboardEvent<HTMLFormElement>) => {
@@ -100,12 +100,9 @@ export default function Form() {
 
   const onFormChange = useCallback(() => {}, []);
 
-  const containerRef = useMountHeight();
-
   return (
     <SimpleBar
       className="w-full h-full"
-      scrollableNodeProps={{ ref: containerRef }}
       style={
         {
           WebkitAppRegion: 'no-drag',

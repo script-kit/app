@@ -14,6 +14,7 @@ import Preview from './preview';
 import ChoiceButton from './button';
 import {
   choicesAtom,
+  flagValueAtom,
   indexAtom,
   inputAtom,
   mainHeightAtom,
@@ -44,6 +45,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [index, onIndexChange] = useAtom(indexAtom);
   const [inputValue] = useAtom(inputAtom);
   const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
+  const [flagValue] = useAtom(flagValueAtom);
 
   const onIndexSubmit = useCallback(
     (i) => {
@@ -79,7 +81,7 @@ export default function ChoiceList({ width, height }: ListProps) {
     if (choices.length && height) {
       (listRef as any).current.scrollToItem(index);
     }
-  }, [index, choices.length, height]);
+  }, [index, choices, height, flagValue]);
 
   return (
     <div

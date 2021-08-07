@@ -4,10 +4,9 @@
 /* eslint-disable react/prop-types */
 
 import { useAtom } from 'jotai';
-import React, { KeyboardEvent, useCallback, useRef, useState } from 'react';
-import { useEscape } from '../hooks';
+import React, { useCallback, useState } from 'react';
 import { placeholderAtom, submitValueAtom } from '../jotai';
-import useMountHeight from './hooks/useMountHeight';
+import { useEscape, useMountMainHeight } from '../hooks';
 
 export default function Drop() {
   useEscape();
@@ -60,7 +59,7 @@ export default function Drop() {
     [submit]
   );
 
-  const containerRef = useMountHeight();
+  const containerRef = useMountMainHeight();
 
   return (
     <div ref={containerRef}>

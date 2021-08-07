@@ -98,7 +98,7 @@ export default function ChoiceButton({
                     ? `opacity-90 dark:text-primary-light text-primary-dark`
                     : `opacity-60`
                 }
-                hover:opacity-100
+
                 `}
               >
                 {(index === currentIndex && choice?.description) ||
@@ -108,11 +108,11 @@ export default function ChoiceButton({
           </div>
 
           <div className="flex flex-row items-center h-full">
-            <div className="flex flex-col">
+            <div className="flex flex-col pr-2">
               {choice?.shortcut && (
                 <div
                   className={`
-              text-xxs font-mono font-bold
+              text-xxs font-mono
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `}
                 >
@@ -122,7 +122,7 @@ export default function ChoiceButton({
               {choice?.kenv && (
                 <div
                   className={`
-              text-xxs font-mono font-bold
+              text-xxs font-mono
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `}
                 >
@@ -132,7 +132,7 @@ export default function ChoiceButton({
               {choice?.tag && (
                 <div
                   className={`
-              text-xxs font-mono font-bold
+              text-xxs font-mono
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `}
                 >
@@ -162,10 +162,7 @@ export default function ChoiceButton({
             {index === currentIndex &&
               Boolean(Object.keys(flags).length) &&
               !flaggedValue && (
-                <div
-                  className="pl-2 hover:cursor-pointer"
-                  onClick={onRightClick}
-                >
+                <div className="hover:cursor-pointer" onClick={onRightClick}>
                   <MoreThanIcon
                     className={`
         h-4 w-3

@@ -8,18 +8,6 @@ import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 
 import {
-  useEdit,
-  useEnter,
-  useEscape,
-  useFlag,
-  useFocus,
-  useGetDb,
-  useKeyIndex,
-  useOpen,
-  useTab,
-} from '../hooks';
-
-import {
   inputAtom,
   mouseEnabledAtom,
   pidAtom,
@@ -32,6 +20,18 @@ import {
   tabsAtom,
   unfilteredChoicesAtom,
 } from '../jotai';
+import {
+  useEdit,
+  useEnter,
+  useEscape,
+  useFlag,
+  useFocus,
+  useGetDb,
+  useKeyIndex,
+  useOpen,
+  useTab,
+} from '../hooks';
+import { setPlaceholder } from '../prompt';
 
 export default function Input() {
   const inputRef = useFocus();
@@ -72,8 +72,8 @@ export default function Input() {
           return choice?.shortcode?.find((sc: string) => sc === iv);
         });
         if (shortcodeChoice) {
-          setSubmitValue(shortcodeChoice.value);
           event.preventDefault();
+          setSubmitValue(shortcodeChoice.value);
           return;
         }
 
@@ -82,6 +82,8 @@ export default function Input() {
         );
 
         if (tab) {
+          event.preventDefault();
+
           const ti = tabs.indexOf(tab);
           setTabIndex(ti);
           setInput('');
@@ -90,7 +92,6 @@ export default function Input() {
             input: inputValue,
             pid,
           });
-          event.preventDefault();
         }
       }
     },

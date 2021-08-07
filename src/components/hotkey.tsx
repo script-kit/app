@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { KeyboardEvent, useCallback, useEffect, useRef } from 'react';
+import React, { KeyboardEvent, useCallback, useRef } from 'react';
 
 import { useAtom } from 'jotai';
 import { placeholderAtom } from '../jotai';

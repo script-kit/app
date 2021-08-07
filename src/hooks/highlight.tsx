@@ -1,6 +1,6 @@
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React from 'react';
+import React, { ReactElement } from 'react';
 import { Choice } from 'kit-bridge/cjs/type';
 
 export const highlightAdjacentAndWordStart = (name: string, input: string) => {
@@ -87,7 +87,7 @@ const firstLettersMatch = (name: string, input: string) => {
 export const highlightChoiceName = (
   name: string,
   input: string
-): Choice['name'] => {
+): string | ReactElement[] => {
   const nameLower = name.toLowerCase();
   const inputLower = input.toLowerCase();
 
@@ -100,7 +100,7 @@ export const highlightChoiceName = (
   }
 
   if (firstLettersMatch(nameLower, inputLower)) {
-    return highlightFirstLetters(name, input) as Choice['name'];
+    return highlightFirstLetters(name, input) as ReactElement[];
   }
 
   if (nameLower.includes(inputLower)) {

@@ -1,12 +1,16 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import path from 'path';
 import { useAtom } from 'jotai';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
 import { EditorOptions } from 'kit-bridge/cjs/type';
-import { useClose, useFocus, useSave, useThemeDetector } from '../hooks';
 import { editorConfigAtom } from '../jotai';
-import useMountHeight from './hooks/useMountHeight';
+import {
+  useClose,
+  useMountMainHeight,
+  useSave,
+  useThemeDetector,
+} from '../hooks';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -36,12 +40,13 @@ export default function Editor() {
   const editorRef = useRef<editor.IStandaloneCodeEditor>();
 
   const [options] = useAtom(editorConfigAtom);
+  const [editorValue, setEditorValue] = useState('');
 
-  useSave(() => editorRef.current?.getValue());
+  useSave(editorValue);
   useClose();
 
   const isDark = useThemeDetector();
-  const containerRef = useMountHeight();
+  const containerRef = useMountMainHeight();
 
   const beforeMount = useCallback((monaco) => {
     monaco.editor.defineTheme('kit-dark', {
@@ -89,6 +94,10 @@ export default function Editor() {
     [options]
   );
 
+  const onChange = useCallback(() => {
+    setEditorValue(editorRef.current?.getValue() as string);
+  }, []);
+
   return (
     <div
       ref={containerRef}
@@ -103,6 +112,7 @@ export default function Editor() {
         theme={isDark ? 'kit-dark' : 'kit-light'}
         options={{ ...DEFAULT_OPTIONS, ...(options as EditorOptions) }}
         value={(options as EditorOptions)?.value || ''}
+        onChange={onChange}
       />
     </div>
   );

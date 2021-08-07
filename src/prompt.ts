@@ -20,6 +20,14 @@ import { getAssetPath } from './assets';
 import { getAppHidden } from './appHidden';
 import { getScriptsMemory } from './state';
 import { emitter, KitEvent } from './events';
+import {
+  DEFAULT_HEIGHT,
+  DEFAULT_WIDTH,
+  heightMap,
+  INPUT_HEIGHT,
+  MIN_HEIGHT,
+  MIN_WIDTH,
+} from './defaults';
 
 let promptScript: Script;
 let promptWindow: BrowserWindow;
@@ -37,8 +45,6 @@ export const setIgnoreBlur = (value = true) => {
 const miniArgs = minimist(process.argv);
 const { devTools } = miniArgs;
 log.info(process.argv.join(' '), devTools);
-
-let lastResizedByUser = false;
 
 export const createPromptWindow = async () => {
   promptWindow = new BrowserWindow({
@@ -89,6 +95,7 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow.on('hide', () => {
+    lastResizedByUser = false;
     ignoreBlur = false;
   });
 
@@ -108,24 +115,20 @@ export const createPromptWindow = async () => {
     }
   });
 
-  const userResize = (event: Event, rect: Rectangle) => {
-    lastResizedByUser = true;
-    sendToPrompt(Channel.USER_RESIZED, rect);
-  };
-
-  const userMove = async (event: Event) => {
+  const onMove = async () => {
     await cachePromptBounds(Bounds.Position);
   };
 
-  promptWindow?.on('will-resize', throttle(userResize, 500));
-  promptWindow?.on(
-    'resized',
-    debounce(async (event: Event, rect: Rectangle) => {
-      await cachePromptBounds(Bounds.Size);
-    }, 500)
-  );
+  const onResized = async () => {
+    lastResizedByUser = false;
+    await cachePromptBounds(Bounds.Size);
+  };
 
-  promptWindow?.on('move', debounce(userMove, 500));
+  promptWindow?.on('will-resize', () => {
+    lastResizedByUser = true;
+  });
+  promptWindow?.on('resized', debounce(onResized, 500));
+  promptWindow?.on('move', debounce(onMove, 500));
 
   // setInterval(() => {
   //   const [, newHeight] = promptWindow?.getSize() as number[];
@@ -177,18 +180,16 @@ export const getCurrentScreenPromptCache = async () => {
 
   if (currentPromptCache) return currentPromptCache;
 
-  const { id, bounds } = getDefaultBounds(currentScreen);
-  if (!promptDb.screens[String(currentScreen.id)])
-    promptDb.screens[String(currentScreen.id)] = {};
-  promptDb.screens[String(currentScreen.id)][promptScript.filePath] = bounds;
-  await promptDb.write();
-
+  const bounds = await resetPromptBounds();
   return bounds;
 };
 
 const guessTopHeight = (script: Script) => {
   let height = 0;
   if (script?.description || script?.twitter || script?.menu) {
+    height += 24;
+  }
+  if (script?.description && script?.twitter) {
     height += 12;
   }
 
@@ -205,52 +206,27 @@ export const getDefaultBounds = (currentScreen: Display) => {
   const { width: screenWidth, height: screenHeight } =
     currentScreen.workAreaSize;
 
-  const DEFAULT_WIDTH = 370;
-
   const height =
     promptScript.filePath.includes(kitPath()) || instantChoices.length
-      ? Math.round((DEFAULT_WIDTH * 11) / 8.5)
+      ? DEFAULT_HEIGHT
       : currentUI === UI.arg
       ? guessTopHeight(promptScript)
       : heightMap[currentUI]; // Math.round(screenHeight / 1.5);
   const width = DEFAULT_WIDTH; // Math.round(height * (8.5 / 11));
   const { x: workX, y: workY } = currentScreen.workArea;
   const x = Math.round(screenWidth / 2 - width / 2 + workX);
-  const y = Math.round(workY + height / 10);
+  const y = Math.round(workY + screenHeight / 8);
 
   return { id: currentScreen.id, bounds: { x, y, width, height } };
 };
 
-const INPUT_HEIGHT = 64;
-const MIN_HEIGHT = INPUT_HEIGHT;
-const MIN_WIDTH = 320;
-
-const heightMap: { [key in UI]: number } = {
-  [UI.none]: INPUT_HEIGHT,
-  [UI.arg]: INPUT_HEIGHT,
-  [UI.textarea]: 480,
-  [UI.hotkey]: INPUT_HEIGHT,
-  [UI.drop]: 280,
-  [UI.editor]: 480,
-  [UI.form]: 480,
-  [UI.div]: 480,
-  [UI.log]: INPUT_HEIGHT,
-};
-
-const setBounds = async () => {
+export const showPrompt = async () => {
   const bounds = await getCurrentScreenPromptCache();
 
   if (!promptWindow?.isVisible()) {
     log.info(`↖ BOUNDS:`, bounds);
     sendToPrompt(Channel.SET_MAX_HEIGHT, bounds.height);
     promptWindow.setBounds(bounds);
-  }
-};
-
-export const showPrompt = async () => {
-  await setBounds();
-
-  if (!promptWindow?.isVisible()) {
     promptWindow?.show();
     if (devTools) promptWindow?.webContents.openDevTools();
   }
@@ -258,33 +234,38 @@ export const showPrompt = async () => {
   return promptWindow;
 };
 
-export const resizePromptHeight = ({
-  height,
-  cache,
-}: {
-  height: number;
-  cache: boolean;
-}) => {
-  if (lastResizedByUser) {
-    lastResizedByUser = false;
-    return;
-  }
+let lastResizedByUser = false;
+export const resizePromptHeight = debounce(
+  ({ height: targetHeight, ui }: { height: number; ui: UI }) => {
+    const maxHeight = Math.round(getCurrentScreen().bounds.height * (15 / 16));
+    const height = targetHeight > maxHeight ? maxHeight : targetHeight;
 
-  const bounds = promptWindow?.getBounds();
+    if (lastResizedByUser) return;
+    const bounds = promptWindow?.getBounds();
 
-  // console.log({
-  //   height,
-  //   cache,
-  //   boundsHeight: bounds.height,
-  //   visible: promptWindow.isVisible(),
-  // });
+    if (bounds.height !== height) {
+      log.info(`↕ RESIZE: ${bounds.width} x ${height}`);
+      promptWindow?.setBounds({ ...bounds, height });
 
-  if (height !== bounds.height && promptWindow?.isVisible()) {
-    log.info(`↕ RESIZE: ${bounds.width} x ${height}`);
+      if (ui !== UI.arg) cachePromptBounds(Bounds.Size);
+    }
+  },
+  10
+);
 
-    promptWindow?.setBounds({ ...bounds, height });
-    if (cache) cachePromptBounds(Bounds.Size);
-  }
+export const resetPromptBounds = async () => {
+  const currentScreen = getCurrentScreen();
+  const promptDb = await getPromptDb();
+
+  const { id, bounds } = getDefaultBounds(currentScreen);
+  if (!promptDb.screens[String(currentScreen.id)])
+    promptDb.screens[String(currentScreen.id)] = {};
+  promptDb.screens[String(currentScreen.id)][promptScript.filePath] = bounds;
+  await promptDb.write();
+
+  promptWindow?.setBounds(bounds);
+
+  return bounds;
 };
 
 export const sendToPrompt = (channel: string, data: any) => {
@@ -302,41 +283,44 @@ enum Bounds {
   Size = 1 << 1,
 }
 
-const cachePromptBounds = async (b = Bounds.Position | Bounds.Size) => {
-  const currentScreen = getCurrentScreen();
-  const promptDb = await getPromptDb();
+const cachePromptBounds = debounce(
+  async (b = Bounds.Position | Bounds.Size) => {
+    const currentScreen = getCurrentScreen();
+    const promptDb = await getPromptDb();
 
-  const bounds = promptWindow?.getBounds();
-  const prevBounds =
-    promptDb.screens?.[String(currentScreen.id)]?.[promptScript.filePath] ||
-    bounds;
-  // Ignore if flag
-  const size = b & Bounds.Size;
-  const position = b & Bounds.Position;
+    const bounds = promptWindow?.getBounds();
+    const prevBounds =
+      promptDb.screens?.[String(currentScreen.id)]?.[promptScript.filePath] ||
+      bounds;
+    // Ignore if flag
+    const size = b & Bounds.Size;
+    const position = b & Bounds.Position;
 
-  const { x, y } = position ? bounds : prevBounds;
-  const { width, height } = size ? bounds : prevBounds;
+    const { x, y } = position ? bounds : prevBounds;
+    const { width, height } = size ? bounds : prevBounds;
 
-  const promptBounds: PromptBounds = {
-    x,
-    y,
-    width: width < MIN_WIDTH ? MIN_WIDTH : width,
-    height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
-  };
+    const promptBounds: PromptBounds = {
+      x,
+      y,
+      width: width < MIN_WIDTH ? MIN_WIDTH : width,
+      height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
+    };
 
-  promptDb.screens[String(currentScreen.id)][promptScript.filePath] =
-    promptBounds;
+    promptDb.screens[String(currentScreen.id)][promptScript.filePath] =
+      promptBounds;
 
-  log.info(`Cache prompt:`, {
-    script: promptScript.filePath,
-    screen: currentScreen.id,
-    ...promptBounds,
-  });
+    log.info(`Cache prompt:`, {
+      script: promptScript.filePath,
+      screen: currentScreen.id,
+      ...promptBounds,
+    });
 
-  await promptDb.write();
+    await promptDb.write();
 
-  sendToPrompt(Channel.SET_MAX_HEIGHT, promptBounds.height);
-};
+    sendToPrompt(Channel.SET_MAX_HEIGHT, promptBounds.height);
+  },
+  250
+);
 
 const hideAppIfNoWindows = () => {
   if (promptWindow?.isVisible()) {
@@ -390,6 +374,7 @@ export const setScript = async (script: Script) => {
   }
 
   sendToPrompt(Channel.SET_SCRIPT, script);
+
   instantChoices = [];
   if (script.filePath === mainScriptPath) {
     instantChoices = getScriptsMemory();
