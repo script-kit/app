@@ -4,41 +4,37 @@
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, {
-  useCallback,
-  useRef,
-  KeyboardEvent,
-  useEffect,
-  RefObject,
-} from 'react';
-import parse, { attributesToProps, domToReact } from 'html-react-parser';
+import React, { useCallback, useRef, KeyboardEvent, useEffect } from 'react';
+import parse, { domToReact } from 'html-react-parser';
 import SimpleBar from 'simplebar-react';
 import { useAtom } from 'jotai';
-import { formDataAtom, formHTMLAtom, pidAtom } from '../jotai';
-import useMountHeight from './hooks/useMountHeight';
+import { formDataAtom, formHTMLAtom, submitValueAtom } from '../jotai';
+import { useEscape, useMountMainHeight, useObserveMainHeight } from '../hooks';
 
-type FormProps = {
-  onSubmit: (value: any) => void;
-  onEscape: (value: any) => void;
-};
+export default function Form() {
+  useEscape();
 
-export default function Form({ onSubmit, onEscape }: FormProps) {
-  const formRef = useRef<any>();
+  const formRef = useObserveMainHeight<HTMLFormElement>();
   const [formHTML] = useAtom(formHTMLAtom);
   const [formData] = useAtom(formDataAtom);
+  const [, submit] = useAtom(submitValueAtom);
 
   useEffect(() => {
     if (formRef?.current?.elements?.[0]) {
-      formRef?.current?.elements?.[0]?.focus();
+      (formRef?.current?.elements as any)?.[0]?.focus();
     } else {
       formRef?.current?.focus();
     }
-  }, [formRef?.current?.firstElementChild, formRef?.current?.elements]);
+  }, [
+    formRef?.current?.firstElementChild,
+    formRef?.current?.elements,
+    formRef,
+  ]);
 
   useEffect(() => {
     if (formData) {
       const data: any = formData;
-      for (const el of formRef?.current?.elements) {
+      for (const el of formRef?.current?.elements as any) {
         if (data[el.name]) {
           const value = data[el.name];
           if (Array.isArray(value)) {
@@ -79,17 +75,13 @@ export default function Form({ onSubmit, onEscape }: FormProps) {
         }
       }
 
-      onSubmit(formJSON);
+      submit(formJSON);
     },
-    [onSubmit]
+    [submit]
   );
 
   const onFormKeyDown = useCallback(
     (event: KeyboardEvent<HTMLFormElement>) => {
-      if (event.key === 'Escape') {
-        onEscape(event);
-        return;
-      }
       if (event.ctrlKey || event.metaKey) {
         switch (event.key) {
           case 's':
@@ -98,26 +90,19 @@ export default function Form({ onSubmit, onEscape }: FormProps) {
             onLocalSubmit(event);
             break;
 
-          case 'w':
-            event.preventDefault();
-            onEscape(event);
-            break;
-
           default:
             break;
         }
       }
     },
-    [onEscape, onLocalSubmit]
+    [onLocalSubmit]
   );
 
   const onFormChange = useCallback(() => {}, []);
 
-  const containerRef = useMountHeight();
-
   return (
     <SimpleBar
-      scrollableNodeProps={{ ref: containerRef }}
+      className="w-full h-full"
       style={
         {
           WebkitAppRegion: 'no-drag',

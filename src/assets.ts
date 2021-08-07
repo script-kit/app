@@ -2,7 +2,7 @@
 import { app } from 'electron';
 import path from 'path';
 
-const checkPackaged = (name) =>
+const checkPackaged = (name: string) =>
   app.isPackaged
     ? path.join(process.resourcesPath, name)
     : path.join(__dirname, '..', name);

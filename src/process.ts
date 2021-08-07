@@ -99,10 +99,6 @@ export const checkScriptChoices = (data: MessageData) => {
         }`;
       }
 
-      if (script.kenv) {
-        script.tag = script.kenv;
-      }
-
       if (script.img) {
         script.img = script.img.match(/(^http)|^\//)
           ? script.img
@@ -160,6 +156,18 @@ const SHOW_IMAGE = async (data: MessageData) => {
   }
 };
 
+const toProcess =
+  (fn: (processInfo: ProcessInfo, data: MessageData) => void) =>
+  (data: MessageData) => {
+    const processInfo = processes.getByPid(data?.pid);
+
+    if (processInfo) {
+      fn(processInfo, data);
+    } else {
+      console.warn(`⚠️ Failed channel ${data?.channel} to pid ${data?.pid}`);
+    }
+  };
+
 const kitMessageMap: ChannelHandler = {
   CONSOLE_LOG: (data) => {
     getLog(data.kitScript).info(data.log);
@@ -175,56 +183,44 @@ const kitMessageMap: ChannelHandler = {
     clipboard.writeImage(data.path as any);
   },
 
-  GET_SCRIPTS_STATE: (data) => {
-    processes.ifPid(data.pid, ({ child }) => {
-      child?.send({
-        channel: 'SCRIPTS_STATE',
-        schedule: getSchedule(),
-        tasks: getBackgroundTasks(),
-      });
+  GET_SCRIPTS_STATE: toProcess(({ child }) => {
+    child?.send({
+      channel: 'SCRIPTS_STATE',
+      schedule: getSchedule(),
+      tasks: getBackgroundTasks(),
     });
-  },
+  }),
 
-  GET_SCHEDULE: (data) => {
-    processes.ifPid(data.pid, ({ child }) => {
-      child?.send({ channel: 'SCHEDULE', schedule: getSchedule() });
-    });
-  },
+  GET_SCHEDULE: toProcess(({ child }) => {
+    child?.send({ channel: 'SCHEDULE', schedule: getSchedule() });
+  }),
 
-  GET_BACKGROUND: (data) => {
-    processes.ifPid(data.pid, ({ child }) => {
-      child?.send({ channel: 'BACKGROUND', tasks: getBackgroundTasks() });
-    });
-  },
+  GET_BACKGROUND: toProcess(({ child }) => {
+    child?.send({ channel: 'BACKGROUND', tasks: getBackgroundTasks() });
+  }),
 
   TOGGLE_BACKGROUND: (data) => {
     emitter.emit(KitEvent.ToggleBackground, data);
   },
 
-  GET_SCREEN_INFO: (data) => {
-    processes.ifPid(data.pid, ({ child }) => {
-      const cursor = screen.getCursorScreenPoint();
-      // Get display with cursor
-      const activeScreen = screen.getDisplayNearestPoint({
-        x: cursor.x,
-        y: cursor.y,
-      });
+  GET_SCREEN_INFO: toProcess(({ child }) => {
+    const cursor = screen.getCursorScreenPoint();
+    // Get display with cursor
+    const activeScreen = screen.getDisplayNearestPoint({
+      x: cursor.x,
+      y: cursor.y,
+    });
 
-      child?.send({ channel: 'SCREEN_INFO', activeScreen });
-    });
-  },
+    child?.send({ channel: 'SCREEN_INFO', activeScreen });
+  }),
 
-  GET_MOUSE: (data) => {
-    processes.ifPid(data.pid, ({ child }) => {
-      const mouseCursor = screen.getCursorScreenPoint();
-      child?.send({ channel: 'MOUSE', mouseCursor });
-    });
-  },
-  GET_SERVER_STATE: (data) => {
-    processes.ifPid(data.pid, ({ child }) => {
-      child?.send({ channel: 'SERVER', ...serverState });
-    });
-  },
+  GET_MOUSE: toProcess(({ child }) => {
+    const mouseCursor = screen.getCursorScreenPoint();
+    child?.send({ channel: 'MOUSE', mouseCursor });
+  }),
+  GET_SERVER_STATE: toProcess(({ child }) => {
+    child?.send({ channel: 'SERVER', ...serverState });
+  }),
   HIDE_APP: () => {
     setAppHidden(true);
   },
@@ -234,18 +230,17 @@ const kitMessageMap: ChannelHandler = {
   QUIT_APP: () => {
     app.exit();
   },
-  SET_SCRIPT: (data) => {
-    processes.ifPid(data.pid, async ({ type }) => {
-      // log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.script.filePath);
-      if (type === ProcessType.Prompt) {
-        await setScript(data.script as Script);
-      }
-    });
-  },
+  SET_SCRIPT: toProcess(async ({ type }, data) => {
+    // log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.script.filePath);
+    if (type === ProcessType.Prompt) {
+      await setScript(data.script as Script);
+    }
+  }),
 
   SET_LOGIN: (data) => {
     app.setLoginItemSettings(data);
   },
+
   SET_MODE: (data) => {
     if (data.mode === Mode.HOTKEY) {
       emitter.emit(KitEvent.PauseShortcuts);
@@ -332,8 +327,14 @@ const kitMessageMap: ChannelHandler = {
   SET_TEXTAREA_CONFIG: (data) => {
     sendToPrompt(Channel.SET_TEXTAREA_CONFIG, data.options);
   },
+  SET_DIV_HTML: (data) => {
+    sendToPrompt(Channel.SET_DIV_HTML, data.html);
+  },
   SET_FORM_HTML: (data) => {
     sendToPrompt(Channel.SET_FORM_HTML, data);
+  },
+  SET_FLAGS: (data: any) => {
+    sendToPrompt(Channel.SET_FLAGS, data.flags);
   },
 };
 
@@ -481,13 +482,14 @@ class Processes extends Array<ProcessInfo> {
     child?.on('message', createMessageHandler(type));
 
     const { pid } = child;
+
     child.on('exit', () => {
+      sendToPrompt(Channel.EXIT, false);
       if (id) clearTimeout(id);
       if (type === ProcessType.Prompt) {
         setAppHidden(false);
         emitter.emit(KitEvent.ExitPrompt);
         emitter.emit(KitEvent.ResumeShortcuts);
-        sendToPrompt(Channel.EXIT, {});
       }
 
       const { values } = processes.getByPid(pid) as ProcessInfo;
@@ -555,15 +557,6 @@ class Processes extends Array<ProcessInfo> {
         this.findIndex((info) => info.pid === pid),
         1
       );
-    }
-  }
-
-  public ifPid(pid: number, callback: (info: ProcessInfo) => void) {
-    const processInfo = this.getByPid(pid);
-    if (processInfo) {
-      callback(processInfo);
-    } else {
-      log.warn(`⚠️ Can't find ${pid}`);
     }
   }
 

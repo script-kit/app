@@ -1,197 +1,201 @@
-# [1.3.0-beta.34](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.33...v1.3.0-beta.34) (2021-07-24)
+# [1.3.0-alpha.98](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.97...v1.3.0-alpha.98) (2021-08-07)
 
+
+### Features
+
+* **app:** Resizing fixes. Extracting hooks. Handle ipc/channel ([cee0df8](https://github.com/johnlindquist/kitapp/commit/cee0df861917fefddbb8365f7b7f4b11e133b0bc))
+
+# [1.3.0-alpha.97](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.96...v1.3.0-alpha.97) (2021-08-03)
+
+
+### Features
+
+* **app:** validating flags ([dfcc28a](https://github.com/johnlindquist/kitapp/commit/dfcc28a0b3658a7ed8a52a5dd7229646ba5262b7))
+
+# [1.3.0-alpha.96](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.95...v1.3.0-alpha.96) (2021-08-02)
+
+
+### Features
+
+* **app:** script context menu ([ff53596](https://github.com/johnlindquist/kitapp/commit/ff535962d09dcc1e09c5f72da7a8fc129b9a01db))
+* **app:** script context menu ([7bd01e3](https://github.com/johnlindquist/kitapp/commit/7bd01e3f2a8e3fd083c16ce20703acc1ee5d8042))
+
+# [1.3.0-alpha.95](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.94...v1.3.0-alpha.95) (2021-07-31)
+
+### Features
+
+- **app:** adding setFlags ([f0b8f42](https://github.com/johnlindquist/kitapp/commit/f0b8f42945779821e9626025d5edb6ad0a921cd6))
+
+# [1.3.0-beta.34](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.33...v1.3.0-beta.34) (2021-07-24)
 
 ### Bug Fixes
 
-* **app:** sk anywhere, shortcut toggles, code syntax highlight ([5ea2948](https://github.com/johnlindquist/kitapp/commit/5ea2948a77d19bc77753343d693e6b97a836e177))
+- **app:** sk anywhere, shortcut toggles, code syntax highlight ([5ea2948](https://github.com/johnlindquist/kitapp/commit/5ea2948a77d19bc77753343d693e6b97a836e177))
 
 # [1.3.0-alpha.94](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.93...v1.3.0-alpha.94) (2021-07-24)
 
-
 ### Bug Fixes
 
-* **app:** sk anywhere, shortcut toggles, code syntax highlight ([5ea2948](https://github.com/johnlindquist/kitapp/commit/5ea2948a77d19bc77753343d693e6b97a836e177))
+- **app:** sk anywhere, shortcut toggles, code syntax highlight ([5ea2948](https://github.com/johnlindquist/kitapp/commit/5ea2948a77d19bc77753343d693e6b97a836e177))
 
 # [1.3.0-beta.33](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.32...v1.3.0-beta.33) (2021-07-22)
 
-
 ### Bug Fixes
 
-* **app:** Open/edit as prompt scripts. Adding className ([81ae97c](https://github.com/johnlindquist/kitapp/commit/81ae97c73462894ac792ea6e2f012a8eb906551c))
+- **app:** Open/edit as prompt scripts. Adding className ([81ae97c](https://github.com/johnlindquist/kitapp/commit/81ae97c73462894ac792ea6e2f012a8eb906551c))
 
 # [1.3.0-alpha.93](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.92...v1.3.0-alpha.93) (2021-07-22)
 
-
 ### Bug Fixes
 
-* **app:** Open/edit as prompt scripts. Adding className ([81ae97c](https://github.com/johnlindquist/kitapp/commit/81ae97c73462894ac792ea6e2f012a8eb906551c))
+- **app:** Open/edit as prompt scripts. Adding className ([81ae97c](https://github.com/johnlindquist/kitapp/commit/81ae97c73462894ac792ea6e2f012a8eb906551c))
 
 # [1.3.0-beta.32](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.31...v1.3.0-beta.32) (2021-07-22)
 
-
 ### Bug Fixes
 
-* **app:** watch kenvs scripts, exclude. Edit hotkeys. ([96996fa](https://github.com/johnlindquist/kitapp/commit/96996faf544d5d452bf84f773f70ab01ce49aa23))
+- **app:** watch kenvs scripts, exclude. Edit hotkeys. ([96996fa](https://github.com/johnlindquist/kitapp/commit/96996faf544d5d452bf84f773f70ab01ce49aa23))
 
 # [1.3.0-alpha.92](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.91...v1.3.0-alpha.92) (2021-07-22)
 
-
 ### Bug Fixes
 
-* **app:** watch kenvs scripts, exclude. Edit hotkeys. ([96996fa](https://github.com/johnlindquist/kitapp/commit/96996faf544d5d452bf84f773f70ab01ce49aa23))
+- **app:** watch kenvs scripts, exclude. Edit hotkeys. ([96996fa](https://github.com/johnlindquist/kitapp/commit/96996faf544d5d452bf84f773f70ab01ce49aa23))
 
 # [1.3.0-beta.31](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.30...v1.3.0-beta.31) (2021-07-20)
 
-
 ### Bug Fixes
 
-* **prompt:** console.log, mouseOver ([15d42b3](https://github.com/johnlindquist/kitapp/commit/15d42b33449ebf9a35507c41bbcbb7510ef94463))
+- **prompt:** console.log, mouseOver ([15d42b3](https://github.com/johnlindquist/kitapp/commit/15d42b33449ebf9a35507c41bbcbb7510ef94463))
 
 # [1.3.0-alpha.91](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.90...v1.3.0-alpha.91) (2021-07-20)
 
-
 ### Bug Fixes
 
-* **prompt:** console.log, mouseOver ([15d42b3](https://github.com/johnlindquist/kitapp/commit/15d42b33449ebf9a35507c41bbcbb7510ef94463))
+- **prompt:** console.log, mouseOver ([15d42b3](https://github.com/johnlindquist/kitapp/commit/15d42b33449ebf9a35507c41bbcbb7510ef94463))
 
 # [1.3.0-beta.30](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.29...v1.3.0-beta.30) (2021-07-20)
 
-
 ### Features
 
-* **prompt:** console.log, resizing/positioning fixes ([2aeedc2](https://github.com/johnlindquist/kitapp/commit/2aeedc28ea68b5092d2e1d8dc6640a0f7edd058d))
+- **prompt:** console.log, resizing/positioning fixes ([2aeedc2](https://github.com/johnlindquist/kitapp/commit/2aeedc28ea68b5092d2e1d8dc6640a0f7edd058d))
 
 # [1.3.0-alpha.90](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.89...v1.3.0-alpha.90) (2021-07-20)
 
-
 ### Features
 
-* **prompt:** console.log, resizing/positioning fixes ([2aeedc2](https://github.com/johnlindquist/kitapp/commit/2aeedc28ea68b5092d2e1d8dc6640a0f7edd058d))
+- **prompt:** console.log, resizing/positioning fixes ([2aeedc2](https://github.com/johnlindquist/kitapp/commit/2aeedc28ea68b5092d2e1d8dc6640a0f7edd058d))
 
 # [1.3.0-beta.29](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.28...v1.3.0-beta.29) (2021-07-16)
 
-
 ### Bug Fixes
 
-* **install:** resize config window ([f63accc](https://github.com/johnlindquist/kitapp/commit/f63accc8bda033aab499c90f762923f60e7dab19))
+- **install:** resize config window ([f63accc](https://github.com/johnlindquist/kitapp/commit/f63accc8bda033aab499c90f762923f60e7dab19))
 
 # [1.3.0-alpha.89](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.88...v1.3.0-alpha.89) (2021-07-16)
 
-
 ### Bug Fixes
 
-* **install:** resize config window ([f63accc](https://github.com/johnlindquist/kitapp/commit/f63accc8bda033aab499c90f762923f60e7dab19))
+- **install:** resize config window ([f63accc](https://github.com/johnlindquist/kitapp/commit/f63accc8bda033aab499c90f762923f60e7dab19))
 
 # [1.3.0-beta.28](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.27...v1.3.0-beta.28) (2021-07-16)
 
-
 ### Bug Fixes
 
-* **prompt:** resize border. escape child. ([4bdb059](https://github.com/johnlindquist/kitapp/commit/4bdb0598250143f61d1cfa9f5a02733ce2cb2b5b))
+- **prompt:** resize border. escape child. ([4bdb059](https://github.com/johnlindquist/kitapp/commit/4bdb0598250143f61d1cfa9f5a02733ce2cb2b5b))
 
 # [1.3.0-alpha.88](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.87...v1.3.0-alpha.88) (2021-07-16)
 
-
 ### Bug Fixes
 
-* **prompt:** resize border. escape child. ([4bdb059](https://github.com/johnlindquist/kitapp/commit/4bdb0598250143f61d1cfa9f5a02733ce2cb2b5b))
+- **prompt:** resize border. escape child. ([4bdb059](https://github.com/johnlindquist/kitapp/commit/4bdb0598250143f61d1cfa9f5a02733ce2cb2b5b))
 
 # [1.3.0-beta.27](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.26...v1.3.0-beta.27) (2021-07-15)
 
-
 ### Features
 
-* **prompt:** Adding spinner and logs ([9e8158a](https://github.com/johnlindquist/kitapp/commit/9e8158accfe61cff0369804811c697ef2e5dd495))
+- **prompt:** Adding spinner and logs ([9e8158a](https://github.com/johnlindquist/kitapp/commit/9e8158accfe61cff0369804811c697ef2e5dd495))
 
 # [1.3.0-alpha.87](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.86...v1.3.0-alpha.87) (2021-07-15)
 
-
 ### Features
 
-* **prompt:** Adding spinner and logs ([9e8158a](https://github.com/johnlindquist/kitapp/commit/9e8158accfe61cff0369804811c697ef2e5dd495))
+- **prompt:** Adding spinner and logs ([9e8158a](https://github.com/johnlindquist/kitapp/commit/9e8158accfe61cff0369804811c697ef2e5dd495))
 
 # [1.3.0-beta.26](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.25...v1.3.0-beta.26) (2021-07-14)
 
-
 ### Bug Fixes
 
-* **prompt:** scroll bug. Editor bugs. ([d18f934](https://github.com/johnlindquist/kitapp/commit/d18f934117e81d727e1fc53b74bb80824b7da55c))
+- **prompt:** scroll bug. Editor bugs. ([d18f934](https://github.com/johnlindquist/kitapp/commit/d18f934117e81d727e1fc53b74bb80824b7da55c))
 
 # [1.3.0-alpha.86](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.85...v1.3.0-alpha.86) (2021-07-14)
 
-
 ### Bug Fixes
 
-* **prompt:** scroll bug. Editor bugs. ([d18f934](https://github.com/johnlindquist/kitapp/commit/d18f934117e81d727e1fc53b74bb80824b7da55c))
+- **prompt:** scroll bug. Editor bugs. ([d18f934](https://github.com/johnlindquist/kitapp/commit/d18f934117e81d727e1fc53b74bb80824b7da55c))
 
 # [1.3.0-beta.25](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.24...v1.3.0-beta.25) (2021-07-14)
 
-
 ### Bug Fixes
 
-* **app:** instant choices and resizing ([9df2cf9](https://github.com/johnlindquist/kitapp/commit/9df2cf9d7f1daecd1b4e62cfd0d0326636d6145b))
-* **app:** instant choices and resizing ([9684571](https://github.com/johnlindquist/kitapp/commit/9684571bdcaaa8f4bc6eedfde4c8dd30c2ca6ddd))
+- **app:** instant choices and resizing ([9df2cf9](https://github.com/johnlindquist/kitapp/commit/9df2cf9d7f1daecd1b4e62cfd0d0326636d6145b))
+- **app:** instant choices and resizing ([9684571](https://github.com/johnlindquist/kitapp/commit/9684571bdcaaa8f4bc6eedfde4c8dd30c2ca6ddd))
 
 # [1.3.0-alpha.85](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.84...v1.3.0-alpha.85) (2021-07-14)
 
-
 ### Bug Fixes
 
-* **app:** instant choices and resizing ([9df2cf9](https://github.com/johnlindquist/kitapp/commit/9df2cf9d7f1daecd1b4e62cfd0d0326636d6145b))
-* **app:** instant choices and resizing ([9684571](https://github.com/johnlindquist/kitapp/commit/9684571bdcaaa8f4bc6eedfde4c8dd30c2ca6ddd))
+- **app:** instant choices and resizing ([9df2cf9](https://github.com/johnlindquist/kitapp/commit/9df2cf9d7f1daecd1b4e62cfd0d0326636d6145b))
+- **app:** instant choices and resizing ([9684571](https://github.com/johnlindquist/kitapp/commit/9684571bdcaaa8f4bc6eedfde4c8dd30c2ca6ddd))
 
 # [1.3.0-beta.24](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.23...v1.3.0-beta.24) (2021-07-14)
 
-
 ### Bug Fixes
 
-* **app:** install and resizing ([de58852](https://github.com/johnlindquist/kitapp/commit/de58852b97b3cee630a6489276965cc185fcc7be))
-* **app:** install from link ([09781fa](https://github.com/johnlindquist/kitapp/commit/09781fa9a8420c4087593cbda01d631caab8454d))
-* **app:** removing logs ([8f3ebd7](https://github.com/johnlindquist/kitapp/commit/8f3ebd7e6ae1c5219c92de093e02a452b4a0be2c))
-* **app:** resizing ([f476675](https://github.com/johnlindquist/kitapp/commit/f47667578efac9680cd5cb2a7c10081620d500b2))
-* **app:** resizing ([0796c92](https://github.com/johnlindquist/kitapp/commit/0796c92f8c391913a69c9d291f49d7534215592c))
-* **app:** trigger a build ([a20a742](https://github.com/johnlindquist/kitapp/commit/a20a74222556581f293548ee8bb842c841e4778c))
-* **app:** trying to fix build ([e828130](https://github.com/johnlindquist/kitapp/commit/e828130fb3dafad1fe356c4312592b1338fa8197))
-* **app:** trying to fix build ([5daeb5c](https://github.com/johnlindquist/kitapp/commit/5daeb5c54cba1ca4d662ef31f19e53f6745dea41))
-* **app:** trying to fix build ([ab47ff2](https://github.com/johnlindquist/kitapp/commit/ab47ff22ac28ce9bb3bffaadb95a427dc6ad2fec))
-* **app:** trying to fix build ([73699b3](https://github.com/johnlindquist/kitapp/commit/73699b3742b6b22f469b5ab1a2ad0afec7557fb0))
-* **app:** trying to fix build ([2846cf7](https://github.com/johnlindquist/kitapp/commit/2846cf7bf83a3e528900a4ab744a4b8d98f89dbf))
-* **app:** trying to fix build ([a7457fd](https://github.com/johnlindquist/kitapp/commit/a7457fd9b0c6efe3cb2f5c288853f9886d55a2c6))
-* **app:** trying to fix build ([2eb8983](https://github.com/johnlindquist/kitapp/commit/2eb8983bd8a90ef28325283e5cfdc68d40eecebf))
-* **app:** trying to fix build ([4f97a79](https://github.com/johnlindquist/kitapp/commit/4f97a79dc57a203b1d75baccfb839699a4a9f693))
-* **app:** trying to fix build ([ac78e03](https://github.com/johnlindquist/kitapp/commit/ac78e03b5df4fa1b52d7c99cb04b642f076e91f7))
-* **app:** trying to fix build ([64c58e8](https://github.com/johnlindquist/kitapp/commit/64c58e88c029d41956109ac0d4a792268fd156bb))
-* **app:** trying to fix build ([fbf320e](https://github.com/johnlindquist/kitapp/commit/fbf320eb8252a20dfee2e83c44750db017baf092))
-* **app:** trying to fix build ([f577b36](https://github.com/johnlindquist/kitapp/commit/f577b366961eb3e718354d1b1de3bde2c987b6a4))
-* **app:** trying to fix build ([c2932b3](https://github.com/johnlindquist/kitapp/commit/c2932b3e26eca91570125eead7a0ae42bd995a96))
-* **app:** trying to fix build ([ab2033e](https://github.com/johnlindquist/kitapp/commit/ab2033e5c31d5143569d2de3bcfda2758fc442d4))
-* **app:** trying to fix build ([00c30f8](https://github.com/johnlindquist/kitapp/commit/00c30f801c737f79e43bd1b86f1c6a0c5bfbbd70))
-* **app:** trying to fix build ([cc5e863](https://github.com/johnlindquist/kitapp/commit/cc5e8630bfea737d98a8aa4d1181aaf332017532))
-* **app:** trying to fix build ([1830335](https://github.com/johnlindquist/kitapp/commit/1830335083868e75c1ad0ca75551d67dc1d87bc1))
-* **app:** trying to fix changelog ([06fb138](https://github.com/johnlindquist/kitapp/commit/06fb1388cb21cac9b54ba5fb0cef53ce7be46f68))
-* **app:** trying to fix changelog ([8216e28](https://github.com/johnlindquist/kitapp/commit/8216e28970f5994cac0220d2182e02783b7a0bb8))
-
+- **app:** install and resizing ([de58852](https://github.com/johnlindquist/kitapp/commit/de58852b97b3cee630a6489276965cc185fcc7be))
+- **app:** install from link ([09781fa](https://github.com/johnlindquist/kitapp/commit/09781fa9a8420c4087593cbda01d631caab8454d))
+- **app:** removing logs ([8f3ebd7](https://github.com/johnlindquist/kitapp/commit/8f3ebd7e6ae1c5219c92de093e02a452b4a0be2c))
+- **app:** resizing ([f476675](https://github.com/johnlindquist/kitapp/commit/f47667578efac9680cd5cb2a7c10081620d500b2))
+- **app:** resizing ([0796c92](https://github.com/johnlindquist/kitapp/commit/0796c92f8c391913a69c9d291f49d7534215592c))
+- **app:** trigger a build ([a20a742](https://github.com/johnlindquist/kitapp/commit/a20a74222556581f293548ee8bb842c841e4778c))
+- **app:** trying to fix build ([e828130](https://github.com/johnlindquist/kitapp/commit/e828130fb3dafad1fe356c4312592b1338fa8197))
+- **app:** trying to fix build ([5daeb5c](https://github.com/johnlindquist/kitapp/commit/5daeb5c54cba1ca4d662ef31f19e53f6745dea41))
+- **app:** trying to fix build ([ab47ff2](https://github.com/johnlindquist/kitapp/commit/ab47ff22ac28ce9bb3bffaadb95a427dc6ad2fec))
+- **app:** trying to fix build ([73699b3](https://github.com/johnlindquist/kitapp/commit/73699b3742b6b22f469b5ab1a2ad0afec7557fb0))
+- **app:** trying to fix build ([2846cf7](https://github.com/johnlindquist/kitapp/commit/2846cf7bf83a3e528900a4ab744a4b8d98f89dbf))
+- **app:** trying to fix build ([a7457fd](https://github.com/johnlindquist/kitapp/commit/a7457fd9b0c6efe3cb2f5c288853f9886d55a2c6))
+- **app:** trying to fix build ([2eb8983](https://github.com/johnlindquist/kitapp/commit/2eb8983bd8a90ef28325283e5cfdc68d40eecebf))
+- **app:** trying to fix build ([4f97a79](https://github.com/johnlindquist/kitapp/commit/4f97a79dc57a203b1d75baccfb839699a4a9f693))
+- **app:** trying to fix build ([ac78e03](https://github.com/johnlindquist/kitapp/commit/ac78e03b5df4fa1b52d7c99cb04b642f076e91f7))
+- **app:** trying to fix build ([64c58e8](https://github.com/johnlindquist/kitapp/commit/64c58e88c029d41956109ac0d4a792268fd156bb))
+- **app:** trying to fix build ([fbf320e](https://github.com/johnlindquist/kitapp/commit/fbf320eb8252a20dfee2e83c44750db017baf092))
+- **app:** trying to fix build ([f577b36](https://github.com/johnlindquist/kitapp/commit/f577b366961eb3e718354d1b1de3bde2c987b6a4))
+- **app:** trying to fix build ([c2932b3](https://github.com/johnlindquist/kitapp/commit/c2932b3e26eca91570125eead7a0ae42bd995a96))
+- **app:** trying to fix build ([ab2033e](https://github.com/johnlindquist/kitapp/commit/ab2033e5c31d5143569d2de3bcfda2758fc442d4))
+- **app:** trying to fix build ([00c30f8](https://github.com/johnlindquist/kitapp/commit/00c30f801c737f79e43bd1b86f1c6a0c5bfbbd70))
+- **app:** trying to fix build ([cc5e863](https://github.com/johnlindquist/kitapp/commit/cc5e8630bfea737d98a8aa4d1181aaf332017532))
+- **app:** trying to fix build ([1830335](https://github.com/johnlindquist/kitapp/commit/1830335083868e75c1ad0ca75551d67dc1d87bc1))
+- **app:** trying to fix changelog ([06fb138](https://github.com/johnlindquist/kitapp/commit/06fb1388cb21cac9b54ba5fb0cef53ce7be46f68))
+- **app:** trying to fix changelog ([8216e28](https://github.com/johnlindquist/kitapp/commit/8216e28970f5994cac0220d2182e02783b7a0bb8))
 
 ### Features
 
-* **prompt:** multiple shortcodes ([aa2c5f1](https://github.com/johnlindquist/kitapp/commit/aa2c5f1afe06f46b60a6cb9b5c25d45b998e530f))
+- **prompt:** multiple shortcodes ([aa2c5f1](https://github.com/johnlindquist/kitapp/commit/aa2c5f1afe06f46b60a6cb9b5c25d45b998e530f))
 
 # [1.3.0-alpha.84](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.83...v1.3.0-alpha.84) (2021-07-14)
 
-
 ### Bug Fixes
 
-* **app:** trying to fix build ([e828130](https://github.com/johnlindquist/kitapp/commit/e828130fb3dafad1fe356c4312592b1338fa8197))
-* **app:** trying to fix build ([5daeb5c](https://github.com/johnlindquist/kitapp/commit/5daeb5c54cba1ca4d662ef31f19e53f6745dea41))
-* **app:** trying to fix build ([ab47ff2](https://github.com/johnlindquist/kitapp/commit/ab47ff22ac28ce9bb3bffaadb95a427dc6ad2fec))
+- **app:** trying to fix build ([e828130](https://github.com/johnlindquist/kitapp/commit/e828130fb3dafad1fe356c4312592b1338fa8197))
+- **app:** trying to fix build ([5daeb5c](https://github.com/johnlindquist/kitapp/commit/5daeb5c54cba1ca4d662ef31f19e53f6745dea41))
+- **app:** trying to fix build ([ab47ff2](https://github.com/johnlindquist/kitapp/commit/ab47ff22ac28ce9bb3bffaadb95a427dc6ad2fec))
 
 # [1.3.0-alpha.84](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.83...v1.3.0-alpha.84) (2021-07-14)
 
-
 ### Bug Fixes
 
-* **app:** trying to fix build ([5daeb5c](https://github.com/johnlindquist/kitapp/commit/5daeb5c54cba1ca4d662ef31f19e53f6745dea41))
-* **app:** trying to fix build ([ab47ff2](https://github.com/johnlindquist/kitapp/commit/ab47ff22ac28ce9bb3bffaadb95a427dc6ad2fec))
+- **app:** trying to fix build ([5daeb5c](https://github.com/johnlindquist/kitapp/commit/5daeb5c54cba1ca4d662ef31f19e53f6745dea41))
+- **app:** trying to fix build ([ab47ff2](https://github.com/johnlindquist/kitapp/commit/ab47ff22ac28ce9bb3bffaadb95a427dc6ad2fec))
 
 # [1.3.0-alpha.83](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.82...v1.3.0-alpha.83) (2021-07-14)
 

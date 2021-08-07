@@ -1,15 +1,13 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
+import { useAtom } from 'jotai';
 import React from 'react';
 import SimpleBar from 'simplebar-react';
+import { tabIndexAtom, tabsAtom } from '../jotai';
 
-interface KitTabsProps {
-  tabs: string[];
-  tabIndex: number;
-  onTabClick: (i: number) => (event: any) => void;
-}
-
-export default function KitTabs({ tabs, tabIndex, onTabClick }: KitTabsProps) {
+export default function KitTabs() {
+  const [tabs] = useAtom(tabsAtom);
+  const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
   return (
     <SimpleBar
       className="overscroll-y-none"
@@ -34,7 +32,7 @@ export default function KitTabs({ tabs, tabIndex, onTabClick }: KitTabsProps) {
 
           `}
               key={tab}
-              onMouseDown={onTabClick(i)}
+              onMouseDown={() => setTabIndex(i)}
             >
               {tab}
             </div>

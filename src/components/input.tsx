@@ -1,38 +1,118 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { forwardRef, useCallback, KeyboardEvent } from 'react';
+import React, { useCallback, KeyboardEvent } from 'react';
 
+import { Channel } from 'kit-bridge/cjs/enum';
+import { Choice } from 'kit-bridge/cjs/type';
 import { useAtom } from 'jotai';
+import { ipcRenderer } from 'electron';
 
 import {
-  indexAtom,
   inputAtom,
+  mouseEnabledAtom,
+  pidAtom,
   placeholderAtom,
   promptDataAtom,
+  selectionStartAtom,
   submittedAtom,
+  submitValueAtom,
+  tabIndexAtom,
+  tabsAtom,
+  unfilteredChoicesAtom,
 } from '../jotai';
+import {
+  useEdit,
+  useEnter,
+  useEscape,
+  useFlag,
+  useFocus,
+  useGetDb,
+  useKeyIndex,
+  useOpen,
+  useTab,
+} from '../hooks';
+import { setPlaceholder } from '../prompt';
 
-interface InputProps {
-  onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
-  placeholder: string;
-}
+export default function Input() {
+  const inputRef = useFocus();
 
-export default forwardRef<HTMLInputElement, InputProps>(function Input(
-  { onKeyDown },
-  ref
-) {
-  const [inputValue, setInputValue] = useAtom(inputAtom);
-  const [index, setIndex] = useAtom(indexAtom);
+  const [pid] = useAtom(pidAtom);
+  const [, setMouseEnabled] = useAtom(mouseEnabledAtom);
+  const [inputValue, setInput] = useAtom(inputAtom);
+  const [tabs] = useAtom(tabsAtom);
+  const [, setTabIndex] = useAtom(tabIndexAtom);
+  const [unfilteredChoices] = useAtom(unfilteredChoicesAtom);
+  const [, setSubmitValue] = useAtom(submitValueAtom);
   const [placeholder] = useAtom(placeholderAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [submitted] = useAtom(submittedAtom);
+  const [selectionStart, setSelectionStart] = useAtom(selectionStartAtom);
+
+  useEscape();
+  useEnter();
+  useFlag();
+  useTab();
+  useOpen();
+  useEdit();
+  useGetDb();
+  useKeyIndex();
+
+  const onKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      setMouseEnabled(false);
+      setSelectionStart(
+        (event.target as HTMLInputElement).selectionStart as number
+      );
+      if (event.key === ' ') {
+        const shortcodeChoice = unfilteredChoices?.find((choice: Choice) => {
+          const iv = inputValue.trim().toLowerCase();
+          if (typeof choice?.shortcode === 'string') {
+            return choice.shortcode === iv;
+          }
+          return choice?.shortcode?.find((sc: string) => sc === iv);
+        });
+        if (shortcodeChoice) {
+          event.preventDefault();
+          setSubmitValue(shortcodeChoice.value);
+          return;
+        }
+
+        const tab = tabs.find((t) =>
+          t.toLowerCase().startsWith(inputValue?.toLowerCase())
+        );
+
+        if (tab) {
+          event.preventDefault();
+
+          const ti = tabs.indexOf(tab);
+          setTabIndex(ti);
+          setInput('');
+          ipcRenderer.send(Channel.TAB_CHANGED, {
+            tab,
+            input: inputValue,
+            pid,
+          });
+        }
+      }
+    },
+    [
+      setMouseEnabled,
+      setSelectionStart,
+      tabs,
+      unfilteredChoices,
+      inputValue,
+      setTabIndex,
+      setInput,
+      pid,
+      setSubmitValue,
+    ]
+  );
 
   const onChange = useCallback(
     (event) => {
-      setIndex(0);
-      setInputValue(event.target.value);
+      setInput(event.target.value);
     },
-    [setIndex, setInputValue]
+    [setInput]
   );
 
   return (
@@ -55,7 +135,7 @@ export default forwardRef<HTMLInputElement, InputProps>(function Input(
         onChange={onChange}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        ref={ref}
+        ref={inputRef}
         type={promptData?.secret || 'text'}
         value={inputValue}
       />
@@ -85,4 +165,4 @@ export default forwardRef<HTMLInputElement, InputProps>(function Input(
       )}
     </div>
   );
-});
+}

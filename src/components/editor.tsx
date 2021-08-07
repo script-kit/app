@@ -1,18 +1,16 @@
-import React, {
-  forwardRef,
-  RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-} from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import path from 'path';
 import { useAtom } from 'jotai';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
-import { EditorOptions, EditorProps } from 'kit-bridge/cjs/type';
-import { useThemeDetector } from '../hooks';
+import { EditorOptions } from 'kit-bridge/cjs/type';
 import { editorConfigAtom } from '../jotai';
-import useMountHeight from './hooks/useMountHeight';
+import {
+  useClose,
+  useMountMainHeight,
+  useSave,
+  useThemeDetector,
+} from '../hooks';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -38,17 +36,17 @@ const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   wordWrap: 'on',
 };
 
-export default forwardRef<any, any>(function Editor(
-  { height, width }: EditorProps,
-  ref: any
-) {
-  const [options] = useAtom(editorConfigAtom);
+export default function Editor() {
+  const editorRef = useRef<editor.IStandaloneCodeEditor>();
 
-  useEffect(() => {
-    return () => {
-      ref(null);
-    };
-  }, [ref]);
+  const [options] = useAtom(editorConfigAtom);
+  const [editorValue, setEditorValue] = useState('');
+
+  useSave(editorValue);
+  useClose();
+
+  const isDark = useThemeDetector();
+  const containerRef = useMountMainHeight();
 
   const beforeMount = useCallback((monaco) => {
     monaco.editor.defineTheme('kit-dark', {
@@ -70,7 +68,9 @@ export default forwardRef<any, any>(function Editor(
   }, []);
   const onMount = useCallback(
     (editorInstance: editor.IStandaloneCodeEditor) => {
-      ref(editorInstance);
+      editorInstance.focus();
+      editorRef.current = editorInstance;
+
       if (editorInstance?.getDomNode())
         (
           (editorInstance.getDomNode() as HTMLElement).style as any
@@ -91,11 +91,12 @@ export default forwardRef<any, any>(function Editor(
         editorInstance.revealLineInCenter(Math.floor(lineNumber / 2));
       }
     },
-    [options, ref]
+    [options]
   );
 
-  const isDark = useThemeDetector();
-  const containerRef = useMountHeight();
+  const onChange = useCallback(() => {
+    setEditorValue(editorRef.current?.getValue() as string);
+  }, []);
 
   return (
     <div
@@ -111,7 +112,8 @@ export default forwardRef<any, any>(function Editor(
         theme={isDark ? 'kit-dark' : 'kit-light'}
         options={{ ...DEFAULT_OPTIONS, ...(options as EditorOptions) }}
         value={(options as EditorOptions)?.value || ''}
+        onChange={onChange}
       />
     </div>
   );
-});
+}

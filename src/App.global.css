@@ -13,9 +13,9 @@
 }
 
 body {
-  --tw-bg-opacity: 0.3 !important;
   @apply dark:bg-black  bg-white subpixel-antialiased;
   @apply overflow-hidden;
+  --tw-bg-opacity: 0.3;
 }
 
 .simplebar-scrollbar:before {
@@ -39,6 +39,27 @@ body {
 
 *::-webkit-resizer {
   display: none;
+}
+
+.kit-docs > h1 {
+  @apply px-2 pt-2;
+}
+
+.kit-docs > h2 {
+  @apply px-2 pt-2;
+}
+
+.kit-docs > p {
+  @apply px-2;
+}
+
+.primary-invert {
+  @apply bg-primary-dark dark:bg-primary-light;
+  /* --tw-bg-opacity: 0.7; */
+
+  @apply text-white dark:text-black text-opacity-75;
+  @apply bg-opacity-75 hover:bg-opacity-90;
+  @apply transition ease-in duration-100;
 }
 
 @layer base {
@@ -91,6 +112,10 @@ body {
 
   p {
     @apply mb-0;
+  }
+
+  pre {
+    @apply py-2;
   }
 
   .kit-form * {

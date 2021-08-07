@@ -1,13 +1,16 @@
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
 import React, { useCallback, useState } from 'react';
 import parse from 'html-react-parser';
 import { overrideTailwindClasses } from 'tailwind-override';
-import { kenvPath } from 'kit-bridge/cjs/util';
-import { Channel } from 'kit-bridge/cjs/enum';
-import { ipcRenderer } from 'electron';
+import { friendlyShortcut } from 'kit-bridge/cjs/util';
+import { useAtom } from 'jotai';
 import { ChoiceButtonProps } from '../types';
+import { flagsAtom, flagValueAtom } from '../jotai';
+import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
 
 export default function ChoiceButton({
   data,
@@ -19,18 +22,23 @@ export default function ChoiceButton({
   const choice = choices[index];
 
   const [mouseDown, setMouseDown] = useState(false);
+  const [flags] = useAtom(flagsAtom);
+  const [flaggedValue, setFlagValue] = useAtom(flagValueAtom);
 
-  const editScript = useCallback(() => {
-    const filePath = (choice as any)?.filePath;
-    if (filePath?.includes(kenvPath())) {
-      ipcRenderer.send(Channel.EDIT_SCRIPT, filePath);
-    }
-  }, [choice]);
+  const onRightClick = useCallback(
+    (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setFlagValue(choice);
+    },
+    [choice, setFlagValue]
+  );
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button
       type="button"
+      onContextMenu={onRightClick}
       onMouseDown={() => setMouseDown(true)}
       onMouseUp={() => setMouseDown(false)}
       style={style}
@@ -53,17 +61,18 @@ export default function ChoiceButton({
         flex
         flex-row
         text-lg
-        px-4
+        pl-4
+        pr-2
         justify-between
         items-center
         focus:outline-none
-        transition-shadow ease-in-out duration-250
+        transition-shadow ease-in-out duration-200
         ${choice?.className}
       `)}`}
       onClick={(_event) => {
         onIndexSubmit(index);
       }}
-      onContextMenu={editScript}
+      // onContextMenu={editScript}
       onMouseOver={() => {
         if (mouseEnabled) {
           onIndexChange(index);
@@ -89,7 +98,7 @@ export default function ChoiceButton({
                     ? `opacity-90 dark:text-primary-light text-primary-dark`
                     : `opacity-60`
                 }
-                hover:opacity-100
+
                 `}
               >
                 {(index === currentIndex && choice?.description) ||
@@ -97,36 +106,77 @@ export default function ChoiceButton({
               </div>
             )}
           </div>
-          {(choice?.tag || choice?.icon) &&
-            (choice?.icon ? (
+
+          <div className="flex flex-row items-center h-full">
+            <div className="flex flex-col pr-2">
+              {choice?.shortcut && (
+                <div
+                  className={`
+              text-xxs font-mono
+              ${index === currentIndex ? `opacity-70` : `opacity-40`}
+              `}
+                >
+                  {friendlyShortcut(choice.shortcut)}
+                </div>
+              )}
+              {choice?.kenv && (
+                <div
+                  className={`
+              text-xxs font-mono
+              ${index === currentIndex ? `opacity-70` : `opacity-40`}
+              `}
+                >
+                  {choice.kenv}
+                </div>
+              )}
+              {choice?.tag && (
+                <div
+                  className={`
+              text-xxs font-mono
+              ${index === currentIndex ? `opacity-70` : `opacity-40`}
+              `}
+                >
+                  {choice.tag}
+                </div>
+              )}
+            </div>
+            {choice?.icon && (
               <img
                 alt="icon"
                 className={`
-              border-2 border-black dark:border-white border-opacity-50
-              rounded-full
-
-              w-6 h-6
-              `}
+                border-2 border-black dark:border-white border-opacity-50
+                rounded-full
+                w-6 h-6
+                `}
                 src={choice?.icon}
               />
-            ) : (
-              <div
-                className={`
-            text-xxs font-mono
-            ${index === currentIndex ? `opacity-40` : `opacity-20`}
-            `}
-              >
-                {choice.tag}
-              </div>
-            ))}
+            )}
+            {choice?.img && (
+              <img
+                src={choice.img}
+                alt={choice.description || ''}
+                className="py-2 h-full"
+              />
+            )}
 
-          {choice?.img && (
-            <img
-              src={choice.img}
-              alt={choice.description || ''}
-              className="py-2 h-full"
-            />
-          )}
+            {index === currentIndex &&
+              Boolean(Object.keys(flags).length) &&
+              !flaggedValue && (
+                <div className="hover:cursor-pointer" onClick={onRightClick}>
+                  <MoreThanIcon
+                    className={`
+        h-4 w-3
+        fill-current
+        transition ease-in
+        opacity-25
+        hover:opacity-100
+        dark:text-white text-black
+        `}
+                    viewBox="0 0 32 32"
+                  />
+                </div>
+              )}
+          </div>
         </div>
       )}
     </button>

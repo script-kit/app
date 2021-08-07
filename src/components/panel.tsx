@@ -1,51 +1,56 @@
-import React, { RefObject, useEffect, useRef } from 'react';
+/* eslint-disable no-nested-ternary */
+import React, { RefObject, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
-import useResizeObserver from '@react-hook/resize-observer';
 import Highlight from 'react-highlight';
 import { useAtom } from 'jotai';
 import { panelHTMLAtom } from '../jotai';
+import {
+  useEnter,
+  useEscape,
+  useKeyDirection,
+  useObserveMainHeight,
+  useOpen,
+} from '../hooks';
 
 interface PanelProps {
-  onContainerHeightChanged: (height: number) => void;
+  width: number;
+  height: number;
 }
 
-export default React.forwardRef<HTMLDivElement, PanelProps>(function Panel(
-  { onContainerHeightChanged }: PanelProps,
-  ref
-) {
-  const containerRef: RefObject<any> = useRef(null);
-  const divRef: RefObject<any> = useRef(null);
-
+export default function Panel({ width, height }: PanelProps) {
+  useEscape();
+  useEnter();
+  useOpen();
+  const scrollRef: RefObject<any> = useRef(null);
   const [panelHTML] = useAtom(panelHTMLAtom);
 
-  useResizeObserver(divRef, (entry) => {
-    if (entry?.contentRect?.height) {
-      onContainerHeightChanged(entry.contentRect.height);
-    }
-  });
+  const divRef = useObserveMainHeight();
 
-  useEffect(() => {
-    if (containerRef?.current?.firstElementChild) {
-      onContainerHeightChanged(
-        containerRef?.current?.firstElementChild?.clientHeight
-      );
-    }
-  }, [onContainerHeightChanged, containerRef?.current?.firstElementChild]);
+  useKeyDirection((key) => {
+    scrollRef.current.scrollBy({
+      top: key === 'up' ? -200 : 200,
+      behavior: 'smooth',
+    });
+  }, []);
 
   return (
     <SimpleBar
-      className="w-full h-full"
-      scrollableNodeProps={{ ref: containerRef }}
+      className={`
+      shadow-inner
+      `}
+      scrollableNodeProps={{ ref: scrollRef }}
       style={
         {
+          width,
+          height,
           WebkitAppRegion: 'no-drag',
           WebkitUserSelect: 'text',
         } as any
       }
     >
-      <div ref={divRef}>
+      <div className="w-full h-full" ref={divRef}>
         <Highlight innerHTML>{panelHTML}</Highlight>
       </div>
     </SimpleBar>
   );
-});
+}

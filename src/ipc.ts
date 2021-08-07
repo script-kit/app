@@ -5,33 +5,54 @@ import log from 'electron-log';
 import { isUndefined } from 'lodash';
 import { Channel, ProcessType } from 'kit-bridge/cjs/enum';
 import { kitPath, getLogFromScriptPath } from 'kit-bridge/cjs/util';
-import { Script } from 'kit-bridge/cjs/type';
+import { MessageData, Script } from 'kit-bridge/cjs/type';
 import { emitter, KitEvent } from './events';
 
-import { processes } from './process';
+import { processes, ProcessInfo } from './process';
 
-import { escapePromptWindow, resizePromptHeight, reload } from './prompt';
+import {
+  escapePromptWindow,
+  resizePromptHeight,
+  reload,
+  resetPromptBounds,
+} from './prompt';
 import { setAppHidden, getAppHidden } from './appHidden';
 import { runPromptProcess } from './kit';
+import { AppChannel } from './enums';
+
+const handleChannel =
+  (fn: (processInfo: ProcessInfo, data: any) => void) =>
+  (_event: any, data: MessageData) => {
+    const processInfo = processes.getByPid(data?.pid);
+
+    if (processInfo) {
+      fn(processInfo, data);
+    } else {
+      console.warn(`⚠️ IPC failed on pid ${data?.pid}`);
+      console.log(data);
+    }
+  };
 
 export const startIpc = () => {
-  ipcMain.on(Channel.VALUE_SUBMITTED, (_event, { value, pid }) => {
-    processes.ifPid(pid, ({ child, values }) => {
+  ipcMain.on(
+    Channel.VALUE_SUBMITTED,
+    handleChannel(({ child, values }, { value, pid, flag }) => {
       emitter.emit(KitEvent.ResumeShortcuts);
       values.push(value);
       if (child) {
-        child?.send({ channel: Channel.VALUE_SUBMITTED, value });
+        child?.send({ channel: Channel.VALUE_SUBMITTED, value, flag });
       }
-    });
-  });
+    })
+  );
 
-  ipcMain.on(Channel.GENERATE_CHOICES, (_event, { input, pid }) => {
-    processes.ifPid(pid, ({ child }) => {
+  ipcMain.on(
+    Channel.GENERATE_CHOICES,
+    handleChannel(({ child }, { input }) => {
       if (child && !isUndefined(input)) {
         child?.send({ channel: Channel.GENERATE_CHOICES, input });
       }
-    });
-  });
+    })
+  );
 
   ipcMain.on(Channel.PROMPT_ERROR, (_event, { error }) => {
     log.warn(error);
@@ -44,27 +65,32 @@ export const startIpc = () => {
     }
   });
 
-  ipcMain.on(Channel.CHOICE_FOCUSED, (_event, { index, pid }) => {
-    processes.ifPid(pid, ({ child }) => {
+  ipcMain.on(
+    Channel.CHOICE_FOCUSED,
+    handleChannel(({ child }, { index, pid }) => {
       if (child && !isUndefined(index)) {
         child?.send({ channel: Channel.CHOICE_FOCUSED, index });
       }
-    });
-  });
+    })
+  );
 
-  ipcMain.on(Channel.TAB_CHANGED, (event, { tab, input = '', pid }) => {
-    emitter.emit(KitEvent.ResumeShortcuts);
-    processes.ifPid(pid, ({ child }) => {
+  ipcMain.on(
+    Channel.TAB_CHANGED,
+    handleChannel(({ child }, { tab, input = '', pid }) => {
+      emitter.emit(KitEvent.ResumeShortcuts);
+
       if (child && tab) {
         child?.send({ channel: Channel.TAB_CHANGED, tab, input });
       }
-    });
+    })
+  );
+
+  ipcMain.on(Channel.CONTENT_HEIGHT_UPDATED, (event, heightAndUi) => {
+    resizePromptHeight(heightAndUi);
   });
 
-  ipcMain.on(Channel.CONTENT_HEIGHT_UPDATED, (event, heightAndCache) => {
-    if (!isUndefined(heightAndCache)) {
-      resizePromptHeight(heightAndCache);
-    }
+  ipcMain.on(AppChannel.PROMPT_HEIGHT_RESET, (event) => {
+    resetPromptBounds();
   });
 
   ipcMain.on(Channel.ESCAPE_PRESSED, async (event, { pid }) => {
@@ -94,7 +120,7 @@ export const startIpc = () => {
   emitter.on(KitEvent.Blur, async () => {
     const promptProcessInfo = await processes.findPromptProcess();
 
-    if (promptProcessInfo) {
+    if (promptProcessInfo && promptProcessInfo.scriptPath) {
       const { child, scriptPath } = promptProcessInfo;
       emitter.emit(KitEvent.ResumeShortcuts);
 

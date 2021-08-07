@@ -1,13 +1,13 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { KeyboardEvent, useCallback, useEffect, useRef } from 'react';
+import React, { KeyboardEvent, useCallback, useRef } from 'react';
 
 import { useAtom } from 'jotai';
 import { placeholderAtom } from '../jotai';
+import { useEscape } from '../hooks';
 
 interface HotkeyProps {
   submit(data: any): void;
-  onEscape(): void;
   onHotkeyHeightChanged: (height: number) => void;
 }
 
@@ -88,32 +88,32 @@ const getKeyData = (event: KeyboardEvent<HTMLInputElement>) => {
   return { modifierString, keyData };
 };
 
-export default function Hotkey({
-  submit,
-  onEscape,
-  onHotkeyHeightChanged,
-}: HotkeyProps) {
+export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
   const containerRef = useRef<HTMLInputElement>(null);
   const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
 
-  const onKeyUp = useCallback((event) => {
-    event.preventDefault();
-    const modifierString = getModifierString(event);
-    setPlaceholder(modifierString);
-  }, []);
+  useEscape();
+
+  const onKeyUp = useCallback(
+    (event) => {
+      event.preventDefault();
+      const modifierString = getModifierString(event);
+      setPlaceholder(modifierString);
+    },
+    [setPlaceholder]
+  );
 
   const onKeyDown = useCallback(
     (event) => {
       event.preventDefault();
 
-      if (event.key === 'Escape') {
-        onEscape();
-        return;
-      }
-
       const { keyData, modifierString } = getKeyData(event);
 
       setPlaceholder(modifierString);
+
+      if (event.key === 'Escape') {
+        return;
+      }
 
       if (
         event.key.length === 1 ||
@@ -122,7 +122,7 @@ export default function Hotkey({
         submit(keyData);
       }
     },
-    [onEscape, submit]
+    [setPlaceholder, submit]
   );
 
   return (

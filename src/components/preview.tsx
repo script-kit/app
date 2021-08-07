@@ -1,6 +1,6 @@
 /* eslint-disable react/destructuring-assignment */
 import React from 'react';
-import parse from 'html-react-parser';
+import Highlight from 'react-highlight';
 
 interface PreviewProps {
   preview: string;
@@ -25,7 +25,9 @@ class PreviewBoundary extends React.Component {
 export default function Preview({ preview }: PreviewProps) {
   return (
     <div className="flex-1">
-      <PreviewBoundary>{parse(preview as string)} </PreviewBoundary>
+      <PreviewBoundary>
+        <Highlight innerHTML>{preview}</Highlight>
+      </PreviewBoundary>
     </div>
   );
 }

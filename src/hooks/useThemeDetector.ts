@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-export const useThemeDetector = () => {
+export default () => {
   const getCurrentTheme = () =>
     window.matchMedia('(prefers-color-scheme: dark)').matches;
   const [isDarkTheme, setIsDarkTheme] = useState(getCurrentTheme());
