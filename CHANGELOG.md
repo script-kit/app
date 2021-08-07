@@ -1,3 +1,14 @@
+# [1.3.0-beta.35](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.34...v1.3.0-beta.35) (2021-08-07)
+
+
+### Features
+
+* **app:** adding setFlags ([f0b8f42](https://github.com/johnlindquist/kitapp/commit/f0b8f42945779821e9626025d5edb6ad0a921cd6))
+* **app:** Resizing fixes. Extracting hooks. Handle ipc/channel ([cee0df8](https://github.com/johnlindquist/kitapp/commit/cee0df861917fefddbb8365f7b7f4b11e133b0bc))
+* **app:** script context menu ([ff53596](https://github.com/johnlindquist/kitapp/commit/ff535962d09dcc1e09c5f72da7a8fc129b9a01db))
+* **app:** script context menu ([7bd01e3](https://github.com/johnlindquist/kitapp/commit/7bd01e3f2a8e3fd083c16ce20703acc1ee5d8042))
+* **app:** validating flags ([dfcc28a](https://github.com/johnlindquist/kitapp/commit/dfcc28a0b3658a7ed8a52a5dd7229646ba5262b7))
+
 # [1.3.0-alpha.98](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.97...v1.3.0-alpha.98) (2021-08-07)
 
 
