@@ -1,3 +1,10 @@
+# [1.3.0-alpha.99](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.98...v1.3.0-alpha.99) (2021-08-08)
+
+
+### Features
+
+* **app:** hide after notify. Allow empty string. ([567505b](https://github.com/johnlindquist/kitapp/commit/567505bc0c572ca74e8535cfe3de420a97692621))
+
 # [1.3.0-beta.35](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.34...v1.3.0-beta.35) (2021-08-07)
 
 

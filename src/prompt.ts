@@ -250,7 +250,7 @@ export const resizePromptHeight = debounce(
       if (ui !== UI.arg) cachePromptBounds(Bounds.Size);
     }
   },
-  10
+  69 // nice
 );
 
 export const resetPromptBounds = async () => {
@@ -319,7 +319,7 @@ const cachePromptBounds = debounce(
 
     sendToPrompt(Channel.SET_MAX_HEIGHT, promptBounds.height);
   },
-  250
+  100
 );
 
 const hideAppIfNoWindows = () => {

@@ -1,11 +1,11 @@
 import useResizeObserver from '@react-hook/resize-observer';
+import { RefObject, useRef } from 'react';
 
-import { useLayoutEffect, useRef } from 'react';
 import { useAtom } from 'jotai';
-import { mainHeightAtom, uiAtom } from '../jotai';
+import { mainHeightAtom } from '../jotai';
 
 export default <T extends HTMLElement = HTMLElement>() => {
-  const containerRef = useRef<T>(null);
+  const containerRef = useRef<T>();
   const [, setMainHeight] = useAtom(mainHeightAtom);
 
   // useLayoutEffect(() => {
@@ -14,7 +14,7 @@ export default <T extends HTMLElement = HTMLElement>() => {
   //   }
   // }, [containerRef?.current?.clientHeight, setMainHeight]);
 
-  useResizeObserver(containerRef, (entry) => {
+  useResizeObserver(containerRef as RefObject<HTMLElement>, (entry) => {
     if (entry?.contentRect?.height) {
       setMainHeight(entry.contentRect.height);
     }
