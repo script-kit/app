@@ -21,7 +21,7 @@ import React, {
   useRef,
 } from 'react';
 import { useAtom } from 'jotai';
-// import { useWhatChanged } from '@simbathesailor/use-what-changed';
+import { useWhatChanged } from '@simbathesailor/use-what-changed';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { useDebouncedCallback } from 'use-debounce';
@@ -168,6 +168,16 @@ export default function App() {
     [ui]
   );
 
+  const initResize = useCallback(
+    (height: number) => {
+      ipcRenderer.send(AppChannel.INIT_RESIZE_HEIGHT, {
+        height,
+        ui,
+      });
+    },
+    [ui]
+  );
+
   const resetBounds = useCallback(() => {
     ipcRenderer.send(AppChannel.PROMPT_HEIGHT_RESET, {});
   }, []);
@@ -181,7 +191,7 @@ export default function App() {
     mode,
     open,
     choices?.length,
-    panelHTML,
+    panelHTML?.length,
   ];
 
   // useWhatChanged(
@@ -193,34 +203,30 @@ export default function App() {
   //   ui,
   //   mode,
   //   open,
-  //   choices?.length,`
+  //   choices?.length,
+  //   panelHTML,`
   // );
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!maxHeight) return;
 
-    if (ui === UI.arg) {
+    if (ui & (UI.arg | UI.hotkey)) {
+      if (!open) {
+        initResize(Math.round(maxHeight));
+        return;
+      }
       const hasMain = choices?.length || panelHTML?.length;
       let newHeight = topHeight;
 
-      if (panelHTML?.length) {
-        newHeight += mainHeight;
-      } else if (mode === Mode.FILTER) {
-        if (hasMain) newHeight += mainHeight;
-        if (newHeight > maxHeight) newHeight = maxHeight;
-      } else if (mode === Mode.GENERATE) {
-        if (hasMain) newHeight += mainHeight;
-        if (newHeight > DEFAULT_HEIGHT) newHeight = DEFAULT_HEIGHT;
-      }
+      if (hasMain) newHeight += mainHeight;
+
+      if (newHeight > maxHeight && mode === Mode.FILTER) newHeight = maxHeight;
       if (newHeight < topHeight && !hasMain) newHeight = topHeight;
-      // console.log({
-      //   hasMain,
-      //   newHeight,
-      //   topHeight,
-      // });
-      if (newHeight < topHeight && hasMain) {
-        resetBounds();
-      } else {
+
+      if (newHeight < topHeight && hasMain) resetBounds();
+
+      if (hasMain && mainHeight) resizeHeight(Math.round(newHeight));
+      if (!hasMain && mainHeight === 0 && topHeight) {
         resizeHeight(Math.round(newHeight));
       }
     }
@@ -240,7 +246,7 @@ export default function App() {
         resizeHeight(Math.round(newHeight));
       }
     }
-    if (ui & UI.form && mainHeight) {
+    if (ui & (UI.form | UI.drop) && mainHeight) {
       let newHeight = topHeight;
       newHeight += mainHeight;
 
@@ -377,7 +383,7 @@ export default function App() {
                   )}
 
                 {!!(ui & UI.arg) && panelHTML?.length === 0 && (
-                  <List height={choices?.length ? height : 0} width={width} />
+                  <List height={height} width={width} />
                 )}
               </>
             )}

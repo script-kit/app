@@ -139,7 +139,7 @@ export default function Input() {
         type={promptData?.secret || 'text'}
         value={inputValue}
       />
-      {submitted && (
+      {submitted && placeholder.startsWith('Processing') && (
         <div className="flex justify-center items-center">
           <svg
             className="animate-spin mr-4 h-6 w-6 text-primary-dark dark:text-primary-light"

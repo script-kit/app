@@ -15,6 +15,7 @@ import {
 } from 'kit-bridge/cjs/type';
 import { clamp, debounce, drop } from 'lodash';
 import { ipcRenderer } from 'electron';
+import { mainScriptPath } from 'kit-bridge/esm/util';
 
 const convert = new Convert();
 
@@ -28,7 +29,7 @@ export const tabsAtom = atom<string[]>([]);
 const placeholder = atom('');
 export const placeholderAtom = atom(
   (g) => g(placeholder),
-  debounce((g, s, a) => s(placeholder, a), 10)
+  debounce((g, s, a) => s(placeholder, a), 25)
 );
 
 export const unfilteredChoicesAtom = atom<Choice[]>([]);
@@ -81,7 +82,7 @@ export const maxHeightAtom = atom(
   (g) => g(maxHeight),
   (g, s, a: number) => {
     s(maxHeight, a);
-    s(mainHeightAtom, a - g(topHeightAtom));
+    // s(mainHeightAtom, a - g(topHeightAtom));
   }
 );
 
@@ -279,31 +280,34 @@ const submitValue = atom('');
 export const submitValueAtom = atom(
   (g) => g(submitValue),
   (g, s, a: any) => {
-    s(submittedAtom, true);
-    s(indexAtom, 0);
-    s(rawInputAtom, '');
-    s(choices, []);
-    s(
-      placeholder,
-      a === 'string' && !g(promptDataAtom)?.secret
-        ? `Processing ${a}...`
-        : 'Processing...'
-    );
-
     const fValue = g(flaggedValueAtom);
-    s(flaggedValueAtom, ''); // clear after getting
     const f = g(flagAtom);
     const flag = fValue ? a : f || '';
-    s(flagAtom, '');
 
     const value = checkIfSubmitIsDrop(fValue || a);
-    s(submitValue, value);
 
     ipcRenderer.send(Channel.VALUE_SUBMITTED, {
       value,
       flag,
       pid: g(pidAtom),
     });
+
+    setTimeout(() => {
+      s(submittedAtom, true);
+      s(indexAtom, 0);
+      s(rawInputAtom, '');
+      s(choices, []);
+      s(
+        placeholder,
+        a === 'string' && !g(promptDataAtom)?.secret
+          ? `Processing ${a}...`
+          : 'Processing...'
+      );
+
+      s(flaggedValueAtom, ''); // clear after getting
+      s(flagAtom, '');
+      s(submitValue, value);
+    }, 0);
   }
 );
 
@@ -313,7 +317,7 @@ export const openAtom = atom(
     if (g(rawOpen) && a === false) {
       ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: g(pidAtom) });
       // setChoices([]);
-      s(choices, []);
+      // s(choices, []);
       s(tabIndex, 0);
       s(indexAtom, 0);
       s(rawInputAtom, '');
@@ -333,3 +337,19 @@ export const openAtom = atom(
 
 export const selectionStartAtom = atom(0);
 export const isMouseDownAtom = atom(false);
+
+interface FilePathBounds {
+  bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  filePath: string;
+}
+
+const emptyFilePathBounds: FilePathBounds = {
+  bounds: { x: 0, y: 0, width: 0, height: 0 },
+  filePath: '',
+};
+export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);

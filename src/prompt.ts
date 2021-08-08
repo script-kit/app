@@ -235,23 +235,26 @@ export const showPrompt = async () => {
 };
 
 let lastResizedByUser = false;
-export const resizePromptHeight = debounce(
-  ({ height: targetHeight, ui }: { height: number; ui: UI }) => {
-    const maxHeight = Math.round(getCurrentScreen().bounds.height * (15 / 16));
-    const height = targetHeight > maxHeight ? maxHeight : targetHeight;
+export const resizePromptHeight = ({
+  height: targetHeight,
+  ui,
+}: {
+  height: number;
+  ui: UI;
+}) => {
+  const maxHeight = Math.round(getCurrentScreen().bounds.height * (15 / 16));
+  const height = targetHeight > maxHeight ? maxHeight : targetHeight;
 
-    if (lastResizedByUser) return;
-    const bounds = promptWindow?.getBounds();
+  if (lastResizedByUser) return;
+  const bounds = promptWindow?.getBounds();
 
-    if (bounds.height !== height) {
-      log.info(`↕ RESIZE: ${bounds.width} x ${height}`);
-      promptWindow?.setBounds({ ...bounds, height });
+  if (bounds.height !== height) {
+    log.info(`↕ RESIZE: ${bounds.width} x ${height}`);
+    promptWindow?.setBounds({ ...bounds, height });
 
-      if (ui !== UI.arg) cachePromptBounds(Bounds.Size);
-    }
-  },
-  69 // nice
-);
+    if (ui !== UI.arg) cachePromptBounds(Bounds.Size);
+  }
+};
 
 export const resetPromptBounds = async () => {
   const currentScreen = getCurrentScreen();
@@ -316,8 +319,6 @@ const cachePromptBounds = debounce(
     });
 
     await promptDb.write();
-
-    sendToPrompt(Channel.SET_MAX_HEIGHT, promptBounds.height);
   },
   100
 );
@@ -377,6 +378,7 @@ export const setScript = async (script: Script) => {
 
   instantChoices = [];
   if (script.filePath === mainScriptPath) {
+    sendToPrompt(Channel.SET_PLACEHOLDER, 'Run script');
     instantChoices = getScriptsMemory();
   } else if (script.requiresPrompt) {
     const maybeCachedChoices = kenvPath(
