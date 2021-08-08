@@ -1,5 +1,5 @@
 /* eslint-disable no-nested-ternary */
-import React, { RefObject, useRef } from 'react';
+import React, { LegacyRef, RefObject, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
 import Highlight from 'react-highlight';
 import { useAtom } from 'jotai';
@@ -24,7 +24,7 @@ export default function Panel({ width, height }: PanelProps) {
   const scrollRef: RefObject<any> = useRef(null);
   const [panelHTML] = useAtom(panelHTMLAtom);
 
-  const divRef = useObserveMainHeight();
+  const divRef = useObserveMainHeight<HTMLDivElement>();
 
   useKeyDirection((key) => {
     scrollRef.current.scrollBy({
@@ -48,7 +48,7 @@ export default function Panel({ width, height }: PanelProps) {
         } as any
       }
     >
-      <div className="w-full h-full" ref={divRef}>
+      <div className="w-full h-full" ref={divRef as LegacyRef<HTMLDivElement>}>
         <Highlight innerHTML>{panelHTML}</Highlight>
       </div>
     </SimpleBar>

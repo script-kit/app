@@ -25,7 +25,7 @@ export default () => {
       event.preventDefault();
 
       if (promptData?.strict && panelHTML?.length === 0) {
-        if (choices.length && choices[index]?.value) {
+        if (choices.length && typeof choices[index]?.value !== 'undefined') {
           submit(choices[index].value);
         }
       } else {

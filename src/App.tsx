@@ -236,11 +236,11 @@ export default function App() {
       newHeight += mainHeight;
       if (newHeight < MIN_HEIGHT) {
         resetBounds();
-      } else {
+      } else if (mainHeightAtom) {
         resizeHeight(Math.round(newHeight));
       }
     }
-    if (ui & UI.form) {
+    if (ui & UI.form && mainHeight) {
       let newHeight = topHeight;
       newHeight += mainHeight;
 

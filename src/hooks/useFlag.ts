@@ -58,8 +58,7 @@ export default () => {
     (event) => {
       if (selectionStart === input.length) {
         event.preventDefault();
-        if (!flagValue)
-          setFlagValue(choices.length ? choices[index].value : input);
+        setFlagValue(choices.length ? choices[index].value : input);
       }
     },
     hotkeysOptions,
