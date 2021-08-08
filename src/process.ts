@@ -426,11 +426,15 @@ class Processes extends Array<ProcessInfo> {
       (info) => info.type === ProcessType.Prompt && info.scriptPath
     );
 
+    const same =
+      previousPromptProcess?.scriptPath === promptScriptPath &&
+      previousPromptProcess.values.length === 0;
+
     if (previousPromptProcess) {
-      this.removeByPid(previousPromptProcess.pid);
+      this.removeByPid(previousPromptProcess.pid, same);
     }
 
-    return previousPromptProcess?.scriptPath === promptScriptPath;
+    return same;
   }
 
   public getAllProcessInfo() {
@@ -538,7 +542,7 @@ class Processes extends Array<ProcessInfo> {
     return this.find((processInfo) => processInfo.pid === pid);
   }
 
-  public removeByPid(pid: number) {
+  public removeByPid(pid: number, same = false) {
     const processInfo = this.find((info) => info.pid === pid);
 
     if (processInfo) {
@@ -548,7 +552,7 @@ class Processes extends Array<ProcessInfo> {
         if (!child?.killed) {
           child?.kill();
           log.info(`🛑 kill ${type} ${scriptPath || 'idle'} id: ${child.pid}`);
-          if (getPromptPid() === child.pid) {
+          if (getPromptPid() === child.pid && same) {
             hidePromptWindow();
           }
         }

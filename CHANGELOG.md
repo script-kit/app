@@ -1,3 +1,10 @@
+# [1.3.0-alpha.100](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.99...v1.3.0-alpha.100) (2021-08-08)
+
+
+### Bug Fixes
+
+* **app:** flagged value timing. Prompt resizing debouncing ([369d0e0](https://github.com/johnlindquist/kitapp/commit/369d0e02c0d29fc51402aa902543f7291fd69084))
+
 # [1.3.0-beta.36](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.35...v1.3.0-beta.36) (2021-08-08)
 
 

@@ -2,7 +2,7 @@
 /* eslint-disable no-restricted-syntax */
 import { ipcMain } from 'electron';
 import log from 'electron-log';
-import { isUndefined } from 'lodash';
+import { debounce, isUndefined } from 'lodash';
 import { Channel, ProcessType } from 'kit-bridge/cjs/enum';
 import { kitPath, getLogFromScriptPath } from 'kit-bridge/cjs/util';
 import { MessageData, Script } from 'kit-bridge/cjs/type';
@@ -85,7 +85,14 @@ export const startIpc = () => {
     })
   );
 
-  ipcMain.on(Channel.CONTENT_HEIGHT_UPDATED, (event, heightAndUi) => {
+  ipcMain.on(
+    Channel.CONTENT_HEIGHT_UPDATED,
+    debounce((event, heightAndUi) => {
+      resizePromptHeight(heightAndUi);
+    }, 44)
+  );
+
+  ipcMain.on(AppChannel.INIT_RESIZE_HEIGHT, (event, heightAndUi) => {
     resizePromptHeight(heightAndUi);
   });
 
