@@ -34,15 +34,42 @@ export default function ChoiceButton({
     [choice, setFlagValue]
   );
 
+  const onMouseDown = useCallback((e) => {
+    e.preventDefault();
+    setMouseDown(true);
+  }, []);
+  const onMouseUp = useCallback((e) => {
+    e.preventDefault();
+    setMouseDown(false);
+  }, []);
+  const onClick = useCallback(
+    (e) => {
+      e.preventDefault();
+      onIndexSubmit(index);
+    },
+    [index, onIndexSubmit]
+  );
+  const onMouseOver = useCallback(
+    (e) => {
+      e.preventDefault();
+      if (mouseEnabled) {
+        onIndexChange(index);
+      }
+    },
+    [index, mouseEnabled, onIndexChange]
+  );
+
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button
       type="button"
       onContextMenu={onRightClick}
-      onMouseDown={() => setMouseDown(true)}
-      onMouseUp={() => setMouseDown(false)}
+      onMouseDown={onMouseDown}
+      onMouseUp={onMouseUp}
       style={style}
-      className={`  ${
+      className={`
+      ${mouseEnabled ? `hover:cursor-pointer` : ''}
+      ${
         index === currentIndex
           ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-50
             ${
@@ -69,15 +96,9 @@ export default function ChoiceButton({
         transition-shadow ease-in-out duration-200
         ${choice?.className}
       `)}`}
-      onClick={(_event) => {
-        onIndexSubmit(index);
-      }}
+      onClick={onClick}
       // onContextMenu={editScript}
-      onMouseOver={() => {
-        if (mouseEnabled) {
-          onIndexChange(index);
-        }
-      }}
+      onMouseOver={onMouseOver}
     >
       {choice?.html ? (
         parse(choice?.html, {
@@ -107,7 +128,7 @@ export default function ChoiceButton({
             )}
           </div>
 
-          <div className="flex flex-row items-center h-full">
+          <div className="flex flex-row items-center h-full flex-shrink-0">
             <div className="flex flex-col pr-2">
               {choice?.shortcut && (
                 <div
@@ -146,7 +167,7 @@ export default function ChoiceButton({
                 className={`
                 border-2 border-black dark:border-white border-opacity-50
                 rounded-full
-                w-6 h-6
+                w-12
                 `}
                 src={choice?.icon}
               />
@@ -155,14 +176,14 @@ export default function ChoiceButton({
               <img
                 src={choice.img}
                 alt={choice.description || ''}
-                className="py-2 h-full"
+                className="py-2 h-full w-12"
               />
             )}
 
             {index === currentIndex &&
               Boolean(Object.keys(flags).length) &&
               !flaggedValue && (
-                <div className="hover:cursor-pointer" onClick={onRightClick}>
+                <div onClick={onRightClick}>
                   <MoreThanIcon
                     className={`
         h-4 w-3

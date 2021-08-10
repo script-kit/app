@@ -10,9 +10,13 @@ import { flagValueAtom } from '../jotai';
 export default function Selected() {
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
 
-  const onClick = useCallback(() => {
-    setFlagValue('');
-  }, [setFlagValue]);
+  const onClick = useCallback(
+    (e) => {
+      e.preventDefault();
+      setFlagValue('');
+    },
+    [setFlagValue]
+  );
 
   return (
     <div

@@ -1,10 +1,10 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import path from 'path';
 import { useAtom } from 'jotai';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
 import { EditorOptions } from 'kit-bridge/cjs/type';
-import { editorConfigAtom } from '../jotai';
+import { editorConfigAtom, openAtom } from '../jotai';
 import {
   useClose,
   useMountMainHeight,
@@ -34,12 +34,19 @@ const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
     enabled: false,
   },
   wordWrap: 'on',
+  lineNumbers: 'off',
+  glyphMargin: false,
+  // folding: false,
+  // Undocumented see https://github.com/Microsoft/vscode/issues/30795#issuecomment-410998882
+  // lineDecorationsWidth: 0,
+  // lineNumbersMinChars: 0,
 };
 
 export default function Editor() {
   const editorRef = useRef<editor.IStandaloneCodeEditor>();
 
   const [options] = useAtom(editorConfigAtom);
+  const [open] = useAtom(openAtom);
   const [editorValue, setEditorValue] = useState('');
 
   useSave(editorValue);
@@ -47,6 +54,10 @@ export default function Editor() {
 
   const isDark = useThemeDetector();
   const containerRef = useMountMainHeight();
+
+  useEffect(() => {
+    if (editorRef?.current) editorRef?.current?.focus();
+  }, [open, editorRef]);
 
   const beforeMount = useCallback((monaco) => {
     monaco.editor.defineTheme('kit-dark', {
@@ -66,6 +77,7 @@ export default function Editor() {
       },
     });
   }, []);
+
   const onMount = useCallback(
     (editorInstance: editor.IStandaloneCodeEditor) => {
       editorInstance.focus();
@@ -103,7 +115,7 @@ export default function Editor() {
       ref={containerRef}
       className={`
     pt-3
-    w-full h-full min-h-64`}
+    w-full h-full min-h-128`}
     >
       <MonacoEditor
         beforeMount={beforeMount}

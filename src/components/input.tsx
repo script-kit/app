@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { useCallback, KeyboardEvent } from 'react';
+import React, { useCallback, KeyboardEvent, LegacyRef } from 'react';
 
 import { Channel } from 'kit-bridge/cjs/enum';
 import { Choice } from 'kit-bridge/cjs/type';
@@ -21,17 +21,13 @@ import {
   unfilteredChoicesAtom,
 } from '../jotai';
 import {
-  useEdit,
   useEnter,
   useEscape,
   useFlag,
   useFocus,
-  useGetDb,
   useKeyIndex,
-  useOpen,
   useTab,
 } from '../hooks';
-import { setPlaceholder } from '../prompt';
 
 export default function Input() {
   const inputRef = useFocus();
@@ -52,9 +48,6 @@ export default function Input() {
   useEnter();
   useFlag();
   useTab();
-  useOpen();
-  useEdit();
-  useGetDb();
   useKeyIndex();
 
   const onKeyDown = useCallback(
@@ -135,11 +128,11 @@ export default function Input() {
         onChange={onChange}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        ref={inputRef}
+        ref={inputRef as LegacyRef<HTMLInputElement>}
         type={promptData?.secret || 'text'}
         value={inputValue}
       />
-      {submitted && placeholder.startsWith('Processing') && (
+      {placeholder.startsWith('Processing') && (
         <div className="flex justify-center items-center">
           <svg
             className="animate-spin mr-4 h-6 w-6 text-primary-dark dark:text-primary-light"

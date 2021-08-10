@@ -53,7 +53,6 @@ import {
   isMouseDownAtom,
   logHTMLAtom,
   mainHeightAtom,
-  maxHeightAtom,
   modeAtom,
   openAtom,
   panelHTMLAtom,
@@ -142,7 +141,6 @@ export default function App() {
   const [formHTML, setFormHTML] = useAtom(formHTMLAtom);
   const [, setFormData] = useAtom(formDataAtom);
 
-  const [maxHeight, setMaxHeight] = useAtom(maxHeightAtom);
   const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
   const [topHeight, setTopHeight] = useAtom(topHeightAtom);
 
@@ -158,101 +156,6 @@ export default function App() {
   });
 
   const [isMouseDown, setIsMouseDown] = useAtom(isMouseDownAtom);
-  const resizeHeight = useCallback(
-    (height: number) => {
-      ipcRenderer.send(Channel.CONTENT_HEIGHT_UPDATED, {
-        height,
-        ui,
-      });
-    },
-    [ui]
-  );
-
-  const initResize = useCallback(
-    (height: number) => {
-      ipcRenderer.send(AppChannel.INIT_RESIZE_HEIGHT, {
-        height,
-        ui,
-      });
-    },
-    [ui]
-  );
-
-  const resetBounds = useCallback(() => {
-    ipcRenderer.send(AppChannel.PROMPT_HEIGHT_RESET, {});
-  }, []);
-
-  const sizeDeps = [
-    mainHeight,
-    maxHeight,
-    resizeHeight,
-    topHeight,
-    ui,
-    mode,
-    open,
-    choices?.length,
-    panelHTML?.length,
-  ];
-
-  // useWhatChanged(
-  //   sizeDeps,
-  //   `    mainHeight,
-  //   maxHeight,
-  //   resizeHeight,
-  //   topHeight,
-  //   ui,
-  //   mode,
-  //   open,
-  //   choices?.length,
-  //   panelHTML,`
-  // );
-
-  useLayoutEffect(() => {
-    if (!maxHeight) return;
-
-    if (ui & (UI.arg | UI.hotkey)) {
-      if (!open) {
-        initResize(Math.round(maxHeight));
-        return;
-      }
-      const hasMain = choices?.length || panelHTML?.length;
-      let newHeight = topHeight;
-
-      if (hasMain) newHeight += mainHeight;
-
-      if (newHeight > maxHeight && mode === Mode.FILTER) newHeight = maxHeight;
-      if (newHeight < topHeight && !hasMain) newHeight = topHeight;
-
-      if (newHeight < topHeight && hasMain) resetBounds();
-
-      if (hasMain && mainHeight) resizeHeight(Math.round(newHeight));
-      if (!hasMain && mainHeight === 0 && topHeight) {
-        resizeHeight(Math.round(newHeight));
-      }
-    }
-
-    if (ui & (UI.textarea | UI.editor)) {
-      if (maxHeight < MIN_TEXTAREA_HEIGHT) {
-        resetBounds();
-      }
-    }
-
-    if (ui & UI.div) {
-      let newHeight = topHeight;
-      newHeight += mainHeight;
-      if (newHeight < MIN_HEIGHT) {
-        resetBounds();
-      } else if (mainHeightAtom) {
-        resizeHeight(Math.round(newHeight));
-      }
-    }
-    if (ui & (UI.form | UI.drop) && mainHeight) {
-      let newHeight = topHeight;
-      newHeight += mainHeight;
-
-      resizeHeight(Math.round(newHeight));
-    }
-  }, sizeDeps);
 
   // useEffect(() => {
   //   if (choices?.length > 0 && choices?.[index]) {
@@ -304,7 +207,6 @@ export default function App() {
     [Channel.SET_PLACEHOLDER]: second(setPlaceholder),
     [Channel.SET_TAB_INDEX]: second(setTabIndex),
     [Channel.SET_PROMPT_DATA]: second(setPromptData),
-    [Channel.SET_MAX_HEIGHT]: second(setMaxHeight),
   };
 
   useEffect(() => {
@@ -381,7 +283,6 @@ export default function App() {
                   panelHTML?.length > 0 && (
                     <Panel width={width} height={height} />
                   )}
-
                 {!!(ui & UI.arg) && panelHTML?.length === 0 && (
                   <List height={height} width={width} />
                 )}
