@@ -1,3 +1,10 @@
+# [1.3.0-beta.38](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.37...v1.3.0-beta.38) (2021-08-10)
+
+
+### Bug Fixes
+
+* **app:** resizing in prompt. timeout for choices ([d6ade46](https://github.com/johnlindquist/kitapp/commit/d6ade461a631082d7b85e9eaef1b11731e368b19))
+
 # [1.3.0-alpha.101](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.100...v1.3.0-alpha.101) (2021-08-10)
 
 
