@@ -72,8 +72,6 @@ export default () => {
         event.preventDefault();
         if (flagValue) {
           setFlagValue('');
-        } else {
-          setOpen(false);
         }
       }
     },

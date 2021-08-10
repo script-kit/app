@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable guard-for-in */
-import { atom } from 'jotai';
+import { Atom, atom, Getter, Setter } from 'jotai';
+import asap from 'asap';
 import { Channel, Mode, ProcessType, UI } from 'kit-bridge/cjs/enum';
 import Convert from 'ansi-to-html';
 import {
@@ -15,11 +16,13 @@ import {
 } from 'kit-bridge/cjs/type';
 import { clamp, debounce, drop } from 'lodash';
 import { ipcRenderer } from 'electron';
-import { mainScriptPath } from 'kit-bridge/esm/util';
+import { AppChannel } from './enums';
+import { ResizeData } from './types';
+
+let placeholderTimeoutId: NodeJS.Timeout;
+let choicesTimeoutId: NodeJS.Timeout;
 
 const convert = new Convert();
-
-const DEFAULT_MAX_HEIGHT = 480;
 
 export const pidAtom = atom(0);
 const rawOpen = atom(false);
@@ -29,7 +32,10 @@ export const tabsAtom = atom<string[]>([]);
 const placeholder = atom('');
 export const placeholderAtom = atom(
   (g) => g(placeholder),
-  debounce((g, s, a) => s(placeholder, a), 25)
+  (g, s, a: string) => {
+    s(placeholder, a);
+    if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
+  }
 );
 
 export const unfilteredChoicesAtom = atom<Choice[]>([]);
@@ -66,25 +72,6 @@ export const textareaConfigAtom = atom<TextareaConfig>({
   value: '',
   placeholder: '',
 });
-
-export const topHeightAtom = atom(88);
-
-const mainHeight = atom(0);
-export const mainHeightAtom = atom(
-  (g) => g(mainHeight),
-  (g, s, a: number) => {
-    return s(mainHeight, a < 0 ? 0 : a);
-  }
-);
-
-const maxHeight = atom(DEFAULT_MAX_HEIGHT);
-export const maxHeightAtom = atom(
-  (g) => g(maxHeight),
-  (g, s, a: number) => {
-    s(maxHeight, a);
-    // s(mainHeightAtom, a - g(topHeightAtom));
-  }
-);
 
 export const formHTMLAtom = atom('');
 export const formDataAtom = atom({});
@@ -125,6 +112,8 @@ const flaggedValueAtom = atom<Choice | string>('');
 export const choicesAtom = atom(
   (g) => g(choices),
   (g, s, a: Choice[]) => {
+    if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
+
     s(mouseEnabledAtom, false);
     s(submittedAtom, false);
 
@@ -198,6 +187,42 @@ export const scriptAtom = atom(
   }
 );
 
+const topHeight = atom(88);
+const mainHeight = atom(0);
+
+const resize = (g: Getter, s: Setter) => {
+  asap(() => {
+    const data: ResizeData = {
+      topHeight: g(topHeight),
+      ui: g(uiAtom),
+      mainHeight: g(mainHeight),
+      filePath: g(script).filePath,
+      mode: g(modeAtom),
+      hasChoices: Boolean(g(choices)?.length),
+      hasPanel: Boolean(g(panelHTMLAtom)?.length),
+      hasInput: Boolean(g(inputAtom)?.length),
+    };
+    ipcRenderer.send(AppChannel.RESIZE, data);
+
+    s(mouseEnabledAtom, false);
+  });
+};
+
+export const topHeightAtom = atom(
+  (g) => g(topHeight),
+  (g, s, a: number) => {
+    s(topHeight, a);
+    resize(g, s);
+  }
+);
+
+export const mainHeightAtom = atom(
+  (g) => g(mainHeight),
+  (g, s, a: number) => {
+    s(mainHeight, a < 0 ? 0 : a);
+    resize(g, s);
+  }
+);
 // export const indexAtom = atom(
 //   (g) => g(index),
 //   (g, s, a: number) => {
@@ -292,22 +317,34 @@ export const submitValueAtom = atom(
       pid: g(pidAtom),
     });
 
-    setTimeout(() => {
+    if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
+    placeholderTimeoutId = setTimeout(
+      (placehold, secret) => {
+        s(
+          placeholderAtom,
+          typeof placehold === 'string' && !secret
+            ? `Processing "${placehold}"...`
+            : 'Processing...'
+        );
+      },
+      500,
+      a,
+      g(promptDataAtom)?.secret
+    );
+    if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
+    choicesTimeoutId = setTimeout(() => {
+      s(choices, []);
+    }, 150);
+
+    asap(() => {
       s(submittedAtom, true);
       s(indexAtom, 0);
       s(rawInputAtom, '');
-      s(choices, []);
-      s(
-        placeholder,
-        a === 'string' && !g(promptDataAtom)?.secret
-          ? `Processing ${a}...`
-          : 'Processing...'
-      );
 
       s(flaggedValueAtom, ''); // clear after getting
       s(flagAtom, '');
       s(submitValue, value);
-    }, 0);
+    });
   }
 );
 

@@ -35,9 +35,6 @@ export default function Panel({ width, height }: PanelProps) {
 
   return (
     <SimpleBar
-      className={`
-      shadow-inner
-      `}
       scrollableNodeProps={{ ref: scrollRef }}
       style={
         {
