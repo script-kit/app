@@ -1,3 +1,10 @@
+# [1.3.0-beta.41](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.40...v1.3.0-beta.41) (2021-08-12)
+
+
+### Features
+
+* **app:** Color vars ([eb65993](https://github.com/johnlindquist/kitapp/commit/eb65993af6453d7b2d80279d0f312d9d9143c081))
+
 # [1.3.0-beta.40](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.39...v1.3.0-beta.40) (2021-08-12)
 
 
