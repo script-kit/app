@@ -71,6 +71,7 @@ import {
 } from './jotai';
 
 import useChoices from './hooks/useChoices';
+import { useThemeDetector } from './hooks';
 
 const second = (fn: (value: any) => void) => (_: any, x: any) => fn(x);
 
@@ -149,6 +150,8 @@ export default function App() {
   useResizeObserver(headerRef, (entry) => {
     setTopHeight(entry.contentRect.height);
   });
+
+  useThemeDetector();
 
   const [isMouseDown, setIsMouseDown] = useAtom(isMouseDownAtom);
 

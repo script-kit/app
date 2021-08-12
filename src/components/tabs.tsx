@@ -43,7 +43,8 @@ export default function KitTabs() {
               text-black dark:text-white
 
               hover:text-opacity-100
-              hover:border-b-2 hover:border-primary-dark hover:dark:border-primary-light
+              hover:border-b-2 dark:hover:border-b-2
+              hover:border-primary-dark dark:hover:border-primary-light
               transition-all duration-100 ease-in-out
 
 

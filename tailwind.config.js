@@ -2,6 +2,18 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
 
+const colorVar =
+  (name) =>
+  ({ opacityVariable, opacityValue }) => {
+    if (opacityValue !== undefined) {
+      return `rgba(var(--color-${name}), ${opacityValue})`;
+    }
+    if (opacityVariable !== undefined) {
+      return `rgba(var(--color-${name}), var(${opacityVariable}, 1))`;
+    }
+    return `rgb(var(--color-${name}))`;
+  };
+
 /* eslint-disable global-require */
 module.exports = {
   mode: process.env.NODE_ENV === 'development' ? 'jit' : '',
@@ -45,8 +57,8 @@ module.exports = {
         ...colors,
         gray: colors.coolGray,
         primary: {
-          light: colors.yellow['400'],
-          dark: colors.indigo['600'], // '#4F46E5',
+          light: colorVar('light'),
+          dark: colorVar('dark'), // '#4F46E5',
         },
       },
       minWidth: {

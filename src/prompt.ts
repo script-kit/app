@@ -406,7 +406,6 @@ export const setScript = async (script: Script) => {
   if (promptScript?.filePath === script?.filePath) return;
   promptScript = script;
 
-  console.log(`😍 setScript`);
   // if (promptScript?.id === script?.id) return;
   // log.info(script);
 
