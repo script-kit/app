@@ -26,7 +26,7 @@ export default function Log() {
 
   const editLog = useCallback(() => {
     ipcRenderer.send(Channel.OPEN_SCRIPT_LOG, script);
-  }, []);
+  }, [script]);
 
   useResizeObserver(divRef, (entry) => {
     if (entry?.contentRect?.height) {
@@ -57,7 +57,7 @@ export default function Log() {
         className="log
         w-full h-16
         bg-black text-white dark:bg-white dark:text-black
-        bg-opacity-90 dark:bg-opacity-90
+        bg-opacity-80 dark:bg-opacity-30
         font-mono text-xs
         hover:cursor-auto
         "

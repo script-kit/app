@@ -4,13 +4,8 @@ import { useAtom } from 'jotai';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
 import { EditorOptions } from 'kit-bridge/cjs/type';
-import { editorConfigAtom, openAtom } from '../jotai';
-import {
-  useClose,
-  useMountMainHeight,
-  useSave,
-  useThemeDetector,
-} from '../hooks';
+import { darkAtom, editorConfigAtom, openAtom } from '../jotai';
+import { useClose, useMountMainHeight, useSave } from '../hooks';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -46,13 +41,13 @@ export default function Editor() {
   const editorRef = useRef<editor.IStandaloneCodeEditor>();
 
   const [options] = useAtom(editorConfigAtom);
+  const [isDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
   const [editorValue, setEditorValue] = useState('');
 
   useSave(editorValue);
   useClose();
 
-  const isDark = useThemeDetector();
   const containerRef = useMountMainHeight();
 
   useEffect(() => {

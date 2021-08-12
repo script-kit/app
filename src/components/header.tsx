@@ -2,6 +2,7 @@ import React from 'react';
 import { useAtom } from 'jotai';
 import {
   choicesAtom,
+  darkAtom,
   mainHeightAtom,
   mouseEnabledAtom,
   panelHTMLAtom,
@@ -22,6 +23,7 @@ export default function Header() {
   const [unfilteredChoices] = useAtom(unfilteredChoicesAtom);
   const [choices] = useAtom(choicesAtom);
   const [selected] = useAtom(selectedAtom);
+  const [dark] = useAtom(darkAtom);
 
   return (
     <div
@@ -31,6 +33,7 @@ export default function Header() {
     >
       <span className="dark:text-primary-light text-primary-dark col-span-3">
         {script?.description || ''}
+        {dark ? 'Dark' : 'Light'}
         {/* {unfilteredChoices.length} : {choices.length} */}
         {/* {topHeight},{mainHeight},{maxHeight},{panelHTML?.length},{ui} */}
       </span>

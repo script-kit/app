@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useAtom } from 'jotai';
+import { useEffect } from 'react';
+import { darkAtom } from '../jotai';
 
 export default () => {
-  const getCurrentTheme = () =>
-    window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const [isDarkTheme, setIsDarkTheme] = useState(getCurrentTheme());
+  const [, setDark] = useAtom(darkAtom);
+
   const mqListener = (e: MediaQueryListEvent) => {
-    setIsDarkTheme(e.matches);
+    setDark(e.matches);
   };
 
   useEffect(() => {
@@ -13,5 +15,4 @@ export default () => {
     darkThemeMq.addEventListener('change', mqListener);
     return () => darkThemeMq.removeEventListener('change', mqListener);
   }, []);
-  return isDarkTheme;
 };

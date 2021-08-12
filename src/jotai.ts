@@ -22,8 +22,6 @@ import { ResizeData } from './types';
 let placeholderTimeoutId: NodeJS.Timeout;
 let choicesTimeoutId: NodeJS.Timeout;
 
-const convert = new Convert();
-
 export const pidAtom = atom(0);
 const rawOpen = atom(false);
 export const submittedAtom = atom(false);
@@ -48,11 +46,38 @@ export const modeAtom = atom<Mode>(Mode.FILTER);
 export const panelHTMLAtom = atom('');
 
 const log = atom<string[]>([]);
+
+const darkInit = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+const createConvertOptions = (
+  dark: boolean
+): ConstructorParameters<typeof import('ansi-to-html')>[0] => {
+  return {
+    bg: dark ? '#FFF' : '#000',
+    fg: dark ? '#000' : '#FFF  ',
+    newline: true,
+  };
+};
+
+let convert = new Convert(createConvertOptions(darkInit));
+
+const dark = atom(darkInit);
+export const darkAtom = atom(
+  (g) => g(dark),
+  (g, s, a: boolean) => {
+    s(dark, a);
+
+    convert = new Convert(createConvertOptions(a));
+  }
+);
+
 export const logHTMLAtom = atom(
   (g) =>
-    g(log)
-      .map((line) => `<br>${convert.toHtml(line)}`)
-      .join(``),
+    convert
+      ? g(log)
+          .map((line) => `<br/>${convert.toHtml(line)}`)
+          .join(``)
+      : '',
   (g, s, a: string) => {
     if (a === Channel.CONSOLE_CLEAR || a === '') {
       s(log, []);
