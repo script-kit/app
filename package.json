@@ -18,7 +18,7 @@
     "test": "jest",
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
     "refresh-zips": "rm ./assets/*.zip || true && download https://github.com/johnlindquist/kit/archive/refs/heads/alpha.zip > ./assets/kit.zip && download https://github.com/johnlindquist/kenv/archive/refs/heads/alpha.zip > ./assets/kenv.zip",
-    "mac": "yarn build && electron-builder build --mac dmg -c.mac.identity=null && open ./release/mac"
+    "mac": "yarn build && DEBUG_PROD=true electron-builder build --mac dmg -c.mac.identity=null && open ./release/mac/Kit.app"
   },
   "lint-staged": {
     "*.{jsx,ts,tsx}": [
@@ -319,7 +319,7 @@
     "is-image": "^3.0.0",
     "jetbrains-mono": "^1.0.3",
     "jotai": "^1.1.2",
-    "kit-bridge": "7.0.1",
+    "kit-bridge": "8.0.0",
     "lodash": "^4.17.20",
     "mdx-bundler": "^1.1.3",
     "memoize-one": "^5.2.1",

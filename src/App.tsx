@@ -65,6 +65,7 @@ import {
   tabIndexAtom,
   tabsAtom,
   textareaConfigAtom,
+  themeAtom,
   topHeightAtom,
   uiAtom,
   unfilteredChoicesAtom,
@@ -115,6 +116,7 @@ export default function App() {
   const [inputValue, setInput] = useAtom(inputAtom);
   const [, setPlaceholder] = useAtom(placeholderAtom);
   const [promptData, setPromptData] = useAtom(promptDataAtom);
+  const [, setTheme] = useAtom(themeAtom);
   const [submitted] = useAtom(submittedAtom);
 
   const [, setUnfilteredChoices] = useAtom(unfilteredChoicesAtom);
@@ -169,7 +171,7 @@ export default function App() {
 
   useChoices();
 
-  const generateChoices = useDebouncedCallback((input, mode, tab) => {
+  const generateChoices = useDebouncedCallback((input, mode) => {
     if (mode === Mode.GENERATE) {
       ipcRenderer.send(Channel.GENERATE_CHOICES, {
         input,
@@ -205,6 +207,7 @@ export default function App() {
     [Channel.SET_PLACEHOLDER]: second(setPlaceholder),
     [Channel.SET_TAB_INDEX]: second(setTabIndex),
     [Channel.SET_PROMPT_DATA]: second(setPromptData),
+    [Channel.SET_THEME]: second(setTheme),
   };
 
   useEffect(() => {
