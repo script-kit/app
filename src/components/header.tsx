@@ -27,8 +27,11 @@ export default function Header() {
 
   return (
     <div
+      style={{
+        cursor: mouseEnabled > 10 ? 'auto' : 'none',
+      }}
       className={`
-    header-component transition
+    header-component transition duration-1000
     text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row dark:text-primary-light text-primary-dark `}
     >
       <span>
@@ -41,16 +44,15 @@ export default function Header() {
       {/* <span className="dark:text-primary-light text-primary-dark col-span-3">
         {`top: ${topHeight} - main: ${mainHeight} - max: ${maxHeight} -`}
       </span> */}
-      <span>
-        {script?.menu}
-        {script?.twitter && (
-          <span>
-            <span> - </span>
+      <span className="flex flex-col items-end">
+        <span>{script?.menu}</span>
+        <span>
+          {script?.twitter && (
             <a href={`https://twitter.com/${script?.twitter.slice(1)}`}>
               {script?.twitter}
             </a>
-          </span>
-        )}
+          )}
+        </span>
       </span>
     </div>
   );

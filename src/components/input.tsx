@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { useCallback, KeyboardEvent, LegacyRef } from 'react';
+import React, { useCallback, KeyboardEvent, LegacyRef, useEffect } from 'react';
 
 import { Channel } from 'kit-bridge/cjs/enum';
 import { Choice } from 'kit-bridge/cjs/type';
@@ -10,6 +10,7 @@ import { ipcRenderer } from 'electron';
 import {
   inputAtom,
   mouseEnabledAtom,
+  openAtom,
   pidAtom,
   placeholderAtom,
   promptDataAtom,
@@ -120,14 +121,16 @@ export default function Input() {
         }
         autoFocus
         className={`
-      bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-14
-  ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
-  focus:border-none border-none`}
+      bg-transparent w-full text-black dark:text-white focus:outline-none outline-none
+      text-xl dark:placeholder-white dark:placeholder-opacity-40
+      placeholder-black placeholder-opacity-40 h-14
+      ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 px-4 py-0
+      focus:border-none border-none`}
         onChange={onChange}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
         ref={inputRef as LegacyRef<HTMLInputElement>}
-        type={promptData?.secret || 'text'}
+        type={promptData?.secret ? 'password' : promptData?.type || 'text'}
         value={inputValue}
       />
       {placeholder.startsWith('Processing') && (

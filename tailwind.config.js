@@ -59,6 +59,9 @@ module.exports = {
         65: '.65',
         70: '.70',
       },
+      opacity: {
+        theme: 'var(--opacity-main)',
+      },
       colors: {
         ...defaultTheme.colors,
         ...colors,

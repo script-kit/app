@@ -3,7 +3,7 @@ import React, { LegacyRef, RefObject, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
 import Highlight from 'react-highlight';
 import { useAtom } from 'jotai';
-import { panelHTMLAtom } from '../jotai';
+import { mouseEnabledAtom, panelHTMLAtom } from '../jotai';
 import {
   useEnter,
   useEscape,
@@ -23,6 +23,7 @@ export default function Panel({ width, height }: PanelProps) {
   useOpen();
   const scrollRef: RefObject<any> = useRef(null);
   const [panelHTML] = useAtom(panelHTMLAtom);
+  const [mouseEnabled] = useAtom(mouseEnabledAtom);
 
   const divRef = useObserveMainHeight<HTMLDivElement>();
 
@@ -38,6 +39,7 @@ export default function Panel({ width, height }: PanelProps) {
       scrollableNodeProps={{ ref: scrollRef }}
       style={
         {
+          cursor: mouseEnabled > 10 ? 'auto' : 'none',
           width,
           height,
           WebkitAppRegion: 'no-drag',
