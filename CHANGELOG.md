@@ -1,3 +1,15 @@
+# [1.3.0-alpha.104](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.103...v1.3.0-alpha.104) (2021-08-12)
+
+
+### Bug Fixes
+
+* **app:** Theme. Header ([7945313](https://github.com/johnlindquist/kitapp/commit/7945313167a5a3b0ec2b7cec98e6cf7fd0a0bc43))
+
+
+### Features
+
+* **app:** Color vars ([eb65993](https://github.com/johnlindquist/kitapp/commit/eb65993af6453d7b2d80279d0f312d9d9143c081))
+
 # [1.3.0-beta.41](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.40...v1.3.0-beta.41) (2021-08-12)
 
 
