@@ -74,7 +74,7 @@ export default function Drop() {
           } as any
         }
         className={`
-        min-h-64 w-full h-full
+        w-full h-full
         drop-component
         flex flex-col justify-center items-center
         text-black dark:text-white text-xl

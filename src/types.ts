@@ -5,7 +5,7 @@ export interface ChoiceButtonData {
   choices: Choice[];
   currentIndex: number;
   inputValue: string;
-  mouseEnabled: boolean;
+  mouseEnabled: number;
   onIndexChange: (index: number) => void;
   onIndexSubmit: (index: number) => void;
 }
@@ -28,4 +28,5 @@ export interface ResizeData {
   hasPanel: boolean;
   hasChoices: boolean;
   hasInput: boolean;
+  open: boolean;
 }

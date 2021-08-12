@@ -66,9 +66,12 @@ export default function ChoiceButton({
       onContextMenu={onRightClick}
       onMouseDown={onMouseDown}
       onMouseUp={onMouseUp}
-      style={style}
+      style={{
+        cursor: mouseEnabled > 10 ? 'pointer' : 'none',
+        ...style,
+      }}
       className={`
-      ${mouseEnabled ? `hover:cursor-pointer` : ''}
+
       ${
         index === currentIndex
           ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-50
@@ -87,14 +90,15 @@ export default function ChoiceButton({
         text-left
         flex
         flex-row
-        text-lg
-        pl-4
-        pr-2
+
+        px-4
+
         justify-between
         items-center
         focus:outline-none
         transition-shadow ease-in-out duration-200
         ${choice?.className}
+        ${index === currentIndex ? `opacity-100` : `opacity-90`}
       `)}`}
       onClick={onClick}
       // onContextMenu={editScript}
@@ -129,7 +133,7 @@ export default function ChoiceButton({
           </div>
 
           <div className="flex flex-row items-center h-full flex-shrink-0">
-            <div className="flex flex-col pr-2">
+            <div className="flex flex-col px-2">
               {choice?.shortcut && (
                 <div
                   className={`
@@ -176,7 +180,15 @@ export default function ChoiceButton({
               <img
                 src={choice.img}
                 alt={choice.description || ''}
-                className="py-2 h-full w-12"
+                className={`
+                h-3/4 rounded
+                ${index === currentIndex ? `opacity-100` : `opacity-80`}
+
+              }
+
+
+              transition ease-in
+                `}
               />
             )}
 
@@ -186,12 +198,13 @@ export default function ChoiceButton({
                 <div onClick={onRightClick}>
                   <MoreThanIcon
                     className={`
-        h-4 w-3
+        h-4 w-3 ml-2
         fill-current
         transition ease-in
-        opacity-25
-        hover:opacity-100
+        opacity-50
+        hover:opacity-80
         dark:text-white text-black
+
         `}
                     viewBox="0 0 32 32"
                   />

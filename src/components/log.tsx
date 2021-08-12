@@ -58,7 +58,9 @@ export default function Log() {
         w-full h-16
         bg-black text-white dark:bg-white dark:text-black
         bg-opacity-90 dark:bg-opacity-90
-        font-mono text-xs"
+        font-mono text-xs
+        hover:cursor-auto
+        "
         scrollableNodeProps={{ ref: containerRef }}
         style={
           {

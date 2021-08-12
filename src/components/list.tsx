@@ -22,6 +22,7 @@ import {
   submitValueAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
+import { BUTTON_HEIGHT } from '../defaults';
 
 const createItemData = memoize(
   (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>
@@ -37,9 +38,8 @@ const createItemData = memoize(
 export default function ChoiceList({ width, height }: ListProps) {
   const listRef = useRef(null);
   const innerRef = useRef(null);
-  const [mouseEnabled, setMouseEnabled] = useAtom(mouseEnabledAtom);
+  const [mouseEnabled] = useAtom(mouseEnabledAtom);
   // TODO: In case items ever have dynamic height
-  const [listItemHeight, setListItemHeight] = useState(64);
   const [choices] = useAtom(choicesAtom);
   const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
   const [index, onIndexChange] = useAtom(indexAtom);
@@ -73,9 +73,9 @@ export default function ChoiceList({ width, height }: ListProps) {
   // });
 
   useLayoutEffect(() => {
-    const newListHeight = choices.length * listItemHeight;
+    const newListHeight = choices.length * BUTTON_HEIGHT;
     setMainHeight(newListHeight);
-  }, [choices, listItemHeight, setMainHeight]);
+  }, [choices, setMainHeight]);
 
   useEffect(() => {
     if (choices.length && height) {
@@ -105,7 +105,7 @@ export default function ChoiceList({ width, height }: ListProps) {
         innerRef={innerRef}
         height={height}
         itemCount={choices?.length || 0}
-        itemSize={listItemHeight}
+        itemSize={BUTTON_HEIGHT}
         width="100%"
         itemData={itemData}
         className={`

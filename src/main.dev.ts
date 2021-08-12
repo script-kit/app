@@ -61,7 +61,7 @@ import { createTray, destroyTray } from './tray';
 import { cacheMenu, setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
 import { tick } from './tick';
-import { createPromptWindow } from './prompt';
+import { clearPromptCache, createPromptWindow } from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion } from './version';
 import { show } from './show';
@@ -366,6 +366,13 @@ const kenvExists = () => {
   return doesKenvExist;
 };
 
+const kenvExamplesExist = () => {
+  const doesKenvExamplesExist = existsSync(kenvPath('kenv', 'examples'));
+  setupLog(`kenv/kenvs/examples${doesKenvExamplesExist ? `` : ` not`} found`);
+
+  return doesKenvExamplesExist;
+};
+
 const kenvConfigured = () => {
   const isKenvConfigured = existsSync(kenvPath('.env'));
   setupLog(`kenv is${isKenvConfigured ? `` : ` not`} configured`);
@@ -630,12 +637,27 @@ const checkKit = async () => {
       kenvConfigured();
     }
 
+    if (!kenvExamplesExist()) {
+      // Step 4: Use kit wrapper to run setup.js script
+      configWindow?.show();
+      const cloneExamplesResult = spawnSync(
+        `./script`,
+        [`./setup/clone-examples.js`],
+        options
+      );
+      await handleSpawnReturns(`clone-examples`, cloneExamplesResult);
+
+      kenvExamplesExist();
+    }
+
     const createAllBins = spawnSync(
       `./script`,
       [`./cli/create-all-bins.js`],
       options
     );
     await handleSpawnReturns(`create-all-bins`, createAllBins);
+
+    await clearPromptCache();
 
     await verifyInstall();
   }

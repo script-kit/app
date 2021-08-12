@@ -17,11 +17,9 @@ import React, {
   RefObject,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
 } from 'react';
 import { useAtom } from 'jotai';
-import { useWhatChanged } from '@simbathesailor/use-what-changed';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { useDebouncedCallback } from 'use-debounce';
@@ -54,12 +52,14 @@ import {
   logHTMLAtom,
   mainHeightAtom,
   modeAtom,
+  mouseEnabledAtom,
   openAtom,
   panelHTMLAtom,
   pidAtom,
   placeholderAtom,
   promptDataAtom,
   scriptAtom,
+  selectedAtom,
   submittedAtom,
   submitValueAtom,
   tabIndexAtom,
@@ -70,14 +70,7 @@ import {
   unfilteredChoicesAtom,
 } from './jotai';
 
-import {
-  DEFAULT_HEIGHT,
-  heightMap,
-  MIN_HEIGHT,
-  MIN_TEXTAREA_HEIGHT,
-} from './defaults';
 import useChoices from './hooks/useChoices';
-import { AppChannel } from './enums';
 
 const second = (fn: (value: any) => void) => (_: any, x: any) => fn(x);
 
@@ -146,6 +139,8 @@ export default function App() {
 
   const [, setSubmitValue] = useAtom(submitValueAtom);
   const [flagValue] = useAtom(flagValueAtom);
+  const [mouseEnabled, setMouseEnabled] = useAtom(mouseEnabledAtom);
+  const [selected] = useAtom(selectedAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -233,6 +228,10 @@ export default function App() {
     setIsMouseDown(false);
   }, [setIsMouseDown]);
 
+  const onMouseMove = useCallback(() => {
+    setMouseEnabled(mouseEnabled + 1);
+  }, [setMouseEnabled, mouseEnabled]);
+
   return (
     <ErrorBoundary>
       <div
@@ -241,11 +240,13 @@ export default function App() {
           {
             WebkitAppRegion: 'drag',
             WebkitUserSelect: 'none',
+            cursor: mouseEnabled > 10 ? 'pointer' : 'none',
           } as any
         }
         className="flex flex-col w-full rounded-lg relative h-full"
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
+        onMouseMove={onMouseMove}
       >
         <header ref={headerRef}>
           {(script?.description || script?.twitter || script?.menu) && (
@@ -258,10 +259,10 @@ export default function App() {
             />
           )}
           {!!(ui & UI.arg) && <Input />}
+          {selected && <Selected />}
           {hint && <Hint />}
-          {tabs?.length > 0 && <Tabs />}
+          {tabs?.length > 0 && !flagValue && <Tabs />}
           {logHtml?.length > 0 && script.log && <Log />}
-          {flagValue && <Selected />}
         </header>
         <main
           ref={mainRef}

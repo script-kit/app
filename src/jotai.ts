@@ -76,22 +76,7 @@ export const textareaConfigAtom = atom<TextareaConfig>({
 export const formHTMLAtom = atom('');
 export const formDataAtom = atom({});
 
-const mouseEnabled = atom(true);
-
-let mouseEnabledId: any;
-export const mouseEnabledAtom = atom(
-  (g) => g(mouseEnabled),
-  (g, s, a: boolean) => {
-    s(mouseEnabled, a);
-
-    if (a === false) {
-      if (mouseEnabledId) clearTimeout(mouseEnabledId);
-      mouseEnabledId = setTimeout(() => {
-        s(mouseEnabled, true);
-      }, 200);
-    }
-  }
-);
+export const mouseEnabledAtom = atom(0);
 
 const index = atom(0);
 
@@ -113,8 +98,6 @@ export const choicesAtom = atom(
   (g) => g(choices),
   (g, s, a: Choice[]) => {
     if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
-
-    s(mouseEnabledAtom, false);
     s(submittedAtom, false);
 
     const prevChoices = g(choices);
@@ -132,6 +115,7 @@ export const rawInputAtom = atom('');
 export const inputAtom = atom(
   (g) => g(rawInputAtom),
   (g, s, a: string) => {
+    s(mouseEnabledAtom, 0);
     s(submittedAtom, false);
     s(indexAtom, 0);
     s(rawInputAtom, a);
@@ -170,6 +154,9 @@ const noScript: Script = {
   requiresPrompt: false,
   kenv: '',
 };
+
+export const selectedAtom = atom('');
+
 const script = atom<Script>(noScript);
 export const scriptAtom = atom(
   (g) => g(script),
@@ -201,10 +188,9 @@ const resize = (g: Getter, s: Setter) => {
       hasChoices: Boolean(g(choices)?.length),
       hasPanel: Boolean(g(panelHTMLAtom)?.length),
       hasInput: Boolean(g(inputAtom)?.length),
+      open: g(rawOpen),
     };
     ipcRenderer.send(AppChannel.RESIZE, data);
-
-    s(mouseEnabledAtom, false);
   });
 };
 
@@ -264,6 +250,7 @@ export const promptDataAtom = atom(
       s(panelHTMLAtom, '');
       s(placeholderAtom, a.placeholder);
       s(tabsAtom, a?.tabs || []);
+      s(selectedAtom, a?.selected || '');
     }
     s(promptData, a);
   }
@@ -276,10 +263,12 @@ export const flagValueAtom = atom(
       s(unfilteredChoicesAtom, g(prevChoicesAtom));
       s(rawInputAtom, g(prevInputAtom));
       s(index, g(prevIndexAtom));
+      s(selectedAtom, '');
     } else {
       s(prevIndexAtom, g(indexAtom));
       s(prevInputAtom, g(inputAtom));
       s(inputAtom, '');
+      s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
 
       const flagChoices = Object.entries(g(flagsAtom)).map(
         ([key, value]: [key: string, value: any]) => {
@@ -334,7 +323,7 @@ export const submitValueAtom = atom(
     if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
     choicesTimeoutId = setTimeout(() => {
       s(choices, []);
-    }, 150);
+    }, 250);
 
     asap(() => {
       s(submittedAtom, true);
@@ -351,6 +340,7 @@ export const submitValueAtom = atom(
 export const openAtom = atom(
   (g) => g(rawOpen),
   (g, s, a: boolean) => {
+    s(mouseEnabledAtom, 0);
     if (g(rawOpen) && a === false) {
       ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: g(pidAtom) });
       // setChoices([]);

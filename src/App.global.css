@@ -1,3 +1,8 @@
+:root {
+  --color-light: #facc15;
+  --color-dark: #4f46e5;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,14 +13,20 @@
 @import '../node_modules/simplebar-react/dist/simplebar.min.css';
 @import '../node_modules/highlight.js/styles/night-owl.css';
 
+body {
+  cursor: none !important;
+}
+
 .lato {
   font-family: 'Lato';
 }
 
 body {
-  @apply dark:bg-black  bg-white subpixel-antialiased;
+  @apply bg-white dark:bg-black;
+  @apply bg-opacity-25 dark:bg-opacity-25;
+  @apply subpixel-antialiased;
   @apply overflow-hidden;
-  --tw-bg-opacity: 0.3;
+  /* --tw-bg-opacity: 0.3; */
 }
 
 .simplebar-scrollbar:before {
@@ -53,13 +64,52 @@ body {
   @apply px-2;
 }
 
-.primary-invert {
-  @apply bg-primary-dark dark:bg-primary-light;
-  /* --tw-bg-opacity: 0.7; */
+.gg-chevron-left {
+  box-sizing: border-box;
+  position: relative;
+  display: block;
+  transform: scale(var(--tw-scale-x, 1), var(--tw-scale-y, 1));
+  width: 22px;
+  height: 22px;
+  border: 3px solid transparent;
+  border-radius: 100px;
+}
+.gg-chevron-left::after {
+  content: '';
+  display: block;
+  box-sizing: border-box;
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-bottom: 3px solid;
+  border-left: 3px solid;
+  transform: rotate(45deg);
+  left: 6px;
+  top: 3px;
+}
 
-  @apply text-white dark:text-black text-opacity-75;
-  @apply bg-opacity-75 hover:bg-opacity-90;
-  @apply transition ease-in duration-100;
+.gg-chevron-right {
+  box-sizing: border-box;
+  position: relative;
+  display: block;
+  transform: scale(var(--ggs, 1));
+  width: 22px;
+  height: 22px;
+  border: 2px solid transparent;
+  border-radius: 100px;
+}
+.gg-chevron-right::after {
+  content: '';
+  display: block;
+  box-sizing: border-box;
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-bottom: 2px solid;
+  border-right: 2px solid;
+  transform: rotate(-45deg);
+  right: 6px;
+  top: 4px;
 }
 
 @layer base {

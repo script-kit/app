@@ -33,7 +33,6 @@ export default function Input() {
   const inputRef = useFocus();
 
   const [pid] = useAtom(pidAtom);
-  const [, setMouseEnabled] = useAtom(mouseEnabledAtom);
   const [inputValue, setInput] = useAtom(inputAtom);
   const [tabs] = useAtom(tabsAtom);
   const [, setTabIndex] = useAtom(tabIndexAtom);
@@ -42,7 +41,8 @@ export default function Input() {
   const [placeholder] = useAtom(placeholderAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [submitted] = useAtom(submittedAtom);
-  const [selectionStart, setSelectionStart] = useAtom(selectionStartAtom);
+  const [, setSelectionStart] = useAtom(selectionStartAtom);
+  const [mouseEnabled] = useAtom(mouseEnabledAtom);
 
   useEscape();
   useEnter();
@@ -52,7 +52,6 @@ export default function Input() {
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
-      setMouseEnabled(false);
       setSelectionStart(
         (event.target as HTMLInputElement).selectionStart as number
       );
@@ -89,7 +88,6 @@ export default function Input() {
       }
     },
     [
-      setMouseEnabled,
       setSelectionStart,
       tabs,
       unfilteredChoices,
@@ -111,18 +109,18 @@ export default function Input() {
   return (
     <div className="flex flex-row">
       <input
+        spellCheck="false"
         style={
           {
-            WebkitAppRegion: 'drag',
+            WebkitAppRegion: 'no-drag',
             WebkitUserSelect: 'none',
-            minHeight: '4rem',
             ...(submitted && { caretColor: 'transparent' }),
+            cursor: mouseEnabled > 10 ? 'auto' : 'none',
           } as any
         }
         autoFocus
         className={`
-      input-component
-      bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
+      bg-transparent w-full text-black dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-14
   ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
   focus:border-none border-none`}
         onChange={onChange}

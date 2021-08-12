@@ -1,12 +1,13 @@
 import { UI } from 'kit-bridge/cjs/enum';
 
-export const DEFAULT_WIDTH = 370;
+export const DEFAULT_WIDTH = 320; // 256;
 export const DEFAULT_HEIGHT = Math.round((DEFAULT_WIDTH * 11) / 8.5);
 export const INPUT_HEIGHT = 64;
 export const MIN_HEIGHT = INPUT_HEIGHT;
 export const MIN_TEXTAREA_HEIGHT = MIN_HEIGHT * 3;
-export const MIN_WIDTH = 320;
-export const DROP_HEIGHT = 256;
+export const MIN_WIDTH = 256;
+export const DROP_HEIGHT = 232;
+export const BUTTON_HEIGHT = 64;
 
 export const heightMap: { [key in UI]: number } = {
   [UI.none]: INPUT_HEIGHT,
