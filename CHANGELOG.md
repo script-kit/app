@@ -1,3 +1,10 @@
+# [1.3.0-alpha.103](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.102...v1.3.0-alpha.103) (2021-08-12)
+
+
+### Features
+
+* **app:** selected. Styling. Resizing ([0587c71](https://github.com/johnlindquist/kitapp/commit/0587c71db13044c9704f5017c13d1155003a803e))
+
 # [1.3.0-beta.39](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.38...v1.3.0-beta.39) (2021-08-12)
 
 
