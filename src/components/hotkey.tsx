@@ -3,7 +3,7 @@
 import React, { KeyboardEvent, useCallback, useRef } from 'react';
 
 import { useAtom } from 'jotai';
-import { placeholderAtom } from '../jotai';
+import { placeholderAtom, selectedAtom } from '../jotai';
 import { useEscape } from '../hooks';
 
 interface HotkeyProps {
@@ -91,6 +91,7 @@ const getKeyData = (event: KeyboardEvent<HTMLInputElement>) => {
 export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
   const containerRef = useRef<HTMLInputElement>(null);
   const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
+  const [, setSelected] = useAtom(selectedAtom);
 
   useEscape();
 
@@ -98,9 +99,9 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
     (event) => {
       event.preventDefault();
       const modifierString = getModifierString(event);
-      setPlaceholder(modifierString);
+      setSelected(modifierString);
     },
-    [setPlaceholder]
+    [setSelected]
   );
 
   const onKeyDown = useCallback(
@@ -109,7 +110,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
 
       const { keyData, modifierString } = getKeyData(event);
 
-      setPlaceholder(modifierString);
+      setSelected(modifierString);
 
       if (event.key === 'Escape') {
         return;
@@ -122,7 +123,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
         submit(keyData);
       }
     },
-    [setPlaceholder, submit]
+    [setSelected, submit]
   );
 
   return (

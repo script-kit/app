@@ -60,6 +60,7 @@ import { showNotification } from './notifications';
 import { getVersion } from './version';
 
 export const checkScriptChoices = (data: MessageData) => {
+  // console.log(`🤔 checkScriptChoices ${data?.choices?.length}`);
   if (data?.scripts) {
     const dataChoices: Script[] = (data?.choices || []) as Script[];
     const choices = dataChoices.map((script) => {
@@ -230,9 +231,9 @@ const kitMessageMap: ChannelHandler = {
   QUIT_APP: () => {
     app.exit();
   },
-  SET_SCRIPT: toProcess(async ({ type }, data) => {
+  SET_SCRIPT: toProcess(async ({ type, scriptPath }, data) => {
     // log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.script.filePath);
-    if (type === ProcessType.Prompt) {
+    if (type === ProcessType.Prompt && scriptPath !== data.filePath) {
       await setScript(data.script as Script);
     }
   }),

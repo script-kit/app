@@ -27,20 +27,25 @@ module.exports = {
   },
   darkMode: 'media',
   theme: {
-    colors: {
-      ...defaultTheme.colors,
-      ...colors,
-      gray: colors.coolGray,
-      primary: {
-        light: colors.yellow['400'],
-        dark: colors.indigo['600'],
-      },
-    },
-    fontFamily: {
-      mono: ['JetBrains Mono'],
-      // sans: ['Lato'],
-    },
     extend: {
+      fontFamily: {
+        mono: ['JetBrains Mono'],
+        // sans: ['Lato'],
+      },
+      margin: {
+        '-2': '-2px',
+      },
+      colors: {
+        ...defaultTheme.colors,
+        ...colors,
+        gray: colors.coolGray,
+        primary: {
+          light: colors.yellow['400'],
+          dark: colors.indigo['600'], // '#4F46E5',
+          // light: 'var(--color-light)',
+          // dark: 'var(--color-dark)', // '#4F46E5',
+        },
+      },
       minWidth: {
         0: '0',
         '1/4': '25%',

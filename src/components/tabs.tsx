@@ -3,10 +3,11 @@
 import { useAtom } from 'jotai';
 import React from 'react';
 import SimpleBar from 'simplebar-react';
-import { tabIndexAtom, tabsAtom } from '../jotai';
+import { mouseEnabledAtom, tabIndexAtom, tabsAtom } from '../jotai';
 
 export default function KitTabs() {
   const [tabs] = useAtom(tabsAtom);
+  const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
   return (
     <SimpleBar
@@ -18,21 +19,38 @@ export default function KitTabs() {
         } as any
       }
     >
-      <div className="flex flex-row pl-2 whitespace-nowrap">
+      <div className="flex flex-row pl-1 whitespace-nowrap">
         {/* <span className="bg-white">{modeIndex}</span> */}
         {tabs.map((tab: string, i: number) => {
           return (
             // I need to research a11y for apps vs. "sites"
             <div
-              className={`text-xs px-2 py-1 mb-1 mx-px dark:bg-o rounded-full font-medium cursor-pointer dark:bg-primary-light dark:hover:bg-white bg-white hover:opacity-100 dark:hover:opacity-100 dark:hover:bg-opacity-10 hover:bg-opacity-80 ${
+              className={`
+              text-black
+
+              ${
                 i === tabIndex
-                  ? 'opacity-100 dark:bg-opacity-10 bg-opacity-60 dark:text-primary-light text-primary-dark'
-                  : 'opacity-60 dark:bg-opacity-0 bg-opacity-0'
+                  ? `border-b-2 border-primary-dark dark:border-primary-light
+                  opacity-100 dark:bg-opacity-10 bg-opacity-60
+                  dark:text-primary-light text-primary-dark`
+                  : 'dark:bg-opacity-0 bg-opacity-0 text-opacity-50 dark:text-opacity-50'
               }
+
+              ${tabs.length > 5 ? `px-2` : `px-3`}
+
+              text-xs pb-1
+              font-medium
+              text-black dark:text-white
+
+              hover:text-opacity-100
+              hover:border-b-2 hover:border-primary-dark hover:dark:border-primary-light
+              transition-all duration-100 ease-in-out
+
 
           `}
               key={tab}
               onMouseDown={() => setTabIndex(i)}
+              style={{ cursor: mouseEnabled > 10 ? 'pointer' : 'none' }}
             >
               {tab}
             </div>

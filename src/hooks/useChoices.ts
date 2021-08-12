@@ -18,15 +18,13 @@ import {
 import { highlightChoiceName } from './highlight';
 
 export default () => {
-  const [inputValue, setInput] = useAtom(inputAtom);
-  const [submitted, setSubmitted] = useAtom(submittedAtom);
-  const [unfilteredChoices, setUnfilteredChoices] = useAtom(
-    unfilteredChoicesAtom
-  );
-  const [filteredChoices, setFilteredChoices] = useAtom(choicesAtom);
-  const [mode, setMode] = useAtom(modeAtom);
-  const [pid, setPid] = useAtom(pidAtom);
-  const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
+  const [inputValue] = useAtom(inputAtom);
+  const [submitted] = useAtom(submittedAtom);
+  const [unfilteredChoices] = useAtom(unfilteredChoicesAtom);
+  const [, setFilteredChoices] = useAtom(choicesAtom);
+  const [mode] = useAtom(modeAtom);
+  const [pid] = useAtom(pidAtom);
+  const [, setMainHeight] = useAtom(mainHeightAtom);
 
   useEffect(() => {
     if (submitted) return;
@@ -137,7 +135,7 @@ export default () => {
           name: highlightChoiceName(choice.name as string, inputValue),
         };
       });
-      setFilteredChoices(highlightedChoices);
+      setFilteredChoices(highlightedChoices as any);
     } catch (error) {
       ipcRenderer.send('PROMPT_ERROR', { error, pid });
     }

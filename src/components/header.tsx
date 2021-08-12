@@ -1,12 +1,15 @@
 import React from 'react';
 import { useAtom } from 'jotai';
 import {
+  choicesAtom,
   mainHeightAtom,
   mouseEnabledAtom,
   panelHTMLAtom,
   scriptAtom,
+  selectedAtom,
   topHeightAtom,
   uiAtom,
+  unfilteredChoicesAtom,
 } from '../jotai';
 
 export default function Header() {
@@ -16,16 +19,19 @@ export default function Header() {
   const [panelHTML] = useAtom(panelHTMLAtom);
   const [ui] = useAtom(uiAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
+  const [unfilteredChoices] = useAtom(unfilteredChoicesAtom);
+  const [choices] = useAtom(choicesAtom);
+  const [selected] = useAtom(selectedAtom);
 
   return (
     <div
       className={`
     header-component
-    text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 grid grid-cols-5`}
+    text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row`}
     >
       <span className="dark:text-primary-light text-primary-dark col-span-3">
-        {/* {mouseEnabled && 'mouseEnabled'} */}
         {script?.description || ''}
+        {/* {unfilteredChoices.length} : {choices.length} */}
         {/* {topHeight},{mainHeight},{maxHeight},{panelHTML?.length},{ui} */}
       </span>
 

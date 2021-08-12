@@ -251,12 +251,14 @@ export const resize = debounce(
     hasChoices,
     hasPanel,
     hasInput,
+    open,
   }: ResizeData) => {
     const sameScript = filePath === promptScript?.filePath;
     if (lastResizedByUser || !sameScript) return;
     if (!mainHeight && ui & (UI.form | UI.div | UI.editor | UI.drop)) return;
     // if (!mainHeight && hasPanel) return;
     if (!mainHeight && !hasInput && hasChoices) return;
+    if (!promptWindow?.isVisible() || !open) return;
 
     const cachedBounds = await getCurrentScreenPromptCache();
     const bounds = promptWindow.getBounds();
@@ -264,7 +266,9 @@ export const resize = debounce(
     const targetHeight = topHeight + mainHeight;
     // const y = Math.round(workY + screenHeight / 8);
     const maxHeight =
-      hasPanel || mode === Mode.GENERATE || ui & (UI.form | UI.div | UI.editor)
+      hasPanel ||
+      mode === Mode.GENERATE ||
+      ui & (UI.form | UI.div | UI.editor | UI.hotkey)
         ? Math.round(getCurrentScreen().bounds.height * (3 / 4))
         : Math.max(cachedBounds.height, heightMap[ui]);
 
@@ -288,7 +292,7 @@ export const resize = debounce(
 
     if (ui !== UI.arg) cachePromptBounds(Bounds.Size);
   },
-  50
+  0
 );
 
 export const resetPromptBounds = async () => {
@@ -307,9 +311,6 @@ export const resetPromptBounds = async () => {
 };
 
 export const sendToPrompt = (channel: string, data: any) => {
-  if (channel === Channel.SET_SCRIPT) {
-    promptScript = data as Script;
-  }
   // log.info(`>_ ${channel} ${data?.kitScript}`);
   if (promptWindow && !promptWindow.isDestroyed()) {
     promptWindow?.webContents.send(channel, data);
@@ -402,6 +403,10 @@ export const setPromptPid = (pid: number) => {
 let instantChoices = [];
 
 export const setScript = async (script: Script) => {
+  if (promptScript?.filePath === script?.filePath) return;
+  promptScript = script;
+
+  console.log(`😍 setScript`);
   // if (promptScript?.id === script?.id) return;
   // log.info(script);
 

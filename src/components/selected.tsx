@@ -4,11 +4,11 @@ import React, { useCallback } from 'react';
 import { Choice } from 'kit-bridge/cjs/type';
 import { useAtom } from 'jotai';
 
-import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
-import { flagValueAtom } from '../jotai';
+import { flagValueAtom, selectedAtom } from '../jotai';
 
 export default function Selected() {
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
+  const [selected] = useAtom(selectedAtom);
 
   const onClick = useCallback(
     (e) => {
@@ -28,29 +28,24 @@ export default function Selected() {
       }
       onClick={onClick}
       className={`
-    py-1
-    cursor-pointer
-    text-sm
-    primary-invert
-    flex flex-row
-    items-center
+flex flex-row items-center
+text-xs
+-mt-2  border-b-2
+text-primary-dark dark:text-primary-light
+border-primary-dark dark:border-primary-light
+
+    hover:cursor-pointer
+    font-semibold
     `}
     >
-      <div className="px-2 hover:cursor-pointer">
-        <MoreThanIcon
-          className={`
-h-2 w-2
-fill-current
-transition ease-in
-opacity-75
-hover:opacity-100
-text-white dark:text-black
-`}
-          viewBox="0 0 32 32"
-          transform="rotate(180)"
-        />
-      </div>
-      {typeof flagValue === 'string' ? flagValue : (flagValue as Choice).name}
+      {flagValue ? (
+        <div className="flex flex-row items-center justify-content hover:text-black dark:hover:text-white">
+          <i className="ml-1 gg-chevron-left scale-[50%] " some-aria="" />
+          <div className="">{selected}</div>
+        </div>
+      ) : (
+        <div className="px-4 py-1">{selected}</div>
+      )}
     </div>
   );
 }
