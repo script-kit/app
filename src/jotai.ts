@@ -161,6 +161,7 @@ const script = atom<Script>(noScript);
 export const scriptAtom = atom(
   (g) => g(script),
   (g, s, a: Script) => {
+    s(mouseEnabledAtom, 0);
     s(script, a);
     s(rawInputAtom, '');
     s(unfilteredChoicesAtom, []);

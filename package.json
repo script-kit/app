@@ -17,7 +17,8 @@
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
     "test": "jest",
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
-    "refresh-zips": "rm ./assets/*.zip || true && download https://github.com/johnlindquist/kit/archive/refs/heads/alpha.zip > ./assets/kit.zip && download https://github.com/johnlindquist/kenv/archive/refs/heads/alpha.zip > ./assets/kenv.zip"
+    "refresh-zips": "rm ./assets/*.zip || true && download https://github.com/johnlindquist/kit/archive/refs/heads/alpha.zip > ./assets/kit.zip && download https://github.com/johnlindquist/kenv/archive/refs/heads/alpha.zip > ./assets/kenv.zip",
+    "mac": "yarn build && electron-builder build --mac dmg -c.mac.identity=null && open ./release/mac"
   },
   "lint-staged": {
     "*.{jsx,ts,tsx}": [

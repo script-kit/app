@@ -35,6 +35,11 @@ module.exports = {
       margin: {
         '-2': '-2px',
       },
+      scale: {
+        60: '.60',
+        65: '.65',
+        70: '.70',
+      },
       colors: {
         ...defaultTheme.colors,
         ...colors,
@@ -42,8 +47,6 @@ module.exports = {
         primary: {
           light: colors.yellow['400'],
           dark: colors.indigo['600'], // '#4F46E5',
-          // light: 'var(--color-light)',
-          // dark: 'var(--color-dark)', // '#4F46E5',
         },
       },
       minWidth: {
