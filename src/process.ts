@@ -328,6 +328,10 @@ const kitMessageMap: ChannelHandler = {
   SET_TEXTAREA_CONFIG: (data) => {
     sendToPrompt(Channel.SET_TEXTAREA_CONFIG, data.options);
   },
+  SET_THEME: (data) => {
+    sendToPrompt(Channel.SET_THEME, data);
+  },
+
   SET_DIV_HTML: (data) => {
     sendToPrompt(Channel.SET_DIV_HTML, data.html);
   },

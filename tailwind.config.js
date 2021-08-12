@@ -2,17 +2,16 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
 
-const colorVar =
-  (name) =>
-  ({ opacityVariable, opacityValue }) => {
-    if (opacityValue !== undefined) {
-      return `rgba(var(--color-${name}), ${opacityValue})`;
-    }
-    if (opacityVariable !== undefined) {
-      return `rgba(var(--color-${name}), var(${opacityVariable}, 1))`;
-    }
-    return `rgb(var(--color-${name}))`;
-  };
+const colorVar = (name) => (v) => {
+  const { opacityVariable, opacityValue } = v;
+  if (opacityValue !== undefined) {
+    return `rgba(var(--color-${name}), ${opacityValue})`;
+  }
+  if (opacityVariable !== undefined) {
+    return `rgba(var(--color-${name}), var(${opacityVariable}, 1))`;
+  }
+  return `rgb(var(--color-${name}))`;
+};
 
 /* eslint-disable global-require */
 module.exports = {
@@ -22,6 +21,7 @@ module.exports = {
     content: ['./src/**/*.html', './src/**/*.tsx', './src/*.ts'],
     options: {
       safelist: [
+        /^hover/,
         /^font/,
         /^flex/,
         /^justify/,
@@ -38,6 +38,13 @@ module.exports = {
     },
   },
   darkMode: 'media',
+  variants: {
+    extend: {
+      borderWidth: ['hover'],
+      textOpacity: ['dark'],
+      placeholderOpacity: ['dark'],
+    },
+  },
   theme: {
     extend: {
       fontFamily: {
@@ -56,9 +63,11 @@ module.exports = {
         ...defaultTheme.colors,
         ...colors,
         gray: colors.coolGray,
+        bgdark: colorVar('bgdark'),
+        bglight: colorVar('bglight'),
         primary: {
           light: colorVar('light'),
-          dark: colorVar('dark'), // '#4F46E5',
+          dark: colorVar('dark'),
         },
       },
       minWidth: {

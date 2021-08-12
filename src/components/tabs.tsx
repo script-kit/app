@@ -26,7 +26,14 @@ export default function KitTabs() {
             // I need to research a11y for apps vs. "sites"
             <div
               className={`
-              text-black
+              text-xs pb-1
+              font-medium
+              text-black dark:text-white
+
+              hover:text-opacity-100 dark:hover:text-opacity-100
+              hover:border-b-2 dark:hover:border-b-2
+              hover:border-primary-dark dark:hover:border-primary-light
+              transition-all duration-100 ease-in-out
 
               ${
                 i === tabIndex
@@ -37,17 +44,6 @@ export default function KitTabs() {
               }
 
               ${tabs.length > 5 ? `px-2` : `px-3`}
-
-              text-xs pb-1
-              font-medium
-              text-black dark:text-white
-
-              hover:text-opacity-100
-              hover:border-b-2 dark:hover:border-b-2
-              hover:border-primary-dark dark:hover:border-primary-light
-              transition-all duration-100 ease-in-out
-
-
           `}
               key={tab}
               onMouseDown={() => setTabIndex(i)}

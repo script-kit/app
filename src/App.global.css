@@ -3,6 +3,8 @@
 :root {
   --color-light: 251, 191, 36;
   --color-dark: 79, 70, 229;
+  --color-bgdark: 0, 0, 0;
+  --color-bglight: 255, 255, 255;
 }
 
 @tailwind base;
@@ -24,7 +26,7 @@ body {
 }
 
 body {
-  @apply bg-white dark:bg-black;
+  @apply bg-bglight dark:bg-bglight;
   @apply bg-opacity-25 dark:bg-opacity-25;
   @apply subpixel-antialiased;
   @apply overflow-hidden;
