@@ -296,7 +296,8 @@ const ready = async () => {
 
 const handleSpawnReturns = async (
   message: string,
-  result: SpawnSyncReturns<any>
+  result: SpawnSyncReturns<any>,
+  required = true
 ) => {
   console.log(`stdout:`, result?.stdout?.toString());
   console.log(`stderr:`, result?.stderr?.toString());
@@ -307,7 +308,7 @@ const handleSpawnReturns = async (
     updateConfigWindow(stdout.toString());
   }
 
-  if (error) {
+  if (error && required) {
     throw new Error(error.message);
   }
 
@@ -366,11 +367,18 @@ const kenvExists = () => {
   return doesKenvExist;
 };
 
-const kenvExamplesExist = () => {
-  const doesKenvExamplesExist = existsSync(kenvPath('kenv', 'examples'));
-  setupLog(`kenv/kenvs/examples${doesKenvExamplesExist ? `` : ` not`} found`);
+const kenvsExists = () => {
+  const doKenvsExists = existsSync(kenvPath('kenvs'));
+  setupLog(`kenv/kenvs/examples${doKenvsExists ? `` : ` not`} found`);
 
-  return doesKenvExamplesExist;
+  return doKenvsExists;
+};
+
+const examplesExists = () => {
+  const doExamplesExist = existsSync(kenvPath('kenvs', 'examples'));
+  setupLog(`kenv/kenvs/examples${doExamplesExist ? `` : ` not`} found`);
+
+  return doExamplesExist;
 };
 
 const kenvConfigured = () => {
@@ -618,6 +626,17 @@ const checkKit = async () => {
     );
     await handleSpawnReturns(`chmod`, chmodResult);
 
+    if (kenvsExists() && examplesExists()) {
+      const updateExamplesResult = spawnSync(
+        `./script`,
+        [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
+        options
+      );
+      await handleSpawnReturns(`clone-examples`, updateExamplesResult);
+
+      kenvsExists();
+    }
+
     if (!kenvExists()) {
       // Step 4: Use kit wrapper to run setup.js script
       configWindow?.show();
@@ -625,6 +644,14 @@ const checkKit = async () => {
       await unzipToHome(kenvZip, '.kenv');
 
       kenvExists();
+      await ensureKenvDirs();
+
+      const cloneExamplesResult = spawnSync(
+        `./script`,
+        [`./setup/clone-examples.js`],
+        options
+      );
+      await handleSpawnReturns(`clone-examples`, cloneExamplesResult, false);
     }
 
     if (!kenvConfigured()) {
@@ -635,19 +662,6 @@ const checkKit = async () => {
       await handleSpawnReturns(`setup`, setupResult);
 
       kenvConfigured();
-    }
-
-    if (!kenvExamplesExist()) {
-      // Step 4: Use kit wrapper to run setup.js script
-      configWindow?.show();
-      const cloneExamplesResult = spawnSync(
-        `./script`,
-        [`./setup/clone-examples.js`],
-        options
-      );
-      await handleSpawnReturns(`clone-examples`, cloneExamplesResult);
-
-      kenvExamplesExist();
     }
 
     const createAllBins = spawnSync(
