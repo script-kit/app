@@ -1,3 +1,10 @@
+# [1.3.0-beta.45](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.44...v1.3.0-beta.45) (2021-08-13)
+
+
+### Bug Fixes
+
+* **app:** minor opacity ([1c240b1](https://github.com/johnlindquist/kitapp/commit/1c240b1f2cd8080693191e49b49278ddca52b054))
+
 # [1.3.0-alpha.108](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.107...v1.3.0-alpha.108) (2021-08-13)
 
 
