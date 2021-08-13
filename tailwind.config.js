@@ -67,11 +67,17 @@ module.exports = {
         ...defaultTheme.colors,
         ...colors,
         gray: colors.coolGray,
-        bgdark: colorVar('bgdark'),
-        bglight: colorVar('bglight'),
+        bg: {
+          dark: colorVar('background-dark'),
+          light: colorVar('background-light'),
+        },
         primary: {
-          light: colorVar('light'),
-          dark: colorVar('dark'),
+          light: colorVar('primary-light'),
+          dark: colorVar('primary-dark'),
+        },
+        secondary: {
+          light: colorVar('secondary-light'),
+          dark: colorVar('secondary-dark'),
         },
       },
       minWidth: {

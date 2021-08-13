@@ -181,7 +181,7 @@ export default function App() {
   }, 150);
 
   useEffect(() => {
-    if (!submitted) generateChoices(inputValue, mode, tabIndex);
+    if (!submitted) generateChoices(inputValue, mode);
   }, [mode, inputValue, tabIndex, submitted, generateChoices]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -249,7 +249,7 @@ export default function App() {
             cursor: mouseEnabled > 10 ? 'pointer' : 'none',
           } as any
         }
-        className="flex flex-col w-full rounded-lg relative h-full"
+        className="relative flex flex-col w-full h-full"
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
         onMouseMove={onMouseMove}
