@@ -32,6 +32,7 @@ import {
   exec,
   SpawnSyncOptions,
   SpawnSyncReturns,
+  spawn,
 } from 'child_process';
 import { homedir } from 'os';
 import { ensureDir } from 'fs-extra';
@@ -78,6 +79,17 @@ app.setName(APP_NAME);
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
 app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
+
+const KIT = kitPath();
+const options: SpawnSyncOptions = {
+  cwd: KIT,
+  encoding: 'utf-8',
+  env: {
+    KIT,
+    KENV: kenvPath(),
+    PATH,
+  },
+};
 
 powerMonitor.on('resume', () => {
   autoUpdater.checkForUpdatesAndNotify({
@@ -164,6 +176,16 @@ autoUpdater.on('update-downloaded', async () => {
     app.quit();
     app.exit();
   }, 3000);
+
+  spawn(`./script`, [`./cli/open-app.js`], {
+    cwd: KIT,
+    detached: true,
+    env: {
+      KIT,
+      KENV: kenvPath(),
+      PATH,
+    },
+  });
 });
 
 app.on('window-all-closed', (e: Event) => {
@@ -482,17 +504,6 @@ ${mainLog}
   });
 
   throw new Error(error.message);
-};
-
-const KIT = kitPath();
-const options: SpawnSyncOptions = {
-  cwd: KIT,
-  encoding: 'utf-8',
-  env: {
-    KIT,
-    KENV: kenvPath(),
-    PATH,
-  },
 };
 
 const unzipToHome = async (zipFile: string, outDir: string) => {
