@@ -153,7 +153,8 @@ export const createPromptWindow = async () => {
   return promptWindow;
 };
 
-export const setPromptProp = (key: string, value: any) => {
+export const setPromptProp = (data: { prop: { key: string; value: any } }) => {
+  const { key, value }: any = data.prop;
   (promptWindow as any)[key](value);
 };
 
