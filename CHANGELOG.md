@@ -1,3 +1,15 @@
+# [1.3.0-beta.46](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.45...v1.3.0-beta.46) (2021-08-13)
+
+
+### Bug Fixes
+
+* **app:** theming ([bfb2628](https://github.com/johnlindquist/kitapp/commit/bfb2628e9bd17853265268db9bcadc436556cd8f))
+
+
+### Features
+
+* **app:** adding back SET_PROMPT_PROP ([1f3964b](https://github.com/johnlindquist/kitapp/commit/1f3964b035527ffcc0c671c9b7d3f90b9567426a))
+
 # [1.3.0-alpha.109](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.108...v1.3.0-alpha.109) (2021-08-13)
 
 
