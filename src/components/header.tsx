@@ -34,7 +34,7 @@ export default function Header() {
     header-component transition duration-1000
     text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row dark:text-primary-light text-primary-dark `}
     >
-      <span>
+      <span className="pr-1">
         {script?.description || ''}
         {/* {dark ? 'Dark' : 'Light'} */}
         {/* {unfilteredChoices.length} : {choices.length} */}
@@ -44,7 +44,7 @@ export default function Header() {
       {/* <span className="dark:text-primary-light text-primary-dark col-span-3">
         {`top: ${topHeight} - main: ${mainHeight} - max: ${maxHeight} -`}
       </span> */}
-      <span className="flex flex-col items-end">
+      <span className="flex flex-col items-end pl-1 text-right">
         <span>{script?.menu}</span>
         <span>
           {script?.twitter && (
