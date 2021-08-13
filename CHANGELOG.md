@@ -1,3 +1,10 @@
+# [1.3.0-alpha.106](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.105...v1.3.0-alpha.106) (2021-08-13)
+
+
+### Bug Fixes
+
+* **app:** Theme ([f530a97](https://github.com/johnlindquist/kitapp/commit/f530a975da2b2c2097c9ed59ebd05b3a2e5e3492))
+
 # [1.3.0-beta.43](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.42...v1.3.0-beta.43) (2021-08-13)
 
 
