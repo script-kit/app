@@ -1,3 +1,10 @@
+# [1.3.0-alpha.105](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.104...v1.3.0-alpha.105) (2021-08-12)
+
+
+### Features
+
+* **app:** Add input type. Install docs ([7b80d4c](https://github.com/johnlindquist/kitapp/commit/7b80d4c0efa96de3f1b763d36407153b8f7f76e3))
+
 # [1.3.0-beta.42](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.41...v1.3.0-beta.42) (2021-08-12)
 
 

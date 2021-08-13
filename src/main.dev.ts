@@ -381,6 +381,13 @@ const examplesExists = () => {
   return doExamplesExist;
 };
 
+const docsExists = () => {
+  const doDocsExist = existsSync(kenvPath('kenvs', 'docs'));
+  setupLog(`kenv/kenvs/docs${doDocsExist ? `` : ` not`} found`);
+
+  return doDocsExist;
+};
+
 const kenvConfigured = () => {
   const isKenvConfigured = existsSync(kenvPath('.env'));
   setupLog(`kenv is${isKenvConfigured ? `` : ` not`} configured`);
@@ -632,7 +639,18 @@ const checkKit = async () => {
         [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
         options
       );
-      await handleSpawnReturns(`clone-examples`, updateExamplesResult);
+
+      await handleSpawnReturns(`update-examples`, updateExamplesResult);
+
+      kenvsExists();
+    }
+    if (kenvsExists() && docsExists()) {
+      const updateDocsResult = spawnSync(
+        `./script`,
+        [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
+        options
+      );
+      await handleSpawnReturns(`update-docs`, updateDocsResult);
 
       kenvsExists();
     }
@@ -652,6 +670,13 @@ const checkKit = async () => {
         options
       );
       await handleSpawnReturns(`clone-examples`, cloneExamplesResult, false);
+
+      const cloneDocsResult = spawnSync(
+        `./script`,
+        [`./setup/clone-docs.js`],
+        options
+      );
+      await handleSpawnReturns(`clone-docs`, cloneDocsResult, false);
     }
 
     if (!kenvConfigured()) {

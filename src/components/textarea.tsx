@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
-import React, { useState } from 'react';
+import React, { LegacyRef, useState } from 'react';
 import { useAtom } from 'jotai';
 
 import { textareaConfigAtom } from '../jotai';
@@ -10,6 +10,7 @@ import {
   useSave,
   useOpen,
   useMountMainHeight,
+  useEscape,
 } from '../hooks';
 
 export default function TextArea() {
@@ -21,12 +22,13 @@ export default function TextArea() {
   const [textAreaValue, setTextAreaValue] = useState(options.value);
   useSave(textAreaValue);
   useClose();
+  useEscape();
   const containerRef = useMountMainHeight();
 
   return (
     <div ref={containerRef}>
       <textarea
-        ref={textareaRef}
+        ref={textareaRef as LegacyRef<HTMLTextAreaElement>}
         style={
           {
             WebkitAppRegion: 'no-drag',
