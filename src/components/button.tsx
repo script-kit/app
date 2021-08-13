@@ -74,7 +74,7 @@ export default function ChoiceButton({
 
       ${
         index === currentIndex
-          ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-50
+          ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-20 choice
             ${
               mouseDown
                 ? `shadow-sm bg-opacity-25`

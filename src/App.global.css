@@ -5,7 +5,7 @@
   --color-dark: 79, 70, 229;
   --color-bgdark: 0, 0, 0;
   --color-bglight: 255, 255, 255;
-  --opacity-themelight: 33%;
+  --opacity-themelight: 20%;
   --opacity-themedark: 33%;
 }
 
@@ -34,6 +34,10 @@ body {
   @apply subpixel-antialiased;
   @apply overflow-hidden;
   /* --tw-bg-opacity: 0.3; */
+}
+
+.choice {
+  /* box-shadow: 0 0 0 2px white, inset 0 2px 8px black; */
 }
 
 .simplebar-scrollbar:before {
