@@ -44,6 +44,7 @@ import {
   setLog,
   hidePromptWindow,
   getPromptPid,
+  setPromptProp,
 } from './prompt';
 import { setAppHidden } from './appHidden';
 import {
@@ -291,6 +292,9 @@ const kitMessageMap: ChannelHandler = {
   },
   SET_PROMPT_DATA: async (data) => {
     await setPromptData(data as PromptData);
+  },
+  SET_PROMPT_PROP: async (data) => {
+    setPromptProp(data);
   },
   SHOW_IMAGE,
   SHOW: async (data) => {

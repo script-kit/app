@@ -78,7 +78,7 @@ export default function ChoiceButton({
             ${
               mouseDown
                 ? `shadow-sm bg-opacity-25`
-                : `shadow-lg hover:shadow-xl`
+                : `shadow-md hover:shadow-lg`
             }
             `
           : ``
@@ -113,7 +113,7 @@ export default function ChoiceButton({
           },
         })
       ) : (
-        <div className="flex flex-row h-full w-full justify-between items-center">
+        <div className="flex flex-row items-center justify-between w-full h-full">
           <div className="flex flex-col max-w-full overflow-x-hidden">
             <div className="truncate">{choice.name}</div>
             {(choice?.focused || choice?.description) && (
@@ -132,7 +132,7 @@ export default function ChoiceButton({
             )}
           </div>
 
-          <div className="flex flex-row items-center h-full flex-shrink-0">
+          <div className="flex flex-row items-center flex-shrink-0 h-full">
             <div className="flex flex-col px-2">
               {choice?.shortcut && (
                 <div
