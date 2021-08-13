@@ -5,7 +5,8 @@
   --color-dark: 79, 70, 229;
   --color-bgdark: 0, 0, 0;
   --color-bglight: 255, 255, 255;
-  --opacity-main: 25%;
+  --opacity-themelight: 33%;
+  --opacity-themedark: 33%;
 }
 
 @tailwind base;
@@ -28,8 +29,8 @@ body {
 
 body {
   @apply transition duration-1000;
-  @apply bg-bglight dark:bg-bglight;
-  @apply bg-opacity-theme dark:bg-opacity-theme;
+  @apply bg-bglight dark:bg-bgdark;
+  @apply bg-opacity-themelight dark:bg-opacity-themedark;
   @apply subpixel-antialiased;
   @apply overflow-hidden;
   /* --tw-bg-opacity: 0.3; */

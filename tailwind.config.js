@@ -60,7 +60,8 @@ module.exports = {
         70: '.70',
       },
       opacity: {
-        theme: 'var(--opacity-main)',
+        themelight: 'var(--opacity-themelight)',
+        themedark: 'var(--opacity-themedark)',
       },
       colors: {
         ...defaultTheme.colors,

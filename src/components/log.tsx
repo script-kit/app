@@ -57,7 +57,7 @@ export default function Log() {
         className="log
         w-full h-16
         bg-black text-white dark:bg-white dark:text-black
-        bg-opacity-80 dark:bg-opacity-30
+        bg-opacity-80 dark:bg-opacity-80
         font-mono text-xs
         hover:cursor-auto
         "
