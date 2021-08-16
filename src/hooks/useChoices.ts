@@ -15,8 +15,6 @@ import {
   unfilteredChoicesAtom,
 } from '../jotai';
 
-import { highlightChoiceName } from './highlight';
-
 export default () => {
   const [inputValue] = useAtom(inputAtom);
   const [submitted] = useAtom(submittedAtom);
@@ -46,14 +44,22 @@ export default () => {
 
       const input = inputValue?.toLowerCase() || '';
 
+      const against = (choice: Choice) => {
+        return (
+          (choice.name as string)?.toLowerCase() +
+          (String(choice?.description) || '')?.toLowerCase()
+        );
+      };
+
       const startExactFilter = (choice: Choice) => {
-        return (choice.name as string)?.toLowerCase().startsWith(input);
+        return against(choice).startsWith(input);
       };
 
       const startEachWordFilter = (choice: Choice) => {
         let wordIndex = 0;
         let wordLetterIndex = 0;
-        const words = (choice.name as string)?.toLowerCase().match(/\w+\W*/g);
+
+        const words = against(choice).match(/\w+\W*/g);
         if (!words) return false;
         const inputLetters: string[] = input.split('');
 
@@ -95,13 +101,11 @@ export default () => {
 
       const startFirstAndEachWordFilter = (choice: any) => {
         return (
-          choice.name?.toLowerCase().startsWith(input[0]) &&
-          startEachWordFilter(choice)
+          against(choice).startsWith(input[0]) && startEachWordFilter(choice)
         );
       };
 
-      const partialFilter = (choice: any) =>
-        choice.name?.toLowerCase().includes(input);
+      const partialFilter = (choice: any) => against(choice).includes(input);
 
       const [startExactMatches, notBestMatches] = partition(
         unfilteredChoices,
@@ -129,13 +133,7 @@ export default () => {
         ...partialMatches,
       ];
 
-      const highlightedChoices = filtered.map((choice) => {
-        return {
-          ...choice,
-          name: highlightChoiceName(choice.name as string, inputValue),
-        };
-      });
-      setFilteredChoices(highlightedChoices as any);
+      setFilteredChoices(filtered as any);
     } catch (error) {
       ipcRenderer.send('PROMPT_ERROR', { error, pid });
     }

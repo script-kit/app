@@ -412,7 +412,6 @@ export const themeAtom = atom(
   (g) => g(theme),
   (g, s, a: { [key: string]: string }) => {
     Object.entries(a).forEach(([key, value]) => {
-      console.log({ key, value });
       document.documentElement.style.setProperty(key, value);
     });
 

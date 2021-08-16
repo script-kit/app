@@ -319,7 +319,7 @@
     "is-image": "^3.0.0",
     "jetbrains-mono": "^1.0.3",
     "jotai": "^1.1.2",
-    "kit-bridge": "10.0.0",
+    "kit-bridge": "11.0.0",
     "lodash": "^4.17.20",
     "mdx-bundler": "^1.1.3",
     "memoize-one": "^5.2.1",
