@@ -1,3 +1,10 @@
+# [1.3.0-alpha.111](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.110...v1.3.0-alpha.111) (2021-08-16)
+
+
+### Features
+
+* **app:** force focus on mouseUp. Don't send --app flag ([592d49f](https://github.com/johnlindquist/kitapp/commit/592d49f5c796a7fd7516133307eec3c3180527c1))
+
 # [1.3.0-beta.47](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.46...v1.3.0-beta.47) (2021-08-16)
 
 

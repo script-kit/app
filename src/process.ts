@@ -389,12 +389,12 @@ const createChild = ({
   scriptPath = 'kit',
   runArgs = [],
 }: CreateChildInfo) => {
-  let args = [];
+  let args: string[] = [];
   if (!scriptPath) {
-    args = ['--app'];
+    args = [];
   } else {
     const resolvePath = resolveToScriptPath(scriptPath);
-    args = [resolvePath, ...runArgs, '--app'];
+    args = [resolvePath, ...runArgs];
   }
 
   const entry = type === ProcessType.Prompt ? KIT_MAC_APP_PROMPT : KIT_MAC_APP;
