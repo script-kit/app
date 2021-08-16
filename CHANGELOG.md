@@ -1,3 +1,10 @@
+# [1.3.0-alpha.110](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.109...v1.3.0-alpha.110) (2021-08-16)
+
+
+### Features
+
+* **app:** highlight descriptions. Handle missing images. ([1d5bef0](https://github.com/johnlindquist/kitapp/commit/1d5bef04818830d82e3119fd6bc21935d09fe838))
+
 # [1.3.0-beta.46](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.45...v1.3.0-beta.46) (2021-08-13)
 
 
