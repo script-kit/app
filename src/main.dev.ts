@@ -14,7 +14,14 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
-import { app, protocol, BrowserWindow, powerMonitor, session } from 'electron';
+import {
+  app,
+  protocol,
+  BrowserWindow,
+  powerMonitor,
+  session,
+  Notification,
+} from 'electron';
 import queryString from 'query-string';
 import clipboardy from 'clipboardy';
 
@@ -156,37 +163,50 @@ autoUpdater.on('download-progress', (progressObj) => {
 });
 
 let updateDownloaded = false;
-autoUpdater.on('update-downloaded', async () => {
-  log.info('update downloaded');
-  log.info('attempting quitAndInstall');
-  updateDownloaded = true;
-  try {
-    await storeVersion(getVersion());
-  } catch {
-    log.warn(`Couldn't store previous version`);
-  }
-  callBeforeQuitAndInstall();
-  autoUpdater.quitAndInstall();
-  const allWindows = BrowserWindow.getAllWindows();
-  allWindows.forEach((w) => {
-    w?.destroy();
-  });
-  setTimeout(() => {
-    log.info('quit and exit');
-    app.quit();
-    app.exit();
-  }, 3000);
-
-  spawn(`./script`, [`./cli/open-app.js`], {
-    cwd: KIT,
-    detached: true,
-    env: {
-      KIT,
-      KENV: kenvPath(),
-      PATH,
-    },
-  });
+autoUpdater.on('error', (message) => {
+  console.error('There was a problem updating the application');
+  console.error(message);
 });
+
+autoUpdater.on(
+  'update-downloaded',
+  async (event, releaseNotes, releaseName) => {
+    const notification = new Notification({
+      icon: getAssetPath('icon.png'),
+      title: 'Script Kit update downloaded',
+      body: 'Applying update and restarting app...',
+    });
+    log.info('update downloaded');
+    log.info('attempting quitAndInstall');
+    updateDownloaded = true;
+    try {
+      await storeVersion(getVersion());
+    } catch {
+      log.warn(`Couldn't store previous version`);
+    }
+    callBeforeQuitAndInstall();
+    autoUpdater.quitAndInstall();
+    const allWindows = BrowserWindow.getAllWindows();
+    allWindows.forEach((w) => {
+      w?.destroy();
+    });
+    setTimeout(() => {
+      log.info('quit and exit');
+      app.quit();
+      app.exit();
+    }, 3000);
+
+    spawn(`./script`, [`./cli/open-app.js`], {
+      cwd: KIT,
+      detached: true,
+      env: {
+        KIT,
+        KENV: kenvPath(),
+        PATH,
+      },
+    });
+  }
+);
 
 app.on('window-all-closed', (e: Event) => {
   if (!updateDownloaded) e.preventDefault();
@@ -401,13 +421,6 @@ const examplesExists = () => {
   setupLog(`kenv/kenvs/examples${doExamplesExist ? `` : ` not`} found`);
 
   return doExamplesExist;
-};
-
-const docsExists = () => {
-  const doDocsExist = existsSync(kenvPath('kenvs', 'docs'));
-  setupLog(`kenv/kenvs/docs${doDocsExist ? `` : ` not`} found`);
-
-  return doDocsExist;
 };
 
 const kenvConfigured = () => {
@@ -655,16 +668,6 @@ const checkKit = async () => {
 
       kenvsExists();
     }
-    if (kenvsExists() && docsExists()) {
-      const updateDocsResult = spawnSync(
-        `./script`,
-        [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
-        options
-      );
-      await handleSpawnReturns(`update-docs`, updateDocsResult);
-
-      kenvsExists();
-    }
 
     if (!kenvExists()) {
       // Step 4: Use kit wrapper to run setup.js script
@@ -681,13 +684,6 @@ const checkKit = async () => {
         options
       );
       await handleSpawnReturns(`clone-examples`, cloneExamplesResult, false);
-
-      const cloneDocsResult = spawnSync(
-        `./script`,
-        [`./setup/clone-docs.js`],
-        options
-      );
-      await handleSpawnReturns(`clone-docs`, cloneDocsResult, false);
     }
 
     if (!kenvConfigured()) {

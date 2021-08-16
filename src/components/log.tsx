@@ -57,7 +57,7 @@ export default function Log() {
         className="log
         w-full h-16
         bg-black text-white dark:bg-white dark:text-black
-        bg-opacity-80 dark:bg-opacity-80
+        bg-opacity-80 dark:bg-opacity-90
         font-mono text-xs
         hover:cursor-auto
         "
@@ -89,6 +89,7 @@ export default function Log() {
         hover:cursor-pointer
         hover:opacity-100
         text-white dark:text-black
+        scale-75
         `}
         onClick={editLog}
         viewBox="0 0 32 32"

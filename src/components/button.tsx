@@ -9,8 +9,10 @@ import { overrideTailwindClasses } from 'tailwind-override';
 import { friendlyShortcut } from 'kit-bridge/cjs/util';
 import { useAtom } from 'jotai';
 import { ChoiceButtonProps } from '../types';
-import { flagsAtom, flagValueAtom } from '../jotai';
+import { flagsAtom, flagValueAtom, inputAtom } from '../jotai';
 import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
+import { ReactComponent as NoImageIcon } from '../svg/icons8-no-image.svg';
+import { highlightChoiceName } from '../hooks/highlight';
 
 export default function ChoiceButton({
   data,
@@ -24,6 +26,7 @@ export default function ChoiceButton({
   const [mouseDown, setMouseDown] = useState(false);
   const [flags] = useAtom(flagsAtom);
   const [flaggedValue, setFlagValue] = useAtom(flagValueAtom);
+  const [inputValue] = useAtom(inputAtom);
 
   const onRightClick = useCallback(
     (event) => {
@@ -58,6 +61,8 @@ export default function ChoiceButton({
     },
     [index, mouseEnabled, onIndexChange]
   );
+
+  const [imageFail, setImageFail] = useState(false);
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
@@ -115,10 +120,12 @@ export default function ChoiceButton({
       ) : (
         <div className="flex flex-row items-center justify-between w-full h-full">
           <div className="flex flex-col max-w-full overflow-x-hidden">
-            <div className="truncate">{choice.name}</div>
+            <div className="truncate">
+              {highlightChoiceName(choice.name.slice(0, 50), inputValue)}
+            </div>
             {(choice?.focused || choice?.description) && (
               <div
-                className={`text-xs truncate transition-opacity ease-in-out duration-500 pb-1 ${
+                className={`text-xs truncate transition-opacity ease-in-out duration-200 pb-1 ${
                   index === currentIndex
                     ? `opacity-90 dark:text-primary-light text-primary-dark`
                     : `opacity-60`
@@ -126,45 +133,52 @@ export default function ChoiceButton({
 
                 `}
               >
-                {(index === currentIndex && choice?.description) ||
-                  choice?.description}
+                {highlightChoiceName(
+                  String(choice?.description)?.slice(0, 100),
+                  inputValue
+                )}
               </div>
             )}
           </div>
 
           <div className="flex flex-row items-center flex-shrink-0 h-full">
-            <div className="flex flex-col px-2">
-              {choice?.shortcut && (
-                <div
-                  className={`
+            {(choice?.shortcut ||
+              choice?.kenv ||
+              choice?.tag ||
+              choice?.icon) && (
+              <div className="flex flex-col px-2">
+                {choice?.shortcut && (
+                  <div
+                    className={`
               text-xxs font-mono
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `}
-                >
-                  {friendlyShortcut(choice.shortcut)}
-                </div>
-              )}
-              {choice?.kenv && (
-                <div
-                  className={`
+                  >
+                    {friendlyShortcut(choice.shortcut)}
+                  </div>
+                )}
+                {choice?.kenv && (
+                  <div
+                    className={`
               text-xxs font-mono
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `}
-                >
-                  {choice.kenv}
-                </div>
-              )}
-              {choice?.tag && (
-                <div
-                  className={`
+                  >
+                    {choice.kenv}
+                  </div>
+                )}
+                {choice?.tag && (
+                  <div
+                    className={`
               text-xxs font-mono
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `}
-                >
-                  {choice.tag}
-                </div>
-              )}
-            </div>
+                  >
+                    {choice.tag}
+                  </div>
+                )}
+              </div>
+            )}
             {choice?.icon && (
               <img
                 alt="icon"
@@ -176,10 +190,29 @@ export default function ChoiceButton({
                 src={choice?.icon}
               />
             )}
-            {choice?.img && (
+            {imageFail && (
+              <div
+                style={{ aspectRatio: '1/1' }}
+                className="h-3/4 flex flex-row items-center justify-center"
+              >
+                <NoImageIcon
+                  className={`
+        h-1/2
+        fill-current
+        transition ease-in
+        opacity-50
+        dark:text-white text-black
+
+        `}
+                  viewBox="0 0 32 32"
+                />
+              </div>
+            )}
+            {choice?.img && !imageFail && (
               <img
                 src={choice.img}
                 alt={choice.description || ''}
+                onError={() => setImageFail(true)}
                 className={`
                 h-3/4 rounded
                 ${index === currentIndex ? `opacity-100` : `opacity-80`}

@@ -1,9 +1,10 @@
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
 import React, { ReactElement } from 'react';
-import { Choice } from 'kit-bridge/cjs/type';
 
-export const highlightAdjacentAndWordStart = (name: string, input: string) => {
+const className = 'dark:text-primary-light text-primary-dark';
+
+const highlightAdjacentAndWordStart = (name: string, input: string) => {
   const inputLetters = input?.toLowerCase().split('');
   let ili = 0;
   let prevQualifies = true;
@@ -14,7 +15,7 @@ export const highlightAdjacentAndWordStart = (name: string, input: string) => {
       ili += 1;
       prevQualifies = true;
       return (
-        <span key={i} className="dark:text-primary-light text-primary-dark">
+        <span key={i} className={className}>
           {letter}
         </span>
       );
@@ -26,7 +27,7 @@ export const highlightAdjacentAndWordStart = (name: string, input: string) => {
   });
 };
 
-export const highlightFirstLetters = (name: string, input: string) => {
+const highlightFirstLetters = (name: string, input: string) => {
   const words = name.match(/\w+\W*/g);
 
   return (words || []).map((word, i) => {
@@ -34,7 +35,7 @@ export const highlightFirstLetters = (name: string, input: string) => {
       return (
         // eslint-disable-next-line react/no-array-index-key
         <React.Fragment key={i}>
-          <span key={i} className=" dark:text-primary-light text-primary-dark">
+          <span key={i} className={className}>
             {word[0]}
           </span>
           {word.slice(1)}
@@ -45,7 +46,8 @@ export const highlightFirstLetters = (name: string, input: string) => {
     return word;
   });
 };
-export const highlightIncludes = (name: string, input: string) => {
+
+const highlightIncludes = (name: string, input: string) => {
   const index = name?.toLowerCase().indexOf(input?.toLowerCase());
   const indexEnd = index + input.length;
 
@@ -55,19 +57,19 @@ export const highlightIncludes = (name: string, input: string) => {
 
   return [
     <span key={0}>{firstPart}</span>,
-    <span key={1} className="dark:text-primary-light text-primary-dark">
+    <span key={1} className={className}>
       {includesPart}
     </span>,
     <span key={2}>{lastPart}</span>,
   ];
 };
 
-export const highlightStartsWith = (name: string, input: string) => {
+const highlightStartsWith = (name: string, input: string) => {
   const firstPart = name.slice(0, input.length);
   const lastPart = name.slice(input.length);
 
   return [
-    <span key={0} className="dark:text-primary-light text-primary-dark">
+    <span key={0} className={className}>
       {firstPart}
     </span>,
     <span key={1}>{lastPart}</span>,
