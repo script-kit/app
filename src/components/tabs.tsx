@@ -48,7 +48,7 @@ export default function KitTabs() {
           `}
               key={tab}
               onMouseDown={() => setTabIndex(i)}
-              style={{ cursor: mouseEnabled > 10 ? 'pointer' : 'none' }}
+              style={{ cursor: mouseEnabled ? 'pointer' : 'none' }}
             >
               {tab}
             </div>

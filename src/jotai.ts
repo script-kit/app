@@ -147,7 +147,13 @@ export const textareaConfigAtom = atom<TextareaConfig>({
 export const formHTMLAtom = atom('');
 export const formDataAtom = atom({});
 
-export const mouseEnabledAtom = atom(0);
+const mouseEnabled = atom(0);
+export const mouseEnabledAtom = atom(
+  (g) => g(mouseEnabled) > 5,
+  (g, s, a: number) => {
+    s(mouseEnabled, a ? g(mouseEnabled) + a : a);
+  }
+);
 
 const index = atom(0);
 
@@ -433,15 +439,13 @@ export const openAtom = atom(
     if (g(rawOpen) && a === false) {
       ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: g(pidAtom) });
       // setChoices([]);
-      // s(choices, []);
+      // s(scoredChoices, []);
       s(tabIndex, 0);
-      s(indexAtom, 0);
-      s(rawInputAtom, '');
+      s(inputAtom, '');
       s(panelHTMLAtom, '');
       s(formHTMLAtom, '');
       s(promptDataAtom, null);
       s(hintAtom, '');
-      s(submittedAtom, false);
       s(logHTMLAtom, '');
       s(uiAtom, UI.arg);
       s(flagsAtom, {});

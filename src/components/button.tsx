@@ -10,7 +10,7 @@ import { overrideTailwindClasses } from 'tailwind-override';
 import { Choice, Script } from 'kit-bridge/cjs/type';
 import { useAtom } from 'jotai';
 import { ChoiceButtonProps } from '../types';
-import { flagsAtom, flagValueAtom, inputAtom, scoredChoices } from '../jotai';
+import { flagsAtom, flagValueAtom, inputAtom } from '../jotai';
 import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
 import { ReactComponent as NoImageIcon } from '../svg/icons8-no-image.svg';
 
@@ -101,11 +101,12 @@ export default function ChoiceButton({
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button
       type="button"
+      draggable
       onContextMenu={onRightClick}
       onMouseDown={onMouseDown}
       onMouseUp={onMouseUp}
       style={{
-        cursor: mouseEnabled > 10 ? 'pointer' : 'none',
+        cursor: mouseEnabled ? 'pointer' : 'none',
         ...style,
       }}
       className={`
@@ -114,9 +115,10 @@ export default function ChoiceButton({
         index === currentIndex
           ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-20 choice
             ${
-              mouseDown
+              mouseEnabled &&
+              (mouseDown
                 ? `shadow-sm bg-opacity-25`
-                : `shadow-md hover:shadow-lg`
+                : `shadow-md hover:shadow-lg`)
             }
             `
           : ``
@@ -180,62 +182,64 @@ export default function ChoiceButton({
           </div>
 
           <div className="flex flex-row items-center flex-shrink-0 h-full">
-            {isScript(choice) &&
-              (choice?.friendlyShortcut ||
-                choice?.kenv ||
-                choice?.tag ||
-                choice?.icon) && (
-                <div className="flex flex-col px-2">
-                  {choice?.friendlyShortcut && (
-                    <div
-                      className={`
+            {!isScript(choice) && (choice?.tag || choice?.icon) && (
+              <div className="flex flex-row items-center">
+                {choice?.tag && (
+                  <div
+                    className={`
+              text-xxs font-mono mx-1
+              ${index === currentIndex ? `opacity-70` : `opacity-40`}
+              `}
+                  >
+                    {choice.tag}
+                  </div>
+                )}
+
+                {choice?.icon && (
+                  <img
+                    alt="icon"
+                    className={`
+    border-2 border-black dark:border-white border-opacity-50
+    rounded-full
+    h-6 mx-1
+    `}
+                    src={choice?.icon}
+                  />
+                )}
+              </div>
+            )}
+
+            {isScript(choice) && (choice?.friendlyShortcut || choice?.kenv) && (
+              <div className="flex flex-col px-2">
+                {choice?.friendlyShortcut && (
+                  <div
+                    className={`
               text-xxs font-mono
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `}
-                    >
-                      {highlight(
-                        choice.friendlyShortcut,
-                        scoredChoice?.matches?.friendlyShortcut,
-                        'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light text-opacity-100'
-                      )}
-                    </div>
-                  )}
-                  {choice?.kenv && (
-                    <div
-                      className={`
+                  >
+                    {highlight(
+                      choice.friendlyShortcut,
+                      scoredChoice?.matches?.friendlyShortcut,
+                      'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light text-opacity-100'
+                    )}
+                  </div>
+                )}
+                {choice?.kenv && (
+                  <div
+                    className={`
               text-xxs font-mono
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `}
-                    >
-                      {highlight(
-                        choice.kenv,
-                        scoredChoice?.matches?.kenv,
-                        'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light'
-                      )}
-                    </div>
-                  )}
-                  {choice?.tag && (
-                    <div
-                      className={`
-              text-xxs font-mono
-              ${index === currentIndex ? `opacity-70` : `opacity-40`}
-              `}
-                    >
-                      {choice.tag}
-                    </div>
-                  )}
-                </div>
-              )}
-            {choice?.icon && (
-              <img
-                alt="icon"
-                className={`
-                border-2 border-black dark:border-white border-opacity-50
-                rounded-full
-                w-12
-                `}
-                src={choice?.icon}
-              />
+                  >
+                    {highlight(
+                      choice.kenv,
+                      scoredChoice?.matches?.kenv,
+                      'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light'
+                    )}
+                  </div>
+                )}
+              </div>
             )}
             {imageFail && (
               <div

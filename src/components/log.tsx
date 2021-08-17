@@ -1,13 +1,8 @@
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
-import React, {
-  RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { RefObject, useCallback, useRef, useState } from 'react';
 import SimpleBar from 'simplebar-react';
 import useResizeObserver from '@react-hook/resize-observer';
+import { PencilAltIcon } from '@heroicons/react/outline';
 import parse from 'html-react-parser';
 import { Channel } from 'kit-bridge/cjs/enum';
 import { useAtom } from 'jotai';
@@ -78,21 +73,18 @@ export default function Log() {
           {parse(`${logHTML}`)}
         </div>
       </SimpleBar>
-      <EditFileIcon
+      <PencilAltIcon
         className={`
         absolute
         top-4 right-3
         h-6 w-6
-        fill-current
         ${mouseOver ? 'opacity-50' : 'opacity-20'}
         transition ease-in
         hover:cursor-pointer
         hover:opacity-100
         text-white dark:text-black
-        scale-75
         `}
         onClick={editLog}
-        viewBox="0 0 32 32"
       />
     </div>
   );

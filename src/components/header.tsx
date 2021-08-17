@@ -1,8 +1,10 @@
+/* eslint-disable no-nested-ternary */
 import React from 'react';
 import { useAtom } from 'jotai';
 import {
   choicesAtom,
   darkAtom,
+  isMouseDownAtom,
   mainHeightAtom,
   mouseEnabledAtom,
   panelHTMLAtom,
@@ -20,6 +22,7 @@ export default function Header() {
   const [panelHTML] = useAtom(panelHTMLAtom);
   const [ui] = useAtom(uiAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
+  const [mouseDown] = useAtom(isMouseDownAtom);
   const [unfilteredChoices] = useAtom(unfilteredChoicesAtom);
   const [choices] = useAtom(choicesAtom);
   const [selected] = useAtom(selectedAtom);
@@ -28,7 +31,7 @@ export default function Header() {
   return (
     <div
       style={{
-        cursor: mouseEnabled > 10 ? 'auto' : 'none',
+        cursor: mouseEnabled ? (mouseDown ? 'grabbing' : 'grab') : 'none',
       }}
       className={`
     transition duration-1000
@@ -37,6 +40,7 @@ export default function Header() {
     >
       <span className="pr-1">
         {script?.description || ''}
+        {/* {mouseEnabled ? 'enabled' : 'disabled'} */}
         {/* {dark ? 'Dark' : 'Light'} */}
         {/* {unfilteredChoices.length} : {choices.length} */}
         {/* {topHeight},{mainHeight},{maxHeight},{panelHTML?.length},{ui} */}

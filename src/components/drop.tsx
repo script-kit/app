@@ -62,7 +62,7 @@ export default function Drop() {
   const containerRef = useMountMainHeight();
 
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} className="h-full w-full">
       <div
         tabIndex={0}
         role="region"
@@ -75,6 +75,7 @@ export default function Drop() {
         }
         className={`
         w-full h-full
+        min-h-52
         drop-component
         flex flex-col justify-center items-center
         text-black dark:text-white text-xl
@@ -84,7 +85,6 @@ export default function Drop() {
         transition ease-in-out duration-500 ${
           dropReady ? `opacity-75 shadow-inner` : `opacity-25`
         }
-        w-full h-52
       `}
         placeholder={placeholder}
         onDragEnter={onDragEnter}

@@ -95,6 +95,7 @@ module.exports = {
         full: '100%',
       },
       minHeight: {
+        52: '14rem',
         64: '16rem',
         128: '32rem',
       },
