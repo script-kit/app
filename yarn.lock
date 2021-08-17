@@ -8286,6 +8286,11 @@ functions-have-names@^1.2.2:
   resolved "https://registry.npmjs.org/functions-have-names/-/functions-have-names-1.2.2.tgz"
   integrity sha512-bLgc3asbWdwPbx2mNk2S49kmJCuQeu0nfmaOgbs8WIyzzkw3r4htszdIi9Q9EMezDPTYuJx2wvjZ/EwgAthpnA==
 
+fuse.js@^6.4.6:
+  version "6.4.6"
+  resolved "https://registry.yarnpkg.com/fuse.js/-/fuse.js-6.4.6.tgz#62f216c110e5aa22486aff20be7896d19a059b79"
+  integrity sha512-/gYxR/0VpXmWSfZOIPS3rWwU8SHgsRTwWuXhyb2O6s7aRuVtHtxCkR33bNYu3wyLyNx/Wpv0vU7FZy8Vj53VNw==
+
 gauge@~2.7.3:
   version "2.7.4"
   resolved "https://registry.npmjs.org/gauge/-/gauge-2.7.4.tgz"
@@ -10695,10 +10700,10 @@ kind-of@^6.0.0, kind-of@^6.0.2, kind-of@^6.0.3:
   resolved "https://registry.npmjs.org/kind-of/-/kind-of-6.0.3.tgz"
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
-kit-bridge@11.0.0:
-  version "11.0.0"
-  resolved "https://registry.yarnpkg.com/kit-bridge/-/kit-bridge-11.0.0.tgz#ff039f1dbff88a5c96f134808d5029e936c9ac41"
-  integrity sha512-9xWU1JJ0a8dV1nO11Tdm0Q5XqDmjt2XqcoyD8aoTaT59omZUvlXdBktXUZRaUDunquRICFgY75wxDgrhwJ7uCQ==
+kit-bridge@12.0.1:
+  version "12.0.1"
+  resolved "https://registry.yarnpkg.com/kit-bridge/-/kit-bridge-12.0.1.tgz#2a2de5ee0db6ac5559177a0cfe180b9f8393200e"
+  integrity sha512-AQXYCx/K3GjYLO0rBR7bbcooLcIhv+W8SQVh+PCmm/PjnFNJ3w8F6+0RRa+WE6h7/3vODgaUSJrypRVlgzldmA==
   dependencies:
     fs-extra "^10.0.0"
     lowdb "^2.1.0"
@@ -13667,6 +13672,11 @@ quick-lru@^5.1.1:
   version "5.1.1"
   resolved "https://registry.npmjs.org/quick-lru/-/quick-lru-5.1.1.tgz"
   integrity sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==
+
+quick-score@^0.0.12:
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/quick-score/-/quick-score-0.0.12.tgz#262a5ec529332e25d31783e0b721fbb7955d72c3"
+  integrity sha512-YbVgdRf4QdRfgSLMdBl/bnqqrZlkoIHYPogG5LFRAr/tDJ9K5YDZlouGOosjasTylaPjUL5eLBor7a5r2UUiTg==
 
 raf-schd@^4.0.2:
   version "4.0.3"

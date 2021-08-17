@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable guard-for-in */
-import { Atom, atom, Getter, Setter } from 'jotai';
+import { atom, Getter, Setter } from 'jotai';
+import { QuickScore, Range, createConfig } from 'quick-score';
 import asap from 'asap';
+
 import { Channel, Mode, ProcessType, UI } from 'kit-bridge/cjs/enum';
 import Convert from 'ansi-to-html';
 import {
@@ -17,7 +20,7 @@ import {
 import { clamp, debounce, drop } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
-import { ResizeData } from './types';
+import { ResizeData, ScoredChoice } from './types';
 
 let placeholderTimeoutId: NodeJS.Timeout;
 let choicesTimeoutId: NodeJS.Timeout;
@@ -36,7 +39,50 @@ export const placeholderAtom = atom(
   }
 );
 
-export const unfilteredChoicesAtom = atom<Choice[]>([]);
+interface QuickScoreInterface {
+  search: (query: string) => ScoredChoice[];
+}
+const search = (
+  quickScore: QuickScoreInterface,
+  term: string
+): ScoredChoice[] => {
+  return quickScore?.search(term);
+};
+
+const createScoredChoice = (item: Choice): ScoredChoice => {
+  return {
+    item,
+    score: 0,
+    matches: {},
+    _: '',
+  };
+};
+
+export const quickScoreAtom = atom<QuickScoreInterface | null>(null);
+const unfilteredChoices = atom<Choice[]>([]);
+export const unfilteredChoicesAtom = atom(
+  (g) => g(unfilteredChoices),
+  (g, s, a: Choice[]) => {
+    s(unfilteredChoices, a);
+
+    const qs = new QuickScore(a, {
+      keys: ['name', 'description', 'kenv', 'command', 'friendlyShortcut'],
+      minimumScore: 0.5,
+      config: createConfig({
+        stringRange: new Range(0, 50),
+        maxIterations: 100,
+      }),
+    });
+    s(quickScoreAtom, qs);
+    if (g(modeAtom) === Mode.GENERATE) {
+      s(scoredChoices, []);
+    }
+    if (a.length) {
+      s(scoredChoices, a.map(createScoredChoice));
+    }
+  }
+);
+
 export const prevChoicesAtom = atom<Choice[]>([]);
 
 export const uiAtom = atom<UI>(UI.arg);
@@ -105,7 +151,7 @@ export const mouseEnabledAtom = atom(0);
 
 const index = atom(0);
 
-const choices = atom<Choice[]>([]);
+const choices = atom<ScoredChoice[]>([]);
 
 export const prevIndexAtom = atom(0);
 export const prevInputAtom = atom('');
@@ -119,16 +165,16 @@ export const indexAtom = atom(
 
 const flaggedValueAtom = atom<Choice | string>('');
 
-export const choicesAtom = atom(
+export const scoredChoices = atom(
   (g) => g(choices),
-  (g, s, a: Choice[]) => {
+  (g, s, a: ScoredChoice[]) => {
     if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
     s(submittedAtom, false);
 
     const prevChoices = g(choices);
     const prevIndex = g(index);
-    const prevChoice = prevChoices[prevIndex]?.id;
-    const nextChoice = a[prevIndex]?.id;
+    const prevChoice = prevChoices[prevIndex]?.item?.id;
+    const nextChoice = a[prevIndex]?.item?.id;
     if (prevChoice !== nextChoice && !g(flaggedValueAtom)) {
       // s(indexAtom, 0);
     }
@@ -136,7 +182,12 @@ export const choicesAtom = atom(
   }
 );
 
+export const choicesAtom = atom((g) =>
+  g(scoredChoices).map((result) => result.item)
+);
+
 export const rawInputAtom = atom('');
+
 export const inputAtom = atom(
   (g) => g(rawInputAtom),
   (g, s, a: string) => {
@@ -144,6 +195,15 @@ export const inputAtom = atom(
     s(submittedAtom, false);
     s(indexAtom, 0);
     s(rawInputAtom, a);
+
+    const quickScore = g(quickScoreAtom);
+
+    if (quickScore && a) {
+      s(scoredChoices, search(quickScore, a));
+    } else {
+      const un = g(unfilteredChoicesAtom);
+      if (un.length) s(scoredChoices, un.map(createScoredChoice));
+    }
   }
 );
 
@@ -186,6 +246,7 @@ const script = atom<Script>(noScript);
 export const scriptAtom = atom(
   (g) => g(script),
   (g, s, a: Script) => {
+    console.clear();
     s(mouseEnabledAtom, 0);
     s(script, a);
     s(rawInputAtom, '');

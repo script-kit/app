@@ -1,18 +1,46 @@
+/* eslint-disable no-restricted-syntax */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import parse from 'html-react-parser';
 import { overrideTailwindClasses } from 'tailwind-override';
-import { friendlyShortcut } from 'kit-bridge/cjs/util';
+import { Choice, Script } from 'kit-bridge/cjs/type';
 import { useAtom } from 'jotai';
 import { ChoiceButtonProps } from '../types';
-import { flagsAtom, flagValueAtom, inputAtom } from '../jotai';
+import { flagsAtom, flagValueAtom, inputAtom, scoredChoices } from '../jotai';
 import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
 import { ReactComponent as NoImageIcon } from '../svg/icons8-no-image.svg';
-import { highlightChoiceName } from '../hooks/highlight';
+
+function highlight(
+  string: string,
+  matches: [number, number][],
+  className: string
+) {
+  const substrings = [];
+  let previousEnd = 0;
+
+  if (matches?.length) {
+    for (const [start, end] of matches) {
+      const prefix = string.substring(previousEnd, start);
+      const match = (
+        <mark className={className}>{string.substring(start, end)}</mark>
+      );
+
+      substrings.push(prefix, match);
+      previousEnd = end;
+    }
+  }
+  substrings.push(string.substring(previousEnd));
+
+  return <span>{React.Children.toArray(substrings)}</span>;
+}
+
+function isScript(choice: Choice | Script): choice is Script {
+  return (choice as Script)?.filePath !== undefined;
+}
 
 export default function ChoiceButton({
   data,
@@ -21,7 +49,8 @@ export default function ChoiceButton({
 }: ChoiceButtonProps) {
   const { choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit } =
     data;
-  const choice = choices[index];
+  const scoredChoice = choices[index];
+  const choice: Choice | Script = scoredChoice.item;
 
   const [mouseDown, setMouseDown] = useState(false);
   const [flags] = useAtom(flagsAtom);
@@ -63,6 +92,10 @@ export default function ChoiceButton({
   );
 
   const [imageFail, setImageFail] = useState(false);
+
+  useEffect(() => {
+    setImageFail(false);
+  }, [choice]);
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
@@ -121,7 +154,11 @@ export default function ChoiceButton({
         <div className="flex flex-row items-center justify-between w-full h-full">
           <div className="flex flex-col max-w-full overflow-x-hidden">
             <div className="truncate">
-              {highlightChoiceName(choice.name.slice(0, 50), inputValue)}
+              {highlight(
+                choice.name,
+                scoredChoice?.matches?.name,
+                'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light'
+              )}
             </div>
             {(choice?.focused || choice?.description) && (
               <div
@@ -133,52 +170,62 @@ export default function ChoiceButton({
 
                 `}
               >
-                {highlightChoiceName(
-                  String(choice?.description)?.slice(0, 100),
-                  inputValue
+                {highlight(
+                  choice?.description || '',
+                  scoredChoice?.matches?.description,
+                  'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light  text-opacity-100'
                 )}
               </div>
             )}
           </div>
 
           <div className="flex flex-row items-center flex-shrink-0 h-full">
-            {(choice?.shortcut ||
-              choice?.kenv ||
-              choice?.tag ||
-              choice?.icon) && (
-              <div className="flex flex-col px-2">
-                {choice?.shortcut && (
-                  <div
-                    className={`
+            {isScript(choice) &&
+              (choice?.friendlyShortcut ||
+                choice?.kenv ||
+                choice?.tag ||
+                choice?.icon) && (
+                <div className="flex flex-col px-2">
+                  {choice?.friendlyShortcut && (
+                    <div
+                      className={`
               text-xxs font-mono
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `}
-                  >
-                    {friendlyShortcut(choice.shortcut)}
-                  </div>
-                )}
-                {choice?.kenv && (
-                  <div
-                    className={`
+                    >
+                      {highlight(
+                        choice.friendlyShortcut,
+                        scoredChoice?.matches?.friendlyShortcut,
+                        'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light text-opacity-100'
+                      )}
+                    </div>
+                  )}
+                  {choice?.kenv && (
+                    <div
+                      className={`
               text-xxs font-mono
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `}
-                  >
-                    {choice.kenv}
-                  </div>
-                )}
-                {choice?.tag && (
-                  <div
-                    className={`
+                    >
+                      {highlight(
+                        choice.kenv,
+                        scoredChoice?.matches?.kenv,
+                        'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light'
+                      )}
+                    </div>
+                  )}
+                  {choice?.tag && (
+                    <div
+                      className={`
               text-xxs font-mono
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `}
-                  >
-                    {choice.tag}
-                  </div>
-                )}
-              </div>
-            )}
+                    >
+                      {choice.tag}
+                    </div>
+                  )}
+                </div>
+              )}
             {choice?.icon && (
               <img
                 alt="icon"
