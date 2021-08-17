@@ -1,3 +1,10 @@
+# [1.3.0-alpha.113](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.112...v1.3.0-alpha.113) (2021-08-17)
+
+
+### Bug Fixes
+
+* **app:** flags shortcuts ([e23a978](https://github.com/johnlindquist/kitapp/commit/e23a978099a9a3e1d7b547b48ea6ddf14e75962a))
+
 # [1.3.0-alpha.112](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.111...v1.3.0-alpha.112) (2021-08-17)
 
 
