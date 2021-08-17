@@ -1,3 +1,10 @@
+# [1.3.0-alpha.112](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.111...v1.3.0-alpha.112) (2021-08-17)
+
+
+### Features
+
+* **app:** Allow searching on description, shortcut, etc ([0eb663e](https://github.com/johnlindquist/kitapp/commit/0eb663ee96e953301a0a3ef70531cf738d44a8eb))
+
 # [1.3.0-beta.48](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.47...v1.3.0-beta.48) (2021-08-16)
 
 
