@@ -71,7 +71,6 @@ import {
   unfilteredChoicesAtom,
 } from './jotai';
 
-import useChoices from './hooks/useChoices';
 import { useThemeDetector } from './hooks';
 
 const second = (fn: (value: any) => void) => (_: any, x: any) => fn(x);
@@ -168,8 +167,6 @@ export default function App() {
   //     ipcRenderer.send(CHOICE_FOCUSED, { index: null, pid });
   //   }
   // }, [choices, index, pid]);
-
-  useChoices();
 
   const generateChoices = useDebouncedCallback((input, mode) => {
     if (mode === Mode.GENERATE) {

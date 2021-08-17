@@ -47,6 +47,9 @@ module.exports = {
   },
   theme: {
     extend: {
+      backgroundImage: (theme) => ({
+        'random-shapes': "url('/src/svg/random-shapes.svg')",
+      }),
       fontFamily: {
         mono: ['JetBrains Mono'],
         // sans: ['Lato'],
@@ -78,6 +81,10 @@ module.exports = {
         secondary: {
           light: colorVar('secondary-light'),
           dark: colorVar('secondary-dark'),
+        },
+        gradient: {
+          white: '#ffffff00',
+          dark: '#4F46E533',
         },
       },
       minWidth: {

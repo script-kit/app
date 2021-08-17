@@ -1,8 +1,17 @@
 import { Choice } from 'kit-bridge/cjs/type';
 import { Mode, UI } from 'kit-bridge/cjs/enum';
 
+export interface ScoredChoice {
+  item: Choice;
+  score: number;
+  matches: {
+    [key: string]: [number, number][];
+  };
+  _: string;
+}
+
 export interface ChoiceButtonData {
-  choices: Choice[];
+  choices: ScoredChoice[];
   currentIndex: number;
   inputValue: string;
   mouseEnabled: number;

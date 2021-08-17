@@ -346,8 +346,9 @@ const handleSpawnReturns = async (
   const { stdout, stderr, error } = result;
 
   if (stdout?.toString().length) {
-    log.info(message, stdout.toString());
-    updateConfigWindow(stdout.toString());
+    const out = stdout.toString();
+    log.info(message, out);
+    if (out.length < 200) updateConfigWindow(out);
   }
 
   if (error && required) {

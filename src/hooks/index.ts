@@ -1,4 +1,3 @@
-export { default as useChoices } from './useChoices';
 export { default as useClose } from './useClose';
 export { default as useEdit } from './useEdit';
 export { default as useEnter } from './useEnter';
