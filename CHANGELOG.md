@@ -1,3 +1,10 @@
+# [1.3.0-alpha.114](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.113...v1.3.0-alpha.114) (2021-08-17)
+
+
+### Bug Fixes
+
+* **app:** scored choices clear. mouse enabled fix ([28a177b](https://github.com/johnlindquist/kitapp/commit/28a177b8c23dc8a039c7fe8e8fff06350e172c63))
+
 # [1.3.0-beta.49](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.48...v1.3.0-beta.49) (2021-08-17)
 
 

@@ -232,8 +232,8 @@ export default function App() {
   }, [setIsMouseDown]);
 
   const onMouseMove = useCallback(() => {
-    setMouseEnabled(mouseEnabled + 1);
-  }, [setMouseEnabled, mouseEnabled]);
+    setMouseEnabled(1);
+  }, [setMouseEnabled]);
 
   return (
     <ErrorBoundary>
@@ -243,7 +243,6 @@ export default function App() {
           {
             WebkitAppRegion: 'drag',
             WebkitUserSelect: 'none',
-            cursor: mouseEnabled > 10 ? 'pointer' : 'none',
           } as any
         }
         className="relative flex flex-col w-full h-full"

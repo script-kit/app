@@ -39,7 +39,7 @@ export default function Panel({ width, height }: PanelProps) {
       scrollableNodeProps={{ ref: scrollRef }}
       style={
         {
-          cursor: mouseEnabled > 10 ? 'auto' : 'none',
+          cursor: mouseEnabled ? 'auto' : 'none',
           width,
           height,
           WebkitAppRegion: 'no-drag',

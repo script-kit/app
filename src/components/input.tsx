@@ -116,7 +116,6 @@ export default function Input() {
             WebkitAppRegion: 'no-drag',
             WebkitUserSelect: 'none',
             ...(submitted && { caretColor: 'transparent' }),
-            cursor: mouseEnabled > 10 ? 'auto' : 'none',
           } as any
         }
         autoFocus

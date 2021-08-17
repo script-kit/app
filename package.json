@@ -292,6 +292,7 @@
     "yarn-deduplicate": "^3.1.0"
   },
   "dependencies": {
+    "@heroicons/react": "^1.0.4",
     "@monaco-editor/react": "^4.2.0",
     "@react-hook/resize-observer": "^1.2.0",
     "@rooks/use-previous": "^4.10.0",
