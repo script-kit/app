@@ -360,8 +360,10 @@ export const flagValueAtom = atom(
       const flagChoices = Object.entries(g(flagsAtom)).map(
         ([key, value]: [key: string, value: any]) => {
           return {
+            filePath: value?.name,
             name: value?.name || key,
             shortcut: value?.shortcut || '',
+            friendlyShortcut: value?.shortcut || '',
             description: value?.description || '',
             value: key,
           };
