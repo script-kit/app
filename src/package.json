@@ -1,7 +1,7 @@
 {
   "name": "kit",
   "productName": "Kit",
-  "version": "1.3.0-beta.50",
+  "version": "1.3.0-alpha.115",
   "description": "The Script Kit companion app",
   "main": "./main.prod.js",
   "author": {
@@ -17,5 +17,8 @@
     "@types/core-js": "^2.5.4",
     "@types/regenerator-runtime": "^0.13.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "node-abi": "^2.30.0",
+    "sharp": "^0.29.0"
+  }
 }

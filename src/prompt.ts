@@ -7,9 +7,9 @@
 import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
 import { Choice, Script, PromptData, PromptBounds } from 'kit-bridge/cjs/type';
 
-import { BrowserWindow, screen, nativeTheme, app, Rectangle } from 'electron';
+import { BrowserWindow, screen, nativeTheme, app } from 'electron';
 import log from 'electron-log';
-import { debounce, throttle } from 'lodash';
+import { debounce } from 'lodash';
 import minimist from 'minimist';
 import { readFileSync } from 'fs';
 import { mainScriptPath, isFile, kenvPath, kitPath } from 'kit-bridge/cjs/util';
@@ -24,7 +24,6 @@ import {
   DEFAULT_HEIGHT,
   DEFAULT_WIDTH,
   heightMap,
-  INPUT_HEIGHT,
   MIN_HEIGHT,
   MIN_WIDTH,
 } from './defaults';
@@ -55,7 +54,7 @@ export const createPromptWindow = async () => {
     backgroundColor: nativeTheme.shouldUseDarkColors
       ? '#33000000'
       : '#C0FFFF00',
-    vibrancy: 'popover',
+    vibrancy: 'menu',
     visualEffectState: 'active',
     show: false,
     hasShadow: true,

@@ -63,6 +63,9 @@ module.exports = {
         70: '.70',
       },
       opacity: {
+        12: '.12',
+        15: '.15',
+        18: '.18',
         themelight: 'var(--opacity-themelight)',
         themedark: 'var(--opacity-themedark)',
       },
@@ -83,8 +86,8 @@ module.exports = {
           dark: colorVar('secondary-dark'),
         },
         gradient: {
-          white: '#ffffff00',
-          dark: '#4F46E533',
+          white: '#ffffffcc',
+          dark: '#4F46E511',
         },
       },
       minWidth: {
