@@ -1,3 +1,10 @@
+# [1.3.0-beta.51](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.50...v1.3.0-beta.51) (2021-08-19)
+
+
+### Features
+
+* **app:** adding drag and tag ([ab25e47](https://github.com/johnlindquist/kitapp/commit/ab25e4710589366b395276b396f297cf30624b7a))
+
 # [1.3.0-alpha.115](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.114...v1.3.0-alpha.115) (2021-08-19)
 
 
