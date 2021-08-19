@@ -17,5 +17,8 @@
     "@types/core-js": "^2.5.4",
     "@types/regenerator-runtime": "^0.13.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "node-abi": "^2.30.0",
+    "sharp": "^0.29.0"
+  }
 }

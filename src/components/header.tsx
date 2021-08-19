@@ -1,13 +1,18 @@
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable no-nested-ternary */
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useAtom } from 'jotai';
+import { XIcon } from '@heroicons/react/outline';
 import {
   choicesAtom,
   darkAtom,
   isMouseDownAtom,
   mainHeightAtom,
   mouseEnabledAtom,
+  openAtom,
   panelHTMLAtom,
+  promptDataAtom,
   scriptAtom,
   selectedAtom,
   topHeightAtom,
@@ -27,38 +32,71 @@ export default function Header() {
   const [choices] = useAtom(choicesAtom);
   const [selected] = useAtom(selectedAtom);
   const [dark] = useAtom(darkAtom);
+  const [promptData] = useAtom(promptDataAtom);
+  const [, setOpen] = useAtom(openAtom);
+
+  const onXClick = useCallback(() => {
+    setOpen(false);
+  }, [setOpen]);
 
   return (
     <div
-      style={{
-        cursor: mouseEnabled ? (mouseDown ? 'grabbing' : 'grab') : 'none',
-      }}
-      className={`
-    transition duration-1000
-    text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row
-    dark:text-primary-light text-primary-dark `}
+      style={
+        {
+          WebkitAppRegion: 'no-drag',
+          WebkitUserSelect: 'none',
+        } as any
+      }
+      className="flex flex-row justify-between w-full"
     >
-      <span className="pr-1">
-        {script?.description || ''}
-        {/* {mouseEnabled ? 'enabled' : 'disabled'} */}
-        {/* {dark ? 'Dark' : 'Light'} */}
-        {/* {unfilteredChoices.length} : {choices.length} */}
-        {/* {topHeight},{mainHeight},{maxHeight},{panelHTML?.length},{ui} */}
-      </span>
-
-      {/* <span className="dark:text-primary-light text-primary-dark col-span-3">
-        {`top: ${topHeight} - main: ${mainHeight} - max: ${maxHeight} -`}
-      </span> */}
-      <span className="flex flex-col items-end pl-1 text-right">
-        <span>{script?.menu}</span>
-        <span>
-          {script?.twitter && (
-            <a href={`https://twitter.com/${script?.twitter.slice(1)}`}>
-              {script?.twitter}
-            </a>
-          )}
+      <div
+        style={
+          {
+            WebkitAppRegion: 'drag',
+            WebkitUserSelect: 'none',
+          } as any
+        }
+        className={`
+        w-full
+      transition duration-1000
+      text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row
+      dark:text-primary-light text-primary-dark
+      `}
+      >
+        <span className="pr-1">
+          {script?.description || ''}
+          {/* {promptData?.ignoreBlur && 'Ignore Blur'} */}
+          {/* {mouseEnabled ? 'enabled' : 'disabled'} */}
+          {/* {dark ? 'Dark' : 'Light'} */}
+          {/* {unfilteredChoices.length} : {choices.length} */}
+          {/* {topHeight},{mainHeight},{maxHeight},{panelHTML?.length},{ui} */}
         </span>
-      </span>
+        {/* <span className="dark:text-primary-light text-primary-dark col-span-3">
+          {`top: ${topHeight} - main: ${mainHeight} - max: ${maxHeight} -`}
+        </span> */}
+        <span className="flex flex-col items-end pl-1 text-right">
+          <span>{script?.menu}</span>
+          <span>
+            {script?.twitter && (
+              <a href={`https://twitter.com/${script?.twitter.slice(1)}`}>
+                {script?.twitter}
+              </a>
+            )}
+          </span>
+        </span>
+      </div>
+      {false && promptData?.ignoreBlur && mouseEnabled && (
+        <div onClick={onXClick} className="w-6 h-6 hover:cursor-pointer">
+          <XIcon
+            className="h-3 w-3
+          absolute top-0 right-0
+          m-1.5
+          text-primary-dark dark:text-primary-light
+          hover:text-primary-black hover:dark:text-primary-light
+          "
+          />
+        </div>
+      )}
     </div>
   );
 }

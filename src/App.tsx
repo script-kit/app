@@ -47,6 +47,7 @@ import {
   formDataAtom,
   formHTMLAtom,
   hintAtom,
+  indexAtom,
   inputAtom,
   isMouseDownAtom,
   logHTMLAtom,
@@ -86,7 +87,7 @@ class ErrorBoundary extends React.Component {
     // Display fallback UI
     this.setState({ hasError: true, info });
     // You can also log the error to an error reporting service
-    ipcRenderer.send('PROMPT_ERROR', { error });
+    ipcRenderer.send(Channel.PROMPT_ERROR, { error });
   }
 
   render() {
@@ -119,7 +120,6 @@ export default function App() {
   const [submitted] = useAtom(submittedAtom);
 
   const [, setUnfilteredChoices] = useAtom(unfilteredChoicesAtom);
-  const [choices] = useAtom(choicesAtom);
 
   const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
@@ -143,6 +143,8 @@ export default function App() {
   const [flagValue] = useAtom(flagValueAtom);
   const [mouseEnabled, setMouseEnabled] = useAtom(mouseEnabledAtom);
   const [selected] = useAtom(selectedAtom);
+  const [index] = useAtom(indexAtom);
+  const [choices] = useAtom(choicesAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -153,6 +155,19 @@ export default function App() {
   });
 
   useThemeDetector();
+
+  // useDebouncedEffect(
+  //   () => {
+  //     const choice = choices[index];
+  //     if (choice?.filePath && mouseEnabled) {
+  //       const filePath = choice?.filePath;
+  //       const encoding = 'utf-8';
+  //       ipcRenderer.send(AppChannel.READ_FILE_CONTENTS, { filePath, encoding });
+  //     }
+  //   },
+  //   250,
+  //   [index, mouseEnabled, choices]
+  // );
 
   const [isMouseDown, setIsMouseDown] = useAtom(isMouseDownAtom);
 
@@ -241,7 +256,6 @@ export default function App() {
         ref={windowContainerRef}
         style={
           {
-            WebkitAppRegion: 'drag',
             WebkitUserSelect: 'none',
           } as any
         }

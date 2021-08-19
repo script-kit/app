@@ -66,7 +66,14 @@ export const unfilteredChoicesAtom = atom(
     s(unfilteredChoices, a);
 
     const qs = new QuickScore(a, {
-      keys: ['name', 'description', 'kenv', 'command', 'friendlyShortcut'],
+      keys: [
+        'name',
+        'description',
+        'kenv',
+        'command',
+        'friendlyShortcut',
+        'tag',
+      ],
       minimumScore: 0.5,
       config: createConfig({
         stringRange: new Range(0, 50),
@@ -345,6 +352,7 @@ export const promptDataAtom = atom(
       s(tabsAtom, a?.tabs || []);
       s(selectedAtom, a?.selected || '');
     }
+    console.log(a);
     s(promptData, a);
   }
 );

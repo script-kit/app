@@ -4,15 +4,24 @@
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {
+  DragEventHandler,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import parse from 'html-react-parser';
+import { toPng } from 'html-to-image';
 import { overrideTailwindClasses } from 'tailwind-override';
 import { Choice, Script } from 'kit-bridge/cjs/type';
 import { useAtom } from 'jotai';
+import { ipcRenderer } from 'electron';
 import { ChoiceButtonProps } from '../types';
-import { flagsAtom, flagValueAtom, inputAtom } from '../jotai';
+import { flagsAtom, flagValueAtom } from '../jotai';
 import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
 import { ReactComponent as NoImageIcon } from '../svg/icons8-no-image.svg';
+import { AppChannel } from '../enums';
 
 function highlight(
   string: string,
@@ -39,7 +48,7 @@ function highlight(
 }
 
 function isScript(choice: Choice | Script): choice is Script {
-  return (choice as Script)?.filePath !== undefined;
+  return (choice as Script)?.command !== undefined;
 }
 
 export default function ChoiceButton({
@@ -55,7 +64,7 @@ export default function ChoiceButton({
   const [mouseDown, setMouseDown] = useState(false);
   const [flags] = useAtom(flagsAtom);
   const [flaggedValue, setFlagValue] = useAtom(flagValueAtom);
-  const [inputValue] = useAtom(inputAtom);
+  // const dataTransfer = useRef<any>('Data Transfer');
 
   const onRightClick = useCallback(
     (event) => {
@@ -67,7 +76,6 @@ export default function ChoiceButton({
   );
 
   const onMouseDown = useCallback((e) => {
-    e.preventDefault();
     setMouseDown(true);
   }, []);
   const onMouseUp = useCallback((e) => {
@@ -83,7 +91,6 @@ export default function ChoiceButton({
   );
   const onMouseOver = useCallback(
     (e) => {
-      e.preventDefault();
       if (mouseEnabled) {
         onIndexChange(index);
       }
@@ -97,11 +104,39 @@ export default function ChoiceButton({
     setImageFail(false);
   }, [choice]);
 
+  const onDragStart = useCallback(
+    async (event: DragEvent) => {
+      if (choice?.drag) {
+        const drag = choice?.drag;
+        if (typeof drag === 'string') {
+          event.preventDefault();
+          const icon = await toPng(event.currentTarget as HTMLElement);
+          ipcRenderer.send(AppChannel.DRAG_FILE_PATH, {
+            filePath: drag,
+            icon,
+          });
+        } else {
+          // const domString = `text/plain:script.js:${URL.createObjectURL(
+          //   new Blob([dragContents as string], {
+          //     type: 'text/plain;charset=utf-8',
+          //   })
+          // )}`;
+          event.dataTransfer?.setData(
+            drag?.format || 'text/plain',
+            drag?.data || `please set drag.data`
+          );
+        }
+      }
+    },
+    [choice]
+  );
+
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button
       type="button"
-      draggable
+      draggable={Boolean(choice?.drag)}
+      onDragStart={onDragStart}
       onContextMenu={onRightClick}
       onMouseDown={onMouseDown}
       onMouseUp={onMouseUp}
@@ -113,12 +148,13 @@ export default function ChoiceButton({
 
       ${
         index === currentIndex
-          ? `dark:bg-white dark:bg-opacity-5 bg-white bg-opacity-20 choice
+          ? `bg-black bg-opacity-10
+          dark:bg-white dark:bg-opacity-5
             ${
               mouseEnabled &&
               (mouseDown
-                ? `shadow-sm bg-opacity-25`
-                : `shadow-md hover:shadow-lg`)
+                ? `shadow-sm bg-opacity-15 dark:bg-opacity-10`
+                : `shadow hover:shadow-md`)
             }
             `
           : ``
