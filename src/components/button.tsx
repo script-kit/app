@@ -1,24 +1,19 @@
+/* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, {
-  DragEventHandler,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import parse from 'html-react-parser';
-import { toPng } from 'html-to-image';
+
 import { overrideTailwindClasses } from 'tailwind-override';
 import { Choice, Script } from 'kit-bridge/cjs/type';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { ChoiceButtonProps } from '../types';
-import { flagsAtom, flagValueAtom } from '../jotai';
+import { flagsAtom, flagValueAtom, isMouseDownAtom } from '../jotai';
 import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
 import { ReactComponent as NoImageIcon } from '../svg/icons8-no-image.svg';
 import { AppChannel } from '../enums';
@@ -61,7 +56,7 @@ export default function ChoiceButton({
   const scoredChoice = choices[index];
   const choice: Choice | Script = scoredChoice?.item || scoredChoice;
 
-  const [mouseDown, setMouseDown] = useState(false);
+  const [isMouseDown, setIsMouseDown] = useAtom(isMouseDownAtom);
   const [flags] = useAtom(flagsAtom);
   const [flaggedValue, setFlagValue] = useAtom(flagValueAtom);
   // const dataTransfer = useRef<any>('Data Transfer');
@@ -75,13 +70,6 @@ export default function ChoiceButton({
     [choice, setFlagValue]
   );
 
-  const onMouseDown = useCallback((e) => {
-    setMouseDown(true);
-  }, []);
-  const onMouseUp = useCallback((e) => {
-    e.preventDefault();
-    setMouseDown(false);
-  }, []);
   const onClick = useCallback(
     (e) => {
       e.preventDefault();
@@ -110,10 +98,10 @@ export default function ChoiceButton({
         const drag = choice?.drag;
         if (typeof drag === 'string') {
           event.preventDefault();
-          const icon = await toPng(event.currentTarget as HTMLElement);
+
           ipcRenderer.send(AppChannel.DRAG_FILE_PATH, {
             filePath: drag,
-            icon,
+            icon: '',
           });
         } else {
           // const domString = `text/plain:script.js:${URL.createObjectURL(
@@ -131,17 +119,30 @@ export default function ChoiceButton({
     [choice]
   );
 
+  const onDragEnd = useCallback(() => {
+    setIsMouseDown(false);
+  }, [setIsMouseDown]);
+
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button
       type="button"
-      draggable={Boolean(choice?.drag)}
-      onDragStart={onDragStart}
+      {...(choice?.drag
+        ? {
+            draggable: true,
+            onDragStart,
+            onDragEnd,
+          }
+        : {})}
       onContextMenu={onRightClick}
-      onMouseDown={onMouseDown}
-      onMouseUp={onMouseUp}
       style={{
-        cursor: mouseEnabled ? 'pointer' : 'none',
+        cursor: mouseEnabled
+          ? choice?.drag
+            ? isMouseDown
+              ? 'grabbing'
+              : 'grab'
+            : 'pointer'
+          : 'none',
         ...style,
       }}
       className={`
@@ -151,10 +152,11 @@ export default function ChoiceButton({
           ? `bg-black bg-opacity-10
           dark:bg-white dark:bg-opacity-5
             ${
-              mouseEnabled &&
-              (mouseDown
-                ? `shadow-sm bg-opacity-15 dark:bg-opacity-10`
-                : `shadow hover:shadow-md`)
+              mouseEnabled
+                ? isMouseDown
+                  ? `shadow-inner bg-opacity-15 dark:bg-opacity-10`
+                  : `shadow hover:shadow-md`
+                : ``
             }
             `
           : ``

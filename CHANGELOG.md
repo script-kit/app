@@ -1,3 +1,10 @@
+# [1.3.0-alpha.118](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.117...v1.3.0-alpha.118) (2021-08-20)
+
+
+### Bug Fixes
+
+* **app:** dragging. Notifications ([f87184e](https://github.com/johnlindquist/kitapp/commit/f87184e89d6d630d3e79ae2aae8650394ef247d5))
+
 # [1.3.0-beta.53](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.52...v1.3.0-beta.53) (2021-08-20)
 
 

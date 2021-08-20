@@ -315,7 +315,8 @@ const kitMessageMap: ChannelHandler = {
       log.info('Update available.', info);
       const notification = new Notification({
         title: `Kit.app update available`,
-        body: `Downloading ${info.version}`,
+        body: `Downloading ${info.version} and relaunching...`,
+        silent: true,
       });
 
       notification.show();
@@ -326,6 +327,7 @@ const kitMessageMap: ChannelHandler = {
       const notification = new Notification({
         title: `Kit.app is on the latest version`,
         body: `${info.version}`,
+        silent: true,
       });
 
       notification.show();
