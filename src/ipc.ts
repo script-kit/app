@@ -1,6 +1,7 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-restricted-syntax */
-import { ipcMain, nativeImage as NativeImage } from 'electron';
+import { ipcMain } from 'electron';
 import log from 'electron-log';
 import { debounce, isUndefined } from 'lodash';
 import { Channel, ProcessType } from 'kit-bridge/cjs/enum';
@@ -23,6 +24,7 @@ import { setAppHidden, getAppHidden } from './appHidden';
 import { runPromptProcess } from './kit';
 import { AppChannel } from './enums';
 import { ResizeData } from './types';
+import { getAssetPath } from './assets';
 
 const handleChannel =
   (fn: (processInfo: ProcessInfo, data: any) => void) =>
@@ -140,7 +142,6 @@ export const startIpc = () => {
                   }
                   if (!fp.endsWith(result.ext)) {
                     const fixedFilePath = `${fp}.${result.ext}`;
-                    console.log({ fixedFilePath });
                     renameSync(fp, fixedFilePath);
                     resolve(fixedFilePath);
                   } else {
@@ -152,15 +153,16 @@ export const startIpc = () => {
             dl.start();
           });
         }
+
         if (existsSync(newPath)) {
+          const pickIcon = isImage(newPath)
+            ? newPath.endsWith('.gif')
+              ? getAssetPath('icons8-gif-48.png')
+              : newPath
+            : getAssetPath('icons8-file-48.png');
           event.sender.startDrag({
             file: newPath,
-            icon: isImage(newPath)
-              ? newPath
-              : // ? NativeImage.createFromBuffer(
-                //     await sharp(newPath).resize(128).jpeg().toBuffer()
-                //   )
-                NativeImage.createFromDataURL(icon),
+            icon: pickIcon,
           });
         }
       } catch (error) {

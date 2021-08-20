@@ -146,6 +146,14 @@ autoUpdater.once('checking-for-update', () => {
   log.info('Checking for update...');
 
   autoUpdater.once('update-available', (info) => {
+    const notification = new Notification({
+      title: `Update found ${info.version}`,
+      body: 'Kit.app automatically relaunching',
+      silent: true,
+    });
+
+    notification.show();
+
     log.info('Update available.', info);
   });
   autoUpdater.once('update-not-available', (info) => {
@@ -168,13 +176,6 @@ autoUpdater.on('error', (message) => {
 
 autoUpdater.on('update-downloaded', async (event) => {
   log.info(event);
-  const notification = new Notification({
-    title: `Script Kit updated to ${event.version}`,
-    body: 'Kit.app automatically relaunching',
-  });
-
-  notification.show();
-
   log.info('update downloaded');
   log.info('attempting quitAndInstall');
   updateDownloaded = true;
@@ -606,8 +607,8 @@ const checkKit = async () => {
       `
   <body class="h-screen w-screen flex flex-col justify-evenly items-center">
     <h1 class="header pt-4">Configuring ~/.kit and ~/.kenv...</h1>
-    <img src="${getAssetPath('icon.png')}" class="w-20"/>
-    <div class="message p-4"></div>
+    <img src="${getAssetPath('icon.png')}" class="w-16"/>
+    <div class="message p-4 truncate"></div>
   </body>
   `,
       { frame: false },
