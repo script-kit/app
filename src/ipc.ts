@@ -13,7 +13,6 @@ import { MessageData, Script } from 'kit-bridge/cjs/type';
 import { existsSync, renameSync } from 'fs';
 import isImage from 'is-image';
 import { DownloaderHelper } from 'node-downloader-helper';
-import sharp from 'sharp';
 import detect from 'detect-file-type';
 import { emitter, KitEvent } from './events';
 
@@ -157,10 +156,11 @@ export const startIpc = () => {
           event.sender.startDrag({
             file: newPath,
             icon: isImage(newPath)
-              ? NativeImage.createFromBuffer(
-                  await sharp(newPath).resize(128).jpeg().toBuffer()
-                )
-              : NativeImage.createFromDataURL(icon),
+              ? newPath
+              : // ? NativeImage.createFromBuffer(
+                //     await sharp(newPath).resize(128).jpeg().toBuffer()
+                //   )
+                NativeImage.createFromDataURL(icon),
           });
         }
       } catch (error) {

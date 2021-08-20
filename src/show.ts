@@ -51,10 +51,7 @@ export const show = async (
     title: name,
     frame: false,
     transparent: true,
-    backgroundColor: nativeTheme.shouldUseDarkColors
-      ? '#33000000'
-      : '#C0FFFF00',
-    vibrancy: 'popover',
+    vibrancy: 'menu',
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
