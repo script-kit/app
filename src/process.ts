@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
-import { app, clipboard, screen } from 'electron';
+import { app, clipboard, Notification, screen } from 'electron';
 import http from 'http';
 import https from 'https';
 import url from 'url';
@@ -311,10 +311,26 @@ const kitMessageMap: ChannelHandler = {
     }
   },
   UPDATE_APP: () => {
-    autoUpdater.checkForUpdatesAndNotify({
-      title: 'Script Kit Updated',
-      body: 'Relaunching...',
+    autoUpdater.once('update-available', (info) => {
+      log.info('Update available.', info);
+      const notification = new Notification({
+        title: `Kit.app update available`,
+        body: `Downloading ${info.version}`,
+      });
+
+      notification.show();
     });
+    autoUpdater.once('update-not-available', (info) => {
+      log.info('Update not available.', info);
+
+      const notification = new Notification({
+        title: `Kit.app is on the latest version`,
+        body: `${info.version}`,
+      });
+
+      notification.show();
+    });
+    autoUpdater.checkForUpdates();
   },
   SET_CHOICES: (data) => {
     checkScriptChoices(data);

@@ -1,11 +1,5 @@
 /* eslint-disable react/require-default-props */
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useLayoutEffect,
-} from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 
 import { FixedSizeList as List } from 'react-window';
 import { useAtom } from 'jotai';
@@ -72,7 +66,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   //   }
   // });
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const newListHeight = choices.length * BUTTON_HEIGHT;
     setMainHeight(newListHeight);
   }, [choices, setMainHeight]);
