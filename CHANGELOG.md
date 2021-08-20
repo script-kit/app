@@ -1,3 +1,10 @@
+# [1.3.0-beta.53](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.52...v1.3.0-beta.53) (2021-08-20)
+
+
+### Bug Fixes
+
+* **app:** Removing sharp ([fb8a269](https://github.com/johnlindquist/kitapp/commit/fb8a2694fd5366194cdf4700027a1fc66122c835))
+
 # [1.3.0-alpha.117](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.116...v1.3.0-alpha.117) (2021-08-20)
 
 
