@@ -1,3 +1,10 @@
+# [1.3.0-beta.55](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.54...v1.3.0-beta.55) (2021-08-20)
+
+
+### Bug Fixes
+
+* **app:** dragging svgs ([3cbb1c9](https://github.com/johnlindquist/kitapp/commit/3cbb1c9455b14ea8586203df868d8ada8fc2afcf))
+
 # [1.3.0-alpha.119](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.118...v1.3.0-alpha.119) (2021-08-20)
 
 
