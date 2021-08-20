@@ -1,3 +1,10 @@
+# [1.3.0-alpha.116](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.115...v1.3.0-alpha.116) (2021-08-20)
+
+
+### Features
+
+* **app:** adding update notifications. Render tweaks ([e596dca](https://github.com/johnlindquist/kitapp/commit/e596dca097885de1c0caa1e86367882b0b4135d2))
+
 # [1.3.0-beta.51](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.50...v1.3.0-beta.51) (2021-08-19)
 
 
