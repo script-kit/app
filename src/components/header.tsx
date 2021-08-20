@@ -70,6 +70,7 @@ export default function Header() {
           {/* {dark ? 'Dark' : 'Light'} */}
           {/* {unfilteredChoices.length} : {choices.length} */}
           {/* {topHeight},{mainHeight},{maxHeight},{panelHTML?.length},{ui} */}
+          {/* {mouseDown ? `Mouse down` : `up`} */}
         </span>
         {/* <span className="dark:text-primary-light text-primary-dark col-span-3">
           {`top: ${topHeight} - main: ${mainHeight} - max: ${maxHeight} -`}
