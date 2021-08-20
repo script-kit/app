@@ -4,7 +4,11 @@ import { ipcMain, nativeImage as NativeImage } from 'electron';
 import log from 'electron-log';
 import { debounce, isUndefined } from 'lodash';
 import { Channel, ProcessType } from 'kit-bridge/cjs/enum';
-import { kitPath, getLogFromScriptPath } from 'kit-bridge/cjs/util';
+import {
+  kitPath,
+  getLogFromScriptPath,
+  tmpDownloadsDir,
+} from 'kit-bridge/cjs/util';
 import { MessageData, Script } from 'kit-bridge/cjs/type';
 import { existsSync, renameSync } from 'fs';
 import isImage from 'is-image';
@@ -124,11 +128,9 @@ export const startIpc = () => {
         let newPath = filePath;
         if (filePath.startsWith('http')) {
           newPath = await new Promise((resolve, reject) => {
-            const dl = new DownloaderHelper(
-              filePath,
-              kitPath('tmp', 'downloads'),
-              { override: true }
-            );
+            const dl = new DownloaderHelper(filePath, tmpDownloadsDir, {
+              override: true,
+            });
             dl.on('end', (info) => {
               const fp = info.filePath;
               detect.fromFile(

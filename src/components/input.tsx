@@ -79,7 +79,6 @@ export default function Input() {
 
           const ti = tabs.indexOf(tab);
           setTabIndex(ti);
-          setInput('');
           ipcRenderer.send(Channel.TAB_CHANGED, {
             tab,
             input: inputValue,
@@ -94,7 +93,6 @@ export default function Input() {
       unfilteredChoices,
       inputValue,
       setTabIndex,
-      setInput,
       pid,
       setSubmitValue,
     ]

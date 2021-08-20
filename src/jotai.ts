@@ -278,20 +278,18 @@ const topHeight = atom(88);
 const mainHeight = atom(0);
 
 const resize = (g: Getter, s: Setter) => {
-  asap(() => {
-    const data: ResizeData = {
-      topHeight: g(topHeight),
-      ui: g(uiAtom),
-      mainHeight: g(mainHeight),
-      filePath: g(script).filePath,
-      mode: g(modeAtom),
-      hasChoices: Boolean(g(choices)?.length),
-      hasPanel: Boolean(g(panelHTMLAtom)?.length),
-      hasInput: Boolean(g(inputAtom)?.length),
-      open: g(rawOpen),
-    };
-    ipcRenderer.send(AppChannel.RESIZE, data);
-  });
+  const data: ResizeData = {
+    topHeight: g(topHeight),
+    ui: g(uiAtom),
+    mainHeight: g(mainHeight),
+    filePath: g(script).filePath,
+    mode: g(modeAtom),
+    hasChoices: Boolean(g(choices)?.length),
+    hasPanel: Boolean(g(panelHTMLAtom)?.length),
+    hasInput: Boolean(g(inputAtom)?.length),
+    open: g(rawOpen),
+  };
+  ipcRenderer.send(AppChannel.RESIZE, data);
 };
 
 export const topHeightAtom = atom(
@@ -345,6 +343,7 @@ export const promptDataAtom = atom(
   (g, s, a: null | PromptData) => {
     if (a) {
       s(rawOpen, true);
+      s(rawInputAtom, '');
       s(submittedAtom, false);
       s(uiAtom, a.ui);
       s(panelHTMLAtom, '');
@@ -352,7 +351,6 @@ export const promptDataAtom = atom(
       s(tabsAtom, a?.tabs || []);
       s(selectedAtom, a?.selected || '');
     }
-    console.log(a);
     s(promptData, a);
   }
 );
@@ -431,7 +429,7 @@ export const submitValueAtom = atom(
     asap(() => {
       s(submittedAtom, true);
       s(indexAtom, 0);
-      s(rawInputAtom, '');
+      // s(rawInputAtom, '');
 
       s(flaggedValueAtom, ''); // clear after getting
       s(flagAtom, '');
@@ -445,11 +443,9 @@ export const openAtom = atom(
   (g, s, a: boolean) => {
     s(mouseEnabledAtom, 0);
     if (g(rawOpen) && a === false) {
-      ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: g(pidAtom) });
-      // setChoices([]);
-      // s(scoredChoices, []);
+      // s(choices, []);
       s(tabIndex, 0);
-      s(inputAtom, '');
+      s(rawInputAtom, '');
       s(panelHTMLAtom, '');
       s(formHTMLAtom, '');
       s(promptDataAtom, null);
@@ -458,6 +454,7 @@ export const openAtom = atom(
       s(uiAtom, UI.arg);
       s(flagsAtom, {});
       s(flaggedValueAtom, '');
+      ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: g(pidAtom) });
     }
     s(rawOpen, a);
   }

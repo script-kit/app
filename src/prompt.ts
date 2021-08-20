@@ -4,7 +4,7 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
-import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
+import { Channel, Mode, ProcessType, UI } from 'kit-bridge/cjs/enum';
 import { Choice, Script, PromptData, PromptBounds } from 'kit-bridge/cjs/type';
 
 import { BrowserWindow, screen, nativeTheme, app } from 'electron';
@@ -51,9 +51,6 @@ export const createPromptWindow = async () => {
     useContentSize: true,
     frame: false,
     transparent: true,
-    backgroundColor: nativeTheme.shouldUseDarkColors
-      ? '#33000000'
-      : '#C0FFFF00',
     vibrancy: 'menu',
     visualEffectState: 'active',
     show: false,
@@ -101,7 +98,7 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.on('blur', () => {
-    if (promptScript.filePath !== mainScriptPath && ignoreBlur) {
+    if (promptScript?.filePath !== mainScriptPath && ignoreBlur) {
       promptWindow.setVibrancy('hud');
     } else {
       hidePromptWindow();
@@ -164,6 +161,14 @@ export const focusPrompt = () => {
 };
 
 export const escapePromptWindow = () => {
+  promptScript = {
+    command: '',
+    filePath: '',
+    type: ProcessType.Prompt,
+    kenv: '',
+    requiresPrompt: false,
+    name: '',
+  };
   blurredByKit = false;
   hideAppIfNoWindows();
 };
@@ -209,7 +214,7 @@ export const getDefaultBounds = (currentScreen: Display) => {
     currentScreen.workAreaSize;
 
   const height = Math.round(
-    promptScript.filePath.includes(kitPath()) || instantChoices.length
+    promptScript?.filePath.includes(kitPath()) || instantChoices.length
       ? DEFAULT_HEIGHT
       : currentUI === UI.arg
       ? guessTopHeight(promptScript)
@@ -434,7 +439,7 @@ export const setScript = async (script: Script) => {
       );
     }
   }
-  // log.info({ length: instantChoices.length, path: script.filePath });
+  log.info({ length: instantChoices.length, path: script.filePath });
 
   if (instantChoices.length) setChoices(instantChoices);
 };

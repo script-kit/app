@@ -63,6 +63,7 @@ import {
   PATH,
   isDir,
   mainScriptPath,
+  tmpDownloadsDir,
 } from 'kit-bridge/cjs/util';
 import { getPrefsDb, getShortcutsDb } from 'kit-bridge/cjs/db';
 import { createTray, destroyTray } from './tray';
@@ -99,10 +100,7 @@ const options: SpawnSyncOptions = {
 };
 
 powerMonitor.on('resume', () => {
-  autoUpdater.checkForUpdatesAndNotify({
-    title: 'Script Kit Updated',
-    body: 'Relaunching...',
-  });
+  autoUpdater.checkForUpdates();
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -146,15 +144,17 @@ const installExtensions = async () => {
   });
 };
 
-autoUpdater.on('checking-for-update', () => {
+autoUpdater.once('checking-for-update', () => {
   log.info('Checking for update...');
+
+  autoUpdater.once('update-available', (info) => {
+    log.info('Update available.', info);
+  });
+  autoUpdater.once('update-not-available', (info) => {
+    log.info('Update not available.', info);
+  });
 });
-autoUpdater.on('update-available', (info) => {
-  log.info('Update available.', info);
-});
-autoUpdater.on('update-not-available', (info) => {
-  log.info('Update not available.', info);
-});
+
 autoUpdater.on('download-progress', (progressObj) => {
   let logMessage = `Download speed: ${progressObj.bytesPerSecond}`;
   logMessage = `${logMessage} - Downloaded ${progressObj.percent}%`;
@@ -168,45 +168,45 @@ autoUpdater.on('error', (message) => {
   console.error(message);
 });
 
-autoUpdater.on(
-  'update-downloaded',
-  async (event, releaseNotes, releaseName) => {
-    const notification = new Notification({
-      icon: getAssetPath('icon.png'),
-      title: 'Script Kit update downloaded',
-      body: 'Applying update and restarting app...',
-    });
-    log.info('update downloaded');
-    log.info('attempting quitAndInstall');
-    updateDownloaded = true;
-    try {
-      await storeVersion(getVersion());
-    } catch {
-      log.warn(`Couldn't store previous version`);
-    }
-    callBeforeQuitAndInstall();
-    autoUpdater.quitAndInstall();
-    const allWindows = BrowserWindow.getAllWindows();
-    allWindows.forEach((w) => {
-      w?.destroy();
-    });
-    setTimeout(() => {
-      log.info('quit and exit');
-      app.quit();
-      app.exit();
-    }, 3000);
+autoUpdater.on('update-downloaded', async (event) => {
+  log.info(event);
+  const notification = new Notification({
+    title: `Script Kit updated to ${event.version}`,
+    body: 'Kit.app automatically relaunching',
+  });
 
-    spawn(`./script`, [`./cli/open-app.js`], {
-      cwd: KIT,
-      detached: true,
-      env: {
-        KIT,
-        KENV: kenvPath(),
-        PATH,
-      },
-    });
+  notification.show();
+
+  log.info('update downloaded');
+  log.info('attempting quitAndInstall');
+  updateDownloaded = true;
+  try {
+    await storeVersion(getVersion());
+  } catch {
+    log.warn(`Couldn't store previous version`);
   }
-);
+  callBeforeQuitAndInstall();
+  autoUpdater.quitAndInstall();
+  const allWindows = BrowserWindow.getAllWindows();
+  allWindows.forEach((w) => {
+    w?.destroy();
+  });
+  setTimeout(() => {
+    log.info('quit and exit');
+    app.quit();
+    app.exit();
+  }, 3000);
+
+  spawn(`./script`, [`./cli/open-app.js`], {
+    cwd: KIT,
+    detached: true,
+    env: {
+      KIT,
+      KENV: kenvPath(),
+      PATH,
+    },
+  });
+});
 
 app.on('window-all-closed', (e: Event) => {
   if (!updateDownloaded) e.preventDefault();
@@ -290,6 +290,7 @@ const ensureKitDirs = async () => {
   await ensureDir(kitPath('logs'));
   await ensureDir(kitPath('db'));
   await ensureDir(tmpClipboardDir);
+  await ensureDir(tmpDownloadsDir);
   await getPrefsDb();
   await getShortcutsDb();
 };
@@ -599,10 +600,7 @@ const checkKit = async () => {
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
   autoUpdater.logger = log;
-  autoUpdater.checkForUpdatesAndNotify({
-    title: 'Script Kit Updated',
-    body: 'Relaunching...',
-  });
+  autoUpdater.checkForUpdates();
 
   if (!kitExists() || (await versionMismatch())) {
     configWindow = await show(

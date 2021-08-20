@@ -59,7 +59,7 @@ export default function ChoiceButton({
   const { choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit } =
     data;
   const scoredChoice = choices[index];
-  const choice: Choice | Script = scoredChoice.item;
+  const choice: Choice | Script = scoredChoice?.item || scoredChoice;
 
   const [mouseDown, setMouseDown] = useState(false);
   const [flags] = useAtom(flagsAtom);
