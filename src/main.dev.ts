@@ -61,8 +61,6 @@ import {
   kitPath,
   tmpClipboardDir,
   PATH,
-  isDir,
-  mainScriptPath,
   tmpDownloadsDir,
 } from 'kit-bridge/cjs/util';
 import { getPrefsDb, getShortcutsDb } from 'kit-bridge/cjs/db';
@@ -606,7 +604,7 @@ const checkKit = async () => {
     configWindow = await show(
       'splash-setup',
       `
-  <body class="h-screen w-screen flex flex-col justify-evenly items-center dark:bg-gray-800 dark:text-white bg-opacity-70">
+  <body class="h-screen w-screen flex flex-col justify-evenly items-center">
     <h1 class="header pt-4">Configuring ~/.kit and ~/.kenv...</h1>
     <img src="${getAssetPath('icon.png')}" class="w-20"/>
     <div class="message p-4"></div>

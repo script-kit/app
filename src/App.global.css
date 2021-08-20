@@ -51,6 +51,7 @@ img:after {
 body {
   @apply transition duration-1000;
   @apply bg-bg-light dark:bg-bg-dark;
+  @apply text-black dark:text-white;
   @apply bg-opacity-themelight dark:bg-opacity-themedark;
   @apply subpixel-antialiased;
   @apply overflow-hidden;

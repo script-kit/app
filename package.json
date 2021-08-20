@@ -18,7 +18,8 @@
     "test": "jest",
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
     "refresh-zips": "rm ./assets/*.zip || true && download https://github.com/johnlindquist/kit/archive/refs/heads/alpha.zip > ./assets/kit.zip && download https://github.com/johnlindquist/kenv/archive/refs/heads/alpha.zip > ./assets/kenv.zip",
-    "mac": "yarn build && DEBUG_PROD=true electron-builder build --mac dmg -c.mac.identity=null && open ./release/mac/Kit.app"
+    "mac": "yarn build && DEBUG_PROD=true electron-builder build --mac dmg -c.mac.identity=null && open ./release/mac/Kit.app",
+    "m1": "yarn build && DEBUG_PROD=true electron-builder build --mac --arm64 -c.mac.identity=null --publish never  && open ./release/mac-arm64"
   },
   "lint-staged": {
     "*.{jsx,ts,tsx}": [
