@@ -245,6 +245,9 @@ export default function App() {
   const onMouseUp = useCallback(() => {
     setIsMouseDown(false);
   }, [setIsMouseDown]);
+  const onMouseLeave = useCallback(() => {
+    setIsMouseDown(false);
+  }, [setIsMouseDown]);
 
   const onMouseMove = useCallback(() => {
     setMouseEnabled(1);
@@ -262,6 +265,7 @@ export default function App() {
         className="relative flex flex-col w-full h-full"
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
         onMouseMove={onMouseMove}
       >
         <header ref={headerRef}>

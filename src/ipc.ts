@@ -156,8 +156,8 @@ export const startIpc = () => {
 
         if (existsSync(newPath)) {
           const pickIcon = isImage(newPath)
-            ? newPath.endsWith('.gif')
-              ? getAssetPath('icons8-gif-48.png')
+            ? newPath.endsWith('.gif') || newPath.endsWith('.svg')
+              ? getAssetPath('icons8-image-file-24.png')
               : newPath
             : getAssetPath('icons8-file-48.png');
           event.sender.startDrag({

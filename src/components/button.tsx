@@ -119,10 +119,6 @@ export default function ChoiceButton({
     [choice]
   );
 
-  const onDragEnd = useCallback(() => {
-    setIsMouseDown(false);
-  }, [setIsMouseDown]);
-
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button
@@ -131,7 +127,6 @@ export default function ChoiceButton({
         ? {
             draggable: true,
             onDragStart,
-            onDragEnd,
           }
         : {})}
       onContextMenu={onRightClick}
