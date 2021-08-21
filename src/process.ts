@@ -13,6 +13,7 @@ import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
 import { Channel, Mode, ProcessType } from 'kit-bridge/cjs/enum';
 import { Choice, MessageData, Script, PromptData } from 'kit-bridge/cjs/type';
+import { getAppDb } from 'kit-bridge/cjs/db';
 
 import {
   resolveToScriptPath,
@@ -239,8 +240,11 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
 
-  SET_LOGIN: (data) => {
+  SET_LOGIN: async (data: any) => {
     app.setLoginItemSettings(data);
+    const appDb = await getAppDb();
+    appDb.openAtLogin = data?.openAtLogin;
+    await appDb.write();
   },
 
   SET_MODE: (data) => {

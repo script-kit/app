@@ -77,7 +77,7 @@ export const unfilteredChoicesAtom = atom(
       minimumScore: 0.5,
       config: createConfig({
         stringRange: new Range(0, 50),
-        maxIterations: 100,
+        maxIterations: 50,
       }),
     });
     s(quickScoreAtom, qs);

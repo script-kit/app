@@ -89,7 +89,11 @@ export const createPromptWindow = async () => {
   // });
 
   promptWindow.on('focus', () => {
-    promptWindow.setVibrancy('popover');
+    // sendToPrompt(Channel.SET_THEME, {
+    //   '--opacity-themedark': '33%',
+    //   '--opacity-themelight': '33%',
+    // });
+    promptWindow?.setVibrancy('menu');
   });
 
   promptWindow.on('hide', () => {
@@ -99,7 +103,11 @@ export const createPromptWindow = async () => {
 
   promptWindow?.on('blur', () => {
     if (promptScript?.filePath !== mainScriptPath && ignoreBlur) {
-      promptWindow.setVibrancy('hud');
+      // sendToPrompt(Channel.SET_THEME, {
+      //   '--opacity-themedark': '0%',
+      //   '--opacity-themelight': '0%',
+      // });
+      promptWindow?.setVibrancy('popover');
     } else {
       hidePromptWindow();
     }
