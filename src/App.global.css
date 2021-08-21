@@ -49,7 +49,7 @@ img:after {
 }
 
 body {
-  @apply transition duration-1000;
+  @apply transition duration-200;
   @apply bg-bg-light dark:bg-bg-dark;
   @apply text-black dark:text-white;
   @apply bg-opacity-themelight dark:bg-opacity-themedark;
