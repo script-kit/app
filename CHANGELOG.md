@@ -1,3 +1,10 @@
+# [1.3.0-beta.56](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.55...v1.3.0-beta.56) (2021-08-21)
+
+
+### Features
+
+* **app:** toggle login launch setting ([c453e26](https://github.com/johnlindquist/kitapp/commit/c453e269dc47ea5c43a4184a5991baa7e635a706))
+
 # [1.3.0-alpha.120](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.119...v1.3.0-alpha.120) (2021-08-21)
 
 
