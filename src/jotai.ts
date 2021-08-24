@@ -1,10 +1,12 @@
+/* eslint-disable no-useless-escape */
+/* eslint-disable no-plusplus */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable guard-for-in */
 import { atom, Getter, Setter } from 'jotai';
-import { QuickScore, Range, createConfig } from 'quick-score';
+import { QuickScore, Range, createConfig, quickScore } from 'quick-score';
 import asap from 'asap';
 
 import { Channel, Mode, ProcessType, UI } from 'kit-bridge/cjs/enum';
@@ -42,11 +44,8 @@ export const placeholderAtom = atom(
 interface QuickScoreInterface {
   search: (query: string) => ScoredChoice[];
 }
-const search = (
-  quickScore: QuickScoreInterface,
-  term: string
-): ScoredChoice[] => {
-  return quickScore?.search(term);
+const search = (qs: QuickScoreInterface, term: string): ScoredChoice[] => {
+  return qs?.search(term.replaceAll(' ', ''));
 };
 
 const createScoredChoice = (item: Choice): ScoredChoice => {
@@ -60,25 +59,59 @@ const createScoredChoice = (item: Choice): ScoredChoice => {
 
 export const quickScoreAtom = atom<QuickScoreInterface | null>(null);
 const unfilteredChoices = atom<Choice[]>([]);
+
+function containsSpecialCharacters(str: string) {
+  const regex = /[ !@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/g;
+  return regex.test(str);
+}
+
+const precede = `(:?(^|\\W))`;
+function scorer(string: string, query: string, matches: number[][]) {
+  // avoid regex being passed in
+  if (!containsSpecialCharacters(query)) {
+    const r = new RegExp(`${precede}${query}`, 'i');
+    const match = string.match(r);
+    if (match) {
+      const index = match?.index || 0;
+      // const first = index === 0;
+      const start = index ? index + 1 : index;
+      const length = match[0]?.length - (index ? 1 : 0);
+      const ms = [start, start + length];
+      matches.push(ms);
+      return 1 - start / 100;
+    }
+  }
+
+  return quickScore(
+    string,
+    query,
+    matches,
+    undefined,
+    undefined,
+    createConfig({
+      maxIterations: 2 ** 8,
+    }),
+    new Range(0, 150)
+  );
+}
+
+const keys = [
+  'name',
+  'description',
+  'kenv',
+  'command',
+  'friendlyShortcut',
+  'tag',
+].map((name) => ({ name, scorer }));
+
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[]) => {
     s(unfilteredChoices, a);
 
     const qs = new QuickScore(a, {
-      keys: [
-        'name',
-        'description',
-        'kenv',
-        'command',
-        'friendlyShortcut',
-        'tag',
-      ],
-      minimumScore: 0.5,
-      config: createConfig({
-        stringRange: new Range(0, 50),
-        maxIterations: 50,
-      }),
+      keys,
+      minimumScore: 0.3,
     });
     s(quickScoreAtom, qs);
     if (g(modeAtom) === Mode.GENERATE) {
@@ -201,6 +234,20 @@ export const choicesAtom = atom((g) =>
 
 export const rawInputAtom = atom('');
 
+const generateChoices = debounce((input, pid) => {
+  ipcRenderer.send(Channel.GENERATE_CHOICES, {
+    input,
+    pid,
+  });
+}, 150);
+
+const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
+  if (!a) return false;
+  const result = search(qs, a);
+  s(scoredChoices, result);
+  return true;
+}, 50);
+
 export const inputAtom = atom(
   (g) => g(rawInputAtom),
   (g, s, a: string) => {
@@ -209,13 +256,25 @@ export const inputAtom = atom(
     s(indexAtom, 0);
     s(rawInputAtom, a);
 
-    const quickScore = g(quickScoreAtom);
+    const qs = g(quickScoreAtom);
+    const mode = g(modeAtom);
+    const un = g(unfilteredChoicesAtom);
 
-    if (quickScore && a) {
-      s(scoredChoices, search(quickScore, a));
-    } else {
-      const un = g(unfilteredChoicesAtom);
-      if (un.length) s(scoredChoices, un.map(createScoredChoice));
+    if (mode === Mode.FILTER) {
+      if (qs && a) {
+        if (un.length < 1000) {
+          const result = search(qs, a);
+          s(scoredChoices, result);
+        } else {
+          debounceSearch(qs, s, a);
+        }
+      } else if (un.length) {
+        s(scoredChoices, un.map(createScoredChoice));
+      }
+    }
+
+    if (mode === Mode.GENERATE) {
+      generateChoices(a, g(pidAtom));
     }
   }
 );
