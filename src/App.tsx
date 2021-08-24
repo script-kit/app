@@ -22,10 +22,9 @@ import React, {
 import { useAtom } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
-import { useDebouncedCallback } from 'use-debounce';
 import { ipcRenderer } from 'electron';
 
-import { Channel, Mode, UI } from 'kit-bridge/cjs/enum';
+import { Channel, UI } from 'kit-bridge/cjs/enum';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
@@ -156,45 +155,7 @@ export default function App() {
 
   useThemeDetector();
 
-  // useDebouncedEffect(
-  //   () => {
-  //     const choice = choices[index];
-  //     if (choice?.filePath && mouseEnabled) {
-  //       const filePath = choice?.filePath;
-  //       const encoding = 'utf-8';
-  //       ipcRenderer.send(AppChannel.READ_FILE_CONTENTS, { filePath, encoding });
-  //     }
-  //   },
-  //   250,
-  //   [index, mouseEnabled, choices]
-  // );
-
   const [isMouseDown, setIsMouseDown] = useAtom(isMouseDownAtom);
-
-  // useEffect(() => {
-  //   if (choices?.length > 0 && choices?.[index]) {
-  //     ipcRenderer.send(CHOICE_FOCUSED, {
-  //       index,
-  //       pid,
-  //     });
-  //   }
-  //   if (choices?.length === 0) {
-  //     ipcRenderer.send(CHOICE_FOCUSED, { index: null, pid });
-  //   }
-  // }, [choices, index, pid]);
-
-  const generateChoices = useDebouncedCallback((input, mode) => {
-    if (mode === Mode.GENERATE) {
-      ipcRenderer.send(Channel.GENERATE_CHOICES, {
-        input,
-        pid,
-      });
-    }
-  }, 150);
-
-  useEffect(() => {
-    if (!submitted) generateChoices(inputValue, mode);
-  }, [mode, inputValue, tabIndex, submitted, generateChoices]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const messageMap = {
