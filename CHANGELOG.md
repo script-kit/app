@@ -1,3 +1,10 @@
+# [1.3.0-beta.57](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.56...v1.3.0-beta.57) (2021-08-24)
+
+
+### Features
+
+* **app:** improving search ([3bb7204](https://github.com/johnlindquist/kitapp/commit/3bb7204c82c9534e9d61ed0e1400a8cc5352793c))
+
 # [1.3.0-alpha.121](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.120...v1.3.0-alpha.121) (2021-08-24)
 
 
