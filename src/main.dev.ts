@@ -521,7 +521,7 @@ ${mainLog}
 };
 
 const unzipToHome = async (zipFile: string, outDir: string) => {
-  setupLog(`Unzipping ${zipFile} to ${outDir}`);
+  setupLog(`Extracting ${zipFile} to ${outDir}`);
   const tmpDir = path.join(app.getPath('home'), '.kit-install-tmp');
   const file = await Open.file(zipFile);
   await file.extract({ path: tmpDir, concurrency: 5 });

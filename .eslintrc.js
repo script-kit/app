@@ -26,5 +26,5 @@ module.exports = {
       '@typescript-eslint/parser': ['.ts', '.tsx'],
     },
   },
-  eslintIgnore: ['./scripts/*'],
+  ignorePatterns: ['./scripts/*.js'],
 };
