@@ -1,3 +1,10 @@
+# [1.3.0-alpha.122](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.121...v1.3.0-alpha.122) (2021-09-07)
+
+
+### Features
+
+* **kit:** switch to @johlindquist/kit ([8046bc6](https://github.com/johnlindquist/kitapp/commit/8046bc6328e45f912404edf225a2e9582631ec94))
+
 # [1.3.0-beta.57](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.56...v1.3.0-beta.57) (2021-08-24)
 
 
