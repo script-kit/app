@@ -30,9 +30,16 @@ jobs:
           echo "${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}"
           echo "release_channel=${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
 
+      - name: Find kit ${{ env.release_channel }} release
+        uses: sergeysova/jq-action@v2
+        id: kit_release
+        with:
+          cmd: 'curl https://api.github.com/repos/johnlindquist/kit/releases | jq ''[.[]|select(.name=="${{ env.release_channel }}")][0].assets[0].browser_download_url'''
+
+      #
       - name: Curl kit.zip
         run: |
-          curl -L https://github.com/johnlindquist/kit/archive/refs/heads/${{ env.release_channel }}.zip -o ./../kit.zip
+          curl -L ${{ steps.kit_release.outputs.value }} -o ./../kit.zip
 
       - name: Curl kenv.zip
         run: |
