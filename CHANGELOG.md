@@ -1,3 +1,11 @@
+# [1.3.0-alpha.123](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.122...v1.3.0-alpha.123) (2021-09-07)
+
+
+### Bug Fixes
+
+* **build:** grab kit release .zip ([84265b6](https://github.com/johnlindquist/kitapp/commit/84265b646a650dbd32142e963479eb91cbdc3eb7))
+* **release:** get kit.zip from github releases ([11987b5](https://github.com/johnlindquist/kitapp/commit/11987b5f02f031fe18c2122c8356e76491825847))
+
 # [1.3.0-alpha.122](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.121...v1.3.0-alpha.122) (2021-09-07)
 
 
