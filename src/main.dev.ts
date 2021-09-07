@@ -504,7 +504,7 @@ ${mainLog}
 
   <h2>Error: ${error.message}</h2>
 
-  <textarea class="font-mono w-full h-full text-xs">${mainLog}</textarea>
+  <textarea class="font-mono w-full h-full text-xs text-black">${mainLog}</textarea>
   </body>
   `
   );
