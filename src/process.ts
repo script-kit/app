@@ -11,9 +11,14 @@ import sizeOf from 'image-size';
 import { autoUpdater } from 'electron-updater';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
-import { Channel, Mode, ProcessType } from 'kit-bridge/cjs/enum';
-import { Choice, MessageData, Script, PromptData } from 'kit-bridge/cjs/type';
-import { getAppDb } from 'kit-bridge/cjs/db';
+import { Channel, Mode, ProcessType } from '@johnlindquist/kit/cjs/enum';
+import {
+  Choice,
+  MessageData,
+  Script,
+  PromptData,
+} from '@johnlindquist/kit/cjs/type';
+import { getAppDb } from '@johnlindquist/kit/cjs/db';
 
 import {
   resolveToScriptPath,
@@ -24,7 +29,7 @@ import {
   kenvPath,
   kitDotEnv,
   execPath,
-} from 'kit-bridge/cjs/util';
+} from '@johnlindquist/kit/cjs/util';
 
 import { getLog } from './logs';
 import {
@@ -426,6 +431,7 @@ const createChild = ({
     execPath,
     env: {
       ...process.env,
+      NODE_NO_WARNINGS: '1',
       KIT_CONTEXT: 'app',
       KIT_MAIN: scriptPath,
       PATH,

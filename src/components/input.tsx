@@ -2,8 +2,8 @@
 /* eslint-disable react/prop-types */
 import React, { useCallback, KeyboardEvent, LegacyRef, useEffect } from 'react';
 
-import { Channel } from 'kit-bridge/cjs/enum';
-import { Choice } from 'kit-bridge/cjs/type';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Choice } from '@johnlindquist/kit/cjs/type';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 

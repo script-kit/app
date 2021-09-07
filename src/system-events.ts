@@ -1,7 +1,7 @@
 import { powerMonitor } from 'electron';
 import log from 'electron-log';
-import { ProcessType } from 'kit-bridge/cjs/enum';
-import { Script } from 'kit-bridge/cjs/type';
+import { ProcessType } from '@johnlindquist/kit/cjs/enum';
+import { Script } from '@johnlindquist/kit/cjs/type';
 import { processes } from './process';
 
 const validSystemEvents = [

@@ -2,7 +2,12 @@
 import chokidar, { FSWatcher } from 'chokidar';
 import log from 'electron-log';
 import { debounce } from 'lodash';
-import { appDbPath, info, kenvPath, shortcutsPath } from 'kit-bridge/cjs/util';
+import {
+  appDbPath,
+  info,
+  kenvPath,
+  shortcutsPath,
+} from '@johnlindquist/kit/cjs/util';
 import {
   unlinkShortcuts,
   updateMainShortcut,

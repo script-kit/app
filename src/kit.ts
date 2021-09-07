@@ -7,8 +7,13 @@ import { app } from 'electron';
 import minimist from 'minimist';
 import log from 'electron-log';
 
-import { Channel, ProcessType } from 'kit-bridge/cjs/enum';
-import { info, kenvPath, kitPath, mainScriptPath } from 'kit-bridge/cjs/util';
+import { Channel, ProcessType } from '@johnlindquist/kit/cjs/enum';
+import {
+  info,
+  kenvPath,
+  kitPath,
+  mainScriptPath,
+} from '@johnlindquist/kit/cjs/util';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 import { setPromptPid, setScript } from './prompt';

@@ -6,9 +6,9 @@ import { app } from 'electron';
 import log from 'electron-log';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
-import { Script } from 'kit-bridge/cjs/type';
-import { getScripts, getAppDb } from 'kit-bridge/cjs/db';
-import { info, kitPath, mainScriptPath } from 'kit-bridge/cjs/util';
+import { Script } from '@johnlindquist/kit/cjs/type';
+import { getScripts, getAppDb } from '@johnlindquist/kit/cjs/db';
+import { info, kitPath, mainScriptPath } from '@johnlindquist/kit/cjs/util';
 
 export const makeRestartNecessary = async () => {
   const appDb = await getAppDb();

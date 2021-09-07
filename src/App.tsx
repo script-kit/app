@@ -24,7 +24,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
 
-import { Channel, UI } from 'kit-bridge/cjs/enum';
+import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';

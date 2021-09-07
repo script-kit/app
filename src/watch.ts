@@ -3,8 +3,8 @@ import log from 'electron-log';
 import chokidar from 'chokidar';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
-import { Script } from 'kit-bridge/cjs/type';
-import { ProcessType } from 'kit-bridge/cjs/enum';
+import { Script } from '@johnlindquist/kit/cjs/type';
+import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { processes } from './process';
 
 export const watchMap = new Map();

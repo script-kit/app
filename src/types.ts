@@ -1,5 +1,5 @@
-import { Choice } from 'kit-bridge/cjs/type';
-import { Mode, UI } from 'kit-bridge/cjs/enum';
+import { Choice } from '@johnlindquist/kit/cjs/type';
+import { Mode, UI } from '@johnlindquist/kit/cjs/enum';
 
 export interface ScoredChoice {
   item: Choice;

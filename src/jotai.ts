@@ -9,7 +9,7 @@ import { atom, Getter, Setter } from 'jotai';
 import { QuickScore, Range, createConfig, quickScore } from 'quick-score';
 import asap from 'asap';
 
-import { Channel, Mode, ProcessType, UI } from 'kit-bridge/cjs/enum';
+import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
 import {
   Choice,
@@ -18,7 +18,7 @@ import {
   TextareaConfig,
   PromptData,
   EditorOptions,
-} from 'kit-bridge/cjs/type';
+} from '@johnlindquist/kit/cjs/type';
 import { clamp, debounce, drop } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
@@ -428,9 +428,10 @@ export const flagValueAtom = atom(
       s(inputAtom, '');
       s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
 
-      const flagChoices = Object.entries(g(flagsAtom)).map(
+      const flagChoices: Choice[] = Object.entries(g(flagsAtom)).map(
         ([key, value]: [key: string, value: any]) => {
           return {
+            command: value?.name,
             filePath: value?.name,
             name: value?.name || key,
             shortcut: value?.shortcut || '',

@@ -55,15 +55,15 @@ import {
   rmdir,
 } from 'fs/promises';
 import { Open, Parse } from 'unzipper';
-import { ProcessType } from 'kit-bridge/cjs/enum';
+import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   kenvPath,
   kitPath,
   tmpClipboardDir,
   PATH,
   tmpDownloadsDir,
-} from 'kit-bridge/cjs/util';
-import { getPrefsDb, getShortcutsDb } from 'kit-bridge/cjs/db';
+} from '@johnlindquist/kit/cjs/util';
+import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
 import { createTray, destroyTray } from './tray';
 import { cacheMenu, setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
@@ -372,7 +372,7 @@ const kitExists = () => {
   return doesKitExist;
 };
 const kitIsGit = () => {
-  const isGit = existsSync(kitPath('.git'));
+  const isGit = existsSync(kitPath('.kitignore'));
   setupLog(`kit is${isGit ? `` : ` not`} a .git repo`);
   return isGit;
 };
@@ -632,7 +632,7 @@ const checkKit = async () => {
 
       if (!nodeExists()) {
         setupLog(`Adding node to ~/.kit...`);
-        const installScript = `./install-node.sh`;
+        const installScript = `./build/install-node.sh`;
         await chmod(kitPath(installScript), 0o755);
         const nodeInstallResult = spawnSync(
           installScript,
@@ -643,7 +643,11 @@ const checkKit = async () => {
       }
 
       setupLog(`updating ~/.kit packages...`);
-      const npmResult = spawnSync(`npm`, [`i`], options);
+      const npmResult = spawnSync(
+        `npm`,
+        [`i`, `--loglevel`, `verbose`],
+        options
+      );
       await handleSpawnReturns(`npm`, npmResult);
     }
 

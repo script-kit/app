@@ -28,14 +28,15 @@ jobs:
       - name: Show ref
         run: |
           echo "${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}"
+          echo "release_channel=${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
 
       - name: Curl kit.zip
         run: |
-          curl -L https://github.com/johnlindquist/kit/archive/refs/heads/${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}.zip -o ./../kit.zip
+          curl -L https://github.com/johnlindquist/kit/archive/refs/heads/${{ env.release_channel }}.zip -o ./../kit.zip
 
       - name: Curl kenv.zip
         run: |
-          curl -L https://github.com/johnlindquist/kenv/archive/refs/heads/${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}.zip -o ./../kenv.zip
+          curl -L https://github.com/johnlindquist/kenv/archive/refs/heads/${{ env.release_channel }}.zip -o ./../kenv.zip
 
       - name: ls parent paths
         run: |
@@ -52,9 +53,10 @@ jobs:
 
       - uses: c-hive/gha-yarn-cache@v1
 
-      - name: Install dependencies
+      - name: Match kit to release_channel
         run: |
-          yarn install --network-timeout 1000000
+          yarn remove @johnlindquist/kit
+          yarn add "@johnlindquist/kit@${{ env.release_channel }}" --network-timeout 1000000
 
       - name: electron-build install
         run: |
