@@ -1,3 +1,11 @@
+# [1.3.0-alpha.127](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.126...v1.3.0-alpha.127) (2021-09-08)
+
+
+### Bug Fixes
+
+* **build:** electron v14 ([f8a69b3](https://github.com/johnlindquist/kitapp/commit/f8a69b3552770a6c9e42090f6dc7e3df06697b54))
+* **build:** release zip as .kit ([ae14512](https://github.com/johnlindquist/kitapp/commit/ae14512b10d21271ab671bbe51229d4d9f977469))
+
 # [1.3.0-alpha.126](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.125...v1.3.0-alpha.126) (2021-09-08)
 
 
