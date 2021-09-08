@@ -45,7 +45,11 @@ jobs:
 
       - uses: c-hive/gha-yarn-cache@v1
 
-      - name: electron-build install
+      - name: yarn
+        run: |
+          yarn
+
+      - name: yarn install-electron-deps
         run: |
           yarn install-electron-deps
 
