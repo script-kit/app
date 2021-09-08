@@ -1,3 +1,11 @@
+# [1.3.0-alpha.128](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.127...v1.3.0-alpha.128) (2021-09-08)
+
+
+### Bug Fixes
+
+* **build:** build assets from script ([8ab7638](https://github.com/johnlindquist/kitapp/commit/8ab7638f0afeda49a57fcd43110ba6c8a3df2dc1))
+* **build:** build assets from script ([caa15ff](https://github.com/johnlindquist/kitapp/commit/caa15ffa93c1230871603cf9ca4e58768f164bfc))
+
 # [1.3.0-alpha.127](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.126...v1.3.0-alpha.127) (2021-09-08)
 
 
