@@ -32,11 +32,11 @@ jobs:
 
       - name: Curl kit.zip
         run: |
-          curl -L "https://www.scriptkit.com/api/get-release?channel=${{ env.release_channel }}" -o ./../kit.zip
+          curl -v -L "https://www.scriptkit.com/api/get-release?channel=${{ env.release_channel }}" -o ./../kit.zip
 
       - name: Curl kenv.zip
         run: |
-          curl -L https://github.com/johnlindquist/kenv/archive/refs/heads/${{ env.release_channel }}.zip -o ./../kenv.zip
+          curl -v -L https://github.com/johnlindquist/kenv/archive/refs/heads/${{ env.release_channel }}.zip -o ./../kenv.zip
 
       - name: ls parent paths
         run: |
