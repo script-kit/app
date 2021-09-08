@@ -547,10 +547,12 @@ const unzipKit = async () => {
     const fileName = entry.path;
     const innerFile = fileName.replace(/^(.*?)\//, '');
     const { type } = entry;
-    const kitPathName = kitPath(innerFile);
-    const notDot = innerFile.match(/^\w/);
+    const kitPathName = kitPath(fileName);
+    const notDot = !innerFile.startsWith('.');
+    console.log({ fileName, type, innerFile, notDot });
 
     if (type === 'Directory' && notDot) {
+      console.log({ kitPathName });
       await mkdir(kitPathName).catch((error) => console.log(error.message));
     } else if (type === 'File' && notDot) {
       entry.pipe(createWriteStream(kitPathName));

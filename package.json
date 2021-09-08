@@ -3,7 +3,8 @@
   "productName": "Kit",
   "description": "The Script Kit App",
   "scripts": {
-    "build": "concurrently \"yarn build:main\" \"yarn build:renderer\"",
+    "build": "yarn build:assets && concurrently \"yarn build:main\" \"yarn build:renderer\"",
+    "build:assets": "./build/create-assets.sh",
     "build:main": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.babel.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.renderer.prod.babel.js",
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir src",
@@ -17,7 +18,6 @@
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
     "test": "jest",
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
-    "refresh-zips": "rm ./assets/*.zip || true && download https://github.com/johnlindquist/kit/archive/refs/heads/alpha.zip > ./assets/kit.zip && download https://github.com/johnlindquist/kenv/archive/refs/heads/alpha.zip > ./assets/kenv.zip",
     "mac": "yarn build && DEBUG_PROD=true electron-builder build --mac dir -c.mac.identity=null --publish never && open ./release/mac/Kit.app",
     "m1": "yarn build && DEBUG_PROD=true electron-builder build --mac dir --arm64 -c.mac.identity=null --publish never  && open ./release/mac-arm64"
   },
@@ -224,6 +224,7 @@
     "@types/sanitize-html": "^2.3.1",
     "@types/shelljs": "^0.8.8",
     "@types/simplebar": "^5.1.2",
+    "@types/tar": "^4.0.5",
     "@types/unzipper": "^0.10.3",
     "@types/webpack-env": "^1.15.2",
     "@typescript-eslint/eslint-plugin": "^4.8.1",
@@ -294,7 +295,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^1.0.4",
-    "@johnlindquist/kit": "^0.1.0-alpha.23",
+    "@johnlindquist/kit": "^0.1.0-alpha.25",
     "@monaco-editor/react": "^4.2.0",
     "@react-hook/resize-observer": "^1.2.0",
     "@rooks/use-previous": "^4.10.0",
@@ -357,6 +358,7 @@
     "strip-ansi": "^7.0.0",
     "tailwind-override": "^0.0.10",
     "tailwindcss": "^2.2.7",
+    "tar": "^6.1.11",
     "tree-kill": "^1.2.2",
     "typeface-lato": "^1.1.13",
     "typeface-roboto": "^1.1.13",
