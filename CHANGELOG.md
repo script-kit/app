@@ -1,3 +1,10 @@
+# [1.3.0-alpha.131](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.130...v1.3.0-alpha.131) (2021-09-09)
+
+
+### Bug Fixes
+
+* **install:** chmod kit helpers. Kenv examples update ([60c9cbd](https://github.com/johnlindquist/kitapp/commit/60c9cbd739992d4f439ea598c89b27278bdeb8f1))
+
 # [1.3.0-alpha.130](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.129...v1.3.0-alpha.130) (2021-09-09)
 
 
