@@ -1,3 +1,10 @@
+# [1.3.0-alpha.134](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.133...v1.3.0-alpha.134) (2021-09-09)
+
+
+### Bug Fixes
+
+* **install:** move verify install ([124fc04](https://github.com/johnlindquist/kitapp/commit/124fc0449f90f9d1b0e4d304a0d71d843153b1da))
+
 # [1.3.0-alpha.133](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.132...v1.3.0-alpha.133) (2021-09-09)
 
 
