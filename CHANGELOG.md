@@ -1,3 +1,10 @@
+# [1.3.0-alpha.129](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.128...v1.3.0-alpha.129) (2021-09-09)
+
+
+### Bug Fixes
+
+* **install:** PROCESS_PATH. Kit install ([76c0f4d](https://github.com/johnlindquist/kitapp/commit/76c0f4d3d2e5137ea13c4264b8b5cd233d825d08))
+
 # [1.3.0-alpha.128](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.127...v1.3.0-alpha.128) (2021-09-08)
 
 
