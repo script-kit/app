@@ -43,7 +43,12 @@ import {
 } from 'child_process';
 import { homedir } from 'os';
 import { ensureDir } from 'fs-extra';
-import { createReadStream, createWriteStream, existsSync } from 'fs';
+import {
+  createReadStream,
+  createWriteStream,
+  existsSync,
+  readFileSync,
+} from 'fs';
 import {
   chmod,
   lstat,
@@ -85,6 +90,13 @@ app.setName(APP_NAME);
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
 app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
+
+const releaseChannel = readFileSync(
+  getAssetPath('release_channel.txt'),
+  'utf-8'
+);
+
+log.info(`${releaseChannel} channel:`);
 
 const KIT = kitPath();
 const options: SpawnSyncOptions = {
@@ -483,7 +495,7 @@ ${mainLog}
     'install-error',
     `
   <body class="p-1 h-screen w-screen flex flex-col">
-  <h1>Kit failed to install</h1>
+  <h1>Kit ${getVersion()} failed to install</h1>
   <div>Please share the logs below (already copied to clipboard): </div>
   <div class="italic">Note: Kit exits when you close this window</div>
   <div><a href="https://github.com/johnlindquist/kit/discussions/categories/errors">https://github.com/johnlindquist/kit/discussions/categories/errors</a></div>
@@ -593,7 +605,8 @@ const checkKit = async () => {
       'splash-setup',
       `
   <body class="h-screen w-screen flex flex-col justify-evenly items-center">
-    <h1 class="header pt-4">Configuring ~/.kit and ~/.kenv...</h1>
+    <h1 class="header pt-4">Kit ${getVersion()}</h1>
+    <h2>Configuring ~/.kit and ~/.kenv...</h2>
     <img src="${getAssetPath('icon.png')}" class="w-16"/>
     <div class="message p-4 truncate"></div>
   </body>
@@ -646,54 +659,54 @@ const checkKit = async () => {
     );
     await handleSpawnReturns(`chmod`, chmodResult);
 
-    if (kenvsExists() && examplesExists()) {
-      const updateExamplesResult = spawnSync(
-        `./script`,
-        [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
-        options
-      );
-
-      await handleSpawnReturns(`update-examples`, updateExamplesResult);
-    }
-
-    if (!kenvExists()) {
-      // Step 4: Use kit wrapper to run setup.js script
-      configWindow?.show();
-      const kenvZip = getAssetPath('kenv.zip');
-      await unzipToHome(kenvZip, '.kenv');
-
-      kenvExists();
-      await ensureKenvDirs();
-
-      const cloneExamplesResult = spawnSync(
-        `./script`,
-        [`./setup/clone-examples.js`],
-        options
-      );
-      await handleSpawnReturns(`clone-examples`, cloneExamplesResult, false);
-    }
-
-    if (!kenvConfigured()) {
-      setupLog(`Run .kenv setup script...`);
-      await chmod(kitPath('script'), 0o755);
-
-      const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
-      await handleSpawnReturns(`setup`, setupResult);
-
-      kenvConfigured();
-    }
-
-    const createAllBins = spawnSync(
-      `./script`,
-      [`./cli/create-all-bins.js`],
-      options
-    );
-    await handleSpawnReturns(`create-all-bins`, createAllBins);
-
     await clearPromptCache();
 
     await verifyInstall();
   }
+
+  if (kenvsExists() && examplesExists()) {
+    const updateExamplesResult = spawnSync(
+      `./script`,
+      [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
+      options
+    );
+
+    await handleSpawnReturns(`update-examples`, updateExamplesResult);
+  }
+
+  if (!kenvExists()) {
+    // Step 4: Use kit wrapper to run setup.js script
+    configWindow?.show();
+    const kenvZip = getAssetPath('kenv.zip');
+    await unzipToHome(kenvZip, '.kenv');
+
+    kenvExists();
+    await ensureKenvDirs();
+
+    const cloneExamplesResult = spawnSync(
+      `./script`,
+      [`./setup/clone-examples.js`],
+      options
+    );
+    await handleSpawnReturns(`clone-examples`, cloneExamplesResult, false);
+  }
+
+  if (!kenvConfigured()) {
+    setupLog(`Run .kenv setup script...`);
+    await chmod(kitPath('script'), 0o755);
+
+    const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
+    await handleSpawnReturns(`setup`, setupResult);
+
+    kenvConfigured();
+  }
+
+  const createAllBins = spawnSync(
+    `./script`,
+    [`./cli/create-all-bins.js`],
+    options
+  );
+  await handleSpawnReturns(`create-all-bins`, createAllBins);
 
   await storeVersion(getVersion());
   await ready();

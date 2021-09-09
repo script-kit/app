@@ -14,6 +14,9 @@ if [ -f $WD/assets/kit.zip ]; then
 fi
 zip -r "$WD/assets/kit.zip" ./ -x "./node_modules/*" -x "./node/*"
 
+echo "dev" >| "$WD/assets/release_channel.txt"
+
+
 # Back to root
 cd "$WD"
 
