@@ -675,8 +675,6 @@ const checkKit = async () => {
     await handleSpawnReturns(`chmod helpers`, chmodResult);
 
     await clearPromptCache();
-
-    await verifyInstall();
   }
 
   if (kenvsExists() && examplesExists()) {
@@ -723,6 +721,7 @@ const checkKit = async () => {
   );
   await handleSpawnReturns(`create-all-bins`, createAllBins);
 
+  await verifyInstall();
   await storeVersion(getVersion());
   await ready();
 };
