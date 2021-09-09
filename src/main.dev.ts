@@ -613,7 +613,7 @@ const checkKit = async () => {
       `
   <body class="h-screen w-screen flex flex-col justify-evenly items-center">
     <h1 class="header pt-4">Kit ${getVersion()}</h1>
-    <h2>Configuring ~/.kit and ~/.kenv...</h2>
+    <div>Configuring ~/.kit and ~/.kenv...</div>
     <img src="${getAssetPath('icon.png')}" class="w-16"/>
     <div class="message p-4 truncate"></div>
   </body>
@@ -639,6 +639,7 @@ const checkKit = async () => {
 
       if (!nodeExists()) {
         setupLog(`Adding node to ~/.kit...`);
+        await ensureDir(kitPath('node'));
         const installScript = `./build/install-node.sh`;
         await chmod(kitPath(installScript), 0o755);
         const nodeInstallResult = spawnSync(
