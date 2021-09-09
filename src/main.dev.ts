@@ -556,6 +556,13 @@ const unzipKit = async () => {
     } else {
       entry.autodrain();
     }
+
+    const chmodKit = spawnSync(
+      `chmod`,
+      `+x ${kitPath()}/{bin/*,kar,kit,script,sk}`.split(' '),
+      options
+    );
+    await handleSpawnReturns(`chmod kit`, chmodKit);
   }
 };
 
@@ -639,7 +646,14 @@ const checkKit = async () => {
           ` --prefix node --platform darwin`.split(' '),
           options
         );
-        await handleSpawnReturns(`npm`, nodeInstallResult);
+        await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
+
+        const chmodNode = spawnSync(
+          `chmod`,
+          `+x ${kitPath()}/{node/bin/*}`.split(' '),
+          options
+        );
+        await handleSpawnReturns(`chmod node bins:`, chmodNode);
       }
 
       setupLog(`updating ~/.kit packages...`);
@@ -657,7 +671,7 @@ const checkKit = async () => {
       [`./setup/chmod-helpers.js`],
       options
     );
-    await handleSpawnReturns(`chmod`, chmodResult);
+    await handleSpawnReturns(`chmod helpers`, chmodResult);
 
     await clearPromptCache();
 
