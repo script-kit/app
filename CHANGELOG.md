@@ -1,3 +1,10 @@
+# [1.3.0-alpha.132](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.131...v1.3.0-alpha.132) (2021-09-09)
+
+
+### Bug Fixes
+
+* **install:** chmod ([1c7ef5b](https://github.com/johnlindquist/kitapp/commit/1c7ef5b46926391fa998354952697d6289d9c81d))
+
 # [1.3.0-alpha.131](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.130...v1.3.0-alpha.131) (2021-09-09)
 
 
