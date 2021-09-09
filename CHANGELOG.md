@@ -1,3 +1,10 @@
+# [1.3.0-alpha.133](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.132...v1.3.0-alpha.133) (2021-09-09)
+
+
+### Bug Fixes
+
+* **install:** ensure node dir ([270a954](https://github.com/johnlindquist/kitapp/commit/270a9542e2ff77df6dc7b4b952fab0796427fb25))
+
 # [1.3.0-alpha.132](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.131...v1.3.0-alpha.132) (2021-09-09)
 
 
