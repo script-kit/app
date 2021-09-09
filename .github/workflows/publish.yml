@@ -47,6 +47,7 @@ jobs:
 
       - name: yarn
         run: |
+          yarn add "@johnlindquist/kit@$release_channel"
           yarn
 
       - name: yarn install-electron-deps

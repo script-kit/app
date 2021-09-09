@@ -24,11 +24,11 @@ import {
   resolveToScriptPath,
   KIT_MAC_APP,
   KIT_MAC_APP_PROMPT,
-  PATH,
   kitPath,
   kenvPath,
   kitDotEnv,
   execPath,
+  PROCESS_PATH,
 } from '@johnlindquist/kit/cjs/util';
 
 import { getLog } from './logs';
@@ -434,7 +434,7 @@ const createChild = ({
       NODE_NO_WARNINGS: '1',
       KIT_CONTEXT: 'app',
       KIT_MAIN: scriptPath,
-      PATH,
+      PATH: PROCESS_PATH,
       KENV: kenvPath(),
       KIT: kitPath(),
       KIT_DOTENV: kitDotEnv(),

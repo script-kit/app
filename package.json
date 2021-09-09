@@ -3,8 +3,8 @@
   "productName": "Kit",
   "description": "The Script Kit App",
   "scripts": {
-    "build": "yarn build:assets && concurrently \"yarn build:main\" \"yarn build:renderer\"",
-    "build:assets": "./build/create-assets.sh",
+    "build": "./build/create-assets.sh && concurrently \"yarn build:main\" \"yarn build:renderer\"",
+    "build:local": "./build/local-assets.sh && concurrently \"yarn build:main\" \"yarn build:renderer\"",
     "build:main": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.babel.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.renderer.prod.babel.js",
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir src",
@@ -18,8 +18,8 @@
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
     "test": "jest",
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
-    "mac": "yarn build && DEBUG_PROD=true electron-builder build --mac dir -c.mac.identity=null --publish never && open ./release/mac/Kit.app",
-    "m1": "yarn build && DEBUG_PROD=true electron-builder build --mac dir --arm64 -c.mac.identity=null --publish never  && open ./release/mac-arm64"
+    "mac": "yarn build:local && DEBUG_PROD=true electron-builder build --mac dir -c.mac.identity=null --publish never && open ./release/mac/Kit.app",
+    "m1": "yarn build:local && DEBUG_PROD=true electron-builder build --mac dir --arm64 -c.mac.identity=null --publish never  && open ./release/mac-arm64"
   },
   "lint-staged": {
     "*.{jsx,ts,tsx}": [
@@ -295,7 +295,6 @@
   },
   "dependencies": {
     "@heroicons/react": "^1.0.4",
-    "@johnlindquist/kit": "^0.1.0-alpha.25",
     "@monaco-editor/react": "^4.2.0",
     "@react-hook/resize-observer": "^1.2.0",
     "@rooks/use-previous": "^4.10.0",

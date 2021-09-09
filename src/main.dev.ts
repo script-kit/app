@@ -60,7 +60,7 @@ import {
   kenvPath,
   kitPath,
   tmpClipboardDir,
-  PATH,
+  PROCESS_PATH,
   tmpDownloadsDir,
 } from '@johnlindquist/kit/cjs/util';
 import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
@@ -93,7 +93,7 @@ const options: SpawnSyncOptions = {
   env: {
     KIT,
     KENV: kenvPath(),
-    PATH,
+    PATH: PROCESS_PATH,
   },
 };
 
@@ -202,7 +202,7 @@ autoUpdater.on('update-downloaded', async (event) => {
     env: {
       KIT,
       KENV: kenvPath(),
-      PATH,
+      PATH: PROCESS_PATH,
     },
   });
 });
@@ -376,20 +376,6 @@ const kitIsGit = () => {
   setupLog(`kit is${isGit ? `` : ` not`} a .git repo`);
   return isGit;
 };
-const kitIsReleaseBranch = async () => {
-  const HEADpath = kitPath('.git', 'HEAD');
-  if (!existsSync(HEADpath)) {
-    return false;
-  }
-  const HEADfile = await readFile(HEADpath, 'utf-8');
-  setupLog(`HEAD: ${HEADfile}`);
-
-  const isReleaseBranch = HEADfile.match(/alpha|beta|main/);
-
-  setupLog(`.kit is${isReleaseBranch ? ` not` : ``} a release branch`);
-
-  return isReleaseBranch;
-};
 
 const kitUserDataExists = () => {
   const userDataExists = existsSync(app.getPath('userData'));
@@ -400,7 +386,7 @@ const kitUserDataExists = () => {
 
 const isContributor = async () => {
   // eslint-disable-next-line no-return-await
-  return kitExists() && kitIsGit() && (await kitIsReleaseBranch());
+  return kitExists() && kitIsGit();
 };
 
 const kenvExists = () => {
@@ -412,7 +398,7 @@ const kenvExists = () => {
 
 const kenvsExists = () => {
   const doKenvsExists = existsSync(kenvPath('kenvs'));
-  setupLog(`kenv/kenvs/examples${doKenvsExists ? `` : ` not`} found`);
+  setupLog(`kenv/kenvs${doKenvsExists ? `` : ` not`} found`);
 
   return doKenvsExists;
 };
@@ -549,7 +535,6 @@ const unzipKit = async () => {
     const { type } = entry;
     const kitPathName = kitPath(fileName);
     const notDot = !innerFile.startsWith('.');
-    console.log({ fileName, type, innerFile, notDot });
 
     if (type === 'Directory' && notDot) {
       console.log({ kitPathName });
@@ -669,8 +654,6 @@ const checkKit = async () => {
       );
 
       await handleSpawnReturns(`update-examples`, updateExamplesResult);
-
-      kenvsExists();
     }
 
     if (!kenvExists()) {
