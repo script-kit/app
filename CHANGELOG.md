@@ -1,3 +1,10 @@
+# [1.3.0-alpha.130](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.129...v1.3.0-alpha.130) (2021-09-09)
+
+
+### Bug Fixes
+
+* **build:** release_channel to assets ([739eb45](https://github.com/johnlindquist/kitapp/commit/739eb4532c4c57698f18e9d5c788a7d90de9e07d))
+
 # [1.3.0-alpha.129](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.128...v1.3.0-alpha.129) (2021-09-09)
 
 
