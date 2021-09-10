@@ -20,7 +20,8 @@
     "test": "jest",
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
     "mac": "yarn build:local && DEBUG_PROD=true electron-builder build --mac dir -c.mac.identity=null --publish never && open ./release/mac/Kit.app",
-    "m1": "yarn build:local && DEBUG_PROD=true electron-builder build --mac dir --arm64 -c.mac.identity=null --publish never  && open ./release/mac-arm64"
+    "m1": "yarn build:local && DEBUG_PROD=true electron-builder build --mac dir --arm64 -c.mac.identity=null --publish never  && open ./release/mac-arm64",
+    "release": "yarn build:local && DEBUG_PROD=true yarn electron-builder -c.mac.identity=null --publish never --mac"
   },
   "lint-staged": {
     "*.{jsx,ts,tsx}": [
@@ -245,7 +246,7 @@
     "detect-port": "^1.3.0",
     "download": "^8.0.0",
     "download-cli": "^1.1.1",
-    "electron": "^13.1.6",
+    "electron": "14",
     "electron-builder": "22.12.0",
     "electron-devtools-installer": "^3.1.1",
     "electron-notarize": "^1.0.0",

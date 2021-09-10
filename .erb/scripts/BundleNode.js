@@ -8,6 +8,8 @@ const VERSION =
   fs.readFileSync('./assets/node.txt', 'utf-8').trim();
 
 exports.default = async function notarizeMacos(context) {
+  console.log(`>>> AFTER PACK:`);
+
   /** @type typeof import("electron-builder").AfterPackContext */
   const { electronPlatformName, appOutDir, arch } = context;
   const archCode = Object.entries(Arch).find(
@@ -19,7 +21,25 @@ exports.default = async function notarizeMacos(context) {
 
   console.log(`Downloading ${url}`);
 
-  fs.writeFileSync('./assets/arch.txt', archCode);
-  fs.writeFileSync('./assets/platform.txt', electronPlatformName);
-  fs.writeFileSync('./assets/node.tar.gz', await download(url));
+  const archTxt = 'arch.txt';
+  const platformTxt = 'platform.txt';
+  const nodeTxt = 'node.txt';
+  const nodeTar = 'node.tar.gz';
+
+  fs.writeFileSync(`./assets/${archTxt}`, archCode);
+  fs.writeFileSync(`./assets/${platformTxt}`, electronPlatformName);
+  fs.writeFileSync(`./assets/${nodeTar}`, await download(url));
+  console.log(`✅ Download complete. Verifying...`);
+
+  const assets = await fs.readdir('./assets');
+  console.log(assets);
+  const hasArch = assets.includes(archTxt);
+  const hasPlatform = assets.includes(platformTxt);
+  const hasNodeTxt = assets.includes(nodeTxt);
+  const hasNodeTar = assets.includes(nodeTar);
+
+  if (!(hasArch && hasPlatform && hasNode && hasNodeTar)) {
+    console.log(`🔴 Oh no...`);
+    process.exit(1);
+  }
 };
