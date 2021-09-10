@@ -1,3 +1,10 @@
+# [1.3.0-alpha.135](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.134...v1.3.0-alpha.135) (2021-09-10)
+
+
+### Bug Fixes
+
+* **install:** bundle node. Install prod. Clean ui. ([ca3e6ea](https://github.com/johnlindquist/kitapp/commit/ca3e6eadecba48e8a0effdb766424bdf525a038a))
+
 # [1.3.0-alpha.134](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.133...v1.3.0-alpha.134) (2021-09-09)
 
 
