@@ -26,13 +26,14 @@ exports.default = async function notarizeMacos(context) {
   const platformTxt = 'platform.txt';
   const nodeTxt = 'node.txt';
   const nodeTar = 'node.tar.gz';
+  const assetsPath = `${appOutDir}/Kit.app/Contents/Resources/assets/`;
 
-  fs.writeFileSync(`./assets/${archTxt}`, archCode);
-  fs.writeFileSync(`./assets/${platformTxt}`, electronPlatformName);
-  fs.writeFileSync(`./assets/${nodeTar}`, await download(url));
+  fs.writeFileSync(`${assetsPath}${archTxt}`, archCode);
+  fs.writeFileSync(`${assetsPath}${platformTxt}`, electronPlatformName);
+  fs.writeFileSync(`${assetsPath}${nodeTar}`, await download(url));
   console.log(`✅ Download complete. Verifying...`);
 
-  const assets = await readdir('./assets');
+  const assets = await readdir(assetsPath);
   console.log(assets);
   const hasArch = assets.includes(archTxt);
   const hasPlatform = assets.includes(platformTxt);
