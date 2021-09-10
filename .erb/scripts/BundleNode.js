@@ -39,7 +39,7 @@ exports.default = async function notarizeMacos(context) {
   const hasNodeTxt = assets.includes(nodeTxt);
   const hasNodeTar = assets.includes(nodeTar);
 
-  if (!(hasArch && hasPlatform && hasNode && hasNodeTar)) {
+  if (!(hasArch && hasPlatform && hasNodeTxt && hasNodeTar)) {
     console.log(`🔴 Oh no...`);
     process.exit(1);
   }
