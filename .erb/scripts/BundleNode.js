@@ -1,5 +1,6 @@
 const { build } = require('../../package.json');
 const fs = require('fs');
+const { readdir } = require('fs/promises');
 const download = require('download');
 const { Arch } = require('electron-builder');
 
@@ -31,7 +32,7 @@ exports.default = async function notarizeMacos(context) {
   fs.writeFileSync(`./assets/${nodeTar}`, await download(url));
   console.log(`✅ Download complete. Verifying...`);
 
-  const assets = await fs.readdir('./assets');
+  const assets = await readdir('./assets');
   console.log(assets);
   const hasArch = assets.includes(archTxt);
   const hasPlatform = assets.includes(platformTxt);
