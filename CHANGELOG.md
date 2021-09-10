@@ -1,3 +1,10 @@
+# [1.3.0-alpha.141](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.140...v1.3.0-alpha.141) (2021-09-10)
+
+
+### Bug Fixes
+
+* **install:** verify assets. Electron 14 ([4e319b7](https://github.com/johnlindquist/kitapp/commit/4e319b7e41087d3a4b495308f9c28769e23e66ec))
+
 # [1.3.0-alpha.140](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.139...v1.3.0-alpha.140) (2021-09-10)
 
 
