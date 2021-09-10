@@ -18,9 +18,10 @@ const page = (body: string) => {
 
     const {ipcRenderer} = require("electron")
 
-    ipcRenderer.on('UPDATE', (event, {message, header})=> {
+    ipcRenderer.on('UPDATE', (event, {message, header, spinner})=> {
       if(header) document.querySelector(".header").innerHTML = header
       if(message) document.querySelector(".message").innerHTML = message
+      if(typeof spinner === "boolean") document.querySelector(".spinner").classList[spinner ? "remove" : "add"]("hidden")
     })
     </script>
 </head>

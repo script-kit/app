@@ -22,6 +22,7 @@ module.exports = {
     options: {
       safelist: [
         /^hover/,
+        /^hidden/,
         /^font/,
         /^flex/,
         /^justify/,

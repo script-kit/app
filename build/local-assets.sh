@@ -9,10 +9,11 @@ kit_dir=~/.kit
 
 # Into to $kit_dir
 cd $kit_dir
-if [ -f $WD/assets/kit.zip ]; then
-  rm $WD/assets/kit.zip
+kit_tar="$WD/assets/kit.tar.gz"
+if [ -f $kit_tar ]; then
+  rm $kit_tar
 fi
-zip -r "$WD/assets/kit.zip" ./ -x "./node_modules/*" -x "./node/*"
+tar --exclude "./node_modules/*" --exclude "./node/*" --exclude "kit.sock" -cvzf "$kit_tar" ./
 
 echo "dev" >| "$WD/assets/release_channel.txt"
 
@@ -20,6 +21,6 @@ echo "dev" >| "$WD/assets/release_channel.txt"
 # Back to root
 cd "$WD"
 
-kenv_url="https://github.com/johnlindquist/kenv/archive/refs/heads/$release_channel.zip"
+kenv_url="https://github.com/johnlindquist/kenv/tarball/$release_channel"
 echo "Downloading $kenv_url"
-curl -L $kenv_url  -o ./assets/kenv.zip
+curl -L $kenv_url  -o ./assets/kenv.tar.gz

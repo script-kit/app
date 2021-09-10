@@ -22,13 +22,14 @@ import {
   session,
   Notification,
 } from 'electron';
+
+import tar from 'tar';
 import queryString from 'query-string';
 import clipboardy from 'clipboardy';
 
 if (!app.requestSingleInstanceLock()) {
   app.exit();
 }
-
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import { autoUpdater } from 'electron-updater';
@@ -43,23 +44,8 @@ import {
 } from 'child_process';
 import { homedir } from 'os';
 import { ensureDir } from 'fs-extra';
-import {
-  createReadStream,
-  createWriteStream,
-  existsSync,
-  readFileSync,
-} from 'fs';
-import {
-  chmod,
-  lstat,
-  mkdir,
-  readdir,
-  readFile,
-  rename,
-  rm,
-  rmdir,
-} from 'fs/promises';
-import { Open, Parse } from 'unzipper';
+import { existsSync, readFileSync } from 'fs';
+import { chmod, lstat, readdir, readFile, rm, rmdir } from 'fs/promises';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   kenvPath,
@@ -82,6 +68,7 @@ import { startSK } from './sk';
 import { processes } from './process';
 import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
+import { CONFIG_SPLASH, showError } from './main.dev.templates';
 
 let configWindow: BrowserWindow;
 
@@ -95,6 +82,9 @@ const releaseChannel = readFileSync(
   getAssetPath('release_channel.txt'),
   'utf-8'
 );
+const arch = readFileSync(getAssetPath('arch.txt'), 'utf-8').trim();
+const platform = readFileSync(getAssetPath('platform.txt'), 'utf-8').trim();
+const nodeVersion = readFileSync(getAssetPath('node.txt'), 'utf-8').trim();
 
 log.info(`${releaseChannel} channel:`);
 
@@ -106,6 +96,7 @@ const options: SpawnSyncOptions = {
     KIT,
     KENV: kenvPath(),
     PATH: PROCESS_PATH,
+    NODE_ENV: 'production',
   },
 };
 
@@ -269,8 +260,9 @@ const configWindowDone = () => {
   if (configWindow?.isVisible()) {
     configWindow?.webContents.send('UPDATE', {
       header: `Script Kit ${getVersion()}`,
+      spinner: false,
       message: `
-  <div class="flex flex-col justify-center items-center">
+  <div class="flex flex-col justify-center items-center px-8">
     <div><span class="font-bold"><kbd>cmd</kbd> <kbd>;</kbd></span> to launch main prompt (or click tray icon)</div>
     <div>Right-click tray icon for options</div>
   </div>
@@ -491,21 +483,7 @@ ${mainLog}
   );
   configWindow?.destroy();
 
-  const showWindow = await show(
-    'install-error',
-    `
-  <body class="p-1 h-screen w-screen flex flex-col">
-  <h1>Kit ${getVersion()} failed to install</h1>
-  <div>Please share the logs below (already copied to clipboard): </div>
-  <div class="italic">Note: Kit exits when you close this window</div>
-  <div><a href="https://github.com/johnlindquist/kit/discussions/categories/errors">https://github.com/johnlindquist/kit/discussions/categories/errors</a></div>
-
-  <h2>Error: ${error.message}</h2>
-
-  <textarea class="font-mono w-full h-full text-xs text-black">${mainLog}</textarea>
-  </body>
-  `
-  );
+  const showWindow = await show('install-error', showError(error, mainLog));
 
   showWindow?.on('close', () => {
     app.exit();
@@ -518,52 +496,15 @@ ${mainLog}
   throw new Error(error.message);
 };
 
-const unzipToHome = async (zipFile: string, outDir: string) => {
-  setupLog(`Extracting ${zipFile} to ${outDir}`);
-  const tmpDir = path.join(app.getPath('home'), '.kit-install-tmp');
-  const file = await Open.file(zipFile);
-  await file.extract({ path: tmpDir, concurrency: 5 });
+const extractTar = async (tarFile: string, outDir: string) => {
+  setupLog(`Extracting ${tarFile} to ${outDir}`);
+  await ensureDir(outDir);
 
-  const [zipDir] = await readdir(tmpDir);
-  const targetDir = path.join(path.join(app.getPath('home'), outDir));
-
-  setupLog(`Renaming ${zipDir} to ${targetDir}`);
-
-  await rename(path.join(tmpDir, zipDir), targetDir);
-
-  await rmdir(tmpDir);
-};
-
-const unzipKit = async () => {
-  setupLog(`Unzipping kit into ${kitPath()}`);
-  await mkdir(kitPath()).catch((error) => setupLog(error.message));
-  const kitZip = getAssetPath('kit.zip');
-
-  const zip = createReadStream(kitZip).pipe(Parse({ forceStream: true }));
-
-  for await (const entry of zip) {
-    const fileName = entry.path;
-    const innerFile = fileName.replace(/^(.*?)\//, '');
-    const { type } = entry;
-    const kitPathName = kitPath(fileName);
-    const notDot = !innerFile.startsWith('.');
-
-    if (type === 'Directory' && notDot) {
-      console.log({ kitPathName });
-      await mkdir(kitPathName).catch((error) => console.log(error.message));
-    } else if (type === 'File' && notDot) {
-      entry.pipe(createWriteStream(kitPathName));
-    } else {
-      entry.autodrain();
-    }
-
-    const chmodKit = spawnSync(
-      `chmod`,
-      `+x ${kitPath()}/{bin/*,kar,kit,script,sk}`.split(' '),
-      options
-    );
-    await handleSpawnReturns(`chmod kit`, chmodKit);
-  }
+  await tar.x({
+    file: tarFile,
+    C: outDir,
+    strip: 1,
+  });
 };
 
 const versionMismatch = async () => {
@@ -600,6 +541,8 @@ const cleanUserData = async () => {
   await rmdir(pathToClean, { recursive: true });
 };
 
+const KIT_NODE_TAR = process.env.KIT_NODE_TAR || getAssetPath('node.tar.gz');
+
 const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
   setupLog(`Launching Script Kit  ${getVersion()}`);
@@ -610,14 +553,7 @@ const checkKit = async () => {
   if (!kitExists() || (await versionMismatch())) {
     configWindow = await show(
       'splash-setup',
-      `
-  <body class="h-screen w-screen flex flex-col justify-evenly items-center">
-    <h1 class="header pt-4">Kit ${getVersion()}</h1>
-    <div>Configuring ~/.kit and ~/.kenv...</div>
-    <img src="${getAssetPath('icon.png')}" class="w-16"/>
-    <div class="message p-4 truncate"></div>
-  </body>
-  `,
+      CONFIG_SPLASH,
       { frame: false },
       false
     );
@@ -635,34 +571,37 @@ const checkKit = async () => {
       }
 
       setupLog(`.kit doesn't exist or isn't on a contributor branch`);
-      await unzipKit();
+      const kitTar = getAssetPath('kit.tar.gz');
+      await extractTar(kitTar, kitPath());
 
       if (!nodeExists()) {
-        setupLog(`Adding node to ~/.kit...`);
-        await ensureDir(kitPath('node'));
-        const installScript = `./build/install-node.sh`;
-        await chmod(kitPath(installScript), 0o755);
-        const nodeInstallResult = spawnSync(
-          installScript,
-          ` --prefix node --platform darwin`.split(' '),
-          options
+        setupLog(
+          `Adding node ${nodeVersion} ${platform} ${arch} to ~/.kit/node ...`
         );
-        await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
 
-        const chmodNode = spawnSync(
-          `chmod`,
-          `+x ${kitPath()}/{node/bin/*}`.split(' '),
-          options
-        );
-        await handleSpawnReturns(`chmod node bins:`, chmodNode);
+        await ensureDir(kitPath('node'));
+
+        if (existsSync(KIT_NODE_TAR)) {
+          log.info(`Found ${KIT_NODE_TAR}. Extracting...`);
+          await tar.x({
+            file: KIT_NODE_TAR,
+            C: kitPath('node'),
+            strip: 1,
+          });
+        } else {
+          const installScript = `./build/install-node.sh`;
+          await chmod(kitPath(installScript), 0o755);
+          const nodeInstallResult = spawnSync(
+            installScript,
+            ` --prefix node --platform darwin`.split(' '),
+            options
+          );
+          await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
+        }
       }
 
       setupLog(`updating ~/.kit packages...`);
-      const npmResult = spawnSync(
-        `npm`,
-        [`i`, `--loglevel`, `verbose`],
-        options
-      );
+      const npmResult = spawnSync(`npm`, [`i`], options);
       await handleSpawnReturns(`npm`, npmResult);
     }
 
@@ -690,8 +629,8 @@ const checkKit = async () => {
   if (!kenvExists()) {
     // Step 4: Use kit wrapper to run setup.js script
     configWindow?.show();
-    const kenvZip = getAssetPath('kenv.zip');
-    await unzipToHome(kenvZip, '.kenv');
+    const kenvTar = getAssetPath('kenv.tar.gz');
+    await extractTar(kenvTar, kenvPath());
 
     kenvExists();
     await ensureKenvDirs();
