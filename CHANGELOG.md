@@ -1,3 +1,37 @@
+# [1.3.0-beta.58](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.57...v1.3.0-beta.58) (2021-09-11)
+
+
+### Bug Fixes
+
+* **build:** build assets from script ([8ab7638](https://github.com/johnlindquist/kitapp/commit/8ab7638f0afeda49a57fcd43110ba6c8a3df2dc1))
+* **build:** build assets from script ([caa15ff](https://github.com/johnlindquist/kitapp/commit/caa15ffa93c1230871603cf9ca4e58768f164bfc))
+* **build:** electron v14 ([f8a69b3](https://github.com/johnlindquist/kitapp/commit/f8a69b3552770a6c9e42090f6dc7e3df06697b54))
+* **build:** grab kit release .zip ([84265b6](https://github.com/johnlindquist/kitapp/commit/84265b646a650dbd32142e963479eb91cbdc3eb7))
+* **build:** release zip as .kit ([ae14512](https://github.com/johnlindquist/kitapp/commit/ae14512b10d21271ab671bbe51229d4d9f977469))
+* **build:** release zip as .kit ([61a739d](https://github.com/johnlindquist/kitapp/commit/61a739d9489bba2921c0f3a7dcaa69f304ce5e8d))
+* **build:** release zip as .kit ([e39ac9d](https://github.com/johnlindquist/kitapp/commit/e39ac9d56c582ecd90f37fe80ec54b7f6c2ef922))
+* **build:** release zip as .kit ([e2449c7](https://github.com/johnlindquist/kitapp/commit/e2449c730a25e701791f08e4078a159dca950fe5))
+* **build:** release_channel to assets ([739eb45](https://github.com/johnlindquist/kitapp/commit/739eb4532c4c57698f18e9d5c788a7d90de9e07d))
+* **install:** bundle node. Install prod. Clean ui. ([ca3e6ea](https://github.com/johnlindquist/kitapp/commit/ca3e6eadecba48e8a0effdb766424bdf525a038a))
+* **install:** chmod ([1c7ef5b](https://github.com/johnlindquist/kitapp/commit/1c7ef5b46926391fa998354952697d6289d9c81d))
+* **install:** chmod kit helpers. Kenv examples update ([60c9cbd](https://github.com/johnlindquist/kitapp/commit/60c9cbd739992d4f439ea598c89b27278bdeb8f1))
+* **install:** ensure node dir ([270a954](https://github.com/johnlindquist/kitapp/commit/270a9542e2ff77df6dc7b4b952fab0796427fb25))
+* **install:** move verify install ([124fc04](https://github.com/johnlindquist/kitapp/commit/124fc0449f90f9d1b0e4d304a0d71d843153b1da))
+* **install:** PROCESS_PATH. Kit install ([76c0f4d](https://github.com/johnlindquist/kitapp/commit/76c0f4d3d2e5137ea13c4264b8b5cd233d825d08))
+* **install:** verify assets. Electron 14 ([9186a13](https://github.com/johnlindquist/kitapp/commit/9186a13d949037d60770101ff6f11c50c68a4cda))
+* **install:** verify assets. Electron 14 ([4e319b7](https://github.com/johnlindquist/kitapp/commit/4e319b7e41087d3a4b495308f9c28769e23e66ec))
+* **install:** verify assets. Electron 14 ([4bbc043](https://github.com/johnlindquist/kitapp/commit/4bbc0438032af2391e2ddc3de5e7f7680d87f30d))
+* **install:** verify assets. Electron 14 ([8e3889e](https://github.com/johnlindquist/kitapp/commit/8e3889e02f22514eac077aae79b7aff744e776d4))
+* **install:** verify assets. Electron 14 ([2920f9a](https://github.com/johnlindquist/kitapp/commit/2920f9afa0333d6729b828e22b0cdf6edeaa3668))
+* **install:** verify assets. Electron 14 ([d4d39cb](https://github.com/johnlindquist/kitapp/commit/d4d39cbbbadb77c86947c674c490ef0ba3d34add))
+* **install:** verify assets. Electron 14 ([11d49f9](https://github.com/johnlindquist/kitapp/commit/11d49f9385086b7564fa2f2127c613853fb7cdf4))
+* **release:** get kit.zip from github releases ([11987b5](https://github.com/johnlindquist/kitapp/commit/11987b5f02f031fe18c2122c8356e76491825847))
+
+
+### Features
+
+* **kit:** switch to @johlindquist/kit ([8046bc6](https://github.com/johnlindquist/kitapp/commit/8046bc6328e45f912404edf225a2e9582631ec94))
+
 # [1.3.0-alpha.142](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.141...v1.3.0-alpha.142) (2021-09-11)
 
 
