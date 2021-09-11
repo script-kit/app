@@ -96,7 +96,6 @@ const options: SpawnSyncOptions = {
     KIT,
     KENV: kenvPath(),
     PATH: PROCESS_PATH,
-    NODE_ENV: 'production',
   },
 };
 
@@ -601,7 +600,11 @@ const checkKit = async () => {
       }
 
       setupLog(`updating ~/.kit packages...`);
-      const npmResult = spawnSync(`npm`, [`i`], options);
+      const npmResult = spawnSync(
+        `npm`,
+        [`i`, `--production`, `--no-progress`],
+        options
+      );
       await handleSpawnReturns(`npm`, npmResult);
     }
 
