@@ -4,13 +4,13 @@
 import { ipcMain } from 'electron';
 import log from 'electron-log';
 import { debounce, isUndefined } from 'lodash';
-import { Channel, ProcessType } from 'kit-bridge/cjs/enum';
+import { Channel, ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   kitPath,
   getLogFromScriptPath,
   tmpDownloadsDir,
-} from 'kit-bridge/cjs/util';
-import { MessageData, Script } from 'kit-bridge/cjs/type';
+} from '@johnlindquist/kit/cjs/util';
+import { MessageData, Script } from '@johnlindquist/kit/cjs/type';
 import { existsSync, renameSync } from 'fs';
 import isImage from 'is-image';
 import { DownloaderHelper } from 'node-downloader-helper';

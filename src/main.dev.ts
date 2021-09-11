@@ -22,13 +22,14 @@ import {
   session,
   Notification,
 } from 'electron';
+
+import tar from 'tar';
 import queryString from 'query-string';
 import clipboardy from 'clipboardy';
 
 if (!app.requestSingleInstanceLock()) {
   app.exit();
 }
-
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import { autoUpdater } from 'electron-updater';
@@ -43,27 +44,17 @@ import {
 } from 'child_process';
 import { homedir } from 'os';
 import { ensureDir } from 'fs-extra';
-import { createReadStream, createWriteStream, existsSync } from 'fs';
-import {
-  chmod,
-  lstat,
-  mkdir,
-  readdir,
-  readFile,
-  rename,
-  rm,
-  rmdir,
-} from 'fs/promises';
-import { Open, Parse } from 'unzipper';
-import { ProcessType } from 'kit-bridge/cjs/enum';
+import { existsSync, readFileSync } from 'fs';
+import { chmod, lstat, readdir, readFile, rm, rmdir } from 'fs/promises';
+import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   kenvPath,
   kitPath,
   tmpClipboardDir,
-  PATH,
+  PROCESS_PATH,
   tmpDownloadsDir,
-} from 'kit-bridge/cjs/util';
-import { getPrefsDb, getShortcutsDb } from 'kit-bridge/cjs/db';
+} from '@johnlindquist/kit/cjs/util';
+import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
 import { createTray, destroyTray } from './tray';
 import { cacheMenu, setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
@@ -77,6 +68,7 @@ import { startSK } from './sk';
 import { processes } from './process';
 import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
+import { CONFIG_SPLASH, showError } from './main.dev.templates';
 
 let configWindow: BrowserWindow;
 
@@ -86,6 +78,16 @@ app.setAsDefaultProtocolClient(KIT_PROTOCOL);
 app.dock.hide();
 app.dock.setIcon(getAssetPath('icon.png'));
 
+const releaseChannel = readFileSync(
+  getAssetPath('release_channel.txt'),
+  'utf-8'
+);
+const arch = readFileSync(getAssetPath('arch.txt'), 'utf-8').trim();
+const platform = readFileSync(getAssetPath('platform.txt'), 'utf-8').trim();
+const nodeVersion = readFileSync(getAssetPath('node.txt'), 'utf-8').trim();
+
+log.info(`${releaseChannel} channel:`);
+
 const KIT = kitPath();
 const options: SpawnSyncOptions = {
   cwd: KIT,
@@ -93,7 +95,7 @@ const options: SpawnSyncOptions = {
   env: {
     KIT,
     KENV: kenvPath(),
-    PATH,
+    PATH: PROCESS_PATH,
   },
 };
 
@@ -202,7 +204,7 @@ autoUpdater.on('update-downloaded', async (event) => {
     env: {
       KIT,
       KENV: kenvPath(),
-      PATH,
+      PATH: PROCESS_PATH,
     },
   });
 });
@@ -257,8 +259,9 @@ const configWindowDone = () => {
   if (configWindow?.isVisible()) {
     configWindow?.webContents.send('UPDATE', {
       header: `Script Kit ${getVersion()}`,
+      spinner: false,
       message: `
-  <div class="flex flex-col justify-center items-center">
+  <div class="flex flex-col justify-center items-center px-8">
     <div><span class="font-bold"><kbd>cmd</kbd> <kbd>;</kbd></span> to launch main prompt (or click tray icon)</div>
     <div>Right-click tray icon for options</div>
   </div>
@@ -372,23 +375,9 @@ const kitExists = () => {
   return doesKitExist;
 };
 const kitIsGit = () => {
-  const isGit = existsSync(kitPath('.git'));
+  const isGit = existsSync(kitPath('.kitignore'));
   setupLog(`kit is${isGit ? `` : ` not`} a .git repo`);
   return isGit;
-};
-const kitIsReleaseBranch = async () => {
-  const HEADpath = kitPath('.git', 'HEAD');
-  if (!existsSync(HEADpath)) {
-    return false;
-  }
-  const HEADfile = await readFile(HEADpath, 'utf-8');
-  setupLog(`HEAD: ${HEADfile}`);
-
-  const isReleaseBranch = HEADfile.match(/alpha|beta|main/);
-
-  setupLog(`.kit is${isReleaseBranch ? ` not` : ``} a release branch`);
-
-  return isReleaseBranch;
 };
 
 const kitUserDataExists = () => {
@@ -400,7 +389,7 @@ const kitUserDataExists = () => {
 
 const isContributor = async () => {
   // eslint-disable-next-line no-return-await
-  return kitExists() && kitIsGit() && (await kitIsReleaseBranch());
+  return kitExists() && kitIsGit();
 };
 
 const kenvExists = () => {
@@ -412,7 +401,7 @@ const kenvExists = () => {
 
 const kenvsExists = () => {
   const doKenvsExists = existsSync(kenvPath('kenvs'));
-  setupLog(`kenv/kenvs/examples${doKenvsExists ? `` : ` not`} found`);
+  setupLog(`kenv/kenvs${doKenvsExists ? `` : ` not`} found`);
 
   return doKenvsExists;
 };
@@ -493,21 +482,7 @@ ${mainLog}
   );
   configWindow?.destroy();
 
-  const showWindow = await show(
-    'install-error',
-    `
-  <body class="p-1 h-screen w-screen flex flex-col">
-  <h1>Kit failed to install</h1>
-  <div>Please share the logs below (already copied to clipboard): </div>
-  <div class="italic">Note: Kit exits when you close this window</div>
-  <div><a href="https://github.com/johnlindquist/kit/discussions/categories/errors">https://github.com/johnlindquist/kit/discussions/categories/errors</a></div>
-
-  <h2>Error: ${error.message}</h2>
-
-  <textarea class="font-mono w-full h-full text-xs">${mainLog}</textarea>
-  </body>
-  `
-  );
+  const showWindow = await show('install-error', showError(error, mainLog));
 
   showWindow?.on('close', () => {
     app.exit();
@@ -520,44 +495,15 @@ ${mainLog}
   throw new Error(error.message);
 };
 
-const unzipToHome = async (zipFile: string, outDir: string) => {
-  setupLog(`Unzipping ${zipFile} to ${outDir}`);
-  const tmpDir = path.join(app.getPath('home'), '.kit-install-tmp');
-  const file = await Open.file(zipFile);
-  await file.extract({ path: tmpDir, concurrency: 5 });
+const extractTar = async (tarFile: string, outDir: string) => {
+  setupLog(`Extracting ${tarFile} to ${outDir}`);
+  await ensureDir(outDir);
 
-  const [zipDir] = await readdir(tmpDir);
-  const targetDir = path.join(path.join(app.getPath('home'), outDir));
-
-  setupLog(`Renaming ${zipDir} to ${targetDir}`);
-
-  await rename(path.join(tmpDir, zipDir), targetDir);
-
-  await rmdir(tmpDir);
-};
-
-const unzipKit = async () => {
-  setupLog(`Unzipping kit into ${kitPath()}`);
-  await mkdir(kitPath()).catch((error) => setupLog(error.message));
-  const kitZip = getAssetPath('kit.zip');
-
-  const zip = createReadStream(kitZip).pipe(Parse({ forceStream: true }));
-
-  for await (const entry of zip) {
-    const fileName = entry.path;
-    const innerFile = fileName.replace(/^(.*?)\//, '');
-    const { type } = entry;
-    const kitPathName = kitPath(innerFile);
-    const notDot = innerFile.match(/^\w/);
-
-    if (type === 'Directory' && notDot) {
-      await mkdir(kitPathName).catch((error) => console.log(error.message));
-    } else if (type === 'File' && notDot) {
-      entry.pipe(createWriteStream(kitPathName));
-    } else {
-      entry.autodrain();
-    }
-  }
+  await tar.x({
+    file: tarFile,
+    C: outDir,
+    strip: 1,
+  });
 };
 
 const versionMismatch = async () => {
@@ -594,6 +540,8 @@ const cleanUserData = async () => {
   await rmdir(pathToClean, { recursive: true });
 };
 
+const KIT_NODE_TAR = process.env.KIT_NODE_TAR || getAssetPath('node.tar.gz');
+
 const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
   setupLog(`Launching Script Kit  ${getVersion()}`);
@@ -604,13 +552,7 @@ const checkKit = async () => {
   if (!kitExists() || (await versionMismatch())) {
     configWindow = await show(
       'splash-setup',
-      `
-  <body class="h-screen w-screen flex flex-col justify-evenly items-center">
-    <h1 class="header pt-4">Configuring ~/.kit and ~/.kenv...</h1>
-    <img src="${getAssetPath('icon.png')}" class="w-16"/>
-    <div class="message p-4 truncate"></div>
-  </body>
-  `,
+      CONFIG_SPLASH,
       { frame: false },
       false
     );
@@ -628,22 +570,41 @@ const checkKit = async () => {
       }
 
       setupLog(`.kit doesn't exist or isn't on a contributor branch`);
-      await unzipKit();
+      const kitTar = getAssetPath('kit.tar.gz');
+      await extractTar(kitTar, kitPath());
 
       if (!nodeExists()) {
-        setupLog(`Adding node to ~/.kit...`);
-        const installScript = `./install-node.sh`;
-        await chmod(kitPath(installScript), 0o755);
-        const nodeInstallResult = spawnSync(
-          installScript,
-          ` --prefix node --platform darwin`.split(' '),
-          options
+        setupLog(
+          `Adding node ${nodeVersion} ${platform} ${arch} to ~/.kit/node ...`
         );
-        await handleSpawnReturns(`npm`, nodeInstallResult);
+
+        await ensureDir(kitPath('node'));
+
+        if (existsSync(KIT_NODE_TAR)) {
+          log.info(`Found ${KIT_NODE_TAR}. Extracting...`);
+          await tar.x({
+            file: KIT_NODE_TAR,
+            C: kitPath('node'),
+            strip: 1,
+          });
+        } else {
+          const installScript = `./build/install-node.sh`;
+          await chmod(kitPath(installScript), 0o755);
+          const nodeInstallResult = spawnSync(
+            installScript,
+            ` --prefix node --platform darwin`.split(' '),
+            options
+          );
+          await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
+        }
       }
 
       setupLog(`updating ~/.kit packages...`);
-      const npmResult = spawnSync(`npm`, [`i`], options);
+      const npmResult = spawnSync(
+        `npm`,
+        [`i`, `--production`, `--no-progress`],
+        options
+      );
       await handleSpawnReturns(`npm`, npmResult);
     }
 
@@ -653,59 +614,56 @@ const checkKit = async () => {
       [`./setup/chmod-helpers.js`],
       options
     );
-    await handleSpawnReturns(`chmod`, chmodResult);
-
-    if (kenvsExists() && examplesExists()) {
-      const updateExamplesResult = spawnSync(
-        `./script`,
-        [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
-        options
-      );
-
-      await handleSpawnReturns(`update-examples`, updateExamplesResult);
-
-      kenvsExists();
-    }
-
-    if (!kenvExists()) {
-      // Step 4: Use kit wrapper to run setup.js script
-      configWindow?.show();
-      const kenvZip = getAssetPath('kenv.zip');
-      await unzipToHome(kenvZip, '.kenv');
-
-      kenvExists();
-      await ensureKenvDirs();
-
-      const cloneExamplesResult = spawnSync(
-        `./script`,
-        [`./setup/clone-examples.js`],
-        options
-      );
-      await handleSpawnReturns(`clone-examples`, cloneExamplesResult, false);
-    }
-
-    if (!kenvConfigured()) {
-      setupLog(`Run .kenv setup script...`);
-      await chmod(kitPath('script'), 0o755);
-
-      const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
-      await handleSpawnReturns(`setup`, setupResult);
-
-      kenvConfigured();
-    }
-
-    const createAllBins = spawnSync(
-      `./script`,
-      [`./cli/create-all-bins.js`],
-      options
-    );
-    await handleSpawnReturns(`create-all-bins`, createAllBins);
+    await handleSpawnReturns(`chmod helpers`, chmodResult);
 
     await clearPromptCache();
-
-    await verifyInstall();
   }
 
+  if (kenvsExists() && examplesExists()) {
+    const updateExamplesResult = spawnSync(
+      `./script`,
+      [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
+      options
+    );
+
+    await handleSpawnReturns(`update-examples`, updateExamplesResult);
+  }
+
+  if (!kenvExists()) {
+    // Step 4: Use kit wrapper to run setup.js script
+    configWindow?.show();
+    const kenvTar = getAssetPath('kenv.tar.gz');
+    await extractTar(kenvTar, kenvPath());
+
+    kenvExists();
+    await ensureKenvDirs();
+
+    const cloneExamplesResult = spawnSync(
+      `./script`,
+      [`./setup/clone-examples.js`],
+      options
+    );
+    await handleSpawnReturns(`clone-examples`, cloneExamplesResult, false);
+  }
+
+  if (!kenvConfigured()) {
+    setupLog(`Run .kenv setup script...`);
+    await chmod(kitPath('script'), 0o755);
+
+    const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
+    await handleSpawnReturns(`setup`, setupResult);
+
+    kenvConfigured();
+  }
+
+  const createAllBins = spawnSync(
+    `./script`,
+    [`./cli/create-all-bins.js`],
+    options
+  );
+  await handleSpawnReturns(`create-all-bins`, createAllBins);
+
+  await verifyInstall();
   await storeVersion(getVersion());
   await ready();
 };

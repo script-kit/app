@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { app, BrowserWindow, nativeTheme, screen } from 'electron';
 import { writeFile, mkdir } from 'fs/promises';
-import { kenvPath, isDir } from 'kit-bridge/cjs/util';
+import { kenvPath, isDir } from '@johnlindquist/kit/cjs/util';
 import { getAssetPath } from './assets';
 
 const page = (body: string) => {
@@ -18,9 +18,10 @@ const page = (body: string) => {
 
     const {ipcRenderer} = require("electron")
 
-    ipcRenderer.on('UPDATE', (event, {message, header})=> {
+    ipcRenderer.on('UPDATE', (event, {message, header, spinner})=> {
       if(header) document.querySelector(".header").innerHTML = header
       if(message) document.querySelector(".message").innerHTML = message
+      if(typeof spinner === "boolean") document.querySelector(".spinner").classList[spinner ? "remove" : "add"]("hidden")
     })
     </script>
 </head>

@@ -1,4 +1,4 @@
-import { UI } from 'kit-bridge/cjs/enum';
+import { UI } from '@johnlindquist/kit/cjs/enum';
 
 export const DEFAULT_WIDTH = 320; // 256;
 export const DEFAULT_HEIGHT = Math.round((DEFAULT_WIDTH * 11) / 8.5);

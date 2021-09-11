@@ -3,7 +3,7 @@
 import net from 'net';
 import fs from 'fs';
 import log from 'electron-log';
-import { kitPath, resolveToScriptPath } from 'kit-bridge/cjs/util';
+import { kitPath, resolveToScriptPath } from '@johnlindquist/kit/cjs/util';
 import { runPromptProcess } from './kit';
 
 export const startSK = () => {

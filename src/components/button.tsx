@@ -43,7 +43,12 @@ function highlight(
 }
 
 function isScript(choice: Choice | Script): choice is Script {
+  console.log({ choice });
   return (choice as Script)?.command !== undefined;
+}
+
+function isNotScript(choice: Choice | Script): choice is Script {
+  return (choice as Script)?.command === undefined;
 }
 
 export default function ChoiceButton({
@@ -215,7 +220,7 @@ export default function ChoiceButton({
           </div>
 
           <div className="flex flex-row items-center flex-shrink-0 h-full">
-            {!isScript(choice) && (choice?.tag || choice?.icon) && (
+            {isNotScript(choice) && (choice?.tag || choice?.icon) && (
               <div className="flex flex-row items-center">
                 {choice?.tag && (
                   <div

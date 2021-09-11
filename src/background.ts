@@ -1,8 +1,8 @@
 import log from 'electron-log';
 
-import { ProcessType } from 'kit-bridge/cjs/enum';
-import { info } from 'kit-bridge/cjs/util';
-import { Script } from 'kit-bridge/cjs/type';
+import { ProcessType } from '@johnlindquist/kit/cjs/enum';
+import { info } from '@johnlindquist/kit/cjs/util';
+import { Script } from '@johnlindquist/kit/cjs/type';
 import { emitter, KitEvent } from './events';
 import { backgroundMap, Background } from './state';
 import { processes } from './process';

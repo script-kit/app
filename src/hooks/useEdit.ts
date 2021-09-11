@@ -1,7 +1,7 @@
 import { ipcRenderer } from 'electron';
 import { useAtom } from 'jotai';
 
-import { Channel } from 'kit-bridge/cjs/enum';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { choicesAtom, indexAtom, scriptAtom } from '../jotai';
 

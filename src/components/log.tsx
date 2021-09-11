@@ -4,7 +4,7 @@ import SimpleBar from 'simplebar-react';
 import useResizeObserver from '@react-hook/resize-observer';
 import { PencilAltIcon } from '@heroicons/react/outline';
 import parse from 'html-react-parser';
-import { Channel } from 'kit-bridge/cjs/enum';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { logHeightAtom, logHTMLAtom, scriptAtom } from '../jotai';

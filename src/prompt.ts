@@ -4,19 +4,29 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
-import { Channel, Mode, ProcessType, UI } from 'kit-bridge/cjs/enum';
-import { Choice, Script, PromptData, PromptBounds } from 'kit-bridge/cjs/type';
+import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
+import {
+  Choice,
+  Script,
+  PromptData,
+  PromptBounds,
+} from '@johnlindquist/kit/cjs/type';
 
 import { BrowserWindow, screen, nativeTheme, app } from 'electron';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import minimist from 'minimist';
 import { readFileSync } from 'fs';
-import { mainScriptPath, isFile, kenvPath, kitPath } from 'kit-bridge/cjs/util';
-import { getPromptDb } from 'kit-bridge/cjs/db';
+import {
+  mainScriptPath,
+  isFile,
+  kenvPath,
+  kitPath,
+} from '@johnlindquist/kit/cjs/util';
+import { getPromptDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
 import { getAssetPath } from './assets';
-// import { Channel, Mode, UI } from 'kit-bridge/cjs/type';
+// import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/type';
 import { getAppHidden } from './appHidden';
 import { getScriptsMemory } from './state';
 import { emitter, KitEvent } from './events';
@@ -337,6 +347,7 @@ enum Bounds {
 
 const cachePromptBounds = debounce(
   async (b = Bounds.Position | Bounds.Size) => {
+    if (!promptScript) return;
     const currentScreen = getCurrentScreen();
     const promptDb = await getPromptDb();
 

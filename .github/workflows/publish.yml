@@ -28,14 +28,7 @@ jobs:
       - name: Show ref
         run: |
           echo "${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}"
-
-      - name: Curl kit.zip
-        run: |
-          curl -L https://github.com/johnlindquist/kit/archive/refs/heads/${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}.zip -o ./../kit.zip
-
-      - name: Curl kenv.zip
-        run: |
-          curl -L https://github.com/johnlindquist/kenv/archive/refs/heads/${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}.zip -o ./../kenv.zip
+          echo "release_channel=${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
 
       - name: ls parent paths
         run: |
@@ -52,30 +45,14 @@ jobs:
 
       - uses: c-hive/gha-yarn-cache@v1
 
-      - name: Install dependencies
+      - name: yarn
         run: |
-          yarn install --network-timeout 1000000
+          yarn add "@johnlindquist/kit@${{ env.release_channel }}"
+          yarn
 
-      - name: electron-build install
+      - name: yarn install-electron-deps
         run: |
           yarn install-electron-deps
-
-      - name: pwd
-        run: |
-          pwd
-
-      - name: ls cwd
-        run: |
-          ls ./
-          ls ./../
-
-      - name: Find .zips
-        run: |
-          find ./../../ -name "kit.zip"
-
-      - name: Bundle kit and kenv in assets
-        run: |
-          mv /Users/runner/work/kitapp/kit.zip ./assets/kit.zip && mv /Users/runner/work/kitapp/kenv.zip ./assets/kenv.zip
 
       - name: Semantic Release
         id: semantic
