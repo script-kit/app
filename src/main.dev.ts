@@ -50,7 +50,7 @@ import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   kenvPath,
   kitPath,
-  KIT_APP_SUBPROCESS_PATH,
+  KIT_FIRST_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
 } from '@johnlindquist/kit/cjs/util';
@@ -95,7 +95,7 @@ const options: SpawnSyncOptions = {
   env: {
     KIT,
     KENV: kenvPath(),
-    PATH: KIT_APP_SUBPROCESS_PATH,
+    PATH: KIT_FIRST_PATH,
   },
 };
 
@@ -204,7 +204,7 @@ autoUpdater.on('update-downloaded', async (event) => {
     env: {
       KIT,
       KENV: kenvPath(),
-      PATH: KIT_APP_SUBPROCESS_PATH,
+      PATH: KIT_FIRST_PATH,
     },
   });
 });
