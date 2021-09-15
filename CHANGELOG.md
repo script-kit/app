@@ -1,555 +1,187 @@
-# [1.3.0-beta.58](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.57...v1.3.0-beta.58) (2021-09-11)
+# [1.3.0-alpha.144](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.143...v1.3.0-alpha.144) (2021-09-15)
 
 
 ### Bug Fixes
 
-* **build:** build assets from script ([8ab7638](https://github.com/johnlindquist/kitapp/commit/8ab7638f0afeda49a57fcd43110ba6c8a3df2dc1))
-* **build:** build assets from script ([caa15ff](https://github.com/johnlindquist/kitapp/commit/caa15ffa93c1230871603cf9ca4e58768f164bfc))
-* **build:** electron v14 ([f8a69b3](https://github.com/johnlindquist/kitapp/commit/f8a69b3552770a6c9e42090f6dc7e3df06697b54))
-* **build:** grab kit release .zip ([84265b6](https://github.com/johnlindquist/kitapp/commit/84265b646a650dbd32142e963479eb91cbdc3eb7))
-* **build:** release zip as .kit ([ae14512](https://github.com/johnlindquist/kitapp/commit/ae14512b10d21271ab671bbe51229d4d9f977469))
-* **build:** release zip as .kit ([61a739d](https://github.com/johnlindquist/kitapp/commit/61a739d9489bba2921c0f3a7dcaa69f304ce5e8d))
-* **build:** release zip as .kit ([e39ac9d](https://github.com/johnlindquist/kitapp/commit/e39ac9d56c582ecd90f37fe80ec54b7f6c2ef922))
-* **build:** release zip as .kit ([e2449c7](https://github.com/johnlindquist/kitapp/commit/e2449c730a25e701791f08e4078a159dca950fe5))
-* **build:** release_channel to assets ([739eb45](https://github.com/johnlindquist/kitapp/commit/739eb4532c4c57698f18e9d5c788a7d90de9e07d))
-* **install:** bundle node. Install prod. Clean ui. ([ca3e6ea](https://github.com/johnlindquist/kitapp/commit/ca3e6eadecba48e8a0effdb766424bdf525a038a))
-* **install:** chmod ([1c7ef5b](https://github.com/johnlindquist/kitapp/commit/1c7ef5b46926391fa998354952697d6289d9c81d))
-* **install:** chmod kit helpers. Kenv examples update ([60c9cbd](https://github.com/johnlindquist/kitapp/commit/60c9cbd739992d4f439ea598c89b27278bdeb8f1))
-* **install:** ensure node dir ([270a954](https://github.com/johnlindquist/kitapp/commit/270a9542e2ff77df6dc7b4b952fab0796427fb25))
-* **install:** move verify install ([124fc04](https://github.com/johnlindquist/kitapp/commit/124fc0449f90f9d1b0e4d304a0d71d843153b1da))
-* **install:** PROCESS_PATH. Kit install ([76c0f4d](https://github.com/johnlindquist/kitapp/commit/76c0f4d3d2e5137ea13c4264b8b5cd233d825d08))
-* **install:** verify assets. Electron 14 ([9186a13](https://github.com/johnlindquist/kitapp/commit/9186a13d949037d60770101ff6f11c50c68a4cda))
-* **install:** verify assets. Electron 14 ([4e319b7](https://github.com/johnlindquist/kitapp/commit/4e319b7e41087d3a4b495308f9c28769e23e66ec))
-* **install:** verify assets. Electron 14 ([4bbc043](https://github.com/johnlindquist/kitapp/commit/4bbc0438032af2391e2ddc3de5e7f7680d87f30d))
-* **install:** verify assets. Electron 14 ([8e3889e](https://github.com/johnlindquist/kitapp/commit/8e3889e02f22514eac077aae79b7aff744e776d4))
-* **install:** verify assets. Electron 14 ([2920f9a](https://github.com/johnlindquist/kitapp/commit/2920f9afa0333d6729b828e22b0cdf6edeaa3668))
-* **install:** verify assets. Electron 14 ([d4d39cb](https://github.com/johnlindquist/kitapp/commit/d4d39cbbbadb77c86947c674c490ef0ba3d34add))
-* **install:** verify assets. Electron 14 ([11d49f9](https://github.com/johnlindquist/kitapp/commit/11d49f9385086b7564fa2f2127c613853fb7cdf4))
-* **release:** get kit.zip from github releases ([11987b5](https://github.com/johnlindquist/kitapp/commit/11987b5f02f031fe18c2122c8356e76491825847))
+* **git:** merge ([5158a1c](https://github.com/johnlindquist/kitapp/commit/5158a1c6a8bb18b898994f6681b0cac28dfe120f))
 
+### Bug Fixes
+
+- **build:** build assets from script ([8ab7638](https://github.com/johnlindquist/kitapp/commit/8ab7638f0afeda49a57fcd43110ba6c8a3df2dc1))
+- **build:** build assets from script ([caa15ff](https://github.com/johnlindquist/kitapp/commit/caa15ffa93c1230871603cf9ca4e58768f164bfc))
+- **build:** electron v14 ([f8a69b3](https://github.com/johnlindquist/kitapp/commit/f8a69b3552770a6c9e42090f6dc7e3df06697b54))
+
+### Bug Fixes
+
+- **app:** theming ([bfb2628](https://github.com/johnlindquist/kitapp/commit/bfb2628e9bd17853265268db9bcadc436556cd8f))
 
 ### Features
 
-* **kit:** switch to @johlindquist/kit ([8046bc6](https://github.com/johnlindquist/kitapp/commit/8046bc6328e45f912404edf225a2e9582631ec94))
-
-# [1.3.0-alpha.142](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.141...v1.3.0-alpha.142) (2021-09-11)
-
-
-### Bug Fixes
-
-* **install:** verify assets. Electron 14 ([9186a13](https://github.com/johnlindquist/kitapp/commit/9186a13d949037d60770101ff6f11c50c68a4cda))
-
-# [1.3.0-alpha.141](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.140...v1.3.0-alpha.141) (2021-09-10)
-
-
-### Bug Fixes
-
-* **install:** verify assets. Electron 14 ([4e319b7](https://github.com/johnlindquist/kitapp/commit/4e319b7e41087d3a4b495308f9c28769e23e66ec))
-
-# [1.3.0-alpha.140](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.139...v1.3.0-alpha.140) (2021-09-10)
-
-
-### Bug Fixes
-
-* **install:** verify assets. Electron 14 ([4bbc043](https://github.com/johnlindquist/kitapp/commit/4bbc0438032af2391e2ddc3de5e7f7680d87f30d))
-
-# [1.3.0-alpha.139](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.138...v1.3.0-alpha.139) (2021-09-10)
-
-
-### Bug Fixes
-
-* **install:** verify assets. Electron 14 ([8e3889e](https://github.com/johnlindquist/kitapp/commit/8e3889e02f22514eac077aae79b7aff744e776d4))
-
-# [1.3.0-alpha.138](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.137...v1.3.0-alpha.138) (2021-09-10)
-
-
-### Bug Fixes
-
-* **install:** verify assets. Electron 14 ([2920f9a](https://github.com/johnlindquist/kitapp/commit/2920f9afa0333d6729b828e22b0cdf6edeaa3668))
-
-# [1.3.0-alpha.137](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.136...v1.3.0-alpha.137) (2021-09-10)
-
-
-### Bug Fixes
-
-* **install:** verify assets. Electron 14 ([d4d39cb](https://github.com/johnlindquist/kitapp/commit/d4d39cbbbadb77c86947c674c490ef0ba3d34add))
-
-# [1.3.0-alpha.136](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.135...v1.3.0-alpha.136) (2021-09-10)
-
-
-### Bug Fixes
-
-* **install:** verify assets. Electron 14 ([11d49f9](https://github.com/johnlindquist/kitapp/commit/11d49f9385086b7564fa2f2127c613853fb7cdf4))
-
-# [1.3.0-alpha.135](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.134...v1.3.0-alpha.135) (2021-09-10)
-
-
-### Bug Fixes
-
-* **install:** bundle node. Install prod. Clean ui. ([ca3e6ea](https://github.com/johnlindquist/kitapp/commit/ca3e6eadecba48e8a0effdb766424bdf525a038a))
-
-# [1.3.0-alpha.134](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.133...v1.3.0-alpha.134) (2021-09-09)
-
-
-### Bug Fixes
-
-* **install:** move verify install ([124fc04](https://github.com/johnlindquist/kitapp/commit/124fc0449f90f9d1b0e4d304a0d71d843153b1da))
-
-# [1.3.0-alpha.133](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.132...v1.3.0-alpha.133) (2021-09-09)
-
-
-### Bug Fixes
-
-* **install:** ensure node dir ([270a954](https://github.com/johnlindquist/kitapp/commit/270a9542e2ff77df6dc7b4b952fab0796427fb25))
-
-# [1.3.0-alpha.132](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.131...v1.3.0-alpha.132) (2021-09-09)
-
-
-### Bug Fixes
-
-* **install:** chmod ([1c7ef5b](https://github.com/johnlindquist/kitapp/commit/1c7ef5b46926391fa998354952697d6289d9c81d))
-
-# [1.3.0-alpha.131](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.130...v1.3.0-alpha.131) (2021-09-09)
-
-
-### Bug Fixes
-
-* **install:** chmod kit helpers. Kenv examples update ([60c9cbd](https://github.com/johnlindquist/kitapp/commit/60c9cbd739992d4f439ea598c89b27278bdeb8f1))
-
-# [1.3.0-alpha.130](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.129...v1.3.0-alpha.130) (2021-09-09)
-
-
-### Bug Fixes
-
-* **build:** release_channel to assets ([739eb45](https://github.com/johnlindquist/kitapp/commit/739eb4532c4c57698f18e9d5c788a7d90de9e07d))
-
-# [1.3.0-alpha.129](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.128...v1.3.0-alpha.129) (2021-09-09)
-
-
-### Bug Fixes
-
-* **install:** PROCESS_PATH. Kit install ([76c0f4d](https://github.com/johnlindquist/kitapp/commit/76c0f4d3d2e5137ea13c4264b8b5cd233d825d08))
-
-# [1.3.0-alpha.128](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.127...v1.3.0-alpha.128) (2021-09-08)
-
-
-### Bug Fixes
-
-* **build:** build assets from script ([8ab7638](https://github.com/johnlindquist/kitapp/commit/8ab7638f0afeda49a57fcd43110ba6c8a3df2dc1))
-* **build:** build assets from script ([caa15ff](https://github.com/johnlindquist/kitapp/commit/caa15ffa93c1230871603cf9ca4e58768f164bfc))
-
-# [1.3.0-alpha.127](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.126...v1.3.0-alpha.127) (2021-09-08)
-
-
-### Bug Fixes
-
-* **build:** electron v14 ([f8a69b3](https://github.com/johnlindquist/kitapp/commit/f8a69b3552770a6c9e42090f6dc7e3df06697b54))
-* **build:** release zip as .kit ([ae14512](https://github.com/johnlindquist/kitapp/commit/ae14512b10d21271ab671bbe51229d4d9f977469))
-
-# [1.3.0-alpha.126](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.125...v1.3.0-alpha.126) (2021-09-08)
-
-
-### Bug Fixes
-
-* **build:** release zip as .kit ([61a739d](https://github.com/johnlindquist/kitapp/commit/61a739d9489bba2921c0f3a7dcaa69f304ce5e8d))
-
-# [1.3.0-alpha.125](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.124...v1.3.0-alpha.125) (2021-09-07)
-
-
-### Bug Fixes
-
-* **build:** release zip as .kit ([e39ac9d](https://github.com/johnlindquist/kitapp/commit/e39ac9d56c582ecd90f37fe80ec54b7f6c2ef922))
-
-# [1.3.0-alpha.124](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.123...v1.3.0-alpha.124) (2021-09-07)
-
-
-### Bug Fixes
-
-* **build:** release zip as .kit ([e2449c7](https://github.com/johnlindquist/kitapp/commit/e2449c730a25e701791f08e4078a159dca950fe5))
-
-# [1.3.0-alpha.123](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.122...v1.3.0-alpha.123) (2021-09-07)
-
-
-### Bug Fixes
-
-* **build:** grab kit release .zip ([84265b6](https://github.com/johnlindquist/kitapp/commit/84265b646a650dbd32142e963479eb91cbdc3eb7))
-* **release:** get kit.zip from github releases ([11987b5](https://github.com/johnlindquist/kitapp/commit/11987b5f02f031fe18c2122c8356e76491825847))
-
-# [1.3.0-alpha.122](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.121...v1.3.0-alpha.122) (2021-09-07)
-
-
-### Features
-
-* **kit:** switch to @johlindquist/kit ([8046bc6](https://github.com/johnlindquist/kitapp/commit/8046bc6328e45f912404edf225a2e9582631ec94))
-
-# [1.3.0-beta.57](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.56...v1.3.0-beta.57) (2021-08-24)
-
-
-### Features
-
-* **app:** improving search ([3bb7204](https://github.com/johnlindquist/kitapp/commit/3bb7204c82c9534e9d61ed0e1400a8cc5352793c))
-
-# [1.3.0-alpha.121](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.120...v1.3.0-alpha.121) (2021-08-24)
-
-
-### Features
-
-* **app:** improving search ([3bb7204](https://github.com/johnlindquist/kitapp/commit/3bb7204c82c9534e9d61ed0e1400a8cc5352793c))
-
-# [1.3.0-beta.56](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.55...v1.3.0-beta.56) (2021-08-21)
-
-
-### Features
-
-* **app:** toggle login launch setting ([c453e26](https://github.com/johnlindquist/kitapp/commit/c453e269dc47ea5c43a4184a5991baa7e635a706))
-
-# [1.3.0-alpha.120](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.119...v1.3.0-alpha.120) (2021-08-21)
-
-
-### Features
-
-* **app:** toggle login launch setting ([c453e26](https://github.com/johnlindquist/kitapp/commit/c453e269dc47ea5c43a4184a5991baa7e635a706))
-
-# [1.3.0-beta.55](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.54...v1.3.0-beta.55) (2021-08-20)
-
-
-### Bug Fixes
-
-* **app:** dragging svgs ([3cbb1c9](https://github.com/johnlindquist/kitapp/commit/3cbb1c9455b14ea8586203df868d8ada8fc2afcf))
-
-# [1.3.0-alpha.119](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.118...v1.3.0-alpha.119) (2021-08-20)
-
-
-### Bug Fixes
-
-* **app:** dragging svgs ([3cbb1c9](https://github.com/johnlindquist/kitapp/commit/3cbb1c9455b14ea8586203df868d8ada8fc2afcf))
-
-# [1.3.0-beta.54](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.53...v1.3.0-beta.54) (2021-08-20)
-
-
-### Bug Fixes
-
-* **app:** dragging. Notifications ([f87184e](https://github.com/johnlindquist/kitapp/commit/f87184e89d6d630d3e79ae2aae8650394ef247d5))
-
-# [1.3.0-alpha.118](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.117...v1.3.0-alpha.118) (2021-08-20)
-
-
-### Bug Fixes
-
-* **app:** dragging. Notifications ([f87184e](https://github.com/johnlindquist/kitapp/commit/f87184e89d6d630d3e79ae2aae8650394ef247d5))
-
-# [1.3.0-beta.53](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.52...v1.3.0-beta.53) (2021-08-20)
-
-
-### Bug Fixes
-
-* **app:** Removing sharp ([fb8a269](https://github.com/johnlindquist/kitapp/commit/fb8a2694fd5366194cdf4700027a1fc66122c835))
-
-# [1.3.0-alpha.117](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.116...v1.3.0-alpha.117) (2021-08-20)
-
-
-### Bug Fixes
-
-* **app:** Removing sharp ([fb8a269](https://github.com/johnlindquist/kitapp/commit/fb8a2694fd5366194cdf4700027a1fc66122c835))
-
-# [1.3.0-beta.52](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.51...v1.3.0-beta.52) (2021-08-20)
-
-
-### Features
-
-* **app:** adding update notifications. Render tweaks ([e596dca](https://github.com/johnlindquist/kitapp/commit/e596dca097885de1c0caa1e86367882b0b4135d2))
-
-# [1.3.0-alpha.116](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.115...v1.3.0-alpha.116) (2021-08-20)
-
-
-### Features
-
-* **app:** adding update notifications. Render tweaks ([e596dca](https://github.com/johnlindquist/kitapp/commit/e596dca097885de1c0caa1e86367882b0b4135d2))
-
-# [1.3.0-beta.51](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.50...v1.3.0-beta.51) (2021-08-19)
-
-
-### Features
-
-* **app:** adding drag and tag ([ab25e47](https://github.com/johnlindquist/kitapp/commit/ab25e4710589366b395276b396f297cf30624b7a))
-
-# [1.3.0-alpha.115](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.114...v1.3.0-alpha.115) (2021-08-19)
-
-
-### Features
-
-* **app:** adding drag and tag ([ab25e47](https://github.com/johnlindquist/kitapp/commit/ab25e4710589366b395276b396f297cf30624b7a))
-
-# [1.3.0-beta.50](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.49...v1.3.0-beta.50) (2021-08-17)
-
-
-### Bug Fixes
-
-* **app:** scored choices clear. mouse enabled fix ([28a177b](https://github.com/johnlindquist/kitapp/commit/28a177b8c23dc8a039c7fe8e8fff06350e172c63))
-
-# [1.3.0-alpha.114](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.113...v1.3.0-alpha.114) (2021-08-17)
-
-
-### Bug Fixes
-
-* **app:** scored choices clear. mouse enabled fix ([28a177b](https://github.com/johnlindquist/kitapp/commit/28a177b8c23dc8a039c7fe8e8fff06350e172c63))
-
-# [1.3.0-beta.49](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.48...v1.3.0-beta.49) (2021-08-17)
-
-
-### Bug Fixes
-
-* **app:** flags shortcuts ([e23a978](https://github.com/johnlindquist/kitapp/commit/e23a978099a9a3e1d7b547b48ea6ddf14e75962a))
-
-
-### Features
-
-* **app:** Allow searching on description, shortcut, etc ([0eb663e](https://github.com/johnlindquist/kitapp/commit/0eb663ee96e953301a0a3ef70531cf738d44a8eb))
-
-# [1.3.0-alpha.113](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.112...v1.3.0-alpha.113) (2021-08-17)
-
-
-### Bug Fixes
-
-* **app:** flags shortcuts ([e23a978](https://github.com/johnlindquist/kitapp/commit/e23a978099a9a3e1d7b547b48ea6ddf14e75962a))
-
-# [1.3.0-alpha.112](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.111...v1.3.0-alpha.112) (2021-08-17)
-
-
-### Features
-
-* **app:** Allow searching on description, shortcut, etc ([0eb663e](https://github.com/johnlindquist/kitapp/commit/0eb663ee96e953301a0a3ef70531cf738d44a8eb))
-
-# [1.3.0-beta.48](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.47...v1.3.0-beta.48) (2021-08-16)
-
-
-### Features
-
-* **app:** force focus on mouseUp. Don't send --app flag ([592d49f](https://github.com/johnlindquist/kitapp/commit/592d49f5c796a7fd7516133307eec3c3180527c1))
-
-# [1.3.0-alpha.111](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.110...v1.3.0-alpha.111) (2021-08-16)
-
-
-### Features
-
-* **app:** force focus on mouseUp. Don't send --app flag ([592d49f](https://github.com/johnlindquist/kitapp/commit/592d49f5c796a7fd7516133307eec3c3180527c1))
-
-# [1.3.0-beta.47](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.46...v1.3.0-beta.47) (2021-08-16)
-
-
-### Features
-
-* **app:** highlight descriptions. Handle missing images. ([1d5bef0](https://github.com/johnlindquist/kitapp/commit/1d5bef04818830d82e3119fd6bc21935d09fe838))
-
-# [1.3.0-alpha.110](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.109...v1.3.0-alpha.110) (2021-08-16)
-
-
-### Features
-
-* **app:** highlight descriptions. Handle missing images. ([1d5bef0](https://github.com/johnlindquist/kitapp/commit/1d5bef04818830d82e3119fd6bc21935d09fe838))
-
-# [1.3.0-beta.46](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.45...v1.3.0-beta.46) (2021-08-13)
-
-
-### Bug Fixes
-
-* **app:** theming ([bfb2628](https://github.com/johnlindquist/kitapp/commit/bfb2628e9bd17853265268db9bcadc436556cd8f))
-
-
-### Features
-
-* **app:** adding back SET_PROMPT_PROP ([1f3964b](https://github.com/johnlindquist/kitapp/commit/1f3964b035527ffcc0c671c9b7d3f90b9567426a))
+- **app:** adding back SET_PROMPT_PROP ([1f3964b](https://github.com/johnlindquist/kitapp/commit/1f3964b035527ffcc0c671c9b7d3f90b9567426a))
 
 # [1.3.0-alpha.109](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.108...v1.3.0-alpha.109) (2021-08-13)
 
-
 ### Bug Fixes
 
-* **app:** theming ([bfb2628](https://github.com/johnlindquist/kitapp/commit/bfb2628e9bd17853265268db9bcadc436556cd8f))
-
+- **app:** theming ([bfb2628](https://github.com/johnlindquist/kitapp/commit/bfb2628e9bd17853265268db9bcadc436556cd8f))
 
 ### Features
 
-* **app:** adding back SET_PROMPT_PROP ([1f3964b](https://github.com/johnlindquist/kitapp/commit/1f3964b035527ffcc0c671c9b7d3f90b9567426a))
+- **app:** adding back SET_PROMPT_PROP ([1f3964b](https://github.com/johnlindquist/kitapp/commit/1f3964b035527ffcc0c671c9b7d3f90b9567426a))
 
 # [1.3.0-beta.45](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.44...v1.3.0-beta.45) (2021-08-13)
 
-
 ### Bug Fixes
 
-* **app:** minor opacity ([1c240b1](https://github.com/johnlindquist/kitapp/commit/1c240b1f2cd8080693191e49b49278ddca52b054))
+- **app:** minor opacity ([1c240b1](https://github.com/johnlindquist/kitapp/commit/1c240b1f2cd8080693191e49b49278ddca52b054))
 
 # [1.3.0-alpha.108](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.107...v1.3.0-alpha.108) (2021-08-13)
 
-
 ### Bug Fixes
 
-* **app:** minor opacity ([1c240b1](https://github.com/johnlindquist/kitapp/commit/1c240b1f2cd8080693191e49b49278ddca52b054))
+- **app:** minor opacity ([1c240b1](https://github.com/johnlindquist/kitapp/commit/1c240b1f2cd8080693191e49b49278ddca52b054))
 
 # [1.3.0-beta.44](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.43...v1.3.0-beta.44) (2021-08-13)
 
-
 ### Bug Fixes
 
-* **app:** Header text. Log opacity ([12c2962](https://github.com/johnlindquist/kitapp/commit/12c2962a0a8ab958ba88258000526d66e59bc261))
-* **app:** Theme ([f530a97](https://github.com/johnlindquist/kitapp/commit/f530a975da2b2c2097c9ed59ebd05b3a2e5e3492))
+- **app:** Header text. Log opacity ([12c2962](https://github.com/johnlindquist/kitapp/commit/12c2962a0a8ab958ba88258000526d66e59bc261))
+- **app:** Theme ([f530a97](https://github.com/johnlindquist/kitapp/commit/f530a975da2b2c2097c9ed59ebd05b3a2e5e3492))
 
 # [1.3.0-alpha.107](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.106...v1.3.0-alpha.107) (2021-08-13)
 
-
 ### Bug Fixes
 
-* **app:** Header text. Log opacity ([12c2962](https://github.com/johnlindquist/kitapp/commit/12c2962a0a8ab958ba88258000526d66e59bc261))
+- **app:** Header text. Log opacity ([12c2962](https://github.com/johnlindquist/kitapp/commit/12c2962a0a8ab958ba88258000526d66e59bc261))
 
 # [1.3.0-alpha.106](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.105...v1.3.0-alpha.106) (2021-08-13)
 
-
 ### Bug Fixes
 
-* **app:** Theme ([f530a97](https://github.com/johnlindquist/kitapp/commit/f530a975da2b2c2097c9ed59ebd05b3a2e5e3492))
+- **app:** Theme ([f530a97](https://github.com/johnlindquist/kitapp/commit/f530a975da2b2c2097c9ed59ebd05b3a2e5e3492))
 
 # [1.3.0-beta.43](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.42...v1.3.0-beta.43) (2021-08-13)
 
-
 ### Features
 
-* **app:** Add input type. Install docs ([7b80d4c](https://github.com/johnlindquist/kitapp/commit/7b80d4c0efa96de3f1b763d36407153b8f7f76e3))
+- **app:** Add input type. Install docs ([7b80d4c](https://github.com/johnlindquist/kitapp/commit/7b80d4c0efa96de3f1b763d36407153b8f7f76e3))
 
 # [1.3.0-alpha.105](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.104...v1.3.0-alpha.105) (2021-08-12)
 
-
 ### Features
 
-* **app:** Add input type. Install docs ([7b80d4c](https://github.com/johnlindquist/kitapp/commit/7b80d4c0efa96de3f1b763d36407153b8f7f76e3))
+- **app:** Add input type. Install docs ([7b80d4c](https://github.com/johnlindquist/kitapp/commit/7b80d4c0efa96de3f1b763d36407153b8f7f76e3))
 
 # [1.3.0-beta.42](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.41...v1.3.0-beta.42) (2021-08-12)
 
-
 ### Bug Fixes
 
-* **app:** Theme. Header ([7945313](https://github.com/johnlindquist/kitapp/commit/7945313167a5a3b0ec2b7cec98e6cf7fd0a0bc43))
+- **app:** Theme. Header ([7945313](https://github.com/johnlindquist/kitapp/commit/7945313167a5a3b0ec2b7cec98e6cf7fd0a0bc43))
 
 # [1.3.0-alpha.104](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.103...v1.3.0-alpha.104) (2021-08-12)
 
-
 ### Bug Fixes
 
-* **app:** Theme. Header ([7945313](https://github.com/johnlindquist/kitapp/commit/7945313167a5a3b0ec2b7cec98e6cf7fd0a0bc43))
-
+- **app:** Theme. Header ([7945313](https://github.com/johnlindquist/kitapp/commit/7945313167a5a3b0ec2b7cec98e6cf7fd0a0bc43))
 
 ### Features
 
-* **app:** Color vars ([eb65993](https://github.com/johnlindquist/kitapp/commit/eb65993af6453d7b2d80279d0f312d9d9143c081))
+- **app:** Color vars ([eb65993](https://github.com/johnlindquist/kitapp/commit/eb65993af6453d7b2d80279d0f312d9d9143c081))
 
 # [1.3.0-beta.41](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.40...v1.3.0-beta.41) (2021-08-12)
 
-
 ### Features
 
-* **app:** Color vars ([eb65993](https://github.com/johnlindquist/kitapp/commit/eb65993af6453d7b2d80279d0f312d9d9143c081))
+- **app:** Color vars ([eb65993](https://github.com/johnlindquist/kitapp/commit/eb65993af6453d7b2d80279d0f312d9d9143c081))
 
 # [1.3.0-beta.40](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.39...v1.3.0-beta.40) (2021-08-12)
 
-
 ### Features
 
-* **app:** selected. Styling. Resizing ([0587c71](https://github.com/johnlindquist/kitapp/commit/0587c71db13044c9704f5017c13d1155003a803e))
+- **app:** selected. Styling. Resizing ([0587c71](https://github.com/johnlindquist/kitapp/commit/0587c71db13044c9704f5017c13d1155003a803e))
 
 # [1.3.0-alpha.103](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.102...v1.3.0-alpha.103) (2021-08-12)
 
-
 ### Features
 
-* **app:** selected. Styling. Resizing ([0587c71](https://github.com/johnlindquist/kitapp/commit/0587c71db13044c9704f5017c13d1155003a803e))
+- **app:** selected. Styling. Resizing ([0587c71](https://github.com/johnlindquist/kitapp/commit/0587c71db13044c9704f5017c13d1155003a803e))
 
 # [1.3.0-beta.39](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.38...v1.3.0-beta.39) (2021-08-12)
 
-
 ### Features
 
-* **app:** selected. Styling. Resizing ([a12a689](https://github.com/johnlindquist/kitapp/commit/a12a689aa038aee2e656d156ef2ade079ab63cc9))
+- **app:** selected. Styling. Resizing ([a12a689](https://github.com/johnlindquist/kitapp/commit/a12a689aa038aee2e656d156ef2ade079ab63cc9))
 
 # [1.3.0-alpha.102](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.101...v1.3.0-alpha.102) (2021-08-12)
 
-
 ### Features
 
-* **app:** selected. Styling. Resizing ([a12a689](https://github.com/johnlindquist/kitapp/commit/a12a689aa038aee2e656d156ef2ade079ab63cc9))
+- **app:** selected. Styling. Resizing ([a12a689](https://github.com/johnlindquist/kitapp/commit/a12a689aa038aee2e656d156ef2ade079ab63cc9))
 
 # [1.3.0-beta.38](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.37...v1.3.0-beta.38) (2021-08-10)
 
-
 ### Bug Fixes
 
-* **app:** resizing in prompt. timeout for choices ([d6ade46](https://github.com/johnlindquist/kitapp/commit/d6ade461a631082d7b85e9eaef1b11731e368b19))
+- **app:** resizing in prompt. timeout for choices ([d6ade46](https://github.com/johnlindquist/kitapp/commit/d6ade461a631082d7b85e9eaef1b11731e368b19))
 
 # [1.3.0-alpha.101](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.100...v1.3.0-alpha.101) (2021-08-10)
 
-
 ### Bug Fixes
 
-* **app:** resizing in prompt. timeout for choices ([d6ade46](https://github.com/johnlindquist/kitapp/commit/d6ade461a631082d7b85e9eaef1b11731e368b19))
+- **app:** resizing in prompt. timeout for choices ([d6ade46](https://github.com/johnlindquist/kitapp/commit/d6ade461a631082d7b85e9eaef1b11731e368b19))
 
 # [1.3.0-beta.37](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.36...v1.3.0-beta.37) (2021-08-08)
 
-
 ### Bug Fixes
 
-* **app:** flagged value timing. Prompt resizing debouncing ([369d0e0](https://github.com/johnlindquist/kitapp/commit/369d0e02c0d29fc51402aa902543f7291fd69084))
+- **app:** flagged value timing. Prompt resizing debouncing ([369d0e0](https://github.com/johnlindquist/kitapp/commit/369d0e02c0d29fc51402aa902543f7291fd69084))
 
 # [1.3.0-alpha.100](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.99...v1.3.0-alpha.100) (2021-08-08)
 
-
 ### Bug Fixes
 
-* **app:** flagged value timing. Prompt resizing debouncing ([369d0e0](https://github.com/johnlindquist/kitapp/commit/369d0e02c0d29fc51402aa902543f7291fd69084))
+- **app:** flagged value timing. Prompt resizing debouncing ([369d0e0](https://github.com/johnlindquist/kitapp/commit/369d0e02c0d29fc51402aa902543f7291fd69084))
 
 # [1.3.0-beta.36](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.35...v1.3.0-beta.36) (2021-08-08)
 
-
 ### Features
 
-* **app:** hide after notify. Allow empty string. ([567505b](https://github.com/johnlindquist/kitapp/commit/567505bc0c572ca74e8535cfe3de420a97692621))
+- **app:** hide after notify. Allow empty string. ([567505b](https://github.com/johnlindquist/kitapp/commit/567505bc0c572ca74e8535cfe3de420a97692621))
 
 # [1.3.0-alpha.99](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.98...v1.3.0-alpha.99) (2021-08-08)
 
-
 ### Features
 
-* **app:** hide after notify. Allow empty string. ([567505b](https://github.com/johnlindquist/kitapp/commit/567505bc0c572ca74e8535cfe3de420a97692621))
+- **app:** hide after notify. Allow empty string. ([567505b](https://github.com/johnlindquist/kitapp/commit/567505bc0c572ca74e8535cfe3de420a97692621))
 
 # [1.3.0-beta.35](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.34...v1.3.0-beta.35) (2021-08-07)
 
-
 ### Features
 
-* **app:** adding setFlags ([f0b8f42](https://github.com/johnlindquist/kitapp/commit/f0b8f42945779821e9626025d5edb6ad0a921cd6))
-* **app:** Resizing fixes. Extracting hooks. Handle ipc/channel ([cee0df8](https://github.com/johnlindquist/kitapp/commit/cee0df861917fefddbb8365f7b7f4b11e133b0bc))
-* **app:** script context menu ([ff53596](https://github.com/johnlindquist/kitapp/commit/ff535962d09dcc1e09c5f72da7a8fc129b9a01db))
-* **app:** script context menu ([7bd01e3](https://github.com/johnlindquist/kitapp/commit/7bd01e3f2a8e3fd083c16ce20703acc1ee5d8042))
-* **app:** validating flags ([dfcc28a](https://github.com/johnlindquist/kitapp/commit/dfcc28a0b3658a7ed8a52a5dd7229646ba5262b7))
+- **app:** adding setFlags ([f0b8f42](https://github.com/johnlindquist/kitapp/commit/f0b8f42945779821e9626025d5edb6ad0a921cd6))
+- **app:** Resizing fixes. Extracting hooks. Handle ipc/channel ([cee0df8](https://github.com/johnlindquist/kitapp/commit/cee0df861917fefddbb8365f7b7f4b11e133b0bc))
+- **app:** script context menu ([ff53596](https://github.com/johnlindquist/kitapp/commit/ff535962d09dcc1e09c5f72da7a8fc129b9a01db))
+- **app:** script context menu ([7bd01e3](https://github.com/johnlindquist/kitapp/commit/7bd01e3f2a8e3fd083c16ce20703acc1ee5d8042))
+- **app:** validating flags ([dfcc28a](https://github.com/johnlindquist/kitapp/commit/dfcc28a0b3658a7ed8a52a5dd7229646ba5262b7))
 
 # [1.3.0-alpha.98](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.97...v1.3.0-alpha.98) (2021-08-07)
 
-
 ### Features
 
-* **app:** Resizing fixes. Extracting hooks. Handle ipc/channel ([cee0df8](https://github.com/johnlindquist/kitapp/commit/cee0df861917fefddbb8365f7b7f4b11e133b0bc))
+- **app:** Resizing fixes. Extracting hooks. Handle ipc/channel ([cee0df8](https://github.com/johnlindquist/kitapp/commit/cee0df861917fefddbb8365f7b7f4b11e133b0bc))
 
 # [1.3.0-alpha.97](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.96...v1.3.0-alpha.97) (2021-08-03)
 
-
 ### Features
 
-* **app:** validating flags ([dfcc28a](https://github.com/johnlindquist/kitapp/commit/dfcc28a0b3658a7ed8a52a5dd7229646ba5262b7))
+- **app:** validating flags ([dfcc28a](https://github.com/johnlindquist/kitapp/commit/dfcc28a0b3658a7ed8a52a5dd7229646ba5262b7))
 
 # [1.3.0-alpha.96](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.95...v1.3.0-alpha.96) (2021-08-02)
 
-
 ### Features
 
-* **app:** script context menu ([ff53596](https://github.com/johnlindquist/kitapp/commit/ff535962d09dcc1e09c5f72da7a8fc129b9a01db))
-* **app:** script context menu ([7bd01e3](https://github.com/johnlindquist/kitapp/commit/7bd01e3f2a8e3fd083c16ce20703acc1ee5d8042))
+- **app:** script context menu ([ff53596](https://github.com/johnlindquist/kitapp/commit/ff535962d09dcc1e09c5f72da7a8fc129b9a01db))
+- **app:** script context menu ([7bd01e3](https://github.com/johnlindquist/kitapp/commit/7bd01e3f2a8e3fd083c16ce20703acc1ee5d8042))
 
 # [1.3.0-alpha.95](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.94...v1.3.0-alpha.95) (2021-07-31)
 
