@@ -1,3 +1,10 @@
+# [1.3.0-alpha.144](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.143...v1.3.0-alpha.144) (2021-09-15)
+
+
+### Bug Fixes
+
+* **git:** merge ([5158a1c](https://github.com/johnlindquist/kitapp/commit/5158a1c6a8bb18b898994f6681b0cac28dfe120f))
+
 ### Bug Fixes
 
 - **build:** build assets from script ([8ab7638](https://github.com/johnlindquist/kitapp/commit/8ab7638f0afeda49a57fcd43110ba6c8a3df2dc1))
