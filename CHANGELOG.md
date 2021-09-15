@@ -1,3 +1,10 @@
+# [1.3.0-alpha.143](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.142...v1.3.0-alpha.143) (2021-09-15)
+
+
+### Bug Fixes
+
+* **kit:** update to latest kit api ([74df2e3](https://github.com/johnlindquist/kitapp/commit/74df2e399ce9e3b80e99c32c41a60b02ecc0e6d7))
+
 # [1.3.0-alpha.142](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.141...v1.3.0-alpha.142) (2021-09-11)
 
 
