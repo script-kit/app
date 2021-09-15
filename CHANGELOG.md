@@ -1,3 +1,10 @@
+# [1.3.0-alpha.145](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.144...v1.3.0-alpha.145) (2021-09-15)
+
+
+### Bug Fixes
+
+* **install:** KIT_FIRST_PATH ([92cf0e8](https://github.com/johnlindquist/kitapp/commit/92cf0e8e8ffc6ada236663619d722af2fbf95059))
+
 # [1.3.0-beta.59](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.58...v1.3.0-beta.59) (2021-09-15)
 
 
