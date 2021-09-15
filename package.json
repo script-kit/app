@@ -305,7 +305,6 @@
   },
   "dependencies": {
     "@heroicons/react": "^1.0.4",
-    "@johnlindquist/kit": "^0.1.0-alpha.29",
     "@monaco-editor/react": "^4.2.0",
     "@react-hook/resize-observer": "^1.2.0",
     "@rooks/use-previous": "^4.10.0",

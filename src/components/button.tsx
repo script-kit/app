@@ -9,7 +9,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import parse from 'html-react-parser';
 
 import { overrideTailwindClasses } from 'tailwind-override';
-import { Choice, Script } from 'kit-bridge/cjs/type';
+import { Choice, Script } from '@johnlindquist/kit/cjs/type';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { ChoiceButtonProps } from '../types';
@@ -43,7 +43,6 @@ function highlight(
 }
 
 function isScript(choice: Choice | Script): choice is Script {
-  console.log({ choice });
   return (choice as Script)?.command !== undefined;
 }
 
