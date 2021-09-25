@@ -5,12 +5,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
-import {
-  Choice,
-  Script,
-  PromptData,
-  PromptBounds,
-} from '@johnlindquist/kit/cjs/type';
+import { Choice, Script, PromptData, PromptBounds } from '@johnlindquist/kit';
 
 import { BrowserWindow, screen, nativeTheme, app } from 'electron';
 import log from 'electron-log';
@@ -22,11 +17,11 @@ import {
   isFile,
   kenvPath,
   kitPath,
-} from '@johnlindquist/kit/cjs/util';
+} from '@johnlindquist/kit/cjs/utils';
 import { getPromptDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
 import { getAssetPath } from './assets';
-// import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/type';
+// import { Channel, Mode, UI } from '@johnlindquist/kit';
 import { getAppHidden } from './appHidden';
 import { getScriptsMemory } from './state';
 import { emitter, KitEvent } from './events';

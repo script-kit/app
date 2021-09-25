@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { app, BrowserWindow, nativeTheme, screen } from 'electron';
 import { writeFile, mkdir } from 'fs/promises';
-import { kenvPath, isDir } from '@johnlindquist/kit/cjs/util';
+import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
 import { getAssetPath } from './assets';
 
 const page = (body: string) => {

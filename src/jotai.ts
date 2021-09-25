@@ -18,7 +18,7 @@ import {
   TextareaConfig,
   PromptData,
   EditorOptions,
-} from '@johnlindquist/kit/cjs/type';
+} from '@johnlindquist/kit';
 import { clamp, debounce, drop } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';

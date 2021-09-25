@@ -13,7 +13,7 @@ import {
   kenvPath,
   kitPath,
   mainScriptPath,
-} from '@johnlindquist/kit/cjs/util';
+} from '@johnlindquist/kit/cjs/utils';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 import { setPromptPid, setScript } from './prompt';

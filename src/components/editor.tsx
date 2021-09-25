@@ -3,7 +3,7 @@ import path from 'path';
 import { useAtom } from 'jotai';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
-import { EditorOptions } from '@johnlindquist/kit/cjs/type';
+import { EditorOptions } from '@johnlindquist/kit';
 import { darkAtom, editorConfigAtom, openAtom } from '../jotai';
 import { useClose, useMountMainHeight, useSave } from '../hooks';
 

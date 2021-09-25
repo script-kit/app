@@ -7,7 +7,7 @@ import {
   info,
   kenvPath,
   shortcutsPath,
-} from '@johnlindquist/kit/cjs/util';
+} from '@johnlindquist/kit/cjs/utils';
 import {
   unlinkShortcuts,
   updateMainShortcut,
@@ -64,7 +64,7 @@ export const setupWatchers = async () => {
   watchers.push(shortcutsDbWatcher);
   shortcutsDbWatcher.on('all', onDbChanged);
 
-  const kenvScripts = kenvPath('scripts/*.js');
+  const kenvScripts = kenvPath('scripts/*.(j|t)s');
 
   const scriptsWatcher = chokidar.watch([kenvScripts], {
     depth: 1,
@@ -76,7 +76,7 @@ export const setupWatchers = async () => {
   });
 
   kenvsWatcher.on('all', async (eventName, addPath) => {
-    const scriptsPath = `${addPath}/scripts/*.js`;
+    const scriptsPath = `${addPath}/scripts/*.(j|t)s`;
 
     if (eventName.includes('addDir') && addPath.match(/kenvs\/[^/]+$/)) {
       log.info(`👀 Watch ${scriptsPath}`);

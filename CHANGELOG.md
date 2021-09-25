@@ -1,3 +1,38 @@
+# [1.3.0-alpha.150](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.149...v1.3.0-alpha.150) (2021-09-25)
+
+
+### Features
+
+* **typescript:** adding typescript support ([4eb9f72](https://github.com/johnlindquist/kitapp/commit/4eb9f7274c563ed8ddfc07c727652a29eea34d92))
+
+# [1.3.0-alpha.149](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.148...v1.3.0-alpha.149) (2021-09-25)
+
+
+### Features
+
+* **typescript:** adding typescript support ([16c77c8](https://github.com/johnlindquist/kitapp/commit/16c77c8ad2ce0430107aa7873a6ae28f32307b97))
+
+# [1.3.0-alpha.148](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.147...v1.3.0-alpha.148) (2021-09-25)
+
+
+### Features
+
+* **electron:** upgrade to electron 15 ([7609b9d](https://github.com/johnlindquist/kitapp/commit/7609b9d51535af4157c99047e7b27e2b487c4f36))
+
+# [1.3.0-alpha.147](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.146...v1.3.0-alpha.147) (2021-09-25)
+
+
+### Features
+
+* **typescript:** adding typescript support ([38c78e5](https://github.com/johnlindquist/kitapp/commit/38c78e55ec347245047abcc37b16597c04f36d9f))
+
+# [1.3.0-alpha.146](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.145...v1.3.0-alpha.146) (2021-09-25)
+
+
+### Features
+
+* **typescript:** adding typescript support ([4ef708d](https://github.com/johnlindquist/kitapp/commit/4ef708d3d81e355ebea000b47c953cd22ab17f8b))
+
 # [1.3.0-beta.60](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.59...v1.3.0-beta.60) (2021-09-15)
 
 

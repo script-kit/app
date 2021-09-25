@@ -1,12 +1,12 @@
 import { globalShortcut } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
-import { Script } from '@johnlindquist/kit/cjs/type';
+import { Script } from '@johnlindquist/kit';
 import {
   mainScriptPath,
   shortcutsPath,
   shortcutNormalizer,
-} from '@johnlindquist/kit/cjs/util';
+} from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 

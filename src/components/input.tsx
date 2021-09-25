@@ -3,7 +3,7 @@
 import React, { useCallback, KeyboardEvent, LegacyRef, useEffect } from 'react';
 
 import { Channel } from '@johnlindquist/kit/cjs/enum';
-import { Choice } from '@johnlindquist/kit/cjs/type';
+import { Choice } from '@johnlindquist/kit';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 
