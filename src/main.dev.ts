@@ -333,8 +333,8 @@ const ensureKenvDirs = async () => {
 
   if (!existsSync(defaultTSTemplate)) {
     await copyFile(
-      defaultTSTemplate,
-      kitPath('templates', 'scripts', 'default.ts')
+      kitPath('templates', 'scripts', 'default.ts'),
+      defaultTSTemplate
     );
   }
 
