@@ -1,3 +1,10 @@
+# [1.3.0-beta.62](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.61...v1.3.0-beta.62) (2021-09-25)
+
+
+### Bug Fixes
+
+* **patch:** adding patch script ([9812e67](https://github.com/johnlindquist/kitapp/commit/9812e6753fc03ad5ff1640621ef980ba1f649fa5))
+
 # [1.3.0-alpha.151](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.150...v1.3.0-alpha.151) (2021-09-25)
 
 
