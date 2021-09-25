@@ -45,7 +45,15 @@ import {
 import { homedir } from 'os';
 import { ensureDir, writeFile } from 'fs-extra';
 import { existsSync, readFileSync } from 'fs';
-import { chmod, lstat, readdir, readFile, rm, rmdir } from 'fs/promises';
+import {
+  chmod,
+  lstat,
+  readdir,
+  readFile,
+  rm,
+  rmdir,
+  copyFile,
+} from 'fs/promises';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 
 import {
