@@ -1,3 +1,10 @@
+# [1.3.0-alpha.147](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.146...v1.3.0-alpha.147) (2021-09-25)
+
+
+### Features
+
+* **typescript:** adding typescript support ([38c78e5](https://github.com/johnlindquist/kitapp/commit/38c78e55ec347245047abcc37b16597c04f36d9f))
+
 # [1.3.0-alpha.146](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.145...v1.3.0-alpha.146) (2021-09-25)
 
 
