@@ -1,3 +1,10 @@
+# [1.3.0-alpha.148](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.147...v1.3.0-alpha.148) (2021-09-25)
+
+
+### Features
+
+* **electron:** upgrade to electron 15 ([7609b9d](https://github.com/johnlindquist/kitapp/commit/7609b9d51535af4157c99047e7b27e2b487c4f36))
+
 # [1.3.0-alpha.147](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.146...v1.3.0-alpha.147) (2021-09-25)
 
 
