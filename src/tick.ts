@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { db } from '@johnlindquist/kit/cjs/db';
-import { kitPath, tmpClipboardDir } from '@johnlindquist/kit/cjs/util';
+import { kitPath, tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
 
 export const tick = async () => {
   const clipboardHistory = await db(kitPath('db', 'clipboard-history.json'), {

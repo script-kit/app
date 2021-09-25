@@ -12,23 +12,18 @@ import { autoUpdater } from 'electron-updater';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
 import { Channel, Mode, ProcessType } from '@johnlindquist/kit/cjs/enum';
-import {
-  Choice,
-  MessageData,
-  Script,
-  PromptData,
-} from '@johnlindquist/kit/cjs/type';
+import { Choice, MessageData, Script, PromptData } from '@johnlindquist/kit';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 
 import {
   resolveToScriptPath,
-  KIT_MAC_APP,
-  KIT_MAC_APP_PROMPT,
+  KIT_APP,
+  KIT_APP_PROMPT,
   kitPath,
   kenvPath,
   kitDotEnv,
   execPath,
-} from '@johnlindquist/kit/cjs/util';
+} from '@johnlindquist/kit/cjs/utils';
 
 import { getLog } from './logs';
 import {
@@ -423,7 +418,7 @@ const createChild = ({
     args = [resolvePath, ...runArgs];
   }
 
-  const entry = type === ProcessType.Prompt ? KIT_MAC_APP_PROMPT : KIT_MAC_APP;
+  const entry = type === ProcessType.Prompt ? KIT_APP_PROMPT : KIT_APP;
   const child = fork(entry, args, {
     silent: false,
     // stdio: 'inherit',

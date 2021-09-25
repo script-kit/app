@@ -2,7 +2,11 @@
 import { Tray } from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
-import { kenvPath, kitPath, mainScriptPath } from '@johnlindquist/kit/cjs/util';
+import {
+  kenvPath,
+  kitPath,
+  mainScriptPath,
+} from '@johnlindquist/kit/cjs/utils';
 import { getAssetPath } from './assets';
 import { restartIfNecessary } from './state';
 import { runPromptProcess } from './kit';

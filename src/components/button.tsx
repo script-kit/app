@@ -9,7 +9,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import parse from 'html-react-parser';
 
 import { overrideTailwindClasses } from 'tailwind-override';
-import { Choice, Script } from '@johnlindquist/kit/cjs/type';
+import { Choice, Script } from '@johnlindquist/kit';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { ChoiceButtonProps } from '../types';

@@ -43,17 +43,18 @@ import {
   spawn,
 } from 'child_process';
 import { homedir } from 'os';
-import { ensureDir } from 'fs-extra';
+import { ensureDir, writeFile } from 'fs-extra';
 import { existsSync, readFileSync } from 'fs';
 import { chmod, lstat, readdir, readFile, rm, rmdir } from 'fs/promises';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
+
 import {
   kenvPath,
   kitPath,
   KIT_FIRST_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
-} from '@johnlindquist/kit/cjs/util';
+} from '@johnlindquist/kit/cjs/utils';
 import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
 import { createTray, destroyTray } from './tray';
 import { cacheMenu, setupWatchers } from './watcher';
@@ -300,6 +301,43 @@ const ensureKitDirs = async () => {
 const ensureKenvDirs = async () => {
   await ensureDir(kenvPath('kenvs'));
   await ensureDir(kenvPath('assets'));
+  const tsconfigPath = kenvPath('tsconfig.json');
+  if (!existsSync(tsconfigPath)) {
+    const tsconfig = {
+      compilerOptions: {
+        types: ['kit'],
+        module: 'esnext',
+        target: 'esnext',
+        moduleResolution: 'node',
+      },
+    };
+    await writeFile(tsconfigPath, JSON.stringify(tsconfig, null, '\t'));
+  }
+
+  const defaultJSTemplate = kenvPath('templates', 'default.js');
+  if (!existsSync(defaultJSTemplate)) {
+    await copyFile(
+      kitPath('templates', 'scripts', 'default.js'),
+      defaultJSTemplate
+    );
+  }
+  const defaultTSTemplate = kenvPath('templates', 'default.ts');
+
+  if (!existsSync(defaultTSTemplate)) {
+    await copyFile(
+      defaultTSTemplate,
+      kitPath('templates', 'scripts', 'default.ts')
+    );
+  }
+
+  const defaultBinTemplate = kenvPath('templates', 'default.ts');
+
+  if (!existsSync(defaultTSTemplate)) {
+    await copyFile(
+      defaultTSTemplate,
+      kitPath('templates', 'scripts', 'default.ts')
+    );
+  }
 };
 
 const ready = async () => {
