@@ -43,17 +43,9 @@ import {
   spawn,
 } from 'child_process';
 import { homedir } from 'os';
-import { ensureDir, writeFile } from 'fs-extra';
+import { ensureDir } from 'fs-extra';
 import { existsSync, readFileSync } from 'fs';
-import {
-  chmod,
-  lstat,
-  readdir,
-  readFile,
-  rm,
-  rmdir,
-  copyFile,
-} from 'fs/promises';
+import { chmod, lstat, readdir, readFile, rm, rmdir } from 'fs/promises';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 
 import {
@@ -309,43 +301,6 @@ const ensureKitDirs = async () => {
 const ensureKenvDirs = async () => {
   await ensureDir(kenvPath('kenvs'));
   await ensureDir(kenvPath('assets'));
-  const tsconfigPath = kenvPath('tsconfig.json');
-  if (!existsSync(tsconfigPath)) {
-    const tsconfig = {
-      compilerOptions: {
-        types: ['kit'],
-        module: 'esnext',
-        target: 'esnext',
-        moduleResolution: 'node',
-      },
-    };
-    await writeFile(tsconfigPath, JSON.stringify(tsconfig, null, '\t'));
-  }
-
-  const defaultJSTemplate = kenvPath('templates', 'default.js');
-  if (!existsSync(defaultJSTemplate)) {
-    await copyFile(
-      kitPath('templates', 'scripts', 'default.js'),
-      defaultJSTemplate
-    );
-  }
-  const defaultTSTemplate = kenvPath('templates', 'default.ts');
-
-  if (!existsSync(defaultTSTemplate)) {
-    await copyFile(
-      kitPath('templates', 'scripts', 'default.ts'),
-      defaultTSTemplate
-    );
-  }
-
-  const defaultBinTemplate = kenvPath('templates', 'default.ts');
-
-  if (!existsSync(defaultTSTemplate)) {
-    await copyFile(
-      defaultTSTemplate,
-      kitPath('templates', 'scripts', 'default.ts')
-    );
-  }
 };
 
 const ready = async () => {
@@ -692,9 +647,10 @@ const checkKit = async () => {
     await handleSpawnReturns(`clone-examples`, cloneExamplesResult, false);
   }
 
+  await chmod(kitPath('script'), 0o755);
+
   if (!kenvConfigured()) {
     setupLog(`Run .kenv setup script...`);
-    await chmod(kitPath('script'), 0o755);
 
     const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
     await handleSpawnReturns(`setup`, setupResult);
@@ -708,6 +664,9 @@ const checkKit = async () => {
     options
   );
   await handleSpawnReturns(`create-all-bins`, createAllBins);
+
+  const patchResult = spawnSync(`./script`, [`./setup/patch.js`], options);
+  await handleSpawnReturns(`patch`, patchResult);
 
   await verifyInstall();
   await storeVersion(getVersion());
