@@ -1,3 +1,10 @@
+# [1.3.0-alpha.152](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.151...v1.3.0-alpha.152) (2021-09-29)
+
+
+### Bug Fixes
+
+* **patch:** fix kenv/kit linking ([6ad19a0](https://github.com/johnlindquist/kitapp/commit/6ad19a00b44ef79d2ba8a85d5ccf24cdd71cd1c4))
+
 # [1.3.0-beta.62](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.61...v1.3.0-beta.62) (2021-09-25)
 
 

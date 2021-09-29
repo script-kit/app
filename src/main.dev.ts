@@ -665,6 +665,7 @@ const checkKit = async () => {
   );
   await handleSpawnReturns(`create-all-bins`, createAllBins);
 
+  setupLog(`Update .kenv`);
   const patchResult = spawnSync(`./script`, [`./setup/patch.js`], options);
   await handleSpawnReturns(`patch`, patchResult);
 
