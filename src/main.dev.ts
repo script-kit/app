@@ -672,7 +672,6 @@ const checkKit = async () => {
   await verifyInstall();
   await storeVersion(getVersion());
   await ready();
-  setupLog(`Ready`);
 };
 
 app.whenReady().then(checkKit).catch(ohNo);
