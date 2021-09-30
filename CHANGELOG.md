@@ -1,3 +1,10 @@
+# [1.3.0-beta.64](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.63...v1.3.0-beta.64) (2021-09-30)
+
+
+### Bug Fixes
+
+* **types:** grouping into d.ts files ([b646c30](https://github.com/johnlindquist/kitapp/commit/b646c302779b5a714cabc108d1d5b40f625d9afd))
+
 # [1.3.0-alpha.153](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.152...v1.3.0-alpha.153) (2021-09-30)
 
 
