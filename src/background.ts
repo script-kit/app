@@ -1,8 +1,8 @@
 import log from 'electron-log';
 
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
-import { info } from '@johnlindquist/kit/cjs/utils';
-import { Script } from '@johnlindquist/kit';
+import { parseScript } from '@johnlindquist/kit/cjs/utils';
+import { Script } from '@johnlindquist/kit/types/core';
 import { emitter, KitEvent } from './events';
 import { backgroundMap, Background } from './state';
 import { processes } from './process';
@@ -40,7 +40,7 @@ export const updateBackground = async (
   filePath: string,
   fileChange = false
 ) => {
-  const { background: backgroundString } = await info(filePath);
+  const { background: backgroundString } = await parseScript(filePath);
 
   const startTask = () => {
     const { child } = processes.add(ProcessType.Background, filePath);

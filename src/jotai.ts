@@ -11,14 +11,13 @@ import asap from 'asap';
 
 import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
+import { Choice, Script, PromptData } from '@johnlindquist/kit/types/core';
 import {
-  Choice,
   EditorConfig,
-  Script,
   TextareaConfig,
-  PromptData,
   EditorOptions,
-} from '@johnlindquist/kit';
+} from '@johnlindquist/kit/types/app';
+
 import { clamp, debounce, drop } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
@@ -304,6 +303,7 @@ export const tabIndexAtom = atom(
 );
 
 const noScript: Script = {
+  id: '',
   filePath: '',
   command: '',
   name: '',

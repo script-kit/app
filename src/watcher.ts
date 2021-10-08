@@ -4,7 +4,7 @@ import log from 'electron-log';
 import { debounce } from 'lodash';
 import {
   appDbPath,
-  info,
+  parseScript,
   kenvPath,
   shortcutsPath,
 } from '@johnlindquist/kit/cjs/utils';
@@ -38,7 +38,7 @@ const onScriptsChanged = async (
     removeBackground(filePath);
   }
   if (event === 'add' || event === 'change') {
-    const script = await info(filePath);
+    const script = await parseScript(filePath);
 
     shortcutScriptChanged(script);
     scheduleScriptChanged(script);

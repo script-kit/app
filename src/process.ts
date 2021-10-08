@@ -12,7 +12,8 @@ import { autoUpdater } from 'electron-updater';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
 import { Channel, Mode, ProcessType } from '@johnlindquist/kit/cjs/enum';
-import { Choice, MessageData, Script, PromptData } from '@johnlindquist/kit';
+import { Choice, Script, PromptData } from '@johnlindquist/kit/types/core';
+import { MessageData } from '@johnlindquist/kit/types/app';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 
 import {
@@ -21,7 +22,7 @@ import {
   KIT_APP_PROMPT,
   kitPath,
   kenvPath,
-  kitDotEnv,
+  kitDotEnvPath,
   execPath,
 } from '@johnlindquist/kit/cjs/utils';
 
@@ -430,7 +431,7 @@ const createChild = ({
       KIT_MAIN: scriptPath,
       KENV: kenvPath(),
       KIT: kitPath(),
-      KIT_DOTENV: kitDotEnv(),
+      KIT_DOTENV_PATH: kitDotEnvPath(),
       KIT_APP_VERSION: getVersion(),
       PROCESS_TYPE: type,
       FORCE_COLOR: '1',

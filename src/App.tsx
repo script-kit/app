@@ -243,7 +243,7 @@ export default function App() {
           {selected && <Selected />}
           {hint && <Hint />}
           {tabs?.length > 0 && !flagValue && <Tabs />}
-          {logHtml?.length > 0 && script.log && <Log />}
+          {logHtml?.length > 0 && script?.log !== 'false' && <Log />}
         </header>
         <main
           ref={mainRef}
