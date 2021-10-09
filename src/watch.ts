@@ -3,7 +3,7 @@ import log from 'electron-log';
 import chokidar from 'chokidar';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
-import { Script } from '@johnlindquist/kit';
+import { Script } from '@johnlindquist/kit/types/core';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { processes } from './process';
 

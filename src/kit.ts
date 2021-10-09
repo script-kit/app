@@ -9,7 +9,7 @@ import log from 'electron-log';
 
 import { Channel, ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
-  info,
+  parseScript,
   kenvPath,
   kitPath,
   mainScriptPath,
@@ -56,7 +56,7 @@ const findScript = async (scriptPath: string) => {
     return getKenvScript(scriptPath);
   }
 
-  const script = await info(scriptPath);
+  const script = await parseScript(scriptPath);
 
   return script;
 };

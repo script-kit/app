@@ -8,7 +8,8 @@ import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { logHeightAtom, logHTMLAtom, scriptAtom } from '../jotai';
-import { ReactComponent as EditFileIcon } from '../svg/icons8-edit-file.svg';
+
+// TODO: Fix error prompt icon
 
 export default function Log() {
   const [script, setScript] = useAtom(scriptAtom);
@@ -73,8 +74,9 @@ export default function Log() {
           {parse(`${logHTML}`)}
         </div>
       </SimpleBar>
-      <PencilAltIcon
-        className={`
+      {!script.name.startsWith('error') && (
+        <PencilAltIcon
+          className={`
         absolute
         top-4 right-3
         h-6 w-6
@@ -84,8 +86,9 @@ export default function Log() {
         hover:opacity-100
         text-white dark:text-black
         `}
-        onClick={editLog}
-      />
+          onClick={editLog}
+        />
+      )}
     </div>
   );
 }

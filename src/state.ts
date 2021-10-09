@@ -6,9 +6,9 @@ import { app } from 'electron';
 import log from 'electron-log';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
-import { Script } from '@johnlindquist/kit';
+import { Script } from '@johnlindquist/kit/types/core';
 import { getScripts, getAppDb } from '@johnlindquist/kit/cjs/db';
-import { info, kitPath, mainScriptPath } from '@johnlindquist/kit/cjs/utils';
+import { parseScript, kitPath } from '@johnlindquist/kit/cjs/utils';
 
 export const makeRestartNecessary = async () => {
   const appDb = await getAppDb();
@@ -100,14 +100,14 @@ export const cacheKitScripts = async () => {
   const kitMainScripts = await readdir(kitMainPath);
 
   for await (const main of kitMainScripts) {
-    const mainScript = await info(kitPath('main', main));
+    const mainScript = await parseScript(kitPath('main', main));
     kitScripts.push(mainScript);
   }
 
   const kitCliPath = kitPath('cli');
   const kitCliScripts = await readdir(kitCliPath);
   for await (const cli of kitCliScripts) {
-    const cliScript = await info(kitPath('cli', cli));
+    const cliScript = await parseScript(kitPath('cli', cli));
     kitScripts.push(cliScript);
   }
 };
