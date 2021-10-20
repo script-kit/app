@@ -1,3 +1,10 @@
+# [1.3.0-alpha.156](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.155...v1.3.0-alpha.156) (2021-10-20)
+
+
+### Features
+
+* **install:** testing bundling node_modules and node ([20817cf](https://github.com/johnlindquist/kitapp/commit/20817cfaba58a2a4bd75b11d122a9301c44d8bb2))
+
 # [1.3.0-alpha.155](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.154...v1.3.0-alpha.155) (2021-10-08)
 
 
