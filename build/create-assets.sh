@@ -11,8 +11,7 @@ echo "$release_channel" >|"$WD/assets/release_channel.txt"
 # Into to $kit_dir
 cd $kit_dir
 kit_tar="$WD/assets/kit.tar.gz"
-# tar --exclude "./node_modules/*" --exclude "./node/*" --exclude "kit.sock" -cvzf "$kit_tar" ./
-tar --exclude "kit.sock" -cvzf "$kit_tar" ./
+tar --exclude "./node_modules/*" --exclude "./node/*" --exclude "kit.sock" -cvzf "$kit_tar" ./
 
 # Back to working dir
 cd "$WD"
