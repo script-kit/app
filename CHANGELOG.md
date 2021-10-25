@@ -1,3 +1,10 @@
+# [1.3.0-alpha.158](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.157...v1.3.0-alpha.158) (2021-10-25)
+
+
+### Bug Fixes
+
+* **install:** fix assets scripts ([9b11a01](https://github.com/johnlindquist/kitapp/commit/9b11a017c27614354e5583c03a40f199882a7448))
+
 # [1.3.0-alpha.157](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.156...v1.3.0-alpha.157) (2021-10-25)
 
 
