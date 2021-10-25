@@ -574,7 +574,7 @@ const checkKit = async () => {
       const kitTar = getAssetPath('kit.tar.gz');
       await extractTar(kitTar, kitPath());
 
-      if (false && !nodeExists()) {
+      if (!nodeExists()) {
         setupLog(
           `Adding node ${nodeVersion} ${platform} ${arch} to ~/.kit/node ...`
         );
@@ -599,15 +599,13 @@ const checkKit = async () => {
           await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
         }
       }
-      if (false) {
-        setupLog(`updating ~/.kit packages...`);
-        const npmResult = spawnSync(
-          `npm`,
-          [`i`, `--production`, `--no-progress`],
-          options
-        );
-        await handleSpawnReturns(`npm`, npmResult);
-      }
+      setupLog(`updating ~/.kit packages...`);
+      const npmResult = spawnSync(
+        `npm`,
+        [`i`, `--production`, `--no-progress`],
+        options
+      );
+      await handleSpawnReturns(`npm`, npmResult);
     }
 
     await chmod(kitPath('script'), 0o755);
