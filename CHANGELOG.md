@@ -1,3 +1,10 @@
+# [1.3.0-alpha.157](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.156...v1.3.0-alpha.157) (2021-10-25)
+
+
+### Features
+
+* **install:** switch to johnlindquist/globals ([fff98aa](https://github.com/johnlindquist/kitapp/commit/fff98aa538d5b91866a242202fe7bcb36d5ad579))
+
 # [1.3.0-alpha.156](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.155...v1.3.0-alpha.156) (2021-10-20)
 
 
