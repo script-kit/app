@@ -1,3 +1,10 @@
+# [1.3.0-alpha.159](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.158...v1.3.0-alpha.159) (2021-10-26)
+
+
+### Features
+
+* **packages:** build globals cjs with esbuild ([768b6a2](https://github.com/johnlindquist/kitapp/commit/768b6a2c1fe7462186190c44a2c15a878e728a11))
+
 # [1.3.0-alpha.158](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.157...v1.3.0-alpha.158) (2021-10-25)
 
 
