@@ -1,3 +1,10 @@
+# [1.3.0-alpha.160](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.159...v1.3.0-alpha.160) (2021-10-26)
+
+
+### Bug Fixes
+
+* **cjs:** globals ([2afa52a](https://github.com/johnlindquist/kitapp/commit/2afa52ae32399a5f0ae0210079e5217409758bfa))
+
 # [1.3.0-alpha.159](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.158...v1.3.0-alpha.159) (2021-10-26)
 
 
