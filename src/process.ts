@@ -13,7 +13,7 @@ import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
 import { Channel, Mode, ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { Choice, Script, PromptData } from '@johnlindquist/kit/types/core';
-import { MessageData } from '@johnlindquist/kit/types/app';
+import { MessageData } from '@johnlindquist/kit/types/kitapp';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 
 import {

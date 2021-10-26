@@ -10,7 +10,8 @@ import {
   getLogFromScriptPath,
   tmpDownloadsDir,
 } from '@johnlindquist/kit/cjs/utils';
-import { MessageData, Script } from '@johnlindquist/kit';
+import { Script } from '@johnlindquist/kit/types/core';
+import { MessageData } from '@johnlindquist/kit/types/kitapp';
 import { existsSync, renameSync } from 'fs';
 import isImage from 'is-image';
 import { DownloaderHelper } from 'node-downloader-helper';
