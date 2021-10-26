@@ -632,8 +632,10 @@ const checkKit = async () => {
   if (!kenvExists()) {
     // Step 4: Use kit wrapper to run setup.js script
     configWindow?.show();
+    setupLog(`Extract tar to ~/.kenv...`);
     const kenvTar = getAssetPath('kenv.tar.gz');
     await extractTar(kenvTar, kenvPath());
+    log.info(await readdir(kenvPath()));
 
     kenvExists();
     await ensureKenvDirs();

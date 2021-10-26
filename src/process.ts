@@ -330,7 +330,7 @@ const kitMessageMap: ChannelHandler = {
 
       const notification = new Notification({
         title: `Kit.app is on the latest version`,
-        body: `${info.version}`,
+        body: `${getVersion()}`,
         silent: true,
       });
 
