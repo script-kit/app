@@ -1,3 +1,10 @@
+# [1.3.0-alpha.162](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.161...v1.3.0-alpha.162) (2021-10-26)
+
+
+### Features
+
+* **ts:** expose globals api ([05ff274](https://github.com/johnlindquist/kitapp/commit/05ff27490bf27f0367ec6fad287dbe8cb26b1f3a))
+
 # [1.3.0-alpha.161](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.160...v1.3.0-alpha.161) (2021-10-26)
 
 
