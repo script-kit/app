@@ -1,3 +1,9 @@
+@import 'jetbrains-mono';
+@import 'typeface-lato';
+
+@import '../node_modules/simplebar-react/dist/simplebar.min.css';
+@import '../node_modules/highlight.js/styles/night-owl.css';
+
 /* FBBF24 */
 /* 4F46E5 */
 /* --color-primary-dark: 79, 70, 229; indigo*/
@@ -26,12 +32,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import 'jetbrains-mono';
-@import 'typeface-lato';
-
-@import '../node_modules/simplebar-react/dist/simplebar.min.css';
-@import '../node_modules/highlight.js/styles/night-owl.css';
 
 .lato {
   font-family: 'Lato';

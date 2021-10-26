@@ -5,9 +5,14 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
-import { Choice, Script, PromptData, PromptBounds } from '@johnlindquist/kit';
+import {
+  Choice,
+  Script,
+  PromptData,
+  PromptBounds,
+} from '@johnlindquist/kit/types/core';
 
-import { BrowserWindow, screen, nativeTheme, app } from 'electron';
+import { BrowserWindow, screen, app } from 'electron';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import minimist from 'minimist';
@@ -175,6 +180,7 @@ export const focusPrompt = () => {
 
 export const escapePromptWindow = () => {
   promptScript = {
+    id: '',
     command: '',
     filePath: '',
     type: ProcessType.Prompt,
