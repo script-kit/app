@@ -1,3 +1,10 @@
+# [1.3.0-alpha.161](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.160...v1.3.0-alpha.161) (2021-10-26)
+
+
+### Bug Fixes
+
+* **node:** version 17 ([3561113](https://github.com/johnlindquist/kitapp/commit/3561113601a820bb4ff2b3367b2fe2f9ec7d0a2b))
+
 # [1.3.0-alpha.160](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.159...v1.3.0-alpha.160) (2021-10-26)
 
 
