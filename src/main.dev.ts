@@ -620,6 +620,7 @@ const checkKit = async () => {
   }
 
   if (kenvsExists() && examplesExists()) {
+    setupLog(`Updating examples...`);
     const updateExamplesResult = spawnSync(
       `./script`,
       [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
