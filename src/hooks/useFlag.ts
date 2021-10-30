@@ -58,28 +58,28 @@ export default () => {
   );
 
   useHotkeys(
-    flagsArray.length ? 'right,cmd+k' : 'f18',
+    flagsArray.length ? 'right,left,cmd+k' : 'f18',
     (event) => {
       if (!inputFocus) return;
-      if (selectionStart === input.length) {
+      if (
+        selectionStart === input.length &&
+        !flagValue &&
+        event.key !== 'ArrowLeft'
+      ) {
         event.preventDefault();
-        if (!flagValue)
-          setFlagValue(choices.length ? choices[index].value : input);
-      }
-    },
-    hotkeysOptions,
-    [input, inputFocus, choices, index, selectionStart, flagValue]
-  );
+        setFlagValue(choices.length ? choices[index].value : input);
+      } else if (
+        selectionStart === 0 &&
+        flagValue &&
+        event.key !== 'ArrowRight'
+      ) {
+        event.preventDefault();
 
-  useHotkeys(
-    flagsArray.length ? 'left' : 'f17',
-    (event) => {
-      if (!inputFocus) return;
-      if (selectionStart === 0) {
-        event.preventDefault();
-        if (flagValue) {
-          setFlagValue('');
-        }
+        setFlagValue('');
+      } else if (event.key === 'k') {
+        setFlagValue(
+          flagValue ? '' : choices.length ? choices[index].value : input
+        );
       }
     },
     hotkeysOptions,

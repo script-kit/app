@@ -132,10 +132,9 @@ export const panelHTMLAtom = atom('');
 const previewHTML = atom('');
 export const previewHTMLAtom = atom(
   (g) => g(previewHTML),
-  debounce((g, s, a: string) => {
-    console.log(`Setting previewHTML`);
+  (g, s, a: string) => {
     s(previewHTML, a);
-  }, 100)
+  }
 );
 
 const log = atom<string[]>([]);
