@@ -28,25 +28,28 @@ import {
 
 import { getLog } from './logs';
 import {
-  focusPrompt,
-  setBlurredByKit,
-  setIgnoreBlur,
-  setPlaceholder,
-  setScript,
-  setMode,
-  setInput,
-  setPanel,
-  setHint,
-  setTabIndex,
-  setPromptData,
-  setChoices,
   clearPromptCache,
-  sendToPrompt,
-  setLog,
-  hidePromptWindow,
+  focusPrompt,
+  getCurrentScreen,
+  getPromptBounds,
   getPromptPid,
-  setPromptProp,
+  hidePromptWindow,
+  sendToPrompt,
+  setBlurredByKit,
+  setBounds,
+  setChoices,
+  setHint,
+  setIgnoreBlur,
+  setInput,
+  setLog,
+  setMode,
+  setPanel,
+  setPlaceholder,
   setPreview,
+  setPromptData,
+  setPromptProp,
+  setScript,
+  setTabIndex,
 } from './prompt';
 import { setAppHidden } from './appHidden';
 import {
@@ -200,6 +203,11 @@ const kitMessageMap: ChannelHandler = {
     child?.send({ channel: 'SCHEDULE', schedule: getSchedule() });
   }),
 
+  GET_BOUNDS: toProcess(({ child }) => {
+    const bounds = getPromptBounds();
+    child?.send({ channel: 'BOUNDS', bounds });
+  }),
+
   GET_BACKGROUND: toProcess(({ child }) => {
     child?.send({ channel: 'BACKGROUND', tasks: getBackgroundTasks() });
   }),
@@ -262,6 +270,10 @@ const kitMessageMap: ChannelHandler = {
 
   SET_HINT: (data) => {
     setHint(data.hint as string);
+  },
+
+  SET_BOUNDS: (data) => {
+    setBounds(data.bounds);
   },
 
   SET_IGNORE_BLUR: (data) => {
@@ -389,8 +401,10 @@ export const createMessageHandler =
       )} id: ${data.pid}`
     );
 
-    if (kitMessageMap[data?.channel]) {
-      const channelFn = kitMessageMap[data.channel] as (data: any) => void;
+    if (kitMessageMap[data?.channel as Channel]) {
+      const channelFn = kitMessageMap[data.channel as Channel] as (
+        data: any
+      ) => void;
       channelFn(data);
     } else {
       console.warn(`Channel ${data?.channel} not found on ${type}.`);

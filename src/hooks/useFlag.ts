@@ -8,6 +8,7 @@ import {
   flagValueAtom,
   indexAtom,
   inputAtom,
+  inputFocusAtom,
   openAtom,
   selectionStartAtom,
   submitValueAtom,
@@ -25,6 +26,7 @@ export default () => {
   const [, submit] = useAtom(submitValueAtom);
   const [selectionStart] = useAtom(selectionStartAtom);
   const [open, setOpen] = useAtom(openAtom);
+  const [inputFocus] = useAtom(inputFocusAtom);
 
   const flagsArray = Object.entries(flags);
 
@@ -45,17 +47,20 @@ export default () => {
   useHotkeys(
     shortcuts.length ? shortcuts : 'f19',
     (event, handler) => {
+      if (!inputFocus) return;
       event.preventDefault();
+
       setFlag(flagKeyByShortcut(handler.key));
       submit(choices.length ? choices[index].value : input);
     },
     hotkeysOptions,
-    [flags, input, choices, index]
+    [flags, input, inputFocus, choices, index]
   );
 
   useHotkeys(
-    flagsArray.length ? 'right' : 'f18',
+    flagsArray.length ? 'right,cmd+k' : 'f18',
     (event) => {
+      if (!inputFocus) return;
       if (selectionStart === input.length) {
         event.preventDefault();
         if (!flagValue)
@@ -63,12 +68,13 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [input, choices, index, selectionStart, flagValue]
+    [input, inputFocus, choices, index, selectionStart, flagValue]
   );
 
   useHotkeys(
     flagsArray.length ? 'left' : 'f17',
     (event) => {
+      if (!inputFocus) return;
       if (selectionStart === 0) {
         event.preventDefault();
         if (flagValue) {
@@ -77,6 +83,6 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [input, choices, index, selectionStart, flagValue]
+    [input, inputFocus, choices, index, selectionStart, flagValue]
   );
 };

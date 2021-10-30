@@ -329,6 +329,7 @@ export const tabIndexAtom = atom(
     s(tabIndex, a);
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
+    s(previewHTMLAtom, '');
     ipcRenderer.send(Channel.TAB_CHANGED, {
       tab: g(tabsAtom)[a],
       input: g(rawInputAtom),
@@ -602,3 +603,4 @@ export const modifiers = [
   'SymbolLock',
 ];
 export const modifiersAtom = atom<string[]>([]);
+export const inputFocusAtom = atom<boolean>(true);

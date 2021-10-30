@@ -105,7 +105,8 @@ export const cacheKitScripts = async () => {
   }
 
   const kitCliPath = kitPath('cli');
-  const kitCliScripts = await readdir(kitCliPath);
+  const kitCliDir = await readdir(kitCliPath);
+  const kitCliScripts = kitCliDir.filter((f) => f.endsWith('.js'));
   for await (const cli of kitCliScripts) {
     const cliScript = await parseScript(kitPath('cli', cli));
     kitScripts.push(cliScript);

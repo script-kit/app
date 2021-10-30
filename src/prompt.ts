@@ -12,7 +12,7 @@ import {
   PromptBounds,
 } from '@johnlindquist/kit/types/core';
 
-import { BrowserWindow, screen, app } from 'electron';
+import { BrowserWindow, screen, app, Rectangle } from 'electron';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import minimist from 'minimist';
@@ -192,7 +192,7 @@ export const escapePromptWindow = () => {
   hideAppIfNoWindows();
 };
 
-const getCurrentScreen = (): Display => {
+export const getCurrentScreen = (): Display => {
   return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
 };
 
@@ -265,6 +265,12 @@ export const showPrompt = async () => {
 
 let lastResizedByUser = false;
 
+let fixedBounds: Partial<Rectangle> | null = null;
+export const setBounds = (bounds: Partial<Rectangle>) => {
+  promptWindow.setBounds(bounds);
+  fixedBounds = bounds;
+};
+
 export const resize = debounce(
   async ({
     topHeight,
@@ -278,6 +284,15 @@ export const resize = debounce(
     open,
   }: ResizeData) => {
     const sameScript = filePath === promptScript?.filePath;
+    if (fixedBounds) {
+      const cachedBounds = await getCurrentScreenPromptCache();
+
+      promptWindow.setBounds({
+        ...cachedBounds,
+        ...fixedBounds,
+      });
+      return;
+    }
     if (lastResizedByUser || !sameScript) return;
     if (!mainHeight && ui & (UI.form | UI.div | UI.editor | UI.drop)) return;
     // if (!mainHeight && hasPanel) return;
@@ -428,6 +443,7 @@ export const setPromptPid = (pid: number) => {
 let instantChoices = [];
 
 export const setScript = async (script: Script) => {
+  fixedBounds = null;
   if (promptScript?.filePath === script?.filePath) return;
   promptScript = script;
 
@@ -435,7 +451,9 @@ export const setScript = async (script: Script) => {
   // log.info(script);
 
   if (script.filePath === mainScriptPath) {
-    script.tabs = script?.tabs?.filter((tab) => !tab.match(/join|live/i));
+    script.tabs = script?.tabs?.filter(
+      (tab: string) => !tab.match(/join|live/i)
+    );
   }
 
   sendToPrompt(Channel.SET_SCRIPT, script);
@@ -516,3 +534,5 @@ emitter.on(KitEvent.ExitPrompt, () => {
 export const reload = () => {
   promptWindow?.reload();
 };
+
+export const getPromptBounds = () => promptWindow.getBounds();
