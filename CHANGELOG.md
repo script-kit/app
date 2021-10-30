@@ -1,3 +1,10 @@
+# [1.3.0-alpha.163](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.162...v1.3.0-alpha.163) (2021-10-30)
+
+
+### Features
+
+* **preview:** async preview pane ([b843c49](https://github.com/johnlindquist/kitapp/commit/b843c49df68048833849fec88228cf34c0c49ad4))
+
 # [1.3.0-alpha.162](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.161...v1.3.0-alpha.162) (2021-10-26)
 
 
