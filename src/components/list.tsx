@@ -14,6 +14,7 @@ import {
   mouseEnabledAtom,
   scoredChoices,
   submitValueAtom,
+  previewHTMLAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 import { BUTTON_HEIGHT } from '../defaults';
@@ -40,6 +41,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [inputValue] = useAtom(inputAtom);
   const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
   const [flagValue] = useAtom(flagValueAtom);
+  const [previewHTML, setPreviewHTML] = useAtom(previewHTMLAtom);
 
   const onIndexSubmit = useCallback(
     (i) => {
@@ -111,9 +113,7 @@ export default function ChoiceList({ width, height }: ListProps) {
       >
         {ChoiceButton}
       </List>
-      {choices?.[index]?.item?.preview && (
-        <Preview preview={choices?.[index]?.item?.preview || ''} />
-      )}
+      {previewHTML && <Preview />}
     </div>
   );
 }

@@ -77,9 +77,10 @@ export const startIpc = () => {
 
   ipcMain.on(
     Channel.CHOICE_FOCUSED,
-    handleChannel(({ child }, { index, pid }) => {
+
+    handleChannel(({ child }, { index, pid, input = '' }) => {
       if (child && !isUndefined(index)) {
-        child?.send({ channel: Channel.CHOICE_FOCUSED, index });
+        child?.send({ channel: Channel.CHOICE_FOCUSED, index, pid, input });
       }
     })
   );
@@ -90,7 +91,7 @@ export const startIpc = () => {
       emitter.emit(KitEvent.ResumeShortcuts);
 
       if (child && tab) {
-        child?.send({ channel: Channel.TAB_CHANGED, tab, input });
+        child?.send({ channel: Channel.TAB_CHANGED, tab, input, pid });
       }
     })
   );

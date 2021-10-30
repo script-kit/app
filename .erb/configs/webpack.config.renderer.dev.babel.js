@@ -51,6 +51,7 @@ export default merge(baseConfig, {
   ],
 
   output: {
+    hashFunction: 'xxhash64',
     publicPath: `http://localhost:${port}/dist/`,
     filename: 'renderer.dev.js',
   },

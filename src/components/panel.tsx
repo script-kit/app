@@ -48,6 +48,7 @@ export default function Panel({ width, height }: PanelProps) {
       }
     >
       <div className="w-full h-full" ref={divRef as LegacyRef<HTMLDivElement>}>
+        <link />
         <Highlight innerHTML>{panelHTML}</Highlight>
       </div>
     </SimpleBar>

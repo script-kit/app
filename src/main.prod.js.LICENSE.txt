@@ -5,6 +5,12 @@ object-assign
 */
 
 /*!
+ * content-disposition
+ * Copyright(c) 2014-2017 Douglas Christopher Wilson
+ * MIT Licensed
+ */
+
+/*!
  * fill-range <https://github.com/jonschlinkert/fill-range>
  *
  * Copyright (c) 2014-present, Jon Schlinkert.
@@ -26,10 +32,28 @@ object-assign
  */
 
 /*!
+ * is-natural-number.js | MIT (c) Shinnosuke Watanabe
+ * https://github.com/shinnn/is-natural-number.js
+*/
+
+/*!
  * is-number <https://github.com/jonschlinkert/is-number>
  *
  * Copyright (c) 2014-present, Jon Schlinkert.
  * Released under the MIT License.
+ */
+
+/*!
+ * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
+ *
+ * Copyright (c) 2014-2017, Jon Schlinkert.
+ * Released under the MIT License.
+ */
+
+/*!
+ * mime-db
+ * Copyright(c) 2014 Jonathan Ong
+ * MIT Licensed
  */
 
 /*!
@@ -40,15 +64,58 @@ object-assign
  */
 
 /*!
+ * strip-dirs | MIT (c) Shinnosuke Watanabe
+ * https://github.com/shinnn/node-strip-dirs
+*/
+
+/*!
  * to-regex-range <https://github.com/micromatch/to-regex-range>
  *
  * Copyright (c) 2015-present, Jon Schlinkert.
  * Released under the MIT License.
  */
 
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+
 /*! arch. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
 
 /*! http://mths.be/fromcodepoint v0.1.0 by @mathias */
+
+/*! queue-microtask. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+
+/*! run-parallel. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+
+/**
+ * @file Tests if ES6 @@toStringTag is supported.
+ * @see {@link http://www.ecma-international.org/ecma-262/6.0/#sec-@@tostringtag|26.3.1 @@toStringTag}
+ * @version 1.4.1
+ * @author Xotic750 <Xotic750@gmail.com>
+ * @copyright  Xotic750
+ * @license {@link <https://opensource.org/licenses/MIT> MIT}
+ * @module has-to-string-tag-x
+ */
+
+/**
+ * @file Tests if ES6 Symbol is supported.
+ * @version 1.4.2
+ * @author Xotic750 <Xotic750@gmail.com>
+ * @copyright  Xotic750
+ * @license {@link <https://opensource.org/licenses/MIT> MIT}
+ * @module has-symbol-support-x
+ */
 
 /**
  * @license

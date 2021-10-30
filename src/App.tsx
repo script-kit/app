@@ -57,6 +57,7 @@ import {
   panelHTMLAtom,
   pidAtom,
   placeholderAtom,
+  previewHTMLAtom,
   promptDataAtom,
   scriptAtom,
   selectedAtom,
@@ -72,6 +73,7 @@ import {
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
+import Preview from './components/preview';
 
 const second = (fn: (value: any) => void) => (_: any, x: any) => fn(x);
 
@@ -128,6 +130,7 @@ export default function App() {
   const [tabs] = useAtom(tabsAtom);
 
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
+  const [previewHTML, setPreviewHTML] = useAtom(previewHTMLAtom);
   const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
   const [, setEditorConfig] = useAtom(editorConfigAtom);
   const [, setTextareaConfig] = useAtom(textareaConfigAtom);
@@ -176,6 +179,7 @@ export default function App() {
     [Channel.SET_INPUT]: second(setInput),
     [Channel.SET_MODE]: second(setMode),
     [Channel.SET_PANEL]: second(setPanelHTML),
+    [Channel.SET_PREVIEW]: second(setPreviewHTML),
     [Channel.SET_LOG]: second(setLogHtml),
     [Channel.SET_PLACEHOLDER]: second(setPlaceholder),
     [Channel.SET_TAB_INDEX]: second(setTabIndex),

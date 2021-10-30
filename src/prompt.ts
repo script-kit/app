@@ -476,6 +476,10 @@ export const setPanel = (html: string) => {
   sendToPrompt(Channel.SET_PANEL, html);
 };
 
+export const setPreview = (html: string) => {
+  sendToPrompt(Channel.SET_PREVIEW, html);
+};
+
 export const setLog = (_log: string) => {
   sendToPrompt(Channel.SET_LOG, _log);
 };

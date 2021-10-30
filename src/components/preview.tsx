@@ -1,33 +1,26 @@
+/* eslint-disable react/no-danger */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/destructuring-assignment */
-import React from 'react';
-import Highlight from 'react-highlight';
+import { useAtom } from 'jotai';
+import React, { RefObject, useRef } from 'react';
+import { previewHTMLAtom } from '../jotai';
 
-interface PreviewProps {
-  preview: string;
-}
+export default function Preview() {
+  const highlightRef: RefObject<any> = useRef(null);
+  const [previewHTML] = useAtom(previewHTMLAtom);
 
-class PreviewBoundary extends React.Component {
-  // eslint-disable-next-line react/state-in-constructor
-  public state: { hasError: boolean } = { hasError: false };
-
-  render() {
-    // eslint-disable-next-line react/destructuring-assignment
-    if (this.state.hasError) {
-      // You can render any custom fallback UI
-      return <h1>Preview not available</h1>;
-    }
-    // eslint-disable-next-line react/destructuring-assignment
-    // eslint-disable-next-line react/prop-types
-    return this.props.children;
-  }
-}
-
-export default function Preview({ preview }: PreviewProps) {
   return (
-    <div className="flex-1">
-      <PreviewBoundary>
-        <Highlight innerHTML>{preview}</Highlight>
-      </PreviewBoundary>
+    <div
+      className="flex-1 overflow-scroll"
+      style={{ userSelect: 'text' }}
+      // onMouseUp={onMouseUp}
+      ref={highlightRef}
+    >
+      {previewHTML && (
+        <pre>
+          <code dangerouslySetInnerHTML={{ __html: previewHTML }} />
+        </pre>
+      )}
     </div>
   );
 }

@@ -16,7 +16,7 @@ import {
   EditorConfig,
   TextareaConfig,
   EditorOptions,
-} from '@johnlindquist/kit/types/app';
+} from '@johnlindquist/kit/types/kitapp';
 
 import { clamp, debounce, drop } from 'lodash';
 import { ipcRenderer } from 'electron';
@@ -129,6 +129,14 @@ export const hintAtom = atom('');
 export const modeAtom = atom<Mode>(Mode.FILTER);
 
 export const panelHTMLAtom = atom('');
+const previewHTML = atom('');
+export const previewHTMLAtom = atom(
+  (g) => g(previewHTML),
+  debounce((g, s, a: string) => {
+    console.log(`Setting previewHTML`);
+    s(previewHTML, a);
+  }, 100)
+);
 
 const log = atom<string[]>([]);
 
@@ -203,8 +211,26 @@ export const prevInputAtom = atom('');
 export const indexAtom = atom(
   (g) => g(index),
   (g, s, a: number) => {
-    const { length } = g(choices);
-    s(index, clamp(a, 0, length - 1));
+    const cs = g(choices);
+    const clampedIndex = clamp(a, 0, cs.length - 1);
+
+    if (g(index) !== clampedIndex) {
+      s(index, clampedIndex);
+    }
+
+    const checkPreview = cs?.[clampedIndex]?.item?.preview;
+    if (cs.length && typeof checkPreview === 'string') {
+      s(previewHTMLAtom, checkPreview);
+    } else {
+      const selected = g(selectedAtom);
+      if (!selected) {
+        sendChoiceFocused({
+          index: clampedIndex,
+          input: g(rawInputAtom),
+          pid: g(pidAtom),
+        });
+      }
+    }
   }
 );
 
@@ -239,6 +265,15 @@ const generateChoices = debounce((input, pid) => {
     pid,
   });
 }, 150);
+
+type FocusValue = {
+  input: string;
+  index: number;
+  pid: number;
+};
+const sendChoiceFocused = debounce((value: FocusValue) => {
+  ipcRenderer.send(Channel.CHOICE_FOCUSED, value);
+}, 100);
 
 const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
   if (!a) return false;
@@ -330,6 +365,7 @@ export const scriptAtom = atom(
     s(tabsAtom, a?.tabs || []);
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
+    s(previewHTMLAtom, '');
   }
 );
 
@@ -418,15 +454,15 @@ export const flagValueAtom = atom(
   (g) => g(flaggedValueAtom),
   (g, s, a: any) => {
     if (a === '') {
+      s(selectedAtom, '');
       s(unfilteredChoicesAtom, g(prevChoicesAtom));
       s(rawInputAtom, g(prevInputAtom));
       s(index, g(prevIndexAtom));
-      s(selectedAtom, '');
     } else {
+      s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
       s(prevIndexAtom, g(indexAtom));
       s(prevInputAtom, g(inputAtom));
       s(inputAtom, '');
-      s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
 
       const flagChoices: Choice[] = Object.entries(g(flagsAtom)).map(
         ([key, value]: [key: string, value: any]) => {
@@ -550,3 +586,19 @@ export const themeAtom = atom(
     s(theme, a);
   }
 );
+
+export const modifiers = [
+  'Alt',
+  'AltGraph',
+  'CapsLock',
+  'Control',
+  'Fn',
+  'FnLock',
+  'Meta',
+  'NumLock',
+  'ScrollLock',
+  'Shift',
+  'Symbol',
+  'SymbolLock',
+];
+export const modifiersAtom = atom<string[]>([]);

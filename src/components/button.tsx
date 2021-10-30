@@ -9,11 +9,16 @@ import React, { useCallback, useEffect, useState } from 'react';
 import parse from 'html-react-parser';
 
 import { overrideTailwindClasses } from 'tailwind-override';
-import { Choice, Script } from '@johnlindquist/kit';
+import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types/core';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { ChoiceButtonProps } from '../types';
-import { flagsAtom, flagValueAtom, isMouseDownAtom } from '../jotai';
+import {
+  flagsAtom,
+  flagValueAtom,
+  isMouseDownAtom,
+  modifiersAtom,
+} from '../jotai';
 import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
 import { ReactComponent as NoImageIcon } from '../svg/icons8-no-image.svg';
 import { AppChannel } from '../enums';
@@ -60,9 +65,11 @@ export default function ChoiceButton({
   const scoredChoice = choices[index];
   const choice: Choice | Script = scoredChoice?.item || scoredChoice;
 
-  const [isMouseDown, setIsMouseDown] = useAtom(isMouseDownAtom);
+  const [isMouseDown] = useAtom(isMouseDownAtom);
   const [flags] = useAtom(flagsAtom);
   const [flaggedValue, setFlagValue] = useAtom(flagValueAtom);
+  const [modifiers] = useAtom(modifiersAtom);
+
   // const dataTransfer = useRef<any>('Data Transfer');
 
   const onRightClick = useCallback(
@@ -81,7 +88,7 @@ export default function ChoiceButton({
     },
     [index, onIndexSubmit]
   );
-  const onMouseOver = useCallback(
+  const onMouseEnter = useCallback(
     (e) => {
       if (mouseEnabled) {
         onIndexChange(index);
@@ -122,6 +129,12 @@ export default function ChoiceButton({
     },
     [choice]
   );
+
+  const modifier = modifiers.find((m) => {
+    return Object.keys(choice).includes(m);
+  }) as keyof ScriptMetadata;
+
+  const modifierDescription = (choice as unknown as ScriptMetadata)?.[modifier];
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
@@ -179,7 +192,7 @@ export default function ChoiceButton({
       `)}`}
       onClick={onClick}
       // onContextMenu={editScript}
-      onMouseOver={onMouseOver}
+      onMouseEnter={onMouseEnter}
     >
       {choice?.html ? (
         parse(choice?.html, {
@@ -199,7 +212,9 @@ export default function ChoiceButton({
                 'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light'
               )}
             </div>
-            {(choice?.focused || choice?.description) && (
+            {(choice?.focused ||
+              choice?.description ||
+              modifierDescription) && (
               <div
                 className={`text-xs truncate transition-opacity ease-in-out duration-200 pb-1 ${
                   index === currentIndex
@@ -209,11 +224,12 @@ export default function ChoiceButton({
 
                 `}
               >
-                {highlight(
-                  choice?.description || '',
-                  scoredChoice?.matches?.description,
-                  'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light  text-opacity-100'
-                )}
+                {modifierDescription ||
+                  highlight(
+                    choice?.description || '',
+                    scoredChoice?.matches?.description,
+                    'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light  text-opacity-100'
+                  )}
               </div>
             )}
           </div>

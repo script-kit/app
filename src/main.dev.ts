@@ -306,7 +306,7 @@ const ensureKenvDirs = async () => {
 const ready = async () => {
   try {
     if (process.env.NODE_ENV === 'development') {
-      await installExtensions();
+      // await installExtensions();
     }
 
     await ensureKitDirs();
@@ -548,7 +548,10 @@ const checkKit = async () => {
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
   autoUpdater.logger = log;
-  autoUpdater.checkForUpdates();
+  if (process.env.NODE_ENV !== 'development') {
+    // await installExtensions();
+    autoUpdater.checkForUpdates();
+  }
 
   if (!kitExists() || (await versionMismatch())) {
     configWindow = await show(
@@ -602,7 +605,7 @@ const checkKit = async () => {
       setupLog(`updating ~/.kit packages...`);
       const npmResult = spawnSync(
         `npm`,
-        [`i`, `--production`, `--no-progress`],
+        [`i`, `--production`, `--no-progress`, `--quiet`],
         options
       );
       await handleSpawnReturns(`npm`, npmResult);

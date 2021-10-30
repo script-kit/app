@@ -37,6 +37,7 @@ export default merge(baseConfig, {
   ],
 
   output: {
+    hashFunction: 'xxhash64',
     path: path.join(__dirname, '../../src/dist'),
     publicPath: './',
     filename: 'renderer.prod.js',

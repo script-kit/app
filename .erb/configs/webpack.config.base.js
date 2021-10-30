@@ -29,6 +29,7 @@ export default {
   },
 
   output: {
+    hashFunction: 'xxhash64',
     path: path.join(__dirname, '../../src'),
     // https://github.com/webpack/webpack/issues/1114
     libraryTarget: 'commonjs2',

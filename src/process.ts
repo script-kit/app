@@ -46,6 +46,7 @@ import {
   hidePromptWindow,
   getPromptPid,
   setPromptProp,
+  setPreview,
 } from './prompt';
 import { setAppHidden } from './appHidden';
 import {
@@ -60,6 +61,7 @@ import { show } from './show';
 import { showNotification } from './notifications';
 
 import { getVersion } from './version';
+import { getTray, toggleTray } from './tray';
 
 export const checkScriptChoices = (data: MessageData) => {
   // console.log(`🤔 checkScriptChoices ${data?.choices?.length}`);
@@ -206,6 +208,10 @@ const kitMessageMap: ChannelHandler = {
     emitter.emit(KitEvent.ToggleBackground, data);
   },
 
+  TOGGLE_TRAY: () => {
+    toggleTray();
+  },
+
   GET_SCREEN_INFO: toProcess(({ child }) => {
     const cursor = screen.getCursorScreenPoint();
     // Get display with cursor
@@ -274,6 +280,10 @@ const kitMessageMap: ChannelHandler = {
     setPanel(data.html as string);
   },
 
+  SET_PREVIEW: (data) => {
+    setPreview(data.html as string);
+  },
+
   CONSOLE_CLEAR: () => {
     setLog(Channel.CONSOLE_CLEAR);
   },
@@ -297,7 +307,7 @@ const kitMessageMap: ChannelHandler = {
   SET_PROMPT_DATA: async (data) => {
     await setPromptData(data as PromptData);
   },
-  SET_PROMPT_PROP: async (data) => {
+  SET_PROMPT_PROP: async (data: any) => {
     setPromptProp(data);
   },
   SHOW_IMAGE,
