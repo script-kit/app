@@ -1,3 +1,10 @@
+# [1.3.0-alpha.165](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.164...v1.3.0-alpha.165) (2021-10-30)
+
+
+### Features
+
+* **flags:** allow cmd+k ([d38d779](https://github.com/johnlindquist/kitapp/commit/d38d7793e3be4d85814f10f87e15e567edfc3249))
+
 # [1.3.0-alpha.164](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.163...v1.3.0-alpha.164) (2021-10-30)
 
 
