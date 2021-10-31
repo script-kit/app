@@ -18,7 +18,7 @@ export default () => {
 
   useEffect(() => {
     if (inputFocus && ref?.current) ref?.current.focus();
-  }, [flagValue, submitted, open, mouseDown]);
+  }, [flagValue, submitted, open, mouseDown, inputFocus]);
 
   return ref;
 };

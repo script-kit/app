@@ -10,6 +10,7 @@ import {
   inputAtom,
   inputFocusAtom,
   openAtom,
+  previewEnabledAtom,
   selectionStartAtom,
   submitValueAtom,
 } from '../jotai';
@@ -27,6 +28,16 @@ export default () => {
   const [selectionStart] = useAtom(selectionStartAtom);
   const [open, setOpen] = useAtom(openAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
+  const [previewEnabled, setPreviewEnabled] = useAtom(previewEnabledAtom);
+
+  useHotkeys(
+    'cmd+p',
+    (event) => {
+      setPreviewEnabled(!previewEnabled);
+    },
+    hotkeysOptions,
+    [setPreviewEnabled, previewEnabled]
+  );
 
   const flagsArray = Object.entries(flags);
 
@@ -49,6 +60,7 @@ export default () => {
     (event, handler) => {
       if (!inputFocus) return;
       event.preventDefault();
+      console.log({ shortcuts });
 
       setFlag(flagKeyByShortcut(handler.key));
       submit(choices.length ? choices[index].value : input);
@@ -58,7 +70,7 @@ export default () => {
   );
 
   useHotkeys(
-    flagsArray.length ? 'right,left,cmd+k' : 'f18',
+    flagsArray.length ? 'right,left,cmd+k,ctrl+k' : 'f18',
     (event) => {
       if (!inputFocus) return;
       if (

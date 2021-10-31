@@ -43,6 +43,7 @@ let promptScript: Script;
 let promptWindow: BrowserWindow;
 let blurredByKit = false;
 let ignoreBlur = false;
+let previewEnabled = true;
 
 export const setBlurredByKit = (value = true) => {
   blurredByKit = value;
@@ -268,6 +269,7 @@ let lastResizedByUser = false;
 let fixedBounds: Partial<Rectangle> | null = null;
 export const setBounds = (bounds: Partial<Rectangle>) => {
   promptWindow.setBounds(bounds);
+  cachePromptBounds(bounds);
   fixedBounds = bounds;
 };
 
@@ -284,21 +286,16 @@ export const resize = debounce(
     open,
   }: ResizeData) => {
     const sameScript = filePath === promptScript?.filePath;
-    if (fixedBounds) {
-      const cachedBounds = await getCurrentScreenPromptCache();
-
-      promptWindow.setBounds({
-        ...cachedBounds,
-        ...fixedBounds,
-      });
-      return;
-    }
     if (lastResizedByUser || !sameScript) return;
+    // if (fixedBounds) {
+    //   promptWindow.setBounds(cachedBounds);
+    //   return;
+    // }
+
     if (!mainHeight && ui & (UI.form | UI.div | UI.editor | UI.drop)) return;
     // if (!mainHeight && hasPanel) return;
     if (!mainHeight && !hasInput && hasChoices) return;
     if (!promptWindow?.isVisible() || !open) return;
-
     const cachedBounds = await getCurrentScreenPromptCache();
     const bounds = promptWindow.getBounds();
 
@@ -311,9 +308,9 @@ export const resize = debounce(
         ? Math.round(getCurrentScreen().bounds.height * (3 / 4))
         : Math.max(cachedBounds.height, heightMap[ui]);
 
-    const height = Math.round(
-      targetHeight > maxHeight ? maxHeight : targetHeight
-    );
+    const height = previewEnabled
+      ? maxHeight
+      : Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
     // console.log({
     //   topHeight,
     //   mainHeight,
@@ -536,3 +533,13 @@ export const reload = () => {
 };
 
 export const getPromptBounds = () => promptWindow.getBounds();
+
+export const setPreviewEnabled = (bool: boolean) => {
+  previewEnabled = bool;
+
+  const base = 360;
+  const width = Math.round(previewEnabled ? base * 2.5 : base);
+
+  promptWindow.setBounds({ width }, true);
+  cachePromptBounds(Bounds.Size);
+};

@@ -20,7 +20,12 @@ import { emitter, KitEvent } from './events';
 
 import { processes, ProcessInfo } from './process';
 
-import { escapePromptWindow, reload, resize } from './prompt';
+import {
+  escapePromptWindow,
+  reload,
+  resize,
+  setPreviewEnabled,
+} from './prompt';
 import { setAppHidden, getAppHidden } from './appHidden';
 import { runPromptProcess } from './kit';
 import { AppChannel } from './enums';
@@ -78,9 +83,9 @@ export const startIpc = () => {
   ipcMain.on(
     Channel.CHOICE_FOCUSED,
 
-    handleChannel(({ child }, { index, pid, input = '' }) => {
-      if (child && !isUndefined(index)) {
-        child?.send({ channel: Channel.CHOICE_FOCUSED, index, pid, input });
+    handleChannel(({ child }, { id, pid, input = '' }) => {
+      if (child && !isUndefined(id)) {
+        child?.send({ channel: Channel.CHOICE_FOCUSED, id, pid, input });
       }
     })
   );
@@ -123,6 +128,13 @@ export const startIpc = () => {
   ipcMain.on(Channel.OPEN_FILE, async (event, filePath: string) => {
     await runPromptProcess(kitPath('cli/edit-file.js'), [filePath]);
   });
+
+  ipcMain.on(
+    Channel.SET_PREVIEW_ENABLED,
+    async (event, previewEnabled: boolean) => {
+      setPreviewEnabled(previewEnabled);
+    }
+  );
 
   ipcMain.on(
     AppChannel.DRAG_FILE_PATH,

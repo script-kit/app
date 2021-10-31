@@ -444,22 +444,23 @@ const createChild = ({
   }
 
   const entry = type === ProcessType.Prompt ? KIT_APP_PROMPT : KIT_APP;
+  const env = {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+    KIT_CONTEXT: 'app',
+    KIT_MAIN: scriptPath,
+    KENV: kenvPath(),
+    KIT: kitPath(),
+    KIT_DOTENV_PATH: kitDotEnvPath(),
+    KIT_APP_VERSION: getVersion(),
+    PROCESS_TYPE: type,
+    FORCE_COLOR: '1',
+  };
   const child = fork(entry, args, {
     silent: false,
     // stdio: 'inherit',
     execPath,
-    env: {
-      ...process.env,
-      NODE_NO_WARNINGS: '1',
-      KIT_CONTEXT: 'app',
-      KIT_MAIN: scriptPath,
-      KENV: kenvPath(),
-      KIT: kitPath(),
-      KIT_DOTENV_PATH: kitDotEnvPath(),
-      KIT_APP_VERSION: getVersion(),
-      PROCESS_TYPE: type,
-      FORCE_COLOR: '1',
-    },
+    env,
   });
 
   return child;

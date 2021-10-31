@@ -57,6 +57,7 @@ import {
   panelHTMLAtom,
   pidAtom,
   placeholderAtom,
+  previewEnabledAtom,
   previewHTMLAtom,
   promptDataAtom,
   scriptAtom,
@@ -131,6 +132,7 @@ export default function App() {
 
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
   const [previewHTML, setPreviewHTML] = useAtom(previewHTMLAtom);
+  const [, setPreviewEnabled] = useAtom(previewEnabledAtom);
   const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
   const [, setEditorConfig] = useAtom(editorConfigAtom);
   const [, setTextareaConfig] = useAtom(textareaConfigAtom);
@@ -180,6 +182,7 @@ export default function App() {
     [Channel.SET_MODE]: second(setMode),
     [Channel.SET_PANEL]: second(setPanelHTML),
     [Channel.SET_PREVIEW]: second(setPreviewHTML),
+    [Channel.SET_PREVIEW_ENABLED]: second(setPreviewEnabled),
     [Channel.SET_LOG]: second(setLogHtml),
     [Channel.SET_PLACEHOLDER]: second(setPlaceholder),
     [Channel.SET_TAB_INDEX]: second(setTabIndex),

@@ -133,7 +133,9 @@ const previewHTML = atom('');
 export const previewHTMLAtom = atom(
   (g) => g(previewHTML),
   (g, s, a: string) => {
-    s(previewHTML, a);
+    if (g(previewHTML) !== a) {
+      s(previewHTML, a);
+    }
   }
 );
 
@@ -222,9 +224,10 @@ export const indexAtom = atom(
       s(previewHTMLAtom, checkPreview);
     } else {
       const selected = g(selectedAtom);
-      if (!selected) {
+      const id = cs[clampedIndex]?.item?.id;
+      if (!selected && id) {
         sendChoiceFocused({
-          index: clampedIndex,
+          id,
           input: g(rawInputAtom),
           pid: g(pidAtom),
         });
@@ -249,6 +252,18 @@ export const scoredChoices = atom(
       // s(indexAtom, 0);
     }
     s(choices, a);
+
+    if (a?.length) {
+      const selected = g(selectedAtom);
+      const id = a[0]?.item?.id;
+      if (!selected && id) {
+        sendChoiceFocused({
+          id,
+          input: g(rawInputAtom),
+          pid: g(pidAtom),
+        });
+      }
+    }
   }
 );
 
@@ -267,7 +282,7 @@ const generateChoices = debounce((input, pid) => {
 
 type FocusValue = {
   input: string;
-  index: number;
+  id: string;
   pid: number;
 };
 const sendChoiceFocused = debounce((value: FocusValue) => {
@@ -603,3 +618,16 @@ export const modifiers = [
 ];
 export const modifiersAtom = atom<string[]>([]);
 export const inputFocusAtom = atom<boolean>(true);
+
+const sendTogglePreviewScripts = (bool: boolean) => {
+  ipcRenderer.send(Channel.SET_PREVIEW_ENABLED, bool);
+};
+
+const previewEnabled = atom<boolean>(true);
+export const previewEnabledAtom = atom(
+  (g) => g(previewEnabled),
+  (g, s, a: boolean) => {
+    s(previewEnabled, a);
+    sendTogglePreviewScripts(a);
+  }
+);

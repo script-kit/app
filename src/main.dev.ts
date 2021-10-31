@@ -51,6 +51,7 @@ import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   kenvPath,
   kitPath,
+  home,
   KIT_FIRST_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
@@ -631,6 +632,17 @@ const checkKit = async () => {
     );
 
     await handleSpawnReturns(`update-examples`, updateExamplesResult);
+  }
+
+  if (existsSync(home('.kit-docs', '.git'))) {
+    setupLog(`Updating docs...`);
+    const pullDocsResult = spawnSync(
+      `./script`,
+      [`./cli/pull-docs.js`],
+      options
+    );
+
+    await handleSpawnReturns(`docs-pull`, pullDocsResult);
   }
 
   if (!kenvExists()) {
