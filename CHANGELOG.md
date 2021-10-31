@@ -1,3 +1,10 @@
+# [1.3.0-alpha.167](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.166...v1.3.0-alpha.167) (2021-10-31)
+
+
+### Bug Fixes
+
+* **preview:** locking sizes until further research ([692e622](https://github.com/johnlindquist/kitapp/commit/692e622ce23cdd73dc5b3a708e10afabfc57e782))
+
 # [1.3.0-alpha.166](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.165...v1.3.0-alpha.166) (2021-10-31)
 
 
