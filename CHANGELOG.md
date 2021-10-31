@@ -1,3 +1,10 @@
+# [1.3.0-alpha.166](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.165...v1.3.0-alpha.166) (2021-10-31)
+
+
+### Features
+
+* **preview:** dynamic panel based on id ([03c6804](https://github.com/johnlindquist/kitapp/commit/03c68048196095dcf7fd11e54e28ae9a4cbb520c))
+
 # [1.3.0-alpha.165](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.164...v1.3.0-alpha.165) (2021-10-30)
 
 
