@@ -534,12 +534,22 @@ export const reload = () => {
 
 export const getPromptBounds = () => promptWindow.getBounds();
 
-export const setPreviewEnabled = (bool: boolean) => {
-  previewEnabled = bool;
+export const setPreviewEnabled = async (bool: boolean) => {
+  if (bool !== previewEnabled) {
+    previewEnabled = bool;
+    const { width: currentWidth } = promptWindow.getBounds();
+    const { width: cachedWidth } = await getCurrentScreenPromptCache();
+    const baseWidth = Math.max(currentWidth, cachedWidth);
+    // const width = Math.max(
+    //   360,
+    //   Math.round(baseWidth + (previewEnabled ? 480 : -480))
+    // );
 
-  const base = 360;
-  const width = Math.round(previewEnabled ? base * 2.5 : base);
+    const width = previewEnabled
+      ? Math.max(cachedWidth, 920)
+      : Math.min(cachedWidth, 360);
 
-  promptWindow.setBounds({ width }, true);
-  cachePromptBounds(Bounds.Size);
+    promptWindow.setBounds({ width });
+    cachePromptBounds(Bounds.Size);
+  }
 };

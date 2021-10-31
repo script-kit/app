@@ -136,6 +136,12 @@ export const previewHTMLAtom = atom(
     if (g(previewHTML) !== a) {
       s(previewHTML, a);
     }
+
+    if (a === '') {
+      sendTogglePreviewScripts(false);
+    } else if (g(previewEnabled)) {
+      sendTogglePreviewScripts(true);
+    }
   }
 );
 
@@ -619,15 +625,21 @@ export const modifiers = [
 export const modifiersAtom = atom<string[]>([]);
 export const inputFocusAtom = atom<boolean>(true);
 
+let togglePreviewScripts = true;
 const sendTogglePreviewScripts = (bool: boolean) => {
-  ipcRenderer.send(Channel.SET_PREVIEW_ENABLED, bool);
+  if (bool !== togglePreviewScripts) {
+    togglePreviewScripts = bool;
+    ipcRenderer.send(Channel.SET_PREVIEW_ENABLED, bool);
+  }
 };
 
 const previewEnabled = atom<boolean>(true);
 export const previewEnabledAtom = atom(
   (g) => g(previewEnabled),
   (g, s, a: boolean) => {
-    s(previewEnabled, a);
-    sendTogglePreviewScripts(a);
+    if (a !== g(previewEnabled)) {
+      s(previewEnabled, a);
+      sendTogglePreviewScripts(a);
+    }
   }
 );
