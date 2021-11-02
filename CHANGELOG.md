@@ -1,3 +1,11 @@
+# [1.3.0-alpha.168](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.167...v1.3.0-alpha.168) (2021-11-02)
+
+
+### Features
+
+* **preview:** Sorting out resizing. Needs caching work ([43fa459](https://github.com/johnlindquist/kitapp/commit/43fa4597f7bd5f45c609a84ce3702c8d60c107bc))
+* **preview:** working preview panel with cached sizes ([ba4e6c0](https://github.com/johnlindquist/kitapp/commit/ba4e6c0d1acd88be9b9996b4faf3bdd8ef65bd5a))
+
 # [1.3.0-alpha.167](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.166...v1.3.0-alpha.167) (2021-10-31)
 
 
