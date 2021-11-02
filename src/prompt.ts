@@ -43,7 +43,7 @@ let promptScript: Script;
 let promptWindow: BrowserWindow;
 let blurredByKit = false;
 let ignoreBlur = false;
-let previewEnabled = true;
+// let previewEnabled = true;
 
 export const setBlurredByKit = (value = true) => {
   blurredByKit = value;
@@ -266,13 +266,12 @@ export const showPrompt = async () => {
 
 let lastResizedByUser = false;
 
-let fixedBounds: Partial<Rectangle> | null = null;
 export const setBounds = (bounds: Partial<Rectangle>) => {
   promptWindow.setBounds(bounds);
   cachePromptBounds(bounds);
-  fixedBounds = bounds;
 };
 
+let prevWidth = 0;
 export const resize = debounce(
   async ({
     topHeight,
@@ -283,21 +282,21 @@ export const resize = debounce(
     hasChoices,
     hasPanel,
     hasInput,
+    hasPreview,
     open,
+    tabIndex,
   }: ResizeData) => {
     const sameScript = filePath === promptScript?.filePath;
     if (lastResizedByUser || !sameScript) return;
-    // if (fixedBounds) {
-    //   promptWindow.setBounds(cachedBounds);
-    //   return;
-    // }
 
     if (!mainHeight && ui & (UI.form | UI.div | UI.editor | UI.drop)) return;
     // if (!mainHeight && hasPanel) return;
     if (!mainHeight && !hasInput && hasChoices) return;
     if (!promptWindow?.isVisible() || !open) return;
-    const cachedBounds = await getCurrentScreenPromptCache();
-    const bounds = promptWindow.getBounds();
+    const { width: cachedWidth, height: cachedHeight } =
+      await getCurrentScreenPromptCache();
+    const { width: currentWidth, height: currentHeight } =
+      promptWindow.getBounds();
 
     const targetHeight = topHeight + mainHeight;
     // const y = Math.round(workY + screenHeight / 8);
@@ -306,27 +305,20 @@ export const resize = debounce(
       mode === Mode.GENERATE ||
       ui & (UI.form | UI.div | UI.editor | UI.hotkey)
         ? Math.round(getCurrentScreen().bounds.height * (3 / 4))
-        : Math.max(cachedBounds.height, heightMap[ui]);
+        : Math.max(cachedHeight, heightMap[ui]);
 
-    const height = previewEnabled
+    const width = hasPreview ? Math.max(cachedWidth, 768) : 360;
+
+    const height = hasPreview
       ? maxHeight
       : Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
-    // console.log({
-    //   topHeight,
-    //   mainHeight,
-    //   ui,
-    //   hasChoices,
-    //   hasInput,
-    //   mode,
-    //   maxHeight,
-    // });
 
-    // console.log({ cached: cachedBounds.height, bounds: bounds.height, height });
-    if (bounds.height === height) return;
-    log.info(`↕ RESIZE: ${cachedBounds.width} x ${height}`);
-    promptWindow.setSize(cachedBounds.width, height);
+    if (currentHeight === height && currentWidth === width) return;
+    log.info(`↕ RESIZE: ${width} x ${height}`);
+    promptWindow.setSize(width, height);
 
-    if (ui !== UI.arg) cachePromptBounds(Bounds.Size);
+    if (ui !== UI.arg || (tabIndex === 0 && !hasInput))
+      cachePromptBounds(Bounds.Size);
   },
   0
 );
@@ -440,7 +432,6 @@ export const setPromptPid = (pid: number) => {
 let instantChoices = [];
 
 export const setScript = async (script: Script) => {
-  fixedBounds = null;
   if (promptScript?.filePath === script?.filePath) return;
   promptScript = script;
 
@@ -533,23 +524,3 @@ export const reload = () => {
 };
 
 export const getPromptBounds = () => promptWindow.getBounds();
-
-export const setPreviewEnabled = async (bool: boolean) => {
-  if (bool !== previewEnabled) {
-    previewEnabled = bool;
-    const { width: currentWidth } = promptWindow.getBounds();
-    const { width: cachedWidth } = await getCurrentScreenPromptCache();
-    const baseWidth = Math.max(currentWidth, cachedWidth);
-    // const width = Math.max(
-    //   360,
-    //   Math.round(baseWidth + (previewEnabled ? 480 : -480))
-    // );
-
-    const width = previewEnabled
-      ? Math.max(cachedWidth, 920)
-      : Math.min(cachedWidth, 360);
-
-    promptWindow.setBounds({ width });
-    cachePromptBounds(Bounds.Size);
-  }
-};

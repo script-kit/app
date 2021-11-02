@@ -107,6 +107,14 @@ export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[]) => {
     s(unfilteredChoices, a);
+    // const choice = a?.[0];
+    // if (choice?.id) {
+    //   sendChoiceFocused({
+    //     id: choice?.id,
+    //     input: g(inputAtom),
+    //     pid: g(pidAtom),
+    //   });
+    // }
 
     const qs = new QuickScore(a, {
       keys,
@@ -135,12 +143,6 @@ export const previewHTMLAtom = atom(
   (g, s, a: string) => {
     if (g(previewHTML) !== a) {
       s(previewHTML, a);
-    }
-
-    if (a === '') {
-      sendTogglePreviewScripts(false);
-    } else if (g(previewEnabled)) {
-      sendTogglePreviewScripts(true);
     }
   }
 );
@@ -225,25 +227,41 @@ export const indexAtom = atom(
       s(index, clampedIndex);
     }
 
-    const checkPreview = cs?.[clampedIndex]?.item?.preview;
-    if (cs.length && typeof checkPreview === 'string') {
-      s(previewHTMLAtom, checkPreview);
-    } else {
-      const selected = g(selectedAtom);
-      const id = cs[clampedIndex]?.item?.id;
-      if (!selected && id) {
-        sendChoiceFocused({
-          id,
-          input: g(rawInputAtom),
-          pid: g(pidAtom),
-        });
-      }
+    const choice = cs?.[clampedIndex]?.item;
+    if (cs.length && typeof choice?.preview === 'string') {
+      s(previewHTMLAtom, choice?.preview);
+    }
+    const selected = g(selectedAtom);
+    const id = choice?.id;
+    if (!selected && id) {
+      s(focusedChoiceAtom, choice);
     }
   }
 );
 
 const flaggedValueAtom = atom<Choice | string>('');
+const focusedChoice = atom<Choice | null>(null);
+export const focusedChoiceAtom = atom(
+  (g) => g(focusedChoice),
+  (g, s, choice: Choice | null) => {
+    // if (g(focusedChoice)?.id === choice?.id) return;
+    s(focusedChoice, choice);
 
+    if (choice?.id) {
+      const { id } = choice;
+      sendChoiceFocused({
+        id,
+        input: g(rawInputAtom),
+        pid: g(pidAtom),
+      });
+
+      const pe = g(previewEnabled);
+      const hp = Boolean(choice?.hasPreview);
+
+      s(isPreviewOpenAtom, pe && hp);
+    }
+  }
+);
 export const scoredChoices = atom(
   (g) => g(choices),
   (g, s, a: ScoredChoice[]) => {
@@ -261,13 +279,9 @@ export const scoredChoices = atom(
 
     if (a?.length) {
       const selected = g(selectedAtom);
-      const id = a[0]?.item?.id;
-      if (!selected && id) {
-        sendChoiceFocused({
-          id,
-          input: g(rawInputAtom),
-          pid: g(pidAtom),
-        });
+
+      if (!selected) {
+        s(focusedChoiceAtom, a[0]?.item);
       }
     }
   }
@@ -403,8 +417,11 @@ const resize = (g: Getter, s: Setter) => {
     hasChoices: Boolean(g(choices)?.length),
     hasPanel: Boolean(g(panelHTMLAtom)?.length),
     hasInput: Boolean(g(inputAtom)?.length),
+    hasPreview: g(isPreviewOpen),
     open: g(rawOpen),
+    tabIndex: g(tabIndex),
   };
+
   ipcRenderer.send(AppChannel.RESIZE, data);
 };
 
@@ -625,21 +642,21 @@ export const modifiers = [
 export const modifiersAtom = atom<string[]>([]);
 export const inputFocusAtom = atom<boolean>(true);
 
-let togglePreviewScripts = true;
-const sendTogglePreviewScripts = (bool: boolean) => {
-  if (bool !== togglePreviewScripts) {
-    togglePreviewScripts = bool;
-    ipcRenderer.send(Channel.SET_PREVIEW_ENABLED, bool);
-  }
-};
-
 const previewEnabled = atom<boolean>(true);
 export const previewEnabledAtom = atom(
   (g) => g(previewEnabled),
   (g, s, a: boolean) => {
-    if (a !== g(previewEnabled)) {
-      s(previewEnabled, a);
-      sendTogglePreviewScripts(a);
-    }
+    s(previewEnabled, a);
+    s(isPreviewOpenAtom, a && Boolean(g(focusedChoice)?.hasPreview));
+  }
+);
+
+const isPreviewOpen = atom<boolean>(true);
+export const isPreviewOpenAtom = atom(
+  (g) => g(isPreviewOpen),
+  (g, s, a: boolean) => {
+    console.log({ a });
+    s(isPreviewOpen, a);
+    resize(g, s);
   }
 );

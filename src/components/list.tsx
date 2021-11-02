@@ -104,10 +104,10 @@ export default function ChoiceList({ width, height }: ListProps) {
         height={height}
         itemCount={choices?.length || 0}
         itemSize={BUTTON_HEIGHT}
-        width="100%"
+        width={previewEnabled ? '360px' : '100%'}
         itemData={itemData}
         style={{
-          minWidth: '240px',
+          minWidth: previewEnabled ? '360px' : '240px',
           maxWidth: previewEnabled ? '360px' : '1280px',
         }}
         className={`

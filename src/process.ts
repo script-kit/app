@@ -30,7 +30,6 @@ import { getLog } from './logs';
 import {
   clearPromptCache,
   focusPrompt,
-  getCurrentScreen,
   getPromptBounds,
   getPromptPid,
   hidePromptWindow,
@@ -116,6 +115,7 @@ export const checkScriptChoices = (data: MessageData) => {
               script.img
             );
       }
+      // script.hasPreview = true;
 
       return script;
     });

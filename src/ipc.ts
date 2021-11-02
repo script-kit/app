@@ -20,12 +20,7 @@ import { emitter, KitEvent } from './events';
 
 import { processes, ProcessInfo } from './process';
 
-import {
-  escapePromptWindow,
-  reload,
-  resize,
-  setPreviewEnabled,
-} from './prompt';
+import { escapePromptWindow, reload, resize } from './prompt';
 import { setAppHidden, getAppHidden } from './appHidden';
 import { runPromptProcess } from './kit';
 import { AppChannel } from './enums';
