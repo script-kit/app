@@ -11,7 +11,6 @@ import {
   PromptData,
   PromptBounds,
 } from '@johnlindquist/kit/types/core';
-
 import { BrowserWindow, screen, app, Rectangle } from 'electron';
 import log from 'electron-log';
 import { debounce } from 'lodash';
@@ -39,11 +38,13 @@ import {
 } from './defaults';
 import { ResizeData } from './types';
 
+type PromptState = 'collapsed' | 'expanded';
+
 let promptScript: Script;
 let promptWindow: BrowserWindow;
 let blurredByKit = false;
 let ignoreBlur = false;
-// let previewEnabled = true;
+let promptState: PromptState = 'expanded';
 
 export const setBlurredByKit = (value = true) => {
   blurredByKit = value;
@@ -203,7 +204,8 @@ export const getCurrentScreenPromptCache = async () => {
 
   const screenCache = promptDb.screens?.[String(currentScreen.id)];
 
-  const currentPromptCache = screenCache?.[promptScript?.filePath as string];
+  const currentPromptCache =
+    screenCache?.[promptScript?.filePath as string]?.[promptState];
 
   if (currentPromptCache) return currentPromptCache;
 
@@ -271,7 +273,6 @@ export const setBounds = (bounds: Partial<Rectangle>) => {
   cachePromptBounds(bounds);
 };
 
-let prevWidth = 0;
 export const resize = debounce(
   async ({
     topHeight,
@@ -282,10 +283,12 @@ export const resize = debounce(
     hasChoices,
     hasPanel,
     hasInput,
-    hasPreview,
+    isPreviewOpen,
+    previewEnabled,
     open,
     tabIndex,
   }: ResizeData) => {
+    promptState = isPreviewOpen ? 'expanded' : 'collapsed';
     const sameScript = filePath === promptScript?.filePath;
     if (lastResizedByUser || !sameScript) return;
 
@@ -307,9 +310,11 @@ export const resize = debounce(
         ? Math.round(getCurrentScreen().bounds.height * (3 / 4))
         : Math.max(cachedHeight, heightMap[ui]);
 
-    const width = hasPreview ? Math.max(cachedWidth, 768) : 360;
+    console.log({ currentWidth, cachedWidth, promptState });
 
-    const height = hasPreview
+    const width = isPreviewOpen ? Math.max(cachedWidth, 768) : cachedWidth;
+
+    const height = isPreviewOpen
       ? maxHeight
       : Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
 
@@ -317,8 +322,11 @@ export const resize = debounce(
     log.info(`↕ RESIZE: ${width} x ${height}`);
     promptWindow.setSize(width, height);
 
-    if (ui !== UI.arg || (tabIndex === 0 && !hasInput))
+    if (ui !== UI.arg) cachePromptBounds(Bounds.Size);
+
+    if (ui === UI.arg && !tabIndex && !hasInput) {
       cachePromptBounds(Bounds.Size);
+    }
   },
   0
 );
@@ -330,7 +338,9 @@ export const resetPromptBounds = async () => {
   const { id, bounds } = getDefaultBounds(currentScreen);
   if (!promptDb.screens[String(currentScreen.id)])
     promptDb.screens[String(currentScreen.id)] = {};
-  promptDb.screens[String(currentScreen.id)][promptScript.filePath] = bounds;
+  promptDb.screens[String(currentScreen.id)][promptScript.filePath] = {
+    expanded: bounds,
+  };
   await promptDb.write();
 
   promptWindow?.setBounds(bounds);
@@ -358,8 +368,9 @@ const cachePromptBounds = debounce(
 
     const bounds = promptWindow?.getBounds();
     const prevBounds =
-      promptDb.screens?.[String(currentScreen.id)]?.[promptScript.filePath] ||
-      bounds;
+      promptDb.screens?.[String(currentScreen.id)]?.[promptScript.filePath]?.[
+        promptState
+      ] || bounds;
     // Ignore if flag
     const size = b & Bounds.Size;
     const position = b & Bounds.Position;
@@ -374,12 +385,14 @@ const cachePromptBounds = debounce(
       height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
     };
 
-    promptDb.screens[String(currentScreen.id)][promptScript.filePath] =
-      promptBounds;
+    promptDb.screens[String(currentScreen.id)][promptScript.filePath][
+      promptState
+    ] = promptBounds;
 
     log.info(`Cache prompt:`, {
       script: promptScript.filePath,
       screen: currentScreen.id,
+      promptState,
       ...promptBounds,
     });
 

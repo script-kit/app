@@ -115,7 +115,6 @@ export const checkScriptChoices = (data: MessageData) => {
               script.img
             );
       }
-      // script.hasPreview = true;
 
       return script;
     });

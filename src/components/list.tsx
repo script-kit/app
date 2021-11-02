@@ -16,6 +16,7 @@ import {
   submitValueAtom,
   previewHTMLAtom,
   previewEnabledAtom,
+  focusedChoiceAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 import { BUTTON_HEIGHT } from '../defaults';
@@ -44,6 +45,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [flagValue] = useAtom(flagValueAtom);
   const [previewHTML, setPreviewHTML] = useAtom(previewHTMLAtom);
   const [previewEnabled] = useAtom(previewEnabledAtom);
+  const [focusedChoice] = useAtom(focusedChoiceAtom);
 
   const onIndexSubmit = useCallback(
     (i) => {
@@ -86,7 +88,7 @@ export default function ChoiceList({ width, height }: ListProps) {
       className={`
       list-component
       flex flex-row
-      w-full min-w-1/2
+      w-full
       overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5
       `}
       style={
@@ -104,22 +106,23 @@ export default function ChoiceList({ width, height }: ListProps) {
         height={height}
         itemCount={choices?.length || 0}
         itemSize={BUTTON_HEIGHT}
-        width={previewEnabled ? '360px' : '100%'}
-        itemData={itemData}
+        width={previewEnabled && focusedChoice?.hasPreview ? '320px' : '100%'}
         style={{
-          minWidth: previewEnabled ? '360px' : '240px',
-          maxWidth: previewEnabled ? '360px' : '1280px',
+          minWidth:
+            previewEnabled && focusedChoice?.hasPreview ? '320px' : '100%',
         }}
+        itemData={itemData}
         className={`
         h-full
         px-0 flex flex-col
         text-black dark:text-white
-        overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20 min-w-1/2`}
+        overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20
+        `}
         // onItemsRendered={onItemsRendered}
       >
         {ChoiceButton}
       </List>
-      {previewHTML && previewEnabled && <Preview />}
+      {previewEnabled && <Preview />}
     </div>
   );
 }

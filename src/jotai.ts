@@ -12,6 +12,7 @@ import asap from 'asap';
 import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
 import { Choice, Script, PromptData } from '@johnlindquist/kit/types/core';
+import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
 import {
   EditorConfig,
   TextareaConfig,
@@ -30,6 +31,7 @@ export const pidAtom = atom(0);
 const rawOpen = atom(false);
 export const submittedAtom = atom(false);
 export const tabsAtom = atom<string[]>([]);
+const cachedMainPreview = atom('');
 
 const placeholder = atom('');
 export const placeholderAtom = atom(
@@ -137,10 +139,20 @@ export const hintAtom = atom('');
 export const modeAtom = atom<Mode>(Mode.FILTER);
 
 export const panelHTMLAtom = atom('');
+
 const previewHTML = atom('');
 export const previewHTMLAtom = atom(
   (g) => g(previewHTML),
   (g, s, a: string) => {
+    const sc = g(script);
+    const tI = g(tabIndex);
+    const iA = g(inputAtom);
+
+    console.log(`Set preview`);
+    console.log(a);
+    if (sc.filePath === mainScriptPath && tI === 0 && iA === '') {
+      s(cachedMainPreview, a);
+    }
     if (g(previewHTML) !== a) {
       s(previewHTML, a);
     }
@@ -239,12 +251,20 @@ export const indexAtom = atom(
   }
 );
 
+function isScript(choice: Choice | Script): choice is Script {
+  return (choice as Script)?.command !== undefined;
+}
+
 const flaggedValueAtom = atom<Choice | string>('');
 const focusedChoice = atom<Choice | null>(null);
 export const focusedChoiceAtom = atom(
   (g) => g(focusedChoice),
   (g, s, choice: Choice | null) => {
     // if (g(focusedChoice)?.id === choice?.id) return;
+    if (isScript(choice as Choice)) {
+      (choice as Script).hasPreview = true;
+    }
+
     s(focusedChoice, choice);
 
     if (choice?.id) {
@@ -254,11 +274,6 @@ export const focusedChoiceAtom = atom(
         input: g(rawInputAtom),
         pid: g(pidAtom),
       });
-
-      const pe = g(previewEnabled);
-      const hp = Boolean(choice?.hasPreview);
-
-      s(isPreviewOpenAtom, pe && hp);
     }
   }
 );
@@ -305,9 +320,9 @@ type FocusValue = {
   id: string;
   pid: number;
 };
-const sendChoiceFocused = debounce((value: FocusValue) => {
+const sendChoiceFocused = (value: FocusValue) => {
   ipcRenderer.send(Channel.CHOICE_FOCUSED, value);
-}, 100);
+};
 
 const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
   if (!a) return false;
@@ -363,7 +378,7 @@ export const tabIndexAtom = atom(
     s(tabIndex, a);
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
-    s(previewHTMLAtom, '');
+    if (a !== 0) s(previewHTMLAtom, '');
     ipcRenderer.send(Channel.TAB_CHANGED, {
       tab: g(tabsAtom)[a],
       input: g(rawInputAtom),
@@ -400,7 +415,14 @@ export const scriptAtom = atom(
     s(tabsAtom, a?.tabs || []);
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
-    s(previewHTMLAtom, '');
+    if (a.filePath === mainScriptPath) {
+      console.log(`Show cached preview:`);
+      console.log(g(cachedMainPreview));
+      s(previewHTMLAtom, g(cachedMainPreview));
+    } else {
+      console.log(`Clear preview`);
+      s(previewHTMLAtom, '');
+    }
   }
 );
 
@@ -408,6 +430,8 @@ const topHeight = atom(88);
 const mainHeight = atom(0);
 
 const resize = (g: Getter, s: Setter) => {
+  const choice = g(focusedChoice);
+
   const data: ResizeData = {
     topHeight: g(topHeight),
     ui: g(uiAtom),
@@ -417,7 +441,13 @@ const resize = (g: Getter, s: Setter) => {
     hasChoices: Boolean(g(choices)?.length),
     hasPanel: Boolean(g(panelHTMLAtom)?.length),
     hasInput: Boolean(g(inputAtom)?.length),
-    hasPreview: g(isPreviewOpen),
+    isPreviewOpen: Boolean(
+      choice?.hasPreview &&
+        g(previewEnabled) &&
+        g(uiAtom) === UI.arg &&
+        g(modeAtom) === Mode.FILTER
+    ),
+    previewEnabled: g(previewEnabled),
     open: g(rawOpen),
     tabIndex: g(tabIndex),
   };
@@ -647,16 +677,6 @@ export const previewEnabledAtom = atom(
   (g) => g(previewEnabled),
   (g, s, a: boolean) => {
     s(previewEnabled, a);
-    s(isPreviewOpenAtom, a && Boolean(g(focusedChoice)?.hasPreview));
-  }
-);
-
-const isPreviewOpen = atom<boolean>(true);
-export const isPreviewOpenAtom = atom(
-  (g) => g(isPreviewOpen),
-  (g, s, a: boolean) => {
-    console.log({ a });
-    s(isPreviewOpen, a);
     resize(g, s);
   }
 );
