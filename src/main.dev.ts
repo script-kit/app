@@ -361,6 +361,7 @@ const handleSpawnReturns = async (
   }
 
   if (stderr?.toString().length) {
+    updateConfigWindow(stderr.toString());
     console.log({ stderr: stderr.toString() });
     // throw new Error(stderr.toString());
   }
@@ -634,16 +635,10 @@ const checkKit = async () => {
     await handleSpawnReturns(`update-examples`, updateExamplesResult);
   }
 
-  if (existsSync(home('.kit-docs', '.git'))) {
-    setupLog(`Updating docs...`);
-    const pullDocsResult = spawnSync(
-      `./script`,
-      [`./cli/pull-docs.js`],
-      options
-    );
+  setupLog(`Updating docs...`);
+  const pullDocsResult = spawnSync(`./script`, [`./cli/pull-docs.js`], options);
 
-    await handleSpawnReturns(`docs-pull`, pullDocsResult);
-  }
+  await handleSpawnReturns(`docs-pull`, pullDocsResult);
 
   if (!kenvExists()) {
     // Step 4: Use kit wrapper to run setup.js script

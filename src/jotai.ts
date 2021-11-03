@@ -148,8 +148,6 @@ export const previewHTMLAtom = atom(
     const tI = g(tabIndex);
     const iA = g(inputAtom);
 
-    console.log(`Set preview`);
-    console.log(a);
     if (sc.filePath === mainScriptPath && tI === 0 && iA === '') {
       s(cachedMainPreview, a);
     }
@@ -408,6 +406,7 @@ export const scriptAtom = atom(
     s(script, a);
     s(rawInputAtom, '');
     s(unfilteredChoicesAtom, []);
+    s(choices, []);
     s(logHTMLAtom, '');
     s(indexAtom, 0);
     s(tabIndex, 0);
@@ -416,11 +415,8 @@ export const scriptAtom = atom(
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
     if (a.filePath === mainScriptPath) {
-      console.log(`Show cached preview:`);
-      console.log(g(cachedMainPreview));
       s(previewHTMLAtom, g(cachedMainPreview));
     } else {
-      console.log(`Clear preview`);
       s(previewHTMLAtom, '');
     }
   }
@@ -445,7 +441,7 @@ const resize = (g: Getter, s: Setter) => {
       choice?.hasPreview &&
         g(previewEnabled) &&
         g(uiAtom) === UI.arg &&
-        g(modeAtom) === Mode.FILTER
+        g(scriptAtom)?.hasPreview
     ),
     previewEnabled: g(previewEnabled),
     open: g(rawOpen),

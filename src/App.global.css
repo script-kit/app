@@ -1,5 +1,4 @@
 @import 'jetbrains-mono';
-@import 'typeface-lato';
 
 @import '../node_modules/simplebar-react/dist/simplebar.min.css';
 @import '../node_modules/highlight.js/styles/night-owl.css';
@@ -35,10 +34,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-.lato {
-  font-family: 'Lato';
-}
 
 img:before {
   content: ' ';

@@ -60,7 +60,6 @@ export default () => {
     (event, handler) => {
       if (!inputFocus) return;
       event.preventDefault();
-      console.log({ shortcuts });
 
       setFlag(flagKeyByShortcut(handler.key));
       submit(choices.length ? choices[index].value : input);

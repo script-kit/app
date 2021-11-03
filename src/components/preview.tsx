@@ -12,7 +12,12 @@ export default function Preview() {
   const [, setInputFocus] = useAtom(inputFocusAtom);
   const [isDark] = useAtom(darkAtom);
 
-  useEffect(() => {}, [isDark]);
+  useEffect(() => {
+    if (highlightRef.current) {
+      highlightRef.current.scrollTop = 0;
+      highlightRef.current.scrollLeft = 0;
+    }
+  }, [previewHTML]);
 
   const onMouseEnter = useCallback(() => {
     setInputFocus(false);
@@ -76,7 +81,7 @@ SOFTWARE.
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  background: #011627;
+  background: rgba(0, 0, 0, .25);
   color: #d6deeb;
 }
 
@@ -236,7 +241,7 @@ const lightTheme = `
 
 .hljs {
   display: block;
-  background: white;
+  background: rgba(255, 255, 255, .25);
   padding: 0.5em;
   color: #333333;
   overflow-x: auto;

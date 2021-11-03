@@ -35,6 +35,7 @@ module.exports = {
         /^max/,
         /^grid/,
         /^\w{0,2}-(\d\/\d|\d\.\d|\d{1,3}|full|screen|auto)/,
+        /^leading/,
       ],
     },
   },
@@ -53,7 +54,6 @@ module.exports = {
       }),
       fontFamily: {
         mono: ['JetBrains Mono'],
-        // sans: ['Lato'],
       },
       margin: {
         '-2': '-2px',
