@@ -636,7 +636,11 @@ const checkKit = async () => {
   }
 
   setupLog(`Updating docs...`);
-  const pullDocsResult = spawnSync(`./script`, [`./cli/pull-docs.js`], options);
+  const pullDocsResult = spawnSync(
+    `./script`,
+    [`./help/pull-docs.js`],
+    options
+  );
 
   await handleSpawnReturns(`docs-pull`, pullDocsResult);
 

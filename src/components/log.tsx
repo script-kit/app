@@ -7,9 +7,12 @@ import parse from 'html-react-parser';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
-import { logHeightAtom, logHTMLAtom, scriptAtom } from '../jotai';
-
-// TODO: Fix error prompt icon
+import {
+  isKitScriptAtom,
+  logHeightAtom,
+  logHTMLAtom,
+  scriptAtom,
+} from '../jotai';
 
 export default function Log() {
   const [script, setScript] = useAtom(scriptAtom);

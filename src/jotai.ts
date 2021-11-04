@@ -12,7 +12,7 @@ import asap from 'asap';
 import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
 import { Choice, Script, PromptData } from '@johnlindquist/kit/types/core';
-import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
+import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import {
   EditorConfig,
   TextareaConfig,
@@ -421,6 +421,10 @@ export const scriptAtom = atom(
     }
   }
 );
+
+export const isKitScriptAtom = atom((g) => {
+  g(script).filePath.includes(kitPath());
+});
 
 const topHeight = atom(88);
 const mainHeight = atom(0);

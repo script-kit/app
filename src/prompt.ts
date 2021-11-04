@@ -357,7 +357,10 @@ export const resetPromptBounds = async () => {
   const boundsFilePath =
     promptDb.screens?.[String(currentScreen.id)]?.[promptScript.filePath];
   const maybeBounds =
-    boundsFilePath?.expanded || boundsFilePath?.collapsed || {};
+    boundsFilePath?.expanded ||
+    boundsFilePath?.collapsed ||
+    promptWindow?.getBounds() ||
+    {};
 
   if (!boundsFilePath?.[promptState]) {
     const promptBounds = {

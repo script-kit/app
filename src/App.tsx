@@ -70,6 +70,7 @@ import {
   topHeightAtom,
   uiAtom,
   unfilteredChoicesAtom,
+  isKitScriptAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -112,6 +113,7 @@ export default function App() {
   const [pid, setPid] = useAtom(pidAtom);
   const [open, setOpen] = useAtom(openAtom);
   const [script, setScript] = useAtom(scriptAtom);
+  const [isKitScript] = useAtom(isKitScriptAtom);
 
   const [inputValue, setInput] = useAtom(inputAtom);
   const [, setPlaceholder] = useAtom(placeholderAtom);
@@ -246,7 +248,9 @@ export default function App() {
           {selected && <Selected />}
           {hint && <Hint />}
           {tabs?.length > 0 && !flagValue && <Tabs />}
-          {logHtml?.length > 0 && script?.log !== 'false' && <Log />}
+          {logHtml?.length > 0 && script?.log !== 'false' && !isKitScript && (
+            <Log />
+          )}
         </header>
         <main
           ref={mainRef}
