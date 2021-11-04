@@ -45,6 +45,7 @@ let promptWindow: BrowserWindow;
 let blurredByKit = false;
 let ignoreBlur = false;
 let promptState: PromptState = 'expanded';
+let isPreviewEnabled = true;
 
 export const setBlurredByKit = (value = true) => {
   blurredByKit = value;
@@ -199,10 +200,15 @@ export const getCurrentScreen = (): Display => {
 };
 
 export const getCurrentScreenPromptCache = async () => {
+  // console.log(`Prompt cache`, { promptState });
   const currentScreen = getCurrentScreen();
   const promptDb = await getPromptDb();
 
   const screenCache = promptDb.screens?.[String(currentScreen.id)];
+  if (!promptWindow?.isVisible()) {
+    promptState =
+      promptScript?.hasPreview && isPreviewEnabled ? 'expanded' : 'collapsed';
+  }
 
   const currentPromptCache =
     screenCache?.[promptScript?.filePath as string]?.[promptState];
@@ -294,8 +300,7 @@ export const resize = debounce(
     open,
     tabIndex,
   }: ResizeData) => {
-    promptState =
-      promptScript?.hasPreview && isPreviewOpen ? 'expanded' : 'collapsed';
+    isPreviewEnabled = previewEnabled;
     const sameScript = filePath === promptScript?.filePath;
     if (lastResizedByUser || !sameScript) return;
 
@@ -304,13 +309,33 @@ export const resize = debounce(
     if (!mainHeight && !hasInput && hasChoices) return;
     // if (mainHeight && ui & UI.arg && !hasPanel && !hasChoices) mainHeight = 0;
     if (!promptWindow?.isVisible() || !open) return;
-    const { width: cachedWidth, height: cachedHeight } =
-      await getCurrentScreenPromptCache();
-    const { width: currentWidth, height: currentHeight } =
-      promptWindow.getBounds();
+
+    promptState =
+      promptScript?.hasPreview && isPreviewOpen ? 'expanded' : 'collapsed';
+    // console.log(`Resize:`, { promptState });
+
+    const {
+      width: cachedWidth,
+      height: cachedHeight,
+      x: cachedX,
+      y: cachedY,
+    } = await getCurrentScreenPromptCache();
+    const {
+      width: currentWidth,
+      height: currentHeight,
+      x: currentX,
+      y: currentY,
+    } = promptWindow.getBounds();
 
     const targetHeight = topHeight + mainHeight;
-    // console.log({ topHeight, mainHeight, targetHeight, hasChoices, hasPanel });
+    // console.log({
+    //   topHeight,
+    //   mainHeight,
+    //   targetHeight,
+    //   hasChoices,
+    //   hasPanel,
+    //   isPreviewOpen,
+    // });
     // const y = Math.round(workY + screenHeight / 8);
 
     // const maxHeight =
@@ -341,6 +366,10 @@ export const resize = debounce(
 
     if (ui === UI.arg && !tabIndex && !hasInput) {
       cachePromptBounds(Bounds.Size);
+    }
+
+    if (currentX !== cachedX && currentY !== cachedY) {
+      promptWindow.setPosition(cachedX, cachedY);
     }
   },
   0

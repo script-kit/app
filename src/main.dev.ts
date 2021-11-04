@@ -626,23 +626,19 @@ const checkKit = async () => {
 
   if (kenvsExists() && examplesExists()) {
     setupLog(`Updating examples...`);
-    const updateExamplesResult = spawnSync(
+    const updateExamplesResult = spawn(
       `./script`,
       [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
       options
     );
 
-    await handleSpawnReturns(`update-examples`, updateExamplesResult);
+    // await handleSpawnReturns(`update-examples`, updateExamplesResult);
   }
 
   setupLog(`Updating docs...`);
-  const pullDocsResult = spawnSync(
-    `./script`,
-    [`./help/pull-docs.js`],
-    options
-  );
+  const pullDocsResult = spawn(`./script`, [`./help/pull-docs.js`], options);
 
-  await handleSpawnReturns(`docs-pull`, pullDocsResult);
+  // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 
   if (!kenvExists()) {
     // Step 4: Use kit wrapper to run setup.js script
