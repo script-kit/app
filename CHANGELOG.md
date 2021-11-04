@@ -1,3 +1,10 @@
+# [1.3.0-alpha.172](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.171...v1.3.0-alpha.172) (2021-11-04)
+
+
+### Features
+
+* **css:** safelist.txt ([cc629b4](https://github.com/johnlindquist/kitapp/commit/cc629b4c6bde12b781af4eaab8f007997eaae845))
+
 # [1.3.0-alpha.171](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.170...v1.3.0-alpha.171) (2021-11-04)
 
 
