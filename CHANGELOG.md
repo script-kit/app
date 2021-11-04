@@ -1,3 +1,10 @@
+# [1.3.0-alpha.170](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.169...v1.3.0-alpha.170) (2021-11-04)
+
+
+### Features
+
+* **preview:** adding docs ([4642dfd](https://github.com/johnlindquist/kitapp/commit/4642dfdbf12ea3fd409013c3533c49c830287a53))
+
 # [1.3.0-alpha.169](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.168...v1.3.0-alpha.169) (2021-11-03)
 
 
