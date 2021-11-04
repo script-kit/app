@@ -226,6 +226,19 @@ body {
     list-style-position: outside;
   }
 
+  .prose > ul li {
+    list-style-type: unset;
+  }
+
+  .prose > ol li {
+    list-style-type: unset;
+  }
+
+  .prose > ul,
+  ol {
+    @apply ml-0;
+  }
+
   p {
     @apply mb-0;
   }

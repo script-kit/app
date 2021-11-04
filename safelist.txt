@@ -729,3 +729,5 @@ pl-1\.5
 pl-2\.5
 pl-3\.5
 italic
+prose
+dark:prose-dark

@@ -42,6 +42,7 @@ module.exports = {
         /^\w{0,2}-(\d\/\d|\d\.\d|\d{1,3}|full|screen|auto)/,
         /^leading/,
         /^prose/,
+        /^dark:prose-dark/,
       ],
     },
   },
@@ -119,13 +120,52 @@ module.exports = {
             a: {
               color: theme('colors.primary.dark'),
             },
+            code: {
+              padding: '1px 3px',
+              borderRadius: 2,
+              backgroundColor: theme('colors.gray.100'),
+            },
+            'pre > code': {
+              fontSize: '95%',
+            },
+            'code:before': {
+              content: '""',
+            },
+            'code:after': {
+              content: '""',
+            },
+            li: {
+              listStylePosition: 'outside',
+            },
+            'p:first-of-type, h2:first-of-type, h3:first-of-type': {
+              marginTop: 0,
+            },
+            pre: {
+              background: theme('colors.white'),
+            },
+            'pre > code': {
+              color: theme('colors.black'),
+            },
           },
         },
         dark: {
           css: {
-            color: theme('colors.white'),
+            '*': { color: theme('colors.white') },
+            'h1, h2, h3, h4, h5': {
+              color: theme('colors.white'),
+            },
+            code: {
+              color: theme('colors.white'),
+              backgroundColor: theme('colors.gray.800'),
+            },
             a: {
               color: theme('colors.primary.light'),
+            },
+            pre: {
+              background: theme('colors.gray.800'),
+            },
+            'pre > code': {
+              color: theme('colors.white'),
             },
           },
         },
