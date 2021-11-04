@@ -18,7 +18,12 @@ module.exports = {
   mode: process.env.NODE_ENV === 'development' ? 'jit' : '',
   purge: {
     enabled: true,
-    content: ['./src/**/*.html', './src/**/*.tsx', './src/*.ts'],
+    content: [
+      './src/**/*.html',
+      './src/**/*.tsx',
+      './src/*.ts',
+      './safelist.txt',
+    ],
     options: {
       safelist: [
         /^hover/,
@@ -36,6 +41,7 @@ module.exports = {
         /^grid/,
         /^\w{0,2}-(\d\/\d|\d\.\d|\d{1,3}|full|screen|auto)/,
         /^leading/,
+        /^prose/,
       ],
     },
   },
