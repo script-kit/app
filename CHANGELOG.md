@@ -1,3 +1,10 @@
+# [1.3.0-alpha.169](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.168...v1.3.0-alpha.169) (2021-11-03)
+
+
+### Features
+
+* **preview:** adding async preview pane. Handling resizing ([5e0877b](https://github.com/johnlindquist/kitapp/commit/5e0877b7673222c68a20cec21d816de2f4a055ec))
+
 # [1.3.0-alpha.168](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.167...v1.3.0-alpha.168) (2021-11-02)
 
 
