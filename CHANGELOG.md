@@ -1,4 +1,31 @@
+# [1.3.0-beta.66](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.65...v1.3.0-beta.66) (2021-11-05)
 
+
+### Bug Fixes
+
+* **cjs:** globals ([2afa52a](https://github.com/johnlindquist/kitapp/commit/2afa52ae32399a5f0ae0210079e5217409758bfa))
+* **install:** fix assets scripts ([9b11a01](https://github.com/johnlindquist/kitapp/commit/9b11a017c27614354e5583c03a40f199882a7448))
+* **node:** version 17 ([3561113](https://github.com/johnlindquist/kitapp/commit/3561113601a820bb4ff2b3367b2fe2f9ec7d0a2b))
+* **preview:** locking sizes until further research ([692e622](https://github.com/johnlindquist/kitapp/commit/692e622ce23cdd73dc5b3a708e10afabfc57e782))
+
+
+### Features
+
+* **css:** safelist.txt ([cc629b4](https://github.com/johnlindquist/kitapp/commit/cc629b4c6bde12b781af4eaab8f007997eaae845))
+* **docs:** adding docs ([aec2746](https://github.com/johnlindquist/kitapp/commit/aec2746c870eb7e9ff7ae6660f027f8528a7631f))
+* **docs:** adding docs ([9a7af66](https://github.com/johnlindquist/kitapp/commit/9a7af66dd1a2fcccf813ff702fffb47502ff78cb))
+* **flags:** allow cmd+k ([d38d779](https://github.com/johnlindquist/kitapp/commit/d38d7793e3be4d85814f10f87e15e567edfc3249))
+* **install:** switch to johnlindquist/globals ([fff98aa](https://github.com/johnlindquist/kitapp/commit/fff98aa538d5b91866a242202fe7bcb36d5ad579))
+* **install:** testing bundling node_modules and node ([20817cf](https://github.com/johnlindquist/kitapp/commit/20817cfaba58a2a4bd75b11d122a9301c44d8bb2))
+* **packages:** build globals cjs with esbuild ([768b6a2](https://github.com/johnlindquist/kitapp/commit/768b6a2c1fe7462186190c44a2c15a878e728a11))
+* **preview:** adding async preview pane. Handling resizing ([5e0877b](https://github.com/johnlindquist/kitapp/commit/5e0877b7673222c68a20cec21d816de2f4a055ec))
+* **preview:** adding docs ([4642dfd](https://github.com/johnlindquist/kitapp/commit/4642dfdbf12ea3fd409013c3533c49c830287a53))
+* **preview:** async preview pane ([2d1dcec](https://github.com/johnlindquist/kitapp/commit/2d1dcec8de2cbfe4cd16750eef43c4915c00ed53))
+* **preview:** async preview pane ([b843c49](https://github.com/johnlindquist/kitapp/commit/b843c49df68048833849fec88228cf34c0c49ad4))
+* **preview:** dynamic panel based on id ([03c6804](https://github.com/johnlindquist/kitapp/commit/03c68048196095dcf7fd11e54e28ae9a4cbb520c))
+* **preview:** Sorting out resizing. Needs caching work ([43fa459](https://github.com/johnlindquist/kitapp/commit/43fa4597f7bd5f45c609a84ce3702c8d60c107bc))
+* **preview:** working preview panel with cached sizes ([ba4e6c0](https://github.com/johnlindquist/kitapp/commit/ba4e6c0d1acd88be9b9996b4faf3bdd8ef65bd5a))
+* **ts:** expose globals api ([05ff274](https://github.com/johnlindquist/kitapp/commit/05ff27490bf27f0367ec6fad287dbe8cb26b1f3a))
 
 # [1.3.0-alpha.155](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.154...v1.3.0-alpha.155) (2021-10-08)
 
