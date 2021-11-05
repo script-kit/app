@@ -71,6 +71,7 @@ import { processes } from './process';
 import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
 import { CONFIG_SPLASH, showError } from './main.dev.templates';
+import { scheduleScriptChanged } from './schedule';
 
 let configWindow: BrowserWindow;
 
@@ -336,6 +337,18 @@ const ready = async () => {
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);
+
+    const downloadHot = kitPath('hot', 'download-hot.js');
+    scheduleScriptChanged({
+      name: 'download-hot',
+      command: 'download-hot',
+      filePath: downloadHot,
+      id: downloadHot,
+      type: ProcessType.Schedule,
+      requiresPrompt: false,
+      kenv: '',
+      schedule: '0 11 * * *',
+    });
   } catch (error) {
     log.warn(error);
   }
@@ -626,7 +639,7 @@ const checkKit = async () => {
 
   if (kenvsExists() && examplesExists()) {
     setupLog(`Updating examples...`);
-    const updateExamplesResult = spawn(
+    spawn(
       `./script`,
       [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
       options
@@ -634,9 +647,6 @@ const checkKit = async () => {
 
     // await handleSpawnReturns(`update-examples`, updateExamplesResult);
   }
-
-  setupLog(`Updating docs...`);
-  const pullDocsResult = spawn(`./script`, [`./help/pull-docs.js`], options);
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 

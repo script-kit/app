@@ -4,13 +4,19 @@
 /* eslint-disable react/destructuring-assignment */
 import { useAtom } from 'jotai';
 import React, { RefObject, useCallback, useEffect, useRef } from 'react';
-import { darkAtom, inputFocusAtom, previewHTMLAtom } from '../jotai';
+import {
+  darkAtom,
+  inputFocusAtom,
+  mouseEnabledAtom,
+  previewHTMLAtom,
+} from '../jotai';
 import { darkTheme, lightTheme } from './themes';
 
 export default function Preview() {
   const highlightRef: RefObject<any> = useRef(null);
   const [previewHTML] = useAtom(previewHTMLAtom);
   const [, setInputFocus] = useAtom(inputFocusAtom);
+  const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [isDark] = useAtom(darkAtom);
 
   useEffect(() => {
@@ -21,8 +27,8 @@ export default function Preview() {
   }, [previewHTML]);
 
   const onMouseEnter = useCallback(() => {
-    setInputFocus(false);
-  }, [setInputFocus]);
+    if (mouseEnabled) setInputFocus(false);
+  }, [setInputFocus, mouseEnabled]);
 
   const onMouseLeave = useCallback(() => {
     setInputFocus(true);
@@ -34,7 +40,7 @@ export default function Preview() {
       style={{ userSelect: 'text' }}
       // onMouseUp={onMouseUp}
       ref={highlightRef}
-      onMouseEnter={onMouseEnter}
+      onMouseDown={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
       <style type="text/css">{isDark ? darkTheme : lightTheme}</style>
