@@ -34,6 +34,7 @@ export default merge(baseConfig, {
   },
 
   output: {
+    hashFunction: 'xxhash64',
     library: 'renderer',
     path: dist,
     filename: '[name].dev.dll.js',

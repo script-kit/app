@@ -51,6 +51,7 @@ import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   kenvPath,
   kitPath,
+  home,
   KIT_FIRST_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
@@ -306,7 +307,7 @@ const ensureKenvDirs = async () => {
 const ready = async () => {
   try {
     if (process.env.NODE_ENV === 'development') {
-      await installExtensions();
+      // await installExtensions();
     }
 
     await ensureKitDirs();
@@ -360,6 +361,7 @@ const handleSpawnReturns = async (
   }
 
   if (stderr?.toString().length) {
+    updateConfigWindow(stderr.toString());
     console.log({ stderr: stderr.toString() });
     // throw new Error(stderr.toString());
   }
@@ -548,7 +550,10 @@ const checkKit = async () => {
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
   autoUpdater.logger = log;
-  autoUpdater.checkForUpdates();
+  if (process.env.NODE_ENV !== 'development') {
+    // await installExtensions();
+    autoUpdater.checkForUpdates();
+  }
 
   if (!kitExists() || (await versionMismatch())) {
     configWindow = await show(
@@ -599,11 +604,10 @@ const checkKit = async () => {
           await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
         }
       }
-
       setupLog(`updating ~/.kit packages...`);
       const npmResult = spawnSync(
         `npm`,
-        [`i`, `--production`, `--no-progress`],
+        [`i`, `--production`, `--no-progress`, `--quiet`],
         options
       );
       await handleSpawnReturns(`npm`, npmResult);
@@ -621,20 +625,28 @@ const checkKit = async () => {
   }
 
   if (kenvsExists() && examplesExists()) {
-    const updateExamplesResult = spawnSync(
+    setupLog(`Updating examples...`);
+    const updateExamplesResult = spawn(
       `./script`,
       [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
       options
     );
 
-    await handleSpawnReturns(`update-examples`, updateExamplesResult);
+    // await handleSpawnReturns(`update-examples`, updateExamplesResult);
   }
+
+  setupLog(`Updating docs...`);
+  const pullDocsResult = spawn(`./script`, [`./help/pull-docs.js`], options);
+
+  // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 
   if (!kenvExists()) {
     // Step 4: Use kit wrapper to run setup.js script
     configWindow?.show();
+    setupLog(`Extract tar to ~/.kenv...`);
     const kenvTar = getAssetPath('kenv.tar.gz');
     await extractTar(kenvTar, kenvPath());
+    log.info(await readdir(kenvPath()));
 
     kenvExists();
     await ensureKenvDirs();

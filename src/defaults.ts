@@ -1,7 +1,7 @@
 import { UI } from '@johnlindquist/kit/cjs/enum';
 
 export const DEFAULT_WIDTH = 320; // 256;
-export const DEFAULT_HEIGHT = Math.round((DEFAULT_WIDTH * 11) / 8.5);
+export const DEFAULT_HEIGHT = 492;
 export const INPUT_HEIGHT = 64;
 export const MIN_HEIGHT = INPUT_HEIGHT;
 export const MIN_TEXTAREA_HEIGHT = MIN_HEIGHT * 3;

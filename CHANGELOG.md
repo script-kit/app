@@ -1,9 +1,4 @@
-# [1.3.0-beta.65](https://github.com/johnlindquist/kitapp/compare/v1.3.0-beta.64...v1.3.0-beta.65) (2021-10-09)
 
-
-### Bug Fixes
-
-* **error:** error prompt cleanup ([e95e677](https://github.com/johnlindquist/kitapp/commit/e95e677d1f75630b975fb2fc5bebed2e9a961616))
 
 # [1.3.0-alpha.155](https://github.com/johnlindquist/kitapp/compare/v1.3.0-alpha.154...v1.3.0-alpha.155) (2021-10-08)
 

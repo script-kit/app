@@ -12,11 +12,12 @@ import asap from 'asap';
 import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
 import { Choice, Script, PromptData } from '@johnlindquist/kit/types/core';
+import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import {
   EditorConfig,
   TextareaConfig,
   EditorOptions,
-} from '@johnlindquist/kit/types/app';
+} from '@johnlindquist/kit/types/kitapp';
 
 import { clamp, debounce, drop } from 'lodash';
 import { ipcRenderer } from 'electron';
@@ -30,6 +31,7 @@ export const pidAtom = atom(0);
 const rawOpen = atom(false);
 export const submittedAtom = atom(false);
 export const tabsAtom = atom<string[]>([]);
+const cachedMainPreview = atom('');
 
 const placeholder = atom('');
 export const placeholderAtom = atom(
@@ -107,6 +109,14 @@ export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[]) => {
     s(unfilteredChoices, a);
+    // const choice = a?.[0];
+    // if (choice?.id) {
+    //   sendChoiceFocused({
+    //     id: choice?.id,
+    //     input: g(inputAtom),
+    //     pid: g(pidAtom),
+    //   });
+    // }
 
     const qs = new QuickScore(a, {
       keys,
@@ -129,6 +139,23 @@ export const hintAtom = atom('');
 export const modeAtom = atom<Mode>(Mode.FILTER);
 
 export const panelHTMLAtom = atom('');
+
+const previewHTML = atom('');
+export const previewHTMLAtom = atom(
+  (g) => g(previewHTML),
+  (g, s, a: string) => {
+    const sc = g(script);
+    const tI = g(tabIndex);
+    const iA = g(inputAtom);
+
+    if (sc.filePath === mainScriptPath && tI === 0 && iA === '') {
+      s(cachedMainPreview, a);
+    }
+    if (g(previewHTML) !== a) {
+      s(previewHTML, a);
+    }
+  }
+);
 
 const log = atom<string[]>([]);
 
@@ -203,13 +230,51 @@ export const prevInputAtom = atom('');
 export const indexAtom = atom(
   (g) => g(index),
   (g, s, a: number) => {
-    const { length } = g(choices);
-    s(index, clamp(a, 0, length - 1));
+    const cs = g(choices);
+    const clampedIndex = clamp(a, 0, cs.length - 1);
+
+    if (g(index) !== clampedIndex) {
+      s(index, clampedIndex);
+    }
+
+    const choice = cs?.[clampedIndex]?.item;
+    if (cs.length && typeof choice?.preview === 'string') {
+      s(previewHTMLAtom, choice?.preview);
+    }
+    const selected = g(selectedAtom);
+    const id = choice?.id;
+    if (!selected && id) {
+      s(focusedChoiceAtom, choice);
+    }
   }
 );
 
-const flaggedValueAtom = atom<Choice | string>('');
+function isScript(choice: Choice | Script): choice is Script {
+  return (choice as Script)?.command !== undefined;
+}
 
+const flaggedValueAtom = atom<Choice | string>('');
+const focusedChoice = atom<Choice | null>(null);
+export const focusedChoiceAtom = atom(
+  (g) => g(focusedChoice),
+  (g, s, choice: Choice | null) => {
+    // if (g(focusedChoice)?.id === choice?.id) return;
+    if (isScript(choice as Choice)) {
+      (choice as Script).hasPreview = true;
+    }
+
+    s(focusedChoice, choice);
+
+    if (choice?.id) {
+      const { id } = choice;
+      sendChoiceFocused({
+        id,
+        input: g(rawInputAtom),
+        pid: g(pidAtom),
+      });
+    }
+  }
+);
 export const scoredChoices = atom(
   (g) => g(choices),
   (g, s, a: ScoredChoice[]) => {
@@ -224,6 +289,14 @@ export const scoredChoices = atom(
       // s(indexAtom, 0);
     }
     s(choices, a);
+
+    if (a?.length) {
+      const selected = g(selectedAtom);
+
+      if (!selected) {
+        s(focusedChoiceAtom, a[0]?.item);
+      }
+    }
   }
 );
 
@@ -239,6 +312,15 @@ const generateChoices = debounce((input, pid) => {
     pid,
   });
 }, 150);
+
+type FocusValue = {
+  input: string;
+  id: string;
+  pid: number;
+};
+const sendChoiceFocused = (value: FocusValue) => {
+  ipcRenderer.send(Channel.CHOICE_FOCUSED, value);
+};
 
 const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
   if (!a) return false;
@@ -294,6 +376,7 @@ export const tabIndexAtom = atom(
     s(tabIndex, a);
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
+    if (a !== 0) s(previewHTMLAtom, '');
     ipcRenderer.send(Channel.TAB_CHANGED, {
       tab: g(tabsAtom)[a],
       input: g(rawInputAtom),
@@ -323,6 +406,7 @@ export const scriptAtom = atom(
     s(script, a);
     s(rawInputAtom, '');
     s(unfilteredChoicesAtom, []);
+    s(choices, []);
     s(logHTMLAtom, '');
     s(indexAtom, 0);
     s(tabIndex, 0);
@@ -330,13 +414,24 @@ export const scriptAtom = atom(
     s(tabsAtom, a?.tabs || []);
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
+    if (a.filePath === mainScriptPath) {
+      s(previewHTMLAtom, g(cachedMainPreview));
+    } else {
+      s(previewHTMLAtom, '');
+    }
   }
 );
+
+export const isKitScriptAtom = atom((g) => {
+  g(script).filePath.includes(kitPath());
+});
 
 const topHeight = atom(88);
 const mainHeight = atom(0);
 
 const resize = (g: Getter, s: Setter) => {
+  const choice = g(focusedChoice);
+
   const data: ResizeData = {
     topHeight: g(topHeight),
     ui: g(uiAtom),
@@ -346,8 +441,17 @@ const resize = (g: Getter, s: Setter) => {
     hasChoices: Boolean(g(choices)?.length),
     hasPanel: Boolean(g(panelHTMLAtom)?.length),
     hasInput: Boolean(g(inputAtom)?.length),
+    isPreviewOpen: Boolean(
+      choice?.hasPreview &&
+        g(previewEnabled) &&
+        g(uiAtom) === UI.arg &&
+        g(scriptAtom)?.hasPreview
+    ),
+    previewEnabled: g(previewEnabled),
     open: g(rawOpen),
+    tabIndex: g(tabIndex),
   };
+
   ipcRenderer.send(AppChannel.RESIZE, data);
 };
 
@@ -418,15 +522,15 @@ export const flagValueAtom = atom(
   (g) => g(flaggedValueAtom),
   (g, s, a: any) => {
     if (a === '') {
+      s(selectedAtom, '');
       s(unfilteredChoicesAtom, g(prevChoicesAtom));
       s(rawInputAtom, g(prevInputAtom));
       s(index, g(prevIndexAtom));
-      s(selectedAtom, '');
     } else {
+      s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
       s(prevIndexAtom, g(indexAtom));
       s(prevInputAtom, g(inputAtom));
       s(inputAtom, '');
-      s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
 
       const flagChoices: Choice[] = Object.entries(g(flagsAtom)).map(
         ([key, value]: [key: string, value: any]) => {
@@ -548,5 +652,31 @@ export const themeAtom = atom(
     });
 
     s(theme, a);
+  }
+);
+
+export const modifiers = [
+  'Alt',
+  'AltGraph',
+  'CapsLock',
+  'Control',
+  'Fn',
+  'FnLock',
+  'Meta',
+  'NumLock',
+  'ScrollLock',
+  'Shift',
+  'Symbol',
+  'SymbolLock',
+];
+export const modifiersAtom = atom<string[]>([]);
+export const inputFocusAtom = atom<boolean>(true);
+
+const previewEnabled = atom<boolean>(true);
+export const previewEnabledAtom = atom(
+  (g) => g(previewEnabled),
+  (g, s, a: boolean) => {
+    s(previewEnabled, a);
+    resize(g, s);
   }
 );

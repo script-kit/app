@@ -13,7 +13,7 @@ import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
 import { Channel, Mode, ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { Choice, Script, PromptData } from '@johnlindquist/kit/types/core';
-import { MessageData } from '@johnlindquist/kit/types/app';
+import { MessageData } from '@johnlindquist/kit/types/kitapp';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 
 import {
@@ -28,24 +28,27 @@ import {
 
 import { getLog } from './logs';
 import {
-  focusPrompt,
-  setBlurredByKit,
-  setIgnoreBlur,
-  setPlaceholder,
-  setScript,
-  setMode,
-  setInput,
-  setPanel,
-  setHint,
-  setTabIndex,
-  setPromptData,
-  setChoices,
   clearPromptCache,
-  sendToPrompt,
-  setLog,
-  hidePromptWindow,
+  focusPrompt,
+  getPromptBounds,
   getPromptPid,
+  hidePromptWindow,
+  sendToPrompt,
+  setBlurredByKit,
+  setBounds,
+  setChoices,
+  setHint,
+  setIgnoreBlur,
+  setInput,
+  setLog,
+  setMode,
+  setPanel,
+  setPlaceholder,
+  setPreview,
+  setPromptData,
   setPromptProp,
+  setScript,
+  setTabIndex,
 } from './prompt';
 import { setAppHidden } from './appHidden';
 import {
@@ -60,6 +63,7 @@ import { show } from './show';
 import { showNotification } from './notifications';
 
 import { getVersion } from './version';
+import { getTray, toggleTray } from './tray';
 
 export const checkScriptChoices = (data: MessageData) => {
   // console.log(`🤔 checkScriptChoices ${data?.choices?.length}`);
@@ -198,12 +202,21 @@ const kitMessageMap: ChannelHandler = {
     child?.send({ channel: 'SCHEDULE', schedule: getSchedule() });
   }),
 
+  GET_BOUNDS: toProcess(({ child }) => {
+    const bounds = getPromptBounds();
+    child?.send({ channel: 'BOUNDS', bounds });
+  }),
+
   GET_BACKGROUND: toProcess(({ child }) => {
     child?.send({ channel: 'BACKGROUND', tasks: getBackgroundTasks() });
   }),
 
   TOGGLE_BACKGROUND: (data) => {
     emitter.emit(KitEvent.ToggleBackground, data);
+  },
+
+  TOGGLE_TRAY: () => {
+    toggleTray();
   },
 
   GET_SCREEN_INFO: toProcess(({ child }) => {
@@ -258,6 +271,10 @@ const kitMessageMap: ChannelHandler = {
     setHint(data.hint as string);
   },
 
+  SET_BOUNDS: (data) => {
+    setBounds(data.bounds);
+  },
+
   SET_IGNORE_BLUR: (data) => {
     setIgnoreBlur(data?.ignore);
   },
@@ -272,6 +289,10 @@ const kitMessageMap: ChannelHandler = {
 
   SET_PANEL: (data) => {
     setPanel(data.html as string);
+  },
+
+  SET_PREVIEW: (data) => {
+    setPreview(data.html as string);
   },
 
   CONSOLE_CLEAR: () => {
@@ -297,7 +318,7 @@ const kitMessageMap: ChannelHandler = {
   SET_PROMPT_DATA: async (data) => {
     await setPromptData(data as PromptData);
   },
-  SET_PROMPT_PROP: async (data) => {
+  SET_PROMPT_PROP: async (data: any) => {
     setPromptProp(data);
   },
   SHOW_IMAGE,
@@ -330,7 +351,7 @@ const kitMessageMap: ChannelHandler = {
 
       const notification = new Notification({
         title: `Kit.app is on the latest version`,
-        body: `${info.version}`,
+        body: `${getVersion()}`,
         silent: true,
       });
 
@@ -379,8 +400,10 @@ export const createMessageHandler =
       )} id: ${data.pid}`
     );
 
-    if (kitMessageMap[data?.channel]) {
-      const channelFn = kitMessageMap[data.channel] as (data: any) => void;
+    if (kitMessageMap[data?.channel as Channel]) {
+      const channelFn = kitMessageMap[data.channel as Channel] as (
+        data: any
+      ) => void;
       channelFn(data);
     } else {
       console.warn(`Channel ${data?.channel} not found on ${type}.`);
@@ -420,22 +443,23 @@ const createChild = ({
   }
 
   const entry = type === ProcessType.Prompt ? KIT_APP_PROMPT : KIT_APP;
+  const env = {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+    KIT_CONTEXT: 'app',
+    KIT_MAIN: scriptPath,
+    KENV: kenvPath(),
+    KIT: kitPath(),
+    KIT_DOTENV_PATH: kitDotEnvPath(),
+    KIT_APP_VERSION: getVersion(),
+    PROCESS_TYPE: type,
+    FORCE_COLOR: '1',
+  };
   const child = fork(entry, args, {
     silent: false,
     // stdio: 'inherit',
     execPath,
-    env: {
-      ...process.env,
-      NODE_NO_WARNINGS: '1',
-      KIT_CONTEXT: 'app',
-      KIT_MAIN: scriptPath,
-      KENV: kenvPath(),
-      KIT: kitPath(),
-      KIT_DOTENV_PATH: kitDotEnvPath(),
-      KIT_APP_VERSION: getVersion(),
-      PROCESS_TYPE: type,
-      FORCE_COLOR: '1',
-    },
+    env,
   });
 
   return child;

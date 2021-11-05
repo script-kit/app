@@ -12,6 +12,7 @@ import { emitter, KitEvent } from './events';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
   const success = globalShortcut.register(shortcut, async () => {
+    console.log(`🏃‍♀️ Run ${filePath}`);
     await runPromptProcess(filePath);
   });
 

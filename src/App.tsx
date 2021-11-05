@@ -57,6 +57,7 @@ import {
   panelHTMLAtom,
   pidAtom,
   placeholderAtom,
+  previewHTMLAtom,
   promptDataAtom,
   scriptAtom,
   selectedAtom,
@@ -69,6 +70,7 @@ import {
   topHeightAtom,
   uiAtom,
   unfilteredChoicesAtom,
+  isKitScriptAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -111,6 +113,7 @@ export default function App() {
   const [pid, setPid] = useAtom(pidAtom);
   const [open, setOpen] = useAtom(openAtom);
   const [script, setScript] = useAtom(scriptAtom);
+  const [isKitScript] = useAtom(isKitScriptAtom);
 
   const [inputValue, setInput] = useAtom(inputAtom);
   const [, setPlaceholder] = useAtom(placeholderAtom);
@@ -128,6 +131,7 @@ export default function App() {
   const [tabs] = useAtom(tabsAtom);
 
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
+  const [previewHTML, setPreviewHTML] = useAtom(previewHTMLAtom);
   const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
   const [, setEditorConfig] = useAtom(editorConfigAtom);
   const [, setTextareaConfig] = useAtom(textareaConfigAtom);
@@ -176,6 +180,7 @@ export default function App() {
     [Channel.SET_INPUT]: second(setInput),
     [Channel.SET_MODE]: second(setMode),
     [Channel.SET_PANEL]: second(setPanelHTML),
+    [Channel.SET_PREVIEW]: second(setPreviewHTML),
     [Channel.SET_LOG]: second(setLogHtml),
     [Channel.SET_PLACEHOLDER]: second(setPlaceholder),
     [Channel.SET_TAB_INDEX]: second(setTabIndex),
@@ -243,7 +248,9 @@ export default function App() {
           {selected && <Selected />}
           {hint && <Hint />}
           {tabs?.length > 0 && !flagValue && <Tabs />}
-          {logHtml?.length > 0 && script?.log !== 'false' && <Log />}
+          {logHtml?.length > 0 && script?.log !== 'false' && !isKitScript && (
+            <Log />
+          )}
         </header>
         <main
           ref={mainRef}

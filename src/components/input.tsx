@@ -1,16 +1,16 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { useCallback, KeyboardEvent, LegacyRef, useEffect } from 'react';
+import React, { useCallback, KeyboardEvent, LegacyRef } from 'react';
 
 import { Channel } from '@johnlindquist/kit/cjs/enum';
-import { Choice } from '@johnlindquist/kit';
+import { Choice } from '@johnlindquist/kit/types/core';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 
 import {
   inputAtom,
-  mouseEnabledAtom,
-  openAtom,
+  modifiers,
+  modifiersAtom,
   pidAtom,
   placeholderAtom,
   promptDataAtom,
@@ -30,6 +30,13 @@ import {
   useTab,
 } from '../hooks';
 
+const remapModifiers = (m: string) => {
+  if (m === 'Meta') return ['cmd'];
+  if (m === 'Control') return ['control', 'ctrl'];
+  if (m === 'Alt') return ['alt', 'option'];
+  return m.toLowerCase();
+};
+
 export default function Input() {
   const inputRef = useFocus();
 
@@ -43,7 +50,7 @@ export default function Input() {
   const [promptData] = useAtom(promptDataAtom);
   const [submitted] = useAtom(submittedAtom);
   const [, setSelectionStart] = useAtom(selectionStartAtom);
-  const [mouseEnabled] = useAtom(mouseEnabledAtom);
+  const [, setModifiers] = useAtom(modifiersAtom);
 
   useEscape();
   useEnter();
@@ -56,6 +63,18 @@ export default function Input() {
       setSelectionStart(
         (event.target as HTMLInputElement).selectionStart as number
       );
+
+      setModifiers(
+        modifiers
+          .filter((m) => event.getModifierState(m))
+          .flatMap(remapModifiers)
+      );
+
+      // if ((Object.values(Modifier) as string[]).includes(event.key)) {
+      //   setModifier(event.key as Modifier);
+      //   return;
+      // }
+
       if (event.key === ' ') {
         const shortcodeChoice = unfilteredChoices?.find((choice: Choice) => {
           const iv = inputValue.trim().toLowerCase();
@@ -89,13 +108,25 @@ export default function Input() {
     },
     [
       setSelectionStart,
-      tabs,
+      setModifiers,
       unfilteredChoices,
+      tabs,
       inputValue,
+      setSubmitValue,
       setTabIndex,
       pid,
-      setSubmitValue,
     ]
+  );
+
+  const onKeyUp = useCallback(
+    (event) => {
+      setModifiers(
+        modifiers
+          .filter((m) => event.getModifierState(m))
+          .flatMap(remapModifiers)
+      );
+    },
+    [setModifiers]
   );
 
   const onChange = useCallback(
@@ -125,6 +156,7 @@ export default function Input() {
       focus:border-none border-none`}
         onChange={onChange}
         onKeyDown={onKeyDown}
+        onKeyUp={onKeyUp}
         placeholder={placeholder}
         ref={inputRef as LegacyRef<HTMLInputElement>}
         type={promptData?.secret ? 'password' : promptData?.type || 'text'}

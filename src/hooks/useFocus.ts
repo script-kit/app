@@ -2,6 +2,7 @@ import { useAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 import {
   flagValueAtom,
+  inputFocusAtom,
   isMouseDownAtom,
   openAtom,
   submittedAtom,
@@ -13,10 +14,11 @@ export default () => {
   const [submitted] = useAtom(submittedAtom);
   const [open] = useAtom(openAtom);
   const [mouseDown] = useAtom(isMouseDownAtom);
+  const [inputFocus] = useAtom(inputFocusAtom);
 
   useEffect(() => {
-    if (ref?.current) ref?.current.focus();
-  }, [flagValue, submitted, open, mouseDown]);
+    if (inputFocus && ref?.current) ref?.current.focus();
+  }, [flagValue, submitted, open, mouseDown, inputFocus]);
 
   return ref;
 };

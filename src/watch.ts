@@ -36,18 +36,18 @@ const addWatch = (watchString: string, filePath: string) => {
       : resolvePath(pathsString);
 
     const watcher = chokidar.watch(paths);
-    watcher.on('change', () => {
+    watcher.on('change', (path) => {
       log.info(`👀 ${paths} changed`);
-      processes.add(ProcessType.Watch, filePath);
+      processes.add(ProcessType.Watch, filePath, [path]);
     });
 
     const watched = watcher.getWatched();
 
     log.info(`Watching: ${Object.keys(watched).join(', ')}`);
     watchMap.set(filePath, watcher);
-  } catch (error) {
+  } catch (error: any) {
     removeWatch(filePath);
-    log.warn(error.message);
+    log.warn(error?.message);
   }
 };
 

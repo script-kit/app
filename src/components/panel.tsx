@@ -1,9 +1,8 @@
 /* eslint-disable no-nested-ternary */
 import React, { LegacyRef, RefObject, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
-import Highlight from 'react-highlight';
 import { useAtom } from 'jotai';
-import { mouseEnabledAtom, panelHTMLAtom } from '../jotai';
+import { mouseEnabledAtom, panelHTMLAtom, darkAtom } from '../jotai';
 import {
   useEnter,
   useEscape,
@@ -11,6 +10,7 @@ import {
   useObserveMainHeight,
   useOpen,
 } from '../hooks';
+import { darkTheme, lightTheme } from './themes';
 
 interface PanelProps {
   width: number;
@@ -24,6 +24,7 @@ export default function Panel({ width, height }: PanelProps) {
   const scrollRef: RefObject<any> = useRef(null);
   const [panelHTML] = useAtom(panelHTMLAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
+  const [isDark] = useAtom(darkAtom);
 
   const divRef = useObserveMainHeight<HTMLDivElement>();
 
@@ -47,9 +48,16 @@ export default function Panel({ width, height }: PanelProps) {
         } as any
       }
     >
-      <div className="w-full h-full" ref={divRef as LegacyRef<HTMLDivElement>}>
+      {/* <div className="w-full h-full" ref={divRef as LegacyRef<HTMLDivElement>}>
         <Highlight innerHTML>{panelHTML}</Highlight>
-      </div>
+      </div> */}
+      <style type="text/css">{isDark ? darkTheme : lightTheme}</style>
+
+      <div
+        className="w-full h-full"
+        ref={divRef as LegacyRef<HTMLDivElement>}
+        dangerouslySetInnerHTML={{ __html: panelHTML }}
+      />
     </SimpleBar>
   );
 }

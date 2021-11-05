@@ -48,6 +48,17 @@ export const createTray = async () => {
   return 'tray created';
 };
 
+export const getTray = (): Tray | null => tray;
+
 export const destroyTray = () => {
+  tray?.destroy();
   tray = null;
+};
+
+export const toggleTray = () => {
+  if (tray) {
+    destroyTray();
+  } else {
+    createTray();
+  }
 };

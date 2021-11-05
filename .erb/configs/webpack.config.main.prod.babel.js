@@ -31,6 +31,7 @@ export default merge(baseConfig, {
   entry: './src/main.dev.ts',
 
   output: {
+    hashFunction: 'xxhash64',
     path: path.join(__dirname, '../../'),
     filename: './src/main.prod.js',
   },

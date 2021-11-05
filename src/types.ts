@@ -38,4 +38,7 @@ export interface ResizeData {
   hasChoices: boolean;
   hasInput: boolean;
   open: boolean;
+  isPreviewOpen: boolean;
+  previewEnabled: boolean;
+  tabIndex: number;
 }

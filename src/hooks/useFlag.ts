@@ -8,7 +8,9 @@ import {
   flagValueAtom,
   indexAtom,
   inputAtom,
+  inputFocusAtom,
   openAtom,
+  previewEnabledAtom,
   selectionStartAtom,
   submitValueAtom,
 } from '../jotai';
@@ -25,6 +27,17 @@ export default () => {
   const [, submit] = useAtom(submitValueAtom);
   const [selectionStart] = useAtom(selectionStartAtom);
   const [open, setOpen] = useAtom(openAtom);
+  const [inputFocus] = useAtom(inputFocusAtom);
+  const [previewEnabled, setPreviewEnabled] = useAtom(previewEnabledAtom);
+
+  useHotkeys(
+    'cmd+p',
+    (event) => {
+      setPreviewEnabled(!previewEnabled);
+    },
+    hotkeysOptions,
+    [setPreviewEnabled, previewEnabled]
+  );
 
   const flagsArray = Object.entries(flags);
 
@@ -45,38 +58,42 @@ export default () => {
   useHotkeys(
     shortcuts.length ? shortcuts : 'f19',
     (event, handler) => {
+      if (!inputFocus) return;
       event.preventDefault();
+
       setFlag(flagKeyByShortcut(handler.key));
       submit(choices.length ? choices[index].value : input);
     },
     hotkeysOptions,
-    [flags, input, choices, index]
+    [flags, input, inputFocus, choices, index]
   );
 
   useHotkeys(
-    flagsArray.length ? 'right' : 'f18',
+    flagsArray.length ? 'right,left,cmd+k,ctrl+k' : 'f18',
     (event) => {
-      if (selectionStart === input.length) {
+      if (!inputFocus) return;
+      if (
+        selectionStart === input.length &&
+        !flagValue &&
+        event.key !== 'ArrowLeft'
+      ) {
         event.preventDefault();
-        if (!flagValue)
-          setFlagValue(choices.length ? choices[index].value : input);
-      }
-    },
-    hotkeysOptions,
-    [input, choices, index, selectionStart, flagValue]
-  );
+        setFlagValue(choices.length ? choices[index].value : input);
+      } else if (
+        selectionStart === 0 &&
+        flagValue &&
+        event.key !== 'ArrowRight'
+      ) {
+        event.preventDefault();
 
-  useHotkeys(
-    flagsArray.length ? 'left' : 'f17',
-    (event) => {
-      if (selectionStart === 0) {
-        event.preventDefault();
-        if (flagValue) {
-          setFlagValue('');
-        }
+        setFlagValue('');
+      } else if (event.key === 'k') {
+        setFlagValue(
+          flagValue ? '' : choices.length ? choices[index].value : input
+        );
       }
     },
     hotkeysOptions,
-    [input, choices, index, selectionStart, flagValue]
+    [input, inputFocus, choices, index, selectionStart, flagValue]
   );
 };

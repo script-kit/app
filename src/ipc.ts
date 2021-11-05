@@ -10,7 +10,8 @@ import {
   getLogFromScriptPath,
   tmpDownloadsDir,
 } from '@johnlindquist/kit/cjs/utils';
-import { MessageData, Script } from '@johnlindquist/kit';
+import { Script } from '@johnlindquist/kit/types/core';
+import { MessageData } from '@johnlindquist/kit/types/kitapp';
 import { existsSync, renameSync } from 'fs';
 import isImage from 'is-image';
 import { DownloaderHelper } from 'node-downloader-helper';
@@ -76,9 +77,10 @@ export const startIpc = () => {
 
   ipcMain.on(
     Channel.CHOICE_FOCUSED,
-    handleChannel(({ child }, { index, pid }) => {
-      if (child && !isUndefined(index)) {
-        child?.send({ channel: Channel.CHOICE_FOCUSED, index });
+
+    handleChannel(({ child }, { id, pid, input = '' }) => {
+      if (child && !isUndefined(id)) {
+        child?.send({ channel: Channel.CHOICE_FOCUSED, id, pid, input });
       }
     })
   );
@@ -89,7 +91,7 @@ export const startIpc = () => {
       emitter.emit(KitEvent.ResumeShortcuts);
 
       if (child && tab) {
-        child?.send({ channel: Channel.TAB_CHANGED, tab, input });
+        child?.send({ channel: Channel.TAB_CHANGED, tab, input, pid });
       }
     })
   );
@@ -121,6 +123,13 @@ export const startIpc = () => {
   ipcMain.on(Channel.OPEN_FILE, async (event, filePath: string) => {
     await runPromptProcess(kitPath('cli/edit-file.js'), [filePath]);
   });
+
+  ipcMain.on(
+    Channel.SET_PREVIEW_ENABLED,
+    async (event, previewEnabled: boolean) => {
+      setPreviewEnabled(previewEnabled);
+    }
+  );
 
   ipcMain.on(
     AppChannel.DRAG_FILE_PATH,

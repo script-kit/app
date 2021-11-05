@@ -1,3 +1,15 @@
+/*
+object-assign
+(c) Sindre Sorhus
+@license MIT
+*/
+
+/*!
+ * content-disposition
+ * Copyright(c) 2014-2017 Douglas Christopher Wilson
+ * MIT Licensed
+ */
+
 /*!
  * fill-range <https://github.com/jonschlinkert/fill-range>
  *
@@ -20,10 +32,28 @@
  */
 
 /*!
+ * is-natural-number.js | MIT (c) Shinnosuke Watanabe
+ * https://github.com/shinnn/is-natural-number.js
+*/
+
+/*!
  * is-number <https://github.com/jonschlinkert/is-number>
  *
  * Copyright (c) 2014-present, Jon Schlinkert.
  * Released under the MIT License.
+ */
+
+/*!
+ * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
+ *
+ * Copyright (c) 2014-2017, Jon Schlinkert.
+ * Released under the MIT License.
+ */
+
+/*!
+ * mime-db
+ * Copyright(c) 2014 Jonathan Ong
+ * MIT Licensed
  */
 
 /*!
@@ -32,6 +62,11 @@
  * Copyright (c) 2014-2018, Jon Schlinkert.
  * Released under the MIT License.
  */
+
+/*!
+ * strip-dirs | MIT (c) Shinnosuke Watanabe
+ * https://github.com/shinnn/node-strip-dirs
+*/
 
 /*!
  * to-regex-range <https://github.com/micromatch/to-regex-range>
@@ -58,6 +93,29 @@ PERFORMANCE OF THIS SOFTWARE.
 /*! arch. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
 
 /*! http://mths.be/fromcodepoint v0.1.0 by @mathias */
+
+/*! queue-microtask. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+
+/*! run-parallel. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+
+/**
+ * @file Tests if ES6 @@toStringTag is supported.
+ * @see {@link http://www.ecma-international.org/ecma-262/6.0/#sec-@@tostringtag|26.3.1 @@toStringTag}
+ * @version 1.4.1
+ * @author Xotic750 <Xotic750@gmail.com>
+ * @copyright  Xotic750
+ * @license {@link <https://opensource.org/licenses/MIT> MIT}
+ * @module has-to-string-tag-x
+ */
+
+/**
+ * @file Tests if ES6 Symbol is supported.
+ * @version 1.4.2
+ * @author Xotic750 <Xotic750@gmail.com>
+ * @copyright  Xotic750
+ * @license {@link <https://opensource.org/licenses/MIT> MIT}
+ * @module has-symbol-support-x
+ */
 
 /**
  * @license
