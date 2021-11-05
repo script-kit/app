@@ -265,7 +265,7 @@ export const focusedChoiceAtom = atom(
 
     s(focusedChoice, choice);
 
-    if (choice?.id) {
+    if (choice?.id && g(selectedAtom) === '') {
       const { id } = choice;
       sendChoiceFocused({
         id,

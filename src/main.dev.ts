@@ -338,6 +338,8 @@ const ready = async () => {
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);
 
+    spawn(`./script`, [`./setup/downloads.js`], options);
+
     const downloadHot = kitPath('hot', 'download-hot.js');
     scheduleScriptChanged({
       name: 'download-hot',
