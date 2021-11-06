@@ -474,15 +474,6 @@ export const mainHeightAtom = atom(
     resize(g, s);
   }
 );
-// export const indexAtom = atom(
-//   (g) => g(index),
-//   (g, s, a: number) => {
-//     s(mouseEnabledAtom, false);
-//     s(index, a);
-//   }
-// );
-
-// export const submittedAtom = atom((g) => g(submitted));
 
 const checkIfSubmitIsDrop = (checkValue: any) => {
   if (Array.isArray(checkValue)) {
@@ -587,7 +578,7 @@ export const submitValueAtom = atom(
       },
       500,
       a,
-      g(promptDataAtom)?.secret
+      (g(promptDataAtom) as PromptData)?.secret
     );
     if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
     choicesTimeoutId = setTimeout(() => {
