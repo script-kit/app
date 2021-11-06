@@ -71,6 +71,7 @@ import { processes } from './process';
 import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
 import { CONFIG_SPLASH, showError } from './main.dev.templates';
+import { scheduleScriptChanged } from './schedule';
 
 let configWindow: BrowserWindow;
 
@@ -102,7 +103,9 @@ const options: SpawnSyncOptions = {
 };
 
 powerMonitor.on('resume', () => {
-  autoUpdater.checkForUpdates();
+  if (process.env?.KIT_IGNORE_UPDATES !== 'true') {
+    autoUpdater.checkForUpdates();
+  }
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -336,6 +339,20 @@ const ready = async () => {
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);
+
+    spawn(`./script`, [`./setup/downloads.js`], options);
+
+    const downloadHot = kitPath('hot', 'download-hot.js');
+    scheduleScriptChanged({
+      name: 'download-hot',
+      command: 'download-hot',
+      filePath: downloadHot,
+      id: downloadHot,
+      type: ProcessType.Schedule,
+      requiresPrompt: false,
+      kenv: '',
+      schedule: '0 11 * * *',
+    });
   } catch (error) {
     log.warn(error);
   }
@@ -550,7 +567,10 @@ const checkKit = async () => {
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
   autoUpdater.logger = log;
-  if (process.env.NODE_ENV !== 'development') {
+  if (
+    process.env.NODE_ENV !== 'development' &&
+    process.env?.KIT_IGNORE_UPDATES !== 'true'
+  ) {
     // await installExtensions();
     autoUpdater.checkForUpdates();
   }
@@ -626,7 +646,7 @@ const checkKit = async () => {
 
   if (kenvsExists() && examplesExists()) {
     setupLog(`Updating examples...`);
-    const updateExamplesResult = spawn(
+    spawn(
       `./script`,
       [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
       options
@@ -634,9 +654,6 @@ const checkKit = async () => {
 
     // await handleSpawnReturns(`update-examples`, updateExamplesResult);
   }
-
-  setupLog(`Updating docs...`);
-  const pullDocsResult = spawn(`./script`, [`./help/pull-docs.js`], options);
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 

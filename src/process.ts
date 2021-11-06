@@ -237,9 +237,11 @@ const kitMessageMap: ChannelHandler = {
   GET_SERVER_STATE: toProcess(({ child }) => {
     child?.send({ channel: 'SERVER', ...serverState });
   }),
-  HIDE_APP: () => {
-    setAppHidden(true);
-  },
+  HIDE_APP: toProcess(({ child, type }) => {
+    if (type === ProcessType.Prompt) {
+      setAppHidden(true);
+    }
+  }),
   NEEDS_RESTART: async () => {
     await makeRestartNecessary();
   },
@@ -247,7 +249,7 @@ const kitMessageMap: ChannelHandler = {
     app.exit();
   },
   SET_SCRIPT: toProcess(async ({ type, scriptPath }, data) => {
-    // log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.script.filePath);
+    log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.script.filePath);
     if (type === ProcessType.Prompt && scriptPath !== data.filePath) {
       await setScript(data.script as Script);
     }
@@ -543,10 +545,11 @@ class Processes extends Array<ProcessInfo> {
     const { pid } = child;
 
     child.on('exit', () => {
-      sendToPrompt(Channel.EXIT, false);
       if (id) clearTimeout(id);
       if (type === ProcessType.Prompt) {
         setAppHidden(false);
+        sendToPrompt(Channel.EXIT, false);
+
         emitter.emit(KitEvent.ExitPrompt);
         emitter.emit(KitEvent.ResumeShortcuts);
       }
@@ -607,7 +610,11 @@ class Processes extends Array<ProcessInfo> {
         if (!child?.killed) {
           child?.kill();
           log.info(`🛑 kill ${type} ${scriptPath || 'idle'} id: ${child.pid}`);
-          if (getPromptPid() === child.pid && same) {
+          if (
+            getPromptPid() === child.pid &&
+            same &&
+            type === ProcessType.Prompt
+          ) {
             hidePromptWindow();
           }
         }
