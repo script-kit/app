@@ -103,7 +103,9 @@ const options: SpawnSyncOptions = {
 };
 
 powerMonitor.on('resume', () => {
-  autoUpdater.checkForUpdates();
+  if (process.env?.KIT_IGNORE_UPDATES !== 'true') {
+    autoUpdater.checkForUpdates();
+  }
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -565,7 +567,10 @@ const checkKit = async () => {
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
   autoUpdater.logger = log;
-  if (process.env.NODE_ENV !== 'development') {
+  if (
+    process.env.NODE_ENV !== 'development' &&
+    process.env?.KIT_IGNORE_UPDATES !== 'true'
+  ) {
     // await installExtensions();
     autoUpdater.checkForUpdates();
   }
