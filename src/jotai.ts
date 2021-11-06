@@ -144,7 +144,7 @@ const previewHTML = atom('');
 export const previewHTMLAtom = atom(
   (g) => g(previewHTML),
   (g, s, a: string) => {
-    const sc = g(script);
+    const sc = g(script) as Script;
     const tI = g(tabIndex);
     const iA = g(inputAtom);
 
@@ -238,9 +238,7 @@ export const indexAtom = atom(
     }
 
     const choice = cs?.[clampedIndex]?.item;
-    if (cs.length && typeof choice?.preview === 'string') {
-      s(previewHTMLAtom, choice?.preview);
-    }
+
     const selected = g(selectedAtom);
     const id = choice?.id;
     if (!selected && id) {
@@ -267,6 +265,11 @@ export const focusedChoiceAtom = atom(
 
     if (choice?.id && g(selectedAtom) === '') {
       const { id } = choice;
+
+      if (typeof choice?.preview === 'string') {
+        s(previewHTMLAtom, choice?.preview);
+      }
+
       sendChoiceFocused({
         id,
         input: g(rawInputAtom),
@@ -423,20 +426,20 @@ export const scriptAtom = atom(
 );
 
 export const isKitScriptAtom = atom((g) => {
-  g(script).filePath.includes(kitPath());
+  (g(script) as Script).filePath.includes(kitPath());
 });
 
 const topHeight = atom(88);
 const mainHeight = atom(0);
 
 const resize = (g: Getter, s: Setter) => {
-  const choice = g(focusedChoice);
+  const choice = g(focusedChoice) as Choice;
 
   const data: ResizeData = {
     topHeight: g(topHeight),
     ui: g(uiAtom),
     mainHeight: g(mainHeight),
-    filePath: g(script).filePath,
+    filePath: (g(script) as Script).filePath,
     mode: g(modeAtom),
     hasChoices: Boolean(g(choices)?.length),
     hasPanel: Boolean(g(panelHTMLAtom)?.length),
@@ -445,7 +448,8 @@ const resize = (g: Getter, s: Setter) => {
       choice?.hasPreview &&
         g(previewEnabled) &&
         g(uiAtom) === UI.arg &&
-        g(scriptAtom)?.hasPreview
+        choice?.hasPreview &&
+        g(choices)?.length
     ),
     previewEnabled: g(previewEnabled),
     open: g(rawOpen),
@@ -470,15 +474,6 @@ export const mainHeightAtom = atom(
     resize(g, s);
   }
 );
-// export const indexAtom = atom(
-//   (g) => g(index),
-//   (g, s, a: number) => {
-//     s(mouseEnabledAtom, false);
-//     s(index, a);
-//   }
-// );
-
-// export const submittedAtom = atom((g) => g(submitted));
 
 const checkIfSubmitIsDrop = (checkValue: any) => {
   if (Array.isArray(checkValue)) {
@@ -583,7 +578,7 @@ export const submitValueAtom = atom(
       },
       500,
       a,
-      g(promptDataAtom)?.secret
+      (g(promptDataAtom) as PromptData)?.secret
     );
     if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
     choicesTimeoutId = setTimeout(() => {
