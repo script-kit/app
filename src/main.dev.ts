@@ -345,7 +345,7 @@ const ready = async () => {
 
     spawn(`./script`, [`./setup/downloads.js`], options);
 
-    const downloadHot = kitPath('hot', 'download-hot.js');
+    const downloadHot = kitPath('setup', 'downloads.js');
     scheduleScriptChanged({
       name: 'download-hot',
       command: 'download-hot',

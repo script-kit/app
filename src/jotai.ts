@@ -144,7 +144,7 @@ const previewHTML = atom('');
 export const previewHTMLAtom = atom(
   (g) => g(previewHTML),
   (g, s, a: string) => {
-    const sc = g(script);
+    const sc = g(script) as Script;
     const tI = g(tabIndex);
     const iA = g(inputAtom);
 
@@ -238,9 +238,7 @@ export const indexAtom = atom(
     }
 
     const choice = cs?.[clampedIndex]?.item;
-    if (cs.length && typeof choice?.preview === 'string') {
-      s(previewHTMLAtom, choice?.preview);
-    }
+
     const selected = g(selectedAtom);
     const id = choice?.id;
     if (!selected && id) {
@@ -267,6 +265,11 @@ export const focusedChoiceAtom = atom(
 
     if (choice?.id && g(selectedAtom) === '') {
       const { id } = choice;
+
+      if (typeof choice?.preview === 'string') {
+        s(previewHTMLAtom, choice?.preview);
+      }
+
       sendChoiceFocused({
         id,
         input: g(rawInputAtom),
@@ -423,7 +426,7 @@ export const scriptAtom = atom(
 );
 
 export const isKitScriptAtom = atom((g) => {
-  g(script).filePath.includes(kitPath());
+  (g(script) as Script).filePath.includes(kitPath());
 });
 
 const topHeight = atom(88);
