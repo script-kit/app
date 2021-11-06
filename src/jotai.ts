@@ -433,13 +433,13 @@ const topHeight = atom(88);
 const mainHeight = atom(0);
 
 const resize = (g: Getter, s: Setter) => {
-  const choice = g(focusedChoice);
+  const choice = g(focusedChoice) as Choice;
 
   const data: ResizeData = {
     topHeight: g(topHeight),
     ui: g(uiAtom),
     mainHeight: g(mainHeight),
-    filePath: g(script).filePath,
+    filePath: (g(script) as Script).filePath,
     mode: g(modeAtom),
     hasChoices: Boolean(g(choices)?.length),
     hasPanel: Boolean(g(panelHTMLAtom)?.length),
@@ -448,7 +448,8 @@ const resize = (g: Getter, s: Setter) => {
       choice?.hasPreview &&
         g(previewEnabled) &&
         g(uiAtom) === UI.arg &&
-        g(scriptAtom)?.hasPreview
+        choice?.hasPreview &&
+        g(choices)?.length
     ),
     previewEnabled: g(previewEnabled),
     open: g(rawOpen),
