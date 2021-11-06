@@ -52,6 +52,7 @@ module.exports = {
       borderWidth: ['hover'],
       textOpacity: ['dark'],
       placeholderOpacity: ['dark'],
+      typography: ['dark'],
     },
   },
   theme: {
@@ -125,9 +126,6 @@ module.exports = {
               borderRadius: 2,
               backgroundColor: theme('colors.gray.100'),
             },
-            'pre > code': {
-              fontSize: '95%',
-            },
             'code:before': {
               content: '""',
             },
@@ -145,6 +143,7 @@ module.exports = {
             },
             'pre > code': {
               color: theme('colors.black'),
+              fontSize: '95%',
             },
           },
         },
