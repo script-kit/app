@@ -20,6 +20,7 @@ import {
   BrowserWindow,
   powerMonitor,
   session,
+  shell,
   Notification,
 } from 'electron';
 
@@ -221,10 +222,12 @@ app.on('window-all-closed', (e: Event) => {
 app.on('web-contents-created', (_, contents) => {
   contents.on('will-navigate', (event, navigationUrl) => {
     const parsedUrl = new URL(navigationUrl);
+    console.log({ parsedUrl });
 
     if (parsedUrl.protocol.startsWith('http')) {
       event.preventDefault();
-      exec(`open ${parsedUrl.href}`);
+
+      shell.openExternal(parsedUrl.href);
     }
   });
 });
