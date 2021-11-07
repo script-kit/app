@@ -1,5 +1,11 @@
 /* eslint-disable import/prefer-default-export */
-import { app, BrowserWindow, nativeTheme, screen } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  BrowserWindowConstructorOptions,
+  nativeTheme,
+  screen,
+} from 'electron';
 import { writeFile, mkdir } from 'fs/promises';
 import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
 import { getAssetPath } from './assets';
@@ -29,12 +35,9 @@ const page = (body: string) => {
 </html>`;
 };
 
-export const show = async (
-  name: string,
-  html: string,
-  options: any = {},
-  showOnLoad = true
-): Promise<BrowserWindow> => {
+const getCenterOnCurrentScreen = (
+  options: BrowserWindowConstructorOptions = {}
+) => {
   const cursor = screen.getCursorScreenPoint();
   // Get display with cursor
   const distScreen = screen.getDisplayNearestPoint({
@@ -48,6 +51,49 @@ export const show = async (
   const x = distScreen.workArea.x + Math.floor(screenWidth / 2 - width / 2); // * distScreen.scaleFactor
   const y = distScreen.workArea.y + Math.floor(screenHeight / 2 - height / 2);
 
+  return {
+    width,
+    height,
+    x,
+    y,
+  };
+};
+
+export const showDevTools = async (value: any) => {
+  const center = getCenterOnCurrentScreen({ width: 800, height: 600 });
+
+  const devToolsWindow = new BrowserWindow({
+    ...center,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
+  devToolsWindow.loadURL(`file://${__dirname}/devTools.html`);
+  devToolsWindow.webContents.openDevTools({
+    mode: 'bottom',
+  });
+
+  devToolsWindow.webContents.setZoomFactor(1.5);
+
+  devToolsWindow.webContents.focus();
+
+  if (value) {
+    devToolsWindow.webContents.send('LOG', value);
+  }
+
+  // devToolsWindow.on('blur', () => {});
+
+  // debug.detach();
+};
+
+export const show = async (
+  name: string,
+  html: string,
+  options: BrowserWindowConstructorOptions = {},
+  showOnLoad = true
+): Promise<BrowserWindow> => {
+  const center = getCenterOnCurrentScreen(options);
   const showWindow = new BrowserWindow({
     title: name,
     frame: false,
@@ -58,10 +104,7 @@ export const show = async (
       nodeIntegration: true,
       contextIsolation: false,
     },
-    width,
-    height,
-    x,
-    y,
+    ...center,
     show: false,
     ...options,
   });

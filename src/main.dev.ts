@@ -76,6 +76,8 @@ import { scheduleScriptChanged } from './schedule';
 
 let configWindow: BrowserWindow;
 
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
+
 app.setName(APP_NAME);
 
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
@@ -219,34 +221,43 @@ app.on('window-all-closed', (e: Event) => {
   if (!updateDownloaded) e.preventDefault();
 });
 
+const cliFromParams = async (cli: string, params: URLSearchParams) => {
+  const name = params.get('name');
+  const newUrl = params.get('url');
+  if (name && newUrl) {
+    await runPromptProcess(kitPath(`cli/${cli}.js`), [name, '--url', newUrl]);
+    return true;
+  }
+  return false;
+};
+
+const newFromProtocol = async (u: string) => {
+  const url = new URL(u);
+  if (url.protocol === 'kit:') {
+    if (url.pathname === 'new') {
+      await cliFromParams('new', url.searchParams);
+    }
+  }
+};
+
 app.on('web-contents-created', (_, contents) => {
-  contents.on('will-navigate', (event, navigationUrl) => {
-    const parsedUrl = new URL(navigationUrl);
-    console.log({ parsedUrl });
+  contents.on('will-navigate', async (event, navigationUrl) => {
+    const url = new URL(navigationUrl);
+    event.preventDefault();
 
-    if (parsedUrl.protocol.startsWith('http')) {
-      event.preventDefault();
-
-      shell.openExternal(parsedUrl.href);
+    if (url.host === 'scriptkit.com' && url.pathname === '/api/new') {
+      await cliFromParams('new', url.searchParams);
+    } else if (url.protocol.startsWith('http')) {
+      shell.openExternal(url.href);
     }
   });
 });
 
 const prepareProtocols = async () => {
-  const PROTOCOL_START = `${KIT_PROTOCOL}://`;
-
-  app.on('open-url', async (e, url) => {
-    log.info(`URL PROTOCOL`, url);
+  app.on('open-url', async (e, u) => {
+    log.info(`URL PROTOCOL`, u);
     e.preventDefault();
-    const [name, params] = url.slice(PROTOCOL_START.length).split('?');
-    const argObject = queryString.parse(params);
-
-    const args = Object.entries(argObject)
-      .map(([key, value]) => `--${key} ${value}`)
-      .join(' ')
-      .split(' ');
-
-    runPromptProcess(kitPath('cli/new.js'), [name, ...args]);
+    await newFromProtocol(u);
   });
 
   protocol.registerFileProtocol(KIT_PROTOCOL, (request, callback) => {
@@ -257,6 +268,15 @@ const prepareProtocols = async () => {
 
     callback(file);
   });
+
+  // session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+  //   callback({
+  //     responseHeaders: {
+  //       'Content-Security-Policy': ["default-src 'self'"],
+  //       ...details.responseHeaders,
+  //     },
+  //   });
+  // });
 };
 
 const createLogs = () => {

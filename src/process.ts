@@ -59,7 +59,7 @@ import {
 } from './state';
 
 import { emitter, KitEvent } from './events';
-import { show } from './show';
+import { show, showDevTools } from './show';
 import { showNotification } from './notifications';
 
 import { getVersion } from './version';
@@ -303,6 +303,9 @@ const kitMessageMap: ChannelHandler = {
 
   SET_TAB_INDEX: (data) => {
     setTabIndex(data.tabIndex as number);
+  },
+  DEV_TOOLS: (data) => {
+    showDevTools(data?.data);
   },
   SHOW_TEXT: (data) => {
     setBlurredByKit();
