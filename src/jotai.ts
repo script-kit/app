@@ -105,10 +105,13 @@ const keys = [
   'tag',
 ].map((name) => ({ name, scorer }));
 
+const unfilteredPreview = atom<boolean>(true);
+
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[]) => {
     s(unfilteredChoices, a);
+    s(unfilteredPreview, Boolean(a.find((c) => c?.hasPreview)));
     // const choice = a?.[0];
     // if (choice?.id) {
     //   sendChoiceFocused({
@@ -433,8 +436,6 @@ const topHeight = atom(88);
 const mainHeight = atom(0);
 
 const resize = (g: Getter, s: Setter) => {
-  const choice = g(focusedChoice) as Choice;
-
   const data: ResizeData = {
     topHeight: g(topHeight),
     ui: g(uiAtom),
@@ -445,11 +446,7 @@ const resize = (g: Getter, s: Setter) => {
     hasPanel: Boolean(g(panelHTMLAtom)?.length),
     hasInput: Boolean(g(inputAtom)?.length),
     isPreviewOpen: Boolean(
-      choice?.hasPreview &&
-        g(previewEnabled) &&
-        g(uiAtom) === UI.arg &&
-        choice?.hasPreview &&
-        g(choices)?.length
+      g(unfilteredPreview) && g(previewEnabled) && g(uiAtom) === UI.arg
     ),
     previewEnabled: g(previewEnabled),
     open: g(rawOpen),

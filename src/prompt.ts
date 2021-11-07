@@ -11,7 +11,7 @@ import {
   PromptData,
   PromptBounds,
 } from '@johnlindquist/kit/types/core';
-import { BrowserWindow, screen, app, Rectangle } from 'electron';
+import { BrowserWindow, screen, app, Rectangle, session } from 'electron';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import minimist from 'minimist';
