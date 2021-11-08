@@ -5,17 +5,30 @@
 
     <title>Dev Tools</title>
     <style>
+      body {
+        height: 100vh;
+        width: 100vw;
+        padding: 0;
+        margin: 0;
+      }
       @media (prefers-color-scheme: dark) {
         body {
-          background: #333;
+          background: rgba(0, 0, 0, 0.25);
           color: white;
+        }
+      }
+
+      @media (prefers-color-scheme: light) {
+        body {
+          background: rgba(255, 255, 255, 0.25);
+          color: black;
         }
       }
     </style>
     <script>
       const { ipcRenderer } = require('electron');
 
-      ipcRenderer.on('LOG', (event, x) => {
+      ipcRenderer.on('DEVTOOLS', (event, x) => {
         window['x'] = x;
 
         for (let [key, value] of Object.entries(x)) {

@@ -68,10 +68,16 @@ export const showDevTools = async (value: any) => {
       nodeIntegration: true,
       contextIsolation: false,
     },
+    frame: false,
+    transparent: true,
+    vibrancy: 'menu',
+    visualEffectState: 'active',
+    show: false,
+    width: 0,
+    height: 0,
   });
-  devToolsWindow.loadURL(`file://${__dirname}/devTools.html`);
   devToolsWindow.webContents.openDevTools({
-    mode: 'bottom',
+    mode: 'detach',
   });
 
   devToolsWindow.webContents.setZoomFactor(1.5);
@@ -79,8 +85,20 @@ export const showDevTools = async (value: any) => {
   devToolsWindow.webContents.focus();
 
   if (value) {
-    devToolsWindow.webContents.send('LOG', value);
+    devToolsWindow.webContents.send('DEVTOOLS', value);
   }
+
+  // devToolsWindow.webContents.once('did-finish-load', () => {
+  // });
+
+  devToolsWindow.show();
+
+  devToolsWindow.loadURL(`file://${__dirname}/devTools.html`);
+
+  devToolsWindow.webContents.on('devtools-closed', () => {
+    console.log(`Destroy dev tools window`);
+    devToolsWindow?.destroy();
+  });
 
   // devToolsWindow.on('blur', () => {});
 

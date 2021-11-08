@@ -545,7 +545,6 @@ export const setScript = async (script: Script) => {
       );
     }
   }
-  log.info({ length: instantChoices.length, path: script.filePath });
 
   if (instantChoices.length) setChoices(instantChoices);
 };

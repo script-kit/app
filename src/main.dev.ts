@@ -25,7 +25,6 @@ import {
 } from 'electron';
 
 import tar from 'tar';
-import queryString from 'query-string';
 import clipboardy from 'clipboardy';
 
 if (!app.requestSingleInstanceLock()) {
@@ -64,7 +63,7 @@ import { getAssetPath } from './assets';
 import { tick } from './tick';
 import { clearPromptCache, createPromptWindow } from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
-import { getVersion } from './version';
+import { checkForUpdates, getVersion, kitIgnore } from './version';
 import { show } from './show';
 import { cacheKitScripts, getStoredVersion, storeVersion } from './state';
 import { startSK } from './sk';
@@ -87,12 +86,17 @@ app.dock.setIcon(getAssetPath('icon.png'));
 const releaseChannel = readFileSync(
   getAssetPath('release_channel.txt'),
   'utf-8'
-);
+).trim();
 const arch = readFileSync(getAssetPath('arch.txt'), 'utf-8').trim();
 const platform = readFileSync(getAssetPath('platform.txt'), 'utf-8').trim();
 const nodeVersion = readFileSync(getAssetPath('node.txt'), 'utf-8').trim();
 
-log.info(`${releaseChannel} channel:`);
+log.info(`
+Release channel: ${releaseChannel}
+Arch: ${arch}
+Platform: ${platform}
+Node version: ${nodeVersion}
+`);
 
 const KIT = kitPath();
 const options: SpawnSyncOptions = {
@@ -105,10 +109,8 @@ const options: SpawnSyncOptions = {
   },
 };
 
-powerMonitor.on('resume', () => {
-  if (process.env?.KIT_IGNORE_UPDATES !== 'true') {
-    autoUpdater.checkForUpdates();
-  }
+powerMonitor.on('resume', async () => {
+  await checkForUpdates();
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -166,9 +168,10 @@ autoUpdater.once('checking-for-update', () => {
 
     log.info('Update available.', info);
   });
-  autoUpdater.once('update-not-available', (info) => {
-    log.info('Update not available.', info);
-  });
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  log.info('Update not available.', info);
 });
 
 autoUpdater.on('download-progress', (progressObj) => {
@@ -236,6 +239,9 @@ const newFromProtocol = async (u: string) => {
   if (url.protocol === 'kit:') {
     if (url.pathname === 'new') {
       await cliFromParams('new', url.searchParams);
+    }
+    if (url.pathname === 'snippet') {
+      await cliFromParams('snippet', url.searchParams);
     }
   }
 };
@@ -417,11 +423,6 @@ const kitExists = () => {
 
   return doesKitExist;
 };
-const kitIsGit = () => {
-  const isGit = existsSync(kitPath('.kitignore'));
-  setupLog(`kit is${isGit ? `` : ` not`} a .git repo`);
-  return isGit;
-};
 
 const kitUserDataExists = () => {
   const userDataExists = existsSync(app.getPath('userData'));
@@ -432,7 +433,7 @@ const kitUserDataExists = () => {
 
 const isContributor = async () => {
   // eslint-disable-next-line no-return-await
-  return kitExists() && kitIsGit();
+  return kitExists() && kitIgnore();
 };
 
 const kenvExists = () => {
@@ -590,13 +591,7 @@ const checkKit = async () => {
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
   autoUpdater.logger = log;
-  if (
-    process.env.NODE_ENV !== 'development' &&
-    process.env?.KIT_IGNORE_UPDATES !== 'true'
-  ) {
-    // await installExtensions();
-    autoUpdater.checkForUpdates();
-  }
+  await checkForUpdates();
 
   if (!kitExists() || (await versionMismatch())) {
     configWindow = await show(
