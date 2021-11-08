@@ -352,8 +352,6 @@ const kitMessageMap: ChannelHandler = {
       notification.show();
     });
     autoUpdater.once('update-not-available', (info) => {
-      log.info('Update not available.', info);
-
       const notification = new Notification({
         title: `Kit.app is on the latest version`,
         body: `${getVersion()}`,

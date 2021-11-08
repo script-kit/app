@@ -144,7 +144,25 @@ export const unfilteredChoicesAtom = atom(
 export const prevChoicesAtom = atom<Choice[]>([]);
 
 export const uiAtom = atom<UI>(UI.arg);
-export const hintAtom = atom('');
+
+const hint = atom('');
+export const hintAtom = atom(
+  (g) => g(hint),
+  (g, s, a: string) => {
+    s(hint, a);
+    const hintCodes = a?.match(/(?<=\[)\w(?=\])/gi);
+    if (hintCodes) {
+      const codes = hintCodes.map((code) => {
+        return {
+          code,
+          id: '',
+        };
+      });
+      s(ultraShortCodesAtom, codes);
+    }
+  }
+);
+
 export const modeAtom = atom<Mode>(Mode.FILTER);
 
 export const panelHTMLAtom = atom('');

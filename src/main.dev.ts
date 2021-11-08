@@ -104,8 +104,8 @@ const options: SpawnSyncOptions = {
   },
 };
 
-powerMonitor.on('resume', () => {
-  checkForUpdates();
+powerMonitor.on('resume', async () => {
+  await checkForUpdates();
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -163,9 +163,10 @@ autoUpdater.once('checking-for-update', () => {
 
     log.info('Update available.', info);
   });
-  autoUpdater.once('update-not-available', (info) => {
-    log.info('Update not available.', info);
-  });
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  log.info('Update not available.', info);
 });
 
 autoUpdater.on('download-progress', (progressObj) => {
@@ -582,7 +583,7 @@ const checkKit = async () => {
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
   autoUpdater.logger = log;
-  checkForUpdates();
+  await checkForUpdates();
 
   if (!kitExists() || (await versionMismatch())) {
     configWindow = await show(

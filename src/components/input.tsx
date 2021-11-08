@@ -81,13 +81,14 @@ export default function Input() {
           (u) => u.code === event.key?.toLowerCase()
         );
         if (findCode) {
+          event.preventDefault();
           const findChoice = unfilteredChoices?.find(
             (c) => c.id === findCode?.id
           );
           if (findChoice) {
-            event.preventDefault();
             setSubmitValue(findChoice.value);
-            return;
+          } else if (unfilteredChoices?.length === 0) {
+            setSubmitValue(findCode.code);
           }
         }
       }
