@@ -225,10 +225,19 @@ app.on('window-all-closed', (e: Event) => {
 });
 
 const cliFromParams = async (cli: string, params: URLSearchParams) => {
+  console.log(`cliFromParams`);
   const name = params.get('name');
   const newUrl = params.get('url');
   if (name && newUrl) {
     await runPromptProcess(kitPath(`cli/${cli}.js`), [name, '--url', newUrl]);
+    return true;
+  }
+
+  const content = params.get('content');
+  console.log({ content });
+
+  if (content) {
+    await runPromptProcess(kitPath(`cli/${cli}.js`), ['--content', content]);
     return true;
   }
   return false;
@@ -249,10 +258,13 @@ const newFromProtocol = async (u: string) => {
 app.on('web-contents-created', (_, contents) => {
   contents.on('will-navigate', async (event, navigationUrl) => {
     const url = new URL(navigationUrl);
+    console.log({ url });
     event.preventDefault();
 
     if (url.host === 'scriptkit.com' && url.pathname === '/api/new') {
       await cliFromParams('new', url.searchParams);
+    } else if (url.protocol === 'kit:') {
+      await cliFromParams(url.pathname, url.searchParams);
     } else if (url.protocol.startsWith('http')) {
       shell.openExternal(url.href);
     }
