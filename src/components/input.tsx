@@ -19,6 +19,7 @@ import {
   submitValueAtom,
   tabIndexAtom,
   tabsAtom,
+  ultraShortCodesAtom,
   unfilteredChoicesAtom,
 } from '../jotai';
 import {
@@ -51,6 +52,7 @@ export default function Input() {
   const [submitted] = useAtom(submittedAtom);
   const [, setSelectionStart] = useAtom(selectionStartAtom);
   const [, setModifiers] = useAtom(modifiersAtom);
+  const [ultraShortCodes] = useAtom(ultraShortCodesAtom);
 
   useEscape();
   useEnter();
@@ -60,9 +62,8 @@ export default function Input() {
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
-      setSelectionStart(
-        (event.target as HTMLInputElement).selectionStart as number
-      );
+      const target = event.target as HTMLInputElement;
+      setSelectionStart(target.selectionStart as number);
 
       setModifiers(
         modifiers
@@ -74,6 +75,22 @@ export default function Input() {
       //   setModifier(event.key as Modifier);
       //   return;
       // }
+
+      if (target?.value.length === 0) {
+        const findCode = ultraShortCodes.find(
+          (u) => u.code === event.key?.toLowerCase()
+        );
+        if (findCode) {
+          const findChoice = unfilteredChoices?.find(
+            (c) => c.id === findCode?.id
+          );
+          if (findChoice) {
+            event.preventDefault();
+            setSubmitValue(findChoice.value);
+            return;
+          }
+        }
+      }
 
       if (event.key === ' ') {
         const shortcodeChoice = unfilteredChoices?.find((choice: Choice) => {
@@ -115,6 +132,7 @@ export default function Input() {
       setSubmitValue,
       setTabIndex,
       pid,
+      ultraShortCodes,
     ]
   );
 

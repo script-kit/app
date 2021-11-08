@@ -107,19 +107,25 @@ const keys = [
 
 const unfilteredPreview = atom<boolean>(true);
 
+export const ultraShortCodesAtom = atom<{ code: string; id: string }[]>([]);
+
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[]) => {
     s(unfilteredChoices, a);
     s(unfilteredPreview, Boolean(a.find((c) => c?.hasPreview)));
-    // const choice = a?.[0];
-    // if (choice?.id) {
-    //   sendChoiceFocused({
-    //     id: choice?.id,
-    //     input: g(inputAtom),
-    //     pid: g(pidAtom),
-    //   });
-    // }
+    if (a?.[0]?.name.match(/(?<=\[)\w(?=\])/i)) {
+      const codes = a.map((choice) => {
+        const code = choice?.name.match(/(?<=\[)\w(?=\])/i)?.[0] || '';
+
+        return {
+          code: code?.toLowerCase(),
+          id: code ? (choice.id as string) : '',
+        };
+      });
+
+      s(ultraShortCodesAtom, codes);
+    }
 
     const qs = new QuickScore(a, {
       keys,
@@ -412,6 +418,7 @@ export const scriptAtom = atom(
     s(script, a);
     s(rawInputAtom, '');
     s(unfilteredChoicesAtom, []);
+    s(ultraShortCodesAtom, []);
     s(choices, []);
     s(logHTMLAtom, '');
     s(indexAtom, 0);

@@ -1,4 +1,5 @@
 import { app, autoUpdater } from 'electron';
+import log from 'electron-log';
 import { existsSync } from 'fs';
 import { kitPath } from '@johnlindquist/kit/cjs/utils';
 
@@ -13,12 +14,13 @@ export const getVersion = () => {
 
 export const kitIsGit = () => {
   const isGit = existsSync(kitPath('.kitignore'));
-
+  log.info(`${isGit ? `Found` : `Didn't find`} ${kitPath('.kitignore')}`);
   return isGit;
 };
 
 export const checkForUpdates = () => {
-  if (!kitIsGit) {
+  if (!kitIsGit()) {
+    log.info(`AutoUpdater go!`);
     autoUpdater.checkForUpdates();
   }
 };
