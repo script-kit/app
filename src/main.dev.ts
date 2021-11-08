@@ -25,7 +25,6 @@ import {
 } from 'electron';
 
 import tar from 'tar';
-import queryString from 'query-string';
 import clipboardy from 'clipboardy';
 
 if (!app.requestSingleInstanceLock()) {
@@ -64,7 +63,7 @@ import { getAssetPath } from './assets';
 import { tick } from './tick';
 import { clearPromptCache, createPromptWindow } from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
-import { getVersion } from './version';
+import { checkForUpdates, getVersion, kitIsGit } from './version';
 import { show } from './show';
 import { cacheKitScripts, getStoredVersion, storeVersion } from './state';
 import { startSK } from './sk';
@@ -106,9 +105,7 @@ const options: SpawnSyncOptions = {
 };
 
 powerMonitor.on('resume', () => {
-  if (process.env?.KIT_IGNORE_UPDATES !== 'true') {
-    autoUpdater.checkForUpdates();
-  }
+  checkForUpdates();
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -417,11 +414,6 @@ const kitExists = () => {
 
   return doesKitExist;
 };
-const kitIsGit = () => {
-  const isGit = existsSync(kitPath('.kitignore'));
-  setupLog(`kit is${isGit ? `` : ` not`} a .git repo`);
-  return isGit;
-};
 
 const kitUserDataExists = () => {
   const userDataExists = existsSync(app.getPath('userData'));
@@ -590,13 +582,7 @@ const checkKit = async () => {
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
   autoUpdater.logger = log;
-  if (
-    process.env.NODE_ENV !== 'development' &&
-    process.env?.KIT_IGNORE_UPDATES !== 'true'
-  ) {
-    // await installExtensions();
-    autoUpdater.checkForUpdates();
-  }
+  checkForUpdates();
 
   if (!kitExists() || (await versionMismatch())) {
     configWindow = await show(
