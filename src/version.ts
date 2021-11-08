@@ -13,7 +13,7 @@ export const getVersion = () => {
   return app.getVersion();
 };
 
-export const kitIsGit = () => {
+export const kitIgnore = () => {
   const isGit = existsSync(kitPath('.kitignore'));
   log.info(`${isGit ? `Found` : `Didn't find`} ${kitPath('.kitignore')}`);
   return isGit;
@@ -24,7 +24,7 @@ export const checkForUpdates = async () => {
     ? (await getAppDb())?.autoUpdate
     : true;
 
-  if (!kitIsGit() && autoUpdate) {
+  if (!kitIgnore() && autoUpdate) {
     log.info(`AutoUpdater go!`);
     autoUpdater.checkForUpdates();
   }

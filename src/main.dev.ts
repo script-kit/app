@@ -63,7 +63,7 @@ import { getAssetPath } from './assets';
 import { tick } from './tick';
 import { clearPromptCache, createPromptWindow } from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
-import { checkForUpdates, getVersion, kitIsGit } from './version';
+import { checkForUpdates, getVersion, kitIgnore } from './version';
 import { show } from './show';
 import { cacheKitScripts, getStoredVersion, storeVersion } from './state';
 import { startSK } from './sk';
@@ -86,12 +86,17 @@ app.dock.setIcon(getAssetPath('icon.png'));
 const releaseChannel = readFileSync(
   getAssetPath('release_channel.txt'),
   'utf-8'
-);
+).trim();
 const arch = readFileSync(getAssetPath('arch.txt'), 'utf-8').trim();
 const platform = readFileSync(getAssetPath('platform.txt'), 'utf-8').trim();
 const nodeVersion = readFileSync(getAssetPath('node.txt'), 'utf-8').trim();
 
-log.info(`${releaseChannel} channel:`);
+log.info(`
+Release channel: ${releaseChannel}
+Arch: ${arch}
+Platform: ${platform}
+Node version: ${nodeVersion}
+`);
 
 const KIT = kitPath();
 const options: SpawnSyncOptions = {
@@ -234,6 +239,9 @@ const newFromProtocol = async (u: string) => {
   if (url.protocol === 'kit:') {
     if (url.pathname === 'new') {
       await cliFromParams('new', url.searchParams);
+    }
+    if (url.pathname === 'snippet') {
+      await cliFromParams('snippet', url.searchParams);
     }
   }
 };
@@ -425,7 +433,7 @@ const kitUserDataExists = () => {
 
 const isContributor = async () => {
   // eslint-disable-next-line no-return-await
-  return kitExists() && kitIsGit();
+  return kitExists() && kitIgnore();
 };
 
 const kenvExists = () => {
