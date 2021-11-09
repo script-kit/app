@@ -25,7 +25,7 @@ export const checkForUpdates = async () => {
     : true;
 
   if (!kitIgnore() && autoUpdate) {
-    log.info(`AutoUpdater go!`);
+    log.info(`Auto-update enabled. Checking for update.`);
     autoUpdater.checkForUpdates();
   }
 };

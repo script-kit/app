@@ -341,25 +341,7 @@ const kitMessageMap: ChannelHandler = {
     }
   },
   UPDATE_APP: () => {
-    autoUpdater.once('update-available', (info) => {
-      log.info('Update available.', info);
-      const notification = new Notification({
-        title: `Kit.app update available`,
-        body: `Downloading ${info.version} and relaunching...`,
-        silent: true,
-      });
-
-      notification.show();
-    });
-    autoUpdater.once('update-not-available', (info) => {
-      const notification = new Notification({
-        title: `Kit.app is on the latest version`,
-        body: `${getVersion()}`,
-        silent: true,
-      });
-
-      notification.show();
-    });
+    global.globalData.manualUpdateCheck = true;
     autoUpdater.checkForUpdates();
   },
   SET_CHOICES: (data) => {
@@ -458,6 +440,7 @@ const createChild = ({
     PROCESS_TYPE: type,
     FORCE_COLOR: '1',
   };
+  // console.log({ env });
   const child = fork(entry, args, {
     silent: false,
     // stdio: 'inherit',
