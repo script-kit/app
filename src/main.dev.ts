@@ -21,7 +21,6 @@ import {
   powerMonitor,
   session,
   shell,
-  Notification,
 } from 'electron';
 
 import tar from 'tar';
@@ -55,15 +54,16 @@ import {
   tmpDownloadsDir,
 } from '@johnlindquist/kit/cjs/utils';
 import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
-import { createTray, destroyTray } from './tray';
+import { createTray } from './tray';
 import { cacheMenu, setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
 import { tick } from './tick';
 import { clearPromptCache, createPromptWindow } from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
-import { checkForUpdates, getVersion, kitIgnore } from './version';
+import { getVersion, getStoredVersion, storeVersion } from './version';
+import { checkForUpdates, configureAutoUpdate } from './update';
 import { show } from './show';
-import { cacheKitScripts, getStoredVersion, storeVersion } from './state';
+import { cacheKitScripts } from './state';
 import { startSK } from './sk';
 import { processes } from './process';
 import { startIpc } from './ipc';
@@ -128,22 +128,6 @@ if (
   require('electron-debug')({ showDevTools: false });
 }
 
-const callBeforeQuitAndInstall = () => {
-  try {
-    destroyTray();
-    app.removeAllListeners('window-all-closed');
-    const browserWindows = BrowserWindow.getAllWindows();
-    browserWindows.forEach((browserWindow) => {
-      browserWindow.removeAllListeners('close');
-    });
-    browserWindows.forEach((w) => {
-      w?.destroy();
-    });
-  } catch (e) {
-    console.log(e);
-  }
-};
-
 // fmkadmapgofadopljbjfkapdkoienihi
 const installExtensions = async () => {
   const reactDevToolsDir = path.join(
@@ -160,111 +144,7 @@ const installExtensions = async () => {
   });
 };
 
-autoUpdater.logger = log;
-autoUpdater.autoDownload = true;
-autoUpdater.autoInstallOnAppQuit = false;
-
-autoUpdater.on('update-available', (info) => {
-  log.info('Update available.', info);
-});
-autoUpdater.on('update-not-available', (info) => {
-  if (global.globalData.manualUpdateCheck) {
-    const notification = new Notification({
-      title: `Kit.app is on the latest version`,
-      body: `${getVersion()}`,
-      silent: true,
-    });
-
-    notification.show();
-
-    global.globalData.manualUpdateCheck = false;
-  }
-});
-
-autoUpdater.on('checking-for-update', () => {
-  log.info('Checking for update...');
-});
-
-autoUpdater.on('download-progress', (progressObj) => {
-  let logMessage = `Download speed: ${progressObj.bytesPerSecond}`;
-  logMessage = `${logMessage} - Downloaded ${progressObj.percent}%`;
-  logMessage = `${logMessage} (${progressObj.transferred}/${progressObj.total})`;
-  log.info(logMessage);
-});
-
-autoUpdater.on('error', (message) => {
-  console.error('There was a problem updating the application');
-  console.error(message);
-});
-
-let updateDownloaded = false;
-autoUpdater.on('update-downloaded', async (event) => {
-  const parseChannel = (version: string) => {
-    if (version.includes('development')) return 'development';
-    if (version.includes('alpha')) return 'alpha';
-    if (version.includes('beta')) return 'beta';
-
-    return 'main';
-  };
-  const version = getVersion();
-  const newVersion = event?.version;
-
-  const currentChannel = parseChannel(version);
-  const newChannel = parseChannel(newVersion);
-
-  if (currentChannel !== newChannel && newChannel !== 'main') {
-    log.warn(`Blocking update install due to channel mis-match`);
-    return;
-  }
-
-  autoUpdater.autoInstallOnAppQuit = true;
-  try {
-    log.info(`⏫ Updating from ${version} to ${newVersion}`);
-    if (version === event?.version) {
-      log.warn(`Downloaded same version 🤔`);
-      return;
-    }
-    await storeVersion(version);
-  } catch {
-    log.warn(`Couldn't store previous version`);
-  }
-
-  const notification = new Notification({
-    title: `Kit.app update downloaded`,
-    body: `Updating to ${event.version} and relaunching`,
-    silent: true,
-  });
-
-  notification.show();
-
-  log.info(`Downloaded update ${event?.version}`);
-  log.info('Attempting quitAndInstall...');
-  updateDownloaded = true;
-
-  callBeforeQuitAndInstall();
-
-  spawn(`./script`, [`./cli/open-app.js`], {
-    cwd: KIT,
-    detached: true,
-    env: {
-      KIT,
-      KENV: kenvPath(),
-      PATH: KIT_FIRST_PATH,
-    },
-  });
-
-  log.info('Quit and exit 👋');
-
-  app.quit();
-  app.exit();
-});
-
-app.on('window-all-closed', (e: Event) => {
-  if (!updateDownloaded) e.preventDefault();
-});
-
 const cliFromParams = async (cli: string, params: URLSearchParams) => {
-  console.log(`cliFromParams`);
   const name = params.get('name');
   const newUrl = params.get('url');
   if (name && newUrl) {
@@ -273,11 +153,10 @@ const cliFromParams = async (cli: string, params: URLSearchParams) => {
   }
 
   const content = params.get('content');
-  console.log({ content });
 
   if (content) {
     await runPromptProcess(kitPath(`cli/${cli}.js`), [
-      ...(name ? [name] : []),
+      name || '',
       '--content',
       content,
     ]);
@@ -645,6 +524,7 @@ const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
+  configureAutoUpdate();
   await checkForUpdates();
 
   if (!kitExists() || (await versionMismatch())) {

@@ -2,13 +2,12 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
-import { app, clipboard, Notification, screen } from 'electron';
+import { app, clipboard, screen } from 'electron';
 import http from 'http';
 import https from 'https';
 import url from 'url';
 import sizeOf from 'image-size';
 
-import { autoUpdater } from 'electron-updater';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
 import { Channel, Mode, ProcessType } from '@johnlindquist/kit/cjs/enum';
@@ -63,7 +62,8 @@ import { show, showDevTools } from './show';
 import { showNotification } from './notifications';
 
 import { getVersion } from './version';
-import { getTray, toggleTray } from './tray';
+import { toggleTray } from './tray';
+
 import { getClipboardHistory } from './tick';
 
 export const checkScriptChoices = (data: MessageData) => {
@@ -349,8 +349,7 @@ const kitMessageMap: ChannelHandler = {
     }
   },
   UPDATE_APP: () => {
-    global.globalData.manualUpdateCheck = true;
-    autoUpdater.checkForUpdates();
+    emitter.emit(KitEvent.CheckForUpdates, true);
   },
   SET_CHOICES: (data) => {
     checkScriptChoices(data);

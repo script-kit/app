@@ -10,14 +10,13 @@ import log from 'electron-log';
 import { Channel, ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   parseScript,
-  kenvPath,
   kitPath,
   mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 import { setPromptPid, setScript } from './prompt';
-import { getKitScript, getKenvScript } from './state';
+import { getKitScript } from './state';
 
 app.on('second-instance', async (_event, argv) => {
   const { _ } = minimist(argv);
@@ -40,6 +39,10 @@ emitter.on(KitEvent.SetKenv, () => {
   runPromptProcess(mainScriptPath);
 });
 
+emitter.on(KitEvent.RunPromptProcess, (scriptPath: string) => {
+  runPromptProcess(scriptPath);
+});
+
 const findScript = async (scriptPath: string) => {
   if (scriptPath === mainScriptPath) {
     return getKitScript(mainScriptPath);
@@ -50,10 +53,6 @@ const findScript = async (scriptPath: string) => {
     !scriptPath.startsWith(kitPath('tmp'))
   ) {
     return getKitScript(scriptPath);
-  }
-
-  if (scriptPath.startsWith(kenvPath())) {
-    return getKenvScript(scriptPath);
   }
 
   const script = await parseScript(scriptPath);
