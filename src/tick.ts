@@ -9,17 +9,24 @@ import {
   skip,
   tap,
 } from 'rxjs/operators';
+
 import { format } from 'date-fns';
 import { writeFile } from 'fs/promises';
 import path from 'path';
-import { db } from '@johnlindquist/kit/cjs/db';
-import { kitPath, tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
+import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
+
+interface ClipboardItem {
+  value: string;
+  type: string;
+  timestamp: string;
+  secret: boolean;
+}
+
+const clipboardHistory: ClipboardItem[] = [];
+
+export const getClipboardHistory = () => clipboardHistory;
 
 export const tick = async () => {
-  const clipboardHistory = await db(kitPath('db', 'clipboard-history.json'), {
-    history: [],
-  });
-
   const tick$ = interval(1000).pipe(share());
 
   const clipboardText$ = tick$.pipe(
@@ -60,8 +67,10 @@ export const tick = async () => {
       type === 'text' &&
         value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-z0-9-]{5,})$/gi)
     );
-    clipboardHistory.history.unshift({ value, type, timestamp, secret });
-    clipboardHistory.history.pop();
-    await clipboardHistory.write();
+    const clipboardItem = { value, type, timestamp, secret };
+    clipboardHistory.unshift(clipboardItem);
+    if (clipboardHistory.length > 100) {
+      clipboardHistory.pop();
+    }
   });
 };

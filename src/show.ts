@@ -3,9 +3,10 @@ import {
   app,
   BrowserWindow,
   BrowserWindowConstructorOptions,
-  nativeTheme,
   screen,
 } from 'electron';
+import log from 'electron-log';
+import { ensureDir } from 'fs-extra';
 import path from 'path';
 import { writeFile, mkdir } from 'fs/promises';
 import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
@@ -117,18 +118,20 @@ export const showDevTools = async (value: any) => {
     ? kenvPath('tmp', 'devTools')
     : app.getPath('appData');
 
-  if (!(await isDir(devToolsParentDir))) {
-    await mkdir(devToolsParentDir, { recursive: true });
-  }
+  await ensureDir(devToolsParentDir);
 
   const devToolsPath = path.resolve(devToolsParentDir, 'devTools.html');
   await writeFile(devToolsPath, devTools());
 
-  devToolsWindow?.loadURL(`file://${devToolsPath}`);
+  const devToolsUrl = `file://${devToolsPath}`;
+
+  log.info(`Load ${devToolsUrl} in ${devToolsWindow.id}`);
+  devToolsWindow?.loadURL(devToolsUrl);
 
   devToolsWindow.show();
 
   devToolsWindow.webContents.on('devtools-closed', () => {
+    log.info(`Close devTools: ${devToolsWindow.id}`);
     devToolsWindow?.destroy();
   });
 };

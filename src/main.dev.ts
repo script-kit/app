@@ -37,7 +37,6 @@ import log from 'electron-log';
 import path from 'path';
 import {
   spawnSync,
-  exec,
   SpawnSyncOptions,
   SpawnSyncReturns,
   spawn,
@@ -51,7 +50,6 @@ import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   kenvPath,
   kitPath,
-  home,
   KIT_FIRST_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
@@ -73,8 +71,13 @@ import { runPromptProcess } from './kit';
 import { CONFIG_SPLASH, showError } from './main.dev.templates';
 import { scheduleScriptChanged } from './schedule';
 
+global.globalData = {
+  manualUpdateCheck: false,
+};
+
 let configWindow: BrowserWindow;
 
+// Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 
 app.setName(APP_NAME);
@@ -133,6 +136,9 @@ const callBeforeQuitAndInstall = () => {
     browserWindows.forEach((browserWindow) => {
       browserWindow.removeAllListeners('close');
     });
+    browserWindows.forEach((w) => {
+      w?.destroy();
+    });
   } catch (e) {
     console.log(e);
   }
@@ -154,24 +160,29 @@ const installExtensions = async () => {
   });
 };
 
-autoUpdater.once('checking-for-update', () => {
-  log.info('Checking for update...');
+autoUpdater.logger = log;
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = false;
 
-  autoUpdater.once('update-available', (info) => {
+autoUpdater.on('update-available', (info) => {
+  log.info('Update available.', info);
+});
+autoUpdater.on('update-not-available', (info) => {
+  if (global.globalData.manualUpdateCheck) {
     const notification = new Notification({
-      title: `Update found ${info.version}`,
-      body: 'Kit.app automatically relaunching',
+      title: `Kit.app is on the latest version`,
+      body: `${getVersion()}`,
       silent: true,
     });
 
     notification.show();
 
-    log.info('Update available.', info);
-  });
+    global.globalData.manualUpdateCheck = false;
+  }
 });
 
-autoUpdater.on('update-not-available', (info) => {
-  log.info('Update not available.', info);
+autoUpdater.on('checking-for-update', () => {
+  log.info('Checking for update...');
 });
 
 autoUpdater.on('download-progress', (progressObj) => {
@@ -181,33 +192,56 @@ autoUpdater.on('download-progress', (progressObj) => {
   log.info(logMessage);
 });
 
-let updateDownloaded = false;
 autoUpdater.on('error', (message) => {
   console.error('There was a problem updating the application');
   console.error(message);
 });
 
+let updateDownloaded = false;
 autoUpdater.on('update-downloaded', async (event) => {
-  log.info(event);
-  log.info('update downloaded');
-  log.info('attempting quitAndInstall');
-  updateDownloaded = true;
+  const parseChannel = (version: string) => {
+    if (version.includes('development')) return 'development';
+    if (version.includes('alpha')) return 'alpha';
+    if (version.includes('beta')) return 'beta';
+
+    return 'main';
+  };
+  const version = getVersion();
+  const newVersion = event?.version;
+
+  const currentChannel = parseChannel(version);
+  const newChannel = parseChannel(newVersion);
+
+  if (currentChannel !== newChannel && newChannel !== 'main') {
+    log.warn(`Blocking update install due to channel mis-match`);
+    return;
+  }
+
+  autoUpdater.autoInstallOnAppQuit = true;
   try {
-    await storeVersion(getVersion());
+    log.info(`⏫ Updating from ${version} to ${newVersion}`);
+    if (version === event?.version) {
+      log.warn(`Downloaded same version 🤔`);
+      return;
+    }
+    await storeVersion(version);
   } catch {
     log.warn(`Couldn't store previous version`);
   }
-  callBeforeQuitAndInstall();
-  autoUpdater.quitAndInstall();
-  const allWindows = BrowserWindow.getAllWindows();
-  allWindows.forEach((w) => {
-    w?.destroy();
+
+  const notification = new Notification({
+    title: `Kit.app update downloaded`,
+    body: `Updating to ${event.version} and relaunching`,
+    silent: true,
   });
-  setTimeout(() => {
-    log.info('quit and exit');
-    app.quit();
-    app.exit();
-  }, 3000);
+
+  notification.show();
+
+  log.info(`Downloaded update ${event?.version}`);
+  log.info('Attempting quitAndInstall...');
+  updateDownloaded = true;
+
+  callBeforeQuitAndInstall();
 
   spawn(`./script`, [`./cli/open-app.js`], {
     cwd: KIT,
@@ -218,6 +252,11 @@ autoUpdater.on('update-downloaded', async (event) => {
       PATH: KIT_FIRST_PATH,
     },
   });
+
+  log.info('Quit and exit 👋');
+
+  app.quit();
+  app.exit();
 });
 
 app.on('window-all-closed', (e: Event) => {
@@ -602,7 +641,6 @@ const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
-  autoUpdater.logger = log;
   await checkForUpdates();
 
   if (!kitExists() || (await versionMismatch())) {
