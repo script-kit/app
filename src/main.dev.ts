@@ -37,7 +37,6 @@ import log from 'electron-log';
 import path from 'path';
 import {
   spawnSync,
-  exec,
   SpawnSyncOptions,
   SpawnSyncReturns,
   spawn,
@@ -51,7 +50,6 @@ import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   kenvPath,
   kitPath,
-  home,
   KIT_FIRST_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
@@ -133,6 +131,9 @@ const callBeforeQuitAndInstall = () => {
     browserWindows.forEach((browserWindow) => {
       browserWindow.removeAllListeners('close');
     });
+    browserWindows.forEach((w) => {
+      w?.destroy();
+    });
   } catch (e) {
     console.log(e);
   }
@@ -153,6 +154,9 @@ const installExtensions = async () => {
     allowFileAccess: true,
   });
 };
+
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
 
 autoUpdater.once('checking-for-update', () => {
   log.info('Checking for update...');
@@ -188,26 +192,22 @@ autoUpdater.on('error', (message) => {
 });
 
 autoUpdater.on('update-downloaded', async (event) => {
-  log.info(event);
-  log.info('update downloaded');
-  log.info('attempting quitAndInstall');
+  log.info(`Downloaded update ${event?.version}`);
+  log.info('Attempting quitAndInstall...');
   updateDownloaded = true;
   try {
-    await storeVersion(getVersion());
+    const version = getVersion();
+    log.info(`⏫ Updating from ${version} to ${event?.version}`);
+    if (version === event?.version) {
+      log.warn(`Downloaded same version 🤔`);
+      return;
+    }
+    await storeVersion(version);
   } catch {
     log.warn(`Couldn't store previous version`);
   }
+
   callBeforeQuitAndInstall();
-  autoUpdater.quitAndInstall();
-  const allWindows = BrowserWindow.getAllWindows();
-  allWindows.forEach((w) => {
-    w?.destroy();
-  });
-  setTimeout(() => {
-    log.info('quit and exit');
-    app.quit();
-    app.exit();
-  }, 3000);
 
   spawn(`./script`, [`./cli/open-app.js`], {
     cwd: KIT,
@@ -218,6 +218,11 @@ autoUpdater.on('update-downloaded', async (event) => {
       PATH: KIT_FIRST_PATH,
     },
   });
+
+  log.info('Quit and exit 👋');
+
+  app.quit();
+  app.exit();
 });
 
 app.on('window-all-closed', (e: Event) => {
