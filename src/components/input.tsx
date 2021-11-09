@@ -78,7 +78,7 @@ export default function Input() {
 
       if (target?.value.length === 0) {
         const findCode = ultraShortCodes.find(
-          (u) => u.code === event.key?.toLowerCase()
+          (u) => u.code.toLowerCase() === event.key?.toLowerCase()
         );
         if (findCode) {
           event.preventDefault();
@@ -86,7 +86,11 @@ export default function Input() {
             (c) => c.id === findCode?.id
           );
           if (findChoice) {
-            setSubmitValue(findChoice.value);
+            if (findChoice.name === findChoice.value) {
+              setSubmitValue(findCode.code);
+            } else {
+              setSubmitValue(findChoice.value);
+            }
           } else if (unfilteredChoices?.length === 0) {
             setSubmitValue(findCode.code);
           }
