@@ -6,6 +6,7 @@ import {
   nativeTheme,
   screen,
 } from 'electron';
+import path from 'path';
 import { writeFile, mkdir } from 'fs/promises';
 import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
 import { getAssetPath } from './assets';
@@ -32,6 +33,30 @@ const page = (body: string) => {
     </script>
 </head>
     ${body}
+</html>`;
+};
+
+const devTools = () => {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script>
+      const { ipcRenderer } = require('electron');
+
+      ipcRenderer.on('DEVTOOLS', (event, x) => {
+        window['x'] = x;
+
+        for (let [key, value] of Object.entries(x)) {
+          window[key] = value;
+        }
+
+        console.log(x);
+      });
+    </script>
+</head>
 </html>`;
 };
 
@@ -88,21 +113,24 @@ export const showDevTools = async (value: any) => {
     devToolsWindow.webContents.send('DEVTOOLS', value);
   }
 
-  // devToolsWindow.webContents.once('did-finish-load', () => {
-  // });
+  const devToolsParentDir = (await isDir(kenvPath('tmp')))
+    ? kenvPath('tmp', 'devTools')
+    : app.getPath('appData');
+
+  if (!(await isDir(devToolsParentDir))) {
+    await mkdir(devToolsParentDir, { recursive: true });
+  }
+
+  const devToolsPath = path.resolve(devToolsParentDir, 'devTools.html');
+  await writeFile(devToolsPath, devTools());
+
+  devToolsWindow?.loadURL(`file://${devToolsPath}`);
 
   devToolsWindow.show();
 
-  devToolsWindow.loadURL(`file://${__dirname}/devTools.html`);
-
   devToolsWindow.webContents.on('devtools-closed', () => {
-    console.log(`Destroy dev tools window`);
     devToolsWindow?.destroy();
   });
-
-  // devToolsWindow.on('blur', () => {});
-
-  // debug.detach();
 };
 
 export const show = async (
