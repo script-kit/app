@@ -16,10 +16,12 @@ import path from 'path';
 import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
 
 interface ClipboardItem {
+  name: string;
+  description: string;
   value: string;
   type: string;
   timestamp: string;
-  secret: boolean;
+  maybeSecret: boolean;
 }
 
 const clipboardHistory: ClipboardItem[] = [];
@@ -63,11 +65,18 @@ export const tick = async () => {
       await writeFile(value, (textOrImage as NativeImage).toPNG());
     }
 
-    const secret = Boolean(
+    const maybeSecret = Boolean(
       type === 'text' &&
         value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-z0-9-]{5,})$/gi)
     );
-    const clipboardItem = { value, type, timestamp, secret };
+    const clipboardItem = {
+      name: type === 'image' ? value : value.trim().slice(0, 40),
+      description: `${type}: ${timestamp}`,
+      value,
+      type,
+      timestamp,
+      maybeSecret,
+    };
     clipboardHistory.unshift(clipboardItem);
     if (clipboardHistory.length > 100) {
       clipboardHistory.pop();

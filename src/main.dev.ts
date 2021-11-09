@@ -276,7 +276,11 @@ const cliFromParams = async (cli: string, params: URLSearchParams) => {
   console.log({ content });
 
   if (content) {
-    await runPromptProcess(kitPath(`cli/${cli}.js`), ['--content', content]);
+    await runPromptProcess(kitPath(`cli/${cli}.js`), [
+      ...(name ? [name] : []),
+      '--content',
+      content,
+    ]);
     return true;
   }
   return false;
