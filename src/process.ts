@@ -64,6 +64,7 @@ import { showNotification } from './notifications';
 
 import { getVersion } from './version';
 import { getTray, toggleTray } from './tray';
+import { getClipboardHistory } from './tick';
 
 export const checkScriptChoices = (data: MessageData) => {
   // console.log(`🤔 checkScriptChoices ${data?.choices?.length}`);
@@ -209,6 +210,13 @@ const kitMessageMap: ChannelHandler = {
 
   GET_BACKGROUND: toProcess(({ child }) => {
     child?.send({ channel: 'BACKGROUND', tasks: getBackgroundTasks() });
+  }),
+
+  GET_CLIPBOARD_HISTORY: toProcess(({ child }) => {
+    child?.send({
+      channel: 'CLIPBOARD_HISTORY',
+      history: getClipboardHistory(),
+    });
   }),
 
   TOGGLE_BACKGROUND: (data) => {

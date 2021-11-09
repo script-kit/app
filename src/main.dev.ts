@@ -162,7 +162,7 @@ const installExtensions = async () => {
 
 autoUpdater.logger = log;
 autoUpdater.autoDownload = true;
-autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.autoInstallOnAppQuit = false;
 
 autoUpdater.on('update-available', (info) => {
   log.info('Update available.', info);
@@ -217,6 +217,7 @@ autoUpdater.on('update-downloaded', async (event) => {
     return;
   }
 
+  autoUpdater.autoInstallOnAppQuit = true;
   try {
     log.info(`⏫ Updating from ${version} to ${newVersion}`);
     if (version === event?.version) {
