@@ -74,9 +74,13 @@ export const configureAutoUpdate = async () => {
       const result = await autoUpdater.downloadUpdate();
       log.log(`Update downloaded:`, result);
     } else if (version === newVersion) {
-      log.info(`Blocking update. Versions match`);
+      log.info(
+        `Blocking update. You're version is ${version} and found ${newVersion}`
+      );
     } else {
-      log.info(`Block update. Channels match`);
+      log.info(
+        `Blocking update. You're on ${currentChannel}, but requested ${newChannel}`
+      );
     }
   });
 
