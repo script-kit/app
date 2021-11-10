@@ -2,13 +2,8 @@ import { app, BrowserWindow, Notification } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { existsSync } from 'fs';
-import {
-  kitPath,
-  appDbPath,
-  KIT_FIRST_PATH,
-} from '@johnlindquist/kit/cjs/utils';
+import { kitPath, appDbPath } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
-import { spawn } from 'child_process';
 import { destroyTray } from './tray';
 import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
@@ -20,9 +15,7 @@ const callBeforeQuitAndInstall = () => {
     const browserWindows = BrowserWindow.getAllWindows();
     browserWindows.forEach((browserWindow) => {
       browserWindow.removeAllListeners('close');
-    });
-    browserWindows.forEach((w) => {
-      w?.destroy();
+      browserWindow?.destroy();
     });
   } catch (e) {
     console.log(e);
@@ -145,21 +138,24 @@ export const configureAutoUpdate = async () => {
     log.info('Attempting quitAndInstall...');
     updateDownloaded = true;
 
-    callBeforeQuitAndInstall();
+    try {
+      callBeforeQuitAndInstall();
+    } catch {}
 
-    const KIT = kitPath();
-    spawn(`./script`, [`./cli/open-app.js`], {
-      cwd: KIT,
-      detached: true,
-      env: {
-        KIT,
-        KENV: kenvPath(),
-        PATH: KIT_FIRST_PATH,
-      },
-    });
+    // const KIT = kitPath();
+    // spawn(`./script`, [`./cli/open-app.js`], {
+    //   cwd: KIT,
+    //   detached: true,
+    //   env: {
+    //     KIT,
+    //     KENV: kenvPath(),
+    //     PATH: KIT_FIRST_PATH,
+    //   },
+    // });
 
     log.info('Quit and exit 👋');
 
+    app.relaunch();
     app.quit();
     app.exit();
   });
