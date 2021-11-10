@@ -1,7 +1,4 @@
-import { app, autoUpdater } from 'electron';
-import log from 'electron-log';
-import { existsSync } from 'fs';
-import { kitPath, appDbPath } from '@johnlindquist/kit/cjs/utils';
+import { app } from 'electron';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 
 // eslint-disable-next-line import/prefer-default-export
@@ -13,19 +10,12 @@ export const getVersion = () => {
   return app.getVersion();
 };
 
-export const kitIgnore = () => {
-  const isGit = existsSync(kitPath('.kitignore'));
-  log.info(`${isGit ? `Found` : `Didn't find`} ${kitPath('.kitignore')}`);
-  return isGit;
+export const storeVersion = async (version: string) => {
+  const appDb = await getAppDb();
+  appDb.version = version;
+  await appDb.write();
 };
 
-export const checkForUpdates = async () => {
-  const autoUpdate = existsSync(appDbPath)
-    ? (await getAppDb())?.autoUpdate
-    : true;
-
-  if (!kitIgnore() && autoUpdate) {
-    log.info(`Auto-update enabled. Checking for update.`);
-    autoUpdater.checkForUpdates();
-  }
+export const getStoredVersion = async () => {
+  return (await getAppDb()).version;
 };

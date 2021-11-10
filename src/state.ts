@@ -3,7 +3,6 @@
 /* eslint-disable no-nested-ternary */
 import { ChildProcess } from 'child_process';
 import { app } from 'electron';
-import log from 'electron-log';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { Script } from '@johnlindquist/kit/types/core';
@@ -22,16 +21,6 @@ export const restartIfNecessary = async () => {
     await appDb.write();
     app.exit(0);
   }
-};
-
-export const storeVersion = async (version: string) => {
-  const appDb = await getAppDb();
-  appDb.version = version;
-  await appDb.write();
-};
-
-export const getStoredVersion = async () => {
-  return (await getAppDb()).version;
 };
 
 export const serverState = {
@@ -86,11 +75,6 @@ export const updateScripts = async () => {
 
 export const getScriptsMemory = (): Script[] => {
   return scripts.filter((script) => !script?.exclude);
-};
-
-export const getKenvScript = (filePath: string): Script => {
-  log.info(`💉 getKenvScript ${filePath}`);
-  return scripts.find((script) => script.filePath === filePath) as Script;
 };
 
 const kitScripts: Script[] = [];

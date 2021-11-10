@@ -9,27 +9,36 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { getAssetPath } from './assets';
 import { restartIfNecessary } from './state';
-import { runPromptProcess } from './kit';
+import { emitter, KitEvent } from './events';
 
 let tray: Tray | null = null;
 
 const leftClick = async (event: KeyboardEvent) => {
   await restartIfNecessary();
   if (event.metaKey) {
-    runPromptProcess(kenvPath('app', 'command-click.js'));
+    emitter.emit(
+      KitEvent.RunPromptProcess,
+      kenvPath('app', 'command-click.js')
+    );
   } else if (event.shiftKey) {
-    runPromptProcess(kenvPath('app', 'shift-click.js'));
+    emitter.emit(
+      KitEvent.RunPromptProcess,
+      kenvPath('app', 'command-click.js')
+    );
   } else if (event.ctrlKey) {
-    runPromptProcess(kenvPath('app', 'control-click.js'));
+    emitter.emit(
+      KitEvent.RunPromptProcess,
+      kenvPath('app', 'control-click.js')
+    );
   } else if (event.altKey) {
-    runPromptProcess(kenvPath('app', 'alt-click.js'));
+    emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'alt-click.js'));
   } else {
-    runPromptProcess(mainScriptPath);
+    emitter.emit(KitEvent.RunPromptProcess, mainScriptPath);
   }
 };
 
 const rightClick = async () => {
-  runPromptProcess(kitPath('main', 'kit.js'));
+  emitter.emit(KitEvent.RunPromptProcess, kitPath('main', 'kit.js'));
 };
 
 const trayIcon = getAssetPath('IconTemplate.png');

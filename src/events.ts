@@ -9,6 +9,8 @@ export enum KitEvent {
   Blur = 'Blur',
   ExitPrompt = 'HidePrompt',
   ToggleBackground = 'ToggleBackground',
+  RunPromptProcess = 'RunPromptProcess',
+  CheckForUpdates = 'CheckForUpdates',
 }
 
 interface KitEmitter {
