@@ -75,14 +75,6 @@ export const configureAutoUpdate = async () => {
       log.warn(`Couldn't store previous version`);
     }
 
-    const notification = new Notification({
-      title: `Kit.app update downloaded`,
-      body: `Updating to ${info.version} and relaunching`,
-      silent: true,
-    });
-
-    notification.show();
-
     log.info(`Downloaded update ${info?.version}`);
     log.info('Attempting quitAndInstall...');
     updateDownloaded = true;
@@ -102,7 +94,6 @@ export const configureAutoUpdate = async () => {
 
     log.info('Quit and exit 👋');
 
-    app.relaunch();
     app.quit();
     app.exit();
   };
@@ -118,6 +109,14 @@ export const configureAutoUpdate = async () => {
 
     if (currentChannel === newChannel) {
       log.info(`Downloading update`);
+
+      const notification = new Notification({
+        title: `Kit.app update downloading...`,
+        body: `Updating to ${info.version} and relaunching`,
+        silent: true,
+      });
+
+      notification.show();
       const result = await autoUpdater.downloadUpdate();
       log.log(`Update downloaded:`, result);
       await applyUpdate(info);
