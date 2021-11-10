@@ -2,8 +2,13 @@ import { app, BrowserWindow, Notification } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { existsSync } from 'fs';
-import { kitPath, appDbPath } from '@johnlindquist/kit/cjs/utils';
+import {
+  kitPath,
+  appDbPath,
+  KIT_FIRST_PATH,
+} from '@johnlindquist/kit/cjs/utils';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
+import { spawn } from 'child_process';
 import { destroyTray } from './tray';
 import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
@@ -53,6 +58,55 @@ export const configureAutoUpdate = async () => {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
 
+  let updateDownloaded = false;
+
+  const applyUpdate = async (info: any) => {
+    const version = getVersion();
+    const newVersion = info?.version;
+
+    try {
+      log.info(`⏫ Updating from ${version} to ${newVersion}`);
+      if (version === info?.version) {
+        log.warn(`Downloaded same version 🤔`);
+        return;
+      }
+      await storeVersion(info?.version);
+    } catch {
+      log.warn(`Couldn't store previous version`);
+    }
+
+    const notification = new Notification({
+      title: `Kit.app update downloaded`,
+      body: `Updating to ${info.version} and relaunching`,
+      silent: true,
+    });
+
+    notification.show();
+
+    log.info(`Downloaded update ${info?.version}`);
+    log.info('Attempting quitAndInstall...');
+    updateDownloaded = true;
+
+    callBeforeQuitAndInstall();
+
+    const KIT = kitPath();
+    spawn(`./script`, [`./cli/open-app.js`], {
+      cwd: KIT,
+      detached: true,
+      env: {
+        KIT,
+        KENV: kenvPath(),
+        PATH: KIT_FIRST_PATH,
+      },
+    });
+
+    log.info('Quit and exit 👋');
+
+    app.relaunch();
+    app.quit();
+    app.exit();
+  };
+
   autoUpdater.on('update-available', async (info) => {
     log.info('Update available.', info);
 
@@ -66,6 +120,7 @@ export const configureAutoUpdate = async () => {
       log.info(`Downloading update`);
       const result = await autoUpdater.downloadUpdate();
       log.log(`Update downloaded:`, result);
+      await applyUpdate(info);
     } else if (version === newVersion) {
       log.info(
         `Blocking update. You're version is ${version} and found ${newVersion}`
@@ -108,56 +163,6 @@ export const configureAutoUpdate = async () => {
   autoUpdater.on('error', (message) => {
     console.error('There was a problem updating the application');
     console.error(message);
-  });
-
-  let updateDownloaded = false;
-  autoUpdater.on('update-downloaded', async (info) => {
-    const version = getVersion();
-    const newVersion = info?.version;
-
-    try {
-      log.info(`⏫ Updating from ${version} to ${newVersion}`);
-      if (version === info?.version) {
-        log.warn(`Downloaded same version 🤔`);
-        return;
-      }
-      await storeVersion(version);
-    } catch {
-      log.warn(`Couldn't store previous version`);
-    }
-
-    const notification = new Notification({
-      title: `Kit.app update downloaded`,
-      body: `Updating to ${info.version} and relaunching`,
-      silent: true,
-    });
-
-    notification.show();
-
-    log.info(`Downloaded update ${info?.version}`);
-    log.info('Attempting quitAndInstall...');
-    updateDownloaded = true;
-
-    try {
-      callBeforeQuitAndInstall();
-    } catch {}
-
-    // const KIT = kitPath();
-    // spawn(`./script`, [`./cli/open-app.js`], {
-    //   cwd: KIT,
-    //   detached: true,
-    //   env: {
-    //     KIT,
-    //     KENV: kenvPath(),
-    //     PATH: KIT_FIRST_PATH,
-    //   },
-    // });
-
-    log.info('Quit and exit 👋');
-
-    app.relaunch();
-    app.quit();
-    app.exit();
   });
 
   app.on('window-all-closed', (e: Event) => {
