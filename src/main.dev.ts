@@ -168,10 +168,11 @@ const cliFromParams = async (cli: string, params: URLSearchParams) => {
 const newFromProtocol = async (u: string) => {
   const url = new URL(u);
   if (url.protocol === 'kit:') {
-    if (url.pathname === 'new') {
+    const pathname = url.pathname.replace('//', '');
+    if (pathname === 'new') {
       await cliFromParams('new', url.searchParams);
     }
-    if (url.pathname === 'snippet') {
+    if (pathname === 'snippet') {
       await cliFromParams('snippet', url.searchParams);
     }
   }
