@@ -79,6 +79,12 @@ export const configureAutoUpdate = async () => {
     log.info('Attempting quitAndInstall...');
     updateDownloaded = true;
 
+    setTimeout(() => {
+      log.info('Quit and exit 👋');
+
+      app.quit();
+      app.exit();
+    }, 250);
     callBeforeQuitAndInstall();
 
     const KIT = kitPath();
@@ -92,10 +98,7 @@ export const configureAutoUpdate = async () => {
       },
     });
 
-    log.info('Quit and exit 👋');
-
-    app.quit();
-    app.exit();
+    log.info(`attempting relaunch`);
   };
 
   autoUpdater.on('update-available', async (info) => {
