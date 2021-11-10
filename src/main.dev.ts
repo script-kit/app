@@ -61,7 +61,7 @@ import { tick } from './tick';
 import { clearPromptCache, createPromptWindow } from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
-import { checkForUpdates, configureAutoUpdate } from './update';
+import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { show } from './show';
 import { cacheKitScripts } from './state';
 import { startSK } from './sk';
