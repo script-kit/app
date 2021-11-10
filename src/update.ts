@@ -134,6 +134,10 @@ export const configureAutoUpdate = async () => {
     }
   });
 
+  autoUpdater.on('update-downloaded', () => {
+    log.info(`⬇️ Update downloaded`);
+  });
+
   autoUpdater.on('update-not-available', (info) => {
     log.info('Update not available...');
     log.info(info);
