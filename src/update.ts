@@ -56,7 +56,6 @@ let manualUpdateCheck = false;
 export const configureAutoUpdate = async () => {
   autoUpdater.logger = log;
   autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = true;
 
   let updateDownloaded = false;
 
@@ -82,8 +81,7 @@ export const configureAutoUpdate = async () => {
     setTimeout(() => {
       log.info('Quit and exit 👋');
 
-      app.quit();
-      app.exit();
+      autoUpdater.quitAndInstall();
     }, 250);
     callBeforeQuitAndInstall();
 
