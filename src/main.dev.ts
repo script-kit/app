@@ -281,7 +281,7 @@ const ready = async () => {
     createLogs();
     await prepareProtocols();
     setupLog(`Protocols Prepared`);
-    await createTray();
+    await createTray(true);
     setupLog(`Tray created`);
     await setupWatchers();
     setupLog(`Shortcuts Assigned`);
