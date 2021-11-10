@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { Tray } from 'electron';
+import { Notification, Tray } from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
 import {
@@ -7,9 +7,11 @@ import {
   kitPath,
   mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
+import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
 import { restartIfNecessary } from './state';
 import { emitter, KitEvent } from './events';
+import { getVersion } from './version';
 
 let tray: Tray | null = null;
 
@@ -43,7 +45,18 @@ const rightClick = async () => {
 
 const trayIcon = getAssetPath('IconTemplate.png');
 
-export const createTray = async () => {
+export const createTray = async (checkDb = false) => {
+  const appDb = await getAppDb();
+  if (checkDb && typeof appDb?.tray === 'boolean' && appDb.tray === false) {
+    const notification = new Notification({
+      title: `Kit.app started with icon hidden`,
+      body: `${getVersion()}`,
+      silent: true,
+    });
+
+    notification.show();
+    return;
+  }
   try {
     tray = new Tray(trayIcon);
     tray.setIgnoreDoubleClickEvents(true);
@@ -53,8 +66,6 @@ export const createTray = async () => {
   } catch (error) {
     log.error(error);
   }
-
-  return 'tray created';
 };
 
 export const getTray = (): Tray | null => tray;
@@ -64,10 +75,14 @@ export const destroyTray = () => {
   tray = null;
 };
 
-export const toggleTray = () => {
+export const toggleTray = async () => {
+  const appDb = await getAppDb();
   if (tray) {
     destroyTray();
+    appDb.tray = false;
   } else {
     createTray();
+    appDb.tray = true;
   }
+  await appDb.write();
 };

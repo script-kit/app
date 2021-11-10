@@ -46,16 +46,44 @@ export const checkForUpdates = async () => {
   }
 };
 
+const parseChannel = (version: string) => {
+  if (version.includes('development')) return 'development';
+  if (version.includes('alpha')) return 'alpha';
+  if (version.includes('beta')) return 'beta';
+
+  return 'main';
+};
+
 let manualUpdateCheck = false;
 export const configureAutoUpdate = async () => {
   autoUpdater.logger = log;
-  autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
 
-  autoUpdater.on('update-available', (info) => {
+  autoUpdater.on('update-available', async (info) => {
     log.info('Update available.', info);
+
+    const version = getVersion();
+    const newVersion = info?.version;
+
+    const currentChannel = parseChannel(version);
+    const newChannel = parseChannel(newVersion);
+
+    if (currentChannel === newChannel) {
+      log.info(`Downloading update`);
+      const result = await autoUpdater.downloadUpdate();
+      log.log(`Update downloaded:`, result);
+    } else if (version === newVersion) {
+      log.info(`Blocking update. Versions match`);
+    } else {
+      log.info(`Block update. Channels match`);
+    }
   });
+
   autoUpdater.on('update-not-available', (info) => {
+    log.info('Update not available...');
+    log.info(info);
+
     if (manualUpdateCheck) {
       const notification = new Notification({
         title: `Kit.app is on the latest version`,
@@ -86,29 +114,13 @@ export const configureAutoUpdate = async () => {
   });
 
   let updateDownloaded = false;
-  autoUpdater.on('update-downloaded', async (event) => {
-    const parseChannel = (version: string) => {
-      if (version.includes('development')) return 'development';
-      if (version.includes('alpha')) return 'alpha';
-      if (version.includes('beta')) return 'beta';
-
-      return 'main';
-    };
+  autoUpdater.on('update-downloaded', async (info) => {
     const version = getVersion();
-    const newVersion = event?.version;
+    const newVersion = info?.version;
 
-    const currentChannel = parseChannel(version);
-    const newChannel = parseChannel(newVersion);
-
-    if (currentChannel !== newChannel && newChannel !== 'main') {
-      log.warn(`Blocking update install due to channel mis-match`);
-      return;
-    }
-
-    autoUpdater.autoInstallOnAppQuit = true;
     try {
       log.info(`⏫ Updating from ${version} to ${newVersion}`);
-      if (version === event?.version) {
+      if (version === info?.version) {
         log.warn(`Downloaded same version 🤔`);
         return;
       }
@@ -119,13 +131,13 @@ export const configureAutoUpdate = async () => {
 
     const notification = new Notification({
       title: `Kit.app update downloaded`,
-      body: `Updating to ${event.version} and relaunching`,
+      body: `Updating to ${info.version} and relaunching`,
       silent: true,
     });
 
     notification.show();
 
-    log.info(`Downloaded update ${event?.version}`);
+    log.info(`Downloaded update ${info?.version}`);
     log.info('Attempting quitAndInstall...');
     updateDownloaded = true;
 
