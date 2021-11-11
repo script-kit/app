@@ -12,6 +12,8 @@ import { writeFile, mkdir } from 'fs/promises';
 import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
 import { getAssetPath } from './assets';
 
+export const INSTALL_ERROR = 'install-error';
+
 const page = (body: string, options: BrowserWindowConstructorOptions) => {
   const baseURL = app.getAppPath().replace('\\', '/');
   const stylePath = `${baseURL}/dist/style.css`;
@@ -145,10 +147,14 @@ export const showDevTools = async (value: any) => {
   });
 };
 
+type ShowOptions = BrowserWindowConstructorOptions & {
+  ttl?: number;
+};
+
 export const show = async (
   name: string,
   html: string,
-  options: BrowserWindowConstructorOptions = {},
+  options: ShowOptions = {},
   showOnLoad = true
 ): Promise<BrowserWindow> => {
   const center = getCenterOnCurrentScreen(options);
@@ -177,6 +183,17 @@ export const show = async (
     if (input.key === 'Escape') {
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
       showWindow.destroy();
+      if (name === INSTALL_ERROR) {
+        app.removeAllListeners('window-all-closed');
+        const browserWindows = BrowserWindow.getAllWindows();
+        browserWindows.forEach((browserWindow) => {
+          browserWindow.removeAllListeners('close');
+          browserWindow?.destroy();
+        });
+
+        app.quit();
+        app.exit();
+      }
       if (
         BrowserWindow.getAllWindows().every((window) => !window.isVisible())
       ) {
@@ -195,6 +212,13 @@ export const show = async (
 
   const showPath = `${showParentDir}/${name}.html`;
   await writeFile(showPath, page(html, options));
+
+  if (options?.ttl) {
+    setTimeout(() => {
+      showWindow.removeAllListeners();
+      showWindow.destroy();
+    }, options?.ttl);
+  }
 
   return new Promise((resolve, reject) => {
     showWindow.webContents.once('did-finish-load', () => {

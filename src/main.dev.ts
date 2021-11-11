@@ -62,7 +62,7 @@ import { clearPromptCache, createPromptWindow } from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
-import { show } from './show';
+import { INSTALL_ERROR, show } from './show';
 import { cacheKitScripts } from './state';
 import { startSK } from './sk';
 import { processes } from './process';
@@ -457,15 +457,7 @@ ${mainLog}
   );
   configWindow?.destroy();
 
-  const showWindow = await show('install-error', showError(error, mainLog));
-
-  showWindow?.on('close', () => {
-    app.exit();
-  });
-
-  showWindow?.on('blur', () => {
-    app.exit();
-  });
+  await show(INSTALL_ERROR, showError(error, mainLog));
 
   throw new Error(error.message);
 };
