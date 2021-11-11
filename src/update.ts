@@ -71,7 +71,7 @@ export const configureAutoUpdate = async () => {
         log.warn(`Downloaded same version 🤔`);
         return;
       }
-      await storeVersion(info?.version);
+      await storeVersion(version);
     } catch {
       log.warn(`Couldn't store previous version`);
     }
