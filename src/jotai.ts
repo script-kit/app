@@ -171,6 +171,7 @@ const previewHTML = atom('');
 export const previewHTMLAtom = atom(
   (g) => g(previewHTML),
   (g, s, a: string) => {
+    if (!a) return; // never unset preview to avoid flash of white/black
     const sc = g(script) as Script;
     const tI = g(tabIndex);
     const iA = g(inputAtom);
