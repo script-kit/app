@@ -56,6 +56,7 @@ let manualUpdateCheck = false;
 export const configureAutoUpdate = async () => {
   autoUpdater.logger = log;
   autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
 
   let updateDownloaded = false;
 
@@ -74,19 +75,21 @@ export const configureAutoUpdate = async () => {
       log.warn(`Couldn't store previous version`);
     }
 
-    log.info(`Downloaded update ${info?.version}`);
-    log.info('Attempting quitAndInstall...');
     updateDownloaded = true;
+
+    log.info(`⏰ Waiting one second before quit`);
+    callBeforeQuitAndInstall();
 
     setTimeout(() => {
       log.info('Quit and exit 👋');
 
       autoUpdater.quitAndInstall();
-    }, 250);
-    callBeforeQuitAndInstall();
+    }, 1000);
 
     const KIT = kitPath();
-    spawn(`./script`, [`./cli/open-app.js`], {
+
+    log.info(`Before relaunch attempt`);
+    const child = spawn(`./script`, [`./cli/open-app.js`], {
       cwd: KIT,
       detached: true,
       env: {
@@ -96,7 +99,11 @@ export const configureAutoUpdate = async () => {
       },
     });
 
-    log.info(`attempting relaunch`);
+    child.on('message', (data) => {
+      log.info(data.toString());
+    });
+
+    log.info(`After relaunch attempt`);
   };
 
   autoUpdater.on('update-available', async (info) => {
