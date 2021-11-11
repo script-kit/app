@@ -23,7 +23,7 @@ const callBeforeQuitAndInstall = () => {
       browserWindow?.destroy();
     });
   } catch (e) {
-    console.log(e);
+    log.warn(`callBeforeQuitAndInstall error`, e);
   }
 };
 
@@ -83,25 +83,34 @@ export const configureAutoUpdate = async () => {
     setTimeout(() => {
       log.info('Quit and exit 👋');
 
-      autoUpdater.quitAndInstall();
-    }, 1000);
+      try {
+        autoUpdater.quitAndInstall();
+      } catch (e) {
+        log.warn(`autoUpdater.quitAndInstall error`, e);
+      }
+    }, 250);
 
     const KIT = kitPath();
 
     log.info(`Before relaunch attempt`);
-    const child = spawn(`./script`, [`./cli/open-app.js`], {
-      cwd: KIT,
-      detached: true,
-      env: {
-        KIT,
-        KENV: kenvPath(),
-        PATH: KIT_FIRST_PATH,
-      },
-    });
 
-    child.on('message', (data) => {
-      log.info(data.toString());
-    });
+    try {
+      const child = spawn(`./script`, [`./cli/open-app.js`], {
+        cwd: KIT,
+        detached: true,
+        env: {
+          KIT,
+          KENV: kenvPath(),
+          PATH: KIT_FIRST_PATH,
+        },
+      });
+
+      child.on('message', (data) => {
+        log.info(data.toString());
+      });
+    } catch (e) {
+      log.warn(`spawn open-app error`, e);
+    }
 
     log.info(`After relaunch attempt`);
   };
