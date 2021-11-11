@@ -12,7 +12,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
 import { getAssetPath } from './assets';
 
-const page = (body: string) => {
+const page = (body: string, options: BrowserWindowConstructorOptions) => {
   const baseURL = app.getAppPath().replace('\\', '/');
   const stylePath = `${baseURL}/dist/style.css`;
 
@@ -22,6 +22,15 @@ const page = (body: string) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="${stylePath}">
+    ${
+      options?.transparent
+        ? `<style>
+    body{
+      background-color: rgba(0, 0, 0, 0) !important;
+    }
+    </style>`
+        : ``
+    }
     <script>
 
     const {ipcRenderer} = require("electron")
@@ -147,7 +156,11 @@ export const show = async (
     title: name,
     frame: false,
     transparent: true,
-    vibrancy: 'menu',
+    ...(options?.transparent
+      ? {}
+      : {
+          vibrancy: 'menu',
+        }),
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -181,7 +194,7 @@ export const show = async (
   }
 
   const showPath = `${showParentDir}/${name}.html`;
-  await writeFile(showPath, page(html));
+  await writeFile(showPath, page(html, options));
 
   return new Promise((resolve, reject) => {
     showWindow.webContents.once('did-finish-load', () => {
