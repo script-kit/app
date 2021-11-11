@@ -219,6 +219,14 @@ const kitMessageMap: ChannelHandler = {
     });
   }),
 
+  CLEAR_CLIPBOARD_HISTORY: ({ id }) => {
+    emitter.emit(Channel.CLEAR_CLIPBOARD_HISTORY);
+  },
+
+  REMOVE_CLIPBOARD_HISTORY_ITEM: ({ id }) => {
+    emitter.emit(Channel.REMOVE_CLIPBOARD_HISTORY_ITEM, id);
+  },
+
   TOGGLE_BACKGROUND: (data) => {
     emitter.emit(KitEvent.ToggleBackground, data);
   },

@@ -59,6 +59,7 @@ export const configureAutoUpdate = async () => {
   autoUpdater.autoInstallOnAppQuit = true;
 
   let updateDownloaded = false;
+  let downloadProgressMade = false;
 
   const applyUpdate = async (info: any) => {
     const version = getVersion();
@@ -136,7 +137,9 @@ export const configureAutoUpdate = async () => {
       notification.show();
       const result = await autoUpdater.downloadUpdate();
       log.log(`Update downloaded:`, result);
-      await applyUpdate(info);
+      if (downloadProgressMade) {
+        await applyUpdate(info);
+      }
     } else if (version === newVersion) {
       log.info(
         `Blocking update. You're version is ${version} and found ${newVersion}`
@@ -174,6 +177,8 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('download-progress', (progressObj) => {
+    downloadProgressMade = true;
+
     let logMessage = `Download speed: ${progressObj.bytesPerSecond}`;
     logMessage = `${logMessage} - Downloaded ${progressObj.percent}%`;
     logMessage = `${logMessage} (${progressObj.transferred}/${progressObj.total})`;

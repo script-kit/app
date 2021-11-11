@@ -57,7 +57,7 @@ import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
 import { createTray } from './tray';
 import { cacheMenu, setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
-import { tick } from './tick';
+import { configureInterval } from './tick';
 import { clearPromptCache, createPromptWindow } from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -70,10 +70,6 @@ import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
 import { CONFIG_SPLASH, showError } from './main.dev.templates';
 import { scheduleScriptChanged } from './schedule';
-
-global.globalData = {
-  manualUpdateCheck: false,
-};
 
 let configWindow: BrowserWindow;
 
@@ -289,7 +285,7 @@ const ready = async () => {
     await createPromptWindow();
     setupLog(`Prompt window created`);
 
-    await tick();
+    await configureInterval();
     setupLog(`Tick started`);
 
     setupLog(`Kit.app is ready...`);

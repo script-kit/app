@@ -1,4 +1,5 @@
 /* eslint-disable import/prefer-default-export */
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { EventEmitter } from 'events';
 
 export enum KitEvent {
@@ -14,8 +15,8 @@ export enum KitEvent {
 }
 
 interface KitEmitter {
-  emit(event: KitEvent, data?: any): void;
-  on(event: KitEvent, listener: (data: any) => void): void;
+  emit(event: KitEvent | Channel, data?: any): void;
+  on(event: KitEvent | Channel, listener: (data: any) => void): void;
 }
 
 export const emitter: KitEmitter = new EventEmitter();
