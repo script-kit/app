@@ -113,7 +113,11 @@ export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[]) => {
     s(unfilteredChoices, a);
-    s(unfilteredPreview, Boolean(a.find((c) => c?.hasPreview)));
+    const maybePreview = Boolean(
+      a.find((c) => c?.hasPreview) || g(promptData)?.hasPreview
+    );
+
+    s(unfilteredPreview, maybePreview);
     if (a?.[0]?.name.match(/(?<=\[)\w(?=\])/i)) {
       const codes = a.map((choice) => {
         const code = choice?.name.match(/(?<=\[)\w(?=\])/i)?.[0] || '';
@@ -306,6 +310,11 @@ export const focusedChoiceAtom = atom(
     }
   }
 );
+
+export const hasPreviewAtom = atom<boolean>((g) => {
+  return Boolean(g(focusedChoice)?.hasPreview || g(promptData)?.hasPreview);
+});
+
 export const scoredChoices = atom(
   (g) => g(choices),
   (g, s, a: ScoredChoice[]) => {
