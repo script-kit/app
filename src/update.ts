@@ -130,8 +130,8 @@ export const configureAutoUpdate = async () => {
       log.info(`Downloading update`);
 
       const notification = new Notification({
-        title: `Kit.app update downloading...`,
-        body: `Updating to ${info.version} and relaunching`,
+        title: `Downloading Kit.app ${info.version}`,
+        body: `Will relaunch once download complete`,
         silent: true,
       });
 
