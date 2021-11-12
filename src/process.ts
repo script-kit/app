@@ -406,7 +406,7 @@ export const createMessageHandler =
       ) => void;
       channelFn(data);
     } else {
-      console.warn(`Channel ${data?.channel} not found on ${type}.`);
+      log.warn(`Channel ${data?.channel} not found on ${type}.`);
     }
   };
 
