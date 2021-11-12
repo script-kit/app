@@ -6,6 +6,7 @@ import {
   kitPath,
   appDbPath,
   KIT_FIRST_PATH,
+  kenvPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { spawn } from 'child_process';
