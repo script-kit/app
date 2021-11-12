@@ -187,8 +187,8 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('error', (message) => {
-    console.error('There was a problem updating the application');
-    console.error(message);
+    log.error('There was a problem updating the application');
+    log.error(message);
   });
 
   app.on('window-all-closed', (e: Event) => {
