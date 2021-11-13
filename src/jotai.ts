@@ -139,9 +139,9 @@ export const unfilteredChoicesAtom = atom(
     if (g(modeAtom) === Mode.GENERATE) {
       s(scoredChoices, []);
     }
-    if (a.length) {
-      s(scoredChoices, a.map(createScoredChoice));
-    }
+
+    s(scoredChoices, (a || []).map(createScoredChoice));
+    s(indexAtom, 0);
   }
 );
 
@@ -445,9 +445,9 @@ export const scriptAtom = atom(
     s(mouseEnabledAtom, 0);
     s(script, a);
     s(rawInputAtom, '');
-    s(unfilteredChoicesAtom, []);
+    // s(unfilteredChoicesAtom, []);
     s(ultraShortCodesAtom, []);
-    s(choices, []);
+    // s(choices, []);
     s(logHTMLAtom, '');
     s(indexAtom, 0);
     s(tabIndex, 0);
@@ -614,7 +614,7 @@ export const submitValueAtom = atom(
     );
     if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
     choicesTimeoutId = setTimeout(() => {
-      s(choices, []);
+      // s(choices, []);
     }, 250);
 
     asap(() => {
