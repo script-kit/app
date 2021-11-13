@@ -270,10 +270,14 @@ export default function App() {
               <>
                 {!!(ui & (UI.arg | UI.hotkey | UI.div)) &&
                   panelHTML?.length > 0 && (
-                    <Panel width={width} height={height} />
+                    <>
+                      <Panel width={width} height={height} />
+                    </>
                   )}
                 {!!(ui & UI.arg) && panelHTML?.length === 0 && (
-                  <List height={height} width={width} />
+                  <>
+                    <List height={height} width={width} />
+                  </>
                 )}
               </>
             )}

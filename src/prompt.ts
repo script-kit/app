@@ -10,6 +10,7 @@ import {
   Script,
   PromptData,
   PromptBounds,
+  PromptState,
 } from '@johnlindquist/kit/types/core';
 import { BrowserWindow, screen, app, Rectangle, session } from 'electron';
 import log from 'electron-log';
@@ -37,8 +38,6 @@ import {
   MIN_WIDTH,
 } from './defaults';
 import { ResizeData } from './types';
-
-type PromptState = 'collapsed' | 'expanded';
 
 let promptScript: Script;
 let promptWindow: BrowserWindow;
@@ -346,7 +345,7 @@ export const resize = debounce(
     const maxHeight =
       hasPanel ||
       (mode === Mode.GENERATE && !previewEnabled) ||
-      ui & (UI.form | UI.div | UI.editor | UI.hotkey)
+      ui & (UI.form | UI.div | UI.hotkey)
         ? Math.round(getCurrentScreen().bounds.height * (3 / 4))
         : Math.max(DEFAULT_HEIGHT, cachedHeight);
 
