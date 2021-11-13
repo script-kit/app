@@ -62,7 +62,7 @@ export default function Drop() {
   const containerRef = useMountMainHeight();
 
   return (
-    <div ref={containerRef} className="h-full w-full">
+    <div ref={containerRef} className="h-full w-full min-h-52">
       <div
         tabIndex={0}
         role="region"
@@ -75,7 +75,6 @@ export default function Drop() {
         }
         className={`
         w-full h-full
-        min-h-52
         drop-component
         flex flex-col justify-center items-center
         text-black dark:text-white text-xl

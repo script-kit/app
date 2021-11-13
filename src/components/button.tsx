@@ -165,9 +165,8 @@ export default function ChoiceButton({
           dark:bg-white dark:bg-opacity-5
             ${
               mouseEnabled
-                ? isMouseDown
-                  ? `shadow-inner bg-opacity-15 dark:bg-opacity-10`
-                  : `shadow hover:shadow-md`
+                ? `active:shadow-inner active:bg-opacity-15 active:dark:bg-opacity-10
+                  shadow hover:shadow-md`
                 : ``
             }
             `

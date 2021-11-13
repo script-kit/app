@@ -1,3 +1,4 @@
+/* eslint-disable no-bitwise */
 /* eslint-disable no-useless-escape */
 /* eslint-disable no-plusplus */
 /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -112,6 +113,9 @@ export const ultraShortCodesAtom = atom<{ code: string; id: string }[]>([]);
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[]) => {
+    s(panelHTML, ``);
+
+    if (a?.length === 0 && g(unfilteredChoices)?.length === 0) return;
     s(unfilteredChoices, a);
     const maybePreview = Boolean(
       a.find((c) => c?.hasPreview) || g(promptData)?.hasPreview
@@ -169,7 +173,14 @@ export const hintAtom = atom(
 
 export const modeAtom = atom<Mode>(Mode.FILTER);
 
-export const panelHTMLAtom = atom('');
+const panelHTML = atom<string>('');
+export const panelHTMLAtom = atom(
+  (g) => g(panelHTML),
+  (g, s, a: string) => {
+    s(unfilteredChoicesAtom, []);
+    s(panelHTML, a);
+  }
+);
 
 const previewHTML = atom('');
 export const previewHTMLAtom = atom(
@@ -463,12 +474,14 @@ export const scriptAtom = atom(
   }
 );
 
-export const isKitScriptAtom = atom((g) => {
-  (g(script) as Script).filePath.includes(kitPath());
+export const isKitScriptAtom = atom<boolean>((g) => {
+  return (g(script) as Script).filePath.includes(kitPath());
 });
 
 const topHeight = atom(88);
 const mainHeight = atom(0);
+
+const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter) => {
   const data: ResizeData = {
@@ -488,6 +501,13 @@ const resize = (g: Getter, s: Setter) => {
     tabIndex: g(tabIndex),
   };
 
+  const prevData = g(resizeData);
+  if (JSON.stringify(prevData) === JSON.stringify(data)) {
+    return;
+  }
+
+  s(resizeData, data);
+
   ipcRenderer.send(AppChannel.RESIZE, data);
 };
 
@@ -502,8 +522,12 @@ export const topHeightAtom = atom(
 export const mainHeightAtom = atom(
   (g) => g(mainHeight),
   (g, s, a: number) => {
-    s(mainHeight, a < 0 ? 0 : a);
-    resize(g, s);
+    const prevHeight = g(mainHeight);
+    if (Math.abs(a - prevHeight) > 2) {
+      s(mainHeight, a < 0 ? 0 : a);
+
+      resize(g, s);
+    }
   }
 );
 
@@ -536,7 +560,7 @@ export const promptDataAtom = atom(
       s(rawInputAtom, '');
       s(submittedAtom, false);
       s(uiAtom, a.ui);
-      s(panelHTMLAtom, '');
+      // s(panelHTMLAtom, '');
       s(placeholderAtom, a.placeholder);
       s(tabsAtom, a?.tabs || []);
       s(selectedAtom, a?.selected || '');
@@ -637,7 +661,7 @@ export const openAtom = atom(
       // s(choices, []);
       s(tabIndex, 0);
       s(rawInputAtom, '');
-      s(panelHTMLAtom, '');
+      // s(panelHTMLAtom, '');
       s(formHTMLAtom, '');
       s(promptDataAtom, null);
       s(hintAtom, '');
