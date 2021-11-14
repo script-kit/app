@@ -393,12 +393,14 @@ const kitMessageMap: ChannelHandler = {
 export const createMessageHandler =
   (type: ProcessType) => (data: MessageData) => {
     if (!data.kitScript) log.info(data);
-    log.info(
-      `${data.channel} ${type} process ${data.kitScript.replace(
-        /.*\//gi,
-        ''
-      )} id: ${data.pid}`
-    );
+    if (data.channel !== Channel.SET_PREVIEW) {
+      log.info(
+        `${data.channel} ${type} process ${data.kitScript.replace(
+          /.*\//gi,
+          ''
+        )} id: ${data.pid}`
+      );
+    }
 
     if (kitMessageMap[data?.channel as Channel]) {
       const channelFn = kitMessageMap[data.channel as Channel] as (
