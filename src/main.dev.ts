@@ -109,7 +109,9 @@ const options: SpawnSyncOptions = {
 };
 
 powerMonitor.on('resume', async () => {
-  await checkForUpdates();
+  setTimeout(async () => {
+    await checkForUpdates();
+  }, 5000);
 });
 
 if (process.env.NODE_ENV === 'production') {

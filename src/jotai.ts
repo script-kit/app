@@ -145,7 +145,10 @@ export const unfilteredChoicesAtom = atom(
     }
 
     s(scoredChoices, (a || []).map(createScoredChoice));
-    s(indexAtom, 0);
+    const prevCId = g(prevChoiceId);
+    const prevIndex = a.findIndex((c) => c?.id === prevCId);
+
+    s(indexAtom, prevIndex || 0);
   }
 );
 
@@ -326,19 +329,14 @@ export const hasPreviewAtom = atom<boolean>((g) => {
   return Boolean(g(focusedChoice)?.hasPreview || g(promptData)?.hasPreview);
 });
 
+const prevChoiceId = atom<string>('');
+
 export const scoredChoices = atom(
   (g) => g(choices),
   (g, s, a: ScoredChoice[]) => {
     if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
     s(submittedAtom, false);
 
-    const prevChoices = g(choices);
-    const prevIndex = g(index);
-    const prevChoice = prevChoices[prevIndex]?.item?.id;
-    const nextChoice = a[prevIndex]?.item?.id;
-    if (prevChoice !== nextChoice && !g(flaggedValueAtom)) {
-      // s(indexAtom, 0);
-    }
     s(choices, a);
 
     if (a?.length) {
@@ -643,11 +641,12 @@ export const submitValueAtom = atom(
 
     asap(() => {
       s(submittedAtom, true);
-      s(indexAtom, 0);
+      // s(indexAtom, 0);
       // s(rawInputAtom, '');
 
       s(flaggedValueAtom, ''); // clear after getting
       s(flagAtom, '');
+      s(prevChoiceId, g(focusedChoiceAtom)?.id || '');
       s(submitValue, value);
     });
   }

@@ -130,8 +130,8 @@ export const configureAutoUpdate = async () => {
       log.info(`Downloading update`);
 
       const notification = new Notification({
-        title: `Downloading Kit.app ${info.version}`,
-        body: `Will relaunch once download complete`,
+        title: `Downloading Kit.app update ${info.version}`,
+        body: `Kit.app will relaunch once download completes`,
         silent: true,
       });
 
@@ -189,6 +189,14 @@ export const configureAutoUpdate = async () => {
   autoUpdater.on('error', (message) => {
     log.error('There was a problem updating the application');
     log.error(message);
+
+    const notification = new Notification({
+      title: `There was a problem updating`,
+      body: `Please check logs in Kit tab`,
+      silent: true,
+    });
+
+    notification.show();
   });
 
   app.on('window-all-closed', (e: Event) => {
