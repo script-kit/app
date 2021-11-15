@@ -1,4 +1,9 @@
-import { app, BrowserWindow, Notification } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  Notification,
+  autoUpdater as electronAutoUpdater,
+} from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { existsSync } from 'fs';
@@ -86,7 +91,7 @@ export const configureAutoUpdate = async () => {
       log.info('Quit and exit 👋');
 
       try {
-        autoUpdater.quitAndInstall();
+        electronAutoUpdater.quitAndInstall();
       } catch (e) {
         log.warn(`autoUpdater.quitAndInstall error`, e);
       }
