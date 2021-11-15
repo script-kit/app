@@ -93,7 +93,7 @@ export const configureAutoUpdate = async () => {
       try {
         electronAutoUpdater.quitAndInstall();
       } catch (e) {
-        log.warn(`autoUpdater.quitAndInstall error`, e);
+        log.warn(`autoUpdater.quitAndInstall error:`, e);
       }
     }, 250);
 
