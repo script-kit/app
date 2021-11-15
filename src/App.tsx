@@ -183,6 +183,7 @@ export default function App() {
     [Channel.SET_PREVIEW]: second(setPreviewHTML),
     [Channel.SET_LOG]: second(setLogHtml),
     [Channel.SET_PLACEHOLDER]: second(setPlaceholder),
+    [Channel.SET_SUBMIT_VALUE]: second(setSubmitValue),
     [Channel.SET_TAB_INDEX]: second(setTabIndex),
     [Channel.SET_PROMPT_DATA]: second(setPromptData),
     [Channel.SET_THEME]: second(setTheme),

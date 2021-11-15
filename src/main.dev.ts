@@ -44,7 +44,7 @@ import { homedir } from 'os';
 import { ensureDir } from 'fs-extra';
 import { existsSync, readFileSync } from 'fs';
 import { chmod, lstat, readdir, readFile, rm, rmdir } from 'fs/promises';
-import { ProcessType } from '@johnlindquist/kit/cjs/enum';
+import { Channel, ProcessType } from '@johnlindquist/kit/cjs/enum';
 
 import {
   kenvPath,
@@ -58,7 +58,7 @@ import { createTray } from './tray';
 import { cacheMenu, setupWatchers } from './watcher';
 import { getAssetPath } from './assets';
 import { configureInterval } from './tick';
-import { clearPromptCache, createPromptWindow } from './prompt';
+import { clearPromptCache, createPromptWindow, sendToPrompt } from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
@@ -186,6 +186,8 @@ app.on('web-contents-created', (_, contents) => {
       await cliFromParams('new', url.searchParams);
     } else if (url.protocol === 'kit:') {
       await cliFromParams(url.pathname, url.searchParams);
+    } else if (url.protocol === 'submit:') {
+      sendToPrompt(Channel.SET_SUBMIT_VALUE, url.pathname);
     } else if (url.protocol.startsWith('http')) {
       shell.openExternal(url.href);
     }

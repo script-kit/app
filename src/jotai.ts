@@ -287,8 +287,10 @@ export const indexAtom = atom(
 
     const selected = g(selectedAtom);
     const id = choice?.id;
+
     if (!selected && id) {
       s(focusedChoiceAtom, choice);
+      s(prevChoiceId, id);
     }
   }
 );
@@ -360,7 +362,7 @@ const generateChoices = debounce((input, pid) => {
     input,
     pid,
   });
-}, 150);
+}, 100);
 
 type FocusValue = {
   input: string;
@@ -646,7 +648,6 @@ export const submitValueAtom = atom(
 
       s(flaggedValueAtom, ''); // clear after getting
       s(flagAtom, '');
-      s(prevChoiceId, g(focusedChoiceAtom)?.id || '');
       s(submitValue, value);
     });
   }
