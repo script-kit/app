@@ -460,6 +460,7 @@ export const scriptAtom = atom(
   (g) => g(script),
   (g, s, a: Script) => {
     console.clear();
+    s(tabsAtom, a?.tabs || []);
     s(mouseEnabledAtom, 0);
     s(script, a);
     s(rawInputAtom, '');
@@ -470,7 +471,6 @@ export const scriptAtom = atom(
     s(indexAtom, 0);
     s(tabIndex, 0);
     s(submittedAtom, false);
-    s(tabsAtom, a?.tabs || []);
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
     if (a.filePath === mainScriptPath) {
@@ -561,13 +561,13 @@ export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     if (a) {
+      s(tabsAtom, a?.tabs || []);
       s(rawOpen, true);
       s(rawInputAtom, '');
       s(submittedAtom, false);
       s(uiAtom, a.ui);
       // s(panelHTMLAtom, '');
       s(placeholderAtom, a.placeholder);
-      s(tabsAtom, a?.tabs || []);
       s(selectedAtom, a?.selected || '');
     }
     s(promptData, a);
