@@ -471,6 +471,7 @@ export const scriptAtom = atom(
     s(indexAtom, 0);
     s(tabIndex, 0);
     s(submittedAtom, false);
+
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
     if (a.filePath === mainScriptPath) {
