@@ -193,13 +193,13 @@ export const configureAutoUpdate = async () => {
     log.error('There was a problem updating the application');
     log.error(message);
 
-    const notification = new Notification({
-      title: `There was a problem updating`,
-      body: `Please check logs in Kit tab`,
-      silent: true,
-    });
+    // const notification = new Notification({
+    //   title: `There was a problem updating`,
+    //   body: `Please check logs in Kit tab`,
+    //   silent: true,
+    // });
 
-    notification.show();
+    // notification.show();
   });
 
   app.on('window-all-closed', (e: Event) => {
