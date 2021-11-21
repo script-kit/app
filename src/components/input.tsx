@@ -2,10 +2,8 @@
 /* eslint-disable react/prop-types */
 import React, { useCallback, KeyboardEvent, LegacyRef } from 'react';
 
-import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { Choice } from '@johnlindquist/kit/types/core';
 import { useAtom } from 'jotai';
-import { ipcRenderer } from 'electron';
 
 import {
   inputAtom,
@@ -111,20 +109,17 @@ export default function Input() {
           return;
         }
 
-        const tab = tabs.find((t) =>
-          t.toLowerCase().startsWith(inputValue?.toLowerCase())
-        );
+        if (inputValue?.length > 0) {
+          const tab = tabs.find((t) =>
+            t.toLowerCase().startsWith(inputValue?.toLowerCase())
+          );
 
-        if (tab) {
-          event.preventDefault();
+          if (tab) {
+            event.preventDefault();
 
-          const ti = tabs.indexOf(tab);
-          setTabIndex(ti);
-          ipcRenderer.send(Channel.TAB_CHANGED, {
-            tab,
-            input: inputValue,
-            pid,
-          });
+            const ti = tabs.indexOf(tab);
+            setTabIndex(ti);
+          }
         }
       }
     },
