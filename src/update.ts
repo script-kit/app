@@ -1,9 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  Notification,
-  autoUpdater as electronAutoUpdater,
-} from 'electron';
+import { app, BrowserWindow, Notification } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { existsSync } from 'fs';
@@ -91,35 +86,38 @@ export const configureAutoUpdate = async () => {
       log.info('Quit and exit 👋');
 
       try {
-        electronAutoUpdater.quitAndInstall();
+        autoUpdater.quitAndInstall();
       } catch (e) {
         log.warn(`autoUpdater.quitAndInstall error:`, e);
+
+        const KIT = kitPath();
+
+        log.info(`Before relaunch attempt`);
+
+        try {
+          const child = spawn(`./script`, [`./cli/open-app.js`], {
+            cwd: KIT,
+            detached: true,
+            env: {
+              KIT,
+              KENV: kenvPath(),
+              PATH: KIT_FIRST_PATH,
+            },
+          });
+
+          child.on('message', (data) => {
+            log.info(data.toString());
+          });
+        } catch (spawnError) {
+          log.warn(`spawn open-app error`, spawnError);
+        }
+
+        log.info(`After relaunch attempt`);
+
+        app.quit();
+        app.exit();
       }
     }, 250);
-
-    const KIT = kitPath();
-
-    log.info(`Before relaunch attempt`);
-
-    try {
-      const child = spawn(`./script`, [`./cli/open-app.js`], {
-        cwd: KIT,
-        detached: true,
-        env: {
-          KIT,
-          KENV: kenvPath(),
-          PATH: KIT_FIRST_PATH,
-        },
-      });
-
-      child.on('message', (data) => {
-        log.info(data.toString());
-      });
-    } catch (e) {
-      log.warn(`spawn open-app error`, e);
-    }
-
-    log.info(`After relaunch attempt`);
   };
 
   autoUpdater.on('update-available', async (info) => {
