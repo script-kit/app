@@ -55,6 +55,7 @@ export default function Editor() {
   }, [open, editorRef]);
 
   const beforeMount = useCallback((monaco) => {
+    /* eslint-disable @typescript-eslint/no-use-before-define */
     monaco.editor.defineTheme('kit-dark', nightOwl);
     monaco.editor.defineTheme('kit-light', {
       base: 'vs',
@@ -68,6 +69,7 @@ export default function Editor() {
 
   const onMount = useCallback(
     (editorInstance: editor.IStandaloneCodeEditor) => {
+      if (typeof global?.exports === 'undefined') global.exports = {};
       editorInstance.focus();
       editorRef.current = editorInstance;
 

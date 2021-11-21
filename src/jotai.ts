@@ -20,7 +20,7 @@ import {
   EditorOptions,
 } from '@johnlindquist/kit/types/kitapp';
 
-import { clamp, debounce, drop } from 'lodash';
+import { clamp, debounce, drop, get } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
 import { ResizeData, ScoredChoice } from './types';
@@ -317,8 +317,7 @@ export const focusedChoiceAtom = atom(
       if (typeof choice?.preview === 'string') {
         s(previewHTMLAtom, choice?.preview);
       }
-
-      sendChoiceFocused({
+      ipcRenderer.send(Channel.CHOICE_FOCUSED, {
         id,
         input: g(rawInputAtom),
         pid: g(pidAtom),
@@ -328,7 +327,10 @@ export const focusedChoiceAtom = atom(
 );
 
 export const hasPreviewAtom = atom<boolean>((g) => {
-  return Boolean(g(focusedChoice)?.hasPreview || g(promptData)?.hasPreview);
+  return (
+    Boolean(g(focusedChoice)?.hasPreview || g(promptData)?.hasPreview) ||
+    (g(focusedChoiceAtom) === null && Boolean(g(previewHTMLAtom)?.length))
+  );
 });
 
 const prevChoiceId = atom<string>('');
@@ -340,12 +342,26 @@ export const scoredChoices = atom(
     s(submittedAtom, false);
 
     s(choices, a);
+    const isFilter = g(uiAtom) === UI.arg && g(modeAtom) === Mode.FILTER;
 
     if (a?.length) {
       const selected = g(selectedAtom);
 
       if (!selected) {
         s(focusedChoiceAtom, a[0]?.item);
+      }
+
+      ipcRenderer.send(Channel.CHOICES, {
+        input: g(inputAtom),
+        pid: g(pidAtom),
+      });
+    } else {
+      s(focusedChoiceAtom, null);
+      if (isFilter) {
+        ipcRenderer.send(Channel.NO_CHOICES, {
+          input: g(inputAtom),
+          pid: g(pidAtom),
+        });
       }
     }
   }
@@ -368,9 +384,6 @@ type FocusValue = {
   input: string;
   id: string;
   pid: number;
-};
-const sendChoiceFocused = (value: FocusValue) => {
-  ipcRenderer.send(Channel.CHOICE_FOCUSED, value);
 };
 
 const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
@@ -463,13 +476,11 @@ export const scriptAtom = atom(
     s(indexAtom, 0);
     s(tabIndex, 0);
     s(submittedAtom, false);
-    s(tabsAtom, a?.tabs || []);
+    // s(tabsAtom, a?.tabs || []);
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
     if (a.filePath === mainScriptPath) {
       s(previewHTMLAtom, g(cachedMainPreview));
-    } else {
-      s(previewHTMLAtom, '');
     }
   }
 );

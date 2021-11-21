@@ -62,6 +62,24 @@ export const startIpc = () => {
   );
 
   ipcMain.on(
+    Channel.CHOICES,
+    handleChannel(({ child }, { input }) => {
+      if (child && !isUndefined(input)) {
+        child?.send({ channel: Channel.CHOICES, input });
+      }
+    })
+  );
+
+  ipcMain.on(
+    Channel.NO_CHOICES,
+    handleChannel(({ child }, { input }) => {
+      if (child && !isUndefined(input)) {
+        child?.send({ channel: Channel.NO_CHOICES, input });
+      }
+    })
+  );
+
+  ipcMain.on(
     Channel.PROMPT_ERROR,
     debounce((_event, { error }) => {
       log.warn(error);

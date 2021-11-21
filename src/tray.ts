@@ -58,6 +58,7 @@ export const createTray = async (checkDb = false) => {
     return;
   }
   try {
+    log.info(`☑ Enable tray`);
     tray = new Tray(trayIcon);
     tray.setIgnoreDoubleClickEvents(true);
 
@@ -71,18 +72,20 @@ export const createTray = async (checkDb = false) => {
 export const getTray = (): Tray | null => tray;
 
 export const destroyTray = () => {
+  log.info(`◽️ Disable tray`);
   tray?.destroy();
   tray = null;
 };
 
 export const toggleTray = async () => {
   const appDb = await getAppDb();
-  if (tray) {
-    destroyTray();
-    appDb.tray = false;
-  } else {
-    createTray();
-    appDb.tray = true;
+  const trayEnabled = appDb.tray;
+  const changed = Boolean(tray) !== trayEnabled;
+  if (changed) {
+    if (tray) {
+      destroyTray();
+    } else {
+      createTray();
+    }
   }
-  await appDb.write();
 };

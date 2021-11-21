@@ -20,6 +20,8 @@ import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
 import { emitter, KitEvent } from './events';
 import { updateScripts } from './state';
+import { toggleTray } from './tray';
+import { maybeSetLogin } from './settings';
 
 export const cacheMenu = debounce(async () => {
   await updateScripts();
@@ -96,6 +98,8 @@ export const setupWatchers = async () => {
 
   kitAppDbWatcher.on('change', async () => {
     await cacheMenu();
+    await toggleTray();
+    await maybeSetLogin();
   });
 
   scriptsWatcher.on('all', onScriptsChanged);

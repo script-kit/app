@@ -13,7 +13,6 @@ import { ChildProcess, fork } from 'child_process';
 import { Channel, Mode, ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { Choice, Script, PromptData } from '@johnlindquist/kit/types/core';
 import { MessageData } from '@johnlindquist/kit/types/kitapp';
-import { getAppDb } from '@johnlindquist/kit/cjs/db';
 
 import {
   resolveToScriptPath,
@@ -65,6 +64,7 @@ import { getVersion } from './version';
 import { toggleTray } from './tray';
 
 import { getClipboardHistory } from './tick';
+import { maybeSetLogin } from './settings';
 
 export const checkScriptChoices = (data: MessageData) => {
   // console.log(`🤔 checkScriptChoices ${data?.choices?.length}`);
@@ -231,10 +231,6 @@ const kitMessageMap: ChannelHandler = {
     emitter.emit(KitEvent.ToggleBackground, data);
   },
 
-  TOGGLE_TRAY: () => {
-    toggleTray();
-  },
-
   GET_SCREEN_INFO: toProcess(({ child }) => {
     const cursor = screen.getCursorScreenPoint();
     // Get display with cursor
@@ -270,13 +266,9 @@ const kitMessageMap: ChannelHandler = {
       await setScript(data.script as Script);
     }
   }),
-
-  SET_LOGIN: async (data: any) => {
-    app.setLoginItemSettings(data);
-    const appDb = await getAppDb();
-    appDb.openAtLogin = data?.openAtLogin;
-    await appDb.write();
-  },
+  SET_SUBMIT_VALUE: toProcess(async (_, data) => {
+    sendToPrompt(Channel.SET_SUBMIT_VALUE, data.value);
+  }),
 
   SET_MODE: (data) => {
     if (data.mode === Mode.HOTKEY) {

@@ -1482,19 +1482,19 @@
   resolved "https://registry.npmjs.org/@mdn/browser-compat-data/-/browser-compat-data-3.3.14.tgz"
   integrity sha512-n2RC9d6XatVbWFdHLimzzUJxJ1KY8LdjqrW6YvGPiRmsHkhOUx74/Ct10x5Yo7bC/Jvqx7cDEW8IMPv/+vwEzA==
 
-"@monaco-editor/loader@^1.1.1":
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/@monaco-editor/loader/-/loader-1.1.1.tgz"
-  integrity sha512-mkT4r4xDjIyOG9o9M6rJDSzEIeonwF80sYErxEvAAL4LncFVdcbNli8Qv6NDqF6nyv6sunuKkDzo4iFjxPL+uQ==
+"@monaco-editor/loader@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@monaco-editor/loader/-/loader-1.2.0.tgz#373fad69973384624e3d9b60eefd786461a76acd"
+  integrity sha512-cJVCG/T/KxXgzYnjKqyAgsKDbH9mGLjcXxN6AmwumBwa2rVFkwvGcUj1RJtD0ko4XqLqJxwqsN/Z/KURB5f1OQ==
   dependencies:
     state-local "^1.0.6"
 
-"@monaco-editor/react@^4.2.0":
-  version "4.2.2"
-  resolved "https://registry.npmjs.org/@monaco-editor/react/-/react-4.2.2.tgz"
-  integrity sha512-yDDct+f/mZ946tJEXudvmMC8zXDygkELNujpJGjqJ0gS3WePZmS/IwBBsuJ8JyKQQC3Dy/+Ivg1sSpW+UvCv9g==
+"@monaco-editor/react@^4.3.1":
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/@monaco-editor/react/-/react-4.3.1.tgz#d65bcbf174c39b6d4e7fec43d0cddda82b70a12a"
+  integrity sha512-f+0BK1PP/W5I50hHHmwf11+Ea92E5H1VZXs+wvKplWUWOfyMa1VVwqkJrXjRvbcqHL+XdIGYWhWNdi4McEvnZg==
   dependencies:
-    "@monaco-editor/loader" "^1.1.1"
+    "@monaco-editor/loader" "^1.2.0"
     prop-types "^15.7.2"
 
 "@nodelib/fs.scandir@2.1.4":
@@ -12259,14 +12259,14 @@ rc@^1.2.8:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
-react-dom@^18.0.0-alpha-fd5e01c2e-20210913:
-  version "18.0.0-alpha-fd5e01c2e-20210913"
-  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-18.0.0-alpha-fd5e01c2e-20210913.tgz#4f09435d727a12fb2bc319daa43db313ac57e5a8"
-  integrity sha512-TC5tvZF9sspBjxETtTD7bKkc72drM9BIQvDI0GnSxIj4VKzq1i1aAJPZSdSKPOZ1kgqRrXWRFF5YTcgzOIC/Vw==
+react-dom@^18.0.0-beta-149b420f6-20211119:
+  version "18.0.0-beta-149b420f6-20211119"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-18.0.0-beta-149b420f6-20211119.tgz#dcf05faf52c6206db642dd50ae13a6647ee39fac"
+  integrity sha512-r8olPiJVDGRLHjF+LMzLBPUWSbG6OXuNInaC/kcJkDwBW8rX2gkOypGvylP5i3VqtpiPX6CHyD599aypa3wpPA==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
-    scheduler "0.21.0-alpha-fd5e01c2e-20210913"
+    scheduler "0.21.0-beta-149b420f6-20211119"
 
 react-hotkeys-hook@^3.3.2:
   version "3.4.0"
@@ -12377,10 +12377,10 @@ react-window@^1.8.6:
     "@babel/runtime" "^7.0.0"
     memoize-one ">=3.1.1 <6"
 
-react@^18.0.0-alpha-fd5e01c2e-20210913:
-  version "18.0.0-alpha-fd5e01c2e-20210913"
-  resolved "https://registry.yarnpkg.com/react/-/react-18.0.0-alpha-fd5e01c2e-20210913.tgz#3e67ccd4a41a187958788d416b6a19595b8669ab"
-  integrity sha512-SWeUmHARw0qSM8LcpGzpw3UbyCTVNcJTuCHmPIvgHMvZrs8R8wwk2nil5BQ+LZ8q0iNwwU0ilkLTWIqCQ5d44w==
+react@^18.0.0-beta-149b420f6-20211119:
+  version "18.0.0-beta-149b420f6-20211119"
+  resolved "https://registry.yarnpkg.com/react/-/react-18.0.0-beta-149b420f6-20211119.tgz#4acc03dddb74a93aec83a8d6aadeb6b503061f4b"
+  integrity sha512-cxLRM4Yqhe5fYAeYyMEGphtDnSJmKrvrsQyXskcVViGN/EmONHbFfwt1lRUCiZyXX44+/NOgIJ1OjGX2rHmpdQ==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
@@ -12956,10 +12956,10 @@ saxes@^5.0.1:
   dependencies:
     xmlchars "^2.2.0"
 
-scheduler@0.21.0-alpha-fd5e01c2e-20210913:
-  version "0.21.0-alpha-fd5e01c2e-20210913"
-  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.21.0-alpha-fd5e01c2e-20210913.tgz#b44ab3a8bddc6ed85ab4ec656419544288be4616"
-  integrity sha512-ylcV55/U6e67/3tjL16ognZk14UX/J4/C1N0XLZjqKV+XYS0QSxdwin/kdqxueCCbDLh0xLroq/G2lVTbFHP0Q==
+scheduler@0.21.0-beta-149b420f6-20211119:
+  version "0.21.0-beta-149b420f6-20211119"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.21.0-beta-149b420f6-20211119.tgz#066b24dc2df762a6197c725930dcc7013de40ad2"
+  integrity sha512-IShAO9AhLkyiHY5wujThaUypxGHJj8IBdTTlerl040NzV/edrGeFTeTEpn4EjEhQzV0hVW9Oo58Fps3p5wtnww==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"

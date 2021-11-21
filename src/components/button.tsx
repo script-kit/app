@@ -88,14 +88,11 @@ export default function ChoiceButton({
     },
     [index, onIndexSubmit]
   );
-  const onMouseEnter = useCallback(
-    (e) => {
-      if (mouseEnabled) {
-        onIndexChange(index);
-      }
-    },
-    [index, mouseEnabled, onIndexChange]
-  );
+  const onMouseEnter = useCallback(() => {
+    if (mouseEnabled) {
+      onIndexChange(index);
+    }
+  }, [index, mouseEnabled, onIndexChange]);
 
   const [imageFail, setImageFail] = useState(false);
 
@@ -197,7 +194,7 @@ export default function ChoiceButton({
         parse(choice?.html, {
           replace: (domNode: any) => {
             if (domNode?.attribs && index === currentIndex)
-              domNode.attribs.class = 'focused';
+              domNode.attribs.class += ' focused';
             return domNode;
           },
         })
