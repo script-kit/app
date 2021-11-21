@@ -70,6 +70,7 @@ import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
 import { CONFIG_SPLASH, showError } from './main.dev.templates';
 import { scheduleScriptChanged } from './schedule';
+import { maybeSetLogin } from './settings';
 
 let configWindow: BrowserWindow;
 
@@ -165,12 +166,13 @@ const cliFromParams = async (cli: string, params: URLSearchParams) => {
 
 const newFromProtocol = async (u: string) => {
   const url = new URL(u);
+  console.log({ url });
   if (url.protocol === 'kit:') {
     const pathname = url.pathname.replace('//', '');
     if (pathname === 'new') {
       await cliFromParams('new', url.searchParams);
     }
-    if (pathname === 'snippet') {
+    if (pathname === 'snippet' || url.host === 'snippet') {
       await cliFromParams('snippet', url.searchParams);
     }
   }
@@ -283,6 +285,7 @@ const ready = async () => {
     await prepareProtocols();
     setupLog(`Protocols Prepared`);
     await createTray(true);
+    await maybeSetLogin();
     setupLog(`Tray created`);
     await setupWatchers();
     setupLog(`Shortcuts Assigned`);
