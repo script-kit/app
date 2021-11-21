@@ -573,7 +573,6 @@ export const promptDataAtom = atom(
       s(uiAtom, a.ui);
       // s(panelHTMLAtom, '');
       s(placeholderAtom, a.placeholder);
-      s(tabsAtom, a?.tabs || []);
       s(selectedAtom, a?.selected || '');
     }
     s(promptData, a);
