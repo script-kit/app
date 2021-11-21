@@ -109,6 +109,7 @@ export const startIpc = () => {
       emitter.emit(KitEvent.ResumeShortcuts);
 
       if (child && tab) {
+        log.info(`TAB_CHANGED:`, { tab, input, pid });
         child?.send({ channel: Channel.TAB_CHANGED, tab, input, pid });
       }
     })

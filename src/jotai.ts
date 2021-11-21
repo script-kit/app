@@ -20,7 +20,7 @@ import {
   EditorOptions,
 } from '@johnlindquist/kit/types/kitapp';
 
-import { clamp, debounce, drop, get } from 'lodash';
+import { clamp, debounce, drop } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
 import { ResizeData, ScoredChoice } from './types';
@@ -380,12 +380,6 @@ const generateChoices = debounce((input, pid) => {
   });
 }, 100);
 
-type FocusValue = {
-  input: string;
-  id: string;
-  pid: number;
-};
-
 const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
   if (!a) return false;
   const result = search(qs, a);
@@ -440,7 +434,7 @@ export const tabIndexAtom = atom(
     s(tabIndex, a);
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
-    if (a !== 0) s(previewHTMLAtom, '');
+
     ipcRenderer.send(Channel.TAB_CHANGED, {
       tab: g(tabsAtom)[a],
       input: g(rawInputAtom),
