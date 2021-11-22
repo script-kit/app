@@ -38,6 +38,7 @@ module.exports = {
         /^bg/,
         /^self/,
         /^italic/,
+        /^whitespace/,
         /^min/,
         /^max/,
         /^grid/,
@@ -136,7 +137,7 @@ module.exports = {
             },
             li: {
               listStylePosition: 'outside',
-            },            
+            },
             'p:first-of-type, h2:first-of-type, h3:first-of-type': {
               marginTop: 0,
             },
@@ -147,13 +148,13 @@ module.exports = {
               color: theme('colors.black'),
               fontSize: '95%',
             },
-            'p > label':{
-              paddingTop: "5rem"
+            'p > label': {
+              paddingTop: '5rem',
             },
-            input:{
+            input: {
               margin: '0 .25rem 0 .75rem',
             },
-            select:{
+            select: {
               margin: '0 .75rem 0 .5rem',
             },
             'input:focus': {
@@ -162,38 +163,34 @@ module.exports = {
             'input:focus-visible': {
               outline: `1px solid ${theme('colors.black')}`,
             },
-            'input:not([type]),select':{
+            'input:not([type]),select': {
               border: `1px solid ${theme('colors.black')}`,
               color: theme('colors.black'),
-              padding: '0 2rem 0 0.5rem',              
+              padding: '0 2rem 0 0.5rem',
             },
-            'input:checked':{
-              color: theme('colors.black'),          
+            'input:checked': {
+              color: theme('colors.black'),
               outline: 'none',
             },
-            'input[type="checkbox"]':{
+            'input[type="checkbox"]': {
               cursor: 'pointer',
-
             },
-            'input[type="radio"]':{
+            'input[type="radio"]': {
               cursor: 'pointer',
-              marginRight: '.5rem'
+              marginRight: '.5rem',
             },
-            'input[type="submit"]':{
-              
+            'input[type="submit"]': {
               outline: '1px solid ' + theme('colors.black'),
-              padding: '0.25rem .5rem',              
+              padding: '0.25rem .5rem',
             },
-            'input[type="submit"]:hover':{
+            'input[type="submit"]:hover': {
               cursor: 'pointer',
-              backgroundColor: `rgba(0, 0, 0, 33%)`
+              backgroundColor: `rgba(0, 0, 0, 33%)`,
             },
-            
-            'ul > li > *:last-child':{
-            
-                  marginBottom: '.25rem'
-                
-            }
+
+            'ul > li > *:last-child': {
+              marginBottom: '.25rem',
+            },
           },
         },
         dark: {
@@ -221,19 +218,19 @@ module.exports = {
             'input:focus-visible': {
               outline: `1px solid ${theme('colors.white')}`,
             },
-            'input:not([type]),select':{
+            'input:not([type]),select': {
               border: `1px solid ${theme('colors.white')}`,
               color: theme('colors.white'),
-              padding: '0 2rem 0 0.5rem',              
+              padding: '0 2rem 0 0.5rem',
             },
-            'input[type="submit"]':{
+            'input[type="submit"]': {
               outline: '1px solid white',
               padding: '0.25rem .5rem',
-              color: theme('colors.secondary.white'),              
+              color: theme('colors.secondary.white'),
             },
-            'input[type="submit"]:hover':{
+            'input[type="submit"]:hover': {
               cursor: 'pointer',
-              backgroundColor: `rgba(255, 255, 255, 33%)`
+              backgroundColor: `rgba(255, 255, 255, 33%)`,
             },
           },
         },
