@@ -61,10 +61,7 @@ import { show, showDevTools } from './show';
 import { showNotification } from './notifications';
 
 import { getVersion } from './version';
-import { toggleTray } from './tray';
-
 import { getClipboardHistory } from './tick';
-import { maybeSetLogin } from './settings';
 
 export const checkScriptChoices = (data: MessageData) => {
   // console.log(`🤔 checkScriptChoices ${data?.choices?.length}`);
