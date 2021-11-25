@@ -15,7 +15,6 @@ import {
   scoredChoices,
   submitValueAtom,
   previewEnabledAtom,
-  focusedChoiceAtom,
   hasPreviewAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';

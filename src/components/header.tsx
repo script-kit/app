@@ -7,9 +7,11 @@ import { XIcon } from '@heroicons/react/outline';
 import {
   choicesAtom,
   darkAtom,
+  descriptionAtom,
   isMouseDownAtom,
   mainHeightAtom,
   mouseEnabledAtom,
+  nameAtom,
   openAtom,
   panelHTMLAtom,
   promptDataAtom,
@@ -34,6 +36,8 @@ export default function Header() {
   const [dark] = useAtom(darkAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [, setOpen] = useAtom(openAtom);
+  const [description] = useAtom(descriptionAtom);
+  const [name] = useAtom(nameAtom);
 
   const onXClick = useCallback(() => {
     setOpen(false);
@@ -64,7 +68,7 @@ export default function Header() {
       `}
       >
         <span className="pr-1">
-          {script?.description || ''}
+          {description}
           {/* {promptData?.ignoreBlur && 'Ignore Blur'} */}
           {/* {mouseEnabled ? 'enabled' : 'disabled'} */}
           {/* {dark ? 'Dark' : 'Light'} */}
@@ -76,7 +80,7 @@ export default function Header() {
           {`top: ${topHeight} - main: ${mainHeight} - max: ${maxHeight} -`}
         </span> */}
         <span className="flex flex-col items-end pl-1 text-right">
-          <span>{script?.menu}</span>
+          <span>{name}</span>
           <span>
             {script?.twitter && (
               <a href={`https://twitter.com/${script?.twitter.slice(1)}`}>

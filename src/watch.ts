@@ -53,8 +53,11 @@ const addWatch = (watchString: string, filePath: string) => {
 
 export const watchScriptChanged = ({
   filePath,
+  kenv,
   watch: watchString,
 }: Script) => {
+  if (kenv !== '') return;
+
   if (!watchString && watchMap.get(filePath)) {
     removeWatch(filePath);
     return;

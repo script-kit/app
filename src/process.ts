@@ -11,8 +11,12 @@ import sizeOf from 'image-size';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
 import { Channel, Mode, ProcessType } from '@johnlindquist/kit/cjs/enum';
-import { Choice, Script, PromptData } from '@johnlindquist/kit/types/core';
-import { MessageData } from '@johnlindquist/kit/types/kitapp';
+import { Choice, Script } from '@johnlindquist/kit/types/core';
+import {
+  ChannelMap,
+  GenericSendData,
+  SendData,
+} from '@johnlindquist/kit/types/kitapp';
 
 import {
   resolveToScriptPath,
@@ -58,12 +62,14 @@ import {
 
 import { emitter, KitEvent } from './events';
 import { show, showDevTools } from './show';
-import { showNotification } from './notifications';
 
 import { getVersion } from './version';
 import { getClipboardHistory } from './tick';
 
-export const checkScriptChoices = (data: MessageData) => {
+export const checkScriptChoices = (data: {
+  choices: Choice[];
+  scripts: boolean;
+}) => {
   // console.log(`🤔 checkScriptChoices ${data?.choices?.length}`);
   if (data?.scripts) {
     const dataChoices: Script[] = (data?.choices || []) as Script[];
@@ -124,14 +130,14 @@ export const checkScriptChoices = (data: MessageData) => {
 };
 
 export type ChannelHandler = {
-  [key in Channel]?: (data: MessageData) => void;
+  [key in keyof ChannelMap]: (data: SendData<key>) => void;
 };
 
-const SHOW_IMAGE = async (data: MessageData) => {
+const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
   setBlurredByKit();
 
-  const { image, options } = data;
-  const imgOptions = url.parse(image.src);
+  const { image, options } = data.value;
+  const imgOptions = url.parse((image as { src: string }).src);
 
   // eslint-disable-next-line promise/param-names
   const { width, height } = await new Promise((resolveImage, rejectImage) => {
@@ -162,8 +168,10 @@ const SHOW_IMAGE = async (data: MessageData) => {
 };
 
 const toProcess =
-  (fn: (processInfo: ProcessInfo, data: MessageData) => void) =>
-  (data: MessageData) => {
+  <K extends keyof ChannelMap>(
+    fn: (processInfo: ProcessInfo, data: SendData<K>) => void
+  ) =>
+  (data: SendData<K>) => {
     const processInfo = processes.getByPid(data?.pid);
 
     if (processInfo) {
@@ -174,61 +182,61 @@ const toProcess =
   };
 
 const kitMessageMap: ChannelHandler = {
-  CONSOLE_LOG: (data) => {
-    getLog(data.kitScript).info(data.log);
-    setLog(data.log as string);
+  [Channel.CONSOLE_LOG]: (data) => {
+    getLog(data.kitScript).info(data.value);
+    setLog(data.value);
   },
 
   CONSOLE_WARN: (data) => {
-    getLog(data.kitScript).warn(data.warn);
-    setLog(data.warn as string);
+    getLog(data.kitScript).warn(data.value);
+    setLog(data.value);
   },
 
   COPY_PATH_AS_PICTURE: (data) => {
-    clipboard.writeImage(data.path as any);
+    clipboard.writeImage(data.value as any);
   },
 
-  GET_SCRIPTS_STATE: toProcess(({ child }) => {
+  GET_SCRIPTS_STATE: toProcess(({ child }, { channel }) => {
     child?.send({
-      channel: 'SCRIPTS_STATE',
+      channel,
       schedule: getSchedule(),
       tasks: getBackgroundTasks(),
     });
   }),
 
-  GET_SCHEDULE: toProcess(({ child }) => {
-    child?.send({ channel: 'SCHEDULE', schedule: getSchedule() });
+  GET_SCHEDULE: toProcess(({ child }, { channel }) => {
+    child?.send({ channel, schedule: getSchedule() });
   }),
 
-  GET_BOUNDS: toProcess(({ child }) => {
+  GET_BOUNDS: toProcess(({ child }, { channel }) => {
     const bounds = getPromptBounds();
-    child?.send({ channel: 'BOUNDS', bounds });
+    child?.send({ channel, bounds });
   }),
 
-  GET_BACKGROUND: toProcess(({ child }) => {
-    child?.send({ channel: 'BACKGROUND', tasks: getBackgroundTasks() });
+  GET_BACKGROUND: toProcess(({ child }, { channel }) => {
+    child?.send({ channel, tasks: getBackgroundTasks() });
   }),
 
-  GET_CLIPBOARD_HISTORY: toProcess(({ child }) => {
+  GET_CLIPBOARD_HISTORY: toProcess(({ child }, { channel }) => {
     child?.send({
-      channel: 'CLIPBOARD_HISTORY',
+      channel,
       history: getClipboardHistory(),
     });
   }),
 
-  CLEAR_CLIPBOARD_HISTORY: ({ id }) => {
+  CLEAR_CLIPBOARD_HISTORY: () => {
     emitter.emit(Channel.CLEAR_CLIPBOARD_HISTORY);
   },
 
-  REMOVE_CLIPBOARD_HISTORY_ITEM: ({ id }) => {
-    emitter.emit(Channel.REMOVE_CLIPBOARD_HISTORY_ITEM, id);
+  REMOVE_CLIPBOARD_HISTORY_ITEM: (data) => {
+    emitter.emit(Channel.REMOVE_CLIPBOARD_HISTORY_ITEM, data.value);
   },
 
   TOGGLE_BACKGROUND: (data) => {
-    emitter.emit(KitEvent.ToggleBackground, data);
+    emitter.emit(KitEvent.ToggleBackground, data.value);
   },
 
-  GET_SCREEN_INFO: toProcess(({ child }) => {
+  GET_SCREEN_INFO: toProcess(({ child }, { channel }) => {
     const cursor = screen.getCursorScreenPoint();
     // Get display with cursor
     const activeScreen = screen.getDisplayNearestPoint({
@@ -236,16 +244,14 @@ const kitMessageMap: ChannelHandler = {
       y: cursor.y,
     });
 
-    child?.send({ channel: 'SCREEN_INFO', activeScreen });
+    child?.send({ channel, activeScreen });
   }),
 
-  GET_MOUSE: toProcess(({ child }) => {
+  GET_MOUSE: toProcess(({ child }, { channel }) => {
     const mouseCursor = screen.getCursorScreenPoint();
-    child?.send({ channel: 'MOUSE', mouseCursor });
+    child?.send({ channel, mouseCursor });
   }),
-  GET_SERVER_STATE: toProcess(({ child }) => {
-    child?.send({ channel: 'SERVER', ...serverState });
-  }),
+
   HIDE_APP: toProcess(({ child, type }) => {
     if (type === ProcessType.Prompt) {
       setAppHidden(true);
@@ -258,9 +264,9 @@ const kitMessageMap: ChannelHandler = {
     app.exit();
   },
   SET_SCRIPT: toProcess(async ({ type, scriptPath }, data) => {
-    log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.script.filePath);
-    if (type === ProcessType.Prompt && scriptPath !== data.filePath) {
-      await setScript(data.script as Script);
+    log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.value.filePath);
+    if (type === ProcessType.Prompt && scriptPath !== data.value.filePath) {
+      await setScript(data.value);
     }
   }),
   SET_SUBMIT_VALUE: toProcess(async (_, data) => {
@@ -268,38 +274,38 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_MODE: (data) => {
-    if (data.mode === Mode.HOTKEY) {
+    if (data.value === Mode.HOTKEY) {
       emitter.emit(KitEvent.PauseShortcuts);
     }
-    setMode(data.mode as Mode);
+    setMode(data.value);
   },
 
   SET_HINT: (data) => {
-    setHint(data.hint as string);
+    setHint(data.value);
   },
 
   SET_BOUNDS: (data) => {
-    setBounds(data.bounds);
+    setBounds(data.value);
   },
 
   SET_IGNORE_BLUR: (data) => {
-    setIgnoreBlur(data?.ignore);
+    setIgnoreBlur(data.value);
   },
 
   SET_INPUT: (data) => {
-    setInput(data.input as string);
+    setInput(data.value);
   },
 
   SET_PLACEHOLDER: (data) => {
-    setPlaceholder(data.text as string);
+    setPlaceholder(data.value);
   },
 
   SET_PANEL: (data) => {
-    setPanel(data.html as string);
+    setPanel(data.value);
   },
 
   SET_PREVIEW: (data) => {
-    setPreview(data.html as string);
+    setPreview(data.value);
   },
 
   CONSOLE_CLEAR: () => {
@@ -307,37 +313,37 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_TAB_INDEX: (data) => {
-    setTabIndex(data.tabIndex as number);
+    setTabIndex(data.value);
   },
   DEV_TOOLS: (data) => {
-    showDevTools(data?.data);
+    showDevTools(data.value);
   },
-  SHOW_TEXT: (data) => {
-    setBlurredByKit();
+  // SHOW_TEXT: (data) => {
+  //   setBlurredByKit();
 
-    show(
-      String.raw`<div class="text-xs font-mono">${data.text}</div>`,
-      data.options
-    );
-  },
-  SHOW_NOTIFICATION: (data) => {
-    setBlurredByKit();
+  //   show(
+  //     String.raw`<div class="text-xs font-mono">${data.value}</div>`,
+  //     data.options
+  //   );
+  // },
+  // SHOW_NOTIFICATION: (data) => {
+  //   setBlurredByKit();
 
-    showNotification(data.html || 'You forgot html', data.options);
-  },
+  //   showNotification(data.html || 'You forgot html', data.options);
+  // },
   SET_PROMPT_DATA: async (data) => {
-    await setPromptData(data as PromptData);
+    await setPromptData(data.value);
   },
-  SET_PROMPT_PROP: async (data: any) => {
-    setPromptProp(data);
+  SET_PROMPT_PROP: async (data) => {
+    setPromptProp(data.value);
   },
   SHOW_IMAGE,
   SHOW: async (data) => {
     setBlurredByKit();
     const showWindow = await show(
       'show',
-      data.html || 'You forgot html',
-      data.options
+      data.value.html || 'You forgot html',
+      data.value.options
     );
     if (showWindow && !showWindow.isDestroyed()) {
       showWindow.on('close', () => {
@@ -349,38 +355,44 @@ const kitMessageMap: ChannelHandler = {
     emitter.emit(KitEvent.CheckForUpdates, true);
   },
   SET_CHOICES: (data) => {
-    checkScriptChoices(data);
+    checkScriptChoices(data.value);
   },
 
-  UPDATE_PROMPT_WARN: (data) => {
-    setPlaceholder(data.info as string);
-  },
+  // UPDATE_PROMPT_WARN: (data) => {
+  //   setPlaceholder(data.info as string);
+  // },
   CLEAR_PROMPT_CACHE: async () => {
     await clearPromptCache();
   },
   SET_EDITOR_CONFIG: (data) => {
-    sendToPrompt(Channel.SET_EDITOR_CONFIG, data.options);
+    sendToPrompt(Channel.SET_EDITOR_CONFIG, data.value);
   },
   SET_TEXTAREA_CONFIG: (data) => {
-    sendToPrompt(Channel.SET_TEXTAREA_CONFIG, data.options);
+    sendToPrompt(Channel.SET_TEXTAREA_CONFIG, data.value);
   },
   SET_THEME: (data) => {
-    sendToPrompt(Channel.SET_THEME, data);
+    sendToPrompt(Channel.SET_THEME, data.value);
   },
 
   SET_DIV_HTML: (data) => {
-    sendToPrompt(Channel.SET_DIV_HTML, data.html);
+    sendToPrompt(Channel.SET_DIV_HTML, data.value);
   },
   SET_FORM_HTML: (data) => {
-    sendToPrompt(Channel.SET_FORM_HTML, data);
+    sendToPrompt(Channel.SET_FORM_HTML, data.value);
   },
-  SET_FLAGS: (data: any) => {
-    sendToPrompt(Channel.SET_FLAGS, data.flags);
+  SET_FLAGS: (data) => {
+    sendToPrompt(Channel.SET_FLAGS, data.value);
+  },
+  SET_NAME: (data) => {
+    sendToPrompt(Channel.SET_NAME, data.value);
+  },
+  SET_DESCRIPTION: (data) => {
+    sendToPrompt(Channel.SET_DESCRIPTION, data.value);
   },
 };
 
 export const createMessageHandler =
-  (type: ProcessType) => (data: MessageData) => {
+  (type: ProcessType) => (data: GenericSendData) => {
     if (!data.kitScript) log.info(data);
     if (data.channel !== Channel.SET_PREVIEW) {
       log.info(
@@ -391,9 +403,10 @@ export const createMessageHandler =
       );
     }
 
-    if (kitMessageMap[data?.channel as Channel]) {
-      const channelFn = kitMessageMap[data.channel as Channel] as (
-        data: any
+    if (kitMessageMap[data.channel]) {
+      type C = keyof ChannelMap;
+      const channelFn = kitMessageMap[data.channel as C] as (
+        data: SendData<C>
       ) => void;
       channelFn(data);
     } else {
@@ -462,7 +475,6 @@ const createChild = ({
 interface ProcessHandlers {
   onExit?: () => void;
   onError?: (error: Error) => void;
-  onMessage?: (data: MessageData) => void;
   resolve?: (values: any[]) => any;
   reject?: (value: any) => any;
 }

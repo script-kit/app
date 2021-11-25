@@ -12,7 +12,12 @@ import asap from 'asap';
 
 import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
-import { Choice, Script, PromptData } from '@johnlindquist/kit/types/core';
+import {
+  Choice,
+  Script,
+  PromptData,
+  FlagsOptions,
+} from '@johnlindquist/kit/types/core';
 import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import {
   EditorConfig,
@@ -418,13 +423,7 @@ export const inputAtom = atom(
   }
 );
 
-export const flagsAtom = atom<{
-  [key: string]: {
-    name?: string;
-    description?: string;
-    shortcut?: string;
-  };
-}>({});
+export const flagsAtom = atom<FlagsOptions>({});
 
 const tabIndex = atom(0);
 export const tabIndexAtom = atom(
@@ -471,6 +470,8 @@ export const scriptAtom = atom(
     s(indexAtom, 0);
     s(tabIndex, 0);
     s(submittedAtom, false);
+    s(descriptionAtom, a?.description || '');
+    s(nameAtom, a?.menu || '');
 
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
@@ -530,6 +531,8 @@ export const mainHeightAtom = atom(
   (g, s, a: number) => {
     const prevHeight = g(mainHeight);
     if (Math.abs(a - prevHeight) > 2) {
+      const topClient = g(topRefAtom)?.clientHeight;
+      if (topClient) s(topHeight, topClient);
       s(mainHeight, a < 0 ? 0 : a);
 
       resize(g, s);
@@ -616,6 +619,9 @@ const submitValue = atom('');
 export const submitValueAtom = atom(
   (g) => g(submitValue),
   (g, s, a: any) => {
+    // let submitted = g(submittedAtom);
+    // if (submitted) return;
+
     const fValue = g(flaggedValueAtom);
     const f = g(flagAtom);
     const flag = fValue ? a : f || '';
@@ -647,15 +653,13 @@ export const submitValueAtom = atom(
       // s(choices, []);
     }, 250);
 
-    asap(() => {
-      s(submittedAtom, true);
-      // s(indexAtom, 0);
-      // s(rawInputAtom, '');
+    s(submittedAtom, true);
+    // s(indexAtom, 0);
+    // s(rawInputAtom, '');
 
-      s(flaggedValueAtom, ''); // clear after getting
-      s(flagAtom, '');
-      s(submitValue, value);
-    });
+    s(flaggedValueAtom, ''); // clear after getting
+    s(flagAtom, '');
+    s(submitValue, value);
   }
 );
 
@@ -737,3 +741,7 @@ export const previewEnabledAtom = atom(
     resize(g, s);
   }
 );
+
+export const topRefAtom = atom<null | HTMLDivElement>(null);
+export const descriptionAtom = atom<string>('');
+export const nameAtom = atom<string>('');

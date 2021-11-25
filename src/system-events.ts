@@ -42,8 +42,10 @@ export const unlinkEvents = (filePath: string) => {
 };
 export const systemScriptChanged = ({
   filePath,
+  kenv,
   system: systemEventsString,
 }: Script) => {
+  if (kenv !== '') return;
   if (systemEventMap.get(filePath)) {
     log.info(`Clearing ${systemEventMap.get(filePath)} from ${filePath}`);
     systemEventMap.delete(filePath);
