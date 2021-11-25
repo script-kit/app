@@ -309,15 +309,15 @@ const ready = async () => {
 
     spawn(`./script`, [`./setup/downloads.js`], options);
 
-    const downloadHot = kitPath('setup', 'downloads.js');
+    const downloads = kitPath('setup', 'downloads.js');
     scheduleScriptChanged({
-      name: 'download-hot',
-      command: 'download-hot',
-      filePath: downloadHot,
-      id: downloadHot,
+      name: 'downloads',
+      command: 'downloads',
+      filePath: downloads,
+      id: downloads,
       type: ProcessType.Schedule,
       requiresPrompt: false,
-      kenv: '',
+      kenv: '.kit',
       schedule: '0 11 * * *',
     });
   } catch (error) {

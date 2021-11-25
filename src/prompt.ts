@@ -23,6 +23,7 @@ import {
   kenvPath,
   kitPath,
 } from '@johnlindquist/kit/cjs/utils';
+import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { getPromptDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
 import { getAssetPath } from './assets';
@@ -34,6 +35,7 @@ import {
   DEFAULT_HEIGHT,
   DEFAULT_WIDTH,
   heightMap,
+  INPUT_HEIGHT,
   MIN_HEIGHT,
   MIN_WIDTH,
 } from './defaults';
@@ -80,7 +82,7 @@ export const createPromptWindow = async () => {
     maximizable: false,
     movable: true,
     skipTaskbar: true,
-    minHeight: 64,
+    minHeight: INPUT_HEIGHT,
   });
 
   promptWindow.setAlwaysOnTop(true, 'floating', 1);
@@ -228,7 +230,7 @@ const guessTopHeight = (script: Script) => {
     height += 12;
   }
 
-  height += 64;
+  height += INPUT_HEIGHT;
 
   if (script?.tabs?.length) {
     height += 12;
@@ -299,6 +301,7 @@ export const resize = debounce(
     open,
     tabIndex,
   }: ResizeData) => {
+    // console.log({ topHeight, mainHeight });
     isPreviewEnabled = previewEnabled;
     const sameScript = filePath === promptScript?.filePath;
     if (lastResizedByUser || !sameScript) return;
@@ -410,7 +413,10 @@ export const resetPromptBounds = async () => {
   return bounds;
 };
 
-export const sendToPrompt = (channel: string, data: any) => {
+export const sendToPrompt = <K extends keyof ChannelMap>(
+  channel: K,
+  data: ChannelMap[K]
+) => {
   // log.info(`>_ ${channel} ${data?.kitScript}`);
   if (promptWindow && !promptWindow.isDestroyed()) {
     promptWindow?.webContents.send(channel, data);
@@ -584,7 +590,7 @@ export const setPromptData = async (promptData: PromptData) => {
 };
 
 export const setChoices = (choices: Choice[]) => {
-  sendToPrompt(Channel.SET_CHOICES, choices);
+  sendToPrompt(Channel.SET_UNFILTERED_CHOICES, choices);
 };
 
 export const clearPromptCache = async () => {

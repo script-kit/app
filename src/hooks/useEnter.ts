@@ -20,7 +20,7 @@ export default () => {
   const [panelHTML] = useAtom(panelHTMLAtom);
 
   useHotkeys(
-    'enter,return',
+    'enter',
     (event) => {
       event.preventDefault();
 

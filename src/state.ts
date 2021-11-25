@@ -7,7 +7,11 @@ import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { Script } from '@johnlindquist/kit/types/core';
 import { getScripts, getAppDb } from '@johnlindquist/kit/cjs/db';
-import { parseScript, kitPath } from '@johnlindquist/kit/cjs/utils';
+import {
+  parseScript,
+  kitPath,
+  isParentOfDir,
+} from '@johnlindquist/kit/cjs/utils';
 
 export const makeRestartNecessary = async () => {
   const appDb = await getAppDb();
@@ -57,7 +61,10 @@ export const scheduleMap = new Map();
 export const getSchedule = () => {
   return Array.from(scheduleMap.entries())
     .filter(([filePath, job]) => {
-      return schedule.scheduledJobs?.[filePath] === job;
+      return (
+        schedule.scheduledJobs?.[filePath] === job &&
+        !isParentOfDir(kitPath(), filePath)
+      );
     })
     .map(([filePath, job]: [string, Job]) => {
       return {

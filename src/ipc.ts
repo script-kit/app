@@ -47,7 +47,7 @@ export const startIpc = () => {
       emitter.emit(KitEvent.ResumeShortcuts);
       values.push(value);
       if (child) {
-        child?.send({ channel: Channel.VALUE_SUBMITTED, value, flag });
+        child?.send({ channel: Channel.VALUE_SUBMITTED, value, flag, pid });
       }
     })
   );
@@ -143,12 +143,12 @@ export const startIpc = () => {
     await runPromptProcess(kitPath('cli/edit-file.js'), [filePath]);
   });
 
-  ipcMain.on(
-    Channel.SET_PREVIEW_ENABLED,
-    async (event, previewEnabled: boolean) => {
-      setPreviewEnabled(previewEnabled);
-    }
-  );
+  // ipcMain.on(
+  //   Channel.SET_PREVIEW_ENABLED,
+  //   async (event, previewEnabled: boolean) => {
+  //     setPreviewEnabled(previewEnabled);
+  //   }
+  // );
 
   ipcMain.on(
     AppChannel.DRAG_FILE_PATH,

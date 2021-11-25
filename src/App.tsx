@@ -25,6 +25,7 @@ import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
 
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
+import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
@@ -39,7 +40,7 @@ import Log from './components/log';
 import Header from './components/header';
 import Form from './components/form';
 import {
-  choicesAtom,
+  scoredChoices,
   editorConfigAtom,
   flagsAtom,
   flagValueAtom,
@@ -71,11 +72,12 @@ import {
   uiAtom,
   unfilteredChoicesAtom,
   isKitScriptAtom,
+  topRefAtom,
+  descriptionAtom,
+  nameAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
-
-const second = (fn: (value: any) => void) => (_: any, x: any) => fn(x);
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -113,6 +115,8 @@ export default function App() {
   const [pid, setPid] = useAtom(pidAtom);
   const [open, setOpen] = useAtom(openAtom);
   const [script, setScript] = useAtom(scriptAtom);
+  const [description] = useAtom(descriptionAtom);
+  const [name] = useAtom(nameAtom);
   const [isKitScript] = useAtom(isKitScriptAtom);
 
   const [inputValue, setInput] = useAtom(inputAtom);
@@ -147,7 +151,10 @@ export default function App() {
   const [mouseEnabled, setMouseEnabled] = useAtom(mouseEnabledAtom);
   const [selected] = useAtom(selectedAtom);
   const [index] = useAtom(indexAtom);
-  const [choices] = useAtom(choicesAtom);
+  const [choices] = useAtom(scoredChoices);
+  const [, setTopRef] = useAtom(topRefAtom);
+  const [, setDescription] = useAtom(descriptionAtom);
+  const [, setName] = useAtom(nameAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -161,47 +168,53 @@ export default function App() {
 
   const [isMouseDown, setIsMouseDown] = useAtom(isMouseDownAtom);
 
+  type ChannelAtomMap = {
+    [key in keyof ChannelMap]: (data: ChannelMap[key]) => void;
+  };
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const messageMap = {
+  const messageMap: ChannelAtomMap = {
     // [Channel.RESET_PROMPT]: resetPromptHandler,
-    [Channel.EXIT]: second(setOpen),
-    [Channel.SET_PID]: second(setPid),
-    [Channel.SET_SCRIPT]: second(setScript),
-    [Channel.SET_CHOICES]: second(setUnfilteredChoices),
-    [Channel.SET_EDITOR_CONFIG]: second(setEditorConfig),
-    [Channel.SET_TEXTAREA_CONFIG]: second(setTextareaConfig),
-    [Channel.SET_FLAGS]: second(setFlags),
-    [Channel.SET_DIV_HTML]: second(setPanelHTML),
-    [Channel.SET_FORM_HTML]: (event: any, { html, formData }: any) => {
+    [Channel.EXIT]: setOpen,
+    [Channel.SET_PID]: setPid,
+    [Channel.SET_SCRIPT]: setScript,
+    [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
+    [Channel.SET_DESCRIPTION]: setDescription,
+    [Channel.SET_EDITOR_CONFIG]: setEditorConfig,
+    [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfig,
+    [Channel.SET_FLAGS]: setFlags,
+    [Channel.SET_DIV_HTML]: setPanelHTML,
+    [Channel.SET_FORM_HTML]: ({ html, formData }: any) => {
       setFormHTML(html);
       setFormData(formData);
     },
-    [Channel.SET_HINT]: second(setHint),
-    [Channel.SET_INPUT]: second(setInput),
-    [Channel.SET_MODE]: second(setMode),
-    [Channel.SET_PANEL]: second(setPanelHTML),
-    [Channel.SET_PREVIEW]: second(setPreviewHTML),
-    [Channel.SET_LOG]: second(setLogHtml),
-    [Channel.SET_PLACEHOLDER]: second(setPlaceholder),
-    [Channel.SET_SUBMIT_VALUE]: second(setSubmitValue),
-    [Channel.SET_TAB_INDEX]: second(setTabIndex),
-    [Channel.SET_PROMPT_DATA]: second(setPromptData),
-    [Channel.SET_THEME]: second(setTheme),
+    [Channel.SET_HINT]: setHint,
+    [Channel.SET_INPUT]: setInput,
+    [Channel.SET_MODE]: setMode,
+    [Channel.SET_NAME]: setName,
+    [Channel.SET_PANEL]: setPanelHTML,
+    [Channel.SET_PREVIEW]: setPreviewHTML,
+    [Channel.SET_LOG]: setLogHtml,
+    [Channel.SET_PLACEHOLDER]: setPlaceholder,
+    [Channel.SET_SUBMIT_VALUE]: setSubmitValue,
+    [Channel.SET_TAB_INDEX]: setTabIndex,
+    [Channel.SET_PROMPT_DATA]: setPromptData,
+    [Channel.SET_THEME]: setTheme,
   };
 
   useEffect(() => {
-    Object.entries(messageMap).forEach(([key, value]: any) => {
+    Object.entries(messageMap).forEach(([key, fn]) => {
       if (ipcRenderer.listenerCount(key) === 0) {
-        ipcRenderer.on(key, (event, data) => {
+        ipcRenderer.on(key, (_, data) => {
           // if (data?.kitScript) setScriptName(data?.kitScript);
-          value(event, data);
+          (fn as (data: ChannelAtomMap[keyof ChannelAtomMap]) => void)(data);
         });
       }
     });
 
     return () => {
-      Object.entries(messageMap).forEach(([key, value]: any) => {
-        ipcRenderer.off(key, value);
+      Object.entries(messageMap).forEach(([key, fn]) => {
+        ipcRenderer.off(key, fn);
       });
     };
   }, [messageMap]);
@@ -220,6 +233,10 @@ export default function App() {
     setMouseEnabled(1);
   }, [setMouseEnabled]);
 
+  useEffect(() => {
+    if (headerRef?.current) setTopRef(headerRef?.current);
+  }, [headerRef]);
+
   return (
     <ErrorBoundary>
       <div
@@ -236,9 +253,7 @@ export default function App() {
         onMouseMove={onMouseMove}
       >
         <header ref={headerRef}>
-          {(script?.description || script?.twitter || script?.menu) && (
-            <Header />
-          )}
+          {(description || script?.twitter || name) && <Header />}
           {!!(ui & UI.hotkey) && (
             <Hotkey
               submit={setSubmitValue}

@@ -21,8 +21,11 @@ export const cancelSchedule = (filePath: string) => {
 
 export const scheduleScriptChanged = ({
   filePath,
+  kenv,
   schedule: scheduleString,
 }: Script) => {
+  if (kenv !== '') return;
+
   if (scheduleMap.get(filePath)) {
     cancelJob(filePath);
   }

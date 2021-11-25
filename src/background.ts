@@ -1,7 +1,8 @@
 import log from 'electron-log';
 
-import { ProcessType } from '@johnlindquist/kit/cjs/enum';
+import { ProcessType, Channel } from '@johnlindquist/kit/cjs/enum';
 import { parseScript } from '@johnlindquist/kit/cjs/utils';
+import { SendData } from '@johnlindquist/kit/types/kitapp';
 import { Script } from '@johnlindquist/kit/types/core';
 import { emitter, KitEvent } from './events';
 import { backgroundMap, Background } from './state';
@@ -19,8 +20,11 @@ export const removeBackground = (filePath: string) => {
 
 export const backgroundScriptChanged = ({
   filePath,
+  kenv,
   background: backgroundString,
 }: Script) => {
+  if (kenv !== '') return;
+
   const startTask = () => {
     const { child } = processes.add(ProcessType.Background, filePath);
     backgroundMap.set(filePath, {
@@ -75,6 +79,9 @@ export const toggleBackground = async (filePath: string) => {
   }
 };
 
-emitter.on(KitEvent.ToggleBackground, async (data) => {
-  await toggleBackground(data.filePath as string);
-});
+emitter.on(
+  KitEvent.ToggleBackground,
+  async (data: SendData<Channel.TOGGLE_BACKGROUND>) => {
+    await toggleBackground(data.value as string);
+  }
+);
