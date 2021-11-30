@@ -389,6 +389,12 @@ const kitMessageMap: ChannelHandler = {
   SET_DESCRIPTION: (data) => {
     sendToPrompt(Channel.SET_DESCRIPTION, data.value);
   },
+  SET_TEXTAREA_VALUE: (data) => {
+    sendToPrompt(Channel.SET_TEXTAREA_VALUE, data.value);
+  },
+  SEND_KEYSTROKE: (data) => {
+    sendToPrompt(Channel.SEND_KEYSTROKE, data.value);
+  },
 };
 
 export const createMessageHandler =

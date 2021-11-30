@@ -17,7 +17,9 @@ export default () => {
   const [inputFocus] = useAtom(inputFocusAtom);
 
   useEffect(() => {
-    if (inputFocus && ref?.current) ref?.current.focus();
+    if (inputFocus && ref?.current) {
+      ref?.current.focus();
+    }
   }, [flagValue, submitted, open, mouseDown, inputFocus]);
 
   return ref;

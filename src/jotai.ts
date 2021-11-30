@@ -256,10 +256,21 @@ export const editorConfigAtom = atom<EditorConfig>({
   value: '',
   language: 'markdown',
 } as EditorOptions);
-export const textareaConfigAtom = atom<TextareaConfig>({
+
+const textareaConfig = atom<TextareaConfig>({
   value: '',
   placeholder: '',
 });
+
+export const textareaValueAtom = atom<string>('');
+
+export const textareaConfigAtom = atom(
+  (g) => g(textareaConfig),
+  (g, s, a: TextareaConfig) => {
+    s(textareaConfig, a);
+    s(textareaValueAtom, a?.value || '');
+  }
+);
 
 export const formHTMLAtom = atom('');
 export const formDataAtom = atom({});
@@ -395,6 +406,8 @@ const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
 export const inputAtom = atom(
   (g) => g(rawInputAtom),
   (g, s, a: string) => {
+    if (a === g(rawInputAtom)) return;
+
     s(mouseEnabledAtom, 0);
     s(submittedAtom, false);
     s(indexAtom, 0);
@@ -471,7 +484,7 @@ export const scriptAtom = atom(
     s(tabIndex, 0);
     s(submittedAtom, false);
     s(descriptionAtom, a?.description || '');
-    s(nameAtom, a?.menu || '');
+    s(nameAtom, a?.name || '');
 
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
@@ -565,16 +578,31 @@ export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     if (a) {
-      s(tabsAtom, a?.tabs || []);
       s(rawOpen, true);
       s(rawInputAtom, '');
       s(submittedAtom, false);
       s(uiAtom, a.ui);
-      // s(panelHTMLAtom, '');
+      s(hintAtom, a.hint);
+      s(modeAtom, a.mode);
       s(placeholderAtom, a.placeholder);
-      s(selectedAtom, a?.selected || '');
+      s(selectedAtom, a.selected);
+      s(tabsAtom, a.tabs);
+      s(inputAtom, a.input);
+
+      if (Object.keys(a.flags).length) {
+        s(flagsAtom, a.flags);
+      }
+
+      if (a.name) {
+        s(nameAtom, a.name);
+      }
+
+      if (a.description) {
+        s(descriptionAtom, a.description);
+      }
+      // s(tabIndex, a.tabIndex);
+      s(promptData, a);
     }
-    s(promptData, a);
   }
 );
 
@@ -669,14 +697,13 @@ export const openAtom = atom(
     s(mouseEnabledAtom, 0);
     if (g(rawOpen) && a === false) {
       // s(choices, []);
-      s(tabIndex, 0);
+      // s(tabIndex, 0);
       s(rawInputAtom, '');
       // s(panelHTMLAtom, '');
       s(formHTMLAtom, '');
-      s(promptDataAtom, null);
-      s(hintAtom, '');
+      // s(hintAtom, '');
       s(logHTMLAtom, '');
-      s(uiAtom, UI.arg);
+      // s(uiAtom, UI.arg);
       s(flagsAtom, {});
       s(flaggedValueAtom, '');
       ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: g(pidAtom) });
