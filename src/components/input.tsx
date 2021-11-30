@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { useCallback, KeyboardEvent, LegacyRef } from 'react';
+import React, { useCallback, KeyboardEvent, LegacyRef, useEffect } from 'react';
 
 import { Choice } from '@johnlindquist/kit/types/core';
 import { useAtom } from 'jotai';
@@ -157,6 +157,7 @@ export default function Input() {
   return (
     <div className="flex flex-row">
       <input
+        id="input"
         spellCheck="false"
         style={
           {

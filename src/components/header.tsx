@@ -64,7 +64,7 @@ export default function Header() {
         w-full
       transition duration-1000
       text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row
-      dark:text-primary-light text-primary-dark
+      dark:text-white text-primary-dark
       `}
       >
         <span className="pr-1">

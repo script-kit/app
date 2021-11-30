@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
 import React, { KeyboardEvent, useCallback, useRef } from 'react';
+import { KeyData } from '@johnlindquist/kit/types/kitapp';
 
 import { useAtom } from 'jotai';
 import { placeholderAtom, selectedAtom } from '../jotai';
@@ -52,7 +53,9 @@ const getModifierString = (event: KeyboardEvent<HTMLInputElement>) => {
   }${control ? `control ` : ``}${superKey ? `super ` : ``}`;
 };
 
-const getKeyData = (event: KeyboardEvent<HTMLInputElement>) => {
+const getKeyData = (
+  event: KeyboardEvent<HTMLInputElement>
+): { modifierString: string; keyData: KeyData } => {
   const {
     key,
     code,
@@ -83,6 +86,7 @@ const getKeyData = (event: KeyboardEvent<HTMLInputElement>) => {
     // scroll: event.getModifierState('Scroll'),
     // capsLock: event.getModifierState('CapsLock'),
     shortcut: `${modifierString}${normalKey}`,
+    keyCode: code,
   };
 
   return { modifierString, keyData };

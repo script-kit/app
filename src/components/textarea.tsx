@@ -3,7 +3,7 @@
 import React, { LegacyRef, useState } from 'react';
 import { useAtom } from 'jotai';
 
-import { textareaConfigAtom } from '../jotai';
+import { textareaConfigAtom, textareaValueAtom } from '../jotai';
 import {
   useClose,
   useFocus,
@@ -19,7 +19,8 @@ export default function TextArea() {
 
   const [options] = useAtom(textareaConfigAtom);
 
-  const [textAreaValue, setTextAreaValue] = useState(options.value);
+  const [textAreaValue, setTextAreaValue] = useAtom(textareaValueAtom);
+
   useSave(textAreaValue);
   useClose();
   useEscape();

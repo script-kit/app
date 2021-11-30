@@ -40,7 +40,7 @@ export default function KitTabs() {
                 i === tabIndex
                   ? `border-b-2 border-primary-dark dark:border-primary-light
                   opacity-100 dark:bg-opacity-10 bg-opacity-60
-                  dark:text-primary-light text-primary-dark`
+                  dark:text-white text-primary-dark`
                   : 'dark:bg-opacity-0 bg-opacity-0 text-opacity-50 dark:text-opacity-50'
               }
 

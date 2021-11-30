@@ -25,7 +25,7 @@ import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
 
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
-import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
+import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
@@ -75,6 +75,7 @@ import {
   topRefAtom,
   descriptionAtom,
   nameAtom,
+  textareaValueAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -155,6 +156,7 @@ export default function App() {
   const [, setTopRef] = useAtom(topRefAtom);
   const [, setDescription] = useAtom(descriptionAtom);
   const [, setName] = useAtom(nameAtom);
+  const [, setTextareaValue] = useAtom(textareaValueAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -192,6 +194,7 @@ export default function App() {
     [Channel.SET_INPUT]: setInput,
     [Channel.SET_MODE]: setMode,
     [Channel.SET_NAME]: setName,
+    [Channel.SET_TEXTAREA_VALUE]: setTextareaValue,
     [Channel.SET_PANEL]: setPanelHTML,
     [Channel.SET_PREVIEW]: setPreviewHTML,
     [Channel.SET_LOG]: setLogHtml,
@@ -200,6 +203,17 @@ export default function App() {
     [Channel.SET_TAB_INDEX]: setTabIndex,
     [Channel.SET_PROMPT_DATA]: setPromptData,
     [Channel.SET_THEME]: setTheme,
+
+    [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
+      const keyboardEvent = new KeyboardEvent('keydown', {
+        bubbles: true,
+        ctrlKey: keyData.command || keyData.control,
+        shiftKey: keyData.shift,
+        altKey: keyData.option,
+        ...keyData,
+      });
+      document?.activeElement?.dispatchEvent(keyboardEvent);
+    },
   };
 
   useEffect(() => {
@@ -253,7 +267,7 @@ export default function App() {
         onMouseMove={onMouseMove}
       >
         <header ref={headerRef}>
-          {(description || script?.twitter || name) && <Header />}
+          <Header />
           {!!(ui & UI.hotkey) && (
             <Hotkey
               submit={setSubmitValue}
