@@ -76,6 +76,8 @@ import {
   descriptionAtom,
   nameAtom,
   textareaValueAtom,
+  loadingAtom,
+  processingAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -157,6 +159,8 @@ export default function App() {
   const [, setDescription] = useAtom(descriptionAtom);
   const [, setName] = useAtom(nameAtom);
   const [, setTextareaValue] = useAtom(textareaValueAtom);
+  const [, setLoading] = useAtom(loadingAtom);
+  const [processing] = useAtom(processingAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -192,6 +196,7 @@ export default function App() {
     },
     [Channel.SET_HINT]: setHint,
     [Channel.SET_INPUT]: setInput,
+    [Channel.SET_LOADING]: setLoading,
     [Channel.SET_MODE]: setMode,
     [Channel.SET_NAME]: setName,
     [Channel.SET_TEXTAREA_VALUE]: setTextareaValue,
@@ -212,6 +217,7 @@ export default function App() {
         altKey: keyData.option,
         ...keyData,
       });
+
       document?.activeElement?.dispatchEvent(keyboardEvent);
     },
   };
@@ -288,6 +294,7 @@ export default function App() {
         h-full w-full
         border-transparent
         border-b
+        ${processing ? `hidden` : ``}
         `}
         >
           {!!(ui & UI.drop) && <Drop />}

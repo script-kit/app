@@ -8,7 +8,6 @@
 /* eslint-disable guard-for-in */
 import { atom, Getter, Setter } from 'jotai';
 import { QuickScore, Range, createConfig, quickScore } from 'quick-score';
-import asap from 'asap';
 
 import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
@@ -34,10 +33,12 @@ let placeholderTimeoutId: NodeJS.Timeout;
 let choicesTimeoutId: NodeJS.Timeout;
 
 export const pidAtom = atom(0);
+export const processingAtom = atom(false);
 const rawOpen = atom(false);
 export const submittedAtom = atom(false);
 export const tabsAtom = atom<string[]>([]);
 const cachedMainPreview = atom('');
+const loading = atom<boolean>(false);
 
 const placeholder = atom('');
 export const placeholderAtom = atom(
@@ -120,7 +121,6 @@ export const unfilteredChoicesAtom = atom(
   (g, s, a: Choice[]) => {
     s(panelHTML, ``);
 
-    if (a?.length === 0 && g(unfilteredChoices)?.length === 0) return;
     s(unfilteredChoices, a);
     const maybePreview = Boolean(
       a.find((c) => c?.hasPreview) || g(promptData)?.hasPreview
@@ -145,11 +145,20 @@ export const unfilteredChoicesAtom = atom(
       minimumScore: 0.3,
     });
     s(quickScoreAtom, qs);
-    if (g(modeAtom) === Mode.GENERATE) {
-      s(scoredChoices, []);
-    }
 
-    s(scoredChoices, (a || []).map(createScoredChoice));
+    const input = g(inputAtom);
+    const mode = g(modeAtom);
+    const flaggedValue = g(flaggedValueAtom);
+
+    // if (!flaggedValue) {
+    if (mode === Mode.GENERATE && !flaggedValue) {
+      s(scoredChoices, (a || []).map(createScoredChoice));
+    }
+    if (mode === Mode.FILTER) {
+      filterByInput(g, s, qs, input);
+    }
+    // }
+
     const prevCId = g(prevChoiceId);
     const prevIndex = a.findIndex((c) => c?.id === prevCId);
 
@@ -187,6 +196,8 @@ export const panelHTMLAtom = atom(
   (g, s, a: string) => {
     s(unfilteredChoicesAtom, []);
     s(panelHTML, a);
+
+    s(loadingAtom, false);
   }
 );
 
@@ -356,7 +367,7 @@ export const scoredChoices = atom(
   (g, s, a: ScoredChoice[]) => {
     if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
     s(submittedAtom, false);
-
+    s(loadingAtom, false);
     s(choices, a);
     const isFilter = g(uiAtom) === UI.arg && g(modeAtom) === Mode.FILTER;
 
@@ -394,14 +405,36 @@ const generateChoices = debounce((input, pid) => {
     input,
     pid,
   });
-}, 100);
+}, 250);
 
 const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
   if (!a) return false;
   const result = search(qs, a);
   s(scoredChoices, result);
   return true;
-}, 50);
+}, 250);
+
+const filterByInput = (
+  g: Getter,
+  s: Setter,
+  qs: QuickScoreInterface,
+  input: string
+) => {
+  const un = g(unfilteredChoicesAtom);
+
+  if (qs && input) {
+    if (un.length < 1000) {
+      const result = search(qs, input);
+      s(scoredChoices, result);
+    } else {
+      debounceSearch(qs, s, input);
+    }
+  } else if (un.length) {
+    s(scoredChoices, un.map(createScoredChoice));
+  } else {
+    s(scoredChoices, []);
+  }
+};
 
 export const inputAtom = atom(
   (g) => g(rawInputAtom),
@@ -413,25 +446,16 @@ export const inputAtom = atom(
     s(indexAtom, 0);
     s(rawInputAtom, a);
 
-    const qs = g(quickScoreAtom);
+    const qs = g(quickScoreAtom) as QuickScoreInterface;
     const mode = g(modeAtom);
-    const un = g(unfilteredChoicesAtom);
-
+    const pid = g(pidAtom);
     if (mode === Mode.FILTER) {
-      if (qs && a) {
-        if (un.length < 1000) {
-          const result = search(qs, a);
-          s(scoredChoices, result);
-        } else {
-          debounceSearch(qs, s, a);
-        }
-      } else if (un.length) {
-        s(scoredChoices, un.map(createScoredChoice));
-      }
+      filterByInput(g, s, qs, a);
     }
-
     if (mode === Mode.GENERATE) {
-      generateChoices(a, g(pidAtom));
+      s(loading, true);
+      s(loadingAtom, true);
+      generateChoices(a, pid);
     }
   }
 );
@@ -483,6 +507,7 @@ export const scriptAtom = atom(
     s(indexAtom, 0);
     s(tabIndex, 0);
     s(submittedAtom, false);
+    s(processingAtom, false);
     s(descriptionAtom, a?.description || '');
     s(nameAtom, a?.name || '');
 
@@ -491,6 +516,7 @@ export const scriptAtom = atom(
     if (a.filePath === mainScriptPath) {
       s(previewHTMLAtom, g(cachedMainPreview));
     }
+    // s(panelHTMLAtom, `<div/>`);
   }
 );
 
@@ -589,6 +615,8 @@ export const promptDataAtom = atom(
       s(tabsAtom, a.tabs);
       s(inputAtom, a.input);
 
+      s(processingAtom, false);
+
       if (Object.keys(a.flags).length) {
         s(flagsAtom, a.flags);
       }
@@ -662,28 +690,20 @@ export const submitValueAtom = atom(
       pid: g(pidAtom),
     });
 
+    s(rawInputAtom, '');
+
     if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
-    placeholderTimeoutId = setTimeout(
-      (placehold, secret) => {
-        s(
-          placeholderAtom,
-          typeof placehold === 'string' && !secret
-            ? `Processing "${placehold}"...`
-            : 'Processing...'
-        );
-      },
-      500,
-      a,
-      (g(promptDataAtom) as PromptData)?.secret
-    );
+    placeholderTimeoutId = setTimeout(() => {
+      s(loadingAtom, true);
+      s(processingAtom, true);
+    }, 500);
     if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
     choicesTimeoutId = setTimeout(() => {
-      // s(choices, []);
+      s(panelHTMLAtom, ``);
     }, 250);
 
     s(submittedAtom, true);
     // s(indexAtom, 0);
-    // s(rawInputAtom, '');
 
     s(flaggedValueAtom, ''); // clear after getting
     s(flagAtom, '');
@@ -772,3 +792,9 @@ export const previewEnabledAtom = atom(
 export const topRefAtom = atom<null | HTMLDivElement>(null);
 export const descriptionAtom = atom<string>('');
 export const nameAtom = atom<string>('');
+export const loadingAtom = atom(
+  (g) => g(loading),
+  debounce((g, s, a: boolean) => {
+    s(loading, a);
+  }, 500)
+);

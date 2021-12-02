@@ -5,35 +5,19 @@ import React, { useCallback } from 'react';
 import { useAtom } from 'jotai';
 import { XIcon } from '@heroicons/react/outline';
 import {
-  choicesAtom,
-  darkAtom,
   descriptionAtom,
-  isMouseDownAtom,
-  mainHeightAtom,
+  loadingAtom,
   mouseEnabledAtom,
   nameAtom,
   openAtom,
-  panelHTMLAtom,
   promptDataAtom,
   scriptAtom,
-  selectedAtom,
-  topHeightAtom,
-  uiAtom,
-  unfilteredChoicesAtom,
 } from '../jotai';
+import TopBar from './TopBar';
 
 export default function Header() {
   const [script] = useAtom(scriptAtom);
-  const [mainHeight] = useAtom(mainHeightAtom);
-  const [topHeight] = useAtom(topHeightAtom);
-  const [panelHTML] = useAtom(panelHTMLAtom);
-  const [ui] = useAtom(uiAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
-  const [mouseDown] = useAtom(isMouseDownAtom);
-  const [unfilteredChoices] = useAtom(unfilteredChoicesAtom);
-  const [choices] = useAtom(choicesAtom);
-  const [selected] = useAtom(selectedAtom);
-  const [dark] = useAtom(darkAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [, setOpen] = useAtom(openAtom);
   const [description] = useAtom(descriptionAtom);
@@ -53,6 +37,7 @@ export default function Header() {
       }
       className="flex flex-row justify-between w-full"
     >
+      <TopBar />
       <div
         style={
           {

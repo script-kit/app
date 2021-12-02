@@ -77,7 +77,7 @@ export default function Log() {
           {parse(`${logHTML}`)}
         </div>
       </SimpleBar>
-      {!script.name.startsWith('error') && (
+      {!script.name?.startsWith('error') && (
         <PencilAltIcon
           className={`
         absolute

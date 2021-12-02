@@ -407,7 +407,7 @@ export const resetPromptBounds = async () => {
 
     await promptDb.write();
 
-    promptWindow?.setBounds(promptBounds);
+    // promptWindow?.setBounds(promptBounds);
   }
 
   return bounds;
@@ -533,25 +533,9 @@ export const setScript = async (script: Script) => {
 
   instantChoices = [];
   if (script.filePath === mainScriptPath) {
-    sendToPrompt(Channel.SET_PLACEHOLDER, 'Run script');
-    instantChoices = getScriptsMemory();
-  } else if (script.requiresPrompt) {
-    const maybeCachedChoices = kenvPath(
-      script?.kenv ? `kenvs/${script.kenv}` : ``,
-      'db',
-      `_${script.command}.json`
-    );
-    if (await isFile(maybeCachedChoices)) {
-      const choicesFile = readFileSync(maybeCachedChoices, 'utf-8');
-      const { items } = JSON.parse(choicesFile);
-      log.info(`📦 Setting choices from ${maybeCachedChoices}`);
-      instantChoices = items.map((item: string | Choice, id: number) =>
-        typeof item === 'string' ? { name: item, id } : item
-      );
-    }
+    sendToPrompt(Channel.SET_PLACEHOLDER, 'Run Script');
+    setChoices(getScriptsMemory());
   }
-
-  if (instantChoices.length) setChoices(instantChoices);
 };
 
 export const setMode = (mode: Mode) => {

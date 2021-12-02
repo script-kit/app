@@ -183,8 +183,8 @@ const toProcess =
 
 const kitMessageMap: ChannelHandler = {
   [Channel.CONSOLE_LOG]: (data) => {
-    getLog(data.kitScript).info(data.value);
-    setLog(data.value);
+    getLog(data.kitScript).info(data?.value || 'blank');
+    setLog(data.value || 'blank');
   },
 
   CONSOLE_WARN: (data) => {
@@ -391,6 +391,9 @@ const kitMessageMap: ChannelHandler = {
   },
   SET_TEXTAREA_VALUE: (data) => {
     sendToPrompt(Channel.SET_TEXTAREA_VALUE, data.value);
+  },
+  SET_LOADING: (data) => {
+    sendToPrompt(Channel.SET_LOADING, data.value);
   },
   SEND_KEYSTROKE: (data) => {
     sendToPrompt(Channel.SEND_KEYSTROKE, data.value);

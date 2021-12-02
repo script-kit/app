@@ -45,6 +45,11 @@ img:after {
   @apply break-words;
 }
 
+html {
+  min-height: 100vh;
+  height: 100vh;
+}
+
 body {
   @apply transition duration-200;
   @apply bg-bg-light dark:bg-bg-dark;
@@ -53,6 +58,15 @@ body {
   @apply subpixel-antialiased;
   @apply overflow-hidden;
   /* --tw-bg-opacity: 0.3; */
+
+  height: 100vh;
+  min-height: 100vh;
+}
+
+#root {
+  @apply dark:text-white text-black overflow-y-hidden h-screen;
+  min-height: 100vh;
+  height: 100vh;
 }
 
 .choice {
@@ -175,6 +189,27 @@ body {
   border-radius: 100%;
   top: 2px;
   left: 2px;
+}
+
+@keyframes loading {
+  0% {
+    left: -40px;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: -40px;
+  }
+}
+
+.animate-loading {
+  right: calc(100% - 40px);
+  animation: loading 4s linear infinite;
+}
+
+.animate-visibility {
+  transition: visibility 0.25s ease-out, opacity 0.25s ease-in;
 }
 
 @layer base {
