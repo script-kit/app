@@ -1,8 +1,9 @@
 import { useAtom } from 'jotai';
-
+import { Value } from '@johnlindquist/kit/cjs/enum';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
   choicesAtom,
+  flagAtom,
   indexAtom,
   inputAtom,
   panelHTMLAtom,
@@ -18,6 +19,7 @@ export default () => {
   const [, submit] = useAtom(submitValueAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [panelHTML] = useAtom(panelHTMLAtom);
+  const [, setFlag] = useAtom(flagAtom);
 
   useHotkeys(
     'enter',
@@ -35,4 +37,15 @@ export default () => {
     hotkeysOptions,
     [input, choices, index, promptDataAtom, panelHTML]
   );
+
+  // useHotkeys(
+  //   'f12',
+  //   () => {
+  //     console.log(`🔥f20`);
+  //     setFlag('end');
+  //     submit(Value.NoValue);
+  //   },
+  //   hotkeysOptions,
+  //   []
+  // );
 };

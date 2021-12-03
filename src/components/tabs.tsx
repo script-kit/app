@@ -34,7 +34,7 @@ export default function KitTabs() {
               hover:border-b-2 dark:hover:border-b-2
               border-opacity-75 hover:border-opacity-75
               hover:border-primary-dark dark:hover:border-primary-light
-              transition-all duration-100 ease-in-out
+              transition-opacity duration-100 ease-in-out
 
               ${
                 i === tabIndex

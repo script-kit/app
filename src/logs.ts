@@ -3,6 +3,7 @@
 /* eslint-disable no-console */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
+import fs from 'fs';
 import { kenvPath } from '@johnlindquist/kit/cjs/utils';
 
 export const consoleLog = log.create('consoleLog');
@@ -24,29 +25,40 @@ export function stripAnsi(string: string) {
 
   return string.replace(ansiRegex(), '');
 }
+interface Logger {
+  info: (...args: string[]) => void;
+  warn: (...args: string[]) => void;
+  clear: () => void;
+}
 
-const logMap = new Map<string, log.ElectronLog>();
-export const getLog = (id: string) => {
+const logMap = new Map<string, Logger>();
+
+export const getLog = (id: string): Logger => {
   try {
     const normalizedId = id.replace(/.*\//g, '').replace('.js', '');
 
-    if (logMap.get(normalizedId))
-      return logMap.get(normalizedId) as log.ElectronLog;
+    if (logMap.get(normalizedId)) return logMap.get(normalizedId) as Logger;
 
     const scriptLog = log.create(normalizedId);
-    scriptLog.transports.file.resolvePath = () =>
-      kenvPath('logs', `${normalizedId}.log`);
+    const logPath = kenvPath('logs', `${normalizedId}.log`);
+    scriptLog.transports.file.resolvePath = () => logPath;
 
     const _info = scriptLog.info.bind(scriptLog);
     const _warn = scriptLog.warn.bind(scriptLog);
-    scriptLog.info = (...args) => {
-      _info(...args.map(stripAnsi));
+    const logger = {
+      info: (...args: string[]) => {
+        _info(...args.map(stripAnsi));
+      },
+      warn: (...args: string[]) => {
+        _warn(...args.map(stripAnsi));
+      },
+      clear: () => {
+        fs.writeFileSync(logPath, ``);
+      },
     };
-    scriptLog.warn = (...args) => {
-      _warn(...args.map(stripAnsi));
-    };
+    logMap.set(normalizedId, logger);
 
-    return scriptLog;
+    return logger;
   } catch {
     return {
       info: (...args: any[]) => {
@@ -55,6 +67,7 @@ export const getLog = (id: string) => {
       warn: (...args: any[]) => {
         console.warn(...args.map(stripAnsi));
       },
+      clear: () => {},
     };
   }
 };

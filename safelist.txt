@@ -764,3 +764,8 @@ bg-teal-500
 border
 border-yellow-500
 text-yellow-500
+static
+fixed
+absolute
+relative
+sticky

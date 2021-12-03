@@ -47,6 +47,7 @@ let blurredByKit = false;
 let ignoreBlur = false;
 let promptState: PromptState = 'expanded';
 let isPreviewEnabled = true;
+let minHeight = MIN_HEIGHT;
 
 export const setBlurredByKit = (value = true) => {
   blurredByKit = value;
@@ -111,7 +112,7 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow.on('hide', () => {
-    lastResizedByUser = false;
+    modifiedByUser = false;
     ignoreBlur = false;
   });
 
@@ -136,19 +137,24 @@ export const createPromptWindow = async () => {
   });
 
   const onMove = async () => {
-    await cachePromptBounds(Bounds.Position);
+    if (modifiedByUser) await cachePromptBounds(Bounds.Position);
+    modifiedByUser = false;
   };
 
   const onResized = async () => {
-    lastResizedByUser = false;
-    await cachePromptBounds(Bounds.Size);
+    if (modifiedByUser) await cachePromptBounds(Bounds.Size);
+    modifiedByUser = false;
   };
 
   promptWindow?.on('will-resize', () => {
-    lastResizedByUser = true;
+    modifiedByUser = true;
+  });
+
+  promptWindow?.on('will-move', () => {
+    modifiedByUser = true;
   });
   promptWindow?.on('resized', debounce(onResized, 500));
-  promptWindow?.on('move', debounce(onMove, 500));
+  promptWindow?.on('moved', debounce(onMove, 500));
 
   // setInterval(() => {
   //   const [, newHeight] = promptWindow?.getSize() as number[];
@@ -182,7 +188,8 @@ export const focusPrompt = () => {
   }
 };
 
-export const escapePromptWindow = () => {
+export const escapePromptWindow = async () => {
+  await cachePromptBounds(Bounds.Position);
   promptScript = {
     id: '',
     command: '',
@@ -214,7 +221,6 @@ export const getCurrentScreenPromptCache = async () => {
   const currentPromptCache =
     screenCache?.[promptScript?.filePath as string]?.[promptState];
 
-  // console.log(`current`, { promptState, currentPromptCache });
   if (currentPromptCache) return currentPromptCache;
 
   const bounds = await resetPromptBounds();
@@ -248,12 +254,15 @@ export const getDefaultBounds = (currentScreen: Display) => {
   const { width: screenWidth, height: screenHeight } =
     currentScreen.workAreaSize;
 
-  const height = Math.round(
-    promptScript?.filePath.includes(kitPath()) || instantChoices.length
-      ? DEFAULT_HEIGHT
-      : currentUI === UI.arg
-      ? guessTopHeight(promptScript)
-      : heightMap[currentUI]
+  const height = Math.max(
+    minHeight,
+    Math.round(
+      promptScript?.filePath.includes(kitPath()) || instantChoices.length
+        ? DEFAULT_HEIGHT
+        : currentUI === UI.arg
+        ? guessTopHeight(promptScript)
+        : heightMap[currentUI]
+    )
   ); // Math.round(screenHeight / 1.5);
 
   const width = defaultWidths[promptState];
@@ -279,11 +288,11 @@ export const showPrompt = async () => {
   return promptWindow;
 };
 
-let lastResizedByUser = false;
+let modifiedByUser = false;
 
 export const setBounds = (bounds: Partial<Rectangle>) => {
   promptWindow.setBounds(bounds);
-  cachePromptBounds(bounds);
+  cachePromptBounds();
 };
 
 export const resize = debounce(
@@ -301,10 +310,10 @@ export const resize = debounce(
     open,
     tabIndex,
   }: ResizeData) => {
-    // console.log({ topHeight, mainHeight });
+    minHeight = topHeight;
     isPreviewEnabled = previewEnabled;
     const sameScript = filePath === promptScript?.filePath;
-    if (lastResizedByUser || !sameScript) return;
+    if (modifiedByUser || !sameScript) return;
 
     if (!mainHeight && ui & (UI.form | UI.div | UI.editor | UI.drop)) return;
     // if (!mainHeight && hasPanel) return;
@@ -354,11 +363,10 @@ export const resize = debounce(
 
     const width = isPreviewOpen ? Math.max(cachedWidth, 768) : cachedWidth;
 
-    // console.log({ targetHeight, maxHeight });
     const height = isPreviewOpen
       ? maxHeight
       : Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
-
+    console.log({ targetHeight, maxHeight, height });
     // console.log({ currentHeight, height, currentWidth, width });
     if (currentHeight === height && currentWidth === width) return;
     log.info(`↕ RESIZE: ${width} x ${height}`);
@@ -380,17 +388,18 @@ export const resize = debounce(
 export const resetPromptBounds = async () => {
   const currentScreen = getCurrentScreen();
   const promptDb = await getPromptDb();
+  const screenId = String(currentScreen.id).slice();
+  const filePath = (promptScript?.filePath || mainScriptPath).slice();
 
   const { id, bounds } = getDefaultBounds(currentScreen);
-  if (!promptDb.screens[String(currentScreen.id)]) {
-    promptDb.screens[String(currentScreen.id)] = {};
+  if (!promptDb.screens[screenId]) {
+    promptDb.screens[screenId] = {};
   }
-  const boundsFilePath =
-    promptDb.screens?.[String(currentScreen.id)]?.[promptScript.filePath];
+  const boundsFilePath = promptDb.screens?.[screenId]?.[filePath];
   const maybeBounds =
     boundsFilePath?.expanded ||
     boundsFilePath?.collapsed ||
-    promptWindow?.getBounds() ||
+    // promptWindow?.getBounds() ||
     {};
 
   if (!boundsFilePath?.[promptState]) {
@@ -400,14 +409,16 @@ export const resetPromptBounds = async () => {
       y: maybeBounds?.y || bounds.y,
     };
 
-    // console.log({ maybeBounds, promptBounds, bounds });
-    promptDb.screens[String(currentScreen.id)][promptScript.filePath] = {
+    // console.log({ screenId, maybeBounds, promptBounds, bounds });
+    promptDb.screens[screenId][filePath] = {
       [promptState]: promptBounds,
     };
 
     await promptDb.write();
 
-    promptWindow?.setBounds(promptBounds);
+    // console.log(`⛑ Reset prompt bounds:`, promptBounds);
+    // promptWindow?.setBounds(promptBounds);
+    // promptWindow?.setPosition(promptBounds.x, promptBounds.y);
   }
 
   return bounds;
@@ -429,22 +440,36 @@ enum Bounds {
 }
 
 const cachePromptBounds = debounce(
-  async (b = Bounds.Position | Bounds.Size) => {
+  async (b: number = Bounds.Position | Bounds.Size) => {
+    log.info(`Start cachePromptBounds:`, b);
     if (!promptScript) return;
     const currentScreen = getCurrentScreen();
     const promptDb = await getPromptDb();
 
     const bounds = promptWindow?.getBounds();
+
+    const promptPath = (promptScript?.filePath || mainScriptPath).slice();
     const prevBounds =
-      promptDb.screens?.[String(currentScreen.id)]?.[promptScript.filePath]?.[
+      promptDb?.screens?.[String(currentScreen.id)]?.[promptPath]?.[
         promptState
-      ] || bounds;
+      ];
+
     // Ignore if flag
     const size = b & Bounds.Size;
     const position = b & Bounds.Position;
 
-    const { x, y } = position ? bounds : prevBounds;
-    const { width, height } = size ? bounds : prevBounds;
+    // console.log({
+    //   currentScreen: currentScreen.id,
+    //   size,
+    //   position,
+    //   promptScript,
+    //   state: promptState,
+    //   prevBounds,
+    //   bounds,
+    // });
+
+    const { x, y } = position ? bounds : prevBounds || bounds;
+    const { width, height } = size ? bounds : prevBounds || bounds;
 
     const promptBounds: PromptBounds = {
       x,
@@ -453,12 +478,11 @@ const cachePromptBounds = debounce(
       height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
     };
 
-    const promptPath =
-      promptDb.screens[String(currentScreen.id)][promptScript.filePath];
-    if (promptPath) {
-      promptDb.screens[String(currentScreen.id)][promptScript.filePath][
-        promptState
-      ] = promptBounds;
+    const promptCached =
+      promptDb.screens[String(currentScreen.id)]?.[promptPath];
+    if (promptCached) {
+      promptDb.screens[String(currentScreen.id)][promptPath][promptState] =
+        promptBounds;
 
       log.info(`Cache prompt:`, {
         script: promptScript.filePath,
@@ -533,25 +557,9 @@ export const setScript = async (script: Script) => {
 
   instantChoices = [];
   if (script.filePath === mainScriptPath) {
-    sendToPrompt(Channel.SET_PLACEHOLDER, 'Run script');
-    instantChoices = getScriptsMemory();
-  } else if (script.requiresPrompt) {
-    const maybeCachedChoices = kenvPath(
-      script?.kenv ? `kenvs/${script.kenv}` : ``,
-      'db',
-      `_${script.command}.json`
-    );
-    if (await isFile(maybeCachedChoices)) {
-      const choicesFile = readFileSync(maybeCachedChoices, 'utf-8');
-      const { items } = JSON.parse(choicesFile);
-      log.info(`📦 Setting choices from ${maybeCachedChoices}`);
-      instantChoices = items.map((item: string | Choice, id: number) =>
-        typeof item === 'string' ? { name: item, id } : item
-      );
-    }
+    sendToPrompt(Channel.SET_PLACEHOLDER, 'Run Script');
+    setChoices(getScriptsMemory());
   }
-
-  if (instantChoices.length) setChoices(instantChoices);
 };
 
 export const setMode = (mode: Mode) => {

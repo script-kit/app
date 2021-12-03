@@ -19,7 +19,7 @@ export const removeWatch = (filePath: string) => {
 };
 
 const resolvePath = (path: string) => {
-  if (path.startsWith('~')) {
+  if (path?.startsWith('~')) {
     return path.replace('~', app.getPath('home'));
   }
 

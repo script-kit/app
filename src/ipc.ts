@@ -130,12 +130,12 @@ export const startIpc = () => {
   });
 
   ipcMain.on(Channel.OPEN_SCRIPT, async (event, script: Script) => {
-    if (script.filePath.startsWith(kitPath())) return;
+    if (script.filePath?.startsWith(kitPath())) return;
     await runPromptProcess(kitPath('cli/edit-file.js'), [script.filePath]);
   });
 
   ipcMain.on(Channel.EDIT_SCRIPT, async (event, filePath: string) => {
-    if (filePath.startsWith(kitPath())) return;
+    if (filePath?.startsWith(kitPath())) return;
     await runPromptProcess(kitPath('main/edit.js'), [filePath]);
   });
 

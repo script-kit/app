@@ -69,7 +69,7 @@ const getKeyData = (
 
   const modifierString = getModifierString(event);
 
-  const keyData = {
+  const keyData: KeyData = {
     key: normalKey,
     command,
     shift,
