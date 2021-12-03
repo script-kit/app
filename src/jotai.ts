@@ -510,6 +510,8 @@ export const scriptAtom = atom(
     s(processingAtom, false);
     s(descriptionAtom, a?.description || '');
     s(nameAtom, a?.name || '');
+    s(loadingAtom, false);
+    s(loading, false);
 
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
@@ -690,7 +692,9 @@ export const submitValueAtom = atom(
       pid: g(pidAtom),
     });
 
-    s(rawInputAtom, '');
+    // s(rawInputAtom, '');
+    s(loading, false);
+    s(loadingAtom, false);
 
     if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
     placeholderTimeoutId = setTimeout(() => {

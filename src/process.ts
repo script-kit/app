@@ -398,6 +398,15 @@ const kitMessageMap: ChannelHandler = {
   SEND_KEYSTROKE: (data) => {
     sendToPrompt(Channel.SEND_KEYSTROKE, data.value);
   },
+  KIT_LOG: (data) => {
+    getLog(data.kitScript).info(data?.value || 'blank');
+  },
+  KIT_WARN: (data) => {
+    getLog(data.kitScript).warn(data?.value || 'blank');
+  },
+  KIT_CLEAR: (data) => {
+    getLog(data.kitScript).clear(data?.value || 'blank');
+  },
 };
 
 export const createMessageHandler =

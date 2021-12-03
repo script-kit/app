@@ -196,20 +196,48 @@ body {
     left: -40px;
   }
   50% {
-    left: 100%;
+    left: calc(100% + 10px);
   }
   100% {
     left: -40px;
   }
 }
 
+.animate-not-loading {
+  /* right: -400px; */
+}
+
 .animate-loading {
   right: calc(100% - 40px);
   animation: loading 4s linear infinite;
+  animation-fill-mode: forwards;
 }
 
-.animate-visibility {
-  transition: visibility 0.25s ease-out, opacity 0.25s ease-in;
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-in;
+  animation-fill-mode: forwards;
+}
+
+.animate-fade-out {
+  animation: fadeOut 0.25s ease-out;
+  animation-fill-mode: forwards;
 }
 
 @layer base {

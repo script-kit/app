@@ -169,6 +169,7 @@ export default function Input() {
             ...(submitted && { caretColor: 'transparent' }),
           } as any
         }
+        disabled={submitted}
         autoFocus
         className={`
       bg-transparent w-full text-black dark:text-white focus:outline-none outline-none
