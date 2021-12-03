@@ -20,7 +20,8 @@ export default function TopBar() {
     <div
       onAnimationStart={animationStart}
       onAnimationEnd={animationEnd}
-      className={`absolute top-0 left-0 w-full h-[2px]
+      style={{ height: '2px' }}
+      className={`absolute top-0 left-0 w-full
       animate-fade-${loading ? 'in' : 'out'}
       `}
     >
