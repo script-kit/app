@@ -769,3 +769,5 @@ fixed
 absolute
 relative
 sticky
+top-0
+left-0
