@@ -22,9 +22,13 @@ export default () => {
   const [, setFlag] = useAtom(flagAtom);
 
   useHotkeys(
-    'enter',
+    'enter,cmd+enter,ctrl+enter,shift+enter,option+enter',
     (event) => {
       event.preventDefault();
+      if (event.metaKey) setFlag(`cmd`);
+      if (event.shiftKey) setFlag(`shift`);
+      if (event.altKey) setFlag(`opt`);
+      if (event.ctrlKey) setFlag(`ctrl`);
 
       if (promptData?.strict && panelHTML?.length === 0) {
         if (choices.length && typeof choices[index]?.value !== 'undefined') {
