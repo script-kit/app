@@ -47,7 +47,6 @@ export default function Header() {
         }
         className={`
         w-full
-      transition duration-1000
       text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row
       dark:text-white text-primary-dark
       `}

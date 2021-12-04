@@ -81,9 +81,10 @@ process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 app.setName(APP_NAME);
 
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
-app.dock.hide();
-app.dock.setIcon(getAssetPath('icon.png'));
-
+if (app?.dock) {
+  app.dock.hide();
+  app.dock.setIcon(getAssetPath('icon.png'));
+}
 const releaseChannel = readFileSync(
   getAssetPath('release_channel.txt'),
   'utf-8'

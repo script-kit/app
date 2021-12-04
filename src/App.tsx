@@ -262,9 +262,11 @@ export default function App() {
   useEffect(() => {
     if (windowContainerRef?.current) {
       windowContainerRef.current.style.height = `${window.innerHeight}px`;
+      windowContainerRef.current.style.top = `0px`;
+      windowContainerRef.current.style.left = `0px`;
       // windowContainerRef.current.style.width = window.innerWidth + 'px';
     }
-  }, [mainHeight, windowContainerRef]);
+  }, [mainHeight, topHeight, windowContainerRef]);
 
   return (
     <ErrorBoundary>
@@ -300,10 +302,11 @@ export default function App() {
         <main
           ref={mainRef}
           className={`
-        h-full w-full
+        ${processing && !isMainScript ? `h-0` : `h-full`}
+        w-full
         border-transparent
         border-b
-        ${processing && !isMainScript ? `hidden` : ``}
+
         `}
         >
           {!!(ui & UI.drop) && <Drop />}
