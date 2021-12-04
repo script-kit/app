@@ -23,6 +23,7 @@ import {
   shell,
 } from 'electron';
 
+import { Open } from 'unzipper';
 import tar from 'tar';
 import clipboardy from 'clipboardy';
 
@@ -514,7 +515,9 @@ const cleanUserData = async () => {
   await rmdir(pathToClean, { recursive: true });
 };
 
-const KIT_NODE_TAR = process.env.KIT_NODE_TAR || getAssetPath('node.tar.gz');
+const KIT_NODE_TAR =
+  process.env.KIT_NODE_TAR ||
+  getAssetPath(`node.${platform === 'win' ? 'zip' : 'tar.gz'}`);
 
 const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
@@ -556,11 +559,17 @@ const checkKit = async () => {
 
         if (existsSync(KIT_NODE_TAR)) {
           log.info(`Found ${KIT_NODE_TAR}. Extracting...`);
-          await tar.x({
-            file: KIT_NODE_TAR,
-            C: kitPath('node'),
-            strip: 1,
-          });
+
+          if (platform === 'win') {
+            const d = await Open.file(KIT_NODE_TAR);
+            d.extract({ path: kitPath('node'), concurrency: 5 });
+          } else {
+            await tar.x({
+              file: KIT_NODE_TAR,
+              C: kitPath('node'),
+              strip: 1,
+            });
+          }
         } else {
           const installScript = `./build/install-node.sh`;
           await chmod(kitPath(installScript), 0o755);
