@@ -24,7 +24,7 @@ import {
   EditorOptions,
 } from '@johnlindquist/kit/types/kitapp';
 
-import { clamp, debounce, drop } from 'lodash';
+import _, { clamp, debounce, drop, isEqual } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
 import { ResizeData, ScoredChoice } from './types';
@@ -36,7 +36,15 @@ export const pidAtom = atom(0);
 export const processingAtom = atom(false);
 const rawOpen = atom(false);
 export const submittedAtom = atom(false);
-export const tabsAtom = atom<string[]>([]);
+const tabs = atom<string[]>([]);
+export const tabsAtom = atom(
+  (g) => g(tabs),
+  (g, s, a: string[]) => {
+    const prevTabs = g(tabs);
+    if (isEqual(prevTabs, a)) return;
+    s(tabs, a);
+  }
+);
 const cachedMainPreview = atom('');
 const loading = atom<boolean>(false);
 
@@ -123,7 +131,9 @@ export const unfilteredChoicesAtom = atom(
 
     s(unfilteredChoices, a);
     const maybePreview = Boolean(
-      a.find((c) => c?.hasPreview) || g(promptData)?.hasPreview
+      a.find((c) => c?.hasPreview) ||
+        g(promptData)?.hasPreview ||
+        g(isMainScriptAtom)
     );
 
     s(unfilteredPreview, maybePreview);
@@ -162,7 +172,7 @@ export const unfilteredChoicesAtom = atom(
     const prevCId = g(prevChoiceId);
     const prevIndex = a.findIndex((c) => c?.id === prevCId);
 
-    s(indexAtom, prevIndex || 0);
+    if (!g(isMainScriptAtom)) s(indexAtom, prevIndex || 0);
   }
 );
 
@@ -194,7 +204,7 @@ const panelHTML = atom<string>('');
 export const panelHTMLAtom = atom(
   (g) => g(panelHTML),
   (g, s, a: string) => {
-    s(unfilteredChoicesAtom, []);
+    if (a) s(unfilteredChoicesAtom, []);
     s(panelHTML, a);
 
     s(loadingAtom, false);
@@ -205,14 +215,15 @@ const previewHTML = atom('');
 export const previewHTMLAtom = atom(
   (g) => g(previewHTML),
   (g, s, a: string) => {
-    if (!a) return; // never unset preview to avoid flash of white/black
-    const sc = g(script) as Script;
+    if (!a || !g(openAtom)) return; // never unset preview to avoid flash of white/black
     const tI = g(tabIndex);
     const iA = g(inputAtom);
+    const index = g(indexAtom);
 
-    if (sc.filePath === mainScriptPath && tI === 0 && iA === '') {
+    if (g(isMainScriptAtom) && tI === 0 && iA === '' && index === 0) {
       s(cachedMainPreview, a);
     }
+
     if (g(previewHTML) !== a) {
       s(previewHTML, a);
     }
@@ -497,6 +508,7 @@ export const scriptAtom = atom(
   (g, s, a: Script) => {
     console.clear();
     s(tabsAtom, a?.tabs || []);
+
     s(mouseEnabledAtom, 0);
     s(script, a);
     s(rawInputAtom, '');
@@ -515,9 +527,6 @@ export const scriptAtom = atom(
 
     s(flagsAtom, {});
     s(flaggedValueAtom, '');
-    if (a.filePath === mainScriptPath) {
-      s(previewHTMLAtom, g(cachedMainPreview));
-    }
     // s(panelHTMLAtom, `<div/>`);
   }
 );
@@ -526,12 +535,19 @@ export const isKitScriptAtom = atom<boolean>((g) => {
   return (g(script) as Script).filePath.includes(kitPath());
 });
 
+export const isMainScriptAtom = atom<boolean>((g) => {
+  return (g(script) as Script).filePath === mainScriptPath;
+});
+
 const topHeight = atom(88);
 const mainHeight = atom(0);
 
 const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter) => {
+  const isPreviewOpen = Boolean(
+    g(unfilteredPreview) && g(previewEnabled) && g(uiAtom) === UI.arg
+  );
   const data: ResizeData = {
     topHeight: g(topHeight),
     ui: g(uiAtom),
@@ -541,9 +557,7 @@ const resize = (g: Getter, s: Setter) => {
     hasChoices: Boolean(g(choices)?.length),
     hasPanel: Boolean(g(panelHTMLAtom)?.length),
     hasInput: Boolean(g(inputAtom)?.length),
-    isPreviewOpen: Boolean(
-      g(unfilteredPreview) && g(previewEnabled) && g(uiAtom) === UI.arg
-    ),
+    isPreviewOpen,
     previewEnabled: g(previewEnabled),
     open: g(rawOpen),
     tabIndex: g(tabIndex),
@@ -615,6 +629,7 @@ export const promptDataAtom = atom(
       s(placeholderAtom, a.placeholder);
       s(selectedAtom, a.selected);
       s(tabsAtom, a.tabs);
+
       s(inputAtom, a.input);
 
       s(processingAtom, false);
@@ -632,6 +647,11 @@ export const promptDataAtom = atom(
       }
       // s(tabIndex, a.tabIndex);
       s(promptData, a);
+
+      // ipcRenderer.send(Channel.SET_PROMPT_DATA, {
+      //   value: a,
+      //   pid: g(pidAtom),
+      // });
     }
   }
 );
@@ -720,6 +740,9 @@ export const openAtom = atom(
   (g, s, a: boolean) => {
     s(mouseEnabledAtom, 0);
     if (g(rawOpen) && a === false) {
+      const cachedPreview = g(cachedMainPreview);
+      s(previewHTMLAtom, cachedPreview);
+
       // s(choices, []);
       // s(tabIndex, 0);
       s(rawInputAtom, '');
@@ -730,6 +753,9 @@ export const openAtom = atom(
       // s(uiAtom, UI.arg);
       s(flagsAtom, {});
       s(flaggedValueAtom, '');
+      s(loading, false);
+      s(loadingAtom, false);
+
       ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: g(pidAtom) });
     }
     s(rawOpen, a);

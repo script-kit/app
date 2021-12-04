@@ -1,36 +1,36 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
+import { motion, useAnimation } from 'framer-motion';
 import { useAtom } from 'jotai';
 import { loadingAtom } from '../jotai';
 
 export default function TopBar() {
   const [loading] = useAtom(loadingAtom);
-  const [animateBar, setAnimateBar] = useState(false);
-  const animationStart = useCallback((event) => {
-    if (event.animationName === 'fadeIn') {
-      setAnimateBar(true);
+  const controls = useAnimation();
+
+  useEffect(() => {
+    if (loading) {
+      controls.start({
+        left: ['-15%', '100%'],
+      });
     }
-  }, []);
-  const animationEnd = useCallback((event) => {
-    if (event.animationName === 'fadeOut') {
-      setAnimateBar(false);
-    }
-  }, []);
+  }, [loading]);
 
   return (
-    <div
-      onAnimationStart={animationStart}
-      onAnimationEnd={animationEnd}
-      style={{ height: '2px' }}
-      className={`absolute top-0 left-0 w-full
-      animate-fade-${loading ? 'in' : 'out'}
-      `}
+    <motion.div
+      animate={{ opacity: loading ? [0, 1] : [1, 0] }}
+      className="pointer-events-none absolute top-0 left-0 w-full"
     >
-      <div
-        className={`
-          ${
-            animateBar ? `animate-loading` : ``
-          } bg-primary-dark dark:bg-primary-light h-full w-10 absolute top-0`}
+      <motion.div
+        initial={false}
+        animate={controls}
+        transition={{
+          repeat: Infinity,
+          repeatType: 'reverse',
+          duration: window.innerWidth < 400 ? 1.5 : 2.5,
+        }}
+        style={{ height: 2 }}
+        className="bg-primary-dark dark:bg-primary-light h-full w-10 absolute top-0 left-0"
       />
-    </div>
+    </motion.div>
   );
 }

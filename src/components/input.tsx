@@ -7,12 +7,14 @@ import { useAtom } from 'jotai';
 
 import {
   inputAtom,
+  isMainScriptAtom,
   modifiers,
   modifiersAtom,
   pidAtom,
   placeholderAtom,
   processingAtom,
   promptDataAtom,
+  scriptAtom,
   selectionStartAtom,
   submittedAtom,
   submitValueAtom,
@@ -53,6 +55,7 @@ export default function Input() {
   const [, setModifiers] = useAtom(modifiersAtom);
   const [ultraShortCodes] = useAtom(ultraShortCodesAtom);
   const [processing] = useAtom(processingAtom);
+  const [isMainScript] = useAtom(isMainScriptAtom);
 
   useEscape();
   useEnter();
@@ -158,7 +161,9 @@ export default function Input() {
   );
 
   return (
-    <div className={`flex flex-row ${processing ? `hidden` : ``}`}>
+    <div
+      className={`flex flex-row ${processing && !isMainScript ? `hidden` : ``}`}
+    >
       <input
         id="input"
         spellCheck="false"

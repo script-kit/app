@@ -46,27 +46,23 @@ img:after {
 }
 
 html {
-  min-height: 100vh;
-  height: 100vh;
+  @apply h-screen min-h-screen;
 }
 
 body {
-  @apply transition duration-200;
   @apply bg-bg-light dark:bg-bg-dark;
   @apply text-black dark:text-white;
   @apply bg-opacity-themelight dark:bg-opacity-themedark;
   @apply subpixel-antialiased;
   @apply overflow-hidden;
+  @apply h-screen min-h-screen;
+  @apply overflow-y-hidden;
   /* --tw-bg-opacity: 0.3; */
-
-  height: 100vh;
-  min-height: 100vh;
 }
 
 #root {
-  @apply dark:text-white text-black overflow-y-hidden h-screen;
-  min-height: 100vh;
-  height: 100vh;
+  @apply h-screen min-h-screen;
+  @apply overflow-y-hidden;
 }
 
 .choice {
