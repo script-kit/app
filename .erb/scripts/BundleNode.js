@@ -12,21 +12,38 @@ exports.default = async function notarizeMacos(context) {
   console.log(`>>> AFTER PACK:`);
 
   /** @type typeof import("electron-builder").AfterPackContext */
-  const { electronPlatformName, appOutDir, arch } = context;
-  const archCode = Object.entries(Arch).find(
-    ([key, value]) => value === arch
-  )[0];
+  let { electronPlatformName, appOutDir, arch } = context;
+  let archCode = Object.entries(Arch).find(([key, value]) => value === arch)[0];
 
   console.log({ VERSION, archCode, electronPlatformName });
-  const url = `https://nodejs.org/dist/${VERSION}/node-${VERSION}-${electronPlatformName}-${archCode}.tar.gz`;
+  if (electronPlatformName.startsWith('win')) {
+    electronPlatformName = 'win';
+    if (archCode.includes('64')) {
+      archCode = 'x64';
+    } else {
+      archCode = 'x86';
+    }
+  }
+
+  // https://nodejs.org/dist/v17.2.0/node-v17.2.0-win-x86.zip
+  // https://nodejs.org/dist/v17.2.0/node-v17.2.0-win-x64.zip
+  // https://nodejs.org/dist/v17.2.0/node-v17.2.0-win32-arm64.zip
+  const mac = electronPlatformName.startsWith('mac');
+  const url = `https://nodejs.org/dist/${VERSION}/node-${VERSION}-${electronPlatformName}-${archCode}.${
+    mac ? 'tar.gz' : 'zip'
+  }`;
 
   console.log(`Downloading ${url}`);
 
   const archTxt = 'arch.txt';
   const platformTxt = 'platform.txt';
   const nodeTxt = 'node.txt';
-  const nodeTar = 'node.tar.gz';
-  const assetsPath = `${appOutDir}/Kit.app/Contents/Resources/assets/`;
+  const nodeTar = `node.${mac ? 'tar.gz' : 'zip'}`;
+  const assetsPath = `${appOutDir}${
+    electronPlatformName.startsWith('win')
+      ? `/resources/assets/`
+      : `/Kit.app/Contents/Resources/assets/`
+  }`;
 
   fs.writeFileSync(`${assetsPath}${archTxt}`, archCode);
   fs.writeFileSync(`${assetsPath}${platformTxt}`, electronPlatformName);

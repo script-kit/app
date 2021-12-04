@@ -5,6 +5,7 @@ import {
   inputFocusAtom,
   isMouseDownAtom,
   openAtom,
+  processingAtom,
   submittedAtom,
 } from '../jotai';
 
@@ -15,12 +16,13 @@ export default () => {
   const [open] = useAtom(openAtom);
   const [mouseDown] = useAtom(isMouseDownAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
+  const [processing] = useAtom(processingAtom);
 
   useEffect(() => {
     if (inputFocus && ref?.current) {
       ref?.current.focus();
     }
-  }, [flagValue, submitted, open, mouseDown, inputFocus]);
+  }, [flagValue, submitted, open, mouseDown, inputFocus, processing]);
 
   return ref;
 };
