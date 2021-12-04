@@ -27,8 +27,8 @@ exports.default = async function notarizeMacos(context) {
 
   // https://nodejs.org/dist/v17.2.0/node-v17.2.0-win-x86.zip
   // https://nodejs.org/dist/v17.2.0/node-v17.2.0-win-x64.zip
-  // https://nodejs.org/dist/v17.2.0/node-v17.2.0-win32-arm64.zip
-  const mac = electronPlatformName.startsWith('mac');
+  // https://nodejs.org/dist/v17.2.0/node-v17.2.0-darwin-arm64.tar.gz
+  const mac = electronPlatformName.startsWith('darwin');
   const url = `https://nodejs.org/dist/${VERSION}/node-${VERSION}-${electronPlatformName}-${archCode}.${
     mac ? 'tar.gz' : 'zip'
   }`;
