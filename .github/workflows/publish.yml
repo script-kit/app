@@ -87,4 +87,4 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn electron-builder --publish always -m
+          yarn electron-builder --publish always -m -w
