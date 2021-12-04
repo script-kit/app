@@ -78,6 +78,7 @@ import {
   textareaValueAtom,
   loadingAtom,
   processingAtom,
+  isMainScriptAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -161,6 +162,7 @@ export default function App() {
   const [, setTextareaValue] = useAtom(textareaValueAtom);
   const [, setLoading] = useAtom(loadingAtom);
   const [processing] = useAtom(processingAtom);
+  const [isMainScript] = useAtom(isMainScriptAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -257,6 +259,13 @@ export default function App() {
     if (headerRef?.current) setTopRef(headerRef?.current);
   }, [headerRef]);
 
+  useEffect(() => {
+    if (windowContainerRef?.current) {
+      windowContainerRef.current.style.height = `${window.innerHeight}px`;
+      // windowContainerRef.current.style.width = window.innerWidth + 'px';
+    }
+  }, [mainHeight, windowContainerRef]);
+
   return (
     <ErrorBoundary>
       <div
@@ -266,7 +275,7 @@ export default function App() {
             WebkitUserSelect: 'none',
           } as any
         }
-        className="relative flex flex-col w-full h-full"
+        className="relative flex flex-col w-full h-screen min-h-screen"
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseLeave}
@@ -294,7 +303,7 @@ export default function App() {
         h-full w-full
         border-transparent
         border-b
-        ${processing ? `hidden` : ``}
+        ${processing && !isMainScript ? `hidden` : ``}
         `}
         >
           {!!(ui & UI.drop) && <Drop />}

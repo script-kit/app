@@ -75,7 +75,7 @@ export const createPromptWindow = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       devTools: process.env.NODE_ENV === 'development' || devTools,
-      backgroundThrottling: false,
+      backgroundThrottling: true,
     },
     alwaysOnTop: true,
     closable: false,
@@ -190,15 +190,15 @@ export const focusPrompt = () => {
 
 export const escapePromptWindow = async () => {
   await cachePromptBounds(Bounds.Position);
-  promptScript = {
-    id: '',
-    command: '',
-    filePath: '',
-    type: ProcessType.Prompt,
-    kenv: '',
-    requiresPrompt: false,
-    name: '',
-  };
+  // promptScript = {
+  //   id: '',
+  //   command: '',
+  //   filePath: '',
+  //   type: ProcessType.Prompt,
+  //   kenv: '',
+  //   requiresPrompt: false,
+  //   name: '',
+  // };
   blurredByKit = false;
   hideAppIfNoWindows();
 };
@@ -321,6 +321,12 @@ export const resize = debounce(
     // if (mainHeight && ui & UI.arg && !hasPanel && !hasChoices) mainHeight = 0;
     if (!promptWindow?.isVisible() || !open) return;
 
+    // console.log({
+    //   hasPreview: promptScript?.hasPreview,
+    //   isPreviewOpen,
+    //   previewEnabled,
+    // });
+
     promptState =
       promptScript?.hasPreview && isPreviewOpen ? 'expanded' : 'collapsed';
     // console.log(`Resize:`, { promptState });
@@ -366,7 +372,7 @@ export const resize = debounce(
     const height = isPreviewOpen
       ? maxHeight
       : Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
-    console.log({ targetHeight, maxHeight, height });
+    // console.log({ targetHeight, maxHeight, height });
     // console.log({ currentHeight, height, currentWidth, width });
     if (currentHeight === height && currentWidth === width) return;
     log.info(`↕ RESIZE: ${width} x ${height}`);
@@ -594,7 +600,7 @@ let currentUI: UI;
 export const setPromptData = async (promptData: PromptData) => {
   currentUI = promptData.ui;
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
-  await showPrompt();
+  showPrompt();
 };
 
 export const setChoices = (choices: Choice[]) => {

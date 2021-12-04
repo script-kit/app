@@ -53,12 +53,7 @@ import {
   setTabIndex,
 } from './prompt';
 import { setAppHidden } from './appHidden';
-import {
-  makeRestartNecessary,
-  serverState,
-  getBackgroundTasks,
-  getSchedule,
-} from './state';
+import { makeRestartNecessary, getBackgroundTasks, getSchedule } from './state';
 
 import { emitter, KitEvent } from './events';
 import { show, showDevTools } from './show';

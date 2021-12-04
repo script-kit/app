@@ -322,6 +322,7 @@
     "electron-log": "^4.2.4",
     "electron-store": "^7.0.2",
     "electron-updater": "^4.3.9",
+    "framer-motion": "^5.3.3",
     "fs-extra": "^10.0.0",
     "he": "^1.2.0",
     "history": "^5.0.0",
