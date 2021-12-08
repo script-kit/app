@@ -48,6 +48,7 @@ import {
   setPlaceholder,
   setPreview,
   setPromptData,
+  setPromptPid,
   setPromptProp,
   setScript,
   setTabIndex,
@@ -228,7 +229,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   TOGGLE_BACKGROUND: (data) => {
-    emitter.emit(KitEvent.ToggleBackground, data.value);
+    emitter.emit(KitEvent.ToggleBackground, data);
   },
 
   GET_SCREEN_INFO: toProcess(({ child }, { channel }) => {
@@ -326,8 +327,9 @@ const kitMessageMap: ChannelHandler = {
 
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
-  SET_PROMPT_DATA: async (data) => {
-    await setPromptData(data.value);
+  SET_PROMPT_DATA: (data) => {
+    setPromptPid(data.pid);
+    setPromptData(data.value);
   },
   SET_PROMPT_PROP: async (data) => {
     setPromptProp(data.value);
@@ -407,7 +409,7 @@ const kitMessageMap: ChannelHandler = {
 export const createMessageHandler =
   (type: ProcessType) => (data: GenericSendData) => {
     if (!data.kitScript) log.info(data);
-    if (data.channel !== Channel.SET_PREVIEW) {
+    if (![Channel.SET_PREVIEW, Channel.SET_LOADING].includes(data.channel)) {
       log.info(
         `${data.channel} ${type} process ${data.kitScript.replace(
           /.*\//gi,
@@ -559,21 +561,18 @@ class Processes extends Array<ProcessInfo> {
 
     const { pid } = child;
 
-    child.on('exit', () => {
+    child.on('exit', (code) => {
       if (id) clearTimeout(id);
-      if (type === ProcessType.Prompt) {
-        setAppHidden(false);
-        sendToPrompt(Channel.EXIT, false);
 
-        emitter.emit(KitEvent.ExitPrompt);
-        emitter.emit(KitEvent.ResumeShortcuts);
-      }
+      sendToPrompt(Channel.EXIT, pid);
 
       const { values } = processes.getByPid(pid) as ProcessInfo;
       if (resolve) {
         resolve(values);
       }
-      log.info(`🟡 end ${type} process: ${scriptPath} id: ${child.pid}`);
+      log.info(
+        `🟡 exit code ${code}. ${type} process: ${scriptPath} id: ${child.pid}`
+      );
       processes.removeByPid(pid);
     });
 

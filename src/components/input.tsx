@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { useCallback, KeyboardEvent, LegacyRef, useEffect } from 'react';
+import React, { useCallback, KeyboardEvent, LegacyRef } from 'react';
+import { motion } from 'framer-motion';
 
 import { Choice } from '@johnlindquist/kit/types/core';
 import { useAtom } from 'jotai';
@@ -160,7 +161,14 @@ export default function Input() {
   );
 
   return (
-    <div className="flex flex-row">
+    <motion.div
+      className="flex flex-row"
+      initial={{
+        opacity: 0,
+      }}
+      animate={{ opacity: processing ? 0 : 1 }}
+      transition={{ duration: 0.2 }}
+    >
       <input
         id="input"
         spellCheck="false"
@@ -188,6 +196,6 @@ export default function Input() {
         type={promptData?.secret ? 'password' : promptData?.type || 'text'}
         value={inputValue}
       />
-    </div>
+    </motion.div>
   );
 }

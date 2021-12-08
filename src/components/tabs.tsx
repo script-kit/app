@@ -3,6 +3,7 @@
 import { useAtom } from 'jotai';
 import React from 'react';
 import SimpleBar from 'simplebar-react';
+
 import { mouseEnabledAtom, tabIndexAtom, tabsAtom } from '../jotai';
 
 export default function KitTabs() {

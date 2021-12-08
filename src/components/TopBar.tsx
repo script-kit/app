@@ -25,25 +25,25 @@ export default function TopBar() {
   }, []);
 
   return (
-    <motion.div
-      animate={{ opacity: loading ? [0, 1] : [1, 0] }}
-      className={`
-      ${hidden ? 'hidden' : ''}
-
-      pointer-events-none absolute top-0 left-0 w-full`}
-      onAnimationEnd={onAnimationEnd}
-    >
+    !hidden && (
       <motion.div
-        initial={false}
-        animate={controls}
-        transition={{
-          repeat: Infinity,
-          repeatType: 'reverse',
-          duration: window.innerWidth < 400 ? 1.5 : 2.5,
-        }}
-        style={{ height: 2 }}
-        className="bg-primary-dark dark:bg-primary-light h-full w-10 absolute top-0 left-0"
-      />
-    </motion.div>
+        animate={{ opacity: loading ? [0, 1] : [1, 0] }}
+        className={`
+      pointer-events-none absolute top-0 left-0 w-full`}
+        onAnimationEnd={onAnimationEnd}
+      >
+        <motion.div
+          initial={false}
+          animate={controls}
+          transition={{
+            repeat: Infinity,
+            repeatType: 'reverse',
+            duration: window.innerWidth < 400 ? 1.5 : 2.5,
+          }}
+          style={{ height: 2 }}
+          className="bg-primary-dark dark:bg-primary-light h-full w-10 absolute top-0 left-0"
+        />
+      </motion.div>
+    )
   );
 }

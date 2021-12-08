@@ -24,7 +24,7 @@ import {
   EditorOptions,
 } from '@johnlindquist/kit/types/kitapp';
 
-import _, { clamp, debounce, drop, isEqual } from 'lodash';
+import _, { clamp, debounce, drop, gt, isEqual } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
 import { ResizeData, ScoredChoice } from './types';
@@ -32,7 +32,19 @@ import { ResizeData, ScoredChoice } from './types';
 let placeholderTimeoutId: NodeJS.Timeout;
 let choicesTimeoutId: NodeJS.Timeout;
 
-export const pidAtom = atom(0);
+const processId = atom(0);
+export const pidAtom = atom(
+  (g) => g(processId),
+  (g, s, a: number) => {
+    if (a && g(processId) !== a) {
+      ipcRenderer.send(Channel.ESCAPE_PRESSED, {
+        pid: g(processId),
+        newPid: a,
+      });
+    }
+    s(processId, a);
+  }
+);
 export const processingAtom = atom(false);
 const rawOpen = atom(false);
 export const submittedAtom = atom(false);
@@ -377,6 +389,7 @@ export const scoredChoices = atom(
   (g) => g(choices),
   (g, s, a: ScoredChoice[]) => {
     if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
+
     s(submittedAtom, false);
     s(loadingAtom, false);
     s(choices, a);
@@ -551,7 +564,7 @@ const resize = (g: Getter, s: Setter) => {
   const data: ResizeData = {
     topHeight: g(topHeight),
     ui: g(uiAtom),
-    mainHeight: g(mainHeight),
+    mainHeight: g(uiAtom) === UI.hotkey ? 0 : g(mainHeight),
     filePath: (g(script) as Script).filePath,
     mode: g(modeAtom),
     hasChoices: Boolean(g(choices)?.length),
@@ -643,7 +656,7 @@ export const promptDataAtom = atom(
       }
 
       if (a.description) {
-        s(descriptionAtom, a.description);
+        s(descriptionAtom, a.description || g(scriptAtom)?.description || '');
       }
       // s(tabIndex, a.tabIndex);
       s(promptData, a);
@@ -757,6 +770,8 @@ export const openAtom = atom(
       s(loadingAtom, false);
 
       ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: g(pidAtom) });
+
+      s(pidAtom, 0);
     }
     s(rawOpen, a);
   }
@@ -827,4 +842,13 @@ export const loadingAtom = atom(
   debounce((g, s, a: boolean) => {
     s(loading, a);
   }, 500)
+);
+
+export const exitAtom = atom(
+  (g) => g(openAtom),
+  (g, s, a: number) => {
+    if (g(pidAtom) === a) {
+      s(openAtom, false);
+    }
+  }
 );

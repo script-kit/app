@@ -1,6 +1,6 @@
 /* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useCallback } from 'react';
-
+import { motion, useAnimation } from 'framer-motion';
 import { FixedSizeList as List } from 'react-window';
 import { useAtom } from 'jotai';
 import memoize from 'memoize-one';
@@ -84,6 +84,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   return (
     <div
       className={`
+
       list-component
       flex flex-row
       w-full
@@ -98,27 +99,37 @@ export default function ChoiceList({ width, height }: ListProps) {
         } as any
       }
     >
-      <List
-        ref={listRef}
-        innerRef={innerRef}
-        height={height}
-        itemCount={choices?.length || 0}
-        itemSize={BUTTON_HEIGHT}
-        width={previewEnabled && hasPreview ? '320px' : '100%'}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{
+          opacity: choices?.length ? 1 : 0,
+        }}
+        transition={{ duration: 0.15, ease: 'circOut' }}
+        className="h-full"
         style={{
           minWidth: previewEnabled && hasPreview ? '320px' : '100%',
         }}
-        itemData={itemData}
-        className={`
+      >
+        <List
+          ref={listRef}
+          innerRef={innerRef}
+          height={height}
+          itemCount={choices?.length || 0}
+          itemSize={BUTTON_HEIGHT}
+          width="100%"
+          itemData={itemData}
+          className={`
         h-full
         px-0 flex flex-col
         text-black dark:text-white
         overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20
         `}
-        // onItemsRendered={onItemsRendered}
-      >
-        {ChoiceButton}
-      </List>
+          // onItemsRendered={onItemsRendered}
+        >
+          {ChoiceButton}
+        </List>
+      </motion.div>
+
       {previewEnabled && <Preview />}
     </div>
   );

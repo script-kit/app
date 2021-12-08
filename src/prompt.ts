@@ -4,7 +4,7 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
-import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
+import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
   Script,
@@ -12,17 +12,11 @@ import {
   PromptBounds,
   PromptState,
 } from '@johnlindquist/kit/types/core';
-import { BrowserWindow, screen, app, Rectangle, session } from 'electron';
+import { BrowserWindow, screen, app, Rectangle } from 'electron';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import minimist from 'minimist';
-import { readFileSync } from 'fs';
-import {
-  mainScriptPath,
-  isFile,
-  kenvPath,
-  kitPath,
-} from '@johnlindquist/kit/cjs/utils';
+import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { getPromptDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
@@ -33,7 +27,6 @@ import { getScriptsMemory } from './state';
 import { emitter, KitEvent } from './events';
 import {
   DEFAULT_HEIGHT,
-  DEFAULT_WIDTH,
   heightMap,
   INPUT_HEIGHT,
   MIN_HEIGHT,
@@ -75,7 +68,7 @@ export const createPromptWindow = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       devTools: process.env.NODE_ENV === 'development' || devTools,
-      backgroundThrottling: false,
+      backgroundThrottling: true,
     },
     alwaysOnTop: true,
     closable: false,
@@ -123,7 +116,7 @@ export const createPromptWindow = async () => {
       //   '--opacity-themelight': '0%',
       // });
       promptWindow?.setVibrancy('popover');
-    } else {
+    } else if (!ignoreBlur) {
       hidePromptWindow();
     }
 
@@ -363,7 +356,7 @@ export const resize = debounce(
     const maxHeight =
       hasPanel ||
       (mode === Mode.GENERATE && !previewEnabled) ||
-      ui & (UI.form | UI.div | UI.hotkey)
+      ui & (UI.form | UI.div)
         ? Math.round(getCurrentScreen().bounds.height * (3 / 4))
         : Math.max(DEFAULT_HEIGHT, cachedHeight);
 
@@ -447,7 +440,6 @@ enum Bounds {
 
 const cachePromptBounds = debounce(
   async (b: number = Bounds.Position | Bounds.Size) => {
-    log.info(`Start cachePromptBounds:`, b);
     if (!promptScript) return;
     const currentScreen = getCurrentScreen();
     const promptDb = await getPromptDb();
@@ -599,6 +591,7 @@ export const setTabIndex = (tabIndex: number) => {
 let currentUI: UI;
 export const setPromptData = async (promptData: PromptData) => {
   currentUI = promptData.ui;
+  setIgnoreBlur(Boolean(promptData?.ignoreBlur));
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
   showPrompt();
 };

@@ -56,7 +56,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
 import { createTray } from './tray';
-import { cacheMenu, setupWatchers } from './watcher';
+import { cacheMenu, setupWatchers, teardownWatchers } from './watcher';
 import { getAssetPath } from './assets';
 import { configureInterval } from './tick';
 import { clearPromptCache, createPromptWindow, sendToPrompt } from './prompt';
@@ -321,6 +321,16 @@ const ready = async () => {
       requiresPrompt: false,
       kenv: '.kit',
       schedule: '0 11 * * *',
+    });
+
+    powerMonitor.addListener('suspend', async () => {
+      log.info(`😴 System suspending. Removing watchers.`);
+      await teardownWatchers();
+    });
+
+    powerMonitor.addListener('resume', async () => {
+      log.info(`🌄 System waking. Starting watchers.`);
+      await setupWatchers();
     });
   } catch (error) {
     log.warn(error);

@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import path from 'path';
 import { useAtom } from 'jotai';
 import MonacoEditor, { loader } from '@monaco-editor/react';
+import { motion } from 'framer-motion';
+
 import { editor } from 'monaco-editor';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import { darkAtom, editorConfigAtom, openAtom } from '../jotai';
@@ -43,7 +45,9 @@ export default function Editor() {
   const [options] = useAtom(editorConfigAtom);
   const [isDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
-  const [editorValue, setEditorValue] = useState('');
+  const [editorValue, setEditorValue] = useState(
+    (options as EditorOptions)?.value || ''
+  );
 
   useSave(editorValue);
   useClose();
@@ -101,7 +105,10 @@ export default function Editor() {
   }, []);
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
       ref={containerRef}
       className={`
     pt-3
@@ -116,7 +123,7 @@ export default function Editor() {
         value={(options as EditorOptions)?.value || ''}
         onChange={onChange}
       />
-    </div>
+    </motion.div>
   );
 }
 
