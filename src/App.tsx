@@ -275,7 +275,7 @@ export default function App() {
     <ErrorBoundary>
       <motion.div
         animate={{ opacity: open ? 1 : 0 }}
-        transition={{ duration: 0.1, ease: 'easeOut' }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         ref={windowContainerRef}
         style={
           {
@@ -302,9 +302,7 @@ export default function App() {
           {selected && <Selected />}
           {hint && <Hint />}
           {tabs?.length > 0 && !flagValue && <Tabs />}
-          {logHtml?.length > 0 && script?.log !== 'false' && !isKitScript && (
-            <Log />
-          )}
+          {logHtml?.length > 0 && script?.log !== 'false' && <Log />}
         </header>
         <main
           ref={mainRef}

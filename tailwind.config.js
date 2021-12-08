@@ -73,7 +73,11 @@ module.exports = {
         mono: ['JetBrains Mono'],
       },
       margin: {
-        '-2': '-2px',
+        '2px': '2px',
+        '3px': '3px',
+      },
+      padding: {
+        '3px': '3px',
       },
       scale: {
         60: '.60',
