@@ -30,7 +30,7 @@ export default function Selected() {
       className={`
 flex flex-row items-center
 text-xs
--mt-2  border-b-2
+-mt-0.5  border-b-2
 text-primary-dark dark:text-primary-light
 border-primary-dark dark:border-primary-light
     hover:cursor-pointer
