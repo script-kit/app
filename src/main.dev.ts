@@ -44,7 +44,15 @@ import {
 import { homedir } from 'os';
 import { ensureDir } from 'fs-extra';
 import { existsSync, readFileSync } from 'fs';
-import { chmod, lstat, readdir, readFile, rm, rmdir } from 'fs/promises';
+import {
+  chmod,
+  lstat,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  rmdir,
+} from 'fs/promises';
 import { Channel, ProcessType } from '@johnlindquist/kit/cjs/enum';
 
 import {
@@ -107,7 +115,7 @@ const options: SpawnSyncOptions = {
   env: {
     KIT,
     KENV: kenvPath(),
-    PATH: KIT_FIRST_PATH,
+    PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
   },
 };
 
@@ -534,6 +542,7 @@ const checkKit = async () => {
   setupLog(`\n\n---------------------------------`);
   setupLog(`Launching Script Kit  ${getVersion()}`);
   setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
+  log.info(`PATH:`, KIT_FIRST_PATH);
   configureAutoUpdate();
   await checkForUpdates();
 
@@ -573,7 +582,17 @@ const checkKit = async () => {
 
           if (platform === 'win') {
             const d = await Open.file(KIT_NODE_TAR);
-            d.extract({ path: kitPath('node'), concurrency: 5 });
+            await d.extract({ path: kitPath('node'), concurrency: 5 });
+            const nodeDir = await readdir(kitPath('node'));
+            const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));
+            if (nodeDirName) {
+              await rename(
+                kitPath('node', nodeDirName),
+                kitPath('node', 'bin')
+              );
+            } else {
+              log.warn(`Couldn't find node dir in ${nodeDir}`);
+            }
           } else {
             await tar.x({
               file: KIT_NODE_TAR,
@@ -593,6 +612,7 @@ const checkKit = async () => {
         }
       }
       setupLog(`updating ~/.kit packages...`);
+      log.info(`PATH:`, options?.env?.PATH);
       const npmResult = spawnSync(
         `npm`,
         [`i`, `--production`, `--no-progress`, `--quiet`],
