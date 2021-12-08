@@ -56,7 +56,7 @@ jobs:
 
       - name: Semantic Release
         id: semantic
-        uses: cycjimmy/semantic-release-action@v2.5.3
+        uses: cycjimmy/semantic-release-action@v2.6.0
         with:
           semantic_version: 16
           branches: |
