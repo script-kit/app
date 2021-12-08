@@ -13,6 +13,7 @@ import {
   PromptState,
 } from '@johnlindquist/kit/types/core';
 import { BrowserWindow, screen, app, Rectangle } from 'electron';
+import os from 'os';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import minimist from 'minimist';
@@ -21,6 +22,7 @@ import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { getPromptDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
 import { getAssetPath } from './assets';
+
 // import { Channel, Mode, UI } from '@johnlindquist/kit';
 import { getAppHidden } from './appHidden';
 import { getScriptsMemory } from './state';
@@ -55,10 +57,11 @@ const { devTools } = miniArgs;
 log.info(process.argv.join(' '), devTools);
 
 export const createPromptWindow = async () => {
+  const isMac = os.platform() === 'darwin';
   promptWindow = new BrowserWindow({
     useContentSize: true,
     frame: false,
-    transparent: true,
+    transparent: isMac,
     vibrancy: 'menu',
     visualEffectState: 'active',
     show: false,
@@ -127,6 +130,12 @@ export const createPromptWindow = async () => {
     ) {
       emitter.emit(KitEvent.Blur);
     }
+
+    if (!isMac)
+      sendToPrompt(Channel.SET_THEME, {
+        '--opacity-themedark': '100%',
+        '--opacity-themelight': '100%',
+      });
   });
 
   const onMove = async () => {
