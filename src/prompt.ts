@@ -68,7 +68,7 @@ export const createPromptWindow = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       devTools: process.env.NODE_ENV === 'development' || devTools,
-      backgroundThrottling: true,
+      backgroundThrottling: false,
     },
     alwaysOnTop: true,
     closable: false,
