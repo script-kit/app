@@ -5,6 +5,7 @@ import {
   BrowserWindowConstructorOptions,
   screen,
 } from 'electron';
+import os from 'os';
 import log from 'electron-log';
 import { ensureDir } from 'fs-extra';
 import path from 'path';
@@ -15,6 +16,8 @@ import { getAssetPath } from './assets';
 export const INSTALL_ERROR = 'install-error';
 
 const page = (body: string, options: BrowserWindowConstructorOptions) => {
+  const isMac = os.platform() === 'darwin';
+
   const baseURL = app.getAppPath().replace('\\', '/');
   const stylePath = `${baseURL}/dist/style.css`;
 
@@ -42,6 +45,15 @@ const page = (body: string, options: BrowserWindowConstructorOptions) => {
       if(message) document.querySelector(".message").innerHTML = message
       if(typeof spinner === "boolean") document.querySelector(".spinner").classList[spinner ? "remove" : "add"]("hidden")
     })
+
+    ${
+      isMac
+        ? ``
+        : `
+    document.documentElement.style.setProperty("--opacity-themedark", "100%");
+    document.documentElement.style.setProperty("--opacity-themelight", "100%");
+    `
+    }
     </script>
 </head>
     ${body}

@@ -614,7 +614,7 @@ const checkKit = async () => {
       setupLog(`updating ~/.kit packages...`);
       log.info(`PATH:`, options?.env?.PATH);
       const npmResult = spawnSync(
-        `npm`,
+        kitPath('node', 'bin', 'npm'),
         [`i`, `--production`, `--no-progress`, `--quiet`],
         options
       );
@@ -623,8 +623,8 @@ const checkKit = async () => {
 
     await chmod(kitPath('script'), 0o755);
     const chmodResult = spawnSync(
-      `./script`,
-      [`./setup/chmod-helpers.js`],
+      kitPath('script'),
+      [kitPath('setup', 'chmod-helpers.js')],
       options
     );
     await handleSpawnReturns(`chmod helpers`, chmodResult);
@@ -635,8 +635,8 @@ const checkKit = async () => {
   if (kenvsExists() && examplesExists()) {
     setupLog(`Updating examples...`);
     spawn(
-      `./script`,
-      [`./cli/kenv-pull.js`, kenvPath(`kenvs`, `examples`)],
+      kitPath('script'),
+      [kitPath('cli', 'kenv-pull.js'), kenvPath(`kenvs`, `examples`)],
       options
     );
 
@@ -657,8 +657,8 @@ const checkKit = async () => {
     await ensureKenvDirs();
 
     const cloneExamplesResult = spawnSync(
-      `./script`,
-      [`./setup/clone-examples.js`],
+      kitPath('script'),
+      [kitPath('setup', 'clone-examples.js')],
       options
     );
     await handleSpawnReturns(`clone-examples`, cloneExamplesResult, false);
@@ -669,21 +669,29 @@ const checkKit = async () => {
   if (!kenvConfigured()) {
     setupLog(`Run .kenv setup script...`);
 
-    const setupResult = spawnSync(`./script`, [`./setup/setup.js`], options);
+    const setupResult = spawnSync(
+      kitPath('script'),
+      [kitPath('setup', 'setup.js')],
+      options
+    );
     await handleSpawnReturns(`setup`, setupResult);
 
     kenvConfigured();
   }
 
   const createAllBins = spawnSync(
-    `./script`,
-    [`./cli/create-all-bins.js`],
+    kitPath('script'),
+    [kitPath('cli', 'create-all-bins.js')],
     options
   );
   await handleSpawnReturns(`create-all-bins`, createAllBins);
 
   setupLog(`Update .kenv`);
-  const patchResult = spawnSync(`./script`, [`./setup/patch.js`], options);
+  const patchResult = spawnSync(
+    kitPath('script'),
+    [kitPath('setup', 'patch.js')],
+    options
+  );
   await handleSpawnReturns(`patch`, patchResult);
 
   await verifyInstall();
