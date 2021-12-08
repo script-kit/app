@@ -20,7 +20,7 @@ import { emitter, KitEvent } from './events';
 
 import { processes, ProcessInfo } from './process';
 
-import { escapePromptWindow, reload, resize } from './prompt';
+import { escapePromptWindow, reload, resize, setIgnoreBlur } from './prompt';
 import { setAppHidden, getAppHidden } from './appHidden';
 import { runPromptProcess } from './kit';
 import { AppChannel } from './enums';
@@ -45,6 +45,7 @@ export const startIpc = () => {
     Channel.VALUE_SUBMITTED,
     handleChannel(({ child, values }, { value, pid, flag }) => {
       emitter.emit(KitEvent.ResumeShortcuts);
+      setIgnoreBlur(false);
       values.push(value);
       if (child) {
         child?.send({ channel: Channel.VALUE_SUBMITTED, value, flag, pid });
@@ -119,9 +120,15 @@ export const startIpc = () => {
     resize(resizeData);
   });
 
-  ipcMain.on(Channel.ESCAPE_PRESSED, async (event, { pid }) => {
-    escapePromptWindow();
+  ipcMain.on(Channel.ESCAPE_PRESSED, async (event, { pid, newPid }) => {
     processes.removeByPid(pid);
+    emitter.emit(KitEvent.ResumeShortcuts);
+
+    if (!newPid) {
+      escapePromptWindow();
+      setAppHidden(false);
+      emitter.emit(KitEvent.ExitPrompt);
+    }
   });
 
   ipcMain.on(Channel.OPEN_SCRIPT_LOG, async (event, script: Script) => {

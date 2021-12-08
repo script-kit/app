@@ -41,7 +41,6 @@ const onScriptsChanged = async (
   }
   if (event === 'add' || event === 'change') {
     const script = await parseScript(filePath);
-
     shortcutScriptChanged(script);
     scheduleScriptChanged(script);
     systemScriptChanged(script);
@@ -60,8 +59,16 @@ export const onDbChanged = async (event: any, filePath: string) => {
 
 let watchers: FSWatcher[] = [];
 
-export const setupWatchers = async () => {
+export const teardownWatchers = async () => {
+  for await (const watcher of watchers) {
+    await watcher.close();
+    watcher.removeAllListeners();
+  }
   watchers = [];
+};
+
+export const setupWatchers = async () => {
+  await teardownWatchers();
   const shortcutsDbWatcher = chokidar.watch([shortcutsPath]);
   watchers.push(shortcutsDbWatcher);
   shortcutsDbWatcher.on('all', onDbChanged);
@@ -106,10 +113,7 @@ export const setupWatchers = async () => {
 };
 
 export const resetWatchers = async () => {
-  for await (const watcher of watchers) {
-    await watcher.close();
-  }
-
+  await teardownWatchers();
   await setupWatchers();
 };
 

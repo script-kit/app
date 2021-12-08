@@ -2,6 +2,8 @@
 import React, { LegacyRef, RefObject, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
 import { useAtom } from 'jotai';
+import { motion, useAnimation } from 'framer-motion';
+
 import { mouseEnabledAtom, panelHTMLAtom, darkAtom } from '../jotai';
 import {
   useEnter,
@@ -53,9 +55,13 @@ export default function Panel({ width, height }: PanelProps) {
       </div> */}
       <style type="text/css">{isDark ? darkTheme : lightTheme}</style>
 
-      <div
-        className="w-full h-full"
-        ref={divRef as LegacyRef<HTMLDivElement>}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 1] }}
+        transition={{ duration: 0.15, ease: 'circOut' }}
+        className={`
+        w-full h-full`}
+        ref={divRef as any}
         dangerouslySetInnerHTML={{ __html: panelHTML }}
       />
     </SimpleBar>

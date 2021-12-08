@@ -35,7 +35,13 @@ export const backgroundScriptChanged = ({
 
   // Task running. File changed
   if (backgroundMap.get(filePath)) {
+    if (!backgroundString) {
+      removeBackground(filePath);
+      return;
+    }
     if (backgroundString === 'auto') removeBackground(filePath);
+    startTask();
+  } else if (backgroundString === 'auto') {
     startTask();
   }
 };

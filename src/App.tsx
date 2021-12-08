@@ -23,6 +23,7 @@ import { useAtom } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
+import { motion, useAnimation } from 'framer-motion';
 
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
@@ -79,6 +80,7 @@ import {
   loadingAtom,
   processingAtom,
   isMainScriptAtom,
+  exitAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -118,6 +120,7 @@ class ErrorBoundary extends React.Component {
 export default function App() {
   const [pid, setPid] = useAtom(pidAtom);
   const [open, setOpen] = useAtom(openAtom);
+  const [, setExit] = useAtom(exitAtom);
   const [script, setScript] = useAtom(scriptAtom);
   const [description] = useAtom(descriptionAtom);
   const [name] = useAtom(nameAtom);
@@ -183,7 +186,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const messageMap: ChannelAtomMap = {
     // [Channel.RESET_PROMPT]: resetPromptHandler,
-    [Channel.EXIT]: setOpen,
+    [Channel.EXIT]: setExit,
     [Channel.SET_PID]: setPid,
     [Channel.SET_SCRIPT]: setScript,
     [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
@@ -270,14 +273,18 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div
+      <motion.div
+        animate={{ opacity: open ? 1 : 0 }}
+        transition={{ duration: 0.1, ease: 'easeOut' }}
         ref={windowContainerRef}
         style={
           {
             WebkitUserSelect: 'none',
           } as any
         }
-        className="relative flex flex-col w-full h-screen min-h-screen"
+        className={`
+        ${open} ? "" : "hidden"
+        relative flex flex-col w-full h-screen min-h-screen`}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseLeave}
@@ -332,7 +339,7 @@ export default function App() {
             )}
           </AutoSizer>
         </main>
-      </div>
+      </motion.div>
     </ErrorBoundary>
   );
 }

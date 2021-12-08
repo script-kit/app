@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
 import React, { LegacyRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { useAtom } from 'jotai';
 
 import { textareaConfigAtom, textareaValueAtom } from '../jotai';
@@ -27,7 +28,12 @@ export default function TextArea() {
   const containerRef = useMountMainHeight();
 
   return (
-    <div ref={containerRef}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      ref={containerRef}
+    >
       <textarea
         ref={textareaRef as LegacyRef<HTMLTextAreaElement>}
         style={
@@ -52,6 +58,6 @@ export default function TextArea() {
         focus:border-none border-none
         `}
       />
-    </div>
+    </motion.div>
   );
 }

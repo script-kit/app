@@ -12,6 +12,8 @@ import { overrideTailwindClasses } from 'tailwind-override';
 import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types/core';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
+import { motion } from 'framer-motion';
+
 import { ChoiceButtonProps } from '../types';
 import {
   flagsAtom,
@@ -245,7 +247,10 @@ export default function ChoiceButton({
                 )}
 
                 {choice?.icon && (
-                  <img
+                  <motion.img
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.1 }}
                     alt="icon"
                     className={`
     border-2 border-black dark:border-white border-opacity-50
@@ -309,7 +314,10 @@ export default function ChoiceButton({
               </div>
             )}
             {choice?.img && !imageFail && (
-              <img
+              <motion.img
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.1 }}
                 src={choice.img}
                 alt={choice.description || ''}
                 onError={() => setImageFail(true)}
