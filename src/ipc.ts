@@ -43,12 +43,12 @@ const handleChannel =
 export const startIpc = () => {
   ipcMain.on(
     Channel.VALUE_SUBMITTED,
-    handleChannel(({ child, values }, { value, pid, flag }) => {
+    handleChannel(({ child, values }, { value, pid, flag, id }) => {
       emitter.emit(KitEvent.ResumeShortcuts);
       setIgnoreBlur(false);
       values.push(value);
       if (child) {
-        child?.send({ channel: Channel.VALUE_SUBMITTED, value, flag, pid });
+        child?.send({ channel: Channel.VALUE_SUBMITTED, value, flag, pid, id });
       }
     })
   );
