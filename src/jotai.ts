@@ -184,7 +184,7 @@ export const unfilteredChoicesAtom = atom(
     const prevCId = g(prevChoiceId);
     const prevIndex = a.findIndex((c) => c?.id === prevCId);
 
-    if (!g(isMainScriptAtom)) s(indexAtom, prevIndex || 0);
+    s(indexAtom, prevIndex || 0);
   }
 );
 
@@ -718,11 +718,13 @@ export const submitValueAtom = atom(
     const flag = fValue ? a : f || '';
 
     const value = checkIfSubmitIsDrop(fValue || a);
+    const fC = g(focusedChoiceAtom);
 
     ipcRenderer.send(Channel.VALUE_SUBMITTED, {
       value,
       flag,
       pid: g(pidAtom),
+      id: fC?.id || -1,
     });
 
     // s(rawInputAtom, '');

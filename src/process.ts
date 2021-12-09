@@ -70,6 +70,9 @@ export const checkScriptChoices = (data: {
   if (data?.scripts) {
     const dataChoices: Script[] = (data?.choices || []) as Script[];
     const choices = dataChoices.map((script) => {
+      if (!script.description && script.name !== script.command) {
+        script.description = script.command;
+      }
       if (script.background) {
         const backgroundScript = getBackgroundTasks().find(
           (t) => t.filePath === script.filePath

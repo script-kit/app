@@ -590,6 +590,9 @@ const checkKit = async () => {
                 kitPath('node', nodeDirName),
                 kitPath('node', 'bin')
               );
+              log.info(await readdir(kitPath('node', 'bin')));
+              await chmod(kitPath('node', 'bin', 'npm'), 0o755);
+              await chmod(kitPath('node', 'bin', 'node.exe'), 0o755);
             } else {
               log.warn(`Couldn't find node dir in ${nodeDir}`);
             }
