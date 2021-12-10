@@ -292,6 +292,14 @@ body {
     list-style-type: unset;
   }
 
+  .prose > pre {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .prose > pre > code {
+    width: 100%;
+  }
+
   .prose > ul,
   ol {
     @apply ml-0;

@@ -1,6 +1,11 @@
 /* eslint-disable prettier/prettier */
 const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
+delete colors['lightBlue'];
+delete colors['coolGray'];
+delete colors['blueGray'];
+delete colors['trueGray'];
+delete colors['warmGray'];
 
 const colorVar = (name) => (v) => {
   const { opacityVariable, opacityValue } = v;
@@ -13,48 +18,49 @@ const colorVar = (name) => (v) => {
   return `rgb(var(--color-${name}))`;
 };
 
+const safeListStartsWith = [
+  'active',
+  'animate',
+  'hover',
+  'hidden',
+  'font',
+  'flex',
+  'justify',
+  'space',
+  'items',
+  'text',
+  'bg',
+  'self',
+  'italic',
+  'whitespace',
+  'min',
+  'max',
+  'grid',
+  'w{0,2}-(d/d|d.d|d{1,3}|full|screen|auto)',
+  'leading',
+  'prose',
+  'dark:prose-dark',
+  '-?inset',
+  '-?top',
+  '-?right',
+  '-?bottom',
+  '-?left',
+];
+
 /* eslint-disable global-require */
 module.exports = {
   mode: process.env.NODE_ENV === 'development' ? 'jit' : '',
-  purge: {
-    enabled: true,
-    content: [
-      './src/**/*.html',
-      './src/**/*.tsx',
-      './src/*.ts',
-      './safelist.txt',
-    ],
-    options: {
-      safelist: [
-        /^active/,
-        /^animate/,
-        /^hover/,
-        /^hidden/,
-        /^font/,
-        /^flex/,
-        /^justify/,
-        /^space/,
-        /^items/,
-        /^text/,
-        /^bg/,
-        /^self/,
-        /^italic/,
-        /^whitespace/,
-        /^min/,
-        /^max/,
-        /^grid/,
-        /^\w{0,2}-(\d\/\d|\d\.\d|\d{1,3}|full|screen|auto)/,
-        /^leading/,
-        /^prose/,
-        /^dark:prose-dark/,
-        /^-?inset/,
-        /^-?top/,
-        /^-?right/,
-        /^-?bottom/,
-        /^-?left/,
-      ],
+  content: [
+    './src/**/*.html',
+    './src/**/*.tsx',
+    './src/*.ts',
+    './safelist.txt',
+  ],
+  safelist: [
+    {
+      pattern: new RegExp(`^(${safeListStartsWith.join('|')})`),
     },
-  },
+  ],
   darkMode: 'media',
   variants: {
     extend: {

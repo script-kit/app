@@ -86,6 +86,7 @@ import {
   splashBodyAtom,
   splashHeaderAtom,
   splashProgressAtom,
+  isReadyAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -147,6 +148,7 @@ export default function App() {
   const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
   const [mode, setMode] = useAtom(modeAtom);
+  const [, setReady] = useAtom(isReadyAtom);
 
   const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
   const [tabs] = useAtom(tabsAtom);
@@ -222,6 +224,7 @@ export default function App() {
     [Channel.SET_PREVIEW]: setPreviewHTML,
     [Channel.SET_LOG]: setLogHtml,
     [Channel.SET_PLACEHOLDER]: setPlaceholder,
+    [Channel.SET_READY]: setReady,
     [Channel.SET_SUBMIT_VALUE]: setSubmitValue,
     [Channel.SET_TAB_INDEX]: setTabIndex,
     [Channel.SET_PROMPT_DATA]: setPromptData,
@@ -308,17 +311,21 @@ export default function App() {
       >
         <header ref={headerRef}>
           <Header />
-          {!!(ui & UI.hotkey) && (
-            <Hotkey
-              submit={setSubmitValue}
-              onHotkeyHeightChanged={setMainHeight}
-            />
-          )}
-          {!!(ui & UI.arg) && <Input />}
-          {selected && <Selected />}
-          {hint && <Hint />}
-          {tabs?.length > 0 && !flagValue && <Tabs />}
-          {logHtml?.length > 0 && script?.log !== 'false' && <Log />}
+          <AnimatePresence>
+            {!!(ui & UI.hotkey) && (
+              <Hotkey
+                submit={setSubmitValue}
+                onHotkeyHeightChanged={setMainHeight}
+              />
+            )}
+            {!!(ui & UI.arg) && <Input />}
+            {!!(ui & UI.arg) && selected && <Selected />}
+            {hint && <Hint />}
+            {!!(ui & (UI.arg | UI.div)) && tabs?.length > 0 && !flagValue && (
+              <Tabs />
+            )}
+            {logHtml?.length > 0 && script?.log !== 'false' && <Log />}
+          </AnimatePresence>
         </header>
         <main
           ref={mainRef}

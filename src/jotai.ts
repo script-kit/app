@@ -56,7 +56,7 @@ export const tabsAtom = atom(
   (g, s, a: string[]) => {
     const prevTabs = g(tabs);
     if (isEqual(prevTabs, a)) return;
-    s(tabs, a);
+    s(tabs, a || []);
   }
 );
 const cachedMainPreview = atom('');
@@ -185,7 +185,9 @@ export const unfilteredChoicesAtom = atom(
     // }
 
     const prevCId = g(prevChoiceId);
-    const prevIndex = a.findIndex((c) => c?.id === prevCId);
+    const prevIndex = g(isMainScriptAtom)
+      ? 0
+      : a.findIndex((c) => c?.id === prevCId);
 
     s(indexAtom, prevIndex || 0);
   }
@@ -193,7 +195,14 @@ export const unfilteredChoicesAtom = atom(
 
 export const prevChoicesAtom = atom<Choice[]>([]);
 
-export const uiAtom = atom<UI>(UI.arg);
+const ui = atom<UI>(UI.arg);
+export const uiAtom = atom(
+  (g) => g(ui),
+  (g, s, a: UI) => {
+    s(ui, a);
+    s(previewHTMLAtom, g(cachedMainPreview));
+  }
+);
 
 const hint = atom('');
 export const hintAtom = atom(
@@ -880,3 +889,5 @@ export const getAssetAtom = atom((g) => {
   const { sep, assetPath } = g(appConfigAtom);
   return (asset: string) => assetPath + sep + asset;
 });
+
+export const isReadyAtom = atom(false);

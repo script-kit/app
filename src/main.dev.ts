@@ -29,10 +29,12 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
 import {
+  fork,
   spawnSync,
   SpawnSyncOptions,
   SpawnSyncReturns,
   spawn,
+  ForkOptions,
 } from 'child_process';
 import os from 'os';
 import { ensureDir } from 'fs-extra';
@@ -55,6 +57,7 @@ import {
   KIT_FIRST_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
+  execPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
 import { createTray } from './tray';
@@ -109,15 +112,6 @@ Node version: ${nodeVersion}
 `);
 
 const KIT = kitPath();
-const options: SpawnSyncOptions = {
-  cwd: KIT,
-  encoding: 'utf-8',
-  env: {
-    KIT,
-    KENV: kenvPath(),
-    PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
-  },
-};
 
 powerMonitor.on('resume', async () => {
   setTimeout(async () => {
@@ -237,6 +231,7 @@ const createLogs = () => {
 };
 
 const sendSplashBody = (message: string) => {
+  if (message.includes('object')) return;
   sendToPrompt(Channel.SET_SPLASH_BODY, message);
 };
 
@@ -285,6 +280,41 @@ const setupLog = async (message: string) => {
       }, 500)
     );
   }
+};
+
+const forkOptions: ForkOptions = {
+  cwd: KIT,
+  execPath,
+  env: {
+    KIT,
+    KENV: kenvPath(),
+    PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+  },
+};
+
+const optionalSetupScript = (...args: string[]) => {
+  return new Promise((resolve, reject) => {
+    const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
+
+    child.on('message', (data) => {
+      const dataString = typeof data === 'string' ? data : data.toString();
+
+      if (!dataString.includes(`[object`)) {
+        log.info(args[0], dataString);
+        sendSplashBody(dataString.slice(0, 200));
+      }
+    });
+
+    child.on('exit', () => {
+      resolve('success');
+    });
+
+    child.on('error', (error: Error) => {
+      resolve('error');
+      // reject(error);
+      // throw new Error(error.message);
+    });
+  });
 };
 
 const ensureKitDirs = async () => {
@@ -336,7 +366,7 @@ const ready = async () => {
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);
 
-    spawn(`./script`, [`./setup/downloads.js`], options);
+    optionalSetupScript(`./setup/downloads.js`);
 
     const downloads = kitPath('setup', 'downloads.js');
     scheduleScriptChanged({
@@ -558,6 +588,37 @@ const KIT_NODE_TAR =
   getAssetPath(`node.${platform === 'win' ? 'zip' : 'tar.gz'}`);
 
 const checkKit = async () => {
+  const options: SpawnSyncOptions = {
+    cwd: KIT,
+    encoding: 'utf-8',
+    env: {
+      KIT,
+      KENV: kenvPath(),
+      PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+    },
+  };
+
+  const setupScript = (...args: string[]) => {
+    return new Promise((resolve, reject) => {
+      const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
+
+      child.on('message', (data) => {
+        const dataString = data.toString();
+        log.info(args[0], dataString);
+        sendSplashBody(dataString.slice(0, 200));
+      });
+
+      child.on('exit', () => {
+        resolve('success');
+      });
+
+      child.on('error', (error: Error) => {
+        reject(error);
+        throw new Error(error.message);
+      });
+    });
+  };
+
   const showSplash = async () => {
     await setScript({
       name: 'Kit Setup',
@@ -673,23 +734,15 @@ const checkKit = async () => {
       await handleSpawnReturns(`npm`, npmResult);
     }
 
-    await chmod(kitPath('script'), 0o755);
-    const chmodResult = spawnSync(
-      kitPath('script'),
-      [kitPath('setup', 'chmod-helpers.js')],
-      options
-    );
-    await handleSpawnReturns(`chmod helpers`, chmodResult);
-
+    await setupScript(kitPath('setup', 'chmod-helpers.js'));
     await clearPromptCache();
   }
 
   if ((await kenvsExists()) && (await examplesExists())) {
     await setupLog(`Updating examples...`);
-    spawn(
-      kitPath('script'),
-      [kitPath('cli', 'kenv-pull.js'), kenvPath(`kenvs`, `examples`)],
-      options
+    await setupScript(
+      kitPath('cli', 'kenv-pull.js'),
+      kenvPath(`kenvs`, `examples`)
     );
 
     // await handleSpawnReturns(`update-examples`, updateExamplesResult);
@@ -708,47 +761,24 @@ const checkKit = async () => {
     await kenvExists();
     await ensureKenvDirs();
 
-    const cloneExamplesResult = spawnSync(
-      kitPath('script'),
-      [kitPath('setup', 'clone-examples.js')],
-      options
-    );
-    await handleSpawnReturns(`clone-examples`, cloneExamplesResult, false);
+    optionalSetupScript(kitPath('setup', 'clone-examples.js'));
   }
-
-  await chmod(kitPath('script'), 0o755);
 
   if (!(await kenvConfigured())) {
     await setupLog(`Run .kenv setup script...`);
-
-    const setupResult = spawnSync(
-      kitPath('script'),
-      [kitPath('setup', 'setup.js')],
-      options
-    );
-    await handleSpawnReturns(`setup`, setupResult);
-
+    await setupScript(kitPath('setup', 'setup.js'));
     await kenvConfigured();
   }
 
-  const createAllBins = spawnSync(
-    kitPath('script'),
-    [kitPath('cli', 'create-all-bins.js')],
-    options
-  );
-  await handleSpawnReturns(`create-all-bins`, createAllBins);
+  optionalSetupScript(kitPath('cli', 'create-all-bins.js'));
 
   await setupLog(`Update .kenv`);
-  const patchResult = spawnSync(
-    kitPath('script'),
-    [kitPath('setup', 'patch.js')],
-    options
-  );
-  await handleSpawnReturns(`patch`, patchResult);
+  await setupScript(kitPath('setup', 'patch.js'));
 
   await verifyInstall();
   await storeVersion(getVersion());
   await ready();
+  sendToPrompt(Channel.SET_READY, true);
 };
 
 app.whenReady().then(checkKit).catch(ohNo);

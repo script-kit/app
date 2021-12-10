@@ -360,12 +360,12 @@ export const resize = debounce(
     //   previewEnabled,
     // });
 
-    log.info(
-      `getCurrentScreenPromptCache`,
-      promptScript,
-      { isPreviewOpen },
-      { isSplash }
-    );
+    // log.info(
+    //   `getCurrentScreenPromptCache`,
+    //   promptScript,
+    //   { isPreviewOpen },
+    //   { isSplash }
+    // );
     promptState =
       (promptScript?.hasPreview && isPreviewOpen) || isSplash
         ? 'expanded'

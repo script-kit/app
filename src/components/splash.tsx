@@ -5,10 +5,12 @@ import { useAtom } from 'jotai';
 import {
   appConfigAtom,
   getAssetAtom,
+  isReadyAtom,
   splashBodyAtom,
   splashHeaderAtom,
   splashProgressAtom,
 } from '../jotai';
+import { useEscape } from '../hooks';
 
 export default function Splash() {
   const [appConfig] = useAtom(appConfigAtom);
@@ -16,6 +18,9 @@ export default function Splash() {
   const [body] = useAtom(splashBodyAtom);
   const [header] = useAtom(splashHeaderAtom);
   const [progress] = useAtom(splashProgressAtom);
+  const [isReady] = useAtom(isReadyAtom);
+
+  useEscape();
 
   return (
     <motion.div
@@ -23,6 +28,7 @@ export default function Splash() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0 }}
       className="left-0 top-0 fixed w-screen h-screen flex flex-col items-center prose dark:prose-dark px-10 pt-20
 
       bg-white bg-opacity-40

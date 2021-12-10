@@ -162,10 +162,9 @@ export default function Input() {
 
   return (
     <motion.div
+      key="input"
       className="flex flex-row"
-      initial={{
-        opacity: 0,
-      }}
+      initial={{ opacity: 0 }}
       animate={{ opacity: processing ? 0 : 1 }}
       transition={{ duration: 0.2 }}
     >

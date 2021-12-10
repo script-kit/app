@@ -9,12 +9,14 @@ import {
   prevInputAtom,
   rawInputAtom,
   isSplashAtom,
+  isReadyAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 
 export default () => {
   const [open, setOpen] = useAtom(openAtom);
   const [isSplash] = useAtom(isSplashAtom);
+  const [isReady] = useAtom(isReadyAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
   const [input] = useAtom(rawInputAtom);
   const [prevInput] = useAtom(prevInputAtom);
@@ -28,11 +30,11 @@ export default () => {
       event.preventDefault();
       if (flagValue) {
         setFlagValue('');
-      } else if (!isSplash) {
+      } else if (isReady) {
         setOpen(false);
       }
     },
     hotkeysOptions,
-    [open, flagValue, prevInput, prevIndex, index, input, isSplash]
+    [open, flagValue, prevInput, prevIndex, index, input, isReady]
   );
 };
