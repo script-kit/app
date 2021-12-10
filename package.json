@@ -14,6 +14,7 @@
     "yarn-dedupe": "yarn-deduplicate yarn.lock",
     "install-electron-deps": "node -r @babel/register .erb/scripts/CheckNativeDep.js && electron-builder install-app-deps",
     "start": "node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
+    "splash": "KIT_SPLASH=true yarn start",
     "start:install": "source ./build/tmp-kit.sh && node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
     "start:main": "cross-env NODE_ENV=development electron --trace-warnings -r ./.erb/scripts/BabelRegister ./src/main.dev.ts",
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",

@@ -41,4 +41,5 @@ export interface ResizeData {
   isPreviewOpen: boolean;
   previewEnabled: boolean;
   tabIndex: number;
+  isSplash: boolean;
 }

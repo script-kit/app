@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 
-import { useHotkeys, Options } from 'react-hotkeys-hook';
+import { useHotkeys } from 'react-hotkeys-hook';
 import {
   flagValueAtom,
   indexAtom,
@@ -8,11 +8,13 @@ import {
   prevIndexAtom,
   prevInputAtom,
   rawInputAtom,
+  isSplashAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 
 export default () => {
   const [open, setOpen] = useAtom(openAtom);
+  const [isSplash] = useAtom(isSplashAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
   const [input] = useAtom(rawInputAtom);
   const [prevInput] = useAtom(prevInputAtom);
@@ -26,11 +28,11 @@ export default () => {
       event.preventDefault();
       if (flagValue) {
         setFlagValue('');
-      } else {
+      } else if (!isSplash) {
         setOpen(false);
       }
     },
     hotkeysOptions,
-    [open, flagValue, prevInput, prevIndex, index, input]
+    [open, flagValue, prevInput, prevIndex, index, input, isSplash]
   );
 };

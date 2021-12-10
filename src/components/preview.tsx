@@ -36,6 +36,7 @@ export default function Preview() {
 
   return (
     <div
+      id="preview"
       className="overflow-scroll w-full h-full"
       style={{ userSelect: 'text' }}
       // onMouseUp={onMouseUp}

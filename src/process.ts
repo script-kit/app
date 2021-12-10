@@ -407,6 +407,9 @@ const kitMessageMap: ChannelHandler = {
   KIT_CLEAR: (data) => {
     getLog(data.kitScript).clear(data?.value || 'blank');
   },
+  SET_OPEN: (data) => {
+    sendToPrompt(Channel.SET_OPEN, data.value);
+  },
 };
 
 export const createMessageHandler =

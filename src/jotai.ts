@@ -22,12 +22,14 @@ import {
   EditorConfig,
   TextareaConfig,
   EditorOptions,
+  AppConfig,
 } from '@johnlindquist/kit/types/kitapp';
 
 import _, { clamp, debounce, drop, gt, isEqual } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
 import { ResizeData, ScoredChoice } from './types';
+import { noScript, SPLASH_PATH } from './defaults';
 
 let placeholderTimeoutId: NodeJS.Timeout;
 let choicesTimeoutId: NodeJS.Timeout;
@@ -145,7 +147,8 @@ export const unfilteredChoicesAtom = atom(
     const maybePreview = Boolean(
       a.find((c) => c?.hasPreview) ||
         g(promptData)?.hasPreview ||
-        g(isMainScriptAtom)
+        g(isMainScriptAtom) ||
+        g(isSplashAtom)
     );
 
     s(unfilteredPreview, maybePreview);
@@ -503,23 +506,13 @@ export const tabIndexAtom = atom(
   }
 );
 
-const noScript: Script = {
-  id: '',
-  filePath: '',
-  command: '',
-  name: '',
-  type: ProcessType.App,
-  requiresPrompt: false,
-  kenv: '',
-};
-
 export const selectedAtom = atom('');
 
 const script = atom<Script>(noScript);
 export const scriptAtom = atom(
   (g) => g(script),
   (g, s, a: Script) => {
-    console.clear();
+    // console.clear();
     s(tabsAtom, a?.tabs || []);
 
     s(mouseEnabledAtom, 0);
@@ -545,7 +538,7 @@ export const scriptAtom = atom(
 );
 
 export const isKitScriptAtom = atom<boolean>((g) => {
-  return (g(script) as Script).filePath.includes(kitPath());
+  return (g(script) as Script)?.filePath?.includes(kitPath());
 });
 
 export const isMainScriptAtom = atom<boolean>((g) => {
@@ -559,8 +552,18 @@ const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter) => {
   const isPreviewOpen = Boolean(
-    g(unfilteredPreview) && g(previewEnabled) && g(uiAtom) === UI.arg
+    g(unfilteredPreview) &&
+      g(previewEnabled) &&
+      (g(uiAtom) === UI.arg || g(uiAtom) === UI.splash)
   );
+
+  console.log(`🚨`, {
+    isPreviewOpen,
+    unfilteredPreview: g(unfilteredPreview),
+    previewEnabled: g(previewEnabled),
+    uiAtom: g(uiAtom),
+  });
+
   const data: ResizeData = {
     topHeight: g(topHeight),
     ui: g(uiAtom),
@@ -574,6 +577,7 @@ const resize = (g: Getter, s: Setter) => {
     previewEnabled: g(previewEnabled),
     open: g(rawOpen),
     tabIndex: g(tabIndex),
+    isSplash: g(isSplashAtom),
   };
 
   const prevData = g(resizeData);
@@ -647,7 +651,7 @@ export const promptDataAtom = atom(
 
       s(processingAtom, false);
 
-      if (Object.keys(a.flags).length) {
+      if (Object.keys(a?.flags || []).length) {
         s(flagsAtom, a.flags);
       }
 
@@ -847,10 +851,32 @@ export const loadingAtom = atom(
 );
 
 export const exitAtom = atom(
-  (g) => g(openAtom),
+  (g) => true || g(openAtom),
   (g, s, a: number) => {
     if (g(pidAtom) === a) {
       s(openAtom, false);
     }
   }
 );
+
+export const isSplashAtom = atom((g) => {
+  return g(scriptAtom)?.filePath === SPLASH_PATH;
+});
+
+export const splashBodyAtom = atom('');
+export const splashHeaderAtom = atom('');
+export const splashProgressAtom = atom(0);
+
+export const appConfigAtom = atom<AppConfig>({
+  isWin: false,
+  os: '',
+  sep: '',
+  assetPath: '',
+  version: '',
+  delimiter: '',
+});
+
+export const getAssetAtom = atom((g) => {
+  const { sep, assetPath } = g(appConfigAtom);
+  return (asset: string) => assetPath + sep + asset;
+});

@@ -56,6 +56,7 @@ export default function Panel({ width, height }: PanelProps) {
       <style type="text/css">{isDark ? darkTheme : lightTheme}</style>
 
       <motion.div
+        id="panel"
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 1] }}
         transition={{ duration: 0.15, ease: 'circOut' }}
