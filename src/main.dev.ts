@@ -666,7 +666,7 @@ const checkKit = async () => {
       await setupLog(`updating ~/.kit packages...`);
       log.info(`PATH:`, options?.env?.PATH);
       const npmResult = spawnSync(
-        kitPath('node', 'bin', `npm${isWin ? `.exe` : ``}`),
+        kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
         [`i`, `--production`, `--no-progress`, `--quiet`],
         options
       );
