@@ -94,8 +94,8 @@ app.setName(APP_NAME);
 
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
 if (app?.dock) {
-  app.dock.hide();
-  app.dock.setIcon(getAssetPath('icon.png'));
+  app?.dock?.hide();
+  app?.dock?.setIcon(getAssetPath('icon.png'));
 }
 const releaseChannel = readFileSync(
   getAssetPath('release_channel.txt'),
@@ -357,7 +357,8 @@ const ready = async () => {
     await setupLog(`Launch Script Kit with cmd+;`);
     await setupDone();
 
-    startSK();
+    const isMac = os.platform() === 'darwin';
+    if (!isMac) startSK();
     await cacheKitScripts();
     await cacheMenu();
 

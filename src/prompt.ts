@@ -567,7 +567,7 @@ const hideAppIfNoWindows = () => {
     // setPromptBounds();
 
     if (allWindows.every((window) => !window.isVisible())) {
-      app?.hide();
+      if (app?.hide) app?.hide();
     }
   }
 };
