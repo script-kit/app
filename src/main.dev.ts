@@ -782,3 +782,5 @@ const checkKit = async () => {
 };
 
 app.whenReady().then(checkKit).catch(ohNo);
+
+// Build didn't work
