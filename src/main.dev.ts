@@ -285,7 +285,6 @@ const setupLog = async (message: string) => {
 
 const forkOptions: ForkOptions = {
   cwd: KIT,
-  execPath,
   env: {
     KIT,
     KENV: kenvPath(),

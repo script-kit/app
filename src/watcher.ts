@@ -73,7 +73,7 @@ export const setupWatchers = async () => {
   watchers.push(shortcutsDbWatcher);
   shortcutsDbWatcher.on('all', onDbChanged);
 
-  const kenvScripts = kenvPath('scripts/*.(j|t)s');
+  const kenvScripts = kenvPath('scripts', '*.(j|t)s');
 
   const scriptsWatcher = chokidar.watch([kenvScripts], {
     depth: 1,

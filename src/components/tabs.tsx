@@ -35,10 +35,10 @@ export default function KitTabs() {
           WebkitUserSelect: 'text',
         } as any
       }
-      initial={{ opacity: 0, x: `-${DEFAULT_WIDTH}px` }}
-      animate={{ opacity: 1, x: '0px' }}
+      initial={{ opacity: 0, y: `1rem` }}
+      animate={{ opacity: 1, y: '0px' }}
       transition={{ duration: 0.15 }}
-      exit={{ opacity: 0, x: `-${DEFAULT_WIDTH}px` }}
+      exit={{ opacity: 0, y: `1rem` }}
     >
       <motion.div className="flex flex-row pl-1 whitespace-nowrap">
         {/* <span className="bg-white">{modeIndex}</span> */}

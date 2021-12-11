@@ -4,6 +4,7 @@
 import log from 'electron-log';
 import { app, clipboard, screen } from 'electron';
 import http from 'http';
+import path from 'path';
 import https from 'https';
 import url from 'url';
 import sizeOf from 'image-size';
@@ -22,10 +23,10 @@ import {
   resolveToScriptPath,
   KIT_APP,
   KIT_APP_PROMPT,
+  KIT_FIRST_PATH,
   kitPath,
   kenvPath,
   kitDotEnvPath,
-  execPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { getLog } from './logs';
@@ -479,12 +480,13 @@ const createChild = ({
     KIT_APP_VERSION: getVersion(),
     PROCESS_TYPE: type,
     FORCE_COLOR: '1',
+    PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
   };
   // console.log({ env });
   const child = fork(entry, args, {
     silent: false,
     // stdio: 'inherit',
-    execPath,
+    // execPath,
     env,
   });
 
