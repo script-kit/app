@@ -67,6 +67,7 @@ import { configureInterval } from './tick';
 import {
   clearPromptCache,
   createPromptWindow,
+  destroyPromptWindow,
   sendToPrompt,
   setPromptData,
   setPromptPid,
@@ -471,7 +472,7 @@ const kenvConfigured = async () => {
 };
 
 const nodeExists = async () => {
-  const doesNodeExist = existsSync(kitPath('node', 'bin', 'node'));
+  const doesNodeExist = existsSync(execPath);
   await setupLog(`node${doesNodeExist ? `` : ` not`} found`);
 
   return doesNodeExist;
@@ -532,7 +533,7 @@ ${error.stack}
 ${mainLog}
   `.trim()
   );
-
+  destroyPromptWindow();
   await show(INSTALL_ERROR, showError(error, mainLog));
 
   throw new Error(error.message);
@@ -614,7 +615,7 @@ const checkKit = async () => {
 
       child.on('error', (error: Error) => {
         reject(error);
-        throw new Error(error.message);
+        ohNo(error);
       });
     });
   };
@@ -775,7 +776,11 @@ const checkKit = async () => {
   await setupLog(`Update .kenv`);
   await setupScript(kitPath('setup', 'patch.js'));
 
-  await verifyInstall();
+  try {
+    await verifyInstall();
+  } catch (error: any) {
+    ohNo(error);
+  }
   await storeVersion(getVersion());
   await ready();
   sendToPrompt(Channel.SET_READY, true);

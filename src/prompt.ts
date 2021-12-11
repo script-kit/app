@@ -678,3 +678,10 @@ export const reload = () => {
 };
 
 export const getPromptBounds = () => promptWindow.getBounds();
+
+export const destroyPromptWindow = () => {
+  if (promptWindow) {
+    hideAppIfNoWindows();
+    promptWindow.destroy();
+  }
+};
