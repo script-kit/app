@@ -119,6 +119,12 @@ export const setupWatchers = async () => {
   });
 
   scriptsWatcher.on('all', onScriptsChanged);
+
+  setTimeout(() => {
+    for (const w of watchers) {
+      log.info(w.getWatched());
+    }
+  }, 2000);
 };
 
 export const resetWatchers = async () => {
