@@ -359,7 +359,7 @@ const ready = async () => {
     await setupDone();
 
     const isMac = os.platform() === 'darwin';
-    if (!isMac) startSK();
+    if (isMac) startSK();
     await cacheKitScripts();
     await cacheMenu();
 
@@ -662,7 +662,7 @@ const checkKit = async () => {
     await showSplash();
   }
 
-  if (!kitExists() || (await versionMismatch())) {
+  if (!(await kitExists()) || (await versionMismatch())) {
     if (!process.env.KIT_SPLASH) {
       await showSplash();
     }
