@@ -891,3 +891,4 @@ export const getAssetAtom = atom((g) => {
 });
 
 export const isReadyAtom = atom(false);
+export const cmdAtom = atom((g) => (g(appConfigAtom).isWin ? 'ctrl' : 'cmd'));

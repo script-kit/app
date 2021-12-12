@@ -309,7 +309,7 @@ export default function App() {
         onMouseLeave={onMouseLeave}
         onMouseMove={onMouseMove}
       >
-        <header ref={headerRef}>
+        <header ref={headerRef} className="relative">
           <Header />
           <AnimatePresence>
             {!!(ui & UI.hotkey) && (

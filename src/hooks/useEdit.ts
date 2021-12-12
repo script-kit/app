@@ -3,7 +3,7 @@ import { useAtom } from 'jotai';
 
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { choicesAtom, indexAtom, scriptAtom } from '../jotai';
+import { choicesAtom, cmdAtom, indexAtom, scriptAtom } from '../jotai';
 
 import { hotkeysOptions } from './shared';
 
@@ -11,8 +11,10 @@ export default () => {
   const [choices] = useAtom(choicesAtom);
   const [index] = useAtom(indexAtom);
   const [script] = useAtom(scriptAtom);
+  const [cmd] = useAtom(cmdAtom);
+
   useHotkeys(
-    'ctrl+e,cmd+e',
+    `${cmd}+e`,
     (event) => {
       event.preventDefault();
 
