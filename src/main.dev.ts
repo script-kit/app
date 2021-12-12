@@ -354,6 +354,7 @@ const ready = async () => {
     await configureInterval();
     await setupLog(`Tick started`);
 
+    const isWin = os.platform().startsWith('win');
     await setupLog(`Launch Script Kit with ${isWin ? `ctrl` : `cmd`}+;`);
     await setupDone();
 
