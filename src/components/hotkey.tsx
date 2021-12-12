@@ -132,6 +132,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
 
   return (
     <input
+      key="hotkey"
       ref={containerRef}
       style={
         {

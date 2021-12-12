@@ -2,6 +2,7 @@
 import { Notification, Tray } from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
+import os from 'os';
 import {
   kenvPath,
   kitPath,
@@ -43,7 +44,8 @@ const rightClick = async () => {
   emitter.emit(KitEvent.RunPromptProcess, kitPath('main', 'kit.js'));
 };
 
-const trayIcon = getAssetPath('IconTemplate.png');
+const isWin = os.platform() === 'win32';
+const trayIcon = getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`);
 
 export const createTray = async (checkDb = false) => {
   const appDb = await getAppDb();

@@ -20,10 +20,10 @@ export default function Selected() {
   return (
     <motion.div
       key="selected"
+      layout="size"
       initial={{ opacity: 0, width: '20%' }}
       animate={{ opacity: 1, width: '100%' }}
       transition={{ duration: 0.2 }}
-      exit={{ opacity: 0, width: '20%' }}
       style={
         {
           WebkitAppRegion: 'no-drag',

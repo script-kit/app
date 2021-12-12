@@ -125,6 +125,9 @@ module.exports = {
         '3/4': '75%',
         full: '100%',
       },
+      height: {
+        5.5: '22px',
+      },
       minHeight: {
         52: '14rem',
         64: '16rem',

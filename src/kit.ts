@@ -66,7 +66,12 @@ export const runPromptProcess = async (
 ) => {
   const same = processes.endPreviousPromptProcess(promptScriptPath);
 
-  if (same) return;
+  if (same) {
+    log.info(
+      `Same shortcut pressed while process running. Closing current prompt`
+    );
+    return;
+  }
 
   const { child, pid } = await processes.findPromptProcess();
 

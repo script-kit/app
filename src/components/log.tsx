@@ -1,6 +1,7 @@
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 import React, { RefObject, useCallback, useRef, useState } from 'react';
 import SimpleBar from 'simplebar-react';
+import { motion } from 'framer-motion';
 import useResizeObserver from '@react-hook/resize-observer';
 import { PencilAltIcon } from '@heroicons/react/outline';
 import parse from 'html-react-parser';
@@ -46,7 +47,8 @@ export default function Log() {
   // }, [onPanelHeightChanged, containerRef?.current?.firstElementChild]);
 
   return (
-    <div
+    <motion.div
+      key="log"
       className="relative"
       onMouseOver={() => setMouseOver(true)}
       onMouseOut={() => setMouseOver(false)}
@@ -92,6 +94,6 @@ export default function Log() {
           onClick={editLog}
         />
       )}
-    </div>
+    </motion.div>
   );
 }

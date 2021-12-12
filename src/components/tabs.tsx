@@ -4,7 +4,6 @@ import { useAtom } from 'jotai';
 import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { mouseEnabledAtom, openAtom, tabIndexAtom, tabsAtom } from '../jotai';
-import { DEFAULT_WIDTH } from '../defaults';
 
 export default function KitTabs() {
   const [tabs] = useAtom(tabsAtom);
@@ -28,17 +27,17 @@ export default function KitTabs() {
   return (
     <motion.div
       key="tabs"
-      className="overscroll-y-none overflow-x-scroll w-full"
+      className="h-5.5 max-h-5.5 min-h-5.5 overscroll-y-none overflow-x-scroll w-full"
       style={
         {
           WebkitAppRegion: 'no-drag',
           WebkitUserSelect: 'text',
         } as any
       }
+      layout="position"
       initial={{ opacity: 0, y: `1rem` }}
-      animate={{ opacity: 1, y: '0px' }}
+      animate={{ opacity: 1, y: `0px`, position: 'relative' }}
       transition={{ duration: 0.15 }}
-      exit={{ opacity: 0, y: `1rem` }}
     >
       <motion.div className="flex flex-row pl-1 whitespace-nowrap">
         {/* <span className="bg-white">{modeIndex}</span> */}

@@ -152,9 +152,10 @@ export const unfilteredChoicesAtom = atom(
     );
 
     s(unfilteredPreview, maybePreview);
-    if (a?.[0]?.name.match(/(?<=\[)\w(?=\])/i)) {
+    // if (a?.[0]?.name.match(/(?<=\[)\.(?=\])/i)) {
+    if (a?.length < 256) {
       const codes = a.map((choice) => {
-        const code = choice?.name.match(/(?<=\[)\w(?=\])/i)?.[0] || '';
+        const code = choice?.name.match(/(?<=\[).(?=\])/i)?.[0] || '';
 
         return {
           code: code?.toLowerCase(),
@@ -566,12 +567,12 @@ const resize = (g: Getter, s: Setter) => {
       (g(uiAtom) === UI.arg || g(uiAtom) === UI.splash)
   );
 
-  console.log(`🚨`, {
-    isPreviewOpen,
-    unfilteredPreview: g(unfilteredPreview),
-    previewEnabled: g(previewEnabled),
-    uiAtom: g(uiAtom),
-  });
+  // console.log(`🚨`, {
+  //   isPreviewOpen,
+  //   unfilteredPreview: g(unfilteredPreview),
+  //   previewEnabled: g(previewEnabled),
+  //   uiAtom: g(uiAtom),
+  // });
 
   const data: ResizeData = {
     topHeight: g(topHeight),
@@ -890,5 +891,11 @@ export const getAssetAtom = atom((g) => {
   return (asset: string) => assetPath + sep + asset;
 });
 
-export const isReadyAtom = atom(false);
+const isReady = atom(false);
+export const isReadyAtom = atom(
+  (g) => g(isReady) || g(uiAtom) !== UI.splash,
+  (g, s, a: boolean) => {
+    s(isReady, a);
+  }
+);
 export const cmdAtom = atom((g) => (g(appConfigAtom).isWin ? 'ctrl' : 'cmd'));

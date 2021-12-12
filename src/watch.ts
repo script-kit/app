@@ -2,6 +2,7 @@
 import log from 'electron-log';
 import chokidar from 'chokidar';
 import { FSWatcher } from 'fs';
+import os from 'os';
 import { app } from 'electron';
 import { Script } from '@johnlindquist/kit/types/core';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
@@ -18,12 +19,22 @@ export const removeWatch = (filePath: string) => {
   }
 };
 
-const resolvePath = (path: string) => {
-  if (path?.startsWith('~')) {
-    return path.replace('~', app.getPath('home'));
+const accountForWin = (path: string) => {
+  if (os.platform() === 'win32') {
+    return path.replace(/\\/g, '/');
   }
-
   return path;
+};
+
+const resolvePath = (path: string) => {
+  const resolvedPath = () => {
+    if (path?.startsWith('~')) {
+      return path.replace('~', app.getPath('home'));
+    }
+
+    return path;
+  };
+  return accountForWin(resolvedPath());
 };
 
 const addWatch = (watchString: string, filePath: string) => {

@@ -128,6 +128,9 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.on('blur', () => {
+    if (os.platform().startsWith('win')) {
+      return;
+    }
     if (promptScript?.filePath !== mainScriptPath && ignoreBlur) {
       // sendToPrompt(Channel.SET_THEME, {
       //   '--opacity-themedark': '0%',

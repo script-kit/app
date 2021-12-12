@@ -95,12 +95,10 @@ export const checkScriptChoices = (data: {
 
         if (scheduleScript) {
           const date = new Date(scheduleScript.date);
-          const next = `Next ${formatDistanceToNowStrict(date)}`;
-          const cal = `${format(date, 'MMM eo, h:mm:ssa ')}`;
+          const next = `${formatDistanceToNowStrict(date)}`;
+          const cal = `${format(date, 'MMM eo, h:mm:a ')}`;
 
-          script.description = `${
-            script.description || ``
-          } ${next} - ${cal} - ${script.schedule}`;
+          script.description = `Next: ${next} - ${cal} - ${script.schedule}`;
         }
       }
 

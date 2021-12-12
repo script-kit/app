@@ -311,20 +311,28 @@ export default function App() {
       >
         <header ref={headerRef} className="relative">
           <Header />
-          <AnimatePresence>
+          <AnimatePresence key="headerCompenents">
             {!!(ui & UI.hotkey) && (
               <Hotkey
+                key="AppHotkey"
                 submit={setSubmitValue}
                 onHotkeyHeightChanged={setMainHeight}
               />
             )}
-            {!!(ui & UI.arg) && <Input />}
-            {!!(ui & UI.arg) && selected && <Selected />}
-            {hint && <Hint />}
-            {!!(ui & (UI.arg | UI.div)) && tabs?.length > 0 && !flagValue && (
-              <Tabs />
+            {!!(ui & UI.arg) && <Input key="AppInput" />}
+
+            {hint && <Hint key="AppHint" />}
+            <div className="max-h-5.5">
+              {!!(ui & (UI.arg | UI.div)) && tabs?.length > 0 && !flagValue && (
+                <Tabs key="AppTabs" />
+              )}
+              {!!(ui & (UI.arg | UI.hotkey)) && selected && (
+                <Selected key="AppSelected" />
+              )}
+            </div>
+            {logHtml?.length > 0 && script?.log !== 'false' && (
+              <Log key="AppLog" />
             )}
-            {logHtml?.length > 0 && script?.log !== 'false' && <Log />}
           </AnimatePresence>
         </header>
         <main
@@ -338,7 +346,7 @@ export default function App() {
 
         `}
         >
-          <AnimatePresence>
+          <AnimatePresence key="mainComponents">
             {isSplash && <Splash />}
             {!!(ui & UI.drop) && <Drop />}
             {!!(ui & UI.textarea) && <TextArea />}

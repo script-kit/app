@@ -2,6 +2,7 @@
 import chokidar, { FSWatcher } from 'chokidar';
 import log from 'electron-log';
 import { debounce } from 'lodash';
+import os from 'os';
 import {
   appDbPath,
   parseScript,
@@ -69,18 +70,26 @@ export const teardownWatchers = async () => {
 
 export const setupWatchers = async () => {
   await teardownWatchers();
-  const shortcutsDbWatcher = chokidar.watch([shortcutsPath]);
+
+  const accountForWin = (path: string) => {
+    if (os.platform() === 'win32') {
+      return path.replace(/\\/g, '/');
+    }
+    return path;
+  };
+
+  const shortcutsDbWatcher = chokidar.watch([accountForWin(shortcutsPath)]);
   watchers.push(shortcutsDbWatcher);
   shortcutsDbWatcher.on('all', onDbChanged);
 
   const kenvScripts = kenvPath('scripts', '*.(j|t)s');
 
-  const scriptsWatcher = chokidar.watch([kenvScripts], {
+  const scriptsWatcher = chokidar.watch([accountForWin(kenvScripts)], {
     depth: 1,
   });
   watchers.push(scriptsWatcher);
 
-  const kenvsWatcher = chokidar.watch(kenvPath('kenvs/*'), {
+  const kenvsWatcher = chokidar.watch(accountForWin(kenvPath('kenvs', '*')), {
     depth: 0,
   });
 
@@ -100,7 +109,7 @@ export const setupWatchers = async () => {
 
   watchers.push(kenvsWatcher);
 
-  const kitAppDbWatcher = chokidar.watch([appDbPath]);
+  const kitAppDbWatcher = chokidar.watch([accountForWin(appDbPath)]);
   watchers.push(kitAppDbWatcher);
 
   kitAppDbWatcher.on('change', async () => {
