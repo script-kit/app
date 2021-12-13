@@ -288,6 +288,12 @@ body {
     list-style-type: unset;
   }
 
+  .prose > pre {
+    background: hsla(0, 0%, 40%, 0.1);
+  }
+  .prose > blockquote {
+    background: hsla(0, 0%, 40%, 0.1);
+  }
   .prose > pre > code {
     width: 100%;
   }

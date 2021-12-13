@@ -14,7 +14,6 @@ export default function Hint() {
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      exit={{ opacity: 0 }}
       className="px-4 py-1 text-xs text-gray-800 dark:text-gray-200 italic"
     >
       {parse(hint)}

@@ -87,6 +87,7 @@ import {
   splashHeaderAtom,
   splashProgressAtom,
   isReadyAtom,
+  resizeEnabledAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -177,6 +178,7 @@ export default function App() {
   const [, setTextareaValue] = useAtom(textareaValueAtom);
   const [, setLoading] = useAtom(loadingAtom);
   const [processing] = useAtom(processingAtom);
+  const [resizeEnabled] = useAtom(resizeEnabledAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
   const [isSplash] = useAtom(isSplashAtom);
 
@@ -338,7 +340,7 @@ export default function App() {
         <main
           ref={mainRef}
           className={`
-        ${processing && !isMainScript ? `h-0` : `h-full`}
+        ${processing && resizeEnabled ? `h-0` : `h-full`}
         w-full
         border-transparent
         border-b

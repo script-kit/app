@@ -15,6 +15,7 @@ import {
   placeholderAtom,
   processingAtom,
   promptDataAtom,
+  resizeEnabledAtom,
   selectionStartAtom,
   submittedAtom,
   submitValueAtom,
@@ -30,6 +31,7 @@ import {
   useFocus,
   useKeyIndex,
   useTab,
+  useOpen,
 } from '../hooks';
 
 const remapModifiers = (m: string) => {
@@ -55,6 +57,7 @@ export default function Input() {
   const [, setModifiers] = useAtom(modifiersAtom);
   const [ultraShortCodes] = useAtom(ultraShortCodesAtom);
   const [processing] = useAtom(processingAtom);
+  const [resizeEnabled] = useAtom(resizeEnabledAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
 
   useEscape();
@@ -62,6 +65,7 @@ export default function Input() {
   useFlag();
   useTab();
   useKeyIndex();
+  useOpen();
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
@@ -186,7 +190,7 @@ export default function Input() {
       bg-transparent w-full text-black dark:text-white focus:outline-none outline-none
       text-xl dark:placeholder-white dark:placeholder-opacity-40
       placeholder-black placeholder-opacity-40
-      ${processing && !isMainScript ? `h-0` : `h-14`}
+      ${processing && resizeEnabled ? `h-0` : `h-14`}
       ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 px-4 py-0
       focus:border-none border-none`}
         onChange={onChange}

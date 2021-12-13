@@ -207,6 +207,9 @@ export const uiAtom = atom(
   (g) => g(ui),
   (g, s, a: UI) => {
     s(ui, a);
+    if (a & (UI.arg | UI.textarea | UI.hotkey)) {
+      s(inputFocusAtom, true);
+    }
     // s(previewHTMLAtom, g(cachedMainPreview));
   }
 );
@@ -356,8 +359,9 @@ export const indexAtom = atom(
 
     const selected = g(selectedAtom);
     const id = choice?.id;
+    const prevId = g(prevChoiceId);
 
-    if (!selected && id) {
+    if (!selected && id && id !== prevId) {
       s(focusedChoiceAtom, choice);
       s(prevChoiceId, id);
     }
@@ -386,6 +390,7 @@ export const focusedChoiceAtom = atom(
       if (typeof choice?.preview === 'string') {
         s(previewHTMLAtom, choice?.preview);
       }
+
       ipcRenderer.send(Channel.CHOICE_FOCUSED, {
         id,
         input: g(rawInputAtom),
@@ -534,10 +539,11 @@ export const scriptAtom = atom(
   (g, s, a: Script) => {
     s(inputChangedAtom, false);
     const history = g(scriptHistoryAtom);
-    console.log(`new`, { history });
     s(scriptHistoryAtom, [...history, a]);
     // console.clear();
-    s(tabsAtom, a?.tabs || []);
+    if (a?.tabs) {
+      s(tabsAtom, a?.tabs || []);
+    }
 
     s(mouseEnabledAtom, 0);
     s(script, a);
@@ -575,6 +581,7 @@ const mainHeight = atom(0);
 const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter) => {
+  if (!g(scriptAtom).resize) return;
   const isPreviewOpen = Boolean(
     g(unfilteredPreview) &&
       g(previewEnabled) &&
@@ -597,8 +604,8 @@ const resize = (g: Getter, s: Setter) => {
     hasChoices: Boolean(g(choices)?.length),
     hasPanel: Boolean(g(panelHTMLAtom)?.length),
     hasInput: Boolean(g(inputAtom)?.length),
-    isPreviewOpen: true, // isPreviewOpen,
-    previewEnabled: true, // g(previewEnabled),
+    isPreviewOpen,
+    previewEnabled: g(previewEnabled),
     open: g(rawOpen),
     tabIndex: g(tabIndex),
     isSplash: g(isSplashAtom),
@@ -704,7 +711,7 @@ export const flagValueAtom = atom(
       s(selectedAtom, '');
       s(unfilteredChoicesAtom, g(prevChoicesAtom));
       s(rawInputAtom, g(prevInputAtom));
-      s(index, g(prevIndexAtom));
+      s(indexAtom, g(prevIndexAtom));
     } else {
       s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
       s(prevIndexAtom, g(indexAtom));
@@ -814,7 +821,8 @@ export const escapeAtom = atom(null, (g, s, a) => {
 
   if (
     history.find((prevScript) => prevScript.filePath === mainScriptPath) &&
-    !g(inputChangedAtom)
+    !g(inputChangedAtom) &&
+    !g(isKitScriptAtom)
   ) {
     ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
   } else {
@@ -928,3 +936,6 @@ export const isReadyAtom = atom(
   }
 );
 export const cmdAtom = atom((g) => (g(appConfigAtom).isWin ? 'ctrl' : 'cmd'));
+export const resizeEnabledAtom = atom(
+  (g) => g(scriptAtom)?.resize && !g(isMainScriptAtom)
+);

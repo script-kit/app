@@ -21,7 +21,7 @@ export default function Selected() {
     <motion.div
       key="selected"
       layout="size"
-      initial={{ opacity: 0, width: '20%' }}
+      initial={{ opacity: 0 }}
       animate={{ opacity: 1, width: '100%' }}
       transition={{ duration: 0.2 }}
       style={
@@ -32,6 +32,7 @@ export default function Selected() {
       }
       onClick={onClick}
       className={`
+w-max
 flex flex-row items-center
 text-xs
 -mt-0.5  border-b-2

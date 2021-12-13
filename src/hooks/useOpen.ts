@@ -3,7 +3,13 @@ import { useAtom } from 'jotai';
 
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { choicesAtom, cmdAtom, indexAtom, scriptAtom } from '../jotai';
+import {
+  choicesAtom,
+  cmdAtom,
+  indexAtom,
+  isMainScriptAtom,
+  scriptAtom,
+} from '../jotai';
 import { hotkeysOptions } from './shared';
 
 export default () => {
@@ -11,10 +17,12 @@ export default () => {
   const [index] = useAtom(indexAtom);
   const [script] = useAtom(scriptAtom);
   const [cmd] = useAtom(cmdAtom);
+  const [isMainScript] = useAtom(isMainScriptAtom);
   useHotkeys(
     `${cmd}+o`,
     (event) => {
       event.preventDefault();
+      if (isMainScript) return;
 
       const filePath = (choices?.[index] as any)?.filePath;
       if (filePath) {
@@ -24,6 +32,6 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [choices, index, script]
+    [choices, index, script, isMainScript]
   );
 };

@@ -4,7 +4,7 @@ import { Script } from '@johnlindquist/kit/types/core';
 export const DEFAULT_LIST_WIDTH = 300; // 256;
 export const DEFAULT_WIDTH = 300; // 256;
 export const DEFAULT_EXPANDED_WIDTH = 768;
-export const DEFAULT_HEIGHT = 492;
+export const DEFAULT_HEIGHT = Math.round((DEFAULT_EXPANDED_WIDTH * 10) / 16); // 480;
 export const INPUT_HEIGHT = 32;
 export const MIN_HEIGHT = INPUT_HEIGHT;
 export const MIN_TEXTAREA_HEIGHT = MIN_HEIGHT * 3;

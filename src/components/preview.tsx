@@ -61,9 +61,10 @@ export default function Preview() {
       id="preview"
       className="overflow-scroll w-full h-full"
       style={{ userSelect: 'text' }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={{ opacity: 0, width: 0 }}
+      animate={{ opacity: 1, width: '100%' }}
       transition={{ duration: 0.2 }}
+      exit={{ opacity: 0, width: 0 }}
       // onMouseUp={onMouseUp}
       ref={highlightRef}
       onMouseDown={onMouseEnter}
