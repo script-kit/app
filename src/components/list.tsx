@@ -130,6 +130,11 @@ export default function ChoiceList({ width, height }: ListProps) {
         px-0 flex flex-col
         text-black dark:text-white
         overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20
+        ${
+          previewEnabled && hasPreview
+            ? 'border-r dark:border-white border-black dark:border-opacity-5 border-opacity-5'
+            : ''
+        }
         `}
         // onItemsRendered={onItemsRendered}
       >
