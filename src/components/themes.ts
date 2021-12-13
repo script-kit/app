@@ -32,7 +32,6 @@ SOFTWARE.
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  background: rgba(0, 0, 0, .25);
   color: #d6deeb;
 }
 
@@ -201,7 +200,6 @@ Colors: /blob/v0.64.0/lib/css/exports/_stacks-constants-colors.less
 /* var(--highlight-color) */
 color: #2f3337;
 /* var(--highlight-bg) */
-background: #f6f6f6;
 }
 
 .hljs-subst {

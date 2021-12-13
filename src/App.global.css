@@ -260,10 +260,6 @@ body {
     @apply underline;
   }
 
-  a:hover {
-    @apply no-underline;
-  }
-
   ul,
   ol {
     @apply mb-4;
@@ -292,10 +288,6 @@ body {
     list-style-type: unset;
   }
 
-  .prose > pre {
-    background: rgba(255, 255, 255, 0.25);
-  }
-
   .prose > pre > code {
     width: 100%;
   }
@@ -307,10 +299,6 @@ body {
 
   p {
     @apply mb-0;
-  }
-
-  pre {
-    @apply py-2;
   }
 
   .kit-form * {
