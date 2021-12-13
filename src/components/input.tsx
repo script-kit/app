@@ -80,11 +80,11 @@ export default function Input() {
       // }
 
       if (target?.value.length === 0) {
-        console.log(event.key, ultraShortCodes);
+        // console.log(event.key, ultraShortCodes);
         const findCode = ultraShortCodes.find(
           (u) => u.code.toLowerCase() === event.key?.toLowerCase()
         );
-        console.log({ findCode });
+        // console.log({ findCode });
         if (findCode) {
           event.preventDefault();
           const findChoice = unfilteredChoices?.find(

@@ -9,7 +9,7 @@
 import { atom, Getter, Setter } from 'jotai';
 import { QuickScore, Range, createConfig, quickScore } from 'quick-score';
 
-import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
+import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
 import {
   Choice,
@@ -25,7 +25,7 @@ import {
   AppConfig,
 } from '@johnlindquist/kit/types/kitapp';
 
-import _, { clamp, debounce, drop, gt, isEqual } from 'lodash';
+import _, { clamp, debounce, drop, get, isEqual } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
 import { ResizeData, ScoredChoice } from './types';
@@ -153,16 +153,22 @@ export const unfilteredChoicesAtom = atom(
 
     s(unfilteredPreview, maybePreview);
     // if (a?.[0]?.name.match(/(?<=\[)\.(?=\])/i)) {
-    if (a?.length < 256) {
-      const codes = a.map((choice) => {
+    if (
+      a.length > 0 &&
+      a?.length < 256 &&
+      g(ultraShortCodesAtom).length === 0
+    ) {
+      const codes = [];
+      for (const choice of a) {
         const code = choice?.name.match(/(?<=\[).(?=\])/i)?.[0] || '';
 
-        return {
-          code: code?.toLowerCase(),
-          id: code ? (choice.id as string) : '',
-        };
-      });
-
+        if (code) {
+          codes.push({
+            code: code?.toLowerCase(),
+            id: code ? (choice.id as string) : '',
+          });
+        }
+      }
       s(ultraShortCodesAtom, codes);
     }
 
@@ -201,7 +207,7 @@ export const uiAtom = atom(
   (g) => g(ui),
   (g, s, a: UI) => {
     s(ui, a);
-    s(previewHTMLAtom, g(cachedMainPreview));
+    // s(previewHTMLAtom, g(cachedMainPreview));
   }
 );
 
@@ -473,10 +479,12 @@ const filterByInput = (
   }
 };
 
+const inputChangedAtom = atom(false);
 export const inputAtom = atom(
   (g) => g(rawInputAtom),
   (g, s, a: string) => {
     if (a === g(rawInputAtom)) return;
+    if (a) s(inputChangedAtom, true);
 
     s(mouseEnabledAtom, 0);
     s(submittedAtom, false);
@@ -518,10 +526,16 @@ export const tabIndexAtom = atom(
 
 export const selectedAtom = atom('');
 
+export const scriptHistoryAtom = atom<Script[]>([]);
+
 const script = atom<Script>(noScript);
 export const scriptAtom = atom(
   (g) => g(script),
   (g, s, a: Script) => {
+    s(inputChangedAtom, false);
+    const history = g(scriptHistoryAtom);
+    console.log(`new`, { history });
+    s(scriptHistoryAtom, [...history, a]);
     // console.clear();
     s(tabsAtom, a?.tabs || []);
 
@@ -583,8 +597,8 @@ const resize = (g: Getter, s: Setter) => {
     hasChoices: Boolean(g(choices)?.length),
     hasPanel: Boolean(g(panelHTMLAtom)?.length),
     hasInput: Boolean(g(inputAtom)?.length),
-    isPreviewOpen,
-    previewEnabled: g(previewEnabled),
+    isPreviewOpen: true, // isPreviewOpen,
+    previewEnabled: true, // g(previewEnabled),
     open: g(rawOpen),
     tabIndex: g(tabIndex),
     isSplash: g(isSplashAtom),
@@ -760,6 +774,7 @@ export const submitValueAtom = atom(
 
     s(flaggedValueAtom, ''); // clear after getting
     s(flagAtom, '');
+    s(previewHTML, ``);
     s(submitValue, value);
   }
 );
@@ -769,8 +784,8 @@ export const openAtom = atom(
   (g, s, a: boolean) => {
     s(mouseEnabledAtom, 0);
     if (g(rawOpen) && a === false) {
-      const cachedPreview = g(cachedMainPreview);
-      s(previewHTMLAtom, cachedPreview);
+      // const cachedPreview = g(cachedMainPreview);
+      s(previewHTMLAtom, ``);
 
       // s(choices, []);
       // s(tabIndex, 0);
@@ -792,6 +807,20 @@ export const openAtom = atom(
     s(rawOpen, a);
   }
 );
+
+export const escapeAtom = atom(null, (g, s, a) => {
+  const history = g(scriptHistoryAtom).slice();
+  s(scriptHistoryAtom, []);
+
+  if (
+    history.find((prevScript) => prevScript.filePath === mainScriptPath) &&
+    !g(inputChangedAtom)
+  ) {
+    ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+  } else {
+    s(openAtom, false);
+  }
+});
 
 export const selectionStartAtom = atom(0);
 export const isMouseDownAtom = atom(false);

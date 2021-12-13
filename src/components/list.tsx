@@ -1,6 +1,11 @@
 /* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useCallback } from 'react';
-import { motion, useAnimation, useMotionValue } from 'framer-motion';
+import {
+  AnimatePresence,
+  motion,
+  useAnimation,
+  useMotionValue,
+} from 'framer-motion';
 import { FixedSizeList as List } from 'react-window';
 import { useAtom } from 'jotai';
 import memoize from 'memoize-one';
@@ -16,6 +21,7 @@ import {
   submitValueAtom,
   previewEnabledAtom,
   hasPreviewAtom,
+  previewHTMLAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 import { BUTTON_HEIGHT, DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from '../defaults';
@@ -44,6 +50,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [flagValue] = useAtom(flagValueAtom);
   const [previewEnabled] = useAtom(previewEnabledAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
+  const [previewHTML] = useAtom(previewHTMLAtom);
   const listWidth = useMotionValue('100%');
 
   const onIndexSubmit = useCallback(
@@ -129,7 +136,10 @@ export default function ChoiceList({ width, height }: ListProps) {
         {ChoiceButton}
       </List>
 
-      {previewEnabled && <Preview />}
+      {/* {previewEnabled && <Preview />} */}
+      <AnimatePresence>
+        {previewHTML && <Preview key="AppPreview" />}
+      </AnimatePresence>
     </motion.div>
   );
 }

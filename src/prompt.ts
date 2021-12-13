@@ -605,7 +605,7 @@ export const setPromptPid = (pid: number) => {
 let instantChoices = [];
 
 export const setScript = async (script: Script) => {
-  if (promptScript?.filePath === script?.filePath) return;
+  // if (promptScript?.filePath === script?.filePath) return;
   promptScript = script;
 
   // if (promptScript?.id === script?.id) return;

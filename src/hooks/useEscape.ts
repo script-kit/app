@@ -10,11 +10,13 @@ import {
   rawInputAtom,
   isSplashAtom,
   isReadyAtom,
+  escapeAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 
 export default () => {
   const [open, setOpen] = useAtom(openAtom);
+  const [, escape] = useAtom(escapeAtom);
   const [isSplash] = useAtom(isSplashAtom);
   const [isReady] = useAtom(isReadyAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
@@ -31,7 +33,7 @@ export default () => {
       if (flagValue) {
         setFlagValue('');
       } else if (isReady) {
-        setOpen(false);
+        escape();
       }
     },
     hotkeysOptions,
