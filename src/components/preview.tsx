@@ -72,7 +72,7 @@ export default function Preview() {
       <style type="text/css">{isDark ? darkTheme : lightTheme}</style>
       {previewHTML && (
         <div
-          className="w-full h-full border-l dark:border-white border-black dark:border-opacity-5 border-opacity-5"
+          className="w-full h-full"
           dangerouslySetInnerHTML={{ __html: previewHTML }}
         />
       )}
