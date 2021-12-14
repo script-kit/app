@@ -3,8 +3,8 @@
   "productName": "Kit",
   "description": "The Script Kit App",
   "scripts": {
-    "build": "./build/create-assets.sh && concurrently \"yarn build:main\" \"yarn build:renderer\"",
-    "build:local": "./build/local-assets.sh && concurrently \"yarn build:main\" \"yarn build:renderer\"",
+    "build": "node ./build/create-assets.js && concurrently \"yarn build:main\" \"yarn build:renderer\"",
+    "build:local": "node ./build/local-assets.js && concurrently \"yarn build:main\" \"yarn build:renderer\"",
     "build:main": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.babel.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.renderer.prod.babel.js",
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir src",

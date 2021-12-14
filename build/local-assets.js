@@ -1,8 +1,11 @@
 const go = async () => {
   const { execa } = await import('execa');
   const { stdout: releaseChannel } = await execa(
-    `git rev-parse --abbrev-ref HEAD`
+    `git rev-parse --abbrev-ref HEAD`,
+    { shell: true }
   );
+
+  process.exit();
   console.log({ releaseChannel });
 
   const { writeFile } = await import('fs/promises');

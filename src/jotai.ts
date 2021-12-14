@@ -581,7 +581,8 @@ const mainHeight = atom(0);
 const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter) => {
-  if (!g(scriptAtom).resize) return;
+  const currentScript = g(script);
+  if (!currentScript.resize && !g(isMainScriptAtom)) return;
   const isPreviewOpen = Boolean(
     g(unfilteredPreview) &&
       g(previewEnabled) &&
@@ -599,7 +600,7 @@ const resize = (g: Getter, s: Setter) => {
     topHeight: g(topHeight),
     ui: g(uiAtom),
     mainHeight: g(uiAtom) === UI.hotkey ? 0 : g(mainHeight),
-    filePath: (g(script) as Script).filePath,
+    filePath: currentScript.filePath,
     mode: g(modeAtom),
     hasChoices: Boolean(g(choices)?.length),
     hasPanel: Boolean(g(panelHTMLAtom)?.length),
@@ -806,6 +807,7 @@ export const openAtom = atom(
       s(flaggedValueAtom, '');
       s(loading, false);
       s(loadingAtom, false);
+      s(resizeData, {});
 
       ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: g(pidAtom) });
 
@@ -822,7 +824,7 @@ export const escapeAtom = atom(null, (g, s, a) => {
   if (
     history.find((prevScript) => prevScript.filePath === mainScriptPath) &&
     !g(inputChangedAtom) &&
-    !g(isKitScriptAtom)
+    !g(isMainScriptAtom)
   ) {
     ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
   } else {

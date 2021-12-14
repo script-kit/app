@@ -10,7 +10,6 @@ import {
   Script,
   PromptData,
   PromptBounds,
-  PromptState,
 } from '@johnlindquist/kit/types/core';
 import { BrowserWindow, screen, app, Rectangle } from 'electron';
 import os from 'os';
@@ -46,7 +45,6 @@ let promptScript: Script = noScript;
 let promptWindow: BrowserWindow;
 let blurredByKit = false;
 let ignoreBlur = false;
-let promptState: PromptState = 'expanded';
 let isPreviewEnabled = true;
 let minHeight = MIN_HEIGHT;
 
@@ -228,27 +226,12 @@ export const getCurrentScreen = (): Display => {
 };
 
 export const getCurrentScreenPromptCache = async () => {
-  // console.log(`Prompt cache`, { promptState });
   const currentScreen = getCurrentScreen();
   const promptDb = await getPromptDb();
 
   const screenCache = promptDb.screens?.[String(currentScreen.id)];
-  if (!promptWindow?.isVisible()) {
-    const isSplash = promptScript.filePath === SPLASH_PATH;
-    // log.info(
-    //   `getCurrentScreenPromptCache`,
-    //   promptScript,
-    //   { isPreviewEnabled },
-    //   { isSplash }
-    // );
-    promptState =
-      (promptScript?.hasPreview && isPreviewEnabled) || isSplash
-        ? 'expanded'
-        : 'collapsed';
-  }
 
-  const currentPromptCache =
-    screenCache?.[promptScript?.filePath as string]?.[promptState];
+  const currentPromptCache = screenCache?.[promptScript?.filePath as string];
 
   if (currentPromptCache) return currentPromptCache;
 
@@ -274,11 +257,6 @@ const guessTopHeight = (script: Script) => {
   return height;
 };
 
-const defaultWidths: { [key in PromptState]: number } = {
-  expanded: DEFAULT_EXPANDED_WIDTH,
-  collapsed: DEFAULT_WIDTH,
-};
-
 export const getDefaultBounds = (currentScreen: Display) => {
   const isSplash = promptScript?.filePath === SPLASH_PATH;
   const { width: screenWidth, height: screenHeight } =
@@ -297,7 +275,7 @@ export const getDefaultBounds = (currentScreen: Display) => {
         )
       ); // Math.round(screenHeight / 1.5);
 
-  const width = isSplash ? DEFAULT_EXPANDED_WIDTH : defaultWidths[promptState];
+  const width = DEFAULT_EXPANDED_WIDTH;
   const { x: workX, y: workY } = currentScreen.workArea;
   const x = Math.round(screenWidth / 2 - width / 2 + workX);
   const y = Math.round(workY + screenHeight / 8);
@@ -345,6 +323,21 @@ export const resize = debounce(
     tabIndex,
     isSplash,
   }: ResizeData) => {
+    log.info(`RESIZE:`, {
+      topHeight,
+      mainHeight,
+      ui,
+      filePath,
+      mode,
+      hasChoices,
+      hasPanel,
+      hasInput,
+      isPreviewOpen,
+      previewEnabled,
+      open,
+      tabIndex,
+      isSplash,
+    });
     minHeight = topHeight;
     isPreviewEnabled = previewEnabled;
 
@@ -369,11 +362,6 @@ export const resize = debounce(
     //   { isPreviewOpen },
     //   { isSplash }
     // );
-    promptState =
-      (promptScript?.hasPreview && isPreviewOpen) || isSplash
-        ? 'expanded'
-        : 'collapsed';
-    // console.log(`Resize:`, { promptState });
 
     const {
       width: cachedWidth,
@@ -463,7 +451,7 @@ export const resetPromptBounds = async () => {
     // promptWindow?.getBounds() ||
     {};
 
-  if (!boundsFilePath?.[promptState]) {
+  if (!boundsFilePath) {
     const promptBounds = {
       ...bounds,
       x: maybeBounds?.x || bounds.x,
@@ -471,9 +459,7 @@ export const resetPromptBounds = async () => {
     };
 
     // console.log({ screenId, maybeBounds, promptBounds, bounds });
-    promptDb.screens[screenId][filePath] = {
-      [promptState]: promptBounds,
-    };
+    promptDb.screens[screenId][filePath] = promptBounds;
 
     promptDbWrite(promptDb);
 
@@ -514,9 +500,7 @@ const cachePromptBounds = debounce(
 
     const promptPath = (promptScript?.filePath || mainScriptPath).slice();
     const prevBounds =
-      promptDb?.screens?.[String(currentScreen.id)]?.[promptPath]?.[
-        promptState
-      ];
+      promptDb?.screens?.[String(currentScreen.id)]?.[promptPath];
 
     // Ignore if flag
     const size = b & Bounds.Size;
@@ -545,13 +529,11 @@ const cachePromptBounds = debounce(
     const promptCached =
       promptDb.screens[String(currentScreen.id)]?.[promptPath];
     if (promptCached) {
-      promptDb.screens[String(currentScreen.id)][promptPath][promptState] =
-        promptBounds;
+      promptDb.screens[String(currentScreen.id)][promptPath] = promptBounds;
 
       log.info(`Cache prompt:`, {
         script: promptScript.filePath,
         screen: currentScreen.id,
-        promptState,
         ...promptBounds,
       });
 
