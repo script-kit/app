@@ -146,6 +146,7 @@ const installExtensions = async () => {
   await session.defaultSession.loadExtension(reactDevToolsPath, {
     allowFileAccess: true,
   });
+  log.info(`😬 DEVTOOLS INSTALLED`, { version, reactDevToolsPath });
 };
 
 const cliFromParams = async (cli: string, params: URLSearchParams) => {
@@ -333,8 +334,9 @@ const ensureKenvDirs = async () => {
 
 const ready = async () => {
   try {
+    console.log(`NODE_ENV`, process.env.NODE_ENV);
     if (process.env.NODE_ENV === 'development') {
-      // await installExtensions();
+      await installExtensions();
     }
 
     await ensureKitDirs();

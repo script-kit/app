@@ -1,8 +1,9 @@
 /* eslint-disable import/prefer-default-export */
-import { Notification, Tray } from 'electron';
+import { Notification, Tray, Menu, app } from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
 import os from 'os';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import {
   kenvPath,
   kitPath,
@@ -13,6 +14,7 @@ import { getAssetPath } from './assets';
 import { restartIfNecessary } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
+import { sendToPrompt } from './prompt';
 
 let tray: Tray | null = null;
 
@@ -41,7 +43,37 @@ const leftClick = async (event: KeyboardEvent) => {
 };
 
 const rightClick = async () => {
-  emitter.emit(KitEvent.RunPromptProcess, kitPath('main', 'kit.js'));
+  // emitter.emit(KitEvent.RunPromptProcess, kitPath('main', 'kit.js'));
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: `Script Kit ${getVersion()}`,
+    },
+    {
+      label: 'Check for Updates',
+      click: async () => {
+        emitter.emit(KitEvent.CheckForUpdates, true);
+      },
+    },
+    {
+      label: `Change Shortcut`,
+      click: async () => {
+        emitter.emit(
+          KitEvent.RunPromptProcess,
+          kitPath('cli', 'change-main-shortcut.js')
+        );
+      },
+    },
+    {
+      label: 'Quit',
+
+      click: () => {
+        log.info(`Quitting...`);
+        app.exit();
+        app.quit();
+      },
+    },
+  ]);
+  if (tray) tray.setContextMenu(contextMenu);
 };
 
 const isWin = os.platform() === 'win32';

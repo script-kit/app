@@ -473,7 +473,7 @@ export const resetPromptBounds = async () => {
 
 export const sendToPrompt = <K extends keyof ChannelMap>(
   channel: K,
-  data: ChannelMap[K]
+  data?: ChannelMap[K]
 ) => {
   // log.info(`>_ ${channel} ${data?.kitScript}`);
   if (
