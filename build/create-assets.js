@@ -30,17 +30,21 @@ const go = async () => {
 
   await tar.c(
     {
+      cwd: nodeModulesKit,
       gzip: true,
       file: './assets/kit.tar.gz',
       follow: true,
       filter: (item) => {
-        if (item.match(/kit\/node/)) return false;
+        if (item.match(/^.{0,2}node/)) {
+          console.log(`SKIPPING`, item);
+          return false;
+        }
         if (item.includes('kit.sock')) return false;
 
         return true;
       },
     },
-    [nodeModulesKit]
+    ['.']
   );
 
   const { default: download } = await import('download');
