@@ -569,7 +569,7 @@ const cleanKit = async () => {
   for await (const file of await readdir(pathToClean)) {
     if (keep(file)) continue;
 
-    const filePath = path.join(pathToClean, file);
+    const filePath = path.resolve(pathToClean, file);
     const stat = await lstat(filePath);
     if (stat.isDirectory()) {
       await rmdir(filePath, { recursive: true });
@@ -672,7 +672,7 @@ const checkKit = async () => {
     if (!process.env.KIT_SPLASH) {
       await showSplash();
     }
-    log.info(`🔥 Setting Script`);
+    log.info(`🔥 First time install detected`);
   }
 
   if (await isContributor()) {

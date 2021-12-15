@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Notification } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import os from 'os';
 import { existsSync } from 'fs';
 import {
   kitPath,
@@ -35,6 +36,9 @@ export const kitIgnore = () => {
 };
 
 export const checkForUpdates = async () => {
+  const isWin = os.platform().startsWith('win');
+  if (isWin) return; // TODO: Get a Windows app cert
+
   const autoUpdate = existsSync(appDbPath)
     ? (await getAppDb())?.autoUpdate
     : true;
