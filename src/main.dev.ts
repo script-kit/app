@@ -60,7 +60,7 @@ import {
   execPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
-import { createTray } from './tray';
+import { createTray, destroyTray } from './tray';
 import { cacheMenu, setupWatchers, teardownWatchers } from './watcher';
 import { getAssetPath } from './assets';
 import { configureInterval } from './tick';
@@ -202,6 +202,10 @@ app.on('web-contents-created', (_, contents) => {
   });
 });
 
+app.on('before-quit', () => {
+  destroyTray();
+});
+
 const prepareProtocols = async () => {
   app.on('open-url', async (e, u) => {
     log.info(`URL PROTOCOL`, u);
@@ -336,7 +340,11 @@ const ready = async () => {
   try {
     console.log(`NODE_ENV`, process.env.NODE_ENV);
     if (process.env.NODE_ENV === 'development') {
-      await installExtensions();
+      try {
+        await installExtensions();
+      } catch (error) {
+        log.info(`Failed to install extensions`, error);
+      }
     }
 
     await ensureKitDirs();

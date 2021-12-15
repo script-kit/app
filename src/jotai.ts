@@ -941,3 +941,7 @@ export const cmdAtom = atom((g) => (g(appConfigAtom).isWin ? 'ctrl' : 'cmd'));
 export const resizeEnabledAtom = atom(
   (g) => g(scriptAtom)?.resize && !g(isMainScriptAtom)
 );
+
+export const runMainScriptAtom = atom(() => () => {
+  ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+});

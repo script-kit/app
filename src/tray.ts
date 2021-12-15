@@ -107,8 +107,10 @@ export const getTray = (): Tray | null => tray;
 
 export const destroyTray = () => {
   log.info(`◽️ Disable tray`);
-  tray?.destroy();
-  tray = null;
+  if (tray) {
+    tray?.destroy();
+    tray = null;
+  }
 };
 
 export const toggleTray = async () => {
