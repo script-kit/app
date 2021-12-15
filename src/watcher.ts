@@ -33,6 +33,7 @@ const onScriptsChanged = async (
   event: 'add' | 'change' | 'unlink' | 'ready',
   filePath: string
 ) => {
+  log.info(`${event}: ${filePath}`);
   if (event === 'unlink') {
     unlinkShortcuts(filePath);
     cancelSchedule(filePath);
@@ -82,7 +83,7 @@ export const setupWatchers = async () => {
   watchers.push(shortcutsDbWatcher);
   shortcutsDbWatcher.on('all', onDbChanged);
 
-  const kenvScripts = kenvPath('scripts', '*.(j|t)s');
+  const kenvScripts = kenvPath('scripts');
 
   const scriptsWatcher = chokidar.watch([accountForWin(kenvScripts)], {
     depth: 1,
@@ -94,9 +95,9 @@ export const setupWatchers = async () => {
   });
 
   kenvsWatcher.on('all', async (eventName, addPath) => {
-    const scriptsPath = `${addPath}/scripts/*.(j|t)s`;
+    const scriptsPath = `${addPath}/scripts`;
 
-    if (eventName.includes('addDir') && addPath.match(/kenvs\/[^/]+$/)) {
+    if (eventName.includes('addDir') && addPath.includes('kenvs')) {
       log.info(`👀 Watch ${scriptsPath}`);
       scriptsWatcher.add([scriptsPath]);
     }
@@ -119,12 +120,6 @@ export const setupWatchers = async () => {
   });
 
   scriptsWatcher.on('all', onScriptsChanged);
-
-  setTimeout(() => {
-    for (const w of watchers) {
-      log.info(w.getWatched());
-    }
-  }, 2000);
 };
 
 export const resetWatchers = async () => {

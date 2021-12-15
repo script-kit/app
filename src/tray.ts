@@ -43,37 +43,8 @@ const leftClick = async (event: KeyboardEvent) => {
 };
 
 const rightClick = async () => {
+  tray?.popUpContextMenu();
   // emitter.emit(KitEvent.RunPromptProcess, kitPath('main', 'kit.js'));
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: `Script Kit ${getVersion()}`,
-    },
-    {
-      label: 'Check for Updates',
-      click: async () => {
-        emitter.emit(KitEvent.CheckForUpdates, true);
-      },
-    },
-    {
-      label: `Change Shortcut`,
-      click: async () => {
-        emitter.emit(
-          KitEvent.RunPromptProcess,
-          kitPath('cli', 'change-main-shortcut.js')
-        );
-      },
-    },
-    {
-      label: 'Quit',
-
-      click: () => {
-        log.info(`Quitting...`);
-        app.quit();
-        app.exit();
-      },
-    },
-  ]);
-  if (tray) tray.setContextMenu(contextMenu);
 };
 
 const isWin = os.platform() === 'win32';
@@ -97,6 +68,39 @@ export const createTray = async (checkDb = false) => {
     tray.setIgnoreDoubleClickEvents(true);
 
     tray.on('click', leftClick);
+
+    log.info(`right click`);
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: `Script Kit ${getVersion()}`,
+      },
+      {
+        label: 'Check for Updates',
+        click: async () => {
+          emitter.emit(KitEvent.CheckForUpdates, true);
+        },
+      },
+      {
+        label: `Change Shortcut`,
+        click: async () => {
+          emitter.emit(
+            KitEvent.RunPromptProcess,
+            kitPath('cli', 'change-main-shortcut.js')
+          );
+        },
+      },
+      {
+        label: 'Quit',
+
+        click: () => {
+          log.info(`Quitting...`);
+          app.quit();
+          app.exit();
+        },
+      },
+    ]);
+    tray.setContextMenu(contextMenu);
+
     tray.on('right-click', rightClick);
   } catch (error) {
     log.error(error);
