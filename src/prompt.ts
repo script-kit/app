@@ -30,7 +30,6 @@ import { emitter, KitEvent } from './events';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
-  DEFAULT_WIDTH,
   heightMap,
   INPUT_HEIGHT,
   MIN_HEIGHT,
@@ -45,7 +44,6 @@ let promptScript: Script = noScript;
 let promptWindow: BrowserWindow;
 let blurredByKit = false;
 let ignoreBlur = false;
-let isPreviewEnabled = true;
 let minHeight = MIN_HEIGHT;
 
 export const setBlurredByKit = (value = true) => {
@@ -77,7 +75,6 @@ export const createPromptWindow = async () => {
       devTools: process.env.NODE_ENV === 'development' || devTools,
       backgroundThrottling: false,
     },
-    alwaysOnTop: true,
     closable: false,
     minimizable: false,
     maximizable: false,
@@ -86,7 +83,7 @@ export const createPromptWindow = async () => {
     minHeight: INPUT_HEIGHT,
   });
 
-  promptWindow.setAlwaysOnTop(true, 'floating', 1);
+  promptWindow.setAlwaysOnTop(false, 'floating', 1);
   promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   await promptWindow.loadURL(`file://${__dirname}/index.html`);
@@ -203,6 +200,7 @@ export const setPromptProp = (data: { prop: { key: string; value: any } }) => {
 export const focusPrompt = () => {
   if (promptWindow && !promptWindow.isDestroyed()) {
     promptWindow?.focus();
+    promptWindow?.focusOnWebView();
   }
 };
 
@@ -292,10 +290,16 @@ export const showPrompt = async () => {
     promptWindow.setBounds(bounds);
 
     promptWindow?.show();
-    promptWindow?.focus();
-    promptWindow?.focusOnWebView();
     if (devTools) promptWindow?.webContents.openDevTools();
   }
+
+  if (currentUI === UI.splash) {
+    promptWindow.setAlwaysOnTop(false);
+  } else {
+    promptWindow.setAlwaysOnTop(true, 'floating', 1);
+  }
+
+  focusPrompt();
 
   return promptWindow;
 };
@@ -339,7 +343,6 @@ export const resize = debounce(
       isSplash,
     });
     minHeight = topHeight;
-    isPreviewEnabled = previewEnabled;
 
     const sameScript = filePath === promptScript?.filePath;
     if (modifiedByUser || !sameScript) return;
