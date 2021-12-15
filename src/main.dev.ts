@@ -15,6 +15,9 @@
  */
 
 import { app, protocol, powerMonitor, session, shell } from 'electron';
+import installExtension, {
+  REACT_DEVELOPER_TOOLS,
+} from 'electron-devtools-installer';
 
 import { Open } from 'unzipper';
 import tar from 'tar';
@@ -134,19 +137,12 @@ if (
 
 // fmkadmapgofadopljbjfkapdkoienihi
 const installExtensions = async () => {
-  const reactDevToolsDir = path.join(
-    os.homedir(),
-    'Library/Application Support/Google/Chrome/Default/Extensions/fmkadmapgofadopljbjfkapdkoienihi/'
-  );
-
-  const [version] = await readdir(reactDevToolsDir);
-
-  const reactDevToolsPath = path.resolve(reactDevToolsDir, version);
-
-  await session.defaultSession.loadExtension(reactDevToolsPath, {
-    allowFileAccess: true,
+  const result = await installExtension(REACT_DEVELOPER_TOOLS, {
+    loadExtensionOptions: { allowFileAccess: true },
+  }).catch((error) => {
+    log.info(`😬 DEVTOOLS INSTALL FAILED`, { error });
   });
-  log.info(`😬 DEVTOOLS INSTALLED`, { version, reactDevToolsPath });
+  if (result) log.info(`😬 DEVTOOLS INSTALLED`, { result });
 };
 
 const cliFromParams = async (cli: string, params: URLSearchParams) => {
@@ -338,15 +334,6 @@ const ensureKenvDirs = async () => {
 
 const ready = async () => {
   try {
-    console.log(`NODE_ENV`, process.env.NODE_ENV);
-    if (process.env.NODE_ENV === 'development') {
-      try {
-        await installExtensions();
-      } catch (error) {
-        log.info(`Failed to install extensions`, error);
-      }
-    }
-
     await ensureKitDirs();
     await ensureKenvDirs();
     createLogs();
@@ -400,6 +387,8 @@ const ready = async () => {
       log.info(`🌄 System waking. Starting watchers.`);
       await setupWatchers();
     });
+
+    console.log(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {
     log.warn(error);
   }
@@ -653,6 +642,13 @@ const checkKit = async () => {
     sendSplashBody(`Starting up...`);
   };
 
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      await installExtensions();
+    } catch (error) {
+      log.info(`Failed to install extensions`, error);
+    }
+  }
   await createPromptWindow();
 
   await setupLog(`Prompt window created`);
