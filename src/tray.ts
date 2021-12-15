@@ -68,8 +68,8 @@ const rightClick = async () => {
 
       click: () => {
         log.info(`Quitting...`);
-        app.exit();
         app.quit();
+        app.exit();
       },
     },
   ]);

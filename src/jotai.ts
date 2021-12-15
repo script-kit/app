@@ -613,11 +613,11 @@ const resize = (g: Getter, s: Setter) => {
   };
 
   const prevData = g(resizeData);
+  s(resizeData, data);
+
   if (JSON.stringify(prevData) === JSON.stringify(data)) {
     return;
   }
-
-  s(resizeData, data);
 
   ipcRenderer.send(AppChannel.RESIZE, data);
 };
