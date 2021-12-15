@@ -560,6 +560,7 @@ const versionMismatch = async () => {
 };
 
 const cleanKit = async () => {
+  log.info(`🧹 Cleaning ${kitPath()}`);
   const pathToClean = kitPath();
 
   const keep = (file: string) =>
@@ -571,6 +572,7 @@ const cleanKit = async () => {
 
     const filePath = path.resolve(pathToClean, file);
     const stat = await lstat(filePath);
+    log.info(`🧹 Cleaning ${filePath}`);
     if (stat.isDirectory()) {
       await rmdir(filePath, { recursive: true });
     } else {
@@ -668,79 +670,74 @@ const checkKit = async () => {
     await showSplash();
   }
 
-  if (!(await kitExists()) || (await versionMismatch())) {
+  if (!(await kitExists()) || (await getStoredVersion()) === '0.0.0') {
     if (!process.env.KIT_SPLASH) {
       await showSplash();
     }
-    log.info(`🔥 First time install detected`);
+    log.info(`🔥 Starting Kit First Install`);
   }
 
   if (await isContributor()) {
     await setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
-  } else {
-    if ((await getStoredVersion()) === '0.0.0') {
-      if (await kitExists()) {
-        await setupLog(`Cleaning previous .kit`);
-        await cleanKit();
-      }
+  } else if ((await versionMismatch()) || !(await kitExists())) {
+    if (await kitExists()) {
+      await setupLog(`Cleaning previous .kit`);
+      await cleanKit();
+    }
 
-      await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
-      const kitTar = getAssetPath('kit.tar.gz');
-      await extractTar(kitTar, kitPath());
+    await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
+    const kitTar = getAssetPath('kit.tar.gz');
+    await extractTar(kitTar, kitPath());
 
-      if (!(await nodeExists())) {
-        await setupLog(
-          `Adding node ${nodeVersion} ${platform} ${arch} to ~/.kit/node ...`
-        );
+    if (!(await nodeExists())) {
+      await setupLog(
+        `Adding node ${nodeVersion} ${platform} ${arch} to ~/.kit/node ...`
+      );
 
-        await ensureDir(kitPath('node'));
+      await ensureDir(kitPath('node'));
 
-        if (existsSync(KIT_NODE_TAR)) {
-          log.info(`Found ${KIT_NODE_TAR}. Extracting...`);
+      if (existsSync(KIT_NODE_TAR)) {
+        log.info(`Found ${KIT_NODE_TAR}. Extracting...`);
 
-          if (platform === 'win') {
-            const d = await Open.file(KIT_NODE_TAR);
-            await d.extract({ path: kitPath('node'), concurrency: 5 });
-            const nodeDir = await readdir(kitPath('node'));
-            const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));
-            if (nodeDirName) {
-              await rename(
-                kitPath('node', nodeDirName),
-                kitPath('node', 'bin')
-              );
-              log.info(await readdir(kitPath('node', 'bin')));
-              await chmod(kitPath('node', 'bin', 'npm.cmd'), 0o755);
-              await chmod(kitPath('node', 'bin', 'node.exe'), 0o755);
-            } else {
-              log.warn(`Couldn't find node dir in ${nodeDir}`);
-            }
+        if (platform === 'win') {
+          const d = await Open.file(KIT_NODE_TAR);
+          await d.extract({ path: kitPath('node'), concurrency: 5 });
+          const nodeDir = await readdir(kitPath('node'));
+          const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));
+          if (nodeDirName) {
+            await rename(kitPath('node', nodeDirName), kitPath('node', 'bin'));
+            log.info(await readdir(kitPath('node', 'bin')));
+            await chmod(kitPath('node', 'bin', 'npm.cmd'), 0o755);
+            await chmod(kitPath('node', 'bin', 'node.exe'), 0o755);
           } else {
-            await tar.x({
-              file: KIT_NODE_TAR,
-              C: kitPath('node'),
-              strip: 1,
-            });
+            log.warn(`Couldn't find node dir in ${nodeDir}`);
           }
         } else {
-          const installScript = `./build/install-node.sh`;
-          await chmod(kitPath(installScript), 0o755);
-          const nodeInstallResult = spawnSync(
-            installScript,
-            ` --prefix node --platform darwin`.split(' '),
-            options
-          );
-          await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
+          await tar.x({
+            file: KIT_NODE_TAR,
+            C: kitPath('node'),
+            strip: 1,
+          });
         }
+      } else {
+        const installScript = `./build/install-node.sh`;
+        await chmod(kitPath(installScript), 0o755);
+        const nodeInstallResult = spawnSync(
+          installScript,
+          ` --prefix node --platform darwin`.split(' '),
+          options
+        );
+        await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
       }
-      await setupLog(`updating ~/.kit packages...`);
-      log.info(`PATH:`, options?.env?.PATH);
-      const npmResult = spawnSync(
-        kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
-        [`i`, `--production`, `--no-progress`, `--quiet`],
-        options
-      );
-      await handleSpawnReturns(`npm`, npmResult);
     }
+    await setupLog(`updating ~/.kit packages...`);
+    log.info(`PATH:`, options?.env?.PATH);
+    const npmResult = spawnSync(
+      kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
+      [`i`, `--production`, `--no-progress`, `--quiet`],
+      options
+    );
+    await handleSpawnReturns(`npm`, npmResult);
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));
     await clearPromptCache();

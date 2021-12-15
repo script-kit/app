@@ -327,21 +327,21 @@ export const resize = debounce(
     tabIndex,
     isSplash,
   }: ResizeData) => {
-    log.info(`RESIZE:`, {
-      topHeight,
-      mainHeight,
-      ui,
-      filePath,
-      mode,
-      hasChoices,
-      hasPanel,
-      hasInput,
-      isPreviewOpen,
-      previewEnabled,
-      open,
-      tabIndex,
-      isSplash,
-    });
+    // log.info(`RESIZE:`, {
+    //   topHeight,
+    //   mainHeight,
+    //   ui,
+    //   filePath,
+    //   mode,
+    //   hasChoices,
+    //   hasPanel,
+    //   hasInput,
+    //   isPreviewOpen,
+    //   previewEnabled,
+    //   open,
+    //   tabIndex,
+    //   isSplash,
+    // });
     minHeight = topHeight;
 
     const sameScript = filePath === promptScript?.filePath;

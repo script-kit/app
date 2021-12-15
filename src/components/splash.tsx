@@ -68,7 +68,7 @@ export default function Splash() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0 }}
+      transition={{ duration: 0.5 }}
       className="pt-5 left-0 top-0 fixed w-screen h-screen flex flex-col items-center prose dark:prose-dark bg-white bg-opacity-40 dark:bg-black dark:bg-opacity-40"
     >
       <header className="flex flex-col items-center justify-center">
