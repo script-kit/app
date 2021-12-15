@@ -26,7 +26,7 @@ export default function Splash() {
 
   const Spinner = () => (
     <svg
-      className="animate-spin h-6 w-6 text-primary-dark dark:text-primary-light"
+      className="animate-spin h-6 w-6 text-black text-opacity-75 dark:text-primary-light dark:text-opacity-75"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -100,7 +100,7 @@ export default function Splash() {
           </div>
         )}
         {body && progress !== 100 && (
-          <h3 className="font-normal text-base opacity-90">{body}</h3>
+          <h3 className="font-normal text-base opacity-90 mt-8">{body}</h3>
         )}
       </main>
       <div className="w-full grid grid-cols-3 items-center justify-center py-8 border-t dark:border-white dark:border-opacity-10 border-black border-opacity-10">

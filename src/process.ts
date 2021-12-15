@@ -409,6 +409,15 @@ const kitMessageMap: ChannelHandler = {
   SET_OPEN: (data) => {
     sendToPrompt(Channel.SET_OPEN, data.value);
   },
+  SET_SPLASH_BODY: (data) => {
+    sendToPrompt(Channel.SET_SPLASH_BODY, data.value);
+  },
+  SET_SPLASH_HEADER: (data) => {
+    sendToPrompt(Channel.SET_SPLASH_HEADER, data.value);
+  },
+  SET_SPLASH_PROGRESS: (data) => {
+    sendToPrompt(Channel.SET_SPLASH_PROGRESS, data.value);
+  },
 };
 
 export const createMessageHandler =
