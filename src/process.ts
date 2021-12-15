@@ -4,6 +4,7 @@
 import log from 'electron-log';
 import { app, clipboard, screen } from 'electron';
 import http from 'http';
+import path from 'path';
 import https from 'https';
 import url from 'url';
 import sizeOf from 'image-size';
@@ -22,10 +23,10 @@ import {
   resolveToScriptPath,
   KIT_APP,
   KIT_APP_PROMPT,
+  KIT_FIRST_PATH,
   kitPath,
   kenvPath,
   kitDotEnvPath,
-  execPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { getLog } from './logs';
@@ -94,12 +95,10 @@ export const checkScriptChoices = (data: {
 
         if (scheduleScript) {
           const date = new Date(scheduleScript.date);
-          const next = `Next ${formatDistanceToNowStrict(date)}`;
-          const cal = `${format(date, 'MMM eo, h:mm:ssa ')}`;
+          const next = `${formatDistanceToNowStrict(date)}`;
+          const cal = `${format(date, 'MMM eo, h:mm:a ')}`;
 
-          script.description = `${
-            script.description || ``
-          } ${next} - ${cal} - ${script.schedule}`;
+          script.description = `Next: ${next} - ${cal} - ${script.schedule}`;
         }
       }
 
@@ -407,6 +406,18 @@ const kitMessageMap: ChannelHandler = {
   KIT_CLEAR: (data) => {
     getLog(data.kitScript).clear(data?.value || 'blank');
   },
+  SET_OPEN: (data) => {
+    sendToPrompt(Channel.SET_OPEN, data.value);
+  },
+  SET_SPLASH_BODY: (data) => {
+    sendToPrompt(Channel.SET_SPLASH_BODY, data.value);
+  },
+  SET_SPLASH_HEADER: (data) => {
+    sendToPrompt(Channel.SET_SPLASH_HEADER, data.value);
+  },
+  SET_SPLASH_PROGRESS: (data) => {
+    sendToPrompt(Channel.SET_SPLASH_PROGRESS, data.value);
+  },
 };
 
 export const createMessageHandler =
@@ -476,12 +487,13 @@ const createChild = ({
     KIT_APP_VERSION: getVersion(),
     PROCESS_TYPE: type,
     FORCE_COLOR: '1',
+    PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
   };
   // console.log({ env });
   const child = fork(entry, args, {
     silent: false,
     // stdio: 'inherit',
-    execPath,
+    // execPath,
     env,
   });
 

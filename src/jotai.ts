@@ -9,7 +9,7 @@
 import { atom, Getter, Setter } from 'jotai';
 import { QuickScore, Range, createConfig, quickScore } from 'quick-score';
 
-import { Channel, Mode, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
+import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
 import {
   Choice,
@@ -22,12 +22,14 @@ import {
   EditorConfig,
   TextareaConfig,
   EditorOptions,
+  AppConfig,
 } from '@johnlindquist/kit/types/kitapp';
 
-import _, { clamp, debounce, drop, gt, isEqual } from 'lodash';
+import _, { clamp, debounce, drop, get, isEqual } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
 import { ResizeData, ScoredChoice } from './types';
+import { noScript, SPLASH_PATH } from './defaults';
 
 let placeholderTimeoutId: NodeJS.Timeout;
 let choicesTimeoutId: NodeJS.Timeout;
@@ -54,7 +56,7 @@ export const tabsAtom = atom(
   (g, s, a: string[]) => {
     const prevTabs = g(tabs);
     if (isEqual(prevTabs, a)) return;
-    s(tabs, a);
+    s(tabs, a || []);
   }
 );
 const cachedMainPreview = atom('');
@@ -145,20 +147,28 @@ export const unfilteredChoicesAtom = atom(
     const maybePreview = Boolean(
       a.find((c) => c?.hasPreview) ||
         g(promptData)?.hasPreview ||
-        g(isMainScriptAtom)
+        g(isMainScriptAtom) ||
+        g(isSplashAtom)
     );
 
     s(unfilteredPreview, maybePreview);
-    if (a?.[0]?.name.match(/(?<=\[)\w(?=\])/i)) {
-      const codes = a.map((choice) => {
-        const code = choice?.name.match(/(?<=\[)\w(?=\])/i)?.[0] || '';
+    // if (a?.[0]?.name.match(/(?<=\[)\.(?=\])/i)) {
+    if (
+      a.length > 0 &&
+      a?.length < 256 &&
+      g(ultraShortCodesAtom).length === 0
+    ) {
+      const codes = [];
+      for (const choice of a) {
+        const code = choice?.name.match(/(?<=\[).(?=\])/i)?.[0] || '';
 
-        return {
-          code: code?.toLowerCase(),
-          id: code ? (choice.id as string) : '',
-        };
-      });
-
+        if (code) {
+          codes.push({
+            code: code?.toLowerCase(),
+            id: code ? (choice.id as string) : '',
+          });
+        }
+      }
       s(ultraShortCodesAtom, codes);
     }
 
@@ -182,7 +192,9 @@ export const unfilteredChoicesAtom = atom(
     // }
 
     const prevCId = g(prevChoiceId);
-    const prevIndex = a.findIndex((c) => c?.id === prevCId);
+    const prevIndex = g(isMainScriptAtom)
+      ? 0
+      : a.findIndex((c) => c?.id === prevCId);
 
     s(indexAtom, prevIndex || 0);
   }
@@ -190,7 +202,17 @@ export const unfilteredChoicesAtom = atom(
 
 export const prevChoicesAtom = atom<Choice[]>([]);
 
-export const uiAtom = atom<UI>(UI.arg);
+const ui = atom<UI>(UI.arg);
+export const uiAtom = atom(
+  (g) => g(ui),
+  (g, s, a: UI) => {
+    s(ui, a);
+    if (a & (UI.arg | UI.textarea | UI.hotkey)) {
+      s(inputFocusAtom, true);
+    }
+    // s(previewHTMLAtom, g(cachedMainPreview));
+  }
+);
 
 const hint = atom('');
 export const hintAtom = atom(
@@ -337,8 +359,9 @@ export const indexAtom = atom(
 
     const selected = g(selectedAtom);
     const id = choice?.id;
+    const prevId = g(prevChoiceId);
 
-    if (!selected && id) {
+    if (!selected && id && id !== prevId) {
       s(focusedChoiceAtom, choice);
       s(prevChoiceId, id);
     }
@@ -367,6 +390,7 @@ export const focusedChoiceAtom = atom(
       if (typeof choice?.preview === 'string') {
         s(previewHTMLAtom, choice?.preview);
       }
+
       ipcRenderer.send(Channel.CHOICE_FOCUSED, {
         id,
         input: g(rawInputAtom),
@@ -460,10 +484,12 @@ const filterByInput = (
   }
 };
 
+const inputChangedAtom = atom(false);
 export const inputAtom = atom(
   (g) => g(rawInputAtom),
   (g, s, a: string) => {
     if (a === g(rawInputAtom)) return;
+    if (a) s(inputChangedAtom, true);
 
     s(mouseEnabledAtom, 0);
     s(submittedAtom, false);
@@ -503,24 +529,21 @@ export const tabIndexAtom = atom(
   }
 );
 
-const noScript: Script = {
-  id: '',
-  filePath: '',
-  command: '',
-  name: '',
-  type: ProcessType.App,
-  requiresPrompt: false,
-  kenv: '',
-};
-
 export const selectedAtom = atom('');
+
+export const scriptHistoryAtom = atom<Script[]>([]);
 
 const script = atom<Script>(noScript);
 export const scriptAtom = atom(
   (g) => g(script),
   (g, s, a: Script) => {
-    console.clear();
-    s(tabsAtom, a?.tabs || []);
+    s(inputChangedAtom, false);
+    const history = g(scriptHistoryAtom);
+    s(scriptHistoryAtom, [...history, a]);
+    // console.clear();
+    if (a?.tabs) {
+      s(tabsAtom, a?.tabs || []);
+    }
 
     s(mouseEnabledAtom, 0);
     s(script, a);
@@ -545,7 +568,7 @@ export const scriptAtom = atom(
 );
 
 export const isKitScriptAtom = atom<boolean>((g) => {
-  return (g(script) as Script).filePath.includes(kitPath());
+  return (g(script) as Script)?.filePath?.includes(kitPath());
 });
 
 export const isMainScriptAtom = atom<boolean>((g) => {
@@ -558,14 +581,26 @@ const mainHeight = atom(0);
 const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter) => {
+  const currentScript = g(script);
+  if (!currentScript.resize && !g(isMainScriptAtom)) return;
   const isPreviewOpen = Boolean(
-    g(unfilteredPreview) && g(previewEnabled) && g(uiAtom) === UI.arg
+    g(unfilteredPreview) &&
+      g(previewEnabled) &&
+      (g(uiAtom) === UI.arg || g(uiAtom) === UI.splash)
   );
+
+  // console.log(`🚨`, {
+  //   isPreviewOpen,
+  //   unfilteredPreview: g(unfilteredPreview),
+  //   previewEnabled: g(previewEnabled),
+  //   uiAtom: g(uiAtom),
+  // });
+
   const data: ResizeData = {
     topHeight: g(topHeight),
     ui: g(uiAtom),
     mainHeight: g(uiAtom) === UI.hotkey ? 0 : g(mainHeight),
-    filePath: (g(script) as Script).filePath,
+    filePath: currentScript.filePath,
     mode: g(modeAtom),
     hasChoices: Boolean(g(choices)?.length),
     hasPanel: Boolean(g(panelHTMLAtom)?.length),
@@ -574,14 +609,15 @@ const resize = (g: Getter, s: Setter) => {
     previewEnabled: g(previewEnabled),
     open: g(rawOpen),
     tabIndex: g(tabIndex),
+    isSplash: g(isSplashAtom),
   };
 
   const prevData = g(resizeData);
+  s(resizeData, data);
+
   if (JSON.stringify(prevData) === JSON.stringify(data)) {
     return;
   }
-
-  s(resizeData, data);
 
   ipcRenderer.send(AppChannel.RESIZE, data);
 };
@@ -647,7 +683,7 @@ export const promptDataAtom = atom(
 
       s(processingAtom, false);
 
-      if (Object.keys(a.flags).length) {
+      if (Object.keys(a?.flags || []).length) {
         s(flagsAtom, a.flags);
       }
 
@@ -676,7 +712,7 @@ export const flagValueAtom = atom(
       s(selectedAtom, '');
       s(unfilteredChoicesAtom, g(prevChoicesAtom));
       s(rawInputAtom, g(prevInputAtom));
-      s(index, g(prevIndexAtom));
+      s(indexAtom, g(prevIndexAtom));
     } else {
       s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
       s(prevIndexAtom, g(indexAtom));
@@ -746,6 +782,7 @@ export const submitValueAtom = atom(
 
     s(flaggedValueAtom, ''); // clear after getting
     s(flagAtom, '');
+    s(previewHTML, ``);
     s(submitValue, value);
   }
 );
@@ -755,8 +792,8 @@ export const openAtom = atom(
   (g, s, a: boolean) => {
     s(mouseEnabledAtom, 0);
     if (g(rawOpen) && a === false) {
-      const cachedPreview = g(cachedMainPreview);
-      s(previewHTMLAtom, cachedPreview);
+      // const cachedPreview = g(cachedMainPreview);
+      s(previewHTMLAtom, ``);
 
       // s(choices, []);
       // s(tabIndex, 0);
@@ -770,6 +807,7 @@ export const openAtom = atom(
       s(flaggedValueAtom, '');
       s(loading, false);
       s(loadingAtom, false);
+      s(resizeData, {});
 
       ipcRenderer.send(Channel.ESCAPE_PRESSED, { pid: g(pidAtom) });
 
@@ -778,6 +816,21 @@ export const openAtom = atom(
     s(rawOpen, a);
   }
 );
+
+export const escapeAtom = atom(null, (g, s, a) => {
+  const history = g(scriptHistoryAtom).slice();
+  s(scriptHistoryAtom, []);
+
+  if (
+    history.find((prevScript) => prevScript.filePath === mainScriptPath) &&
+    !g(inputChangedAtom) &&
+    !g(isMainScriptAtom)
+  ) {
+    ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+  } else {
+    s(openAtom, false);
+  }
+});
 
 export const selectionStartAtom = atom(0);
 export const isMouseDownAtom = atom(false);
@@ -847,10 +900,48 @@ export const loadingAtom = atom(
 );
 
 export const exitAtom = atom(
-  (g) => g(openAtom),
+  (g) => true || g(openAtom),
   (g, s, a: number) => {
     if (g(pidAtom) === a) {
       s(openAtom, false);
     }
   }
 );
+
+export const isSplashAtom = atom((g) => {
+  return g(scriptAtom)?.filePath === SPLASH_PATH;
+});
+
+export const splashBodyAtom = atom('');
+export const splashHeaderAtom = atom('');
+export const splashProgressAtom = atom(0);
+
+export const appConfigAtom = atom<AppConfig>({
+  isWin: false,
+  os: '',
+  sep: '',
+  assetPath: '',
+  version: '',
+  delimiter: '',
+});
+
+export const getAssetAtom = atom((g) => {
+  const { sep, assetPath } = g(appConfigAtom);
+  return (asset: string) => assetPath + sep + asset;
+});
+
+const isReady = atom(false);
+export const isReadyAtom = atom(
+  (g) => g(isReady) || g(uiAtom) !== UI.splash,
+  (g, s, a: boolean) => {
+    s(isReady, a);
+  }
+);
+export const cmdAtom = atom((g) => (g(appConfigAtom).isWin ? 'ctrl' : 'cmd'));
+export const resizeEnabledAtom = atom(
+  (g) => g(scriptAtom)?.resize && !g(isMainScriptAtom)
+);
+
+export const runMainScriptAtom = atom(() => () => {
+  ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+});

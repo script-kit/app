@@ -5,8 +5,10 @@ import MonacoEditor, { loader } from '@monaco-editor/react';
 import { motion } from 'framer-motion';
 
 import { editor } from 'monaco-editor';
+import { UI } from '@johnlindquist/kit/cjs/enum';
+
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
-import { darkAtom, editorConfigAtom, openAtom } from '../jotai';
+import { darkAtom, editorConfigAtom, openAtom, uiAtom } from '../jotai';
 import { useClose, useMountMainHeight, useSave } from '../hooks';
 
 function ensureFirstBackSlash(str: string) {
@@ -45,6 +47,7 @@ export default function Editor() {
   const [options] = useAtom(editorConfigAtom);
   const [isDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
+  const [ui] = useAtom(uiAtom);
   const [editorValue, setEditorValue] = useState(
     (options as EditorOptions)?.value || ''
   );
@@ -55,8 +58,8 @@ export default function Editor() {
   const containerRef = useMountMainHeight();
 
   useEffect(() => {
-    if (editorRef?.current) editorRef?.current?.focus();
-  }, [open, editorRef]);
+    if (editorRef?.current && ui === UI.editor) editorRef?.current?.focus();
+  }, [open, editorRef, ui]);
 
   const beforeMount = useCallback((monaco) => {
     /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -106,6 +109,7 @@ export default function Editor() {
 
   return (
     <motion.div
+      key="editor"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}

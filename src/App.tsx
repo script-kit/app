@@ -23,7 +23,7 @@ import { useAtom } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
-import { motion, useAnimation } from 'framer-motion';
+import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
@@ -81,9 +81,17 @@ import {
   processingAtom,
   isMainScriptAtom,
   exitAtom,
+  isSplashAtom,
+  appConfigAtom,
+  splashBodyAtom,
+  splashHeaderAtom,
+  splashProgressAtom,
+  isReadyAtom,
+  resizeEnabledAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
+import Splash from './components/splash';
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -118,6 +126,7 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
+  const [appConfig, setAppConfig] = useAtom(appConfigAtom);
   const [pid, setPid] = useAtom(pidAtom);
   const [open, setOpen] = useAtom(openAtom);
   const [, setExit] = useAtom(exitAtom);
@@ -130,6 +139,9 @@ export default function App() {
   const [, setPlaceholder] = useAtom(placeholderAtom);
   const [promptData, setPromptData] = useAtom(promptDataAtom);
   const [, setTheme] = useAtom(themeAtom);
+  const [, setSplashBody] = useAtom(splashBodyAtom);
+  const [, setSplashHeader] = useAtom(splashHeaderAtom);
+  const [, setSplashProgress] = useAtom(splashProgressAtom);
   const [submitted] = useAtom(submittedAtom);
 
   const [, setUnfilteredChoices] = useAtom(unfilteredChoicesAtom);
@@ -137,6 +149,7 @@ export default function App() {
   const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
   const [mode, setMode] = useAtom(modeAtom);
+  const [, setReady] = useAtom(isReadyAtom);
 
   const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
   const [tabs] = useAtom(tabsAtom);
@@ -165,7 +178,9 @@ export default function App() {
   const [, setTextareaValue] = useAtom(textareaValueAtom);
   const [, setLoading] = useAtom(loadingAtom);
   const [processing] = useAtom(processingAtom);
+  const [resizeEnabled] = useAtom(resizeEnabledAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
+  const [isSplash] = useAtom(isSplashAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -186,6 +201,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const messageMap: ChannelAtomMap = {
     // [Channel.RESET_PROMPT]: resetPromptHandler,
+    [Channel.APP_CONFIG]: setAppConfig,
     [Channel.EXIT]: setExit,
     [Channel.SET_PID]: setPid,
     [Channel.SET_SCRIPT]: setScript,
@@ -205,13 +221,18 @@ export default function App() {
     [Channel.SET_MODE]: setMode,
     [Channel.SET_NAME]: setName,
     [Channel.SET_TEXTAREA_VALUE]: setTextareaValue,
+    [Channel.SET_OPEN]: setOpen,
     [Channel.SET_PANEL]: setPanelHTML,
     [Channel.SET_PREVIEW]: setPreviewHTML,
     [Channel.SET_LOG]: setLogHtml,
     [Channel.SET_PLACEHOLDER]: setPlaceholder,
+    [Channel.SET_READY]: setReady,
     [Channel.SET_SUBMIT_VALUE]: setSubmitValue,
     [Channel.SET_TAB_INDEX]: setTabIndex,
     [Channel.SET_PROMPT_DATA]: setPromptData,
+    [Channel.SET_SPLASH_BODY]: setSplashBody,
+    [Channel.SET_SPLASH_HEADER]: setSplashHeader,
+    [Channel.SET_SPLASH_PROGRESS]: setSplashProgress,
     [Channel.SET_THEME]: setTheme,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
@@ -290,35 +311,50 @@ export default function App() {
         onMouseLeave={onMouseLeave}
         onMouseMove={onMouseMove}
       >
-        <header ref={headerRef}>
+        <header ref={headerRef} className="relative">
           <Header />
-          {!!(ui & UI.hotkey) && (
-            <Hotkey
-              submit={setSubmitValue}
-              onHotkeyHeightChanged={setMainHeight}
-            />
-          )}
-          {!!(ui & UI.arg) && <Input />}
-          {selected && <Selected />}
-          {hint && <Hint />}
-          {tabs?.length > 0 && !flagValue && <Tabs />}
-          {logHtml?.length > 0 && script?.log !== 'false' && <Log />}
+          <AnimatePresence key="headerCompenents">
+            {!!(ui & UI.hotkey) && (
+              <Hotkey
+                key="AppHotkey"
+                submit={setSubmitValue}
+                onHotkeyHeightChanged={setMainHeight}
+              />
+            )}
+            {!!(ui & UI.arg) && <Input key="AppInput" />}
+
+            {hint && <Hint key="AppHint" />}
+            <div className="max-h-5.5">
+              {!!(ui & (UI.arg | UI.div)) && tabs?.length > 0 && !flagValue && (
+                <Tabs key="AppTabs" />
+              )}
+              {!!(ui & (UI.arg | UI.hotkey)) && selected && (
+                <Selected key="AppSelected" />
+              )}
+            </div>
+            {logHtml?.length > 0 && script?.log !== 'false' && (
+              <Log key="AppLog" />
+            )}
+          </AnimatePresence>
         </header>
         <main
           ref={mainRef}
           className={`
-        ${processing && !isMainScript ? `h-0` : `h-full`}
+        ${processing && resizeEnabled ? `h-0` : `h-full`}
         w-full
         border-transparent
         border-b
+        relative
 
         `}
         >
-          {!!(ui & UI.drop) && <Drop />}
-          {!!(ui & UI.textarea) && <TextArea />}
-          {!!(ui & UI.editor) && <Editor />}
-          {!!(ui & UI.form) && <Form />}
-
+          <AnimatePresence key="mainComponents">
+            {isSplash && <Splash />}
+            {!!(ui & UI.drop) && <Drop />}
+            {!!(ui & UI.textarea) && <TextArea />}
+            {!!(ui & UI.editor) && <Editor />}
+            {!!(ui & UI.form) && <Form />}
+          </AnimatePresence>
           <AutoSizer>
             {({ width, height }) => (
               <>

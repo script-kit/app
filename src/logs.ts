@@ -4,7 +4,7 @@
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
 import fs from 'fs';
-import { kenvPath } from '@johnlindquist/kit/cjs/utils';
+import { kenvPath, commandFromFilePath } from '@johnlindquist/kit/cjs/utils';
 
 export const consoleLog = log.create('consoleLog');
 consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
@@ -35,7 +35,7 @@ const logMap = new Map<string, Logger>();
 
 export const getLog = (id: string): Logger => {
   try {
-    const normalizedId = id.replace(/.*\//g, '').replace('.js', '');
+    const normalizedId = commandFromFilePath(id);
 
     if (logMap.get(normalizedId)) return logMap.get(normalizedId) as Logger;
 

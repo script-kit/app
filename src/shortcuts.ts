@@ -9,11 +9,13 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
+import { focusPrompt } from './prompt';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
   const success = globalShortcut.register(shortcut, async () => {
     console.log(`🏃‍♀️ Run ${filePath}`);
-    await runPromptProcess(filePath);
+    runPromptProcess(filePath);
+    focusPrompt();
   });
 
   if (!success) {

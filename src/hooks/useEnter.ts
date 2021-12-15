@@ -3,6 +3,7 @@ import { Value } from '@johnlindquist/kit/cjs/enum';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
   choicesAtom,
+  cmdAtom,
   flagAtom,
   indexAtom,
   inputAtom,
@@ -20,9 +21,10 @@ export default () => {
   const [promptData] = useAtom(promptDataAtom);
   const [panelHTML] = useAtom(panelHTMLAtom);
   const [, setFlag] = useAtom(flagAtom);
+  const [cmd] = useAtom(cmdAtom);
 
   useHotkeys(
-    'enter,cmd+enter,ctrl+enter,shift+enter,option+enter',
+    `enter,${cmd}+enter,shift+enter,option+enter`,
     (event) => {
       event.preventDefault();
       if (event.metaKey) setFlag(`cmd`);

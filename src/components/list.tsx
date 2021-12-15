@@ -1,6 +1,11 @@
 /* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useCallback } from 'react';
-import { motion, useAnimation } from 'framer-motion';
+import {
+  AnimatePresence,
+  motion,
+  useAnimation,
+  useMotionValue,
+} from 'framer-motion';
 import { FixedSizeList as List } from 'react-window';
 import { useAtom } from 'jotai';
 import memoize from 'memoize-one';
@@ -16,9 +21,10 @@ import {
   submitValueAtom,
   previewEnabledAtom,
   hasPreviewAtom,
+  previewHTMLAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
-import { BUTTON_HEIGHT } from '../defaults';
+import { BUTTON_HEIGHT, DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from '../defaults';
 
 const createItemData = memoize(
   (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>
@@ -44,6 +50,8 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [flagValue] = useAtom(flagValueAtom);
   const [previewEnabled] = useAtom(previewEnabledAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
+  const [previewHTML] = useAtom(previewHTMLAtom);
+  const listWidth = useMotionValue('100%');
 
   const onIndexSubmit = useCallback(
     (i) => {
@@ -82,7 +90,13 @@ export default function ChoiceList({ width, height }: ListProps) {
   }, [index, choices, height, flagValue]);
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{
+        opacity: choices?.length ? 1 : 0,
+      }}
+      transition={{ duration: 0.15, ease: 'circOut' }}
+      id="list"
       className={`
 
       list-component
@@ -99,38 +113,38 @@ export default function ChoiceList({ width, height }: ListProps) {
         } as any
       }
     >
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{
-          opacity: choices?.length ? 1 : 0,
-        }}
-        transition={{ duration: 0.15, ease: 'circOut' }}
-        className="h-full"
+      <List
         style={{
-          minWidth: previewEnabled && hasPreview ? '320px' : '100%',
+          minWidth:
+            previewEnabled && hasPreview ? DEFAULT_LIST_WIDTH : DEFAULT_WIDTH,
         }}
-      >
-        <List
-          ref={listRef}
-          innerRef={innerRef}
-          height={height}
-          itemCount={choices?.length || 0}
-          itemSize={BUTTON_HEIGHT}
-          width="100%"
-          itemData={itemData}
-          className={`
+        ref={listRef}
+        innerRef={innerRef}
+        height={height}
+        itemCount={choices?.length || 0}
+        itemSize={BUTTON_HEIGHT}
+        width="100%"
+        itemData={itemData}
+        className={`
         h-full
         px-0 flex flex-col
         text-black dark:text-white
         overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20
+        ${
+          previewEnabled && hasPreview
+            ? 'border-r dark:border-white border-black dark:border-opacity-5 border-opacity-5'
+            : ''
+        }
         `}
-          // onItemsRendered={onItemsRendered}
-        >
-          {ChoiceButton}
-        </List>
-      </motion.div>
+        // onItemsRendered={onItemsRendered}
+      >
+        {ChoiceButton}
+      </List>
 
-      {previewEnabled && <Preview />}
-    </div>
+      {/* {previewEnabled && <Preview />} */}
+      <AnimatePresence>
+        {previewHTML && <Preview key="AppPreview" />}
+      </AnimatePresence>
+    </motion.div>
   );
 }

@@ -9,6 +9,7 @@ import {
   kitPath,
   getLogFromScriptPath,
   tmpDownloadsDir,
+  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { Script } from '@johnlindquist/kit/types/core';
 import { MessageData } from '@johnlindquist/kit/types/kitapp';
@@ -148,6 +149,10 @@ export const startIpc = () => {
 
   ipcMain.on(Channel.OPEN_FILE, async (event, filePath: string) => {
     await runPromptProcess(kitPath('cli/edit-file.js'), [filePath]);
+  });
+
+  ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, async () => {
+    runPromptProcess(mainScriptPath);
   });
 
   // ipcMain.on(

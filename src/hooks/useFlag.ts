@@ -3,6 +3,7 @@ import { useAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
   choicesAtom,
+  cmdAtom,
   flagAtom,
   flagsAtom,
   flagValueAtom,
@@ -18,6 +19,7 @@ import {
 import { hotkeysOptions } from './shared';
 
 export default () => {
+  const [cmd] = useAtom(cmdAtom);
   const [choices] = useAtom(choicesAtom);
   const [input] = useAtom(inputAtom);
   const [index] = useAtom(indexAtom);
@@ -31,12 +33,12 @@ export default () => {
   const [previewEnabled, setPreviewEnabled] = useAtom(previewEnabledAtom);
 
   useHotkeys(
-    'cmd+p',
+    `${cmd}+p`,
     (event) => {
       setPreviewEnabled(!previewEnabled);
     },
     hotkeysOptions,
-    [setPreviewEnabled, previewEnabled]
+    [setPreviewEnabled, previewEnabled, cmd]
   );
 
   const flagsArray = Object.entries(flags);
@@ -69,7 +71,7 @@ export default () => {
   );
 
   useHotkeys(
-    flagsArray.length ? 'right,left,cmd+k,ctrl+k' : 'f18',
+    flagsArray.length ? `right,left,${cmd}+k,${cmd}+k` : 'f18',
     (event) => {
       if (!inputFocus) return;
       if (
@@ -88,12 +90,16 @@ export default () => {
 
         setFlagValue('');
       } else if (event.key === 'k') {
-        setFlagValue(
-          flagValue ? '' : choices.length ? choices[index].value : input
-        );
+        if (flagValue) {
+          setFlagValue('');
+        } else if (choices.length) {
+          setFlagValue(choices[index].value);
+        } else {
+          setFlagValue(input);
+        }
       }
     },
     hotkeysOptions,
-    [input, inputFocus, choices, index, selectionStart, flagValue]
+    [input, inputFocus, choices, index, selectionStart, flagValue, cmd]
   );
 };

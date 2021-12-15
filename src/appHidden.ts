@@ -5,7 +5,7 @@ let appHidden = false;
 export const setAppHidden = (hidden: boolean) => {
   appHidden = hidden;
   if (hidden) {
-    app?.hide();
+    if (app?.hide) app?.hide();
   }
 };
 

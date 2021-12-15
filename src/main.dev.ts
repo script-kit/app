@@ -14,14 +14,10 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
-import {
-  app,
-  protocol,
-  BrowserWindow,
-  powerMonitor,
-  session,
-  shell,
-} from 'electron';
+import { app, protocol, powerMonitor, session, shell } from 'electron';
+import installExtension, {
+  REACT_DEVELOPER_TOOLS,
+} from 'electron-devtools-installer';
 
 import { Open } from 'unzipper';
 import tar from 'tar';
@@ -36,12 +32,14 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
 import {
+  fork,
   spawnSync,
   SpawnSyncOptions,
   SpawnSyncReturns,
   spawn,
+  ForkOptions,
 } from 'child_process';
-import { homedir } from 'os';
+import os from 'os';
 import { ensureDir } from 'fs-extra';
 import { existsSync, readFileSync } from 'fs';
 import {
@@ -53,7 +51,8 @@ import {
   rm,
   rmdir,
 } from 'fs/promises';
-import { Channel, ProcessType } from '@johnlindquist/kit/cjs/enum';
+import { Channel, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
+import { PromptData } from '@johnlindquist/kit/types/core';
 
 import {
   kenvPath,
@@ -61,13 +60,22 @@ import {
   KIT_FIRST_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
+  execPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
-import { createTray } from './tray';
+import { createTray, destroyTray } from './tray';
 import { cacheMenu, setupWatchers, teardownWatchers } from './watcher';
 import { getAssetPath } from './assets';
 import { configureInterval } from './tick';
-import { clearPromptCache, createPromptWindow, sendToPrompt } from './prompt';
+import {
+  clearPromptCache,
+  createPromptWindow,
+  destroyPromptWindow,
+  sendToPrompt,
+  setPromptData,
+  setPromptPid,
+  setScript,
+} from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
@@ -77,11 +85,10 @@ import { startSK } from './sk';
 import { processes } from './process';
 import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
-import { CONFIG_SPLASH, showError } from './main.dev.templates';
+import { showError } from './main.dev.templates';
 import { scheduleScriptChanged } from './schedule';
 import { maybeSetLogin } from './settings';
-
-let configWindow: BrowserWindow;
+import { SPLASH_PATH } from './defaults';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -90,8 +97,8 @@ app.setName(APP_NAME);
 
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
 if (app?.dock) {
-  app.dock.hide();
-  app.dock.setIcon(getAssetPath('icon.png'));
+  app?.dock?.hide();
+  app?.dock?.setIcon(getAssetPath('icon.png'));
 }
 const releaseChannel = readFileSync(
   getAssetPath('release_channel.txt'),
@@ -109,15 +116,6 @@ Node version: ${nodeVersion}
 `);
 
 const KIT = kitPath();
-const options: SpawnSyncOptions = {
-  cwd: KIT,
-  encoding: 'utf-8',
-  env: {
-    KIT,
-    KENV: kenvPath(),
-    PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
-  },
-};
 
 powerMonitor.on('resume', async () => {
   setTimeout(async () => {
@@ -139,18 +137,12 @@ if (
 
 // fmkadmapgofadopljbjfkapdkoienihi
 const installExtensions = async () => {
-  const reactDevToolsDir = path.join(
-    homedir(),
-    'Library/Application Support/Google/Chrome/Default/Extensions/fmkadmapgofadopljbjfkapdkoienihi/'
-  );
-
-  const [version] = await readdir(reactDevToolsDir);
-
-  const reactDevToolsPath = path.resolve(reactDevToolsDir, version);
-
-  await session.defaultSession.loadExtension(reactDevToolsPath, {
-    allowFileAccess: true,
+  const result = await installExtension(REACT_DEVELOPER_TOOLS, {
+    loadExtensionOptions: { allowFileAccess: true },
+  }).catch((error) => {
+    log.info(`😬 DEVTOOLS INSTALL FAILED`, { error });
   });
+  if (result) log.info(`😬 DEVTOOLS INSTALLED`, { result });
 };
 
 const cliFromParams = async (cli: string, params: URLSearchParams) => {
@@ -206,6 +198,10 @@ app.on('web-contents-created', (_, contents) => {
   });
 });
 
+app.on('before-quit', () => {
+  destroyTray();
+});
+
 const prepareProtocols = async () => {
   app.on('open-url', async (e, u) => {
     log.info(`URL PROTOCOL`, u);
@@ -236,37 +232,90 @@ const createLogs = () => {
   log.transports.file.resolvePath = () => kitPath('logs', 'kit.log');
 };
 
-const configWindowDone = () => {
-  if (configWindow?.isVisible()) {
-    configWindow?.webContents.send('UPDATE', {
-      header: `Script Kit ${getVersion()}`,
-      spinner: false,
-      message: `
-  <div class="flex flex-col justify-center items-center px-8">
-    <div><span class="font-bold"><kbd>cmd</kbd> <kbd>;</kbd></span> to launch main prompt (or click tray icon)</div>
-    <div>Right-click tray icon for options</div>
-  </div>
-  `.trim(),
-    });
-    configWindow?.on('blur', () => {
-      if (!configWindow?.webContents?.isDevToolsOpened()) {
-        configWindow?.destroy();
+const sendSplashBody = (message: string) => {
+  if (message.includes('object')) return;
+  sendToPrompt(Channel.SET_SPLASH_BODY, message);
+};
+
+const sendSplashHeader = (message: string) => {
+  sendToPrompt(Channel.SET_SPLASH_HEADER, message);
+};
+
+const sendSplashProgress = (progress: number) => {
+  sendToPrompt(Channel.SET_SPLASH_PROGRESS, progress);
+};
+
+const setupDone = () => {
+  sendSplashProgress(100);
+  sendSplashHeader(`Kit SDK Install verified ✅`);
+};
+
+// const configWindowDone = () => {
+//   if (configWindow?.isVisible()) {
+//     configWindow?.webContents.send('UPDATE', {
+//       header: `Script Kit ${getVersion()}`,
+//       spinner: false,
+//       message: `
+//   <div class="flex flex-col justify-center items-center px-8">
+//     <div><span class="font-bold"><kbd>cmd</kbd> <kbd>;</kbd></span> to launch main prompt (or click tray icon)</div>
+//     <div>Right-click tray icon for options</div>
+//   </div>
+//   `.trim(),
+//     });
+//     configWindow?.on('blur', () => {
+//       if (!configWindow?.webContents?.isDevToolsOpened()) {
+//         configWindow?.destroy();
+//       }
+//     });
+//   } else {
+//     configWindow?.destroy();
+//   }
+// };
+
+const setupLog = async (message: string) => {
+  sendSplashBody(message);
+  log.info(message);
+  if (process.env.KIT_SPLASH) {
+    await new Promise((resolve, reject) =>
+      setTimeout(() => {
+        resolve(true);
+      }, 500)
+    );
+  }
+};
+
+const forkOptions: ForkOptions = {
+  cwd: KIT,
+  env: {
+    KIT,
+    KENV: kenvPath(),
+    PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+  },
+};
+
+const optionalSetupScript = (...args: string[]) => {
+  return new Promise((resolve, reject) => {
+    const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
+
+    child.on('message', (data) => {
+      const dataString = typeof data === 'string' ? data : data.toString();
+
+      if (!dataString.includes(`[object`)) {
+        log.info(args[0], dataString);
+        sendSplashBody(dataString.slice(0, 200));
       }
     });
-  } else {
-    configWindow?.destroy();
-  }
-};
 
-const updateConfigWindow = (message: string) => {
-  if (configWindow?.isVisible()) {
-    configWindow?.webContents.send('UPDATE', { message });
-  }
-};
+    child.on('exit', () => {
+      resolve('success');
+    });
 
-const setupLog = (message: string) => {
-  updateConfigWindow(message);
-  log.info(message);
+    child.on('error', (error: Error) => {
+      resolve('error');
+      // reject(error);
+      // throw new Error(error.message);
+    });
+  });
 };
 
 const ensureKitDirs = async () => {
@@ -285,30 +334,29 @@ const ensureKenvDirs = async () => {
 
 const ready = async () => {
   try {
-    if (process.env.NODE_ENV === 'development') {
-      // await installExtensions();
-    }
-
     await ensureKitDirs();
     await ensureKenvDirs();
     createLogs();
     await prepareProtocols();
-    setupLog(`Protocols Prepared`);
+    await setupLog(`Protocols Prepared`);
+
     await createTray(true);
+
     await maybeSetLogin();
-    setupLog(`Tray created`);
+    await setupLog(`Tray created`);
+
     await setupWatchers();
-    setupLog(`Shortcuts Assigned`);
-    await createPromptWindow();
-    setupLog(`Prompt window created`);
+    await setupLog(`Shortcuts Assigned`);
 
     await configureInterval();
-    setupLog(`Tick started`);
+    await setupLog(`Tick started`);
 
-    setupLog(`Kit.app is ready...`);
-    configWindowDone();
+    const isWin = os.platform().startsWith('win');
+    await setupLog(`Launch Script Kit with ${isWin ? `ctrl` : `cmd`}+;`);
+    await setupDone();
 
-    startSK();
+    const isMac = os.platform() === 'darwin';
+    if (isMac) startSK();
     await cacheKitScripts();
     await cacheMenu();
 
@@ -317,7 +365,7 @@ const ready = async () => {
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);
 
-    spawn(`./script`, [`./setup/downloads.js`], options);
+    optionalSetupScript(`./setup/downloads.js`);
 
     const downloads = kitPath('setup', 'downloads.js');
     scheduleScriptChanged({
@@ -326,7 +374,6 @@ const ready = async () => {
       filePath: downloads,
       id: downloads,
       type: ProcessType.Schedule,
-      requiresPrompt: false,
       kenv: '.kit',
       schedule: '0 11 * * *',
     });
@@ -340,6 +387,8 @@ const ready = async () => {
       log.info(`🌄 System waking. Starting watchers.`);
       await setupWatchers();
     });
+
+    console.log(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {
     log.warn(error);
   }
@@ -357,7 +406,7 @@ const handleSpawnReturns = async (
   if (stdout?.toString().length) {
     const out = stdout.toString();
     log.info(message, out);
-    if (out.length < 200) updateConfigWindow(out);
+    sendSplashBody(out.slice(0, 200));
   }
 
   if (error && required) {
@@ -365,7 +414,7 @@ const handleSpawnReturns = async (
   }
 
   if (stderr?.toString().length) {
-    updateConfigWindow(stderr.toString());
+    sendSplashBody(stderr.toString());
     console.log({ stderr: stderr.toString() });
     // throw new Error(stderr.toString());
   }
@@ -373,83 +422,85 @@ const handleSpawnReturns = async (
   return result;
 };
 
-const kitExists = () => {
+const kitExists = async () => {
   setupLog(kitPath());
   const doesKitExist = existsSync(kitPath());
 
-  setupLog(`kit${doesKitExist ? `` : ` not`} found`);
+  await setupLog(`kit${doesKitExist ? `` : ` not`} found`);
 
   return doesKitExist;
 };
 
-const kitUserDataExists = () => {
+const kitUserDataExists = async () => {
   const userDataExists = existsSync(app.getPath('userData'));
-  setupLog(`kit user data ${userDataExists ? `` : ` not`} found`);
+  await setupLog(`kit user data ${userDataExists ? `` : ` not`} found`);
 
   return userDataExists;
 };
 
 const isContributor = async () => {
   // eslint-disable-next-line no-return-await
-  return kitExists() && kitIgnore();
+  return (await kitExists()) && kitIgnore();
 };
 
-const kenvExists = () => {
+const kenvExists = async () => {
   const doesKenvExist = existsSync(kenvPath());
-  setupLog(`kenv${doesKenvExist ? `` : ` not`} found`);
+  await setupLog(`kenv${doesKenvExist ? `` : ` not`} found`);
 
   return doesKenvExist;
 };
 
-const kenvsExists = () => {
+const kenvsExists = async () => {
   const doKenvsExists = existsSync(kenvPath('kenvs'));
-  setupLog(`kenv/kenvs${doKenvsExists ? `` : ` not`} found`);
+  await setupLog(`kenv/kenvs${doKenvsExists ? `` : ` not`} found`);
 
   return doKenvsExists;
 };
 
-const examplesExists = () => {
+const examplesExists = async () => {
   const doExamplesExist = existsSync(kenvPath('kenvs', 'examples'));
-  setupLog(`kenv/kenvs/examples${doExamplesExist ? `` : ` not`} found`);
+  await setupLog(`kenv/kenvs/examples${doExamplesExist ? `` : ` not`} found`);
 
   return doExamplesExist;
 };
 
-const kenvConfigured = () => {
+const kenvConfigured = async () => {
   const isKenvConfigured = existsSync(kenvPath('.env'));
-  setupLog(`kenv is${isKenvConfigured ? `` : ` not`} configured`);
+  await setupLog(`kenv is${isKenvConfigured ? `` : ` not`} configured`);
 
   return isKenvConfigured;
 };
 
-const nodeExists = () => {
-  const doesNodeExist = existsSync(kitPath('node', 'bin', 'node'));
-  setupLog(`node${doesNodeExist ? `` : ` not`} found`);
+const nodeExists = async () => {
+  const doesNodeExist = existsSync(execPath);
+  await setupLog(`node${doesNodeExist ? `` : ` not`} found`);
 
   return doesNodeExist;
 };
 
-const nodeModulesExists = () => {
+const nodeModulesExists = async () => {
   const doesNodeModulesExist = existsSync(kitPath('node_modules'));
-  setupLog(`node_modules${doesNodeModulesExist ? `` : ` not`} found`);
+  await setupLog(`node_modules${doesNodeModulesExist ? `` : ` not`} found`);
 
   return doesNodeModulesExist;
 };
 
 const verifyInstall = async () => {
-  setupLog(`Verifying ~/.kit exists:`);
-  const checkKit = kitExists();
-  setupLog(`Verifying ~/.kenv exists:`);
-  const checkKenv = kenvExists();
+  await setupLog(`Verifying ~/.kit exists:`);
+  const checkKit = await kitExists();
+  await setupLog(`Verifying ~/.kenv exists:`);
+  const checkKenv = await kenvExists();
 
-  const checkNode = nodeExists();
-  setupLog(checkNode ? `node found` : `node missing`);
+  const checkNode = await nodeExists();
+  await setupLog(checkNode ? `node found` : `node missing`);
 
-  const checkNodeModules = nodeModulesExists();
-  setupLog(checkNodeModules ? `node_modules found` : `node_modules missing`);
+  const checkNodeModules = await nodeModulesExists();
+  await setupLog(
+    checkNodeModules ? `node_modules found` : `node_modules missing`
+  );
 
-  const isKenvConfigured = kenvConfigured();
-  setupLog(isKenvConfigured ? `kenv .env found` : `kenv .env missinag`);
+  const isKenvConfigured = await kenvConfigured();
+  await setupLog(isKenvConfigured ? `kenv .env found` : `kenv .env missinag`);
 
   if (
     checkKit &&
@@ -458,7 +509,7 @@ const verifyInstall = async () => {
     checkNodeModules &&
     isKenvConfigured
   ) {
-    setupLog(`Install verified`);
+    await setupLog(`Install verified`);
     return true;
   }
 
@@ -469,7 +520,7 @@ const ohNo = async (error: Error) => {
   log.warn(error.message);
   log.warn(error.stack);
   const mainLog = await readFile(
-    path.join(homedir(), `Library/Logs/Kit/main.log`),
+    path.join(os.homedir(), `Library/Logs/Kit/main.log`),
     {
       encoding: 'utf8',
     }
@@ -482,15 +533,14 @@ ${error.stack}
 ${mainLog}
   `.trim()
   );
-  configWindow?.destroy();
-
+  destroyPromptWindow();
   await show(INSTALL_ERROR, showError(error, mainLog));
 
   throw new Error(error.message);
 };
 
 const extractTar = async (tarFile: string, outDir: string) => {
-  setupLog(`Extracting ${tarFile} to ${outDir}`);
+  await setupLog(`Extracting ${tarFile} to ${outDir}`);
   await ensureDir(outDir);
 
   await tar.x({
@@ -502,10 +552,10 @@ const extractTar = async (tarFile: string, outDir: string) => {
 
 const versionMismatch = async () => {
   const currentVersion = getVersion();
-  setupLog(`App version: ${currentVersion}`);
+  await setupLog(`App version: ${currentVersion}`);
 
   const previousVersion = await getStoredVersion();
-  setupLog(`Previous version: ${previousVersion}`);
+  await setupLog(`Previous version: ${previousVersion}`);
   return currentVersion !== previousVersion;
 };
 
@@ -519,7 +569,7 @@ const cleanKit = async () => {
   for await (const file of await readdir(pathToClean)) {
     if (keep(file)) continue;
 
-    const filePath = path.join(pathToClean, file);
+    const filePath = path.resolve(pathToClean, file);
     const stat = await lstat(filePath);
     if (stat.isDirectory()) {
       await rmdir(filePath, { recursive: true });
@@ -539,39 +589,107 @@ const KIT_NODE_TAR =
   getAssetPath(`node.${platform === 'win' ? 'zip' : 'tar.gz'}`);
 
 const checkKit = async () => {
-  setupLog(`\n\n---------------------------------`);
-  setupLog(`Launching Script Kit  ${getVersion()}`);
-  setupLog(`auto updater detected version: ${autoUpdater.currentVersion}`);
+  const options: SpawnSyncOptions = {
+    cwd: KIT,
+    encoding: 'utf-8',
+    env: {
+      KIT,
+      KENV: kenvPath(),
+      PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+    },
+  };
+
+  const setupScript = (...args: string[]) => {
+    return new Promise((resolve, reject) => {
+      const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
+
+      child.on('message', (data) => {
+        const dataString = data.toString();
+        log.info(args[0], dataString);
+        sendSplashBody(dataString.slice(0, 200));
+      });
+
+      child.on('exit', () => {
+        resolve('success');
+      });
+
+      child.on('error', (error: Error) => {
+        reject(error);
+        ohNo(error);
+      });
+    });
+  };
+
+  const showSplash = async () => {
+    await setScript({
+      name: 'Kit Setup',
+      command: 'splash-screen',
+      filePath: SPLASH_PATH,
+      kenv: '',
+      id: 'spash-screen',
+      type: ProcessType.Prompt,
+      hasPreview: true,
+    });
+
+    sendSplashHeader(`Installing Kit SDK and Kit Environment...`);
+
+    setPromptPid(999999);
+
+    setPromptData({
+      ignoreBlur: true,
+      ui: UI.splash,
+    } as PromptData);
+    sendSplashBody(`Starting up...`);
+  };
+
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      await installExtensions();
+    } catch (error) {
+      log.info(`Failed to install extensions`, error);
+    }
+  }
+  await createPromptWindow();
+
+  await setupLog(`Prompt window created`);
+
+  const isWin = os.platform().startsWith('win');
+
+  await setupLog(`\n\n---------------------------------`);
+  await setupLog(`Launching Script Kit  ${getVersion()}`);
+  await setupLog(
+    `auto updater detected version: ${autoUpdater.currentVersion}`
+  );
   log.info(`PATH:`, KIT_FIRST_PATH);
   configureAutoUpdate();
   await checkForUpdates();
 
-  if (!kitExists() || (await versionMismatch())) {
-    configWindow = await show(
-      'splash-setup',
-      CONFIG_SPLASH,
-      { frame: false },
-      false
-    );
+  if (process.env.KIT_SPLASH) {
+    await showSplash();
+  }
 
-    if (await isContributor()) {
-      setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
-    } else {
-      if ((await getStoredVersion()) === '0.0.0') {
-        configWindow?.show();
-      }
+  if (!(await kitExists()) || (await versionMismatch())) {
+    if (!process.env.KIT_SPLASH) {
+      await showSplash();
+    }
+    log.info(`🔥 First time install detected`);
+  }
 
-      if (kitExists()) {
-        setupLog(`Cleaning previous .kit`);
+  if (await isContributor()) {
+    await setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
+  } else {
+    if ((await getStoredVersion()) === '0.0.0') {
+      if (await kitExists()) {
+        await setupLog(`Cleaning previous .kit`);
         await cleanKit();
       }
 
-      setupLog(`.kit doesn't exist or isn't on a contributor branch`);
+      await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
       const kitTar = getAssetPath('kit.tar.gz');
       await extractTar(kitTar, kitPath());
 
-      if (!nodeExists()) {
-        setupLog(
+      if (!(await nodeExists())) {
+        await setupLog(
           `Adding node ${nodeVersion} ${platform} ${arch} to ~/.kit/node ...`
         );
 
@@ -591,7 +709,7 @@ const checkKit = async () => {
                 kitPath('node', 'bin')
               );
               log.info(await readdir(kitPath('node', 'bin')));
-              await chmod(kitPath('node', 'bin', 'npm'), 0o755);
+              await chmod(kitPath('node', 'bin', 'npm.cmd'), 0o755);
               await chmod(kitPath('node', 'bin', 'node.exe'), 0o755);
             } else {
               log.warn(`Couldn't find node dir in ${nodeDir}`);
@@ -614,33 +732,25 @@ const checkKit = async () => {
           await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
         }
       }
-      setupLog(`updating ~/.kit packages...`);
+      await setupLog(`updating ~/.kit packages...`);
       log.info(`PATH:`, options?.env?.PATH);
       const npmResult = spawnSync(
-        kitPath('node', 'bin', 'npm'),
+        kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
         [`i`, `--production`, `--no-progress`, `--quiet`],
         options
       );
       await handleSpawnReturns(`npm`, npmResult);
     }
 
-    await chmod(kitPath('script'), 0o755);
-    const chmodResult = spawnSync(
-      kitPath('script'),
-      [kitPath('setup', 'chmod-helpers.js')],
-      options
-    );
-    await handleSpawnReturns(`chmod helpers`, chmodResult);
-
+    await setupScript(kitPath('setup', 'chmod-helpers.js'));
     await clearPromptCache();
   }
 
-  if (kenvsExists() && examplesExists()) {
-    setupLog(`Updating examples...`);
-    spawn(
-      kitPath('script'),
-      [kitPath('cli', 'kenv-pull.js'), kenvPath(`kenvs`, `examples`)],
-      options
+  if ((await kenvsExists()) && (await examplesExists())) {
+    await setupLog(`Updating examples...`);
+    await setupScript(
+      kitPath('cli', 'kenv-pull.js'),
+      kenvPath(`kenvs`, `examples`)
     );
 
     // await handleSpawnReturns(`update-examples`, updateExamplesResult);
@@ -648,58 +758,41 @@ const checkKit = async () => {
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 
-  if (!kenvExists()) {
+  if (!(await kenvExists())) {
     // Step 4: Use kit wrapper to run setup.js script
-    configWindow?.show();
-    setupLog(`Extract tar to ~/.kenv...`);
+    // configWindow?.show();
+    await setupLog(`Extract tar to ~/.kenv...`);
     const kenvTar = getAssetPath('kenv.tar.gz');
     await extractTar(kenvTar, kenvPath());
     log.info(await readdir(kenvPath()));
 
-    kenvExists();
+    await kenvExists();
     await ensureKenvDirs();
 
-    const cloneExamplesResult = spawnSync(
-      kitPath('script'),
-      [kitPath('setup', 'clone-examples.js')],
-      options
-    );
-    await handleSpawnReturns(`clone-examples`, cloneExamplesResult, false);
+    optionalSetupScript(kitPath('setup', 'clone-examples.js'));
   }
 
-  await chmod(kitPath('script'), 0o755);
-
-  if (!kenvConfigured()) {
-    setupLog(`Run .kenv setup script...`);
-
-    const setupResult = spawnSync(
-      kitPath('script'),
-      [kitPath('setup', 'setup.js')],
-      options
-    );
-    await handleSpawnReturns(`setup`, setupResult);
-
-    kenvConfigured();
+  if (!(await kenvConfigured())) {
+    await setupLog(`Run .kenv setup script...`);
+    await setupScript(kitPath('setup', 'setup.js'));
+    await kenvConfigured();
   }
 
-  const createAllBins = spawnSync(
-    kitPath('script'),
-    [kitPath('cli', 'create-all-bins.js')],
-    options
-  );
-  await handleSpawnReturns(`create-all-bins`, createAllBins);
+  optionalSetupScript(kitPath('cli', 'create-all-bins.js'));
 
-  setupLog(`Update .kenv`);
-  const patchResult = spawnSync(
-    kitPath('script'),
-    [kitPath('setup', 'patch.js')],
-    options
-  );
-  await handleSpawnReturns(`patch`, patchResult);
+  await setupLog(`Update .kenv`);
+  await setupScript(kitPath('setup', 'patch.js'));
 
-  await verifyInstall();
+  try {
+    await verifyInstall();
+  } catch (error: any) {
+    ohNo(error);
+  }
   await storeVersion(getVersion());
   await ready();
+  sendToPrompt(Channel.SET_READY, true);
 };
 
 app.whenReady().then(checkKit).catch(ohNo);
+
+// Build didn't work

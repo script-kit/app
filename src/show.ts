@@ -209,7 +209,7 @@ export const show = async (
       if (
         BrowserWindow.getAllWindows().every((window) => !window.isVisible())
       ) {
-        app?.hide();
+        if (app?.hide) app?.hide();
       }
     }
   });

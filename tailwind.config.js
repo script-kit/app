@@ -1,6 +1,11 @@
 /* eslint-disable prettier/prettier */
 const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
+delete colors['lightBlue'];
+delete colors['coolGray'];
+delete colors['blueGray'];
+delete colors['trueGray'];
+delete colors['warmGray'];
 
 const colorVar = (name) => (v) => {
   const { opacityVariable, opacityValue } = v;
@@ -13,48 +18,59 @@ const colorVar = (name) => (v) => {
   return `rgb(var(--color-${name}))`;
 };
 
+const round = (num) =>
+  num
+    .toFixed(7)
+    .replace(/(\.[0-9]+?)0+$/, '$1')
+    .replace(/\.0$/, '');
+const rem = (px) => `${round(px / 16)}rem`;
+const em = (px, base) => `${round(px / base)}em`;
+
+const safeListStartsWith = [
+  'active',
+  'animate',
+  'hover',
+  'hidden',
+  'font',
+  'flex',
+  'justify',
+  'space',
+  'items',
+  'text',
+  'bg',
+  'self',
+  'italic',
+  'whitespace',
+  'min',
+  'max',
+  'grid',
+  'w{0,2}-(d/d|d.d|d{1,3}|full|screen|auto)',
+  'leading',
+  'prose',
+  'prose-dark',
+  'dark:prose-dark',
+  'prose-sm',
+  '-?inset',
+  '-?top',
+  '-?right',
+  '-?bottom',
+  '-?left',
+];
+
 /* eslint-disable global-require */
 module.exports = {
   mode: process.env.NODE_ENV === 'development' ? 'jit' : '',
-  purge: {
-    enabled: true,
-    content: [
-      './src/**/*.html',
-      './src/**/*.tsx',
-      './src/*.ts',
-      './safelist.txt',
-    ],
-    options: {
-      safelist: [
-        /^active/,
-        /^animate/,
-        /^hover/,
-        /^hidden/,
-        /^font/,
-        /^flex/,
-        /^justify/,
-        /^space/,
-        /^items/,
-        /^text/,
-        /^bg/,
-        /^self/,
-        /^italic/,
-        /^whitespace/,
-        /^min/,
-        /^max/,
-        /^grid/,
-        /^\w{0,2}-(\d\/\d|\d\.\d|\d{1,3}|full|screen|auto)/,
-        /^leading/,
-        /^prose/,
-        /^dark:prose-dark/,
-        /^-?inset/,
-        /^-?top/,
-        /^-?right/,
-        /^-?bottom/,
-        /^-?left/,
-      ],
+  content: [
+    './src/**/*.html',
+    './src/**/*.tsx',
+    './src/*.ts',
+    './safelist.txt',
+  ],
+  safelist: [
+    {
+      pattern: new RegExp(`^(${safeListStartsWith.join('|')})`),
     },
-  },
+  ],
   darkMode: 'media',
   variants: {
     extend: {
@@ -119,6 +135,9 @@ module.exports = {
         '3/4': '75%',
         full: '100%',
       },
+      height: {
+        5.5: '22px',
+      },
       minHeight: {
         52: '14rem',
         64: '16rem',
@@ -138,13 +157,13 @@ module.exports = {
             code: {
               padding: '1px 3px',
               borderRadius: 2,
-              backgroundColor: theme('colors.gray.100'),
+              backgroundColor: 'rgba(0, 0, 0, 0.1)',
             },
             'code:before': {
-              content: '""',
+              content: 'none',
             },
             'code:after': {
-              content: '""',
+              content: 'none',
             },
             li: {
               listStylePosition: 'outside',
@@ -153,11 +172,12 @@ module.exports = {
               marginTop: 0,
             },
             pre: {
-              background: theme('colors.white'),
+              backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              padding: '0.5rem',
             },
             'pre > code': {
               color: theme('colors.black'),
-              fontSize: '95%',
+              backgroundColor: 'transparent',
             },
             'p > label': {
               paddingTop: '5rem',
@@ -198,9 +218,23 @@ module.exports = {
               cursor: 'pointer',
               backgroundColor: `rgba(0, 0, 0, 33%)`,
             },
-
             'ul > li > *:last-child': {
               marginBottom: '.25rem',
+            },
+            'ul > li::marker': {
+              color: 'rgba(0, 0, 0, 0.35)',
+            },
+            blockquote: {
+              padding: '1rem',
+              backgroundColor: 'rgba(0, 0, 0.05)',
+              borderLeft: `2px solid ${theme('colors.primary.dark')}`,
+              fontStyle: 'normal',
+            },
+            'blockquote p:first-of-type::before': {
+              content: 'none',
+            },
+            'blockquote p:first-of-type::after': {
+              content: 'none',
             },
           },
         },
@@ -210,18 +244,28 @@ module.exports = {
             'h1, h2, h3, h4, h5': {
               color: theme('colors.white'),
             },
+            'code:before': {
+              content: 'none',
+            },
+            'code:after': {
+              content: 'none',
+            },
             code: {
+              padding: '1px 3px',
+              borderRadius: 2,
               color: theme('colors.white'),
-              backgroundColor: theme('colors.gray.800'),
+              background: 'rgba(255, 255, 255, 0.1)',
             },
             a: {
               color: theme('colors.primary.light'),
             },
             pre: {
-              background: theme('colors.gray.800'),
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              padding: '0.5rem',
             },
             'pre > code': {
               color: theme('colors.white'),
+              backgroundColor: 'transparent',
             },
             'input:focus': {
               border: `1px solid ${theme('colors.white')}`,
@@ -242,6 +286,48 @@ module.exports = {
             'input[type="submit"]:hover': {
               cursor: 'pointer',
               backgroundColor: `rgba(255, 255, 255, 33%)`,
+            },
+            'ul > li::marker': {
+              color: 'rgba(255, 255, 255, 0.35)',
+            },
+            blockquote: {
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              borderLeft: `2px solid ${theme('colors.primary.light')}`,
+            },
+          },
+        },
+        sm: {
+          css: {
+            'p:first-of-type': {
+              marginTop: 0,
+            },
+            'h1:first-of-type': {
+              fontSize: em(22, 16),
+              marginBottom: em(22, 22),
+              paddingBottom: em(16, 22),
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            },
+            h1: {
+              fontSize: em(24, 16),
+              fontFamily: theme('fontFamily.mono').join(', '),
+              textTransform: 'uppercase',
+            },
+            h2: {
+              fontSize: em(18, 16),
+              fontFamily: theme('fontFamily.mono').join(', '),
+              textTransform: 'uppercase',
+            },
+            h3: {
+              fontSize: em(16, 16),
+            },
+            h4: {
+              fontSize: em(14, 16),
+            },
+            pre: {
+              fontSize: '1em',
+            },
+            'blockquote p:first-of-type': {
+              marginBottom: 0,
             },
           },
         },
