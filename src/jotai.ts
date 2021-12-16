@@ -238,7 +238,7 @@ export const modeAtom = atom<Mode>(Mode.FILTER);
 
 const panelHTML = atom<string>('');
 export const panelHTMLAtom = atom(
-  (g) => g(panelHTML),
+  (g) => g(panelHTML) || g(promptData)?.panel,
   (g, s, a: string) => {
     if (a) s(unfilteredChoicesAtom, []);
     s(panelHTML, a);
@@ -249,7 +249,7 @@ export const panelHTMLAtom = atom(
 
 const previewHTML = atom('');
 export const previewHTMLAtom = atom(
-  (g) => g(previewHTML),
+  (g) => g(previewHTML) || g(promptData)?.preview,
   (g, s, a: string) => {
     if (!a || !g(openAtom)) return; // never unset preview to avoid flash of white/black
     const tI = g(tabIndex);
@@ -414,7 +414,7 @@ export const focusedChoiceAtom = atom(
 export const hasPreviewAtom = atom<boolean>((g) => {
   return (
     Boolean(g(focusedChoice)?.hasPreview || g(promptData)?.hasPreview) ||
-    (g(focusedChoiceAtom) === null && Boolean(g(previewHTMLAtom)?.length))
+    (g(focusedChoiceAtom) === null && Boolean(g(previewHTMLAtom)))
   );
 });
 
@@ -595,10 +595,9 @@ const resize = (g: Getter, s: Setter) => {
   const currentScript = g(script);
   if (!currentScript.resize && !g(isMainScriptAtom)) return;
   const isPreviewOpen = Boolean(
-    g(isMainScriptAtom) ||
-      (g(unfilteredPreview) &&
-        g(previewEnabled) &&
-        (g(uiAtom) === UI.arg || g(uiAtom) === UI.splash))
+    g(unfilteredPreview) &&
+      g(previewEnabled) &&
+      (g(uiAtom) === UI.arg || g(uiAtom) === UI.splash)
   );
 
   // console.log(`🚨`, {
@@ -681,6 +680,7 @@ export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     if (a) {
+      console.log(a);
       s(rawOpen, true);
       s(rawInputAtom, '');
       s(submittedAtom, false);
@@ -705,6 +705,14 @@ export const promptDataAtom = atom(
 
       if (a.description) {
         s(descriptionAtom, a.description || g(scriptAtom)?.description || '');
+      }
+
+      if (a.preview) {
+        s(previewHTMLAtom, a.preview);
+      }
+
+      if (a.panel) {
+        s(panelHTMLAtom, a.panel);
       }
       // s(tabIndex, a.tabIndex);
       s(promptData, a);

@@ -311,6 +311,8 @@ export const setBounds = (bounds: Partial<Rectangle>) => {
   cachePromptBounds();
 };
 
+let prevResize = false;
+
 export const resize = debounce(
   async ({
     topHeight,
@@ -323,7 +325,6 @@ export const resize = debounce(
     hasInput,
     isPreviewOpen,
     previewEnabled,
-    open,
     tabIndex,
     isSplash,
   }: ResizeData) => {
@@ -342,6 +343,11 @@ export const resize = debounce(
     //   tabIndex,
     //   isSplash,
     // });
+
+    if (!promptScript.resize && !prevResize) {
+      prevResize = false;
+      return;
+    }
     minHeight = topHeight;
 
     const sameScript = filePath === promptScript?.filePath;
@@ -419,6 +425,7 @@ export const resize = debounce(
     if (currentHeight === height && currentWidth === width) return;
     log.info(`↕ RESIZE: ${width} x ${height}`);
     promptWindow.setSize(width, height);
+    prevResize = true;
 
     if (ui !== UI.arg) cachePromptBounds(Bounds.Size);
 
@@ -438,6 +445,12 @@ export const promptDbWrite = debounce(async (promptDb) => {
 }, 250);
 
 export const resetPromptBounds = async () => {
+  if (
+    !promptScript.resize &&
+    ![mainScriptPath, SPLASH_PATH].includes(promptScript.filePath)
+  ) {
+    return promptWindow?.getBounds();
+  }
   const currentScreen = getCurrentScreen();
   const promptDb = await getPromptDb();
   const screenId = String(currentScreen.id).slice();
@@ -448,11 +461,7 @@ export const resetPromptBounds = async () => {
     promptDb.screens[screenId] = {};
   }
   const boundsFilePath = promptDb.screens?.[screenId]?.[filePath];
-  const maybeBounds =
-    boundsFilePath?.expanded ||
-    boundsFilePath?.collapsed ||
-    // promptWindow?.getBounds() ||
-    {};
+  const maybeBounds = boundsFilePath || {};
 
   if (!boundsFilePath) {
     const promptBounds = {

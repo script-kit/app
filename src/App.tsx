@@ -361,13 +361,12 @@ export default function App() {
           <AutoSizer>
             {({ width, height }) => (
               <>
-                {!!(ui & (UI.arg | UI.hotkey | UI.div)) &&
-                  panelHTML?.length > 0 && (
-                    <>
-                      <Panel width={width} height={height} />
-                    </>
-                  )}
-                {!!(ui & UI.arg) && panelHTML?.length === 0 && (
+                {!!(ui & (UI.arg | UI.hotkey | UI.div)) && panelHTML && (
+                  <>
+                    <Panel width={width} height={height} />
+                  </>
+                )}
+                {!!(ui & UI.arg) && !panelHTML && (
                   <>
                     <List height={height} width={width} />
                   </>
