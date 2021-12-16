@@ -78,7 +78,7 @@ export default function Splash() {
         </h1>
         <h3 className="font-normal text-base opacity-90">{header}</h3>
       </header>
-      <main className="flex flex-col items-center justify-center h-full pb-4 max-w-full">
+      <main className="flex flex-col items-center justify-center h-full pb-4 w-full max-w-full">
         {progress === 100 ? (
           <div className="w-full flex items-center justify-center space-x-5">
             <button
@@ -100,7 +100,7 @@ export default function Splash() {
           </div>
         )}
         {body && progress !== 100 && (
-          <h3 className="font-normal text-base opacity-90 mt-8 truncate w-10/12">
+          <h3 className="font-normal text-base opacity-90 mt-8 truncate max-w-lg">
             {body}
           </h3>
         )}
