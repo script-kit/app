@@ -2,3 +2,24 @@
 # yarn lockfile v1
 
 
+"@types/core-js@^2.5.4":
+  version "2.5.4"
+  resolved "https://registry.npmjs.org/@types/core-js/-/core-js-2.5.4.tgz"
+  integrity sha512-Xwy8o12ak+iYgFr/KCVaVK5Sy+jFMiiPAID3+ObvMlBzy26XQJw5xu+a6rlHsrJENXj/AwJOGsJpVohUjAzSKQ==
+
+"@types/regenerator-runtime@^0.13.0":
+  version "0.13.0"
+  resolved "https://registry.npmjs.org/@types/regenerator-runtime/-/regenerator-runtime-0.13.0.tgz"
+  integrity sha512-U5osy6qZU3lOPGQRHGDIAt/hC/jAE7zP4Aq258UMXnF8/htmZ+72ALrSsmWTtqML7lCztKkKaPz6Pb5XHJF0Vw==
+
+node-abi@^2.30.0:
+  version "2.30.0"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-2.30.0.tgz#8be53bf3e7945a34eea10e0fc9a5982776cf550b"
+  integrity sha512-g6bZh3YCKQRdwuO/tSZZYJAw622SjsRfJ2X0Iy4sSOHZ34/sPPdVBn8fev2tj7njzLwuqPw9uMtGsGkO5kIQvg==
+  dependencies:
+    semver "^5.4.1"
+
+semver@^5.4.1:
+  version "5.7.1"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-5.7.1.tgz#a954f931aeba508d307bbf069eff0c01c96116f7"
+  integrity sha512-sauaDf/PZdVgrLTNYHRtpXa1iRiKcaebiKQ1BJdpQlWH2lCvexQdX55snPFyK7QzpudqbCI0qXFfOasHdyNDGQ==

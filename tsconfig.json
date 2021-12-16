@@ -20,7 +20,11 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "allowJs": true
+    "allowJs": true,
+    "baseUrl": "./",
+    "paths": {
+      "@johnlindquist/kit/cjs/*": ["./node_modules/@johnlindquist/kit/core/*"]
+    }
   },
   "exclude": [
     "test",

@@ -50,3 +50,10 @@ npm-debug.log.*
 *.scss.d.ts
 .history
 .env
+assets/kit.zip
+assets/kenv.zip
+assets/kit.tar.gz
+assets/kenv.tar.gz
+assets/node.tar.gz
+assets/arch.txt
+assets/platform.txt

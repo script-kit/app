@@ -1,229 +1,379 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-bitwise */
+/* eslint-disable react/no-danger */
+/* eslint-disable react/jsx-props-no-spreading */
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable guard-for-in */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable react/no-array-index-key */
+/* eslint-disable react/prop-types */
+/* eslint-disable no-nested-ternary */
+/* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import React, {
-  KeyboardEvent,
+  ErrorInfo,
   RefObject,
   useCallback,
   useEffect,
   useRef,
-  useState,
 } from 'react';
-import { app, ipcRenderer, nativeTheme } from 'electron';
-import { SimplePromptOptions } from './types';
-import reactStringReplace from 'react-string-replace';
+import { useAtom } from 'jotai';
+import AutoSizer from 'react-virtualized-auto-sizer';
+import useResizeObserver from '@react-hook/resize-observer';
+import { ipcRenderer } from 'electron';
+import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 
-interface ChoiceData {
-  name: string;
-  value: string;
-  info: string | null;
+import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
+import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
+import Tabs from './components/tabs';
+import List from './components/list';
+import Input from './components/input';
+import Drop from './components/drop';
+import Editor from './components/editor';
+import Hotkey from './components/hotkey';
+import Hint from './components/hint';
+import Selected from './components/selected';
+import TextArea from './components/textarea';
+import Panel from './components/panel';
+import Log from './components/log';
+import Header from './components/header';
+import Form from './components/form';
+import {
+  scoredChoices,
+  editorConfigAtom,
+  flagsAtom,
+  flagValueAtom,
+  formDataAtom,
+  formHTMLAtom,
+  hintAtom,
+  indexAtom,
+  inputAtom,
+  isMouseDownAtom,
+  logHTMLAtom,
+  mainHeightAtom,
+  modeAtom,
+  mouseEnabledAtom,
+  openAtom,
+  panelHTMLAtom,
+  pidAtom,
+  placeholderAtom,
+  previewHTMLAtom,
+  promptDataAtom,
+  scriptAtom,
+  selectedAtom,
+  submittedAtom,
+  submitValueAtom,
+  tabIndexAtom,
+  tabsAtom,
+  textareaConfigAtom,
+  themeAtom,
+  topHeightAtom,
+  uiAtom,
+  unfilteredChoicesAtom,
+  isKitScriptAtom,
+  topRefAtom,
+  descriptionAtom,
+  nameAtom,
+  textareaValueAtom,
+  loadingAtom,
+  processingAtom,
+  isMainScriptAtom,
+  exitAtom,
+  isSplashAtom,
+  appConfigAtom,
+  splashBodyAtom,
+  splashHeaderAtom,
+  splashProgressAtom,
+  isReadyAtom,
+  resizeEnabledAtom,
+} from './jotai';
+
+import { useThemeDetector } from './hooks';
+import Splash from './components/splash';
+
+class ErrorBoundary extends React.Component {
+  // eslint-disable-next-line react/state-in-constructor
+  public state: { hasError: boolean; info: ErrorInfo } = {
+    hasError: false,
+    info: { componentStack: '' },
+  };
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    // Display fallback UI
+    this.setState({ hasError: true, info });
+    // You can also log the error to an error reporting service
+    ipcRenderer.send(Channel.PROMPT_ERROR, { error });
+  }
+
+  render() {
+    const { hasError, info } = this.state;
+    const { children } = this.props;
+    if (hasError) {
+      return (
+        <div className="p-2 font-mono">
+          <div className="text-base text-red-500">
+            Rendering Error. Opening logs.
+          </div>
+          <div className="text-xs">{info.componentStack}</div>
+        </div>
+      );
+    }
+
+    return children;
+  }
 }
 
 export default function App() {
-  const [data, setData]: any[] = useState({});
-  const [inputValue, setInputValue] = useState('');
-  const [index, setIndex] = useState(0);
-  const [choices, setChoices] = useState<ChoiceData[]>([]);
-  const scrollRef: RefObject<HTMLDivElement> = useRef(null);
-  const inputRef: RefObject<HTMLInputElement> = useRef(null);
+  const [appConfig, setAppConfig] = useAtom(appConfigAtom);
+  const [pid, setPid] = useAtom(pidAtom);
+  const [open, setOpen] = useAtom(openAtom);
+  const [, setExit] = useAtom(exitAtom);
+  const [script, setScript] = useAtom(scriptAtom);
+  const [description] = useAtom(descriptionAtom);
+  const [name] = useAtom(nameAtom);
+  const [isKitScript] = useAtom(isKitScriptAtom);
 
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef?.current.focus();
-    }
-  }, [inputRef]);
+  const [inputValue, setInput] = useAtom(inputAtom);
+  const [, setPlaceholder] = useAtom(placeholderAtom);
+  const [promptData, setPromptData] = useAtom(promptDataAtom);
+  const [, setTheme] = useAtom(themeAtom);
+  const [, setSplashBody] = useAtom(splashBodyAtom);
+  const [, setSplashHeader] = useAtom(splashHeaderAtom);
+  const [, setSplashProgress] = useAtom(splashProgressAtom);
+  const [submitted] = useAtom(submittedAtom);
 
-  const submit = useCallback((submitValue: string) => {
-    ipcRenderer.send('prompt', submitValue);
-    setData({ type: 'clear', choices: [], message: 'Processing...' });
-    setIndex(0);
-    setInputValue('');
-  }, []);
+  const [, setUnfilteredChoices] = useAtom(unfilteredChoicesAtom);
 
-  const onChange = useCallback((event) => {
-    if (event.key === 'Enter') return;
-    setIndex(0);
-    setInputValue(event.currentTarget.value);
-  }, []);
+  const [ui] = useAtom(uiAtom);
+  const [hint, setHint] = useAtom(hintAtom);
+  const [mode, setMode] = useAtom(modeAtom);
+  const [, setReady] = useAtom(isReadyAtom);
 
-  const onKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLInputElement>) => {
-      // console.log(event);
-      if (event.key === 'Enter') {
-        submit(choices?.[index]?.value || inputValue);
+  const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
+  const [tabs] = useAtom(tabsAtom);
 
-        return;
-      }
+  const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
+  const [previewHTML, setPreviewHTML] = useAtom(previewHTMLAtom);
+  const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
+  const [, setEditorConfig] = useAtom(editorConfigAtom);
+  const [, setTextareaConfig] = useAtom(textareaConfigAtom);
+  const [, setFlags] = useAtom(flagsAtom);
+  const [formHTML, setFormHTML] = useAtom(formHTMLAtom);
+  const [, setFormData] = useAtom(formDataAtom);
 
-      let newIndex = index;
+  const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
+  const [topHeight, setTopHeight] = useAtom(topHeightAtom);
 
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        newIndex += 1;
-      }
-      if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        newIndex -= 1;
-      }
+  const [, setSubmitValue] = useAtom(submitValueAtom);
+  const [flagValue] = useAtom(flagValueAtom);
+  const [mouseEnabled, setMouseEnabled] = useAtom(mouseEnabledAtom);
+  const [selected] = useAtom(selectedAtom);
+  const [index] = useAtom(indexAtom);
+  const [choices] = useAtom(scoredChoices);
+  const [, setTopRef] = useAtom(topRefAtom);
+  const [, setDescription] = useAtom(descriptionAtom);
+  const [, setName] = useAtom(nameAtom);
+  const [, setTextareaValue] = useAtom(textareaValueAtom);
+  const [, setLoading] = useAtom(loadingAtom);
+  const [processing] = useAtom(processingAtom);
+  const [resizeEnabled] = useAtom(resizeEnabledAtom);
+  const [isMainScript] = useAtom(isMainScriptAtom);
+  const [isSplash] = useAtom(isSplashAtom);
 
-      if (newIndex < 0) newIndex = 0;
-      if (newIndex > choices.length - 1) newIndex = choices.length - 1;
+  const mainRef: RefObject<HTMLDivElement> = useRef(null);
+  const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
+  const headerRef: RefObject<HTMLDivElement> = useRef(null);
 
-      setIndex(newIndex);
+  useResizeObserver(headerRef, (entry) => {
+    setTopHeight(entry.contentRect.height);
+  });
 
-      if (scrollRef.current) {
-        const el = scrollRef.current;
-        const itemHeight = el.scrollHeight / choices?.length;
-        const itemY = newIndex * itemHeight;
+  useThemeDetector();
 
-        if (itemY + itemHeight >= el.scrollTop + el.clientHeight) {
-          el.scrollTo({
-            top: itemY - el.clientHeight + itemHeight,
-            behavior: 'auto',
-          });
-        }
+  const [isMouseDown, setIsMouseDown] = useAtom(isMouseDownAtom);
 
-        if (itemY < el.scrollTop) {
-          el.scrollTo({
-            top: itemY,
-            behavior: 'auto',
-          });
-        }
-      }
+  type ChannelAtomMap = {
+    [key in keyof ChannelMap]: (data: ChannelMap[key]) => void;
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const messageMap: ChannelAtomMap = {
+    // [Channel.RESET_PROMPT]: resetPromptHandler,
+    [Channel.APP_CONFIG]: setAppConfig,
+    [Channel.EXIT]: setExit,
+    [Channel.SET_PID]: setPid,
+    [Channel.SET_SCRIPT]: setScript,
+    [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
+    [Channel.SET_DESCRIPTION]: setDescription,
+    [Channel.SET_EDITOR_CONFIG]: setEditorConfig,
+    [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfig,
+    [Channel.SET_FLAGS]: setFlags,
+    [Channel.SET_DIV_HTML]: setPanelHTML,
+    [Channel.SET_FORM_HTML]: ({ html, formData }: any) => {
+      setFormHTML(html);
+      setFormData(formData);
     },
-    [choices, index, submit, inputValue, scrollRef]
-  );
+    [Channel.SET_HINT]: setHint,
+    [Channel.SET_INPUT]: setInput,
+    [Channel.SET_LOADING]: setLoading,
+    [Channel.SET_MODE]: setMode,
+    [Channel.SET_NAME]: setName,
+    [Channel.SET_TEXTAREA_VALUE]: setTextareaValue,
+    [Channel.SET_OPEN]: setOpen,
+    [Channel.SET_PANEL]: setPanelHTML,
+    [Channel.SET_PREVIEW]: setPreviewHTML,
+    [Channel.SET_LOG]: setLogHtml,
+    [Channel.SET_PLACEHOLDER]: setPlaceholder,
+    [Channel.SET_READY]: setReady,
+    [Channel.SET_SUBMIT_VALUE]: setSubmitValue,
+    [Channel.SET_TAB_INDEX]: setTabIndex,
+    [Channel.SET_PROMPT_DATA]: setPromptData,
+    [Channel.SET_SPLASH_BODY]: setSplashBody,
+    [Channel.SET_SPLASH_HEADER]: setSplashHeader,
+    [Channel.SET_SPLASH_PROGRESS]: setSplashProgress,
+    [Channel.SET_THEME]: setTheme,
+
+    [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
+      const keyboardEvent = new KeyboardEvent('keydown', {
+        bubbles: true,
+        ctrlKey: keyData.command || keyData.control,
+        shiftKey: keyData.shift,
+        altKey: keyData.option,
+        ...keyData,
+      });
+
+      document?.activeElement?.dispatchEvent(keyboardEvent);
+    },
+  };
 
   useEffect(() => {
-    if (data.type === 'lazy' && typeof inputValue === 'string') {
-      ipcRenderer.send('input', inputValue);
-    }
-  }, [data, inputValue]);
-
-  useEffect(() => {
-    const lazyHandler = (_event: any, lazyChoices: any) => {
-      setChoices(lazyChoices);
-      if (inputRef.current) {
-        inputRef?.current.focus();
+    Object.entries(messageMap).forEach(([key, fn]) => {
+      if (ipcRenderer.listenerCount(key) === 0) {
+        ipcRenderer.on(key, (_, data) => {
+          // if (data?.kitScript) setScriptName(data?.kitScript);
+          (fn as (data: ChannelAtomMap[keyof ChannelAtomMap]) => void)(data);
+        });
       }
-    };
-    ipcRenderer.on('lazy', lazyHandler);
+    });
 
     return () => {
-      ipcRenderer.off('lazy', lazyHandler);
+      Object.entries(messageMap).forEach(([key, fn]) => {
+        ipcRenderer.off(key, fn);
+      });
     };
-  }, []);
+  }, [messageMap]);
+
+  const onMouseDown = useCallback(() => {
+    setIsMouseDown(true);
+  }, [setIsMouseDown]);
+  const onMouseUp = useCallback(() => {
+    setIsMouseDown(false);
+  }, [setIsMouseDown]);
+  const onMouseLeave = useCallback(() => {
+    setIsMouseDown(false);
+  }, [setIsMouseDown]);
+
+  const onMouseMove = useCallback(() => {
+    setMouseEnabled(1);
+  }, [setMouseEnabled]);
 
   useEffect(() => {
-    if (data.type === 'lazy') return;
-    const filtered = ((data?.choices as any[]) || [])?.filter((choice) => {
-      try {
-        return choice?.name.match(new RegExp(inputValue, 'i'));
-      } catch (error) {
-        return false;
-      }
-    });
-    setChoices(filtered);
-  }, [data, inputValue]);
+    if (headerRef?.current) setTopRef(headerRef?.current);
+  }, [headerRef]);
 
   useEffect(() => {
-    ipcRenderer.on('prompt', (_event, promptData: SimplePromptOptions) => {
-      // console.log(`setData`, promptData);
-      setData(promptData);
-      setIndex(0);
-      if (inputRef.current) {
-        inputRef?.current.focus();
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    ipcRenderer.on('escape', () => {
-      console.log(`ESCAPE!!!`);
-      if (inputRef.current) {
-        inputRef?.current.focus();
-      }
-      setData({ type: 'clear', choices: [], message: '' });
-      setIndex(0);
-      setInputValue('');
-    });
-  }, []);
+    if (windowContainerRef?.current) {
+      windowContainerRef.current.style.height = `${window.innerHeight}px`;
+      windowContainerRef.current.style.top = `0px`;
+      windowContainerRef.current.style.left = `0px`;
+      // windowContainerRef.current.style.width = window.innerWidth + 'px';
+    }
+  }, [mainHeight, topHeight, windowContainerRef]);
 
   return (
-    <div className="flex flex-row-reverse w-full overflow-y-hidden">
-      <div className="w-1/2 h-screen">
-        <input
-          ref={inputRef}
-          style={{ height: '12vh' }}
-          className="w-full bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white  focus:outline-none focus:border-transparent"
-          type="text"
-          value={inputValue}
-          onChange={onChange}
-          autoFocus
-          placeholder={data?.message || ''}
-          onKeyDown={onKeyDown}
-        />
-        {/* <div className="bg-white">
-          {index} : {choices[index]?.name}
-        </div>
-        <div className="bg-white">
-          {Array.from(value)
-            .map((letter) => `${letter}.*`)
-            .join('')}
-        </div> */}
-        {choices?.length > 0 && (
-          <div
-            ref={scrollRef}
-            style={{ maxHeight: '88vh' }}
-            className="p-1 flex flex-col bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white overflow-y-scroll overflow-x-hidden"
-          >
-            {((choices as any[]) || []).map((choice, i) => (
-              // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-              <button
-                type="button"
-                key={choice.uuid}
-                className={`
-              hover:bg-gray-400
-              dark:hover:bg-gray-600
-              placeholder-gray-700
-              dark:placeholder-gray-300
-              whitespace-nowrap
-              text-left
-              justify-start
-              ${index === i ? `bg-gray-500` : ``}`}
-                onClick={(_event) => {
-                  submit(choice.value);
-                }}
-              >
-                {reactStringReplace(choice?.name, inputValue, (match, i) => (
-                  <span key={i} className="font-bold text-yellow-500">
-                    {match}
-                  </span>
-                ))}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      {choices[index]?.info && (
-        <div
-          style={{ height: 'fit-content' }}
-          className="w-1/2 flex  bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white overscroll-none p-1"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{
-            __html: choices[index]?.info as string,
-          }}
-        />
-      )}
-      {data?.info && (
-        <div
-          style={{ height: 'fit-content' }}
-          className="w-1/2 flex  bg-white dark:bg-gray-800  text-black text-opacity-90  dark:text-white overscroll-y-none p-1"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{
-            __html: data?.info as string,
-          }}
-        />
-      )}
-    </div>
+    <ErrorBoundary>
+      <motion.div
+        animate={{ opacity: open ? 1 : 0 }}
+        transition={{ duration: 0.1, ease: 'easeOut' }}
+        ref={windowContainerRef}
+        style={
+          {
+            WebkitUserSelect: 'none',
+          } as any
+        }
+        className={`
+        ${open} ? "" : "hidden"
+        relative flex flex-col w-full h-screen min-h-screen`}
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
+        onMouseMove={onMouseMove}
+      >
+        <header ref={headerRef} className="relative">
+          <Header />
+          <AnimatePresence key="headerCompenents">
+            {!!(ui & UI.hotkey) && (
+              <Hotkey
+                key="AppHotkey"
+                submit={setSubmitValue}
+                onHotkeyHeightChanged={setMainHeight}
+              />
+            )}
+            {!!(ui & UI.arg) && <Input key="AppInput" />}
+
+            {hint && <Hint key="AppHint" />}
+            <div className="max-h-5.5">
+              {!!(ui & (UI.arg | UI.div)) && tabs?.length > 0 && !flagValue && (
+                <Tabs key="AppTabs" />
+              )}
+              {!!(ui & (UI.arg | UI.hotkey)) && selected && (
+                <Selected key="AppSelected" />
+              )}
+            </div>
+            {logHtml?.length > 0 && script?.log !== 'false' && (
+              <Log key="AppLog" />
+            )}
+          </AnimatePresence>
+        </header>
+        <main
+          ref={mainRef}
+          className={`
+        ${processing && resizeEnabled ? `h-0` : `h-full`}
+        w-full
+        border-transparent
+        border-b
+        relative
+
+        `}
+        >
+          <AnimatePresence key="mainComponents">
+            {isSplash && <Splash />}
+            {!!(ui & UI.drop) && <Drop />}
+            {!!(ui & UI.textarea) && <TextArea />}
+            {!!(ui & UI.editor) && <Editor />}
+            {!!(ui & UI.form) && <Form />}
+          </AnimatePresence>
+          <AutoSizer>
+            {({ width, height }) => (
+              <>
+                {!!(ui & (UI.arg | UI.hotkey | UI.div)) &&
+                  panelHTML?.length > 0 && (
+                    <>
+                      <Panel width={width} height={height} />
+                    </>
+                  )}
+                {!!(ui & UI.arg) && panelHTML?.length === 0 && (
+                  <>
+                    <List height={height} width={width} />
+                  </>
+                )}
+              </>
+            )}
+          </AutoSizer>
+        </main>
+      </motion.div>
+    </ErrorBoundary>
   );
 }

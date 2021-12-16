@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Simple Scripts</title>
+    <title>Kit</title>
     <script>
       (() => {
         const link = document.createElement('link');
@@ -12,6 +12,17 @@
         document.getElementsByTagName('head')[0].appendChild(link);
       })();
     </script>
+    <style>
+      body {
+        pointer-events: none;
+      }
+      * {
+        pointer-events: all;
+      }
+      .draggable {
+        -webkit-app-region: drag;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

@@ -21,10 +21,15 @@ export default {
           },
         },
       },
+      {
+        test: /\.svg$/,
+        use: ['@svgr/webpack'],
+      },
     ],
   },
 
   output: {
+    hashFunction: 'xxhash64',
     path: path.join(__dirname, '../../src'),
     // https://github.com/webpack/webpack/issues/1114
     libraryTarget: 'commonjs2',
@@ -36,6 +41,9 @@ export default {
   resolve: {
     extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     modules: [path.join(__dirname, '../src'), 'node_modules'],
+    // alias: {
+    //   '@fonts': path.resolve(__dirname, '../src/fonts'),
+    // },
   },
 
   plugins: [

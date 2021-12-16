@@ -3,8 +3,15 @@ name: Publish
 on:
   push:
     branches:
-      - master
+      - alpha
       - beta
+      - main
+
+  workflow_dispatch:
+    branches:
+      - alpha
+      - beta
+      - main
 
 jobs:
   publish:
@@ -15,20 +22,60 @@ jobs:
         os: [macos-latest]
 
     steps:
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Show ref
+        run: |
+          echo "${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}"
+          echo "release_channel=${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
+
+      - name: ls parent paths
+        run: |
+          pwd
+          ls ./
+
       - name: Checkout git repo
         uses: actions/checkout@v2
 
       - name: Install Node, NPM and Yarn
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: 15
+          node-version: 16.10
 
-      - name: Install dependencies
+      - uses: c-hive/gha-yarn-cache@v1
+
+      - name: yarn
         run: |
-          yarn install --network-timeout 1000000
+          yarn add "@johnlindquist/kit@${{ env.release_channel }}"
+          yarn
+
+      - name: yarn install-electron-deps
+        run: |
+          yarn install-electron-deps
 
       - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v2.5.3
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v2.6.0
+        with:
+          semantic_version: 16
+          branches: |
+            [
+              '+([0-9])?(.{+([0-9]),x}).x',
+              'main',
+              {
+                name: 'beta',
+                prerelease: true
+              },
+              {
+                name: 'alpha',
+                prerelease: true
+              }
+            ]
+
+      - name: yarn build
+        run: |
+          yarn build
 
       - name: Publish releases
         env:
@@ -40,4 +87,4 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn postinstall && yarn build && yarn electron-builder --publish always --mac
+          yarn electron-builder --publish always -m -w

@@ -51,6 +51,7 @@ export default merge(baseConfig, {
   ],
 
   output: {
+    hashFunction: 'xxhash64',
     publicPath: `http://localhost:${port}/dist/`,
     filename: 'renderer.dev.js',
   },
@@ -160,6 +161,11 @@ export default merge(baseConfig, {
       },
     ],
   },
+  // resolve: {
+  //   alias: {
+  //     '@assets': path.resolve(__dirname, '..', '..', 'assets'),
+  //   },
+  // },
   plugins: [
     requiredByDLLConfig
       ? null

@@ -1,22 +1,32 @@
 {
-  "name": "simple",
-  "productName": "Simple",
-  "description": "A companion app for Simple Scripts",
+  "name": "kit",
+  "productName": "Kit",
+  "description": "The Script Kit App",
   "scripts": {
-    "build": "concurrently \"yarn build:main\" \"yarn build:renderer\"",
+    "build": "node ./build/create-assets.js && concurrently \"yarn build:main\" \"yarn build:renderer\"",
+    "build:local": "node ./build/local-assets.js && concurrently \"yarn build:main\" \"yarn build:renderer\"",
     "build:main": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.babel.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.renderer.prod.babel.js",
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir src",
     "lint": "cross-env NODE_ENV=development eslint . --cache --ext .js,.jsx,.ts,.tsx",
     "package": "yarn build && electron-builder build --publish never",
-    "postinstall": "node -r @babel/register .erb/scripts/CheckNativeDep.js && electron-builder install-app-deps && yarn cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js && opencollective-postinstall && yarn-deduplicate yarn.lock",
+    "webpack-dev": "yarn cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js",
+    "yarn-dedupe": "yarn-deduplicate yarn.lock",
+    "install-electron-deps": "node -r @babel/register .erb/scripts/CheckNativeDep.js && electron-builder install-app-deps",
     "start": "node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
-    "start:main": "cross-env NODE_ENV=development electron -r ./.erb/scripts/BabelRegister ./src/main.dev.ts",
-    "start:renderer": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css && cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
-    "test": "jest"
+    "splash": "KIT_SPLASH=true yarn start",
+    "start:install": "source ./build/tmp-kit.sh && node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
+    "start:main": "cross-env NODE_ENV=development electron --trace-warnings -r ./.erb/scripts/BabelRegister ./src/main.dev.ts",
+    "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
+    "test": "jest",
+    "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
+    "mac": "yarn build:local && DEBUG_PROD=true electron-builder build --mac dir -c.mac.identity=null --publish never && open ./release/mac/Kit.app",
+    "m1": "yarn build:local && DEBUG_PROD=true electron-builder build --mac dir --arm64 -c.mac.identity=null --publish never  && open ./release/mac-arm64/Kit.app",
+    "win": "yarn build:local && DEBUG_PROD=true electron-builder build --win --publish never",
+    "release": "yarn build:local && DEBUG_PROD=true yarn electron-builder -c.mac.identity=null --publish never --mac"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
+    "*.{jsx,ts,tsx}": [
       "cross-env NODE_ENV=development eslint --cache"
     ],
     "{*.json,.{babelrc,eslintrc,prettierrc}}": [
@@ -30,31 +40,51 @@
     ]
   },
   "build": {
-    "productName": "Simple",
-    "appId": "dev.simplescripts",
+    "generateUpdatesFilesForAllChannels": true,
+    "detectUpdateChannel": "true",
+    "productName": "Kit",
+    "appId": "app.scriptkit",
     "files": [
       "dist/",
+      "fonts/**",
       "node_modules/",
       "index.html",
+      "debug.html",
+      "devTools.html",
       "preload.js",
       "main.prod.js",
       "main.prod.js.map",
       "package.json"
     ],
     "afterSign": ".erb/scripts/Notarize.js",
+    "afterPack": ".erb/scripts/BundleNode.js",
     "protocols": [
       {
-        "name": "simple",
+        "name": "kit",
         "role": "Viewer",
         "schemes": [
-          "simple"
+          "kit"
         ]
       }
     ],
     "mac": {
       "target": [
-        "dmg",
-        "zip"
+        {
+          "target": "dmg",
+          "arch": "x64"
+        },
+        {
+          "target": "zip",
+          "arch": "x64"
+        },
+        {
+          "target": "dmg",
+          "arch": "arm64"
+        },
+        {
+          "target": "zip",
+          "arch": "arm64"
+        }
       ],
       "type": "distribution",
       "hardenedRuntime": true,
@@ -94,26 +124,26 @@
     },
     "extraResources": [
       "./assets/**",
-      "./simplescripts/**"
+      "./kit/**"
     ],
     "publish": {
       "provider": "github",
       "owner": "johnlindquist",
-      "repo": "simple"
+      "repo": "kitapp"
     }
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/johnlindquist/simple.git"
+    "url": "git+https://github.com/johnlindquist/kitapp.git"
   },
   "author": {
     "name": "John Lindquist",
     "email": "johnlindquist@gmail.com",
-    "url": "https://simplescripts.dev"
+    "url": "https://scriptkit.com"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/johnlindquist/simple/issues"
+    "url": "https://github.com/johnlindquist/kitapp/issues"
   },
   "keywords": [
     "electron",
@@ -121,8 +151,9 @@
     "typescript",
     "ts"
   ],
-  "homepage": "https://github.com/johnlindquist/simple#readme",
+  "homepage": "https://github.com/johnlindquist/kitapp#readme",
   "jest": {
+    "resolver": "jest-node-exports-resolver",
     "testURL": "http://localhost/",
     "moduleNameMapper": {
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/.erb/mocks/fileMock.js",
@@ -138,6 +169,9 @@
     "moduleDirectories": [
       "node_modules",
       "src/node_modules"
+    ],
+    "modulePathIgnorePatterns": [
+      ".history"
     ],
     "setupFiles": [
       "./.erb/scripts/CheckBuildsExist.js"
@@ -167,33 +201,50 @@
     "@babel/preset-react": "^7.12.7",
     "@babel/preset-typescript": "^7.12.7",
     "@babel/register": "^7.12.1",
+    "@fullhuman/postcss-purgecss": "^4.0.2",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
-    "@semantic-release/changelog": "^5.0.1",
-    "@semantic-release/commit-analyzer": "^8.0.1",
-    "@semantic-release/git": "^9.0.0",
     "@semantic-release/npm": "^7.0.10",
-    "@semantic-release/release-notes-generator": "^9.0.1",
+    "@simbathesailor/use-what-changed": "^2.0.0",
+    "@svgr/webpack": "^5.5.0",
+    "@tailwindcss/forms": "^0.4.0",
+    "@tailwindcss/typography": "^0.5.0",
     "@teamsupercell/typings-for-css-modules-loader": "^2.4.0",
     "@testing-library/jest-dom": "^5.11.6",
     "@testing-library/react": "^11.2.2",
+    "@testing-library/webdriverio": "^3.0.2",
+    "@types/asap": "^2.0.0",
+    "@types/bonjour": "^3.5.8",
     "@types/chokidar": "^2.1.3",
+    "@types/cron": "^1.7.2",
+    "@types/download": "^8.0.1",
     "@types/enzyme": "^3.10.5",
     "@types/enzyme-adapter-react-16": "^1.0.6",
+    "@types/he": "^1.1.1",
     "@types/history": "4.7.6",
     "@types/jest": "^26.0.15",
     "@types/lodash": "^4.14.167",
+    "@types/micro": "^7.3.3",
+    "@types/minimist": "^1.2.2",
     "@types/node": "14.14.10",
-    "@types/react": "^16.9.44",
-    "@types/react-dom": "^16.9.9",
+    "@types/node-ipc": "^9.1.3",
+    "@types/node-schedule": "^1.3.1",
+    "@types/react": "^17.0.11",
+    "@types/react-dom": "^17.0.7",
     "@types/react-router-dom": "^5.1.6",
     "@types/react-test-renderer": "^16.9.3",
+    "@types/react-virtualized-auto-sizer": "^1.0.0",
+    "@types/react-window": "^1.8.5",
+    "@types/sanitize-html": "^2.3.1",
     "@types/shelljs": "^0.8.8",
+    "@types/simplebar": "^5.1.2",
+    "@types/tar": "^4.0.5",
+    "@types/unzipper": "^0.10.3",
     "@types/webpack-env": "^1.15.2",
     "@typescript-eslint/eslint-plugin": "^4.8.1",
     "@typescript-eslint/parser": "^4.8.1",
     "babel-eslint": "^10.1.0",
     "babel-jest": "^26.1.0",
-    "babel-loader": "^8.2.2",
+    "babel-loader": "^8.2.3",
     "babel-plugin-dev-expression": "^0.2.2",
     "babel-plugin-transform-react-remove-prop-types": "^0.4.24",
     "browserslist-config-erb": "^0.0.1",
@@ -203,11 +254,13 @@
     "cross-env": "^7.0.2",
     "css-loader": "^5.0.1",
     "detect-port": "^1.3.0",
-    "electron": "^11.0.1",
-    "electron-builder": "^22.3.6",
-    "electron-devtools-installer": "^3.1.1",
-    "electron-notarize": "^1.0.0",
-    "electron-rebuild": "^2.3.2",
+    "download": "^8.0.0",
+    "download-cli": "^1.1.1",
+    "electron": "^16.0.4",
+    "electron-builder": "^22.14.5",
+    "electron-devtools-installer": "^3.2.0",
+    "electron-notarize": "^1.1.1",
+    "electron-rebuild": "^3.2.5",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.3",
     "enzyme-to-json": "^3.5.0",
@@ -225,62 +278,97 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-react": "^7.20.6",
     "eslint-plugin-react-hooks": "^4.0.8",
-    "file-loader": "^6.0.0",
+    "execa": "^6.0.0",
+    "file-loader": "^6.2.0",
     "husky": "^4.2.5",
     "identity-obj-proxy": "^3.0.0",
-    "jest": "^26.1.0",
-    "lint-staged": "^10.2.11",
+    "jest": "^27.0.6",
+    "jest-node-exports-resolver": "^1.0.3",
+    "lint-staged": "^12.1.2",
     "mini-css-extract-plugin": "^1.3.1",
-    "node-sass": "^5.0.0",
+    "mocha": "^9.0.3",
     "opencollective-postinstall": "^2.0.3",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "postcss-cli": "^8.3.1",
     "postcss-loader": "^4.1.0",
     "prettier": "^2.0.5",
+    "purgecss": "^4.0.2",
     "react-refresh": "^0.9.0",
     "react-test-renderer": "^17.0.1",
     "rimraf": "^3.0.0",
-    "sass-loader": "^10.1.0",
-    "style-loader": "^2.0.0",
+    "spectron": "^15.0.0",
+    "style-loader": "^3.3.1",
+    "tailwindcss": "^3.0.0",
     "terser-webpack-plugin": "^5.0.3",
     "typescript": "^4.0.5",
-    "url-loader": "^4.1.0",
-    "webpack": "^5.5.1",
+    "url-loader": "^4.1.1",
+    "webpack": "^5.60.0",
     "webpack-bundle-analyzer": "^4.1.0",
     "webpack-cli": "^4.2.0",
     "webpack-dev-server": "^3.11.0",
-    "webpack-merge": "^5.4.0",
+    "webpack-merge": "^5.8.0",
     "yarn-deduplicate": "^3.1.0"
   },
   "dependencies": {
-    "@tailwindcss/forms": "^0.2.1",
-    "autoprefixer": "^10.2.1",
+    "@heroicons/react": "^1.0.4",
+    "@monaco-editor/react": "^4.3.1",
+    "@react-hook/resize-observer": "^1.2.0",
+    "@rooks/use-previous": "^4.10.0",
+    "ansi-to-html": "^0.7.0",
+    "autoprefixer": "^10.4.0",
     "chokidar": "^3.5.0",
+    "clipboardy": "^2.3.0",
+    "cron-parser": "^3.4.0",
+    "date-fns": "^2.21.1",
+    "detect-file-type": "^0.2.8",
     "electron-debug": "^3.1.0",
     "electron-log": "^4.2.4",
-    "electron-updater": "^4.3.4",
+    "electron-store": "^7.0.2",
+    "electron-updater": "^4.3.9",
+    "framer-motion": "^5.3.3",
+    "fs-extra": "^10.0.0",
+    "he": "^1.2.0",
     "history": "^5.0.0",
-    "iohook": "^0.7.2",
+    "hotkeys-js": "^3.8.7",
+    "html-react-parser": "^1.2.4",
+    "html-to-image": "^1.7.0",
+    "image-size": "^0.9.4",
+    "is-image": "^3.0.0",
+    "jetbrains-mono": "^1.0.3",
+    "jotai": "^1.1.2",
     "lodash": "^4.17.20",
-    "node-ipc": "^9.1.3",
-    "postcss": "^8.2.4",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "react-router-dom": "^5.2.0",
-    "react-string-replace": "^0.4.4",
+    "memoize-one": "^5.2.1",
+    "minimist": "^1.2.5",
+    "monaco-editor": "^0.25.1",
+    "nanoid": "^3.1.30",
+    "node-abi": "^2.30.0",
+    "node-downloader-helper": "^1.0.18",
+    "node-ipc": "^9.1.4",
+    "node-schedule": "^2.0.0",
+    "postcss": "^8.4.4",
+    "query-string": "^6.14.1",
+    "quick-score": "^0.0.12",
+    "react": "^18.0.0-rc.0",
+    "react-dom": "^18.0.0-rc.0",
+    "react-hotkeys-hook": "^3.3.2",
+    "react-is-mounted-hook": "^1.1.1",
+    "react-virtualized-auto-sizer": "^1.0.5",
+    "react-window": "^1.8.6",
     "regenerator-runtime": "^0.13.5",
-    "shelljs": "^0.8.4",
+    "rxjs": "^6.6.7",
+    "simplebar-react": "^2.3.0",
     "source-map-support": "^0.5.19",
-    "tailwindcss": "^2.0.2",
-    "tree-kill": "^1.2.2"
+    "tailwind-override": "^0.0.10",
+    "tar": "^6.1.11",
+    "unzipper": "^0.10.11"
+  },
+  "engines": {
+    "node": ">=14.17.0"
   },
   "devEngines": {
-    "node": ">=10.x",
+    "node": ">=14.17.0",
     "npm": ">=6.x",
     "yarn": ">=1.21.3"
-  },
-  "collective": {
-    "url": "https://opencollective.com/electron-react-boilerplate-594"
   },
   "browserslist": [],
   "prettier": {
@@ -310,18 +398,5 @@
     "hooks": {
       "pre-commit": "lint-staged"
     }
-  },
-  "iohook": {
-    "targets": [
-      "node-72",
-      "electron-85"
-    ],
-    "platforms": [
-      "darwin"
-    ],
-    "arches": [
-      "x64",
-      "ia32"
-    ]
   }
 }

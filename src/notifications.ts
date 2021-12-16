@@ -1,13 +1,13 @@
 /* eslint-disable import/prefer-default-export */
-import { app, BrowserWindow, protocol, screen } from 'electron';
-import log from 'electron-log';
-import path from 'path';
+import { app, BrowserWindow, screen } from 'electron';
 import { getAssetPath } from './assets';
+import { KIT_PROTOCOL } from './helpers';
 
 let notificationWindow: BrowserWindow | null = null;
 
 export const createNotification = async () => {
   notificationWindow = new BrowserWindow({
+    title: 'Kit Notification',
     frame: true,
     transparent: true,
     backgroundColor: '#00000000',
@@ -36,6 +36,7 @@ export const createNotification = async () => {
       }
     );
   }
+  return notificationWindow;
 };
 
 const styles = 'dist/style.css';
@@ -45,7 +46,7 @@ const page = (html: string) => `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Scripts Notification</title>
+    <title>Kit Notification</title>
     <link rel="stylesheet" href="${styles}">
 </head>
 <body>
@@ -53,13 +54,11 @@ const page = (html: string) => `<!DOCTYPE html>
 </body>
 </html>`;
 
-const customProtocol = 'file2';
-
 export const showNotification = (html: string, options: any = {}) => {
   notificationWindow?.loadURL(
     `data:text/html;charset=UTF-8,${encodeURIComponent(page(html))}`,
     {
-      baseURLForDataURL: `${customProtocol}://${app
+      baseURLForDataURL: `${KIT_PROTOCOL}://${app
         .getAppPath()
         .replace('\\', '/')}/`,
     }
@@ -72,10 +71,8 @@ export const showNotification = (html: string, options: any = {}) => {
       y: cursor.y,
     });
 
-    const {
-      width: screenWidth,
-      height: screenHeight,
-    } = distScreen.workAreaSize;
+    const { width: screenWidth, height: screenHeight } =
+      distScreen.workAreaSize;
     const width = Math.floor((screenWidth / 4) * distScreen.scaleFactor);
     const height = Math.floor((screenHeight / 4) * distScreen.scaleFactor);
     const x = Math.floor(screenWidth * distScreen.scaleFactor - width); // * distScreen.scaleFactor
@@ -90,8 +87,6 @@ export const showNotification = (html: string, options: any = {}) => {
 
 export const hidePromptWindow = () => {
   if (notificationWindow?.isVisible()) {
-    log.info(`Hiding prompt`);
-
     notificationWindow?.hide();
   }
 };
