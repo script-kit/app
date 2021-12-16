@@ -218,8 +218,10 @@ const hint = atom('');
 export const hintAtom = atom(
   (g) => g(hint),
   (g, s, a: string) => {
-    s(hint, a);
-    const hintCodes = a?.match(/(?<=\[)\w(?=\])/gi);
+    const aHint = typeof a !== 'string' ? '' : a;
+    const getConvert = g(convertAtom);
+    s(hint, getConvert(true).toHtml(aHint));
+    const hintCodes = aHint?.match(/(?<=\[)\w(?=\])/gi);
     if (hintCodes) {
       const codes = hintCodes.map((code) => {
         return {
@@ -268,35 +270,44 @@ const log = atom<string[]>([]);
 
 const darkInit = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-const createConvertOptions = (
-  dark: boolean
-): ConstructorParameters<typeof import('ansi-to-html')>[0] => {
-  return {
-    bg: dark ? '#FFF' : '#000',
-    fg: dark ? '#000' : '#FFF  ',
-    newline: true,
-  };
-};
+const convertAtom = atom<(inverse?: boolean) => Convert>((g) => {
+  return (inverse = false) => {
+    const isDark = g(darkAtom);
 
-let convert = new Convert(createConvertOptions(darkInit));
+    const bgMatch = isDark ? '#fff' : '#000';
+    const fgMatch = isDark ? '#000' : '#fff';
+
+    const bg = inverse ? fgMatch : bgMatch;
+    const fg = inverse ? bgMatch : fgMatch;
+
+    const convertOptions: ConstructorParameters<
+      typeof import('ansi-to-html')
+    >[0] = {
+      bg,
+      fg,
+      newline: true,
+    };
+
+    return new Convert(convertOptions);
+  };
+});
 
 const dark = atom(darkInit);
 export const darkAtom = atom(
   (g) => g(dark),
   (g, s, a: boolean) => {
     s(dark, a);
-
-    convert = new Convert(createConvertOptions(a));
   }
 );
 
 export const logHTMLAtom = atom(
-  (g) =>
-    convert
-      ? g(log)
-          .map((line) => `<br/>${convert.toHtml(line)}`)
-          .join(``)
-      : '',
+  (g) => {
+    const getConvert = g(convertAtom);
+    return g(log)
+      .map((line) => `<br/>${getConvert().toHtml(line)}`)
+      .join(``);
+  },
+
   (g, s, a: string) => {
     if (a === Channel.CONSOLE_CLEAR || a === '') {
       s(log, []);
