@@ -189,6 +189,12 @@ export const createPromptWindow = async () => {
   //   );
   // }, 2000);
 
+  promptWindow?.on('show', () => {
+    setTimeout(() => {
+      focusPrompt();
+    }, 150);
+  });
+
   return promptWindow;
 };
 
@@ -199,6 +205,8 @@ export const setPromptProp = (data: { prop: { key: string; value: any } }) => {
 
 export const focusPrompt = () => {
   if (promptWindow && !promptWindow.isDestroyed()) {
+    log.info(`👓 Focus Prompt`);
+
     promptWindow?.focus();
     promptWindow?.focusOnWebView();
   }

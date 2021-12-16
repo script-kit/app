@@ -680,7 +680,6 @@ export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     if (a) {
-      console.log(a);
       s(rawOpen, true);
       s(rawInputAtom, '');
       s(submittedAtom, false);
@@ -716,11 +715,6 @@ export const promptDataAtom = atom(
       }
       // s(tabIndex, a.tabIndex);
       s(promptData, a);
-
-      // ipcRenderer.send(Channel.SET_PROMPT_DATA, {
-      //   value: a,
-      //   pid: g(pidAtom),
-      // });
     }
   }
 );
@@ -967,9 +961,10 @@ export const runMainScriptAtom = atom(() => () => {
 });
 
 export const valueInvalidAtom = atom(null, (g, s, a: string) => {
-  console.log({ a });
   if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
   s(processingAtom, false);
   s(inputAtom, '');
   if (typeof a === 'string') s(hintAtom, a);
 });
+
+export const isHiddenAtom = atom(false);

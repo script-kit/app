@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import {
   flagValueAtom,
   inputFocusAtom,
+  isHiddenAtom,
   isMouseDownAtom,
   openAtom,
   processingAtom,
@@ -19,12 +20,22 @@ export default () => {
   const [inputFocus] = useAtom(inputFocusAtom);
   const [processing] = useAtom(processingAtom);
   const [script] = useAtom(scriptAtom);
+  const [isHidden] = useAtom(isHiddenAtom);
 
   useEffect(() => {
     if (inputFocus && ref?.current) {
       ref?.current.focus();
     }
-  }, [flagValue, submitted, open, mouseDown, inputFocus, processing, script]);
+  }, [
+    flagValue,
+    submitted,
+    open,
+    mouseDown,
+    inputFocus,
+    processing,
+    script,
+    isHidden,
+  ]);
 
   return ref;
 };

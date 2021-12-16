@@ -21,7 +21,13 @@ import { emitter, KitEvent } from './events';
 
 import { processes, ProcessInfo } from './process';
 
-import { escapePromptWindow, reload, resize, setIgnoreBlur } from './prompt';
+import {
+  escapePromptWindow,
+  focusPrompt,
+  reload,
+  resize,
+  setIgnoreBlur,
+} from './prompt';
 import { setAppHidden, getAppHidden } from './appHidden';
 import { runPromptProcess } from './kit';
 import { AppChannel } from './enums';
@@ -153,6 +159,10 @@ export const startIpc = () => {
 
   ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, async () => {
     runPromptProcess(mainScriptPath);
+  });
+
+  ipcMain.on(AppChannel.FOCUS_PROMPT, () => {
+    focusPrompt();
   });
 
   // ipcMain.on(

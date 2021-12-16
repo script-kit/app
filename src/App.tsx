@@ -23,7 +23,7 @@ import { useAtom } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
-import { AnimatePresence, motion, useAnimation } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
@@ -89,6 +89,7 @@ import {
   isReadyAtom,
   resizeEnabledAtom,
   valueInvalidAtom,
+  isHiddenAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -295,11 +296,23 @@ export default function App() {
     }
   }, [mainHeight, topHeight, windowContainerRef]);
 
+  const [hidden, setHidden] = useAtom(isHiddenAtom);
+
+  const showIfOpen = useCallback(() => {
+    if (open) setHidden(false);
+  }, [open]);
+
+  const hideIfClosed = useCallback(() => {
+    if (!open) setHidden(true);
+  }, [open]);
+
   return (
     <ErrorBoundary>
       <motion.div
         animate={{ opacity: open ? 1 : 0 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
+        transition={{ duration: 0.15 }}
+        onAnimationStart={showIfOpen}
+        onAnimationComplete={hideIfClosed}
         ref={windowContainerRef}
         style={
           {
@@ -307,6 +320,7 @@ export default function App() {
           } as any
         }
         className={`
+        ${hidden ? 'hidden' : ''}
         relative flex flex-col w-full h-screen min-h-screen`}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
