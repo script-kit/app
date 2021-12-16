@@ -47,8 +47,7 @@ jobs:
 
       - name: yarn
         run: |
-          if [ $env.release_channel -eq "main" ]; then yarn add "@johnlindquist/kit"; \
-          else yarn add "@johnlindquist/kit@${{ env.release_channel }}";
+          if [ $env.release_channel -eq "main" ]; then yarn add "@johnlindquist/kit"; else yarn add "@johnlindquist/kit@${{ env.release_channel }}";
           yarn
 
       - name: yarn install-electron-deps
