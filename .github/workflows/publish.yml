@@ -47,7 +47,7 @@ jobs:
 
       - name: yarn
         run: |
-          if [ "$env.release_channel" = "main" ]; then yarn add "@johnlindquist/kit"; \
+          if [ $env.release_channel = "main" ]; then yarn add "@johnlindquist/kit"; \
           else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
           yarn
 
