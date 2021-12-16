@@ -595,14 +595,15 @@ const resize = (g: Getter, s: Setter) => {
   const currentScript = g(script);
   if (!currentScript.resize && !g(isMainScriptAtom)) return;
   const isPreviewOpen = Boolean(
-    g(unfilteredPreview) &&
-      g(previewEnabled) &&
-      (g(uiAtom) === UI.arg || g(uiAtom) === UI.splash)
+    g(isMainScriptAtom) ||
+      (g(unfilteredPreview) &&
+        g(previewEnabled) &&
+        (g(uiAtom) === UI.arg || g(uiAtom) === UI.splash))
   );
 
   // console.log(`🚨`, {
   //   isPreviewOpen,
-  //   unfilteredPreview: g(unfilteredPreview),
+  //   unfilteredPreview: g(unfilteredPreawesomeview),
   //   previewEnabled: g(previewEnabled),
   //   uiAtom: g(uiAtom),
   // });
@@ -955,4 +956,12 @@ export const resizeEnabledAtom = atom(
 
 export const runMainScriptAtom = atom(() => () => {
   ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+});
+
+export const valueInvalidAtom = atom(null, (g, s, a: string) => {
+  console.log({ a });
+  if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
+  s(processingAtom, false);
+  s(inputAtom, '');
+  if (typeof a === 'string') s(hintAtom, a);
 });
