@@ -299,7 +299,7 @@ export default function App() {
     <ErrorBoundary>
       <motion.div
         animate={{ opacity: open ? 1 : 0 }}
-        transition={{ duration: 0.1, ease: 'easeOut' }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         ref={windowContainerRef}
         style={
           {
@@ -307,7 +307,6 @@ export default function App() {
           } as any
         }
         className={`
-        ${open} ? "" : "hidden"
         relative flex flex-col w-full h-screen min-h-screen`}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
