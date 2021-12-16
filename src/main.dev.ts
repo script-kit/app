@@ -65,7 +65,13 @@ import {
 import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
 import { createTray, destroyTray } from './tray';
 import { cacheMenu, setupWatchers, teardownWatchers } from './watcher';
-import { getAssetPath } from './assets';
+import {
+  getArch,
+  getAssetPath,
+  getNodeVersion,
+  getPlatform,
+  getReleaseChannel,
+} from './assets';
 import { configureInterval } from './tick';
 import {
   clearPromptCache,
@@ -100,13 +106,10 @@ if (app?.dock) {
   app?.dock?.hide();
   app?.dock?.setIcon(getAssetPath('icon.png'));
 }
-const releaseChannel = readFileSync(
-  getAssetPath('release_channel.txt'),
-  'utf-8'
-).trim();
-const arch = readFileSync(getAssetPath('arch.txt'), 'utf-8').trim();
-const platform = readFileSync(getAssetPath('platform.txt'), 'utf-8').trim();
-const nodeVersion = readFileSync(getAssetPath('node.txt'), 'utf-8').trim();
+const releaseChannel = getReleaseChannel();
+const arch = getArch();
+const platform = getPlatform();
+const nodeVersion = getNodeVersion();
 
 log.info(`
 Release channel: ${releaseChannel}

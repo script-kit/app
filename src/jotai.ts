@@ -238,7 +238,7 @@ export const modeAtom = atom<Mode>(Mode.FILTER);
 
 const panelHTML = atom<string>('');
 export const panelHTMLAtom = atom(
-  (g) => g(panelHTML),
+  (g) => g(panelHTML) || g(promptData)?.panel,
   (g, s, a: string) => {
     if (a) s(unfilteredChoicesAtom, []);
     s(panelHTML, a);
@@ -249,7 +249,7 @@ export const panelHTMLAtom = atom(
 
 const previewHTML = atom('');
 export const previewHTMLAtom = atom(
-  (g) => g(previewHTML),
+  (g) => g(previewHTML) || g(promptData)?.preview,
   (g, s, a: string) => {
     if (!a || !g(openAtom)) return; // never unset preview to avoid flash of white/black
     const tI = g(tabIndex);
@@ -414,7 +414,7 @@ export const focusedChoiceAtom = atom(
 export const hasPreviewAtom = atom<boolean>((g) => {
   return (
     Boolean(g(focusedChoice)?.hasPreview || g(promptData)?.hasPreview) ||
-    (g(focusedChoiceAtom) === null && Boolean(g(previewHTMLAtom)?.length))
+    (g(focusedChoiceAtom) === null && Boolean(g(previewHTMLAtom)))
   );
 });
 
@@ -602,7 +602,7 @@ const resize = (g: Getter, s: Setter) => {
 
   // console.log(`🚨`, {
   //   isPreviewOpen,
-  //   unfilteredPreview: g(unfilteredPreview),
+  //   unfilteredPreview: g(unfilteredPreawesomeview),
   //   previewEnabled: g(previewEnabled),
   //   uiAtom: g(uiAtom),
   // });
@@ -680,6 +680,7 @@ export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     if (a) {
+      console.log(a);
       s(rawOpen, true);
       s(rawInputAtom, '');
       s(submittedAtom, false);
@@ -704,6 +705,14 @@ export const promptDataAtom = atom(
 
       if (a.description) {
         s(descriptionAtom, a.description || g(scriptAtom)?.description || '');
+      }
+
+      if (a.preview) {
+        s(previewHTMLAtom, a.preview);
+      }
+
+      if (a.panel) {
+        s(panelHTMLAtom, a.panel);
       }
       // s(tabIndex, a.tabIndex);
       s(promptData, a);
@@ -955,4 +964,12 @@ export const resizeEnabledAtom = atom(
 
 export const runMainScriptAtom = atom(() => () => {
   ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+});
+
+export const valueInvalidAtom = atom(null, (g, s, a: string) => {
+  console.log({ a });
+  if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
+  s(processingAtom, false);
+  s(inputAtom, '');
+  if (typeof a === 'string') s(hintAtom, a);
 });

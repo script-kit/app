@@ -418,6 +418,9 @@ const kitMessageMap: ChannelHandler = {
   SET_SPLASH_PROGRESS: (data) => {
     sendToPrompt(Channel.SET_SPLASH_PROGRESS, data.value);
   },
+  VALUE_INVALID: (data) => {
+    sendToPrompt(Channel.VALUE_INVALID, data.value);
+  },
 };
 
 export const createMessageHandler =

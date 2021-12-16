@@ -88,6 +88,7 @@ import {
   splashProgressAtom,
   isReadyAtom,
   resizeEnabledAtom,
+  valueInvalidAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -181,6 +182,7 @@ export default function App() {
   const [resizeEnabled] = useAtom(resizeEnabledAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
   const [isSplash] = useAtom(isSplashAtom);
+  const [, setValueInvalid] = useAtom(valueInvalidAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -234,6 +236,7 @@ export default function App() {
     [Channel.SET_SPLASH_HEADER]: setSplashHeader,
     [Channel.SET_SPLASH_PROGRESS]: setSplashProgress,
     [Channel.SET_THEME]: setTheme,
+    [Channel.VALUE_INVALID]: setValueInvalid,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -358,13 +361,12 @@ export default function App() {
           <AutoSizer>
             {({ width, height }) => (
               <>
-                {!!(ui & (UI.arg | UI.hotkey | UI.div)) &&
-                  panelHTML?.length > 0 && (
-                    <>
-                      <Panel width={width} height={height} />
-                    </>
-                  )}
-                {!!(ui & UI.arg) && panelHTML?.length === 0 && (
+                {!!(ui & (UI.arg | UI.hotkey | UI.div)) && panelHTML && (
+                  <>
+                    <Panel width={width} height={height} />
+                  </>
+                )}
+                {!!(ui & UI.arg) && !panelHTML && (
                   <>
                     <List height={height} width={width} />
                   </>
