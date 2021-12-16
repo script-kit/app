@@ -3,6 +3,10 @@ import chokidar, { FSWatcher } from 'chokidar';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import os from 'os';
+import path from 'path';
+import { existsSync } from 'fs';
+
+import { rm } from 'fs/promises';
 import {
   appDbPath,
   parseScript,
@@ -26,7 +30,7 @@ import { maybeSetLogin } from './settings';
 
 export const cacheMenu = debounce(async () => {
   await updateScripts();
-}, 200);
+}, 150);
 
 const updateEventNames = ['add', 'change', 'unlink', 'ready'];
 const onScriptsChanged = async (
@@ -40,6 +44,16 @@ const onScriptsChanged = async (
     unlinkEvents(filePath);
     removeWatch(filePath);
     removeBackground(filePath);
+
+    const binPath = path.resolve(
+      path.dirname(path.dirname(filePath)),
+      'bin',
+      path
+        .basename(filePath)
+        .replace(new RegExp(`\\${path.extname(filePath)}$`), '')
+    );
+
+    if (existsSync(binPath)) rm(binPath);
   }
   if (event === 'add' || event === 'change') {
     const script = await parseScript(filePath);
@@ -72,11 +86,11 @@ export const teardownWatchers = async () => {
 export const setupWatchers = async () => {
   await teardownWatchers();
 
-  const accountForWin = (path: string) => {
+  const accountForWin = (watchPath: string) => {
     if (os.platform() === 'win32') {
-      return path.replace(/\\/g, '/');
+      return watchPath.replace(/\\/g, '/');
     }
-    return path;
+    return watchPath;
   };
 
   const shortcutsDbWatcher = chokidar.watch([accountForWin(shortcutsPath)]);

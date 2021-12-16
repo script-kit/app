@@ -351,7 +351,7 @@ export const resize = debounce(
     // if (!mainHeight && hasPanel) return;
     if (!mainHeight && !hasInput && hasChoices) return;
     // if (mainHeight && ui & UI.arg && !hasPanel && !hasChoices) mainHeight = 0;
-    if (!promptWindow?.isVisible() || !open) return;
+    // if (!promptWindow?.isVisible() || !open) return;
 
     // console.log({
     //   hasPreview: promptScript?.hasPreview,
