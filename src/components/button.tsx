@@ -189,7 +189,6 @@ export default function ChoiceButton({
         ${index === currentIndex ? `opacity-100` : `opacity-90`}
       `)}`}
       onClick={onClick}
-      // onContextMenu={editScript}
       onMouseEnter={onMouseEnter}
     >
       {choice?.html ? (
