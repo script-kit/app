@@ -391,7 +391,7 @@ const ready = async () => {
       await setupWatchers();
     });
 
-    console.log(`NODE_ENV`, process.env.NODE_ENV);
+    log.info(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {
     log.warn(error);
   }
@@ -748,10 +748,7 @@ const checkKit = async () => {
 
   if ((await kenvsExists()) && (await examplesExists())) {
     await setupLog(`Updating examples...`);
-    await setupScript(
-      kitPath('cli', 'kenv-pull.js'),
-      kenvPath(`kenvs`, `examples`)
-    );
+    setupScript(kitPath('cli', 'kenv-pull.js'), kenvPath(`kenvs`, `examples`));
 
     // await handleSpawnReturns(`update-examples`, updateExamplesResult);
   }
