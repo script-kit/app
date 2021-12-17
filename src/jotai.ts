@@ -32,7 +32,6 @@ import { ResizeData, ScoredChoice } from './types';
 import { noScript, SPLASH_PATH } from './defaults';
 
 let placeholderTimeoutId: NodeJS.Timeout;
-let choicesTimeoutId: NodeJS.Timeout;
 
 const processId = atom(0);
 export const pidAtom = atom(
@@ -240,7 +239,7 @@ const panelHTML = atom<string>('');
 export const panelHTMLAtom = atom(
   (g) => g(panelHTML) || g(promptData)?.panel,
   (g, s, a: string) => {
-    if (a) s(unfilteredChoicesAtom, []);
+    // if (a) s(unfilteredChoicesAtom, []);
     s(panelHTML, a);
 
     s(loadingAtom, false);
@@ -423,8 +422,6 @@ const prevChoiceId = atom<string>('');
 export const scoredChoices = atom(
   (g) => g(choices),
   (g, s, a: ScoredChoice[]) => {
-    if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
-
     s(submittedAtom, false);
     s(loadingAtom, false);
     s(choices, a);
@@ -499,8 +496,8 @@ const inputChangedAtom = atom(false);
 export const inputAtom = atom(
   (g) => g(rawInputAtom),
   (g, s, a: string) => {
+    if (a !== g(rawInputAtom)) s(inputChangedAtom, true);
     if (a === g(rawInputAtom)) return;
-    if (a) s(inputChangedAtom, true);
 
     s(mouseEnabledAtom, 0);
     s(submittedAtom, false);
@@ -542,7 +539,13 @@ export const tabIndexAtom = atom(
 
 export const selectedAtom = atom('');
 
-export const scriptHistoryAtom = atom<Script[]>([]);
+const scriptHistory = atom<Script[]>([]);
+export const scriptHistoryAtom = atom(
+  (g) => g(scriptHistory),
+  (g, s, a: Script[]) => {
+    s(scriptHistory, a);
+  }
+);
 
 const script = atom<Script>(noScript);
 export const scriptAtom = atom(
@@ -786,10 +789,6 @@ export const submitValueAtom = atom(
       s(loadingAtom, true);
       s(processingAtom, true);
     }, 500);
-    if (choicesTimeoutId) clearTimeout(choicesTimeoutId);
-    choicesTimeoutId = setTimeout(() => {
-      s(panelHTMLAtom, ``);
-    }, 250);
 
     s(submittedAtom, true);
     // s(indexAtom, 0);
@@ -797,6 +796,8 @@ export const submitValueAtom = atom(
     s(flaggedValueAtom, ''); // clear after getting
     s(flagAtom, '');
     s(previewHTML, ``);
+    s(panelHTMLAtom, ``);
+
     s(submitValue, value);
   }
 );
@@ -831,20 +832,23 @@ export const openAtom = atom(
   }
 );
 
-export const escapeAtom = atom(null, (g, s, a) => {
-  const history = g(scriptHistoryAtom).slice();
-  s(scriptHistoryAtom, []);
+export const escapeAtom = atom(
+  null,
+  debounce((g, s) => {
+    const history = g(scriptHistoryAtom).slice();
+    s(scriptHistoryAtom, []);
 
-  if (
-    history.find((prevScript) => prevScript.filePath === mainScriptPath) &&
-    !g(inputChangedAtom) &&
-    !g(isMainScriptAtom)
-  ) {
-    ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
-  } else {
-    s(openAtom, false);
-  }
-});
+    if (
+      history.find((prevScript) => prevScript.filePath === mainScriptPath) &&
+      !g(inputChangedAtom) &&
+      !g(isMainScriptAtom)
+    ) {
+      ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+    } else {
+      s(openAtom, false);
+    }
+  }, 100)
+);
 
 export const selectionStartAtom = atom(0);
 export const isMouseDownAtom = atom(false);
