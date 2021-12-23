@@ -1,17 +1,10 @@
 const go = async () => {
+  let wd = process.cwd();
   const { execa } = await import('execa');
-  const { stdout: releaseChannel } = await execa(
-    `git rev-parse --abbrev-ref HEAD`,
-    { shell: true }
-  );
-
-  process.exit();
-  console.log({ releaseChannel });
+  let { chdir } = await import('process');
 
   const { writeFile } = await import('fs/promises');
-  await writeFile('./assets/release_channel.txt', releaseChannel);
-
-  const { chdir } = await import('process');
+  await writeFile('./assets/release_channel.txt', 'dev');
 
   const tar = await import('tar');
 
@@ -23,24 +16,34 @@ const go = async () => {
       ...pathParts
     );
 
+  await execa('npm run build-kit', {
+    cwd: path.resolve(homedir(), 'dev', 'kit'),
+    shell: true,
+  });
+
   await tar.c(
     {
+      cwd: kitPath(),
+      follow: true,
       gzip: true,
       file: './assets/kit.tar.gz',
       filter: (item) => {
-        if (item.includes('node')) return false;
+        if (item.match(/^.{0,2}node/)) {
+          console.log(`SKIPPING`, item);
+          return false;
+        }
         if (item.includes('kit.sock')) return false;
 
         return true;
       },
     },
-    ['./node_modules/@johnlindquist/kit']
+    ['.']
   );
 
   const { default: download } = await import('download');
 
   await download(
-    `https://github.com/johnlindquist/kenv/tarball/${releaseChannel}`,
+    `https://github.com/johnlindquist/kenv/tarball/main`,
     `./assets`,
     { filename: 'kenv.tar.gz' }
   );

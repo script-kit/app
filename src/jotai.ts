@@ -437,6 +437,7 @@ export const scoredChoices = atom(
       ipcRenderer.send(Channel.CHOICES, {
         input: g(inputAtom),
         pid: g(pidAtom),
+        flaggedValue: g(flaggedValueAtom),
       });
     } else {
       s(focusedChoiceAtom, null);
@@ -444,6 +445,7 @@ export const scoredChoices = atom(
         ipcRenderer.send(Channel.NO_CHOICES, {
           input: g(inputAtom),
           pid: g(pidAtom),
+          flaggedValue: g(flaggedValueAtom),
         });
       }
     }
@@ -589,6 +591,10 @@ export const isMainScriptAtom = atom<boolean>((g) => {
   return (g(script) as Script).filePath === mainScriptPath;
 });
 
+export const isMainScriptInitialAtom = atom<boolean>((g) => {
+  return g(isMainScriptAtom) && g(inputAtom) === '';
+});
+
 const topHeight = atom(88);
 const mainHeight = atom(0);
 
@@ -596,7 +602,7 @@ const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter) => {
   const currentScript = g(script);
-  if (!currentScript.resize && !g(isMainScriptAtom)) return;
+  if (!currentScript.resize && !g(isMainScriptInitialAtom)) return;
   const isPreviewOpen = Boolean(
     g(unfilteredPreview) &&
       g(previewEnabled) &&
@@ -774,6 +780,7 @@ export const submitValueAtom = atom(
     const fC = g(focusedChoiceAtom);
 
     ipcRenderer.send(Channel.VALUE_SUBMITTED, {
+      input: g(inputAtom),
       value,
       flag,
       pid: g(pidAtom),
@@ -806,7 +813,10 @@ export const openAtom = atom(
   (g) => g(rawOpen),
   (g, s, a: boolean) => {
     s(mouseEnabledAtom, 0);
+
     if (g(rawOpen) && a === false) {
+      s(rawOpen, a);
+
       // const cachedPreview = g(cachedMainPreview);
       s(previewHTMLAtom, ``);
 
@@ -936,6 +946,7 @@ export const splashProgressAtom = atom(0);
 
 export const appConfigAtom = atom<AppConfig>({
   isWin: false,
+  isMac: false,
   os: '',
   sep: '',
   assetPath: '',

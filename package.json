@@ -20,9 +20,10 @@
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
     "test": "jest",
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
-    "mac": "yarn build:local && DEBUG_PROD=true electron-builder build --mac dir -c.mac.identity=null --publish never && open ./release/mac/Kit.app",
-    "m1": "yarn build:local && DEBUG_PROD=true electron-builder build --mac dir --arm64 -c.mac.identity=null --publish never  && open ./release/mac-arm64/Kit.app",
-    "win": "yarn build:local && DEBUG_PROD=true electron-builder build --win --publish never",
+    "mac": "yarn build:local && DEBUG_PROD=true electron-builder --mac dir -c.mac.identity=null --publish never",
+    "m1": "yarn build:local && DEBUG_PROD=true electron-builder --mac dir --arm64 -c.mac.identity=null --publish never",
+    "win": "yarn build:local && DEBUG_PROD=true electron-builder --win",
+    "linux": "yarn build:local && DEBUG_PROD=true electron-builder --linux --publish never",
     "release": "yarn build:local && DEBUG_PROD=true yarn electron-builder -c.mac.identity=null --publish never --mac"
   },
   "lint-staged": {
@@ -108,12 +109,26 @@
     },
     "win": {
       "target": [
-        "nsis"
+        {
+          "target": "nsis",
+          "arch": "x64"
+        },
+        {
+          "target": "nsis",
+          "arch": "arm64"
+        }
       ]
     },
     "linux": {
       "target": [
-        "AppImage"
+        {
+          "target": "AppImage",
+          "arch": "x64"
+        },
+        {
+          "target": "AppImage",
+          "arch": "arm64"
+        }
       ],
       "category": "Development"
     },

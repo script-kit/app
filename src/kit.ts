@@ -86,6 +86,7 @@ export const runPromptProcess = async (
 
   child?.send({
     channel: Channel.VALUE_SUBMITTED,
+    input: '',
     value: {
       script: promptScriptPath,
       args,

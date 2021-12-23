@@ -92,6 +92,7 @@ export const createPromptWindow = async () => {
     delimiter: path.delimiter,
     sep: path.sep,
     os: os.platform(),
+    isMac: os.platform().startsWith('darwin'),
     isWin: os.platform().startsWith('win'),
     assetPath: getAssetPath(),
     version: getVersion(),

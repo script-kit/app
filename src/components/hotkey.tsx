@@ -5,7 +5,7 @@ import { KeyData } from '@johnlindquist/kit/types/kitapp';
 
 import { useAtom } from 'jotai';
 import { placeholderAtom, selectedAtom } from '../jotai';
-import { useEscape } from '../hooks';
+import { useEscape, useFocus } from '../hooks';
 
 interface HotkeyProps {
   submit(data: any): void;
@@ -93,11 +93,11 @@ const getKeyData = (
 };
 
 export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
-  const containerRef = useRef<HTMLInputElement>(null);
   const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
   const [, setSelected] = useAtom(selectedAtom);
 
   useEscape();
+  const hotkeyRef = useFocus();
 
   const onKeyUp = useCallback(
     (event) => {
@@ -133,7 +133,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
   return (
     <input
       key="hotkey"
-      ref={containerRef}
+      ref={hotkeyRef}
       style={
         {
           WebkitAppRegion: 'drag',

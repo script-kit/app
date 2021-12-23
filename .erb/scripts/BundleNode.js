@@ -28,21 +28,20 @@ exports.default = async function notarizeMacos(context) {
   // https://nodejs.org/dist/v17.2.0/node-v17.2.0-win-x86.zip
   // https://nodejs.org/dist/v17.2.0/node-v17.2.0-win-x64.zip
   // https://nodejs.org/dist/v17.2.0/node-v17.2.0-darwin-arm64.tar.gz
+  const win = electronPlatformName.startsWith('win');
   const mac = electronPlatformName.startsWith('darwin');
-  const url = `https://nodejs.org/dist/${VERSION}/node-${VERSION}-${electronPlatformName}-${archCode}.${
-    mac ? 'tar.gz' : 'zip'
-  }`;
+  const linux = electronPlatformName.startsWith('linux');
+  const extension = mac ? 'tar.gz' : linux ? 'tar.xz' : 'zip';
+  const url = `https://nodejs.org/dist/${VERSION}/node-${VERSION}-${electronPlatformName}-${archCode}.${extension}`;
 
   console.log(`Downloading ${url}`);
 
   const archTxt = 'arch.txt';
   const platformTxt = 'platform.txt';
   const nodeTxt = 'node.txt';
-  const nodeTar = `node.${mac ? 'tar.gz' : 'zip'}`;
+  const nodeTar = `node.${extension}`;
   const assetsPath = `${appOutDir}${
-    electronPlatformName.startsWith('win')
-      ? `/resources/assets/`
-      : `/Kit.app/Contents/Resources/assets/`
+    mac ? `/Kit.app/Contents/Resources/assets/` : `/resources/assets/`
   }`;
 
   fs.writeFileSync(`${assetsPath}${archTxt}`, archCode);

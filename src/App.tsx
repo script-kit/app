@@ -23,7 +23,7 @@ import { useAtom } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
@@ -297,6 +297,16 @@ export default function App() {
   }, [mainHeight, topHeight, windowContainerRef]);
 
   const [hidden, setHidden] = useAtom(isHiddenAtom);
+  const controls = useAnimation();
+
+  useEffect(() => {
+    if (open) {
+      controls.start({ opacity: [0, 1] });
+    } else {
+      controls.stop();
+      controls.set({ opacity: 0 });
+    }
+  }, [open]);
 
   const showIfOpen = useCallback(() => {
     if (open) setHidden(false);
@@ -309,7 +319,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <motion.div
-        animate={{ opacity: open ? 1 : 0 }}
+        animate={controls}
         transition={{ duration: 0.15 }}
         onAnimationStart={showIfOpen}
         onAnimationComplete={hideIfClosed}

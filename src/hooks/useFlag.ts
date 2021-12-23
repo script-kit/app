@@ -71,7 +71,7 @@ export default () => {
   );
 
   useHotkeys(
-    flagsArray.length ? `right,left,${cmd}+k,${cmd}+k` : 'f18',
+    flagsArray.length ? `right,left,${cmd}+k` : 'f18',
     (event) => {
       if (!inputFocus) return;
       if (

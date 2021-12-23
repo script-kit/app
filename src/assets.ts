@@ -36,6 +36,17 @@ export const getPlatform = () => {
   }
 };
 
+export const getPlatformExtension = (): string => {
+  const platform = getPlatform();
+  const win = platform.startsWith('win');
+  const mac = platform.startsWith('darwin');
+  const linux = platform.startsWith('linux');
+  if (mac) return 'tar.gz';
+  if (linux) return 'tar.xz';
+  if (win) return 'zip';
+  throw new Error('Unsupported platform');
+};
+
 export const getNodeVersion = () => {
   try {
     return readFileSync(getAssetPath('node.txt'), 'utf-8').trim();

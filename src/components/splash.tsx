@@ -90,7 +90,7 @@ export default function Splash() {
             >
               Launch Script Kit with{' '}
               <kbd className="bg-black dark:bg-black dark:text-black text-black px-2 py-1 rounded-sm dark:bg-opacity-10 bg-opacity-10">
-                {appConfig?.isWin ? 'CTRL' : 'CMD'} + ;
+                {appConfig?.isMac ? 'CMD' : 'CTRL'} + ;
               </kbd>
             </button>
           </div>

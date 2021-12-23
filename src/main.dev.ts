@@ -70,6 +70,7 @@ import {
   getAssetPath,
   getNodeVersion,
   getPlatform,
+  getPlatformExtension,
   getReleaseChannel,
 } from './assets';
 import { configureInterval } from './tick';
@@ -590,8 +591,7 @@ const cleanUserData = async () => {
 };
 
 const KIT_NODE_TAR =
-  process.env.KIT_NODE_TAR ||
-  getAssetPath(`node.${platform === 'win' ? 'zip' : 'tar.gz'}`);
+  process.env.KIT_NODE_TAR || getAssetPath(`node.${getPlatformExtension()}`);
 
 const checkKit = async () => {
   const options: SpawnSyncOptions = {
@@ -715,12 +715,32 @@ const checkKit = async () => {
           } else {
             log.warn(`Couldn't find node dir in ${nodeDir}`);
           }
-        } else {
+        }
+
+        if (platform === 'darwin') {
           await tar.x({
             file: KIT_NODE_TAR,
             C: kitPath('node'),
             strip: 1,
           });
+        }
+
+        if (platform === 'linux') {
+          const extractNode = spawnSync(
+            `tar --strip-components 1 -xf '${getAssetPath(
+              'node.tar.xz'
+            )}' --directory '${kitPath('node')}'`,
+            {
+              shell: true,
+            }
+          );
+
+          await handleSpawnReturns(`extract node`, extractNode);
+          // await tar.x({
+          //   file: KIT_NODE_TAR,
+          //   C: kitPath('node'),
+          //   strip: 1,
+          // });
         }
       } else {
         const installScript = `./build/install-node.sh`;
@@ -735,12 +755,35 @@ const checkKit = async () => {
     }
     await setupLog(`updating ~/.kit packages...`);
     log.info(`PATH:`, options?.env?.PATH);
-    const npmResult = spawnSync(
-      kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
-      [`i`, `--production`, `--no-progress`, `--quiet`],
-      options
-    );
-    await handleSpawnReturns(`npm`, npmResult);
+
+    if (isWin) {
+      const npmResult = await new Promise((resolve, reject) => {
+        const child = fork(
+          kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+          [`i`, `--production`, `--no-progress`, `--quiet`],
+          options
+        );
+
+        child.on('message', (data) => {
+          sendSplashBody(data.toString());
+        });
+
+        child.on('exit', () => {
+          resolve('npm install success');
+        });
+
+        child.on('error', (error) => {
+          reject(error);
+        });
+      });
+    } else {
+      const npmResult = spawnSync(
+        kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
+        [`i`, `--production`, `--no-progress`, `--quiet`],
+        options
+      );
+      await handleSpawnReturns(`npm`, npmResult);
+    }
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));
     await clearPromptCache();

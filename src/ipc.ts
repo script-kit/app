@@ -50,39 +50,39 @@ const handleChannel =
 export const startIpc = () => {
   ipcMain.on(
     Channel.VALUE_SUBMITTED,
-    handleChannel(({ child, values }, { value, pid, flag, id }) => {
+    handleChannel(({ child, values }, { input, ...state }) => {
       emitter.emit(KitEvent.ResumeShortcuts);
       setIgnoreBlur(false);
-      values.push(value);
+      values.push(state.value);
       if (child) {
-        child?.send({ channel: Channel.VALUE_SUBMITTED, value, flag, pid, id });
+        child?.send({ channel: Channel.VALUE_SUBMITTED, input, state });
       }
     })
   );
 
   ipcMain.on(
     Channel.GENERATE_CHOICES,
-    handleChannel(({ child }, { input }) => {
+    handleChannel(({ child }, { input, ...state }) => {
       if (child && !isUndefined(input)) {
-        child?.send({ channel: Channel.GENERATE_CHOICES, input });
+        child?.send({ channel: Channel.GENERATE_CHOICES, input, state });
       }
     })
   );
 
   ipcMain.on(
     Channel.CHOICES,
-    handleChannel(({ child }, { input }) => {
+    handleChannel(({ child }, { input, ...state }) => {
       if (child && !isUndefined(input)) {
-        child?.send({ channel: Channel.CHOICES, input });
+        child?.send({ channel: Channel.CHOICES, input, state });
       }
     })
   );
 
   ipcMain.on(
     Channel.NO_CHOICES,
-    handleChannel(({ child }, { input }) => {
+    handleChannel(({ child }, { input, ...state }) => {
       if (child && !isUndefined(input)) {
-        child?.send({ channel: Channel.NO_CHOICES, input });
+        child?.send({ channel: Channel.NO_CHOICES, input, state });
       }
     })
   );
@@ -104,21 +104,21 @@ export const startIpc = () => {
   ipcMain.on(
     Channel.CHOICE_FOCUSED,
 
-    handleChannel(({ child }, { id, pid, input = '' }) => {
-      if (child && !isUndefined(id)) {
-        child?.send({ channel: Channel.CHOICE_FOCUSED, id, pid, input });
+    handleChannel(({ child }, { input = '', ...state }) => {
+      if (child && !isUndefined(state.id)) {
+        child?.send({ channel: Channel.CHOICE_FOCUSED, input, state });
       }
     })
   );
 
   ipcMain.on(
     Channel.TAB_CHANGED,
-    handleChannel(({ child }, { tab, input = '', pid }) => {
+    handleChannel(({ child }, { input = '', ...state }) => {
       emitter.emit(KitEvent.ResumeShortcuts);
 
-      if (child && tab) {
-        log.info(`TAB_CHANGED:`, { tab, input, pid });
-        child?.send({ channel: Channel.TAB_CHANGED, tab, input, pid });
+      if (child && state?.tab) {
+        log.info(`TAB_CHANGED:`, { input, ...state });
+        child?.send({ channel: Channel.TAB_CHANGED, input, state });
       }
     })
   );
