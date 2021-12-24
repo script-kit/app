@@ -4,7 +4,7 @@ import React, { KeyboardEvent, useCallback, useRef } from 'react';
 import { KeyData } from '@johnlindquist/kit/types/kitapp';
 
 import { useAtom } from 'jotai';
-import { placeholderAtom, selectedAtom } from '../jotai';
+import { placeholderAtom, panelHTMLAtom } from '../jotai';
 import { useEscape, useFocus } from '../hooks';
 
 interface HotkeyProps {
@@ -92,9 +92,19 @@ const getKeyData = (
   return { modifierString, keyData };
 };
 
+const prose = (html: string) => {
+  return `<div class="p-5 prose dark:prose-dark">
+  ${html}
+  </div>`;
+};
+
+const hotkeyProse = (modifierString: string) => {
+  return prose(`<h2><kbd>${modifierString}</kbd></h2>`);
+};
+
 export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
   const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
-  const [, setSelected] = useAtom(selectedAtom);
+  const [, setPanel] = useAtom(panelHTMLAtom);
 
   useEscape();
   const hotkeyRef = useFocus();
@@ -103,9 +113,9 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
     (event) => {
       event.preventDefault();
       const modifierString = getModifierString(event);
-      setSelected(modifierString);
+      setPanel(hotkeyProse(modifierString));
     },
-    [setSelected]
+    [setPanel]
   );
 
   const onKeyDown = useCallback(
@@ -114,7 +124,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
 
       const { keyData, modifierString } = getKeyData(event);
 
-      setSelected(modifierString);
+      setPanel(hotkeyProse(modifierString));
 
       if (event.key === 'Escape') {
         return;
@@ -127,7 +137,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
         submit(keyData);
       }
     },
-    [setSelected, submit]
+    [setPanel, submit]
   );
 
   return (
