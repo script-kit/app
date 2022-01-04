@@ -340,7 +340,7 @@ export default function App() {
         onMouseLeave={onMouseLeave}
         onMouseMove={onMouseMove}
       >
-        <header ref={headerRef} className="relative">
+        <header ref={headerRef} className="relative z-10">
           <Header />
           <AnimatePresence key="headerCompenents">
             {!!(ui & UI.hotkey) && (
@@ -371,10 +371,7 @@ export default function App() {
           className={`
         ${processing && resizeEnabled ? `h-0` : `h-full`}
         w-full
-        border-transparent
-        border-b
         relative
-
         `}
         >
           <AnimatePresence key="mainComponents">
