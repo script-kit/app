@@ -305,7 +305,7 @@ module.exports = {
               fontSize: em(22, 16),
               marginBottom: em(22, 22),
               paddingBottom: em(16, 22),
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+              borderBottom: '1px solid rgba(130, 130, 130, 0.15)',
             },
             h1: {
               fontSize: em(24, 16),

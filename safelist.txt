@@ -772,3 +772,4 @@ sticky
 top-0
 left-0
 pointer-events-none
+bg-opacity-[0.05]

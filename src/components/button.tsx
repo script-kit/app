@@ -160,12 +160,11 @@ export default function ChoiceButton({
 
       ${
         index === currentIndex
-          ? `bg-black bg-opacity-10
+          ? `bg-black bg-opacity-[0.05]
           dark:bg-white dark:bg-opacity-5
             ${
               mouseEnabled
-                ? `active:shadow-inner active:bg-opacity-15 active:dark:bg-opacity-10
-                  shadow hover:shadow-md`
+                ? `active:bg-opacity-10 active:dark:bg-opacity-10`
                 : ``
             }
             `
@@ -178,9 +177,7 @@ export default function ChoiceButton({
         text-left
         flex
         flex-row
-
         px-4
-
         justify-between
         items-center
         focus:outline-none
@@ -215,7 +212,7 @@ export default function ChoiceButton({
               <div
                 className={`text-xs truncate transition-opacity ease-in-out duration-200 pb-1 ${
                   index === currentIndex
-                    ? `opacity-90 dark:text-primary-light text-primary-dark`
+                    ? `opacity-100 dark:text-primary-light text-primary-dark`
                     : `opacity-60`
                 }
 
@@ -225,7 +222,7 @@ export default function ChoiceButton({
                   highlight(
                     choice?.description || '',
                     scoredChoice?.matches?.description,
-                    'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light  text-opacity-100'
+                    'bg-white text-primary-dark dark:text-primary-light text-opacity-100'
                   )}
               </div>
             )}
@@ -268,7 +265,7 @@ export default function ChoiceButton({
                   <div
                     className={`
               text-xxs font-mono
-              ${index === currentIndex ? `opacity-70` : `opacity-40`}
+              ${index === currentIndex ? `opacity-100` : `opacity-40`}
               `}
                   >
                     {highlight(
