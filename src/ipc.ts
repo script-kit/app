@@ -3,7 +3,7 @@
 /* eslint-disable no-restricted-syntax */
 import { ipcMain } from 'electron';
 import log from 'electron-log';
-import { debounce, isUndefined } from 'lodash';
+import { debounce } from 'lodash';
 import { Channel, ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   kitPath,
@@ -11,8 +11,8 @@ import {
   tmpDownloadsDir,
   mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
+import { AppMessage } from '@johnlindquist/kit/types/kitapp';
 import { Script } from '@johnlindquist/kit/types/core';
-import { MessageData } from '@johnlindquist/kit/types/kitapp';
 import { existsSync, renameSync } from 'fs';
 import isImage from 'is-image';
 import { DownloaderHelper } from 'node-downloader-helper';
@@ -35,58 +35,19 @@ import { ResizeData } from './types';
 import { getAssetPath } from './assets';
 
 const handleChannel =
-  (fn: (processInfo: ProcessInfo, data: any) => void) =>
-  (_event: any, data: MessageData) => {
-    const processInfo = processes.getByPid(data?.pid);
+  (fn: (processInfo: ProcessInfo, message: AppMessage) => void) =>
+  (_event: any, message: AppMessage) => {
+    const processInfo = processes.getByPid(message?.pid);
 
     if (processInfo) {
-      fn(processInfo, data);
+      fn(processInfo, message);
     } else {
-      console.warn(`⚠️ IPC failed on pid ${data?.pid}`);
-      console.log(data);
+      console.warn(`⚠️ IPC failed on pid ${message?.pid}`);
+      console.log(message);
     }
   };
 
 export const startIpc = () => {
-  ipcMain.on(
-    Channel.VALUE_SUBMITTED,
-    handleChannel(({ child, values }, { input, ...state }) => {
-      emitter.emit(KitEvent.ResumeShortcuts);
-      setIgnoreBlur(false);
-      values.push(state.value);
-      if (child) {
-        child?.send({ channel: Channel.VALUE_SUBMITTED, input, state });
-      }
-    })
-  );
-
-  ipcMain.on(
-    Channel.GENERATE_CHOICES,
-    handleChannel(({ child }, { input, ...state }) => {
-      if (child && !isUndefined(input)) {
-        child?.send({ channel: Channel.GENERATE_CHOICES, input, state });
-      }
-    })
-  );
-
-  ipcMain.on(
-    Channel.CHOICES,
-    handleChannel(({ child }, { input, ...state }) => {
-      if (child && !isUndefined(input)) {
-        child?.send({ channel: Channel.CHOICES, input, state });
-      }
-    })
-  );
-
-  ipcMain.on(
-    Channel.NO_CHOICES,
-    handleChannel(({ child }, { input, ...state }) => {
-      if (child && !isUndefined(input)) {
-        child?.send({ channel: Channel.NO_CHOICES, input, state });
-      }
-    })
-  );
-
   ipcMain.on(
     Channel.PROMPT_ERROR,
     debounce((_event, { error }) => {
@@ -101,37 +62,15 @@ export const startIpc = () => {
     }, 1000)
   );
 
-  ipcMain.on(
-    Channel.CHOICE_FOCUSED,
-
-    handleChannel(({ child }, { input = '', ...state }) => {
-      if (child && !isUndefined(state.id)) {
-        child?.send({ channel: Channel.CHOICE_FOCUSED, input, state });
-      }
-    })
-  );
-
-  ipcMain.on(
-    Channel.TAB_CHANGED,
-    handleChannel(({ child }, { input = '', ...state }) => {
-      emitter.emit(KitEvent.ResumeShortcuts);
-
-      if (child && state?.tab) {
-        log.info(`TAB_CHANGED:`, { input, ...state });
-        child?.send({ channel: Channel.TAB_CHANGED, input, state });
-      }
-    })
-  );
-
   ipcMain.on(AppChannel.RESIZE, (event, resizeData: ResizeData) => {
     resize(resizeData);
   });
 
-  ipcMain.on(Channel.ESCAPE_PRESSED, async (event, { pid, newPid }) => {
-    processes.removeByPid(pid);
+  ipcMain.on(Channel.ESCAPE_PRESSED, async (event, message) => {
+    processes.removeByPid(message.pid);
     emitter.emit(KitEvent.ResumeShortcuts);
 
-    if (!newPid) {
+    if (!message.newPid) {
       escapePromptWindow();
       setAppHidden(false);
       emitter.emit(KitEvent.ExitPrompt);
@@ -165,6 +104,39 @@ export const startIpc = () => {
     focusPrompt();
   });
 
+  for (const channel of [
+    Channel.INPUT,
+    Channel.CHOICE_FOCUSED,
+    Channel.CHOICES,
+    Channel.NO_CHOICES,
+    Channel.BACK,
+    Channel.FORWARD,
+    Channel.UP,
+    Channel.DOWN,
+    Channel.TAB,
+    Channel.ESCAPE,
+    Channel.VALUE_SUBMITTED,
+    Channel.TAB_CHANGED,
+  ]) {
+    // log.info(`😅 Registering ${channel}`);
+    ipcMain.on(
+      channel,
+      handleChannel(({ child }, message) => {
+        // log.info({ channel, message });
+        if ([Channel.VALUE_SUBMITTED, Channel.TAB_CHANGED].includes(channel)) {
+          emitter.emit(KitEvent.ResumeShortcuts);
+        }
+
+        if (channel === Channel.VALUE_SUBMITTED) {
+          setIgnoreBlur(false);
+        }
+
+        if (child) {
+          child?.send(message);
+        }
+      })
+    );
+  }
   // ipcMain.on(
   //   Channel.SET_PREVIEW_ENABLED,
   //   async (event, previewEnabled: boolean) => {

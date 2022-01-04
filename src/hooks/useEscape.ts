@@ -1,3 +1,4 @@
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
@@ -11,6 +12,7 @@ import {
   isSplashAtom,
   isReadyAtom,
   escapeAtom,
+  channelAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 

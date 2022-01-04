@@ -295,15 +295,15 @@ export const getDefaultBounds = (currentScreen: Display) => {
 export const showPrompt = async () => {
   if (!promptWindow?.isVisible()) {
     const bounds = await getCurrentScreenPromptCache();
-    log.info(`↖ BOUNDS:`, bounds);
+    log.info(`↖ OPEN:`, bounds);
     promptWindow.setBounds(bounds);
 
     promptWindow?.show();
     if (devTools) promptWindow?.webContents.openDevTools();
   }
 
-  if (currentUI === UI.splash) {
-    promptWindow.setAlwaysOnTop(false);
+  if (currentUI === UI.splash || ignoreBlur) {
+    promptWindow.setAlwaysOnTop(false, 'floating', 1);
   } else {
     promptWindow.setAlwaysOnTop(true, 'floating', 1);
   }
@@ -552,11 +552,11 @@ const cachePromptBounds = debounce(
     if (promptCached) {
       promptDb.screens[String(currentScreen.id)][promptPath] = promptBounds;
 
-      log.info(`Cache prompt:`, {
-        script: promptScript.filePath,
-        screen: currentScreen.id,
-        ...promptBounds,
-      });
+      // log.info(`Cache prompt:`, {
+      //   script: promptScript.filePath,
+      //   screen: currentScreen.id,
+      //   ...promptBounds,
+      // });
 
       await promptDb.write();
     }

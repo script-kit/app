@@ -1,4 +1,4 @@
-import { Choice } from '@johnlindquist/kit';
+import { Choice } from '@johnlindquist/kit/types/core';
 import { Mode, UI } from '@johnlindquist/kit/cjs/enum';
 
 export interface ScoredChoice {

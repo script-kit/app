@@ -165,6 +165,8 @@ const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
   }
 };
 
+const NO_VALUE = `__no_value__`;
+
 const toProcess =
   <K extends keyof ChannelMap>(
     fn: (processInfo: ProcessInfo, data: SendData<K>) => void
@@ -181,8 +183,8 @@ const toProcess =
 
 const kitMessageMap: ChannelHandler = {
   [Channel.CONSOLE_LOG]: (data) => {
-    getLog(data.kitScript).info(data?.value || 'blank');
-    setLog(data.value || 'blank');
+    getLog(data.kitScript).info(data?.value || NO_VALUE);
+    setLog(data.value || NO_VALUE);
   },
 
   CONSOLE_WARN: (data) => {
@@ -398,13 +400,13 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.SEND_KEYSTROKE, data.value);
   },
   KIT_LOG: (data) => {
-    getLog(data.kitScript).info(data?.value || 'blank');
+    getLog(data.kitScript).info(data?.value || NO_VALUE);
   },
   KIT_WARN: (data) => {
-    getLog(data.kitScript).warn(data?.value || 'blank');
+    getLog(data.kitScript).warn(data?.value || NO_VALUE);
   },
   KIT_CLEAR: (data) => {
-    getLog(data.kitScript).clear(data?.value || 'blank');
+    getLog(data.kitScript).clear(data?.value || NO_VALUE);
   },
   SET_OPEN: (data) => {
     sendToPrompt(Channel.SET_OPEN, data.value);
@@ -420,6 +422,9 @@ const kitMessageMap: ChannelHandler = {
   },
   VALUE_INVALID: (data) => {
     sendToPrompt(Channel.VALUE_INVALID, data.value);
+  },
+  SET_SCRIPT_HISTORY: (data) => {
+    sendToPrompt(Channel.SET_SCRIPT_HISTORY, data.value);
   },
 };
 
@@ -524,6 +529,7 @@ class Processes extends Array<ProcessInfo> {
 
     if (previousPromptProcess) {
       this.removeByPid(previousPromptProcess.pid, same);
+      sendToPrompt(Channel.SET_SCRIPT_HISTORY, []);
     }
 
     return same;
@@ -579,7 +585,16 @@ class Processes extends Array<ProcessInfo> {
 
     const { pid } = child;
 
+    child.on('close', () => {
+      log.info(`CLOSE`);
+    });
+
+    child.on('disconnect', () => {
+      log.info(`DISCONNECT`);
+    });
+
     child.on('exit', (code) => {
+      log.info(`EXIT`, { pid, code });
       if (id) clearTimeout(id);
 
       sendToPrompt(Channel.EXIT, pid);

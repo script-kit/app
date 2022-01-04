@@ -23,6 +23,8 @@ import {
   TextareaConfig,
   EditorOptions,
   AppConfig,
+  AppMessage,
+  AppState,
 } from '@johnlindquist/kit/types/kitapp';
 
 import _, { clamp, debounce, drop, get, isEqual } from 'lodash';
@@ -318,10 +320,22 @@ export const logHTMLAtom = atom(
 );
 
 export const logHeightAtom = atom(0);
-export const editorConfigAtom = atom<EditorConfig>({
+
+const editorConfig = atom<EditorConfig>({
   value: '',
   language: 'markdown',
 } as EditorOptions);
+
+export const editorConfigAtom = atom(
+  (g) => g(editorConfig),
+  (g, s, a: EditorConfig) => {
+    s(editorConfig, a);
+    s(inputAtom, a.value);
+    s(submitOnEscapeAtom, a.submitOnEscape);
+    const channel = g(channelAtom);
+    channel(Channel.INPUT, { input: a.value });
+  }
+);
 
 const textareaConfig = atom<TextareaConfig>({
   value: '',
@@ -395,17 +409,12 @@ export const focusedChoiceAtom = atom(
     s(focusedChoice, choice);
 
     if (choice?.id && g(selectedAtom) === '') {
-      const { id } = choice;
-
       if (typeof choice?.preview === 'string') {
         s(previewHTMLAtom, choice?.preview);
       }
 
-      ipcRenderer.send(Channel.CHOICE_FOCUSED, {
-        id,
-        input: g(rawInputAtom),
-        pid: g(pidAtom),
-      });
+      const channel = g(channelAtom);
+      channel(Channel.CHOICE_FOCUSED);
     }
   }
 );
@@ -458,13 +467,6 @@ export const choicesAtom = atom((g) =>
 
 export const rawInputAtom = atom('');
 
-const generateChoices = debounce((input, pid) => {
-  ipcRenderer.send(Channel.GENERATE_CHOICES, {
-    input,
-    pid,
-  });
-}, 250);
-
 const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
   if (!a) return false;
   const result = search(qs, a);
@@ -508,15 +510,19 @@ export const inputAtom = atom(
 
     const qs = g(quickScoreAtom) as QuickScoreInterface;
     const mode = g(modeAtom);
-    const pid = g(pidAtom);
+
+    // TODO: Investigate eliminating modes and bringing/generating over to kit + setChoices(). Probably would be too slow.
     if (mode === Mode.FILTER) {
       filterByInput(g, s, qs, a);
     }
     if (mode === Mode.GENERATE) {
       s(loading, true);
       s(loadingAtom, true);
-      generateChoices(a, pid);
+      // generateChoices(a, pid);
     }
+
+    const channel = g(channelAtom);
+    channel(Channel.INPUT);
   }
 );
 
@@ -527,27 +533,26 @@ export const tabIndexAtom = atom(
   (g) => g(tabIndex),
   (g, s, a: number) => {
     s(submittedAtom, false);
-    s(tabIndex, a);
-    s(flagsAtom, {});
-    s(flaggedValueAtom, '');
+    if (g(tabIndex) !== a) {
+      s(tabIndex, a);
+      s(flagsAtom, {});
+      s(flaggedValueAtom, '');
 
-    ipcRenderer.send(Channel.TAB_CHANGED, {
-      tab: g(tabsAtom)[a],
-      input: g(rawInputAtom),
-      pid: g(pidAtom),
-    });
+      const channel = g(channelAtom);
+      channel(Channel.TAB_CHANGED);
+    }
   }
 );
 
 export const selectedAtom = atom('');
 
-const scriptHistory = atom<Script[]>([]);
-export const scriptHistoryAtom = atom(
-  (g) => g(scriptHistory),
-  (g, s, a: Script[]) => {
-    s(scriptHistory, a);
-  }
-);
+export const scriptHistoryAtom = atom<Script[]>([]);
+// export const scriptHistoryAtom = atom(
+//   (g) => g(scriptHistory),
+//   (g, s, a: Script[]) => {
+//     s(scriptHistory, a);
+//   }
+// );
 
 const script = atom<Script>(noScript);
 export const scriptAtom = atom(
@@ -698,6 +703,7 @@ export const promptDataAtom = atom(
       s(placeholderAtom, a.placeholder);
       s(selectedAtom, a.selected);
       s(tabsAtom, a.tabs);
+      console.log(a);
 
       s(inputAtom, a.input);
 
@@ -766,9 +772,37 @@ export const flagValueAtom = atom(
 
 export const flagAtom = atom('');
 const submitValue = atom('');
+
+// TODO: Finish up channel messaging cleanup
+export const appStateAtom = atom<
+  (channel: Channel, override: AppState) => AppMessage
+>((g) => (channel, override) => {
+  return {
+    channel,
+    input: g(rawInputAtom),
+    pid: g(pidAtom),
+    state: {
+      flag: g(flagAtom),
+      index: g(indexAtom),
+      flaggedValue: g(flaggedValueAtom),
+      focused: g(focusedChoiceAtom),
+      tab: g(tabsAtom)?.[g(tabIndexAtom)] || '',
+      history: g(scriptHistoryAtom),
+      modifiers: g(modifiersAtom),
+      count: g(choicesAtom).length,
+      ...override,
+    },
+  };
+});
+
+export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
+  ipcRenderer.send(channel, g(appStateAtom)(channel, override));
+});
+
 export const submitValueAtom = atom(
   (g) => g(submitValue),
   (g, s, a: any) => {
+    console.log({ a });
     // let submitted = g(submittedAtom);
     // if (submitted) return;
 
@@ -777,15 +811,21 @@ export const submitValueAtom = atom(
     const flag = fValue ? a : f || '';
 
     const value = checkIfSubmitIsDrop(fValue || a);
-    const fC = g(focusedChoiceAtom);
+    // const fC = g(focusedChoiceAtom);
 
-    ipcRenderer.send(Channel.VALUE_SUBMITTED, {
-      input: g(inputAtom),
+    const channel = g(channelAtom);
+    channel(Channel.VALUE_SUBMITTED, {
       value,
       flag,
-      pid: g(pidAtom),
-      id: fC?.id || -1,
     });
+
+    // ipcRenderer.send(Channel.VALUE_SUBMITTED, {
+    //   input: g(inputAtom),
+    //   value,
+    //   flag,
+    //   pid: g(pidAtom),
+    //   id: fC?.id || -1,
+    // });
 
     // s(rawInputAtom, '');
     s(loading, false);
@@ -845,19 +885,20 @@ export const openAtom = atom(
 export const escapeAtom = atom(
   null,
   debounce((g, s) => {
-    const history = g(scriptHistoryAtom).slice();
-    s(scriptHistoryAtom, []);
+    // const history = g(scriptHistoryAtom).slice();
+    // s(scriptHistoryAtom, []);
 
-    if (
-      history.find((prevScript) => prevScript.filePath === mainScriptPath) &&
-      !g(inputChangedAtom) &&
-      !g(isMainScriptAtom)
-    ) {
-      ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
-    } else {
-      s(openAtom, false);
-    }
-  }, 100)
+    // if (
+    //   history.find((prevScript) => prevScript.filePath === mainScriptPath) &&
+    //   !g(inputChangedAtom) &&
+    //   !g(isMainScriptAtom)
+    // ) {
+    //   ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+    // } else {
+    const channel = g(channelAtom);
+    channel(Channel.ESCAPE);
+    // }
+  }, 50)
 );
 
 export const selectionStartAtom = atom(0);
@@ -983,3 +1024,4 @@ export const valueInvalidAtom = atom(null, (g, s, a: string) => {
 });
 
 export const isHiddenAtom = atom(false);
+export const submitOnEscapeAtom = atom(false);

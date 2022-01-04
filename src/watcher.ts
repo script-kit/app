@@ -27,6 +27,7 @@ import { emitter, KitEvent } from './events';
 import { updateScripts } from './state';
 import { toggleTray } from './tray';
 import { maybeSetLogin } from './settings';
+import { buildScriptChanged } from './build';
 
 export const cacheMenu = debounce(async () => {
   await updateScripts();
@@ -62,6 +63,7 @@ const onScriptsChanged = async (
     systemScriptChanged(script);
     watchScriptChanged(script);
     backgroundScriptChanged(script);
+    buildScriptChanged(script);
   }
 
   if (updateEventNames.includes(event)) {

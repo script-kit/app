@@ -1,7 +1,7 @@
 import { globalShortcut } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
-import { Script } from '@johnlindquist/kit';
+import { Script } from '@johnlindquist/kit/types/core';
 import {
   mainScriptPath,
   shortcutsPath,
@@ -13,7 +13,7 @@ import { focusPrompt } from './prompt';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
   const success = globalShortcut.register(shortcut, async () => {
-    console.log(`🏃‍♀️ Run ${filePath}`);
+    log.info(`🏃‍♀️ Run ${filePath}`);
     runPromptProcess(filePath);
     focusPrompt();
   });

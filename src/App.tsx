@@ -90,6 +90,7 @@ import {
   resizeEnabledAtom,
   valueInvalidAtom,
   isHiddenAtom,
+  scriptHistoryAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -133,6 +134,7 @@ export default function App() {
   const [open, setOpen] = useAtom(openAtom);
   const [, setExit] = useAtom(exitAtom);
   const [script, setScript] = useAtom(scriptAtom);
+  const [, setScriptHistory] = useAtom(scriptHistoryAtom);
   const [description] = useAtom(descriptionAtom);
   const [name] = useAtom(nameAtom);
   const [isKitScript] = useAtom(isKitScriptAtom);
@@ -208,6 +210,7 @@ export default function App() {
     [Channel.EXIT]: setExit,
     [Channel.SET_PID]: setPid,
     [Channel.SET_SCRIPT]: setScript,
+    [Channel.SET_SCRIPT_HISTORY]: setScriptHistory,
     [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
     [Channel.SET_DESCRIPTION]: setDescription,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfig,

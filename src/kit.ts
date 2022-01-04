@@ -6,12 +6,16 @@
 import { app } from 'electron';
 import minimist from 'minimist';
 import log from 'electron-log';
+import path from 'path';
+import { fork, ForkOptions } from 'child_process';
 
 import { Channel, ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
   parseScript,
   kitPath,
+  kenvPath,
   mainScriptPath,
+  KIT_FIRST_PATH,
 } from '@johnlindquist/kit/cjs/utils';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
@@ -101,3 +105,32 @@ export const runPromptProcess = async (
 //   processes.removeByPid(pid);
 //   processes.add(ProcessType.Prompt);
 // };
+
+const KIT = kitPath();
+const forkOptions: ForkOptions = {
+  cwd: KIT,
+  env: {
+    KIT,
+    KENV: kenvPath(),
+    PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+  },
+};
+
+export const runScript = (...args: string[]) => {
+  return new Promise((resolve, reject) => {
+    const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
+
+    child.on('message', (data) => {
+      const dataString = data.toString();
+      log.info(args[0], dataString);
+    });
+
+    child.on('exit', () => {
+      resolve('success');
+    });
+
+    child.on('error', (error: Error) => {
+      reject(error);
+    });
+  });
+};

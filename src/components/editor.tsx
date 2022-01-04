@@ -5,11 +5,16 @@ import MonacoEditor, { loader } from '@monaco-editor/react';
 import { motion } from 'framer-motion';
 
 import { editor } from 'monaco-editor';
-import { UI } from '@johnlindquist/kit/cjs/enum';
 
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
-import { darkAtom, editorConfigAtom, openAtom, uiAtom } from '../jotai';
-import { useClose, useMountMainHeight, useSave } from '../hooks';
+import { darkAtom, editorConfigAtom, inputAtom, openAtom } from '../jotai';
+import {
+  useClose,
+  useEscape,
+  useFocus,
+  useMountMainHeight,
+  useSave,
+} from '../hooks';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -42,24 +47,18 @@ const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
 };
 
 export default function Editor() {
-  const editorRef = useRef<editor.IStandaloneCodeEditor>();
+  const editorRef = useFocus();
 
   const [options] = useAtom(editorConfigAtom);
   const [isDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
-  const [ui] = useAtom(uiAtom);
-  const [editorValue, setEditorValue] = useState(
-    (options as EditorOptions)?.value || ''
-  );
+  const [inputValue, setInputValue] = useAtom(inputAtom);
 
-  useSave(editorValue);
+  useSave(inputValue);
   useClose();
+  useEscape();
 
   const containerRef = useMountMainHeight();
-
-  useEffect(() => {
-    if (editorRef?.current && ui === UI.editor) editorRef?.current?.focus();
-  }, [open, editorRef, ui]);
 
   const beforeMount = useCallback((monaco) => {
     /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -78,7 +77,6 @@ export default function Editor() {
     (editorInstance: editor.IStandaloneCodeEditor) => {
       if (typeof global?.exports === 'undefined') global.exports = {};
       editorInstance.focus();
-      editorRef.current = editorInstance;
 
       if (editorInstance?.getDomNode())
         (
@@ -103,8 +101,8 @@ export default function Editor() {
     [options]
   );
 
-  const onChange = useCallback(() => {
-    setEditorValue(editorRef.current?.getValue() as string);
+  const onChange = useCallback((value) => {
+    setInputValue(value);
   }, []);
 
   return (

@@ -1,12 +1,14 @@
 import { useAtom } from 'jotai';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 
 import { useHotkeys } from 'react-hotkeys-hook';
-import { tabIndexAtom, tabsAtom } from '../jotai';
+import { channelAtom, tabIndexAtom, tabsAtom } from '../jotai';
 import { hotkeysOptions } from './shared';
 
 export default () => {
   const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
   const [tabs] = useAtom(tabsAtom);
+  const [channel] = useAtom(channelAtom);
 
   useHotkeys(
     'tab,shift+tab',
@@ -18,6 +20,8 @@ export default () => {
         const nextIndex = clampTabIndex < 0 ? maxTab - 1 : clampTabIndex;
         setTabIndex(nextIndex);
       }
+
+      channel(Channel.TAB);
     },
     hotkeysOptions,
     [tabIndex, tabs]

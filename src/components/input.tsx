@@ -1,12 +1,14 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { useCallback, KeyboardEvent, LegacyRef } from 'react';
+import React, { useCallback, KeyboardEvent, LegacyRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 import { Choice } from '@johnlindquist/kit/types/core';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 
 import {
+  channelAtom,
   inputAtom,
   isMainScriptAtom,
   modifiers,
@@ -59,6 +61,7 @@ export default function Input() {
   const [processing] = useAtom(processingAtom);
   const [resizeEnabled] = useAtom(resizeEnabledAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
+  const [channel] = useAtom(channelAtom);
 
   useEscape();
   useEnter();
@@ -131,6 +134,7 @@ export default function Input() {
             const ti = tabs.indexOf(tab);
             setInput('');
             setTabIndex(ti);
+            channel(Channel.TAB);
           }
         }
       }
