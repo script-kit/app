@@ -8,11 +8,12 @@ import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 
 import {
+  appStateAtom,
   channelAtom,
   inputAtom,
   isMainScriptAtom,
   modifiers,
-  modifiersAtom,
+  _modifiers,
   pidAtom,
   placeholderAtom,
   processingAtom,
@@ -22,7 +23,7 @@ import {
   submittedAtom,
   submitValueAtom,
   tabIndexAtom,
-  tabsAtom,
+  _tabs,
   ultraShortCodesAtom,
   unfilteredChoicesAtom,
 } from '../jotai';
@@ -48,7 +49,7 @@ export default function Input() {
 
   const [pid] = useAtom(pidAtom);
   const [inputValue, setInput] = useAtom(inputAtom);
-  const [tabs] = useAtom(tabsAtom);
+  const [tabs] = useAtom(_tabs);
   const [, setTabIndex] = useAtom(tabIndexAtom);
   const [unfilteredChoices] = useAtom(unfilteredChoicesAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);
@@ -56,11 +57,10 @@ export default function Input() {
   const [promptData] = useAtom(promptDataAtom);
   const [submitted] = useAtom(submittedAtom);
   const [, setSelectionStart] = useAtom(selectionStartAtom);
-  const [, setModifiers] = useAtom(modifiersAtom);
+  const [, setModifiers] = useAtom(_modifiers);
   const [ultraShortCodes] = useAtom(ultraShortCodesAtom);
   const [processing] = useAtom(processingAtom);
   const [resizeEnabled] = useAtom(resizeEnabledAtom);
-  const [isMainScript] = useAtom(isMainScriptAtom);
   const [channel] = useAtom(channelAtom);
 
   useEscape();
@@ -68,7 +68,7 @@ export default function Input() {
   useFlag();
   useTab();
   useKeyIndex();
-  useOpen();
+  // useOpen();
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
@@ -149,6 +149,7 @@ export default function Input() {
       setTabIndex,
       pid,
       ultraShortCodes,
+      channel,
     ]
   );
 

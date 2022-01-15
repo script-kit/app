@@ -1,31 +1,27 @@
-import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
   flagValueAtom,
-  indexAtom,
+  _index,
   openAtom,
   prevIndexAtom,
   prevInputAtom,
-  rawInputAtom,
-  isSplashAtom,
+  _input,
   isReadyAtom,
   escapeAtom,
-  channelAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 
 export default () => {
-  const [open, setOpen] = useAtom(openAtom);
+  const [open] = useAtom(openAtom);
   const [, escape] = useAtom(escapeAtom);
-  const [isSplash] = useAtom(isSplashAtom);
   const [isReady] = useAtom(isReadyAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
-  const [input] = useAtom(rawInputAtom);
+  const [input] = useAtom(_input);
   const [prevInput] = useAtom(prevInputAtom);
 
-  const [index] = useAtom(indexAtom);
+  const [index] = useAtom(_index);
   const [prevIndex] = useAtom(prevIndexAtom);
 
   useHotkeys(

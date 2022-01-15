@@ -2,12 +2,12 @@ import { useAtom } from 'jotai';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 
 import { useHotkeys } from 'react-hotkeys-hook';
-import { channelAtom, tabIndexAtom, tabsAtom } from '../jotai';
+import { channelAtom, tabIndexAtom, _tabs } from '../jotai';
 import { hotkeysOptions } from './shared';
 
 export default () => {
   const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
-  const [tabs] = useAtom(tabsAtom);
+  const [tabs] = useAtom(_tabs);
   const [channel] = useAtom(channelAtom);
 
   useHotkeys(
@@ -24,6 +24,6 @@ export default () => {
       channel(Channel.TAB);
     },
     hotkeysOptions,
-    [tabIndex, tabs]
+    [tabIndex, tabs, channel]
   );
 };

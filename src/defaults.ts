@@ -33,3 +33,8 @@ export const noScript: Script = {
   type: ProcessType.App,
   kenv: '',
 };
+
+export const noChoice: Choice = {
+  id: '',
+  name: '__app__/no-choice',
+};

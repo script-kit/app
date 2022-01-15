@@ -29,17 +29,19 @@ export interface ListProps {
 }
 
 export interface ResizeData {
+  scriptPath: string;
   ui: UI;
   mode: Mode;
   topHeight: number;
   mainHeight: number;
-  filePath: string;
   hasPanel: boolean;
   hasChoices: boolean;
   hasInput: boolean;
   open: boolean;
-  isPreviewOpen: boolean;
   previewEnabled: boolean;
   tabIndex: number;
   isSplash: boolean;
+  hasPreview: boolean;
+  promptId: number;
+  inputChanged: boolean;
 }

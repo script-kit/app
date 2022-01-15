@@ -41,14 +41,12 @@ import Log from './components/log';
 import Header from './components/header';
 import Form from './components/form';
 import {
-  scoredChoices,
   editorConfigAtom,
   flagsAtom,
   flagValueAtom,
   formDataAtom,
   formHTMLAtom,
   hintAtom,
-  indexAtom,
   inputAtom,
   isMouseDownAtom,
   logHTMLAtom,
@@ -63,23 +61,20 @@ import {
   promptDataAtom,
   scriptAtom,
   selectedAtom,
-  submittedAtom,
   submitValueAtom,
   tabIndexAtom,
-  tabsAtom,
+  _tabs,
   textareaConfigAtom,
   themeAtom,
   topHeightAtom,
   uiAtom,
   unfilteredChoicesAtom,
-  isKitScriptAtom,
   topRefAtom,
-  descriptionAtom,
-  nameAtom,
+  _description,
+  _name,
   textareaValueAtom,
   loadingAtom,
   processingAtom,
-  isMainScriptAtom,
   exitAtom,
   isSplashAtom,
   appConfigAtom,
@@ -90,7 +85,11 @@ import {
   resizeEnabledAtom,
   valueInvalidAtom,
   isHiddenAtom,
-  scriptHistoryAtom,
+  _history,
+  filterInputAtom,
+  blurAtom,
+  shortcutPressedAtom,
+  _logo,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -129,63 +128,60 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
-  const [appConfig, setAppConfig] = useAtom(appConfigAtom);
-  const [pid, setPid] = useAtom(pidAtom);
+  const [, setAppConfig] = useAtom(appConfigAtom);
+  const [, setPid] = useAtom(pidAtom);
   const [open, setOpen] = useAtom(openAtom);
   const [, setExit] = useAtom(exitAtom);
   const [script, setScript] = useAtom(scriptAtom);
-  const [, setScriptHistory] = useAtom(scriptHistoryAtom);
-  const [description] = useAtom(descriptionAtom);
-  const [name] = useAtom(nameAtom);
-  const [isKitScript] = useAtom(isKitScriptAtom);
+  const [, setScriptHistory] = useAtom(_history);
 
-  const [inputValue, setInput] = useAtom(inputAtom);
+  const [, setInput] = useAtom(inputAtom);
   const [, setPlaceholder] = useAtom(placeholderAtom);
-  const [promptData, setPromptData] = useAtom(promptDataAtom);
+  const [, setPromptData] = useAtom(promptDataAtom);
   const [, setTheme] = useAtom(themeAtom);
   const [, setSplashBody] = useAtom(splashBodyAtom);
   const [, setSplashHeader] = useAtom(splashHeaderAtom);
   const [, setSplashProgress] = useAtom(splashProgressAtom);
-  const [submitted] = useAtom(submittedAtom);
 
   const [, setUnfilteredChoices] = useAtom(unfilteredChoicesAtom);
 
   const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
-  const [mode, setMode] = useAtom(modeAtom);
+  const [, setMode] = useAtom(modeAtom);
   const [, setReady] = useAtom(isReadyAtom);
 
-  const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
-  const [tabs] = useAtom(tabsAtom);
+  const [, setTabIndex] = useAtom(tabIndexAtom);
+  const [tabs] = useAtom(_tabs);
 
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
-  const [previewHTML, setPreviewHTML] = useAtom(previewHTMLAtom);
+  const [, setPreviewHTML] = useAtom(previewHTMLAtom);
   const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
   const [, setEditorConfig] = useAtom(editorConfigAtom);
   const [, setTextareaConfig] = useAtom(textareaConfigAtom);
   const [, setFlags] = useAtom(flagsAtom);
-  const [formHTML, setFormHTML] = useAtom(formHTMLAtom);
+  const [, setFormHTML] = useAtom(formHTMLAtom);
   const [, setFormData] = useAtom(formDataAtom);
 
-  const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
-  const [topHeight, setTopHeight] = useAtom(topHeightAtom);
+  const [, setMainHeight] = useAtom(mainHeightAtom);
+  const [, setTopHeight] = useAtom(topHeightAtom);
 
   const [, setSubmitValue] = useAtom(submitValueAtom);
   const [flagValue] = useAtom(flagValueAtom);
-  const [mouseEnabled, setMouseEnabled] = useAtom(mouseEnabledAtom);
+  const [, setMouseEnabled] = useAtom(mouseEnabledAtom);
   const [selected] = useAtom(selectedAtom);
-  const [index] = useAtom(indexAtom);
-  const [choices] = useAtom(scoredChoices);
   const [, setTopRef] = useAtom(topRefAtom);
-  const [, setDescription] = useAtom(descriptionAtom);
-  const [, setName] = useAtom(nameAtom);
+  const [, setDescription] = useAtom(_description);
+  const [, setName] = useAtom(_name);
   const [, setTextareaValue] = useAtom(textareaValueAtom);
   const [, setLoading] = useAtom(loadingAtom);
   const [processing] = useAtom(processingAtom);
   const [resizeEnabled] = useAtom(resizeEnabledAtom);
-  const [isMainScript] = useAtom(isMainScriptAtom);
   const [isSplash] = useAtom(isSplashAtom);
   const [, setValueInvalid] = useAtom(valueInvalidAtom);
+  const [, setFilterInput] = useAtom(filterInputAtom);
+  const [, setBlur] = useAtom(blurAtom);
+  const [, shortcutPressed] = useAtom(shortcutPressedAtom);
+  const [, setLogo] = useAtom(_logo);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -197,7 +193,7 @@ export default function App() {
 
   useThemeDetector();
 
-  const [isMouseDown, setIsMouseDown] = useAtom(isMouseDownAtom);
+  const [, setIsMouseDown] = useAtom(isMouseDownAtom);
 
   type ChannelAtomMap = {
     [key in keyof ChannelMap]: (data: ChannelMap[key]) => void;
@@ -217,6 +213,7 @@ export default function App() {
     [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfig,
     [Channel.SET_FLAGS]: setFlags,
     [Channel.SET_DIV_HTML]: setPanelHTML,
+    [Channel.SET_FILTER_INPUT]: setFilterInput,
     [Channel.SET_FORM_HTML]: ({ html, formData }: any) => {
       setFormHTML(html);
       setFormData(formData);
@@ -230,7 +227,9 @@ export default function App() {
     [Channel.SET_OPEN]: setOpen,
     [Channel.SET_PANEL]: setPanelHTML,
     [Channel.SET_PREVIEW]: setPreviewHTML,
+    [Channel.SET_PROMPT_BLURRED]: setBlur,
     [Channel.SET_LOG]: setLogHtml,
+    [Channel.SET_LOGO]: setLogo,
     [Channel.SET_PLACEHOLDER]: setPlaceholder,
     [Channel.SET_READY]: setReady,
     [Channel.SET_SUBMIT_VALUE]: setSubmitValue,
@@ -241,6 +240,7 @@ export default function App() {
     [Channel.SET_SPLASH_PROGRESS]: setSplashProgress,
     [Channel.SET_THEME]: setTheme,
     [Channel.VALUE_INVALID]: setValueInvalid,
+    [Channel.SHORTCUT_PRESSED]: shortcutPressed,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -288,16 +288,16 @@ export default function App() {
 
   useEffect(() => {
     if (headerRef?.current) setTopRef(headerRef?.current);
-  }, [headerRef]);
+  }, [headerRef, setTopRef]);
 
-  useEffect(() => {
-    if (windowContainerRef?.current) {
-      windowContainerRef.current.style.height = `${window.innerHeight}px`;
-      windowContainerRef.current.style.top = `0px`;
-      windowContainerRef.current.style.left = `0px`;
-      // windowContainerRef.current.style.width = window.innerWidth + 'px';
-    }
-  }, [mainHeight, topHeight, windowContainerRef]);
+  // useEffect(() => {
+  //   if (windowContainerRef?.current) {
+  //     windowContainerRef.current.style.height = `${window.innerHeight}px`;
+  //     windowContainerRef.current.style.top = `0px`;
+  //     windowContainerRef.current.style.left = `0px`;
+  //     // windowContainerRef.current.style.width = window.innerWidth + 'px';
+  //   }
+  // }, [mainHeight, topHeight, windowContainerRef]);
 
   const [hidden, setHidden] = useAtom(isHiddenAtom);
   const controls = useAnimation();
@@ -309,18 +309,19 @@ export default function App() {
       controls.stop();
       controls.set({ opacity: 0 });
     }
-  }, [open]);
+  }, [open, controls]);
 
   const showIfOpen = useCallback(() => {
     if (open) setHidden(false);
-  }, [open]);
+  }, [open, setHidden]);
 
   const hideIfClosed = useCallback(() => {
     if (!open) setHidden(true);
-  }, [open]);
+  }, [open, setHidden]);
 
   return (
     <ErrorBoundary>
+      {/* {JSON.stringify(state)} */}
       <motion.div
         animate={controls}
         transition={{ duration: 0.15 }}
@@ -334,7 +335,7 @@ export default function App() {
         }
         className={`
         ${hidden ? 'hidden' : ''}
-        relative flex flex-col w-full h-screen min-h-screen`}
+        relative flex flex-col w-full h-full`}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseLeave}

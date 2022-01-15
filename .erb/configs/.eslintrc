@@ -2,6 +2,8 @@
   "rules": {
     "no-console": "off",
     "global-require": "off",
-    "import/no-dynamic-require": "off"
+    "import/no-dynamic-require": "off",
+    "no-bitwise": "off",
+    "no-restricted-syntax": "off"
   }
 }

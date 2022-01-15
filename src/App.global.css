@@ -1,5 +1,5 @@
 @import 'jetbrains-mono';
-
+@import '../node_modules/@vscode/codicons/dist/codicon.css';
 @import '../node_modules/simplebar-react/dist/simplebar.min.css';
 /* @import '../node_modules/highlight.js/styles/solarized-light.css'; */
 /* .hljs {
@@ -13,17 +13,6 @@
   --color-secondary-light: 232, 113, 39;
   --color-primary-dark: 79, 70, 229;
   --color-secondary-dark: 0, 0, 0;
-  /*
-  --color-primary-dark: 79, 70, 229;
-  --color-secondary-dark: 221, 229, 70; */
-
-  /* --color-primary-dark: 119, 0, 255;
-  --color-secondary-dark: 255, 185, 0; */
-
-  /* --color-secondary-dark: 255, 129, 70; */
-  /* --color-secondary-dark: 157, 70, 229; */
-  /* --color-secondary-dark: 229, 70, 221; */
-  /* --color-secondary-dark: 229, 155, 70; */
   --color-background-dark: 0, 0, 0;
   --color-background-light: 255, 255, 255;
   --opacity-themelight: 33%;
@@ -294,6 +283,10 @@ body {
   .prose > blockquote {
     background: hsla(0, 0%, 40%, 0.1);
   }
+  .prose > blockquote > p {
+    margin: 0;
+  }
+
   .prose > pre > code {
     width: 100%;
   }

@@ -3,10 +3,10 @@
 import { useAtom } from 'jotai';
 import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { mouseEnabledAtom, openAtom, tabIndexAtom, tabsAtom } from '../jotai';
+import { mouseEnabledAtom, openAtom, tabIndexAtom, _tabs } from '../jotai';
 
 export default function KitTabs() {
-  const [tabs] = useAtom(tabsAtom);
+  const [tabs] = useAtom(_tabs);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
   const [open] = useAtom(openAtom);

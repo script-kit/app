@@ -80,6 +80,8 @@ const rightClick = async () => {
 const isWin = os.platform() === 'win32';
 const trayIcon = getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`);
 
+export const getTrayIcon = () => trayIcon;
+
 export const createTray = async (checkDb = false) => {
   const appDb = await getAppDb();
   if (checkDb && typeof appDb?.tray === 'boolean' && appDb.tray === false) {

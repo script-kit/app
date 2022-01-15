@@ -2,6 +2,8 @@ import { globalShortcut } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { Script } from '@johnlindquist/kit/types/core';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
+
 import {
   mainScriptPath,
   shortcutsPath,
@@ -9,11 +11,12 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
-import { focusPrompt } from './prompt';
+import { focusPrompt, sendToPrompt } from './prompt';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
   const success = globalShortcut.register(shortcut, async () => {
     log.info(`🏃‍♀️ Run ${filePath}`);
+    sendToPrompt(Channel.SHORTCUT_PRESSED, filePath);
     runPromptProcess(filePath);
     focusPrompt();
   });
@@ -84,6 +87,8 @@ export const updateMainShortcut = async (filePath: string) => {
 
       const ret = globalShortcut.register(shortcut, async () => {
         log.info(`🏚 main shortcut`);
+        sendToPrompt(Channel.SHORTCUT_PRESSED, mainScriptPath);
+
         await runPromptProcess(mainScriptPath);
       });
 

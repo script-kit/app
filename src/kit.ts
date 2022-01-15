@@ -19,7 +19,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
-import { setPromptPid, setScript } from './prompt';
+import { hideAppIfNoWindows, setPromptPid, setScript } from './prompt';
 import { getKitScript } from './state';
 
 app.on('second-instance', async (_event, argv) => {
@@ -68,12 +68,11 @@ export const runPromptProcess = async (
   promptScriptPath: string,
   args: string[] = []
 ) => {
-  const same = processes.endPreviousPromptProcess(promptScriptPath);
+  const same = processes.hidePreviousPromptProcess(promptScriptPath);
 
   if (same) {
-    log.info(
-      `Same shortcut pressed while process running. Closing current prompt`
-    );
+    hideAppIfNoWindows(promptScriptPath);
+    log.info(`Same shortcut pressed while process running. `);
     return;
   }
 

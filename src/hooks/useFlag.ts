@@ -3,12 +3,12 @@ import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
-  choicesAtom,
+  _choices,
   cmdAtom,
-  flagAtom,
+  _flag,
   flagsAtom,
   flagValueAtom,
-  indexAtom,
+  _index,
   inputAtom,
   inputFocusAtom,
   openAtom,
@@ -22,12 +22,12 @@ import { hotkeysOptions } from './shared';
 
 export default () => {
   const [cmd] = useAtom(cmdAtom);
-  const [choices] = useAtom(choicesAtom);
+  const [choices] = useAtom(_choices);
   const [input] = useAtom(inputAtom);
-  const [index] = useAtom(indexAtom);
+  const [index] = useAtom(_index);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
   const [flags] = useAtom(flagsAtom);
-  const [, setFlag] = useAtom(flagAtom);
+  const [, setFlag] = useAtom(_flag);
   const [, submit] = useAtom(submitValueAtom);
   const [selectionStart] = useAtom(selectionStartAtom);
   const [open, setOpen] = useAtom(openAtom);
@@ -79,7 +79,7 @@ export default () => {
       if (!inputFocus) return;
       if (selectionStart === input.length && event.key !== 'ArrowLeft') {
         event.preventDefault();
-        if (!flagValue) {
+        if (!flagValue && flagsArray.length) {
           setFlagValue(choices.length ? choices[index].value : input);
         }
         channel(Channel.FORWARD);
@@ -101,6 +101,6 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [input, inputFocus, choices, index, selectionStart, flagValue, cmd]
+    [input, inputFocus, choices, index, selectionStart, flagValue, cmd, channel]
   );
 };

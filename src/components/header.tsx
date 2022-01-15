@@ -5,22 +5,22 @@ import React, { useCallback } from 'react';
 import { useAtom } from 'jotai';
 import { XIcon } from '@heroicons/react/outline';
 import {
-  descriptionAtom,
+  _description,
   mouseEnabledAtom,
-  nameAtom,
+  _name,
   openAtom,
-  promptDataAtom,
   scriptAtom,
+  _logo,
 } from '../jotai';
 import TopBar from './TopBar';
 
 export default function Header() {
   const [script] = useAtom(scriptAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
-  const [promptData] = useAtom(promptDataAtom);
   const [, setOpen] = useAtom(openAtom);
-  const [description] = useAtom(descriptionAtom);
-  const [name] = useAtom(nameAtom);
+  const [description] = useAtom(_description);
+  const [logo] = useAtom(_logo);
+  const [name] = useAtom(_name);
 
   const onXClick = useCallback(() => {
     setOpen(false);
@@ -47,10 +47,16 @@ export default function Header() {
         className={`
         w-full
       text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row
-      dark:text-white text-primary-dark
+      dark:text-white text-primary-dark items-center
       `}
       >
-        <span className="pr-1 truncate">{description}</span>
+        <div className="flex flex-row">
+          {logo ? (
+            <img src={logo} alt={name} className="h-4 pr-2 dark:invert" />
+          ) : (
+            <span className="pr-1 truncate">{description}</span>
+          )}
+        </div>
         <span className="flex flex-row items-end pl-1 text-right">
           <span className="truncate">{name}</span>
 
@@ -64,7 +70,7 @@ export default function Header() {
           )}
         </span>
       </div>
-      {false && promptData?.ignoreBlur && mouseEnabled && (
+      {false && mouseEnabled && (
         <div onClick={onXClick} className="w-6 h-6 hover:cursor-pointer">
           <XIcon
             className="h-3 w-3

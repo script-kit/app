@@ -5,6 +5,7 @@
 import path from 'path';
 import webpack from 'webpack';
 import { dependencies as externals } from '../../src/package.json';
+import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 
 export default {
   externals: ['fsevents', ...Object.keys(externals || {})],
@@ -50,5 +51,6 @@ export default {
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
     }),
+    new MonacoWebpackPlugin(),
   ],
 };

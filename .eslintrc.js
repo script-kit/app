@@ -6,6 +6,12 @@ module.exports = {
     'react/prop-types': 'off',
     'jsx-a11y/no-autofocus': 'off',
     'import/prefer-default-export': 'off',
+    'no-bitwise': 'off',
+    'no-restricted-syntax': 'off',
+    '@typescript-eslint/no-use-before-define': 'off',
+    '@typescript-eslint/naming-convention': 'off',
+    'no-underscore-dangle': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
   },
   parserOptions: {
     ecmaVersion: 2020,

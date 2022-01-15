@@ -1,34 +1,23 @@
 import { ipcRenderer } from 'electron';
 import { useAtom } from 'jotai';
-import { basename, resolve } from 'path';
 
-import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { choicesAtom, cmdAtom, indexAtom, scriptAtom } from '../jotai';
+import { appStateAtom, cmdAtom } from '../jotai';
 
 import { hotkeysOptions } from './shared';
+import { AppChannel } from '../enums';
 
 export default () => {
-  const [choices] = useAtom(choicesAtom);
-  const [index] = useAtom(indexAtom);
-  const [script] = useAtom(scriptAtom);
   const [cmd] = useAtom(cmdAtom);
+  const [state] = useAtom(appStateAtom);
   useHotkeys(
     `${cmd}+d`,
     (event) => {
       event.preventDefault();
 
-      const filePath = (choices?.[index] as any)?.filePath || script?.filePath;
-      const dbPath = resolve(
-        filePath,
-        '..',
-        '..',
-        'db',
-        `_${basename(filePath).replace(/js$/, 'json')}`
-      );
-      ipcRenderer.send(Channel.OPEN_FILE, dbPath);
+      ipcRenderer.send(AppChannel.OPEN_SCRIPT_DB, state);
     },
     hotkeysOptions,
-    [choices, index, script]
+    [state]
   );
 };

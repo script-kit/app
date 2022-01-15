@@ -1,19 +1,28 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import path from 'path';
 import { useAtom } from 'jotai';
-import MonacoEditor, { loader } from '@monaco-editor/react';
+import MonacoEditor, { loader, Monaco } from '@monaco-editor/react';
 import { motion } from 'framer-motion';
 
-import { editor } from 'monaco-editor';
-
+import { editor as monacoEditor } from 'monaco-editor';
+import { UI } from '@johnlindquist/kit/cjs/enum';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
-import { darkAtom, editorConfigAtom, inputAtom, openAtom } from '../jotai';
+import {
+  darkAtom,
+  editorConfigAtom,
+  editorInstanceAtom,
+  inputAtom,
+  monacoAtom,
+  openAtom,
+  uiAtom,
+} from '../jotai';
 import {
   useClose,
   useEscape,
   useFocus,
   useMountMainHeight,
   useSave,
+  useOpen,
 } from '../hooks';
 
 function ensureFirstBackSlash(str: string) {
@@ -31,7 +40,7 @@ loader.config({
   },
 });
 
-const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
+const DEFAULT_OPTIONS: monacoEditor.IStandaloneEditorConstructionOptions = {
   fontFamily: 'JetBrains Mono',
   fontSize: 18,
   minimap: {
@@ -40,6 +49,9 @@ const DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   wordWrap: 'on',
   lineNumbers: 'off',
   glyphMargin: false,
+  scrollBeyondLastLine: false,
+  automaticLayout: true,
+  quickSuggestions: false,
   // folding: false,
   // Undocumented see https://github.com/Microsoft/vscode/issues/30795#issuecomment-410998882
   // lineDecorationsWidth: 0,
@@ -53,57 +65,107 @@ export default function Editor() {
   const [isDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
   const [inputValue, setInputValue] = useAtom(inputAtom);
+  const [ui] = useAtom(uiAtom);
+  const [monaco, setMonaco] = useAtom(monacoAtom);
+  const [editor, setEditor] = useAtom(editorInstanceAtom);
 
   useSave(inputValue);
   useClose();
   useEscape();
+  useOpen();
 
   const containerRef = useMountMainHeight();
 
-  const beforeMount = useCallback((monaco) => {
-    /* eslint-disable @typescript-eslint/no-use-before-define */
-    monaco.editor.defineTheme('kit-dark', nightOwl);
-    monaco.editor.defineTheme('kit-light', {
-      base: 'vs',
-      inherit: true,
-      rules: [],
-      colors: {
-        'editor.background': '#FFFFFF00',
-      },
-    });
-  }, []);
+  const beforeMount = useCallback(
+    (m: Monaco) => {
+      setMonaco(m);
+
+      m.editor.defineTheme('kit-dark', nightOwl);
+      m.editor.defineTheme('kit-light', {
+        base: 'vs',
+        inherit: true,
+        rules: [],
+        colors: {
+          'editor.background': '#FFFFFF00',
+        },
+      });
+
+      m.languages.typescript.typescriptDefaults.setCompilerOptions({
+        target: m.languages.typescript.ScriptTarget.ESNext,
+        allowNonTsExtensions: true,
+        moduleResolution: m.languages.typescript.ModuleResolutionKind.NodeJs,
+        module: m.languages.typescript.ModuleKind.ESNext,
+      });
+
+      m.languages.typescript.javascriptDefaults.setCompilerOptions({
+        target: m.languages.typescript.ScriptTarget.ESNext,
+        allowNonTsExtensions: true,
+        moduleResolution: m.languages.typescript.ModuleResolutionKind.NodeJs,
+        module: m.languages.typescript.ModuleKind.ESNext,
+      });
+    },
+    [setMonaco]
+  );
 
   const onMount = useCallback(
-    (editorInstance: editor.IStandaloneCodeEditor) => {
-      if (typeof global?.exports === 'undefined') global.exports = {};
-      editorInstance.focus();
-
-      if (editorInstance?.getDomNode())
-        (
-          (editorInstance.getDomNode() as HTMLElement).style as any
-        ).webkitAppRegion = 'no-drag';
-
-      const lineNumber = editorInstance.getModel()?.getLineCount() || 0;
-      if ((options as EditorOptions).scrollTo === 'bottom') {
-        const column =
-          (editorInstance?.getModel()?.getLineContent(lineNumber).length || 0) +
-          1;
-        editorInstance.setPosition({ lineNumber, column });
-        if (lineNumber > 5) {
-          editorInstance.revealLineInCenter(lineNumber - 3);
-        }
-      }
-
-      if ((options as EditorOptions).scrollTo === 'center') {
-        editorInstance.revealLineInCenter(Math.floor(lineNumber / 2));
-      }
+    (editorInstance: monacoEditor.IStandaloneCodeEditor) => {
+      setEditor(editorInstance);
     },
-    [options]
+    [setEditor]
   );
 
   const onChange = useCallback((value) => {
     setInputValue(value);
   }, []);
+
+  useEffect(() => {
+    if (!!(ui & UI.editor) && open) {
+      if (options?.value) {
+        setInputValue(options.value);
+      }
+    }
+  }, [open, options]);
+
+  useEffect(() => {
+    if (!monaco) return;
+
+    if (options?.extraLibs?.length) {
+      for (const { content, filePath } of options.extraLibs) {
+        monaco.languages.typescript.typescriptDefaults.addExtraLib(
+          content,
+          filePath
+        );
+        monaco.languages.typescript.javascriptDefaults.addExtraLib(
+          content,
+          filePath
+        );
+      }
+    }
+
+    monaco.editor.setTheme(isDark ? 'kit-dark' : 'kit-light');
+
+    if (!editor) return;
+
+    if (typeof global?.exports === 'undefined') global.exports = {};
+    editor.focus();
+
+    if (editor?.getDomNode())
+      ((editor.getDomNode() as HTMLElement).style as any).webkitAppRegion =
+        'no-drag';
+
+    const lineNumber = editor.getModel()?.getLineCount() || 0;
+    if ((options as EditorOptions).scrollTo === 'bottom') {
+      const column =
+        (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+      editor.setPosition({ lineNumber, column });
+
+      editor.revealPosition({ lineNumber, column });
+    }
+
+    if ((options as EditorOptions).scrollTo === 'center') {
+      editor.revealLineInCenter(Math.floor(lineNumber / 2));
+    }
+  }, [monaco, editor, options, isDark]);
 
   return (
     <motion.div
@@ -114,9 +176,11 @@ export default function Editor() {
       ref={containerRef}
       className={`
     pt-3
-    w-full h-full min-h-128`}
+    w-full h-full`}
     >
       <MonacoEditor
+        height="100%"
+        width="100%"
         beforeMount={beforeMount}
         onMount={onMount}
         language={(options as EditorOptions)?.language || 'markdown'}
@@ -129,7 +193,7 @@ export default function Editor() {
   );
 }
 
-const nightOwl = {
+const nightOwl: monacoEditor.IStandaloneThemeData = {
   base: 'vs-dark',
   inherit: true,
   rules: [
@@ -803,8 +867,8 @@ const nightOwl = {
   colors: {
     'editor.foreground': '#d6deeb',
     'editor.background': '#00000000',
-    'editor.selectionBackground': '#5f7e97cc',
-    'editor.lineHighlightBackground': '#ffffff11',
+    'editor.selectionBackground': '#ffffff22',
+    'editor.lineHighlightBackground': '#ffffff01',
     'editorCursor.foreground': '#80a4c2',
     'editorWhitespace.foreground': '#2e2040',
     'editorIndentGuide.background': '#5e81ce52',

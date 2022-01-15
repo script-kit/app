@@ -1,11 +1,6 @@
 /* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useCallback } from 'react';
-import {
-  AnimatePresence,
-  motion,
-  useAnimation,
-  useMotionValue,
-} from 'framer-motion';
+import { AnimatePresence, motion, useMotionValue } from 'framer-motion';
 import { FixedSizeList as List } from 'react-window';
 import { useAtom } from 'jotai';
 import memoize from 'memoize-one';
@@ -13,7 +8,7 @@ import Preview from './preview';
 import ChoiceButton from './button';
 import {
   flagValueAtom,
-  indexAtom,
+  _index,
   inputAtom,
   mainHeightAtom,
   mouseEnabledAtom,
@@ -44,14 +39,14 @@ export default function ChoiceList({ width, height }: ListProps) {
   // TODO: In case items ever have dynamic height
   const [choices] = useAtom(scoredChoices);
   const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
-  const [index, onIndexChange] = useAtom(indexAtom);
-  const [inputValue] = useAtom(inputAtom);
-  const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
+  const [index, onIndexChange] = useAtom(_index);
+  // const [inputValue] = useAtom(inputAtom);
+  // const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
   const [flagValue] = useAtom(flagValueAtom);
   const [previewEnabled] = useAtom(previewEnabledAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
   const [previewHTML] = useAtom(previewHTMLAtom);
-  const listWidth = useMotionValue('100%');
+  // const listWidth = useMotionValue('100%');
 
   const onIndexSubmit = useCallback(
     (i) => {
@@ -78,10 +73,17 @@ export default function ChoiceList({ width, height }: ListProps) {
   //   }
   // });
 
-  useEffect(() => {
-    const newListHeight = choices.length * BUTTON_HEIGHT;
-    setMainHeight(newListHeight);
-  }, [choices, setMainHeight]);
+  // useEffect(() => {
+  //   const newListHeight = choices.length * BUTTON_HEIGHT;
+  //   console.log('newListHeight', newListHeight);
+  //   setMainHeight(newListHeight);
+  // }, [choices, setMainHeight]);
+
+  // useEffect(() => {
+  //   const newListHeight = choices.length * BUTTON_HEIGHT;
+  //   console.log('newListHeight', newListHeight);
+  //   setMainHeight(newListHeight);
+  // }, []);
 
   useEffect(() => {
     if (choices.length && height) {
