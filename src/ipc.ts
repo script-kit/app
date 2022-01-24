@@ -3,6 +3,7 @@
 /* eslint-disable no-restricted-syntax */
 import { ipcMain } from 'electron';
 import log from 'electron-log';
+import path from 'path';
 import { debounce } from 'lodash';
 import { Script } from '@johnlindquist/kit';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
@@ -15,31 +16,28 @@ import {
   kenvPath,
   isFile,
 } from '@johnlindquist/kit/cjs/utils';
+import { ProcessInfo } from '@johnlindquist/kit/types/core';
 import { AppMessage, AppState } from '@johnlindquist/kit/types/kitapp';
-import { existsSync, renameSync, write } from 'fs';
+import { existsSync, renameSync } from 'fs';
 import { writeFile } from 'fs/promises';
 import isImage from 'is-image';
 import { DownloaderHelper } from 'node-downloader-helper';
 import detect from 'detect-file-type';
 import { emitter, KitEvent } from './events';
-
-import { processes, ProcessInfo } from './process';
+import { processes } from './process';
 
 import {
-  escapePromptWindow as endPrompt,
+  endPrompt,
   focusPrompt,
-  getPromptState,
   reload,
   resize,
-  sendToPrompt,
   setIgnoreBlur,
-  setPromptState,
 } from './prompt';
-import { runPromptProcess } from './kit';
+import { runPromptProcess, runScript } from './kit';
 import { AppChannel } from './enums';
-import { ResizeData } from './types';
+import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
-import { updateScripts } from './state';
+import { state, updateScripts } from './state';
 
 const handleChannel =
   (fn: (processInfo: ProcessInfo, message: AppMessage) => void) =>
@@ -47,10 +45,19 @@ const handleChannel =
     // log.info(message);
     const processInfo = processes.getByPid(message?.pid);
 
+    if (message?.channel !== Channel.INPUT) {
+      log.info(
+        `${processInfo?.pid}: ✉️  ${message?.channel}: ${path.basename(
+          processInfo?.scriptPath || ''
+        )}`
+      );
+    }
+
     if (processInfo) {
       fn(processInfo, message);
     } else {
-      console.warn(`${message.channel} failed on ${message?.pid}`);
+      log.warn(`${message.channel} failed on ${message?.pid}`);
+      // log.warn(processInfo?.child, processInfo?.type);
       // console.log(message);
     }
   };
@@ -60,7 +67,7 @@ export const startIpc = () => {
     Channel.PROMPT_ERROR,
     debounce((_event, { error }) => {
       log.warn(error);
-      if (!getPromptState().hidden) {
+      if (!state.hidden) {
         setTimeout(() => {
           reload();
           // processes.add(ProcessType.App, kitPath('cli/kit-log.js'), []);
@@ -174,13 +181,15 @@ export const startIpc = () => {
     Channel.ESCAPE,
     Channel.VALUE_SUBMITTED,
     Channel.TAB_CHANGED,
-    Channel.PROMPT_BLURRED,
+    Channel.BLUR,
+    Channel.ABANDON,
+    Channel.GET_EDITOR_HISTORY,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
       channel,
       handleChannel(({ child }, message) => {
-        // log.info({ channel });
+        // log.info({ channel, message });
         if ([Channel.VALUE_SUBMITTED, Channel.TAB_CHANGED].includes(channel)) {
           emitter.emit(KitEvent.ResumeShortcuts);
         }
@@ -250,6 +259,10 @@ export const startIpc = () => {
       }
     }
   );
+
+  ipcMain.on(AppChannel.FEEDBACK, (event, data: Survey) => {
+    runScript(kitPath('cli', 'feedback.js'), JSON.stringify(data));
+  });
 
   // emitter.on(KitEvent.Blur, async () => {
   //   const promptProcessInfo = await processes.findPromptProcess();

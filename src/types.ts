@@ -35,7 +35,6 @@ export interface ResizeData {
   topHeight: number;
   mainHeight: number;
   hasPanel: boolean;
-  hasChoices: boolean;
   hasInput: boolean;
   open: boolean;
   previewEnabled: boolean;
@@ -44,4 +43,11 @@ export interface ResizeData {
   hasPreview: boolean;
   promptId: number;
   inputChanged: boolean;
+  placeholderOnly: boolean;
+}
+
+export interface Survey {
+  email: string;
+  question: string;
+  response: string;
 }

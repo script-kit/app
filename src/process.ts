@@ -7,20 +7,27 @@ import {
   clipboard,
   screen,
   Notification,
-  Tray,
   nativeImage,
+  BrowserWindow,
+  ipcMain,
+  IpcMainEvent,
 } from 'electron';
+import { setTimeout } from 'timers';
+
+import { subscribe } from 'valtio';
 import http from 'http';
 import path from 'path';
 import https from 'https';
 import url from 'url';
 import sizeOf from 'image-size';
-
+import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { fork } from 'child_process';
 import { Channel, Mode, ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { Choice, Script, ProcessInfo } from '@johnlindquist/kit/types/core';
+
 import {
+  AppMessage,
   ChannelMap,
   GenericSendData,
   SendData,
@@ -36,15 +43,13 @@ import {
   kitDotEnvPath,
 } from '@johnlindquist/kit/cjs/utils';
 
-import { getLog } from './logs';
+import { getLog, warn } from './logs';
 import {
   clearPromptCache,
   focusPrompt,
   getPromptBounds,
-  isFocused,
-  isVisible,
+  hideAppIfNoWindows,
   sendToPrompt,
-  setBlurredByKit,
   setBounds,
   setChoices,
   setHint,
@@ -58,11 +63,15 @@ import {
   setPromptData,
   setPromptPid,
   setPromptProp,
-  setPromptState,
   setScript,
   setTabIndex,
 } from './prompt';
-import { makeRestartNecessary, getBackgroundTasks, getSchedule } from './state';
+import {
+  makeRestartNecessary,
+  getBackgroundTasks,
+  getSchedule,
+  state,
+} from './state';
 
 import { emitter, KitEvent } from './events';
 import { show, showDevTools } from './show';
@@ -140,7 +149,7 @@ export type ChannelHandler = {
 };
 
 const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
-  setBlurredByKit();
+  state.blurredByKit = true;
 
   const { image, options } = data.value;
   const imgOptions = url.parse((image as { src: string }).src);
@@ -182,10 +191,21 @@ const toProcess =
   (data: SendData<K>) => {
     const processInfo = processes.getByPid(data?.pid);
 
-    if (processInfo) {
+    // Send data to Widget process if ids match
+    if (data.channel.includes('WIDGET')) {
+      if (processInfo) {
+        fn(processInfo, data);
+      } else {
+        warn(`${data?.pid}: Can't find processInfo associated with widget`);
+      }
+    }
+    // Send data to Prompt process only if id matches current prompt
+    else if (processInfo && processInfo?.pid === state.promptProcess?.pid) {
       fn(processInfo, data);
-    } else {
-      console.warn(`⚠️ Failed channel ${data?.channel} to pid ${data?.pid}`);
+    } else if (processInfo?.type === ProcessType.PROMPT) {
+      warn(
+        `${data?.pid}: ⚠️ ${data.channel} failed. ${data.pid} doesn't match ${state.promptProcess?.pid}`
+      );
     }
   };
 
@@ -232,6 +252,136 @@ const kitMessageMap: ChannelHandler = {
     });
   }),
 
+  UPDATE_WIDGET: toProcess(({ child }, { channel, value }) => {
+    const { widgetId } = value as any;
+    const widget = BrowserWindow.fromId(widgetId);
+
+    if (widget) {
+      widget?.webContents.send(channel, value);
+    } else {
+      warn(`${widgetId}: widget not found. Killing process.`);
+      child?.kill();
+    }
+  }),
+
+  GET_WIDGET: toProcess(
+    async (
+      { child },
+      {
+        channel,
+        value,
+      }: { channel: Channel; value: { html: string; options: any } }
+    ) => {
+      state.blurredByKit = true;
+      log.info(`${child?.pid}: ⚙️ Creating widget`);
+      const widget = await show('widget', value.html || '', value.options);
+
+      const un = subscribe(state.ps, () => {
+        if (!state.ps.find((p) => p.pid === child?.pid)) {
+          widget?.destroy();
+          un();
+        }
+      });
+
+      widget.webContents.on('before-input-event', (event, input) => {
+        if (input.key === 'Escape') {
+          widget.close();
+        }
+      });
+
+      // widget.on('move', () => {
+      //   log.info(`${widget?.id}: 📦 widget moved`);
+      // });
+
+      type WidgetHandler = (event: IpcMainEvent, message: AppMessage) => void;
+
+      const clickHandler: WidgetHandler = (event, data) => {
+        log.info(data);
+        child?.send({
+          channel: Channel.WIDGET_CLICK,
+          pid: child.pid,
+          ...data,
+        });
+      };
+
+      const inputHandler: WidgetHandler = (event, data) => {
+        child?.send({
+          channel: Channel.WIDGET_INPUT,
+          pid: child.pid,
+          ...data,
+        });
+      };
+
+      const ignoreMouseHandler = (event, data: boolean) => {
+        log.info({ data });
+        if (data) {
+          widget.setIgnoreMouseEvents(true, { forward: true });
+        } else {
+          widget.setIgnoreMouseEvents(false);
+        }
+      };
+
+      const resizeHandler = (
+        event,
+        size: { width: number; height: number }
+      ) => {
+        log.info({ size });
+        if (size) {
+          widget.setSize(size.width, size.height);
+        }
+      };
+
+      ipcMain.on(Channel.WIDGET_CLICK, clickHandler);
+      ipcMain.on(Channel.WIDGET_INPUT, inputHandler);
+      ipcMain.on('WIDGET_IGNORE_MOUSE', ignoreMouseHandler);
+      ipcMain.on('WIDGET_RESIZE', resizeHandler);
+
+      widget.on('close', () => {
+        log.info(`${widget?.id}: Widget closed`);
+        focusPrompt();
+        child?.send({
+          channel: Channel.END_WIDGET,
+          widgetId: widget?.id,
+        });
+        widget.destroy();
+
+        ipcMain.off(Channel.WIDGET_CLICK, clickHandler);
+        ipcMain.off(Channel.WIDGET_INPUT, inputHandler);
+        ipcMain.off(Channel.WIDGET_INPUT, ignoreMouseHandler);
+        ipcMain.off('WIDGET_RESIZE', resizeHandler);
+      });
+
+      child?.send({
+        channel,
+        widgetId: widget?.id,
+      });
+    }
+  ),
+
+  WIDGET_CAPTURE_PAGE: toProcess(async ({ child }, { channel, value }) => {
+    const { widgetId } = value as any;
+    const widget = BrowserWindow.fromId(widgetId);
+    const image = await widget?.capturePage();
+
+    if (image) {
+      const imagePath = kenvPath('tmp', `${widgetId}-capture.png`);
+      log.info(`Captured page for widget ${widgetId} to ${imagePath}`);
+      await writeFile(imagePath, image.toPNG());
+
+      child?.send({
+        channel,
+        imagePath,
+      });
+    } else {
+      const imagePath = `⚠️ Failed to capture page for widget ${widgetId}`;
+      child?.send({
+        channel,
+        imagePath,
+      });
+      warn(imagePath);
+    }
+  }),
+
   CLEAR_CLIPBOARD_HISTORY: () => {
     emitter.emit(Channel.CLEAR_CLIPBOARD_HISTORY);
   },
@@ -264,11 +414,10 @@ const kitMessageMap: ChannelHandler = {
     child?.send({ channel, processes });
   }),
 
-  HIDE_APP: toProcess(({ child, type }) => {
+  HIDE_APP: toProcess(({ child, type, scriptPath }) => {
     if (type === ProcessType.Prompt) {
-      setPromptState({
-        hidden: true,
-      });
+      state.hidden = true;
+      hideAppIfNoWindows(scriptPath);
     }
   }),
   NEEDS_RESTART: async () => {
@@ -277,13 +426,11 @@ const kitMessageMap: ChannelHandler = {
   QUIT_APP: () => {
     app.exit();
   },
-  SET_SCRIPT: toProcess(async ({ type, scriptPath }, data) => {
-    log.info(`🏘 SET_SCRIPT ${type} ${data.pid}`, data.value.filePath);
-    if (type === ProcessType.Prompt) {
+  SET_SCRIPT: toProcess(async (processInfo, data) => {
+    if (processInfo.type === ProcessType.Prompt) {
+      processInfo.scriptPath = data.value?.filePath;
       await setScript(data.value);
     }
-
-    processes.scriptPath = data.value.filePath;
   }),
   SET_SUBMIT_VALUE: toProcess(async (_, data) => {
     sendToPrompt(Channel.SET_SUBMIT_VALUE, data.value);
@@ -356,7 +503,8 @@ const kitMessageMap: ChannelHandler = {
   },
   SHOW_IMAGE,
   SHOW: async (data) => {
-    setBlurredByKit();
+    state.blurredByKit = true;
+
     const showWindow = await show(
       'show',
       data.value.html || 'You forgot html',
@@ -445,8 +593,8 @@ const kitMessageMap: ChannelHandler = {
   SET_FILTER_INPUT: (data) => {
     sendToPrompt(Channel.SET_FILTER_INPUT, data.value);
   },
-  SHORTCUT_PRESSED: (data) => {
-    sendToPrompt(Channel.SHORTCUT_PRESSED, data.value);
+  START: (data) => {
+    sendToPrompt(Channel.START, data.value);
   },
   NOTIFY: (data) => {
     const notification = new Notification(data.value);
@@ -460,17 +608,50 @@ const kitMessageMap: ChannelHandler = {
     getTray()?.setImage(image);
     getTray()?.setTitle(data.value);
   },
+  GET_EDITOR_HISTORY: toProcess(({ child }, { channel }) => {
+    sendToPrompt(Channel.GET_EDITOR_HISTORY);
+  }),
+  TERMINATE_PROCESS: (data) => {
+    warn(`${data?.value}: Terminating process ${data.value}`);
+    processes.removeByPid(data?.value);
+  },
 };
 
 export const createMessageHandler =
-  (type: ProcessType) => (data: GenericSendData) => {
+  (type: ProcessType) => async (data: GenericSendData) => {
+    // if (data.pid !== processes.promptProcess?.pid) {
+    //   warn(data?.pid, data?.channel, data?.value);
+    //   const processInfo = processes.getByPid(data?.pid);
+    //   if (processInfo?.type === ProcessType.Prompt) {
+    //     const title = 'Script Message Failed';
+    //     const message = `${path.basename(
+    //       data?.kitScript
+    //     )} doesn't match ${path.basename(
+    //       processes.promptProcess?.scriptPath || ''
+    //     )}.\nUse //Background metadata for long-running processes.\nExiting...`;
+    //     warn(
+    //       `${data?.pid} doesn't match ${processes.promptProcess?.pid}`,
+    //       message
+    //     );
+
+    //     processes.removeByPid(data.pid);
+    //     runScript(
+    //       kitPath('cli', 'notify.js'),
+    //       '--title',
+    //       title,
+    //       '--message',
+    //       message
+    //     );
+
+    //     return;
+    //   }
+    // }
     if (!data.kitScript) log.info(data);
     if (![Channel.SET_PREVIEW, Channel.SET_LOADING].includes(data.channel)) {
       log.info(
-        `${data.channel} ${type} process ${data.kitScript.replace(
-          /.*\//gi,
-          ''
-        )} id: ${data.pid}`
+        `${data.channel === Channel.SET_SCRIPT ? `\n\n` : ``}${data.pid}: ${
+          data.channel
+        } ${type} process ${data.kitScript.replace(/.*\//gi, '')}`
       );
     }
 
@@ -481,7 +662,7 @@ export const createMessageHandler =
       ) => void;
       channelFn(data);
     } else {
-      log.warn(`Channel ${data?.channel} not found on ${type}.`);
+      warn(`Channel ${data?.channel} not found on ${type}.`);
     }
   };
 
@@ -533,8 +714,6 @@ const createChild = ({
   return child;
 };
 
-/* eslint-disable import/prefer-default-export */
-
 interface ProcessHandlers {
   onExit?: () => void;
   onError?: (error: Error) => void;
@@ -543,9 +722,11 @@ interface ProcessHandlers {
 }
 
 class Processes extends Array<ProcessInfo> {
-  public abandonnedProcesses: ProcessInfo[] = [];
+  public endCurrentPromptProcess() {
+    if (state.promptProcess?.pid) this.removeByPid(state.promptProcess?.pid);
+  }
 
-  public scriptPath = '';
+  public abandonnedProcesses: ProcessInfo[] = [];
 
   constructor(...args: ProcessInfo[]) {
     super(...args);
@@ -554,58 +735,12 @@ class Processes extends Array<ProcessInfo> {
       if (this.abandonnedProcesses.length) {
         log.info(
           `Still running:`,
-          this.abandonnedProcesses.length,
           this.abandonnedProcesses
             .filter(({ child }) => !child?.killed)
-            .map(({ pid, scriptPath }) => ({ pid, scriptPath }))
+            .map(({ pid, scriptPath }) => `${pid} ${scriptPath}`)
         );
       }
     }, 2000);
-  }
-
-  public hidePreviousPromptProcess(promptScriptPath: string) {
-    const previousPromptProcess = this.find(
-      (info) => info.type === ProcessType.Prompt && info.scriptPath
-    );
-
-    if (previousPromptProcess) {
-      this.removeByPid(previousPromptProcess.pid);
-    }
-
-    const same =
-      this.scriptPath === promptScriptPath &&
-      previousPromptProcess?.values.length === 0 &&
-      isFocused();
-
-    return same;
-  }
-
-  public endPreviousPromptProcess(promptScriptPath: string) {
-    const previousPromptProcess = this.find(
-      (info) => info.type === ProcessType.Prompt && info.scriptPath
-    );
-
-    if (previousPromptProcess) {
-      this.abandonByPid(previousPromptProcess.pid);
-    }
-
-    const same =
-      previousPromptProcess?.scriptPath === promptScriptPath &&
-      previousPromptProcess.values.length === 0;
-
-    return same;
-  }
-
-  public isSameScript(promptScriptPath: string) {
-    const previousPromptProcess = this.find(
-      (info) => info.type === ProcessType.Prompt && info.scriptPath
-    );
-
-    const same =
-      previousPromptProcess?.scriptPath === promptScriptPath &&
-      previousPromptProcess.values.length === 0;
-
-    return same;
   }
 
   public getAllProcessInfo() {
@@ -638,18 +773,19 @@ class Processes extends Array<ProcessInfo> {
     };
 
     this.push(info);
+    state.ps.push(info);
 
     if (scriptPath) {
-      log.info(`🟢 start ${type} ${scriptPath} id: ${child.pid}`);
+      log.info(`${child.pid}: 🟢 start ${type} ${scriptPath}`);
     } else {
-      log.info(`🟢 start idle ${type} id: ${child.pid}`);
+      log.info(`${child.pid}: 🟢 start idle ${type}`);
     }
 
     const id =
       ![ProcessType.Background, ProcessType.Prompt].includes(type) &&
       setTimeout(() => {
         log.info(
-          `> ${type} process: ${scriptPath} took > ${DEFAULT_TIMEOUT} seconds. Ending...`
+          `${child.pid}: ${type} process: ${scriptPath} took > ${DEFAULT_TIMEOUT} seconds. Ending...`
         );
         child?.kill();
       }, DEFAULT_TIMEOUT);
@@ -670,18 +806,19 @@ class Processes extends Array<ProcessInfo> {
       // log.info(`EXIT`, { pid, code });
       if (id) clearTimeout(id);
 
-      sendToPrompt(Channel.EXIT, pid);
+      if (child?.pid === state.promptProcess?.pid) {
+        sendToPrompt(Channel.EXIT, pid);
+      }
 
       const processInfo = processes.getByPid(pid) as ProcessInfo;
 
       if (!processInfo) return;
 
-      const { values } = processInfo;
       if (resolve) {
-        resolve(values);
+        resolve(processInfo?.values);
       }
       log.info(
-        `🟡 exit code ${code}. ${type} process: ${scriptPath} id: ${child.pid}`
+        `${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
       );
       processes.removeByPid(pid);
     });
@@ -693,13 +830,19 @@ class Processes extends Array<ProcessInfo> {
     return info;
   }
 
-  public async findPromptProcess(): Promise<ProcessInfo> {
+  public async findIdlePromptProcess(): Promise<ProcessInfo> {
     const promptProcess = this.find(
-      (processInfo) => processInfo.type === ProcessType.Prompt
+      (processInfo) =>
+        processInfo.type === ProcessType.Prompt &&
+        processInfo?.scriptPath === ''
     );
-    if (promptProcess) return promptProcess;
 
-    log.warn(`☠️ Can't find Prompt Process. Starting another`);
+    if (promptProcess) {
+      log.info(`Found:`, promptProcess.scriptPath);
+      return promptProcess;
+    }
+
+    warn(`🤔 Can't find idle Prompt Process. Starting another`);
     const newProcess = processes.add(ProcessType.Prompt);
     return new Promise((resolve, reject) => {
       setTimeout(() => {
@@ -715,21 +858,31 @@ class Processes extends Array<ProcessInfo> {
     );
 
     if (idleProcess?.pid) {
-      log.info(`Found idle ${idleProcess.pid}. Removing`);
+      log.info(`${idleProcess.pid}: Removing idle process`);
       this.removeByPid(idleProcess.pid);
     }
   }
 
   public getByPid(pid: number) {
-    return this.find((processInfo) => processInfo.pid === pid);
+    return [...this, ...this.abandonnedProcesses].find(
+      (processInfo) => processInfo.pid === pid
+    );
   }
 
   public removeByPid(pid: number) {
     const index = this.findIndex((info) => info.pid === pid);
     if (index === -1) return;
-
-    this[index]?.child?.removeAllListeners();
+    if (!this[index].child?.killed) {
+      this[index]?.child?.removeAllListeners();
+      this[index]?.child?.kill();
+      log.info(`${pid}: 🛑 removed`);
+      if (state.promptProcess?.pid === pid) {
+        hideAppIfNoWindows(state.promptProcess.scriptPath);
+      }
+    }
     this.splice(index, 1);
+
+    state.removeP(pid);
   }
 
   public killAbandonnedProcess(pid: number) {
@@ -737,7 +890,7 @@ class Processes extends Array<ProcessInfo> {
       (info) => info.pid === pid
     );
     if (!processInfo) {
-      log.info(`Can't find process with pid: ${pid}`);
+      log.info(`${pid}: Can't find abandonned process`);
       return;
     }
 
@@ -747,7 +900,7 @@ class Processes extends Array<ProcessInfo> {
 
       if (!child?.killed) {
         child?.kill();
-        log.info(`🛑 kill ${type} ${scriptPath || 'idle'} id: ${child.pid}`);
+        log.info(`${child.pid}: 🛑 kill ${type} ${scriptPath || 'idle'}`);
         const aIndex = this.abandonnedProcesses.findIndex(
           (info) => info.pid === pid
         );
@@ -762,23 +915,13 @@ class Processes extends Array<ProcessInfo> {
     this.removeByPid(pid);
 
     if (processInfo) {
+      log.info(`${processInfo.pid}: 👋 Abandonning ${processInfo.scriptPath}`);
+
       setTimeout(() => {
         this.killAbandonnedProcess(pid);
       }, 5000);
 
       this.abandonnedProcesses.push(processInfo);
-    }
-  }
-
-  public assignScriptToProcess(
-    scriptPath: ProcessInfo['scriptPath'],
-    pid: number
-  ) {
-    const index = this.findIndex((processInfo) => processInfo.pid === pid);
-    if (index !== -1) {
-      this[index] = { ...this[index], scriptPath };
-    } else {
-      log.warn(`⚠️ pid ${pid} not found. Can't run`, scriptPath);
     }
   }
 }

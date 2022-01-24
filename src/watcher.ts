@@ -34,27 +34,32 @@ export const cacheMenu = debounce(async () => {
 }, 150);
 
 const updateEventNames = ['add', 'change', 'unlink', 'ready'];
+
+const unlink = (filePath: string) => {
+  unlinkShortcuts(filePath);
+  cancelSchedule(filePath);
+  unlinkEvents(filePath);
+  removeWatch(filePath);
+  removeBackground(filePath);
+
+  const binPath = path.resolve(
+    path.dirname(path.dirname(filePath)),
+    'bin',
+    path
+      .basename(filePath)
+      .replace(new RegExp(`\\${path.extname(filePath)}$`), '')
+  );
+
+  if (existsSync(binPath)) rm(binPath);
+};
+
 const onScriptsChanged = async (
   event: 'add' | 'change' | 'unlink' | 'ready',
   filePath: string
 ) => {
   log.info(`${event}: ${filePath}`);
   if (event === 'unlink') {
-    unlinkShortcuts(filePath);
-    cancelSchedule(filePath);
-    unlinkEvents(filePath);
-    removeWatch(filePath);
-    removeBackground(filePath);
-
-    const binPath = path.resolve(
-      path.dirname(path.dirname(filePath)),
-      'bin',
-      path
-        .basename(filePath)
-        .replace(new RegExp(`\\${path.extname(filePath)}$`), '')
-    );
-
-    if (existsSync(binPath)) rm(binPath);
+    unlink(filePath);
   }
   if (event === 'add' || event === 'change') {
     const script = await parseScript(filePath);

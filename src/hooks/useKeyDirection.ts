@@ -20,6 +20,6 @@ export default (
       { leading: true, maxWait: 200 }
     ),
     hotkeysOptions,
-    [fn, deps, cmd]
+    [fn, ...deps, cmd]
   );
 };

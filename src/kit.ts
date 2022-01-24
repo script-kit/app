@@ -19,8 +19,8 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
-import { hideAppIfNoWindows, setPromptPid, setScript } from './prompt';
-import { getKitScript } from './state';
+import { isVisible, sendToPrompt, setPromptPid, setScript } from './prompt';
+import { getKitScript, isSameScript, state } from './state';
 
 app.on('second-instance', async (_event, argv) => {
   const { _ } = minimist(argv);
@@ -68,24 +68,33 @@ export const runPromptProcess = async (
   promptScriptPath: string,
   args: string[] = []
 ) => {
-  const same = processes.hidePreviousPromptProcess(promptScriptPath);
+  log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
-  if (same) {
-    hideAppIfNoWindows(promptScriptPath);
+  // Only abandon if prompt is open or something
+  sendToPrompt(Channel.START, promptScriptPath);
+  // const same = processes.hidePreviousPromptProcess(promptScriptPath);
+  // const same = processes.endPreviousPromptProcess(promptScriptPath);
+  const same = isSameScript(promptScriptPath);
+
+  if (same && isVisible()) {
+    // hideAppIfNoWindows(promptScriptPath);
     log.info(`Same shortcut pressed while process running. `);
     return;
   }
 
-  const { child, pid } = await processes.findPromptProcess();
-
+  const processInfo = await processes.findIdlePromptProcess();
+  const { pid, child } = processInfo;
   setPromptPid(pid);
 
   const script = await findScript(promptScriptPath);
   // log.info(script);
   await setScript(script);
 
-  log.info(`🏎 ${promptScriptPath} ${pid}`);
-  processes.assignScriptToProcess(promptScriptPath, pid);
+  log.info(`${pid}: 🏎 ${promptScriptPath} `);
+  processInfo.scriptPath = promptScriptPath;
+  state.promptProcess = processInfo;
+
+  // processes.assignScriptToProcess(promptScriptPath, pid);
 
   child?.send({
     channel: Channel.VALUE_SUBMITTED,
@@ -116,20 +125,26 @@ const forkOptions: ForkOptions = {
 };
 
 export const runScript = (...args: string[]) => {
+  log.info(`Run`, ...args);
+
   return new Promise((resolve, reject) => {
-    const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
+    try {
+      const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
 
-    child.on('message', (data) => {
-      const dataString = data.toString();
-      log.info(args[0], dataString);
-    });
+      child.on('message', (data) => {
+        const dataString = data.toString();
+        log.info(args[0], dataString);
+      });
 
-    child.on('exit', () => {
-      resolve('success');
-    });
+      child.on('exit', () => {
+        resolve('success');
+      });
 
-    child.on('error', (error: Error) => {
-      reject(error);
-    });
+      child.on('error', (error: Error) => {
+        reject(error);
+      });
+    } catch (error) {
+      log.warn(`Failed to run script ${args}`);
+    }
   });
 };

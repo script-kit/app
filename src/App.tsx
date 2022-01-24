@@ -88,8 +88,12 @@ import {
   _history,
   filterInputAtom,
   blurAtom,
-  shortcutPressedAtom,
+  startAtom,
   _logo,
+  getEditorHistoryAtom,
+  scoredChoices,
+  showTabsAtom,
+  showSelectedAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -144,6 +148,7 @@ export default function App() {
   const [, setSplashProgress] = useAtom(splashProgressAtom);
 
   const [, setUnfilteredChoices] = useAtom(unfilteredChoicesAtom);
+  const [choices] = useAtom(scoredChoices);
 
   const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
@@ -168,7 +173,8 @@ export default function App() {
   const [, setSubmitValue] = useAtom(submitValueAtom);
   const [flagValue] = useAtom(flagValueAtom);
   const [, setMouseEnabled] = useAtom(mouseEnabledAtom);
-  const [selected] = useAtom(selectedAtom);
+  const [showSelected] = useAtom(showSelectedAtom);
+  const [showTabs] = useAtom(showTabsAtom);
   const [, setTopRef] = useAtom(topRefAtom);
   const [, setDescription] = useAtom(_description);
   const [, setName] = useAtom(_name);
@@ -180,8 +186,10 @@ export default function App() {
   const [, setValueInvalid] = useAtom(valueInvalidAtom);
   const [, setFilterInput] = useAtom(filterInputAtom);
   const [, setBlur] = useAtom(blurAtom);
-  const [, shortcutPressed] = useAtom(shortcutPressedAtom);
+  const [, start] = useAtom(startAtom);
   const [, setLogo] = useAtom(_logo);
+  const [getEditorHistory] = useAtom(getEditorHistoryAtom);
+  const [appConfig] = useAtom(appConfigAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -240,7 +248,8 @@ export default function App() {
     [Channel.SET_SPLASH_PROGRESS]: setSplashProgress,
     [Channel.SET_THEME]: setTheme,
     [Channel.VALUE_INVALID]: setValueInvalid,
-    [Channel.SHORTCUT_PRESSED]: shortcutPressed,
+    [Channel.START]: start,
+    [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -344,26 +353,25 @@ export default function App() {
         <header ref={headerRef} className="relative z-10">
           <Header />
           <AnimatePresence key="headerCompenents">
-            {!!(ui & UI.hotkey) && (
+            {ui === UI.hotkey && (
               <Hotkey
                 key="AppHotkey"
                 submit={setSubmitValue}
                 onHotkeyHeightChanged={setMainHeight}
               />
             )}
-            {!!(ui & UI.arg) && <Input key="AppInput" />}
+            {ui === UI.arg && <Input key="AppInput" />}
 
             {hint && <Hint key="AppHint" />}
-            <div className="max-h-5.5">
-              {!!(ui & (UI.arg | UI.div)) && tabs?.length > 0 && !flagValue && (
-                <Tabs key="AppTabs" />
-              )}
-              {!!(ui & (UI.arg | UI.hotkey)) && selected && (
-                <Selected key="AppSelected" />
-              )}
-            </div>
             {logHtml?.length > 0 && script?.log !== 'false' && (
               <Log key="AppLog" />
+            )}
+
+            {(showTabs || showSelected) && (
+              <div className="max-h-5.5">
+                {showTabs && <Tabs key="AppTabs" />}
+                {showSelected && <Selected key="AppSelected" />}
+              </div>
             )}
           </AnimatePresence>
         </header>
@@ -376,25 +384,26 @@ export default function App() {
         `}
         >
           <AnimatePresence key="mainComponents">
-            {isSplash && <Splash />}
-            {!!(ui & UI.drop) && <Drop />}
-            {!!(ui & UI.textarea) && <TextArea />}
-            {!!(ui & UI.editor) && <Editor />}
-            {!!(ui & UI.form) && <Form />}
+            {ui === UI.splash && <Splash />}
+            {ui === UI.drop && <Drop />}
+            {ui === UI.textarea && <TextArea />}
+            {ui === UI.editor && <Editor />}
+            {ui === UI.form && <Form />}
           </AnimatePresence>
           <AutoSizer>
             {({ width, height }) => (
               <>
-                {!!(ui & (UI.arg | UI.hotkey | UI.div)) && panelHTML && (
-                  <>
-                    <Panel width={width} height={height} />
-                  </>
-                )}
-                {!!(ui & UI.arg) && !panelHTML && (
+                {(ui === UI.arg && choices.length > 0 && (
                   <>
                     <List height={height} width={width} />
                   </>
-                )}
+                )) ||
+                  (!!(ui & (UI.arg | UI.hotkey | UI.div)) &&
+                    panelHTML.length > 0 && (
+                      <>
+                        <Panel width={width} height={height} />
+                      </>
+                    ))}
               </>
             )}
           </AutoSizer>

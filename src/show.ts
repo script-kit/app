@@ -4,6 +4,7 @@ import {
   BrowserWindow,
   BrowserWindowConstructorOptions,
   screen,
+  nativeTheme,
 } from 'electron';
 import os from 'os';
 import log from 'electron-log';
@@ -11,11 +12,14 @@ import { ensureDir } from 'fs-extra';
 import path from 'path';
 import { writeFile, mkdir } from 'fs/promises';
 import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
+import { ShowOptions } from '@johnlindquist/kit/types/kitapp';
+
 import { getAssetPath } from './assets';
+import { darkTheme, lightTheme } from './components/themes';
 
 export const INSTALL_ERROR = 'install-error';
 
-const page = (body: string, options: BrowserWindowConstructorOptions) => {
+const page = (body: string, options: ShowOptions) => {
   const isMac = os.platform() === 'darwin';
 
   const baseURL = app.getAppPath().replace('\\', '/');
@@ -27,16 +31,43 @@ const page = (body: string, options: BrowserWindowConstructorOptions) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="${stylePath}">
-    ${
-      options?.transparent
-        ? `<style>
-    body{
-      background-color: rgba(0, 0, 0, 0) !important;
-    }
-    </style>`
-        : ``
-    }
+    <style>
+      body {
+        ${
+          options?.transparent
+            ? `
+          background-color: rgba(0, 0, 0, 0) !important;`
+            : ``
+        }
+
+        ${
+          options?.draggable
+            ? `
+            -webkit-user-select: none;
+            -webkit-app-region: drag;
+        `
+            : ``
+        }
+
+        pointer-events: none
+      }
+
+      * {pointer-events: all;}
+      .draggable {-webkit-app-region: drag;}
+    </style>
+
+
+
+    <style>
+    ${nativeTheme.shouldUseDarkColors ? darkTheme : lightTheme}
+    </style>
     <script>
+
+    window.addEventListener('load', () => {
+      let minWidth = document.body.firstElementChild.offsetWidth + 'px'
+      document.body.firstElementChild.style.display = "inline-block"
+      document.body.style.minWidth = minWidth;
+    })
 
     const {ipcRenderer} = require("electron")
 
@@ -45,6 +76,30 @@ const page = (body: string, options: BrowserWindowConstructorOptions) => {
       if(message) document.querySelector(".message").innerHTML = message
       if(typeof spinner === "boolean") document.querySelector(".spinner").classList[spinner ? "remove" : "add"]("hidden")
     })
+
+    let cw = 0
+    let ch = 0
+    let resize = ()=>  setTimeout(()=> {
+      let width =  Math.ceil(document.body.firstElementChild.offsetWidth)
+      let height =  Math.ceil(document.body.firstElementChild.offsetHeight)
+
+      if(width === cw && height === ch) return
+      cw = width
+      ch = height
+
+
+      ipcRenderer.send("WIDGET_RESIZE", {
+        width,
+        height
+      })
+    }, 500)
+
+    ipcRenderer.on('UPDATE_WIDGET', (event, {html})=> {
+      document.body.innerHTML = html
+      resize()
+    })
+
+    resize()
 
     ${
       isMac
@@ -57,8 +112,59 @@ const page = (body: string, options: BrowserWindowConstructorOptions) => {
     </script>
 </head>
     ${body}
+    <script>
+
+    document.addEventListener("click", (event) => {
+      console.log(window.id, event.target)
+      ipcRenderer.send("WIDGET_CLICK", {
+        targetId: event.target.id,
+        windowId: window.id
+      })
+    })
+
+
+    document.addEventListener("input", (event) => {
+      ipcRenderer.send("WIDGET_INPUT", {
+        targetId: event.target.id,
+        windowId: window.id,
+        value: event.target.value
+      })
+    })
+
+    // const myObserver = new ResizeObserver(entries => {
+    //   entries.forEach(entry => {
+    //     console.log('width', entry.contentRect.width);
+    //     console.log('height', entry.contentRect.height);
+
+    //     ipcRenderer.send("WIDGET_RESIZE", {
+    //       width: Math.round(entry.contentRect.width),
+    //       height: Math.round(entry.contentRect.height)
+    //     })
+    //   });
+    // });
+
+
+    // myObserver.observe(document.body.firstElementChild);
+
+    </script>
 </html>`;
 };
+
+// let t
+
+// let setIgnoreMouseEvents = (bool)=> {
+//   ipcRenderer.send("WIDGET_IGNORE_MOUSE", bool)
+// }
+
+// window.addEventListener('mousemove', event => {
+//   if (event.target === document.documentElement) {
+//     setIgnoreMouseEvents(true)
+//     if (t) clearTimeout(t)
+//     t = setTimeout(function() {
+//       setIgnoreMouseEvents(false)
+//     }, 150)
+//   } else setIgnoreMouseEvents(false)
+// })
 
 const devTools = () => {
   return `<!DOCTYPE html>
@@ -159,10 +265,6 @@ export const showDevTools = async (value: any) => {
   });
 };
 
-type ShowOptions = BrowserWindowConstructorOptions & {
-  ttl?: number;
-};
-
 export const show = async (
   name: string,
   html: string,
@@ -194,8 +296,8 @@ export const show = async (
   showWindow?.webContents.on('before-input-event', (event: any, input) => {
     if (input.key === 'Escape') {
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      showWindow.destroy();
       if (name === INSTALL_ERROR) {
+        showWindow.destroy();
         app.removeAllListeners('window-all-closed');
         const browserWindows = BrowserWindow.getAllWindows();
         browserWindows.forEach((browserWindow) => {

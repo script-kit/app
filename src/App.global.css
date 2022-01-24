@@ -1,6 +1,6 @@
 @import 'jetbrains-mono';
-@import '../node_modules/@vscode/codicons/dist/codicon.css';
-@import '../node_modules/simplebar-react/dist/simplebar.min.css';
+@import 'simplebar/dist/simplebar.min.css';
+
 /* @import '../node_modules/highlight.js/styles/solarized-light.css'; */
 /* .hljs {
   background: rgba(0, 0, 0, 0.2);
@@ -22,6 +22,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* * {
+  outline: red solid 1px;
+} */
 
 img:before {
   content: ' ';
@@ -291,9 +295,23 @@ body {
     width: 100%;
   }
 
+  .prose code::before {
+    content: '';
+  }
+  .prose code::after {
+    content: '';
+  }
+
   .prose > ul,
   ol {
     @apply ml-0;
+  }
+
+  .prose a {
+    @apply block;
+    @apply w-full;
+    @apply whitespace-pre-wrap;
+    @apply break-words;
   }
 
   p {

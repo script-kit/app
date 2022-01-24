@@ -29,10 +29,10 @@ import {
 import { editor } from 'monaco-editor';
 import { Monaco } from '@monaco-editor/react';
 
-import _, { clamp, debounce, drop, get, isEqual } from 'lodash';
+import { clamp, debounce, drop, get, isEqual } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
-import { ResizeData, ScoredChoice } from './types';
+import { ResizeData, ScoredChoice, Survey } from './types';
 import { BUTTON_HEIGHT, noChoice, noScript, SPLASH_PATH } from './defaults';
 
 let placeholderTimeoutId: NodeJS.Timeout;
@@ -92,24 +92,24 @@ function scorer(string: string, query: string, matches: number[][]) {
   // avoid regex being passed in
   // console.log(`scorer: ${string} ${query}`);
   // if (!containsSpecialCharacters(query)) {
-  // try {
-  //   const r = new RegExp(query, 'i');
-  //   const match = string.match(r);
+  try {
+    const r = new RegExp(query, 'i');
+    const match = string.match(r);
 
-  //   if (match) {
-  //     const index = match?.index || 0;
-  //     // const first = index === 0;
-  //     const start = index;
-  //     const length = match[0]?.length;
-  //     const ms = [start, start + length];
-  //     matches.push(ms);
-  //     return 1 - start / 100;
-  //   }
-  // } catch (error) {
-  //   return [];
-  // }
+    if (match) {
+      const index = match?.index || 0;
+      // const first = index === 0;
+      const start = index;
+      const length = match[0]?.length;
+      const ms = [start, start + length];
+      matches.push(ms);
+      return 1 - start / 100;
+    }
+  } catch (error) {
+    return [];
+  }
 
-  // if (containsSpecialCharacters(query)) return [];
+  if (containsSpecialCharacters(query)) return [];
 
   return quickScore(
     string,
@@ -144,10 +144,9 @@ export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[]) => {
     s(choicesIdAtom, Math.random());
-    s(panelHTML, ``);
 
     s(unfilteredChoices, a);
-    console.log('choices', a);
+
     if (a?.length === 0) {
       s(scoredChoices, []);
     }
@@ -252,12 +251,11 @@ export const modeAtom = atom<Mode>(Mode.FILTER);
 
 const panelHTML = atom<string>('');
 export const panelHTMLAtom = atom(
-  (g) => g(panelHTML) || g(promptData)?.panel,
+  (g) => g(panelHTML),
   (g, s, a: string) => {
     if (g(panelHTMLAtom) === a) return;
     // if (a) s(unfilteredChoicesAtom, []);
     s(panelHTML, a);
-
     s(loadingAtom, false);
   }
 );
@@ -430,6 +428,7 @@ export const focusedChoiceAtom = atom(
 
       const channel = g(channelAtom);
       channel(Channel.CHOICE_FOCUSED);
+      // resize(g, s);
     }
   }
 );
@@ -442,8 +441,6 @@ export const hasPreviewAtom = atom<boolean>((g) => {
 });
 
 const prevChoiceId = atom<string>('');
-
-export const hasChoices = atom<boolean>(false);
 
 export const scoredChoices = atom(
   (g) => g(choices),
@@ -462,13 +459,13 @@ export const scoredChoices = atom(
         s(focusedChoiceAtom, a[0]?.item);
       }
 
-      channel(Channel.CHOICES);
-      s(hasChoices, true);
+      // channel(Channel.CHOICES);
+      s(panelHTMLAtom, ``);
+      resize(g, s);
     } else {
       s(focusedChoiceAtom, null);
       if (isFilter) {
         channel(Channel.NO_CHOICES);
-        s(hasChoices, false);
       }
     }
     if (a.length) s(mainHeightAtom, a.length * BUTTON_HEIGHT);
@@ -595,7 +592,6 @@ const _script = atom<Script>(noScript);
 export const scriptAtom = atom(
   (g) => g(_script),
   (g, s, a: Script) => {
-    s(_inputChangedAtom, false);
     const history = g(_history);
     s(_history, [...history, a]);
     // console.clear();
@@ -605,7 +601,7 @@ export const scriptAtom = atom(
 
     s(mouseEnabledAtom, 0);
     s(_script, a);
-    s(_input, '');
+    // s(_input, '');
     // s(unfilteredChoicesAtom, []);
     s(ultraShortCodesAtom, []);
     // s(choices, []);
@@ -658,16 +654,25 @@ const mainHeight = atom(0);
 const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter) => {
-  if (!g(resizeEnabledAtom)) return;
+  // if (!g(resizeEnabledAtom)) return;
+
+  const placeholderOnly = Boolean(g(promptDataAtom)?.placeholderOnly);
+  const hasPanel = Boolean(g(panelHTMLAtom)?.length);
+
+  console.log({
+    hasPanel,
+    panel: g(panelHTMLAtom),
+    choices: g(choices)?.length,
+  });
 
   const data: ResizeData = {
     scriptPath: g(_script)?.filePath,
+    placeholderOnly,
     topHeight: g(topHeight),
     ui: g(uiAtom),
-    mainHeight: g(uiAtom) === UI.hotkey ? 0 : g(mainHeight),
+    mainHeight: g(uiAtom) === UI.hotkey || placeholderOnly ? 0 : g(mainHeight),
     mode: g(modeAtom),
-    hasChoices: g(hasChoices),
-    hasPanel: Boolean(g(panelHTMLAtom)?.length),
+    hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
     previewEnabled: g(previewEnabled),
     open: g(rawOpen),
@@ -681,7 +686,7 @@ const resize = (g: Getter, s: Setter) => {
   // const prevData = g(resizeData);
   s(resizeData, data);
 
-  console.log(`Before resize:`, data);
+  // console.log(`Before resize:`, data);
   // if (JSON.stringify(prevData) === JSON.stringify(data)) {
   //   return;
   // }
@@ -738,6 +743,17 @@ export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     s(promptId, Math.random());
+
+    const prevPromptData = g(promptData);
+
+    if (prevPromptData?.ui === UI.editor && g(_inputChangedAtom)) {
+      const prevInput = g(_input);
+      // console.log(`prevInput:`, prevInput);
+      s(editorHistoryPush, prevInput);
+    }
+
+    s(_inputChangedAtom, false);
+
     if (a) {
       s(rawOpen, true);
       s(_input, '');
@@ -836,7 +852,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     value: g(_submitValue),
   };
 
-  console.log(`state`, new Date());
+  // console.log(`state`, new Date());
 
   return state;
 });
@@ -845,6 +861,7 @@ export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
   const state = g(appStateAtom);
   const pid = g(pidAtom);
 
+  if (!pid) return;
   const appMessage: AppMessage = {
     channel,
     pid,
@@ -898,6 +915,7 @@ export const submitValueAtom = atom(
     s(submittedAtom, true);
     // s(indexAtom, 0);
 
+    if (fValue) s(inputAtom, '');
     s(_flagged, ''); // clear after getting
     s(_flag, '');
     s(previewHTML, ``);
@@ -920,8 +938,8 @@ export const openAtom = atom(
 
       // s(choices, []);
       // s(tabIndex, 0);
-      s(_input, '');
-      // s(panelHTMLAtom, '');
+      // s(_input, '');
+      s(panelHTMLAtom, '');
       s(formHTMLAtom, '');
       // s(hintAtom, '');
       s(logHTMLAtom, '');
@@ -943,9 +961,9 @@ export const openAtom = atom(
   }
 );
 
-export const escapeAtom = atom(
-  null,
-  debounce((g, s) => {
+export const escapeAtom = atom<any>((g) => {
+  return debounce(() => {
+    const channel = g(channelAtom);
     // const history = g(scriptHistoryAtom).slice();
     // s(scriptHistoryAtom, []);
 
@@ -956,11 +974,11 @@ export const escapeAtom = atom(
     // ) {
     //   ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
     // } else {
-    const channel = g(channelAtom);
+
     channel(Channel.ESCAPE);
     // }
-  }, 50)
-);
+  }, 10);
+});
 
 export const selectionStartAtom = atom(0);
 export const isMouseDownAtom = atom(false);
@@ -986,7 +1004,7 @@ export const themeAtom = atom(
   (g) => g(theme),
   (g, s, a: { [key: string]: string }) => {
     Object.entries(a).forEach(([key, value]) => {
-      console.log(`Set theme ${key} to ${value}`);
+      // console.log(`Set theme ${key} to ${value}`);
       document.documentElement.style.setProperty(key, value);
     });
 
@@ -1009,7 +1027,14 @@ export const modifiers = [
   'SymbolLock',
 ];
 export const _modifiers = atom<string[]>([]);
-export const inputFocusAtom = atom<boolean>(true);
+const inputFocus = atom<boolean>(true);
+export const inputFocusAtom = atom(
+  (g) => g(inputFocus),
+  (g, s, a: boolean) => {
+    ipcRenderer.send(AppChannel.FOCUS_PROMPT);
+    s(inputFocus, a);
+  }
+);
 
 const previewEnabled = atom<boolean>(true);
 export const previewEnabledAtom = atom(
@@ -1100,12 +1125,52 @@ export const filterInputAtom = atom<string>(``);
 export const blurAtom = atom(null, (g, s, a: boolean) => {
   if (g(openAtom)) {
     const channel = g(channelAtom);
-    channel(Channel.PROMPT_BLURRED);
+    channel(Channel.BLUR);
   }
 });
 
-// First Phase. Initialize State.
-export const shortcutPressedAtom = atom(null, (g, s, a: string) => {
-  console.log(`Shortcut pressed: ${a}`);
+export const startAtom = atom(null, (g, s, a: string) => {
+  console.log(`🎬 Start ${a}`);
+  const history = g(_history);
+  if (history.length > 0 || g(scriptAtom).filePath === a) {
+    const channel = g(channelAtom);
+    channel(Channel.ABANDON);
+  }
+
   s(_history, []);
+});
+
+export const editorHistory = atom<{ content: string; timestamp: string }[]>([]);
+export const editorHistoryPush = atom(null, (g, s, a: string) => {
+  const history = g(editorHistory);
+  const updatedHistory = [
+    {
+      content: a,
+      timestamp: new Date().toISOString(),
+    },
+    ...history,
+  ];
+  if (updatedHistory.length > 30) updatedHistory.shift();
+  s(editorHistory, updatedHistory);
+});
+
+export const getEditorHistoryAtom = atom((g) => () => {
+  const channel = g(channelAtom);
+  channel(Channel.GET_EDITOR_HISTORY, { editorHistory: g(editorHistory) });
+});
+
+export const submitSurveyAtom = atom(null, (g, s, a: Survey) => {
+  ipcRenderer.send(AppChannel.FEEDBACK, a);
+});
+
+export const showTabsAtom = atom((g) => {
+  return (
+    !!(g(uiAtom) & (UI.arg | UI.div)) &&
+    g(_tabs)?.length > 0 &&
+    !g(flagValueAtom)
+  );
+});
+
+export const showSelectedAtom = atom((g) => {
+  return !!(g(uiAtom) & (UI.arg | UI.hotkey)) && g(selectedAtom);
 });

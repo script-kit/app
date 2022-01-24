@@ -15,8 +15,6 @@ import { focusPrompt, sendToPrompt } from './prompt';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
   const success = globalShortcut.register(shortcut, async () => {
-    log.info(`🏃‍♀️ Run ${filePath}`);
-    sendToPrompt(Channel.SHORTCUT_PRESSED, filePath);
     runPromptProcess(filePath);
     focusPrompt();
   });
@@ -86,14 +84,13 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       const ret = globalShortcut.register(shortcut, async () => {
-        log.info(`🏚 main shortcut`);
-        sendToPrompt(Channel.SHORTCUT_PRESSED, mainScriptPath);
+        log.info(`🏚  main shortcut`);
 
         await runPromptProcess(mainScriptPath);
       });
 
       if (!ret) {
-        log.info(`Failed to register: ${shortcut} to ${mainScriptPath}`);
+        log.warn(`Failed to register: ${shortcut} to ${mainScriptPath}`);
       }
 
       if (ret && globalShortcut.isRegistered(shortcut)) {

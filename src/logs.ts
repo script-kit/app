@@ -9,6 +9,8 @@ import {
   commandFromFilePath,
   kenvFromFilePath,
 } from '@johnlindquist/kit/cjs/utils';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { sendToPrompt } from './prompt';
 
 export const consoleLog = log.create('consoleLog');
 consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
@@ -80,4 +82,9 @@ export const getLog = (id: string): Logger => {
       clear: () => {},
     };
   }
+};
+
+export const warn = (message: string) => {
+  sendToPrompt(Channel.CONSOLE_WARN, message);
+  log.warn(message);
 };

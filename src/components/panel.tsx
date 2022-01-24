@@ -30,12 +30,15 @@ export default function Panel({ width, height }: PanelProps) {
 
   const divRef = useObserveMainHeight<HTMLDivElement>();
 
-  useKeyDirection((key) => {
-    scrollRef.current.scrollBy({
-      top: key === 'up' ? -200 : 200,
-      behavior: 'smooth',
-    });
-  }, []);
+  useKeyDirection(
+    (key) => {
+      scrollRef.current.scrollBy({
+        top: key === 'up' ? -200 : 200,
+        behavior: 'smooth',
+      });
+    },
+    [scrollRef?.current]
+  );
 
   return (
     <SimpleBar
@@ -45,6 +48,7 @@ export default function Panel({ width, height }: PanelProps) {
           cursor: mouseEnabled ? 'auto' : 'none',
           width,
           height,
+          maxHeight: height,
           WebkitAppRegion: 'no-drag',
           WebkitUserSelect: 'text',
         } as any

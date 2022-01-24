@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import path from 'path';
 import { useAtom } from 'jotai';
-import MonacoEditor, { loader, Monaco } from '@monaco-editor/react';
+import MonacoEditor, { Monaco, loader } from '@monaco-editor/react';
 import { motion } from 'framer-motion';
 
 import { editor as monacoEditor } from 'monaco-editor';
@@ -34,11 +34,21 @@ function uriFromPath(_path: string) {
   return encodeURI(`file://${ensureFirstBackSlash(pathName)}`);
 }
 
+const vs = uriFromPath(path.join(__dirname, '../assets/vs'));
+
 loader.config({
   paths: {
-    vs: uriFromPath(path.join(__dirname, '../assets/vs')),
+    vs,
   },
 });
+
+// loader.config({
+//   paths: {
+//     vs: uriFromPath(
+//       path.join(__dirname, '../node_modules/monaco-editor/min/vs')
+//     ),
+//   },
+// });
 
 const DEFAULT_OPTIONS: monacoEditor.IStandaloneEditorConstructionOptions = {
   fontFamily: 'JetBrains Mono',
@@ -110,6 +120,8 @@ export default function Editor() {
   const onMount = useCallback(
     (editorInstance: monacoEditor.IStandaloneCodeEditor) => {
       setEditor(editorInstance);
+
+      editorInstance.focus();
     },
     [setEditor]
   );
@@ -119,7 +131,7 @@ export default function Editor() {
   }, []);
 
   useEffect(() => {
-    if (!!(ui & UI.editor) && open) {
+    if (ui === UI.editor && open) {
       if (options?.value) {
         setInputValue(options.value);
       }

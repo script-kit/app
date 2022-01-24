@@ -198,7 +198,7 @@ export default function ChoiceButton({
         })
       ) : (
         <div className="flex flex-row items-center justify-between w-full h-full">
-          <div className="flex flex-row overflow-x-hidden">
+          <div className="flex flex-row overflow-x-hidden items-center h-full">
             {/* Img */}
             {choice?.img && !imageFail && (
               <motion.img
@@ -209,8 +209,8 @@ export default function ChoiceButton({
                 alt={choice.description || ''}
                 onError={() => setImageFail(true)}
                 className={`
-                h-8 rounded
-                pr-4
+                h-12 rounded
+                mr-2
                 ${index === currentIndex ? `opacity-100` : `opacity-80`}
                 `}
               />
@@ -221,7 +221,7 @@ export default function ChoiceButton({
                 {highlight(
                   choice.name,
                   scoredChoice?.matches?.name,
-                  'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-15 text-primary-dark dark:text-primary-light'
+                  'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-5 text-primary-dark dark:text-primary-light'
                 )}
               </div>
               {/* Description */}

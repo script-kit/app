@@ -378,7 +378,8 @@
     "source-map-support": "^0.5.19",
     "tailwind-override": "^0.0.10",
     "tar": "^6.1.11",
-    "unzipper": "^0.10.11"
+    "unzipper": "^0.10.11",
+    "valtio": "^1.2.9"
   },
   "engines": {
     "node": ">=14.17.0"

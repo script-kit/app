@@ -14,7 +14,7 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
-import { app, protocol, powerMonitor, session, shell } from 'electron';
+import { app, protocol, powerMonitor, shell } from 'electron';
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
@@ -36,12 +36,11 @@ import {
   spawnSync,
   SpawnSyncOptions,
   SpawnSyncReturns,
-  spawn,
   ForkOptions,
 } from 'child_process';
 import os from 'os';
 import { ensureDir } from 'fs-extra';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 import {
   chmod,
   lstat,
@@ -82,6 +81,7 @@ import {
   setPromptData,
   setPromptPid,
   setScript,
+  focusPrompt,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -93,7 +93,7 @@ import { processes } from './process';
 import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
 import { showError } from './main.dev.templates';
-import { scheduleScriptChanged } from './schedule';
+import { scheduleDownloads, sleepSchedule } from './schedule';
 import { maybeSetLogin } from './settings';
 import { SPLASH_PATH } from './defaults';
 
@@ -120,12 +120,6 @@ Node version: ${nodeVersion}
 `);
 
 const KIT = kitPath();
-
-powerMonitor.on('resume', async () => {
-  setTimeout(async () => {
-    await checkForUpdates();
-  }, 5000);
-});
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -336,6 +330,25 @@ const ensureKenvDirs = async () => {
   await ensureDir(kenvPath('assets'));
 };
 
+const systemEvents = () => {
+  powerMonitor.addListener('suspend', async () => {
+    log.info(`😴 System suspending. Removing watchers.`);
+    await teardownWatchers();
+    sleepSchedule();
+  });
+
+  powerMonitor.addListener('resume', async () => {
+    log.info(`🌄 System waking. Starting watchers.`);
+    await setupWatchers();
+
+    setTimeout(async () => {
+      log.info(`Resume tasks`);
+      scheduleDownloads();
+      checkForUpdates();
+    }, 5000);
+  });
+};
+
 const ready = async () => {
   try {
     await ensureKitDirs();
@@ -369,28 +382,8 @@ const ready = async () => {
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);
 
-    optionalSetupScript(`./setup/downloads.js`);
-
-    const downloads = kitPath('setup', 'downloads.js');
-    scheduleScriptChanged({
-      name: 'downloads',
-      command: 'downloads',
-      filePath: downloads,
-      id: downloads,
-      type: ProcessType.Schedule,
-      kenv: '.kit',
-      schedule: '0 11 * * *',
-    });
-
-    powerMonitor.addListener('suspend', async () => {
-      log.info(`😴 System suspending. Removing watchers.`);
-      await teardownWatchers();
-    });
-
-    powerMonitor.addListener('resume', async () => {
-      log.info(`🌄 System waking. Starting watchers.`);
-      await setupWatchers();
-    });
+    scheduleDownloads();
+    systemEvents();
 
     log.info(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {
@@ -645,6 +638,10 @@ const checkKit = async () => {
       ui: UI.splash,
     } as PromptData);
     sendSplashBody(`Starting up...`);
+
+    setTimeout(() => {
+      focusPrompt();
+    }, 500);
   };
 
   if (process.env.NODE_ENV === 'development') {
