@@ -32,6 +32,7 @@ export default () => {
   useHotkeys(
     'escape',
     (event) => {
+      console.log(`useEscape`, { flagValue, isReady, ui: ui === UI.splash });
       event.preventDefault();
       if (flagValue) {
         setFlagValue('');

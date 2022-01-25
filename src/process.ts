@@ -12,6 +12,7 @@ import {
   ipcMain,
   IpcMainEvent,
 } from 'electron';
+import os from 'os';
 import { setTimeout } from 'timers';
 
 import { subscribe } from 'valtio';
@@ -708,6 +709,7 @@ const createChild = ({
     silent: false,
     // stdio: 'inherit',
     // execPath,
+    cwd: os.homedir(),
     env,
   });
 

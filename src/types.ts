@@ -50,4 +50,6 @@ export interface Survey {
   email: string;
   question: string;
   response: string;
+  subscribe: boolean;
+  contact: boolean;
 }

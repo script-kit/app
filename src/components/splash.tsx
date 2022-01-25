@@ -4,7 +4,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { useAtom } from 'jotai';
-import { sample } from 'lodash';
 import {
   appConfigAtom,
   getAssetAtom,
@@ -16,13 +15,12 @@ import {
 } from '../jotai';
 import { useEscape } from '../hooks';
 
-const questions = [
-  `What problem should Script Kit will solve for you?`,
-  `What's the most repetitive task of your workday?`,
-  `What's something you've want to write a script for?`,
-  `What's your idea of the perfect developer tool?`,
-  `What's stopped you from writing scripts in the past?`,
-];
+// const questions = [
+//   `What problem should Script Kit will solve for you?`,
+//   `What's something you'ven want to write a script for?`,
+//   `What's your idea of the perfect developer tool?`,
+//   `What's stopped you from writing scripts in the past?`,
+// ];
 
 const Spinner = () => (
   <svg
@@ -90,6 +88,8 @@ function Aside() {
         </h1>
         <h3 className="font-normal text-sm opacity-70 text-center leading-tight">
           {header}
+        </h3>
+        <h3 className="font-normal text-sm opacity-70 text-center leading-tight">
           {body}
         </h3>
         {progress === 100 && (
@@ -139,41 +139,53 @@ export default function Splash() {
   useEscape();
   const [isSubmitted, setSubmitted] = React.useState<boolean>(false);
   const [isSubmitting, setSubmitting] = React.useState<boolean>(false);
-  const [response, setAnswer] = React.useState<string>('');
+  const [response, setResponse] = React.useState<string>('');
   const [email, setEmail] = React.useState<string>('');
   const [question, setQuestion] = useState<string>('');
-  const [hasEmail, setHasEmail] = useState(false);
-  const questionRef = useRef();
-  const emailRef = useRef();
+  const [subscribe, setSubscribe] = useState(false);
+  const [contact, setContact] = useState(false);
+  const questionRef = useRef<HTMLTextAreaElement>();
+  const emailRef = useRef<HTMLInputElement>();
 
   useEffect(() => {
-    setQuestion(`Subscribe to the Script Kit Newsletter`);
-    console.log(emailRef);
-    if (emailRef?.current) {
-      emailRef?.current?.focus();
-      console.log('focus');
-      console.log(document.activeElement);
+    setQuestion(`What kind of script do you want to write?`);
+    if (questionRef?.current) {
+      questionRef?.current?.focus();
+    } else {
+      setTimeout(() => {
+        questionRef?.current?.focus();
+      }, 250);
     }
-  }, [emailRef]);
+  }, [questionRef, questionRef?.current]);
 
   const handleOnSubmit = useCallback(() => {
     submitSurvey({
       question,
       response,
       email,
+      subscribe,
+      contact,
     });
     // submitting
     setSubmitting(true);
     // done
     return setTimeout(() => {
-      setHasEmail(true);
       setSubmitting(false);
       setSubmitted(true);
-      setAnswer('');
-      setQuestion(sample(questions) as string);
+      setResponse('');
+      questionRef?.current?.focus();
+
       // questionRef?.current?.focus();
     }, 1000);
-  }, [response, email, question, questionRef, isSubmitting, isSubmitted]);
+  }, [
+    response,
+    email,
+    question,
+    questionRef,
+    questionRef?.current,
+    isSubmitting,
+    isSubmitted,
+  ]);
 
   const controls = useAnimation();
 
@@ -194,15 +206,6 @@ export default function Splash() {
       clearTimeout(timer);
     };
   }, [isSubmitted]);
-
-  const onMaybeEnter = useCallback(
-    (e) => {
-      if (e.key === 'Enter' && isSubmitted) {
-        handleOnSubmit();
-      }
-    },
-    [isSubmitted, response, email, question, isSubmitting]
-  );
 
   return (
     <motion.div
@@ -225,10 +228,53 @@ export default function Splash() {
               <p className="font-semibold">{question}</p>
             </legend>
             <div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 flex flex-col">
-              {!hasEmail ? (
-                <div className="relative flex items-center border-t border-white border-opacity-10">
+              <textarea
+                ref={questionRef}
+                value={response}
+                // onKeyDown={onMaybeEnter}
+                onChange={(e) => {
+                  setResponse(e.currentTarget.value);
+                }}
+                id="answer"
+                required
+                placeholder={
+                  isSubmitted
+                    ? 'What else would you like to see in a script?'
+                    : 'Type your script idea here...'
+                }
+                className="text-lg w-full rounded-t-md border-none bg-transparent px-5 py-3"
+                rows={5}
+              />
+            </div>
+            {!isSubmitted && (
+              <div>
+                <div className="flex flex-row items-center">
+                  <div className="relative flex items-center border-t border-white border-opacity-10">
+                    <input
+                      type="checkbox"
+                      checked={subscribe}
+                      onChange={(e) => setSubscribe(Boolean(!subscribe))}
+                      id="subscribe"
+                    />
+                    <label htmlFor="subscribe" className="pl-2">
+                      Contact me to help automate this
+                    </label>
+                  </div>
+                </div>
+                <div className="flex flex-row items-center">
+                  <input
+                    type="checkbox"
+                    checked={contact}
+                    onChange={(e) => setContact(Boolean(!contact))}
+                    id="contact"
+                  />
+                  <label htmlFor="contact" className="pl-2">
+                    Receive Script Kit Tips, Tricks, and News
+                  </label>
+                </div>
+                <div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 my-3">
                   <label className="px-5 py-3 absolute" htmlFor="email">
-                    From:
+                    Email:
                   </label>
                   <input
                     ref={emailRef}
@@ -239,22 +285,8 @@ export default function Splash() {
                     placeholder="you@company.com"
                   />
                 </div>
-              ) : (
-                <textarea
-                  ref={questionRef}
-                  value={response}
-                  onKeyDown={onMaybeEnter}
-                  onChange={(e) => {
-                    setAnswer(e.currentTarget.value);
-                  }}
-                  id="answer"
-                  required
-                  placeholder="Type here..."
-                  className="text-lg w-full rounded-t-md border-none bg-transparent px-5 py-3"
-                  rows={5}
-                />
-              )}
-            </div>
+              </div>
+            )}
             <div className="flex space-x-5 items-center">
               <button
                 type="submit"
@@ -262,13 +294,23 @@ export default function Splash() {
               >
                 {isSubmitting ? <Spinner /> : 'Send'}
               </button>
-              {isSubmitted && (
-                <motion.p animate={controls} className="opacity-80">
-                  Thanks!
-                </motion.p>
-              )}
             </div>
           </fieldset>
+          {isSubmitted && (
+            <div className="opacity-80 pt-6">
+              <h2>Thanks! 🙌</h2>
+              <ul>
+                {subscribe && (
+                  <li>Verify the newsletter subscription in your inbox</li>
+                )}
+                {contact && (
+                  <li>
+                    We will follow up via e-mail on your automation request
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
         </form>
       </main>
     </motion.div>

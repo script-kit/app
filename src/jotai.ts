@@ -659,12 +659,6 @@ const resize = (g: Getter, s: Setter) => {
   const placeholderOnly = Boolean(g(promptDataAtom)?.placeholderOnly);
   const hasPanel = Boolean(g(panelHTMLAtom)?.length);
 
-  console.log({
-    hasPanel,
-    panel: g(panelHTMLAtom),
-    choices: g(choices)?.length,
-  });
-
   const data: ResizeData = {
     scriptPath: g(_script)?.filePath,
     placeholderOnly,
@@ -1090,7 +1084,7 @@ export const getAssetAtom = atom((g) => {
 
 const isReady = atom(false);
 export const isReadyAtom = atom(
-  (g) => g(isReady) || g(uiAtom) !== UI.splash,
+  (g) => g(isReady),
   (g, s, a: boolean) => {
     s(isReady, a);
   }

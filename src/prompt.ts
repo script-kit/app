@@ -115,8 +115,9 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.webContents?.on('dom-ready', () => {
-    log.info('dom-ready');
+    log.info(`🍀 dom-ready on ${state.promptProcess?.scriptPath}`);
     hideAppIfNoWindows(state?.promptProcess?.scriptPath);
+    sendToPrompt(Channel.SET_READY, true);
   });
 
   promptWindow?.on('blur', () => {

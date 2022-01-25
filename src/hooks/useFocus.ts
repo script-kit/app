@@ -10,6 +10,7 @@ import {
   scriptAtom,
   submittedAtom,
 } from '../jotai';
+import { SPLASH_PATH } from '../defaults';
 
 export default () => {
   const ref = useRef<HTMLElement>();
@@ -23,7 +24,7 @@ export default () => {
   const [isHidden] = useAtom(isHiddenAtom);
 
   useEffect(() => {
-    if (inputFocus && ref?.current) {
+    if (script.filePath !== SPLASH_PATH && inputFocus && ref?.current) {
       ref?.current.focus();
     }
   }, [
