@@ -77,12 +77,11 @@ function Aside() {
             className="w-24 mb-2"
             alt="Script Kit Icon"
           />
-          {progress !== 100 ||
-            (true && (
-              <div className="absolute right-0 top-0 bg-black rounded-full p-2 bg-opacity-80 backdrop-blur-lg">
-                <Spinner />
-              </div>
-            ))}
+          {progress !== 100 && (
+            <div className="absolute right-0 top-0 bg-black rounded-full p-2 bg-opacity-80 backdrop-blur-lg">
+              <Spinner />
+            </div>
+          )}
         </div>
         <h1 className="text-2xl font-semibold mb-1">
           {progress === 100 ? 'Script Kit Installed' : 'Installing Script Kit'}

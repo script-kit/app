@@ -680,6 +680,7 @@ const checkKit = async () => {
   }
 
   const requiresInstall = (await versionMismatch()) || !(await kitExists());
+  log.info(`Requires install: ${requiresInstall}`);
 
   if (await isContributor()) {
     await setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
