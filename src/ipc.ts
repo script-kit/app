@@ -26,13 +26,7 @@ import detect from 'detect-file-type';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 
-import {
-  endPrompt,
-  focusPrompt,
-  reload,
-  resize,
-  setIgnoreBlur,
-} from './prompt';
+import { endPrompt, focusPrompt, reload, resize } from './prompt';
 import { runPromptProcess, runScript } from './kit';
 import { AppChannel } from './enums';
 import { ResizeData, Survey } from './types';
@@ -162,6 +156,10 @@ export const startIpc = () => {
     runPromptProcess(mainScriptPath);
   });
 
+  ipcMain.on(AppChannel.RUN_PROCESSES_SCRIPT, async () => {
+    runPromptProcess(kitPath('cli', 'processes.js'));
+  });
+
   ipcMain.on(AppChannel.FOCUS_PROMPT, () => {
     focusPrompt();
   });
@@ -195,7 +193,7 @@ export const startIpc = () => {
         }
 
         if (channel === Channel.VALUE_SUBMITTED) {
-          setIgnoreBlur(false);
+          state.ignoreBlur = false;
         }
 
         if (child) {

@@ -11,7 +11,7 @@ import { processes } from './process';
 export const watchMap = new Map();
 
 export const removeWatch = (filePath: string) => {
-  log.info(`Remove watch: ${filePath}`);
+  log.info(`🗑 Remove watch: ${filePath}`);
   const watcher = watchMap.get(filePath) as FSWatcher;
   if (watcher) {
     watcher.close();
@@ -47,10 +47,12 @@ const addWatch = (watchString: string, filePath: string) => {
       : resolvePath(pathsString);
 
     const watcher = chokidar.watch(paths);
-    watcher.on('change', (path) => {
+    const watch = (eventName: string, path: string) => {
       log.info(`👀 ${paths} changed`);
-      processes.add(ProcessType.Watch, filePath, [path]);
-    });
+      processes.add(ProcessType.Watch, filePath, [path, eventName]);
+    };
+
+    watcher.on('add', watch).on('change', watch).on('unlink', watch);
 
     const watched = watcher.getWatched();
 
@@ -68,6 +70,8 @@ export const watchScriptChanged = ({
   watch: watchString,
 }: Script) => {
   if (kenv !== '') return;
+
+  // log.info(`🔍 Changed ${filePath} - ${watchString}`);
 
   if (!watchString && watchMap.get(filePath)) {
     removeWatch(filePath);

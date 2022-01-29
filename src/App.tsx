@@ -94,10 +94,13 @@ import {
   scoredChoices,
   showTabsAtom,
   showSelectedAtom,
+  nullChoicesAtom,
+  processesAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
 import Splash from './components/splash';
+import { AppChannel } from './enums';
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -181,6 +184,7 @@ export default function App() {
   const [, setTextareaValue] = useAtom(textareaValueAtom);
   const [, setLoading] = useAtom(loadingAtom);
   const [processing] = useAtom(processingAtom);
+  const [nullChoices] = useAtom(nullChoicesAtom);
   const [resizeEnabled] = useAtom(resizeEnabledAtom);
   const [isSplash] = useAtom(isSplashAtom);
   const [, setValueInvalid] = useAtom(valueInvalidAtom);
@@ -190,6 +194,7 @@ export default function App() {
   const [, setLogo] = useAtom(_logo);
   const [getEditorHistory] = useAtom(getEditorHistoryAtom);
   const [appConfig] = useAtom(appConfigAtom);
+  const [, setProcesses] = useAtom(processesAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -280,6 +285,12 @@ export default function App() {
       });
     };
   }, [messageMap]);
+
+  useEffect(() => {
+    ipcRenderer.on(AppChannel.PROCESSES, (_, data) => {
+      setProcesses(data);
+    });
+  }, []);
 
   const onMouseDown = useCallback(() => {
     setIsMouseDown(true);
@@ -378,7 +389,7 @@ export default function App() {
         <main
           ref={mainRef}
           className={`
-        ${processing && resizeEnabled ? `h-0` : `h-full`}
+        ${(processing && resizeEnabled) || nullChoices ? `h-0` : `h-full`}
         w-full
         relative
         `}
@@ -393,12 +404,13 @@ export default function App() {
           <AutoSizer>
             {({ width, height }) => (
               <>
-                {(ui === UI.arg && choices.length > 0 && (
+                {(ui === UI.arg && !nullChoices && choices.length > 0 && (
                   <>
                     <List height={height} width={width} />
                   </>
                 )) ||
-                  (!!(ui & (UI.arg | UI.hotkey | UI.div)) &&
+                  (!!(ui === UI.arg || ui === UI.hotkey || ui === UI.div) &&
+                    !nullChoices &&
                     panelHTML.length > 0 && (
                       <>
                         <Panel width={width} height={height} />

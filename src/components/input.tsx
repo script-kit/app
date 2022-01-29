@@ -1,6 +1,12 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { useCallback, KeyboardEvent, LegacyRef, useEffect } from 'react';
+import React, {
+  useCallback,
+  KeyboardEvent,
+  LegacyRef,
+  useEffect,
+  useRef,
+} from 'react';
 import { motion } from 'framer-motion';
 
 import { Choice } from '@johnlindquist/kit/types/core';
@@ -26,6 +32,7 @@ import {
   _tabs,
   ultraShortCodesAtom,
   unfilteredChoicesAtom,
+  onInputSubmitAtom,
 } from '../jotai';
 import {
   useEnter,
@@ -45,7 +52,8 @@ const remapModifiers = (m: string) => {
 };
 
 export default function Input() {
-  const inputRef = useFocus();
+  const inputRef = useRef<HTMLInputElement>(null);
+  useFocus(inputRef);
 
   const [pid] = useAtom(pidAtom);
   const [inputValue, setInput] = useAtom(inputAtom);
@@ -62,6 +70,7 @@ export default function Input() {
   const [processing] = useAtom(processingAtom);
   const [resizeEnabled] = useAtom(resizeEnabledAtom);
   const [channel] = useAtom(channelAtom);
+  const [onInputSubmit] = useAtom(onInputSubmitAtom);
 
   useEscape();
   useEnter();
@@ -150,6 +159,7 @@ export default function Input() {
       pid,
       ultraShortCodes,
       channel,
+      onInputSubmit,
     ]
   );
 
@@ -166,9 +176,13 @@ export default function Input() {
 
   const onChange = useCallback(
     (event) => {
-      setInput(event.target.value);
+      if (onInputSubmit[event.target.value]) {
+        setSubmitValue(onInputSubmit[event.target.value]);
+      } else {
+        setInput(event.target.value);
+      }
     },
-    [setInput]
+    [setInput, onInputSubmit]
   );
 
   return (

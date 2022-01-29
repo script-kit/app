@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
-import React, { LegacyRef, useState } from 'react';
+import React, { LegacyRef, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAtom } from 'jotai';
 
@@ -15,7 +15,8 @@ import {
 } from '../hooks';
 
 export default function TextArea() {
-  const textareaRef = useFocus();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useFocus(textareaRef);
   useOpen();
 
   const [options] = useAtom(textareaConfigAtom);

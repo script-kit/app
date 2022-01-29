@@ -296,8 +296,8 @@ export const show = async (
   showWindow?.webContents.on('before-input-event', (event: any, input) => {
     if (input.key === 'Escape') {
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      showWindow.destroy();
       if (name === INSTALL_ERROR) {
-        showWindow.destroy();
         app.removeAllListeners('window-all-closed');
         const browserWindows = BrowserWindow.getAllWindows();
         browserWindows.forEach((browserWindow) => {

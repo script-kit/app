@@ -54,7 +54,6 @@ import {
   setBounds,
   setChoices,
   setHint,
-  setIgnoreBlur,
   setInput,
   setLog,
   setMode,
@@ -286,7 +285,7 @@ const kitMessageMap: ChannelHandler = {
 
       widget.webContents.on('before-input-event', (event, input) => {
         if (input.key === 'Escape') {
-          widget.close();
+          if (!widget?.isDestroyed) widget.close();
         }
       });
 
@@ -430,6 +429,10 @@ const kitMessageMap: ChannelHandler = {
   SET_SCRIPT: toProcess(async (processInfo, data) => {
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
+      const foundP = state.ps.find((p) => p.pid === processInfo.pid);
+      if (foundP) {
+        foundP.scriptPath = data.value?.filePath;
+      }
       await setScript(data.value);
     }
   }),
@@ -453,7 +456,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_IGNORE_BLUR: (data) => {
-    setIgnoreBlur(data.value);
+    state.ignoreBlur = data.value;
   },
 
   SET_INPUT: (data) => {
@@ -530,6 +533,9 @@ const kitMessageMap: ChannelHandler = {
   CLEAR_PROMPT_CACHE: async () => {
     await clearPromptCache();
   },
+  CLEAR_PREVIEW: () => {
+    sendToPrompt(Channel.CLEAR_PREVIEW, ``);
+  },
   SET_EDITOR_CONFIG: (data) => {
     sendToPrompt(Channel.SET_EDITOR_CONFIG, data.value);
   },
@@ -602,6 +608,7 @@ const kitMessageMap: ChannelHandler = {
     notification.show();
   },
   SET_TRAY: (data) => {
+    log.info(JSON.stringify(data));
     const image =
       data?.value?.length > 0
         ? nativeImage.createFromDataURL(``)
@@ -652,7 +659,7 @@ export const createMessageHandler =
       log.info(
         `${data.channel === Channel.SET_SCRIPT ? `\n\n` : ``}${data.pid}: ${
           data.channel
-        } ${type} process ${data.kitScript.replace(/.*\//gi, '')}`
+        } ${type} process ${data.kitScript?.replace(/.*\//gi, '')}`
       );
     }
 
@@ -775,7 +782,7 @@ class Processes extends Array<ProcessInfo> {
     };
 
     this.push(info);
-    state.ps.push(info);
+    state.addP(info);
 
     if (scriptPath) {
       log.info(`${child.pid}: 🟢 start ${type} ${scriptPath}`);
@@ -907,6 +914,7 @@ class Processes extends Array<ProcessInfo> {
           (info) => info.pid === pid
         );
         this.abandonnedProcesses.splice(aIndex, 1);
+        state.removeP(child?.pid);
       }
     }
   }
@@ -915,6 +923,7 @@ class Processes extends Array<ProcessInfo> {
     const processInfo = this.find((info) => info.pid === pid);
 
     this.removeByPid(pid);
+    state.removeP(pid);
 
     if (processInfo) {
       log.info(`${processInfo.pid}: 👋 Abandonning ${processInfo.scriptPath}`);
@@ -924,6 +933,7 @@ class Processes extends Array<ProcessInfo> {
       }, 5000);
 
       this.abandonnedProcesses.push(processInfo);
+      state.addP(processInfo);
     }
   }
 }

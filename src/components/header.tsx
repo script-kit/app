@@ -11,6 +11,9 @@ import {
   openAtom,
   scriptAtom,
   _logo,
+  processesAtom,
+  isMainScriptAtom,
+  runProcessesAtom,
 } from '../jotai';
 import TopBar from './TopBar';
 
@@ -21,10 +24,17 @@ export default function Header() {
   const [description] = useAtom(_description);
   const [logo] = useAtom(_logo);
   const [name] = useAtom(_name);
+  const [processes] = useAtom(processesAtom);
+  const [isMainScript] = useAtom(isMainScriptAtom);
+  const [runProcesses] = useAtom(runProcessesAtom);
 
   const onXClick = useCallback(() => {
     setOpen(false);
   }, [setOpen]);
+
+  const onProcessButtonClick = useCallback(() => {
+    runProcesses();
+  }, [processes, runProcesses]);
 
   return (
     <div
@@ -47,7 +57,9 @@ export default function Header() {
         className={`
         w-full
       text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row
-      dark:text-white text-primary-dark items-center
+      dark:text-white text-primary-dark items-center ${
+        isMainScript && processes?.length > 1 ? `-my-1` : ``
+      }
       `}
       >
         <div className="flex flex-row">
@@ -58,7 +70,18 @@ export default function Header() {
           )}
         </div>
         <span className="flex flex-row items-end pl-1 text-right">
-          <span className="truncate">{name}</span>
+          {isMainScript && processes?.length > 1 ? (
+            <button
+              type="button"
+              onClick={onProcessButtonClick}
+              className="cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold primary-dark text-primary-dark bg-primary-dark dark:bg-primary-light dark:text-primary-light rounded-md bg-opacity-10 dark:bg-opacity-20 hover:bg-opacity-30 dark:hover:bg-opacity-50 "
+            >
+              <span className="pl-2">{processes.length}</span>
+              <i className="gg-play-button -ml-1.5 scale-75" some-aria="" />
+            </button>
+          ) : (
+            <span className="truncate">{name}</span>
+          )}
 
           {script?.twitter && (
             <span>

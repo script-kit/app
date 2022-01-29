@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { ErrorInfo, useCallback, useEffect } from 'react';
 import path from 'path';
 import { useAtom } from 'jotai';
 import MonacoEditor, { Monaco, loader } from '@monaco-editor/react';
@@ -19,11 +19,16 @@ import {
 import {
   useClose,
   useEscape,
-  useFocus,
   useMountMainHeight,
   useSave,
   useOpen,
 } from '../hooks';
+
+class ErrorBoundary extends React.Component {
+  render() {
+    return this.props.children;
+  }
+}
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -69,8 +74,6 @@ const DEFAULT_OPTIONS: monacoEditor.IStandaloneEditorConstructionOptions = {
 };
 
 export default function Editor() {
-  const editorRef = useFocus();
-
   const [options] = useAtom(editorConfigAtom);
   const [isDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
@@ -136,21 +139,31 @@ export default function Editor() {
         setInputValue(options.value);
       }
     }
-  }, [open, options]);
+  }, [open, options, options?.value]);
 
   useEffect(() => {
     if (!monaco) return;
+    if (typeof options !== 'string') {
+      if (options?.language === 'typescript') {
+        if (options?.extraLibs?.length) {
+          for (const { content, filePath } of options.extraLibs) {
+            monaco.languages.typescript.typescriptDefaults.addExtraLib(
+              content,
+              filePath
+            );
+          }
+        }
+      }
 
-    if (options?.extraLibs?.length) {
-      for (const { content, filePath } of options.extraLibs) {
-        monaco.languages.typescript.typescriptDefaults.addExtraLib(
-          content,
-          filePath
-        );
-        monaco.languages.typescript.javascriptDefaults.addExtraLib(
-          content,
-          filePath
-        );
+      if (options?.language === 'javascript') {
+        if (options?.extraLibs?.length) {
+          for (const { content, filePath } of options.extraLibs) {
+            monaco.languages.typescript.javascriptDefaults.addExtraLib(
+              content,
+              filePath
+            );
+          }
+        }
       }
     }
 
@@ -190,17 +203,19 @@ export default function Editor() {
     pt-3
     w-full h-full`}
     >
-      <MonacoEditor
-        height="100%"
-        width="100%"
-        beforeMount={beforeMount}
-        onMount={onMount}
-        language={(options as EditorOptions)?.language || 'markdown'}
-        theme={isDark ? 'kit-dark' : 'kit-light'}
-        options={{ ...DEFAULT_OPTIONS, ...(options as EditorOptions) }}
-        value={(options as EditorOptions)?.value || ''}
-        onChange={onChange}
-      />
+      <ErrorBoundary>
+        <MonacoEditor
+          height="100%"
+          width="100%"
+          beforeMount={beforeMount}
+          onMount={onMount}
+          language={(options as EditorOptions)?.language || 'markdown'}
+          theme={isDark ? 'kit-dark' : 'kit-light'}
+          options={{ ...DEFAULT_OPTIONS, ...(options as EditorOptions) }}
+          value={(options as EditorOptions)?.value || ''}
+          onChange={onChange}
+        />
+      </ErrorBoundary>
     </motion.div>
   );
 }

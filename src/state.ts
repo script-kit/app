@@ -15,8 +15,9 @@ import {
   isParentOfDir,
   mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
-import { ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
+import { UI } from '@johnlindquist/kit/cjs/enum';
 import { noScript, MIN_HEIGHT } from './defaults';
+import { ProcessInfo } from './types';
 
 export const makeRestartNecessary = async () => {
   const appDb = await getAppDb();
@@ -117,19 +118,8 @@ export const getKitScript = (filePath: string): Script => {
   return kitScripts.find((script) => script.filePath === filePath) as Script;
 };
 
-type ProcessInfo = {
-  pid: number;
-  child: ChildProcess;
-  type: ProcessType;
-  scriptPath: string;
-  values: any[];
-  date: Date;
-};
-
-type State = {
-  hidden: boolean;
-  ps: ProcessInfo[];
-  removeP: (pid: number) => void;
+const addP = (pi: Partial<ProcessInfo>) => {
+  state.ps.push(pi);
 };
 
 const removeP = (pid: number) => {
@@ -141,7 +131,8 @@ const removeP = (pid: number) => {
 
 const initState = {
   hidden: false,
-  ps: [] as ProcessInfo[],
+  ps: [] as Partial<ProcessInfo>[],
+  addP,
   removeP,
   pid: 0,
   script: noScript,

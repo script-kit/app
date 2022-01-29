@@ -4,6 +4,7 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
+import { subscribe } from 'valtio/vanilla';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -15,7 +16,7 @@ import { BrowserWindow, screen, app, Rectangle, powerMonitor } from 'electron';
 import os from 'os';
 import path from 'path';
 import log from 'electron-log';
-import { debounce, lowerFirst } from 'lodash';
+import { debounce } from 'lodash';
 import minimist from 'minimist';
 import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
@@ -31,15 +32,14 @@ import {
   INPUT_HEIGHT,
   MIN_HEIGHT,
   MIN_WIDTH,
+  TOP_HEIGHT,
 } from './defaults';
 import { ResizeData } from './types';
 import { getVersion } from './version';
-
-export const setIgnoreBlur = (ignoreBlur = true) => {
-  state.ignoreBlur = ignoreBlur;
-};
+import { AppChannel } from './enums';
 
 let promptWindow: BrowserWindow;
+let unsub: () => void;
 
 const miniArgs = minimist(process.argv);
 const { devTools } = miniArgs;
@@ -127,8 +127,8 @@ export const createPromptWindow = async () => {
       return;
     }
 
-    if (promptWindow?.isVisible()) {
-      // sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
+    if (promptWindow?.isVisible() && !state.ignoreBlur) {
+      sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
     }
 
     if (state.ignoreBlur) {
@@ -204,6 +204,21 @@ export const createPromptWindow = async () => {
     reload();
   });
 
+  if (unsub) unsub();
+
+  unsub = subscribe(state.ps, () => {
+    const ps = state.ps
+      .filter((p) => p.scriptPath !== '')
+      .map((p) => {
+        const { child, values, ...rest } = p;
+
+        return { ...rest };
+      });
+
+    // log.info(`ps`, ps);
+    appToPrompt(AppChannel.PROCESSES, ps);
+  });
+
   return promptWindow;
 };
 
@@ -228,9 +243,10 @@ export const focusPrompt = () => {
     promptWindow?.focusOnWebView();
 
     sendToPrompt(Channel.SET_OPEN, true);
+    sendToPrompt(AppChannel.FOCUS_PROMPT);
 
     setTimeout(() => {
-      if (!promptWindow.isFocused()) {
+      if (!promptWindow.isFocused() && promptWindow?.isFocusable()) {
         logFocus();
         promptWindow.focus();
       }
@@ -314,12 +330,11 @@ export const resize = debounce(
     topHeight,
     mainHeight,
     ui,
-    mode,
     hasPanel,
     hasInput,
     tabIndex,
     isSplash,
-    placeholderOnly,
+    nullChoices,
   }: ResizeData) => {
     if (state.modifiedByUser) return;
 
@@ -337,11 +352,13 @@ export const resize = debounce(
     } = promptWindow.getBounds();
 
     const targetHeight = topHeight + mainHeight;
-    const threeFourths = getCurrentScreenFromPrompt().bounds.height * (3 / 4);
+    // const threeFourths = getCurrentScreenFromPrompt().bounds.height * (3 / 4);
 
-    const maxHeight = hasPanel
-      ? Math.round(threeFourths)
-      : Math.max(DEFAULT_HEIGHT, cachedHeight);
+    // const maxHeight = hasPanel
+    //   ? Math.round(threeFourths)
+    //   : Math.max(DEFAULT_HEIGHT, cachedHeight);
+
+    const maxHeight = Math.max(DEFAULT_HEIGHT, cachedHeight);
 
     let width = Math.max(cachedWidth, DEFAULT_EXPANDED_WIDTH);
 
@@ -352,16 +369,19 @@ export const resize = debounce(
     // log.info({
     //   placeholderOnly,
     //   hasPanel,
-    // });
+    // // });
 
     // log.info({
     //   topHeight,
     //   maxHeight,
     //   targetHeight,
     //   height,
+    //   mainHeight,
     // });
 
-    if (!placeholderOnly && !hasPanel) {
+    // log.info({ ui, hasPanel });
+
+    if (!nullChoices && !hasPanel) {
       height = Math.max(cachedHeight, DEFAULT_HEIGHT);
     }
 
@@ -388,13 +408,25 @@ export const resize = debounce(
       promptWindow.setPosition(cachedX, cachedY);
     }
   },
-  100
+  0
 );
 
 export const sendToPrompt = <K extends keyof ChannelMap>(
   channel: K,
   data?: ChannelMap[K]
 ) => {
+  // log.info(`>_ ${channel} ${data?.kitScript}`);
+  // log.info(`>_ ${channel}`);
+  if (
+    promptWindow &&
+    promptWindow?.webContents &&
+    !promptWindow.isDestroyed()
+  ) {
+    promptWindow?.webContents.send(channel, data);
+  }
+};
+
+export const appToPrompt = (channel: AppChannel, data?: any) => {
   // log.info(`>_ ${channel} ${data?.kitScript}`);
   // log.info(`>_ ${channel}`);
   if (

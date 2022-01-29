@@ -1,5 +1,6 @@
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
+import { useEffect } from 'react';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
@@ -16,6 +17,7 @@ import {
   selectionStartAtom,
   submitValueAtom,
   channelAtom,
+  onShortcutSubmitAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -34,15 +36,16 @@ export default () => {
   const [inputFocus] = useAtom(inputFocusAtom);
   const [previewEnabled, setPreviewEnabled] = useAtom(previewEnabledAtom);
   const [channel] = useAtom(channelAtom);
+  const [onShortcutSubmit] = useAtom(onShortcutSubmitAtom);
 
-  useHotkeys(
-    `${cmd}+p`,
-    (event) => {
-      setPreviewEnabled(!previewEnabled);
-    },
-    hotkeysOptions,
-    [setPreviewEnabled, previewEnabled, cmd]
-  );
+  // useHotkeys(
+  //   `${cmd}+p`,
+  //   (event) => {
+  //     setPreviewEnabled(!previewEnabled);
+  //   },
+  //   hotkeysOptions,
+  //   [setPreviewEnabled, previewEnabled, cmd]
+  // );
 
   const flagsArray = Object.entries(flags);
 
@@ -71,6 +74,24 @@ export default () => {
     },
     hotkeysOptions,
     [flags, input, inputFocus, choices, index]
+  );
+
+  const onShortcuts = Object.keys(onShortcutSubmit).length
+    ? Object.keys(onShortcutSubmit).join(',')
+    : `f19`;
+
+  useHotkeys(
+    onShortcuts,
+    (event, handler) => {
+      console.log({ event, handler });
+      if (!inputFocus) return;
+      event.preventDefault();
+
+      const value = onShortcutSubmit[handler.key];
+      submit(value);
+    },
+    hotkeysOptions,
+    [onShortcutSubmit]
   );
 
   useHotkeys(

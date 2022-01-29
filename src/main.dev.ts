@@ -293,6 +293,7 @@ const forkOptions: ForkOptions = {
 
 const optionalSetupScript = (...args: string[]) => {
   return new Promise((resolve, reject) => {
+    log.info(`Running optional setup script: ${args.join(' ')}`);
     const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
 
     child.on('message', (data) => {
@@ -599,6 +600,7 @@ const checkKit = async () => {
 
   const setupScript = (...args: string[]) => {
     return new Promise((resolve, reject) => {
+      log.info(`🔨 Running Setup Script ${args.join(' ')}`);
       const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
 
       child.on('message', (data) => {
@@ -677,9 +679,11 @@ const checkKit = async () => {
     log.info(`🔥 Starting Kit First Install`);
   }
 
+  const requiresInstall = (await versionMismatch()) || !(await kitExists());
+
   if (await isContributor()) {
     await setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
-  } else if ((await versionMismatch()) || !(await kitExists())) {
+  } else if (requiresInstall) {
     if (await kitExists()) {
       await setupLog(`Cleaning previous .kit`);
       await cleanKit();
@@ -826,8 +830,24 @@ const checkKit = async () => {
     ohNo(error);
   }
   await storeVersion(getVersion());
+
+  if (requiresInstall || !(await isContributor())) {
+    const installInfo = {
+      version: getVersion(),
+      platform,
+      timestamp: Date.now(),
+    };
+
+    optionalSetupScript(
+      kitPath('cli', 'installs.js'),
+      JSON.stringify(installInfo)
+    );
+  }
+
   await ready();
+
   sendToPrompt(Channel.SET_READY, true);
+  focusPrompt();
 };
 
 app.whenReady().then(checkKit).catch(ohNo);

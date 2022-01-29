@@ -107,7 +107,8 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
   const [, setPanel] = useAtom(panelHTMLAtom);
 
   useEscape();
-  const hotkeyRef = useFocus();
+  const hotkeyRef = useRef<HTMLInputElement>(null);
+  useFocus(hotkeyRef);
 
   const onKeyUp = useCallback(
     (event) => {

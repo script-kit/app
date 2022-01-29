@@ -17,12 +17,12 @@ export default function KitTabs() {
     itemsRef.current = itemsRef.current.slice(0, tabs.length);
   }, [tabs]);
 
-  useEffect(() => {
-    const el = itemsRef?.current?.[tabIndex];
-    if (el) {
-      el.scrollIntoView({ block: 'end', inline: 'nearest' });
-    }
-  }, [tabIndex, itemsRef]);
+  // useEffect(() => {
+  //   const el = itemsRef?.current?.[tabIndex];
+  //   if (el) {
+  //     el.scrollIntoView({ block: 'end', inline: 'nearest' });
+  //   }
+  // }, [tabIndex, itemsRef]);
 
   return (
     <motion.div

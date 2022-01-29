@@ -149,7 +149,7 @@ body {
   box-sizing: border-box;
   position: relative;
   display: block;
-  transform: scale(var(--ggs, 1));
+  transform: scale(var(--tw-scale-x, 1), var(--tw-scale-y, 1));
   width: 20px;
   height: 16px;
   overflow: hidden;
@@ -178,6 +178,29 @@ body {
   border-radius: 100%;
   top: 2px;
   left: 2px;
+}
+
+.gg-play-button {
+  box-sizing: border-box;
+  position: relative;
+  display: block;
+  transform: scale(var(--tw-scale-x, 1), var(--tw-scale-y, 1));
+  width: 22px;
+  height: 22px;
+}
+
+.gg-play-button::before {
+  content: '';
+  display: block;
+  box-sizing: border-box;
+  position: absolute;
+  width: 0;
+  height: 10px;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid;
+  top: 6px;
+  left: 9px;
 }
 
 @keyframes loading {
@@ -308,7 +331,7 @@ body {
   }
 
   .prose a {
-    @apply block;
+    /* @apply block; */
     @apply w-full;
     @apply whitespace-pre-wrap;
     @apply break-words;

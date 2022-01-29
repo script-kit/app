@@ -13,6 +13,7 @@ module.exports = {
     'no-underscore-dangle': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     'jsx-a11y/label-has-associated-control': 'off',
+    'react/destructuring-assignment': 'off',
   },
   parserOptions: {
     ecmaVersion: 2020,

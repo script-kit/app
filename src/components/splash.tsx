@@ -2,7 +2,7 @@
 
 /* eslint-disable no-nested-ternary */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, useAnimation } from 'framer-motion';
+import { AnimateSharedLayout, motion } from 'framer-motion';
 import { useAtom } from 'jotai';
 import {
   appConfigAtom,
@@ -13,7 +13,7 @@ import {
   splashProgressAtom,
   submitSurveyAtom,
 } from '../jotai';
-import { useEscape } from '../hooks';
+import { useEscape, useFocus } from '../hooks';
 
 // const questions = [
 //   `What problem should Script Kit will solve for you?`,
@@ -24,7 +24,7 @@ import { useEscape } from '../hooks';
 
 const Spinner = () => (
   <svg
-    className="animate-spin h-6 w-6 text-black text-opacity-75 dark:text-white dark:text-opacity-75"
+    className="animate-spin h-6 w-6 text-white text-opacity-75 dark:text-white dark:text-opacity-75"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
@@ -77,11 +77,12 @@ function Aside() {
             className="w-24 mb-2"
             alt="Script Kit Icon"
           />
-          {progress !== 100 && (
-            <div className="absolute right-0 top-0 bg-black rounded-full p-2 bg-opacity-80 backdrop-blur-lg">
-              <Spinner />
-            </div>
-          )}
+          {progress !== 100 ||
+            (true && (
+              <div className="absolute right-0 top-0 bg-black rounded-full p-2 bg-opacity-80 backdrop-blur-lg">
+                <Spinner />
+              </div>
+            ))}
         </div>
         <h1 className="text-2xl font-semibold mb-1">
           {progress === 100 ? 'Script Kit Installed' : 'Installing Script Kit'}
@@ -143,12 +144,17 @@ export default function Splash() {
   const [email, setEmail] = React.useState<string>('');
   const [question, setQuestion] = useState<string>('');
   const [subscribe, setSubscribe] = useState(false);
+  const [subscribeSubmitted, setSubscribeSubmitted] = useState(false);
+  const [contactSubmitted, setContactSubmitted] = useState(false);
+  const [hideEmail, setHideEmail] = useState(false);
   const [contact, setContact] = useState(false);
-  const questionRef = useRef<HTMLTextAreaElement>();
-  const emailRef = useRef<HTMLInputElement>();
+  const questionRef = useRef<HTMLTextAreaElement>(null);
+  useFocus(questionRef);
+  const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setQuestion(`What kind of script do you want to write?`);
+
     if (questionRef?.current) {
       questionRef?.current?.focus();
     } else {
@@ -157,6 +163,13 @@ export default function Splash() {
       }, 250);
     }
   }, [questionRef, questionRef?.current]);
+
+  const [progress] = useAtom(splashProgressAtom);
+  useEffect(() => {
+    setTimeout(() => {
+      questionRef?.current?.focus();
+    }, 250);
+  }, [questionRef?.current, progress]);
 
   const handleOnSubmit = useCallback(() => {
     submitSurvey({
@@ -173,11 +186,14 @@ export default function Splash() {
       setSubmitting(false);
       setSubmitted(true);
       setResponse('');
+      setSubscribeSubmitted(subscribe);
+      setContactSubmitted(contact);
+      setHideEmail(email?.length > 0 && subscribe && contact);
       questionRef?.current?.focus();
-
-      // questionRef?.current?.focus();
     }, 1000);
   }, [
+    subscribe,
+    contact,
     response,
     email,
     question,
@@ -187,25 +203,7 @@ export default function Splash() {
     isSubmitted,
   ]);
 
-  const controls = useAnimation();
-
-  React.useEffect(() => {
-    // the "thanks!" label
-    controls.start({
-      opacity: [0, 1],
-      x: [-5, 0],
-    });
-    // hide once submitted, but not immidiately
-    const timer = setTimeout(() => {
-      controls.start({
-        opacity: 0,
-        transition: { duration: 3 },
-      });
-    }, 2000);
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [isSubmitted]);
+  const emailRequired = subscribe || contact;
 
   return (
     <motion.div
@@ -217,101 +215,129 @@ export default function Splash() {
       className="grid grid-cols-8 left-0 top-0 fixed w-screen h-screen bg-white bg-opacity-40 dark:bg-black dark:bg-opacity-40"
     >
       <Aside />
-      <main className="bg-white bg-opacity-5 col-span-5 h-full p-8">
-        <form
-          onSubmit={handleOnSubmit}
-          className="flex flex-col h-full justify-center"
-        >
-          <fieldset className="space-y-3">
-            <legend className="text-lg opacity-90">
-              <p>Hey! 👋</p>
-              <p className="font-semibold">{question}</p>
-            </legend>
-            <div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 flex flex-col">
-              <textarea
-                ref={questionRef}
-                value={response}
-                // onKeyDown={onMaybeEnter}
-                onChange={(e) => {
-                  setResponse(e.currentTarget.value);
-                }}
-                id="answer"
-                required
-                placeholder={
-                  isSubmitted
-                    ? 'What else would you like to see in a script?'
-                    : 'Type your script idea here...'
-                }
-                className="text-lg w-full rounded-t-md border-none bg-transparent px-5 py-3"
-                rows={5}
-              />
-            </div>
-            {!isSubmitted && (
-              <div>
-                <div className="flex flex-row items-center">
-                  <div className="relative flex items-center border-t border-white border-opacity-10">
+      <main className="bg-white bg-opacity-5 col-span-5 h-full p-6">
+        <AnimateSharedLayout>
+          <form
+            onSubmit={handleOnSubmit}
+            className="flex flex-col h-full justify-center"
+          >
+            <fieldset className="space-y-2 p-2">
+              <motion.legend layout className="text-lg opacity-90 w-full">
+                <p>Hey! 👋</p>
+                <p className="font-semibold">{question}</p>
+              </motion.legend>
+              <motion.div
+                layout
+                className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 flex flex-col"
+              >
+                <motion.textarea
+                  layout
+                  autoFocus
+                  tabIndex={0}
+                  ref={questionRef}
+                  value={response}
+                  // onKeyDown={onMaybeEnter}
+                  onChange={(e) => {
+                    setResponse(e.currentTarget.value);
+                  }}
+                  id="answer"
+                  required={contact && !subscribe}
+                  placeholder={
+                    isSubmitted
+                      ? 'What else would you like to see in a script?'
+                      : 'Type your script idea here...'
+                  }
+                  className="text-lg w-full rounded-md border-none bg-transparent px-5 py-3"
+                  rows={5}
+                />
+              </motion.div>
+
+              <motion.div layout>
+                {!contactSubmitted && (
+                  <motion.div layout className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={subscribe}
-                      onChange={(e) => setSubscribe(Boolean(!subscribe))}
-                      id="subscribe"
+                      checked={contact}
+                      onChange={(e) => setContact(e.target.checked)}
+                      id="contact"
+                      className="dark:bg-white bg-black dark:bg-opacity-20 bg-opacity-10 rounded-sm"
                     />
-                    <label htmlFor="subscribe" className="pl-2">
-                      Contact me to help automate this
+                    <label htmlFor="contact" className="pl-2">
+                      Contact me with an example of my script idea
                     </label>
-                  </div>
-                </div>
-                <div className="flex flex-row items-center">
-                  <input
-                    type="checkbox"
-                    checked={contact}
-                    onChange={(e) => setContact(Boolean(!contact))}
-                    id="contact"
-                  />
-                  <label htmlFor="contact" className="pl-2">
-                    Receive Script Kit Tips, Tricks, and News
-                  </label>
-                </div>
-                <div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 my-3">
-                  <label className="px-5 py-3 absolute" htmlFor="email">
-                    Email:
-                  </label>
-                  <input
-                    ref={emailRef}
-                    onChange={(event) => setEmail(event.target.value)}
-                    type="email"
-                    id="email"
-                    className="px-5 pl-20 py-3 border-none bg-transparent w-full rounded-b-md"
-                    placeholder="you@company.com"
-                  />
-                </div>
-              </div>
+                  </motion.div>
+                )}
+
+                {!subscribeSubmitted && (
+                  <motion.div layout className="flex items-center">
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={subscribe}
+                        onChange={(e) => setSubscribe(e.target.checked)}
+                        id="subscribe"
+                        className="dark:bg-white bg-black dark:bg-opacity-20 bg-opacity-10 rounded-sm"
+                      />
+                      <label htmlFor="subscribe" className="pl-2">
+                        Receive Script Kit Tips, Tricks, and News
+                      </label>
+                    </div>
+                  </motion.div>
+                )}
+                {!hideEmail ? (
+                  <motion.div
+                    layout
+                    className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 my-3"
+                  >
+                    <label
+                      className={`px-5 py-3 absolute ${
+                        emailRequired
+                          ? "after:content-['*'] after:absolute dark:after:text-primary-light after:text-primary-dark"
+                          : ''
+                      }`}
+                      htmlFor="email"
+                    >
+                      Email
+                    </label>
+                    <input
+                      required={emailRequired}
+                      ref={emailRef}
+                      onChange={(event) => setEmail(event.target.value)}
+                      type="email"
+                      id="email"
+                      className="px-5 pl-20 py-3 border-none bg-transparent w-full rounded-md"
+                      placeholder="you@company.com"
+                    />
+                  </motion.div>
+                ) : null}
+              </motion.div>
+
+              <motion.div layout>
+                <button
+                  type="submit"
+                  className="rounded-md bg-primary-light dark:bg-bg-light bg-opacity-75 dark:bg-opacity-20 hover:bg-opacity-100 dark:hover:bg-opacity-30 transition px-5 py-2 font-medium"
+                >
+                  {isSubmitting ? <Spinner /> : 'Send'}
+                </button>
+              </motion.div>
+            </fieldset>
+            {isSubmitted && (
+              <motion.div className="opacity-80 pt-6 px-2">
+                <h2>Thanks! 🙌</h2>
+                <ul>
+                  {subscribeSubmitted && (
+                    <li>Verify the newsletter subscription in your inbox</li>
+                  )}
+                  {contactSubmitted && (
+                    <li>
+                      We will follow up via e-mail on your automation request
+                    </li>
+                  )}
+                </ul>
+              </motion.div>
             )}
-            <div className="flex space-x-5 items-center">
-              <button
-                type="submit"
-                className="rounded-md bg-primary-light dark:bg-bg-light bg-opacity-75 dark:bg-opacity-20 hover:bg-opacity-100 dark:hover:bg-opacity-30 transition px-5 py-2 font-medium"
-              >
-                {isSubmitting ? <Spinner /> : 'Send'}
-              </button>
-            </div>
-          </fieldset>
-          {isSubmitted && (
-            <div className="opacity-80 pt-6">
-              <h2>Thanks! 🙌</h2>
-              <ul>
-                {subscribe && (
-                  <li>Verify the newsletter subscription in your inbox</li>
-                )}
-                {contact && (
-                  <li>
-                    We will follow up via e-mail on your automation request
-                  </li>
-                )}
-              </ul>
-            </div>
-          )}
-        </form>
+          </form>
+        </AnimateSharedLayout>
       </main>
     </motion.div>
   );

@@ -32,7 +32,7 @@ import { Monaco } from '@monaco-editor/react';
 import { clamp, debounce, drop, get, isEqual } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
-import { ResizeData, ScoredChoice, Survey } from './types';
+import { ProcessInfo, ResizeData, ScoredChoice, Survey } from './types';
 import { BUTTON_HEIGHT, noChoice, noScript, SPLASH_PATH } from './defaults';
 
 let placeholderTimeoutId: NodeJS.Timeout;
@@ -140,19 +140,36 @@ export const ultraShortCodesAtom = atom<{ code: string; id: string }[]>([]);
 export const choicesIdAtom = atom<number>(0);
 export const filteredChoicesIdAtom = atom<number>(0);
 
+const _nullChoices = atom(false);
+export const nullChoicesAtom = atom(
+  (g) => g(_nullChoices) && g(uiAtom) === UI.arg,
+  (g, s, a: boolean) => {
+    s(_nullChoices, a);
+    if (a) resize(g, s);
+  }
+);
+
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
-  (g, s, a: Choice[]) => {
+  (g, s, a: Choice[] | null) => {
+    s(nullChoicesAtom, a === null);
+
+    if (a === null) {
+      s(quickScoreAtom, null);
+    }
+
+    const cs = a === null ? [] : a;
+
     s(choicesIdAtom, Math.random());
 
-    s(unfilteredChoices, a);
+    s(unfilteredChoices, cs);
 
-    if (a?.length === 0) {
+    if (cs?.length === 0) {
       s(scoredChoices, []);
     }
 
     const maybePreview = Boolean(
-      a.find((c) => c?.hasPreview) ||
+      cs.find((c) => c?.hasPreview) ||
         g(promptData)?.hasPreview ||
         g(isMainScriptAtom) ||
         g(isSplashAtom)
@@ -161,12 +178,12 @@ export const unfilteredChoicesAtom = atom(
     s(unfilteredPreview, maybePreview);
     // if (a?.[0]?.name.match(/(?<=\[)\.(?=\])/i)) {
     if (
-      a.length > 0 &&
-      a?.length < 256 &&
+      cs.length > 0 &&
+      cs?.length < 256 &&
       g(ultraShortCodesAtom).length === 0
     ) {
       const codes = [];
-      for (const choice of a) {
+      for (const choice of cs) {
         const code = choice?.name.match(/(?<=\[).(?=\])/i)?.[0] || '';
 
         if (code) {
@@ -179,31 +196,33 @@ export const unfilteredChoicesAtom = atom(
       s(ultraShortCodesAtom, codes);
     }
 
-    const qs = new QuickScore(a, {
-      keys,
-      minimumScore: 0.3,
-    });
-    s(quickScoreAtom, qs);
+    if (cs?.length) {
+      const qs = new QuickScore(cs, {
+        keys,
+        minimumScore: 0.3,
+      });
+      s(quickScoreAtom, qs);
 
-    const mode = g(modeAtom);
-    const flaggedValue = g(_flagged);
+      const mode = g(modeAtom);
+      const flaggedValue = g(_flagged);
 
-    // if (!flaggedValue) {
-    if (mode === Mode.GENERATE && !flaggedValue) {
-      s(scoredChoices, (a || []).map(createScoredChoice));
+      // if (!flaggedValue) {
+      if (mode === Mode.GENERATE && !flaggedValue) {
+        s(scoredChoices, cs.map(createScoredChoice));
+      }
+      if (mode === Mode.FILTER || mode === Mode.CUSTOM) {
+        const input = g(inputAtom);
+        filterByInput(g, s, qs, input);
+      }
+      // }
+
+      const prevCId = g(prevChoiceId);
+      const prevIndex = g(isMainScriptAtom)
+        ? 0
+        : cs.findIndex((c) => c?.id === prevCId);
+
+      s(_index, prevIndex || 0);
     }
-    if (mode === Mode.FILTER) {
-      const input = g(inputAtom);
-      filterByInput(g, s, qs, input);
-    }
-    // }
-
-    const prevCId = g(prevChoiceId);
-    const prevIndex = g(isMainScriptAtom)
-      ? 0
-      : a.findIndex((c) => c?.id === prevCId);
-
-    s(_index, prevIndex || 0);
 
     // console.log(`Before`);
     // if (g(isMainScriptAtom)) {
@@ -215,12 +234,12 @@ export const unfilteredChoicesAtom = atom(
 
 export const prevChoicesAtom = atom<Choice[]>([]);
 
-const ui = atom<UI>(UI.arg);
+const _ui = atom<UI>(UI.arg);
 export const uiAtom = atom(
-  (g) => g(ui),
+  (g) => g(_ui),
   (g, s, a: UI) => {
-    s(ui, a);
-    if (a & (UI.arg | UI.textarea | UI.hotkey)) {
+    s(_ui, a);
+    if (a & (UI.arg | UI.textarea | UI.hotkey | UI.splash)) {
       s(inputFocusAtom, true);
     }
     // s(previewHTMLAtom, g(cachedMainPreview));
@@ -254,7 +273,7 @@ export const panelHTMLAtom = atom(
   (g) => g(panelHTML),
   (g, s, a: string) => {
     if (g(panelHTMLAtom) === a) return;
-    // if (a) s(unfilteredChoicesAtom, []);
+    if (a) s(scoredChoices, null);
     s(panelHTML, a);
     s(loadingAtom, false);
   }
@@ -274,7 +293,11 @@ export const previewHTMLAtom = atom(
     }
 
     if (g(previewHTML) !== a) {
-      s(previewHTML, a);
+      if (a === `<div/>`) {
+        s(previewHTML, '');
+      } else {
+        s(previewHTML, a);
+      }
     }
   }
 );
@@ -444,10 +467,12 @@ const prevChoiceId = atom<string>('');
 
 export const scoredChoices = atom(
   (g) => g(choices),
-  (g, s, a: ScoredChoice[]) => {
+  // Setting to `null` should only happen when using setPanel
+  // This helps skip sending `onNoChoices`
+  (g, s, a: ScoredChoice[] | null) => {
     s(submittedAtom, false);
     s(loadingAtom, false);
-    s(choices, a);
+    s(choices, a || []);
     const isFilter = g(uiAtom) === UI.arg && g(modeAtom) === Mode.FILTER;
 
     const channel = g(channelAtom);
@@ -455,7 +480,7 @@ export const scoredChoices = atom(
     if (a?.length) {
       const selected = g(selectedAtom);
 
-      if (!selected) {
+      if (!selected && a) {
         s(focusedChoiceAtom, a[0]?.item);
       }
 
@@ -464,11 +489,11 @@ export const scoredChoices = atom(
       resize(g, s);
     } else {
       s(focusedChoiceAtom, null);
-      if (isFilter) {
+      if (isFilter && Boolean(a)) {
         channel(Channel.NO_CHOICES);
       }
     }
-    if (a.length) s(mainHeightAtom, a.length * BUTTON_HEIGHT);
+    if (a?.length) s(mainHeightAtom, a.length * BUTTON_HEIGHT);
   }
 );
 
@@ -537,10 +562,14 @@ export const inputAtom = atom(
     if (a !== g(_input)) s(_inputChangedAtom, true);
     if (a === g(_input)) return;
 
+    s(_input, a);
+
+    const channel = g(channelAtom);
+    channel(Channel.INPUT);
+
     s(mouseEnabledAtom, 0);
     s(submittedAtom, false);
     s(_index, 0);
-    s(_input, a);
 
     const qs = g(quickScoreAtom) as QuickScoreInterface;
     const mode = g(modeAtom);
@@ -554,9 +583,6 @@ export const inputAtom = atom(
       s(loadingAtom, true);
       // generateChoices(a, pid);
     }
-
-    const channel = g(channelAtom);
-    channel(Channel.INPUT);
   }
 );
 
@@ -656,15 +682,21 @@ const resizeData = atom({});
 const resize = (g: Getter, s: Setter) => {
   // if (!g(resizeEnabledAtom)) return;
 
-  const placeholderOnly = Boolean(g(promptDataAtom)?.placeholderOnly);
-  const hasPanel = Boolean(g(panelHTMLAtom)?.length);
+  const ui = g(uiAtom);
 
+  const placeholderOnly = Boolean(
+    g(promptDataAtom)?.mode === Mode.FILTER &&
+      g(unfilteredChoices).length === 0 &&
+      ui === UI.arg
+  );
+  const hasPanel = Boolean(g(panelHTMLAtom)?.length);
+  const nullChoices = g(nullChoicesAtom);
   const data: ResizeData = {
     scriptPath: g(_script)?.filePath,
     placeholderOnly,
     topHeight: g(topHeight),
-    ui: g(uiAtom),
-    mainHeight: g(uiAtom) === UI.hotkey || placeholderOnly ? 0 : g(mainHeight),
+    ui,
+    mainHeight: nullChoices ? 0 : g(mainHeight),
     mode: g(modeAtom),
     hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
@@ -675,6 +707,7 @@ const resize = (g: Getter, s: Setter) => {
     hasPreview: Boolean(g(hasPreviewAtom)),
     promptId: g(promptId),
     inputChanged: g(_inputChangedAtom),
+    nullChoices,
   };
 
   // const prevData = g(resizeData);
@@ -783,6 +816,12 @@ export const promptDataAtom = atom(
       if (a.panel) {
         s(panelHTMLAtom, a.panel);
       }
+
+      s(onInputSubmitAtom, a?.onInputSubmit || {});
+      s(onShortcutSubmitAtom, a?.onShortcutSubmit || {});
+
+      console.log({ onShortcutSubmit: a?.onShortcutSubmit });
+
       // s(tabIndex, a.tabIndex);
       s(promptData, a);
     }
@@ -1101,6 +1140,10 @@ export const runMainScriptAtom = atom(() => () => {
   ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
 });
 
+export const runProcessesAtom = atom(() => () => {
+  ipcRenderer.send(AppChannel.RUN_PROCESSES_SCRIPT);
+});
+
 export const valueInvalidAtom = atom(null, (g, s, a: string) => {
   if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
   s(processingAtom, false);
@@ -1168,3 +1211,15 @@ export const showTabsAtom = atom((g) => {
 export const showSelectedAtom = atom((g) => {
   return !!(g(uiAtom) & (UI.arg | UI.hotkey)) && g(selectedAtom);
 });
+
+type OnInputSubmit = {
+  [key: string]: any;
+};
+
+type OnShortcutSubmit = {
+  [key: string]: any;
+};
+export const onInputSubmitAtom = atom<OnInputSubmit>({});
+export const onShortcutSubmitAtom = atom<OnShortcutSubmit>({});
+
+export const processesAtom = atom<ProcessInfo[]>([]);

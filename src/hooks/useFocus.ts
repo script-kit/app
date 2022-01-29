@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import { useEffect, useRef } from 'react';
+import { Ref, RefObject, useEffect, useRef } from 'react';
 import {
   flagValueAtom,
   inputFocusAtom,
@@ -10,10 +10,8 @@ import {
   scriptAtom,
   submittedAtom,
 } from '../jotai';
-import { SPLASH_PATH } from '../defaults';
 
-export default () => {
-  const ref = useRef<HTMLElement>();
+export default (ref: RefObject<HTMLElement>) => {
   const [flagValue] = useAtom(flagValueAtom);
   const [submitted] = useAtom(submittedAtom);
   const [open] = useAtom(openAtom);
@@ -24,7 +22,7 @@ export default () => {
   const [isHidden] = useAtom(isHiddenAtom);
 
   useEffect(() => {
-    if (script.filePath !== SPLASH_PATH && inputFocus && ref?.current) {
+    if (inputFocus && ref?.current) {
       ref?.current.focus();
     }
   }, [
@@ -36,6 +34,8 @@ export default () => {
     processing,
     script,
     isHidden,
+    ref,
+    ref?.current,
   ]);
 
   return ref;
