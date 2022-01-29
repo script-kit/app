@@ -1,4 +1,5 @@
 @import 'jetbrains-mono';
+@import 'jetbrains-mono/css/jetbrains-mono.css';
 @import 'simplebar/dist/simplebar.min.css';
 
 /* @import '../node_modules/highlight.js/styles/solarized-light.css'; */
