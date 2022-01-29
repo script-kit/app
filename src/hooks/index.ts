@@ -1,5 +1,4 @@
 export { default as useClose } from './useClose';
-export { default as useEdit } from './useEdit';
 export { default as useEnter } from './useEnter';
 export { default as useEscape } from './useEscape';
 export { default as useFlag } from './useFlag';

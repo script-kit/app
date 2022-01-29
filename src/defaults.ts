@@ -11,6 +11,7 @@ export const MIN_TEXTAREA_HEIGHT = MIN_HEIGHT * 3;
 export const MIN_WIDTH = 256;
 export const DROP_HEIGHT = 232;
 export const BUTTON_HEIGHT = 56;
+export const TOP_HEIGHT = 80;
 
 export const heightMap: { [key in UI]: number } = {
   [UI.none]: INPUT_HEIGHT,
@@ -22,6 +23,7 @@ export const heightMap: { [key in UI]: number } = {
   [UI.form]: DEFAULT_HEIGHT,
   [UI.div]: DEFAULT_HEIGHT,
   [UI.log]: INPUT_HEIGHT,
+  [UI.input]: TOP_HEIGHT,
 };
 
 export const SPLASH_PATH = `__app__/splash-screen`;
@@ -32,4 +34,9 @@ export const noScript: Script = {
   name: '',
   type: ProcessType.App,
   kenv: '',
+};
+
+export const noChoice: Choice = {
+  id: '',
+  name: '__app__/no-choice',
 };

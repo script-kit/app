@@ -2,10 +2,10 @@ import { useAtom } from 'jotai';
 import { Value } from '@johnlindquist/kit/cjs/enum';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
-  choicesAtom,
+  _choices,
   cmdAtom,
-  flagAtom,
-  indexAtom,
+  _flag,
+  _index,
   inputAtom,
   panelHTMLAtom,
   promptDataAtom,
@@ -14,13 +14,13 @@ import {
 import { hotkeysOptions } from './shared';
 
 export default () => {
-  const [choices] = useAtom(choicesAtom);
+  const [choices] = useAtom(_choices);
   const [input] = useAtom(inputAtom);
-  const [index] = useAtom(indexAtom);
+  const [index] = useAtom(_index);
   const [, submit] = useAtom(submitValueAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [panelHTML] = useAtom(panelHTMLAtom);
-  const [, setFlag] = useAtom(flagAtom);
+  const [, setFlag] = useAtom(_flag);
   const [cmd] = useAtom(cmdAtom);
 
   useHotkeys(

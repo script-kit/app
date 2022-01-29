@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import { useEffect, useRef } from 'react';
+import { Ref, RefObject, useEffect, useRef } from 'react';
 import {
   flagValueAtom,
   inputFocusAtom,
@@ -11,8 +11,7 @@ import {
   submittedAtom,
 } from '../jotai';
 
-export default () => {
-  const ref = useRef<HTMLElement>();
+export default (ref: RefObject<HTMLElement>) => {
   const [flagValue] = useAtom(flagValueAtom);
   const [submitted] = useAtom(submittedAtom);
   const [open] = useAtom(openAtom);
@@ -35,6 +34,8 @@ export default () => {
     processing,
     script,
     isHidden,
+    ref,
+    ref?.current,
   ]);
 
   return ref;

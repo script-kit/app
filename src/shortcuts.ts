@@ -1,7 +1,9 @@
 import { globalShortcut } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
-import { Script } from '@johnlindquist/kit';
+import { Script } from '@johnlindquist/kit/types/core';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
+
 import {
   mainScriptPath,
   shortcutsPath,
@@ -9,11 +11,10 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
-import { focusPrompt } from './prompt';
+import { focusPrompt, sendToPrompt } from './prompt';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
   const success = globalShortcut.register(shortcut, async () => {
-    console.log(`🏃‍♀️ Run ${filePath}`);
     runPromptProcess(filePath);
     focusPrompt();
   });
@@ -83,12 +84,13 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       const ret = globalShortcut.register(shortcut, async () => {
-        log.info(`🏚 main shortcut`);
+        log.info(`🏚  main shortcut`);
+
         await runPromptProcess(mainScriptPath);
       });
 
       if (!ret) {
-        log.info(`Failed to register: ${shortcut} to ${mainScriptPath}`);
+        log.warn(`Failed to register: ${shortcut} to ${mainScriptPath}`);
       }
 
       if (ret && globalShortcut.isRegistered(shortcut)) {

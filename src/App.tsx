@@ -41,14 +41,12 @@ import Log from './components/log';
 import Header from './components/header';
 import Form from './components/form';
 import {
-  scoredChoices,
   editorConfigAtom,
   flagsAtom,
   flagValueAtom,
   formDataAtom,
   formHTMLAtom,
   hintAtom,
-  indexAtom,
   inputAtom,
   isMouseDownAtom,
   logHTMLAtom,
@@ -63,23 +61,20 @@ import {
   promptDataAtom,
   scriptAtom,
   selectedAtom,
-  submittedAtom,
   submitValueAtom,
   tabIndexAtom,
-  tabsAtom,
+  _tabs,
   textareaConfigAtom,
   themeAtom,
   topHeightAtom,
   uiAtom,
   unfilteredChoicesAtom,
-  isKitScriptAtom,
   topRefAtom,
-  descriptionAtom,
-  nameAtom,
+  _description,
+  _name,
   textareaValueAtom,
   loadingAtom,
   processingAtom,
-  isMainScriptAtom,
   exitAtom,
   isSplashAtom,
   appConfigAtom,
@@ -90,10 +85,22 @@ import {
   resizeEnabledAtom,
   valueInvalidAtom,
   isHiddenAtom,
+  _history,
+  filterInputAtom,
+  blurAtom,
+  startAtom,
+  _logo,
+  getEditorHistoryAtom,
+  scoredChoices,
+  showTabsAtom,
+  showSelectedAtom,
+  nullChoicesAtom,
+  processesAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
 import Splash from './components/splash';
+import { AppChannel } from './enums';
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -128,62 +135,66 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
-  const [appConfig, setAppConfig] = useAtom(appConfigAtom);
-  const [pid, setPid] = useAtom(pidAtom);
+  const [, setAppConfig] = useAtom(appConfigAtom);
+  const [, setPid] = useAtom(pidAtom);
   const [open, setOpen] = useAtom(openAtom);
   const [, setExit] = useAtom(exitAtom);
   const [script, setScript] = useAtom(scriptAtom);
-  const [description] = useAtom(descriptionAtom);
-  const [name] = useAtom(nameAtom);
-  const [isKitScript] = useAtom(isKitScriptAtom);
+  const [, setScriptHistory] = useAtom(_history);
 
-  const [inputValue, setInput] = useAtom(inputAtom);
+  const [, setInput] = useAtom(inputAtom);
   const [, setPlaceholder] = useAtom(placeholderAtom);
-  const [promptData, setPromptData] = useAtom(promptDataAtom);
+  const [, setPromptData] = useAtom(promptDataAtom);
   const [, setTheme] = useAtom(themeAtom);
   const [, setSplashBody] = useAtom(splashBodyAtom);
   const [, setSplashHeader] = useAtom(splashHeaderAtom);
   const [, setSplashProgress] = useAtom(splashProgressAtom);
-  const [submitted] = useAtom(submittedAtom);
 
   const [, setUnfilteredChoices] = useAtom(unfilteredChoicesAtom);
+  const [choices] = useAtom(scoredChoices);
 
   const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
-  const [mode, setMode] = useAtom(modeAtom);
+  const [, setMode] = useAtom(modeAtom);
   const [, setReady] = useAtom(isReadyAtom);
 
-  const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
-  const [tabs] = useAtom(tabsAtom);
+  const [, setTabIndex] = useAtom(tabIndexAtom);
+  const [tabs] = useAtom(_tabs);
 
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
-  const [previewHTML, setPreviewHTML] = useAtom(previewHTMLAtom);
+  const [, setPreviewHTML] = useAtom(previewHTMLAtom);
   const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
   const [, setEditorConfig] = useAtom(editorConfigAtom);
   const [, setTextareaConfig] = useAtom(textareaConfigAtom);
   const [, setFlags] = useAtom(flagsAtom);
-  const [formHTML, setFormHTML] = useAtom(formHTMLAtom);
+  const [, setFormHTML] = useAtom(formHTMLAtom);
   const [, setFormData] = useAtom(formDataAtom);
 
-  const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
-  const [topHeight, setTopHeight] = useAtom(topHeightAtom);
+  const [, setMainHeight] = useAtom(mainHeightAtom);
+  const [, setTopHeight] = useAtom(topHeightAtom);
 
   const [, setSubmitValue] = useAtom(submitValueAtom);
   const [flagValue] = useAtom(flagValueAtom);
-  const [mouseEnabled, setMouseEnabled] = useAtom(mouseEnabledAtom);
-  const [selected] = useAtom(selectedAtom);
-  const [index] = useAtom(indexAtom);
-  const [choices] = useAtom(scoredChoices);
+  const [, setMouseEnabled] = useAtom(mouseEnabledAtom);
+  const [showSelected] = useAtom(showSelectedAtom);
+  const [showTabs] = useAtom(showTabsAtom);
   const [, setTopRef] = useAtom(topRefAtom);
-  const [, setDescription] = useAtom(descriptionAtom);
-  const [, setName] = useAtom(nameAtom);
+  const [, setDescription] = useAtom(_description);
+  const [, setName] = useAtom(_name);
   const [, setTextareaValue] = useAtom(textareaValueAtom);
   const [, setLoading] = useAtom(loadingAtom);
   const [processing] = useAtom(processingAtom);
+  const [nullChoices] = useAtom(nullChoicesAtom);
   const [resizeEnabled] = useAtom(resizeEnabledAtom);
-  const [isMainScript] = useAtom(isMainScriptAtom);
   const [isSplash] = useAtom(isSplashAtom);
   const [, setValueInvalid] = useAtom(valueInvalidAtom);
+  const [, setFilterInput] = useAtom(filterInputAtom);
+  const [, setBlur] = useAtom(blurAtom);
+  const [, start] = useAtom(startAtom);
+  const [, setLogo] = useAtom(_logo);
+  const [getEditorHistory] = useAtom(getEditorHistoryAtom);
+  const [appConfig] = useAtom(appConfigAtom);
+  const [, setProcesses] = useAtom(processesAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -195,7 +206,7 @@ export default function App() {
 
   useThemeDetector();
 
-  const [isMouseDown, setIsMouseDown] = useAtom(isMouseDownAtom);
+  const [, setIsMouseDown] = useAtom(isMouseDownAtom);
 
   type ChannelAtomMap = {
     [key in keyof ChannelMap]: (data: ChannelMap[key]) => void;
@@ -208,12 +219,14 @@ export default function App() {
     [Channel.EXIT]: setExit,
     [Channel.SET_PID]: setPid,
     [Channel.SET_SCRIPT]: setScript,
+    [Channel.SET_SCRIPT_HISTORY]: setScriptHistory,
     [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
     [Channel.SET_DESCRIPTION]: setDescription,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfig,
     [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfig,
     [Channel.SET_FLAGS]: setFlags,
     [Channel.SET_DIV_HTML]: setPanelHTML,
+    [Channel.SET_FILTER_INPUT]: setFilterInput,
     [Channel.SET_FORM_HTML]: ({ html, formData }: any) => {
       setFormHTML(html);
       setFormData(formData);
@@ -227,7 +240,9 @@ export default function App() {
     [Channel.SET_OPEN]: setOpen,
     [Channel.SET_PANEL]: setPanelHTML,
     [Channel.SET_PREVIEW]: setPreviewHTML,
+    [Channel.SET_PROMPT_BLURRED]: setBlur,
     [Channel.SET_LOG]: setLogHtml,
+    [Channel.SET_LOGO]: setLogo,
     [Channel.SET_PLACEHOLDER]: setPlaceholder,
     [Channel.SET_READY]: setReady,
     [Channel.SET_SUBMIT_VALUE]: setSubmitValue,
@@ -238,6 +253,8 @@ export default function App() {
     [Channel.SET_SPLASH_PROGRESS]: setSplashProgress,
     [Channel.SET_THEME]: setTheme,
     [Channel.VALUE_INVALID]: setValueInvalid,
+    [Channel.START]: start,
+    [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -269,6 +286,12 @@ export default function App() {
     };
   }, [messageMap]);
 
+  useEffect(() => {
+    ipcRenderer.on(AppChannel.PROCESSES, (_, data) => {
+      setProcesses(data);
+    });
+  }, []);
+
   const onMouseDown = useCallback(() => {
     setIsMouseDown(true);
   }, [setIsMouseDown]);
@@ -285,16 +308,16 @@ export default function App() {
 
   useEffect(() => {
     if (headerRef?.current) setTopRef(headerRef?.current);
-  }, [headerRef]);
+  }, [headerRef, setTopRef]);
 
-  useEffect(() => {
-    if (windowContainerRef?.current) {
-      windowContainerRef.current.style.height = `${window.innerHeight}px`;
-      windowContainerRef.current.style.top = `0px`;
-      windowContainerRef.current.style.left = `0px`;
-      // windowContainerRef.current.style.width = window.innerWidth + 'px';
-    }
-  }, [mainHeight, topHeight, windowContainerRef]);
+  // useEffect(() => {
+  //   if (windowContainerRef?.current) {
+  //     windowContainerRef.current.style.height = `${window.innerHeight}px`;
+  //     windowContainerRef.current.style.top = `0px`;
+  //     windowContainerRef.current.style.left = `0px`;
+  //     // windowContainerRef.current.style.width = window.innerWidth + 'px';
+  //   }
+  // }, [mainHeight, topHeight, windowContainerRef]);
 
   const [hidden, setHidden] = useAtom(isHiddenAtom);
   const controls = useAnimation();
@@ -306,18 +329,19 @@ export default function App() {
       controls.stop();
       controls.set({ opacity: 0 });
     }
-  }, [open]);
+  }, [open, controls]);
 
   const showIfOpen = useCallback(() => {
     if (open) setHidden(false);
-  }, [open]);
+  }, [open, setHidden]);
 
   const hideIfClosed = useCallback(() => {
     if (!open) setHidden(true);
-  }, [open]);
+  }, [open, setHidden]);
 
   return (
     <ErrorBoundary>
+      {/* {JSON.stringify(state)} */}
       <motion.div
         animate={controls}
         transition={{ duration: 0.15 }}
@@ -331,69 +355,67 @@ export default function App() {
         }
         className={`
         ${hidden ? 'hidden' : ''}
-        relative flex flex-col w-full h-screen min-h-screen`}
+        relative flex flex-col w-full h-full`}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseLeave}
         onMouseMove={onMouseMove}
       >
-        <header ref={headerRef} className="relative">
+        <header ref={headerRef} className="relative z-10">
           <Header />
           <AnimatePresence key="headerCompenents">
-            {!!(ui & UI.hotkey) && (
+            {ui === UI.hotkey && (
               <Hotkey
                 key="AppHotkey"
                 submit={setSubmitValue}
                 onHotkeyHeightChanged={setMainHeight}
               />
             )}
-            {!!(ui & UI.arg) && <Input key="AppInput" />}
+            {ui === UI.arg && <Input key="AppInput" />}
 
             {hint && <Hint key="AppHint" />}
-            <div className="max-h-5.5">
-              {!!(ui & (UI.arg | UI.div)) && tabs?.length > 0 && !flagValue && (
-                <Tabs key="AppTabs" />
-              )}
-              {!!(ui & (UI.arg | UI.hotkey)) && selected && (
-                <Selected key="AppSelected" />
-              )}
-            </div>
             {logHtml?.length > 0 && script?.log !== 'false' && (
               <Log key="AppLog" />
+            )}
+
+            {(showTabs || showSelected) && (
+              <div className="max-h-5.5">
+                {showTabs && <Tabs key="AppTabs" />}
+                {showSelected && <Selected key="AppSelected" />}
+              </div>
             )}
           </AnimatePresence>
         </header>
         <main
           ref={mainRef}
           className={`
-        ${processing && resizeEnabled ? `h-0` : `h-full`}
+        ${(processing && resizeEnabled) || nullChoices ? `h-0` : `h-full`}
         w-full
-        border-transparent
-        border-b
         relative
-
         `}
         >
           <AnimatePresence key="mainComponents">
-            {isSplash && <Splash />}
-            {!!(ui & UI.drop) && <Drop />}
-            {!!(ui & UI.textarea) && <TextArea />}
-            {!!(ui & UI.editor) && <Editor />}
-            {!!(ui & UI.form) && <Form />}
+            {ui === UI.splash && <Splash />}
+            {ui === UI.drop && <Drop />}
+            {ui === UI.textarea && <TextArea />}
+            {ui === UI.editor && <Editor />}
+            {ui === UI.form && <Form />}
           </AnimatePresence>
           <AutoSizer>
             {({ width, height }) => (
               <>
-                {!!(ui & (UI.arg | UI.hotkey | UI.div)) && panelHTML && (
-                  <>
-                    <Panel width={width} height={height} />
-                  </>
-                )}
-                {!!(ui & UI.arg) && !panelHTML && (
+                {(ui === UI.arg && !nullChoices && choices.length > 0 && (
                   <>
                     <List height={height} width={width} />
                   </>
-                )}
+                )) ||
+                  (!!(ui === UI.arg || ui === UI.hotkey || ui === UI.div) &&
+                    !nullChoices &&
+                    panelHTML.length > 0 && (
+                      <>
+                        <Panel width={width} height={height} />
+                      </>
+                    ))}
               </>
             )}
           </AutoSizer>

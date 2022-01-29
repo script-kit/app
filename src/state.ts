@@ -1,6 +1,8 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
+import { proxy } from 'valtio/vanilla';
+import path from 'path';
 import { ChildProcess } from 'child_process';
 import { app } from 'electron';
 import schedule, { Job } from 'node-schedule';
@@ -11,7 +13,11 @@ import {
   parseScript,
   kitPath,
   isParentOfDir,
+  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
+import { UI } from '@johnlindquist/kit/cjs/enum';
+import { noScript, MIN_HEIGHT } from './defaults';
+import { ProcessInfo } from './types';
 
 export const makeRestartNecessary = async () => {
   const appDb = await getAppDb();
@@ -56,7 +62,7 @@ export const getBackgroundTasks = () => {
   return tasks;
 };
 
-export const scheduleMap = new Map();
+export const scheduleMap = new Map<string, Job>();
 
 export const getSchedule = () => {
   return Array.from(scheduleMap.entries())
@@ -111,3 +117,42 @@ export const getKitScripts = (): Script[] => {
 export const getKitScript = (filePath: string): Script => {
   return kitScripts.find((script) => script.filePath === filePath) as Script;
 };
+
+const addP = (pi: Partial<ProcessInfo>) => {
+  state.ps.push(pi);
+};
+
+const removeP = (pid: number) => {
+  const index = state.ps.findIndex((p) => p.pid === pid);
+  if (index > -1) {
+    state.ps.splice(index, 1);
+  }
+};
+
+const initState = {
+  hidden: false,
+  ps: [] as Partial<ProcessInfo>[],
+  addP,
+  removeP,
+  pid: 0,
+  script: noScript,
+  ui: UI.arg,
+  blurredByKit: false,
+  modifiedByUser: false,
+  ignoreBlur: false,
+  minHeight: MIN_HEIGHT,
+  resize: false,
+  prevResize: false,
+  promptProcess: undefined as ProcessInfo | undefined,
+  isMainScript: () => state.script.filePath === mainScriptPath,
+};
+
+export const state: typeof initState = proxy(initState);
+
+export function isSameScript(promptScriptPath: string) {
+  const same =
+    path.resolve(state.script.filePath || '') ===
+    path.resolve(promptScriptPath);
+
+  return same;
+}

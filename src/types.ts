@@ -1,5 +1,6 @@
-import { Choice } from '@johnlindquist/kit';
-import { Mode, UI } from '@johnlindquist/kit/cjs/enum';
+import { Choice } from '@johnlindquist/kit/types/core';
+import { ProcessType, Mode, UI } from '@johnlindquist/kit/cjs/enum';
+import { ChildProcess } from 'child_process';
 
 export interface ScoredChoice {
   item: Choice;
@@ -29,17 +30,37 @@ export interface ListProps {
 }
 
 export interface ResizeData {
+  scriptPath: string;
   ui: UI;
   mode: Mode;
   topHeight: number;
   mainHeight: number;
-  filePath: string;
   hasPanel: boolean;
-  hasChoices: boolean;
   hasInput: boolean;
   open: boolean;
-  isPreviewOpen: boolean;
   previewEnabled: boolean;
   tabIndex: number;
   isSplash: boolean;
+  hasPreview: boolean;
+  promptId: number;
+  inputChanged: boolean;
+  placeholderOnly: boolean;
+  nullChoices: boolean;
 }
+
+export interface Survey {
+  email: string;
+  question: string;
+  response: string;
+  subscribe: boolean;
+  contact: boolean;
+}
+
+export type ProcessInfo = {
+  pid: number;
+  child: ChildProcess;
+  type: ProcessType;
+  scriptPath: string;
+  values: any[];
+  date: Date;
+};

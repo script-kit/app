@@ -19,7 +19,7 @@ import {
   flagsAtom,
   flagValueAtom,
   isMouseDownAtom,
-  modifiersAtom,
+  _modifiers,
 } from '../jotai';
 import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
 import { ReactComponent as NoImageIcon } from '../svg/icons8-no-image.svg';
@@ -70,7 +70,7 @@ export default function ChoiceButton({
   const [isMouseDown] = useAtom(isMouseDownAtom);
   const [flags] = useAtom(flagsAtom);
   const [flaggedValue, setFlagValue] = useAtom(flagValueAtom);
-  const [modifiers] = useAtom(modifiersAtom);
+  const [modifiers] = useAtom(_modifiers);
 
   // const dataTransfer = useRef<any>('Data Transfer');
 
@@ -160,12 +160,11 @@ export default function ChoiceButton({
 
       ${
         index === currentIndex
-          ? `bg-black bg-opacity-10
+          ? `bg-black bg-opacity-[0.05]
           dark:bg-white dark:bg-opacity-5
             ${
               mouseEnabled
-                ? `active:shadow-inner active:bg-opacity-15 active:dark:bg-opacity-10
-                  shadow hover:shadow-md`
+                ? `active:bg-opacity-10 active:dark:bg-opacity-10`
                 : ``
             }
             `
@@ -178,9 +177,7 @@ export default function ChoiceButton({
         text-left
         flex
         flex-row
-
         px-4
-
         justify-between
         items-center
         focus:outline-none
@@ -201,34 +198,54 @@ export default function ChoiceButton({
         })
       ) : (
         <div className="flex flex-row items-center justify-between w-full h-full">
-          <div className="flex flex-col max-w-full overflow-x-hidden">
-            <div className="truncate">
-              {highlight(
-                choice.name,
-                scoredChoice?.matches?.name,
-                'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light'
-              )}
-            </div>
-            {(choice?.focused ||
-              choice?.description ||
-              modifierDescription) && (
-              <div
-                className={`text-xs truncate transition-opacity ease-in-out duration-200 pb-1 ${
-                  index === currentIndex
-                    ? `opacity-90 dark:text-primary-light text-primary-dark`
-                    : `opacity-60`
-                }
+          <div className="flex flex-row overflow-x-hidden items-center h-full">
+            {/* Img */}
+            {choice?.img && !imageFail && (
+              <motion.img
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.1 }}
+                src={choice.img}
+                alt={choice.description || ''}
+                onError={() => setImageFail(true)}
+                className={`
+                h-12 rounded
+                mr-2
+                ${index === currentIndex ? `opacity-100` : `opacity-80`}
+                `}
+              />
+            )}
+            <div className="flex flex-col max-w-full overflow-x-hidden">
+              {/* Name */}
+              <div className="truncate">
+                {highlight(
+                  choice.name,
+                  scoredChoice?.matches?.name,
+                  'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-5 text-primary-dark dark:text-primary-light'
+                )}
+              </div>
+              {/* Description */}
+              {(choice?.focused ||
+                choice?.description ||
+                modifierDescription) && (
+                <div
+                  className={`text-xs truncate transition-opacity ease-in-out duration-200 pb-1 ${
+                    index === currentIndex
+                      ? `opacity-100 dark:text-primary-light text-primary-dark`
+                      : `opacity-60`
+                  }
 
                 `}
-              >
-                {modifierDescription ||
-                  highlight(
-                    choice?.description || '',
-                    scoredChoice?.matches?.description,
-                    'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light  text-opacity-100'
-                  )}
-              </div>
-            )}
+                >
+                  {modifierDescription ||
+                    highlight(
+                      choice?.description || '',
+                      scoredChoice?.matches?.description,
+                      'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-15 text-primary-dark dark:text-primary-light'
+                    )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-row items-center flex-shrink-0 h-full">
@@ -268,7 +285,7 @@ export default function ChoiceButton({
                   <div
                     className={`
               text-xxs font-mono
-              ${index === currentIndex ? `opacity-70` : `opacity-40`}
+              ${index === currentIndex ? `opacity-100` : `opacity-40`}
               `}
                   >
                     {highlight(
@@ -297,7 +314,7 @@ export default function ChoiceButton({
             {imageFail && (
               <div
                 style={{ aspectRatio: '1/1' }}
-                className="h-3/4 flex flex-row items-center justify-center"
+                className="h-8 flex flex-row items-center justify-center"
               >
                 <NoImageIcon
                   className={`
@@ -312,7 +329,7 @@ export default function ChoiceButton({
                 />
               </div>
             )}
-            {choice?.img && !imageFail && (
+            {/* {choice?.img && !imageFail && (
               <motion.img
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -321,7 +338,7 @@ export default function ChoiceButton({
                 alt={choice.description || ''}
                 onError={() => setImageFail(true)}
                 className={`
-                h-3/4 rounded
+                h-8 rounded
                 ${index === currentIndex ? `opacity-100` : `opacity-80`}
 
               }
@@ -330,7 +347,7 @@ export default function ChoiceButton({
               transition ease-in
                 `}
               />
-            )}
+            )} */}
 
             {index === currentIndex &&
               Boolean(Object.keys(flags).length) &&

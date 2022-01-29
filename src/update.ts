@@ -36,6 +36,7 @@ export const kitIgnore = () => {
 };
 
 export const checkForUpdates = async () => {
+  log.info('Checking for updates...');
   const isWin = os.platform().startsWith('win');
   if (isWin) return; // TODO: Get a Windows app cert
 
@@ -59,6 +60,7 @@ const parseChannel = (version: string) => {
 
 let manualUpdateCheck = false;
 export const configureAutoUpdate = async () => {
+  log.info(`Configuring auto-update`);
   autoUpdater.logger = log;
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;

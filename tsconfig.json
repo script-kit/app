@@ -32,6 +32,8 @@
     "src/main.prod.js",
     "src/renderer.prod.js",
     "src/dist",
-    ".erb/dll"
+    ".erb/dll",
+    "node_modules",
+    "assets"
   ]
 }
