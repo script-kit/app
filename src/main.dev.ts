@@ -301,7 +301,7 @@ const optionalSetupScript = (...args: string[]) => {
 
       if (!dataString.includes(`[object`)) {
         log.info(args[0], dataString);
-        sendSplashBody(dataString.slice(0, 200));
+        // sendSplashBody(dataString.slice(0, 200));
       }
     });
 
@@ -606,7 +606,6 @@ const checkKit = async () => {
       child.on('message', (data) => {
         const dataString = data.toString();
         log.info(args[0], dataString);
-        sendSplashBody(dataString.slice(0, 200));
       });
 
       child.on('exit', () => {
