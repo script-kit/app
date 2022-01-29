@@ -170,24 +170,6 @@ export const createPromptWindow = async () => {
   promptWindow?.on('resized', debounce(onResized, 500));
   promptWindow?.on('moved', debounce(onMove, 500));
 
-  // setInterval(() => {
-  //   const [, newHeight] = promptWindow?.getSize() as number[];
-  //   const { height: boundsHeight } = promptWindow?.getBounds() as Rectangle;
-  //   const {
-  //     height: normalBoundsHeight,
-  //   } = promptWindow?.getNormalBounds() as Rectangle;
-  //   const {
-  //     height: contentBoundsHeight,
-  //   } = promptWindow?.getContentBounds() as Rectangle;
-  //   log.info(
-  //     `REPORTING HEIGHT: `,
-  //     newHeight,
-  //     boundsHeight,
-  //     normalBoundsHeight,
-  //     contentBoundsHeight
-  //   );
-  // }, 2000);
-
   promptWindow?.on('show', () => {
     setTimeout(() => {
       focusPrompt();
