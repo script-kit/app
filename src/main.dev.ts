@@ -33,6 +33,7 @@ import log from 'electron-log';
 import path from 'path';
 import {
   fork,
+  spawn,
   spawnSync,
   SpawnSyncOptions,
   SpawnSyncReturns,
@@ -778,12 +779,31 @@ const checkKit = async () => {
         });
       });
     } else {
-      const npmResult = spawnSync(
-        kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
-        [`i`, `--production`, `--no-progress`, `--quiet`],
-        options
-      );
-      await handleSpawnReturns(`npm`, npmResult);
+      const npmResult = await new Promise((resolve, reject) => {
+        const child = spawn(
+          kitPath('node', 'bin', 'npm'),
+          [`i`, `--production`, `--no-progress`, `--quiet`],
+          options
+        );
+
+        child.on('message', (data: any) => {
+          sendSplashBody(data.toString());
+        });
+
+        child.on('exit', () => {
+          resolve('npm install success 🏆');
+        });
+
+        child.on('error', (error: any) => {
+          reject(error);
+        });
+      });
+      // const npmResult = spawnSync(
+      //   kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
+      //   [`i`, `--production`, `--no-progress`, `--quiet`],
+      //   options
+      // );
+      log.info({ npmResult });
     }
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));

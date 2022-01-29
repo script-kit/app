@@ -696,7 +696,7 @@ const resize = (g: Getter, s: Setter) => {
     placeholderOnly,
     topHeight: g(topHeight),
     ui,
-    mainHeight: nullChoices ? 0 : g(mainHeight),
+    mainHeight: nullChoices && !hasPanel ? 0 : g(mainHeight),
     mode: g(modeAtom),
     hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
@@ -813,14 +813,13 @@ export const promptDataAtom = atom(
         s(previewHTMLAtom, a.preview);
       }
 
+      console.log({ a });
       if (a.panel) {
         s(panelHTMLAtom, a.panel);
       }
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
       s(onShortcutSubmitAtom, a?.onShortcutSubmit || {});
-
-      console.log({ onShortcutSubmit: a?.onShortcutSubmit });
 
       // s(tabIndex, a.tabIndex);
       s(promptData, a);

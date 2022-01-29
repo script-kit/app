@@ -389,7 +389,11 @@ export default function App() {
         <main
           ref={mainRef}
           className={`
-        ${(processing && resizeEnabled) || nullChoices ? `h-0` : `h-full`}
+        ${
+          (processing && resizeEnabled) || (nullChoices && !panelHTML?.length)
+            ? `h-0`
+            : `h-full`
+        }
         w-full
         relative
         `}
@@ -410,7 +414,6 @@ export default function App() {
                   </>
                 )) ||
                   (!!(ui === UI.arg || ui === UI.hotkey || ui === UI.div) &&
-                    !nullChoices &&
                     panelHTML.length > 0 && (
                       <>
                         <Panel width={width} height={height} />
