@@ -13,7 +13,7 @@ import {
   splashProgressAtom,
   submitSurveyAtom,
 } from '../jotai';
-import { useEscape, useFocus } from '../hooks';
+import { useEscape } from '../hooks';
 
 // const questions = [
 //   `What problem should Script Kit will solve for you?`,
@@ -148,19 +148,10 @@ export default function Splash() {
   const [hideEmail, setHideEmail] = useState(false);
   const [contact, setContact] = useState(false);
   const questionRef = useRef<HTMLTextAreaElement>(null);
-  useFocus(questionRef);
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setQuestion(`What kind of script do you want to write?`);
-
-    if (questionRef?.current) {
-      questionRef?.current?.focus();
-    } else {
-      setTimeout(() => {
-        questionRef?.current?.focus();
-      }, 250);
-    }
   }, [questionRef, questionRef?.current]);
 
   const [progress] = useAtom(splashProgressAtom);

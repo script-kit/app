@@ -832,11 +832,13 @@ const checkKit = async () => {
   }
   await storeVersion(getVersion());
 
-  if (requiresInstall || !(await isContributor())) {
+  if (requiresInstall || (await isContributor())) {
     const installInfo = {
       version: getVersion(),
       platform,
       timestamp: Date.now(),
+      osversion: os.version(),
+      username: os.userInfo().username,
     };
 
     optionalSetupScript(
