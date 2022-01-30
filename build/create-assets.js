@@ -54,6 +54,8 @@ const go = async () => {
     path.resolve(process.env.PWD, 'assets'),
     { filename: 'kenv.tar.gz' }
   );
+
+  await execa(`cp -R ./node_modules/monaco-editor/min/vs ./assets`);
 };
 
 go();
