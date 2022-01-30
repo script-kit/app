@@ -1,6 +1,7 @@
 const go = async () => {
   const { chdir } = await import('process');
   const path = await import('path');
+  const fs = await import('fs-extra');
 
   console.log(`PWD`, process.env.PWD);
   chdir(process.env.PWD);
@@ -54,6 +55,8 @@ const go = async () => {
     path.resolve(process.env.PWD, 'assets'),
     { filename: 'kenv.tar.gz' }
   );
+
+  await fs.copy(`./node_modules/monaco-editor/min/vs`, `./assets`);
 };
 
 go();

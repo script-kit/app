@@ -2,7 +2,7 @@
 
 /* eslint-disable no-nested-ternary */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AnimateSharedLayout, motion } from 'framer-motion';
+import { AnimatePresence, AnimateSharedLayout, motion } from 'framer-motion';
 import { useAtom } from 'jotai';
 import {
   appConfigAtom,
@@ -187,12 +187,11 @@ export default function Splash() {
     setQuestion(questions[qIndex]);
   }, [questionRef, questionRef?.current, qIndex]);
 
-  const [progress] = useAtom(splashProgressAtom);
   useEffect(() => {
     setTimeout(() => {
       questionRef?.current?.focus();
     }, 250);
-  }, [questionRef?.current, progress]);
+  }, [questionRef?.current]);
 
   const handleOnSubmit = useCallback(() => {
     submitSurvey({
@@ -205,6 +204,7 @@ export default function Splash() {
     // submitting
     setSubmitting(true);
     // done
+    setQuestion('');
     return setTimeout(() => {
       setSubmitting(false);
       setSubmitted(true);
@@ -242,117 +242,135 @@ export default function Splash() {
     >
       <Aside />
       <main className="bg-white bg-opacity-5 col-span-5 h-full p-6">
-        <AnimateSharedLayout>
-          <form
-            onSubmit={handleOnSubmit}
-            className="flex flex-col h-full justify-center"
-          >
-            <fieldset className="space-y-2 p-2">
-              <legend className="text-lg opacity-90 w-full">
-                <p>Hey! 👋</p>
-                <p className="font-semibold">{question}</p>
-              </legend>
-              <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 flex flex-col">
-                <motion.textarea
-                  autoFocus
-                  tabIndex={0}
-                  ref={questionRef}
-                  value={response}
-                  // onKeyDown={onMaybeEnter}
-                  onChange={(e) => {
-                    setResponse(e.currentTarget.value);
-                  }}
-                  id="answer"
-                  required={contact && !subscribe}
-                  placeholder="Type your answer here..."
-                  className="text-lg w-full rounded-md border-none bg-transparent px-5 py-3"
-                  rows={5}
-                />
-              </motion.div>
+        <form
+          onSubmit={handleOnSubmit}
+          className="flex flex-col h-full justify-center"
+        >
+          <fieldset className="space-y-2 p-2">
+            <legend className="text-lg opacity-90 w-full h-14">
+              <p>Hey! 👋</p>
+              <AnimateSharedLayout type="crossfade">
+                <AnimatePresence>
+                  {question && (
+                    <motion.p
+                      layoutId="question"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.5 }}
+                      className="font-semibold"
+                    >
+                      {question}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </AnimateSharedLayout>
+            </legend>
+            <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 flex flex-col">
+              <motion.textarea
+                autoFocus
+                tabIndex={0}
+                ref={questionRef}
+                value={response}
+                // onKeyDown={onMaybeEnter}
+                onChange={(e) => {
+                  setResponse(e?.currentTarget?.value || '');
+                }}
+                id="answer"
+                required={contact && !subscribe}
+                placeholder="Type your answer here..."
+                className="text-lg w-full rounded-md border-none bg-transparent px-5 py-3"
+                rows={5}
+              />
+            </motion.div>
 
-              <motion.div>
-                {!contactSubmitted && (
-                  <motion.div className="flex items-center">
+            <motion.div>
+              {!contactSubmitted && (
+                <motion.div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={contact}
+                    onChange={(e) => setContact(e?.target?.checked || false)}
+                    id="contact"
+                    className="dark:bg-white bg-black dark:bg-opacity-20 bg-opacity-10 rounded-sm"
+                  />
+                  <label htmlFor="contact" className="pl-2">
+                    Contact me with an example of my script idea
+                  </label>
+                </motion.div>
+              )}
+
+              {!subscribeSubmitted && (
+                <motion.div className="flex items-center">
+                  <div className="relative flex items-center">
                     <input
                       type="checkbox"
-                      checked={contact}
-                      onChange={(e) => setContact(e.target.checked)}
-                      id="contact"
+                      checked={subscribe}
+                      onChange={(e) =>
+                        setSubscribe(e?.target?.checked || false)
+                      }
+                      id="subscribe"
                       className="dark:bg-white bg-black dark:bg-opacity-20 bg-opacity-10 rounded-sm"
                     />
-                    <label htmlFor="contact" className="pl-2">
-                      Contact me with an example of my script idea
+                    <label htmlFor="subscribe" className="pl-2">
+                      Receive Script Kit Tips, Tricks, and News
                     </label>
-                  </motion.div>
-                )}
+                  </div>
+                </motion.div>
+              )}
+              {!hideEmail ? (
+                <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 my-3">
+                  <label
+                    className={`px-5 py-3 absolute ${
+                      emailRequired
+                        ? "after:content-['*'] after:absolute dark:after:text-primary-light after:text-primary-dark"
+                        : ''
+                    }`}
+                    htmlFor="email"
+                  >
+                    Email
+                  </label>
+                  <input
+                    required={emailRequired}
+                    ref={emailRef}
+                    onChange={(event) => setEmail(event.target.value || '')}
+                    value={email}
+                    type="email"
+                    id="email"
+                    className="px-5 pl-20 py-3 border-none bg-transparent w-full rounded-md"
+                    placeholder="you@company.com"
+                  />
+                </motion.div>
+              ) : null}
+            </motion.div>
 
-                {!subscribeSubmitted && (
-                  <motion.div className="flex items-center">
-                    <div className="relative flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={subscribe}
-                        onChange={(e) => setSubscribe(e.target.checked)}
-                        id="subscribe"
-                        className="dark:bg-white bg-black dark:bg-opacity-20 bg-opacity-10 rounded-sm"
-                      />
-                      <label htmlFor="subscribe" className="pl-2">
-                        Receive Script Kit Tips, Tricks, and News
-                      </label>
-                    </div>
-                  </motion.div>
-                )}
-                {!hideEmail ? (
-                  <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 my-3">
-                    <label
-                      className={`px-5 py-3 absolute ${
-                        emailRequired
-                          ? "after:content-['*'] after:absolute dark:after:text-primary-light after:text-primary-dark"
-                          : ''
-                      }`}
-                      htmlFor="email"
-                    >
-                      Email
-                    </label>
-                    <input
-                      required={emailRequired}
-                      ref={emailRef}
-                      onChange={(event) => setEmail(event.target.value)}
-                      type="email"
-                      id="email"
-                      className="px-5 pl-20 py-3 border-none bg-transparent w-full rounded-md"
-                      placeholder="you@company.com"
-                    />
-                  </motion.div>
-                ) : null}
-              </motion.div>
-
-              <motion.div className="flex flex-row justify-between items-center w-full h-10">
-                <button
-                  type="submit"
-                  className="rounded-md bg-primary-light dark:bg-bg-light bg-opacity-75 dark:bg-opacity-20 hover:bg-opacity-100 dark:hover:bg-opacity-30 transition px-5 py-2 font-medium"
-                >
-                  {isSubmitting ? <Spinner /> : 'Send'}
-                </button>
-                {/* {isSubmitted && (
+            <motion.div className="flex flex-row justify-between w-full pt-2">
+              <button
+                type="submit"
+                className="rounded-md bg-primary-light dark:bg-bg-light bg-opacity-75 dark:bg-opacity-20 hover:bg-opacity-100 dark:hover:bg-opacity-30 transition px-5 py-2 font-medium h-10"
+              >
+                {isSubmitting ? <Spinner /> : 'Send'}
+              </button>
+              {/* {isSubmitted && (
                   <motion.h2 className="-mb-1">Thanks! 🙌</motion.h2>
                 )} */}
-              </motion.div>
-            </fieldset>
-            {isSubmitted && (subscribeSubmitted || contactSubmitted) && (
-              <motion.div className="opacity-80 pt-2">
-                <ul>
-                  {subscribeSubmitted && (
-                    <li>Verify the newsletter subscription in your inbox</li>
-                  )}
-                  {contactSubmitted && (
-                    <li>We will e-mail you an example of your script idea</li>
-                  )}
-                </ul>
-              </motion.div>
-            )}
-          </form>
-        </AnimateSharedLayout>
+              {isSubmitted && (subscribeSubmitted || contactSubmitted) && (
+                <motion.div className="opacity-80 pl-2 w-9/12">
+                  <ul>
+                    {subscribeSubmitted && (
+                      <li className="pb-4">
+                        Verify the newsletter subscription in your inbox
+                      </li>
+                    )}
+                    {contactSubmitted && (
+                      <li>We will e-mail you an example of your script idea</li>
+                    )}
+                  </ul>
+                </motion.div>
+              )}
+            </motion.div>
+          </fieldset>
+        </form>
       </main>
     </motion.div>
   );
