@@ -60,6 +60,38 @@ const links = [
   },
 ];
 
+const questions = [
+  `What problem do you hope a script will solve?`,
+  `What's your most annoying daily developer task?`,
+  `Which API do you wish you could automate?`,
+  `What's stopped you from writing scripts before?`,
+  `What's keeping you from writing more scripts?`,
+  `Anything else?`,
+  `Anything else?`,
+  `Anything else?`,
+  `What's the best thing about a Boolean?`,
+  `What do you call a pile of kittens?`,
+  `How do you make a tissue dance?`,
+  `When did the first computer virus go viral?`,
+  `What did the spider do on the computer?`,
+  `Why did the computer show up at work late?`,
+  `Who's the best programmer?`,
+  `When is the last time you used a computer?`,
+  `What's the best way to get a new computer?`,
+  `Snacks or candy?`,
+  `Tacos or burritos?`,
+  `Chocolate or peanut butter?`,
+  `Fries or nachos?`,
+  `Bacon or sausage?`,
+  `Mario or Sonic?`,
+  `Laptop or desktop?`,
+  `Playstation or Xbox?`,
+  `Apple or Android?`,
+  `Don't you have work to do?`,
+  `Are you a robot?`,
+  `Anything else?`,
+];
+
 function Aside() {
   const [appConfig] = useAtom(appConfigAtom);
   const [getAsset] = useAtom(getAssetAtom);
@@ -149,10 +181,11 @@ export default function Splash() {
   const [contact, setContact] = useState(false);
   const questionRef = useRef<HTMLTextAreaElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+  const [qIndex, setQIndex] = useState(0);
 
   useEffect(() => {
-    setQuestion(`What kind of script do you want to write?`);
-  }, [questionRef, questionRef?.current]);
+    setQuestion(questions[qIndex]);
+  }, [questionRef, questionRef?.current, qIndex]);
 
   const [progress] = useAtom(splashProgressAtom);
   useEffect(() => {
@@ -176,6 +209,9 @@ export default function Splash() {
       setSubmitting(false);
       setSubmitted(true);
       setResponse('');
+      setQIndex(
+        qIndex + 1 > questions.length - 1 ? questions.length - 1 : qIndex + 1
+      );
       setSubscribeSubmitted(subscribe);
       setContactSubmitted(contact);
       setHideEmail(email?.length > 0 && subscribe && contact);
@@ -212,16 +248,12 @@ export default function Splash() {
             className="flex flex-col h-full justify-center"
           >
             <fieldset className="space-y-2 p-2">
-              <motion.legend layout className="text-lg opacity-90 w-full">
+              <legend className="text-lg opacity-90 w-full">
                 <p>Hey! 👋</p>
                 <p className="font-semibold">{question}</p>
-              </motion.legend>
-              <motion.div
-                layout
-                className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 flex flex-col"
-              >
+              </legend>
+              <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 flex flex-col">
                 <motion.textarea
-                  layout
                   autoFocus
                   tabIndex={0}
                   ref={questionRef}
@@ -232,19 +264,15 @@ export default function Splash() {
                   }}
                   id="answer"
                   required={contact && !subscribe}
-                  placeholder={
-                    isSubmitted
-                      ? 'What else would you like to see in a script?'
-                      : 'Type your script idea here...'
-                  }
+                  placeholder="Type your answer here..."
                   className="text-lg w-full rounded-md border-none bg-transparent px-5 py-3"
                   rows={5}
                 />
               </motion.div>
 
-              <motion.div layout>
+              <motion.div>
                 {!contactSubmitted && (
-                  <motion.div layout className="flex items-center">
+                  <motion.div className="flex items-center">
                     <input
                       type="checkbox"
                       checked={contact}
@@ -259,7 +287,7 @@ export default function Splash() {
                 )}
 
                 {!subscribeSubmitted && (
-                  <motion.div layout className="flex items-center">
+                  <motion.div className="flex items-center">
                     <div className="relative flex items-center">
                       <input
                         type="checkbox"
@@ -275,10 +303,7 @@ export default function Splash() {
                   </motion.div>
                 )}
                 {!hideEmail ? (
-                  <motion.div
-                    layout
-                    className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 my-3"
-                  >
+                  <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 my-3">
                     <label
                       className={`px-5 py-3 absolute ${
                         emailRequired
@@ -302,26 +327,26 @@ export default function Splash() {
                 ) : null}
               </motion.div>
 
-              <motion.div layout>
+              <motion.div className="flex flex-row justify-between items-center w-full h-10">
                 <button
                   type="submit"
                   className="rounded-md bg-primary-light dark:bg-bg-light bg-opacity-75 dark:bg-opacity-20 hover:bg-opacity-100 dark:hover:bg-opacity-30 transition px-5 py-2 font-medium"
                 >
                   {isSubmitting ? <Spinner /> : 'Send'}
                 </button>
+                {/* {isSubmitted && (
+                  <motion.h2 className="-mb-1">Thanks! 🙌</motion.h2>
+                )} */}
               </motion.div>
             </fieldset>
-            {isSubmitted && (
-              <motion.div className="opacity-80 pt-6 px-2">
-                <h2>Thanks! 🙌</h2>
+            {isSubmitted && (subscribeSubmitted || contactSubmitted) && (
+              <motion.div className="opacity-80 pt-2">
                 <ul>
                   {subscribeSubmitted && (
                     <li>Verify the newsletter subscription in your inbox</li>
                   )}
                   {contactSubmitted && (
-                    <li>
-                      We will follow up via e-mail on your automation request
-                    </li>
+                    <li>We will e-mail you an example of your script idea</li>
                   )}
                 </ul>
               </motion.div>
