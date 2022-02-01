@@ -139,8 +139,13 @@
       "output": "release"
     },
     "extraResources": [
-      "./assets/**",
-      "./kit/**"
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "publish": {
       "provider": "github",

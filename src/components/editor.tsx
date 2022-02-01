@@ -39,10 +39,7 @@ function uriFromPath(_path: string) {
   return encodeURI(`file://${ensureFirstBackSlash(pathName)}`);
 }
 
-// const vs = uriFromPath(path.join(__dirname, '../assets/vs'));
-const params = new URL((window as any).document.location).searchParams;
-const vsParam = params.get('vs'); // is the string "Jonathan Smith".
-const vs = uriFromPath(vsParam as string);
+const vs = uriFromPath(path.join(__dirname, '../assets/vs'));
 
 console.log(`vs: ${vs}`);
 loader.config({
