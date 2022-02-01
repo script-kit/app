@@ -268,20 +268,20 @@ export const hintAtom = atom(
 
 export const modeAtom = atom<Mode>(Mode.FILTER);
 
-const panelHTML = atom<string>('');
+const _panelHTML = atom<string>('');
 export const panelHTMLAtom = atom(
-  (g) => g(panelHTML),
+  (g) => g(_panelHTML),
   (g, s, a: string) => {
-    if (g(panelHTMLAtom) === a) return;
+    if (g(_panelHTML) === a) return;
     if (a) s(scoredChoices, null);
-    s(panelHTML, a);
+    s(_panelHTML, a);
     s(loadingAtom, false);
   }
 );
 
-const previewHTML = atom('');
+const _previewHTML = atom('');
 export const previewHTMLAtom = atom(
-  (g) => g(previewHTML) || g(promptData)?.preview,
+  (g) => g(_previewHTML) || g(promptData)?.preview,
   (g, s, a: string) => {
     if (!a || !g(openAtom)) return; // never unset preview to avoid flash of white/black
     const tI = g(_tabIndex);
@@ -292,11 +292,11 @@ export const previewHTMLAtom = atom(
       s(cachedMainPreview, a);
     }
 
-    if (g(previewHTML) !== a) {
+    if (g(_previewHTML) !== a) {
       if (a === `<div/>`) {
-        s(previewHTML, '');
+        s(_previewHTML, '');
       } else {
-        s(previewHTML, a);
+        s(_previewHTML, a);
       }
     }
   }
@@ -813,7 +813,6 @@ export const promptDataAtom = atom(
         s(previewHTMLAtom, a.preview);
       }
 
-      console.log({ a });
       if (a.panel) {
         s(panelHTMLAtom, a.panel);
       }
@@ -950,7 +949,7 @@ export const submitValueAtom = atom(
     if (fValue) s(inputAtom, '');
     s(_flagged, ''); // clear after getting
     s(_flag, '');
-    s(previewHTML, ``);
+    s(_previewHTML, ``);
     s(panelHTMLAtom, ``);
 
     s(_submitValue, value);
@@ -962,16 +961,19 @@ export const openAtom = atom(
   (g, s, a: boolean) => {
     s(mouseEnabledAtom, 0);
 
+    console.log({ open: a });
+
     if (g(rawOpen) && a === false) {
       s(rawOpen, a);
 
       // const cachedPreview = g(cachedMainPreview);
-      s(previewHTMLAtom, ``);
+      s(_previewHTML, ``);
 
       // s(choices, []);
       // s(tabIndex, 0);
-      // s(_input, '');
-      s(panelHTMLAtom, '');
+      s(_input, '');
+      s(_panelHTML, '');
+
       s(formHTMLAtom, '');
       // s(hintAtom, '');
       s(logHTMLAtom, '');
@@ -1131,7 +1133,7 @@ export const cmdAtom = atom((g) => (g(appConfigAtom).isWin ? 'ctrl' : 'cmd'));
 export const resizeEnabledAtom = atom(
   (g) =>
     g(promptDataAtom)?.resize ||
-    g(panelHTML)?.length > 0 ||
+    g(_panelHTML)?.length > 0 ||
     !g(_inputChangedAtom)
 );
 

@@ -36,7 +36,7 @@ export const removeFromClipboardHistory = (itemId: string) => {
 };
 
 export const configureInterval = async () => {
-  const tick$ = interval(1000).pipe(share());
+  const tick$ = interval(3000).pipe(share());
 
   const clipboardText$ = tick$.pipe(
     map(() => clipboard.readText()),
@@ -45,20 +45,22 @@ export const configureInterval = async () => {
     distinctUntilChanged()
   );
 
-  let image: NativeImage | null = null;
-  const clipboardImage$ = tick$.pipe(
-    tap(() => {
-      image = clipboard.readImage();
-    }),
-    filter(() => Boolean(image)),
-    skip(1),
-    map(() => image?.toDataURL()),
-    filter((dataUrl) => !dataUrl?.endsWith(',')),
-    distinctUntilChanged(),
-    map(() => image)
-  );
+  // let image: NativeImage | null = null;
+  // const clipboardImage$ = tick$.pipe(
+  //   tap(() => {
+  //     image = clipboard.readImage();
+  //   }),
+  //   filter(() => Boolean(image)),
+  //   skip(1),
+  //   map(() => image?.toDataURL()),
+  //   filter((dataUrl) => !dataUrl?.endsWith(',')),
+  //   distinctUntilChanged(),
+  //   map(() => image)
+  // );
 
-  merge(clipboardText$, clipboardImage$).subscribe(async (textOrImage) => {
+  // merge(clipboardText$, clipboardImage$)
+
+  clipboardText$.subscribe(async (textOrImage) => {
     let value = '';
     let type = '';
     const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');

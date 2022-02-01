@@ -580,7 +580,12 @@ export const clearPromptCache = async () => {
   promptDb.screens = {};
 
   log.info(`⛑ Clear prompt cache:`, promptDb);
-  promptDb.write();
+  await promptDb.write();
+
+  promptWindow?.webContents?.setZoomLevel(0);
+  const bounds = await getCurrentScreenPromptCache(state.script.filePath);
+  log.info(`↖ CLEARED:`, bounds);
+  promptWindow.setBounds(bounds);
 };
 
 export const reload = () => {

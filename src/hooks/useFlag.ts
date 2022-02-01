@@ -83,7 +83,6 @@ export default () => {
   useHotkeys(
     onShortcuts,
     (event, handler) => {
-      console.log({ event, handler });
       if (!inputFocus) return;
       event.preventDefault();
 

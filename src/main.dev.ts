@@ -371,7 +371,7 @@ const ready = async () => {
     await setupLog(`Tick started`);
 
     const isWin = os.platform().startsWith('win');
-    await setupLog(`Launch Script Kit with ${isWin ? `ctrl` : `cmd`}+;`);
+    await setupLog(``);
     await setupDone();
 
     const isMac = os.platform() === 'darwin';
