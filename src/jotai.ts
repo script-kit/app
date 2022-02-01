@@ -961,7 +961,7 @@ export const openAtom = atom(
   (g, s, a: boolean) => {
     s(mouseEnabledAtom, 0);
 
-    console.log({ open: a });
+    // console.log({ open: a });
 
     if (g(rawOpen) && a === false) {
       s(rawOpen, a);
