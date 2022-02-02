@@ -543,18 +543,20 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
   } else {
     s(scoredChoices, []);
   }
-
-  s(prevPromptId, g(promptId));
 };
 
 const _inputChangedAtom = atom(false);
 
-export const prevPromptId = atom(0);
 export const inputAtom = atom(
   (g) => g(_input),
   (g, s, a: string) => {
+    const prevInput = g(_input);
+
     if (a !== g(_input)) s(_inputChangedAtom, true);
-    if (a === g(_input)) return;
+    if (a === g(_input)) {
+      s(_tabChangedAtom, false);
+      return;
+    }
 
     s(_input, a);
 
@@ -568,7 +570,12 @@ export const inputAtom = atom(
     const mode = g(modeAtom);
 
     // TODO: Investigate eliminating modes and bringing/generating over to kit + setChoices(). Probably would be too slow.
-    if (g(promptId) !== g(prevPromptId)) return;
+
+    if (g(_tabChangedAtom) && prevInput !== a) {
+      s(_tabChangedAtom, false);
+      return;
+    }
+
     if (mode === Mode.FILTER) {
       filterByInput(g, s, a);
     }
@@ -582,6 +589,7 @@ export const inputAtom = atom(
 
 export const flagsAtom = atom<FlagsOptions>({});
 
+export const _tabChangedAtom = atom(false);
 const _tabIndex = atom(0);
 export const tabIndexAtom = atom(
   (g) => g(_tabIndex),
@@ -594,6 +602,7 @@ export const tabIndexAtom = atom(
 
       const channel = g(channelAtom);
       channel(Channel.TAB_CHANGED);
+      s(_tabChangedAtom, true);
     }
   }
 );
@@ -762,9 +771,7 @@ export const promptDataAtom = atom(
     const prevPromptData = g(promptData);
 
     if (prevPromptData?.ui === UI.editor && g(_inputChangedAtom)) {
-      const prevInput = g(_input);
-
-      s(editorHistoryPush, prevInput);
+      s(editorHistoryPush, g(closedInput));
     }
 
     s(_inputChangedAtom, false);
@@ -931,6 +938,7 @@ export const submitValueAtom = atom(
     s(submittedAtom, true);
     // s(indexAtom, 0);
 
+    s(closedInput, g(inputAtom));
     if (fValue) s(inputAtom, '');
     s(_flagged, ''); // clear after getting
     s(_flag, '');
@@ -941,6 +949,7 @@ export const submitValueAtom = atom(
   }
 );
 
+export const closedInput = atom('');
 export const openAtom = atom(
   (g) => g(rawOpen),
   (g, s, a: boolean) => {
@@ -954,6 +963,7 @@ export const openAtom = atom(
 
       // s(choices, []);
       // s(tabIndex, 0);
+      s(closedInput, g(_input));
       s(_input, '');
       s(_panelHTML, '');
 
