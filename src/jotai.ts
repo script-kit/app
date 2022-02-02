@@ -543,15 +543,16 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
   } else {
     s(scoredChoices, []);
   }
+
+  s(prevPromptId, g(promptId));
 };
 
 const _inputChangedAtom = atom(false);
 
+export const prevPromptId = atom(0);
 export const inputAtom = atom(
   (g) => g(_input),
   (g, s, a: string) => {
-    const wasCleared = g(_input) === '';
-
     if (a !== g(_input)) s(_inputChangedAtom, true);
     if (a === g(_input)) return;
 
@@ -567,7 +568,8 @@ export const inputAtom = atom(
     const mode = g(modeAtom);
 
     // TODO: Investigate eliminating modes and bringing/generating over to kit + setChoices(). Probably would be too slow.
-    if (mode === Mode.FILTER && !wasCleared) {
+    if (g(promptId) !== g(prevPromptId)) return;
+    if (mode === Mode.FILTER) {
       filterByInput(g, s, a);
     }
     if (mode === Mode.GENERATE) {
@@ -757,7 +759,6 @@ export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     s(promptId, Math.random());
-
     const prevPromptData = g(promptData);
 
     if (prevPromptData?.ui === UI.editor && g(_inputChangedAtom)) {
