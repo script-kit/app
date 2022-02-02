@@ -41,6 +41,7 @@ function uriFromPath(_path: string) {
 
 const vs = uriFromPath(path.join(__dirname, '../assets/vs'));
 
+console.log(`vs: ${vs}`);
 loader.config({
   paths: {
     vs,

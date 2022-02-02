@@ -1,13 +1,12 @@
 @import 'jetbrains-mono';
 @import 'jetbrains-mono/css/jetbrains-mono.css';
 @import 'simplebar/dist/simplebar.min.css';
+@import '@vscode/codicons/dist/codicon.css';
 
 /* @import '../node_modules/highlight.js/styles/solarized-light.css'; */
 /* .hljs {
   background: rgba(0, 0, 0, 0.2);
-} */
-/* FBBF24 */
-/* 4F46E5 */
+} */ /* FBBF24 */ /* 4F46E5 */
 /* --color-primary-dark: 79, 70, 229; indigo*/
 :root {
   --color-primary-light: 251, 191, 36;
