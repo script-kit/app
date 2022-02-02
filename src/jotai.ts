@@ -212,7 +212,7 @@ export const unfilteredChoicesAtom = atom(
       }
       if (mode === Mode.FILTER || mode === Mode.CUSTOM) {
         const input = g(inputAtom);
-        filterByInput(g, s, qs, input);
+        filterByInput(g, s, input);
       }
       // }
 
@@ -223,12 +223,6 @@ export const unfilteredChoicesAtom = atom(
 
       s(_index, prevIndex || 0);
     }
-
-    // console.log(`Before`);
-    // if (g(isMainScriptAtom)) {
-    //   console.log(`REFRESHING MAIN PREVIEW`);
-    //   resize(g, s);
-    // }
   }
 );
 
@@ -512,16 +506,13 @@ const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
 
 const prevFilteredInputAtom = atom('');
 
-const filterByInput = (
-  g: Getter,
-  s: Setter,
-  qs: QuickScoreInterface,
-  a: string
-) => {
+const filterByInput = (g: Getter, s: Setter, a: string) => {
   let input = a;
+  const qs = g(quickScoreAtom);
   const filterInput = g(filterInputAtom);
   const un = g(unfilteredChoicesAtom);
   const prevFilteredInput = g(prevFilteredInputAtom);
+
   s(prevFilteredInputAtom, a);
   if (filterInput) {
     // if (input.length > prevFilteredInput.length) return;
@@ -559,6 +550,8 @@ const _inputChangedAtom = atom(false);
 export const inputAtom = atom(
   (g) => g(_input),
   (g, s, a: string) => {
+    const wasCleared = g(_input) === '';
+
     if (a !== g(_input)) s(_inputChangedAtom, true);
     if (a === g(_input)) return;
 
@@ -571,12 +564,11 @@ export const inputAtom = atom(
     s(submittedAtom, false);
     s(_index, 0);
 
-    const qs = g(quickScoreAtom) as QuickScoreInterface;
     const mode = g(modeAtom);
 
     // TODO: Investigate eliminating modes and bringing/generating over to kit + setChoices(). Probably would be too slow.
-    if (mode === Mode.FILTER) {
-      filterByInput(g, s, qs, a);
+    if (mode === Mode.FILTER && !wasCleared) {
+      filterByInput(g, s, a);
     }
     if (mode === Mode.GENERATE) {
       s(loading, true);
@@ -689,6 +681,7 @@ const resize = (g: Getter, s: Setter) => {
       g(unfilteredChoices).length === 0 &&
       ui === UI.arg
   );
+
   const hasPanel = Boolean(g(panelHTMLAtom)?.length);
   const nullChoices = g(nullChoicesAtom);
   const data: ResizeData = {
@@ -710,13 +703,7 @@ const resize = (g: Getter, s: Setter) => {
     nullChoices,
   };
 
-  // const prevData = g(resizeData);
   s(resizeData, data);
-
-  // console.log(`Before resize:`, data);
-  // if (JSON.stringify(prevData) === JSON.stringify(data)) {
-  //   return;
-  // }
 
   ipcRenderer.send(AppChannel.RESIZE, data);
 };
@@ -775,7 +762,7 @@ export const promptDataAtom = atom(
 
     if (prevPromptData?.ui === UI.editor && g(_inputChangedAtom)) {
       const prevInput = g(_input);
-      // console.log(`prevInput:`, prevInput);
+
       s(editorHistoryPush, prevInput);
     }
 
@@ -883,8 +870,6 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     value: g(_submitValue),
   };
 
-  // console.log(`state`, new Date());
-
   return state;
 });
 
@@ -902,7 +887,6 @@ export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
     },
   };
 
-  // console.log(channel, appMessage);
   ipcRenderer.send(channel, appMessage);
 });
 
@@ -960,8 +944,6 @@ export const openAtom = atom(
   (g) => g(rawOpen),
   (g, s, a: boolean) => {
     s(mouseEnabledAtom, 0);
-
-    // console.log({ open: a });
 
     if (g(rawOpen) && a === false) {
       s(rawOpen, a);
@@ -1038,7 +1020,6 @@ export const themeAtom = atom(
   (g) => g(theme),
   (g, s, a: { [key: string]: string }) => {
     Object.entries(a).forEach(([key, value]) => {
-      // console.log(`Set theme ${key} to ${value}`);
       document.documentElement.style.setProperty(key, value);
     });
 

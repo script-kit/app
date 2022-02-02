@@ -63,7 +63,7 @@ export default function Panel({ width, height }: PanelProps) {
         id="panel"
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 1] }}
-        transition={{ duration: 0.15, ease: 'circOut' }}
+        transition={{ duration: 0.5, ease: 'circOut' }}
         className={`
         w-full h-full`}
         ref={divRef as any}

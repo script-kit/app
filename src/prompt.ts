@@ -306,92 +306,84 @@ export const isFocused = () => {
   return promptWindow?.isFocused();
 };
 
-export const resize = debounce(
-  async ({
-    scriptPath,
-    topHeight,
-    mainHeight,
-    ui,
-    hasPanel,
-    hasInput,
-    tabIndex,
-    isSplash,
-    nullChoices,
-  }: ResizeData) => {
-    if (state.modifiedByUser) return;
+export const resize = async ({
+  scriptPath,
+  topHeight,
+  mainHeight,
+  ui,
+  hasPanel,
+  hasInput,
+  tabIndex,
+  isSplash,
+  nullChoices,
+}: ResizeData) => {
+  if (state.modifiedByUser) return;
 
-    const {
-      width: cachedWidth,
-      height: cachedHeight,
-      x: cachedX,
-      y: cachedY,
-    } = await getCurrentScreenPromptCache(scriptPath);
-    const {
-      width: currentWidth,
-      height: currentHeight,
-      x: currentX,
-      y: currentY,
-    } = promptWindow.getBounds();
+  // log.info({
+  //   scriptPath,
+  //   topHeight,
+  //   mainHeight,
+  //   hasPanel,
+  //   hasInput,
+  //   tabIndex,
+  //   nullChoices,
+  //   choiceCount,
+  // });
 
-    const targetHeight = topHeight + mainHeight;
-    // const threeFourths = getCurrentScreenFromPrompt().bounds.height * (3 / 4);
+  const {
+    width: cachedWidth,
+    height: cachedHeight,
+    x: cachedX,
+    y: cachedY,
+  } = await getCurrentScreenPromptCache(scriptPath);
+  const {
+    width: currentWidth,
+    height: currentHeight,
+    x: currentX,
+    y: currentY,
+  } = promptWindow.getBounds();
 
-    // const maxHeight = hasPanel
-    //   ? Math.round(threeFourths)
-    //   : Math.max(DEFAULT_HEIGHT, cachedHeight);
+  const targetHeight = topHeight + mainHeight;
+  // const threeFourths = getCurrentScreenFromPrompt().bounds.height * (3 / 4);
 
-    const maxHeight = Math.max(DEFAULT_HEIGHT, cachedHeight);
+  // const maxHeight = hasPanel
+  //   ? Math.round(threeFourths)
+  //   : Math.max(DEFAULT_HEIGHT, cachedHeight);
 
-    let width = Math.max(cachedWidth, DEFAULT_EXPANDED_WIDTH);
+  const maxHeight = Math.max(DEFAULT_HEIGHT, cachedHeight);
 
-    let height = Math.round(
-      targetHeight > maxHeight ? maxHeight : targetHeight
-    );
+  let width = Math.max(cachedWidth, DEFAULT_EXPANDED_WIDTH);
 
-    // log.info({
-    //   placeholderOnly,
-    //   hasPanel,
-    // // });
+  let height = Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
 
-    // log.info({
-    //   topHeight,
-    //   maxHeight,
-    //   targetHeight,
-    //   height,
-    //   mainHeight,
-    // });
+  if (!nullChoices && !hasPanel) {
+    height = Math.max(cachedHeight, DEFAULT_HEIGHT);
+  }
 
-    // log.info({ ui, hasPanel });
+  if (isSplash) {
+    width = DEFAULT_EXPANDED_WIDTH;
+    height = DEFAULT_HEIGHT;
+  }
 
-    if (!nullChoices && !hasPanel) {
-      height = Math.max(cachedHeight, DEFAULT_HEIGHT);
-    }
+  height = Math.round(height);
+  width = Math.round(width);
+  if (currentHeight === height && currentWidth === width) return;
 
-    if (isSplash) {
-      width = DEFAULT_EXPANDED_WIDTH;
-      height = DEFAULT_HEIGHT;
-    }
+  log.info(`↕ RESIZE: ${width} x ${height}`);
+  promptWindow.setSize(width, height);
 
-    height = Math.round(height);
-    width = Math.round(width);
-    if (currentHeight === height && currentWidth === width) return;
-    log.info(`↕ RESIZE: ${width} x ${height}`);
-    promptWindow.setSize(width, height);
+  state.prevResize = true;
 
-    state.prevResize = true;
+  if (ui !== UI.arg) savePromptBounds(scriptPath, Bounds.Size);
 
-    if (ui !== UI.arg) savePromptBounds(scriptPath, Bounds.Size);
+  if (ui === UI.arg && !tabIndex && !hasInput) {
+    savePromptBounds(scriptPath, Bounds.Size);
+  }
 
-    if (ui === UI.arg && !tabIndex && !hasInput) {
-      savePromptBounds(scriptPath, Bounds.Size);
-    }
-
-    if (currentX !== cachedX && currentY !== cachedY) {
-      promptWindow.setPosition(cachedX, cachedY);
-    }
-  },
-  0
-);
+  if (currentX !== cachedX && currentY !== cachedY) {
+    promptWindow.setPosition(cachedX, cachedY);
+  }
+};
 
 export const sendToPrompt = <K extends keyof ChannelMap>(
   channel: K,
