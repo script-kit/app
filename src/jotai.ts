@@ -356,12 +356,48 @@ const editorConfig = atom<EditorConfig>({
   extraLibs: [],
 } as EditorOptions);
 
+const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
+  fontFamily: 'JetBrains Mono',
+  fontSize: 18,
+  minimap: {
+    enabled: false,
+  },
+  wordWrap: 'on',
+  lineNumbers: 'off',
+  glyphMargin: false,
+  scrollBeyondLastLine: false,
+  automaticLayout: true,
+  quickSuggestions: true,
+  formatOnType: true,
+};
+
+export const editorOptions =
+  atom<editor.IStandaloneEditorConstructionOptions>(defaultEditorOptions);
+
 export const editorConfigAtom = atom(
   (g) => g(editorConfig),
-  (g, s, a: EditorConfig) => {
+  (g, s, a: EditorOptions) => {
     s(editorConfig, a);
-    s(inputAtom, a.value);
-    s(submitOnEscapeAtom, a.submitOnEscape);
+    // s(inputAtom, a.value);
+
+    const {
+      file,
+      scrollTo,
+      hint: h,
+      onInput,
+      onEscape,
+      onAbandon,
+      onBlur,
+      ignoreBlur,
+      extraLibs,
+      ...options
+    } = a;
+
+    s(editorOptions, {
+      ...defaultEditorOptions,
+      ...(options as editor.IStandaloneEditorConstructionOptions),
+    });
+
     const channel = g(channelAtom);
     channel(Channel.INPUT, { input: a.value });
   }
@@ -1145,14 +1181,13 @@ export const valueInvalidAtom = atom(null, (g, s, a: string) => {
 });
 
 export const isHiddenAtom = atom(false);
-export const submitOnEscapeAtom = atom(false);
 export const monacoAtom = atom<Monaco | null>(null);
 export const editorInstanceAtom = atom<editor.IStandaloneCodeEditor | null>(
   null
 );
 
 export const filterInputAtom = atom<string>(``);
-export const blurAtom = atom(null, (g, s, a: boolean) => {
+export const blurAtom = atom(null, (g) => {
   if (g(openAtom)) {
     const channel = g(channelAtom);
     channel(Channel.BLUR);

@@ -19,6 +19,10 @@ import React, {
   useEffect,
   useRef,
 } from 'react';
+
+import path from 'path';
+import { loader } from '@monaco-editor/react';
+
 import { useAtom } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
@@ -43,7 +47,6 @@ import Form from './components/form';
 import {
   editorConfigAtom,
   flagsAtom,
-  flagValueAtom,
   formDataAtom,
   formHTMLAtom,
   hintAtom,
@@ -60,7 +63,6 @@ import {
   previewHTMLAtom,
   promptDataAtom,
   scriptAtom,
-  selectedAtom,
   submitValueAtom,
   tabIndexAtom,
   _tabs,
@@ -76,7 +78,6 @@ import {
   loadingAtom,
   processingAtom,
   exitAtom,
-  isSplashAtom,
   appConfigAtom,
   splashBodyAtom,
   splashHeaderAtom,
@@ -101,6 +102,23 @@ import {
 import { useThemeDetector } from './hooks';
 import Splash from './components/splash';
 import { AppChannel } from './enums';
+
+function ensureFirstBackSlash(str: string) {
+  return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
+}
+
+function uriFromPath(_path: string) {
+  const pathName = path.resolve(_path).replace(/\\/g, '/');
+  return encodeURI(`file://${ensureFirstBackSlash(pathName)}`);
+}
+
+const vs = uriFromPath(path.join(__dirname, '../assets/vs'));
+
+loader.config({
+  paths: {
+    vs,
+  },
+});
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -159,7 +177,6 @@ export default function App() {
   const [, setReady] = useAtom(isReadyAtom);
 
   const [, setTabIndex] = useAtom(tabIndexAtom);
-  const [tabs] = useAtom(_tabs);
 
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
   const [, setPreviewHTML] = useAtom(previewHTMLAtom);
@@ -174,7 +191,6 @@ export default function App() {
   const [, setTopHeight] = useAtom(topHeightAtom);
 
   const [, setSubmitValue] = useAtom(submitValueAtom);
-  const [flagValue] = useAtom(flagValueAtom);
   const [, setMouseEnabled] = useAtom(mouseEnabledAtom);
   const [showSelected] = useAtom(showSelectedAtom);
   const [showTabs] = useAtom(showTabsAtom);
@@ -186,14 +202,12 @@ export default function App() {
   const [processing] = useAtom(processingAtom);
   const [nullChoices] = useAtom(nullChoicesAtom);
   const [resizeEnabled] = useAtom(resizeEnabledAtom);
-  const [isSplash] = useAtom(isSplashAtom);
   const [, setValueInvalid] = useAtom(valueInvalidAtom);
   const [, setFilterInput] = useAtom(filterInputAtom);
   const [, setBlur] = useAtom(blurAtom);
   const [, start] = useAtom(startAtom);
   const [, setLogo] = useAtom(_logo);
   const [getEditorHistory] = useAtom(getEditorHistoryAtom);
-  const [appConfig] = useAtom(appConfigAtom);
   const [, setProcesses] = useAtom(processesAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
