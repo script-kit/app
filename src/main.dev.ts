@@ -591,7 +591,7 @@ const KIT_NODE_TAR =
 
 const checkKit = async () => {
   const options: SpawnSyncOptions = {
-    cwd: kitPath(),
+    cwd: KIT,
     encoding: 'utf-8',
     env: {
       KIT,
@@ -599,6 +599,8 @@ const checkKit = async () => {
       PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
     },
   };
+
+  log.info(`🧐 Checking ${KIT}`, options);
 
   const setupScript = (...args: string[]) => {
     return new Promise((resolve, reject) => {
