@@ -71,6 +71,7 @@ export default function ChoiceButton({
   const [flags] = useAtom(flagsAtom);
   const [flaggedValue, setFlagValue] = useAtom(flagValueAtom);
   const [modifiers] = useAtom(_modifiers);
+  const [modifierDescription, setModifierDescription] = useState('');
 
   // const dataTransfer = useRef<any>('Data Transfer');
 
@@ -129,11 +130,13 @@ export default function ChoiceButton({
     [choice]
   );
 
-  const modifier = modifiers.find((m) => {
-    return Object.keys(choice).includes(m);
-  }) as keyof ScriptMetadata;
+  useEffect(() => {
+    const modifier = modifiers.find((m) => {
+      return Object.keys(choice).includes(m);
+    }) as keyof ScriptMetadata;
 
-  const modifierDescription = (choice as unknown as ScriptMetadata)?.[modifier];
+    setModifierDescription((choice as unknown as ScriptMetadata)?.[modifier]);
+  }, [modifiers]);
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
@@ -238,11 +241,13 @@ export default function ChoiceButton({
                 `}
                 >
                   {modifierDescription ||
-                    highlight(
-                      choice?.description || '',
-                      scoredChoice?.matches?.description,
-                      'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-15 text-primary-dark dark:text-primary-light'
-                    )}
+                  (index === currentIndex && choice?.focused)
+                    ? choice?.focused
+                    : highlight(
+                        choice?.description || '',
+                        scoredChoice?.matches?.description,
+                        'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-15 text-primary-dark dark:text-primary-light'
+                      )}
                 </div>
               )}
             </div>

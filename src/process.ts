@@ -23,12 +23,11 @@ import url from 'url';
 import sizeOf from 'image-size';
 import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { fork } from 'child_process';
+import { ChildProcess, fork } from 'child_process';
 import { Channel, Mode, ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { Choice, Script, ProcessInfo } from '@johnlindquist/kit/types/core';
 
 import {
-  AppMessage,
   ChannelMap,
   GenericSendData,
   SendData,
@@ -39,6 +38,7 @@ import {
   KIT_APP,
   KIT_APP_PROMPT,
   KIT_FIRST_PATH,
+  execPath,
   kitPath,
   kenvPath,
   kitDotEnvPath,
@@ -70,15 +70,15 @@ import {
   makeRestartNecessary,
   getBackgroundTasks,
   getSchedule,
-  state,
+  kitState,
 } from './state';
 
 import { emitter, KitEvent } from './events';
-import { show, showDevTools } from './show';
+import { show, showDevTools, showWidget } from './show';
 
 import { getVersion } from './version';
 import { getClipboardHistory } from './tick';
-import { getTray, getTrayIcon } from './tray';
+import { getTray, getTrayIcon, setTrayMenu } from './tray';
 
 export const checkScriptChoices = (data: {
   choices: Choice[];
@@ -149,7 +149,7 @@ export type ChannelHandler = {
 };
 
 const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
-  state.blurredByKit = true;
+  kitState.blurredByKit = true;
 
   const { image, options } = data.value;
   const imgOptions = url.parse((image as { src: string }).src);
@@ -182,7 +182,25 @@ const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
   }
 };
 
-const NO_VALUE = `__no_value__`;
+const NO_VALUE = `__undefined__`;
+
+type WidgetData = {
+  widgetId: string;
+  value?: any;
+  width?: number;
+  height?: number;
+};
+type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
+
+const widgetMap: {
+  [widgetId: string]: {
+    widget: BrowserWindow;
+    child: ChildProcess;
+    moved: boolean;
+    ignoreMouse: boolean;
+    ignoreMeasure: boolean;
+  };
+} = {};
 
 const toProcess =
   <K extends keyof ChannelMap>(
@@ -200,11 +218,11 @@ const toProcess =
       }
     }
     // Send data to Prompt process only if id matches current prompt
-    else if (processInfo && processInfo?.pid === state.promptProcess?.pid) {
+    else if (processInfo && processInfo?.pid === kitState.promptProcess?.pid) {
       fn(processInfo, data);
     } else if (processInfo?.type === ProcessType.PROMPT) {
       warn(
-        `${data?.pid}: ⚠️ ${data.channel} failed. ${data.pid} doesn't match ${state.promptProcess?.pid}`
+        `${data?.pid}: ⚠️ ${data.channel} failed. ${data.pid} doesn't match ${kitState.promptProcess?.pid}`
       );
     }
   };
@@ -252,7 +270,7 @@ const kitMessageMap: ChannelHandler = {
     });
   }),
 
-  UPDATE_WIDGET: toProcess(({ child }, { channel, value }) => {
+  WIDGET_UPDATE: toProcess(({ child }, { channel, value }) => {
     const { widgetId } = value as any;
     const widget = BrowserWindow.fromId(widgetId);
 
@@ -264,96 +282,173 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
 
-  GET_WIDGET: toProcess(
+  WIDGET_SET_STATE: toProcess(({ child }, { channel, value }) => {
+    const { widgetId, state } = value as any;
+    // log.info({ widgetId }, `${channel}`);
+    const { widget } = widgetMap[widgetId];
+
+    // log.info(`WIDGET_SET_STATE`, value);
+    if (widget) {
+      widget?.webContents.send(channel, state);
+    } else {
+      warn(`${widgetId}: widget not found. Terminating process.`);
+      child?.kill();
+    }
+  }),
+  WIDGET_FIT: toProcess(({ child }, { channel, value }) => {
+    const { widgetId, state } = value as any;
+    // log.info({ widgetId }, `${channel}`);
+    const { widget } = widgetMap[widgetId];
+    // log.info(`WIDGET_SET_STATE`, value);
+    if (widget) {
+      widget?.webContents.send(channel, state);
+    } else {
+      warn(`${widgetId}: widget not found. Terminating process.`);
+      child?.kill();
+    }
+  }),
+
+  WIDGET_SET_SIZE: toProcess(({ child }, { value }) => {
+    const { widgetId, width, height } = value as any;
+    // log.info({ widgetId }, `${channel}`);
+    const { widget } = widgetMap[widgetId];
+
+    // log.info(`WIDGET_SET_STATE`, value);
+    if (widget) {
+      widget?.setSize(width, height);
+    } else {
+      warn(`${widgetId}: widget not found. Terminating process.`);
+      child?.kill();
+    }
+  }),
+
+  WIDGET_SET_POSITION: toProcess(({ child }, { value }) => {
+    const { widgetId, x, y } = value as any;
+    // log.info({ widgetId }, `${channel}`);
+    const { widget } = widgetMap[widgetId];
+
+    // log.info(`WIDGET_SET_STATE`, value);
+    if (widget) {
+      widget?.setPosition(x, y);
+    } else {
+      warn(`${widgetId}: widget not found. Terminating process.`);
+      child?.kill();
+    }
+  }),
+
+  WIDGET_GET: toProcess(
     async (
       { child },
       {
         channel,
         value,
-      }: { channel: Channel; value: { html: string; options: any } }
+      }: { channel: Channel; value: { filePath: string; options: any } }
     ) => {
-      state.blurredByKit = true;
-      log.info(`${child?.pid}: ⚙️ Creating widget`);
-      const widget = await show('widget', value.html || '', value.options);
-
-      const un = subscribe(state.ps, () => {
-        if (!state.ps.find((p) => p.pid === child?.pid)) {
-          widget?.destroy();
-          un();
-        }
-      });
-
-      widget.webContents.on('before-input-event', (event, input) => {
-        if (input.key === 'Escape') {
-          if (!widget?.isDestroyed) widget.close();
-        }
-      });
+      kitState.blurredByKit = true;
+      const widgetId = Date.now().toString();
+      const widget = await showWidget(widgetId, value.filePath, value.options);
+      log.info(`${child?.pid}: ⚙️ Creating widget ${widgetId}`);
 
       // widget.on('move', () => {
       //   log.info(`${widget?.id}: 📦 widget moved`);
       // });
 
-      type WidgetHandler = (event: IpcMainEvent, message: AppMessage) => void;
+      // const ignoreMouseHandler = (event, data: boolean) => {
+      //   if (data) {
+      //     widget.setIgnoreMouseEvents(true, { forward: true });
+      //   } else {
+      //     widget.setIgnoreMouseEvents(false);
+      //   }
+      // };
 
-      const clickHandler: WidgetHandler = (event, data) => {
-        log.info(data);
-        child?.send({
-          channel: Channel.WIDGET_CLICK,
-          pid: child.pid,
-          ...data,
+      // const resizeHandler = (
+      //   event,
+      //   size: { width: number; height: number }
+      // ) => {
+      //   log.info({ size });
+      //   if (size) {
+      //     widget.setSize(size.width, size.height);
+      //   }
+      // };
+
+      widgetMap[widgetId] = {
+        widget,
+        child,
+        moved: false,
+        ignoreMouse: value?.options?.ignoreMouse || false,
+        ignoreMeasure: Boolean(
+          value?.options?.width || value?.options?.height || false
+        ),
+      };
+
+      widget.on('resized', () => {
+        child.send({
+          channel: Channel.WIDGET_RESIZED,
+          widgetId,
+          ...widget.getBounds(),
         });
-      };
+      });
 
-      const inputHandler: WidgetHandler = (event, data) => {
-        child?.send({
-          channel: Channel.WIDGET_INPUT,
-          pid: child.pid,
-          ...data,
+      widget.on('moved', () => {
+        child.send({
+          channel: Channel.WIDGET_MOVED,
+          widgetId,
+          ...widget.getBounds(),
         });
-      };
+      });
 
-      const ignoreMouseHandler = (event, data: boolean) => {
-        log.info({ data });
-        if (data) {
-          widget.setIgnoreMouseEvents(true, { forward: true });
-        } else {
-          widget.setIgnoreMouseEvents(false);
-        }
-      };
+      const closeHandler = () => {
+        if (widget?.isDestroyed()) return;
+        if (typeof widgetMap?.[widgetId] === 'undefined') return;
 
-      const resizeHandler = (
-        event,
-        size: { width: number; height: number }
-      ) => {
-        log.info({ size });
-        if (size) {
-          widget.setSize(size.width, size.height);
-        }
-      };
-
-      ipcMain.on(Channel.WIDGET_CLICK, clickHandler);
-      ipcMain.on(Channel.WIDGET_INPUT, inputHandler);
-      ipcMain.on('WIDGET_IGNORE_MOUSE', ignoreMouseHandler);
-      ipcMain.on('WIDGET_RESIZE', resizeHandler);
-
-      widget.on('close', () => {
-        log.info(`${widget?.id}: Widget closed`);
+        log.info(`${widgetId}: Widget closed`);
         focusPrompt();
         child?.send({
-          channel: Channel.END_WIDGET,
-          widgetId: widget?.id,
+          channel: Channel.WIDGET_END,
+          widgetId,
+          ...widget.getBounds(),
         });
-        widget.destroy();
 
-        ipcMain.off(Channel.WIDGET_CLICK, clickHandler);
-        ipcMain.off(Channel.WIDGET_INPUT, inputHandler);
-        ipcMain.off(Channel.WIDGET_INPUT, ignoreMouseHandler);
-        ipcMain.off('WIDGET_RESIZE', resizeHandler);
+        delete widgetMap?.[widgetId];
+        widget.removeAllListeners();
+        widget.destroy();
+      };
+
+      widget?.webContents.on('before-input-event', (event, input) => {
+        if (input.key === 'Escape') {
+          closeHandler();
+        }
+
+        if (input.key === 'l' && (input.control || input.meta)) {
+          if (widgetMap[widgetId]?.ignoreMouse) {
+            log.info(`${widgetId}: 🔓 Unlock widget`);
+            widget.setIgnoreMouseEvents(false);
+            widgetMap[widgetId].ignoreMouse = false;
+          } else {
+            log.info(`${widgetId}: 🔒 Lock widget`);
+            widget.setIgnoreMouseEvents(true, { forward: true });
+            widgetMap[widgetId].ignoreMouse = true;
+          }
+        }
+      });
+
+      widget?.on('close', closeHandler);
+      child?.on('close', closeHandler);
+      const un = subscribe(kitState.ps, () => {
+        if (!kitState.ps.find((p) => p.pid === child?.pid)) {
+          closeHandler();
+          un();
+        }
+      });
+
+      widget?.on('will-move', () => {
+        console.log(`${widgetId}: 📦 widget will move`);
+        widgetMap[widgetId].moved = true;
       });
 
       child?.send({
         channel,
-        widgetId: widget?.id,
+        widgetId,
       });
     }
   ),
@@ -386,11 +481,11 @@ const kitMessageMap: ChannelHandler = {
     emitter.emit(Channel.CLEAR_CLIPBOARD_HISTORY);
   },
 
-  REMOVE_CLIPBOARD_HISTORY_ITEM: (data) => {
+  REMOVE_CLIPBOARD_HISTORY_ITEM: (data: any) => {
     emitter.emit(Channel.REMOVE_CLIPBOARD_HISTORY_ITEM, data.value);
   },
 
-  TOGGLE_BACKGROUND: (data) => {
+  TOGGLE_BACKGROUND: (data: any) => {
     emitter.emit(KitEvent.ToggleBackground, data);
   },
 
@@ -414,9 +509,9 @@ const kitMessageMap: ChannelHandler = {
     child?.send({ channel, processes });
   }),
 
-  HIDE_APP: toProcess(({ child, type, scriptPath }) => {
+  HIDE_APP: toProcess(({ type, scriptPath }) => {
     if (type === ProcessType.Prompt) {
-      state.hidden = true;
+      kitState.hidden = true;
       hideAppIfNoWindows(scriptPath);
     }
   }),
@@ -429,10 +524,11 @@ const kitMessageMap: ChannelHandler = {
   SET_SCRIPT: toProcess(async (processInfo, data) => {
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
-      const foundP = state.ps.find((p) => p.pid === processInfo.pid);
+      const foundP = kitState.ps.find((p) => p.pid === processInfo.pid);
       if (foundP) {
         foundP.scriptPath = data.value?.filePath;
       }
+      kitState.promptCount = -1;
       await setScript(data.value);
     }
   }),
@@ -456,7 +552,8 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_IGNORE_BLUR: (data) => {
-    state.ignoreBlur = data.value;
+    log.info(`SET_IGNORE_BLUR`, { data });
+    kitState.ignoreBlur = data.value;
   },
 
   SET_INPUT: (data) => {
@@ -501,13 +598,14 @@ const kitMessageMap: ChannelHandler = {
   SET_PROMPT_DATA: (data) => {
     setPromptPid(data.pid);
     setPromptData(data.value);
+    kitState.promptCount += 1;
   },
   SET_PROMPT_PROP: async (data) => {
     setPromptProp(data.value);
   },
   SHOW_IMAGE,
   SHOW: async (data) => {
-    state.blurredByKit = true;
+    kitState.blurredByKit = true;
 
     const showWindow = await show(
       'show',
@@ -561,6 +659,9 @@ const kitMessageMap: ChannelHandler = {
   SET_DESCRIPTION: (data) => {
     sendToPrompt(Channel.SET_DESCRIPTION, data.value);
   },
+  SET_FOCUSED: (data) => {
+    sendToPrompt(Channel.SET_FOCUSED, data.value);
+  },
   SET_TEXTAREA_VALUE: (data) => {
     sendToPrompt(Channel.SET_TEXTAREA_VALUE, data.value);
   },
@@ -609,19 +710,31 @@ const kitMessageMap: ChannelHandler = {
   },
   SET_TRAY: (data) => {
     log.info(JSON.stringify(data));
-    const image =
-      data?.value?.length > 0
-        ? nativeImage.createFromDataURL(``)
-        : getTrayIcon();
-    getTray()?.setImage(image);
-    getTray()?.setTitle(data.value);
+    const { label, scripts } = data?.value;
+    if (label) {
+      const image = nativeImage.createFromDataURL(``);
+      getTray()?.setImage(image);
+      getTray()?.setTitle(label);
+    } else {
+      getTray()?.setImage(getTrayIcon());
+      getTray()?.setTitle('');
+    }
+
+    if (scripts?.length) {
+      setTrayMenu(scripts);
+    } else {
+      setTrayMenu([]);
+    }
   },
-  GET_EDITOR_HISTORY: toProcess(({ child }, { channel }) => {
+  GET_EDITOR_HISTORY: toProcess(() => {
     sendToPrompt(Channel.GET_EDITOR_HISTORY);
   }),
   TERMINATE_PROCESS: (data) => {
     warn(`${data?.value}: Terminating process ${data.value}`);
     processes.removeByPid(data?.value);
+  },
+  TERMINAL: (data) => {
+    sendToPrompt(Channel.TERMINAL, data.value);
   },
 };
 
@@ -655,13 +768,17 @@ export const createMessageHandler =
     //   }
     // }
     if (!data.kitScript) log.info(data);
-    if (![Channel.SET_PREVIEW, Channel.SET_LOADING].includes(data.channel)) {
-      log.info(
-        `${data.channel === Channel.SET_SCRIPT ? `\n\n` : ``}${data.pid}: ${
-          data.channel
-        } ${type} process ${data.kitScript?.replace(/.*\//gi, '')}`
-      );
-    }
+    // if (
+    //   ![Channel.SET_PREVIEW, Channel.SET_LOADING, Channel.KIT_LOG].includes(
+    //     data.channel
+    //   )
+    // ) {
+    //   log.info(
+    //     `${data.channel === Channel.SET_SCRIPT ? `\n\n` : ``}${data.pid}: ${
+    //       data.channel
+    //     } ${type} process ${data.kitScript?.replace(/.*\//gi, '')}`
+    //   );
+    // }
 
     if (kitMessageMap[data.channel]) {
       type C = keyof ChannelMap;
@@ -710,12 +827,14 @@ const createChild = ({
     PROCESS_TYPE: type,
     FORCE_COLOR: '1',
     PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+    KIT_APP_PATH: app.getAppPath(),
   };
   // console.log({ env });
+  const isWin = os.platform().startsWith('win');
   const child = fork(entry, args, {
     silent: false,
     // stdio: 'inherit',
-    // execPath,
+    ...(isWin ? {} : { execPath }),
     cwd: os.homedir(),
     env,
   });
@@ -732,7 +851,8 @@ interface ProcessHandlers {
 
 class Processes extends Array<ProcessInfo> {
   public endCurrentPromptProcess() {
-    if (state.promptProcess?.pid) this.removeByPid(state.promptProcess?.pid);
+    if (kitState.promptProcess?.pid)
+      this.removeByPid(kitState.promptProcess?.pid);
   }
 
   public abandonnedProcesses: ProcessInfo[] = [];
@@ -782,7 +902,7 @@ class Processes extends Array<ProcessInfo> {
     };
 
     this.push(info);
-    state.addP(info);
+    kitState.addP(info);
 
     if (scriptPath) {
       log.info(`${child.pid}: 🟢 start ${type} ${scriptPath}`);
@@ -815,7 +935,7 @@ class Processes extends Array<ProcessInfo> {
       // log.info(`EXIT`, { pid, code });
       if (id) clearTimeout(id);
 
-      if (child?.pid === state.promptProcess?.pid) {
+      if (child?.pid === kitState.promptProcess?.pid) {
         sendToPrompt(Channel.EXIT, pid);
       }
 
@@ -885,13 +1005,13 @@ class Processes extends Array<ProcessInfo> {
       this[index]?.child?.removeAllListeners();
       this[index]?.child?.kill();
       log.info(`${pid}: 🛑 removed`);
-      if (state.promptProcess?.pid === pid) {
-        hideAppIfNoWindows(state.promptProcess.scriptPath);
+      if (kitState.promptProcess?.pid === pid) {
+        hideAppIfNoWindows(kitState.promptProcess.scriptPath);
       }
     }
     this.splice(index, 1);
 
-    state.removeP(pid);
+    kitState.removeP(pid);
   }
 
   public killAbandonnedProcess(pid: number) {
@@ -914,7 +1034,7 @@ class Processes extends Array<ProcessInfo> {
           (info) => info.pid === pid
         );
         this.abandonnedProcesses.splice(aIndex, 1);
-        state.removeP(child?.pid);
+        kitState.removeP(child?.pid);
       }
     }
   }
@@ -923,7 +1043,7 @@ class Processes extends Array<ProcessInfo> {
     const processInfo = this.find((info) => info.pid === pid);
 
     this.removeByPid(pid);
-    state.removeP(pid);
+    kitState.removeP(pid);
 
     if (processInfo) {
       log.info(`${processInfo.pid}: 👋 Abandonning ${processInfo.scriptPath}`);
@@ -933,9 +1053,56 @@ class Processes extends Array<ProcessInfo> {
       }, 5000);
 
       this.abandonnedProcesses.push(processInfo);
-      state.addP(processInfo);
+      kitState.addP(processInfo);
     }
   }
 }
 
 export const processes = new Processes();
+
+export const handleWidgetEvents = () => {
+  const clickHandler: WidgetHandler = (event, data) => {
+    const { widgetId } = data;
+    const { widget, child, moved } = widgetMap[widgetId];
+    if (!child) return;
+
+    if (moved) {
+      widgetMap[widgetId].moved = false;
+      return;
+    }
+
+    child?.send({
+      ...data,
+      ...widget.getBounds(),
+      pid: child.pid,
+      channel: Channel.WIDGET_CLICK,
+    });
+  };
+
+  const inputHandler: WidgetHandler = (event, data) => {
+    const { widgetId } = data;
+    const { child, widget } = widgetMap[widgetId];
+    if (!child) return;
+
+    child?.send({
+      ...data,
+      ...widget.getBounds(),
+      widgetId,
+      pid: child?.pid,
+      channel: Channel.WIDGET_INPUT,
+    });
+  };
+
+  const measureHandler: WidgetHandler = (event, data: any) => {
+    const { widgetId } = data;
+    log.info(`📏 ${widgetId} Widget: Fitting to inner child`);
+    const { widget, child, ignoreMeasure } = widgetMap[widgetId];
+    if (!child || ignoreMeasure) return;
+
+    widget.setSize(data.width, data.height, true);
+  };
+
+  ipcMain.on(Channel.WIDGET_CLICK, clickHandler);
+  ipcMain.on(Channel.WIDGET_INPUT, inputHandler);
+  ipcMain.on('WIDGET_MEASURE', measureHandler);
+};

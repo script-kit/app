@@ -13,6 +13,7 @@ import path from 'path';
 import { writeFile, mkdir } from 'fs/promises';
 import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
 import { ShowOptions } from '@johnlindquist/kit/types/kitapp';
+import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
 import { getAssetPath } from './assets';
 import { darkTheme, lightTheme } from './components/themes';
@@ -94,7 +95,7 @@ const page = (body: string, options: ShowOptions) => {
       })
     }, 500)
 
-    ipcRenderer.on('UPDATE_WIDGET', (event, {html})=> {
+    ipcRenderer.on('WIDGET_UPDATE', (event, {html})=> {
       document.body.innerHTML = html
       resize()
     })
@@ -344,5 +345,56 @@ export const show = async (
     });
 
     showWindow?.loadURL(`file://${showPath}`);
+  });
+};
+
+export const showWidget = async (
+  widgetId: string,
+  filePath: string,
+  options: WidgetOptions = {},
+  showOnLoad = true
+): Promise<BrowserWindow> => {
+  const center = getCenterOnCurrentScreen(options);
+  const widgetWindow = new BrowserWindow({
+    title: 'Script Kit Widget',
+    frame: false,
+    transparent: true,
+    ...(options?.transparent
+      ? {}
+      : {
+          vibrancy: 'menu',
+        }),
+    icon: getAssetPath('icon.png'),
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+    ...center,
+    show: false,
+    ...options,
+  });
+
+  if (options?.ignoreMouse)
+    widgetWindow?.setIgnoreMouseEvents(true, { forward: true });
+
+  if (options?.ttl) {
+    setTimeout(() => {
+      widgetWindow.removeAllListeners();
+      widgetWindow.destroy();
+    }, options?.ttl);
+  }
+
+  return new Promise((resolve, reject) => {
+    widgetWindow.webContents.once('did-finish-load', () => {
+      if (showOnLoad && widgetWindow) {
+        widgetWindow?.show();
+      }
+
+      resolve(widgetWindow);
+    });
+
+    log.info(`Load ${filePath} in ${widgetWindow.id}`);
+
+    widgetWindow?.loadURL(`file://${filePath}?widgetId=${widgetId}`);
   });
 };

@@ -1,5 +1,4 @@
 import { useAtom } from 'jotai';
-import { Value } from '@johnlindquist/kit/cjs/enum';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
   _choices,

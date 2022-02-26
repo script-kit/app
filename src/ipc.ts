@@ -31,7 +31,7 @@ import { runPromptProcess, runScript } from './kit';
 import { AppChannel } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
-import { state, updateScripts } from './state';
+import { kitState, updateScripts } from './state';
 
 const handleChannel =
   (fn: (processInfo: ProcessInfo, message: AppMessage) => void) =>
@@ -39,18 +39,11 @@ const handleChannel =
     // log.info(message);
     const processInfo = processes.getByPid(message?.pid);
 
-    if (message?.channel !== Channel.INPUT) {
-      log.info(
-        `${processInfo?.pid}: ✉️  ${message?.channel}: ${path.basename(
-          processInfo?.scriptPath || ''
-        )}`
-      );
-    }
-
     if (processInfo) {
       fn(processInfo, message);
+      log.info(`${message.channel}`, message.pid);
     } else {
-      log.warn(`${message.channel} failed on ${message?.pid}`);
+      log.warn(`${message.channel} failed on ${message?.pid}`, message);
       // log.warn(processInfo?.child, processInfo?.type);
       // console.log(message);
     }
@@ -61,7 +54,7 @@ export const startIpc = () => {
     Channel.PROMPT_ERROR,
     debounce((_event, { error }) => {
       log.warn(error);
-      if (!state.hidden) {
+      if (!kitState.hidden) {
         setTimeout(() => {
           reload();
           // processes.add(ProcessType.App, kitPath('cli/kit-log.js'), []);
@@ -193,11 +186,18 @@ export const startIpc = () => {
         }
 
         if (channel === Channel.VALUE_SUBMITTED) {
-          state.ignoreBlur = false;
+          kitState.ignoreBlur = false;
         }
 
         if (child) {
           child?.send(message);
+        }
+
+        if (channel === Channel.ESCAPE) {
+          // log.info(message.state);
+          if (message.state.submitted) {
+            child.kill();
+          }
         }
       })
     );

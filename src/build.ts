@@ -9,4 +9,9 @@ export const buildScriptChanged = debounce(async ({ filePath }: Script) => {
     log.info(`🏗️ Build ${filePath}`);
     await runScript(kitPath('cli/build-ts-script.js'), filePath);
   }
+
+  if (filePath.endsWith('.tsx') || filePath.endsWith('.jsx')) {
+    log.info(`🏗️ Build ${filePath}`);
+    await runScript(kitPath('cli/build-widget.js'), filePath);
+  }
 }, 250);

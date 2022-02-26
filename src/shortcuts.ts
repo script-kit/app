@@ -2,7 +2,6 @@ import { globalShortcut } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { Script } from '@johnlindquist/kit/types/core';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
 
 import {
   mainScriptPath,

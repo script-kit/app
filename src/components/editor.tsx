@@ -37,14 +37,12 @@ class ErrorBoundary extends React.Component {
 // });
 
 export default function Editor() {
-  const [config, setEditorConfig] = useAtom(editorConfigAtom);
+  const [config] = useAtom(editorConfigAtom);
   const [isDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
   const [inputValue, setInputValue] = useAtom(inputAtom);
   const [ui] = useAtom(uiAtom);
   const [options] = useAtom(editorOptions);
-  // const [editor, setEditor] = useAtom(editorInstanceAtom);
-  // const [monaco, setMonaco] = useAtom(monacoAtom);
 
   useSave(inputValue);
   useClose();
@@ -79,6 +77,10 @@ export default function Editor() {
           moduleResolution:
             monaco.languages.typescript.ModuleResolutionKind.NodeJs,
           module: monaco.languages.typescript.ModuleKind.ESNext,
+          lib: ['esnext'],
+          jsx: monaco.languages.typescript.JsxEmit.React,
+          reactNamespace: 'React',
+          typeRoots: ['node_modules/@types'],
         });
       }
 
@@ -94,6 +96,10 @@ export default function Editor() {
           moduleResolution:
             monaco.languages.typescript.ModuleResolutionKind.NodeJs,
           module: monaco.languages.typescript.ModuleKind.ESNext,
+          lib: ['esnext'],
+          jsx: monaco.languages.typescript.JsxEmit.React,
+          reactNamespace: 'React',
+          typeRoots: ['node_modules/@types'],
         });
       }
     },
@@ -102,16 +108,29 @@ export default function Editor() {
 
   const onMount = useCallback(
     (editor: monacoEditor.IStandaloneCodeEditor, monaco: Monaco) => {
+      editorRef.current = editor;
+
       editor.focus();
 
-      editorRef.current = editor;
+      // monaco.languages.typescript.typescriptDefaults.addExtraLib(
+      //   `
+      //   declare module 'axios' {
+      //       export interface Foo {
+      //           foo: string;
+      //       }
+      //   }
+      //   `
+      // );
 
       if (typeof config !== 'string') {
         if (config?.language === 'typescript') {
           if (config?.extraLibs?.length) {
-            for (const { content } of config.extraLibs) {
+            for (const { content, filePath } of config.extraLibs) {
+              // console.log(filePath);
+              // console.log(content);
               monaco.languages.typescript.typescriptDefaults.addExtraLib(
-                content
+                content,
+                filePath
               );
             }
           }
@@ -119,18 +138,38 @@ export default function Editor() {
 
         if (config?.language === 'javascript') {
           if (config?.extraLibs?.length) {
-            for (const { content } of config.extraLibs) {
+            for (const { content, filePath } of config.extraLibs) {
               monaco.languages.typescript.javascriptDefaults.addExtraLib(
-                content
+                content,
+                filePath
               );
             }
           }
         }
       }
 
+      // const model = monaco.editor.createModel(
+      //   `
+      // import { getUserProfile } from './user';
+      // const profile = getUserProfile("some-id");
+      // console.log(profile.firstName);
+      //     `.trim(),
+      //   'typescript',
+      //   monaco.Uri.parse('file:///main.tsx')
+      // );
+
+      // editor.setModel(model);
+
       monaco.editor.setTheme(isDark ? 'kit-dark' : 'kit-light');
 
-      if (typeof global?.exports === 'undefined') global.exports = {};
+      editor.layout({
+        width: containerRef?.current?.offsetWidth || document.body.offsetWidth,
+        height:
+          (containerRef?.current?.offsetHeight || document.body.offsetHeight) -
+          24,
+      });
+
+      // if (typeof global?.exports === 'undefined') global.exports = {};
       editor.focus();
 
       if (editor?.getDomNode())
@@ -138,12 +177,16 @@ export default function Editor() {
           'no-drag';
 
       const lineNumber = editor.getModel()?.getLineCount() || 0;
+
       if ((config as EditorOptions).scrollTo === 'bottom') {
         const column =
           (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
-        editor.setPosition({ lineNumber, column });
 
-        editor.revealPosition({ lineNumber, column });
+        const position = { lineNumber, column };
+        // console.log({ position });
+        editor.setPosition(position);
+
+        editor.revealPosition(position);
       }
 
       if ((config as EditorOptions).scrollTo === 'center') {
@@ -155,7 +198,8 @@ export default function Editor() {
 
   useEffect(() => {
     if (editorRef?.current) {
-      editorRef.current.focus();
+      const e = editorRef.current;
+      e.focus();
     }
   }, [editorRef?.current, config]);
 
@@ -164,12 +208,28 @@ export default function Editor() {
   }, []);
 
   useEffect(() => {
+    // console.log({ ui, open, config, ref: editorRef?.current });
     if (ui === UI.editor && open) {
-      if (config?.value) {
-        setInputValue(config.value);
+      const editor = editorRef?.current;
+      if (!editor) return;
+
+      const lineNumber = editor.getModel()?.getLineCount() || 0;
+
+      if ((config as EditorOptions).scrollTo === 'bottom') {
+        const column =
+          (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+
+        const position = { lineNumber, column };
+        editor.setPosition(position);
+
+        editor.revealPosition(position);
+      }
+
+      if ((config as EditorOptions).scrollTo === 'center') {
+        editor.revealLineInCenter(Math.floor(lineNumber / 2));
       }
     }
-  }, [open, config, config?.value, editorRef?.current]);
+  }, [open, config, (config as EditorOptions)?.value, editorRef?.current]);
 
   return (
     <motion.div
@@ -184,13 +244,12 @@ export default function Editor() {
     >
       <ErrorBoundary>
         <MonacoEditor
-          height="100%"
-          width="100%"
           beforeMount={onBeforeMount}
           onMount={onMount}
           language={(config as EditorOptions)?.language || 'markdown'}
           theme={isDark ? 'kit-dark' : 'kit-light'}
           options={options}
+          path="file:///index.ts"
           value={(config as EditorOptions)?.value || ''}
           onChange={onChange}
         />

@@ -8,6 +8,7 @@ import minimist from 'minimist';
 import log from 'electron-log';
 import path from 'path';
 import { fork, ForkOptions } from 'child_process';
+import { homedir } from 'os';
 
 import { Channel, ProcessType } from '@johnlindquist/kit/cjs/enum';
 import {
@@ -16,11 +17,12 @@ import {
   kenvPath,
   mainScriptPath,
   KIT_FIRST_PATH,
+  execPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 import { isVisible, sendToPrompt, setPromptPid, setScript } from './prompt';
-import { getKitScript, isSameScript, state } from './state';
+import { getKitScript, isSameScript, kitState } from './state';
 
 app.on('second-instance', async (_event, argv) => {
   const { _ } = minimist(argv);
@@ -74,7 +76,7 @@ export const runPromptProcess = async (
   sendToPrompt(Channel.START, promptScriptPath);
   // const same = processes.hidePreviousPromptProcess(promptScriptPath);
   // const same = processes.endPreviousPromptProcess(promptScriptPath);
-  const same = isSameScript(promptScriptPath);
+  const same = kitState.promptCount === 0 && isSameScript(promptScriptPath);
 
   if (same && isVisible()) {
     // hideAppIfNoWindows(promptScriptPath);
@@ -92,7 +94,7 @@ export const runPromptProcess = async (
 
   log.info(`${pid}: 🏎 ${promptScriptPath} `);
   processInfo.scriptPath = promptScriptPath;
-  state.promptProcess = processInfo;
+  kitState.promptProcess = processInfo;
 
   // processes.assignScriptToProcess(promptScriptPath, pid);
 
@@ -116,7 +118,8 @@ export const runPromptProcess = async (
 
 const KIT = kitPath();
 const forkOptions: ForkOptions = {
-  cwd: KIT,
+  cwd: homedir(),
+  execPath,
   env: {
     KIT,
     KENV: kenvPath(),

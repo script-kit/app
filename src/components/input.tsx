@@ -4,20 +4,16 @@ import React, {
   useCallback,
   KeyboardEvent,
   LegacyRef,
-  useEffect,
   useRef,
+  useEffect,
 } from 'react';
 import { motion } from 'framer-motion';
 
 import { Choice } from '@johnlindquist/kit/types/core';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 
 import {
-  appStateAtom,
-  channelAtom,
   inputAtom,
-  isMainScriptAtom,
   modifiers,
   _modifiers,
   pidAtom,
@@ -41,7 +37,6 @@ import {
   useFocus,
   useKeyIndex,
   useTab,
-  useOpen,
 } from '../hooks';
 
 const remapModifiers = (m: string) => {
@@ -69,7 +64,6 @@ export default function Input() {
   const [ultraShortCodes] = useAtom(ultraShortCodesAtom);
   const [processing] = useAtom(processingAtom);
   const [resizeEnabled] = useAtom(resizeEnabledAtom);
-  const [channel] = useAtom(channelAtom);
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
 
   useEscape();
@@ -129,22 +123,6 @@ export default function Input() {
         if (shortcodeChoice) {
           event.preventDefault();
           setSubmitValue(shortcodeChoice.value);
-          return;
-        }
-
-        if (inputValue?.length > 0) {
-          const tab = tabs.find((t) =>
-            t.toLowerCase().startsWith(inputValue?.toLowerCase())
-          );
-
-          if (tab) {
-            event.preventDefault();
-
-            const ti = tabs.indexOf(tab);
-            setInput('');
-            setTabIndex(ti);
-            channel(Channel.TAB);
-          }
         }
       }
     },
@@ -158,7 +136,6 @@ export default function Input() {
       setTabIndex,
       pid,
       ultraShortCodes,
-      channel,
       onInputSubmit,
     ]
   );

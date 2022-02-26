@@ -1,14 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { clipboard, NativeImage } from 'electron';
-import { interval, merge } from 'rxjs';
-import {
-  distinctUntilChanged,
-  filter,
-  map,
-  share,
-  skip,
-  tap,
-} from 'rxjs/operators';
+import { interval } from 'rxjs';
+import { distinctUntilChanged, filter, map, share, skip } from 'rxjs/operators';
 
 import { format } from 'date-fns';
 import { writeFile } from 'fs/promises';
@@ -19,6 +12,16 @@ import { Choice } from '@johnlindquist/kit/types/core';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 
 import { emitter } from './events';
+
+// const memory = (kDec = 2) => {
+//   const bytes = process.memoryUsage().rss;
+
+//   const MBytes = bytes / (1024 * 1024);
+//   const roundedMegabytes =
+//     Math.round(MBytes * Math.pow(10, kDec)) / Math.pow(10, kDec);
+
+//   return roundedMegabytes.toString() + ' MB';
+// };
 
 interface ClipboardItem extends Choice {
   type: string;
@@ -44,6 +47,12 @@ export const configureInterval = async () => {
     skip(1),
     distinctUntilChanged()
   );
+
+  // const memoryLog = interval(5000).pipe(map(() => memory()));
+
+  // memoryLog.subscribe((s) => {
+  //   log.info(`🧠 Memory`, s);
+  // });
 
   // let image: NativeImage | null = null;
   // const clipboardImage$ = tick$.pipe(

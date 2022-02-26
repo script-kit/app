@@ -3,18 +3,16 @@ import { Notification, Tray, Menu, app } from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
 import os from 'os';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
 import {
   kenvPath,
   kitPath,
   mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
-import { getAppDb } from '@johnlindquist/kit/cjs/db';
+import { getAppDb, getScriptsDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
 import { restartIfNecessary } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
-import { sendToPrompt } from './prompt';
 
 let tray: Tray | null = null;
 
@@ -129,5 +127,43 @@ export const toggleTray = async () => {
     } else {
       createTray();
     }
+  }
+};
+
+let leftClickOverride: null | ((event: any) => void) = null;
+export const setTrayMenu = async (scripts: string[]) => {
+  if (!scripts?.length) {
+    if (leftClickOverride) {
+      tray?.off('click', leftClickOverride);
+      tray?.on('click', leftClick);
+      leftClickOverride = null;
+      tray?.setContextMenu(null);
+    }
+    return;
+  }
+
+  const db = await getScriptsDb();
+  const scriptMenuItems = [];
+  for (const command of scripts) {
+    const script = db.scripts.find((s) => s.command === command);
+    if (script) {
+      scriptMenuItems.push({
+        label: script.name,
+        click: () => {
+          emitter.emit(KitEvent.RunPromptProcess, script.filePath);
+        },
+      });
+    }
+  }
+
+  if (scriptMenuItems.length) {
+    const cMenu = Menu.buildFromTemplate(scriptMenuItems);
+
+    leftClickOverride = () => {
+      tray?.popUpContextMenu(cMenu);
+    };
+
+    tray?.off('click', leftClick);
+    tray?.on('click', leftClickOverride);
   }
 };

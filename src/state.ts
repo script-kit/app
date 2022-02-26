@@ -119,13 +119,13 @@ export const getKitScript = (filePath: string): Script => {
 };
 
 const addP = (pi: Partial<ProcessInfo>) => {
-  state.ps.push(pi);
+  kitState.ps.push(pi);
 };
 
 const removeP = (pid: number) => {
-  const index = state.ps.findIndex((p) => p.pid === pid);
+  const index = kitState.ps.findIndex((p) => p.pid === pid);
   if (index > -1) {
-    state.ps.splice(index, 1);
+    kitState.ps.splice(index, 1);
   }
 };
 
@@ -144,15 +144,16 @@ const initState = {
   resize: false,
   prevResize: false,
   promptProcess: undefined as ProcessInfo | undefined,
-  isMainScript: () => state.script.filePath === mainScriptPath,
+  isMainScript: () => kitState.script.filePath === mainScriptPath,
+  promptCount: -1,
 };
 
-export const state: typeof initState = proxy(initState);
+export const kitState: typeof initState = proxy(initState);
 
 export function isSameScript(promptScriptPath: string) {
   const same =
-    path.resolve(state.script.filePath || '') ===
-    path.resolve(promptScriptPath);
+    path.resolve(kitState.script.filePath || '') ===
+      path.resolve(promptScriptPath) && kitState.promptCount === 0;
 
   return same;
 }

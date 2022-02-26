@@ -27,7 +27,6 @@ import {
   AppState,
 } from '@johnlindquist/kit/types/kitapp';
 import { editor } from 'monaco-editor';
-import { Monaco } from '@monaco-editor/react';
 
 import { clamp, debounce, drop, get, isEqual } from 'lodash';
 import { ipcRenderer } from 'electron';
@@ -166,6 +165,7 @@ export const unfilteredChoicesAtom = atom(
 
     if (cs?.length === 0) {
       s(scoredChoices, []);
+      s(quickScoreAtom, null);
     }
 
     const maybePreview = Boolean(
@@ -350,7 +350,7 @@ export const logHTMLAtom = atom(
 
 export const logHeightAtom = atom(0);
 
-const editorConfig = atom<EditorConfig>({
+const editorConfig = atom<EditorConfig | null>({
   value: '',
   language: 'markdown',
   extraLibs: [],
@@ -378,6 +378,7 @@ export const editorConfigAtom = atom(
   (g) => g(editorConfig),
   (g, s, a: EditorOptions) => {
     s(editorConfig, a);
+
     // s(inputAtom, a.value);
 
     const {
@@ -397,6 +398,8 @@ export const editorConfigAtom = atom(
       ...defaultEditorOptions,
       ...(options as editor.IStandaloneEditorConstructionOptions),
     });
+
+    if (typeof a?.value === 'undefined') return;
 
     const channel = g(channelAtom);
     channel(Channel.INPUT, { input: a.value });
@@ -600,7 +603,7 @@ export const inputAtom = atom(
     channel(Channel.INPUT);
 
     s(mouseEnabledAtom, 0);
-    s(submittedAtom, false);
+
     s(_index, 0);
 
     const mode = g(modeAtom);
@@ -848,6 +851,10 @@ export const promptDataAtom = atom(
         s(panelHTMLAtom, a.panel);
       }
 
+      if (a.defaultChoiceId) {
+        s(prevChoiceId, a.defaultChoiceId);
+      }
+
       s(onInputSubmitAtom, a?.onInputSubmit || {});
       s(onShortcutSubmitAtom, a?.onShortcutSubmit || {});
 
@@ -912,6 +919,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     description: g(_description),
     script: g(_script),
     value: g(_submitValue),
+    submitted: g(submittedAtom),
   };
 
   return state;
@@ -937,6 +945,7 @@ export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
+    if (g(submittedAtom)) return;
     // let submitted = g(submittedAtom);
     // if (submitted) return;
 
@@ -1012,6 +1021,8 @@ export const openAtom = atom(
       s(loading, false);
       s(loadingAtom, false);
       s(resizeData, {});
+      s(editorConfigAtom, {});
+      s(promptData, null);
 
       ipcRenderer.send(AppChannel.END_PROCESS, {
         pid: g(pidAtom),
@@ -1177,14 +1188,11 @@ export const valueInvalidAtom = atom(null, (g, s, a: string) => {
   if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
   s(processingAtom, false);
   s(inputAtom, '');
+  s(_inputChangedAtom, false);
   if (typeof a === 'string') s(hintAtom, a);
 });
 
 export const isHiddenAtom = atom(false);
-export const monacoAtom = atom<Monaco | null>(null);
-export const editorInstanceAtom = atom<editor.IStandaloneCodeEditor | null>(
-  null
-);
 
 export const filterInputAtom = atom<string>(``);
 export const blurAtom = atom(null, (g) => {
@@ -1230,14 +1238,14 @@ export const submitSurveyAtom = atom(null, (g, s, a: Survey) => {
 
 export const showTabsAtom = atom((g) => {
   return (
-    !!(g(uiAtom) & (UI.arg | UI.div)) &&
+    [UI.arg, UI.div].includes(g(uiAtom)) &&
     g(_tabs)?.length > 0 &&
     !g(flagValueAtom)
   );
 });
 
 export const showSelectedAtom = atom((g) => {
-  return !!(g(uiAtom) & (UI.arg | UI.hotkey)) && g(selectedAtom);
+  return [UI.arg, UI.hotkey].includes(g(uiAtom)) && g(selectedAtom);
 });
 
 type OnInputSubmit = {
@@ -1251,3 +1259,14 @@ export const onInputSubmitAtom = atom<OnInputSubmit>({});
 export const onShortcutSubmitAtom = atom<OnShortcutSubmit>({});
 
 export const processesAtom = atom<ProcessInfo[]>([]);
+
+export const setFocusedChoiceAtom = atom(null, (g, s, a: string) => {
+  const i = g(choices).findIndex((c) => c?.item?.id === a);
+
+  console.log({ i });
+  if (i > -1) {
+    s(_index, i);
+  }
+});
+
+export const socketURLAtom = atom<string>('');

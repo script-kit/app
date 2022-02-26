@@ -1,6 +1,5 @@
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
-import { useEffect } from 'react';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
@@ -12,8 +11,6 @@ import {
   _index,
   inputAtom,
   inputFocusAtom,
-  openAtom,
-  previewEnabledAtom,
   selectionStartAtom,
   submitValueAtom,
   channelAtom,
@@ -32,9 +29,7 @@ export default () => {
   const [, setFlag] = useAtom(_flag);
   const [, submit] = useAtom(submitValueAtom);
   const [selectionStart] = useAtom(selectionStartAtom);
-  const [open, setOpen] = useAtom(openAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
-  const [previewEnabled, setPreviewEnabled] = useAtom(previewEnabledAtom);
   const [channel] = useAtom(channelAtom);
   const [onShortcutSubmit] = useAtom(onShortcutSubmitAtom);
 

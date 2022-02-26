@@ -39,7 +39,7 @@ import {
   SpawnSyncReturns,
   ForkOptions,
 } from 'child_process';
-import os from 'os';
+import os, { homedir } from 'os';
 import { ensureDir } from 'fs-extra';
 import { existsSync } from 'fs';
 import {
@@ -58,6 +58,7 @@ import {
   kenvPath,
   kitPath,
   KIT_FIRST_PATH,
+  KIT_NODE_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
   execPath,
@@ -90,7 +91,7 @@ import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { INSTALL_ERROR, show } from './show';
 import { cacheKitScripts } from './state';
 import { startSK } from './sk';
-import { processes } from './process';
+import { handleWidgetEvents, processes } from './process';
 import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
 import { showError } from './main.dev.templates';
@@ -284,7 +285,7 @@ const setupLog = async (message: string) => {
 };
 
 const forkOptions: ForkOptions = {
-  cwd: KIT,
+  cwd: homedir(),
   env: {
     KIT,
     KENV: kenvPath(),
@@ -381,8 +382,9 @@ const ready = async () => {
 
     startIpc();
     processes.add(ProcessType.Prompt);
-    processes.add(ProcessType.Prompt);
-    processes.add(ProcessType.Prompt);
+    handleWidgetEvents();
+    // processes.add(ProcessType.Prompt);
+    // processes.add(ProcessType.Prompt);
 
     scheduleDownloads();
     systemEvents();
@@ -590,7 +592,7 @@ const KIT_NODE_TAR =
 
 const checkKit = async () => {
   const options: SpawnSyncOptions = {
-    cwd: KIT,
+    cwd: homedir(),
     encoding: 'utf-8',
     env: {
       KIT,

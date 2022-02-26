@@ -97,11 +97,14 @@ import {
   showSelectedAtom,
   nullChoicesAtom,
   processesAtom,
+  setFocusedChoiceAtom,
+  socketURLAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
 import Splash from './components/splash';
 import { AppChannel } from './enums';
+import Terminal from './term';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -209,6 +212,8 @@ export default function App() {
   const [, setLogo] = useAtom(_logo);
   const [getEditorHistory] = useAtom(getEditorHistoryAtom);
   const [, setProcesses] = useAtom(processesAtom);
+  const [, setFocused] = useAtom(setFocusedChoiceAtom);
+  const [, setSocketURL] = useAtom(socketURLAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -239,6 +244,7 @@ export default function App() {
     [Channel.SET_EDITOR_CONFIG]: setEditorConfig,
     [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfig,
     [Channel.SET_FLAGS]: setFlags,
+    [Channel.SET_FOCUSED]: setFocused,
     [Channel.SET_DIV_HTML]: setPanelHTML,
     [Channel.SET_FILTER_INPUT]: setFilterInput,
     [Channel.SET_FORM_HTML]: ({ html, formData }: any) => {
@@ -269,6 +275,7 @@ export default function App() {
     [Channel.VALUE_INVALID]: setValueInvalid,
     [Channel.START]: start,
     [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
+    [Channel.TERMINAL]: setSocketURL,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -368,7 +375,7 @@ export default function App() {
           } as any
         }
         className={`
-        ${hidden ? 'hidden' : ''}
+        ${hidden || !open ? 'hidden' : ''}
         relative flex flex-col w-full h-full`}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
@@ -418,6 +425,7 @@ export default function App() {
             {ui === UI.textarea && <TextArea />}
             {ui === UI.editor && <Editor />}
             {ui === UI.form && <Form />}
+            {ui === UI.term && <Terminal />}
           </AnimatePresence>
           <AutoSizer>
             {({ width, height }) => (
