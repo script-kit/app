@@ -335,17 +335,6 @@ export const resize = async ({
 }: ResizeData) => {
   if (kitState.modifiedByUser) return;
 
-  // log.info({
-  //   scriptPath,
-  //   topHeight,
-  //   mainHeight,
-  //   hasPanel,
-  //   hasInput,
-  //   tabIndex,
-  //   nullChoices,
-  //   choiceCount,
-  // });
-
   const {
     width: cachedWidth,
     height: cachedHeight,

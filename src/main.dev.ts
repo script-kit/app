@@ -371,7 +371,6 @@ const ready = async () => {
     await configureInterval();
     await setupLog(`Tick started`);
 
-    const isWin = os.platform().startsWith('win');
     await setupLog(``);
     await setupDone();
 
@@ -592,7 +591,7 @@ const KIT_NODE_TAR =
 
 const checkKit = async () => {
   const options: SpawnSyncOptions = {
-    cwd: homedir(),
+    cwd: kitPath(),
     encoding: 'utf-8',
     env: {
       KIT,
@@ -812,8 +811,8 @@ const checkKit = async () => {
           sendSplashBody(data.toString());
         });
 
-        child.on('exit', () => {
-          resolve('npm install success 🏆');
+        child.on('exit', (code) => {
+          resolve(`Deps install exit code ${code}`);
         });
 
         child.on('error', (error: any) => {
@@ -825,12 +824,13 @@ const checkKit = async () => {
       //   [`i`, `--production`, `--no-progress`, `--quiet`],
       //   options
       // );
+
       log.info({ npmResult });
 
       const kitAppResult = await new Promise((resolve, reject) => {
         const child = spawn(
           kitPath('node', 'bin', 'npm'),
-          [`i`, `@johnlindquist/kitdeps@0.0.1`, `--no-progress`, `--quiet`],
+          [`i`, `@johnlindquist/kitdeps`, `--no-progress`, `--quiet`],
           options
         );
 
@@ -838,8 +838,8 @@ const checkKit = async () => {
           sendSplashBody(data.toString());
         });
 
-        child.on('exit', () => {
-          resolve('npm install success for kit app 🏆');
+        child.on('exit', (code) => {
+          resolve(`Deps install exit code ${code}`);
         });
 
         child.on('error', (error: any) => {
@@ -892,20 +892,33 @@ const checkKit = async () => {
   await setupLog(`Update .kenv`);
   await setupScript(kitPath('setup', 'patch.js'));
 
+  let status = 'success';
+  let err = '';
+
   try {
     await verifyInstall();
+
+    await storeVersion(getVersion());
+
+    await ready();
+
+    sendToPrompt(Channel.SET_READY, true);
+    focusPrompt();
   } catch (error: any) {
     ohNo(error);
+    status = 'fail';
+    err = error.toString();
   }
-  await storeVersion(getVersion());
 
-  if (requiresInstall || (await isContributor())) {
+  if (requiresInstall) {
     const installInfo = {
       version: getVersion(),
+      status,
       platform,
       timestamp: Date.now(),
       osversion: os.version(),
       username: os.userInfo().username,
+      err,
     };
 
     optionalSetupScript(
@@ -913,11 +926,6 @@ const checkKit = async () => {
       JSON.stringify(installInfo)
     );
   }
-
-  await ready();
-
-  sendToPrompt(Channel.SET_READY, true);
-  focusPrompt();
 };
 
 app.whenReady().then(checkKit).catch(ohNo);

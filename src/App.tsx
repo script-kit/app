@@ -375,7 +375,7 @@ export default function App() {
           } as any
         }
         className={`
-        ${hidden || !open ? 'hidden' : ''}
+        ${hidden ? 'hidden' : ''}
         relative flex flex-col w-full h-full`}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}

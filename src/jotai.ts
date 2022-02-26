@@ -522,7 +522,7 @@ export const scoredChoices = atom(
       resize(g, s);
     } else {
       s(focusedChoiceAtom, null);
-      if (isFilter && Boolean(a)) {
+      if (isFilter && Boolean(a) && !g(nullChoicesAtom)) {
         channel(Channel.NO_CHOICES);
       }
     }
@@ -732,7 +732,9 @@ const resize = (g: Getter, s: Setter) => {
       ui === UI.arg
   );
 
-  const hasPanel = Boolean(g(panelHTMLAtom)?.length);
+  const panelHTML = g(panelHTMLAtom);
+  const hasPanel = Boolean(panelHTML?.length);
+
   const nullChoices = g(nullChoicesAtom);
   const data: ResizeData = {
     scriptPath: g(_script)?.filePath,
@@ -1205,7 +1207,10 @@ export const blurAtom = atom(null, (g) => {
 export const startAtom = atom(null, (g, s, a: string) => {
   console.log(`🎬 Start ${a}`);
   const history = g(_history);
-  if (history.length > 0 || g(scriptAtom).filePath === a) {
+  if (
+    g(uiAtom) !== UI.splash &&
+    (history.length > 0 || g(scriptAtom).filePath === a)
+  ) {
     const channel = g(channelAtom);
     channel(Channel.ABANDON);
   }

@@ -87,7 +87,7 @@ export default function Editor() {
       if (options?.language === 'javascript') {
         monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
           noSyntaxValidation: false,
-          noSemanticValidation: false,
+          noSemanticValidation: true,
         });
 
         monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
