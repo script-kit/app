@@ -285,6 +285,8 @@ const kitMessageMap: ChannelHandler = {
   WIDGET_SET_STATE: toProcess(({ child }, { channel, value }) => {
     const { widgetId, state } = value as any;
     // log.info({ widgetId }, `${channel}`);
+    if (!widgetMap[widgetId]) return;
+
     const { widget } = widgetMap[widgetId];
 
     // log.info(`WIDGET_SET_STATE`, value);
@@ -298,6 +300,7 @@ const kitMessageMap: ChannelHandler = {
   WIDGET_FIT: toProcess(({ child }, { channel, value }) => {
     const { widgetId, state } = value as any;
     // log.info({ widgetId }, `${channel}`);
+    if (!widgetMap[widgetId]) return;
     const { widget } = widgetMap[widgetId];
     // log.info(`WIDGET_SET_STATE`, value);
     if (widget) {

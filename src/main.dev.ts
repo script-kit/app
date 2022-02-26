@@ -780,6 +780,26 @@ const checkKit = async () => {
           reject(error);
         });
       });
+
+      const kitAppResult = await new Promise((resolve, reject) => {
+        const child = fork(
+          kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+          [`i`, `@johnlindquist/kitdeps@0.0.1`, `--no-progress`, `--quiet`],
+          options
+        );
+
+        child.on('message', (data) => {
+          sendSplashBody(data.toString());
+        });
+
+        child.on('exit', () => {
+          resolve('npm install success');
+        });
+
+        child.on('error', (error) => {
+          reject(error);
+        });
+      });
     } else {
       const npmResult = await new Promise((resolve, reject) => {
         const child = spawn(
@@ -806,6 +826,32 @@ const checkKit = async () => {
       //   options
       // );
       log.info({ npmResult });
+
+      const kitAppResult = await new Promise((resolve, reject) => {
+        const child = spawn(
+          kitPath('node', 'bin', 'npm'),
+          [`i`, `@johnlindquist/kitdeps@0.0.1`, `--no-progress`, `--quiet`],
+          options
+        );
+
+        child.on('message', (data: any) => {
+          sendSplashBody(data.toString());
+        });
+
+        child.on('exit', () => {
+          resolve('npm install success for kit app 🏆');
+        });
+
+        child.on('error', (error: any) => {
+          reject(error);
+        });
+      });
+      // const npmResult = spawnSync(
+      //   kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
+      //   [`i`, `--production`, `--no-progress`, `--quiet`],
+      //   options
+      // );
+      log.info({ kitAppResult });
     }
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));

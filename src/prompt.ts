@@ -409,8 +409,8 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
   // log.info(`>_ ${channel}`);
   if (
     promptWindow &&
-    promptWindow?.webContents &&
-    !promptWindow.isDestroyed()
+    !promptWindow.isDestroyed() &&
+    promptWindow?.webContents
   ) {
     promptWindow?.webContents.send(channel, data);
   }
@@ -476,7 +476,11 @@ const writePromptDb = debounce(
 );
 
 export const hideAppIfNoWindows = (scriptPath = '') => {
-  if (promptWindow?.isVisible()) {
+  if (
+    promptWindow &&
+    !promptWindow?.isDestroyed() &&
+    promptWindow?.isVisible()
+  ) {
     if (scriptPath) savePromptBounds(scriptPath, Bounds.Position);
 
     const allWindows = BrowserWindow.getAllWindows();
