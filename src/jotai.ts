@@ -362,7 +362,7 @@ const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   minimap: {
     enabled: false,
   },
-  wordWrap: 'on',
+  wordWrap: 'bounded',
   lineNumbers: 'off',
   glyphMargin: false,
   scrollBeyondLastLine: false,
@@ -669,7 +669,7 @@ export const scriptAtom = atom(
 
     s(mouseEnabledAtom, 0);
     s(_script, a);
-    // s(_input, '');
+
     // s(unfilteredChoicesAtom, []);
     s(ultraShortCodesAtom, []);
     // s(choices, []);
@@ -701,6 +701,8 @@ export const scriptAtom = atom(
     s(themeAtom, theme);
 
     // s(panelHTMLAtom, `<div/>`);
+
+    if (g(isMainScriptAtom)) s(_input, ``);
   }
 );
 
@@ -1274,4 +1276,25 @@ export const setFocusedChoiceAtom = atom(null, (g, s, a: string) => {
   }
 });
 
-export const socketURLAtom = atom<string>('');
+export const webSocketAtom = atom<WebSocket | null>(null);
+export const webSocketOpenAtom = atom(false);
+
+export const _socketURLAtom = atom<string>('');
+export const socketURLAtom = atom(
+  (g) => g(_socketURLAtom),
+  (g, s, a: string) => {
+    s(_socketURLAtom, a);
+
+    if (a) {
+      const ws = new WebSocket(`${a}/terminals/1`);
+      ws.onopen = () => {
+        s(webSocketOpenAtom, true);
+      };
+      s(webSocketAtom, ws);
+    } else if (g(webSocketAtom)) {
+      g(webSocketAtom)?.close();
+      s(webSocketOpenAtom, false);
+      s(webSocketAtom, null);
+    }
+  }
+);

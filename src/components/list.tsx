@@ -110,8 +110,6 @@ export default function ChoiceList({ width, height }: ListProps) {
         {
           width,
           height,
-          WebkitAppRegion: 'no-drag',
-          WebkitUserSelect: 'none',
         } as any
       }
     >

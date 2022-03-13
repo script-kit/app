@@ -338,6 +338,7 @@
     "@vscode/codicons": "^0.0.27",
     "ansi-to-html": "^0.7.0",
     "autoprefixer": "^10.4.0",
+    "axios": "^0.26.1",
     "chokidar": "^3.5.0",
     "clipboardy": "^2.3.0",
     "cron-parser": "^3.4.0",

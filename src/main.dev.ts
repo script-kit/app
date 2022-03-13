@@ -51,6 +51,9 @@ import {
   rm,
   rmdir,
 } from 'fs/promises';
+
+import axios from 'axios';
+
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
 import { PromptData } from '@johnlindquist/kit/types/core';
 
@@ -58,11 +61,11 @@ import {
   kenvPath,
   kitPath,
   KIT_FIRST_PATH,
-  KIT_NODE_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
   execPath,
 } from '@johnlindquist/kit/cjs/utils';
+
 import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
 import { createTray, destroyTray } from './tray';
 import { cacheMenu, setupWatchers, teardownWatchers } from './watcher';
@@ -336,7 +339,7 @@ const ensureKenvDirs = async () => {
 const systemEvents = () => {
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);
-    await teardownWatchers();
+    teardownWatchers();
     sleepSchedule();
   });
 
@@ -381,9 +384,10 @@ const ready = async () => {
 
     startIpc();
     processes.add(ProcessType.Prompt);
+    processes.add(ProcessType.Prompt);
+    // processes.add(ProcessType.Prompt);
+
     handleWidgetEvents();
-    // processes.add(ProcessType.Prompt);
-    // processes.add(ProcessType.Prompt);
 
     scheduleDownloads();
     systemEvents();
@@ -651,7 +655,7 @@ const checkKit = async () => {
 
   if (process.env.NODE_ENV === 'development') {
     try {
-      // await installExtensions();
+      await installExtensions();
     } catch (error) {
       log.info(`Failed to install extensions`, error);
     }
@@ -915,18 +919,19 @@ const checkKit = async () => {
   if (requiresInstall) {
     const installInfo = {
       version: getVersion(),
+      username: os.userInfo().username,
       status,
       platform,
       timestamp: Date.now(),
       osversion: os.version(),
-      username: os.userInfo().username,
       err,
     };
 
-    optionalSetupScript(
-      kitPath('cli', 'installs.js'),
-      JSON.stringify(installInfo)
-    );
+    try {
+      await axios.post(`https://scriptkit.com/api/installs`, installInfo);
+    } catch {
+      log.info(`Could not post install info`);
+    }
   }
 };
 

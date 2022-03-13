@@ -12,13 +12,19 @@ import { motion } from 'framer-motion';
 import { throttle } from 'lodash';
 
 import { useAtom } from 'jotai';
-import { openAtom, socketURLAtom, submitValueAtom } from './jotai';
+import {
+  openAtom,
+  submitValueAtom,
+  webSocketAtom,
+  webSocketOpenAtom,
+} from './jotai';
 import { useEscape } from './hooks';
 
 export default function Terminal() {
   const xtermRef = useRef<XTerm>(null);
   const fitRef = useRef(new FitAddon());
-  const [socketURL] = useAtom(socketURLAtom);
+  const [ws] = useAtom(webSocketAtom);
+  const [wsOpen] = useAtom(webSocketOpenAtom);
   const [, submit] = useAtom(submitValueAtom);
   const [open] = useAtom(openAtom);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,51 +48,50 @@ export default function Terminal() {
   useEscape();
 
   useEffect(() => {
-    if (socketURL) {
-      const ws = new WebSocket(`${socketURL}/terminals/1`);
-      ws.onopen = () => {
-        if (!xtermRef?.current?.terminal) return;
-        const t = xtermRef.current.terminal;
+    if (wsOpen) {
+      if (!xtermRef?.current?.terminal) return;
+      const t = xtermRef.current.terminal;
 
-        // console.log(`onopen`, { ws });
-        const attachAddon = new AttachAddon(ws);
+      // console.log(`onopen`, { ws });
+      const attachAddon = new AttachAddon(ws);
 
-        // console.log(`loadAddon`, xtermRef?.current?.terminal.loadAddon);
+      // console.log(`loadAddon`, xtermRef?.current?.terminal.loadAddon);
 
-        t.loadAddon(fitRef.current);
-        t.loadAddon(new WebLinksAddon());
-        t.loadAddon(new Unicode11Addon());
-        t.loadAddon(new SearchAddon());
-        t.loadAddon(new LigaturesAddon());
-        t.loadAddon(new SerializeAddon());
+      t.loadAddon(fitRef.current);
+      t.loadAddon(new WebLinksAddon());
+      t.loadAddon(new Unicode11Addon());
+      t.loadAddon(new SearchAddon());
+      t.loadAddon(new LigaturesAddon());
+      t.loadAddon(new SerializeAddon());
 
-        t.onKey((x) => {
-          // console.log({ key: x });
-          if (
-            (x?.domEvent.key === 'Enter' && x?.domEvent.metaKey) ||
-            x.domEvent.ctrlKey
-          ) {
-            // const line = t.buffer.normal
-            //   .getLine(t.buffer.normal.cursorY)
-            //   ?.translateToString(true);
+      t.onKey((x) => {
+        // console.log({ key: x });
+        if (
+          (x?.domEvent.key === 'Enter' && x?.domEvent.metaKey) ||
+          (x.domEvent.ctrlKey && x?.domEvent.key === 'c')
+        ) {
+          // const line = t.buffer.normal
+          //   .getLine(t.buffer.normal.cursorY)
+          //   ?.translateToString(true);
 
-            // console.log({ line });
+          // console.log({ line });
 
-            // console.log(`SUBMIT`);
-            submit('');
-            attachAddon.dispose();
-          }
-        });
+          // console.log(`SUBMIT`);
+          submit('');
+          attachAddon.dispose();
+        }
+      });
 
-        t.loadAddon(attachAddon);
+      t.loadAddon(attachAddon);
 
-        fitRef.current.fit();
+      fitRef.current.fit();
+      t.focus();
+
+      setTimeout(() => {
         t.focus();
-      };
-    } else {
-      xtermRef?.current?.terminal?.clear();
+      }, 250);
     }
-  }, [xtermRef?.current?.terminal, socketURL]);
+  }, [xtermRef?.current?.terminal, wsOpen]);
 
   return (
     <motion.div

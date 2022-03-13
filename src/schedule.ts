@@ -8,11 +8,38 @@ import { runScript } from './kit';
 import { scheduleMap } from './state';
 import { processes } from './process';
 
-export const sleepSchedule = () => {
-  for (const [jobName, job] of Object.entries(schedule.scheduledJobs)) {
-    log.info(`😴 Computer sleeping: ${jobName} won't run again until wake.`);
-    job.cancel(false);
+export const cancelJob = (filePath: string) => {
+  let success = false;
+  if (scheduleMap.has(filePath)) {
+    log.info(`Unscheduling: ${filePath}`);
+    const job = scheduleMap.get(filePath) as Job;
+    success = schedule.cancelJob(job.name);
+    job.cancelNext();
+    job.cancel(true);
+    scheduleMap.delete(filePath);
   }
+
+  return success;
+};
+
+export const sleepSchedule = () => {
+  // for (const [jobName, job] of Object.entries(schedule.scheduledJobs)) {
+  //   job.cancelNext();
+  //   job.cancel(true);
+  //   const cancelled = schedule.cancelJob(jobName);
+
+  //   scheduleMap.delete(jobName);
+  // }
+
+  for (const [filePath, job] of scheduleMap) {
+    const cancelled = cancelJob(filePath);
+    log.info(
+      `😴 Computer sleeping: ${
+        job.name
+      } won't run again until wake. Cancel Success? ${cancelled ? 'Yes' : 'No'}`
+    );
+  }
+
   schedule.scheduledJobs = {};
   scheduleMap.clear();
 };
@@ -20,15 +47,6 @@ export const sleepSchedule = () => {
 export const scheduleDownloads = async () => {
   log.info(`schedule downloads`);
   runScript(kitPath('setup', 'downloads.js'));
-};
-
-export const cancelJob = (filePath: string) => {
-  if (scheduleMap.has(filePath)) {
-    log.info(`Unscheduling: ${filePath}`);
-    const job = scheduleMap.get(filePath) as Job;
-    job.cancel();
-    scheduleMap.delete(filePath);
-  }
 };
 
 export const cancelSchedule = (filePath: string) => {
@@ -42,22 +60,43 @@ export const scheduleScriptChanged = ({
 }: Script) => {
   if (kenv !== '') return;
 
-  if (scheduleMap.get(filePath)) {
+  if (scheduleMap.has(filePath)) {
+    log.info(
+      `Schedule script exists. Reschedule: ${filePath} ${scheduleString}`
+    );
     cancelJob(filePath);
   }
 
   try {
     if (scheduleString) {
-      // log.info(`Schedule string ${scheduleString}:${filePath}`);
+      // log.info(`Schedule script changed: ${filePath} ${scheduleString}`);
+      // for (const [key, value] of scheduleMap.entries()) {
+      //   log.info({
+      //     key,
+      //     value: value.name,
+      //     pending: (value?.pendingInvocations as any).map(
+      //       (i: any) => i.fireDate
+      //     ),
+      //   });
+      // }
 
-      const job = schedule.scheduleJob(filePath, scheduleString, () => {
+      log.info(`Schedule string ${scheduleString}:${filePath}`);
+
+      const scheduledFunction = () => {
+        log.info(`Running: ${filePath}`, Object.entries(scheduleMap));
         processes.add(ProcessType.Schedule, filePath);
-      });
+      };
+
+      const job = schedule.scheduleJob(
+        filePath,
+        scheduleString,
+        scheduledFunction
+      );
 
       log.info(`Scheduling: ${filePath} for ${scheduleString}`);
       scheduleMap.set(filePath, job);
     }
   } catch (error) {
-    log.warn(error.message);
+    log.warn((error as any)?.message);
   }
 };

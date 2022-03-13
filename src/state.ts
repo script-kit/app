@@ -144,6 +144,7 @@ const initState = {
   resize: false,
   prevResize: false,
   promptProcess: undefined as ProcessInfo | undefined,
+  isScripts: false,
   isMainScript: () => kitState.script.filePath === mainScriptPath,
   promptCount: -1,
 };

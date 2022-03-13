@@ -4,12 +4,12 @@
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, { useCallback, useRef, KeyboardEvent, useEffect } from 'react';
+import React, { useCallback, KeyboardEvent, useEffect } from 'react';
 import parse, { domToReact } from 'html-react-parser';
 import SimpleBar from 'simplebar-react';
 import { useAtom } from 'jotai';
 import { formDataAtom, formHTMLAtom, submitValueAtom } from '../jotai';
-import { useEscape, useMountMainHeight, useObserveMainHeight } from '../hooks';
+import { useEscape, useObserveMainHeight } from '../hooks';
 
 export default function Form() {
   useEscape();

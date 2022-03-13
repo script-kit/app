@@ -225,7 +225,7 @@ export const logFocus = () => {
 
 export const focusPrompt = () => {
   if (promptWindow && !promptWindow.isDestroyed()) {
-    promptWindow.setAlwaysOnTop(true, 'pop-up-menu', 1);
+    promptWindow.setAlwaysOnTop(true, 'floating', 1);
     // app.focus({
     //   steal: true,
     // });
@@ -233,7 +233,6 @@ export const focusPrompt = () => {
     promptWindow?.focusOnWebView();
 
     sendToPrompt(Channel.SET_OPEN, true);
-    sendToPrompt(AppChannel.FOCUS_PROMPT);
 
     setTimeout(() => {
       if (

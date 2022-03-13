@@ -41,10 +41,6 @@ process.on('uncaughtException', (error) => {
   log.warn(error);
 });
 
-emitter.on(KitEvent.SetKenv, () => {
-  runPromptProcess(mainScriptPath);
-});
-
 emitter.on(KitEvent.RunPromptProcess, (scriptPath: string) => {
   runPromptProcess(scriptPath);
 });

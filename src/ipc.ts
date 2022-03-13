@@ -5,6 +5,7 @@ import { ipcMain } from 'electron';
 import log from 'electron-log';
 import path from 'path';
 import { debounce } from 'lodash';
+import axios from 'axios';
 import { Script } from '@johnlindquist/kit';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import {
@@ -258,8 +259,29 @@ export const startIpc = () => {
     }
   );
 
-  ipcMain.on(AppChannel.FEEDBACK, (event, data: Survey) => {
-    runScript(kitPath('cli', 'feedback.js'), JSON.stringify(data));
+  ipcMain.on(AppChannel.FEEDBACK, async (event, data: Survey) => {
+    // runScript(kitPath('cli', 'feedback.js'), JSON.stringify(data));
+
+    try {
+      const feedbackResponse = await axios.post(
+        `https://scriptkit.com/api/feedback`,
+        data
+      );
+      log.info(feedbackResponse.data);
+
+      if (data?.email && data?.subscribe) {
+        const subResponse = await axios.post(
+          `https://scriptkit.com/api/subscribe`,
+          {
+            email: data?.email,
+          }
+        );
+
+        log.info(subResponse.data);
+      }
+    } catch (error) {
+      log.error(`Error sending feedback: ${error}`);
+    }
   });
 
   // emitter.on(KitEvent.Blur, async () => {

@@ -351,8 +351,7 @@ export const show = async (
 export const showWidget = async (
   widgetId: string,
   filePath: string,
-  options: WidgetOptions = {},
-  showOnLoad = true
+  options: WidgetOptions = {}
 ): Promise<BrowserWindow> => {
   const center = getCenterOnCurrentScreen(options);
   const widgetWindow = new BrowserWindow({
@@ -371,6 +370,8 @@ export const showWidget = async (
     },
     ...center,
     show: false,
+    minHeight: 36,
+    minWidth: 36,
     ...options,
   });
 
@@ -386,11 +387,13 @@ export const showWidget = async (
 
   return new Promise((resolve, reject) => {
     widgetWindow.webContents.once('did-finish-load', () => {
-      if (showOnLoad && widgetWindow) {
+      if (widgetWindow) {
+        widgetWindow.webContents.send('WIDGET_INIT', options.state || {});
         widgetWindow?.show();
+        resolve(widgetWindow);
+      } else {
+        log.error(`Widget ${widgetId} failed to load`);
       }
-
-      resolve(widgetWindow);
     });
 
     log.info(`Load ${filePath} in ${widgetWindow.id}`);

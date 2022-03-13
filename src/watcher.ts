@@ -23,7 +23,6 @@ import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
-import { emitter, KitEvent } from './events';
 import { updateScripts } from './state';
 import { toggleTray } from './tray';
 import { maybeSetLogin } from './settings';
@@ -83,8 +82,8 @@ export const onDbChanged = async (event: any, filePath: string) => {
 let watchers: FSWatcher[] = [];
 
 export const teardownWatchers = async () => {
-  for await (const watcher of watchers) {
-    await watcher.close();
+  for (const watcher of watchers) {
+    watcher.close();
     watcher.removeAllListeners();
   }
   watchers = [];
@@ -142,12 +141,3 @@ export const setupWatchers = async () => {
 
   scriptsWatcher.on('all', onScriptsChanged);
 };
-
-export const resetWatchers = async () => {
-  await teardownWatchers();
-  await setupWatchers();
-};
-
-emitter.on(KitEvent.SetKenv, async () => {
-  await resetWatchers();
-});

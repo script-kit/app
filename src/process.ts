@@ -80,68 +80,57 @@ import { getVersion } from './version';
 import { getClipboardHistory } from './tick';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 
-export const checkScriptChoices = (data: {
-  choices: Choice[];
-  scripts: boolean;
-}) => {
-  // console.log(`🤔 checkScriptChoices ${data?.choices?.length}`);
-  if (data?.scripts) {
-    const dataChoices: Script[] = (data?.choices || []) as Script[];
-    const choices = dataChoices.map((script) => {
-      if (!script.description && script.name !== script.command) {
-        script.description = script.command;
+export const formatScriptChoices = (data: Choice[]) => {
+  const dataChoices: Script[] = (data || []) as Script[];
+  const choices = dataChoices.map((script) => {
+    if (!script.description && script.name !== script.command) {
+      script.description = script.command;
+    }
+    if (script.background) {
+      const backgroundScript = getBackgroundTasks().find(
+        (t) => t.filePath === script.filePath
+      );
+
+      script.description = `${script.description || ''}${
+        backgroundScript
+          ? `🟢  Uptime: ${formatDistanceToNowStrict(
+              new Date(backgroundScript.process.start)
+            )} PID: ${backgroundScript.process.pid}`
+          : "🛑 isn't running"
+      }`;
+    }
+
+    if (script.schedule) {
+      log.info(`📅 ${script.name} scheduled for ${script.schedule}`);
+      const scheduleScript = getSchedule().find(
+        (s) => s.filePath === script.filePath
+      );
+
+      if (scheduleScript) {
+        const date = new Date(scheduleScript.date);
+        const next = `${formatDistanceToNowStrict(date)}`;
+        const cal = `${format(date, 'MMM eo, h:mm:a ')}`;
+
+        script.description = `Next: ${next} - ${cal} - ${script.schedule}`;
       }
-      if (script.background) {
-        const backgroundScript = getBackgroundTasks().find(
-          (t) => t.filePath === script.filePath
-        );
+    }
 
-        script.description = `${script.description || ''}${
-          backgroundScript
-            ? `🟢  Uptime: ${formatDistanceToNowStrict(
-                new Date(backgroundScript.process.start)
-              )} PID: ${backgroundScript.process.pid}`
-            : "🛑 isn't running"
-        }`;
-      }
+    if (script.watch) {
+      script.description = `${script.description || ``} Watching: ${
+        script.watch
+      }`;
+    }
 
-      if (script.schedule) {
-        const scheduleScript = getSchedule().find(
-          (s) => s.filePath === script.filePath
-        );
+    if (script.img) {
+      script.img = script.img.match(/(^http)|^\//)
+        ? script.img
+        : kenvPath(script.kenv && `kenvs/${script.kenv}`, 'assets', script.img);
+    }
 
-        if (scheduleScript) {
-          const date = new Date(scheduleScript.date);
-          const next = `${formatDistanceToNowStrict(date)}`;
-          const cal = `${format(date, 'MMM eo, h:mm:a ')}`;
+    return script;
+  });
 
-          script.description = `Next: ${next} - ${cal} - ${script.schedule}`;
-        }
-      }
-
-      if (script.watch) {
-        script.description = `${script.description || ``} Watching: ${
-          script.watch
-        }`;
-      }
-
-      if (script.img) {
-        script.img = script.img.match(/(^http)|^\//)
-          ? script.img
-          : kenvPath(
-              script.kenv && `kenvs/${script.kenv}`,
-              'assets',
-              script.img
-            );
-      }
-
-      return script;
-    });
-
-    data.choices = choices as Choice[];
-  }
-
-  setChoices(data.choices);
+  return choices;
 };
 
 export type ChannelHandler = {
@@ -601,6 +590,7 @@ const kitMessageMap: ChannelHandler = {
   SET_PROMPT_DATA: (data) => {
     setPromptPid(data.pid);
     setPromptData(data.value);
+    kitState.isScripts = Boolean(data.value?.scripts);
     kitState.promptCount += 1;
   },
   SET_PROMPT_PROP: async (data) => {
@@ -625,7 +615,11 @@ const kitMessageMap: ChannelHandler = {
     emitter.emit(KitEvent.CheckForUpdates, true);
   },
   SET_CHOICES: (data) => {
-    checkScriptChoices(data.value);
+    if (kitState.isScripts) {
+      setChoices(formatScriptChoices(data.value));
+    } else {
+      setChoices(data.value);
+    }
   },
 
   // UPDATE_PROMPT_WARN: (data) => {

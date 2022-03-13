@@ -5,7 +5,7 @@
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, DragEvent } from 'react';
 import parse from 'html-react-parser';
 
 import { overrideTailwindClasses } from 'tailwind-override';
@@ -104,7 +104,7 @@ export default function ChoiceButton({
   }, [choice]);
 
   const onDragStart = useCallback(
-    async (event: DragEvent) => {
+    (event: DragEvent) => {
       if (choice?.drag) {
         const drag = choice?.drag;
         if (typeof drag === 'string') {

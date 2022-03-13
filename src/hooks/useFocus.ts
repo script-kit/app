@@ -38,15 +38,15 @@ export default (ref: RefObject<HTMLElement>) => {
     ref?.current,
   ]);
 
-  useEffect(() => {
-    const handleFocusIn = () => {
-      ref?.current?.focus();
-    };
-    document.addEventListener('focusin', handleFocusIn);
-    return () => {
-      document.removeEventListener('focusin', handleFocusIn);
-    };
-  }, []);
+  // useEffect(() => {
+  //   const handleFocusIn = () => {
+  //     // ref?.current?.focus();
+  //   };
+  //   document.addEventListener('focusin', handleFocusIn);
+  //   return () => {
+  //     document.removeEventListener('focusin', handleFocusIn);
+  //   };
+  // }, []);
 
   return ref;
 };
