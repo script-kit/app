@@ -371,8 +371,9 @@ const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   formatOnType: true,
 };
 
-export const editorOptions =
-  atom<editor.IStandaloneEditorConstructionOptions>(defaultEditorOptions);
+export const editorOptions = atom<editor.IStandaloneEditorConstructionOptions>(
+  defaultEditorOptions
+);
 
 export const editorConfigAtom = atom(
   (g) => g(editorConfig),
@@ -744,6 +745,7 @@ const resize = (g: Getter, s: Setter) => {
     topHeight: g(topHeight),
     ui,
     mainHeight: nullChoices && !hasPanel ? 0 : g(mainHeight),
+    footerHeight: g(footerAtom) ? 20 : 0,
     mode: g(modeAtom),
     hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
@@ -806,6 +808,8 @@ const checkIfSubmitIsDrop = (checkValue: any) => {
 
 export const promptId = atom(0);
 
+export const footerAtom = atom('');
+
 const promptData = atom<null | PromptData>(null);
 export const promptDataAtom = atom(
   (g) => g(promptData),
@@ -855,13 +859,16 @@ export const promptDataAtom = atom(
         s(panelHTMLAtom, a.panel);
       }
 
+      if (typeof a?.footer === 'string') {
+        s(footerAtom, a?.footer);
+      }
+
       if (a.defaultChoiceId) {
         s(prevChoiceId, a.defaultChoiceId);
       }
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
       s(onShortcutSubmitAtom, a?.onShortcutSubmit || {});
-
       // s(tabIndex, a.tabIndex);
       s(promptData, a);
     }
@@ -883,7 +890,7 @@ export const flagValueAtom = atom(
       s(inputAtom, '');
 
       const flagChoices: Choice[] = Object.entries(g(flagsAtom)).map(
-        ([key, value]: [key: string, value: any]) => {
+        ([key, value]) => {
           return {
             command: value?.name,
             filePath: value?.name,

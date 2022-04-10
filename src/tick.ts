@@ -10,6 +10,7 @@ import { nanoid } from 'nanoid';
 import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
 import { Choice } from '@johnlindquist/kit/types/core';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { remove } from 'lodash';
 
 import { emitter } from './events';
 
@@ -96,6 +97,9 @@ export const configureInterval = async () => {
       timestamp,
       maybeSecret,
     };
+
+    remove(clipboardHistory, (item) => item.value === value);
+
     clipboardHistory.unshift(clipboardItem);
     if (clipboardHistory.length > 100) {
       clipboardHistory.pop();

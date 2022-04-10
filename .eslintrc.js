@@ -14,6 +14,7 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     'jsx-a11y/label-has-associated-control': 'off',
     'react/destructuring-assignment': 'off',
+    '@typescript-eslint/comma-dangle': 'off',
   },
   parserOptions: {
     ecmaVersion: 2020,

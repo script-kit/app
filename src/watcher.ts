@@ -2,7 +2,6 @@
 import chokidar, { FSWatcher } from 'chokidar';
 import log from 'electron-log';
 import { debounce } from 'lodash';
-import os from 'os';
 import path from 'path';
 import { existsSync } from 'fs';
 
@@ -92,30 +91,26 @@ export const teardownWatchers = async () => {
 export const setupWatchers = async () => {
   await teardownWatchers();
 
-  const accountForWin = (watchPath: string) => {
-    if (os.platform() === 'win32') {
-      return watchPath.replace(/\\/g, '/');
-    }
-    return watchPath;
-  };
-
-  const shortcutsDbWatcher = chokidar.watch([accountForWin(shortcutsPath)]);
+  const shortcutsDbWatcher = chokidar.watch([path.normalize(shortcutsPath)]);
   watchers.push(shortcutsDbWatcher);
   shortcutsDbWatcher.on('all', onDbChanged);
 
-  const kenvScripts = kenvPath('scripts');
+  const kenvScriptsJS = path.normalize(kenvPath('scripts'));
+  log.info({ kenvScriptsJS });
 
-  const scriptsWatcher = chokidar.watch([accountForWin(kenvScripts)], {
-    depth: 1,
+  const scriptsWatcher = chokidar.watch([kenvScriptsJS], {
+    depth: 0,
   });
   watchers.push(scriptsWatcher);
 
-  const kenvsWatcher = chokidar.watch(accountForWin(kenvPath('kenvs', '*')), {
+  const kenvsPath = path.normalize(kenvPath('kenvs', '*'));
+  log.info({ kenvsPath });
+  const kenvsWatcher = chokidar.watch(kenvsPath, {
     depth: 0,
   });
 
   kenvsWatcher.on('all', async (eventName, addPath) => {
-    const scriptsPath = `${addPath}/scripts`;
+    const scriptsPath = path.normalize(`${addPath}/scripts`);
 
     if (eventName.includes('addDir') && addPath.includes('kenvs')) {
       log.info(`👀 Watch ${scriptsPath}`);
@@ -130,7 +125,7 @@ export const setupWatchers = async () => {
 
   watchers.push(kenvsWatcher);
 
-  const kitAppDbWatcher = chokidar.watch([accountForWin(appDbPath)]);
+  const kitAppDbWatcher = chokidar.watch([path.normalize(appDbPath)]);
   watchers.push(kitAppDbWatcher);
 
   kitAppDbWatcher.on('change', async () => {

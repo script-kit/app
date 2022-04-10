@@ -1,8 +1,8 @@
 /* eslint-disable no-nested-ternary */
 import log from 'electron-log';
 import chokidar from 'chokidar';
+import path from 'path';
 import { FSWatcher } from 'fs';
-import os from 'os';
 import { app } from 'electron';
 import { Script } from '@johnlindquist/kit/types/core';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
@@ -11,55 +11,55 @@ import { processes } from './process';
 export const watchMap = new Map();
 
 export const removeWatch = (filePath: string) => {
-  log.info(`🗑 Remove watch: ${filePath}`);
   const watcher = watchMap.get(filePath) as FSWatcher;
   if (watcher) {
+    log.info(`🗑 Remove watch: ${filePath}`);
     watcher.close();
     watchMap.delete(filePath);
   }
 };
 
-const accountForWin = (path: string) => {
-  if (os.platform() === 'win32') {
-    return path.replace(/\\/g, '/');
-  }
-  return path;
-};
-
-const resolvePath = (path: string) => {
+const normalizePath = (filePath: string) => {
   const resolvedPath = () => {
-    if (path?.startsWith('~')) {
-      return path.replace('~', app.getPath('home'));
+    if (filePath?.startsWith('~')) {
+      return filePath.replace('~', app.getPath('home'));
     }
 
-    return path;
+    return filePath;
   };
-  return accountForWin(resolvedPath());
+  return path.normalize(resolvedPath());
 };
 
-const addWatch = (watchString: string, filePath: string) => {
+const validWatchEvents = ['add', 'change', 'unlink'];
+
+const addWatch = (watchString: string, scriptPath: string) => {
   try {
-    log.info(`Watch: ${watchString} - from - ${filePath}`);
+    log.info(`Watch: ${watchString} - from - ${scriptPath}`);
 
     const [pathsString] = watchString.split('|');
+
     const paths = pathsString.startsWith('[')
-      ? JSON.parse(pathsString).map(resolvePath)
-      : resolvePath(pathsString);
+      ? JSON.parse(pathsString).map(normalizePath)
+      : normalizePath(pathsString);
 
-    const watcher = chokidar.watch(paths);
-    const watch = (eventName: string, path: string) => {
-      log.info(`👀 ${paths} changed`);
-      processes.add(ProcessType.Watch, filePath, [path, eventName]);
-    };
+    const watcher = chokidar.watch(paths, {
+      ignoreInitial: true,
+    });
 
-    watcher.on('add', watch).on('change', watch).on('unlink', watch);
+    watcher.on('all', (eventName: string, filePath: string) => {
+      log.info({ eventName, filePath });
+      if (validWatchEvents.includes(eventName)) {
+        log.info(`👀 ${paths} changed`);
+        processes.add(ProcessType.Watch, scriptPath, [filePath, eventName]);
+      }
+    });
 
     const watched = watcher.getWatched();
 
     log.info(`Watching: ${Object.keys(watched).join(', ')}`);
-    watchMap.set(filePath, watcher);
-  } catch (error: any) {
-    removeWatch(filePath);
+    watchMap.set(scriptPath, watcher);
+  } catch (error) {
+    removeWatch(scriptPath);
     log.warn(error?.message);
   }
 };
@@ -72,6 +72,12 @@ export const watchScriptChanged = ({
   if (kenv !== '') return;
 
   // log.info(`🔍 Changed ${filePath} - ${watchString}`);
+
+  // log.info({
+  //   filePath,
+  //   watchString: watchString || 'No watch string',
+  //   watchMap: watchMap.get(filePath) || 'no watch map',
+  // });
 
   if (!watchString && watchMap.get(filePath)) {
     removeWatch(filePath);

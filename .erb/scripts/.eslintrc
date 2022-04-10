@@ -5,7 +5,6 @@
     "import/no-dynamic-require": "off",
     "import/no-extraneous-dependencies": "off",
     "no-bitwise": "off",
-    "no-restricted-syntax": "off",
-    "trailing-comma": "off"
+    "no-restricted-syntax": "off"
   }
 }

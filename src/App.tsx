@@ -99,6 +99,7 @@ import {
   processesAtom,
   setFocusedChoiceAtom,
   socketURLAtom,
+  footerAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -176,6 +177,7 @@ export default function App() {
 
   const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
+  const [footer, setFooter] = useAtom(footerAtom);
   const [, setMode] = useAtom(modeAtom);
   const [, setReady] = useAtom(isReadyAtom);
 
@@ -251,6 +253,7 @@ export default function App() {
       setFormHTML(html);
       setFormData(formData);
     },
+    [Channel.SET_FOOTER]: setFooter,
     [Channel.SET_HINT]: setHint,
     [Channel.SET_INPUT]: setInput,
     [Channel.SET_LOADING]: setLoading,
@@ -445,6 +448,22 @@ export default function App() {
             )}
           </AutoSizer>
         </main>
+        {footer === '' ? (
+          ''
+        ) : (
+          <footer
+            className="
+        py-1 px-4
+        fixed bottom-0
+        bg-opacity-80 dark:bg-opacity-80
+        bg-primary-dark dark:bg-primary-light
+        text-white dark:text-black
+
+          font-mono font-bold w-screen text-xxs uppercase"
+          >
+            {footer}
+          </footer>
+        )}
       </motion.div>
     </ErrorBoundary>
   );

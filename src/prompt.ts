@@ -121,7 +121,7 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.on('blur', () => {
-    log.info('🍀 blur', { setIgnoreBlur: kitState.ignoreBlur });
+    // log.info('🍀 blur', { setIgnoreBlur: kitState.ignoreBlur });
     if (promptWindow?.webContents.isDevToolsOpened()) return;
 
     if (os.platform().startsWith('win')) {
@@ -275,8 +275,10 @@ export const getCurrentScreenPromptCache = async (scriptPath: string) => {
   if (savedPromptBounds) return savedPromptBounds;
 
   // log.info(`resetPromptBounds`, scriptPath);
-  const { width: screenWidth, height: screenHeight } =
-    currentScreen.workAreaSize;
+  const {
+    width: screenWidth,
+    height: screenHeight,
+  } = currentScreen.workAreaSize;
 
   const height = DEFAULT_HEIGHT;
   const width = DEFAULT_EXPANDED_WIDTH;
@@ -325,6 +327,7 @@ export const resize = async ({
   scriptPath,
   topHeight,
   mainHeight,
+  footerHeight,
   ui,
   hasPanel,
   hasInput,
@@ -347,7 +350,7 @@ export const resize = async ({
     y: currentY,
   } = promptWindow.getBounds();
 
-  const targetHeight = topHeight + mainHeight;
+  const targetHeight = topHeight + mainHeight + footerHeight;
   // const threeFourths = getCurrentScreenFromPrompt().bounds.height * (3 / 4);
 
   // const maxHeight = hasPanel
@@ -492,6 +495,10 @@ export const hideAppIfNoWindows = (scriptPath = '') => {
 
 export const setPlaceholder = (text: string) => {
   sendToPrompt(Channel.SET_PLACEHOLDER, text);
+};
+
+export const setFooter = (footer: string) => {
+  sendToPrompt(Channel.SET_FOOTER, footer);
 };
 
 export const setPromptPid = (pid: number) => {

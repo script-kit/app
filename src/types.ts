@@ -35,6 +35,7 @@ export interface ResizeData {
   mode: Mode;
   topHeight: number;
   mainHeight: number;
+  footerHeight: number;
   hasPanel: boolean;
   hasInput: boolean;
   open: boolean;

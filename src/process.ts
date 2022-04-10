@@ -53,6 +53,7 @@ import {
   sendToPrompt,
   setBounds,
   setChoices,
+  setFooter,
   setHint,
   setInput,
   setLog,
@@ -101,7 +102,7 @@ export const formatScriptChoices = (data: Choice[]) => {
     }
 
     if (script.schedule) {
-      log.info(`📅 ${script.name} scheduled for ${script.schedule}`);
+      // log.info(`📅 ${script.name} scheduled for ${script.schedule}`);
       const scheduleScript = getSchedule().find(
         (s) => s.filePath === script.filePath
       );
@@ -191,30 +192,28 @@ const widgetMap: {
   };
 } = {};
 
-const toProcess =
-  <K extends keyof ChannelMap>(
-    fn: (processInfo: ProcessInfo, data: SendData<K>) => void
-  ) =>
-  (data: SendData<K>) => {
-    const processInfo = processes.getByPid(data?.pid);
+const toProcess = <K extends keyof ChannelMap>(
+  fn: (processInfo: ProcessInfo, data: SendData<K>) => void
+) => (data: SendData<K>) => {
+  const processInfo = processes.getByPid(data?.pid);
 
-    // Send data to Widget process if ids match
-    if (data.channel.includes('WIDGET')) {
-      if (processInfo) {
-        fn(processInfo, data);
-      } else {
-        warn(`${data?.pid}: Can't find processInfo associated with widget`);
-      }
-    }
-    // Send data to Prompt process only if id matches current prompt
-    else if (processInfo && processInfo?.pid === kitState.promptProcess?.pid) {
+  // Send data to Widget process if ids match
+  if (data.channel.includes('WIDGET')) {
+    if (processInfo) {
       fn(processInfo, data);
-    } else if (processInfo?.type === ProcessType.PROMPT) {
-      warn(
-        `${data?.pid}: ⚠️ ${data.channel} failed. ${data.pid} doesn't match ${kitState.promptProcess?.pid}`
-      );
+    } else {
+      warn(`${data?.pid}: Can't find processInfo associated with widget`);
     }
-  };
+  }
+  // Send data to Prompt process only if id matches current prompt
+  else if (processInfo && processInfo?.pid === kitState.promptProcess?.pid) {
+    fn(processInfo, data);
+  } else if (processInfo?.type === ProcessType.PROMPT) {
+    warn(
+      `${data?.pid}: ⚠️ ${data.channel} failed. ${data.pid} doesn't match ${kitState.promptProcess?.pid}`
+    );
+  }
+};
 
 const kitMessageMap: ChannelHandler = {
   [Channel.CONSOLE_LOG]: (data) => {
@@ -556,6 +555,10 @@ const kitMessageMap: ChannelHandler = {
     setPlaceholder(data.value);
   },
 
+  SET_FOOTER: (data) => {
+    setFooter(data.value);
+  },
+
   SET_PANEL: (data) => {
     setPanel(data.value);
   },
@@ -735,58 +738,59 @@ const kitMessageMap: ChannelHandler = {
   },
 };
 
-export const createMessageHandler =
-  (type: ProcessType) => async (data: GenericSendData) => {
-    // if (data.pid !== processes.promptProcess?.pid) {
-    //   warn(data?.pid, data?.channel, data?.value);
-    //   const processInfo = processes.getByPid(data?.pid);
-    //   if (processInfo?.type === ProcessType.Prompt) {
-    //     const title = 'Script Message Failed';
-    //     const message = `${path.basename(
-    //       data?.kitScript
-    //     )} doesn't match ${path.basename(
-    //       processes.promptProcess?.scriptPath || ''
-    //     )}.\nUse //Background metadata for long-running processes.\nExiting...`;
-    //     warn(
-    //       `${data?.pid} doesn't match ${processes.promptProcess?.pid}`,
-    //       message
-    //     );
+export const createMessageHandler = (type: ProcessType) => async (
+  data: GenericSendData
+) => {
+  // if (data.pid !== processes.promptProcess?.pid) {
+  //   warn(data?.pid, data?.channel, data?.value);
+  //   const processInfo = processes.getByPid(data?.pid);
+  //   if (processInfo?.type === ProcessType.Prompt) {
+  //     const title = 'Script Message Failed';
+  //     const message = `${path.basename(
+  //       data?.kitScript
+  //     )} doesn't match ${path.basename(
+  //       processes.promptProcess?.scriptPath || ''
+  //     )}.\nUse //Background metadata for long-running processes.\nExiting...`;
+  //     warn(
+  //       `${data?.pid} doesn't match ${processes.promptProcess?.pid}`,
+  //       message
+  //     );
 
-    //     processes.removeByPid(data.pid);
-    //     runScript(
-    //       kitPath('cli', 'notify.js'),
-    //       '--title',
-    //       title,
-    //       '--message',
-    //       message
-    //     );
+  //     processes.removeByPid(data.pid);
+  //     runScript(
+  //       kitPath('cli', 'notify.js'),
+  //       '--title',
+  //       title,
+  //       '--message',
+  //       message
+  //     );
 
-    //     return;
-    //   }
-    // }
-    if (!data.kitScript) log.info(data);
-    // if (
-    //   ![Channel.SET_PREVIEW, Channel.SET_LOADING, Channel.KIT_LOG].includes(
-    //     data.channel
-    //   )
-    // ) {
-    //   log.info(
-    //     `${data.channel === Channel.SET_SCRIPT ? `\n\n` : ``}${data.pid}: ${
-    //       data.channel
-    //     } ${type} process ${data.kitScript?.replace(/.*\//gi, '')}`
-    //   );
-    // }
+  //     return;
+  //   }
+  // }
+  if (!data.kitScript) log.info(data);
+  // if (
+  //   ![Channel.SET_PREVIEW, Channel.SET_LOADING, Channel.KIT_LOG].includes(
+  //     data.channel
+  //   )
+  // ) {
+  //   log.info(
+  //     `${data.channel === Channel.SET_SCRIPT ? `\n\n` : ``}${data.pid}: ${
+  //       data.channel
+  //     } ${type} process ${data.kitScript?.replace(/.*\//gi, '')}`
+  //   );
+  // }
 
-    if (kitMessageMap[data.channel]) {
-      type C = keyof ChannelMap;
-      const channelFn = kitMessageMap[data.channel as C] as (
-        data: SendData<C>
-      ) => void;
-      channelFn(data);
-    } else {
-      warn(`Channel ${data?.channel} not found on ${type}.`);
-    }
-  };
+  if (kitMessageMap[data.channel]) {
+    type C = keyof ChannelMap;
+    const channelFn = kitMessageMap[data.channel as C] as (
+      data: SendData<C>
+    ) => void;
+    channelFn(data);
+  } else {
+    warn(`Channel ${data?.channel} not found on ${type}.`);
+  }
+};
 
 interface CreateChildInfo {
   type: ProcessType;
