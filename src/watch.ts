@@ -68,14 +68,6 @@ export const watchScriptChanged = ({
 }: Script) => {
   if (kenv !== '') return;
 
-  // log.info(`🔍 Changed ${filePath} - ${watchString}`);
-
-  // log.info({
-  //   filePath,
-  //   watchString: watchString || 'No watch string',
-  //   watchMap: watchMap.get(filePath) || 'no watch map',
-  // });
-
   if (!watchString && watchMap.get(filePath)) {
     removeWatch(filePath);
     return;
