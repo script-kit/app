@@ -54,9 +54,6 @@ const addWatch = (watchString: string, scriptPath: string) => {
       }
     });
 
-    const watched = watcher.getWatched();
-
-    log.info(`Watching: ${Object.keys(watched).join(', ')}`);
     watchMap.set(scriptPath, watcher);
   } catch (error) {
     removeWatch(scriptPath);
