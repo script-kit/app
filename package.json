@@ -48,7 +48,12 @@
     "productName": "Kit",
     "appId": "app.scriptkit",
     "asar": true,
-    "asarUnpack": "**\\*.{node,dll}",
+    "asarUnpack": [
+      "**\\*.{node,dll}",
+      "**/node_modules/sharp/**/*",
+      "**/node_modules/keylogger.js/**/*",
+      "**/node_modules/@nut-tree/**/*"
+    ],
     "files": [
       "dist/",
       "fonts/**",
