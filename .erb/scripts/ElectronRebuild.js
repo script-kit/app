@@ -10,13 +10,13 @@ if (
   fs.existsSync(nodeModulesPath)
 ) {
   const electronRebuildCmd =
-    '../node_modules/.bin/electron-rebuild --parallel --force --types prod,dev,optional --module-dir .';
+    '../node_modules/.bin/electron-rebuild  --openssl_fips=0 --parallel --types prod,dev,optional --module-dir ../src';
   const cmd =
     process.platform === 'win32'
       ? electronRebuildCmd.replace(/\//g, '\\')
       : electronRebuildCmd;
   execSync(cmd, {
-    cwd: path.join(__dirname, '../../src'),
+    cwd: path.join(__dirname, '../src'),
     stdio: 'inherit',
   });
 }
