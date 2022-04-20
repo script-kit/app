@@ -7,7 +7,7 @@
     "build:local": "node ./build/local-assets.js && concurrently \"yarn build:main\" \"yarn build:renderer\"",
     "build:main": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.babel.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.renderer.prod.babel.js",
-    "rebuild": "electron-rebuild --openssl_fips=0 --parallel --types prod,dev,optional --module-dir src",
+    "rebuild": "DEBUG=electron-rebuild electron-rebuild --openssl_fips=0 --parallel --types prod,dev,optional --module-dir src",
     "lint": "cross-env NODE_ENV=development eslint . --cache --ext .js,.jsx,.ts,.tsx",
     "package": "yarn build && electron-builder build --publish never",
     "webpack-dev": "yarn cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js",
