@@ -18,7 +18,6 @@
     "@types/regenerator-runtime": "^0.13.0"
   },
   "dependencies": {
-    "@nut-tree/nut-js": "^2.0.1",
     "keylogger.js": "^0.0.4",
     "node-abi": "^3.8.0",
     "node-pty": "^0.10.1"
