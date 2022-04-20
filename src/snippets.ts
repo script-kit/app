@@ -17,14 +17,21 @@ export const startSnippets = () => {
   };
 
   let text = ``;
+  log.info(`BEFORE new Observable`);
   const o = new Observable<KeyEvent>((observer) => {
-    logger.start((key, isKeyUp, keyCode) => {
-      log.info({ key, isKeyUp, keyCode });
-      observer.next({ key, isKeyUp, keyCode });
-    });
+    log.info(`STARTING LOGGER`);
+    try {
+      logger.start((key, isKeyUp, keyCode) => {
+        log.info({ key, isKeyUp, keyCode });
+        observer.next({ key, isKeyUp, keyCode });
+      });
+    } catch (error) {
+      log.error(`FAILED TO START LOGGER`, error);
+    }
 
     return () => {
-      logger.stop();
+      log.info(`STOPPING LOGGER`);
+      // logger.stop();
     };
   });
 

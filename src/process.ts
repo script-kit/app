@@ -751,8 +751,15 @@ const kitMessageMap: ChannelHandler = {
   },
   KEYBOARD_TYPE: async (data) => {
     keyboard.config.autoDelayMs = 10;
+    log.info(`KEYBOARD_TYPE: ${data.value}`);
     kitState.isTyping = true;
-    await keyboard.type(data.value);
+    try {
+      const result = await keyboard.type(data.value);
+      log.info(`KEYBOARD DONE TYPE`, result);
+    } catch (error) {
+      log.error(`KEYBOARD ERROR TYPE`, error);
+    }
+
     kitState.isTyping = false;
   },
 };
