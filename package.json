@@ -47,6 +47,7 @@
     "detectUpdateChannel": "true",
     "productName": "Kit",
     "appId": "app.scriptkit",
+    "asar": false,
     "files": [
       "dist/",
       "fonts/**",
