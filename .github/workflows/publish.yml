@@ -43,7 +43,7 @@ jobs:
         with:
           node-version: 16.10
 
-      - uses: c-hive/gha-yarn-cache@v1
+      # - uses: c-hive/gha-yarn-cache@v1
 
       - name: yarn
         run: |
@@ -53,7 +53,7 @@ jobs:
 
       - name: yarn install-electron-deps
         run: |
-          yarn install-electron-deps
+          DEBUG=electron-rebuild yarn install-electron-deps
 
       - name: Semantic Release
         id: semantic
