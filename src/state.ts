@@ -147,6 +147,7 @@ const initState = {
   isScripts: false,
   isMainScript: () => kitState.script.filePath === mainScriptPath,
   promptCount: -1,
+  isTyping: false,
 };
 
 export const kitState: typeof initState = proxy(initState);

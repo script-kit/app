@@ -7,7 +7,7 @@
     "build:local": "node ./build/local-assets.js && concurrently \"yarn build:main\" \"yarn build:renderer\"",
     "build:main": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.babel.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.renderer.prod.babel.js",
-    "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir src",
+    "rebuild": "electron-rebuild --openssl_fips=0 --parallel --types prod,dev,optional --module-dir src",
     "lint": "cross-env NODE_ENV=development eslint . --cache --ext .js,.jsx,.ts,.tsx",
     "package": "yarn build && electron-builder build --publish never",
     "webpack-dev": "yarn cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js",
@@ -20,12 +20,13 @@
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
     "test": "jest",
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
-    "mac": "yarn build:local && DEBUG_PROD=true electron-builder --mac dir --x64 -c.mac.identity=null --publish never",
-    "m1": "yarn build:local && DEBUG_PROD=true electron-builder --mac dir --arm64 -c.mac.identity=null --publish never",
+    "mac": "yarn build:local && DEBUG_PROD=true electron-builder --mac dir --x64 -c.mac.identity=null --publish never --openssl_fips=0",
+    "m1": "PATH=~/.node-versions/node-v16.10.0-darwin-arm64/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --arm64 -c.mac.identity=null --publish never",
     "win": "yarn build:local && DEBUG_PROD=true electron-builder --win",
     "linux": "yarn build:local && DEBUG_PROD=true electron-builder --linux --publish never",
     "release": "yarn build:local && DEBUG_PROD=true yarn electron-builder -c.mac.identity=null --publish never --mac",
-    "cp-vs-assets": "cp -R ./node_modules/monaco-editor/min/vs ./assets"
+    "cp-vs-assets": "cp -R ./node_modules/monaco-editor/min/vs ./assets",
+    "v": "PATH=~/.node-versions/node-v16.10.0-darwin-arm64/bin:$PATH node --version"
   },
   "lint-staged": {
     "*.{jsx,ts,tsx}": [
@@ -240,6 +241,8 @@
     "@types/download": "8.0.1",
     "@types/enzyme": "3.10.5",
     "@types/enzyme-adapter-react-16": "1.0.6",
+    "@types/express": "^4.17.13",
+    "@types/express-ws": "^3.0.1",
     "@types/he": "1.1.1",
     "@types/history": "4.7.6",
     "@types/jest": "26.0.15",
@@ -280,7 +283,7 @@
     "electron-builder": "23.0.3",
     "electron-devtools-installer": "3.2.0",
     "electron-notarize": "1.2.1",
-    "electron-rebuild": "3.2.7",
+    "electron-rebuild": "^3.2.7",
     "enzyme": "3.11.0",
     "enzyme-adapter-react-16": "1.15.3",
     "enzyme-to-json": "3.5.0",
@@ -307,6 +310,7 @@
     "lint-staged": "12.1.2",
     "mini-css-extract-plugin": "2.6.0",
     "mocha": "9.0.3",
+    "node-gyp": "8.4.1",
     "opencollective-postinstall": "2.0.3",
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "postcss-cli": "8.3.1",
@@ -347,8 +351,11 @@
     "electron-log": "4.2.4",
     "electron-store": "8.0.1",
     "electron-updater": "4.6.5",
+    "express": "^4.17.3",
+    "express-ws": "^5.0.2",
     "framer-motion": "6.2.8",
     "fs-extra": "10.0.0",
+    "get-port": "^6.1.2",
     "he": "1.2.0",
     "history": "5.3.0",
     "hotkeys-js": "3.8.7",
@@ -365,7 +372,6 @@
     "monaco-editor-auto-typings": "0.1.1",
     "monaco-editor-webpack-plugin": "7.0.1",
     "nanoid": "3.1.30",
-    "node-abi": "2.30.0",
     "node-downloader-helper": "1.0.18",
     "node-schedule": "2.1.0",
     "postcss": "8.4.4",
@@ -431,8 +437,5 @@
     "hooks": {
       "pre-commit": "lint-staged"
     }
-  },
-  "resolutions": {
-    "**/node-abi": "3.2.0"
   }
 }

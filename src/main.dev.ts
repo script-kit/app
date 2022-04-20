@@ -101,6 +101,7 @@ import { showError } from './main.dev.templates';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { maybeSetLogin } from './settings';
 import { SPLASH_PATH } from './defaults';
+import { startSnippets } from './snippets';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -391,6 +392,8 @@ const ready = async () => {
 
     scheduleDownloads();
     systemEvents();
+
+    startSnippets();
 
     log.info(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {
@@ -786,25 +789,25 @@ const checkKit = async () => {
         });
       });
 
-      const kitAppResult = await new Promise((resolve, reject) => {
-        const child = fork(
-          kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-          [`i`, `@johnlindquist/kitdeps@0.0.1`, `--no-progress`, `--quiet`],
-          options
-        );
+      // const kitAppResult = await new Promise((resolve, reject) => {
+      //   const child = fork(
+      //     kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+      //     [`i`, `@johnlindquist/kitdeps@0.0.1`, `--no-progress`, `--quiet`],
+      //     options
+      //   );
 
-        child.on('message', (data) => {
-          sendSplashBody(data.toString());
-        });
+      //   child.on('message', (data) => {
+      //     sendSplashBody(data.toString());
+      //   });
 
-        child.on('exit', () => {
-          resolve('npm install success');
-        });
+      //   child.on('exit', () => {
+      //     resolve('npm install success');
+      //   });
 
-        child.on('error', (error) => {
-          reject(error);
-        });
-      });
+      //   child.on('error', (error) => {
+      //     reject(error);
+      //   });
+      // });
     } else {
       const npmResult = await new Promise((resolve, reject) => {
         const child = spawn(
@@ -833,31 +836,31 @@ const checkKit = async () => {
 
       log.info({ npmResult });
 
-      const kitAppResult = await new Promise((resolve, reject) => {
-        const child = spawn(
-          kitPath('node', 'bin', 'npm'),
-          [`i`, `@johnlindquist/kitdeps`, `--no-progress`, `--quiet`],
-          options
-        );
+      // const kitAppResult = await new Promise((resolve, reject) => {
+      //   const child = spawn(
+      //     kitPath('node', 'bin', 'npm'),
+      //     [`i`, `@johnlindquist/kitdeps`, `--no-progress`, `--quiet`],
+      //     options
+      //   );
 
-        child.on('message', (data: any) => {
-          sendSplashBody(data.toString());
-        });
+      //   child.on('message', (data: any) => {
+      //     sendSplashBody(data.toString());
+      //   });
 
-        child.on('exit', (code) => {
-          resolve(`Deps install exit code ${code}`);
-        });
+      //   child.on('exit', (code) => {
+      //     resolve(`Deps install exit code ${code}`);
+      //   });
 
-        child.on('error', (error: any) => {
-          reject(error);
-        });
-      });
+      //   child.on('error', (error: any) => {
+      //     reject(error);
+      //   });
+      // });
       // const npmResult = spawnSync(
       //   kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
       //   [`i`, `--production`, `--no-progress`, `--quiet`],
       //   options
       // );
-      log.info({ kitAppResult });
+      // log.info({ kitAppResult });
     }
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));
@@ -910,7 +913,7 @@ const checkKit = async () => {
 
     sendToPrompt(Channel.SET_READY, true);
     focusPrompt();
-  } catch (error: any) {
+  } catch (error) {
     ohNo(error);
     status = 'fail';
     err = error.toString();

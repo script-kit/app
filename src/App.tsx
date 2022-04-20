@@ -418,6 +418,10 @@ export default function App() {
             ? `h-0`
             : `h-full`
         }
+
+        ${footer && `mb-5`}
+
+
         w-full
         relative
         `}
@@ -453,7 +457,7 @@ export default function App() {
         ) : (
           <footer
             className="
-        py-1 px-4
+        py-1 px-4 h-5
         fixed bottom-0
         bg-opacity-80 dark:bg-opacity-80
         bg-primary-dark dark:bg-primary-light

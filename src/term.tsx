@@ -13,12 +13,46 @@ import { throttle } from 'lodash';
 
 import { useAtom } from 'jotai';
 import {
+  darkAtom,
   openAtom,
   submitValueAtom,
   webSocketAtom,
   webSocketOpenAtom,
 } from './jotai';
 import { useEscape } from './hooks';
+
+const defaultTheme = {
+  foreground: '#2c3e50',
+  background: '#ffffff00',
+  cursor: 'rgba(0, 0, 0, .4)',
+  selection: 'rgba(0, 0, 0, 0.3)',
+  black: '#000000',
+  red: '#e83030',
+  brightRed: '#e83030',
+  green: '#42b983',
+  brightGreen: '#42b983',
+  brightYellow: '#ea6e00',
+  yellow: '#ea6e00',
+  magenta: '#e83030',
+  brightMagenta: '#e83030',
+  cyan: '#03c2e6',
+  brightBlue: '#03c2e6',
+  brightCyan: '#03c2e6',
+  blue: '#03c2e6',
+  white: '#d0d0d0',
+  brightBlack: '#808080',
+  brightWhite: '#ffffff',
+};
+
+const darkTheme = {
+  ...defaultTheme,
+  foreground: '#fff',
+  background: '#00000000',
+  cursor: 'rgba(255, 255, 255, .4)',
+  selection: 'rgba(255, 255, 255, 0.3)',
+  magenta: '#e83030',
+  brightMagenta: '#e83030',
+};
 
 export default function Terminal() {
   const xtermRef = useRef<XTerm>(null);
@@ -27,14 +61,15 @@ export default function Terminal() {
   const [wsOpen] = useAtom(webSocketOpenAtom);
   const [, submit] = useAtom(submitValueAtom);
   const [open] = useAtom(openAtom);
+  const [isDark] = useAtom(darkAtom);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useResizeObserver(
     containerRef,
     throttle((entry) => {
       if (entry?.contentRect?.height) {
-        // console.log(`Fitting....`);
         fitRef.current.fit();
+        console.log(fitRef.current.proposeDimensions());
       }
     }, 50)
   );
@@ -103,12 +138,11 @@ export default function Terminal() {
       ref={containerRef as RefObject<HTMLDivElement>}
     >
       <XTerm
+        className="w-full h-full"
         options={{
           fontFamily: 'monospace',
           allowTransparency: true,
-          theme: {
-            background: '#00000000',
-          },
+          theme: isDark ? darkTheme : defaultTheme,
         }}
         ref={xtermRef}
         addons={[]}

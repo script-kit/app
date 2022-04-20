@@ -24,7 +24,13 @@ import sizeOf from 'image-size';
 import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
-import { Channel, Mode, ProcessType } from '@johnlindquist/kit/cjs/enum';
+import {
+  Channel,
+  Mode,
+  ProcessType,
+  Value,
+  UI,
+} from '@johnlindquist/kit/cjs/enum';
 import { Choice, Script, ProcessInfo } from '@johnlindquist/kit/types/core';
 
 import {
@@ -43,6 +49,8 @@ import {
   kenvPath,
   kitDotEnvPath,
 } from '@johnlindquist/kit/cjs/utils';
+
+import { keyboard } from '@nut-tree/nut-js';
 
 import { getLog, warn } from './logs';
 import {
@@ -80,6 +88,7 @@ import { show, showDevTools, showWidget } from './show';
 import { getVersion } from './version';
 import { getClipboardHistory } from './tick';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
+import { start } from './pty';
 
 export const formatScriptChoices = (data: Choice[]) => {
   const dataChoices: Script[] = (data || []) as Script[];
@@ -172,8 +181,6 @@ const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
   }
 };
 
-const NO_VALUE = `__undefined__`;
-
 type WidgetData = {
   widgetId: string;
   value?: any;
@@ -217,8 +224,8 @@ const toProcess = <K extends keyof ChannelMap>(
 
 const kitMessageMap: ChannelHandler = {
   [Channel.CONSOLE_LOG]: (data) => {
-    getLog(data.kitScript).info(data?.value || NO_VALUE);
-    setLog(data.value || NO_VALUE);
+    getLog(data.kitScript).info(data?.value || Value.Undefined);
+    setLog(data.value || Value.Undefined);
   },
 
   CONSOLE_WARN: (data) => {
@@ -590,11 +597,17 @@ const kitMessageMap: ChannelHandler = {
 
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
-  SET_PROMPT_DATA: (data) => {
+  SET_PROMPT_DATA: async (data) => {
     setPromptPid(data.pid);
     setPromptData(data.value);
     kitState.isScripts = Boolean(data.value?.scripts);
     kitState.promptCount += 1;
+
+    if (data?.value?.ui === UI.term) {
+      const { socketURL } = await start(data);
+
+      sendToPrompt(Channel.TERMINAL, socketURL);
+    }
   },
   SET_PROMPT_PROP: async (data) => {
     setPromptProp(data.value);
@@ -672,13 +685,13 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.SEND_KEYSTROKE, data.value);
   },
   KIT_LOG: (data) => {
-    getLog(data.kitScript).info(data?.value || NO_VALUE);
+    getLog(data.kitScript).info(data?.value || Value.Undefined);
   },
   KIT_WARN: (data) => {
-    getLog(data.kitScript).warn(data?.value || NO_VALUE);
+    getLog(data.kitScript).warn(data?.value || Value.Undefined);
   },
   KIT_CLEAR: (data) => {
-    getLog(data.kitScript).clear(data?.value || NO_VALUE);
+    getLog(data.kitScript).clear(data?.value || Value.Undefined);
   },
   SET_OPEN: (data) => {
     sendToPrompt(Channel.SET_OPEN, data.value);
@@ -735,6 +748,12 @@ const kitMessageMap: ChannelHandler = {
   },
   TERMINAL: (data) => {
     sendToPrompt(Channel.TERMINAL, data.value);
+  },
+  KEYBOARD_TYPE: async (data) => {
+    keyboard.config.autoDelayMs = 10;
+    kitState.isTyping = true;
+    await keyboard.type(data.value);
+    kitState.isTyping = false;
   },
 };
 

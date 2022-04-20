@@ -1002,6 +1002,12 @@ export const submitValueAtom = atom(
     s(panelHTMLAtom, ``);
 
     s(_submitValue, value);
+
+    if (g(webSocketAtom)) {
+      g(webSocketAtom)?.close();
+      s(webSocketOpenAtom, false);
+      s(webSocketAtom, null);
+    }
   }
 );
 
@@ -1298,10 +1304,6 @@ export const socketURLAtom = atom(
         s(webSocketOpenAtom, true);
       };
       s(webSocketAtom, ws);
-    } else if (g(webSocketAtom)) {
-      g(webSocketAtom)?.close();
-      s(webSocketOpenAtom, false);
-      s(webSocketAtom, null);
     }
   }
 );

@@ -26,6 +26,7 @@ import { updateScripts } from './state';
 import { toggleTray } from './tray';
 import { maybeSetLogin } from './settings';
 import { buildScriptChanged } from './build';
+import { addSnippet } from './snippets';
 
 export const cacheMenu = debounce(async () => {
   await updateScripts();
@@ -67,6 +68,7 @@ const onScriptsChanged = async (
     watchScriptChanged(script);
     backgroundScriptChanged(script);
     buildScriptChanged(script);
+    addSnippet(script);
   }
 
   if (updateEventNames.includes(event)) {
