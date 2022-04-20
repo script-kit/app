@@ -47,8 +47,6 @@
     "detectUpdateChannel": "true",
     "productName": "Kit",
     "appId": "app.scriptkit",
-    "npmRebuild": true,
-    "buildDependenciesFromSource": true,
     "files": [
       "dist/",
       "fonts/**",
