@@ -27,6 +27,6 @@ exports.default = async function notarizeMacos(context) {
     appPath: `${appOutDir}/${appName}.app`,
     appleId: process.env.APPLE_ID,
     appleIdPassword: process.env.APPLE_ID_PASS,
-    teamId: process.env.APPLE_TEAM_ID,
+    teamId: '9822B7V7MD',
   });
 };
