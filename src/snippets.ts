@@ -1,4 +1,3 @@
-import logger from 'keylogger.js';
 import log from 'electron-log';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { filter, scan, tap } from 'rxjs/operators';
@@ -9,7 +8,9 @@ import { kitState } from './state';
 
 const snippetMap = new Map<string, Script>();
 
-export const startSnippets = () => {
+export const startSnippets = async () => {
+  const logger = await import('keylogger.js');
+
   type KeyEvent = {
     key: string;
     isKeyUp: boolean;

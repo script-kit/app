@@ -50,8 +50,6 @@ import {
   kitDotEnvPath,
 } from '@johnlindquist/kit/cjs/utils';
 
-import { keyboard } from '@nut-tree/nut-js';
-
 import { getLog, warn } from './logs';
 import {
   clearPromptCache,
@@ -750,6 +748,7 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.TERMINAL, data.value);
   },
   KEYBOARD_TYPE: async (data) => {
+    const { keyboard } = await import('@nut-tree/nut-js');
     keyboard.config.autoDelayMs = 10;
     log.info(`KEYBOARD_TYPE: ${data.value}`);
     kitState.isTyping = true;
