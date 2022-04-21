@@ -49,10 +49,7 @@
     "appId": "app.scriptkit",
     "asar": true,
     "asarUnpack": [
-      "**\\*.{node,dll}",
-      "**/node_modules/sharp/**/*",
-      "**/node_modules/keylogger.js/**/*",
-      "**/node_modules/@nut-tree/**/*"
+      "**\\*.{node,dll}"
     ],
     "files": [
       "dist/",

@@ -26,7 +26,7 @@ import { updateScripts } from './state';
 import { toggleTray } from './tray';
 import { maybeSetLogin } from './settings';
 import { buildScriptChanged } from './build';
-import { addSnippet } from './snippets';
+import { addSnippet, removeSnippet } from './snippets';
 
 export const cacheMenu = debounce(async () => {
   await updateScripts();
@@ -40,6 +40,7 @@ const unlink = (filePath: string) => {
   unlinkEvents(filePath);
   removeWatch(filePath);
   removeBackground(filePath);
+  removeSnippet(filePath);
 
   const binPath = path.resolve(
     path.dirname(path.dirname(filePath)),

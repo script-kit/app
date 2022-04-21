@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
+import { keyboard } from '@nut-tree/nut-js';
 import {
   app,
   clipboard,
@@ -748,7 +749,17 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.TERMINAL, data.value);
   },
   KEYBOARD_TYPE: async (data) => {
-    const { keyboard } = await import('@nut-tree/nut-js');
+    const pathToNut = `${
+      process.env.NODE_ENV === 'development'
+        ? ''
+        : `${app.getAppPath()}.unpacked/node_modules/`
+    }@nut-tree/nut-js/dist/index.js`;
+    log.info(`Path to nut`, pathToNut);
+    // const { keyboard } = (await import(
+    //   pathToNut
+    // )) as typeof import('@nut-tree/nut-js');
+
+    log.info(`keyboard:`, keyboard);
     keyboard.config.autoDelayMs = 10;
     log.info(`KEYBOARD_TYPE: ${data.value}`);
     kitState.isTyping = true;
@@ -760,6 +771,9 @@ const kitMessageMap: ChannelHandler = {
     }
 
     kitState.isTyping = false;
+  },
+  KEYBOARD_PRESS_KEY: async (data) => {
+    await keyboard.pressKey(data?.value as any);
   },
 };
 
