@@ -33,22 +33,23 @@ import { AppChannel } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
 import { kitState, updateScripts } from './state';
+import { stripAnsi } from './ansi';
 
-const handleChannel =
-  (fn: (processInfo: ProcessInfo, message: AppMessage) => void) =>
-  (_event: any, message: AppMessage) => {
-    // log.info(message);
-    const processInfo = processes.getByPid(message?.pid);
+const handleChannel = (
+  fn: (processInfo: ProcessInfo, message: AppMessage) => void
+) => (_event: any, message: AppMessage) => {
+  // log.info(message);
+  const processInfo = processes.getByPid(message?.pid);
 
-    if (processInfo) {
-      fn(processInfo, message);
-      // log.info(`${message.channel}`, message.pid);
-    } else {
-      log.warn(`${message.channel} failed on ${message?.pid}`, message);
-      // log.warn(processInfo?.child, processInfo?.type);
-      // console.log(message);
-    }
-  };
+  if (processInfo) {
+    fn(processInfo, message);
+    // log.info(`${message.channel}`, message.pid);
+  } else {
+    log.warn(`${message.channel} failed on ${message?.pid}`, message);
+    // log.warn(processInfo?.child, processInfo?.type);
+    // console.log(message);
+  }
+};
 
 export const startIpc = () => {
   ipcMain.on(
@@ -176,6 +177,7 @@ export const startIpc = () => {
     Channel.BLUR,
     Channel.ABANDON,
     Channel.GET_EDITOR_HISTORY,
+    Channel.SHORTCUT,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
@@ -188,6 +190,24 @@ export const startIpc = () => {
 
         if (channel === Channel.VALUE_SUBMITTED) {
           kitState.ignoreBlur = false;
+
+          if (message?.state?.value === Channel.TERMINAL) {
+            log.info(`🤔 ${channel}`, 'TERM SUBMITTED');
+            const [, postBell] = stripAnsi(kitState.termPrev)
+              .split('\x07')
+              .map((line) => line.trim());
+
+            const lines = (postBell || stripAnsi(kitState.termPrev))
+              .split(/(\r|\n)/)
+              .map((line) => line.trim())
+              .filter((line) => line.trim() !== '');
+
+            log.info({ postBell });
+            if (!postBell) lines.shift();
+            lines.pop();
+
+            message.state.value = lines.join('\n');
+          }
         }
 
         if (child) {

@@ -3,16 +3,20 @@ import { WebSocket } from 'ws';
 import log from 'electron-log';
 import { Server } from 'net';
 import getPort from './get-port';
+import { kitState } from './state';
 
 let t: any = null;
 let server: Server | null = null;
-export const start = async (config: any = {}) => {
+
+export const startPty = async (config: any = {}) => {
   // clear before use
   try {
     if (t) t?.kill();
     if (server) server?.close();
     t = null;
     server = null;
+    kitState.termLatest = ``;
+    kitState.termPrev = ``;
   } catch (error) {
     // ignore
   }
@@ -21,7 +25,8 @@ export const start = async (config: any = {}) => {
   const { default: expressWs } = await import('express-ws');
   const pty = await import('node-pty');
 
-  const command = config?.command || '';
+  const command = config?.input || '';
+  log.info({ command });
   const appBase = express();
   const wsInstance = expressWs(appBase);
   const { app } = wsInstance;
@@ -38,7 +43,7 @@ export const start = async (config: any = {}) => {
       cols: 80,
       rows: 24,
       cwd: os.homedir(),
-      env: config?.env,
+      env: config?.env || process.env,
       encoding: 'utf8',
     }
   );
@@ -51,6 +56,7 @@ export const start = async (config: any = {}) => {
         t.write(`${command}\n`);
       }, 250);
     }
+
     // string message buffering
     function bufferString(socket: WebSocket, timeout: number) {
       let s = '';
@@ -59,6 +65,8 @@ export const start = async (config: any = {}) => {
         s += data;
         if (!sender) {
           sender = setTimeout(() => {
+            kitState.termPrev = kitState.termLatest;
+            kitState.termLatest = s;
             socket.send(s);
             s = '';
             sender = null;
@@ -79,7 +87,10 @@ export const start = async (config: any = {}) => {
         length += d.length;
         if (!sender) {
           sender = setTimeout(() => {
-            socket.send(Buffer.concat(buffer, length));
+            const b = Buffer.concat(buffer, length);
+            kitState.termPrev = kitState.termLatest;
+            kitState.termLatest = b.toString('utf8');
+            socket.send(b);
             buffer = [];
             sender = null;
             length = 0;

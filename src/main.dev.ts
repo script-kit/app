@@ -101,7 +101,8 @@ import { showError } from './main.dev.templates';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { maybeSetLogin } from './settings';
 import { SPLASH_PATH } from './defaults';
-import { startSnippets } from './snippets';
+import { startSnippets, subSnippets } from './snippets';
+import { startPtyServer } from './pty';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -393,7 +394,7 @@ const ready = async () => {
     scheduleDownloads();
     systemEvents();
 
-    startSnippets();
+    subSnippets();
 
     log.info(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {

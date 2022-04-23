@@ -10,7 +10,7 @@ import { AttachAddon } from 'xterm-addon-attach';
 import useResizeObserver from '@react-hook/resize-observer';
 import { motion } from 'framer-motion';
 import { throttle } from 'lodash';
-
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 import {
   darkAtom,
@@ -88,7 +88,7 @@ export default function Terminal() {
       const t = xtermRef.current.terminal;
 
       // console.log(`onopen`, { ws });
-      const attachAddon = new AttachAddon(ws);
+      const attachAddon = new AttachAddon(ws as WebSocket);
 
       // console.log(`loadAddon`, xtermRef?.current?.terminal.loadAddon);
 
@@ -105,14 +105,8 @@ export default function Terminal() {
           (x?.domEvent.key === 'Enter' && x?.domEvent.metaKey) ||
           (x.domEvent.ctrlKey && x?.domEvent.key === 'c')
         ) {
-          // const line = t.buffer.normal
-          //   .getLine(t.buffer.normal.cursorY)
-          //   ?.translateToString(true);
-
-          // console.log({ line });
-
-          // console.log(`SUBMIT`);
-          submit('');
+          console.log(`SUBMITTING TERMINAL`);
+          submit(Channel.TERMINAL);
           attachAddon.dispose();
         }
       });

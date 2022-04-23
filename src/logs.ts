@@ -11,26 +11,11 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { sendToPrompt } from './prompt';
+import { stripAnsi } from './ansi';
 
 export const consoleLog = log.create('consoleLog');
 consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
 
-export function ansiRegex({ onlyFirst = false } = {}) {
-  const pattern = [
-    '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
-    '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))',
-  ].join('|');
-
-  return new RegExp(pattern, onlyFirst ? undefined : 'g');
-}
-
-export function stripAnsi(string: string) {
-  if (typeof string !== 'string') {
-    throw new TypeError(`Expected a \`string\`, got \`${typeof string}\``);
-  }
-
-  return string.replace(ansiRegex(), '');
-}
 interface Logger {
   info: (...args: string[]) => void;
   warn: (...args: string[]) => void;

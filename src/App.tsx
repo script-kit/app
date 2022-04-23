@@ -464,9 +464,8 @@ export default function App() {
         text-white dark:text-black
 
           font-mono font-bold w-screen text-xxs uppercase"
-          >
-            {footer}
-          </footer>
+            dangerouslySetInnerHTML={{ __html: footer }}
+          />
         )}
       </motion.div>
     </ErrorBoundary>

@@ -869,6 +869,8 @@ export const promptDataAtom = atom(
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
       s(onShortcutSubmitAtom, a?.onShortcutSubmit || {});
+      console.log(a);
+      s(onShortcutAtom, a?.onShortcut || {});
       // s(tabIndex, a.tabIndex);
       s(promptData, a);
     }
@@ -1272,10 +1274,20 @@ type OnInputSubmit = {
   [key: string]: any;
 };
 
+type OnShortcut = {
+  [key: string]: any;
+};
 type OnShortcutSubmit = {
   [key: string]: any;
 };
 export const onInputSubmitAtom = atom<OnInputSubmit>({});
+export const onShortcutAtom = atom<OnShortcut>({});
+
+export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
+  const channel = g(channelAtom);
+  console.log(`🎬 Send shortcut ${shortcut}`);
+  channel(Channel.SHORTCUT, { shortcut });
+});
 export const onShortcutSubmitAtom = atom<OnShortcutSubmit>({});
 
 export const processesAtom = atom<ProcessInfo[]>([]);

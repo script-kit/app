@@ -87,7 +87,7 @@ import { show, showDevTools, showWidget } from './show';
 import { getVersion } from './version';
 import { getClipboardHistory } from './tick';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
-import { start } from './pty';
+import { startPty } from './pty';
 
 export const formatScriptChoices = (data: Choice[]) => {
   const dataChoices: Script[] = (data || []) as Script[];
@@ -603,7 +603,7 @@ const kitMessageMap: ChannelHandler = {
     kitState.promptCount += 1;
 
     if (data?.value?.ui === UI.term) {
-      const { socketURL } = await start(data);
+      const { socketURL } = await startPty(data?.value);
 
       sendToPrompt(Channel.TERMINAL, socketURL);
     }
@@ -749,31 +749,28 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.TERMINAL, data.value);
   },
   KEYBOARD_TYPE: async (data) => {
-    const pathToNut = `${
-      process.env.NODE_ENV === 'development'
-        ? ''
-        : `${app.getAppPath()}.unpacked/node_modules/`
-    }@nut-tree/nut-js/dist/index.js`;
-    log.info(`Path to nut`, pathToNut);
-    // const { keyboard } = (await import(
-    //   pathToNut
-    // )) as typeof import('@nut-tree/nut-js');
-
-    log.info(`keyboard:`, keyboard);
     keyboard.config.autoDelayMs = 10;
-    log.info(`KEYBOARD_TYPE: ${data.value}`);
     kitState.isTyping = true;
     try {
-      const result = await keyboard.type(data.value);
-      log.info(`KEYBOARD DONE TYPE`, result);
+      await keyboard.type(data.value);
     } catch (error) {
       log.error(`KEYBOARD ERROR TYPE`, error);
     }
 
-    kitState.isTyping = false;
+    setTimeout(() => {
+      kitState.isTyping = false;
+    }, 100);
   },
   KEYBOARD_PRESS_KEY: async (data) => {
-    await keyboard.pressKey(data?.value as any);
+    await keyboard.pressKey(...(data?.value as any));
+  },
+  KEYBOARD_RELEASE_KEY: async (data) => {
+    await keyboard.releaseKey(...(data?.value as any));
+  },
+  KEYBOARD_CONFIG: async (data) => {
+    if (data?.value) {
+      keyboard.config = data.value;
+    }
   },
 };
 

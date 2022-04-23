@@ -148,6 +148,11 @@ const initState = {
   isMainScript: () => kitState.script.filePath === mainScriptPath,
   promptCount: -1,
   isTyping: false,
+  snippet: ``,
+  keyloggerOn: false,
+  socketURL: '',
+  termLatest: '',
+  termPrev: '',
 };
 
 export const kitState: typeof initState = proxy(initState);

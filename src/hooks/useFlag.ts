@@ -15,6 +15,8 @@ import {
   submitValueAtom,
   channelAtom,
   onShortcutSubmitAtom,
+  onShortcutAtom,
+  sendShortcutAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -32,6 +34,8 @@ export default () => {
   const [inputFocus] = useAtom(inputFocusAtom);
   const [channel] = useAtom(channelAtom);
   const [onShortcutSubmit] = useAtom(onShortcutSubmitAtom);
+  const [onShortcut] = useAtom(onShortcutAtom);
+  const [, sendShortcut] = useAtom(sendShortcutAtom);
 
   // useHotkeys(
   //   `${cmd}+p`,
@@ -71,9 +75,26 @@ export default () => {
     [flags, input, inputFocus, choices, index]
   );
 
-  const onShortcuts = Object.keys(onShortcutSubmit).length
+  const onShortcutSubmits = Object.keys(onShortcutSubmit).length
     ? Object.keys(onShortcutSubmit).join(',')
     : `f19`;
+
+  const onShortcuts = Object.keys(onShortcut).length
+    ? Object.keys(onShortcut).join(',')
+    : `f19`;
+
+  useHotkeys(
+    onShortcutSubmits,
+    (event, handler) => {
+      if (!inputFocus) return;
+      event.preventDefault();
+
+      const value = onShortcutSubmit[handler.key];
+      submit(value);
+    },
+    hotkeysOptions,
+    [onShortcutSubmit]
+  );
 
   useHotkeys(
     onShortcuts,
@@ -81,8 +102,7 @@ export default () => {
       if (!inputFocus) return;
       event.preventDefault();
 
-      const value = onShortcutSubmit[handler.key];
-      submit(value);
+      sendShortcut(handler.key);
     },
     hotkeysOptions,
     [onShortcutSubmit]
