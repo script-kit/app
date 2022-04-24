@@ -26,7 +26,7 @@ export const startPty = async (config: any = {}) => {
   const pty = await import('node-pty');
 
   const command = config?.input || '';
-  log.info({ command });
+  if (command) log.info(`Terminal command:`, { command });
   const appBase = express();
   const wsInstance = expressWs(appBase);
   const { app } = wsInstance;
@@ -42,7 +42,7 @@ export const startPty = async (config: any = {}) => {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,
-      cwd: os.homedir(),
+      cwd: config?.cwd || os.homedir(),
       env: config?.env || process.env,
       encoding: 'utf8',
     }

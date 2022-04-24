@@ -65,6 +65,7 @@ export const placeholderAtom = atom(
 interface QuickScoreInterface {
   search: (query: string) => ScoredChoice[];
 }
+
 const search = (qs: QuickScoreInterface, term: string): ScoredChoice[] => {
   return qs?.search(term);
 };
