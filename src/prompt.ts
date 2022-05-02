@@ -45,16 +45,21 @@ const miniArgs = minimist(process.argv);
 const { devTools } = miniArgs;
 // log.info(process.argv.join(' '), devTools);
 
+let electronPanelWindow: any = null;
 export const createPromptWindow = async () => {
   const isMac = os.platform() === 'darwin';
+  if (isMac) {
+    electronPanelWindow = await import('@akiflow/electron-panel-window' as any);
+  }
   promptWindow = new BrowserWindow({
+    titleBarStyle: 'customButtonsOnHover',
     useContentSize: true,
     frame: false,
     transparent: isMac,
     vibrancy: 'menu',
     visualEffectState: 'active',
     show: false,
-    hasShadow: true,
+    // hasShadow: true,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -70,8 +75,12 @@ export const createPromptWindow = async () => {
     minHeight: INPUT_HEIGHT,
   });
 
-  promptWindow.setAlwaysOnTop(false, 'floating', 1);
-  promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  // electronPanelWindow.makePanel(promptWindow);
+
+  log.info(`BEFORE CALLED!`);
+
+  promptWindow.setAlwaysOnTop(true, 'floating', 1);
+  // promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   promptWindow?.webContents?.on('did-finish-load', () => {
     sendToPrompt(Channel.APP_CONFIG, {
@@ -88,6 +97,10 @@ export const createPromptWindow = async () => {
   await promptWindow.loadURL(
     `file://${__dirname}/index.html?vs=${getAssetPath('vs')}`
   );
+
+  // promptWindow.on('ready-to-show', function () {
+  //   promptWindow.showInactive();
+  // });
 
   promptWindow.webContents.once('did-finish-load', () => {
     promptWindow?.webContents.closeDevTools();
@@ -106,7 +119,7 @@ export const createPromptWindow = async () => {
     //   '--opacity-themedark': '33%',
     //   '--opacity-themelight': '33%',
     // });
-    promptWindow?.setVibrancy('menu');
+    // promptWindow?.setVibrancy('menu');
   });
 
   promptWindow.on('hide', () => {
@@ -133,7 +146,7 @@ export const createPromptWindow = async () => {
     }
 
     if (kitState.ignoreBlur) {
-      promptWindow?.setVibrancy('popover');
+      // promptWindow?.setVibrancy('popover');
     } else if (!kitState.ignoreBlur) {
       kitState.blurredByKit = false;
     }
@@ -225,12 +238,12 @@ export const logFocus = () => {
 
 export const focusPrompt = () => {
   if (promptWindow && !promptWindow.isDestroyed()) {
-    promptWindow.setAlwaysOnTop(true, 'floating', 1);
+    // promptWindow.setAlwaysOnTop(true, 'floating', 1);
     // app.focus({
     //   steal: true,
     // });
-    promptWindow?.focus();
-    promptWindow?.focusOnWebView();
+    // promptWindow?.focus();
+    // promptWindow?.focusOnWebView();
 
     sendToPrompt(Channel.SET_OPEN, true);
 
@@ -244,8 +257,8 @@ export const focusPrompt = () => {
         // app.focus({
         //   steal: true,
         // });
-        promptWindow.focus();
-        promptWindow?.focusOnWebView();
+        // promptWindow.focus();
+        // promptWindow?.focusOnWebView();
       }
     }, 500);
   }
@@ -482,6 +495,7 @@ export const hideAppIfNoWindows = (scriptPath = '') => {
       kitState.hidden = false;
     }
 
+    log.info(`HIDE APP: ${allWindows.length}`);
     promptWindow?.hide();
     // setPromptBounds();
 
@@ -571,7 +585,17 @@ export const setPromptData = async (promptData: PromptData) => {
     log.info(`↖ OPEN:`, bounds);
     promptWindow.setBounds(bounds);
 
-    promptWindow?.show();
+    // log.info(`🧑‍🏫 SHOW INACTIVE`);
+    promptWindow?.showInactive();
+    // log.info(`⛳️ MAKING KEY WINDOW!!!!!`);
+    try {
+      if (electronPanelWindow) {
+        electronPanelWindow?.makePanel(promptWindow);
+        electronPanelWindow?.makeKeyWindow(promptWindow);
+      }
+    } catch (error) {
+      log.error(error);
+    }
     // app.focus({
     //   steal: true,
     // });

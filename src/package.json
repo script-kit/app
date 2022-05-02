@@ -18,6 +18,7 @@
     "@types/regenerator-runtime": "^0.13.0"
   },
   "dependencies": {
+    "@akiflow/electron-panel-window": "^3.2.1",
     "@nut-tree/nut-js": "^2.0.1",
     "keylogger.js": "^0.0.4",
     "node-abi": "^3.8.0",

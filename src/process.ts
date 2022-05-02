@@ -88,6 +88,7 @@ import { getVersion } from './version';
 import { getClipboardHistory } from './tick';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
+import { createWidget } from './widget';
 
 export const formatScriptChoices = (data: Choice[]) => {
   const dataChoices: Script[] = (data || []) as Script[];
@@ -339,11 +340,16 @@ const kitMessageMap: ChannelHandler = {
       {
         channel,
         value,
-      }: { channel: Channel; value: { filePath: string; options: any } }
+      }: {
+        channel: Channel;
+        value: { command: string; html: string; options: any };
+      }
     ) => {
+      const { command, html, options } = value;
+      const filePath = await createWidget(command, html, options);
       kitState.blurredByKit = true;
       const widgetId = Date.now().toString();
-      const widget = await showWidget(widgetId, value.filePath, value.options);
+      const widget = await showWidget(widgetId, filePath, options);
       log.info(`${child?.pid}: ⚙️ Creating widget ${widgetId}`);
 
       // widget.on('move', () => {

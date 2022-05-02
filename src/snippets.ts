@@ -7,6 +7,31 @@ import { kitState } from './state';
 import { runPromptProcess } from './kit';
 
 const snippetMap = new Map<string, Script>();
+/* eslint-disable no-useless-computed-key */
+const shiftMap = {
+  ['1']: '!',
+  ['2']: '@',
+  ['3']: '#',
+  ['4']: '$',
+  ['5']: '%',
+  ['6']: '^',
+  ['7']: '&',
+  ['8']: '*',
+  ['9']: '(',
+  ['0']: ')',
+  ['-']: '_',
+  ['=']: '+',
+  ['`']: '~',
+  ['[']: '{',
+  [']']: '}',
+  ['\\']: '|',
+  [';']: ':',
+  ["'"]: '"',
+  [',']: '<',
+  ['.']: '>',
+  ['/']: '?',
+  [' ']: ' ',
+};
 
 export const subSnippets = () => {
   subscribeKey(kitState, 'snippet', async (snippet = ``) => {
@@ -37,6 +62,11 @@ export const startSnippets = async () => {
   // });
 
   logger.start((key, isKeyUp) => {
+    if (key === 'Shift') {
+      kitState.isShiftDown = !isKeyUp;
+      return;
+    }
+
     if (isKeyUp && key.length !== 1) {
       kitState.snippet = ``;
     } else if (!isKeyUp) {
@@ -45,7 +75,17 @@ export const startSnippets = async () => {
         kitState.snippet = ``;
       } else {
         if (key.length === 1) {
-          kitState.snippet = `${kitState.snippet}${key}`;
+          if (kitState.isShiftDown) {
+            if ((shiftMap as any)?.[key]) {
+              kitState.snippet = `${kitState.snippet}${
+                (shiftMap as any)?.[key]
+              }`;
+            } else {
+              kitState.snippet = `${kitState.snippet}${key.toUpperCase()}`;
+            }
+          } else {
+            kitState.snippet = `${kitState.snippet}${key}`;
+          }
         } else {
           kitState.snippet = ``;
         }

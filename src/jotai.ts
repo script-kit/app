@@ -543,7 +543,7 @@ const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
   const result = search(qs, a);
   s(scoredChoices, result);
   return true;
-}, 250);
+}, 250); // TODO: too slow for emojis
 
 const prevFilteredInputAtom = atom('');
 
@@ -1225,9 +1225,11 @@ export const blurAtom = atom(null, (g) => {
 export const startAtom = atom(null, (g, s, a: string) => {
   console.log(`🎬 Start ${a}`);
   const history = g(_history);
+  const script = g(scriptAtom);
   if (
     g(uiAtom) !== UI.splash &&
-    (history.length > 0 || g(scriptAtom).filePath === a)
+    (history.length > 0 || script.filePath === a) &&
+    !script?.snippet
   ) {
     const channel = g(channelAtom);
     channel(Channel.ABANDON);

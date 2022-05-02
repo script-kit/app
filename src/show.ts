@@ -233,6 +233,7 @@ export const showDevTools = async (value: any) => {
     height: 0,
   });
   devToolsWindow.webContents.openDevTools({
+    activate: true,
     mode: 'detach',
   });
 
@@ -259,6 +260,8 @@ export const showDevTools = async (value: any) => {
   devToolsWindow?.loadURL(devToolsUrl);
 
   devToolsWindow.show();
+  devToolsWindow.focus();
+  devToolsWindow.webContents.focus();
 
   devToolsWindow.webContents.on('devtools-closed', () => {
     log.info(`Close devTools: ${devToolsWindow.id}`);

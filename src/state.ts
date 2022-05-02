@@ -153,6 +153,7 @@ const initState = {
   socketURL: '',
   termLatest: '',
   termPrev: '',
+  isShiftDown: false,
 };
 
 export const kitState: typeof initState = proxy(initState);
