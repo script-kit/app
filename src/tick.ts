@@ -1,18 +1,46 @@
 /* eslint-disable import/prefer-default-export */
 import { clipboard, NativeImage } from 'electron';
-import { interval } from 'rxjs';
-import { distinctUntilChanged, filter, map, share, skip } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import {
+  delay,
+  distinctUntilChanged,
+  filter,
+  map,
+  share,
+  switchMap,
+} from 'rxjs/operators';
+import log from 'electron-log';
+import { subscribeKey } from 'valtio/utils';
+import { keyboard, Key } from '@nut-tree/nut-js';
 
 import { format } from 'date-fns';
 import { writeFile } from 'fs/promises';
+import { ensureDir } from 'fs-extra';
 import path from 'path';
 import { nanoid } from 'nanoid';
 import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
-import { Choice } from '@johnlindquist/kit/types/core';
+import { Choice, Script } from '@johnlindquist/kit/types/core';
+
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { remove } from 'lodash';
 
-import { emitter } from './events';
+import { emitter, KitEvent } from './events';
+import { kitState } from './state';
+import { isFocused } from './prompt';
+
+type FrontmostApp = {
+  localizedName: string;
+  bundleId: string;
+  bundlePath: string;
+  executablePath: string;
+  isLaunched: boolean;
+  pid: number;
+};
+
+type ClipboardApp = {
+  text: string;
+  app: FrontmostApp;
+};
 
 // const memory = (kDec = 2) => {
 //   const bytes = process.memoryUsage().rss;
@@ -31,22 +59,93 @@ interface ClipboardItem extends Choice {
 }
 
 let clipboardHistory: ClipboardItem[] = [];
-
+let frontmost: any = null;
 export const getClipboardHistory = () => clipboardHistory;
 
 export const removeFromClipboardHistory = (itemId: string) => {
   const index = clipboardHistory.findIndex(({ id }) => itemId === id);
-  if (index) clipboardHistory.splice(index, 1);
+  if (index > -1) {
+    clipboardHistory.splice(index, 1);
+  } else {
+    log.info(`😅 Could not find ${itemId} in clipboard history`);
+  }
 };
 
 export const configureInterval = async () => {
-  const tick$ = interval(3000).pipe(share());
+  const { default: ioHook } = await import('@hcfy/iohook');
 
-  const clipboardText$ = tick$.pipe(
-    map(() => clipboard.readText()),
-    filter(Boolean),
-    skip(1),
-    distinctUntilChanged()
+  if (kitState.isMac) {
+    ({ default: frontmost } = await import('frontmost-app' as any));
+  }
+  // const tick$ = interval(3000).pipe(share());
+  const io$ = new Observable((observer) => {
+    ioHook.on('mouseclick', (event) => {
+      observer.next(event);
+    });
+
+    ioHook.on('keypress', (event) => {
+      // log.info(String.fromCharCode(event.keychar));
+      observer.next(event);
+    });
+
+    // ioHook.on('keyup', (event) => {
+    //   if (event.ctrlKey || event.metaKey) {
+    //     // log.info(event);
+    //     setTimeout(() => {
+    //       observer.next(event);
+    //     }, 100);
+    //   }
+    // });
+
+    // Register and start hook
+    ioHook.start();
+
+    return () => {
+      ioHook.stop();
+    };
+  }).pipe(share());
+
+  const clipboardText$: Observable<any> = io$.pipe(
+    filter((event: any) => {
+      if (event?.type === 'keypress' && (event.ctrlKey || event.metaKey)) {
+        const key = String.fromCharCode(event.keychar);
+        return key === 'c';
+      }
+
+      return event?.type === 'mouseclick';
+    }),
+    switchMap(async () => {
+      if (frontmost) {
+        const frontmostApp = await frontmost();
+        const ignoreList = [
+          'onepassword',
+          'keychain',
+          'security',
+          'wallet',
+          'lastpass',
+        ];
+
+        if (ignoreList.find((app) => frontmostApp.bundleId.includes(app))) {
+          log.info(`Ignoring clipboard for ${frontmostApp.bundleId}`);
+          return false;
+        }
+
+        return frontmostApp;
+      }
+
+      return false;
+    }),
+    filter((value) => value !== false),
+    delay(100),
+    map((app: ClipboardApp) => {
+      const text = clipboard.readText();
+      return {
+        app,
+        text,
+      };
+    }),
+    filter((value) => (value as any)?.text),
+    distinctUntilChanged((a, b) => a.text === b.text)
   );
 
   // const memoryLog = interval(5000).pipe(map(() => memory()));
@@ -70,28 +169,45 @@ export const configureInterval = async () => {
 
   // merge(clipboardText$, clipboardImage$)
 
-  clipboardText$.subscribe(async (textOrImage) => {
+  /*
+  {
+  localizedName: '1Password 7',
+  bundleId: 'com.agilebits.onepassword7',
+  bundlePath: '/Applications/1Password 7.app',
+  executablePath: '/Applications/1Password 7.app/Contents/MacOS/1Password 7',
+  isLaunched: true,
+  pid: 812
+}
+*/
+
+  clipboardText$.subscribe(async ({ text, app }: ClipboardApp) => {
     let value = '';
     let type = '';
     const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
 
-    if (typeof textOrImage === 'string') {
+    if (typeof text === 'string') {
       type = 'text';
-      value = textOrImage;
+      value = text;
     } else {
       type = 'image';
       value = path.join(tmpClipboardDir, `${timestamp}.png`);
-      await writeFile(value, (textOrImage as NativeImage).toPNG());
+      await writeFile(value, (text as NativeImage).toPNG());
     }
 
+    // TODO: Consider filtering consecutive characters without a space
     const maybeSecret = Boolean(
       type === 'text' &&
         value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-z0-9-]{5,})$/gi)
     );
+
+    const appName = isFocused() ? 'Script Kit' : app.localizedName;
+
+    // log.info({ appName, text });
+
     const clipboardItem = {
       id: nanoid(),
       name: type === 'image' ? value : value.trim().slice(0, 40),
-      description: `${type}: ${timestamp}`,
+      description: `${appName} - ${timestamp}`,
       value,
       type,
       timestamp,
@@ -113,4 +229,120 @@ export const configureInterval = async () => {
   emitter.on(Channel.CLEAR_CLIPBOARD_HISTORY, () => {
     clipboardHistory = [];
   });
+
+  subscribeKey(kitState, 'snippet', async (snippet = ``) => {
+    // Use `;;` as "end"?
+    if (snippetMap.has(snippet)) {
+      log.info(`Running snippet: ${snippet}`);
+      const script = snippetMap.get(snippet) as Script;
+      const prevDelay = keyboard.config.autoDelayMs;
+      keyboard.config.autoDelayMs = 0;
+      snippet.split('').forEach(async (char) => {
+        await keyboard.type(Key.Backspace);
+      });
+      keyboard.config.autoDelayMs = prevDelay;
+      emitter.emit(KitEvent.RunPromptProcess, script.filePath);
+    }
+  });
+
+  subscribeKey(kitState, 'isTyping', () => {
+    kitState.snippet = ``;
+  });
+
+  io$.subscribe(ioEvent);
+};
+
+const ioEvent = async (event: any) => {
+  // log.info(event);
+  const {
+    keychar = '',
+    shiftKey = false,
+    type = '',
+    metaKey = false,
+    ctrlKey = false,
+    altKey = false,
+  } = event;
+  kitState.isShiftDown = shiftKey;
+
+  // log.info({ keychar, type });
+  const key = String.fromCharCode(keychar);
+
+  if (ctrlKey || metaKey) {
+    if (key === 'v') {
+      const image = clipboard.readImage();
+      const size = image.getSize();
+
+      // log.info({ size });
+
+      if (size?.width && size?.height && isFocused()) {
+        const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
+        const filePath = path.join(kitState.imagePath, `${timestamp}.png`);
+        await ensureDir(path.dirname(filePath));
+        await writeFile(filePath, image.toPNG());
+        clipboard.clear();
+        clipboard.writeText(filePath);
+
+        log.info(`📎 ${filePath}`);
+
+        await keyboard.pressKey(
+          kitState.isMac ? Key.LeftSuper : Key.LeftControl,
+          Key.V
+        );
+        await keyboard.releaseKey(
+          Key.V,
+          kitState.isMac ? Key.LeftSuper : Key.LeftControl
+        );
+
+        // const prevDelay = keyboard.config.autoDelayMs;
+        // keyboard.config.autoDelayMs = 0;
+        // await keyboard.type(filePath);
+        // keyboard.config.autoDelayMs = prevDelay;
+      }
+    }
+  }
+
+  if (
+    type === 'mouseclick' ||
+    metaKey ||
+    ctrlKey ||
+    altKey ||
+    kitState.isTyping ||
+    keychar < 33
+  ) {
+    kitState.snippet = ``;
+  } else {
+    kitState.snippet = `${kitState.snippet}${key}`;
+  }
+
+  // log.info(kitState.snippet);
+};
+
+const snippetMap = new Map<string, Script>();
+
+// export const maybeStopKeyLogger = () => {
+//   if (snippetMap.size === 0 && kitState.keyloggerOn) {
+//     log.info('📕 Stopping snippets...');
+//     logger.stop();
+//     kitState.keyloggerOn = false;
+//   }
+// };
+
+export const addSnippet = (script: Script) => {
+  for (const [key, value] of snippetMap.entries()) {
+    if (value.filePath === script.filePath) {
+      snippetMap.delete(key);
+    }
+  }
+
+  if (script?.snippet) {
+    snippetMap.set(script.snippet, script);
+  }
+};
+
+export const removeSnippet = (filePath: string) => {
+  for (const [key, value] of snippetMap.entries()) {
+    if (value.filePath === filePath) {
+      snippetMap.delete(key);
+    }
+  }
 };

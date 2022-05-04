@@ -6,7 +6,6 @@ import {
   screen,
   nativeTheme,
 } from 'electron';
-import os from 'os';
 import log from 'electron-log';
 import { ensureDir } from 'fs-extra';
 import path from 'path';
@@ -17,12 +16,11 @@ import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
 import { getAssetPath } from './assets';
 import { darkTheme, lightTheme } from './components/themes';
+import { kitState } from './state';
 
 export const INSTALL_ERROR = 'install-error';
 
 const page = (body: string, options: ShowOptions) => {
-  const isMac = os.platform() === 'darwin';
-
   const baseURL = app.getAppPath().replace('\\', '/');
   const stylePath = `${baseURL}/dist/style.css`;
 
@@ -103,7 +101,7 @@ const page = (body: string, options: ShowOptions) => {
     resize()
 
     ${
-      isMac
+      kitState.isMac
         ? ``
         : `
     document.documentElement.style.setProperty("--opacity-themedark", "100%");
@@ -220,14 +218,15 @@ export const showDevTools = async (value: any) => {
 
   const devToolsWindow = new BrowserWindow({
     ...center,
+    titleBarStyle: 'customButtonsOnHover',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
     frame: false,
     transparent: true,
-    vibrancy: 'menu',
-    visualEffectState: 'active',
+    // vibrancy: 'menu',
+    // visualEffectState: 'active',
     show: false,
     width: 0,
     height: 0,

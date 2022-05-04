@@ -19,9 +19,27 @@
   },
   "dependencies": {
     "@akiflow/electron-panel-window": "^3.2.1",
+    "@hcfy/iohook": "^0.9.3",
     "@nut-tree/nut-js": "^2.0.1",
+    "frontmost-app": "^1.0.0",
     "keylogger.js": "^0.0.4",
     "node-abi": "^3.8.0",
     "node-pty": "^0.10.1"
+  },
+  "iohook": {
+    "targets": [
+      "node-93",
+      "electron-103"
+    ],
+    "platforms": [
+      "win32",
+      "darwin",
+      "linux"
+    ],
+    "arches": [
+      "x64",
+      "ia32",
+      "arm64"
+    ]
   }
 }

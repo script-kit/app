@@ -44,10 +44,10 @@ border-primary-dark dark:border-primary-light
       {flagValue ? (
         <div className="flex flex-row items-center justify-content hover:text-black dark:hover:text-white font-semibold">
           <i className="ml-1 gg-chevron-left scale-60" some-aria="" />
-          <div className="mr-4">{selected}</div>
+          <div className="mr-8 truncate">{selected}</div>
         </div>
       ) : (
-        <div className="mx-4 py-1 font-mono">{selected}</div>
+        <div className="mx-4 py-1 font-mono truncate">{selected}</div>
       )}
     </motion.div>
   );

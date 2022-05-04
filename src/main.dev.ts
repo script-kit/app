@@ -92,7 +92,7 @@ import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { INSTALL_ERROR, show } from './show';
-import { cacheKitScripts } from './state';
+import { cacheKitScripts, kitState } from './state';
 import { startSK } from './sk';
 import { handleWidgetEvents, processes } from './process';
 import { startIpc } from './ipc';
@@ -101,8 +101,6 @@ import { showError } from './main.dev.templates';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { maybeSetLogin } from './settings';
 import { SPLASH_PATH } from './defaults';
-import { startSnippets, subSnippets } from './snippets';
-import { startPtyServer } from './pty';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -343,6 +341,9 @@ const systemEvents = () => {
     log.info(`😴 System suspending. Removing watchers.`);
     teardownWatchers();
     sleepSchedule();
+
+    kitState.suspended = true;
+    // app?.hide();
   });
 
   powerMonitor.addListener('resume', async () => {
@@ -354,6 +355,17 @@ const systemEvents = () => {
       scheduleDownloads();
       checkForUpdates();
     }, 5000);
+
+    kitState.suspended = false;
+  });
+
+  powerMonitor.addListener('lock-screen', async () => {
+    kitState.screenLocked = true;
+    // app?.hide();
+  });
+
+  powerMonitor.addListener('unlock-screen', async () => {
+    kitState.screenLocked = false;
   });
 };
 
@@ -393,8 +405,6 @@ const ready = async () => {
 
     scheduleDownloads();
     systemEvents();
-
-    subSnippets();
 
     log.info(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {

@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
+import untildify from 'untildify';
 import { keyboard } from '@nut-tree/nut-js';
 import {
   app,
@@ -485,6 +486,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   REMOVE_CLIPBOARD_HISTORY_ITEM: (data: any) => {
+    log.info(`REMOVE_CLIPBOARD_HISTORY_ITEM`, data);
     emitter.emit(Channel.REMOVE_CLIPBOARD_HISTORY_ITEM, data.value);
   },
 
@@ -776,6 +778,18 @@ const kitMessageMap: ChannelHandler = {
   KEYBOARD_CONFIG: async (data) => {
     if (data?.value) {
       keyboard.config = data.value;
+    }
+  },
+  SET_CONFIG: async (data) => {
+    if (data?.value) {
+      for (const [key, value] of Object.entries(data.value)) {
+        let v = value;
+        if (key.toLowerCase().includes('path')) {
+          v = untildify(v);
+        }
+
+        (kitState as any)[key] = v;
+      }
     }
   },
 };

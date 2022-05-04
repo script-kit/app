@@ -3,6 +3,7 @@
 /* eslint-disable no-nested-ternary */
 import { proxy } from 'valtio/vanilla';
 import path from 'path';
+import os from 'os';
 import { ChildProcess } from 'child_process';
 import { app } from 'electron';
 import schedule, { Job } from 'node-schedule';
@@ -14,6 +15,7 @@ import {
   kitPath,
   isParentOfDir,
   mainScriptPath,
+  tmpClipboardDir,
 } from '@johnlindquist/kit/cjs/utils';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import { noScript, MIN_HEIGHT } from './defaults';
@@ -149,11 +151,16 @@ const initState = {
   promptCount: -1,
   isTyping: false,
   snippet: ``,
-  keyloggerOn: false,
   socketURL: '',
   termLatest: '',
   termPrev: '',
   isShiftDown: false,
+  isMac: os.platform() === 'darwin',
+  isWindows: os.platform() === 'win32',
+  suspended: false,
+  screenLocked: false,
+  isKeyWindow: false,
+  imagePath: tmpClipboardDir,
 };
 
 export const kitState: typeof initState = proxy(initState);

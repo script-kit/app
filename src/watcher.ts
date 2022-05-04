@@ -26,7 +26,7 @@ import { updateScripts } from './state';
 import { toggleTray } from './tray';
 import { maybeSetLogin } from './settings';
 import { buildScriptChanged } from './build';
-import { addSnippet, removeSnippet } from './snippets';
+import { addSnippet, removeSnippet } from './tick';
 
 export const cacheMenu = debounce(async () => {
   await updateScripts();
