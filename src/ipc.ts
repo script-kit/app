@@ -214,7 +214,6 @@ export const startIpc = () => {
               .map((line) => line.trim())
               .filter((line) => line.trim() !== '');
 
-            log.info({ postBell });
             if (!postBell) lines.shift();
             lines.pop();
 
