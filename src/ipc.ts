@@ -223,17 +223,12 @@ export const startIpc = () => {
         }
 
         if (channel === Channel.ON_DROP) {
-          // app.focus({
-          //   steal: true,
-          // });
           showInactive();
         }
 
         if (channel === Channel.ON_PASTE) {
           const image = clipboard.readImage();
           const size = image.getSize();
-
-          // log.info({ size });
 
           if (size?.width && size?.height && isFocused()) {
             const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
