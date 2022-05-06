@@ -1,6 +1,7 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
+import { Config } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
 import path from 'path';
 import os from 'os';
@@ -160,9 +161,14 @@ const initState = {
   suspended: false,
   screenLocked: false,
   isKeyWindow: false,
-  imagePath: tmpClipboardDir,
 };
 
+const initConfig: Config = {
+  imagePath: tmpClipboardDir,
+  deleteSnippet: true,
+};
+
+export const kitConfig: Config = proxy(initConfig);
 export const kitState: typeof initState = proxy(initState);
 
 export function isSameScript(promptScriptPath: string) {

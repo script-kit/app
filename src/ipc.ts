@@ -1,8 +1,10 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-restricted-syntax */
-import { ipcMain } from 'electron';
+import { clipboard, ipcMain } from 'electron';
 import log from 'electron-log';
+import { format } from 'date-fns';
+import { ensureDir } from 'fs-extra';
 import path from 'path';
 import { debounce } from 'lodash';
 import axios from 'axios';
@@ -27,12 +29,19 @@ import detect from 'detect-file-type';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 
-import { endPrompt, focusPrompt, reload, resize } from './prompt';
-import { runPromptProcess, runScript } from './kit';
+import {
+  endPrompt,
+  focusPrompt,
+  isFocused,
+  reload,
+  resize,
+  showInactive,
+} from './prompt';
+import { runPromptProcess } from './kit';
 import { AppChannel } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
-import { kitState, updateScripts } from './state';
+import { kitConfig, kitState, updateScripts } from './state';
 import { stripAnsi } from './ansi';
 
 const handleChannel = (
@@ -179,11 +188,13 @@ export const startIpc = () => {
     Channel.ABANDON,
     Channel.GET_EDITOR_HISTORY,
     Channel.SHORTCUT,
+    Channel.ON_PASTE,
+    Channel.ON_DROP,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
       channel,
-      handleChannel(({ child }, message) => {
+      handleChannel(async ({ child }, message) => {
         // log.info({ channel, message });
         if ([Channel.VALUE_SUBMITTED, Channel.TAB_CHANGED].includes(channel)) {
           emitter.emit(KitEvent.ResumeShortcuts);
@@ -209,6 +220,36 @@ export const startIpc = () => {
 
             message.state.value = lines.join('\n');
           }
+        }
+
+        if (channel === Channel.ON_DROP) {
+          // app.focus({
+          //   steal: true,
+          // });
+          showInactive();
+        }
+
+        if (channel === Channel.ON_PASTE) {
+          const image = clipboard.readImage();
+          const size = image.getSize();
+
+          // log.info({ size });
+
+          if (size?.width && size?.height && isFocused()) {
+            const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
+            const filePath = path.join(kitConfig.imagePath, `${timestamp}.png`);
+            await ensureDir(path.dirname(filePath));
+            await writeFile(filePath, image.toPNG());
+            clipboard.clear();
+            clipboard.writeText(filePath);
+            message.state.paste = filePath;
+            message.state.isPasteImage = true;
+
+            log.info(`📎 ${filePath}`);
+
+            child?.send(message);
+          }
+          return; // Only send once above
         }
 
         if (child) {

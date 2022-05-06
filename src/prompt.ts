@@ -245,6 +245,22 @@ export const logFocus = () => {
   );
 };
 
+export const showInactive = () => {
+  try {
+    if (electronPanelWindow) {
+      promptWindow?.showInactive();
+
+      if (!kitState.isKeyWindow) {
+        electronPanelWindow?.makePanel(promptWindow);
+        electronPanelWindow?.makeKeyWindow(promptWindow);
+        kitState.isKeyWindow = true;
+      }
+    }
+  } catch (error) {
+    log.error(error);
+  }
+};
+
 export const focusPrompt = () => {
   if (promptWindow && !promptWindow.isDestroyed()) {
     // promptWindow.setAlwaysOnTop(true, 'modal-panel');
@@ -597,19 +613,7 @@ export const setPromptData = async (promptData: PromptData) => {
     promptWindow.setBounds(bounds);
 
     // log.info(`⛳️ MAKING KEY WINDOW!!!!!`);
-    try {
-      if (electronPanelWindow) {
-        promptWindow?.showInactive();
-
-        if (!kitState.isKeyWindow) {
-          electronPanelWindow?.makePanel(promptWindow);
-          electronPanelWindow?.makeKeyWindow(promptWindow);
-          kitState.isKeyWindow = true;
-        }
-      }
-    } catch (error) {
-      log.error(error);
-    }
+    showInactive();
 
     // app.focus({
     //   steal: true,

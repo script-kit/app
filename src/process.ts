@@ -80,6 +80,7 @@ import {
   getBackgroundTasks,
   getSchedule,
   kitState,
+  kitConfig,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -788,7 +789,7 @@ const kitMessageMap: ChannelHandler = {
           v = untildify(v);
         }
 
-        (kitState as any)[key] = v;
+        (kitConfig as any)[key] = v;
       }
     }
   },

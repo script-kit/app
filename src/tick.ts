@@ -2,6 +2,7 @@
 import { clipboard, NativeImage } from 'electron';
 import { Observable } from 'rxjs';
 import {
+  debounceTime,
   delay,
   distinctUntilChanged,
   filter,
@@ -15,7 +16,6 @@ import { keyboard, Key } from '@nut-tree/nut-js';
 
 import { format } from 'date-fns';
 import { writeFile } from 'fs/promises';
-import { ensureDir } from 'fs-extra';
 import path from 'path';
 import { nanoid } from 'nanoid';
 import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
@@ -25,7 +25,7 @@ import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { remove } from 'lodash';
 
 import { emitter, KitEvent } from './events';
-import { kitState } from './state';
+import { kitConfig, kitState } from './state';
 import { isFocused } from './prompt';
 
 type FrontmostApp = {
@@ -109,11 +109,12 @@ export const configureInterval = async () => {
     filter((event: any) => {
       if (event?.type === 'keypress' && (event.ctrlKey || event.metaKey)) {
         const key = String.fromCharCode(event.keychar);
-        return key === 'c';
+        return key === 'c' || key === 'v';
       }
 
       return event?.type === 'mouseclick';
     }),
+    debounceTime(200),
     switchMap(async () => {
       if (frontmost) {
         const frontmostApp = await frontmost();
@@ -235,12 +236,14 @@ export const configureInterval = async () => {
     if (snippetMap.has(snippet)) {
       log.info(`Running snippet: ${snippet}`);
       const script = snippetMap.get(snippet) as Script;
-      const prevDelay = keyboard.config.autoDelayMs;
-      keyboard.config.autoDelayMs = 0;
-      snippet.split('').forEach(async (char) => {
-        await keyboard.type(Key.Backspace);
-      });
-      keyboard.config.autoDelayMs = prevDelay;
+      if (kitConfig.deleteSnippet) {
+        const prevDelay = keyboard.config.autoDelayMs;
+        keyboard.config.autoDelayMs = 0;
+        snippet.split('').forEach(async (char) => {
+          await keyboard.type(Key.Backspace);
+        });
+        keyboard.config.autoDelayMs = prevDelay;
+      }
       emitter.emit(KitEvent.RunPromptProcess, script.filePath);
     }
   });
@@ -266,40 +269,6 @@ const ioEvent = async (event: any) => {
 
   // log.info({ keychar, type });
   const key = String.fromCharCode(keychar);
-
-  if (ctrlKey || metaKey) {
-    if (key === 'v') {
-      const image = clipboard.readImage();
-      const size = image.getSize();
-
-      // log.info({ size });
-
-      if (size?.width && size?.height && isFocused()) {
-        const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
-        const filePath = path.join(kitState.imagePath, `${timestamp}.png`);
-        await ensureDir(path.dirname(filePath));
-        await writeFile(filePath, image.toPNG());
-        clipboard.clear();
-        clipboard.writeText(filePath);
-
-        log.info(`📎 ${filePath}`);
-
-        await keyboard.pressKey(
-          kitState.isMac ? Key.LeftSuper : Key.LeftControl,
-          Key.V
-        );
-        await keyboard.releaseKey(
-          Key.V,
-          kitState.isMac ? Key.LeftSuper : Key.LeftControl
-        );
-
-        // const prevDelay = keyboard.config.autoDelayMs;
-        // keyboard.config.autoDelayMs = 0;
-        // await keyboard.type(filePath);
-        // keyboard.config.autoDelayMs = prevDelay;
-      }
-    }
-  }
 
   if (
     type === 'mouseclick' ||

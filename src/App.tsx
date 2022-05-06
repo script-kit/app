@@ -100,6 +100,8 @@ import {
   setFocusedChoiceAtom,
   socketURLAtom,
   footerAtom,
+  onPasteAtom,
+  onDropAtom,
 } from './jotai';
 
 import { useThemeDetector } from './hooks';
@@ -216,6 +218,8 @@ export default function App() {
   const [, setProcesses] = useAtom(processesAtom);
   const [, setFocused] = useAtom(setFocusedChoiceAtom);
   const [, setSocketURL] = useAtom(socketURLAtom);
+  const [onPaste] = useAtom(onPasteAtom);
+  const [onDrop] = useAtom(onDropAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -424,7 +428,20 @@ export default function App() {
 
         w-full
         relative
+
         `}
+          onPaste={onPaste}
+          onDrop={(event) => {
+            console.log(`🎉 drop`);
+            onDrop(event);
+          }}
+          onDragEnter={() => {
+            console.log(`drag enter`);
+          }}
+          onDragOver={(event) => {
+            event.stopPropagation();
+            event.preventDefault();
+          }}
         >
           <AnimatePresence key="mainComponents">
             {ui === UI.splash && <Splash />}

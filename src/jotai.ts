@@ -28,7 +28,7 @@ import {
 } from '@johnlindquist/kit/types/kitapp';
 import { editor } from 'monaco-editor';
 
-import { clamp, debounce, drop, get, isEqual } from 'lodash';
+import { clamp, debounce, drop as _drop, get, isEqual } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
 import { ProcessInfo, ResizeData, ScoredChoice, Survey } from './types';
@@ -344,7 +344,7 @@ export const logHTMLAtom = atom(
       s(log, []);
     } else {
       const oldLog = g(log);
-      s(log, drop(oldLog, oldLog.length > 256 ? 256 : 0).concat([a]));
+      s(log, _drop(oldLog, oldLog.length > 256 ? 256 : 0).concat([a]));
     }
   }
 );
@@ -926,9 +926,9 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     flaggedValue: g(_flagged),
     focused: g(_focused),
     tab: g(_tabs)?.[g(_tabIndex)] || '',
-    history: g(_history),
+    history: g(_history) || [],
     modifiers: g(_modifiers),
-    count: g(_choices).length,
+    count: g(_choices).length || 0,
     name: g(_name),
     description: g(_description),
     script: g(_script),
@@ -955,6 +955,40 @@ export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
 
   ipcRenderer.send(channel, appMessage);
 });
+
+export const onPasteAtom = atom((g) => (event: any) => {
+  event.preventDefault();
+  const channel = g(channelAtom);
+  channel(Channel.ON_PASTE);
+});
+
+export const onDropAtom = atom((g) => (event: any) => {
+  if (g(uiAtom) === UI.drop) return;
+  event.preventDefault();
+
+  let drop = '';
+  const files = Array.from(event?.dataTransfer?.files);
+
+  if (files.length > 0) {
+    drop = files
+      .map((file: any) => file.path)
+      .join('\n')
+      .trim();
+  } else {
+    drop =
+      event?.dataTransfer?.getData('URL') ||
+      event?.dataTransfer?.getData('Text') ||
+      '';
+  }
+
+  const channel = g(channelAtom);
+  channel(Channel.ON_DROP, { drop });
+});
+
+// export const onCopyAtom = atom((g) => {
+//   const channel = g(channelAtom);
+//   channel(Channel.ON_COPY);
+// });
 
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
