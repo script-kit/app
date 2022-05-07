@@ -298,15 +298,16 @@ export const startIpc = () => {
           });
         }
 
+        // TODO: Use Finder's image preview db
         if (existsSync(newPath)) {
-          const pickIcon = isImage(newPath)
-            ? newPath.endsWith('.gif') || newPath.endsWith('.svg')
-              ? getAssetPath('icons8-image-file-24.png')
-              : newPath
-            : getAssetPath('icons8-file-48.png');
+          // const pickIcon = isImage(newPath)
+          //   ? newPath.endsWith('.gif') || newPath.endsWith('.svg')
+          //     ? getAssetPath('icons8-image-file-24.png')
+          //     : newPath
+          //   : getAssetPath('icons8-file-48.png');
           event.sender.startDrag({
             file: newPath,
-            icon: pickIcon,
+            icon: getAssetPath('icons8-file-50.png'),
           });
         }
       } catch (error) {
