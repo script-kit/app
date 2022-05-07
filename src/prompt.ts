@@ -139,10 +139,10 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.on('blur', () => {
-    if (kitState.isKeyWindow) {
-      electronPanelWindow.makeWindow(promptWindow);
-      kitState.isKeyWindow = false;
-    }
+    // if (kitState.isKeyWindow) {
+    //   electronPanelWindow.makeWindow(promptWindow);
+    //   kitState.isKeyWindow = false;
+    // }
     // log.info('🍀 blur', { setIgnoreBlur: kitState.ignoreBlur });
     if (promptWindow?.webContents.isDevToolsOpened()) return;
 
