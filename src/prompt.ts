@@ -5,7 +5,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import { subscribe } from 'valtio/vanilla';
-import { subscribeKey } from 'valtio/utils';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -44,6 +43,15 @@ let unsub: () => void;
 const miniArgs = minimist(process.argv);
 const { devTools } = miniArgs;
 // log.info(process.argv.join(' '), devTools);
+
+const handleHide = () => {
+  if (kitState.isKeyWindow) {
+    electronPanelWindow.makeWindow(promptWindow);
+    kitState.isKeyWindow = false;
+  }
+  kitState.modifiedByUser = false;
+  kitState.ignoreBlur = false;
+};
 
 let electronPanelWindow: any = null;
 export const createPromptWindow = async () => {
@@ -123,15 +131,6 @@ export const createPromptWindow = async () => {
     // promptWindow?.setVibrancy('menu');
   });
 
-  promptWindow.on('hide', () => {
-    if (kitState.isKeyWindow) {
-      electronPanelWindow.makeWindow(promptWindow);
-      kitState.isKeyWindow = false;
-    }
-    kitState.modifiedByUser = false;
-    kitState.ignoreBlur = false;
-  });
-
   promptWindow?.webContents?.on('dom-ready', () => {
     log.info(`🍀 dom-ready on ${kitState.promptProcess?.scriptPath}`);
     hideAppIfNoWindows(kitState?.promptProcess?.scriptPath);
@@ -143,8 +142,7 @@ export const createPromptWindow = async () => {
     //   electronPanelWindow.makeWindow(promptWindow);
     //   kitState.isKeyWindow = false;
     // }
-    // log.info('🍀 blur', { setIgnoreBlur: kitState.ignoreBlur });
-    if (promptWindow?.webContents.isDevToolsOpened()) return;
+    if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
     if (os.platform().startsWith('win')) {
       return;
@@ -193,11 +191,11 @@ export const createPromptWindow = async () => {
   promptWindow?.on('resized', debounce(onResized, 500));
   promptWindow?.on('moved', debounce(onMove, 500));
 
-  promptWindow?.on('show', () => {
-    setTimeout(() => {
-      focusPrompt();
-    }, 150);
-  });
+  // promptWindow?.on('show', () => {
+  //   setTimeout(() => {
+  //     focusPrompt();
+  //   }, 150);
+  // });
 
   // powerMonitor.addListener('user-did-resign-active', () => {
   //   log.info(`🔓 System unlocked. Reloading prompt window.`);
@@ -222,10 +220,6 @@ export const createPromptWindow = async () => {
 
     // log.info(`ps`, ps);
     appToPrompt(AppChannel.PROCESSES, ps);
-  });
-
-  subscribeKey(kitState, 'ignoreBlur', () => {
-    log.info(`🔓 ignoreBlur`, { ignoreBlur: kitState.ignoreBlur });
   });
 
   return promptWindow;
@@ -262,30 +256,18 @@ export const showInactive = () => {
 };
 
 export const focusPrompt = () => {
-  if (promptWindow && !promptWindow.isDestroyed()) {
+  if (
+    promptWindow &&
+    !promptWindow.isDestroyed() &&
+    kitState.isKeyWindow &&
+    !promptWindow?.isFocused()
+  ) {
     // promptWindow.setAlwaysOnTop(true, 'modal-panel');
     // app.focus({
     //   steal: true,
     // });
     promptWindow?.focus();
     // promptWindow?.focusOnWebView();
-
-    sendToPrompt(Channel.SET_OPEN, true);
-
-    setTimeout(() => {
-      if (
-        promptWindow?.isVisible() &&
-        !promptWindow.isFocused() &&
-        promptWindow?.isFocusable()
-      ) {
-        logFocus();
-        // app.focus({
-        //   steal: true,
-        // });
-        // promptWindow.focus();
-        // promptWindow?.focusOnWebView();
-      }
-    }, 500);
   }
 };
 
@@ -508,7 +490,8 @@ export const hideAppIfNoWindows = (scriptPath = '') => {
   if (
     promptWindow &&
     !promptWindow?.isDestroyed() &&
-    promptWindow?.isVisible()
+    promptWindow?.isVisible() &&
+    kitState.isKeyWindow
   ) {
     if (scriptPath) savePromptBounds(scriptPath, Bounds.Position);
 
@@ -521,6 +504,7 @@ export const hideAppIfNoWindows = (scriptPath = '') => {
     }
 
     promptWindow?.hide();
+    setTimeout(handleHide, 0);
     // setPromptBounds();
 
     if (allWindows.every((window) => !window.isVisible())) {
@@ -545,7 +529,7 @@ export const setPromptPid = (pid: number) => {
 };
 
 export const setScript = async (script: Script) => {
-  log.info(script);
+  // log.info(script);
   // if (promptScript?.filePath === script?.filePath) return;
 
   kitState.script = script;
@@ -622,6 +606,7 @@ export const setPromptData = async (promptData: PromptData) => {
   }
 
   focusPrompt();
+  sendToPrompt(Channel.SET_OPEN, true);
 };
 
 export const setChoices = (choices: Choice[]) => {
@@ -637,7 +622,7 @@ export const clearPromptCache = async () => {
 
   promptWindow?.webContents?.setZoomLevel(0);
   const bounds = await getCurrentScreenPromptCache(kitState.script.filePath);
-  log.info(`↖ CLEARED:`, bounds);
+  // log.info(`↖ CLEARED:`, bounds);
   promptWindow.setBounds(bounds);
 };
 
