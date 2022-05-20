@@ -249,6 +249,8 @@ export const showInactive = () => {
         electronPanelWindow?.makeKeyWindow(promptWindow);
         kitState.isKeyWindow = true;
       }
+    } else {
+      promptWindow?.show();
     }
   } catch (error) {
     log.error(error);
@@ -505,6 +507,12 @@ export const hideAppIfNoWindows = (scriptPath = '') => {
 
     promptWindow?.hide();
     setTimeout(handleHide, 0);
+    promptWindow.webContents.setBackgroundThrottling(false);
+    setTimeout(() => {
+      if (!promptWindow?.isVisible()) {
+        promptWindow.webContents.setBackgroundThrottling(true);
+      }
+    }, 1000);
     // setPromptBounds();
 
     if (allWindows.every((window) => !window.isVisible())) {

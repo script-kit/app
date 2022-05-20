@@ -8,7 +8,7 @@ import React, {
   useEffect,
 } from 'react';
 import { motion } from 'framer-motion';
-
+import { UI } from '@johnlindquist/kit/cjs/enum';
 import { Choice } from '@johnlindquist/kit/types/core';
 import { useAtom } from 'jotai';
 
@@ -29,6 +29,8 @@ import {
   ultraShortCodesAtom,
   unfilteredChoicesAtom,
   onInputSubmitAtom,
+  inputFocusAtom,
+  uiAtom,
 } from '../jotai';
 import {
   useEnter,
@@ -65,6 +67,16 @@ export default function Input() {
   const [processing] = useAtom(processingAtom);
   const [resizeEnabled] = useAtom(resizeEnabledAtom);
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
+  const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
+  const [ui] = useAtom(uiAtom);
+
+  useEffect(() => {
+    setInputFocus(true);
+
+    return () => {
+      setInputFocus(false);
+    };
+  }, []);
 
   useEscape();
   useEnter();
@@ -112,7 +124,7 @@ export default function Input() {
         }
       }
 
-      if (event.key === ' ') {
+      if (event.key === ' ' && ui !== UI.hotkey) {
         const shortcodeChoice = unfilteredChoices?.find((choice: Choice) => {
           const iv = inputValue.trim().toLowerCase();
           if (typeof choice?.shortcode === 'string') {

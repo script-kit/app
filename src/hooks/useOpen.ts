@@ -14,7 +14,6 @@ export default () => {
   useHotkeys(
     `${cmd}+o`,
     (event) => {
-      console.log(`${cmd}+o`);
       event.preventDefault();
       // if (isMainScript) return;
 

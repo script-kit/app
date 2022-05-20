@@ -15,6 +15,7 @@ interface HotkeyProps {
 const DEFAULT_PLACEHOLDER = 'Press a combination of keys';
 
 const keyFromCode = (code: string) => {
+  console.log(`keyFromCode: ${code}`);
   const keyCode = code.replace(/Key|Digit/, '').toLowerCase();
   const replaceAlts = (k: string) => {
     const map: any = {
@@ -28,7 +29,7 @@ const keyFromCode = (code: string) => {
       comma: `,`,
       bracketleft: `[`,
       bracketright: `]`,
-      space: 'space',
+      space: ' ',
       semicolon: ';',
     };
 
@@ -65,7 +66,8 @@ const getKeyData = (
     altKey: option,
   } = event;
   const superKey = event.getModifierState('Super');
-  const normalKey = option ? keyFromCode(code) : key;
+  let normalKey = option ? keyFromCode(code) : key;
+  if (normalKey === ' ') normalKey = 'Space';
 
   const modifierString = getModifierString(event);
 

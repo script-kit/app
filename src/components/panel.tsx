@@ -1,10 +1,17 @@
 /* eslint-disable no-nested-ternary */
-import React, { LegacyRef, RefObject, useRef } from 'react';
+import React, { LegacyRef, RefObject, useEffect, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
 import { useAtom } from 'jotai';
 import { motion, useAnimation } from 'framer-motion';
+import { UI } from '@johnlindquist/kit/cjs/enum';
 
-import { mouseEnabledAtom, panelHTMLAtom, darkAtom } from '../jotai';
+import {
+  mouseEnabledAtom,
+  panelHTMLAtom,
+  darkAtom,
+  inputFocusAtom,
+  uiAtom,
+} from '../jotai';
 import {
   useEnter,
   useEscape,
@@ -27,17 +34,27 @@ export default function Panel({ width, height }: PanelProps) {
   const [panelHTML] = useAtom(panelHTMLAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [isDark] = useAtom(darkAtom);
+  const [inputFocus] = useAtom(inputFocusAtom);
+  const [ui] = useAtom(uiAtom);
 
   const divRef = useObserveMainHeight<HTMLDivElement>();
 
+  useEffect(() => {
+    if (scrollRef.current && ui === UI.div) {
+      scrollRef?.current?.focus();
+    }
+  }, [inputFocus, scrollRef]);
+
   useKeyDirection(
     (key) => {
-      scrollRef.current.scrollBy({
-        top: key === 'up' ? -200 : 200,
-        behavior: 'smooth',
-      });
+      if (inputFocus) {
+        scrollRef.current.scrollBy({
+          top: key.endsWith('up') ? -200 : 200,
+          behavior: 'smooth',
+        });
+      }
     },
-    [scrollRef?.current]
+    [scrollRef?.current, inputFocus]
   );
 
   return (
@@ -58,6 +75,9 @@ export default function Panel({ width, height }: PanelProps) {
         <Highlight innerHTML>{panelHTML}</Highlight>
       </div> */}
       <style type="text/css">{isDark ? darkTheme : lightTheme}</style>
+      <style>{`*:focus {
+    outline: none;
+}`}</style>
 
       <motion.div
         id="panel"

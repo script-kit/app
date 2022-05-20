@@ -204,7 +204,7 @@ export const unfilteredChoicesAtom = atom(
       });
       s(quickScoreAtom, qs);
 
-      const mode = g(modeAtom);
+      const mode = g(promptDataAtom)?.mode;
       const flaggedValue = g(_flagged);
 
       // if (!flaggedValue) {
@@ -260,8 +260,6 @@ export const hintAtom = atom(
     }
   }
 );
-
-export const modeAtom = atom<Mode>(Mode.FILTER);
 
 const _panelHTML = atom<string>('');
 export const panelHTMLAtom = atom(
@@ -508,7 +506,8 @@ export const scoredChoices = atom(
     s(submittedAtom, false);
     s(loadingAtom, false);
     s(choices, a || []);
-    const isFilter = g(uiAtom) === UI.arg && g(modeAtom) === Mode.FILTER;
+    const isFilter =
+      g(uiAtom) === UI.arg && g(promptData)?.mode === Mode.FILTER;
 
     const channel = g(channelAtom);
 
@@ -608,7 +607,7 @@ export const inputAtom = atom(
 
     s(_index, 0);
 
-    const mode = g(modeAtom);
+    const mode = g(promptData)?.mode;
 
     // TODO: Investigate eliminating modes and bringing/generating over to kit + setChoices(). Probably would be too slow.
 
@@ -747,7 +746,7 @@ const resize = (g: Getter, s: Setter) => {
     ui,
     mainHeight: nullChoices && !hasPanel ? 0 : g(mainHeight),
     footerHeight: g(footerAtom) ? 20 : 0,
-    mode: g(modeAtom),
+    mode: g(promptData)?.mode || Mode.FILTER,
     hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
     previewEnabled: g(previewEnabled),
@@ -830,7 +829,6 @@ export const promptDataAtom = atom(
       s(submittedAtom, false);
       s(uiAtom, a.ui);
       s(hintAtom, a.hint);
-      s(modeAtom, a.mode);
       s(placeholderAtom, a.placeholder);
       s(selectedAtom, a.selected);
       s(_tabs, a.tabs);
@@ -870,7 +868,6 @@ export const promptDataAtom = atom(
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
       s(onShortcutSubmitAtom, a?.onShortcutSubmit || {});
-      console.log(a);
       s(onShortcutAtom, a?.onShortcut || {});
       // s(tabIndex, a.tabIndex);
       s(promptData, a);
@@ -1158,6 +1155,7 @@ const inputFocus = atom<boolean>(true);
 export const inputFocusAtom = atom(
   (g) => g(inputFocus),
   (g, s, a: boolean) => {
+    if (g(inputFocus) === a) return;
     ipcRenderer.send(AppChannel.FOCUS_PROMPT);
     s(inputFocus, a);
   }
@@ -1217,7 +1215,9 @@ export const getAssetAtom = atom((g) => {
 
 const isReady = atom(false);
 export const isReadyAtom = atom(
-  (g) => g(isReady),
+  (g) => {
+    return g(isReady);
+  },
   (g, s, a: boolean) => {
     s(isReady, a);
   }
@@ -1332,7 +1332,7 @@ export const processesAtom = atom<ProcessInfo[]>([]);
 export const setFocusedChoiceAtom = atom(null, (g, s, a: string) => {
   const i = g(choices).findIndex((c) => c?.item?.id === a);
 
-  console.log({ i });
+  // console.log({ i });
   if (i > -1) {
     s(_index, i);
   }

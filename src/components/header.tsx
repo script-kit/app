@@ -4,6 +4,7 @@
 import React, { useCallback } from 'react';
 import { useAtom } from 'jotai';
 import { XIcon } from '@heroicons/react/outline';
+import { AnimatePresence } from 'framer-motion';
 import {
   _description,
   mouseEnabledAtom,
@@ -14,19 +15,22 @@ import {
   processesAtom,
   isMainScriptAtom,
   runProcessesAtom,
+  loadingAtom,
 } from '../jotai';
 import TopBar from './TopBar';
 
 export default function Header() {
   const [script] = useAtom(scriptAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
-  const [, setOpen] = useAtom(openAtom);
+  const [setOpen] = useAtom(openAtom);
   const [description] = useAtom(_description);
   const [logo] = useAtom(_logo);
   const [name] = useAtom(_name);
   const [processes] = useAtom(processesAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
   const [runProcesses] = useAtom(runProcessesAtom);
+  const [loading] = useAtom(loadingAtom);
+  const [open] = useAtom(openAtom);
 
   const onXClick = useCallback(() => {
     setOpen(false);
@@ -46,7 +50,9 @@ export default function Header() {
       }
       className="flex flex-row justify-between w-full"
     >
-      <TopBar />
+      <AnimatePresence key="topBar">
+        {open && loading && <TopBar />}
+      </AnimatePresence>
       <div
         style={
           {

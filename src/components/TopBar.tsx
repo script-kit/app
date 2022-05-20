@@ -1,49 +1,38 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import { useAtom } from 'jotai';
-import { loadingAtom } from '../jotai';
 
 export default function TopBar() {
-  const [loading] = useAtom(loadingAtom);
   const controls = useAnimation();
-  const [hidden, setHidden] = useState(true);
 
   useEffect(() => {
-    if (loading) {
-      setHidden(false);
-      controls.start({
-        left: ['-15%', '100%'],
-      });
-    }
-  }, [loading]);
+    controls.start({
+      left: ['-15%', '115%'],
+      opacity: [0, 1, 0],
+    });
 
-  const onAnimationEnd = useCallback(() => {
-    if (!loading) {
-      setHidden(true);
+    return () => {
       controls.stop();
-    }
+    };
   }, []);
-
-  return !hidden ? (
+  return (
     <motion.div
-      animate={{ opacity: loading ? [0, 1] : [1, 0] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       className={`
-      pointer-events-none absolute top-0 left-0 w-full`}
-      onAnimationEnd={onAnimationEnd}
+      pointer-events-none absolute top-0 left-0 w-screen h-0.5`}
     >
       <motion.div
-        initial={false}
         animate={controls}
         transition={{
+          ease: 'easeInOut',
           repeat: Infinity,
           repeatType: 'reverse',
+
           duration: window.innerWidth < 400 ? 1.5 : 2.5,
         }}
-        style={{ height: 2 }}
         className="bg-primary-dark dark:bg-primary-light h-full w-10 absolute top-0 left-0"
       />
     </motion.div>
-  ) : (
-    <></>
   );
 }

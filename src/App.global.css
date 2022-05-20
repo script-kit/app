@@ -337,6 +337,11 @@ body {
     @apply break-words;
   }
 
+  .prose kbd {
+    @apply text-primary-dark dark:text-primary-light;
+    @apply text-sm font-mono font-bold;
+  }
+
   p {
     @apply mb-0;
   }

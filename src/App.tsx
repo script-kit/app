@@ -54,7 +54,6 @@ import {
   isMouseDownAtom,
   logHTMLAtom,
   mainHeightAtom,
-  modeAtom,
   mouseEnabledAtom,
   openAtom,
   panelHTMLAtom,
@@ -180,7 +179,6 @@ export default function App() {
   const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
   const [footer, setFooter] = useAtom(footerAtom);
-  const [, setMode] = useAtom(modeAtom);
   const [, setReady] = useAtom(isReadyAtom);
 
   const [, setTabIndex] = useAtom(tabIndexAtom);
@@ -261,7 +259,6 @@ export default function App() {
     [Channel.SET_HINT]: setHint,
     [Channel.SET_INPUT]: setInput,
     [Channel.SET_LOADING]: setLoading,
-    [Channel.SET_MODE]: setMode,
     [Channel.SET_NAME]: setName,
     [Channel.SET_TEXTAREA_VALUE]: setTextareaValue,
     [Channel.SET_OPEN]: setOpen,
@@ -370,53 +367,54 @@ export default function App() {
   return (
     <ErrorBoundary>
       {/* {JSON.stringify(state)} */}
-      <motion.div
-        animate={controls}
-        transition={{ duration: 0.15 }}
-        onAnimationStart={showIfOpen}
-        onAnimationComplete={hideIfClosed}
-        ref={windowContainerRef}
-        style={
-          {
-            WebkitUserSelect: 'none',
-          } as any
-        }
-        className={`
+      <AnimatePresence key="appComponents">
+        <motion.div
+          animate={controls}
+          transition={{ duration: 0.15 }}
+          onAnimationStart={showIfOpen}
+          onAnimationComplete={hideIfClosed}
+          ref={windowContainerRef}
+          style={
+            {
+              WebkitUserSelect: 'none',
+            } as any
+          }
+          className={`
         ${hidden ? 'hidden' : ''}
         relative flex flex-col w-full h-full`}
-        onMouseDown={onMouseDown}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseLeave}
-        onMouseMove={onMouseMove}
-      >
-        <header ref={headerRef} className="relative z-10">
-          <Header />
-          <AnimatePresence key="headerCompenents">
-            {ui === UI.hotkey && (
-              <Hotkey
-                key="AppHotkey"
-                submit={setSubmitValue}
-                onHotkeyHeightChanged={setMainHeight}
-              />
-            )}
-            {ui === UI.arg && <Input key="AppInput" />}
+          onMouseDown={onMouseDown}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseLeave}
+          onMouseMove={onMouseMove}
+        >
+          <header ref={headerRef} className="relative z-10">
+            <Header />
+            <AnimatePresence key="headerComponents">
+              {ui === UI.hotkey && (
+                <Hotkey
+                  key="AppHotkey"
+                  submit={setSubmitValue}
+                  onHotkeyHeightChanged={setMainHeight}
+                />
+              )}
+              {ui === UI.arg && <Input key="AppInput" />}
 
-            {hint && <Hint key="AppHint" />}
-            {logHtml?.length > 0 && script?.log !== 'false' && (
-              <Log key="AppLog" />
-            )}
+              {hint && <Hint key="AppHint" />}
+              {logHtml?.length > 0 && script?.log !== 'false' && (
+                <Log key="AppLog" />
+              )}
 
-            {(showTabs || showSelected) && (
-              <div className="max-h-5.5">
-                {showTabs && <Tabs key="AppTabs" />}
-                {showSelected && <Selected key="AppSelected" />}
-              </div>
-            )}
-          </AnimatePresence>
-        </header>
-        <main
-          ref={mainRef}
-          className={`
+              {(showTabs || showSelected) && (
+                <div className="max-h-5.5">
+                  {showTabs && <Tabs key="AppTabs" />}
+                  {showSelected && <Selected key="AppSelected" />}
+                </div>
+              )}
+            </AnimatePresence>
+          </header>
+          <main
+            ref={mainRef}
+            className={`
         ${
           (processing && resizeEnabled) || (nullChoices && !panelHTML?.length)
             ? `h-0`
@@ -430,50 +428,50 @@ export default function App() {
         relative
 
         `}
-          onPaste={onPaste}
-          onDrop={(event) => {
-            console.log(`🎉 drop`);
-            onDrop(event);
-          }}
-          onDragEnter={() => {
-            console.log(`drag enter`);
-          }}
-          onDragOver={(event) => {
-            event.stopPropagation();
-            event.preventDefault();
-          }}
-        >
-          <AnimatePresence key="mainComponents">
-            {ui === UI.splash && <Splash />}
-            {ui === UI.drop && <Drop />}
-            {ui === UI.textarea && <TextArea />}
-            {ui === UI.editor && <Editor />}
-            {ui === UI.form && <Form />}
-            {ui === UI.term && <Terminal />}
-          </AnimatePresence>
-          <AutoSizer>
-            {({ width, height }) => (
-              <>
-                {(ui === UI.arg && !nullChoices && choices.length > 0 && (
-                  <>
-                    <List height={height} width={width} />
-                  </>
-                )) ||
-                  (!!(ui === UI.arg || ui === UI.hotkey || ui === UI.div) &&
-                    panelHTML.length > 0 && (
-                      <>
-                        <Panel width={width} height={height} />
-                      </>
-                    ))}
-              </>
-            )}
-          </AutoSizer>
-        </main>
-        {footer === '' ? (
-          ''
-        ) : (
-          <footer
-            className="
+            onPaste={onPaste}
+            onDrop={(event) => {
+              console.log(`🎉 drop`);
+              onDrop(event);
+            }}
+            onDragEnter={() => {
+              console.log(`drag enter`);
+            }}
+            onDragOver={(event) => {
+              event.stopPropagation();
+              event.preventDefault();
+            }}
+          >
+            <AnimatePresence key="mainComponents">
+              {ui === UI.splash && <Splash />}
+              {ui === UI.drop && <Drop />}
+              {ui === UI.textarea && <TextArea />}
+              {ui === UI.editor && <Editor />}
+              {ui === UI.form && <Form />}
+              {ui === UI.term && <Terminal />}
+            </AnimatePresence>
+            <AutoSizer>
+              {({ width, height }) => (
+                <>
+                  {(ui === UI.arg && !nullChoices && choices.length > 0 && (
+                    <>
+                      <List height={height} width={width} />
+                    </>
+                  )) ||
+                    (!!(ui === UI.arg || ui === UI.hotkey || ui === UI.div) &&
+                      panelHTML.length > 0 && (
+                        <>
+                          <Panel width={width} height={height} />
+                        </>
+                      ))}
+                </>
+              )}
+            </AutoSizer>
+          </main>
+          {footer === '' ? (
+            ''
+          ) : (
+            <footer
+              className="
         py-1 px-4 h-5
         fixed bottom-0
         bg-opacity-80 dark:bg-opacity-80
@@ -481,10 +479,11 @@ export default function App() {
         text-white dark:text-black
 
           font-mono font-bold w-screen text-xxs uppercase"
-            dangerouslySetInnerHTML={{ __html: footer }}
-          />
-        )}
-      </motion.div>
+              dangerouslySetInnerHTML={{ __html: footer }}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </ErrorBoundary>
   );
 }

@@ -1,5 +1,5 @@
 // kitapp/src/components/splash.tsx
-
+/* eslint-disable jsx-a11y/accessible-emoji */
 /* eslint-disable no-nested-ternary */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, AnimateSharedLayout, motion } from 'framer-motion';
@@ -230,7 +230,7 @@ export default function Splash() {
             <legend className="text-lg opacity-90 w-full h-14">
               <p>Hey! 👋</p>
               <AnimateSharedLayout type="crossfade">
-                <AnimatePresence>
+                <AnimatePresence key="splashComponents">
                   {question && (
                     <motion.p
                       layoutId="question"

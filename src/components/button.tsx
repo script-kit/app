@@ -62,8 +62,13 @@ export default function ChoiceButton({
   index,
   style,
 }: ChoiceButtonProps) {
-  const { choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit } =
-    data;
+  const {
+    choices,
+    currentIndex,
+    mouseEnabled,
+    onIndexChange,
+    onIndexSubmit,
+  } = data;
   const scoredChoice = choices[index];
   const choice: Choice | Script = scoredChoice?.item || scoredChoice;
 
@@ -135,7 +140,7 @@ export default function ChoiceButton({
       return Object.keys(choice).includes(m);
     }) as keyof ScriptMetadata;
 
-    setModifierDescription((choice as unknown as ScriptMetadata)?.[modifier]);
+    setModifierDescription(((choice as unknown) as ScriptMetadata)?.[modifier]);
   }, [modifiers]);
 
   return (

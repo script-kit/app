@@ -19,7 +19,7 @@ import { useKeyDirection } from '../hooks';
 export default function Preview() {
   const highlightRef: RefObject<any> = useRef(null);
   const [previewHTML] = useAtom(previewHTMLAtom);
-  const [, setInputFocus] = useAtom(inputFocusAtom);
+  const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [isDark] = useAtom(darkAtom);
   const [cmd] = useAtom(cmdAtom);
@@ -27,7 +27,7 @@ export default function Preview() {
   useKeyDirection(
     (key) => {
       if (!key.startsWith(cmd)) return;
-      let top = 0;
+      let top = highlightRef.current.scrollTop;
 
       if (key.endsWith('up')) top = -200;
       if (key.endsWith('down')) top = 200;

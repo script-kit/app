@@ -505,6 +505,21 @@ const kitMessageMap: ChannelHandler = {
 
     child?.send({ channel, activeScreen });
   }),
+  GET_SCREENS_INFO: toProcess(({ child }, { channel }) => {
+    const displays = screen.getAllDisplays();
+
+    child?.send({ channel, displays });
+  }),
+  GET_ACTIVE_APP: toProcess(async ({ child }, { channel }) => {
+    if (kitState.isMac) {
+      const { default: frontmost } = await import('frontmost-app' as any);
+      const frontmostApp = await frontmost();
+      child?.send({ channel, app: frontmostApp });
+    } else {
+      // TODO: implement for windows
+      child?.send({ channel, app: {} });
+    }
+  }),
 
   GET_MOUSE: toProcess(({ child }, { channel }) => {
     const mouseCursor = screen.getCursorScreenPoint();
@@ -908,11 +923,6 @@ interface ProcessHandlers {
 }
 
 class Processes extends Array<ProcessInfo> {
-  public endCurrentPromptProcess() {
-    if (kitState.promptProcess?.pid)
-      this.removeByPid(kitState.promptProcess?.pid);
-  }
-
   public abandonnedProcesses: ProcessInfo[] = [];
 
   constructor(...args: ProcessInfo[]) {
@@ -1038,18 +1048,6 @@ class Processes extends Array<ProcessInfo> {
     });
   }
 
-  public resetIdlePromptProcess() {
-    const idleProcess = this.find(
-      (processInfo) =>
-        processInfo.type === ProcessType.Prompt && processInfo.scriptPath === ''
-    );
-
-    if (idleProcess?.pid) {
-      log.info(`${idleProcess.pid}: Removing idle process`);
-      this.removeByPid(idleProcess.pid);
-    }
-  }
-
   public getByPid(pid: number) {
     return [...this, ...this.abandonnedProcesses].find(
       (processInfo) => processInfo.pid === pid
@@ -1070,49 +1068,6 @@ class Processes extends Array<ProcessInfo> {
     this.splice(index, 1);
 
     kitState.removeP(pid);
-  }
-
-  public killAbandonnedProcess(pid: number) {
-    const processInfo = this.abandonnedProcesses.find(
-      (info) => info.pid === pid
-    );
-    if (!processInfo) {
-      log.info(`${pid}: Can't find abandonned process`);
-      return;
-    }
-
-    const { child, type, scriptPath } = processInfo;
-    if (child) {
-      child?.removeAllListeners();
-
-      if (!child?.killed) {
-        child?.kill();
-        log.info(`${child.pid}: 🛑 kill ${type} ${scriptPath || 'idle'}`);
-        const aIndex = this.abandonnedProcesses.findIndex(
-          (info) => info.pid === pid
-        );
-        this.abandonnedProcesses.splice(aIndex, 1);
-        kitState.removeP(child?.pid);
-      }
-    }
-  }
-
-  public abandonByPid(pid: number) {
-    const processInfo = this.find((info) => info.pid === pid);
-
-    this.removeByPid(pid);
-    kitState.removeP(pid);
-
-    if (processInfo) {
-      log.info(`${processInfo.pid}: 👋 Abandonning ${processInfo.scriptPath}`);
-
-      setTimeout(() => {
-        this.killAbandonnedProcess(pid);
-      }, 5000);
-
-      this.abandonnedProcesses.push(processInfo);
-      kitState.addP(processInfo);
-    }
   }
 }
 

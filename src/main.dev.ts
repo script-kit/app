@@ -912,6 +912,9 @@ const checkKit = async () => {
   await setupLog(`Update .kenv`);
   await setupScript(kitPath('setup', 'patch.js'));
 
+  await setupLog(`Indexing apps`);
+  optionalSetupScript(kitPath('setup', 'app-indexer.js'));
+
   let status = 'success';
   let err = '';
 

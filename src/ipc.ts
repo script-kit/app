@@ -195,6 +195,9 @@ export const startIpc = () => {
     ipcMain.on(
       channel,
       handleChannel(async ({ child }, message) => {
+        if (channel === Channel.ABANDON) {
+          log.info(`⚠️ ABANDON`, message.pid);
+        }
         // log.info({ channel, message });
         if ([Channel.VALUE_SUBMITTED, Channel.TAB_CHANGED].includes(channel)) {
           emitter.emit(KitEvent.ResumeShortcuts);

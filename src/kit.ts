@@ -45,6 +45,10 @@ emitter.on(KitEvent.RunPromptProcess, (scriptPath: string) => {
   runPromptProcess(scriptPath);
 });
 
+emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {
+  processes.add(ProcessType.Background, scriptPath);
+});
+
 const findScript = async (scriptPath: string) => {
   if (scriptPath === mainScriptPath) {
     return getKitScript(mainScriptPath);

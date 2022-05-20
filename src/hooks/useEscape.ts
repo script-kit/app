@@ -38,7 +38,7 @@ export default () => {
         setFlagValue('');
       } else if (isReady && ui === UI.splash) {
         runMainScript();
-      } else if (isReady) {
+      } else if (isReady || ui !== UI.splash) {
         sendEscape();
       }
     },

@@ -23,6 +23,7 @@ export default (ref: RefObject<HTMLElement>) => {
 
   useEffect(() => {
     if (inputFocus && ref?.current) {
+      // console.log(`Focusing`, ref?.current);
       ref?.current.focus();
     }
   }, [

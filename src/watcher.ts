@@ -1,16 +1,17 @@
 /* eslint-disable no-restricted-syntax */
-import chokidar, { FSWatcher } from 'chokidar';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import path from 'path';
 import { existsSync } from 'fs';
+import { ChildProcess, fork, ForkOptions } from 'child_process';
+import { homedir } from 'os';
 
 import { rm } from 'fs/promises';
 import {
-  appDbPath,
   parseScript,
   kenvPath,
-  shortcutsPath,
+  kitPath,
+  KIT_FIRST_PATH,
 } from '@johnlindquist/kit/cjs/utils';
 import {
   unlinkShortcuts,
@@ -53,10 +54,8 @@ const unlink = (filePath: string) => {
   if (existsSync(binPath)) rm(binPath);
 };
 
-const onScriptsChanged = async (
-  event: 'add' | 'change' | 'unlink' | 'ready',
-  filePath: string
-) => {
+type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
+const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
   log.info(`${event}: ${filePath}`);
   if (event === 'unlink') {
     unlink(filePath);
@@ -81,61 +80,55 @@ export const onDbChanged = async (event: any, filePath: string) => {
   updateMainShortcut(filePath);
 };
 
-let watchers: FSWatcher[] = [];
+let childWatcher: ChildProcess | null;
 
 export const teardownWatchers = async () => {
-  for (const watcher of watchers) {
-    watcher.close();
-    watcher.removeAllListeners();
+  if (childWatcher) {
+    childWatcher.removeAllListeners();
+    childWatcher.kill();
+    childWatcher = null;
   }
-  watchers = [];
 };
 
 export const setupWatchers = async () => {
   await teardownWatchers();
 
-  const shortcutsDbWatcher = chokidar.watch([path.normalize(shortcutsPath)]);
-  watchers.push(shortcutsDbWatcher);
-  shortcutsDbWatcher.on('all', onDbChanged);
+  const forkOptions: ForkOptions = {
+    cwd: homedir(),
+    env: {
+      KIT: kitPath(),
+      KENV: kenvPath(),
+      PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+    },
+  };
 
-  const kenvScriptsJS = path.normalize(kenvPath('scripts'));
-  log.info({ kenvScriptsJS });
+  const scriptPath = kitPath('setup', 'watcher.js');
+  childWatcher = fork(kitPath('run', 'terminal.js'), [scriptPath], forkOptions);
+  childWatcher.on(
+    'message',
+    async ({
+      eventName,
+      filePath,
+    }: {
+      eventName: WatchEvent;
+      filePath: string;
+    }) => {
+      const { base } = path.parse(filePath);
+      if (base === 'app.json') {
+        if (eventName === 'change') await cacheMenu();
+        await toggleTray();
+        await maybeSetLogin();
 
-  const scriptsWatcher = chokidar.watch([kenvScriptsJS], {
-    depth: 0,
-  });
-  watchers.push(scriptsWatcher);
+        return;
+      }
 
-  const kenvsPath = path.normalize(kenvPath('kenvs', '*'));
-  log.info({ kenvsPath });
-  const kenvsWatcher = chokidar.watch(kenvsPath, {
-    depth: 0,
-  });
-
-  kenvsWatcher.on('all', async (eventName, addPath) => {
-    const scriptsPath = path.normalize(`${addPath}/scripts`);
-
-    if (eventName.includes('addDir') && addPath.includes('kenvs')) {
-      log.info(`👀 Watch ${scriptsPath}`);
-      scriptsWatcher.add([scriptsPath]);
+      if (base === 'shortcuts.json') {
+        onDbChanged(eventName, filePath);
+        return;
+      }
+      onScriptsChanged(eventName, filePath);
     }
+  );
 
-    if (eventName === 'unlinkDir') {
-      log.info(`🧹 Unwatch ${scriptsPath}`);
-      scriptsWatcher.unwatch([scriptsPath]);
-    }
-  });
-
-  watchers.push(kenvsWatcher);
-
-  const kitAppDbWatcher = chokidar.watch([path.normalize(appDbPath)]);
-  watchers.push(kitAppDbWatcher);
-
-  kitAppDbWatcher.on('change', async () => {
-    await cacheMenu();
-    await toggleTray();
-    await maybeSetLogin();
-  });
-
-  scriptsWatcher.on('all', onScriptsChanged);
+  log.info(`👁 Watch child: ${childWatcher.pid}`);
 };

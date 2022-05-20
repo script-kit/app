@@ -109,7 +109,7 @@ export const configureInterval = async () => {
     filter((event: any) => {
       if (event?.type === 'keypress' && (event.ctrlKey || event.metaKey)) {
         const key = String.fromCharCode(event.keychar);
-        return key === 'c' || key === 'v';
+        return key === 'c' || key === 'x';
       }
 
       return event?.type === 'mouseclick';
@@ -244,7 +244,7 @@ export const configureInterval = async () => {
         });
         keyboard.config.autoDelayMs = prevDelay;
       }
-      emitter.emit(KitEvent.RunPromptProcess, script.filePath);
+      emitter.emit(KitEvent.RunBackgroundProcess, script.filePath);
     }
   });
 
@@ -257,30 +257,34 @@ export const configureInterval = async () => {
 
 const ioEvent = async (event: any) => {
   // log.info(event);
-  const {
-    keychar = '',
-    shiftKey = false,
-    type = '',
-    metaKey = false,
-    ctrlKey = false,
-    altKey = false,
-  } = event;
-  kitState.isShiftDown = shiftKey;
+  try {
+    const {
+      keychar = '',
+      shiftKey = false,
+      type = '',
+      metaKey = false,
+      ctrlKey = false,
+      altKey = false,
+    } = event;
+    kitState.isShiftDown = shiftKey;
 
-  // log.info({ keychar, type });
-  const key = String.fromCharCode(keychar);
+    // log.info({ keychar, type });
+    const key = String.fromCharCode(keychar);
 
-  if (
-    type === 'mouseclick' ||
-    metaKey ||
-    ctrlKey ||
-    altKey ||
-    kitState.isTyping ||
-    keychar < 33
-  ) {
-    kitState.snippet = ``;
-  } else {
-    kitState.snippet = `${kitState.snippet}${key}`;
+    if (
+      type === 'mouseclick' ||
+      metaKey ||
+      ctrlKey ||
+      altKey ||
+      kitState.isTyping ||
+      keychar < 33
+    ) {
+      kitState.snippet = ``;
+    } else {
+      kitState.snippet = `${kitState.snippet}${key}`;
+    }
+  } catch (error) {
+    log.error(error);
   }
 
   // log.info(kitState.snippet);

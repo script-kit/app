@@ -65,6 +65,7 @@ export const shortcutScriptChanged = ({ shortcut, filePath }: Script) => {
 };
 
 export const updateMainShortcut = async (filePath: string) => {
+  log.info(`Updating main shortcut for ${filePath}`);
   if (filePath === shortcutsPath) {
     log.info(`SHORTCUTS DB CHANGED:`, filePath);
     const settings = JSON.parse(await readFile(filePath, 'utf-8'));

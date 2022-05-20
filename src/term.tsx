@@ -105,7 +105,7 @@ export default function Terminal() {
           (x?.domEvent.key === 'Enter' && x?.domEvent.metaKey) ||
           (x.domEvent.ctrlKey && x?.domEvent.key === 'c')
         ) {
-          console.log(`SUBMITTING TERMINAL`);
+          // console.log(`SUBMITTING TERMINAL`);
           submit(Channel.TERMINAL);
           attachAddon.dispose();
         }
