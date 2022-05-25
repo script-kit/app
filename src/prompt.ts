@@ -262,13 +262,19 @@ export const focusPrompt = () => {
     promptWindow &&
     !promptWindow.isDestroyed() &&
     kitState.isKeyWindow &&
-    !promptWindow?.isFocused()
+    !promptWindow?.isFocused() &&
+    promptWindow?.isFocusable() &&
+    promptWindow?.isVisible()
   ) {
     // promptWindow.setAlwaysOnTop(true, 'modal-panel');
     // app.focus({
     //   steal: true,
     // });
-    promptWindow?.focus();
+    try {
+      promptWindow?.focus();
+    } catch (error) {
+      log.error(error);
+    }
     // promptWindow?.focusOnWebView();
   }
 };

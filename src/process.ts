@@ -458,6 +458,22 @@ const kitMessageMap: ChannelHandler = {
     }
   ),
 
+  WIDGET_END: toProcess(({ child }, { value }) => {
+    const { widgetId } = value as any;
+
+    if (typeof widgetMap?.[widgetId] === 'undefined') return;
+    const { widget } = widgetMap[widgetId];
+
+    if (!widget) return;
+
+    log.info(`${widgetId}: Widget closed`);
+    focusPrompt();
+
+    delete widgetMap?.[widgetId];
+    widget.removeAllListeners();
+    widget.destroy();
+  }),
+
   WIDGET_CAPTURE_PAGE: toProcess(async ({ child }, { channel, value }) => {
     const { widgetId } = value as any;
     const widget = BrowserWindow.fromId(widgetId);
@@ -1076,6 +1092,7 @@ export const processes = new Processes();
 export const handleWidgetEvents = () => {
   const clickHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
+    if (!widgetMap[widgetId]) return;
     const { widget, child, moved } = widgetMap[widgetId];
     if (!child) return;
 

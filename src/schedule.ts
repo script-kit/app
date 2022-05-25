@@ -40,7 +40,6 @@ export const sleepSchedule = () => {
     );
   }
 
-  schedule.scheduledJobs = {};
   scheduleMap.clear();
 };
 
@@ -80,7 +79,7 @@ export const scheduleScriptChanged = ({
       //   });
       // }
 
-      log.info(`Schedule string ${scheduleString}:${filePath}`);
+      log.info(`📆 Schedule string ${scheduleString}:${filePath}`);
 
       const scheduledFunction = () => {
         log.info(`Running: ${filePath}`, Object.entries(scheduleMap));

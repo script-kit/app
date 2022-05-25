@@ -319,15 +319,11 @@ export const show = async (
     }
   });
 
-  const showParentDir = (await isDir(kenvPath('tmp')))
-    ? kenvPath('tmp', name)
-    : app.getPath('appData');
-
-  if (!(await isDir(showParentDir))) {
-    await mkdir(showParentDir, { recursive: true });
-  }
+  const showParentDir = kenvPath('tmp', name);
+  await ensureDir(kenvPath('tmp', name));
 
   const showPath = `${showParentDir}/${name}.html`;
+  log.info(`Load ${showPath} in ${showWindow.id}`);
   await writeFile(showPath, page(html, options));
 
   if (options?.ttl) {
