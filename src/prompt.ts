@@ -258,25 +258,25 @@ export const showInactive = () => {
 };
 
 export const focusPrompt = () => {
-  if (
-    promptWindow &&
-    !promptWindow.isDestroyed() &&
-    kitState.isKeyWindow &&
-    !promptWindow?.isFocused() &&
-    promptWindow?.isFocusable() &&
-    promptWindow?.isVisible()
-  ) {
-    // promptWindow.setAlwaysOnTop(true, 'modal-panel');
-    // app.focus({
-    //   steal: true,
-    // });
-    try {
-      promptWindow?.focus();
-    } catch (error) {
-      log.error(error);
-    }
-    // promptWindow?.focusOnWebView();
-  }
+  // if (
+  //   promptWindow &&
+  //   !promptWindow.isDestroyed() &&
+  //   kitState.isKeyWindow &&
+  //   !promptWindow?.isFocused() &&
+  //   promptWindow?.isFocusable() &&
+  //   promptWindow?.isVisible()
+  // ) {
+  //   // promptWindow.setAlwaysOnTop(true, 'modal-panel');
+  //   // app.focus({
+  //   //   steal: true,
+  //   // });
+  //   try {
+  //     promptWindow?.focus();
+  //   } catch (error) {
+  //     log.error(error);
+  //   }
+  //   // promptWindow?.focusOnWebView();
+  // }
 };
 
 export const endPrompt = async (scriptPath: string) => {

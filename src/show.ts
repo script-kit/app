@@ -225,7 +225,7 @@ export const showDevTools = async (value: any) => {
     },
     frame: false,
     transparent: true,
-    // vibrancy: 'menu',
+    // vibrancy: 'menu'
     // visualEffectState: 'active',
     show: false,
     width: 0,
