@@ -103,7 +103,7 @@ import {
   onDropAtom,
 } from './jotai';
 
-import { useThemeDetector } from './hooks';
+import { useEscape, useThemeDetector } from './hooks';
 import Splash from './components/splash';
 import { AppChannel } from './enums';
 import Terminal from './term';
@@ -363,6 +363,8 @@ export default function App() {
   const hideIfClosed = useCallback(() => {
     if (!open) setHidden(true);
   }, [open, setHidden]);
+
+  useEscape();
 
   return (
     <ErrorBoundary>

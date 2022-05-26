@@ -67,7 +67,7 @@ export default function Input() {
   const [processing] = useAtom(processingAtom);
   const [resizeEnabled] = useAtom(resizeEnabledAtom);
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
-  const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
+  const [, setInputFocus] = useAtom(inputFocusAtom);
   const [ui] = useAtom(uiAtom);
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function Input() {
     };
   }, []);
 
-  useEscape();
+  // useEscape();
   useEnter();
   useFlag();
   useTab();

@@ -80,7 +80,7 @@ export default function Terminal() {
     }
   }, [open]);
 
-  useEscape();
+  // useEscape();
 
   useEffect(() => {
     if (wsOpen) {

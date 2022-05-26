@@ -12,7 +12,7 @@ import { formDataAtom, formHTMLAtom, submitValueAtom } from '../jotai';
 import { useEscape, useObserveMainHeight } from '../hooks';
 
 export default function Form() {
-  useEscape();
+  // useEscape();
 
   const formRef = useObserveMainHeight<HTMLFormElement>();
   const [formHTML] = useAtom(formHTMLAtom);

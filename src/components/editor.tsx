@@ -46,7 +46,7 @@ export default function Editor() {
 
   useSave(inputValue);
   useClose();
-  useEscape();
+  // useEscape();
   useOpen();
 
   const editorRef = useRef<any>(null);

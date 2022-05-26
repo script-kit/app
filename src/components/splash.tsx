@@ -148,7 +148,7 @@ function Aside() {
 export default function Splash() {
   const [, submitSurvey] = useAtom(submitSurveyAtom);
 
-  useEscape();
+  // useEscape();
   const [isSubmitted, setSubmitted] = React.useState<boolean>(false);
   const [isSubmitting, setSubmitting] = React.useState<boolean>(false);
   const [response, setResponse] = React.useState<string>('');

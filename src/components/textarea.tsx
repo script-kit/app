@@ -25,7 +25,7 @@ export default function TextArea() {
 
   useSave(textAreaValue);
   useClose();
-  useEscape();
+  // useEscape();
   const containerRef = useMountMainHeight();
 
   return (

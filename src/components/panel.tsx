@@ -27,7 +27,7 @@ interface PanelProps {
 }
 
 export default function Panel({ width, height }: PanelProps) {
-  useEscape();
+  // useEscape();
   useEnter(); // Is this needed?
   useOpen();
   const scrollRef: RefObject<any> = useRef(null);

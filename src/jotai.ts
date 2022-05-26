@@ -627,7 +627,14 @@ export const inputAtom = atom(
   }
 );
 
-export const flagsAtom = atom<FlagsOptions>({});
+const _flagsAtom = atom<FlagsOptions>({});
+export const flagsAtom = atom(
+  (g) => g(_flagsAtom),
+  (g, s, a: FlagsOptions) => {
+    console.log('flags', a);
+    s(_flagsAtom, a);
+  }
+);
 
 export const _tabChangedAtom = atom(false);
 const _tabIndex = atom(0);

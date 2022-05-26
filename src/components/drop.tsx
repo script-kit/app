@@ -9,7 +9,7 @@ import { placeholderAtom, submitValueAtom } from '../jotai';
 import { useEscape, useMountMainHeight } from '../hooks';
 
 export default function Drop() {
-  useEscape();
+  // useEscape();
 
   const [dropReady, setDropReady] = useState(false);
   const [dropMessage, setDropMessage] = useState('');

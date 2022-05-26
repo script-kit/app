@@ -86,6 +86,11 @@ export default () => {
   useHotkeys(
     onShortcutSubmits,
     (event, handler) => {
+      console.log(`useFlag`, {
+        onShortcutSubmit,
+        inputFocus,
+        key: handler.key,
+      });
       if (!inputFocus) return;
       event.preventDefault();
 
@@ -93,7 +98,7 @@ export default () => {
       submit(value);
     },
     hotkeysOptions,
-    [onShortcutSubmit]
+    [onShortcutSubmit, onShortcutSubmits, inputFocus]
   );
 
   useHotkeys(
