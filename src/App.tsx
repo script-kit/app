@@ -372,7 +372,7 @@ export default function App() {
       <AnimatePresence key="appComponents">
         <motion.div
           animate={controls}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: 0.12 }}
           onAnimationStart={showIfOpen}
           onAnimationComplete={hideIfClosed}
           ref={windowContainerRef}

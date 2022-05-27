@@ -213,6 +213,36 @@ const getCenterOnCurrentScreen = (
   };
 };
 
+const getTopRightCurrentScreen = (
+  options: BrowserWindowConstructorOptions = {}
+) => {
+  const cursor = screen.getCursorScreenPoint();
+  // Get display with cursor
+  const distScreen = screen.getDisplayNearestPoint({
+    x: cursor.x,
+    y: cursor.y,
+  });
+
+  const width = options?.width || 480;
+  const height = options?.height || 360;
+
+  const {
+    width: workAreaWidth,
+    x: workAreaX,
+    y: workAreaY,
+  } = distScreen.workArea;
+
+  const x = workAreaX + workAreaWidth - width; // * distScreen.scaleFactor
+  const y = workAreaY;
+
+  return {
+    width,
+    height,
+    x,
+    y,
+  };
+};
+
 export const showDevTools = async (value: any) => {
   const center = getCenterOnCurrentScreen({ width: 800, height: 600 });
 
@@ -274,7 +304,10 @@ export const show = async (
   options: ShowOptions = {},
   showOnLoad = true
 ): Promise<BrowserWindow> => {
-  const center = getCenterOnCurrentScreen(options);
+  const position = options?.center
+    ? getCenterOnCurrentScreen(options)
+    : getTopRightCurrentScreen(options);
+
   const showWindow = new BrowserWindow({
     title: name,
     frame: false,
@@ -289,7 +322,7 @@ export const show = async (
       nodeIntegration: true,
       contextIsolation: false,
     },
-    ...center,
+    ...position,
     show: false,
     ...options,
   });
@@ -351,7 +384,10 @@ export const showWidget = async (
   filePath: string,
   options: WidgetOptions = {}
 ): Promise<BrowserWindow> => {
-  const center = getCenterOnCurrentScreen(options);
+  const position = options?.center
+    ? getCenterOnCurrentScreen(options)
+    : getTopRightCurrentScreen(options);
+
   const widgetWindow = new BrowserWindow({
     title: 'Script Kit Widget',
     frame: false,
@@ -366,7 +402,7 @@ export const showWidget = async (
       nodeIntegration: true,
       contextIsolation: false,
     },
-    ...center,
+    ...position,
     show: false,
     minHeight: 36,
     minWidth: 36,
