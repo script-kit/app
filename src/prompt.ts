@@ -45,10 +45,10 @@ const { devTools } = miniArgs;
 // log.info(process.argv.join(' '), devTools);
 
 const handleHide = () => {
-  if (kitState.isKeyWindow) {
-    // electronPanelWindow.makeWindow(promptWindow);
-    kitState.isKeyWindow = false;
-  }
+  // if (kitState.isKeyWindow) {
+  //   // electronPanelWindow.makeWindow(promptWindow);
+  //   kitState.isKeyWindow = false;
+  // }
   kitState.modifiedByUser = false;
   kitState.ignoreBlur = false;
 };
@@ -138,10 +138,10 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.on('blur', () => {
-    // if (kitState.isKeyWindow) {
-    //   electronPanelWindow.makeWindow(promptWindow);
-    //   kitState.isKeyWindow = false;
-    // }
+    if (kitState.isKeyWindow) {
+      electronPanelWindow.makeWindow(promptWindow);
+      kitState.isKeyWindow = false;
+    }
     if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
     if (os.platform().startsWith('win')) {
@@ -498,8 +498,7 @@ export const hideAppIfNoWindows = (scriptPath = '') => {
   if (
     promptWindow &&
     !promptWindow?.isDestroyed() &&
-    promptWindow?.isVisible() &&
-    kitState.isKeyWindow
+    promptWindow?.isVisible()
   ) {
     if (scriptPath) savePromptBounds(scriptPath, Bounds.Position);
 
