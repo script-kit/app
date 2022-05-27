@@ -250,7 +250,7 @@ export const startIpc = () => {
         }
 
         if (child) {
-          child?.send(message);
+          if (child?.channel) child?.send(message);
         }
 
         if (channel === Channel.ESCAPE) {

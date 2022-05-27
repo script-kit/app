@@ -408,11 +408,13 @@ const kitMessageMap: ChannelHandler = {
 
         log.info(`${widgetId}: Widget closed`);
         focusPrompt();
-        child?.send({
-          channel: Channel.WIDGET_END,
-          widgetId,
-          ...widget.getBounds(),
-        });
+        if (child?.channel) {
+          child?.send({
+            channel: Channel.WIDGET_END,
+            widgetId,
+            ...widget.getBounds(),
+          });
+        }
 
         delete widgetMap?.[widgetId];
         widget.removeAllListeners();
@@ -1016,7 +1018,8 @@ class Processes extends Array<ProcessInfo> {
     });
 
     child.on('exit', (code) => {
-      // log.info(`EXIT`, { pid, code });
+      log.info(`EXIT`, { pid, code });
+
       if (id) clearTimeout(id);
 
       if (child?.pid === kitState.promptProcess?.pid) {
@@ -1030,6 +1033,7 @@ class Processes extends Array<ProcessInfo> {
       if (resolve) {
         resolve(processInfo?.values);
       }
+
       log.info(
         `${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
       );

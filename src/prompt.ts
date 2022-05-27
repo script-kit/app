@@ -139,7 +139,7 @@ export const createPromptWindow = async () => {
 
   promptWindow?.on('blur', () => {
     if (kitState.isKeyWindow) {
-      // electronPanelWindow.makeWindow(promptWindow);
+      electronPanelWindow.makeWindow(promptWindow);
       kitState.isKeyWindow = false;
     }
     if (promptWindow?.webContents?.isDevToolsOpened()) return;
@@ -510,6 +510,10 @@ export const hideAppIfNoWindows = (scriptPath = '') => {
       kitState.hidden = false;
     }
 
+    if (kitState.isKeyWindow) {
+      kitState.isKeyWindow = false;
+      electronPanelWindow.makeWindow(promptWindow);
+    }
     promptWindow?.hide();
     setTimeout(handleHide, 0);
     promptWindow.webContents.setBackgroundThrottling(false);
