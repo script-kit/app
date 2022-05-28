@@ -190,6 +190,11 @@ export const createPromptWindow = async () => {
     }
 
     kitState.modifiedByUser = false;
+
+    if (kitState.isKeyWindow) {
+      electronPanelWindow.makePanel(promptWindow);
+      electronPanelWindow.makeKeyWindow(promptWindow);
+    }
   };
 
   promptWindow?.on('will-resize', () => {
