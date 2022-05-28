@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import { subscribe } from 'valtio/vanilla';
+import { subscribeKey } from 'valtio/utils';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -45,12 +46,10 @@ const { devTools } = miniArgs;
 // log.info(process.argv.join(' '), devTools);
 
 const handleHide = () => {
-  // if (kitState.isKeyWindow) {
-  //   // electronPanelWindow.makeWindow(promptWindow);
-  //   kitState.isKeyWindow = false;
-  // }
   kitState.modifiedByUser = false;
   kitState.ignoreBlur = false;
+
+  promptWindow.hide();
 };
 
 let electronPanelWindow: any = null;
@@ -119,9 +118,9 @@ export const createPromptWindow = async () => {
 
   promptWindow.on('focus', () => {
     if (!kitState.isKeyWindow) {
-      electronPanelWindow?.makePanel(promptWindow);
-      electronPanelWindow?.makeKeyWindow(promptWindow);
       kitState.isKeyWindow = true;
+      electronPanelWindow.makePanel(promptWindow);
+      electronPanelWindow?.makeKeyWindow(promptWindow);
     }
 
     // sendToPrompt(Channel.SET_THEME, {
@@ -133,14 +132,15 @@ export const createPromptWindow = async () => {
 
   promptWindow?.webContents?.on('dom-ready', () => {
     log.info(`🍀 dom-ready on ${kitState.promptProcess?.scriptPath}`);
+
     hideAppIfNoWindows(kitState?.promptProcess?.scriptPath);
     sendToPrompt(Channel.SET_READY, true);
   });
 
   promptWindow?.on('blur', () => {
     if (kitState.isKeyWindow) {
-      electronPanelWindow.makeWindow(promptWindow);
       kitState.isKeyWindow = false;
+      electronPanelWindow.makeWindow(promptWindow);
     }
     if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
@@ -222,6 +222,10 @@ export const createPromptWindow = async () => {
     appToPrompt(AppChannel.PROCESSES, ps);
   });
 
+  // subscribeKey(kitState, 'isKeyWindow', (isKeyWindow) => {
+  //   log.info(`🔑 isKeyWindow`, isKeyWindow, kitState.isKeyWindow);
+  // });
+
   return promptWindow;
 };
 
@@ -245,9 +249,9 @@ export const showInactive = () => {
       promptWindow?.showInactive();
 
       if (!kitState.isKeyWindow) {
+        kitState.isKeyWindow = true;
         electronPanelWindow?.makePanel(promptWindow);
         electronPanelWindow?.makeKeyWindow(promptWindow);
-        kitState.isKeyWindow = true;
       }
     } else {
       promptWindow?.show();
@@ -514,8 +518,7 @@ export const hideAppIfNoWindows = (scriptPath = '') => {
       kitState.isKeyWindow = false;
       electronPanelWindow.makeWindow(promptWindow);
     }
-    promptWindow?.hide();
-    setTimeout(handleHide, 0);
+    setImmediate(handleHide);
     promptWindow.webContents.setBackgroundThrottling(false);
     setTimeout(() => {
       if (!promptWindow?.isVisible()) {
