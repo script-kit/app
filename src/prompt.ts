@@ -46,14 +46,6 @@ const miniArgs = minimist(process.argv);
 const { devTools } = miniArgs;
 // log.info(process.argv.join(' '), devTools);
 
-const handleHide = () => {
-  try {
-    log.info(`🙈 Hide`);
-    if (promptWindow?.isVisible()) promptWindow.hide();
-  } catch (error) {
-    log.error(error);
-  }
-};
 let electronPanelWindow: any = null;
 export const createPromptWindow = async () => {
   if (kitState.isMac) {
@@ -221,17 +213,19 @@ export const createPromptWindow = async () => {
   let oldIsKeyWindow = kitState.isKeyWindow;
 
   const handleKeyWindow = (isKeyWindow: boolean) => {
+    if (!promptWindow?.isVisible()) return;
     oldIsKeyWindow = isKeyWindow;
     if (isKeyWindow) {
       log.info(`🎛 Panel`);
       electronPanelWindow.makePanel(promptWindow);
       electronPanelWindow?.makeKeyWindow(promptWindow);
     } else {
+      if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
+        log.info(`🙈 Hide`);
+        promptWindow.hide();
+      }
       log.info(`🪟 Window`);
       electronPanelWindow.makeWindow(promptWindow);
-      if (!kitState.ignoreBlur) {
-        setTimeout(handleHide, 0);
-      }
     }
   };
 
