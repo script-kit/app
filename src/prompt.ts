@@ -40,6 +40,7 @@ import { AppChannel } from './enums';
 
 let promptWindow: BrowserWindow;
 let unsub: () => void;
+let unsubKey: () => void;
 
 const miniArgs = minimist(process.argv);
 const { devTools } = miniArgs;
@@ -49,16 +50,11 @@ const handleHide = () => {
   kitState.modifiedByUser = false;
   kitState.ignoreBlur = false;
 
-  if (kitState.isKeyWindow) {
-    kitState.isKeyWindow = false;
-    setTimeout(handleHide, 0);
-  } else if (promptWindow?.isVisible()) {
-    try {
-      log.info(`🙈 Hide Prompt Window`);
-      promptWindow.hide();
-    } catch (error) {
-      log.error(error);
-    }
+  try {
+    log.info(`🙈 Hide`);
+    promptWindow.hide();
+  } catch (error) {
+    log.error(error);
   }
 };
 
@@ -126,47 +122,38 @@ export const createPromptWindow = async () => {
   //   }
   // });
 
-  app.on('browser-window-focus', (event, window) => {
-    log.info('🙈 Browser Window Focus', window.id, promptWindow?.id);
-    if (window?.id === promptWindow?.id) {
-      setTimeout(() => {
-        if (!kitState.isKeyWindow) {
-          kitState.isKeyWindow = true;
-          electronPanelWindow.makePanel(promptWindow);
-          electronPanelWindow?.makeKeyWindow(promptWindow);
-        }
-      }, 0);
-    }
+  promptWindow?.on('focus', () => {
+    kitState.isKeyWindow = true;
   });
 
-  app.on('browser-window-blur', (event, window) => {
-    if (window?.id === promptWindow?.id) {
-      if (kitState.isKeyWindow) {
-        kitState.isKeyWindow = false;
-        electronPanelWindow.makeWindow(promptWindow);
-      }
-      if (promptWindow?.webContents?.isDevToolsOpened()) return;
+  promptWindow?.webContents?.on('focus', () => {
+    kitState.isKeyWindow = true;
+  });
 
-      if (os.platform().startsWith('win')) {
-        return;
-      }
+  promptWindow?.on('blur', () => {
+    kitState.isKeyWindow = false;
 
-      if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
-        sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
-      }
+    if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
-      if (kitState.ignoreBlur) {
-        // promptWindow?.setVibrancy('popover');
-      } else if (!kitState.ignoreBlur) {
-        kitState.blurredByKit = false;
-      }
-
-      if (!kitState.isMac)
-        sendToPrompt(Channel.SET_THEME, {
-          '--opacity-themedark': '100%',
-          '--opacity-themelight': '100%',
-        });
+    if (os.platform().startsWith('win')) {
+      return;
     }
+
+    if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
+      sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
+    }
+
+    if (kitState.ignoreBlur) {
+      // promptWindow?.setVibrancy('popover');
+    } else if (!kitState.ignoreBlur) {
+      kitState.blurredByKit = false;
+    }
+
+    if (!kitState.isMac)
+      sendToPrompt(Channel.SET_THEME, {
+        '--opacity-themedark': '100%',
+        '--opacity-themelight': '100%',
+      });
   });
 
   promptWindow?.webContents?.on('dom-ready', () => {
@@ -190,11 +177,6 @@ export const createPromptWindow = async () => {
     }
 
     kitState.modifiedByUser = false;
-
-    if (kitState.isKeyWindow) {
-      electronPanelWindow.makePanel(promptWindow);
-      electronPanelWindow.makeKeyWindow(promptWindow);
-    }
   };
 
   promptWindow?.on('will-resize', () => {
@@ -238,9 +220,30 @@ export const createPromptWindow = async () => {
     appToPrompt(AppChannel.PROCESSES, ps);
   });
 
-  subscribeKey(kitState, 'isKeyWindow', (isKeyWindow) => {
-    log.info(`🔑 isKeyWindow`, isKeyWindow);
-  });
+  if (unsubKey) unsubKey();
+
+  let oldIsKeyWindow = kitState.isKeyWindow;
+
+  const handleKeyWindow = (isKeyWindow: boolean) => {
+    oldIsKeyWindow = isKeyWindow;
+    if (isKeyWindow) {
+      log.info(`🎛 Panel`);
+      electronPanelWindow.makePanel(promptWindow);
+      electronPanelWindow?.makeKeyWindow(promptWindow);
+    } else {
+      log.info(`🪟 Window`);
+      electronPanelWindow.makeWindow(promptWindow);
+    }
+  };
+
+  unsubKey = subscribeKey(
+    kitState,
+    'isKeyWindow',
+    debounce((isKeyWindow) => {
+      if (isKeyWindow === oldIsKeyWindow) return;
+      setTimeout(handleKeyWindow, 0, isKeyWindow);
+    }, 10)
+  );
 
   return promptWindow;
 };
@@ -259,22 +262,11 @@ export const logFocus = () => {
   );
 };
 
-export const handleShow = () => {
-  if (!kitState.isKeyWindow) {
-    kitState.isKeyWindow = true;
-    electronPanelWindow?.makePanel(promptWindow);
-    electronPanelWindow?.makeKeyWindow(promptWindow);
-  } else {
-    kitState.isKeyWindow = false;
-    setTimeout(handleShow, 0);
-  }
-};
-
 export const showInactive = () => {
   try {
     if (electronPanelWindow) {
       promptWindow?.showInactive();
-      setTimeout(handleShow, 0);
+      kitState.isKeyWindow = true;
     } else {
       promptWindow?.show();
     }
@@ -520,7 +512,7 @@ const writePromptDb = debounce(
   100
 );
 
-export const hideAppIfNoWindows = (scriptPath = '') => {
+export const hideAppIfNoWindows = debounce((scriptPath = '') => {
   if (
     promptWindow &&
     !promptWindow?.isDestroyed() &&
@@ -536,10 +528,6 @@ export const hideAppIfNoWindows = (scriptPath = '') => {
       kitState.hidden = false;
     }
 
-    // if (kitState.isKeyWindow) {
-    //   kitState.isKeyWindow = false;
-    // electronPanelWindow.makeWindow(promptWindow);
-    // }
     setTimeout(handleHide, 0);
     promptWindow.webContents.setBackgroundThrottling(false);
     setTimeout(() => {
@@ -555,7 +543,7 @@ export const hideAppIfNoWindows = (scriptPath = '') => {
 
     savePromptBounds(kitState.script.filePath);
   }
-};
+}, 10);
 
 export const setPlaceholder = (text: string) => {
   sendToPrompt(Channel.SET_PLACEHOLDER, text);
