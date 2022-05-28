@@ -49,7 +49,17 @@ const handleHide = () => {
   kitState.modifiedByUser = false;
   kitState.ignoreBlur = false;
 
-  promptWindow.hide();
+  if (kitState.isKeyWindow) {
+    kitState.isKeyWindow = false;
+    setTimeout(handleHide, 0);
+  } else if (promptWindow?.isVisible()) {
+    try {
+      log.info(`🙈 Hide Prompt Window`);
+      promptWindow.hide();
+    } catch (error) {
+      log.error(error);
+    }
+  }
 };
 
 let electronPanelWindow: any = null;
@@ -116,18 +126,47 @@ export const createPromptWindow = async () => {
   //   }
   // });
 
-  promptWindow.on('focus', () => {
-    if (!kitState.isKeyWindow) {
-      kitState.isKeyWindow = true;
-      electronPanelWindow.makePanel(promptWindow);
-      electronPanelWindow?.makeKeyWindow(promptWindow);
+  app.on('browser-window-focus', (event, window) => {
+    log.info('🙈 Browser Window Focus', window.id, promptWindow?.id);
+    if (window?.id === promptWindow?.id) {
+      setTimeout(() => {
+        if (!kitState.isKeyWindow) {
+          kitState.isKeyWindow = true;
+          electronPanelWindow.makePanel(promptWindow);
+          electronPanelWindow?.makeKeyWindow(promptWindow);
+        }
+      }, 0);
     }
+  });
 
-    // sendToPrompt(Channel.SET_THEME, {
-    //   '--opacity-themedark': '33%',
-    //   '--opacity-themelight': '33%',
-    // });
-    // promptWindow?.setVibrancy('menu');
+  app.on('browser-window-blur', (event, window) => {
+    if (window?.id === promptWindow?.id) {
+      if (kitState.isKeyWindow) {
+        kitState.isKeyWindow = false;
+        electronPanelWindow.makeWindow(promptWindow);
+      }
+      if (promptWindow?.webContents?.isDevToolsOpened()) return;
+
+      if (os.platform().startsWith('win')) {
+        return;
+      }
+
+      if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
+        sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
+      }
+
+      if (kitState.ignoreBlur) {
+        // promptWindow?.setVibrancy('popover');
+      } else if (!kitState.ignoreBlur) {
+        kitState.blurredByKit = false;
+      }
+
+      if (!kitState.isMac)
+        sendToPrompt(Channel.SET_THEME, {
+          '--opacity-themedark': '100%',
+          '--opacity-themelight': '100%',
+        });
+    }
   });
 
   promptWindow?.webContents?.on('dom-ready', () => {
@@ -135,34 +174,6 @@ export const createPromptWindow = async () => {
 
     hideAppIfNoWindows(kitState?.promptProcess?.scriptPath);
     sendToPrompt(Channel.SET_READY, true);
-  });
-
-  promptWindow?.on('blur', () => {
-    if (kitState.isKeyWindow) {
-      kitState.isKeyWindow = false;
-      electronPanelWindow.makeWindow(promptWindow);
-    }
-    if (promptWindow?.webContents?.isDevToolsOpened()) return;
-
-    if (os.platform().startsWith('win')) {
-      return;
-    }
-
-    if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
-      sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
-    }
-
-    if (kitState.ignoreBlur) {
-      // promptWindow?.setVibrancy('popover');
-    } else if (!kitState.ignoreBlur) {
-      kitState.blurredByKit = false;
-    }
-
-    if (!kitState.isMac)
-      sendToPrompt(Channel.SET_THEME, {
-        '--opacity-themedark': '100%',
-        '--opacity-themelight': '100%',
-      });
   });
 
   const onMove = async () => {
@@ -222,9 +233,9 @@ export const createPromptWindow = async () => {
     appToPrompt(AppChannel.PROCESSES, ps);
   });
 
-  // subscribeKey(kitState, 'isKeyWindow', (isKeyWindow) => {
-  //   log.info(`🔑 isKeyWindow`, isKeyWindow, kitState.isKeyWindow);
-  // });
+  subscribeKey(kitState, 'isKeyWindow', (isKeyWindow) => {
+    log.info(`🔑 isKeyWindow`, isKeyWindow);
+  });
 
   return promptWindow;
 };
@@ -243,16 +254,22 @@ export const logFocus = () => {
   );
 };
 
+export const handleShow = () => {
+  if (!kitState.isKeyWindow) {
+    kitState.isKeyWindow = true;
+    electronPanelWindow?.makePanel(promptWindow);
+    electronPanelWindow?.makeKeyWindow(promptWindow);
+  } else {
+    kitState.isKeyWindow = false;
+    setTimeout(handleShow, 0);
+  }
+};
+
 export const showInactive = () => {
   try {
     if (electronPanelWindow) {
       promptWindow?.showInactive();
-
-      if (!kitState.isKeyWindow) {
-        kitState.isKeyWindow = true;
-        electronPanelWindow?.makePanel(promptWindow);
-        electronPanelWindow?.makeKeyWindow(promptWindow);
-      }
+      setTimeout(handleShow, 0);
     } else {
       promptWindow?.show();
     }
@@ -514,11 +531,11 @@ export const hideAppIfNoWindows = (scriptPath = '') => {
       kitState.hidden = false;
     }
 
-    if (kitState.isKeyWindow) {
-      kitState.isKeyWindow = false;
-      electronPanelWindow.makeWindow(promptWindow);
-    }
-    setImmediate(handleHide);
+    // if (kitState.isKeyWindow) {
+    //   kitState.isKeyWindow = false;
+    // electronPanelWindow.makeWindow(promptWindow);
+    // }
+    setTimeout(handleHide, 0);
     promptWindow.webContents.setBackgroundThrottling(false);
     setTimeout(() => {
       if (!promptWindow?.isVisible()) {
