@@ -47,17 +47,13 @@ const { devTools } = miniArgs;
 // log.info(process.argv.join(' '), devTools);
 
 const handleHide = () => {
-  kitState.modifiedByUser = false;
-  kitState.ignoreBlur = false;
-
   try {
     log.info(`🙈 Hide`);
-    promptWindow.hide();
+    if (promptWindow?.isVisible()) promptWindow.hide();
   } catch (error) {
     log.error(error);
   }
 };
-
 let electronPanelWindow: any = null;
 export const createPromptWindow = async () => {
   if (kitState.isMac) {
@@ -233,16 +229,23 @@ export const createPromptWindow = async () => {
     } else {
       log.info(`🪟 Window`);
       electronPanelWindow.makeWindow(promptWindow);
+      if (!kitState.ignoreBlur) {
+        setTimeout(handleHide, 0);
+      }
     }
   };
 
   unsubKey = subscribeKey(
     kitState,
     'isKeyWindow',
-    debounce((isKeyWindow) => {
+    // debounce((isKeyWindow) => {
+    //   if (isKeyWindow === oldIsKeyWindow) return;
+    //   setTimeout(handleKeyWindow, 0, isKeyWindow);
+    // }, 10)
+    (isKeyWindow) => {
       if (isKeyWindow === oldIsKeyWindow) return;
       setTimeout(handleKeyWindow, 0, isKeyWindow);
-    }, 10)
+    }
   );
 
   return promptWindow;
@@ -528,7 +531,10 @@ export const hideAppIfNoWindows = debounce((scriptPath = '') => {
       kitState.hidden = false;
     }
 
-    setTimeout(handleHide, 0);
+    kitState.modifiedByUser = false;
+    kitState.ignoreBlur = false;
+    kitState.isKeyWindow = false;
+
     promptWindow.webContents.setBackgroundThrottling(false);
     setTimeout(() => {
       if (!promptWindow?.isVisible()) {
