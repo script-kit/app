@@ -12,7 +12,13 @@ import {
   PromptData,
   PromptBounds,
 } from '@johnlindquist/kit/types/core';
-import { BrowserWindow, screen, app, Rectangle, powerMonitor } from 'electron';
+import {
+  BrowserWindow,
+  screen,
+  Rectangle,
+  powerMonitor,
+  TouchBar,
+} from 'electron';
 import os from 'os';
 import path from 'path';
 import log from 'electron-log';
@@ -64,9 +70,11 @@ const handleKeyWindow = (isKeyWindow: boolean) => {
       promptWindow.hide();
     }
 
-    log.info(`🪟 Window`);
-    electronPanelWindow.makeWindow(promptWindow);
-    kitState.isKeyWindow = false;
+    setTimeout(() => {
+      log.info(`🪟 Window`);
+      electronPanelWindow.makeWindow(promptWindow);
+      kitState.isKeyWindow = false;
+    }, 0);
   }
 };
 
@@ -77,6 +85,14 @@ const triggerKeyWindow = (isKeyWindow: boolean) => {
 };
 
 export const createPromptWindow = async () => {
+  const touchbar = new TouchBar({
+    items: [
+      new TouchBar.TouchBarLabel({
+        label: `Script Kit v${getVersion()}`,
+      }),
+    ],
+  });
+
   if (kitState.isMac) {
     electronPanelWindow = await import('@akiflow/electron-panel-window' as any);
   }
@@ -103,6 +119,8 @@ export const createPromptWindow = async () => {
     skipTaskbar: true,
     minHeight: INPUT_HEIGHT,
   });
+
+  promptWindow.setTouchBar(touchbar);
 
   promptWindow.setAlwaysOnTop(true, 'modal-panel');
   // promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
