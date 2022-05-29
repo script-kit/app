@@ -5,7 +5,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import { subscribe } from 'valtio/vanilla';
-import { subscribeKey } from 'valtio/utils';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -47,6 +46,36 @@ const { devTools } = miniArgs;
 // log.info(process.argv.join(' '), devTools);
 
 let electronPanelWindow: any = null;
+
+const handleKeyWindow = (isKeyWindow: boolean) => {
+  if (!promptWindow?.isVisible()) return;
+  oldIsKeyWindow = isKeyWindow;
+
+  if (isKeyWindow && !kitState.isKeyWindow) {
+    log.info(`🎛 Panel`);
+    electronPanelWindow.makePanel(promptWindow);
+    electronPanelWindow?.makeKeyWindow(promptWindow);
+    kitState.isKeyWindow = true;
+  }
+
+  if (!isKeyWindow && kitState.isKeyWindow) {
+    if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
+      log.info(`🙈 Hide`);
+      promptWindow.hide();
+    }
+
+    log.info(`🪟 Window`);
+    electronPanelWindow.makeWindow(promptWindow);
+    kitState.isKeyWindow = false;
+  }
+};
+
+let oldIsKeyWindow = false;
+const triggerKeyWindow = (isKeyWindow: boolean) => {
+  if (isKeyWindow === oldIsKeyWindow) return;
+  handleKeyWindow(isKeyWindow);
+};
+
 export const createPromptWindow = async () => {
   if (kitState.isMac) {
     electronPanelWindow = await import('@akiflow/electron-panel-window' as any);
@@ -111,15 +140,15 @@ export const createPromptWindow = async () => {
   // });
 
   promptWindow?.on('focus', () => {
-    kitState.isKeyWindow = true;
+    triggerKeyWindow(true);
   });
 
   promptWindow?.webContents?.on('focus', () => {
-    kitState.isKeyWindow = true;
+    triggerKeyWindow(true);
   });
 
   promptWindow?.on('blur', () => {
-    kitState.isKeyWindow = false;
+    triggerKeyWindow(false);
 
     if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
@@ -210,38 +239,6 @@ export const createPromptWindow = async () => {
 
   if (unsubKey) unsubKey();
 
-  let oldIsKeyWindow = kitState.isKeyWindow;
-
-  const handleKeyWindow = (isKeyWindow: boolean) => {
-    if (!promptWindow?.isVisible()) return;
-    oldIsKeyWindow = isKeyWindow;
-    if (isKeyWindow) {
-      log.info(`🎛 Panel`);
-      electronPanelWindow.makePanel(promptWindow);
-      electronPanelWindow?.makeKeyWindow(promptWindow);
-    } else {
-      if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
-        log.info(`🙈 Hide`);
-        promptWindow.hide();
-      }
-      log.info(`🪟 Window`);
-      electronPanelWindow.makeWindow(promptWindow);
-    }
-  };
-
-  unsubKey = subscribeKey(
-    kitState,
-    'isKeyWindow',
-    // debounce((isKeyWindow) => {
-    //   if (isKeyWindow === oldIsKeyWindow) return;
-    //   setTimeout(handleKeyWindow, 0, isKeyWindow);
-    // }, 10)
-    (isKeyWindow) => {
-      if (isKeyWindow === oldIsKeyWindow) return;
-      setTimeout(handleKeyWindow, 0, isKeyWindow);
-    }
-  );
-
   return promptWindow;
 };
 
@@ -263,7 +260,7 @@ export const showInactive = () => {
   try {
     if (electronPanelWindow) {
       promptWindow?.showInactive();
-      kitState.isKeyWindow = true;
+      triggerKeyWindow(true);
     } else {
       promptWindow?.show();
     }
@@ -527,7 +524,7 @@ export const hideAppIfNoWindows = debounce((scriptPath = '') => {
 
     kitState.modifiedByUser = false;
     kitState.ignoreBlur = false;
-    kitState.isKeyWindow = false;
+    triggerKeyWindow(false);
 
     promptWindow.webContents.setBackgroundThrottling(false);
     setTimeout(() => {
