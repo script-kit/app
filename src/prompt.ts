@@ -70,11 +70,7 @@ const handleKeyWindow = (isKeyWindow: boolean) => {
       promptWindow.hide();
     }
 
-    setTimeout(() => {
-      log.info(`🪟 Window`);
-      electronPanelWindow.makeWindow(promptWindow);
-      kitState.isKeyWindow = false;
-    }, 0);
+    kitState.isKeyWindow = false;
   }
 };
 
