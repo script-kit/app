@@ -21,7 +21,13 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
-import { isVisible, sendToPrompt, setPromptPid, setScript } from './prompt';
+import {
+  hideAppIfNoWindows,
+  isVisible,
+  sendToPrompt,
+  setPromptPid,
+  setScript,
+} from './prompt';
 import { getKitScript, isSameScript, kitState } from './state';
 
 app.on('second-instance', async (_event, argv) => {
@@ -42,7 +48,15 @@ process.on('uncaughtException', (error) => {
 });
 
 emitter.on(KitEvent.RunPromptProcess, (scriptPath: string) => {
-  runPromptProcess(scriptPath);
+  if (isVisible()) {
+    log.info(`Hide App: ${scriptPath}`);
+    kitState.isKeyWindow = true;
+    kitState.ignoreBlur = false;
+    hideAppIfNoWindows();
+  } else {
+    log.info(`Show App: ${scriptPath}`);
+    runPromptProcess(scriptPath);
+  }
 });
 
 emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {

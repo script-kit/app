@@ -213,11 +213,13 @@ const toProcess = <K extends keyof ChannelMap>(
     } else {
       warn(`${data?.pid}: Can't find processInfo associated with widget`);
     }
+  } else if (processInfo && data.channel === Channel.HIDE_APP) {
+    fn(processInfo, data);
   }
   // Send data to Prompt process only if id matches current prompt
   else if (processInfo && processInfo?.pid === kitState.promptProcess?.pid) {
     fn(processInfo, data);
-  } else if (processInfo?.type === ProcessType.PROMPT) {
+  } else if (processInfo?.type === ProcessType.Prompt) {
     warn(
       `${data?.pid}: ⚠️ ${data.channel} failed. ${data.pid} doesn't match ${kitState.promptProcess?.pid}`
     );
@@ -549,10 +551,9 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   HIDE_APP: toProcess(({ type, scriptPath }) => {
-    if (type === ProcessType.Prompt) {
-      kitState.hidden = true;
-      hideAppIfNoWindows(scriptPath);
-    }
+    log.info(`🫣 Hiding app`);
+    kitState.hidden = true;
+    hideAppIfNoWindows(scriptPath);
   }),
   NEEDS_RESTART: async () => {
     await makeRestartNecessary();
@@ -560,6 +561,15 @@ const kitMessageMap: ChannelHandler = {
   QUIT_APP: () => {
     app.exit();
   },
+  SET_KIT_STATE: toProcess(async (processInfo, data) => {
+    log.info(`SET_KIT_STATE`, data?.value);
+    for (const [key, value] of Object.entries(data?.value)) {
+      if ((kitState as any)?.[key] !== undefined) {
+        log.info(`Setting kitState.${key} to ${value}`);
+        (kitState as any)[key] = value;
+      }
+    }
+  }),
   SET_SCRIPT: toProcess(async (processInfo, data) => {
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;

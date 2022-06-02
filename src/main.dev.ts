@@ -19,6 +19,7 @@ import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
 
+import { subscribeKey } from 'valtio/utils';
 import { Open } from 'unzipper';
 import tar from 'tar';
 import clipboardy from 'clipboardy';
@@ -608,6 +609,7 @@ const KIT_NODE_TAR =
   process.env.KIT_NODE_TAR || getAssetPath(`node.${getPlatformExtension()}`);
 
 const checkKit = async () => {
+  await createTray(true);
   const options: SpawnSyncOptions = {
     cwd: KIT,
     encoding: 'utf-8',
@@ -697,6 +699,7 @@ const checkKit = async () => {
     if (!process.env.KIT_SPLASH) {
       await showSplash();
     }
+    kitState.installing = true;
     log.info(`🔥 Starting Kit First Install`);
   }
 
@@ -707,6 +710,7 @@ const checkKit = async () => {
     await setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
   } else if (requiresInstall) {
     if (await kitExists()) {
+      kitState.updateInstalling = true;
       await setupLog(`Cleaning previous .kit`);
       await cleanKit();
     }
@@ -923,9 +927,17 @@ const checkKit = async () => {
 
     await storeVersion(getVersion());
 
-    await ready();
+    kitState.starting = false;
+    kitState.updateInstalling = false;
+    kitState.installing = false;
 
-    sendToPrompt(Channel.SET_READY, true);
+    await ready();
+    subscribeKey(kitState, 'ready', (isReady) => {
+      sendToPrompt(Channel.SET_READY, isReady);
+    });
+
+    kitState.ready = true;
+
     focusPrompt();
   } catch (error) {
     ohNo(error);

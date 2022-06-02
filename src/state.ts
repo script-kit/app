@@ -158,9 +158,15 @@ const initState = {
   isShiftDown: false,
   isMac: os.platform() === 'darwin',
   isWindows: os.platform() === 'win32',
+  starting: true,
   suspended: false,
   screenLocked: false,
   isKeyWindow: false,
+  installing: false,
+  updateInstalling: false,
+  updateDownloading: false,
+  updateDownloaded: false,
+  ready: false,
 };
 
 const initConfig: Config = {

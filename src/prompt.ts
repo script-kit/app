@@ -18,6 +18,7 @@ import {
   Rectangle,
   powerMonitor,
   TouchBar,
+  app,
 } from 'electron';
 import os from 'os';
 import path from 'path';
@@ -53,6 +54,7 @@ const { devTools } = miniArgs;
 
 let electronPanelWindow: any = null;
 
+let oldIsKeyWindow = false;
 const handleKeyWindow = (isKeyWindow: boolean) => {
   if (!promptWindow?.isVisible()) return;
   oldIsKeyWindow = isKeyWindow;
@@ -64,8 +66,10 @@ const handleKeyWindow = (isKeyWindow: boolean) => {
     kitState.isKeyWindow = true;
   }
 
-  if (!isKeyWindow && kitState.isKeyWindow) {
-    if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
+  if (!isKeyWindow) {
+    if (kitState.ignoreBlur) {
+      log.info(`🪟 Window`);
+    } else {
       log.info(`🙈 Hide`);
       promptWindow.hide();
     }
@@ -74,9 +78,8 @@ const handleKeyWindow = (isKeyWindow: boolean) => {
   }
 };
 
-let oldIsKeyWindow = false;
 const triggerKeyWindow = (isKeyWindow: boolean) => {
-  if (isKeyWindow === oldIsKeyWindow) return;
+  if (isKeyWindow === oldIsKeyWindow && isKeyWindow) return;
   handleKeyWindow(isKeyWindow);
 };
 
@@ -158,6 +161,10 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.webContents?.on('focus', () => {
+    triggerKeyWindow(true);
+  });
+
+  promptWindow?.webContents?.on('blur', () => {
     triggerKeyWindow(true);
   });
 

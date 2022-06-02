@@ -14,6 +14,7 @@ import { spawn } from 'child_process';
 import { destroyTray } from './tray';
 import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
+import { kitState } from './state';
 
 const callBeforeQuitAndInstall = () => {
   try {
@@ -65,7 +66,6 @@ export const configureAutoUpdate = async () => {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
 
-  let updateDownloaded = false;
   let downloadProgressMade = false;
 
   const applyUpdate = async (info: any) => {
@@ -83,7 +83,7 @@ export const configureAutoUpdate = async () => {
       log.warn(`Couldn't store previous version`);
     }
 
-    updateDownloaded = true;
+    kitState.updateDownloaded = true;
 
     log.info(`⏰ Waiting one second before quit`);
     callBeforeQuitAndInstall();
@@ -127,6 +127,7 @@ export const configureAutoUpdate = async () => {
   };
 
   autoUpdater.on('update-available', async (info) => {
+    kitState.updateDownloading = true;
     log.info('Update available.', info);
 
     const version = getVersion();
@@ -162,10 +163,15 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('update-downloaded', () => {
+    kitState.updateDownloaded = true;
     log.info(`⬇️ Update downloaded`);
   });
 
   autoUpdater.on('update-not-available', (info) => {
+    kitState.updateDownloaded = false;
+    kitState.updateInstalling = false;
+    kitState.updateDownloading = false;
+
     log.info('Update not available...');
     log.info(info);
 
@@ -183,6 +189,7 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('checking-for-update', () => {
+    kitState.updateDownloading = true;
     log.info('Checking for update...');
   });
 
@@ -196,20 +203,21 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('error', (message) => {
-    log.error('There was a problem updating the application');
+    kitState.updateDownloading = false;
+    log.error('There was a problem updating Kit.app');
     log.error(message);
 
-    // const notification = new Notification({
-    //   title: `There was a problem updating`,
-    //   body: `Please check logs in Kit tab`,
-    //   silent: true,
-    // });
+    const notification = new Notification({
+      title: `There was a problem downloading the Kit.app update`,
+      body: `Please check logs in Kit tab`,
+      silent: true,
+    });
 
-    // notification.show();
+    notification.show();
   });
 
   app.on('window-all-closed', (e: Event) => {
-    if (!updateDownloaded) e.preventDefault();
+    if (!kitState.updateDownloaded) e.preventDefault();
   });
 
   emitter.on(KitEvent.CheckForUpdates, async () => {

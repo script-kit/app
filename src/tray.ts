@@ -1,5 +1,13 @@
 /* eslint-disable import/prefer-default-export */
-import { Notification, Tray, Menu, app } from 'electron';
+/* eslint-disable no-nested-ternary */
+import {
+  Notification,
+  Tray,
+  Menu,
+  app,
+  MenuItemConstructorOptions,
+  globalShortcut,
+} from 'electron';
 import log from 'electron-log';
 import { KeyboardEvent } from 'electron/main';
 import os from 'os';
@@ -10,7 +18,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, getScriptsDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
-import { restartIfNecessary } from './state';
+import { kitState, restartIfNecessary } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 
@@ -24,10 +32,7 @@ const leftClick = async (event: KeyboardEvent) => {
       kenvPath('app', 'command-click.js')
     );
   } else if (event.shiftKey) {
-    emitter.emit(
-      KitEvent.RunPromptProcess,
-      kenvPath('app', 'command-click.js')
-    );
+    emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'shift-click.js'));
   } else if (event.ctrlKey) {
     emitter.emit(
       KitEvent.RunPromptProcess,
@@ -40,37 +45,50 @@ const leftClick = async (event: KeyboardEvent) => {
   }
 };
 
-const contextMenu = Menu.buildFromTemplate([
-  {
-    label: `Script Kit ${getVersion()}`,
-  },
-  {
+const rightClick = async () => {
+  let updateMenu: MenuItemConstructorOptions = {
     label: 'Check for Updates',
     click: async () => {
       emitter.emit(KitEvent.CheckForUpdates, true);
     },
-  },
-  {
-    label: `Change Shortcut`,
-    click: async () => {
-      emitter.emit(
-        KitEvent.RunPromptProcess,
-        kitPath('cli', 'change-main-shortcut.js')
-      );
-    },
-  },
-  {
-    label: 'Quit',
+  };
 
-    click: () => {
-      log.info(`Quitting...`);
-      app.quit();
-      app.exit();
-    },
-  },
-]);
+  if (kitState.starting) {
+    updateMenu = {
+      label: 'Starting up...',
+    };
+  }
 
-const rightClick = async () => {
+  if (kitState.updateDownloading) {
+    updateMenu = {
+      label: 'Update Downloading...',
+    };
+  }
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: `Script Kit ${getVersion()}`,
+    },
+    updateMenu,
+    {
+      label: `Change Shortcut`,
+      click: async () => {
+        emitter.emit(
+          KitEvent.RunPromptProcess,
+          kitPath('cli', 'change-main-shortcut.js')
+        );
+      },
+    },
+    {
+      label: 'Quit',
+
+      click: () => {
+        log.info(`Quitting...`);
+        app.quit();
+        app.exit();
+      },
+    },
+  ]);
   tray?.popUpContextMenu(contextMenu);
   // emitter.emit(KitEvent.RunPromptProcess, kitPath('main', 'kit.js'));
 };
@@ -81,29 +99,61 @@ const trayIcon = getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`);
 export const getTrayIcon = () => trayIcon;
 
 export const createTray = async (checkDb = false) => {
-  const appDb = await getAppDb();
-  if (checkDb && typeof appDb?.tray === 'boolean' && appDb.tray === false) {
-    const notification = new Notification({
-      title: `Kit.app started with icon hidden`,
-      body: `${getVersion()}`,
-      silent: true,
-    });
-
-    notification.show();
-    return;
+  if (tray) {
+    tray.removeAllListeners();
   }
-  try {
-    log.info(`☑ Enable tray`);
+  if (!tray) {
     tray = new Tray(trayIcon);
     tray.setIgnoreDoubleClickEvents(true);
+  }
+  if (kitState.starting) {
+    const startingMenu = () => {
+      tray?.popUpContextMenu(
+        Menu.buildFromTemplate([
+          {
+            label: `Script Kit ${getVersion()}`,
+          },
+          {
+            label: kitState.installing
+              ? 'Installing Kit SDK...'
+              : kitState.updateInstalling
+              ? 'One sec. Updating...'
+              : 'Starting...',
+          },
+        ])
+      );
+    };
 
-    tray.on('click', leftClick);
+    tray.on('click', startingMenu);
+    tray.on('right-click', startingMenu);
 
-    log.info(`right click`);
+    globalShortcut.register('CommandOrControl+;', startingMenu);
+  } else {
+    if (!kitState.ready) {
+      globalShortcut.unregister('CommandOrControl+;');
+    }
+    const appDb = await getAppDb();
+    if (checkDb && typeof appDb?.tray === 'boolean' && appDb.tray === false) {
+      const notification = new Notification({
+        title: `Kit.app started with icon hidden`,
+        body: `${getVersion()}`,
+        silent: true,
+      });
 
-    tray.on('right-click', rightClick);
-  } catch (error) {
-    log.error(error);
+      notification.show();
+      return;
+    }
+    try {
+      log.info(`☑ Enable tray`);
+
+      tray.on('click', leftClick);
+
+      log.info(`right click`);
+
+      tray.on('right-click', rightClick);
+    } catch (error) {
+      log.error(error);
+    }
   }
 };
 
