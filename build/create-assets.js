@@ -50,7 +50,7 @@ const go = async () => {
     },
   });
 
-  await execa(`cd ${asssetsKit} && npm install`, {
+  await execa(`cd ${asssetsKit} && npm install --production`, {
     shell: true,
     stdio: 'inherit',
     // env: {
