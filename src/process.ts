@@ -58,6 +58,8 @@ import {
   focusPrompt,
   getPromptBounds,
   hideAppIfNoWindows,
+  isVisible,
+  onHideOnce,
   sendToPrompt,
   setBounds,
   setChoices,
@@ -550,9 +552,22 @@ const kitMessageMap: ChannelHandler = {
     child?.send({ channel, processes });
   }),
 
-  HIDE_APP: toProcess(({ type, scriptPath }) => {
+  HIDE_APP: toProcess(({ child, type, scriptPath }, { channel }) => {
     log.info(`🫣 Hiding app`);
+
+    if (!isVisible()) {
+      log.info(`🫣 App is not visible`);
+      child?.send({ channel });
+      return;
+    }
+
     kitState.hidden = true;
+
+    onHideOnce(() => {
+      child?.send({
+        channel,
+      });
+    });
     hideAppIfNoWindows(scriptPath);
   }),
   NEEDS_RESTART: async () => {
@@ -800,11 +815,12 @@ const kitMessageMap: ChannelHandler = {
   TERMINAL: (data) => {
     sendToPrompt(Channel.TERMINAL, data.value);
   },
-  KEYBOARD_TYPE: async (data) => {
+
+  KEYBOARD_TYPE: toProcess(async ({ child }, { channel, value }) => {
     keyboard.config.autoDelayMs = 10;
     kitState.isTyping = true;
     try {
-      await keyboard.type(data.value);
+      await keyboard.type(value);
     } catch (error) {
       log.error(`KEYBOARD ERROR TYPE`, error);
     }
@@ -812,13 +828,32 @@ const kitMessageMap: ChannelHandler = {
     setTimeout(() => {
       kitState.isTyping = false;
     }, 100);
-  },
-  KEYBOARD_PRESS_KEY: async (data) => {
-    await keyboard.pressKey(...(data?.value as any));
-  },
-  KEYBOARD_RELEASE_KEY: async (data) => {
-    await keyboard.releaseKey(...(data?.value as any));
-  },
+
+    child?.send({
+      channel,
+    });
+  }),
+
+  KEYBOARD_PRESS_KEY: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`BEFORE: KEYBOARD PRESS KEY`, value);
+    await keyboard.pressKey(...(value as any));
+    log.info(`AFTER: KEYBOARD PRESS KEY`, value);
+
+    child?.send({
+      channel,
+    });
+  }),
+
+  KEYBOARD_RELEASE_KEY: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`BEFORE: KEYBOARD RELEASE KEY`, value);
+    await keyboard.releaseKey(...(value as any));
+    log.info(`AFTER: KEYBOARD RELEASE KEY`, value);
+
+    child?.send({
+      channel,
+    });
+  }),
+
   KEYBOARD_CONFIG: async (data) => {
     if (data?.value) {
       keyboard.config = data.value;

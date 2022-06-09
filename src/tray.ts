@@ -9,6 +9,7 @@ import {
   globalShortcut,
 } from 'electron';
 import log from 'electron-log';
+import { subscribeKey } from 'valtio/utils';
 import { KeyboardEvent } from 'electron/main';
 import os from 'os';
 import {
@@ -99,6 +100,17 @@ const trayIcon = getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`);
 export const getTrayIcon = () => trayIcon;
 
 export const createTray = async (checkDb = false) => {
+  log.info(`🎨 Creating tray...`, { checkDb });
+
+  subscribeKey(kitState, 'updateDownloaded', (updateDownloaded) => {
+    if (updateDownloaded) {
+      const updateIcon = getAssetPath(
+        `IconTemplate${isWin ? `-win` : ``}-update.png`
+      );
+      tray?.setImage(updateIcon);
+    }
+  });
+
   if (tray) {
     tray.removeAllListeners();
   }

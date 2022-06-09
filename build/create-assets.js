@@ -7,10 +7,9 @@ const go = async () => {
   chdir(process.env.PWD);
 
   const { execa } = await import('execa');
-  const { stdout: releaseChannel } = await execa(
-    `git rev-parse --abbrev-ref HEAD`,
-    { shell: true }
-  );
+  const {
+    stdout: releaseChannel,
+  } = await execa(`git rev-parse --abbrev-ref HEAD`, { shell: true });
   console.log({ releaseChannel });
 
   const { writeFile } = await import('fs/promises');
@@ -36,10 +35,10 @@ const go = async () => {
       file: './assets/kit.tar.gz',
       follow: true,
       filter: (item) => {
-        if (item.match(/^.{0,2}node/)) {
-          console.log(`SKIPPING`, item);
-          return false;
-        }
+        // if (item.match(/^.{0,2}node/)) {
+        //   console.log(`SKIPPING`, item);
+        //   return false;
+        // }
         if (item.includes('kit.sock')) return false;
 
         return true;

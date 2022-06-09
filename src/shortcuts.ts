@@ -1,7 +1,8 @@
-import { globalShortcut } from 'electron';
+import { globalShortcut, Notification } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { Script } from '@johnlindquist/kit/types/core';
+import { keyboard, Key } from '@nut-tree/nut-js';
 
 import {
   mainScriptPath,
@@ -38,12 +39,31 @@ export const unlinkShortcuts = (filePath: string) => {
 
 export const shortcutScriptChanged = ({ shortcut, filePath }: Script) => {
   const oldShortcut = shortcutMap.get(filePath);
+  const sameScript = oldShortcut === shortcut;
 
   // Handle existing shortcuts
+
+  const exists = [...shortcutMap.entries()].find(([, s]) => s === shortcut);
+  if (exists && !sameScript) {
+    const title = `Shortcut already registered. Skipping...`;
+    log.info(title);
+    const n = new Notification({
+      title,
+      body: `${shortcut} registered to ${exists[0]}`,
+      silent: false,
+    });
+
+    n.show();
+
+    return;
+  }
+
   if (oldShortcut) {
     // No change
-    if (oldShortcut === shortcut) {
-      log.info(`${shortcut} is already registered to ${filePath}`);
+    if (sameScript) {
+      const message = `${shortcut} is already registered to ${filePath}`;
+      log.info(message);
+
       return;
     }
 

@@ -24,6 +24,7 @@
     "frontmost-app": "^1.0.0",
     "keylogger.js": "^0.0.4",
     "node-abi": "^3.22.0",
+    "node-mac-permissions": "^2.2.1",
     "node-pty": "^0.10.1"
   },
   "iohook": {

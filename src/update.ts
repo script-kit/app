@@ -83,8 +83,6 @@ export const configureAutoUpdate = async () => {
       log.warn(`Couldn't store previous version`);
     }
 
-    kitState.updateDownloaded = true;
-
     log.info(`⏰ Waiting one second before quit`);
     callBeforeQuitAndInstall();
 
@@ -139,13 +137,13 @@ export const configureAutoUpdate = async () => {
     if (currentChannel === newChannel) {
       log.info(`Downloading update`);
 
-      const notification = new Notification({
-        title: `Downloading Kit.app update ${info.version}`,
-        body: `Kit.app will relaunch once download completes`,
-        silent: true,
-      });
+      // const notification = new Notification({
+      //   title: `Downloading Kit.app update ${info.version}`,
+      //   body: `Kit.app will relaunch once download completes`,
+      //   silent: true,
+      // });
 
-      notification.show();
+      // notification.show();
       const result = await autoUpdater.downloadUpdate();
       log.log(`Update downloaded:`, result);
       if (downloadProgressMade) {
@@ -207,13 +205,13 @@ export const configureAutoUpdate = async () => {
     log.error('There was a problem updating Kit.app');
     log.error(message);
 
-    const notification = new Notification({
-      title: `There was a problem downloading the Kit.app update`,
-      body: `Please check logs in Kit tab`,
-      silent: true,
-    });
+    // const notification = new Notification({
+    //   title: `There was a problem downloading the Kit.app update`,
+    //   body: `Please check logs in Kit tab`,
+    //   silent: true,
+    // });
 
-    notification.show();
+    // notification.show();
   });
 
   app.on('window-all-closed', (e: Event) => {

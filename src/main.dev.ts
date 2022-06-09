@@ -19,7 +19,8 @@ import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
 
-import { subscribeKey } from 'valtio/utils';
+import tildify from 'tildify';
+
 import { Open } from 'unzipper';
 import tar from 'tar';
 import clipboardy from 'clipboardy';
@@ -559,7 +560,7 @@ ${mainLog}
 };
 
 const extractTar = async (tarFile: string, outDir: string) => {
-  await setupLog(`Extracting ${tarFile} to ${outDir}`);
+  await setupLog(`Extracting ${path.basename(tarFile)} to ${tildify(outDir)}`);
   await ensureDir(outDir);
 
   await tar.x({
@@ -582,8 +583,7 @@ const cleanKit = async () => {
   log.info(`🧹 Cleaning ${kitPath()}`);
   const pathToClean = kitPath();
 
-  const keep = (file: string) =>
-    file.startsWith('node') || file.startsWith('db');
+  const keep = (file: string) => file.startsWith('db');
 
   // eslint-disable-next-line no-restricted-syntax
   for await (const file of await readdir(pathToClean)) {
@@ -784,98 +784,56 @@ const checkKit = async () => {
     log.info(`PATH:`, options?.env?.PATH);
 
     if (isWin) {
-      const npmResult = await new Promise((resolve, reject) => {
-        const child = fork(
-          kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-          [`i`, `--production`, `--no-progress`, `--quiet`],
-          options
-        );
-
-        child.on('message', (data) => {
-          sendSplashBody(data.toString());
-        });
-
-        child.on('exit', () => {
-          resolve('npm install success');
-        });
-
-        child.on('error', (error) => {
-          reject(error);
-        });
-      });
-
+      // const npmResult = await new Promise((resolve, reject) => {
+      //   const child = fork(
+      //     kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+      //     [`i`, `--production`, `--no-progress`, `--quiet`],
+      //     options
+      //   );
+      //   child.on('message', (data) => {
+      //     sendSplashBody(data.toString());
+      //   });
+      //   child.on('exit', () => {
+      //     resolve('npm install success');
+      //   });
+      //   child.on('error', (error) => {
+      //     reject(error);
+      //   });
+      // });
       // const kitAppResult = await new Promise((resolve, reject) => {
       //   const child = fork(
       //     kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
       //     [`i`, `@johnlindquist/kitdeps@0.0.1`, `--no-progress`, `--quiet`],
       //     options
       //   );
-
       //   child.on('message', (data) => {
       //     sendSplashBody(data.toString());
       //   });
-
       //   child.on('exit', () => {
       //     resolve('npm install success');
       //   });
-
       //   child.on('error', (error) => {
       //     reject(error);
       //   });
       // });
     } else {
-      const npmResult = await new Promise((resolve, reject) => {
-        const child = spawn(
-          kitPath('node', 'bin', 'npm'),
-          [`i`, `--production`, `--no-progress`, `--quiet`],
-          options
-        );
-
-        child.on('message', (data: any) => {
-          sendSplashBody(data.toString());
-        });
-
-        child.on('exit', (code) => {
-          resolve(`Deps install exit code ${code}`);
-        });
-
-        child.on('error', (error: any) => {
-          reject(error);
-        });
-      });
-      // const npmResult = spawnSync(
-      //   kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
-      //   [`i`, `--production`, `--no-progress`, `--quiet`],
-      //   options
-      // );
-
-      log.info({ npmResult });
-
-      // const kitAppResult = await new Promise((resolve, reject) => {
+      // const npmResult = await new Promise((resolve, reject) => {
       //   const child = spawn(
       //     kitPath('node', 'bin', 'npm'),
-      //     [`i`, `@johnlindquist/kitdeps`, `--no-progress`, `--quiet`],
+      //     [`i`, `--production`, `--no-progress`, `--quiet`],
       //     options
       //   );
-
       //   child.on('message', (data: any) => {
       //     sendSplashBody(data.toString());
       //   });
-
       //   child.on('exit', (code) => {
       //     resolve(`Deps install exit code ${code}`);
       //   });
-
       //   child.on('error', (error: any) => {
       //     reject(error);
       //   });
       // });
-      // const npmResult = spawnSync(
-      //   kitPath('node', 'bin', `npm${isWin ? `.cmd` : ``}`),
-      //   [`i`, `--production`, `--no-progress`, `--quiet`],
-      //   options
-      // );
-      // log.info({ kitAppResult });
+      // log.info({ npmResult });
     }
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));
@@ -931,12 +889,11 @@ const checkKit = async () => {
     kitState.updateInstalling = false;
     kitState.installing = false;
 
-    await ready();
-    subscribeKey(kitState, 'ready', (isReady) => {
-      sendToPrompt(Channel.SET_READY, isReady);
-    });
+    log.info(`kitState`, kitState);
 
+    await ready();
     kitState.ready = true;
+    sendToPrompt(Channel.SET_READY, true);
 
     focusPrompt();
   } catch (error) {

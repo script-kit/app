@@ -396,6 +396,7 @@
     "source-map-support": "0.5.19",
     "tailwind-override": "0.0.10",
     "tar": "6.1.11",
+    "tildify": "^3.0.0",
     "untildify": "^4.0.0",
     "unzipper": "0.10.11",
     "valtio": "1.5.1",

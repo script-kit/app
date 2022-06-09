@@ -1,6 +1,8 @@
 // kitapp/src/components/splash.tsx
 /* eslint-disable jsx-a11y/accessible-emoji */
 /* eslint-disable no-nested-ternary */
+/* eslint-disable react/no-unescaped-entities */
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, AnimateSharedLayout, motion } from 'framer-motion';
 import { useAtom } from 'jotai';
@@ -13,7 +15,6 @@ import {
   splashProgressAtom,
   submitSurveyAtom,
 } from '../jotai';
-import { useEscape } from '../hooks';
 
 // const questions = [
 //   `What problem should Script Kit will solve for you?`,
@@ -50,12 +51,12 @@ const links = [
     label: 'Community Scripts',
     href: 'https://www.scriptkit.com/scripts',
   },
+  // {
+  //   label: 'Documentation',
+  //   href: 'https://github.com/johnlindquist/kit/discussions/categories/docs',
+  // },
   {
-    label: 'Documentation',
-    href: 'https://github.com/johnlindquist/kit/discussions/categories/docs',
-  },
-  {
-    label: 'Get Help',
+    label: 'Questions?',
     href: 'https://github.com/johnlindquist/kit/discussions/categories/q-a',
   },
 ];
@@ -105,7 +106,7 @@ function Aside() {
           {body}
         </h3>
         {progress === 100 && (
-          <div className="pt-3">
+          <div className="pt-3 flex flex-col px-4">
             <button
               className="rounded-md shadow-md px-5 py-2 bg-gradient-to-b from-yellow-400 to-amber-500 text-black font-semibold"
               type="button"
@@ -124,6 +125,9 @@ function Aside() {
                 </kbd>
               </span>
             </button>
+            <span className="text-xxs px-5 py-4 leading-tight text-center">
+              Snippets and Clipboard History require "Accessibility Permissions"
+            </span>
           </div>
         )}
       </div>

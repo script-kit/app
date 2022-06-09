@@ -25,7 +25,7 @@ import path from 'path';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import minimist from 'minimist';
-import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
+import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { getPromptDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
@@ -684,5 +684,22 @@ export const destroyPromptWindow = () => {
   if (promptWindow) {
     hideAppIfNoWindows(`__destroy__`);
     promptWindow.destroy();
+  }
+};
+
+export const onHideOnce = (fn: () => void) => {
+  let id: null | NodeJS.Timeout = null;
+  if (promptWindow) {
+    const handler = () => {
+      if (id) clearTimeout(id);
+      promptWindow.removeListener('hide', handler);
+      fn();
+    };
+
+    id = setTimeout(() => {
+      promptWindow?.removeListener('hide', handler);
+    }, 1000);
+
+    promptWindow?.once('hide', handler);
   }
 };
