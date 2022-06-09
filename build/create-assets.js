@@ -53,13 +53,13 @@ const go = async () => {
   await execa(`cd ${asssetsKit} && npm install`, {
     shell: true,
     stdio: 'inherit',
-    env: {
-      ...process.env,
-      PATH:
-        path.resolve(homedir(), '.kit', 'node', 'bin') +
-        path.delimiter +
-        process.env.PATH,
-    },
+    // env: {
+    //   ...process.env,
+    //   PATH:
+    //     path.resolve(homedir(), '.kit', 'node', 'bin') +
+    //     path.delimiter +
+    //     process.env.PATH,
+    // },
   });
 
   await tar.c(
