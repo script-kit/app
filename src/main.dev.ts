@@ -786,7 +786,7 @@ const checkKit = async () => {
       const npmResult = await new Promise((resolve, reject) => {
         const child = fork(
           kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-          [`i`, `esbuild`, `shelljs`, `--no-progress`, `--quiet`],
+          [`i`, `--production`, `--no-progress`, `--quiet`],
           options
         );
         child.on('message', (data) => {
@@ -819,7 +819,7 @@ const checkKit = async () => {
       const npmResult = await new Promise((resolve, reject) => {
         const child = spawn(
           kitPath('node', 'bin', 'npm'),
-          [`i`, `esbuild`, `shelljs`, `--no-progress`, `--quiet`],
+          [`i`, `--production`, `--no-progress`, `--quiet`],
           options
         );
         child.on('message', (data: any) => {
