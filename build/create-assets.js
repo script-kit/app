@@ -1,3 +1,5 @@
+const { homedir } = require('os');
+
 const go = async () => {
   const { chdir } = await import('process');
   const path = await import('path');
@@ -24,13 +26,45 @@ const go = async () => {
 
   const tar = await import('tar');
 
+  // const nodeModulesKit = path.resolve(homedir(), '.kit');
   const nodeModulesKit = path.resolve('node_modules', '@johnlindquist', 'kit');
+  const asssetsKit = path.resolve('./assets', 'kit');
+  if (await fs.exists(asssetsKit)) {
+    await fs.remove(asssetsKit);
+  }
+  await fs.ensureDir(asssetsKit);
+  console.log({ nodeModulesKit, asssetsKit, d: path.dirname(asssetsKit) });
 
-  console.log({ nodeModulesKit });
+  await fs.copy(nodeModulesKit, asssetsKit, {
+    recursive: true,
+    overwrite: true,
+    filter: (src, dest) => {
+      if (
+        src.endsWith('node') ||
+        src.endsWith('node_modules' || src.endsWith('.sock'))
+      ) {
+        console.log(`SKIP`, src);
+        return false;
+      }
+      return true;
+    },
+  });
+
+  await execa(`cd ${asssetsKit} && npm install`, {
+    shell: true,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      PATH:
+        path.resolve(homedir(), '.kit', 'node', 'bin') +
+        path.delimiter +
+        process.env.PATH,
+    },
+  });
 
   await tar.c(
     {
-      cwd: nodeModulesKit,
+      cwd: asssetsKit,
       gzip: true,
       file: './assets/kit.tar.gz',
       follow: true,

@@ -19,8 +19,6 @@ import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
 
-import tildify from 'tildify';
-
 import { Open } from 'unzipper';
 import tar from 'tar';
 import clipboardy from 'clipboardy';
@@ -560,6 +558,7 @@ ${mainLog}
 };
 
 const extractTar = async (tarFile: string, outDir: string) => {
+  const { default: tildify } = await import('tildify');
   await setupLog(`Extracting ${path.basename(tarFile)} to ${tildify(outDir)}`);
   await ensureDir(outDir);
 

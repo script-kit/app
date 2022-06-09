@@ -15,7 +15,7 @@ import {
   IpcMainEvent,
 } from 'electron';
 import os from 'os';
-import { setTimeout } from 'timers';
+import inclusion from 'inclusion';
 
 import { subscribe } from 'valtio';
 import http from 'http';
@@ -835,9 +835,7 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   KEYBOARD_PRESS_KEY: toProcess(async ({ child }, { channel, value }) => {
-    log.info(`BEFORE: KEYBOARD PRESS KEY`, value);
     await keyboard.pressKey(...(value as any));
-    log.info(`AFTER: KEYBOARD PRESS KEY`, value);
 
     child?.send({
       channel,
@@ -845,11 +843,37 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   KEYBOARD_RELEASE_KEY: toProcess(async ({ child }, { channel, value }) => {
-    log.info(`BEFORE: KEYBOARD RELEASE KEY`, value);
     await keyboard.releaseKey(...(value as any));
-    log.info(`AFTER: KEYBOARD RELEASE KEY`, value);
 
     child?.send({
+      channel,
+    });
+  }),
+
+  TRASH: toProcess(async ({ child }, { channel, value }) => {
+    const { default: trash } = await inclusion('trash');
+    trash(value?.input, value?.options || {});
+
+    child?.send({
+      channel,
+    });
+  }),
+
+  COPY: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`>>>> COPY`);
+    clipboard.writeText(value);
+
+    child?.send({
+      channel,
+    });
+  }),
+
+  PASTE: toProcess(async ({ child }, { channel }) => {
+    const value = clipboard.readText();
+    log.info(`>>>> PASTE`, value);
+
+    child?.send({
+      value,
       channel,
     });
   }),
