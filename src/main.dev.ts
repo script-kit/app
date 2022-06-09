@@ -783,22 +783,22 @@ const checkKit = async () => {
     log.info(`PATH:`, options?.env?.PATH);
 
     if (isWin) {
-      // const npmResult = await new Promise((resolve, reject) => {
-      //   const child = fork(
-      //     kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-      //     [`i`, `--production`, `--no-progress`, `--quiet`],
-      //     options
-      //   );
-      //   child.on('message', (data) => {
-      //     sendSplashBody(data.toString());
-      //   });
-      //   child.on('exit', () => {
-      //     resolve('npm install success');
-      //   });
-      //   child.on('error', (error) => {
-      //     reject(error);
-      //   });
-      // });
+      const npmResult = await new Promise((resolve, reject) => {
+        const child = fork(
+          kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+          [`i`, `esbuild`, `shelljs`, `--no-progress`, `--quiet`],
+          options
+        );
+        child.on('message', (data) => {
+          sendSplashBody(data.toString());
+        });
+        child.on('exit', () => {
+          resolve('npm install success');
+        });
+        child.on('error', (error) => {
+          reject(error);
+        });
+      });
       // const kitAppResult = await new Promise((resolve, reject) => {
       //   const child = fork(
       //     kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
@@ -816,23 +816,23 @@ const checkKit = async () => {
       //   });
       // });
     } else {
-      // const npmResult = await new Promise((resolve, reject) => {
-      //   const child = spawn(
-      //     kitPath('node', 'bin', 'npm'),
-      //     [`i`, `--production`, `--no-progress`, `--quiet`],
-      //     options
-      //   );
-      //   child.on('message', (data: any) => {
-      //     sendSplashBody(data.toString());
-      //   });
-      //   child.on('exit', (code) => {
-      //     resolve(`Deps install exit code ${code}`);
-      //   });
-      //   child.on('error', (error: any) => {
-      //     reject(error);
-      //   });
-      // });
-      // log.info({ npmResult });
+      const npmResult = await new Promise((resolve, reject) => {
+        const child = spawn(
+          kitPath('node', 'bin', 'npm'),
+          [`i`, `esbuild`, `shelljs`, `--no-progress`, `--quiet`],
+          options
+        );
+        child.on('message', (data: any) => {
+          sendSplashBody(data.toString());
+        });
+        child.on('exit', (code) => {
+          resolve(`Deps install exit code ${code}`);
+        });
+        child.on('error', (error: any) => {
+          reject(error);
+        });
+      });
+      log.info({ npmResult });
     }
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));

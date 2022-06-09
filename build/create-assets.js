@@ -62,6 +62,18 @@ const go = async () => {
     // },
   });
 
+  await execa(`cd ${asssetsKit} && npm un esbuild shelljs`, {
+    shell: true,
+    stdio: 'inherit',
+    // env: {
+    //   ...process.env,
+    //   PATH:
+    //     path.resolve(homedir(), '.kit', 'node', 'bin') +
+    //     path.delimiter +
+    //     process.env.PATH,
+    // },
+  });
+
   await tar.c(
     {
       cwd: asssetsKit,
@@ -90,6 +102,10 @@ const go = async () => {
   );
 
   await fs.copy(`./node_modules/monaco-editor/min/vs`, `./assets`);
+
+  if (await fs.exists(asssetsKit)) {
+    await fs.remove(asssetsKit);
+  }
 };
 
 go();
