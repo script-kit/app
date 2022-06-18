@@ -9,13 +9,24 @@ import { backgroundMap, Background } from './state';
 import { processes } from './process';
 
 export const removeBackground = (filePath: string) => {
+  log.info(`Removing background process ${filePath}`);
   if (backgroundMap.get(filePath)) {
     const { child } = backgroundMap.get(filePath) as Background;
     backgroundMap.delete(filePath);
 
-    log.info(`> kill background process: ${filePath} ${child?.pid}`);
-    child?.kill();
+    if (child && !child?.killed) {
+      log.info(`> kill background process: ${filePath} ${child?.pid}`);
+      child?.kill();
+    }
   }
+};
+
+const startTask = (filePath: string) => {
+  const { child } = processes.add(ProcessType.Background, filePath);
+  backgroundMap.set(filePath, {
+    start: new Date().toString(),
+    child,
+  });
 };
 
 export const backgroundScriptChanged = ({
@@ -25,14 +36,6 @@ export const backgroundScriptChanged = ({
 }: Script) => {
   if (kenv !== '') return;
 
-  const startTask = () => {
-    const { child } = processes.add(ProcessType.Background, filePath);
-    backgroundMap.set(filePath, {
-      start: new Date().toString(),
-      child,
-    });
-  };
-
   // Task running. File changed
   if (backgroundMap.get(filePath)) {
     if (!backgroundString) {
@@ -40,9 +43,9 @@ export const backgroundScriptChanged = ({
       return;
     }
     if (backgroundString === 'auto') removeBackground(filePath);
-    startTask();
+    startTask(filePath);
   } else if (backgroundString === 'auto') {
-    startTask();
+    startTask(filePath);
   }
 };
 
@@ -52,28 +55,20 @@ export const updateBackground = async (
 ) => {
   const { background: backgroundString } = await parseScript(filePath);
 
-  const startTask = () => {
-    const { child } = processes.add(ProcessType.Background, filePath);
-    backgroundMap.set(filePath, {
-      start: new Date().toString(),
-      child,
-    });
-  };
-
   // Task not running. File not changed
   if (
     !backgroundMap.get(filePath) &&
     (backgroundString === 'true' || backgroundString === 'auto') &&
     !fileChange
   ) {
-    startTask();
+    startTask(filePath);
     return;
   }
 
   // Task running. File changed
   if (backgroundMap.get(filePath) && backgroundString === 'auto') {
     removeBackground(filePath);
-    startTask();
+    startTask(filePath);
   }
 };
 
@@ -91,3 +86,5 @@ emitter.on(
     await toggleBackground(data.value as string);
   }
 );
+
+emitter.on(KitEvent.RemoveBackground, removeBackground);

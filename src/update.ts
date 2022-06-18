@@ -202,8 +202,13 @@ export const configureAutoUpdate = async () => {
 
   autoUpdater.on('error', (message) => {
     kitState.updateDownloading = false;
+    kitState.updateError = true;
     log.error('There was a problem updating Kit.app');
     log.error(message);
+
+    setTimeout(() => {
+      kitState.updateError = false;
+    }, 5000);
 
     // const notification = new Notification({
     //   title: `There was a problem downloading the Kit.app update`,

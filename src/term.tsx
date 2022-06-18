@@ -19,7 +19,6 @@ import {
   webSocketAtom,
   webSocketOpenAtom,
 } from './jotai';
-import { useEscape } from './hooks';
 
 const defaultTheme = {
   foreground: '#2c3e50',

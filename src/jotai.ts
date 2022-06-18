@@ -363,11 +363,15 @@ const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   },
   wordWrap: 'bounded',
   lineNumbers: 'off',
-  glyphMargin: false,
+  glyphMargin: true,
   scrollBeyondLastLine: false,
-  automaticLayout: true,
   quickSuggestions: true,
   formatOnType: true,
+  selectionHighlight: false,
+  roundedSelection: false,
+  selectOnLineNumbers: false,
+  renderWhitespace: 'none',
+  trimAutoWhitespace: true,
 };
 
 export const editorOptions = atom<editor.IStandaloneEditorConstructionOptions>(

@@ -83,6 +83,7 @@ import {
   getSchedule,
   kitState,
   kitConfig,
+  updateScripts,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -207,25 +208,27 @@ const toProcess = <K extends keyof ChannelMap>(
   fn: (processInfo: ProcessInfo, data: SendData<K>) => void
 ) => (data: SendData<K>) => {
   const processInfo = processes.getByPid(data?.pid);
+  const isWidgetMessage = data.channel.includes('WIDGET');
 
-  // Send data to Widget process if ids match
-  if (data.channel.includes('WIDGET')) {
-    if (processInfo) {
-      fn(processInfo, data);
-    } else {
-      warn(`${data?.pid}: Can't find processInfo associated with widget`);
-    }
-  } else if (processInfo && data.channel === Channel.HIDE_APP) {
-    fn(processInfo, data);
+  if (!processInfo) {
+    return warn(
+      `${data?.pid}: Can't find process associated with ${
+        isWidgetMessage ? `widget` : `script`
+      }`
+    );
   }
-  // Send data to Prompt process only if id matches current prompt
-  else if (processInfo && processInfo?.pid === kitState.promptProcess?.pid) {
-    fn(processInfo, data);
-  } else if (processInfo?.type === ProcessType.Prompt) {
-    warn(
+
+  if (
+    data.channel !== Channel.HIDE_APP &&
+    processInfo?.type === ProcessType.Prompt &&
+    processInfo?.pid !== kitState.promptProcess?.pid
+  ) {
+    return warn(
       `${data?.pid}: ⚠️ ${data.channel} failed. ${data.pid} doesn't match ${kitState.promptProcess?.pid}`
     );
   }
+
+  return fn(processInfo, data);
 };
 
 const kitMessageMap: ChannelHandler = {
@@ -568,7 +571,7 @@ const kitMessageMap: ChannelHandler = {
         channel,
       });
     });
-    hideAppIfNoWindows(scriptPath);
+    hideAppIfNoWindows(scriptPath, 'HIDE_APP event');
   }),
   NEEDS_RESTART: async () => {
     await makeRestartNecessary();
@@ -817,7 +820,8 @@ const kitMessageMap: ChannelHandler = {
   },
 
   KEYBOARD_TYPE: toProcess(async ({ child }, { channel, value }) => {
-    keyboard.config.autoDelayMs = 10;
+    log.info(`>>>>>>>>>>>> ${channel}: ${value}`);
+    keyboard.config.autoDelayMs = 0;
     kitState.isTyping = true;
     try {
       await keyboard.type(value);
@@ -827,32 +831,41 @@ const kitMessageMap: ChannelHandler = {
 
     setTimeout(() => {
       kitState.isTyping = false;
+      child?.send({
+        channel,
+      });
     }, 100);
-
-    child?.send({
-      channel,
-    });
   }),
 
   KEYBOARD_PRESS_KEY: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`PRESSING KEY`, { value });
     await keyboard.pressKey(...(value as any));
 
     child?.send({
       channel,
+      value,
     });
   }),
 
+  // I guess I could check to see if the clipboard has changed
+
   KEYBOARD_RELEASE_KEY: toProcess(async ({ child }, { channel, value }) => {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 25);
+    });
+
     await keyboard.releaseKey(...(value as any));
 
     child?.send({
       channel,
+      value,
     });
   }),
 
   TRASH: toProcess(async ({ child }, { channel, value }) => {
     const { default: trash } = await inclusion('trash');
-    trash(value?.input, value?.options || {});
+    log.info(`🗑 ${value.input}`, value?.options || '');
+    await trash(value?.input, value?.options || {});
 
     child?.send({
       channel,
@@ -867,6 +880,9 @@ const kitMessageMap: ChannelHandler = {
       channel,
     });
   }),
+
+  // Maybe I need to wait between presses?
+  // Or maybe not?
 
   PASTE: toProcess(async ({ child }, { channel }) => {
     const value = clipboard.readText();
@@ -895,6 +911,12 @@ const kitMessageMap: ChannelHandler = {
       }
     }
   },
+  CLEAR_SCRIPTS_MEMORY: toProcess(async ({ child }, { channel }) => {
+    await updateScripts();
+    child?.send({
+      channel,
+    });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (
@@ -1079,11 +1101,11 @@ class Processes extends Array<ProcessInfo> {
     const { pid } = child;
 
     child.on('close', () => {
-      // log.info(`CLOSE`);
+      log.info(`CLOSE`);
     });
 
     child.on('disconnect', () => {
-      // log.info(`DISCONNECT`);
+      log.info(`DISCONNECT`);
     });
 
     child.on('exit', (code) => {
@@ -1096,6 +1118,9 @@ class Processes extends Array<ProcessInfo> {
       }
 
       const processInfo = processes.getByPid(pid) as ProcessInfo;
+      if (processInfo.type === ProcessType.Background) {
+        emitter.emit(KitEvent.RemoveBackground, processInfo.scriptPath);
+      }
 
       if (!processInfo) return;
 
@@ -1146,12 +1171,19 @@ class Processes extends Array<ProcessInfo> {
   public removeByPid(pid: number) {
     const index = this.findIndex((info) => info.pid === pid);
     if (index === -1) return;
-    if (!this[index].child?.killed) {
-      this[index]?.child?.removeAllListeners();
-      this[index]?.child?.kill();
+    const { child, type, scriptPath } = this[index];
+    if (!child?.killed) {
+      if (type === ProcessType.Background) {
+        emitter.emit(KitEvent.RemoveBackground, scriptPath);
+      }
+      child?.removeAllListeners();
+      child?.kill();
       log.info(`${pid}: 🛑 removed`);
       if (kitState.promptProcess?.pid === pid) {
-        hideAppIfNoWindows(kitState.promptProcess.scriptPath);
+        hideAppIfNoWindows(
+          kitState.promptProcess.scriptPath,
+          `remove ${kitState.promptProcess.scriptPath}`
+        );
       }
     }
     this.splice(index, 1);

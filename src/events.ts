@@ -13,6 +13,7 @@ export enum KitEvent {
   RunPromptProcess = 'RunPromptProcess',
   CheckForUpdates = 'CheckForUpdates',
   RunBackgroundProcess = 'RunBackgroundProcess',
+  RemoveBackground = 'REMOVE_BACKGROUND',
 }
 
 interface KitEmitter {

@@ -1391,6 +1391,16 @@
   resolved "https://registry.yarnpkg.com/@emotion/memoize/-/memoize-0.7.4.tgz#19bf0f5af19149111c40d98bb0cf82119f5d9eeb"
   integrity sha512-Ja/Vfqe3HpuzRsG1oBtWTHk2PGZ7GR+2Vz5iYGelAw8dx32K0y7PjVuxK6z1nMpZOqAFsRUPCkK1YjJ56qJlgw==
 
+"@fontsource/fira-mono@^4.5.8":
+  version "4.5.8"
+  resolved "https://registry.yarnpkg.com/@fontsource/fira-mono/-/fira-mono-4.5.8.tgz#e17123b88459d5dd459ba06a7d3b3e6d7e8f7b42"
+  integrity sha512-sFuSPB/Km8B1fy3CH0NqO5Nb4GmVMzp3XFaw6MwK293xhm3OnB68QJawwTTjLewcrS78wOTAhTUB058qxurJoQ==
+
+"@fontsource/jetbrains-mono@^4.5.9":
+  version "4.5.9"
+  resolved "https://registry.yarnpkg.com/@fontsource/jetbrains-mono/-/jetbrains-mono-4.5.9.tgz#792bcd574f42a0602cc04bfef39e11058d0ca217"
+  integrity sha512-qgzRg1dYIPyAOTp1XR6RkDOlNt4o6LVAe9PXR68hQzbwd1xf0S86TWEzNFSL82do8weF/G2ubo4TGxrNKo9D1A==
+
 "@fullhuman/postcss-purgecss@4.0.2":
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/@fullhuman/postcss-purgecss/-/postcss-purgecss-4.0.2.tgz#6e4809293f006957dfa2d6b4fc9c77d26091177e"
@@ -1681,19 +1691,19 @@
     lodash "^4.17.15"
     tmp-promise "^3.0.2"
 
-"@monaco-editor/loader@^1.3.0":
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/@monaco-editor/loader/-/loader-1.3.0.tgz#659fbaf1d612ea67b2a0519a18612d1c4813e444"
-  integrity sha512-N3mGq1ktC3zh7WUx3NGO+PSDdNq9Vspk/41rEmRdrCqV9vNbBTRzAOplmUpNQsi+hmTs++ERMBobMERb8Kb+3g==
+"@monaco-editor/loader@^1.3.2":
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/@monaco-editor/loader/-/loader-1.3.2.tgz#04effbb87052d19cd7d3c9d81c0635490f9bb6d8"
+  integrity sha512-BTDbpHl3e47r3AAtpfVFTlAi7WXv4UQ/xZmz8atKl4q7epQV5e7+JbigFDViWF71VBi4IIBdcWP57Hj+OWuc9g==
   dependencies:
     state-local "^1.0.6"
 
-"@monaco-editor/react@4.4.1":
-  version "4.4.1"
-  resolved "https://registry.yarnpkg.com/@monaco-editor/react/-/react-4.4.1.tgz#2e2b9b369f3082b0e14f47cdbe35658fd56c7c7d"
-  integrity sha512-95E/XPC4dbm/7qdkhSsU/a1kRgcn2PYhRTVIc+/cixWCZrwRURW1DRPaIZ2lOawBJ6kAOLywxuD4A4UmbT0ZIw==
+"@monaco-editor/react@4.4.5":
+  version "4.4.5"
+  resolved "https://registry.yarnpkg.com/@monaco-editor/react/-/react-4.4.5.tgz#beabe491efeb2457441a00d1c7651c653697f65b"
+  integrity sha512-IImtzU7sRc66OOaQVCG+5PFHkSWnnhrUWGBuH6zNmH2h0YgmAhcjHZQc/6MY9JWEbUtVF1WPBMJ9u1XuFbRrVA==
   dependencies:
-    "@monaco-editor/loader" "^1.3.0"
+    "@monaco-editor/loader" "^1.3.2"
     prop-types "^15.7.2"
 
 "@nodelib/fs.scandir@2.1.5":
@@ -11589,10 +11599,10 @@ monaco-editor-webpack-plugin@7.0.1:
   dependencies:
     loader-utils "^2.0.2"
 
-monaco-editor@0.33.0:
-  version "0.33.0"
-  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.33.0.tgz#842e244f3750a2482f8a29c676b5684e75ff34af"
-  integrity sha512-VcRWPSLIUEgQJQIE0pVT8FcGBIgFoxz7jtqctE+IiCxWugD0DwgyQBcZBhdSrdMC84eumoqMZsGl2GTreOzwqw==
+monaco-editor@0.34.0-dev.20220613:
+  version "0.34.0-dev.20220613"
+  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.34.0-dev.20220613.tgz#cefe255209758d7cc016ed5e0ed8bead4126ce69"
+  integrity sha512-ofuTqS3zzuOqGaH+YbWc3LptlPBcNKdZK9Zzu0DKnxaJiFIdCZ+RCIy63YhvXFOXzm0TAwW4YnozsAb4xxH8sg==
 
 monaco-editor@^0.26.1:
   version "0.26.1"

@@ -5,14 +5,12 @@ import { Config } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
 import path from 'path';
 import os from 'os';
-import log from 'electron-log';
 import { ChildProcess } from 'child_process';
-import { app } from 'electron';
+import { app, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { Script } from '@johnlindquist/kit/types/core';
 import { getScripts, getAppDb } from '@johnlindquist/kit/cjs/db';
-import { getAuthStatus, askForAccessibilityAccess } from 'node-mac-permissions';
 
 import {
   parseScript,
@@ -169,35 +167,16 @@ const initState = {
   updateInstalling: false,
   updateDownloading: false,
   updateDownloaded: false,
+  updateError: false,
   ready: false,
-  hasAccessibilityPermissions: false,
-  hasPromptedForAccessibilityPermissions: false,
-  checkPermissions(prompt = false) {
-    if (this.hasAccessibilityPermissions) return true;
-
-    const status = getAuthStatus('accessibility') === 'authorized';
-    log.info(`🪝 Accessibilty is ${status}`);
-    if (status) {
-      this.hasAccessibilityPermissions = true;
-      this.hasPromptedForAccessibilityPermissions = true;
-      return true;
-    }
-
-    if (prompt) {
-      askForAccessibilityAccess();
-    }
-
-    if (this.hasPromptedForAccessibilityPermissions) {
-      return false;
-    }
-
-    this.hasPromptedForAccessibilityPermissions = true;
-    askForAccessibilityAccess();
-
-    log.error('😅 No accessibility permissions');
-    return false;
-  },
+  authorized: false,
+  mainShortcut: ``,
+  isDark: nativeTheme.shouldUseDarkColors,
 };
+
+nativeTheme.addListener('updated', () => {
+  kitState.isDark = nativeTheme.shouldUseDarkColors;
+});
 
 const initConfig: Config = {
   imagePath: tmpClipboardDir,

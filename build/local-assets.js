@@ -28,10 +28,10 @@ const go = async () => {
       gzip: true,
       file: './assets/kit.tar.gz',
       filter: (item) => {
-        // if (item.match(/^.{0,2}node/)) {
-        //   console.log(`SKIPPING`, item);
-        //   return false;
-        // }
+        if (item.match(/^.{0,2}node/)) {
+          console.log(`SKIPPING`, item);
+          return false;
+        }
         if (item.includes('kit.sock')) return false;
 
         return true;

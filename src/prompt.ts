@@ -18,14 +18,14 @@ import {
   Rectangle,
   powerMonitor,
   TouchBar,
-  app,
 } from 'electron';
 import os from 'os';
 import path from 'path';
+import { subscribeKey } from 'valtio/utils';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import minimist from 'minimist';
-import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
+import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { getPromptDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
@@ -55,7 +55,7 @@ const { devTools } = miniArgs;
 let electronPanelWindow: any = null;
 
 let oldIsKeyWindow = false;
-const handleKeyWindow = (isKeyWindow: boolean) => {
+const handleKeyWindow = (isKeyWindow: boolean, reason: string) => {
   if (!promptWindow?.isVisible()) return;
   oldIsKeyWindow = isKeyWindow;
 
@@ -70,17 +70,16 @@ const handleKeyWindow = (isKeyWindow: boolean) => {
     if (kitState.ignoreBlur) {
       log.info(`🪟 Window`);
     } else {
-      log.info(`🙈 Hide`);
+      log.info(`🙈 Hide because ${reason}`);
       promptWindow.hide();
+      kitState.isKeyWindow = false;
     }
-
-    kitState.isKeyWindow = false;
   }
 };
 
-const triggerKeyWindow = (isKeyWindow: boolean) => {
+const triggerKeyWindow = (isKeyWindow: boolean, reason: string) => {
   if (isKeyWindow === oldIsKeyWindow && isKeyWindow) return;
-  handleKeyWindow(isKeyWindow);
+  handleKeyWindow(isKeyWindow, reason);
 };
 
 export const createPromptWindow = async () => {
@@ -156,20 +155,20 @@ export const createPromptWindow = async () => {
   //   }
   // });
 
-  promptWindow?.on('focus', () => {
-    triggerKeyWindow(true);
-  });
+  // promptWindow?.on('focus', () => {
+  //   triggerKeyWindow(true, 'focus');
+  // });
 
-  promptWindow?.webContents?.on('focus', () => {
-    triggerKeyWindow(true);
-  });
+  // promptWindow?.webContents?.on('focus', () => {
+  //   triggerKeyWindow(true, 'webContents focus');
+  // });
 
-  promptWindow?.webContents?.on('blur', () => {
-    triggerKeyWindow(true);
-  });
+  // promptWindow?.webContents?.on('blur', () => {
+  //   triggerKeyWindow(true, 'webContents blur');
+  // });
 
   promptWindow?.on('blur', () => {
-    triggerKeyWindow(false);
+    // triggerKeyWindow(false, 'blur');
 
     if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
@@ -197,7 +196,7 @@ export const createPromptWindow = async () => {
   promptWindow?.webContents?.on('dom-ready', () => {
     log.info(`🍀 dom-ready on ${kitState.promptProcess?.scriptPath}`);
 
-    hideAppIfNoWindows(kitState?.promptProcess?.scriptPath);
+    hideAppIfNoWindows(kitState?.promptProcess?.scriptPath, 'dom-ready');
     sendToPrompt(Channel.SET_READY, true);
   });
 
@@ -258,6 +257,10 @@ export const createPromptWindow = async () => {
     appToPrompt(AppChannel.PROCESSES, ps);
   });
 
+  subscribeKey(kitState, 'isKeyWindow', (isKeyWindow) => {
+    log.info(`🔑 isKeyWindow`, isKeyWindow);
+  });
+
   if (unsubKey) unsubKey();
 
   return promptWindow;
@@ -281,7 +284,7 @@ export const showInactive = () => {
   try {
     if (electronPanelWindow) {
       promptWindow?.showInactive();
-      triggerKeyWindow(true);
+      triggerKeyWindow(true, 'showInactive');
     } else {
       promptWindow?.show();
     }
@@ -313,8 +316,9 @@ export const focusPrompt = () => {
 };
 
 export const endPrompt = async (scriptPath: string) => {
-  hideAppIfNoWindows(scriptPath);
+  hideAppIfNoWindows(scriptPath, `end ${scriptPath}`);
 };
+
 export const getCurrentScreenFromMouse = (): Display => {
   return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
 };
@@ -527,7 +531,7 @@ const writePromptDb = debounce(
   100
 );
 
-export const hideAppIfNoWindows = debounce((scriptPath = '') => {
+export const hideAppIfNoWindows = (scriptPath = '', reason: string) => {
   if (
     promptWindow &&
     !promptWindow?.isDestroyed() &&
@@ -545,7 +549,7 @@ export const hideAppIfNoWindows = debounce((scriptPath = '') => {
 
     kitState.modifiedByUser = false;
     kitState.ignoreBlur = false;
-    triggerKeyWindow(false);
+    triggerKeyWindow(false, reason);
 
     promptWindow.webContents.setBackgroundThrottling(false);
     setTimeout(() => {
@@ -561,7 +565,7 @@ export const hideAppIfNoWindows = debounce((scriptPath = '') => {
 
     savePromptBounds(kitState.script.filePath);
   }
-}, 10);
+};
 
 export const setPlaceholder = (text: string) => {
   sendToPrompt(Channel.SET_PLACEHOLDER, text);
@@ -577,7 +581,7 @@ export const setPromptPid = (pid: number) => {
 };
 
 export const setScript = async (script: Script) => {
-  // log.info(script);
+  if (!script) return;
   // if (promptScript?.filePath === script?.filePath) return;
 
   kitState.script = script;

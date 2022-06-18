@@ -28,6 +28,7 @@ if (!app.requestSingleInstanceLock()) {
 }
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
+import { getAuthStatus } from 'node-mac-permissions';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
@@ -50,6 +51,7 @@ import {
   rename,
   rm,
   rmdir,
+  mkdir,
 } from 'fs/promises';
 
 import axios from 'axios';
@@ -406,6 +408,8 @@ const ready = async () => {
     scheduleDownloads();
     systemEvents();
 
+    kitState.authorized = getAuthStatus('accessibility') === 'authorized';
+
     log.info(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {
     log.warn(error);
@@ -718,26 +722,38 @@ const checkKit = async () => {
     const kitTar = getAssetPath('kit.tar.gz');
     await extractTar(kitTar, kitPath());
 
-    if (!(await nodeExists())) {
-      await setupLog(
-        `Adding node ${nodeVersion} ${platform} ${arch} to ~/.kit/node ...`
+    const knodePath = (...parts: string[]) =>
+      path.join(
+        process.env.KNODE || path.resolve(homedir(), '.knode'),
+        ...parts.filter(Boolean)
       );
 
-      await ensureDir(kitPath('node'));
+    if (!(await nodeExists())) {
+      await setupLog(
+        `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
+      );
 
       if (existsSync(KIT_NODE_TAR)) {
+        if (existsSync(knodePath())) {
+          await setupLog(`Removing old node ${tildify(knodePath())}`);
+          await rmdir(knodePath());
+        }
+
+        await setupLog(`Create node dir ${tildify(knodePath())}`);
+        await mkdir(knodePath());
+
         log.info(`Found ${KIT_NODE_TAR}. Extracting...`);
 
         if (platform === 'win') {
           const d = await Open.file(KIT_NODE_TAR);
-          await d.extract({ path: kitPath('node'), concurrency: 5 });
-          const nodeDir = await readdir(kitPath('node'));
+          await d.extract({ path: knodePath(), concurrency: 5 });
+          const nodeDir = await readdir(knodePath());
           const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));
           if (nodeDirName) {
-            await rename(kitPath('node', nodeDirName), kitPath('node', 'bin'));
-            log.info(await readdir(kitPath('node', 'bin')));
-            await chmod(kitPath('node', 'bin', 'npm.cmd'), 0o755);
-            await chmod(kitPath('node', 'bin', 'node.exe'), 0o755);
+            await rename(knodePath(nodeDirName), knodePath('bin'));
+            log.info(await readdir(knodePath('bin')));
+            await chmod(knodePath('bin', 'npm.cmd'), 0o755);
+            await chmod(knodePath('bin', 'node.exe'), 0o755);
           } else {
             log.warn(`Couldn't find node dir in ${nodeDir}`);
           }
@@ -746,7 +762,7 @@ const checkKit = async () => {
         if (platform === 'darwin') {
           await tar.x({
             file: KIT_NODE_TAR,
-            C: kitPath('node'),
+            C: knodePath(),
             strip: 1,
           });
         }
@@ -755,7 +771,7 @@ const checkKit = async () => {
           const extractNode = spawnSync(
             `tar --strip-components 1 -xf '${getAssetPath(
               'node.tar.xz'
-            )}' --directory '${kitPath('node')}'`,
+            )}' --directory '${knodePath}'`,
             {
               shell: true,
             }
@@ -785,7 +801,7 @@ const checkKit = async () => {
     if (isWin) {
       const npmResult = await new Promise((resolve, reject) => {
         const child = fork(
-          kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+          knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
           [`i`, `--production`, `--no-progress`, `--quiet`],
           options
         );
@@ -818,7 +834,7 @@ const checkKit = async () => {
     } else {
       const npmResult = await new Promise((resolve, reject) => {
         const child = spawn(
-          kitPath('node', 'bin', 'npm'),
+          knodePath('bin', 'npm'),
           [`i`, `--production`, `--no-progress`, `--quiet`],
           options
         );

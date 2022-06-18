@@ -2,7 +2,6 @@ import { globalShortcut, Notification } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { Script } from '@johnlindquist/kit/types/core';
-import { keyboard, Key } from '@nut-tree/nut-js';
 
 import {
   mainScriptPath,
@@ -12,6 +11,7 @@ import {
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import { focusPrompt } from './prompt';
+import { kitState } from './state';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
   const success = globalShortcut.register(shortcut, async () => {
@@ -114,6 +114,7 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       if (ret && globalShortcut.isRegistered(shortcut)) {
+        kitState.mainShortcut = shortcut;
         log.info(`Registered ${shortcut} to ${mainScriptPath}`);
         shortcutMap.set(mainScriptPath, shortcut);
       }

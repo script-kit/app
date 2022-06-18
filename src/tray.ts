@@ -9,6 +9,7 @@ import {
   globalShortcut,
 } from 'electron';
 import log from 'electron-log';
+import { askForAccessibilityAccess } from 'node-mac-permissions';
 import { subscribeKey } from 'valtio/utils';
 import { KeyboardEvent } from 'electron/main';
 import os from 'os';
@@ -25,7 +26,7 @@ import { getVersion } from './version';
 
 let tray: Tray | null = null;
 
-const leftClick = async (event: KeyboardEvent) => {
+const trayClick = async (event: KeyboardEvent) => {
   await restartIfNecessary();
   if (event.metaKey) {
     emitter.emit(
@@ -42,80 +43,174 @@ const leftClick = async (event: KeyboardEvent) => {
   } else if (event.altKey) {
     emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'alt-click.js'));
   } else {
-    emitter.emit(KitEvent.RunPromptProcess, mainScriptPath);
-  }
-};
+    // emitter.emit(KitEvent.RunPromptProcess, mainScriptPath);
 
-const rightClick = async () => {
-  let updateMenu: MenuItemConstructorOptions = {
-    label: 'Check for Updates',
-    click: async () => {
-      emitter.emit(KitEvent.CheckForUpdates, true);
-    },
-  };
-
-  if (kitState.starting) {
-    updateMenu = {
-      label: 'Starting up...',
-    };
-  }
-
-  if (kitState.updateDownloading) {
-    updateMenu = {
-      label: 'Update Downloading...',
-    };
-  }
-
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: `Script Kit ${getVersion()}`,
-    },
-    updateMenu,
-    {
-      label: `Change Shortcut`,
+    let updateMenu: MenuItemConstructorOptions = {
+      label: 'Check for Updates',
       click: async () => {
-        emitter.emit(
-          KitEvent.RunPromptProcess,
-          kitPath('cli', 'change-main-shortcut.js')
-        );
+        emitter.emit(KitEvent.CheckForUpdates, true);
       },
-    },
-    {
-      label: 'Quit',
+    };
 
-      click: () => {
-        log.info(`Quitting...`);
-        app.quit();
-        app.exit();
+    if (kitState.starting) {
+      updateMenu = {
+        label: '🟢 Starting up...',
+      };
+    }
+
+    if (kitState.updateDownloading) {
+      updateMenu = {
+        label: '🟠 Update Downloading...',
+      };
+    }
+
+    if (kitState.updateError) {
+      updateMenu = {
+        label: '🔴 Update download failed. Check logs...',
+      };
+    }
+
+    const runScript = (script: string) => () => {
+      emitter.emit(KitEvent.RunPromptProcess, script);
+    };
+
+    const kitItems = [
+      {
+        label: `Reveal ~/.kenv in Finder`,
+        click: runScript(kitPath('help', 'reveal-kenv.js')),
       },
-    },
-  ]);
-  tray?.popUpContextMenu(contextMenu);
+      {
+        label: `Reveal ~/.kit/logs/kit.log in Finder`,
+        click: runScript(kitPath('help', 'reveal-kit-log.js')),
+      },
+    ];
+
+    if (!kitState.authorized) {
+      kitItems.push({
+        label: `Allow Snippets, Clipboard History, etc...`,
+        click: () => askForAccessibilityAccess(),
+      });
+    }
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: `Open Kit.app Prompt`,
+        // icon: getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`),
+        icon: menuIcon('open'),
+        click: runScript(mainScriptPath),
+        accelerator: kitState.mainShortcut,
+      },
+      {
+        type: 'separator',
+      },
+      {
+        label: `Community`,
+        click: runScript(kitPath('help', 'get-help.js')),
+        icon: menuIcon('github'),
+      },
+      {
+        label: `Join the Newsletter`,
+        click: runScript(kitPath('help', 'join.js')),
+        icon: menuIcon('newsletter'),
+      },
+      {
+        type: 'separator',
+      },
+      ...kitItems,
+      {
+        type: 'separator',
+      },
+      {
+        label: `Script Kit ${getVersion()}`,
+        enabled: false,
+      },
+      updateMenu,
+      {
+        type: 'separator',
+      },
+      {
+        label: `Change Shortcut`,
+        click: runScript(kitPath('cli', 'change-main-shortcut.js')),
+      },
+      {
+        label: 'Quit',
+
+        click: () => {
+          log.info(`Quitting...`);
+          app.quit();
+          app.exit();
+        },
+      },
+    ]);
+    tray?.popUpContextMenu(contextMenu);
+  }
   // emitter.emit(KitEvent.RunPromptProcess, kitPath('main', 'kit.js'));
 };
 
 const isWin = os.platform() === 'win32';
-const trayIcon = getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`);
+type trayColor = 'default' | 'green' | 'red' | 'orange';
+const trayIcon = (color: trayColor) => {
+  const dark = kitState.isDark ? `` : ``;
+  const pre = color === 'default' ? `default${dark}${isWin ? `-win` : ``}` : ``;
+  const post = color !== 'default' ? `notification${dark}-${color}` : ``;
 
-export const getTrayIcon = () => trayIcon;
+  // const greenIcon = getAssetPath(`tray`, `notification-green.png`);
+
+  const name = `${pre}${post}`;
+
+  log.info(`🎨 Tray icon: ${name}`);
+  return getAssetPath(`tray`, `${name}.png`);
+};
+
+type iconType =
+  | 'bug'
+  | 'discord'
+  | 'github'
+  | 'help-alt'
+  | 'help'
+  | 'newsletter'
+  | 'open';
+const menuIcon = (name: iconType) => {
+  return getAssetPath(`menu`, `${name}.png`);
+};
+
+export const getTrayIcon = () => trayIcon('default');
 
 export const createTray = async (checkDb = false) => {
   log.info(`🎨 Creating tray...`, { checkDb });
 
-  subscribeKey(kitState, 'updateDownloaded', (updateDownloaded) => {
-    if (updateDownloaded) {
-      const updateIcon = getAssetPath(
-        `IconTemplate${isWin ? `-win` : ``}-update.png`
-      );
-      tray?.setImage(updateIcon);
+  subscribeKey(kitState, 'updateDownloading', (updateDownloading) => {
+    if (updateDownloading) {
+      tray?.setImage(trayIcon('orange'));
     }
   });
+
+  subscribeKey(kitState, 'updateDownloaded', (updateDownloaded) => {
+    if (updateDownloaded) {
+      tray?.setImage(trayIcon('green'));
+    }
+  });
+
+  subscribeKey(kitState, 'updateError', (updateError) => {
+    if (updateError) {
+      tray?.setImage(trayIcon('red'));
+    } else {
+      tray?.setImage(trayIcon('default'));
+    }
+  });
+
+  // const colors = ['default', 'green', 'red', 'orange'];
+  // let i = 0;
+  // setInterval(() => {
+  //   i++;
+  //   if (i >= colors.length) i = 0;
+  //   tray?.setImage(trayIcon(colors[i] as trayColor));
+  // }, 500);
 
   if (tray) {
     tray.removeAllListeners();
   }
   if (!tray) {
-    tray = new Tray(trayIcon);
+    tray = new Tray(trayIcon('default'));
     tray.setIgnoreDoubleClickEvents(true);
   }
   if (kitState.starting) {
@@ -136,7 +231,7 @@ export const createTray = async (checkDb = false) => {
       );
     };
 
-    tray.on('click', startingMenu);
+    tray.on('mouse-down', startingMenu);
     tray.on('right-click', startingMenu);
 
     globalShortcut.register('CommandOrControl+;', startingMenu);
@@ -158,11 +253,15 @@ export const createTray = async (checkDb = false) => {
     try {
       log.info(`☑ Enable tray`);
 
-      tray.on('click', leftClick);
+      tray.on('mouse-down', trayClick);
+      tray.on('right-click', trayClick);
 
-      log.info(`right click`);
-
-      tray.on('right-click', rightClick);
+      // tray.on('mouse-enter', () => {
+      //   tray?.setImage(trayIcon('green'));
+      // });
+      // tray.on('mouse-leave', () => {
+      //   tray?.setImage(trayIcon('default'));
+      // });
     } catch (error) {
       log.error(error);
     }
@@ -196,8 +295,8 @@ let leftClickOverride: null | ((event: any) => void) = null;
 export const setTrayMenu = async (scripts: string[]) => {
   if (!scripts?.length) {
     if (leftClickOverride) {
-      tray?.off('click', leftClickOverride);
-      tray?.on('click', leftClick);
+      tray?.off('mouse-down', leftClickOverride);
+      tray?.on('mouse-down', trayClick);
       leftClickOverride = null;
       tray?.setContextMenu(null);
     }
@@ -225,7 +324,7 @@ export const setTrayMenu = async (scripts: string[]) => {
       tray?.popUpContextMenu(cMenu);
     };
 
-    tray?.off('click', leftClick);
-    tray?.on('click', leftClickOverride);
+    tray?.off('mouse-down', trayClick);
+    tray?.on('mouse-down', leftClickOverride);
   }
 };
