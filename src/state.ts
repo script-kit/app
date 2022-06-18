@@ -169,6 +169,7 @@ const initState = {
   updateDownloaded: false,
   updateError: false,
   ready: false,
+  settled: false,
   authorized: false,
   mainShortcut: ``,
   isDark: nativeTheme.shouldUseDarkColors,

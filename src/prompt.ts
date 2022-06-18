@@ -282,7 +282,7 @@ export const logFocus = () => {
 
 export const showInactive = () => {
   try {
-    if (electronPanelWindow) {
+    if (electronPanelWindow && kitState.ready) {
       promptWindow?.showInactive();
       triggerKeyWindow(true, 'showInactive');
     } else {

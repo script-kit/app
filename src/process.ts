@@ -220,6 +220,7 @@ const toProcess = <K extends keyof ChannelMap>(
 
   if (
     data.channel !== Channel.HIDE_APP &&
+    !isWidgetMessage &&
     processInfo?.type === ProcessType.Prompt &&
     processInfo?.pid !== kitState.promptProcess?.pid
   ) {

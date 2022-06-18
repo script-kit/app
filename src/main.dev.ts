@@ -908,6 +908,9 @@ const checkKit = async () => {
 
     await ready();
     kitState.ready = true;
+    setTimeout(() => {
+      kitState.settled = true;
+    }, 10000);
     sendToPrompt(Channel.SET_READY, true);
 
     focusPrompt();

@@ -334,7 +334,7 @@ export const addSnippet = (script: Script) => {
     if (kitState.authorized) {
       log.info(`Set snippet: ${script.snippet}`);
       snippetMap.set(script.snippet, script);
-    } else if (!script.filePath.includes('examples')) {
+    } else if (!script.filePath.includes('examples') && kitState.settled) {
       needsPermission();
     } //
   }

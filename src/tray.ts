@@ -198,6 +198,14 @@ export const createTray = async (checkDb = false) => {
     }
   });
 
+  subscribeKey(kitState, 'ready', (ready) => {
+    if (ready) {
+      tray?.setImage(trayIcon('default'));
+    } else {
+      tray?.setImage(trayIcon('orange'));
+    }
+  });
+
   // const colors = ['default', 'green', 'red', 'orange'];
   // let i = 0;
   // setInterval(() => {
