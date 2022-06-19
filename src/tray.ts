@@ -87,7 +87,9 @@ const trayClick = async (event: KeyboardEvent) => {
 
     if (!kitState.authorized) {
       kitItems.push({
-        label: `Allow Snippets, Clipboard History, etc...`,
+        label: `${
+          kitState.notifyAuthFail ? `🔴 ` : ``
+        }Allow Snippets, Clipboard History, etc...`,
         click: () => askForAccessibilityAccess(),
       });
     }
@@ -141,6 +143,10 @@ const trayClick = async (event: KeyboardEvent) => {
         },
       },
     ]);
+    contextMenu.once('menu-will-close', () => {
+      tray?.setImage(trayIcon('default'));
+      kitState.notifyAuthFail = false;
+    });
     tray?.popUpContextMenu(contextMenu);
   }
   // emitter.emit(KitEvent.RunPromptProcess, kitPath('main', 'kit.js'));
@@ -203,6 +209,14 @@ export const createTray = async (checkDb = false) => {
       tray?.setImage(trayIcon('default'));
     } else {
       tray?.setImage(trayIcon('orange'));
+    }
+  });
+
+  subscribeKey(kitState, 'notifyAuthFail', (fail) => {
+    if (fail) {
+      tray?.setImage(trayIcon('red'));
+    } else {
+      tray?.setImage(trayIcon('default'));
     }
   });
 

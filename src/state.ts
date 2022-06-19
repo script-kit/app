@@ -171,6 +171,7 @@ const initState = {
   ready: false,
   settled: false,
   authorized: false,
+  notifyAuthFail: false,
   mainShortcut: ``,
   isDark: nativeTheme.shouldUseDarkColors,
 };

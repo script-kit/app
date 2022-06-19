@@ -821,6 +821,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   KEYBOARD_TYPE: toProcess(async ({ child }, { channel, value }) => {
+    if (!kitState.authorized) kitState.notifyAuthFail = true;
     log.info(`>>>>>>>>>>>> ${channel}: ${value}`);
     keyboard.config.autoDelayMs = 0;
     kitState.isTyping = true;
@@ -839,6 +840,7 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   KEYBOARD_PRESS_KEY: toProcess(async ({ child }, { channel, value }) => {
+    if (!kitState.authorized) kitState.notifyAuthFail = true;
     log.info(`PRESSING KEY`, { value });
     await keyboard.pressKey(...(value as any));
 

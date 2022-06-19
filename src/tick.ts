@@ -67,9 +67,10 @@ export const getClipboardHistory = () => {
   const choice = {
     name: `Clipboard history requires accessibility access`,
     description: `Unable to read clipboard history`,
-    preview: `Please enable accessibility access in your Mac settings. Then quit and re-open Kit.app`,
   };
   log.info(choice);
+
+  kitState.notifyAuthFail = true;
 
   // emitter.emit(
   //   KitEvent.RunPromptProcess,
@@ -316,13 +317,6 @@ const snippetMap = new Map<string, Script>();
 //   }
 // };
 
-const needsPermission = debounce(() => {
-  emitter.emit(
-    KitEvent.RunPromptProcess,
-    kitPath('permissions', 'snippets.js')
-  );
-}, 250);
-
 export const addSnippet = (script: Script) => {
   for (const [key, value] of snippetMap.entries()) {
     if (value.filePath === script.filePath) {
@@ -335,7 +329,7 @@ export const addSnippet = (script: Script) => {
       log.info(`Set snippet: ${script.snippet}`);
       snippetMap.set(script.snippet, script);
     } else if (!script.filePath.includes('examples') && kitState.settled) {
-      needsPermission();
+      kitState.notifyAuthFail = true;
     } //
   }
 };
