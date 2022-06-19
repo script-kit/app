@@ -313,10 +313,12 @@ const optionalSetupScript = (...args: string[]) => {
     });
 
     child.on('exit', () => {
+      log.info(`✅ Successfully ran setup script: ${args.join(' ')}`);
       resolve('success');
     });
 
     child.on('error', (error: Error) => {
+      log.error(`⚠️ Errored on setup script: ${args.join(' ')}`);
       resolve('error');
       // reject(error);
       // throw new Error(error.message);
@@ -636,6 +638,7 @@ const checkKit = async () => {
       });
 
       child.on('exit', () => {
+        log.info(`✅ Successfully ran ${args.join(' ')}`);
         resolve('success');
       });
 
@@ -884,13 +887,14 @@ const checkKit = async () => {
     await kenvConfigured();
   }
 
-  optionalSetupScript(kitPath('cli', 'create-all-bins.js'));
-
   await setupLog(`Update .kenv`);
   await setupScript(kitPath('setup', 'patch.js'));
 
   await setupLog(`Indexing apps`);
   optionalSetupScript(kitPath('setup', 'app-indexer.js'));
+
+  await setupLog(`Creating bins`);
+  optionalSetupScript(kitPath('cli', 'create-all-bins.js'));
 
   let status = 'success';
   let err = '';
@@ -910,7 +914,7 @@ const checkKit = async () => {
     kitState.ready = true;
     setTimeout(() => {
       kitState.settled = true;
-    }, 10000);
+    }, 4000);
     sendToPrompt(Channel.SET_READY, true);
 
     focusPrompt();

@@ -118,9 +118,11 @@ export const createPromptWindow = async () => {
     minHeight: INPUT_HEIGHT,
   });
 
-  promptWindow.setTouchBar(touchbar);
+  // promptWindow.setTouchBar(touchbar);
 
-  promptWindow.setAlwaysOnTop(true, 'modal-panel');
+  // if (!kitState.isMac) {
+  //   promptWindow.setAlwaysOnTop(true, 'modal-panel');
+  // }
   // promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   promptWindow?.webContents?.on('did-finish-load', () => {
