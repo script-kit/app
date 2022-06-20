@@ -69,6 +69,7 @@ const handleKeyWindow = (isKeyWindow: boolean, reason: string) => {
   if (!isKeyWindow) {
     if (kitState.ignoreBlur) {
       log.info(`🪟 Window`);
+      // electronPanelWindow.makeWindow(promptWindow);
     } else {
       log.info(`🙈 Hide because ${reason}`);
       promptWindow.hide();
@@ -170,7 +171,7 @@ export const createPromptWindow = async () => {
   // });
 
   promptWindow?.on('blur', () => {
-    // triggerKeyWindow(false, 'blur');
+    triggerKeyWindow(false, 'blur');
 
     if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
@@ -277,7 +278,6 @@ export const logFocus = () => {
   log.warn(
     `👓 Unable to focus Prompt ${JSON.stringify({
       focused: promptWindow.isFocused(),
-      focusable: promptWindow.isFocusable(),
     })}`
   );
 };
@@ -300,10 +300,9 @@ export const focusPrompt = () => {
     promptWindow &&
     !promptWindow.isDestroyed() &&
     kitState.isKeyWindow &&
-    !promptWindow?.isFocused() &&
-    promptWindow?.isFocusable() &&
-    promptWindow?.isVisible()
+    !promptWindow?.isFocused()
   ) {
+    // log.info(`⧮ Check errored...`);
     // promptWindow.setAlwaysOnTop(true, 'modal-panel');
     // app.focus({
     //   steal: true,
@@ -645,19 +644,18 @@ export const setPromptData = async (promptData: PromptData) => {
   if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
 
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
-  if (!promptWindow?.isVisible()) {
-    const bounds = await getCurrentScreenPromptCache(promptData.scriptPath);
-    log.info(`↖ OPEN:`, bounds);
-    promptWindow.setBounds(bounds);
+  // if (!promptWindow?.isVisible()) {
+  const bounds = await getCurrentScreenPromptCache(promptData.scriptPath);
+  log.info(`↖ OPEN:`, bounds);
+  promptWindow.setBounds(bounds);
 
-    // log.info(`⛳️ MAKING KEY WINDOW!!!!!`);
-    showInactive();
+  showInactive();
 
-    // app.focus({
-    //   steal: true,
-    // });
-    if (devTools) promptWindow?.webContents.openDevTools();
-  }
+  // app.focus({
+  //   steal: true,
+  // });
+  if (devTools) promptWindow?.webContents.openDevTools();
+  // }
 
   focusPrompt();
   sendToPrompt(Channel.SET_OPEN, true);

@@ -48,15 +48,13 @@ process.on('uncaughtException', (error) => {
 });
 
 emitter.on(KitEvent.RunPromptProcess, (scriptPath: string) => {
-  if (isVisible() && !scriptPath.includes('permissions')) {
-    log.info(`Hide App: ${scriptPath}`);
-    kitState.isKeyWindow = true;
+  if (isVisible()) {
     kitState.ignoreBlur = false;
     hideAppIfNoWindows('', `run ${scriptPath}`);
   } else {
     log.info(`Show App: ${scriptPath}`);
-    runPromptProcess(scriptPath);
   }
+  runPromptProcess(scriptPath);
 });
 
 emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {

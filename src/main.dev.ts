@@ -894,7 +894,7 @@ const checkKit = async () => {
   optionalSetupScript(kitPath('setup', 'app-indexer.js'));
 
   await setupLog(`Creating bins`);
-  optionalSetupScript(kitPath('cli', 'create-all-bins.js'));
+  optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
 
   let status = 'success';
   let err = '';

@@ -54,19 +54,22 @@ const trayClick = async (event: KeyboardEvent) => {
 
     if (kitState.starting) {
       updateMenu = {
-        label: '🟢 Starting up...',
+        label: 'Starting up...',
+        icon: menuIcon('green'),
       };
     }
 
     if (kitState.updateDownloading) {
       updateMenu = {
-        label: '🟠 Update Downloading...',
+        label: 'Update Downloading...',
+        icon: menuIcon('orange'),
       };
     }
 
     if (kitState.updateError) {
       updateMenu = {
-        label: '🔴 Update download failed. Check logs...',
+        label: 'Update download failed. Check logs...',
+        icon: menuIcon('red'),
       };
     }
 
@@ -74,7 +77,7 @@ const trayClick = async (event: KeyboardEvent) => {
       emitter.emit(KitEvent.RunPromptProcess, script);
     };
 
-    const kitItems = [
+    const kitItems: MenuItemConstructorOptions[] = [
       {
         label: `Reveal ~/.kenv in Finder`,
         click: runScript(kitPath('help', 'reveal-kenv.js')),
@@ -85,15 +88,28 @@ const trayClick = async (event: KeyboardEvent) => {
       },
     ];
 
+    const authItems: MenuItemConstructorOptions[] = [];
+
     if (!kitState.authorized) {
-      kitItems.push({
-        label: `${
-          kitState.notifyAuthFail ? `🔴 ` : ``
-        }Allow Snippets, Clipboard History, etc...`,
+      authItems.push({
+        label: `Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
         click: () => askForAccessibilityAccess(),
+        icon: menuIcon(kitState.notifyAuthFail ? 'red' : 'cogwheel'),
+      });
+
+      authItems.push({
+        label: `Learn More About Permissions`,
+        click: runScript(kitPath('help', 'authorized-info.js')),
+        icon: menuIcon('open_in_new'),
+      });
+
+      authItems.push({
+        type: 'separator',
       });
     }
+
     const contextMenu = Menu.buildFromTemplate([
+      ...authItems,
       {
         label: `Open Kit.app Prompt`,
         // icon: getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`),
@@ -105,17 +121,24 @@ const trayClick = async (event: KeyboardEvent) => {
         type: 'separator',
       },
       {
-        label: `Community`,
+        label: `Join Community`,
         click: runScript(kitPath('help', 'get-help.js')),
         icon: menuIcon('github'),
       },
       {
-        label: `Join the Newsletter`,
+        label: `Subscribe to the Newsletter`,
         click: runScript(kitPath('help', 'join.js')),
         icon: menuIcon('newsletter'),
       },
       {
-        type: 'separator',
+        label: `Follow on Twitter`,
+        click: runScript(kitPath('help', 'follow.js')),
+        icon: menuIcon('twitter'),
+      },
+      {
+        label: `Browse Scripts`,
+        click: runScript(kitPath('cli', 'browse-examples.js')),
+        icon: menuIcon('browse'),
       },
       ...kitItems,
       {
@@ -168,13 +191,21 @@ const trayIcon = (color: trayColor) => {
 };
 
 type iconType =
+  | 'alarm'
+  | 'browse'
   | 'bug'
+  | 'cogwheel'
   | 'discord'
   | 'github'
   | 'help-alt'
   | 'help'
   | 'newsletter'
-  | 'open';
+  | 'open'
+  | 'open_in_new'
+  | 'twitter'
+  | 'red'
+  | 'green'
+  | 'orange';
 const menuIcon = (name: iconType) => {
   return getAssetPath(`menu`, `${name}.png`);
 };
