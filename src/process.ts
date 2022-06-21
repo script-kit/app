@@ -3,7 +3,7 @@
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
 import untildify from 'untildify';
-import { keyboard } from '@nut-tree/nut-js';
+import { keyboard, mouse } from '@nut-tree/nut-js';
 import {
   app,
   clipboard,
@@ -858,6 +858,33 @@ const kitMessageMap: ChannelHandler = {
     });
 
     await keyboard.releaseKey(...(value as any));
+
+    child?.send({
+      channel,
+      value,
+    });
+  }),
+
+  MOUSE_LEFT_CLICK: toProcess(async ({ child }, { channel, value }) => {
+    await mouse.leftClick();
+
+    child?.send({
+      channel,
+      value,
+    });
+  }),
+
+  MOUSE_RIGHT_CLICK: toProcess(async ({ child }, { channel, value }) => {
+    await mouse.rightClick();
+
+    child?.send({
+      channel,
+      value,
+    });
+  }),
+
+  MOUSE_MOVE: toProcess(async ({ child }, { channel, value }) => {
+    await mouse.move(value);
 
     child?.send({
       channel,
