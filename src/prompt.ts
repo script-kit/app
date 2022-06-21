@@ -54,49 +54,14 @@ const { devTools } = miniArgs;
 
 let electronPanelWindow: any = null;
 
-let oldIsKeyWindow = false;
-const handleKeyWindow = (isKeyWindow: boolean, reason: string) => {
-  if (!promptWindow?.isVisible()) return;
-  oldIsKeyWindow = isKeyWindow;
-
-  if (isKeyWindow && !kitState.isKeyWindow) {
-    log.info(`🎛 Panel`);
-    electronPanelWindow.makePanel(promptWindow);
-    electronPanelWindow?.makeKeyWindow(promptWindow);
-    kitState.isKeyWindow = true;
+const maybeHide = (reason: string) => {
+  if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
+    log.info(`Hiding because ${reason}`);
+    promptWindow?.hide();
   }
-
-  if (!isKeyWindow) {
-    if (kitState.ignoreBlur) {
-      log.info(`🪟 Window`);
-    } else {
-      log.info(`🙈 Hide because ${reason}`);
-      if (promptWindow?.isVisible()) {
-        try {
-          promptWindow.hide();
-        } catch (error) {
-          log.error(error);
-        }
-      }
-      kitState.isKeyWindow = false;
-    }
-  }
-};
-
-const triggerKeyWindow = (isKeyWindow: boolean, reason: string) => {
-  if (isKeyWindow === oldIsKeyWindow && isKeyWindow) return;
-  handleKeyWindow(isKeyWindow, reason);
 };
 
 export const createPromptWindow = async () => {
-  const touchbar = new TouchBar({
-    items: [
-      new TouchBar.TouchBarLabel({
-        label: `Script Kit v${getVersion()}`,
-      }),
-    ],
-  });
-
   if (kitState.isMac) {
     electronPanelWindow = await import('@akiflow/electron-panel-window' as any);
   }
@@ -123,6 +88,9 @@ export const createPromptWindow = async () => {
     skipTaskbar: true,
     minHeight: INPUT_HEIGHT,
   });
+
+  promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  electronPanelWindow.makePanel(promptWindow);
 
   // promptWindow.setTouchBar(touchbar);
 
@@ -176,7 +144,7 @@ export const createPromptWindow = async () => {
   // });
 
   promptWindow?.on('blur', () => {
-    triggerKeyWindow(false, 'blur');
+    maybeHide('blur');
 
     if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
@@ -291,7 +259,7 @@ export const showInactive = () => {
   try {
     if (electronPanelWindow && kitState.ready) {
       promptWindow?.showInactive();
-      triggerKeyWindow(true, 'showInactive');
+      electronPanelWindow?.makeKeyWindow(promptWindow);
     } else {
       promptWindow?.show();
     }
@@ -556,7 +524,7 @@ export const hideAppIfNoWindows = (scriptPath = '', reason: string) => {
 
     kitState.modifiedByUser = false;
     kitState.ignoreBlur = false;
-    triggerKeyWindow(false, reason);
+    maybeHide(reason);
 
     promptWindow.webContents.setBackgroundThrottling(false);
     setTimeout(() => {
