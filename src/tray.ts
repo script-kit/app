@@ -318,7 +318,7 @@ export const createTray = async (checkDb = false) => {
             label: kitState.installing
               ? 'Installing Kit SDK...'
               : kitState.updateInstalling
-              ? 'One sec. Updating...'
+              ? 'Applying Update...'
               : 'Starting...',
           },
         ])
