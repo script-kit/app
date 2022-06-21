@@ -15,9 +15,14 @@ import { destroyTray } from './tray';
 import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
 import { kitState } from './state';
+import { beforePromptQuit } from './prompt';
 
-const callBeforeQuitAndInstall = () => {
+const callBeforeQuitAndInstall = async () => {
   try {
+    if (kitState.isMac) {
+      await beforePromptQuit();
+    }
+
     destroyTray();
     app.removeAllListeners('window-all-closed');
     const browserWindows = BrowserWindow.getAllWindows();
@@ -25,6 +30,7 @@ const callBeforeQuitAndInstall = () => {
       browserWindow.removeAllListeners('close');
       browserWindow?.destroy();
     });
+    kitState.childWatcher?.kill();
   } catch (e) {
     log.warn(`callBeforeQuitAndInstall error`, e);
   }
@@ -47,7 +53,7 @@ export const checkForUpdates = async () => {
 
   if (!kitIgnore() && autoUpdate) {
     log.info(`Auto-update enabled. Checking for update.`);
-    autoUpdater.checkForUpdates();
+    await autoUpdater.checkForUpdates();
   }
 };
 
@@ -60,6 +66,7 @@ const parseChannel = (version: string) => {
 };
 
 let manualUpdateCheck = false;
+let updateInfo = null as any;
 export const configureAutoUpdate = async () => {
   log.info(`Configuring auto-update`);
   autoUpdater.logger = log;
@@ -68,13 +75,13 @@ export const configureAutoUpdate = async () => {
 
   let downloadProgressMade = false;
 
-  const applyUpdate = async (info: any) => {
+  const applyUpdate = async () => {
     const version = getVersion();
-    const newVersion = info?.version;
+    const newVersion = updateInfo?.version;
 
     try {
       log.info(`⏫ Updating from ${version} to ${newVersion}`);
-      if (version === info?.version) {
+      if (version === updateInfo?.version) {
         log.warn(`Downloaded same version 🤔`);
         return;
       }
@@ -124,7 +131,13 @@ export const configureAutoUpdate = async () => {
     }, 250);
   };
 
+  autoUpdater.on('before-quit-for-update', () => {
+    log.info(`Before quit for update...`);
+  });
+
   autoUpdater.on('update-available', async (info) => {
+    updateInfo = info;
+
     kitState.updateDownloading = true;
     log.info('Update available.', info);
 
@@ -138,10 +151,8 @@ export const configureAutoUpdate = async () => {
       log.info(`Downloading update`);
 
       const result = await autoUpdater.downloadUpdate();
-      log.log(`Update downloaded:`, result);
-      if (downloadProgressMade) {
-        await applyUpdate(info);
-      }
+      log.info(`After downloadUpdate`);
+      log.info({ result });
     } else if (version === newVersion) {
       log.info(
         `Blocking update. You're version is ${version} and found ${newVersion}`
@@ -153,9 +164,14 @@ export const configureAutoUpdate = async () => {
     }
   });
 
-  autoUpdater.on('update-downloaded', () => {
+  autoUpdater.on('update-downloaded', async () => {
     kitState.updateDownloaded = true;
+    kitState.updateDownloading = false;
     log.info(`⬇️ Update downloaded`);
+
+    if (downloadProgressMade) {
+      await applyUpdate();
+    }
   });
 
   autoUpdater.on('update-not-available', (info) => {

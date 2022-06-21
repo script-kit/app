@@ -732,6 +732,7 @@ const checkKit = async () => {
       );
 
     if (!(await nodeExists())) {
+      const { default: tildify } = await import('tildify');
       await setupLog(
         `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
       );

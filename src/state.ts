@@ -177,6 +177,7 @@ const initState = {
   red: ``,
   orange: ``,
   green: ``,
+  childWatcher: null as ChildProcess | null,
 };
 
 nativeTheme.addListener('updated', () => {

@@ -23,7 +23,7 @@ import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
-import { updateScripts } from './state';
+import { kitState, updateScripts } from './state';
 import { toggleTray } from './tray';
 import { maybeSetLogin } from './settings';
 import { buildScriptChanged } from './build';
@@ -129,6 +129,8 @@ export const setupWatchers = async () => {
       onScriptsChanged(eventName, filePath);
     }
   );
+
+  kitState.childWatcher = childWatcher;
 
   log.info(`👁 Watch child: ${childWatcher.pid}`);
 };

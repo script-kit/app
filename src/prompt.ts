@@ -54,11 +54,28 @@ const { devTools } = miniArgs;
 
 let electronPanelWindow: any = null;
 
-const maybeHide = (reason: string) => {
+export const maybeHide = (reason: string) => {
   if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
     log.info(`Hiding because ${reason}`);
     promptWindow?.hide();
   }
+};
+
+export const beforePromptQuit = async () => {
+  promptWindow?.hide();
+  return new Promise((resolve) => {
+    setTimeout(async () => {
+      if (kitState.isMac) {
+        const dummy = new BrowserWindow({
+          show: false,
+        });
+        electronPanelWindow.makeKeyWindow(dummy);
+        electronPanelWindow.makeWindow(promptWindow);
+        promptWindow?.close();
+        resolve(true);
+      }
+    });
+  });
 };
 
 export const createPromptWindow = async () => {
