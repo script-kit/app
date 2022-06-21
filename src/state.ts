@@ -174,6 +174,9 @@ const initState = {
   notifyAuthFail: false,
   mainShortcut: ``,
   isDark: nativeTheme.shouldUseDarkColors,
+  red: ``,
+  orange: ``,
+  green: ``,
 };
 
 nativeTheme.addListener('updated', () => {
@@ -187,6 +190,7 @@ const initConfig: Config = {
 
 export const kitConfig: Config = proxy(initConfig);
 export const kitState: typeof initState = proxy(initState);
+export type kitStateType = typeof initState;
 
 export function isSameScript(promptScriptPath: string) {
   const same =

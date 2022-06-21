@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-nested-ternary */
+/* eslint-disable @typescript-eslint/no-loop-func */
 import {
   Notification,
   Tray,
@@ -20,11 +21,12 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, getScriptsDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
-import { kitState, restartIfNecessary } from './state';
+import { kitState, kitStateType, restartIfNecessary } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 
 let tray: Tray | null = null;
+const colors: (keyof kitStateType)[] = ['green', 'red', 'orange'];
 
 const trayClick = async (event: KeyboardEvent) => {
   await restartIfNecessary();
@@ -61,7 +63,7 @@ const trayClick = async (event: KeyboardEvent) => {
 
     if (kitState.updateDownloading) {
       updateMenu = {
-        label: 'Update Downloading...',
+        label: 'Update downloading. Will auto-restart when complete.',
         icon: menuIcon('orange'),
       };
     }
@@ -78,6 +80,9 @@ const trayClick = async (event: KeyboardEvent) => {
     };
 
     const kitItems: MenuItemConstructorOptions[] = [
+      {
+        type: 'separator',
+      },
       {
         label: `Reveal ~/.kenv in Finder`,
         click: runScript(kitPath('help', 'reveal-kenv.js')),
@@ -108,7 +113,28 @@ const trayClick = async (event: KeyboardEvent) => {
       });
     }
 
+    const notifyItems: MenuItemConstructorOptions[] = [];
+
+    for (const color of colors) {
+      if (kitState[color]) {
+        notifyItems.push({
+          label: kitState[color] as string,
+          icon: menuIcon(color as iconType),
+          click: runScript(kitPath('help', 'reveal-kit-log.js')),
+        });
+
+        (kitState[color] as string) = ``;
+      }
+    }
+
+    if (notifyItems.length) {
+      notifyItems.push({
+        type: 'separator',
+      });
+    }
+
     const contextMenu = Menu.buildFromTemplate([
+      ...notifyItems,
       ...authItems,
       {
         label: `Open Kit.app Prompt`,
@@ -136,7 +162,7 @@ const trayClick = async (event: KeyboardEvent) => {
         icon: menuIcon('twitter'),
       },
       {
-        label: `Browse Scripts`,
+        label: `Browse Community Scripts`,
         click: runScript(kitPath('cli', 'browse-examples.js')),
         icon: menuIcon('browse'),
       },
@@ -158,6 +184,7 @@ const trayClick = async (event: KeyboardEvent) => {
       },
       {
         label: 'Quit',
+        role: 'quit',
 
         click: () => {
           log.info(`Quitting...`);
@@ -221,6 +248,12 @@ export const createTray = async (checkDb = false) => {
     }
   });
 
+  subscribeKey(kitState, 'updateInstalling', (updateInstalling) => {
+    if (updateInstalling) {
+      tray?.setImage(trayIcon('orange'));
+    }
+  });
+
   subscribeKey(kitState, 'updateDownloaded', (updateDownloaded) => {
     if (updateDownloaded) {
       tray?.setImage(trayIcon('green'));
@@ -250,6 +283,14 @@ export const createTray = async (checkDb = false) => {
       tray?.setImage(trayIcon('default'));
     }
   });
+
+  for (const color of colors) {
+    subscribeKey(kitState, color, (c) => {
+      if (c) {
+        tray?.setImage(trayIcon(color as trayColor));
+      }
+    });
+  }
 
   // const colors = ['default', 'green', 'red', 'orange'];
   // let i = 0;

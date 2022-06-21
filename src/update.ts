@@ -137,13 +137,6 @@ export const configureAutoUpdate = async () => {
     if (currentChannel === newChannel) {
       log.info(`Downloading update`);
 
-      // const notification = new Notification({
-      //   title: `Downloading Kit.app update ${info.version}`,
-      //   body: `Kit.app will relaunch once download completes`,
-      //   silent: true,
-      // });
-
-      // notification.show();
       const result = await autoUpdater.downloadUpdate();
       log.log(`Update downloaded:`, result);
       if (downloadProgressMade) {
@@ -174,13 +167,7 @@ export const configureAutoUpdate = async () => {
     log.info(info);
 
     if (manualUpdateCheck) {
-      const notification = new Notification({
-        title: `Kit.app is on the latest version`,
-        body: `${getVersion()}`,
-        silent: true,
-      });
-
-      notification.show();
+      kitState.green = `Kit.app is on the latest version`;
 
       manualUpdateCheck = false;
     }

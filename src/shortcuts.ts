@@ -37,7 +37,11 @@ export const unlinkShortcuts = (filePath: string) => {
   }
 };
 
-export const shortcutScriptChanged = ({ shortcut, filePath }: Script) => {
+export const shortcutScriptChanged = ({
+  shortcut,
+  filePath,
+  friendlyShortcut,
+}: Script) => {
   const oldShortcut = shortcutMap.get(filePath);
   const sameScript = oldShortcut === shortcut;
 
@@ -45,15 +49,7 @@ export const shortcutScriptChanged = ({ shortcut, filePath }: Script) => {
 
   const exists = [...shortcutMap.entries()].find(([, s]) => s === shortcut);
   if (exists && !sameScript) {
-    const title = `Shortcut already registered. Skipping...`;
-    log.info(title);
-    const n = new Notification({
-      title,
-      body: `${shortcut} registered to ${exists[0]}`,
-      silent: false,
-    });
-
-    n.show();
+    kitState.orange = `${friendlyShortcut} already registered. Ignoring...`;
 
     return;
   }
