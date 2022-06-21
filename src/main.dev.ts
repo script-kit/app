@@ -713,7 +713,7 @@ const checkKit = async () => {
   log.info(`Requires install: ${requiresInstall}`);
 
   if (await isContributor()) {
-    await setupLog(`Welcome fellow contributor! Thanks for all you do!`);
+    await setupLog(`Welcome fellow contributor! Thanks for all you do!!!`);
   } else if (requiresInstall) {
     if (await kitExists()) {
       kitState.updateInstalling = true;
