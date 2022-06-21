@@ -850,8 +850,6 @@ const kitMessageMap: ChannelHandler = {
     });
   }),
 
-  // I guess I could check to see if the clipboard has changed
-
   KEYBOARD_RELEASE_KEY: toProcess(async ({ child }, { channel, value }) => {
     await new Promise((resolve) => {
       setTimeout(resolve, 25);
