@@ -324,11 +324,13 @@ export const addSnippet = (script: Script) => {
     }
   }
 
-  if (script?.snippet && kitState.authorized) {
-    log.info(`Set snippet: ${script.snippet}`);
-    snippetMap.set(script.snippet, script);
-  } else {
-    kitState.notifyAuthFail = true;
+  if (script?.snippet) {
+    if (kitState.authorized) {
+      log.info(`Set snippet: ${script.snippet}`);
+      snippetMap.set(script.snippet, script);
+    } else {
+      kitState.notifyAuthFail = true;
+    }
   }
 };
 

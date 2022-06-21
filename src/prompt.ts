@@ -69,10 +69,15 @@ const handleKeyWindow = (isKeyWindow: boolean, reason: string) => {
   if (!isKeyWindow) {
     if (kitState.ignoreBlur) {
       log.info(`🪟 Window`);
-      // electronPanelWindow.makeWindow(promptWindow);
     } else {
       log.info(`🙈 Hide because ${reason}`);
-      promptWindow.hide();
+      if (promptWindow?.isVisible()) {
+        try {
+          promptWindow.hide();
+        } catch (error) {
+          log.error(error);
+        }
+      }
       kitState.isKeyWindow = false;
     }
   }
@@ -492,28 +497,33 @@ enum Bounds {
 
 export const savePromptBounds = debounce(
   async (scriptPath: string, b: number = Bounds.Position | Bounds.Size) => {
+    log.info(`💾 Saving prompt bounds`);
     const currentScreen = getCurrentScreenFromPrompt();
     const promptDb = await getPromptDb();
 
-    const bounds = promptWindow?.getBounds();
+    try {
+      const bounds = promptWindow?.getBounds();
 
-    const prevBounds =
-      promptDb?.screens?.[String(currentScreen.id)]?.[scriptPath];
+      const prevBounds =
+        promptDb?.screens?.[String(currentScreen.id)]?.[scriptPath];
 
-    // Ignore if flag
-    const size = b & Bounds.Size;
-    const position = b & Bounds.Position;
-    const { x, y } = position ? bounds : prevBounds || bounds;
-    const { width, height } = size ? bounds : prevBounds || bounds;
+      // Ignore if flag
+      const size = b & Bounds.Size;
+      const position = b & Bounds.Position;
+      const { x, y } = position ? bounds : prevBounds || bounds;
+      const { width, height } = size ? bounds : prevBounds || bounds;
 
-    const promptBounds: PromptBounds = {
-      x,
-      y,
-      width: width < MIN_WIDTH ? MIN_WIDTH : width,
-      height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
-    };
+      const promptBounds: PromptBounds = {
+        x,
+        y,
+        width: width < MIN_WIDTH ? MIN_WIDTH : width,
+        height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
+      };
 
-    writePromptDb(String(currentScreen.id), scriptPath, promptBounds);
+      writePromptDb(String(currentScreen.id), scriptPath, promptBounds);
+    } catch (error) {
+      log.error(error);
+    }
   },
   100
 );
@@ -533,14 +543,10 @@ const writePromptDb = debounce(
 );
 
 export const hideAppIfNoWindows = (scriptPath = '', reason: string) => {
-  if (
-    promptWindow &&
-    !promptWindow?.isDestroyed() &&
-    promptWindow?.isVisible()
-  ) {
+  if (promptWindow) {
     if (scriptPath) savePromptBounds(scriptPath, Bounds.Position);
 
-    const allWindows = BrowserWindow.getAllWindows();
+    // const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden
 
     if (!kitState.hidden) {
@@ -560,9 +566,9 @@ export const hideAppIfNoWindows = (scriptPath = '', reason: string) => {
     }, 1000);
     // setPromptBounds();
 
-    if (allWindows.every((window) => !window.isVisible())) {
-      // if (app?.hide) app?.hide();
-    }
+    // if (allWindows.every((window) => !window.isVisible())) {
+    // if (app?.hide) app?.hide();
+    // }
 
     savePromptBounds(kitState.script.filePath);
   }
