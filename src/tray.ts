@@ -21,12 +21,11 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, getScriptsDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
-import { kitState, kitStateType, restartIfNecessary } from './state';
+import { colors, kitState, restartIfNecessary, trayColor } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 
 let tray: Tray | null = null;
-const colors: (keyof kitStateType)[] = ['green', 'red', 'orange'];
 
 const trayClick = async (event: KeyboardEvent) => {
   await restartIfNecessary();
@@ -47,33 +46,33 @@ const trayClick = async (event: KeyboardEvent) => {
   } else {
     // emitter.emit(KitEvent.RunPromptProcess, mainScriptPath);
 
-    let updateMenu: MenuItemConstructorOptions = {
+    const updateMenu: MenuItemConstructorOptions = {
       label: 'Check for Updates',
       click: async () => {
         emitter.emit(KitEvent.CheckForUpdates, true);
       },
     };
 
-    if (kitState.starting) {
-      updateMenu = {
-        label: 'Starting up...',
-        icon: menuIcon('green'),
-      };
-    }
+    // if (kitState.starting) {
+    //   updateMenu = {
+    //     label: 'Starting up...',
+    //     icon: menuIcon('green'),
+    //   };
+    // }
 
-    if (kitState.updateDownloading) {
-      updateMenu = {
-        label: 'Update downloading. Will auto-restart when complete.',
-        icon: menuIcon('orange'),
-      };
-    }
+    // if (kitState.updateDownloading) {
+    //   updateMenu = {
+    //     label: 'Update downloading. Will auto-restart when complete.',
+    //     icon: menuIcon('orange'),
+    //   };
+    // }
 
-    if (kitState.updateError) {
-      updateMenu = {
-        label: 'Update download failed. Check logs...',
-        icon: menuIcon('red'),
-      };
-    }
+    // if (kitState.updateError) {
+    //   updateMenu = {
+    //     label: 'Update download failed. Check logs...',
+    //     icon: menuIcon('red'),
+    //   };
+    // }
 
     const runScript = (script: string) => () => {
       emitter.emit(KitEvent.RunPromptProcess, script);
@@ -93,6 +92,22 @@ const trayClick = async (event: KeyboardEvent) => {
       },
     ];
 
+    const notifyItems: MenuItemConstructorOptions[] = [];
+
+    for (const { color, message } of kitState.notifications) {
+      notifyItems.push({
+        label: message,
+        icon: menuIcon(color as iconType),
+        click: runScript(kitPath('help', 'reveal-kit-log.js')),
+      });
+    }
+
+    if (notifyItems.length) {
+      notifyItems.push({
+        type: 'separator',
+      });
+    }
+
     const authItems: MenuItemConstructorOptions[] = [];
 
     if (!kitState.authorized) {
@@ -109,26 +124,6 @@ const trayClick = async (event: KeyboardEvent) => {
       });
 
       authItems.push({
-        type: 'separator',
-      });
-    }
-
-    const notifyItems: MenuItemConstructorOptions[] = [];
-
-    for (const color of colors) {
-      if (kitState[color]) {
-        notifyItems.push({
-          label: kitState[color] as string,
-          icon: menuIcon(color as iconType),
-          click: runScript(kitPath('help', 'reveal-kit-log.js')),
-        });
-
-        (kitState[color] as string) = ``;
-      }
-    }
-
-    if (notifyItems.length) {
-      notifyItems.push({
         type: 'separator',
       });
     }
@@ -194,7 +189,7 @@ const trayClick = async (event: KeyboardEvent) => {
       },
     ]);
     contextMenu.once('menu-will-close', () => {
-      tray?.setImage(trayIcon('default'));
+      kitState.notifications = [];
       kitState.notifyAuthFail = false;
     });
     tray?.popUpContextMenu(contextMenu);
@@ -203,9 +198,13 @@ const trayClick = async (event: KeyboardEvent) => {
 };
 
 const isWin = os.platform() === 'win32';
-type trayColor = 'default' | 'green' | 'red' | 'orange';
+
 const trayIcon = (color: trayColor) => {
-  const dark = kitState.isDark ? `` : ``;
+  // log.info({
+  //   reduceTransparency: kitState.reduceTransparency,
+  //   isDark: kitState.isDark,
+  // });
+  const dark = kitState.reduceTransparency && !kitState.isDark ? `-dark` : ``;
   const pre = color === 'default' ? `default${dark}${isWin ? `-win` : ``}` : ``;
   const post = color !== 'default' ? `notification${dark}-${color}` : ``;
 
@@ -233,8 +232,10 @@ type iconType =
   | 'red'
   | 'green'
   | 'orange';
+
 const menuIcon = (name: iconType) => {
-  return getAssetPath(`menu`, `${name}.png`);
+  const template = colors.includes(name as any) ? `` : `-Template`;
+  return getAssetPath(`menu`, `${name}${template}.png`);
 };
 
 export const getTrayIcon = () => trayIcon('default');
@@ -242,39 +243,55 @@ export const getTrayIcon = () => trayIcon('default');
 export const createTray = async (checkDb = false) => {
   log.info(`🎨 Creating tray...`, { checkDb });
 
-  subscribeKey(kitState, 'updateDownloading', (updateDownloading) => {
-    if (updateDownloading) {
-      tray?.setImage(trayIcon('orange'));
-    }
-  });
+  // subscribeKey(kitState, 'isDark', () => {
+  //   tray?.setImage(trayIcon('default'));
+  //   kitState.notifyAuthFail = false;
+  // });
 
-  subscribeKey(kitState, 'updateInstalling', (updateInstalling) => {
-    if (updateInstalling) {
-      tray?.setImage(trayIcon('orange'));
-    }
-  });
+  // subscribeKey(kitState, 'reduceTransparency', () => {
+  //   tray?.setImage(trayIcon('default'));
+  //   kitState.notifyAuthFail = false;
+  // });
 
-  subscribeKey(kitState, 'updateDownloaded', (updateDownloaded) => {
-    if (updateDownloaded) {
-      tray?.setImage(trayIcon('green'));
-    }
-  });
+  // subscribeKey(kitState, 'checkingForUpdate', (checkingForUpdate) => {
+  //   if (checkingForUpdate) {
+  //     tray?.setImage(trayIcon('orange'));
+  //   }
+  // });
 
-  subscribeKey(kitState, 'updateError', (updateError) => {
-    if (updateError) {
-      tray?.setImage(trayIcon('red'));
-    } else {
-      tray?.setImage(trayIcon('default'));
-    }
-  });
+  // subscribeKey(kitState, 'updateDownloading', (updateDownloading) => {
+  //   if (updateDownloading) {
+  //     tray?.setImage(trayIcon('orange'));
+  //   }
+  // });
 
-  subscribeKey(kitState, 'ready', (ready) => {
-    if (ready) {
-      tray?.setImage(trayIcon('default'));
-    } else {
-      tray?.setImage(trayIcon('orange'));
-    }
-  });
+  // subscribeKey(kitState, 'updateInstalling', (updateInstalling) => {
+  //   if (updateInstalling) {
+  //     tray?.setImage(trayIcon('orange'));
+  //   }
+  // });
+
+  // subscribeKey(kitState, 'updateDownloaded', (updateDownloaded) => {
+  //   if (updateDownloaded) {
+  //     tray?.setImage(trayIcon('green'));
+  //   }
+  // });
+
+  // subscribeKey(kitState, 'updateError', (updateError) => {
+  //   if (updateError) {
+  //     tray?.setImage(trayIcon('red'));
+  //   } else {
+  //     tray?.setImage(trayIcon('default'));
+  //   }
+  // });
+
+  // subscribeKey(kitState, 'ready', (ready) => {
+  //   if (ready) {
+  //     tray?.setImage(trayIcon('default'));
+  //   } else {
+  //     tray?.setImage(trayIcon('orange'));
+  //   }
+  // });
 
   subscribeKey(kitState, 'notifyAuthFail', (fail) => {
     if (fail) {
@@ -284,13 +301,13 @@ export const createTray = async (checkDb = false) => {
     }
   });
 
-  for (const color of colors) {
-    subscribeKey(kitState, color, (c) => {
-      if (c) {
-        tray?.setImage(trayIcon(color as trayColor));
-      }
-    });
-  }
+  subscribeKey(kitState, 'notifications', (notifications) => {
+    if (notifications.length) {
+      tray?.setImage(trayIcon(notifications[notifications.length - 1].color));
+    } else {
+      tray?.setImage(trayIcon('default'));
+    }
+  });
 
   // const colors = ['default', 'green', 'red', 'orange'];
   // let i = 0;

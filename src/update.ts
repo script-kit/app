@@ -138,7 +138,7 @@ export const configureAutoUpdate = async () => {
   autoUpdater.on('update-available', async (info) => {
     updateInfo = info;
 
-    kitState.updateDownloading = true;
+    kitState.orange = `Downloading update ${info.version}...`;
     log.info('Update available.', info);
 
     const version = getVersion();
@@ -166,7 +166,8 @@ export const configureAutoUpdate = async () => {
 
   autoUpdater.on('update-downloaded', async () => {
     kitState.updateDownloaded = true;
-    kitState.updateDownloading = false;
+    kitState.notifications = [];
+    kitState.green = `Update downloaded. Restarting...`;
     log.info(`⬇️ Update downloaded`);
 
     if (downloadProgressMade) {
@@ -175,9 +176,7 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('update-not-available', (info) => {
-    kitState.updateDownloaded = false;
-    kitState.updateInstalling = false;
-    kitState.updateDownloading = false;
+    kitState.notifications = [];
 
     log.info('Update not available...');
     log.info(info);
@@ -190,7 +189,6 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('checking-for-update', () => {
-    kitState.updateDownloading = true;
     log.info('Checking for update...');
   });
 
@@ -204,13 +202,13 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('error', (message) => {
-    kitState.updateDownloading = false;
-    kitState.updateError = true;
+    kitState.notifications = [];
+    kitState.red = `Error in auto-updater: ${message}`;
     log.error('There was a problem updating Kit.app');
     log.error(message);
 
     setTimeout(() => {
-      kitState.updateError = false;
+      kitState.notifications = [];
     }, 5000);
 
     // const notification = new Notification({
@@ -227,6 +225,7 @@ export const configureAutoUpdate = async () => {
   });
 
   emitter.on(KitEvent.CheckForUpdates, async () => {
+    kitState.orange = `Checking for update...`;
     manualUpdateCheck = true;
     await checkForUpdates();
   });

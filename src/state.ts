@@ -3,9 +3,11 @@
 /* eslint-disable no-nested-ternary */
 import { Config } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
+import { subscribeKey } from 'valtio/utils';
+import log from 'electron-log';
 import path from 'path';
 import os from 'os';
-import { ChildProcess } from 'child_process';
+import { ChildProcess, execSync } from 'child_process';
 import { app, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
@@ -133,6 +135,31 @@ const removeP = (pid: number) => {
   }
 };
 
+const checkReduceTransparency = () => {
+  try {
+    const stdout = Boolean(
+      parseInt(
+        Buffer.from(
+          execSync(
+            'defaults read com.apple.universalaccess reduceTransparency',
+            {
+              encoding: 'utf8',
+              maxBuffer: 50 * 1024 * 1024,
+            }
+          )
+        )
+          .toString()
+          .trim(),
+        10
+      )
+    );
+    log.info(`Reduce transparency?`, { stdout });
+    return stdout;
+  } catch (error) {
+    return false;
+  }
+};
+
 const initState = {
   hidden: false,
   ps: [] as Partial<ProcessInfo>[],
@@ -159,15 +186,18 @@ const initState = {
   isShiftDown: false,
   isMac: os.platform() === 'darwin',
   isWindows: os.platform() === 'win32',
+  reduceTransparency: checkReduceTransparency(),
   starting: true,
   suspended: false,
   screenLocked: false,
   isKeyWindow: false,
   installing: false,
+  // checkingForUpdate: false,
   updateInstalling: false,
-  updateDownloading: false,
+  // updateDownloading: false,
   updateDownloaded: false,
-  updateError: false,
+  // updateError: false,
+  updateState: null as { message: string; color: trayColor } | null,
   ready: false,
   settled: false,
   authorized: false,
@@ -178,10 +208,12 @@ const initState = {
   orange: ``,
   green: ``,
   childWatcher: null as ChildProcess | null,
+  notifications: [] as { message: string; color: 'red' | 'orange' | 'green' }[],
 };
 
 nativeTheme.addListener('updated', () => {
   kitState.isDark = nativeTheme.shouldUseDarkColors;
+  kitState.reduceTransparency = checkReduceTransparency();
 });
 
 const initConfig: Config = {
@@ -199,4 +231,19 @@ export function isSameScript(promptScriptPath: string) {
       path.resolve(promptScriptPath) && kitState.promptCount === 0;
 
   return same;
+}
+
+export const colors = ['green', 'red', 'orange'] as const;
+export const trayColors = [...colors, 'default'] as const;
+export type trayColor = typeof trayColors[number];
+
+for (const color of colors) {
+  subscribeKey(kitState, color, (message) => {
+    if (message) {
+      kitState.notifications.push({
+        message: message as string,
+        color,
+      });
+    }
+  });
 }
