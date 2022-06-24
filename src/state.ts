@@ -135,26 +135,28 @@ const removeP = (pid: number) => {
   }
 };
 
-const checkReduceTransparency = () => {
+const checkTransparencyEnabled = () => {
+  if (
+    os.platform() === 'darwin' &&
+    parseInt(os.release().split('.')[0], 10) < 10
+  ) {
+    return false;
+  }
+
   try {
-    const stdout = Boolean(
-      parseInt(
-        Buffer.from(
-          execSync(
-            'defaults read com.apple.universalaccess reduceTransparency',
-            {
-              encoding: 'utf8',
-              maxBuffer: 50 * 1024 * 1024,
-            }
-          )
-        )
-          .toString()
-          .trim(),
-        10
+    const enabled = !parseInt(
+      Buffer.from(
+        execSync('defaults read com.apple.universalaccess reduceTransparency', {
+          encoding: 'utf8',
+          maxBuffer: 50 * 1024 * 1024,
+        })
       )
+        .toString()
+        .trim(),
+      10
     );
-    log.info(`Reduce transparency?`, { stdout });
-    return stdout;
+    log.info(`transparency enabled: ${enabled}`);
+    return enabled;
   } catch (error) {
     return false;
   }
@@ -186,7 +188,8 @@ const initState = {
   isShiftDown: false,
   isMac: os.platform() === 'darwin',
   isWindows: os.platform() === 'win32',
-  reduceTransparency: checkReduceTransparency(),
+  isLinux: os.platform() === 'linux',
+  transparencyEnabled: checkTransparencyEnabled(),
   starting: true,
   suspended: false,
   screenLocked: false,
@@ -213,7 +216,7 @@ const initState = {
 
 nativeTheme.addListener('updated', () => {
   kitState.isDark = nativeTheme.shouldUseDarkColors;
-  kitState.reduceTransparency = checkReduceTransparency();
+  kitState.transparencyEnabled = checkTransparencyEnabled();
 });
 
 const initConfig: Config = {

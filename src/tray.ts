@@ -179,8 +179,6 @@ const trayClick = async (event: KeyboardEvent) => {
       },
       {
         label: 'Quit',
-        role: 'quit',
-
         click: () => {
           log.info(`Quitting...`);
           app.quit();
@@ -204,7 +202,7 @@ const trayIcon = (color: trayColor) => {
   //   reduceTransparency: kitState.reduceTransparency,
   //   isDark: kitState.isDark,
   // });
-  const dark = kitState.reduceTransparency && !kitState.isDark ? `-dark` : ``;
+  const dark = !kitState.isDark && !kitState.transparencyEnabled ? `-dark` : ``;
   const pre = color === 'default' ? `default${dark}${isWin ? `-win` : ``}` : ``;
   const post = color !== 'default' ? `notification${dark}-${color}` : ``;
 
@@ -243,15 +241,15 @@ export const getTrayIcon = () => trayIcon('default');
 export const createTray = async (checkDb = false) => {
   log.info(`🎨 Creating tray...`, { checkDb });
 
-  // subscribeKey(kitState, 'isDark', () => {
-  //   tray?.setImage(trayIcon('default'));
-  //   kitState.notifyAuthFail = false;
-  // });
+  subscribeKey(kitState, 'isDark', () => {
+    tray?.setImage(trayIcon('default'));
+    kitState.notifyAuthFail = false;
+  });
 
-  // subscribeKey(kitState, 'reduceTransparency', () => {
-  //   tray?.setImage(trayIcon('default'));
-  //   kitState.notifyAuthFail = false;
-  // });
+  subscribeKey(kitState, 'transparencyEnabled', () => {
+    tray?.setImage(trayIcon('default'));
+    kitState.notifyAuthFail = false;
+  });
 
   // subscribeKey(kitState, 'checkingForUpdate', (checkingForUpdate) => {
   //   if (checkingForUpdate) {

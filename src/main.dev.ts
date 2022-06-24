@@ -119,6 +119,10 @@ const arch = getArch();
 const platform = getPlatform();
 const nodeVersion = getNodeVersion();
 
+app.on('before-quit', () => {
+  if (kitState?.childWatcher) kitState.childWatcher?.kill();
+});
+
 log.info(`
 Release channel: ${releaseChannel}
 Arch: ${arch}
