@@ -39,6 +39,7 @@ import {
   SpawnSyncOptions,
   SpawnSyncReturns,
   ForkOptions,
+  execSync,
 } from 'child_process';
 import os, { homedir } from 'os';
 import { ensureDir } from 'fs-extra';
@@ -120,7 +121,21 @@ const platform = getPlatform();
 const nodeVersion = getNodeVersion();
 
 app.on('before-quit', () => {
-  if (kitState?.childWatcher) kitState.childWatcher?.kill();
+  try {
+    if (kitState?.childWatcher) kitState.childWatcher?.kill();
+  } catch (error) {
+    log.error(error);
+  }
+
+  try {
+    execSync(`pkill -f 'Kit Helper'`);
+  } catch (error) {
+    log.info(`😬 pkill failed`, { error });
+  }
+});
+
+app.on('window-all-closed', (e: Event) => {
+  if (!kitState.allowQuit) e.preventDefault();
 });
 
 log.info(`

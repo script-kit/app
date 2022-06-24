@@ -199,6 +199,7 @@ const initState = {
   updateInstalling: false,
   // updateDownloading: false,
   updateDownloaded: false,
+  allowQuit: false,
   // updateError: false,
   updateState: null as { message: string; color: trayColor } | null,
   ready: false,
@@ -250,3 +251,9 @@ for (const color of colors) {
     }
   });
 }
+
+subscribeKey(kitState, 'ready', (ready) => {
+  if (ready) {
+    kitState.notifications = [];
+  }
+});

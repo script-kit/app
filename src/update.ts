@@ -167,6 +167,7 @@ export const configureAutoUpdate = async () => {
   autoUpdater.on('update-downloaded', async () => {
     kitState.updateDownloaded = true;
     kitState.notifications = [];
+    kitState.allowQuit = true;
     kitState.green = `Update downloaded. Restarting...`;
     log.info(`⬇️ Update downloaded`);
 
@@ -218,10 +219,6 @@ export const configureAutoUpdate = async () => {
     // });
 
     // notification.show();
-  });
-
-  app.on('window-all-closed', (e: Event) => {
-    if (!kitState.updateDownloaded) e.preventDefault();
   });
 
   emitter.on(KitEvent.CheckForUpdates, async () => {

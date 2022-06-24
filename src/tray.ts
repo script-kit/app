@@ -180,6 +180,7 @@ const trayClick = async (event: KeyboardEvent) => {
       {
         label: 'Quit',
         click: () => {
+          kitState.allowQuit = true;
           log.info(`Quitting...`);
           app.quit();
           app.exit();
@@ -251,46 +252,6 @@ export const createTray = async (checkDb = false) => {
     kitState.notifyAuthFail = false;
   });
 
-  // subscribeKey(kitState, 'checkingForUpdate', (checkingForUpdate) => {
-  //   if (checkingForUpdate) {
-  //     tray?.setImage(trayIcon('orange'));
-  //   }
-  // });
-
-  // subscribeKey(kitState, 'updateDownloading', (updateDownloading) => {
-  //   if (updateDownloading) {
-  //     tray?.setImage(trayIcon('orange'));
-  //   }
-  // });
-
-  // subscribeKey(kitState, 'updateInstalling', (updateInstalling) => {
-  //   if (updateInstalling) {
-  //     tray?.setImage(trayIcon('orange'));
-  //   }
-  // });
-
-  // subscribeKey(kitState, 'updateDownloaded', (updateDownloaded) => {
-  //   if (updateDownloaded) {
-  //     tray?.setImage(trayIcon('green'));
-  //   }
-  // });
-
-  // subscribeKey(kitState, 'updateError', (updateError) => {
-  //   if (updateError) {
-  //     tray?.setImage(trayIcon('red'));
-  //   } else {
-  //     tray?.setImage(trayIcon('default'));
-  //   }
-  // });
-
-  // subscribeKey(kitState, 'ready', (ready) => {
-  //   if (ready) {
-  //     tray?.setImage(trayIcon('default'));
-  //   } else {
-  //     tray?.setImage(trayIcon('orange'));
-  //   }
-  // });
-
   subscribeKey(kitState, 'notifyAuthFail', (fail) => {
     if (fail) {
       tray?.setImage(trayIcon('red'));
@@ -324,6 +285,7 @@ export const createTray = async (checkDb = false) => {
   }
   if (kitState.starting) {
     const startingMenu = () => {
+      tray?.setImage(trayIcon('orange'));
       tray?.popUpContextMenu(
         Menu.buildFromTemplate([
           {
@@ -335,6 +297,7 @@ export const createTray = async (checkDb = false) => {
               : kitState.updateInstalling
               ? 'Applying Update...'
               : 'Starting...',
+            icon: menuIcon('orange'),
           },
         ])
       );
