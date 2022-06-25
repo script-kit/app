@@ -627,19 +627,23 @@ const cleanKit = async () => {
   log.info(`🧹 Cleaning ${kitPath()}`);
   const pathToClean = kitPath();
 
-  const keep = (file: string) => file.startsWith('db');
+  const keep = (file: string) => file === 'db' || file === 'node_modules';
 
   // eslint-disable-next-line no-restricted-syntax
   for await (const file of await readdir(pathToClean)) {
-    if (keep(file)) continue;
+    if (keep(file)) {
+      log.info(`👍 Keeping ${file}`);
+      continue;
+    }
 
     const filePath = path.resolve(pathToClean, file);
     const stat = await lstat(filePath);
-    log.info(`🧹 Cleaning ${filePath}`);
     if (stat.isDirectory()) {
       await rmdir(filePath, { recursive: true });
+      log.info(`🧹 Cleaning dir ${filePath}`);
     } else {
       await rm(filePath);
+      log.info(`🧹 Cleaning file ${filePath}`);
     }
   }
 };
