@@ -987,4 +987,11 @@ const checkKit = async () => {
   }
 };
 
+try {
+  log.info(`🧹 Cleaning abandonned 'Kit Helper' processes`);
+  execSync(`pkill -f 'Kit Helper'`);
+} catch (error) {
+  log.info(`👍 No abandonned 'Kit Helper' processes found`);
+}
+
 app.whenReady().then(checkKit).catch(ohNo);

@@ -256,3 +256,11 @@ subscribeKey(kitState, 'ready', (ready) => {
     kitState.notifications = [];
   }
 });
+
+subscribeKey(kitState, 'notifications', (notifications) => {
+  if (notifications.length === 0) {
+    kitState.orange = '';
+    kitState.green = '';
+    kitState.red = '';
+  }
+});
