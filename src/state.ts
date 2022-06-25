@@ -211,7 +211,6 @@ const initState = {
   red: ``,
   orange: ``,
   green: ``,
-  childWatcher: null as ChildProcess | null,
   notifications: [] as { message: string; color: 'red' | 'orange' | 'green' }[],
 };
 

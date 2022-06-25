@@ -280,12 +280,11 @@ export const createTray = async (checkDb = false) => {
     tray.removeAllListeners();
   }
   if (!tray) {
-    tray = new Tray(trayIcon('default'));
+    tray = new Tray(trayIcon('orange'));
     tray.setIgnoreDoubleClickEvents(true);
   }
   if (kitState.starting) {
     const startingMenu = () => {
-      tray?.setImage(trayIcon('orange'));
       tray?.popUpContextMenu(
         Menu.buildFromTemplate([
           {

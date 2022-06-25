@@ -80,13 +80,15 @@ export const onDbChanged = async (event: any, filePath: string) => {
   updateMainShortcut(filePath);
 };
 
-let childWatcher: ChildProcess | null;
+export const watchers = {
+  childWatcher: null as ChildProcess | null,
+};
 
 export const teardownWatchers = async () => {
-  if (childWatcher) {
-    childWatcher.removeAllListeners();
-    childWatcher.kill();
-    childWatcher = null;
+  if (watchers.childWatcher) {
+    watchers.childWatcher.removeAllListeners();
+    watchers.childWatcher.kill();
+    watchers.childWatcher = null;
   }
 };
 
@@ -103,8 +105,12 @@ export const setupWatchers = async () => {
   };
 
   const scriptPath = kitPath('setup', 'watcher.js');
-  childWatcher = fork(kitPath('run', 'terminal.js'), [scriptPath], forkOptions);
-  childWatcher.on(
+  watchers.childWatcher = fork(
+    kitPath('run', 'terminal.js'),
+    [scriptPath],
+    forkOptions
+  );
+  watchers.childWatcher.on(
     'message',
     async ({
       eventName,
@@ -130,7 +136,5 @@ export const setupWatchers = async () => {
     }
   );
 
-  kitState.childWatcher = childWatcher;
-
-  log.info(`👁 Watch child: ${childWatcher.pid}`);
+  log.info(`👁 Watch child: ${watchers.childWatcher.pid}`);
 };

@@ -71,7 +71,12 @@ import {
 
 import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
 import { createTray, destroyTray } from './tray';
-import { cacheMenu, setupWatchers, teardownWatchers } from './watcher';
+import {
+  cacheMenu,
+  setupWatchers,
+  teardownWatchers,
+  watchers,
+} from './watcher';
 import {
   getArch,
   getAssetPath,
@@ -90,6 +95,7 @@ import {
   setPromptPid,
   setScript,
   focusPrompt,
+  beforePromptQuit,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -122,7 +128,25 @@ const nodeVersion = getNodeVersion();
 
 app.on('before-quit', () => {
   try {
-    if (kitState?.childWatcher) kitState.childWatcher?.kill();
+    destroyTray();
+  } catch (error) {
+    log.error(`😬 ERROR DESTROYING TRAY`, { error });
+  }
+
+  try {
+    app.removeAllListeners('window-all-closed');
+  } catch (error) {
+    log.error(error);
+  }
+
+  try {
+    if (kitState.isMac) beforePromptQuit();
+  } catch (error) {
+    log.error(error);
+  }
+
+  try {
+    if (watchers?.childWatcher) watchers?.childWatcher?.kill();
   } catch (error) {
     log.error(error);
   }
@@ -135,7 +159,7 @@ app.on('before-quit', () => {
 });
 
 app.on('window-all-closed', (e: Event) => {
-  if (!kitState.allowQuit) e.preventDefault();
+  e.preventDefault();
 });
 
 log.info(`
@@ -220,10 +244,6 @@ app.on('web-contents-created', (_, contents) => {
       shell.openExternal(url.href);
     }
   });
-});
-
-app.on('before-quit', () => {
-  destroyTray();
 });
 
 const prepareProtocols = async () => {

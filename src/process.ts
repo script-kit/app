@@ -578,6 +578,8 @@ const kitMessageMap: ChannelHandler = {
     await makeRestartNecessary();
   },
   QUIT_APP: () => {
+    kitState.allowQuit = true;
+    app.quit();
     app.exit();
   },
   SET_KIT_STATE: toProcess(async (processInfo, data) => {

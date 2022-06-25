@@ -16,6 +16,7 @@ import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
 import { kitState } from './state';
 import { beforePromptQuit } from './prompt';
+import { watchers } from './watcher';
 
 const callBeforeQuitAndInstall = async () => {
   try {
@@ -30,7 +31,7 @@ const callBeforeQuitAndInstall = async () => {
       browserWindow.removeAllListeners('close');
       browserWindow?.destroy();
     });
-    kitState.childWatcher?.kill();
+    watchers?.childWatcher?.kill();
   } catch (e) {
     log.warn(`callBeforeQuitAndInstall error`, e);
   }
