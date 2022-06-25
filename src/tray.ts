@@ -268,34 +268,29 @@ export const createTray = async (checkDb = false) => {
     }
   });
 
-  // const colors = ['default', 'green', 'red', 'orange'];
-  // let i = 0;
-  // setInterval(() => {
-  //   i++;
-  //   if (i >= colors.length) i = 0;
-  //   tray?.setImage(trayIcon(colors[i] as trayColor));
-  // }, 500);
-
   if (tray) {
     tray.removeAllListeners();
   }
   if (!tray) {
-    tray = new Tray(trayIcon('orange'));
+    tray = new Tray(trayIcon('default'));
     tray.setIgnoreDoubleClickEvents(true);
   }
   if (kitState.starting) {
     const startingMenu = () => {
+      const label = kitState.installing
+        ? 'Installing Kit SDK...'
+        : kitState.updateInstalling
+        ? 'Applying Update...'
+        : 'Starting...';
+      kitState.orange = label;
+
       tray?.popUpContextMenu(
         Menu.buildFromTemplate([
           {
             label: `Script Kit ${getVersion()}`,
           },
           {
-            label: kitState.installing
-              ? 'Installing Kit SDK...'
-              : kitState.updateInstalling
-              ? 'Applying Update...'
-              : 'Starting...',
+            label,
             icon: menuIcon('orange'),
           },
         ])
