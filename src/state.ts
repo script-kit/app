@@ -211,7 +211,7 @@ const initState = {
   red: ``,
   orange: ``,
   green: ``,
-  notifications: [] as { message: string; color: 'red' | 'orange' | 'green' }[],
+  notifications: [] as { label: string; color: 'red' | 'orange' | 'green' }[],
 };
 
 nativeTheme.addListener('updated', () => {
@@ -241,10 +241,10 @@ export const trayColors = [...colors, 'default'] as const;
 export type trayColor = typeof trayColors[number];
 
 for (const color of colors) {
-  subscribeKey(kitState, color, (message) => {
-    if (message) {
+  subscribeKey(kitState, color, (label) => {
+    if (label) {
       kitState.notifications.push({
-        message: message as string,
+        label: label as string,
         color,
       });
     }

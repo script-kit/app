@@ -84,6 +84,7 @@ import {
   kitState,
   kitConfig,
   updateScripts,
+  kitStateType,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -602,6 +603,21 @@ const kitMessageMap: ChannelHandler = {
       await setScript(data.value);
     }
   }),
+  SET_STATUS: toProcess(
+    async (
+      _,
+      data: {
+        value: {
+          color: keyof kitStateType;
+          label: string;
+        };
+      }
+    ) => {
+      if (data?.value?.color) {
+        kitState[data?.value?.color] = data?.value?.label as never;
+      }
+    }
+  ),
   SET_SUBMIT_VALUE: toProcess(async (_, data) => {
     sendToPrompt(Channel.SET_SUBMIT_VALUE, data.value);
   }),

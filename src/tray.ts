@@ -94,9 +94,9 @@ const trayClick = async (event: KeyboardEvent) => {
 
     const notifyItems: MenuItemConstructorOptions[] = [];
 
-    for (const { color, message } of kitState.notifications) {
+    for (const { color, label } of [...kitState.notifications].reverse()) {
       notifyItems.push({
-        label: message,
+        label,
         icon: menuIcon(color as iconType),
         click: runScript(kitPath('help', 'reveal-kit-log.js')),
       });
