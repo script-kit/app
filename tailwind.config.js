@@ -83,7 +83,7 @@ module.exports = {
   theme: {
     extend: {
       backgroundImage: (theme) => ({
-        'random-shapes': "url('/src/svg/random-shapes.svg')",
+        'random-shapes': "url('/src/svg/ui/random-shapes.svg')",
       }),
       fontFamily: {
         mono: ['JetBrains Mono'],

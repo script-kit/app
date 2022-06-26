@@ -603,21 +603,9 @@ const kitMessageMap: ChannelHandler = {
       await setScript(data.value);
     }
   }),
-  SET_STATUS: toProcess(
-    async (
-      _,
-      data: {
-        value: {
-          color: keyof kitStateType;
-          label: string;
-        };
-      }
-    ) => {
-      if (data?.value?.color) {
-        kitState[data?.value?.color] = data?.value?.label as never;
-      }
-    }
-  ),
+  SET_STATUS: toProcess(async (_, data) => {
+    if (data?.value) kitState.status = data?.value;
+  }),
   SET_SUBMIT_VALUE: toProcess(async (_, data) => {
     sendToPrompt(Channel.SET_SUBMIT_VALUE, data.value);
   }),

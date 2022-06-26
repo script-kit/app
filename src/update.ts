@@ -139,7 +139,10 @@ export const configureAutoUpdate = async () => {
   autoUpdater.on('update-available', async (info) => {
     updateInfo = info;
 
-    kitState.orange = `Downloading update ${info.version}...`;
+    kitState.status = {
+      status: 'busy',
+      message: `Downloading update ${info.version}...`,
+    };
     log.info('Update available.', info);
 
     const version = getVersion();
@@ -167,9 +170,17 @@ export const configureAutoUpdate = async () => {
 
   autoUpdater.on('update-downloaded', async () => {
     kitState.updateDownloaded = true;
-    kitState.notifications = [];
+    kitState.status = {
+      status: 'default',
+      message: '',
+    };
     kitState.allowQuit = true;
-    kitState.green = `Update downloaded. Restarting...`;
+
+    kitState.status = {
+      status: 'success',
+      message: `Update downloaded. Restarting...`,
+    };
+
     log.info(`⬇️ Update downloaded`);
 
     if (downloadProgressMade) {
@@ -178,13 +189,19 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('update-not-available', (info) => {
-    kitState.notifications = [];
+    kitState.status = {
+      status: 'default',
+      message: '',
+    };
 
     log.info('Update not available...');
     log.info(info);
 
     if (manualUpdateCheck) {
-      kitState.green = `Kit.app is on the latest version`;
+      kitState.status = {
+        status: 'success',
+        message: `Kit.app is on the latest version`,
+      };
 
       manualUpdateCheck = false;
     }
@@ -204,13 +221,22 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('error', (message) => {
-    kitState.notifications = [];
-    kitState.red = `Error in auto-updater: ${message}`;
+    kitState.status = {
+      status: 'default',
+      message: '',
+    };
+    kitState.status = {
+      status: 'error',
+      message: `Error in auto-updater: ${message}`,
+    };
     log.error('There was a problem updating Kit.app');
     log.error(message);
 
     setTimeout(() => {
-      kitState.notifications = [];
+      kitState.status = {
+        status: 'default',
+        message: '',
+      };
     }, 5000);
 
     // const notification = new Notification({
@@ -223,7 +249,10 @@ export const configureAutoUpdate = async () => {
   });
 
   emitter.on(KitEvent.CheckForUpdates, async () => {
-    kitState.orange = `Checking for update...`;
+    kitState.status = {
+      status: 'busy',
+      message: `Checking for update...`,
+    };
     manualUpdateCheck = true;
     await checkForUpdates();
   });

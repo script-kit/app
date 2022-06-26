@@ -2,6 +2,7 @@
 import log from 'electron-log';
 import chokidar from 'chokidar';
 import path from 'path';
+import { debounce } from 'lodash';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
 import { Script } from '@johnlindquist/kit/types/core';
@@ -46,13 +47,16 @@ const addWatch = (watchString: string, scriptPath: string) => {
       ignoreInitial: true,
     });
 
-    watcher.on('all', (eventName: string, filePath: string) => {
-      log.info({ eventName, filePath });
-      if (validWatchEvents.includes(eventName)) {
-        log.info(`👀 ${paths} changed`);
-        processes.add(ProcessType.Watch, scriptPath, [filePath, eventName]);
-      }
-    });
+    watcher.on(
+      'all',
+      debounce((eventName: string, filePath: string) => {
+        log.info({ eventName, filePath });
+        if (validWatchEvents.includes(eventName)) {
+          log.info(`👀 ${paths} changed`);
+          processes.add(ProcessType.Watch, scriptPath, [filePath, eventName]);
+        }
+      }, 200)
+    );
 
     watchMap.set(scriptPath, watcher);
   } catch (error) {

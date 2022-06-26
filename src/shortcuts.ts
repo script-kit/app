@@ -49,7 +49,10 @@ export const shortcutScriptChanged = ({
 
   const exists = [...shortcutMap.entries()].find(([, s]) => s === shortcut);
   if (exists && !sameScript) {
-    kitState.orange = `${friendlyShortcut} already registered. Ignoring...`;
+    kitState.status = {
+      status: 'warn',
+      message: `${friendlyShortcut} already registered. Ignoring...`,
+    };
 
     return;
   }

@@ -10,6 +10,7 @@ import {
   globalShortcut,
 } from 'electron';
 import log from 'electron-log';
+import { KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
 import { askForAccessibilityAccess } from 'node-mac-permissions';
 import { subscribeKey } from 'valtio/utils';
 import { KeyboardEvent } from 'electron/main';
@@ -21,7 +22,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, getScriptsDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
-import { colors, kitState, restartIfNecessary, trayColor } from './state';
+import { kitState, restartIfNecessary } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 
@@ -94,10 +95,10 @@ const trayClick = async (event: KeyboardEvent) => {
 
     const notifyItems: MenuItemConstructorOptions[] = [];
 
-    for (const { color, label } of [...kitState.notifications].reverse()) {
+    for (const { status, message } of [...kitState.notifications].reverse()) {
       notifyItems.push({
-        label,
-        icon: menuIcon(color as iconType),
+        label: message,
+        icon: menuIcon(status as iconType),
         click: runScript(kitPath('help', 'reveal-kit-log.js')),
       });
     }
@@ -114,7 +115,7 @@ const trayClick = async (event: KeyboardEvent) => {
       authItems.push({
         label: `Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
         click: () => askForAccessibilityAccess(),
-        icon: menuIcon(kitState.notifyAuthFail ? 'red' : 'cogwheel'),
+        icon: menuIcon(kitState.notifyAuthFail ? 'warn' : 'cogwheel'),
       });
 
       authItems.push({
@@ -188,7 +189,10 @@ const trayClick = async (event: KeyboardEvent) => {
       },
     ]);
     contextMenu.once('menu-will-close', () => {
-      kitState.notifications = [];
+      kitState.status = {
+        status: 'default',
+        message: '',
+      };
       kitState.notifyAuthFail = false;
     });
     tray?.popUpContextMenu(contextMenu);
@@ -198,21 +202,11 @@ const trayClick = async (event: KeyboardEvent) => {
 
 const isWin = os.platform() === 'win32';
 
-const trayIcon = (color: trayColor) => {
-  // log.info({
-  //   reduceTransparency: kitState.reduceTransparency,
-  //   isDark: kitState.isDark,
-  // });
-  const dark = !kitState.isDark && !kitState.transparencyEnabled ? `-dark` : ``;
-  const pre = color === 'default' ? `default${dark}${isWin ? `-win` : ``}` : ``;
-  const post = color !== 'default' ? `notification${dark}-${color}` : ``;
+const trayIcon = (status: Status) => {
+  log.info(`🎨 Tray icon: ${status}`);
+  if (isWin) return getAssetPath(`tray`, `default-win-Template.png`);
 
-  // const greenIcon = getAssetPath(`tray`, `notification-green.png`);
-
-  const name = `${pre}${post}`;
-
-  log.info(`🎨 Tray icon: ${name}`);
-  return getAssetPath(`tray`, `${name}.png`);
+  return getAssetPath(`tray`, `${status}-Template.png`);
 };
 
 type iconType =
@@ -228,61 +222,59 @@ type iconType =
   | 'open'
   | 'open_in_new'
   | 'twitter'
-  | 'red'
-  | 'green'
-  | 'orange';
+  | Status;
 
 const menuIcon = (name: iconType) => {
-  const template = colors.includes(name as any) ? `` : `-Template`;
-  return getAssetPath(`menu`, `${name}${template}.png`);
+  return getAssetPath(`menu`, `${name}-Template.png`);
 };
 
 export const getTrayIcon = () => trayIcon('default');
 
-export const createTray = async (checkDb = false) => {
+export const createTray = async (checkDb = false, state: trayState) => {
   log.info(`🎨 Creating tray...`, { checkDb });
 
-  subscribeKey(kitState, 'isDark', () => {
-    tray?.setImage(trayIcon('default'));
-    kitState.notifyAuthFail = false;
-  });
+  // subscribeKey(kitState, 'isDark', () => {
+  //   tray?.setImage(trayIcon('default'));
+  //   kitState.notifyAuthFail = false;
+  // });
 
-  subscribeKey(kitState, 'transparencyEnabled', () => {
-    tray?.setImage(trayIcon('default'));
-    kitState.notifyAuthFail = false;
-  });
+  // subscribeKey(kitState, 'transparencyEnabled', () => {
+  //   tray?.setImage(trayIcon('default'));
+  //   kitState.notifyAuthFail = false;
+  // });
 
-  subscribeKey(kitState, 'notifyAuthFail', (fail) => {
-    if (fail) {
-      tray?.setImage(trayIcon('red'));
-    } else {
-      tray?.setImage(trayIcon('default'));
-    }
-  });
-
-  subscribeKey(kitState, 'notifications', (notifications) => {
-    if (notifications.length) {
-      tray?.setImage(trayIcon(notifications[notifications.length - 1].color));
-    } else {
-      tray?.setImage(trayIcon('default'));
-    }
-  });
+  // subscribeKey(kitState, 'notifyAuthFail', (fail) => {
+  //   if (fail) {
+  //     tray?.setImage(trayIcon('warn'));
+  //   } else {
+  //     tray?.setImage(trayIcon('default'));
+  //   }
+  // });
 
   if (tray) {
     tray.removeAllListeners();
   }
+
   if (!tray) {
-    tray = new Tray(trayIcon('default'));
+    tray = new Tray(trayIcon(state));
     tray.setIgnoreDoubleClickEvents(true);
+
+    subscribeKey(kitState, 'status', (status: KitStatus) => {
+      tray?.setImage(trayIcon(status.status));
+    });
   }
   if (kitState.starting) {
     const startingMenu = () => {
-      const label = kitState.installing
+      const message = kitState.installing
         ? 'Installing Kit SDK...'
         : kitState.updateInstalling
         ? 'Applying Update...'
         : 'Starting...';
-      kitState.orange = label;
+
+      kitState.status = {
+        status: 'busy',
+        message,
+      };
 
       tray?.popUpContextMenu(
         Menu.buildFromTemplate([
@@ -290,8 +282,8 @@ export const createTray = async (checkDb = false) => {
             label: `Script Kit ${getVersion()}`,
           },
           {
-            label,
-            icon: menuIcon('orange'),
+            label: message,
+            icon: menuIcon('busy'),
           },
         ])
       );
@@ -321,13 +313,6 @@ export const createTray = async (checkDb = false) => {
 
       tray.on('mouse-down', trayClick);
       tray.on('right-click', trayClick);
-
-      // tray.on('mouse-enter', () => {
-      //   tray?.setImage(trayIcon('green'));
-      // });
-      // tray.on('mouse-leave', () => {
-      //   tray?.setImage(trayIcon('default'));
-      // });
     } catch (error) {
       log.error(error);
     }
@@ -352,7 +337,7 @@ export const toggleTray = async () => {
     if (tray) {
       destroyTray();
     } else {
-      createTray();
+      createTray(false, 'default');
     }
   }
 };

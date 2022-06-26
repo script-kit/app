@@ -419,8 +419,7 @@ const ready = async () => {
     createLogs();
     await prepareProtocols();
     await setupLog(`Protocols Prepared`);
-
-    await createTray(true);
+    await createTray(true, 'default');
 
     await maybeSetLogin();
     await setupLog(`Tray created`);
@@ -657,7 +656,9 @@ const KIT_NODE_TAR =
   process.env.KIT_NODE_TAR || getAssetPath(`node.${getPlatformExtension()}`);
 
 const checkKit = async () => {
-  await createTray(true);
+  await createTray(true, 'busy');
+  await setupLog(`Tray created`);
+
   const options: SpawnSyncOptions = {
     cwd: KIT,
     encoding: 'utf-8',

@@ -1,7 +1,8 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
-import { Config } from '@johnlindquist/kit/types/kitapp';
+
+import { Config, KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
 import { subscribeKey } from 'valtio/utils';
 import log from 'electron-log';
@@ -21,7 +22,7 @@ import {
   mainScriptPath,
   tmpClipboardDir,
 } from '@johnlindquist/kit/cjs/utils';
-import { UI } from '@johnlindquist/kit/cjs/enum';
+import { UI, statuses } from '@johnlindquist/kit/cjs/enum';
 import { noScript, MIN_HEIGHT } from './defaults';
 import { ProcessInfo } from './types';
 
@@ -136,10 +137,9 @@ const removeP = (pid: number) => {
 };
 
 const checkTransparencyEnabled = () => {
-  if (
-    os.platform() === 'darwin' &&
-    parseInt(os.release().split('.')[0], 10) < 10
-  ) {
+  const version = parseInt(os.release().split('.')[0], 10);
+  const bigSur = ``;
+  if (os.platform() === 'darwin' && version < bigSur) {
     return false;
   }
 
@@ -201,17 +201,23 @@ const initState = {
   updateDownloaded: false,
   allowQuit: false,
   // updateError: false,
-  updateState: null as { message: string; color: trayColor } | null,
   ready: false,
   settled: false,
   authorized: false,
   notifyAuthFail: false,
   mainShortcut: ``,
   isDark: nativeTheme.shouldUseDarkColors,
-  red: ``,
-  orange: ``,
-  green: ``,
-  notifications: [] as { label: string; color: 'red' | 'orange' | 'green' }[],
+  // warn: ``,
+  // busy: ``,
+  // success: ``,
+  // paused: ``,
+  // error: ``,
+  status: {
+    status: 'default',
+    message: '',
+  } as KitStatus,
+
+  notifications: [] as KitStatus[],
 };
 
 nativeTheme.addListener('updated', () => {
@@ -236,31 +242,29 @@ export function isSameScript(promptScriptPath: string) {
   return same;
 }
 
-export const colors = ['green', 'red', 'orange'] as const;
-export const trayColors = [...colors, 'default'] as const;
-export type trayColor = typeof trayColors[number];
-
-for (const color of colors) {
-  subscribeKey(kitState, color, (label) => {
-    if (label) {
-      kitState.notifications.push({
-        label: label as string,
-        color,
-      });
-    }
-  });
-}
-
-subscribeKey(kitState, 'ready', (ready) => {
-  if (ready) {
+subscribeKey(kitState, 'status', (status: KitStatus) => {
+  if (status.status !== 'default' && status.message) {
+    kitState.notifications.push(status);
+    log.info(`👀 Status: ${JSON.stringify(status)}`);
+  } else if (kitState.notifications.length > 0) {
     kitState.notifications = [];
   }
 });
 
-subscribeKey(kitState, 'notifications', (notifications) => {
-  if (notifications.length === 0) {
-    kitState.orange = '';
-    kitState.green = '';
-    kitState.red = '';
+subscribeKey(kitState, 'ready', (ready) => {
+  if (ready) {
+    kitState.status = {
+      status: 'default',
+      message: '',
+    };
+  }
+});
+
+subscribeKey(kitState, 'notifyAuthFail', (notifyAuthFail) => {
+  if (notifyAuthFail) {
+    kitState.status = {
+      status: 'warn',
+      message: '',
+    };
   }
 });

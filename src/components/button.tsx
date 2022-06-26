@@ -21,8 +21,8 @@ import {
   isMouseDownAtom,
   _modifiers,
 } from '../jotai';
-import { ReactComponent as MoreThanIcon } from '../svg/icons8-more-than.svg';
-import { ReactComponent as NoImageIcon } from '../svg/icons8-no-image.svg';
+import { ReactComponent as MoreThanIcon } from '../svg/ui/icons8-more-than.svg';
+import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
 import { AppChannel } from '../enums';
 
 function highlight(
