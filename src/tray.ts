@@ -9,6 +9,7 @@ import {
   MenuItemConstructorOptions,
   globalShortcut,
 } from 'electron';
+import path from 'path';
 import log from 'electron-log';
 import { KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
 import { askForAccessibilityAccess } from 'node-mac-permissions';
@@ -19,6 +20,8 @@ import {
   kenvPath,
   kitPath,
   mainScriptPath,
+  isFile,
+  getLogFromScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, getScriptsDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
@@ -129,6 +132,59 @@ const trayClick = async (event: KeyboardEvent) => {
       });
     }
 
+    const runningScripts: MenuItemConstructorOptions[] = [];
+
+    if (kitState.ps.find((p) => p?.scriptPath)) {
+      runningScripts.push({
+        type: 'separator',
+      });
+
+      runningScripts.push({
+        label: 'Running Proccesses',
+        enabled: false,
+      });
+
+      for await (const { pid, scriptPath } of kitState.ps) {
+        if (scriptPath) {
+          const logItems: MenuItemConstructorOptions[] = [];
+          const maybeLog = getLogFromScriptPath(scriptPath);
+
+          const logExists = await isFile(maybeLog);
+
+          if (logExists) {
+            logItems.push({
+              label: 'View Log',
+              click: () => {
+                emitter.emit(KitEvent.OpenLog, scriptPath as string);
+              },
+            });
+          }
+          runningScripts.push({
+            label: path.basename(scriptPath as string),
+            submenu: [
+              {
+                label: 'Terminate',
+                click: () => {
+                  emitter.emit(KitEvent.KillProcess, pid);
+                },
+              },
+              ...logItems,
+              {
+                label: 'Edit',
+                click: () => {
+                  emitter.emit(KitEvent.OpenScript, scriptPath as string);
+                },
+              },
+            ],
+          });
+        }
+      }
+
+      runningScripts.push({
+        type: 'separator',
+      });
+    }
+
     const contextMenu = Menu.buildFromTemplate([
       ...notifyItems,
       ...authItems,
@@ -178,6 +234,7 @@ const trayClick = async (event: KeyboardEvent) => {
         label: `Change Shortcut`,
         click: runScript(kitPath('cli', 'change-main-shortcut.js')),
       },
+      ...runningScripts,
       {
         label: 'Quit',
         click: () => {

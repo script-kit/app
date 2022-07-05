@@ -20,13 +20,17 @@ export const removeWatch = (filePath: string) => {
   }
 };
 
-const normalizePath = (filePath: string) => {
+const normalizePath = (scriptPath: string) => (filePath: string) => {
   const resolvedPath = () => {
     if (filePath?.startsWith('~')) {
       return filePath.replace('~', app.getPath('home'));
     }
 
-    return filePath;
+    if (filePath?.startsWith(path.sep)) {
+      return filePath;
+    }
+
+    return path.resolve(path.dirname(scriptPath), filePath);
   };
   return path.normalize(resolvedPath());
 };
@@ -40,23 +44,22 @@ const addWatch = (watchString: string, scriptPath: string) => {
     const [pathsString] = watchString.split('|');
 
     const paths = pathsString.startsWith('[')
-      ? JSON.parse(pathsString).map(normalizePath)
-      : normalizePath(pathsString);
+      ? JSON.parse(pathsString).map(normalizePath(scriptPath))
+      : normalizePath(scriptPath)(pathsString);
+
+    log.info(`Watched paths:`, { paths });
 
     const watcher = chokidar.watch(paths, {
       ignoreInitial: true,
     });
 
-    watcher.on(
-      'all',
-      debounce((eventName: string, filePath: string) => {
-        log.info({ eventName, filePath });
-        if (validWatchEvents.includes(eventName)) {
-          log.info(`👀 ${paths} changed`);
-          processes.add(ProcessType.Watch, scriptPath, [filePath, eventName]);
-        }
-      }, 200)
-    );
+    watcher.on('all', (eventName: string, filePath: string) => {
+      log.info({ eventName, filePath });
+      if (validWatchEvents.includes(eventName)) {
+        log.info(`👀 ${paths} changed`);
+        processes.add(ProcessType.Watch, scriptPath, [filePath, eventName]);
+      }
+    });
 
     watchMap.set(scriptPath, watcher);
   } catch (error) {
@@ -70,8 +73,6 @@ export const watchScriptChanged = ({
   kenv,
   watch: watchString,
 }: Script) => {
-  if (kenv !== '') return;
-
   if (!watchString && watchMap.get(filePath)) {
     removeWatch(filePath);
     return;

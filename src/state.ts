@@ -136,31 +136,31 @@ const removeP = (pid: number) => {
   }
 };
 
-const checkTransparencyEnabled = () => {
-  const version = parseInt(os.release().split('.')[0], 10);
-  const bigSur = ``;
-  if (os.platform() === 'darwin' && version < bigSur) {
-    return false;
-  }
+// const checkTransparencyEnabled = () => {
+//   const version = parseInt(os.release().split('.')[0], 10);
+//   const bigSur = ``;
+//   if (os.platform() === 'darwin' && version < bigSur) {
+//     return false;
+//   }
 
-  try {
-    const enabled = !parseInt(
-      Buffer.from(
-        execSync('defaults read com.apple.universalaccess reduceTransparency', {
-          encoding: 'utf8',
-          maxBuffer: 50 * 1024 * 1024,
-        })
-      )
-        .toString()
-        .trim(),
-      10
-    );
-    log.info(`transparency enabled: ${enabled}`);
-    return enabled;
-  } catch (error) {
-    return false;
-  }
-};
+//   try {
+//     const enabled = !parseInt(
+//       Buffer.from(
+//         execSync('defaults read com.apple.universalaccess reduceTransparency', {
+//           encoding: 'utf8',
+//           maxBuffer: 50 * 1024 * 1024,
+//         })
+//       )
+//         .toString()
+//         .trim(),
+//       10
+//     );
+//     log.info(`transparency enabled: ${enabled}`);
+//     return enabled;
+//   } catch (error) {
+//     return false;
+//   }
+// };
 
 const initState = {
   hidden: false,
@@ -189,7 +189,7 @@ const initState = {
   isMac: os.platform() === 'darwin',
   isWindows: os.platform() === 'win32',
   isLinux: os.platform() === 'linux',
-  transparencyEnabled: checkTransparencyEnabled(),
+  // transparencyEnabled: checkTransparencyEnabled(),
   starting: true,
   suspended: false,
   screenLocked: false,
@@ -222,7 +222,7 @@ const initState = {
 
 nativeTheme.addListener('updated', () => {
   kitState.isDark = nativeTheme.shouldUseDarkColors;
-  kitState.transparencyEnabled = checkTransparencyEnabled();
+  // kitState.transparencyEnabled = checkTransparencyEnabled();
 });
 
 const initConfig: Config = {

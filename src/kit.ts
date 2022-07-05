@@ -18,6 +18,7 @@ import {
   mainScriptPath,
   KIT_FIRST_PATH,
   execPath,
+  getLogFromScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
@@ -163,3 +164,12 @@ export const runScript = (...args: string[]) => {
     }
   });
 };
+
+emitter.on(KitEvent.OpenLog, async (scriptPath) => {
+  const logPath = getLogFromScriptPath(scriptPath);
+  await runPromptProcess(kitPath('cli/edit-file.js'), [logPath]);
+});
+
+emitter.on(KitEvent.OpenScript, async (scriptPath) => {
+  await runPromptProcess(kitPath('cli/edit-file.js'), [scriptPath]);
+});

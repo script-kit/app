@@ -1,5 +1,7 @@
 import os from 'os';
 import { WebSocket } from 'ws';
+import untildify from 'untildify';
+
 import log from 'electron-log';
 import { Server } from 'net';
 import getPort from './get-port';
@@ -42,7 +44,7 @@ export const startPty = async (config: any = {}) => {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,
-      cwd: config?.cwd || os.homedir(),
+      cwd: untildify(config?.cwd || os.homedir()),
       env: config?.env || process.env,
       encoding: 'utf8',
     }

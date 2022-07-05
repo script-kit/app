@@ -1275,3 +1275,7 @@ export const handleWidgetEvents = () => {
   ipcMain.on(Channel.WIDGET_INPUT, inputHandler);
   ipcMain.on('WIDGET_MEASURE', measureHandler);
 };
+
+emitter.on(KitEvent.KillProcess, (pid) => {
+  processes.removeByPid(pid);
+});

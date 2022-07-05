@@ -61,3 +61,5 @@ assets/node.tar.gz
 assets/kit
 assets/basic-languages
 .yarn
+.clj-kondo
+.lsp

@@ -14,6 +14,9 @@ export enum KitEvent {
   CheckForUpdates = 'CheckForUpdates',
   RunBackgroundProcess = 'RunBackgroundProcess',
   RemoveBackground = 'REMOVE_BACKGROUND',
+  KillProcess = 'KillProcess',
+  OpenLog = 'OpenLog',
+  OpenScript = 'OpenScript',
 }
 
 interface KitEmitter {

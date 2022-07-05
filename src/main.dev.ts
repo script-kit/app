@@ -152,7 +152,7 @@ app.on('before-quit', () => {
   }
 
   try {
-    execSync(`pkill -f 'Kit Helper'`);
+    // execSync(`pkill -f 'Kit Helper'`);
   } catch (error) {
     log.info(`😬 pkill failed`, { error });
   }
@@ -990,7 +990,7 @@ const checkKit = async () => {
 
 try {
   log.info(`🧹 Cleaning abandonned 'Kit Helper' processes`);
-  execSync(`pkill -f 'Kit Helper'`);
+  // execSync(`pkill -f 'Kit Helper'`);
 } catch (error) {
   log.info(`👍 No abandonned 'Kit Helper' processes found`);
 }

@@ -92,24 +92,24 @@ function scorer(string: string, query: string, matches: number[][]) {
   // avoid regex being passed in
   // console.log(`scorer: ${string} ${query}`);
   // if (!containsSpecialCharacters(query)) {
-  try {
-    const r = new RegExp(query, 'i');
-    const match = string.match(r);
+  // try {
+  //   const r = new RegExp(query, 'i');
+  //   const match = string.match(r);
 
-    if (match) {
-      const index = match?.index || 0;
-      // const first = index === 0;
-      const start = index;
-      const length = match[0]?.length;
-      const ms = [start, start + length];
-      matches.push(ms);
-      return 1 - start / 100;
-    }
-  } catch (error) {
-    return [];
-  }
+  //   if (match) {
+  //     const index = match?.index || 0;
+  //     // const first = index === 0;
+  //     const start = index;
+  //     const length = match[0]?.length;
+  //     const ms = [start, start + length];
+  //     matches.push(ms);
+  //     return 1 - start / 100;
+  //   }
+  // } catch (error) {
+  //   return [];
+  // }
 
-  if (containsSpecialCharacters(query)) return [];
+  // if (containsSpecialCharacters(query)) return [];
 
   return quickScore(
     string,
@@ -265,7 +265,7 @@ const _panelHTML = atom<string>('');
 export const panelHTMLAtom = atom(
   (g) => g(_panelHTML),
   (g, s, a: string) => {
-    if (g(_panelHTML) === a) return;
+    if (g(_panelHTML) === a || g(_flagged)) return;
     if (a) s(scoredChoices, null);
     s(_panelHTML, a);
     s(loadingAtom, false);
@@ -473,7 +473,8 @@ const _focused = atom(noChoice as Choice);
 export const focusedChoiceAtom = atom(
   (g) => g(_focused),
   (g, s, choice: Choice) => {
-    // if (g(focusedChoice)?.id === choice?.id) return;
+    if (g(submittedAtom)) return;
+    // if (g(_focused)?.id === choice?.id) return;
     if (isScript(choice as Choice)) {
       (choice as Script).hasPreview = true;
     }
@@ -634,7 +635,6 @@ const _flagsAtom = atom<FlagsOptions>({});
 export const flagsAtom = atom(
   (g) => g(_flagsAtom),
   (g, s, a: FlagsOptions) => {
-    console.log('flags', a);
     s(_flagsAtom, a);
   }
 );
@@ -694,6 +694,7 @@ export const scriptAtom = atom(
     s(loadingAtom, false);
     s(loading, false);
     s(_logo, a?.logo || '');
+    s(prevChoicesAtom, []);
 
     s(flagsAtom, {});
     s(_flagged, '');
