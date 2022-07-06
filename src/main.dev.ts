@@ -128,6 +128,8 @@ const nodeVersion = getNodeVersion();
 
 app.on('before-quit', () => {
   try {
+    teardownWatchers();
+    sleepSchedule();
     destroyTray();
   } catch (error) {
     log.error(`😬 ERROR DESTROYING TRAY`, { error });
