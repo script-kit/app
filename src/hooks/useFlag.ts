@@ -114,8 +114,9 @@ export default () => {
   );
 
   useHotkeys(
-    `right,left,${cmd}+k`,
+    `right,left`,
     (event) => {
+      console.log({ inputFocus, event, selectionStart });
       if (!inputFocus) return;
       if (selectionStart === input.length && event.key !== 'ArrowLeft') {
         event.preventDefault();
@@ -130,14 +131,20 @@ export default () => {
           setFlagValue('');
         }
         channel(Channel.BACK);
-      } else if (event.key === 'k') {
-        if (flagValue) {
-          setFlagValue('');
-        } else if (choices.length) {
-          setFlagValue(choices[index].value);
-        } else {
-          setFlagValue(input);
-        }
+      }
+    },
+    hotkeysOptions,
+    [input, inputFocus, choices, index, selectionStart, flagValue, cmd, channel]
+  );
+  useHotkeys(
+    `${cmd}+k`,
+    (event) => {
+      if (flagValue) {
+        setFlagValue('');
+      } else if (choices.length) {
+        setFlagValue(choices[index].value);
+      } else {
+        setFlagValue(input);
       }
     },
     hotkeysOptions,

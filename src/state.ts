@@ -163,6 +163,7 @@ const removeP = (pid: number) => {
 // };
 
 const initState = {
+  isPanel: false,
   hidden: false,
   ps: [] as Partial<ProcessInfo>[],
   addP,

@@ -107,7 +107,6 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  electronPanelWindow.makePanel(promptWindow);
 
   // promptWindow.setTouchBar(touchbar);
 
@@ -273,6 +272,10 @@ export const logFocus = () => {
 };
 
 export const showInactive = () => {
+  if (!kitState.isPanel) {
+    electronPanelWindow.makePanel(promptWindow);
+    kitState.isPanel = true;
+  }
   try {
     if (electronPanelWindow && kitState.ready) {
       promptWindow?.showInactive();

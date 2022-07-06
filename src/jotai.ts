@@ -211,7 +211,7 @@ export const unfilteredChoicesAtom = atom(
       if (mode === Mode.GENERATE && !flaggedValue) {
         s(scoredChoices, cs.map(createScoredChoice));
       }
-      if (mode === Mode.FILTER || mode === Mode.CUSTOM) {
+      if (mode === Mode.FILTER || mode === Mode.CUSTOM || flaggedValue) {
         const input = g(inputAtom);
         filterByInput(g, s, input);
       }
@@ -604,8 +604,12 @@ export const inputAtom = atom(
 
     s(_input, a);
 
-    const channel = g(channelAtom);
-    channel(Channel.INPUT);
+    const flaggedValue = g(flagValueAtom);
+
+    if (!flaggedValue) {
+      const channel = g(channelAtom);
+      channel(Channel.INPUT);
+    }
 
     s(mouseEnabledAtom, 0);
 
@@ -620,10 +624,11 @@ export const inputAtom = atom(
       return;
     }
 
-    if (mode === Mode.FILTER) {
+    // TODO: flaggedValue state? Or prevMode when flagged? Hmm...
+    if (mode === Mode.FILTER || flaggedValue) {
       filterByInput(g, s, a);
     }
-    if (mode === Mode.GENERATE) {
+    if (mode === Mode.GENERATE && !flaggedValue) {
       s(loading, true);
       s(loadingAtom, true);
       // generateChoices(a, pid);
@@ -889,11 +894,13 @@ export const promptDataAtom = atom(
 export const flagValueAtom = atom(
   (g) => g(_flagged),
   (g, s, a: any) => {
+    s(_flagged, a);
+
     if (a === '') {
-      s(selectedAtom, '');
-      s(unfilteredChoicesAtom, g(prevChoicesAtom));
       s(_input, g(prevInputAtom));
       s(_index, g(prevIndexAtom));
+      s(selectedAtom, '');
+      s(unfilteredChoicesAtom, g(prevChoicesAtom));
     } else {
       s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
       s(prevIndexAtom, g(_index));
@@ -917,8 +924,6 @@ export const flagValueAtom = atom(
       s(prevChoicesAtom, g(unfilteredChoicesAtom));
       s(unfilteredChoicesAtom, flagChoices);
     }
-
-    s(_flagged, a);
   }
 );
 
