@@ -894,6 +894,8 @@ export const promptDataAtom = atom(
 export const flagValueAtom = atom(
   (g) => g(_flagged),
   (g, s, a: any) => {
+    const flags = g(_flagsAtom);
+    if (Object.entries(flags).length === 0) return;
     s(_flagged, a);
 
     if (a === '') {

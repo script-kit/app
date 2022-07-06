@@ -740,8 +740,16 @@ const checkKit = async () => {
     `auto updater detected version: ${autoUpdater.currentVersion}`
   );
   log.info(`PATH:`, KIT_FIRST_PATH);
-  configureAutoUpdate();
-  await checkForUpdates();
+  try {
+    configureAutoUpdate();
+  } catch (error) {
+    log.error(error);
+  }
+  try {
+    await checkForUpdates();
+  } catch (error) {
+    log.error(error);
+  }
 
   if (process.env.KIT_SPLASH) {
     await showSplash();

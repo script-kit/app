@@ -116,7 +116,6 @@ export default () => {
   useHotkeys(
     `right,left`,
     (event) => {
-      console.log({ inputFocus, event, selectionStart });
       if (!inputFocus) return;
       if (selectionStart === input.length && event.key !== 'ArrowLeft') {
         event.preventDefault();
@@ -139,6 +138,8 @@ export default () => {
   useHotkeys(
     `${cmd}+k`,
     (event) => {
+      if (!inputFocus) return;
+
       if (flagValue) {
         setFlagValue('');
       } else if (choices.length) {

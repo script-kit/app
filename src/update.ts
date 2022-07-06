@@ -226,10 +226,10 @@ export const configureAutoUpdate = async () => {
       message: '',
     };
     kitState.status = {
-      status: 'error',
-      message: `Error in auto-updater: ${message}`,
+      status: 'warn',
+      message: `Auto-updater unavailable`,
     };
-    log.error('There was a problem updating Kit.app');
+    // log.error('There was a problem updating Kit.app');
     log.error(message);
 
     setTimeout(() => {
