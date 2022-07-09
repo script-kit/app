@@ -194,7 +194,6 @@ const initState = {
   starting: true,
   suspended: false,
   screenLocked: false,
-  isKeyWindow: false,
   installing: false,
   // checkingForUpdate: false,
   updateInstalling: false,

@@ -10,7 +10,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
-import { focusPrompt } from './prompt';
+import { focusPrompt, isFocused, isVisible } from './prompt';
 import { kitState } from './state';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
@@ -104,8 +104,11 @@ export const updateMainShortcut = async (filePath: string) => {
 
       const ret = globalShortcut.register(shortcut, async () => {
         log.info(`🏚  main shortcut`);
-
-        await runPromptProcess(mainScriptPath);
+        if (isVisible() && !isFocused()) {
+          focusPrompt();
+        } else {
+          await runPromptProcess(mainScriptPath);
+        }
       });
 
       if (!ret) {

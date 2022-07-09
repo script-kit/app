@@ -2472,10 +2472,10 @@
   resolved "https://registry.yarnpkg.com/@types/range-parser/-/range-parser-1.2.4.tgz#cd667bcfdd025213aafb7ca5915a932590acdcdc"
   integrity sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==
 
-"@types/react-dom@17.0.7":
-  version "17.0.7"
-  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-17.0.7.tgz#b8ee15ead9e5d6c2c858b44949fdf2ebe5212232"
-  integrity sha512-Wd5xvZRlccOrCTej8jZkoFZuZRKHzanDDv1xglI33oBNFMWrqOSzrvWFw7ngSiZjrpJAzPKFtX7JvuXpkNmQHA==
+"@types/react-dom@^18.0.6":
+  version "18.0.6"
+  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-18.0.6.tgz#36652900024842b74607a17786b6662dd1e103a1"
+  integrity sha512-/5OFZgfIPSwy+YuIBP/FgJnQnsxhZhjjrnxudMddeblOouIodEQ75X14Rr4wGSG/bknL+Omy9iWlLo1u/9GzAA==
   dependencies:
     "@types/react" "*"
 
@@ -13722,10 +13722,10 @@ quick-lru@^5.1.1:
   resolved "https://registry.yarnpkg.com/quick-lru/-/quick-lru-5.1.1.tgz#366493e6b3e42a3a6885e2e99d18f80fb7a8c932"
   integrity sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==
 
-quick-score@0.0.14:
-  version "0.0.14"
-  resolved "https://registry.yarnpkg.com/quick-score/-/quick-score-0.0.14.tgz#4b9ebd41d5d24b353a2fbb0c9a5148e245ccd603"
-  integrity sha512-kE73brwMjuWOQCpZUEAAzFtbup96GhNygCGw0jTFexyXqtP/HK2nHJk5ocuY7Gy2x9YJv02Ns7CprbNlP5EikQ==
+quick-score@0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/quick-score/-/quick-score-0.2.0.tgz#a33906400fc651abae1be79b11a5902ca8ef0a46"
+  integrity sha512-y9PW9rl7BhjTykkGYi4wh0FsXWrWFv3IJVxtAI9FMargSOhqzRN3OjO2itpw63PoSu1FY07i8B2aCwpolQucOQ==
 
 qw@~1.0.1:
   version "1.0.2"

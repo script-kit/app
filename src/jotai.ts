@@ -114,13 +114,12 @@ function scorer(string: string, query: string, matches: number[][]) {
   return quickScore(
     string,
     query,
-    matches,
+    matches as any,
     undefined,
     undefined,
     createConfig({
-      maxIterations: 2 ** 4,
-    }),
-    new Range(0, 150)
+      maxIterations: 2 ** 6,
+    })
   );
 }
 

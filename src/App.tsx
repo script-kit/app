@@ -420,15 +420,9 @@ export default function App() {
         ${
           (processing && resizeEnabled) || (nullChoices && !panelHTML?.length)
             ? `h-0`
-            : `h-full`
+            : `flex-1`
         }
-
-        ${footer && `mb-5`}
-
-
-        w-full
-        relative
-
+        w-full max-h-full
         `}
             onPaste={onPaste}
             onDrop={(event) => {
@@ -475,7 +469,6 @@ export default function App() {
             <footer
               className="
         py-1 px-4 h-5
-        fixed bottom-0
         bg-opacity-80 dark:bg-opacity-80
         bg-primary-dark dark:bg-primary-light
         text-white dark:text-black

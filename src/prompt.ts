@@ -12,13 +12,7 @@ import {
   PromptData,
   PromptBounds,
 } from '@johnlindquist/kit/types/core';
-import {
-  BrowserWindow,
-  screen,
-  Rectangle,
-  powerMonitor,
-  TouchBar,
-} from 'electron';
+import { BrowserWindow, screen, Rectangle, powerMonitor, app } from 'electron';
 import os from 'os';
 import path from 'path';
 import { subscribeKey } from 'valtio/utils';
@@ -249,10 +243,6 @@ export const createPromptWindow = async () => {
     appToPrompt(AppChannel.PROCESSES, ps);
   });
 
-  subscribeKey(kitState, 'isKeyWindow', (isKeyWindow) => {
-    log.info(`🔑 isKeyWindow`, isKeyWindow);
-  });
-
   if (unsubKey) unsubKey();
 
   return promptWindow;
@@ -292,14 +282,8 @@ export const focusPrompt = () => {
   if (
     promptWindow &&
     !promptWindow.isDestroyed() &&
-    kitState.isKeyWindow &&
     !promptWindow?.isFocused()
   ) {
-    // log.info(`⧮ Check errored...`);
-    // promptWindow.setAlwaysOnTop(true, 'modal-panel');
-    // app.focus({
-    //   steal: true,
-    // });
     try {
       promptWindow?.focus();
     } catch (error) {

@@ -127,7 +127,7 @@ export default function Terminal() {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={{ duration: 0.5, ease: 'circOut' }}
-      className="w-full h-full p-3"
+      className="w-full h-full pt-3 px-3"
       ref={containerRef as RefObject<HTMLDivElement>}
     >
       <XTerm
