@@ -1,4 +1,4 @@
-import { globalShortcut, Notification } from 'electron';
+import { app, globalShortcut, Notification } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { Script } from '@johnlindquist/kit/types/core';
@@ -106,6 +106,9 @@ export const updateMainShortcut = async (filePath: string) => {
         log.info(`🏚  main shortcut`);
         if (isVisible() && !isFocused()) {
           focusPrompt();
+          app.focus({
+            steal: true,
+          });
         } else {
           await runPromptProcess(mainScriptPath);
         }
