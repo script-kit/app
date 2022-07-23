@@ -1,7 +1,7 @@
 {
   "name": "kit",
   "productName": "Kit",
-  "version": "0.0.0-development",
+  "version": "999.0.0",
   "description": "The Script Kit companion app",
   "main": "./main.prod.js",
   "author": {
