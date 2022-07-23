@@ -6,6 +6,7 @@ import log from 'electron-log';
 import { Server } from 'net';
 import getPort from './get-port';
 import { kitState } from './state';
+import { stripAnsi } from './ansi';
 
 let t: any = null;
 let server: Server | null = null;
@@ -17,8 +18,6 @@ export const startPty = async (config: any = {}) => {
     if (server) server?.close();
     t = null;
     server = null;
-    kitState.termLatest = ``;
-    kitState.termPrev = ``;
   } catch (error) {
     // ignore
   }
@@ -67,8 +66,6 @@ export const startPty = async (config: any = {}) => {
         s += data;
         if (!sender) {
           sender = setTimeout(() => {
-            kitState.termPrev = kitState.termLatest;
-            kitState.termLatest = s;
             socket.send(s);
             s = '';
             sender = null;
@@ -90,8 +87,13 @@ export const startPty = async (config: any = {}) => {
         if (!sender) {
           sender = setTimeout(() => {
             const b = Buffer.concat(buffer, length);
-            kitState.termPrev = kitState.termLatest;
-            kitState.termLatest = b.toString('utf8');
+
+            // const s = b.toString('utf8');a
+
+            // if (s.endsWith('\x07')) {
+            //   kitState.terminalOutput = stripAnsi(s);
+            // }
+
             socket.send(b);
             buffer = [];
             sender = null;

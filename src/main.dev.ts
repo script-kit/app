@@ -398,7 +398,9 @@ const systemEvents = () => {
     setTimeout(async () => {
       log.info(`Resume tasks`);
       scheduleDownloads();
-      checkForUpdates();
+      if (!kitState.updateDownloaded) {
+        checkForUpdates();
+      }
     }, 5000);
 
     kitState.suspended = false;
@@ -429,8 +431,21 @@ const ready = async () => {
     await setupWatchers();
     await setupLog(`Shortcuts Assigned`);
 
-    await configureInterval();
-    await setupLog(`Tick started`);
+    kitState.authorized = getAuthStatus('accessibility') === 'authorized';
+
+    if (kitState.authorized) {
+      await configureInterval();
+      await setupLog(`Tick started`);
+    } else {
+      const id = setInterval(async () => {
+        kitState.authorized = getAuthStatus('accessibility') === 'authorized';
+        if (kitState.authorized) {
+          clearInterval(id);
+          await configureInterval();
+          await setupLog(`Tick started`);
+        }
+      }, 5000);
+    }
 
     await setupLog(``);
     await setupDone();
@@ -449,8 +464,6 @@ const ready = async () => {
 
     scheduleDownloads();
     systemEvents();
-
-    kitState.authorized = getAuthStatus('accessibility') === 'authorized';
 
     log.info(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {

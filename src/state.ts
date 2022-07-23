@@ -184,8 +184,6 @@ const initState = {
   isTyping: false,
   snippet: ``,
   socketURL: '',
-  termLatest: '',
-  termPrev: '',
   isShiftDown: false,
   isMac: os.platform() === 'darwin',
   isWindows: os.platform() === 'win32',
@@ -218,6 +216,7 @@ const initState = {
   } as KitStatus,
 
   notifications: [] as KitStatus[],
+  downloadPercent: 0,
 };
 
 nativeTheme.addListener('updated', () => {

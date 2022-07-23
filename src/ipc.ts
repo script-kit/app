@@ -207,20 +207,7 @@ export const startIpc = () => {
           kitState.ignoreBlur = false;
 
           if (message?.state?.value === Channel.TERMINAL) {
-            log.info(`🤔 ${channel}`, 'TERM SUBMITTED');
-            const [, postBell] = stripAnsi(kitState.termPrev)
-              .split('\x07')
-              .map((line) => line.trim());
-
-            const lines = (postBell || stripAnsi(kitState.termPrev))
-              .split(/(\r|\n)/)
-              .map((line) => line.trim())
-              .filter((line) => line.trim() !== '');
-
-            if (!postBell) lines.shift();
-            lines.pop();
-
-            message.state.value = lines.join('\n');
+            message.state.value = ``;
           }
         }
 

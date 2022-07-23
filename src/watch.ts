@@ -2,7 +2,6 @@
 import log from 'electron-log';
 import chokidar from 'chokidar';
 import path from 'path';
-import { debounce } from 'lodash';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
 import { Script } from '@johnlindquist/kit/types/core';

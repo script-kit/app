@@ -2,7 +2,10 @@ import { app, BrowserWindow, Notification } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import os from 'os';
+import path from 'path';
 import { existsSync } from 'fs';
+import { readdir, remove } from 'fs-extra';
+import { once } from 'lodash';
 import {
   kitPath,
   appDbPath,
@@ -17,6 +20,7 @@ import { emitter, KitEvent } from './events';
 import { kitState } from './state';
 import { beforePromptQuit } from './prompt';
 import { watchers } from './watcher';
+import { getAssetPath } from './assets';
 
 const callBeforeQuitAndInstall = async () => {
   try {
@@ -45,6 +49,9 @@ export const kitIgnore = () => {
 
 export const checkForUpdates = async () => {
   log.info('Checking for updates...');
+  if (kitState.updateDownloaded) return;
+
+  // TODO: Prompt to apply update
   const isWin = os.platform().startsWith('win');
   if (isWin) return; // TODO: Get a Windows app cert
 
@@ -52,7 +59,7 @@ export const checkForUpdates = async () => {
     ? (await getAppDb())?.autoUpdate
     : true;
 
-  if (!kitIgnore() && autoUpdate) {
+  if ((!kitIgnore() && autoUpdate) || process.env.TEST_UPDATE) {
     log.info(`Auto-update enabled. Checking for update.`);
     await autoUpdater.checkForUpdates();
   }
@@ -70,13 +77,34 @@ let manualUpdateCheck = false;
 let updateInfo = null as any;
 export const configureAutoUpdate = async () => {
   log.info(`Configuring auto-update`);
+  if (process.env.TEST_UPDATE) {
+    autoUpdater.updateConfigPath = getAssetPath('dev-app-update.yml');
+    try {
+      const cachePath = path.resolve(
+        app.getPath('userData'),
+        '..',
+        'Caches',
+        'Kit',
+        'pending'
+      );
+      const files = await readdir(cachePath);
+      if (files) {
+        for await (const file of files) {
+          const filePath = path.resolve(cachePath, file);
+          log.info(`Deleting ${filePath}`);
+          await remove(filePath);
+        }
+      }
+    } catch (error) {
+      log.error(`Error deleting pending updates`, error);
+    }
+  }
+
   autoUpdater.logger = log;
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
 
-  let downloadProgressMade = false;
-
-  const applyUpdate = async () => {
+  const applyUpdate = once(async () => {
     const version = getVersion();
     const newVersion = updateInfo?.version;
 
@@ -91,7 +119,7 @@ export const configureAutoUpdate = async () => {
       log.warn(`Couldn't store previous version`);
     }
 
-    log.info(`⏰ Waiting one second before quit`);
+    log.info(`⏰ Waiting 2.5 seconds before quit and install`);
     callBeforeQuitAndInstall();
 
     setTimeout(() => {
@@ -129,8 +157,8 @@ export const configureAutoUpdate = async () => {
         app.quit();
         app.exit();
       }
-    }, 250);
-  };
+    }, 2500);
+  });
 
   autoUpdater.on('before-quit-for-update', () => {
     log.info(`Before quit for update...`);
@@ -151,7 +179,7 @@ export const configureAutoUpdate = async () => {
     const currentChannel = parseChannel(version);
     const newChannel = parseChannel(newVersion);
 
-    if (currentChannel === newChannel) {
+    if (currentChannel === newChannel || process.env.TEST_UPDATE) {
       log.info(`Downloading update`);
 
       const result = await autoUpdater.downloadUpdate();
@@ -183,7 +211,7 @@ export const configureAutoUpdate = async () => {
 
     log.info(`⬇️ Update downloaded`);
 
-    if (downloadProgressMade) {
+    if (kitState.downloadPercent === 100) {
       await applyUpdate();
     }
   });
@@ -211,13 +239,17 @@ export const configureAutoUpdate = async () => {
     log.info('Checking for update...');
   });
 
-  autoUpdater.on('download-progress', (progressObj) => {
-    downloadProgressMade = true;
-
+  autoUpdater.on('download-progress', async (progressObj) => {
     let logMessage = `Download speed: ${progressObj.bytesPerSecond}`;
     logMessage = `${logMessage} - Downloaded ${progressObj.percent}%`;
     logMessage = `${logMessage} (${progressObj.transferred}/${progressObj.total})`;
     log.info(logMessage);
+
+    kitState.downloadPercent = progressObj.percent;
+
+    if (progressObj.percent === 100 && kitState.updateDownloaded) {
+      await applyUpdate();
+    }
   });
 
   autoUpdater.on('error', (message) => {

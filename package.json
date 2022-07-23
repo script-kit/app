@@ -18,6 +18,7 @@
     "start:install": "source ./build/tmp-kit.sh && node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
     "start:main": "cross-env NODE_ENV=development electron --trace-warnings -r ./.erb/scripts/BabelRegister ./src/main.dev.ts",
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
+    "test-update": "TEST_UPDATE=true yarn start",
     "test": "jest",
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
     "m1": "PATH=~/.node-versions/node-v16.10.0-darwin-arm64/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --arm64 -c.mac.identity=null --publish never",

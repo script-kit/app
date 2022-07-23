@@ -17,15 +17,62 @@ import { format } from 'date-fns';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { nanoid } from 'nanoid';
+import { UiohookKeyboardEvent, UiohookKey } from 'uiohook-napi';
 import { tmpClipboardDir, kitPath } from '@johnlindquist/kit/cjs/utils';
 import { Choice, Script } from '@johnlindquist/kit/types/core';
 
 import { Channel } from '@johnlindquist/kit/cjs/enum';
-import { debounce, remove } from 'lodash';
+import { remove } from 'lodash';
 
 import { emitter, KitEvent } from './events';
 import { kitConfig, kitState } from './state';
 import { isFocused } from './prompt';
+
+const UiohookToName = Object.fromEntries(
+  Object.entries(UiohookKey).map(([k, v]) => [v, k])
+);
+
+UiohookToName[UiohookKey.Comma] = ',';
+UiohookToName[UiohookKey.Period] = '.';
+UiohookToName[UiohookKey.Slash] = '/';
+UiohookToName[UiohookKey.Backslash] = '\\';
+UiohookToName[UiohookKey.Semicolon] = ';';
+UiohookToName[UiohookKey.Equal] = '=';
+UiohookToName[UiohookKey.Minus] = '-';
+UiohookToName[UiohookKey.Quote] = "'";
+
+const ShiftMap = {
+  '`': '~',
+  '1': '!',
+  '2': '@',
+  '3': '#',
+  '4': '$',
+  '5': '%',
+  '6': '^',
+  '7': '&',
+  '8': '*',
+  '9': '(',
+  '0': ')',
+  '-': '_',
+  '=': '+',
+  '[': '{',
+  ']': '}',
+  '\\': '|',
+  ';': ':',
+  "'": '"',
+  ',': '<',
+  '.': '>',
+  '/': '?',
+};
+type KeyCodes = keyof typeof ShiftMap;
+
+const toKey = (keycode: number, shift = false) => {
+  const key: string = UiohookToName[keycode] || '';
+  if (shift) {
+    return ShiftMap[key as KeyCodes] || key;
+  }
+  return key.toLowerCase();
+};
 
 type FrontmostApp = {
   localizedName: string;
@@ -89,33 +136,29 @@ export const removeFromClipboardHistory = (itemId: string) => {
   }
 };
 
-const ioEvent = async (event: any) => {
+const ioEvent = async (e: UiohookKeyboardEvent) => {
   // log.info(event);
   try {
-    const {
-      keychar = '',
-      shiftKey = false,
-      type = '',
-      metaKey = false,
-      ctrlKey = false,
-      altKey = false,
-    } = event;
-    kitState.isShiftDown = shiftKey;
+    kitState.isShiftDown = e.shiftKey;
 
-    // log.info({ keychar, type });
-    const key = String.fromCharCode(keychar);
+    const key = toKey(e?.keycode || 0, e.shiftKey);
+
+    log.info({ key });
+
+    if (key === 'Shift') return;
 
     if (
-      type === 'mouseclick' ||
-      metaKey ||
-      ctrlKey ||
-      altKey ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.altKey ||
       kitState.isTyping ||
-      keychar < 33
+      key.length > 1 ||
+      key === ''
     ) {
       kitState.snippet = ``;
     } else {
       kitState.snippet = `${kitState.snippet}${key}`;
+      log.info(kitState.snippet);
     }
   } catch (error) {
     log.error(error);
@@ -125,17 +168,17 @@ const ioEvent = async (event: any) => {
 };
 
 export const configureInterval = async () => {
-  const { default: ioHook } = await import('@hcfy/iohook');
-
   if (kitState.isMac) {
     ({ default: frontmost } = await import('frontmost-app' as any));
   }
+
+  const { uIOhook } = await import('uiohook-napi');
   const io$ = new Observable((observer) => {
-    ioHook.on('mouseclick', (event) => {
+    uIOhook.on('click', (event) => {
       observer.next(event);
     });
 
-    ioHook.on('keypress', (event) => {
+    uIOhook.on('keydown', (event) => {
       // log.info(String.fromCharCode(event.keychar));
       observer.next(event);
     });
@@ -150,10 +193,10 @@ export const configureInterval = async () => {
     // });
 
     // Register and start hook
-    ioHook.start();
+    uIOhook.start();
 
     return () => {
-      ioHook.stop();
+      uIOhook.stop();
     };
   }).pipe(share());
 
@@ -291,7 +334,7 @@ export const configureInterval = async () => {
       if (kitConfig.deleteSnippet) {
         const prevDelay = keyboard.config.autoDelayMs;
         keyboard.config.autoDelayMs = 0;
-        snippet.split('').forEach(async (char) => {
+        snippet.split('').forEach(async () => {
           await keyboard.type(Key.Backspace);
         });
         keyboard.config.autoDelayMs = prevDelay;
@@ -304,7 +347,7 @@ export const configureInterval = async () => {
     kitState.snippet = ``;
   });
 
-  io$.subscribe(ioEvent);
+  io$.subscribe(ioEvent as any);
 };
 
 const snippetMap = new Map<string, Script>();
