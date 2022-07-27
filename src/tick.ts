@@ -143,11 +143,11 @@ const ioEvent = async (e: UiohookKeyboardEvent) => {
 
     const key = toKey(e?.keycode || 0, e.shiftKey);
 
-    log.info({ key });
-
     if (key === 'Shift') return;
 
-    if (
+    if (key === 'backspace') {
+      kitState.snippet = kitState.snippet.slice(0, -1);
+    } else if (
       e.metaKey ||
       e.ctrlKey ||
       e.altKey ||
@@ -158,7 +158,6 @@ const ioEvent = async (e: UiohookKeyboardEvent) => {
       kitState.snippet = ``;
     } else {
       kitState.snippet = `${kitState.snippet}${key}`;
-      log.info(kitState.snippet);
     }
   } catch (error) {
     log.error(error);

@@ -113,6 +113,7 @@ const trayClick = async (event: KeyboardEvent) => {
     }
 
     const authItems: MenuItemConstructorOptions[] = [];
+    const updateItems: MenuItemConstructorOptions[] = [];
 
     if (!kitState.authorized) {
       authItems.push({
@@ -128,6 +129,20 @@ const trayClick = async (event: KeyboardEvent) => {
       });
 
       authItems.push({
+        type: 'separator',
+      });
+    }
+
+    if (kitState.updateDownloaded) {
+      updateItems.push({
+        label: `Update Downloaded. Click to install.`,
+        click: () => {
+          kitState.applyUpdate = true;
+        },
+        icon: menuIcon('cogwheel'),
+      });
+
+      updateItems.push({
         type: 'separator',
       });
     }

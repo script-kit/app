@@ -1156,14 +1156,6 @@ jsprim@^1.2.2:
     json-schema "0.4.0"
     verror "1.10.0"
 
-keylogger.js@^0.0.4:
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/keylogger.js/-/keylogger.js-0.0.4.tgz#1ec8288e29559428ec624e6fd983ff931e52dda1"
-  integrity sha512-AgWl/o8mtTTgOMywIj5l+LRRvW2SuJDCl7YRNeM8xF7PrgULt6WgOHhHkFeXirSWnnRja6T9A4BnzTfGt1Ka7w==
-  dependencies:
-    bindings "^1.5.0"
-    node-addon-api "^3.1.0"
-
 kind-of@^6.0.2:
   version "6.0.3"
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
@@ -1350,7 +1342,7 @@ node-addon-api@3.0.0:
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.0.0.tgz#812446a1001a54f71663bed188314bba07e09247"
   integrity sha512-sSHCgWfJ+Lui/u+0msF3oyCgvdkhxDbkCS6Q8uiJquzOimkJBvX6hl5aSSA7DR1XbMpdM8r7phjcF63sF4rkKg==
 
-node-addon-api@^3.0.2, node-addon-api@^3.1.0:
+node-addon-api@^3.0.2:
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.2.1.tgz#81325e0a2117789c0128dab65e7e38f07ceba161"
   integrity sha512-mmcei9JghVNDYydghQmeDX8KoAm0FAiYyIcUt/N4nhyAipB17pllZQDOJD2fotxABnt4Mdz+dKTO7eftLg4d0A==

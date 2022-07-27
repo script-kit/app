@@ -217,6 +217,7 @@ const initState = {
 
   notifications: [] as KitStatus[],
   downloadPercent: 0,
+  applyUpdate: false,
 };
 
 nativeTheme.addListener('updated', () => {

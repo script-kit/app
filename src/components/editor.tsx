@@ -250,7 +250,7 @@ export default function Editor() {
           theme={isDark ? 'kit-dark' : 'kit-light'}
           options={options}
           path="file:///index.ts"
-          value={(config as EditorOptions)?.value || ''}
+          value={inputValue}
           onChange={onChange}
         />
       </ErrorBoundary>

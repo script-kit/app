@@ -12,6 +12,7 @@ import {
   KIT_FIRST_PATH,
   kenvPath,
 } from '@johnlindquist/kit/cjs/utils';
+import { subscribeKey } from 'valtio/utils';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { spawn } from 'child_process';
 import { destroyTray } from './tray';
@@ -160,6 +161,12 @@ export const configureAutoUpdate = async () => {
     }, 2500);
   });
 
+  subscribeKey(kitState, 'applyUpdate', async (update) => {
+    if (update) {
+      await applyUpdate();
+    }
+  });
+
   autoUpdater.on('before-quit-for-update', () => {
     log.info(`Before quit for update...`);
   });
@@ -206,13 +213,13 @@ export const configureAutoUpdate = async () => {
 
     kitState.status = {
       status: 'success',
-      message: `Update downloaded. Restarting...`,
+      message: ``,
     };
 
     log.info(`⬇️ Update downloaded`);
 
     if (kitState.downloadPercent === 100) {
-      await applyUpdate();
+      // await applyUpdate();
     }
   });
 
@@ -248,7 +255,7 @@ export const configureAutoUpdate = async () => {
     kitState.downloadPercent = progressObj.percent;
 
     if (progressObj.percent === 100 && kitState.updateDownloaded) {
-      await applyUpdate();
+      // await applyUpdate();
     }
   });
 
