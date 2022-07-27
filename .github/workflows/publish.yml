@@ -51,10 +51,6 @@ jobs:
           else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
           yarn
 
-      - name: yarn install-electron-deps
-        run: |
-          DEBUG=electron-rebuild yarn install-electron-deps
-
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v2.7.0
@@ -74,10 +70,6 @@ jobs:
               }
             ]
 
-      - name: yarn build
-        run: |
-          yarn build
-
       - name: Publish releases
         env:
           # These values are used for auto updates signing
@@ -88,7 +80,14 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          DEBUG=electron-rebuild yarn install-electron-deps
+          yarn build
           yarn electron-builder --publish always -m
+          echo "\n\n--- Removing mac deps ---"
           cd ./src yarn remove node-mac-permissions @akiflow/electron-panel-window
+          cat ./package.json
           cd ..
+          echo "--- Done removing mac deps ---\n\n"
+          DEBUG=electron-rebuild yarn install-electron-deps
+          yarn build
           yarn electron-builder --publish always -w
