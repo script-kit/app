@@ -736,8 +736,11 @@ const kitMessageMap: ChannelHandler = {
   SET_DIV_HTML: (data) => {
     sendToPrompt(Channel.SET_DIV_HTML, data.value);
   },
-  SET_FORM_HTML: (data) => {
-    sendToPrompt(Channel.SET_FORM_HTML, data.value);
+  // SET_FORM_HTML: (data) => {
+  //   sendToPrompt(Channel.SET_FORM_HTML, data.value);
+  // },
+  SET_FORM: (data) => {
+    sendToPrompt(Channel.SET_FORM, data.value);
   },
   SET_FLAGS: (data) => {
     sendToPrompt(Channel.SET_FLAGS, data.value);

@@ -12,10 +12,9 @@ import {
   PromptData,
   PromptBounds,
 } from '@johnlindquist/kit/types/core';
-import { BrowserWindow, screen, Rectangle, powerMonitor, app } from 'electron';
+import { BrowserWindow, screen, Rectangle, powerMonitor } from 'electron';
 import os from 'os';
 import path from 'path';
-import { subscribeKey } from 'valtio/utils';
 import log from 'electron-log';
 import { debounce } from 'lodash';
 import minimist from 'minimist';
@@ -615,6 +614,7 @@ export const setTabIndex = (tabIndex: number) => {
   sendToPrompt(Channel.SET_TAB_INDEX, tabIndex);
 };
 
+let boundsCheck: any = null;
 export const setPromptData = async (promptData: PromptData) => {
   if (kitState.suspended || kitState.screenLocked) return;
 
@@ -637,6 +637,53 @@ export const setPromptData = async (promptData: PromptData) => {
 
   focusPrompt();
   sendToPrompt(Channel.SET_OPEN, true);
+
+  if (boundsCheck) clearTimeout(boundsCheck);
+  boundsCheck = setTimeout(async () => {
+    const currentBounds = promptWindow?.getBounds();
+
+    const displays = screen.getAllDisplays();
+
+    const minX = displays.reduce((min: number, display) => {
+      const m = min === 0 ? display.bounds.x : min;
+      return Math.min(m, display.bounds.x);
+    }, 0);
+
+    const maxX = displays.reduce((max: number, display) => {
+      const m = max === 0 ? display.bounds.x + display.bounds.width : max;
+      return Math.max(m, display.bounds.x + display.bounds.width);
+    }, 0);
+
+    const minY = displays.reduce((min: number, display) => {
+      const m = min === 0 ? display.bounds.y : min;
+      return Math.min(m, display.bounds.y);
+    }, 0);
+
+    const maxY = displays.reduce((max: number, display) => {
+      const m = max === 0 ? display.bounds.y + display.bounds.height : max;
+      return Math.max(m, display.bounds.y + display.bounds.height);
+    }, 0);
+
+    log.info(`↖ BOUNDS:`, {
+      bounds: currentBounds,
+      minX,
+      maxX,
+      minY,
+      maxY,
+    });
+
+    if (
+      currentBounds?.x < minX ||
+      currentBounds?.x + currentBounds?.width > maxX ||
+      currentBounds?.y < minY ||
+      currentBounds?.y + currentBounds?.height > maxY
+    ) {
+      log.info(`Prompt window out of bounds. Clearing cache and resetting.`);
+      await clearPromptCache();
+    } else {
+      log.info(`Prompt window in bounds.`);
+    }
+  }, 1000);
 };
 
 export const setChoices = (choices: Choice[]) => {

@@ -44,7 +44,7 @@ const safeListStartsWith = [
   'min',
   'max',
   'grid',
-  'w{0,2}-(d/d|d.d|d{1,3}|full|screen|auto)',
+  `w{0,2}-(\d\/\d|\d.\d|\d{1,3}|full|screen|auto)`,
   'leading',
   'prose',
   'prose-dark',
@@ -116,6 +116,10 @@ module.exports = {
           light: colorVar('background-light'),
         },
         primary: {
+          light: colorVar('primary-light'),
+          dark: colorVar('primary-dark'),
+        },
+        border: {
           light: colorVar('primary-light'),
           dark: colorVar('primary-dark'),
         },

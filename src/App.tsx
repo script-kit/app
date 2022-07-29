@@ -179,6 +179,7 @@ export default function App() {
   const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
   const [footer, setFooter] = useAtom(footerAtom);
+
   const [, setReady] = useAtom(isReadyAtom);
 
   const [, setTabIndex] = useAtom(tabIndexAtom);
@@ -189,9 +190,6 @@ export default function App() {
   const [, setEditorConfig] = useAtom(editorConfigAtom);
   const [, setTextareaConfig] = useAtom(textareaConfigAtom);
   const [, setFlags] = useAtom(flagsAtom);
-  const [, setFormHTML] = useAtom(formHTMLAtom);
-  const [, setFormData] = useAtom(formDataAtom);
-
   const [, setMainHeight] = useAtom(mainHeightAtom);
   const [, setTopHeight] = useAtom(topHeightAtom);
 
@@ -251,10 +249,6 @@ export default function App() {
     [Channel.SET_FOCUSED]: setFocused,
     [Channel.SET_DIV_HTML]: setPanelHTML,
     [Channel.SET_FILTER_INPUT]: setFilterInput,
-    [Channel.SET_FORM_HTML]: ({ html, formData }: any) => {
-      setFormHTML(html);
-      setFormData(formData);
-    },
     [Channel.SET_FOOTER]: setFooter,
     [Channel.SET_HINT]: setHint,
     [Channel.SET_INPUT]: setInput,

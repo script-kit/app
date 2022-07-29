@@ -16,6 +16,7 @@ import {
   Script,
   PromptData,
   FlagsOptions,
+  PromptConfig,
 } from '@johnlindquist/kit/types/core';
 import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import {
@@ -879,6 +880,14 @@ export const promptDataAtom = atom(
 
       if (a.defaultChoiceId) {
         s(prevChoiceId, a.defaultChoiceId);
+      }
+
+      if (a?.html) {
+        s(formHTMLAtom, a.html);
+      }
+
+      if (a?.formData) {
+        s(formDataAtom, a.formData);
       }
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});

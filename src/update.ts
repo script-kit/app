@@ -175,7 +175,7 @@ export const configureAutoUpdate = async () => {
     updateInfo = info;
 
     kitState.status = {
-      status: 'busy',
+      status: 'update',
       message: `Downloading update ${info.version}...`,
     };
     log.info('Update available.', info);

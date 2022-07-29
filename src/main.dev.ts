@@ -28,7 +28,6 @@ if (!app.requestSingleInstanceLock()) {
 }
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
-import { getAuthStatus } from 'node-mac-permissions';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
@@ -431,20 +430,26 @@ const ready = async () => {
     await setupWatchers();
     await setupLog(`Shortcuts Assigned`);
 
-    kitState.authorized = getAuthStatus('accessibility') === 'authorized';
+    if (kitState.isMac) {
+      log.info(`💻 Mac detected.`);
+      const { getAuthStatus } = await import('node-mac-permissions');
+      kitState.authorized = getAuthStatus('accessibility') === 'authorized';
 
-    if (kitState.authorized) {
-      await configureInterval();
-      await setupLog(`Tick started`);
+      if (kitState.authorized) {
+        await configureInterval();
+        await setupLog(`Tick started`);
+      } else {
+        const id = setInterval(async () => {
+          kitState.authorized = getAuthStatus('accessibility') === 'authorized';
+          if (kitState.authorized) {
+            clearInterval(id);
+            await configureInterval();
+            await setupLog(`Tick started`);
+          }
+        }, 5000);
+      }
     } else {
-      const id = setInterval(async () => {
-        kitState.authorized = getAuthStatus('accessibility') === 'authorized';
-        if (kitState.authorized) {
-          clearInterval(id);
-          await configureInterval();
-          await setupLog(`Tick started`);
-        }
-      }, 5000);
+      kitState.authorized = true;
     }
 
     await setupLog(``);
