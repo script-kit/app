@@ -52,7 +52,7 @@
     "asarUnpack": [
       "**\\*.{node,dll}"
     ],
-    "npmSkipBuildFromSource": true,
+    "buildDependenciesFromSource": false,
     "files": [
       "dist/",
       "fonts/**",
