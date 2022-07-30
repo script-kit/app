@@ -12,7 +12,6 @@ import {
 import path from 'path';
 import log from 'electron-log';
 import { KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
-import { askForAccessibilityAccess } from 'node-mac-permissions';
 import { subscribeKey } from 'valtio/utils';
 import { KeyboardEvent } from 'electron/main';
 import os from 'os';
@@ -116,6 +115,9 @@ const trayClick = async (event: KeyboardEvent) => {
     const updateItems: MenuItemConstructorOptions[] = [];
 
     if (!kitState.authorized) {
+      const { askForAccessibilityAccess } = await import(
+        'node-mac-permissions'
+      );
       authItems.push({
         label: `Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
         click: () => askForAccessibilityAccess(),
