@@ -51,6 +51,7 @@ import {
   rename,
   rm,
   mkdir,
+  copyFile,
 } from 'fs/promises';
 
 import axios from 'axios';
@@ -816,10 +817,11 @@ const checkKit = async () => {
 
         if (platform === 'win') {
           log.info(`Extracting ${KIT_NODE_TAR} to ${tildify(knodePath())}`);
-          const normalized = path.normalize(KIT_NODE_TAR);
-          log.info(`Normalized ${normalized}`);
+
           try {
-            const d = await Open.file(normalized);
+            const copyPath = path.resolve(homedir(), 'node.zip');
+            await copyFile(KIT_NODE_TAR, copyPath);
+            const d = await Open.file(copyPath);
             await d.extract({ path: knodePath(), concurrency: 5 });
             const nodeDir = await readdir(knodePath());
             const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));

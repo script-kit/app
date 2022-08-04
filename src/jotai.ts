@@ -743,6 +743,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   const ui = g(uiAtom);
 
+  if ([UI.term, UI.editor, UI.drop].includes(ui)) return;
+
   const placeholderOnly =
     g(promptDataAtom)?.mode === Mode.FILTER &&
     g(unfilteredChoices).length === 0 &&

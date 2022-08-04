@@ -72,7 +72,7 @@ export const beforePromptQuit = async () => {
 };
 
 export const createPromptWindow = async () => {
-  if (false && kitState.isMac) {
+  if (kitState.isMac) {
     electronPanelWindow = await import('@akiflow/electron-panel-window' as any);
   }
   promptWindow = new BrowserWindow({
