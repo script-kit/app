@@ -50,7 +50,6 @@ import {
   readFile,
   rename,
   rm,
-  rmdir,
   mkdir,
 } from 'fs/promises';
 
@@ -650,7 +649,7 @@ const cleanKit = async () => {
     const filePath = path.resolve(pathToClean, file);
     const stat = await lstat(filePath);
     if (stat.isDirectory()) {
-      await rmdir(filePath, { recursive: true });
+      await rm(filePath, { recursive: true, force: true });
       log.info(`🧹 Cleaning dir ${filePath}`);
     } else {
       await rm(filePath);
@@ -661,7 +660,7 @@ const cleanKit = async () => {
 
 const cleanUserData = async () => {
   const pathToClean = app.getPath('userData');
-  await rmdir(pathToClean, { recursive: true });
+  await rm(pathToClean, { recursive: true, force: true });
 };
 
 const KIT_NODE_TAR =
@@ -804,7 +803,10 @@ const checkKit = async () => {
       if (existsSync(KIT_NODE_TAR)) {
         if (existsSync(knodePath())) {
           await setupLog(`Removing old node ${tildify(knodePath())}`);
-          await rmdir(knodePath());
+          await rm(knodePath(), {
+            recursive: true,
+            force: true,
+          });
         }
 
         await setupLog(`Create node dir ${tildify(knodePath())}`);
@@ -814,6 +816,8 @@ const checkKit = async () => {
 
         if (platform === 'win') {
           const d = await Open.file(KIT_NODE_TAR);
+          log.info(d);
+          log.info(Object.keys(d));
           await d.extract({ path: knodePath(), concurrency: 5 });
           const nodeDir = await readdir(knodePath());
           const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));

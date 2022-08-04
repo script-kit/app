@@ -384,7 +384,7 @@ export const resize = async ({
   nullChoices,
 }: ResizeData) => {
   if (kitState.modifiedByUser) return;
-  if ([UI.term, UI.editor].includes(ui)) return;
+  if ([UI.term, UI.editor, UI.drop].includes(ui)) return;
 
   const {
     width: cachedWidth,
