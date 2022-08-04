@@ -19,7 +19,7 @@ import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
 
-import { Open } from 'unzipper';
+import StreamZip from 'node-stream-zip';
 import tar from 'tar';
 import clipboardy from 'clipboardy';
 
@@ -819,10 +819,16 @@ const checkKit = async () => {
           log.info(`Extracting ${KIT_NODE_TAR} to ${tildify(knodePath())}`);
 
           try {
-            const copyPath = path.resolve(homedir(), 'node.zip');
-            await copyFile(KIT_NODE_TAR, copyPath);
-            const d = await Open.file(copyPath);
-            await d.extract({ path: knodePath(), concurrency: 5 });
+            // const copyPath = path.resolve(homedir(), 'node.zip');
+            // await copyFile(KIT_NODE_TAR, copyPath);
+            // const d = await Open.file(copyPath);
+            // await d.extract({ path: knodePath(), concurrency: 5 });
+            /* eslint-disable new-cap */
+            const zip = new StreamZip.async({ file: KIT_NODE_TAR });
+
+            await zip.extract(null, knodePath());
+            await zip.close();
+
             const nodeDir = await readdir(knodePath());
             const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));
             if (nodeDirName) {
