@@ -15,6 +15,7 @@ import {
   previewEnabledAtom,
   hasPreviewAtom,
   previewHTMLAtom,
+  heightChangedAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 import { BUTTON_HEIGHT, DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from '../defaults';
@@ -44,6 +45,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [previewEnabled] = useAtom(previewEnabledAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
   const [previewHTML] = useAtom(previewHTMLAtom);
+  const [, setHeightChanged] = useAtom(heightChangedAtom);
   // const listWidth = useMotionValue('100%');
 
   const onIndexSubmit = useCallback(
@@ -112,6 +114,9 @@ export default function ChoiceList({ width, height }: ListProps) {
       }
     >
       <List
+        onItemsRendered={(props) => {
+          setHeightChanged(Math.random());
+        }}
         style={{
           minWidth:
             previewEnabled && hasPreview ? DEFAULT_LIST_WIDTH : DEFAULT_WIDTH,
@@ -124,7 +129,7 @@ export default function ChoiceList({ width, height }: ListProps) {
         width="100%"
         itemData={itemData}
         className={`
-        h-full
+        wrapper
         px-0 flex flex-col
         text-black dark:text-white
         overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20

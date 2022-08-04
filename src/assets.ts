@@ -8,16 +8,6 @@ const checkPackaged = (name: string) =>
     ? path.join(process.resourcesPath, name)
     : path.join(__dirname, '..', name);
 
-const checkBin = (name: string) =>
-  app.isPackaged
-    ? path.join(
-        process.resourcesPath,
-        'app.asar.unpacked',
-        'node_modules',
-        name
-      )
-    : path.join(__dirname, '..', name);
-
 export const getAssetPath = (...paths: string[]): string => {
   return path.join(checkPackaged('assets'), ...paths);
 };

@@ -133,8 +133,6 @@ const keys = [
   'tag',
 ].map((name) => ({ name, scorer }));
 
-const unfilteredPreview = atom<boolean>(true);
-
 export const ultraShortCodesAtom = atom<{ code: string; id: string }[]>([]);
 
 export const choicesIdAtom = atom<number>(0);
@@ -145,7 +143,7 @@ export const nullChoicesAtom = atom(
   (g) => g(_nullChoices) && g(uiAtom) === UI.arg,
   (g, s, a: boolean) => {
     s(_nullChoices, a);
-    if (a) resize(g, s);
+    if (a) resize(g, s, 'NULL_CHOICES');
   }
 );
 
@@ -169,14 +167,13 @@ export const unfilteredChoicesAtom = atom(
       s(quickScoreAtom, null);
     }
 
-    const maybePreview = Boolean(
-      cs.find((c) => c?.hasPreview) ||
-        g(promptData)?.hasPreview ||
-        g(isMainScriptAtom) ||
-        g(isSplashAtom)
-    );
+    // const maybePreview = Boolean(
+    //   cs.find((c) => c?.hasPreview) ||
+    //     g(promptData)?.hasPreview ||
+    //     g(isMainScriptAtom) ||
+    //     g(isSplashAtom)
+    // );
 
-    s(unfilteredPreview, maybePreview);
     // if (a?.[0]?.name.match(/(?<=\[)\.(?=\])/i)) {
     if (
       cs.length > 0 &&
@@ -201,8 +198,8 @@ export const unfilteredChoicesAtom = atom(
       const qs = new QuickScore(cs, {
         keys,
         minimumScore: 0.3,
-      });
-      s(quickScoreAtom, qs);
+      } as any);
+      s(quickScoreAtom, qs as any);
 
       const mode = g(promptDataAtom)?.mode;
       const flaggedValue = g(_flagged);
@@ -524,14 +521,15 @@ export const scoredChoices = atom(
 
       // channel(Channel.CHOICES);
       s(panelHTMLAtom, ``);
-      resize(g, s);
+      // resize(g, s, 'SCORED_CHOICES');
     } else {
       s(focusedChoiceAtom, null);
       if (isFilter && Boolean(a) && !g(nullChoicesAtom)) {
         channel(Channel.NO_CHOICES);
       }
     }
-    if (a?.length) s(mainHeightAtom, a.length * BUTTON_HEIGHT);
+
+    if (a && g(uiAtom) === UI.arg) s(mainHeightAtom, a.length * BUTTON_HEIGHT);
   }
 );
 
@@ -740,27 +738,26 @@ const mainHeight = atom(0);
 
 const resizeData = atom({});
 
-const resize = (g: Getter, s: Setter) => {
-  // if (!g(resizeEnabledAtom)) return;
+const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
+  if (g(submittedAtom)) return;
 
   const ui = g(uiAtom);
 
-  const placeholderOnly = Boolean(
+  const placeholderOnly =
     g(promptDataAtom)?.mode === Mode.FILTER &&
-      g(unfilteredChoices).length === 0 &&
-      ui === UI.arg
-  );
-
-  const panelHTML = g(panelHTMLAtom);
-  const hasPanel = Boolean(panelHTML?.length);
-
+    g(unfilteredChoices).length === 0 &&
+    ui === UI.arg;
+  const hasPanel = g(panelHTMLAtom) !== '';
   const nullChoices = g(nullChoicesAtom);
+
+  const mh = nullChoices && !hasPanel ? 0 : g(mainHeight);
+
   const data: ResizeData = {
     scriptPath: g(_script)?.filePath,
     placeholderOnly,
     topHeight: g(topHeight),
     ui,
-    mainHeight: nullChoices && !hasPanel ? 0 : g(mainHeight),
+    mainHeight: mh,
     footerHeight: g(footerAtom) ? 20 : 0,
     mode: g(promptData)?.mode || Mode.FILTER,
     hasPanel,
@@ -775,6 +772,8 @@ const resize = (g: Getter, s: Setter) => {
     nullChoices,
   };
 
+  // console.log(data);
+
   s(resizeData, data);
 
   ipcRenderer.send(AppChannel.RESIZE, data);
@@ -784,22 +783,27 @@ export const topHeightAtom = atom(
   (g) => g(topHeight),
   (g, s, a: number) => {
     s(topHeight, a);
-    resize(g, s);
+    resize(g, s, 'TOP_HEIGHT');
   }
 );
 
 export const mainHeightAtom = atom(
   (g) => g(mainHeight),
   (g, s, a: number) => {
+    const resizeEnabled = g(resizeAtom) && g(promptData)?.resize;
     const prevHeight = g(mainHeight);
-    if (Math.abs(a - prevHeight) > 2) {
-      const topClient = g(topRefAtom)?.clientHeight;
-      if (topClient) s(topHeight, topClient);
-      s(mainHeight, a < 0 ? 0 : a);
 
-      resize(g, s);
-    }
+    if (!resizeEnabled && a < prevHeight) return;
+    // if (Math.abs(a - prevHeight) > 2) {
+    const topClient = g(topRefAtom)?.clientHeight;
+    if (topClient) s(topHeight, topClient);
+
+    const nextMainHeight = a < 0 ? 0 : a;
+    s(mainHeight, nextMainHeight);
+
+    resize(g, s, 'MAIN_HEIGHT');
   }
+  // }
 );
 
 const checkIfSubmitIsDrop = (checkValue: any) => {
@@ -1100,6 +1104,7 @@ export const openAtom = atom(
       s(resizeData, {});
       s(editorConfigAtom, {});
       s(promptData, null);
+      s(resizeAtom, true);
 
       ipcRenderer.send(AppChannel.END_PROCESS, {
         pid: g(pidAtom),
@@ -1192,7 +1197,7 @@ export const previewEnabledAtom = atom(
   (g) => g(previewEnabled),
   (g, s, a: boolean) => {
     s(previewEnabled, a);
-    resize(g, s);
+    resize(g, s, 'PREVIEW_ENABLED');
   }
 );
 
@@ -1382,3 +1387,7 @@ export const socketURLAtom = atom(
     }
   }
 );
+
+export const heightChangedAtom = atom<number>(0);
+
+export const resizeAtom = atom<boolean>(true);

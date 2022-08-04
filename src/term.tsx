@@ -1,5 +1,5 @@
 import React, { RefObject, useEffect, useRef } from 'react';
-import { XTerm } from 'xterm-for-react';
+import { shell } from 'electron';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 import { Unicode11Addon } from 'xterm-addon-unicode11';
@@ -9,7 +9,7 @@ import { SerializeAddon } from 'xterm-addon-serialize';
 import { AttachAddon } from 'xterm-addon-attach';
 import useResizeObserver from '@react-hook/resize-observer';
 import { motion } from 'framer-motion';
-import { throttle } from 'lodash';
+import { debounce } from 'lodash';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 import {
@@ -19,6 +19,8 @@ import {
   webSocketAtom,
   webSocketOpenAtom,
 } from './jotai';
+
+import XTerm from './components/xterm';
 
 const defaultTheme = {
   foreground: '#2c3e50',
@@ -53,9 +55,14 @@ const darkTheme = {
   brightMagenta: '#e83030',
 };
 
+function isCtrlKeyOn(e: MouseEvent) {
+  return e.ctrlKey;
+}
+
 export default function Terminal() {
   const xtermRef = useRef<XTerm>(null);
   const fitRef = useRef(new FitAddon());
+
   const [ws] = useAtom(webSocketAtom);
   const [wsOpen] = useAtom(webSocketOpenAtom);
   const [, submit] = useAtom(submitValueAtom);
@@ -65,12 +72,11 @@ export default function Terminal() {
 
   useResizeObserver(
     containerRef,
-    throttle((entry) => {
+    debounce((entry) => {
       if (entry?.contentRect?.height) {
         fitRef.current.fit();
-        console.log(fitRef.current.proposeDimensions());
       }
-    }, 50)
+    }, 5)
   );
 
   useEffect(() => {
@@ -92,13 +98,19 @@ export default function Terminal() {
       // console.log(`loadAddon`, xtermRef?.current?.terminal.loadAddon);
 
       t.loadAddon(fitRef.current);
-      t.loadAddon(new WebLinksAddon());
+      t.loadAddon(
+        new WebLinksAddon((e, uri) => {
+          shell.openExternal(uri);
+        })
+      );
+
+      // t.loadAddon(new WebglAddon());
       t.loadAddon(new Unicode11Addon());
       t.loadAddon(new SearchAddon());
       t.loadAddon(new LigaturesAddon());
       t.loadAddon(new SerializeAddon());
 
-      t.onKey((x) => {
+      t.onKey((x: any) => {
         // console.log({ key: x });
         if (
           (x?.domEvent.key === 'Enter' && x?.domEvent.metaKey) ||
@@ -106,13 +118,17 @@ export default function Terminal() {
         ) {
           // console.log(`SUBMITTING TERMINAL`);
           submit(Channel.TERMINAL);
-          attachAddon.dispose();
+          if (attachAddon) {
+            attachAddon.dispose();
+          } else {
+            console.log(`attachAddon is null`);
+          }
         }
       });
 
       t.loadAddon(attachAddon);
 
-      fitRef.current.fit();
+      // fitRef.current.fit();
       t.focus();
 
       setTimeout(() => {
@@ -127,19 +143,23 @@ export default function Terminal() {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={{ duration: 0.5, ease: 'circOut' }}
-      className="w-full h-full pt-3 px-3"
-      ref={containerRef as RefObject<HTMLDivElement>}
+      className="w-full h-full pt-3 -mb-3 px-3 max-h-full"
     >
-      <XTerm
+      <div
+        ref={containerRef as RefObject<HTMLDivElement>}
         className="w-full h-full"
-        options={{
-          fontFamily: 'monospace',
-          allowTransparency: true,
-          theme: isDark ? darkTheme : defaultTheme,
-        }}
-        ref={xtermRef}
-        addons={[]}
-      />
+      >
+        <XTerm
+          className="w-full h-full max-h-full"
+          options={{
+            fontFamily: 'monospace',
+            allowTransparency: true,
+            theme: isDark ? darkTheme : defaultTheme,
+          }}
+          ref={xtermRef}
+          addons={[]}
+        />
+      </div>
     </motion.div>
   );
 }

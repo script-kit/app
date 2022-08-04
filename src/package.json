@@ -18,13 +18,12 @@
     "@types/regenerator-runtime": "^0.13.0"
   },
   "dependencies": {
-    "@akiflow/electron-panel-window": "^3.2.1",
-    "@nut-tree/nut-js": "^2.1.1",
-    "frontmost-app": "^1.0.0",
-    "node-abi": "^3.22.0",
-    "node-mac-permissions": "^2.2.1",
-    "node-pty": "^0.10.1",
-    "trash": "^8.1.0",
-    "uiohook-napi": "^1.2.0"
+    "@akiflow/electron-panel-window": "3.2.1",
+    "@nut-tree/nut-js": "2.1.1",
+    "frontmost-app": "1.0.0",
+    "node-abi": "3.23.0",
+    "node-mac-permissions": "2.2.1",
+    "node-pty": "0.10.1",
+    "uiohook-napi": "1.2.0"
   }
 }

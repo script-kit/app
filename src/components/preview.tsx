@@ -73,7 +73,7 @@ export default function Preview() {
       <style type="text/css">{isDark ? darkTheme : lightTheme}</style>
       {previewHTML && (
         <div
-          className="w-full h-full"
+          className="w-full preview"
           dangerouslySetInnerHTML={{ __html: previewHTML }}
         />
       )}

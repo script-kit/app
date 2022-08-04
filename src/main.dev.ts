@@ -69,6 +69,8 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 
 import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
+import { subscribeKey } from 'valtio/utils';
+
 import { createTray, destroyTray } from './tray';
 import {
   cacheMenu,
@@ -396,7 +398,6 @@ const systemEvents = () => {
 
     setTimeout(async () => {
       log.info(`Resume tasks`);
-      scheduleDownloads();
       if (!kitState.updateDownloaded) {
         checkForUpdates();
       }
@@ -468,6 +469,11 @@ const ready = async () => {
     handleWidgetEvents();
 
     scheduleDownloads();
+
+    subscribeKey(kitState, 'lastOpen', async () => {
+      scheduleDownloads();
+    });
+
     systemEvents();
 
     log.info(`NODE_ENV`, process.env.NODE_ENV);
@@ -530,20 +536,6 @@ const kenvExists = async () => {
   await setupLog(`kenv${doesKenvExist ? `` : ` not`} found`);
 
   return doesKenvExist;
-};
-
-const kenvsExists = async () => {
-  const doKenvsExists = existsSync(kenvPath('kenvs'));
-  await setupLog(`kenv/kenvs${doKenvsExists ? `` : ` not`} found`);
-
-  return doKenvsExists;
-};
-
-const examplesExists = async () => {
-  const doExamplesExist = existsSync(kenvPath('kenvs', 'examples'));
-  await setupLog(`kenv/kenvs/examples${doExamplesExist ? `` : ` not`} found`);
-
-  return doExamplesExist;
 };
 
 const kenvConfigured = async () => {
@@ -929,13 +921,6 @@ const checkKit = async () => {
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));
     await clearPromptCache();
-  }
-
-  if ((await kenvsExists()) && (await examplesExists())) {
-    await setupLog(`Updating examples...`);
-    setupScript(kitPath('cli', 'kenv-pull.js'), kenvPath(`kenvs`, `examples`));
-
-    // await handleSpawnReturns(`update-examples`, updateExamplesResult);
   }
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);

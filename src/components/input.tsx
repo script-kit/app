@@ -32,14 +32,7 @@ import {
   inputFocusAtom,
   uiAtom,
 } from '../jotai';
-import {
-  useEnter,
-  useEscape,
-  useFlag,
-  useFocus,
-  useKeyIndex,
-  useTab,
-} from '../hooks';
+import { useEnter, useFlag, useFocus, useKeyIndex, useTab } from '../hooks';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];
@@ -176,9 +169,9 @@ export default function Input() {
     <motion.div
       key="input"
       className="flex flex-row"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: processing ? 0 : 1 }}
-      transition={{ duration: 0.2 }}
+      // initial={{ opacity: 0 }}
+      // animate={{ opacity: processing ? 0 : 1 }}
+      // transition={{ duration: 0.2 }}
     >
       <input
         id="input"
@@ -194,9 +187,9 @@ export default function Input() {
         autoFocus
         className={`
       bg-transparent w-full text-black dark:text-white focus:outline-none outline-none
-      text-xl dark:placeholder-white dark:placeholder-opacity-40
+      text-xl dark:placeholder-white dark:placeholder-opacity-25
       placeholder-black placeholder-opacity-40
-      ${processing && resizeEnabled ? `h-0` : `h-14`}
+      h-14
       ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 px-4 py-0
       focus:border-none border-none`}
         onChange={onChange}

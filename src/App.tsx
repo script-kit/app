@@ -101,6 +101,7 @@ import {
   footerAtom,
   onPasteAtom,
   onDropAtom,
+  resizeAtom,
 } from './jotai';
 
 import { useEscape, useThemeDetector } from './hooks';
@@ -216,6 +217,7 @@ export default function App() {
   const [, setSocketURL] = useAtom(socketURLAtom);
   const [onPaste] = useAtom(onPasteAtom);
   const [onDrop] = useAtom(onDropAtom);
+  const [, setResize] = useAtom(resizeAtom);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -263,6 +265,7 @@ export default function App() {
     [Channel.SET_LOGO]: setLogo,
     [Channel.SET_PLACEHOLDER]: setPlaceholder,
     [Channel.SET_READY]: setReady,
+    [Channel.SET_RESIZE]: setResize,
     [Channel.SET_SUBMIT_VALUE]: setSubmitValue,
     [Channel.SET_TAB_INDEX]: setTabIndex,
     [Channel.SET_PROMPT_DATA]: setPromptData,
@@ -436,7 +439,6 @@ export default function App() {
               {ui === UI.drop && <Drop />}
               {ui === UI.textarea && <TextArea />}
               {ui === UI.editor && <Editor />}
-              {ui === UI.form && <Form />}
               {ui === UI.term && <Terminal />}
             </AnimatePresence>
             <AutoSizer>
@@ -452,7 +454,12 @@ export default function App() {
                         <>
                           <Panel width={width} height={height} />
                         </>
-                      ))}
+                      )) ||
+                    (ui === UI.form && (
+                      <>
+                        <Form width={width} height={height} />
+                      </>
+                    ))}
                 </>
               )}
             </AutoSizer>

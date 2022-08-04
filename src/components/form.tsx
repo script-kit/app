@@ -11,10 +11,14 @@ import { useAtom } from 'jotai';
 import { formDataAtom, formHTMLAtom, submitValueAtom } from '../jotai';
 import { useEscape, useObserveMainHeight } from '../hooks';
 
-export default function Form() {
+interface PanelProps {
+  width: number;
+  height: number;
+}
+export default function Form({ width, height }: PanelProps) {
   // useEscape();
 
-  const formRef = useObserveMainHeight<HTMLFormElement>();
+  const formRef = useObserveMainHeight<HTMLFormElement>('.wrapper');
   const [formHTML] = useAtom(formHTMLAtom);
   const [formData] = useAtom(formDataAtom);
   const [, submit] = useAtom(submitValueAtom);
@@ -48,6 +52,15 @@ export default function Form() {
           }
         }
       }
+
+      if (document) {
+        const wrapper: any = document.querySelector(
+          '.simplebar-content-wrapper'
+        );
+        if (wrapper) {
+          wrapper.tabIndex = -1;
+        }
+      }
     }
   }, [formData]);
 
@@ -59,7 +72,8 @@ export default function Form() {
 
       const names: any = {};
       // const arrays: any = [];
-      for (const el of formRef?.current?.elements) {
+
+      for (const el of (formRef?.current as any)?.elements) {
         if (names[el.name] === false) {
           names[el.name] = true;
         } else {
@@ -102,22 +116,23 @@ export default function Form() {
 
   return (
     <SimpleBar
-      className="w-full h-full"
       style={
         {
           WebkitAppRegion: 'no-drag',
           WebkitUserSelect: 'text',
+          width,
+          height,
+          maxHeight: height,
         } as any
       }
     >
       <form
         onChange={onFormChange}
-        tabIndex={0}
         ref={formRef}
         onKeyDown={onFormKeyDown}
         onSubmit={onLocalSubmit}
         className={`
-        w-full h-full
+        wrapper
         form-component
         kit-form
         border-none

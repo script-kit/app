@@ -22,9 +22,9 @@ import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { getPromptDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
-import { getAssetPath } from './assets';
+import { differenceInHours } from 'date-fns';
 
-// import { Channel, Mode, UI } from '@johnlindquist/kit';
+import { getAssetPath } from './assets';
 import { getScriptsMemory, kitState } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
@@ -72,7 +72,7 @@ export const beforePromptQuit = async () => {
 };
 
 export const createPromptWindow = async () => {
-  if (kitState.isMac) {
+  if (false && kitState.isMac) {
     electronPanelWindow = await import('@akiflow/electron-panel-window' as any);
   }
   promptWindow = new BrowserWindow({
@@ -96,6 +96,9 @@ export const createPromptWindow = async () => {
     maximizable: false,
     movable: true,
     skipTaskbar: true,
+    width: DEFAULT_EXPANDED_WIDTH,
+    height: DEFAULT_HEIGHT,
+    minWidth: MIN_WIDTH,
     minHeight: INPUT_HEIGHT,
   });
 
@@ -201,7 +204,10 @@ export const createPromptWindow = async () => {
     kitState.modifiedByUser = false;
   };
 
-  promptWindow?.on('will-resize', () => {
+  promptWindow?.on('will-resize', (event, rect) => {
+    if (rect.height < MIN_HEIGHT) event.preventDefault();
+    if (rect.width < MIN_WIDTH) event.preventDefault();
+
     kitState.modifiedByUser = true;
   });
 
@@ -261,7 +267,7 @@ export const logFocus = () => {
 };
 
 export const showInactive = () => {
-  if (!kitState.isPanel) {
+  if (!kitState.isPanel && electronPanelWindow) {
     electronPanelWindow.makePanel(promptWindow);
     kitState.isPanel = true;
   }
@@ -378,6 +384,7 @@ export const resize = async ({
   nullChoices,
 }: ResizeData) => {
   if (kitState.modifiedByUser) return;
+  if ([UI.term, UI.editor].includes(ui)) return;
 
   const {
     width: cachedWidth,
@@ -393,6 +400,8 @@ export const resize = async ({
   } = promptWindow.getBounds();
 
   const targetHeight = topHeight + mainHeight + footerHeight;
+
+  // console.log({ topHeight, mainHeight, footerHeight, targetHeight });
   // const threeFourths = getCurrentScreenFromPrompt().bounds.height * (3 / 4);
 
   // const maxHeight = hasPanel
@@ -405,9 +414,9 @@ export const resize = async ({
 
   let height = Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
 
-  if (!nullChoices && !hasPanel) {
-    height = Math.max(cachedHeight, DEFAULT_HEIGHT);
-  }
+  // if (!nullChoices && !hasPanel) {
+  //   height = Math.max(cachedHeight, DEFAULT_HEIGHT);
+  // }
 
   if (isSplash) {
     width = DEFAULT_EXPANDED_WIDTH;
@@ -571,6 +580,12 @@ export const setScript = async (script: Script) => {
     script.tabs = script?.tabs?.filter(
       (tab: string) => !tab.match(/join|live/i)
     );
+
+    const sinceLast = differenceInHours(Date.now(), kitState.lastOpen);
+    log.info(`Hours since last open: ${sinceLast}`);
+    if (sinceLast > 6) {
+      kitState.lastOpen = new Date();
+    }
   }
 
   sendToPrompt(Channel.SET_SCRIPT, script);
@@ -622,10 +637,18 @@ export const setPromptData = async (promptData: PromptData) => {
   if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
 
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
-  // if (!promptWindow?.isVisible()) {
+  // if (!promptWindow?.isVisible())
   const bounds = await getCurrentScreenPromptCache(promptData.scriptPath);
   log.info(`↖ OPEN:`, bounds);
-  promptWindow.setBounds(bounds);
+  promptWindow.setPosition(bounds.x, bounds.y);
+  if ([UI.term, UI.editor].includes(promptData.ui)) {
+    promptWindow.setSize(bounds.width, DEFAULT_HEIGHT);
+    log.info(`Restoring prompt size:`, bounds.width, DEFAULT_HEIGHT);
+  }
+  // if (kitState.prevPromptScriptPath !== promptData.scriptPath) {
+  //   // promptWindow.setBounds(bounds);
+  //   kitState.prevPromptScriptPath = promptData.scriptPath;
+  // }
 
   showInactive();
 
@@ -664,13 +687,13 @@ export const setPromptData = async (promptData: PromptData) => {
       return Math.max(m, display.bounds.y + display.bounds.height);
     }, 0);
 
-    log.info(`↖ BOUNDS:`, {
-      bounds: currentBounds,
-      minX,
-      maxX,
-      minY,
-      maxY,
-    });
+    // log.info(`↖ BOUNDS:`, {
+    //   bounds: currentBounds,
+    //   minX,
+    //   maxX,
+    //   minY,
+    //   maxY,
+    // });
 
     if (
       currentBounds?.x < minX ||

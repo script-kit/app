@@ -174,7 +174,6 @@ const initState = {
   blurredByKit: false,
   modifiedByUser: false,
   ignoreBlur: false,
-  minHeight: MIN_HEIGHT,
   resize: false,
   prevResize: false,
   promptProcess: undefined as ProcessInfo | undefined,
@@ -218,6 +217,8 @@ const initState = {
   notifications: [] as KitStatus[],
   downloadPercent: 0,
   applyUpdate: false,
+  prevPromptScriptPath: ``,
+  lastOpen: new Date(),
 };
 
 nativeTheme.addListener('updated', () => {

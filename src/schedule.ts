@@ -1,9 +1,10 @@
 import schedule, { Job } from 'node-schedule';
+import { existsSync } from 'fs';
 
 import log from 'electron-log';
 import { Script } from '@johnlindquist/kit/types/core';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
-import { kitPath } from '@johnlindquist/kit/cjs/utils';
+import { kitPath, kenvPath } from '@johnlindquist/kit/cjs/utils';
 import { runScript } from './kit';
 import { scheduleMap } from './state';
 import { processes } from './process';
@@ -46,6 +47,12 @@ export const sleepSchedule = () => {
 export const scheduleDownloads = async () => {
   log.info(`schedule downloads`);
   runScript(kitPath('setup', 'downloads.js'));
+
+  if (existsSync(kenvPath('kenvs', 'examples'))) {
+    runScript(kitPath('cli', 'kenv-pull.js'), kenvPath(`kenvs`, `examples`));
+
+    // await handleSpawnReturns(`update-examples`, updateExamplesResult);
+  }
 };
 
 export const cancelSchedule = (filePath: string) => {

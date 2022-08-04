@@ -1,24 +1,39 @@
 import useResizeObserver from '@react-hook/resize-observer';
-import { RefObject, useRef } from 'react';
+import { RefObject, useEffect, useRef } from 'react';
 
 import { useAtom } from 'jotai';
-import { mainHeightAtom } from '../jotai';
+import { mainHeightAtom, heightChangedAtom, openAtom } from '../jotai';
 
-export default <T extends HTMLElement = HTMLElement>() => {
+export default <T extends HTMLElement = HTMLElement>(selector = '') => {
   const containerRef = useRef<T>();
   const [, setMainHeight] = useAtom(mainHeightAtom);
+  const [isOpen] = useAtom(openAtom);
 
-  // useLayoutEffect(() => {
-  //   if (containerRef?.current?.clientHeight) {
-  //     setMainHeight(containerRef?.current?.clientHeight);
-  //   }
-  // }, [containerRef?.current?.clientHeight, setMainHeight]);
+  const update = () => {
+    if (!isOpen) return;
+    const wrapper: any = document?.querySelector(selector);
+    console.log(`>>> Update`);
 
-  useResizeObserver(containerRef as RefObject<HTMLElement>, (entry) => {
-    if (entry?.contentRect?.height) {
-      setMainHeight(entry.contentRect.height);
+    if (wrapper) {
+      const styleHeightString = wrapper?.style?.height;
+      if (styleHeightString) {
+        const styleHeight = parseInt(styleHeightString.replace('px', ''), 10);
+        // console.log(`${selector} style height: ${styleHeight}`);
+        setMainHeight(styleHeight);
+      } else {
+        const elHeight = wrapper?.height || wrapper?.clientHeight;
+
+        // console.log(`${selector} el height: ${elHeight}`);
+        setMainHeight(elHeight);
+      }
+    } else {
+      console.log(`wrapper not found for ${selector}`);
     }
-  });
+  };
+
+  // useLayoutEffect(update, []);
+  useResizeObserver(containerRef as RefObject<HTMLElement>, update);
+  // useEffect(update, [heightChanged]);
 
   return containerRef;
 };

@@ -14,13 +14,7 @@ import {
   openAtom,
   uiAtom,
 } from '../jotai';
-import {
-  useClose,
-  useEscape,
-  useMountMainHeight,
-  useSave,
-  useOpen,
-} from '../hooks';
+import { useClose, useMountMainHeight, useSave, useOpen } from '../hooks';
 
 class ErrorBoundary extends React.Component {
   render() {
@@ -239,21 +233,20 @@ export default function Editor() {
       transition={{ duration: 0.5, ease: 'circOut' }}
       ref={containerRef}
       className={`
-    pt-3
+      pt-3 -mb-3
     w-full h-full`}
     >
-      <ErrorBoundary>
-        <MonacoEditor
-          beforeMount={onBeforeMount}
-          onMount={onMount}
-          language={(config as EditorOptions)?.language || 'markdown'}
-          theme={isDark ? 'kit-dark' : 'kit-light'}
-          options={options}
-          path="file:///index.ts"
-          value={inputValue}
-          onChange={onChange}
-        />
-      </ErrorBoundary>
+      <MonacoEditor
+        className="w-full h-full"
+        beforeMount={onBeforeMount}
+        onMount={onMount}
+        language={(config as EditorOptions)?.language || 'markdown'}
+        theme={isDark ? 'kit-dark' : 'kit-light'}
+        options={options}
+        path="file:///index.ts"
+        value={inputValue}
+        onChange={onChange}
+      />
     </motion.div>
   );
 }

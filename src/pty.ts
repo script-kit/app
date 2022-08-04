@@ -5,8 +5,6 @@ import untildify from 'untildify';
 import log from 'electron-log';
 import { Server } from 'net';
 import getPort from './get-port';
-import { kitState } from './state';
-import { stripAnsi } from './ansi';
 
 let t: any = null;
 let server: Server | null = null;

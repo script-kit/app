@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
+const peers = require('tailwindcss/peers');
 delete colors['lightBlue'];
 delete colors['coolGray'];
 delete colors['blueGray'];
@@ -49,12 +50,15 @@ const safeListStartsWith = [
   'prose',
   'prose-dark',
   'dark:prose-dark',
+  'dark:focus',
+  'focus',
   'prose-sm',
   '-?inset',
   '-?top',
   '-?right',
   '-?bottom',
   '-?left',
+  'border-b',
 ];
 
 /* eslint-disable global-require */
@@ -104,6 +108,7 @@ module.exports = {
         12: '.12',
         15: '.15',
         18: '.18',
+        40: '.40',
         themelight: 'var(--opacity-themelight)',
         themedark: 'var(--opacity-themedark)',
       },

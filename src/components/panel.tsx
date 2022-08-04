@@ -37,7 +37,7 @@ export default function Panel({ width, height }: PanelProps) {
   const [inputFocus] = useAtom(inputFocusAtom);
   const [ui] = useAtom(uiAtom);
 
-  const divRef = useObserveMainHeight<HTMLDivElement>();
+  const divRef = useObserveMainHeight<HTMLDivElement>('.wrapper');
 
   useEffect(() => {
     if (scrollRef.current && ui === UI.div) {
@@ -85,7 +85,8 @@ export default function Panel({ width, height }: PanelProps) {
         animate={{ opacity: [0, 1] }}
         transition={{ duration: 0.5, ease: 'circOut' }}
         className={`
-        w-full h-full`}
+        wrapper
+       `}
         ref={divRef as any}
         dangerouslySetInnerHTML={{ __html: panelHTML }}
       />

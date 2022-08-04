@@ -1,6 +1,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
+import { promisify } from 'util';
 import log from 'electron-log';
 import untildify from 'untildify';
 import { keyboard, mouse } from '@nut-tree/nut-js';
@@ -15,7 +16,6 @@ import {
   IpcMainEvent,
 } from 'electron';
 import os from 'os';
-import inclusion from 'inclusion';
 
 import { subscribe } from 'valtio';
 import http from 'http';
@@ -25,7 +25,7 @@ import url from 'url';
 import sizeOf from 'image-size';
 import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { ChildProcess, fork } from 'child_process';
+import { ChildProcess, fork, exec } from 'child_process';
 import {
   Channel,
   Mode,
@@ -95,6 +95,20 @@ import { getClipboardHistory } from './tick';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
+
+// const trash = async (...args: string[]) => {
+//   const parent = app.isPackaged
+//     ? path.resolve(process.resourcesPath, 'app.asar.unpacked')
+//     : path.resolve(__dirname, '..', 'src');
+
+//   const bin = path.resolve(parent, 'node_modules', '.bin', 'trash');
+
+//   log.info(`Trash: ${bin} ${args.join(' ')}`);
+
+//   const pExec = promisify(exec);
+
+//   return pExec(`${bin} ${args.join(' ')}`);
+// };
 
 export const formatScriptChoices = (data: Choice[]) => {
   const dataChoices: Script[] = (data || []) as Script[];
@@ -630,6 +644,11 @@ const kitMessageMap: ChannelHandler = {
     kitState.ignoreBlur = data.value;
   },
 
+  SET_RESIZE: (data) => {
+    sendToPrompt(Channel.SET_RESIZE, data.value);
+    kitState.resize = data?.value;
+  },
+
   SET_INPUT: (data) => {
     setInput(data.value);
   },
@@ -900,13 +919,12 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   TRASH: toProcess(async ({ child }, { channel, value }) => {
-    const { default: trash } = await inclusion('trash');
-    log.info(`🗑 ${value.input}`, value?.options || '');
-    await trash(value?.input, value?.options || {});
-
-    child?.send({
-      channel,
-    });
+    // const result = await trash(value);
+    // log.info(`TRASH RESULT`, result);
+    // child?.send({
+    //   result,
+    //   channel,
+    // });
   }),
 
   COPY: toProcess(async ({ child }, { channel, value }) => {
