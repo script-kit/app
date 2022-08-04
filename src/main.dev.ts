@@ -815,19 +815,24 @@ const checkKit = async () => {
         log.info(`Found ${KIT_NODE_TAR}. Extracting...`);
 
         if (platform === 'win') {
-          const d = await Open.file(KIT_NODE_TAR);
-          log.info(d);
-          log.info(Object.keys(d));
-          await d.extract({ path: knodePath(), concurrency: 5 });
-          const nodeDir = await readdir(knodePath());
-          const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));
-          if (nodeDirName) {
-            await rename(knodePath(nodeDirName), knodePath('bin'));
-            log.info(await readdir(knodePath('bin')));
-            await chmod(knodePath('bin', 'npm.cmd'), 0o755);
-            await chmod(knodePath('bin', 'node.exe'), 0o755);
-          } else {
-            log.warn(`Couldn't find node dir in ${nodeDir}`);
+          log.info(`Extracting ${KIT_NODE_TAR} to ${tildify(knodePath())}`);
+          const normalized = path.normalize(KIT_NODE_TAR);
+          log.info(`Normalized ${normalized}`);
+          try {
+            const d = await Open.file(normalized);
+            await d.extract({ path: knodePath(), concurrency: 5 });
+            const nodeDir = await readdir(knodePath());
+            const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));
+            if (nodeDirName) {
+              await rename(knodePath(nodeDirName), knodePath('bin'));
+              log.info(await readdir(knodePath('bin')));
+              await chmod(knodePath('bin', 'npm.cmd'), 0o755);
+              await chmod(knodePath('bin', 'node.exe'), 0o755);
+            } else {
+              log.warn(`Couldn't find node dir in ${nodeDir}`);
+            }
+          } catch (error) {
+            log.error(error);
           }
         }
 
