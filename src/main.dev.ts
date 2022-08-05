@@ -111,6 +111,7 @@ import { showError } from './main.dev.templates';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { maybeSetLogin } from './settings';
 import { SPLASH_PATH } from './defaults';
+import { registerTrayShortcut } from './shortcuts';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -984,6 +985,8 @@ const checkKit = async () => {
     kitState.installing = false;
 
     log.info(`kitState`, kitState);
+
+    registerTrayShortcut();
 
     await ready();
     kitState.ready = true;

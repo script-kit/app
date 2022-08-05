@@ -3,6 +3,7 @@
 /* eslint-disable no-console */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
+import { subscribeKey } from 'valtio/utils';
 import fs from 'fs';
 import {
   kenvPath,
@@ -12,6 +13,7 @@ import {
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { sendToPrompt } from './prompt';
 import { stripAnsi } from './ansi';
+import { kitState } from './state';
 
 export const consoleLog = log.create('consoleLog');
 consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
@@ -39,6 +41,7 @@ export const getLog = (id: string): Logger => {
       `${command}.log`
     );
     scriptLog.transports.file.resolvePath = () => logPath;
+    scriptLog.transports.file.level = kitState.logLevel;
 
     const _info = scriptLog.info.bind(scriptLog);
     const _warn = scriptLog.warn.bind(scriptLog);
@@ -73,3 +76,17 @@ export const warn = (message: string) => {
   sendToPrompt(Channel.CONSOLE_WARN, message);
   log.warn(message);
 };
+
+if (process.env.NODE_ENV === 'production') {
+  log.transports.file.level = 'info';
+  log.transports.console.level = 'info';
+} else {
+  log.transports.file.level = 'verbose';
+  log.transports.console.level = 'verbose';
+}
+
+subscribeKey(kitState, 'logLevel', (level) => {
+  log.info(`📋 Log level set to: ${level}`);
+  log.transports.file.level = level;
+  log.transports.console.level = level;
+});

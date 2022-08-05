@@ -10,7 +10,7 @@ import {
   globalShortcut,
 } from 'electron';
 import path from 'path';
-import log from 'electron-log';
+import log, { LogLevel } from 'electron-log';
 import { KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
 import { subscribeKey } from 'valtio/utils';
 import { KeyboardEvent } from 'electron/main';
@@ -30,21 +30,21 @@ import { getVersion } from './version';
 
 let tray: Tray | null = null;
 
-const trayClick = async (event: KeyboardEvent) => {
+export const openMenu = async (event?: KeyboardEvent) => {
   await restartIfNecessary();
-  if (event.metaKey) {
+  if (event?.metaKey) {
     emitter.emit(
       KitEvent.RunPromptProcess,
       kenvPath('app', 'command-click.js')
     );
-  } else if (event.shiftKey) {
+  } else if (event?.shiftKey) {
     emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'shift-click.js'));
-  } else if (event.ctrlKey) {
+  } else if (event?.ctrlKey) {
     emitter.emit(
       KitEvent.RunPromptProcess,
       kenvPath('app', 'control-click.js')
     );
-  } else if (event.altKey) {
+  } else if (event?.altKey) {
     emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'alt-click.js'));
   } else {
     // emitter.emit(KitEvent.RunPromptProcess, mainScriptPath);
@@ -202,6 +202,41 @@ const trayClick = async (event: KeyboardEvent) => {
       });
     }
 
+    const toolsSubmenu: MenuItemConstructorOptions[] = [];
+
+    if (kitState.isMac) {
+      toolsSubmenu.push({
+        label: `Watch kit.log in Terminal`,
+        click: runScript(kitPath('help', 'tail-log.js')),
+      });
+    }
+
+    toolsSubmenu.push({
+      label: `Adjust Log Level`,
+      submenu: log.levels.map(
+        (level) =>
+          ({
+            label: level,
+            click: () => {
+              kitState.logLevel = level as LogLevel;
+            },
+            enabled: kitState.logLevel !== level,
+          } as MenuItemConstructorOptions)
+      ),
+    });
+
+    toolsSubmenu.push({
+      label: `Keep Open on Blur`,
+      type: 'checkbox',
+      click: () => {
+        log.info(
+          `Toggling ignoreBlur to ${!kitState.ignoreBlur ? 'true' : 'false'}`
+        );
+        kitState.ignoreBlur = !kitState.ignoreBlur;
+      },
+      checked: kitState.ignoreBlur,
+    });
+
     const contextMenu = Menu.buildFromTemplate([
       ...notifyItems,
       ...authItems,
@@ -242,6 +277,10 @@ const trayClick = async (event: KeyboardEvent) => {
       {
         label: `Script Kit ${getVersion()}`,
         enabled: false,
+      },
+      {
+        label: `Dev Tools`,
+        submenu: toolsSubmenu,
       },
       updateMenu,
       {
@@ -385,8 +424,8 @@ export const createTray = async (checkDb = false, state: trayState) => {
     try {
       log.info(`☑ Enable tray`);
 
-      tray.on('mouse-down', trayClick);
-      tray.on('right-click', trayClick);
+      tray.on('mouse-down', openMenu);
+      tray.on('right-click', openMenu);
     } catch (error) {
       log.error(error);
     }
@@ -421,7 +460,7 @@ export const setTrayMenu = async (scripts: string[]) => {
   if (!scripts?.length) {
     if (leftClickOverride) {
       tray?.off('mouse-down', leftClickOverride);
-      tray?.on('mouse-down', trayClick);
+      tray?.on('mouse-down', openMenu);
       leftClickOverride = null;
       tray?.setContextMenu(null);
     }
@@ -449,7 +488,9 @@ export const setTrayMenu = async (scripts: string[]) => {
       tray?.popUpContextMenu(cMenu);
     };
 
-    tray?.off('mouse-down', trayClick);
+    tray?.off('mouse-down', openMenu);
     tray?.on('mouse-down', leftClickOverride);
   }
 };
+
+emitter.on(KitEvent.TrayClick, openMenu);

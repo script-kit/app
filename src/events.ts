@@ -17,6 +17,7 @@ export enum KitEvent {
   KillProcess = 'KillProcess',
   OpenLog = 'OpenLog',
   OpenScript = 'OpenScript',
+  TrayClick = 'TrayClick',
 }
 
 interface KitEmitter {

@@ -30,6 +30,8 @@ export interface ListProps {
 }
 
 export interface ResizeData {
+  id: string;
+  reason: string;
   scriptPath: string;
   ui: UI;
   mode: Mode;
@@ -43,7 +45,6 @@ export interface ResizeData {
   tabIndex: number;
   isSplash: boolean;
   hasPreview: boolean;
-  promptId: number;
   inputChanged: boolean;
   placeholderOnly: boolean;
   nullChoices: boolean;

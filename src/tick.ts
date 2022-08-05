@@ -137,7 +137,6 @@ export const removeFromClipboardHistory = (itemId: string) => {
 };
 
 const ioEvent = async (e: UiohookKeyboardEvent) => {
-  // log.info(event);
   try {
     kitState.isShiftDown = e.shiftKey;
 
@@ -158,6 +157,7 @@ const ioEvent = async (e: UiohookKeyboardEvent) => {
       kitState.snippet = ``;
     } else {
       kitState.snippet = `${kitState.snippet}${key}`;
+      log.silly(kitState.snippet);
     }
   } catch (error) {
     log.error(error);
@@ -174,10 +174,12 @@ export const configureInterval = async () => {
   const { uIOhook } = await import('uiohook-napi');
   const io$ = new Observable((observer) => {
     uIOhook.on('click', (event) => {
+      log.silly(`click`);
       observer.next(event);
     });
 
     uIOhook.on('keydown', (event) => {
+      log.silly(`keydown`);
       // log.info(String.fromCharCode(event.keychar));
       observer.next(event);
     });

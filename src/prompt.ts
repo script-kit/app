@@ -16,7 +16,7 @@ import { BrowserWindow, screen, Rectangle, powerMonitor } from 'electron';
 import os from 'os';
 import path from 'path';
 import log from 'electron-log';
-import { debounce } from 'lodash';
+import { debounce, uniqueId } from 'lodash';
 import minimist from 'minimist';
 import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
@@ -49,7 +49,7 @@ let electronPanelWindow: any = null;
 
 export const maybeHide = (reason: string) => {
   if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
-    log.info(`Hiding because ${reason}`);
+    log.verbose(`Hiding because ${reason}`);
     promptWindow?.hide();
   }
 };
@@ -151,11 +151,8 @@ export const createPromptWindow = async () => {
   //   triggerKeyWindow(true, 'webContents focus');
   // });
 
-  // promptWindow?.webContents?.on('blur', () => {
-  //   triggerKeyWindow(true, 'webContents blur');
-  // });
-
-  promptWindow?.on('blur', () => {
+  const onBlur = () => {
+    log.verbose(`Blur: ${kitState.ignoreBlur ? 'ignored' : 'accepted'}`);
     maybeHide('blur');
 
     if (promptWindow?.webContents?.isDevToolsOpened()) return;
@@ -171,6 +168,7 @@ export const createPromptWindow = async () => {
     if (kitState.ignoreBlur) {
       // promptWindow?.setVibrancy('popover');
     } else if (!kitState.ignoreBlur) {
+      log.verbose(`Blurred by kit: off`);
       kitState.blurredByKit = false;
     }
 
@@ -179,7 +177,10 @@ export const createPromptWindow = async () => {
         '--opacity-themedark': '100%',
         '--opacity-themelight': '100%',
       });
-  });
+  };
+
+  promptWindow?.webContents?.on('blur', onBlur);
+  promptWindow?.on('blur', onBlur);
 
   promptWindow?.webContents?.on('dom-ready', () => {
     log.info(`🍀 dom-ready on ${kitState.promptProcess?.scriptPath}`);
@@ -205,6 +206,8 @@ export const createPromptWindow = async () => {
   };
 
   promptWindow?.on('will-resize', (event, rect) => {
+    log.debug(`will-resize ${rect.width} ${rect.height}`);
+
     if (rect.height < MIN_HEIGHT) event.preventDefault();
     if (rect.width < MIN_WIDTH) event.preventDefault();
 
@@ -372,6 +375,8 @@ export const isFocused = () => {
 };
 
 export const resize = async ({
+  id,
+  reason,
   scriptPath,
   topHeight,
   mainHeight,
@@ -383,7 +388,16 @@ export const resize = async ({
   isSplash,
   nullChoices,
 }: ResizeData) => {
-  if (kitState.modifiedByUser) return;
+  if (promptId !== id) {
+    log.verbose(`📱 Resize: ${id} !== ${promptId}`);
+    return;
+  }
+  if (kitState.modifiedByUser) {
+    log.verbose(`📱 Resize: ${id} modified by user`);
+    return;
+  }
+  log.verbose(`📱 Resize ${ui}from ${scriptPath}`);
+
   if ([UI.term, UI.editor, UI.drop].includes(ui)) return;
 
   const {
@@ -427,7 +441,14 @@ export const resize = async ({
   width = Math.round(width);
   if (currentHeight === height && currentWidth === width) return;
 
-  log.info(`↕ RESIZE: ${width} x ${height}`);
+  log.verbose({
+    reason,
+    ui,
+    width,
+    height,
+    mainHeight,
+  });
+
   promptWindow.setSize(width, height);
 
   kitState.prevResize = true;
@@ -582,7 +603,7 @@ export const setScript = async (script: Script) => {
     );
 
     const sinceLast = differenceInHours(Date.now(), kitState.lastOpen);
-    log.info(`Hours since last open: ${sinceLast}`);
+    log.info(`Hours since sync: ${sinceLast}`);
     if (sinceLast > 6) {
       kitState.lastOpen = new Date();
     }
@@ -630,7 +651,9 @@ export const setTabIndex = (tabIndex: number) => {
 };
 
 let boundsCheck: any = null;
+let promptId = '';
 export const setPromptData = async (promptData: PromptData) => {
+  promptId = promptData.id;
   if (kitState.suspended || kitState.screenLocked) return;
 
   kitState.ui = promptData.ui;
@@ -639,11 +662,12 @@ export const setPromptData = async (promptData: PromptData) => {
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
   // if (!promptWindow?.isVisible())
   const bounds = await getCurrentScreenPromptCache(promptData.scriptPath);
-  log.info(`↖ OPEN:`, bounds);
+  log.verbose(`↖ Opening a ${promptData.ui}`, bounds);
   promptWindow.setPosition(bounds.x, bounds.y);
+
   if ([UI.term, UI.editor].includes(promptData.ui)) {
     promptWindow.setSize(bounds.width, DEFAULT_HEIGHT);
-    log.info(`Restoring prompt size:`, bounds.width, DEFAULT_HEIGHT);
+    log.verbose(`Restoring prompt size:`, bounds.width, DEFAULT_HEIGHT);
   }
   // if (kitState.prevPromptScriptPath !== promptData.scriptPath) {
   //   // promptWindow.setBounds(bounds);

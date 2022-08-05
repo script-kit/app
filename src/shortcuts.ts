@@ -26,6 +26,25 @@ const registerShortcut = (shortcut: string, filePath: string) => {
   return success;
 };
 
+export const registerTrayShortcut = () => {
+  const success = globalShortcut.register('CommandOrControl+Shift+;', () => {
+    emitter.emit(KitEvent.TrayClick);
+  });
+
+  log.verbose(`Tray shortcut registered: ${success ? 'success' : 'fail'}`);
+};
+
+// const success = globalShortcut.register(``, async () => {
+//   runPromptProcess(filePath);
+//   focusPrompt();
+// });
+
+// if (!success) {
+//   log.info(`Failed to register: ${shortcut} to ${filePath}`);
+// }
+
+// return success;
+
 export const shortcutMap = new Map();
 
 export const unlinkShortcuts = (filePath: string) => {

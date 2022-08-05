@@ -5,7 +5,7 @@
 import { Config, KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
 import { subscribeKey } from 'valtio/utils';
-import log from 'electron-log';
+import log, { LogLevel } from 'electron-log';
 import path from 'path';
 import os from 'os';
 import { ChildProcess, execSync } from 'child_process';
@@ -219,6 +219,8 @@ const initState = {
   applyUpdate: false,
   prevPromptScriptPath: ``,
   lastOpen: new Date(),
+  logLevel: 'info' as LogLevel,
+  preventResize: false,
 };
 
 nativeTheme.addListener('updated', () => {

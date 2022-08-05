@@ -34,6 +34,7 @@ import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
+import ActionBar from './components/actionbar';
 import Drop from './components/drop';
 import Editor from './components/editor';
 import Hotkey from './components/hotkey';
@@ -52,6 +53,7 @@ import {
   hintAtom,
   inputAtom,
   isMouseDownAtom,
+  isMainScriptAtom,
   logHTMLAtom,
   mainHeightAtom,
   mouseEnabledAtom,
@@ -159,6 +161,7 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
+  const [isMainScript] = useAtom(isMainScriptAtom);
   const [, setAppConfig] = useAtom(appConfigAtom);
   const [, setPid] = useAtom(pidAtom);
   const [open, setOpen] = useAtom(openAtom);
@@ -190,7 +193,7 @@ export default function App() {
   const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
   const [, setEditorConfig] = useAtom(editorConfigAtom);
   const [, setTextareaConfig] = useAtom(textareaConfigAtom);
-  const [, setFlags] = useAtom(flagsAtom);
+  const [flags, setFlags] = useAtom(flagsAtom);
   const [, setMainHeight] = useAtom(mainHeightAtom);
   const [, setTopHeight] = useAtom(topHeightAtom);
 
@@ -464,20 +467,25 @@ export default function App() {
               )}
             </AutoSizer>
           </main>
-          {footer === '' ? (
-            ''
-          ) : (
-            <footer
-              className="
+          <AnimatePresence key="footerComponents">
+            {(isMainScript || Object.entries(flags)?.length > 0) && (
+              <ActionBar />
+            )}
+            {footer === '' ? (
+              ''
+            ) : (
+              <footer
+                className="
         py-1 px-4 h-5
         bg-opacity-80 dark:bg-opacity-80
         bg-primary-dark dark:bg-primary-light
         text-white dark:text-black
 
           font-mono font-bold w-screen text-xxs uppercase"
-              dangerouslySetInnerHTML={{ __html: footer }}
-            />
-          )}
+                dangerouslySetInnerHTML={{ __html: footer }}
+              />
+            )}
+          </AnimatePresence>
         </motion.div>
       </AnimatePresence>
     </ErrorBoundary>

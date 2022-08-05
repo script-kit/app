@@ -269,10 +269,14 @@ export const panelHTMLAtom = atom(
   }
 );
 
+const _currentPromptHasPreviews = atom<boolean>(false);
+
 const _previewHTML = atom('');
 export const previewHTMLAtom = atom(
   (g) => g(_previewHTML) || g(promptData)?.preview,
   (g, s, a: string) => {
+    s(_currentPromptHasPreviews, Boolean(a));
+
     if (!a || !g(openAtom)) return; // never unset preview to avoid flash of white/black
     const tI = g(_tabIndex);
     const iA = g(inputAtom);
@@ -745,31 +749,41 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   if ([UI.term, UI.editor, UI.drop].includes(ui)) return;
 
+  if (!g(resizeAtom)) return;
+
+  const promptData = g(promptDataAtom);
+
   const placeholderOnly =
-    g(promptDataAtom)?.mode === Mode.FILTER &&
+    promptData?.mode === Mode.FILTER &&
     g(unfilteredChoices).length === 0 &&
     ui === UI.arg;
   const hasPanel = g(panelHTMLAtom) !== '';
   const nullChoices = g(nullChoicesAtom);
 
   const mh = nullChoices && !hasPanel ? 0 : g(mainHeight);
+  const th = g(topRefAtom)?.clientHeight || 88;
+
+  const hasPreview = Boolean(g(hasPreviewAtom));
+
+  if (g(_currentPromptHasPreviews)) return;
 
   const data: ResizeData = {
+    id: promptData?.id || 'missing',
+    reason,
     scriptPath: g(_script)?.filePath,
     placeholderOnly,
-    topHeight: g(topHeight),
+    topHeight: th,
     ui,
     mainHeight: mh,
     footerHeight: g(footerAtom) ? 20 : 0,
-    mode: g(promptData)?.mode || Mode.FILTER,
+    mode: promptData?.mode || Mode.FILTER,
     hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
     previewEnabled: g(previewEnabled),
     open: g(rawOpen),
     tabIndex: g(_tabIndex),
     isSplash: g(isSplashAtom),
-    hasPreview: Boolean(g(hasPreviewAtom)),
-    promptId: g(promptId),
+    hasPreview,
     inputChanged: g(_inputChangedAtom),
     nullChoices,
   };
@@ -784,7 +798,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 export const topHeightAtom = atom(
   (g) => g(topHeight),
   (g, s, a: number) => {
-    s(topHeight, a);
     resize(g, s, 'TOP_HEIGHT');
   }
 );
@@ -797,8 +810,6 @@ export const mainHeightAtom = atom(
 
     if (!resizeEnabled && a < prevHeight) return;
     // if (Math.abs(a - prevHeight) > 2) {
-    const topClient = g(topRefAtom)?.clientHeight;
-    if (topClient) s(topHeight, topClient);
 
     const nextMainHeight = a < 0 ? 0 : a;
     s(mainHeight, nextMainHeight);
@@ -828,15 +839,12 @@ const checkIfSubmitIsDrop = (checkValue: any) => {
   return checkValue;
 };
 
-export const promptId = atom(0);
-
 export const footerAtom = atom('');
 
 const promptData = atom<null | PromptData>(null);
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
-    s(promptId, Math.random());
     const prevPromptData = g(promptData);
 
     if (prevPromptData?.ui === UI.editor && g(_inputChangedAtom)) {
@@ -861,7 +869,7 @@ export const promptDataAtom = atom(
       s(processingAtom, false);
 
       if (Object.keys(a?.flags || []).length) {
-        s(flagsAtom, a.flags);
+        s(flagsAtom, a?.flags);
       }
 
       if (a.name) {
@@ -875,6 +883,8 @@ export const promptDataAtom = atom(
       if (a.preview) {
         s(previewHTMLAtom, a.preview);
       }
+
+      s(_currentPromptHasPreviews, Boolean(a?.preview));
 
       if (a.panel) {
         s(panelHTMLAtom, a.panel);
@@ -1068,6 +1078,7 @@ export const submitValueAtom = atom(
     s(panelHTMLAtom, ``);
 
     s(_submitValue, value);
+    s(flagsAtom, {});
 
     if (g(webSocketAtom)) {
       g(webSocketAtom)?.close();
