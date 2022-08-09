@@ -14,7 +14,13 @@ import {
   openAtom,
   uiAtom,
 } from '../jotai';
-import { useClose, useMountMainHeight, useSave, useOpen } from '../hooks';
+import {
+  useClose,
+  useMountMainHeight,
+  useSave,
+  useOpen,
+  useFlag,
+} from '../hooks';
 
 class ErrorBoundary extends React.Component {
   render() {
@@ -38,7 +44,7 @@ export default function Editor() {
   const [ui] = useAtom(uiAtom);
   const [options] = useAtom(editorOptions);
 
-  useSave(inputValue);
+  // useSave(inputValue);
   useClose();
   // useEscape();
   useOpen();

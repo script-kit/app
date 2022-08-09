@@ -21,7 +21,7 @@ import {
 
 import { hotkeysOptions } from './shared';
 
-const exclude = ['enter', 'escape', 'up', 'down', 'left', 'right'];
+const exclude = ['enter', 'up', 'down', 'left', 'right'];
 
 export default () => {
   const [cmd] = useAtom(cmdAtom);
@@ -91,7 +91,7 @@ export default () => {
   useHotkeys(
     onShortcuts,
     (event, handler) => {
-      if (!inputFocus) return;
+      console.log(handler.key);
       event.preventDefault();
 
       if (flagValue) return;

@@ -14,6 +14,8 @@ import {
   useEscape,
 } from '../hooks';
 
+// RESIZE ME!!!!!
+
 export default function TextArea() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   useFocus(textareaRef);
@@ -23,7 +25,7 @@ export default function TextArea() {
 
   const [textAreaValue, setTextAreaValue] = useAtom(textareaValueAtom);
 
-  useSave(textAreaValue);
+  // useSave(textAreaValue);
   useClose();
   // useEscape();
   const containerRef = useMountMainHeight();

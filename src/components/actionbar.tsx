@@ -213,25 +213,22 @@ export default function ActionBar() {
   const [flags] = useAtom(flagsAtom);
   const [footer] = useAtom(footerAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
-  const [focusedChoice] = useAtom(focusedChoiceAtom);
-  const [ui] = useAtom(uiAtom);
+
   const [enterButtonName] = useAtom(enterButtonNameAtom);
   const [disabled] = useAtom(flagValueAtom);
   const [enterButtonDisabled] = useAtom(enterButtonDisabledAtom);
 
   const actions: Action[] = Object.entries(flags)
     .filter(([_, flag]) => {
-      return flag?.action && (flag?.shortcut || flag?.arrow);
+      return flag?.bar && flag?.shortcut;
     })
     .map(([key, flag]) => {
       const action = {
         key,
         value: key,
         name: flag?.name,
-        shortcut: formatShortcut(
-          (flag?.shortcut || (flag as Action)?.arrow) as string
-        ),
-        position: flag.action,
+        shortcut: formatShortcut(flag?.shortcut),
+        position: flag.bar,
         arrow: (flag as Action)?.arrow,
         flag: key,
         disabled: Boolean(disabled),
@@ -250,6 +247,7 @@ export default function ActionBar() {
             shortcut: formatShortcut(key),
             position: bar,
             flag,
+            disabled: Boolean(disabled),
           } as Action;
         })
     );
@@ -315,7 +313,7 @@ export default function ActionBar() {
         px-2 py-1
         items-center justify-left
 text-sm font-medium
-text-black dark:text-primary-light
+text-black dark:text-white
 
       "
         dangerouslySetInnerHTML={{ __html: footer }}

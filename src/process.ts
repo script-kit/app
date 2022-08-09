@@ -618,9 +618,13 @@ const kitMessageMap: ChannelHandler = {
   SET_STATUS: toProcess(async (_, data) => {
     if (data?.value) kitState.status = data?.value;
   }),
-  SET_SUBMIT_VALUE: toProcess(async (_, data) => {
-    sendToPrompt(Channel.SET_SUBMIT_VALUE, data.value);
-  }),
+  SET_SUBMIT_VALUE: toProcess(
+    ({ child, type, scriptPath }, { channel, value }) => {
+      sendToPrompt(Channel.SET_SUBMIT_VALUE, value);
+
+      child?.send({ channel });
+    }
+  ),
 
   SET_MODE: (data) => {
     if (data.value === Mode.HOTKEY) {

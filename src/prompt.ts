@@ -42,6 +42,7 @@ import {
 import { ResizeData } from './types';
 import { getVersion } from './version';
 import { AppChannel } from './enums';
+import { emitter, KitEvent } from './events';
 
 let promptWindow: BrowserWindow;
 let unsub: () => void;
@@ -94,7 +95,7 @@ export const createPromptWindow = async () => {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      devTools: process.env.NODE_ENV === 'development' || devTools,
+      devTools: true,
       backgroundThrottling: false,
     },
     closable: false,
@@ -149,8 +150,12 @@ export const createPromptWindow = async () => {
   //   promptWindow.showInactive();
   // });
 
-  promptWindow.webContents.once('did-finish-load', () => {
-    promptWindow?.webContents.closeDevTools();
+  // promptWindow.webContents.once('did-finish-load', () => {
+  //   promptWindow?.webContents.closeDevTools();
+  // });
+
+  emitter.on(KitEvent.OpenDevTools, () => {
+    promptWindow?.webContents?.openDevTools();
   });
 
   promptWindow?.setMaxListeners(2);
@@ -697,7 +702,7 @@ export const setPromptData = async (promptData: PromptData) => {
   // app.focus({
   //   steal: true,
   // });
-  if (devTools) promptWindow?.webContents.openDevTools();
+  // if (devTools) promptWindow?.webContents.openDevTools();
   // }
 
   focusPrompt();

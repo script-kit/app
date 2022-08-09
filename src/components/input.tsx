@@ -73,7 +73,6 @@ export default function Input() {
 
   // useEscape();
   useEnter();
-  useFlag();
   useTab();
   useKeyIndex();
   // useOpen();

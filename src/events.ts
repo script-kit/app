@@ -18,6 +18,7 @@ export enum KitEvent {
   OpenLog = 'OpenLog',
   OpenScript = 'OpenScript',
   TrayClick = 'TrayClick',
+  OpenDevTools = 'OpenDevTools',
 }
 
 interface KitEmitter {

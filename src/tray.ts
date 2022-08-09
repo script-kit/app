@@ -87,20 +87,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
       emitter.emit(KitEvent.RunPromptProcess, script);
     };
 
-    const kitItems: MenuItemConstructorOptions[] = [
-      {
-        type: 'separator',
-      },
-      {
-        label: `Reveal ~/.kenv in Finder`,
-        click: runScript(kitPath('help', 'reveal-kenv.js')),
-      },
-      {
-        label: `Reveal ~/.kit/logs/kit.log in Finder`,
-        click: runScript(kitPath('help', 'reveal-kit-log.js')),
-      },
-    ];
-
     const notifyItems: MenuItemConstructorOptions[] = [];
 
     for (const { status, message } of [...kitState.notifications].reverse()) {
@@ -211,12 +197,34 @@ export const openMenu = async (event?: KeyboardEvent) => {
     const toolsSubmenu: MenuItemConstructorOptions[] = [];
 
     toolsSubmenu.push({
-      label: `Reset Prompt Positions`,
+      label: `Open Dev Tools`,
       click: async () => {
-        log.info('Resetting prompt cache');
-        runScript(kitPath('cli', 'kit-clear-prompt.js'));
+        emitter.emit(KitEvent.OpenDevTools);
       },
     });
+
+    toolsSubmenu.push(
+      {
+        type: 'separator',
+      },
+      {
+        label: `Reveal ~/.kit/logs/kit.log in Finder`,
+        click: runScript(kitPath('help', 'reveal-kit-log.js')),
+      },
+      {
+        label: `Adjust Log Level`,
+        submenu: log.levels.map(
+          (level) =>
+            ({
+              label: level,
+              click: () => {
+                kitState.logLevel = level as LogLevel;
+              },
+              enabled: kitState.logLevel !== level,
+            } as MenuItemConstructorOptions)
+        ),
+      }
+    );
 
     if (kitState.isMac) {
       toolsSubmenu.push({
@@ -226,21 +234,24 @@ export const openMenu = async (event?: KeyboardEvent) => {
     }
 
     toolsSubmenu.push({
-      label: `Adjust Log Level`,
-      submenu: log.levels.map(
-        (level) =>
-          ({
-            label: level,
-            click: () => {
-              kitState.logLevel = level as LogLevel;
-            },
-            enabled: kitState.logLevel !== level,
-          } as MenuItemConstructorOptions)
-      ),
+      type: 'separator',
     });
 
     toolsSubmenu.push({
-      label: `Keep Open on Blur`,
+      label: `Reveal ~/.kenv in Finder`,
+      click: runScript(kitPath('help', 'reveal-kenv.js')),
+    });
+
+    toolsSubmenu.push({
+      label: `Reset Prompt Positions`,
+      click: async () => {
+        log.info('Resetting prompt cache');
+        runScript(kitPath('cli', 'kit-clear-prompt.js'));
+      },
+    });
+
+    toolsSubmenu.push({
+      label: `Prevent Close on Blur`,
       type: 'checkbox',
       click: () => {
         log.info(
@@ -284,7 +295,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
         click: runScript(kitPath('cli', 'browse-examples.js')),
         icon: menuIcon('browse'),
       },
-      ...kitItems,
       {
         type: 'separator',
       },

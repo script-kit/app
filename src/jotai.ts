@@ -955,6 +955,10 @@ export const promptDataAtom = atom(
         s(formDataAtom, a.formData);
       }
 
+      if (a?.flags) {
+        s(flagsAtom, a.flags);
+      }
+
       s(onInputSubmitAtom, a?.onInputSubmit || {});
       s(onShortcutAtom, a?.onShortcut || {});
       s(shortcutsAtom, a?.shortcuts || []);

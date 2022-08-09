@@ -106,7 +106,7 @@ import {
   resizeAtom,
 } from './jotai';
 
-import { useEscape, useThemeDetector } from './hooks';
+import { useEscape, useFlag, useThemeDetector } from './hooks';
 import Splash from './components/splash';
 import { AppChannel } from './enums';
 import Terminal from './term';
@@ -222,6 +222,8 @@ export default function App() {
   const [onDrop] = useAtom(onDropAtom);
   const [, setResize] = useAtom(resizeAtom);
   const [, setTabs] = useAtom(_tabs);
+
+  useFlag();
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
