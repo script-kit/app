@@ -688,7 +688,10 @@ export const setPromptData = async (promptData: PromptData) => {
   log.verbose(`↖ Opening a ${promptData.ui}`, bounds);
   promptWindow.setPosition(bounds.x, bounds.y);
 
-  if ([UI.term, UI.editor].includes(promptData.ui)) {
+  if (
+    [UI.term, UI.editor].includes(promptData.ui) ||
+    promptData.scriptPath === mainScriptPath
+  ) {
     promptWindow.setSize(bounds.width, DEFAULT_HEIGHT);
     log.verbose(`Restoring prompt size:`, bounds.width, DEFAULT_HEIGHT);
   }
