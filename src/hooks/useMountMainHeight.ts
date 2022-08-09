@@ -7,6 +7,7 @@ export default () => {
   const [, setMainHeight] = useAtom(mainHeightAtom);
   useLayoutEffect(() => {
     const ch = containerRef?.current?.clientHeight || 0;
+    console.log(`useMountMainHeight: ${ch}`);
     setMainHeight(ch);
   }, [setMainHeight, containerRef?.current?.clientHeight]);
 

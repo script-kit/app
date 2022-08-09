@@ -12,7 +12,13 @@ import {
   PromptData,
   PromptBounds,
 } from '@johnlindquist/kit/types/core';
-import { BrowserWindow, screen, Rectangle, powerMonitor } from 'electron';
+import {
+  BrowserWindow,
+  screen,
+  Rectangle,
+  powerMonitor,
+  shell,
+} from 'electron';
 import os from 'os';
 import path from 'path';
 import log from 'electron-log';
@@ -121,6 +127,18 @@ export const createPromptWindow = async () => {
       assetPath: getAssetPath(),
       version: getVersion(),
     });
+  });
+
+  //   promptWindow?.webContents?.on('new-window', function (event, url) {
+  //     event.preventDefault()
+  //     shell.openExternal(url)
+  // })
+
+  promptWindow?.webContents?.setWindowOpenHandler(async ({ url }) => {
+    log.info(`Opening ${url}`);
+    shell.openExternal(url);
+
+    return { action: 'deny' };
   });
 
   await promptWindow.loadURL(
@@ -651,7 +669,7 @@ export const setTabIndex = (tabIndex: number) => {
 };
 
 let boundsCheck: any = null;
-let promptId = '';
+let promptId = '__unset__';
 export const setPromptData = async (promptData: PromptData) => {
   promptId = promptData.id;
   if (kitState.suspended || kitState.screenLocked) return;

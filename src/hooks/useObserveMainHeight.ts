@@ -12,7 +12,7 @@ export default <T extends HTMLElement = HTMLElement>(selector = '') => {
   const update = () => {
     if (!isOpen) return;
     const wrapper: any = document?.querySelector(selector);
-    console.log(`>>> Update`);
+    // console.log(`>>> Update`);
 
     if (wrapper) {
       const styleHeightString = wrapper?.style?.height;
@@ -26,8 +26,6 @@ export default <T extends HTMLElement = HTMLElement>(selector = '') => {
         // console.log(`${selector} el height: ${elHeight}`);
         setMainHeight(elHeight);
       }
-    } else {
-      console.log(`wrapper not found for ${selector}`);
     }
   };
 

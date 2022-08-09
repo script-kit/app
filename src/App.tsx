@@ -221,6 +221,7 @@ export default function App() {
   const [onPaste] = useAtom(onPasteAtom);
   const [onDrop] = useAtom(onDropAtom);
   const [, setResize] = useAtom(resizeAtom);
+  const [, setTabs] = useAtom(_tabs);
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -280,6 +281,7 @@ export default function App() {
     [Channel.START]: start,
     [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
     [Channel.TERMINAL]: setSocketURL,
+    [Channel.CLEAR_TABS]: setTabs,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -383,7 +385,9 @@ export default function App() {
           }
           className={`
         ${hidden ? 'hidden' : ''}
-        relative flex flex-col w-full h-full`}
+        flex flex-col
+        w-full h-full
+        `}
           onMouseDown={onMouseDown}
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseLeave}
@@ -391,38 +395,35 @@ export default function App() {
         >
           <header ref={headerRef} className="relative z-10">
             <Header />
-            <AnimatePresence key="headerComponents">
-              {ui === UI.hotkey && (
-                <Hotkey
-                  key="AppHotkey"
-                  submit={setSubmitValue}
-                  onHotkeyHeightChanged={setMainHeight}
-                />
-              )}
-              {ui === UI.arg && <Input key="AppInput" />}
 
-              {hint && <Hint key="AppHint" />}
-              {logHtml?.length > 0 && script?.log !== 'false' && (
-                <Log key="AppLog" />
-              )}
+            {ui === UI.hotkey && (
+              <Hotkey
+                key="AppHotkey"
+                submit={setSubmitValue}
+                onHotkeyHeightChanged={setMainHeight}
+              />
+            )}
+            {ui === UI.arg && <Input key="AppInput" />}
 
-              {(showTabs || showSelected) && (
-                <div className="max-h-5.5">
-                  {showTabs && <Tabs key="AppTabs" />}
-                  {showSelected && <Selected key="AppSelected" />}
-                </div>
-              )}
-            </AnimatePresence>
+            {hint && <Hint key="AppHint" />}
+            {logHtml?.length > 0 && script?.log !== 'false' && (
+              <Log key="AppLog" />
+            )}
+
+            {(showTabs || showSelected) && (
+              <div className="max-h-5.5">
+                {showTabs && <Tabs key="AppTabs" />}
+                {showSelected && <Selected key="AppSelected" />}
+              </div>
+            )}
           </header>
           <main
             ref={mainRef}
             className={`
-        ${
-          (processing && resizeEnabled) || (nullChoices && !panelHTML?.length)
-            ? `h-0`
-            : `flex-1`
-        }
-        w-full max-h-full
+            flex
+        flex-1
+
+        w-full max-h-full h-full
         `}
             onPaste={onPaste}
             onDrop={(event) => {
@@ -467,25 +468,8 @@ export default function App() {
               )}
             </AutoSizer>
           </main>
-          <AnimatePresence key="footerComponents">
-            {(isMainScript || Object.entries(flags)?.length > 0) && (
-              <ActionBar />
-            )}
-            {footer === '' ? (
-              ''
-            ) : (
-              <footer
-                className="
-        py-1 px-4 h-5
-        bg-opacity-80 dark:bg-opacity-80
-        bg-primary-dark dark:bg-primary-light
-        text-white dark:text-black
 
-          font-mono font-bold w-screen text-xxs uppercase"
-                dangerouslySetInnerHTML={{ __html: footer }}
-              />
-            )}
-          </AnimatePresence>
+          <ActionBar />
         </motion.div>
       </AnimatePresence>
     </ErrorBoundary>

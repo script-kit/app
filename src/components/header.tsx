@@ -48,7 +48,9 @@ export default function Header() {
           WebkitUserSelect: 'none',
         } as any
       }
-      className="flex flex-row justify-between w-full"
+      className="flex flex-row justify-between w-full
+      bg-white dark:bg-black dark:bg-opacity-25 bg-opacity-25
+      "
     >
       <AnimatePresence key="topBar">
         {open && loading && <TopBar />}

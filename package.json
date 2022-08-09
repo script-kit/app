@@ -386,7 +386,7 @@
     "regenerator-runtime": "0.13.5",
     "rxjs": "6.6.7",
     "sane": "^5.0.1",
-    "simplebar-react": "2.3.0",
+    "simplebar-react": "2.4.1",
     "source-map-support": "0.5.19",
     "tailwind-override": "0.0.10",
     "tar": "6.1.11",

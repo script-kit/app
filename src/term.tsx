@@ -143,14 +143,16 @@ export default function Terminal() {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={{ duration: 0.5, ease: 'circOut' }}
-      className="w-full h-full pt-3 -mb-3 px-3 max-h-full"
+      className="w-full h-full pt-3 -mb-6 px-3 max-h-full"
     >
       <div
         ref={containerRef as RefObject<HTMLDivElement>}
         className="w-full h-full"
       >
         <XTerm
-          className="w-full h-full max-h-full"
+          className="w-full h-full max-h-fit
+
+          "
           options={{
             fontFamily: 'monospace',
             allowTransparency: true,

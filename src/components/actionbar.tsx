@@ -1,18 +1,24 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtomValue, useAtom } from 'jotai';
 import { motion } from 'framer-motion';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback } from 'react';
 import {
   getAssetAtom,
   flagsAtom,
-  submitValueAtom,
   _flag,
   _choices,
   inputAtom,
   _index,
   channelAtom,
   flagValueAtom,
+  footerAtom,
+  shortcutsAtom,
+  uiAtom,
+  sendShortcutAtom,
+  focusedChoiceAtom,
+  enterButtonNameAtom,
+  enterButtonDisabledAtom,
 } from '../jotai';
 
 type Action = {
@@ -21,6 +27,9 @@ type Action = {
   position: 'left' | 'right';
   key: string;
   value: string;
+  flag: string;
+  disabled: boolean;
+  arrow?: string;
 };
 
 const transition = { duration: 0.2, ease: 'easeInOut' };
@@ -31,6 +40,7 @@ export function MenuButton() {
   const [index] = useAtom(_index);
   const [channel] = useAtom(channelAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
+  const [ui] = useAtom(uiAtom);
 
   const onClick = useCallback(() => {
     if (flagValue) {
@@ -61,11 +71,11 @@ export function MenuButton() {
   "
       onClick={onClick}
     >
-      <div className="px-1.5">{flagValue ? 'Back' : 'Menu'}</div>
+      <div className="px-1">{flagValue ? 'Back' : 'Options'}</div>
       <div className=" flex flex-row">
         <div
           className="
-          py-.5 px-1.5 mx-0.5
+          py-.5 px-1 mx-0.5
 
           rounded
           bg-black dark:bg-white dark:bg-opacity-10 bg-opacity-10
@@ -80,17 +90,71 @@ export function MenuButton() {
   );
 }
 
+export function ActionSeparator() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 1] }}
+      transition={transition}
+      className="flex items-center justify-center
+text-sm font-semibold
+text-black dark:text-white text-opacity-25 dark:text-opacity-25
+w-2
+text-center
+"
+    >
+      |
+    </motion.div>
+  );
+}
+
+export const formatShortcut = (shortcut: string) => {
+  return shortcut
+    .replace('cmd', '⌘')
+    .replace('ctrl', '⌃')
+    .replace('shift', '⇧')
+    .replace('alt', '⌥')
+    .replace('enter', '⏎')
+    .replace('return', '⏎')
+    .replace('escape', '⎋')
+    .replace('up', '↑')
+    .replace('down', '↓')
+    .replace('left', '←')
+    .replace('right', '→')
+    .replace('delete', '⌫')
+    .replace('backspace', '⌫')
+
+    .toUpperCase();
+};
+
 export function ActionButton(action: Action) {
-  const [, setFlag] = useAtom(_flag);
-  const [, submit] = useAtom(submitValueAtom);
   const [choices] = useAtom(_choices);
   const [input] = useAtom(inputAtom);
   const [index] = useAtom(_index);
+  const [ui] = useAtom(uiAtom);
+  const [, sendShortcut] = useAtom(sendShortcutAtom);
+  const [, setFlag] = useAtom(_flag);
 
-  const onClick = useCallback(() => {
-    setFlag(action.value);
-    submit(choices.length ? choices[index].value : input);
-  }, [action, setFlag, submit, choices, input, index]);
+  const onClick = useCallback(
+    (event) => {
+      if (ui === UI.form) {
+        event.preventDefault();
+
+        const el = document.querySelector(
+          `[name="${action.name.toLowerCase()}"]`
+        ) as HTMLInputElement;
+
+        if (el) {
+          el.click();
+        }
+      } else {
+        console.log(action);
+        if (action?.flag) setFlag(action.flag);
+        sendShortcut(action.value);
+      }
+    },
+    [action, choices, input, index, ui, setFlag]
+  );
 
   return (
     <motion.button
@@ -98,20 +162,29 @@ export function ActionButton(action: Action) {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={transition}
-      className="
+      disabled={action?.disabled}
+      className={`
   flex flex-row items-center justify-center
   outline-none px-1 py-1
   font-medium focus:text-primary-dark dark:focus:text-primary-light
-  hover:text-primary-dark dark:hover:text-primary-light
+
   text-sm
   text-black dark:text-white text-opacity-50 dark:text-opacity-50
   rounded
   bg-black dark:bg-white dark:bg-opacity-0 bg-opacity-0
+  ${
+    action?.disabled
+      ? `brightness-50`
+      : `
+  brightness-100
   hover:bg-opacity-10 dark:hover:bg-opacity-10
-  "
+  hover:text-primary-dark dark:hover:text-primary-light
+  `
+  }
+  `}
       onClick={onClick}
     >
-      <div className="px-1.5">{action.name}</div>
+      <div className="px-1">{action.name}</div>
       <div className=" flex flex-row">
         {action.shortcut.split('+').map((k) => {
           return (
@@ -138,6 +211,13 @@ export function ActionButton(action: Action) {
 export default function ActionBar() {
   const getAsset = useAtomValue(getAssetAtom);
   const [flags] = useAtom(flagsAtom);
+  const [footer] = useAtom(footerAtom);
+  const [shortcuts] = useAtom(shortcutsAtom);
+  const [focusedChoice] = useAtom(focusedChoiceAtom);
+  const [ui] = useAtom(uiAtom);
+  const [enterButtonName] = useAtom(enterButtonNameAtom);
+  const [disabled] = useAtom(flagValueAtom);
+  const [enterButtonDisabled] = useAtom(enterButtonDisabledAtom);
 
   const actions: Action[] = Object.entries(flags)
     .filter(([_, flag]) => {
@@ -148,21 +228,33 @@ export default function ActionBar() {
         key,
         value: key,
         name: flag?.name,
-        shortcut: ((flag?.shortcut || flag?.arrow) as string)
-          .replace('cmd', '⌘')
-          .replace('ctrl', '⌃')
-          .replace('shift', '⇧')
-          .replace('alt', '⌥')
-          .replace('enter', '⏎')
-          .replace('return', '⏎')
-
-          .toUpperCase(),
+        shortcut: formatShortcut(
+          (flag?.shortcut || (flag as Action)?.arrow) as string
+        ),
         position: flag.action,
-        arrow: flag?.arrow,
+        arrow: (flag as Action)?.arrow,
+        flag: key,
+        disabled: Boolean(disabled),
       } as Action;
 
       return action;
-    });
+    })
+    .concat(
+      shortcuts
+        .filter((s) => s?.bar)
+        .map(({ key, name, bar, flag }) => {
+          return {
+            key,
+            name,
+            value: key,
+            shortcut: formatShortcut(key),
+            position: bar,
+            flag,
+          } as Action;
+        })
+    );
+
+  const hasFlags = Object.keys(flags)?.length > 0;
 
   return (
     <motion.div
@@ -172,36 +264,86 @@ export default function ActionBar() {
       className="flex flex-row border-t
     dark:border-white dark:border-opacity-5
     border-black border-opacity-5
+    bg-white dark:bg-black
+    bg-opacity-25 dark:bg-opacity-25
     py-2 px-4
     items-center
     h-10
     "
     >
-      <button type="button">
-        <img
-          src={getAsset('tray/default-Template@2x.png')}
-          alt="Jotai"
-          className="
-        h-4 opacity-50 dark:opacity-50 invert dark:invert-0
+      <motion.button
+        key="icon-button"
+        tabIndex={-1}
+        type="button"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 1] }}
+        transition={transition}
+      >
+        <a href="https://scriptkit.com">
+          <img
+            src={getAsset('tray/default-Template@2x.png')}
+            alt="icon"
+            className="
+          flex
+        h-6 opacity-50 dark:opacity-50 invert dark:invert-0
         hover:opacity-75 dark:hover:opacity-75
+        items-center justify-center
+        p-1
+        rounded
         "
-        />
-      </button>
+          />
+        </a>
+      </motion.button>
 
       {actions
         .filter((action) => action.position === 'left')
-        .map((action) => (
+        .flatMap((action, i, array) => [
           // eslint-disable-next-line react/jsx-key
-          <ActionButton {...action} />
-        ))}
-      <div className="flex-1" />
-      {Object.keys(flags)?.length > 0 && <MenuButton />}
-      {actions
-        .filter((action) => action.position === 'right')
-        .map((action) => (
-          // eslint-disable-next-line react/jsx-key
-          <ActionButton {...action} />
-        ))}
+          <ActionButton {...action} />,
+          i < array.length - 1 ? (
+            <ActionSeparator key={`${action?.key}-separator`} />
+          ) : null,
+          i === array.length - 1 && footer?.length ? (
+            <ActionSeparator key={`${action?.key}-separator`} />
+          ) : null,
+        ])}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 1] }}
+        transition={transition}
+        className="flex flex-1 max-h-full
+        px-2 py-1
+        items-center justify-left
+text-sm font-medium
+text-black dark:text-primary-light
+
+      "
+        dangerouslySetInnerHTML={{ __html: footer }}
+      />
+      {hasFlags && <MenuButton />}
+      {[
+        actions
+          .filter((action) => action.position === 'right')
+          .flatMap((action, i, array) => [
+            i === 0 && hasFlags ? (
+              <ActionSeparator key={`${action?.key}-separator`} />
+            ) : null,
+            i > 0 ? <ActionSeparator key={`${action?.key}-separator`} /> : null,
+            // eslint-disable-next-line react/jsx-key
+            <ActionButton {...action} />,
+          ]),
+        enterButtonName ? (
+          <ActionButton
+            key="enter-button"
+            name={enterButtonName}
+            position="right"
+            shortcut="⏎"
+            value="enter"
+            flag=""
+            disabled={enterButtonDisabled}
+          />
+        ) : null,
+      ]}
     </motion.div>
   );
 }

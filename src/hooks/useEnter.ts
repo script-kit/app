@@ -23,7 +23,7 @@ export default () => {
   const [cmd] = useAtom(cmdAtom);
 
   useHotkeys(
-    `enter,${cmd}+enter,shift+enter,option+enter`,
+    `enter`,
     (event) => {
       event.preventDefault();
       if (event.metaKey) setFlag(`cmd`);

@@ -14,7 +14,9 @@ export default function Hint() {
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="px-4 py-1 text-xs text-gray-800 dark:text-gray-200 italic"
+      className="px-4 py-2 font-medium text-sm
+      text-primary-dark dark:text-primary-light
+      "
     >
       {parse(hint)}
     </motion.div>

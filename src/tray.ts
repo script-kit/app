@@ -31,6 +31,12 @@ import { getVersion } from './version';
 let tray: Tray | null = null;
 
 export const openMenu = async (event?: KeyboardEvent) => {
+  log.verbose(`🎨 Menu state: ${kitState.trayOpen ? 'open' : 'closed'}`);
+  if (kitState.trayOpen) {
+    tray?.closeContextMenu();
+    kitState.trayOpen = false;
+    return;
+  }
   await restartIfNecessary();
   if (event?.metaKey) {
     emitter.emit(
@@ -204,6 +210,14 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     const toolsSubmenu: MenuItemConstructorOptions[] = [];
 
+    toolsSubmenu.push({
+      label: `Reset Prompt Positions`,
+      click: async () => {
+        log.info('Resetting prompt cache');
+        runScript(kitPath('cli', 'kit-clear-prompt.js'));
+      },
+    });
+
     if (kitState.isMac) {
       toolsSubmenu.push({
         label: `Watch kit.log in Terminal`,
@@ -307,8 +321,10 @@ export const openMenu = async (event?: KeyboardEvent) => {
         message: '',
       };
       kitState.notifyAuthFail = false;
+      kitState.trayOpen = false;
     });
     tray?.popUpContextMenu(contextMenu);
+    kitState.trayOpen = true;
   }
   // emitter.emit(KitEvent.RunPromptProcess, kitPath('main', 'kit.js'));
 };
@@ -378,6 +394,7 @@ export const createTray = async (checkDb = false, state: trayState) => {
   }
   if (kitState.starting) {
     const startingMenu = () => {
+      log.verbose(`🎨 Starting menu...`);
       const message = kitState.installing
         ? 'Installing Kit SDK...'
         : kitState.updateInstalling
@@ -389,17 +406,25 @@ export const createTray = async (checkDb = false, state: trayState) => {
         message,
       };
 
-      tray?.popUpContextMenu(
-        Menu.buildFromTemplate([
-          {
-            label: `Script Kit ${getVersion()}`,
-          },
-          {
-            label: message,
-            icon: menuIcon('busy'),
-          },
-        ])
-      );
+      if (kitState.trayOpen) {
+        tray?.closeContextMenu();
+        kitState.trayOpen = false;
+      } else {
+        tray?.popUpContextMenu(
+          Menu.buildFromTemplate([
+            {
+              label: `Script Kit ${getVersion()}`,
+              accelerator: kitState.mainShortcut,
+              enabled: false,
+            },
+            {
+              label: message,
+              icon: menuIcon('busy'),
+            },
+          ])
+        );
+        kitState.trayOpen = true;
+      }
     };
 
     tray.on('mouse-down', startingMenu);
@@ -486,6 +511,7 @@ export const setTrayMenu = async (scripts: string[]) => {
 
     leftClickOverride = () => {
       tray?.popUpContextMenu(cMenu);
+      kitState.trayOpen = true;
     };
 
     tray?.off('mouse-down', openMenu);

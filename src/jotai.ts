@@ -17,6 +17,7 @@ import {
   PromptData,
   FlagsOptions,
   PromptConfig,
+  Shortcut,
 } from '@johnlindquist/kit/types/core';
 import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import {
@@ -38,6 +39,7 @@ import { BUTTON_HEIGHT, noChoice, noScript, SPLASH_PATH } from './defaults';
 let placeholderTimeoutId: NodeJS.Timeout;
 
 export const pidAtom = atom(0);
+export const shortcutsAtom = atom<Shortcut[]>([]);
 
 export const processingAtom = atom(false);
 const rawOpen = atom(false);
@@ -156,6 +158,11 @@ export const unfilteredChoicesAtom = atom(
       s(quickScoreAtom, null);
     }
 
+    if (a === null || a?.length === 0) {
+      // console.log(`Resize no choices`);
+      s(mainHeightAtom, 0);
+    }
+
     const cs = a === null ? [] : a;
 
     s(choicesIdAtom, Math.random());
@@ -272,10 +279,12 @@ export const panelHTMLAtom = atom(
 const _currentPromptHasPreviews = atom<boolean>(false);
 
 const _previewHTML = atom('');
+const closedDiv = `<div/>`;
 export const previewHTMLAtom = atom(
   (g) => g(_previewHTML) || g(promptData)?.preview,
   (g, s, a: string) => {
-    s(_currentPromptHasPreviews, Boolean(a));
+    // console.log({ preview: '', a });
+    s(_currentPromptHasPreviews, Boolean(a !== '' && a !== closedDiv));
 
     if (!a || !g(openAtom)) return; // never unset preview to avoid flash of white/black
     const tI = g(_tabIndex);
@@ -287,7 +296,7 @@ export const previewHTMLAtom = atom(
     }
 
     if (g(_previewHTML) !== a) {
-      if (a === `<div/>`) {
+      if (a === closedDiv) {
         s(_previewHTML, '');
       } else {
         s(_previewHTML, a);
@@ -533,7 +542,10 @@ export const scoredChoices = atom(
       }
     }
 
-    if (a && g(uiAtom) === UI.arg) s(mainHeightAtom, a.length * BUTTON_HEIGHT);
+    if (a && g(uiAtom) === UI.arg) {
+      // console.log(`Resize Button height`);
+      s(mainHeightAtom, a.length * BUTTON_HEIGHT);
+    }
   }
 );
 
@@ -743,13 +755,17 @@ const mainHeight = atom(0);
 const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
+  // console.log(`resize: ${reason}`);
   if (g(submittedAtom)) return;
 
   const ui = g(uiAtom);
 
+  // console.log({ ui });
   if ([UI.term, UI.editor, UI.drop].includes(ui)) return;
 
-  if (!g(resizeAtom)) return;
+  const r = g(resizeAtom);
+
+  if (!r) return;
 
   const promptData = g(promptDataAtom);
 
@@ -757,15 +773,28 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     promptData?.mode === Mode.FILTER &&
     g(unfilteredChoices).length === 0 &&
     ui === UI.arg;
-  const hasPanel = g(panelHTMLAtom) !== '';
+  const hasPanel = g(_panelHTML) !== '';
   const nullChoices = g(nullChoicesAtom);
 
   const mh = nullChoices && !hasPanel ? 0 : g(mainHeight);
   const th = g(topRefAtom)?.clientHeight || 88;
 
   const hasPreview = Boolean(g(hasPreviewAtom));
+  const currentPromptHasPreviews = g(_currentPromptHasPreviews);
 
-  if (g(_currentPromptHasPreviews)) return;
+  // console.log({
+  //   mainHeight: g(mainHeight),
+  //   panel: g(_panelHTML),
+  //   mh,
+  //   th,
+  //   hasPreview,
+  //   currentPromptHasPreviews,
+  //   placeholderOnly,
+  //   hasPanel,
+  //   nullChoices,
+  // });
+
+  if (currentPromptHasPreviews) return;
 
   const data: ResizeData = {
     id: promptData?.id || 'missing',
@@ -775,7 +804,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     topHeight: th,
     ui,
     mainHeight: mh,
-    footerHeight: g(footerAtom) ? 20 : 0,
+    footerHeight: 40,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
@@ -797,14 +826,21 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
 export const topHeightAtom = atom(
   (g) => g(topHeight),
-  (g, s, a: number) => {
-    resize(g, s, 'TOP_HEIGHT');
+  (g, s) => {
+    if (!g(isMainScriptAtom)) {
+      resize(g, s, 'TOP_HEIGHT');
+    }
   }
 );
 
+let flickerGuard: any = null;
 export const mainHeightAtom = atom(
   (g) => g(mainHeight),
   (g, s, a: number) => {
+    if (flickerGuard) {
+      clearTimeout(flickerGuard);
+    }
+
     const resizeEnabled = g(resizeAtom) && g(promptData)?.resize;
     const prevHeight = g(mainHeight);
 
@@ -812,9 +848,22 @@ export const mainHeightAtom = atom(
     // if (Math.abs(a - prevHeight) > 2) {
 
     const nextMainHeight = a < 0 ? 0 : a;
-    s(mainHeight, nextMainHeight);
 
-    resize(g, s, 'MAIN_HEIGHT');
+    if (nextMainHeight === 0) {
+      flickerGuard = setTimeout(() => {
+        // console.log(`flicker guard: ${a} ${nextMainHeight}`);
+        if (nextMainHeight === 0 && g(_panelHTML) !== '') return;
+
+        s(mainHeight, nextMainHeight);
+
+        resize(g, s, 'MAIN_HEIGHT');
+      }, 10);
+    } else {
+      // console.log(`resize: MAIN_HEIGHT`);
+      s(mainHeight, nextMainHeight);
+
+      resize(g, s, 'MAIN_HEIGHT');
+    }
   }
   // }
 );
@@ -907,8 +956,8 @@ export const promptDataAtom = atom(
       }
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
-      s(onShortcutSubmitAtom, a?.onShortcutSubmit || {});
       s(onShortcutAtom, a?.onShortcut || {});
+      s(shortcutsAtom, a?.shortcuts || []);
       // s(tabIndex, a.tabIndex);
       s(promptData, a);
     }
@@ -1287,7 +1336,10 @@ export const valueInvalidAtom = atom(null, (g, s, a: string) => {
   s(processingAtom, false);
   s(inputAtom, '');
   s(_inputChangedAtom, false);
-  if (typeof a === 'string') s(hintAtom, a);
+  if (typeof a === 'string') {
+    const getConvert = g(convertAtom);
+    s(footerAtom, getConvert(true).toHtml(a));
+  }
 });
 
 export const isHiddenAtom = atom(false);
@@ -1301,7 +1353,7 @@ export const blurAtom = atom(null, (g) => {
 });
 
 export const startAtom = atom(null, (g, s, a: string) => {
-  console.log(`🎬 Start ${a}`);
+  // console.log(`🎬 Start ${a}`);
   const history = g(_history);
   const script = g(scriptAtom);
   if (
@@ -1358,18 +1410,16 @@ type OnInputSubmit = {
 type OnShortcut = {
   [key: string]: any;
 };
-type OnShortcutSubmit = {
-  [key: string]: any;
-};
+
 export const onInputSubmitAtom = atom<OnInputSubmit>({});
 export const onShortcutAtom = atom<OnShortcut>({});
 
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
-  console.log(`🎬 Send shortcut ${shortcut}`);
+  // console.log(`🎬 Send shortcut ${shortcut}`);
   channel(Channel.SHORTCUT, { shortcut });
+  s(_flag, '');
 });
-export const onShortcutSubmitAtom = atom<OnShortcutSubmit>({});
 
 export const processesAtom = atom<ProcessInfo[]>([]);
 
@@ -1404,3 +1454,28 @@ export const socketURLAtom = atom(
 export const heightChangedAtom = atom<number>(0);
 
 export const resizeAtom = atom<boolean>(true);
+
+export const enterButtonNameAtom = atom<string>((g) => {
+  const ui = g(uiAtom);
+  if ([UI.fields, UI.form, UI.textarea].includes(ui)) return 'Submit';
+  if (ui !== UI.arg) return '';
+
+  const focusedChoice = g(focusedChoiceAtom);
+  if (focusedChoice?.enter) return focusedChoice.enter;
+  const pd = g(promptDataAtom);
+  if (pd?.enter) return pd.enter;
+
+  if (focusedChoice?.name === noChoice.name) return 'Submit';
+
+  return 'Select';
+});
+
+export const enterButtonDisabledAtom = atom<boolean>((g) => {
+  const pd = g(promptDataAtom);
+  if (!pd?.strict) return false;
+
+  const focusedChoice = g(focusedChoiceAtom);
+  if (focusedChoice?.name === noChoice.name) return true;
+
+  return false;
+});

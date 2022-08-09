@@ -11,11 +11,13 @@ import { useAtom } from 'jotai';
 import { formDataAtom, formHTMLAtom, submitValueAtom } from '../jotai';
 import { useEscape, useObserveMainHeight } from '../hooks';
 
-interface PanelProps {
+export default function Form({
+  width,
+  height,
+}: {
   width: number;
   height: number;
-}
-export default function Form({ width, height }: PanelProps) {
+}) {
   // useEscape();
 
   const formRef = useObserveMainHeight<HTMLFormElement>('.wrapper');
@@ -116,11 +118,11 @@ export default function Form({ width, height }: PanelProps) {
 
   return (
     <SimpleBar
+      className="w-screen"
       style={
         {
           WebkitAppRegion: 'no-drag',
           WebkitUserSelect: 'text',
-          width,
           height,
           maxHeight: height,
         } as any

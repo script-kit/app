@@ -187,7 +187,8 @@ export default function Input() {
         autoFocus
         className={`
       bg-transparent w-full text-black dark:text-white focus:outline-none outline-none
-      text-xl dark:placeholder-white dark:placeholder-opacity-25
+      text-2xl
+      dark:placeholder-white dark:placeholder-opacity-25
       placeholder-black placeholder-opacity-40
       h-14
       ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 px-4 py-0

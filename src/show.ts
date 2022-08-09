@@ -5,6 +5,7 @@ import {
   BrowserWindowConstructorOptions,
   screen,
   nativeTheme,
+  KeyboardInputEvent,
 } from 'electron';
 import log from 'electron-log';
 import { ensureDir } from 'fs-extra';
@@ -167,26 +168,54 @@ const page = (body: string, options: ShowOptions) => {
 
 const devTools = () => {
   return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <html>
+    <head>
+      <meta charset="utf-8" />
 
-    <script>
-      const { ipcRenderer } = require('electron');
-
-      ipcRenderer.on('DEVTOOLS', (event, x) => {
-        window['x'] = x;
-
-        for (let [key, value] of Object.entries(x)) {
-          window[key] = value;
+      <title>Dev Tools</title>
+      <style>
+        body {
+          height: 100vh;
+          width: 100vw;
+          padding: 0;
+          margin: 0;
+        }
+        @media (prefers-color-scheme: dark) {
+          body {
+            background: rgba(0, 0, 0, 0.25);
+            color: white;
+          }
         }
 
-        console.log(x);
-      });
-    </script>
-</head>
-</html>`;
+        @media (prefers-color-scheme: light) {
+          body {
+            background: rgba(255, 255, 255, 0.25);
+            color: black;
+          }
+        }
+      </style>
+      <script>
+        const { ipcRenderer } = require('electron');
+
+        ipcRenderer.on('DEVTOOLS', (event, x) => {
+          window['x'] = x;
+
+          for (let [key, value] of Object.entries(x)) {
+            window[key] = value;
+          }
+
+          console.log(x);
+        });
+
+        ipcRenderer.on('LOG', (event, x) => {
+          console.log(x);
+        });
+      </script>
+    </head>
+
+    <body></body>
+  </html>
+  `;
 };
 
 const getCenterOnCurrentScreen = (
@@ -270,8 +299,24 @@ export const showDevTools = async (value: any) => {
 
   devToolsWindow.webContents.focus();
 
+  // const shortcut: KeyboardInputEvent = {
+  //   type: 'keyDown',
+  //   modifiers: kitState.isMac ? ['cmd', 'alt'] : ['ctrl', 'shift'],
+  //   keyCode: 'j',
+  // };
+
+  // const pressShortcut = (s: KeyboardInputEvent) => {
+  //   s.type = 'keyDown';
+  //   devToolsWindow.webContents.sendInputEvent(s);
+  //   s.type = 'char';
+  //   devToolsWindow.webContents.sendInputEvent(s);
+  //   s.type = 'keyUp';
+  //   devToolsWindow.webContents.sendInputEvent(s);
+  // };
+
   if (value) {
     devToolsWindow.webContents.send('DEVTOOLS', value);
+    devToolsWindow.webContents.send('LOG', `Type 'x' to access your object`);
   }
 
   const devToolsParentDir = (await isDir(kenvPath('tmp')))
@@ -286,11 +331,13 @@ export const showDevTools = async (value: any) => {
   const devToolsUrl = `file://${devToolsPath}`;
 
   log.info(`Load ${devToolsUrl} in ${devToolsWindow.id}`);
-  devToolsWindow?.loadURL(devToolsUrl);
+  devToolsWindow?.loadURL(devToolsUrl, {});
 
   devToolsWindow.show();
   devToolsWindow.focus();
   devToolsWindow.webContents.focus();
+
+  // setTimeout(() => pressShortcut(shortcut), 2000);
 
   devToolsWindow.webContents.on('devtools-closed', () => {
     log.info(`Close devTools: ${devToolsWindow.id}`);

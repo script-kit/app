@@ -1,7 +1,6 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
-import { promisify } from 'util';
 import log from 'electron-log';
 import untildify from 'untildify';
 import { keyboard, mouse } from '@nut-tree/nut-js';
@@ -25,7 +24,7 @@ import url from 'url';
 import sizeOf from 'image-size';
 import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { ChildProcess, fork, exec } from 'child_process';
+import { ChildProcess, fork } from 'child_process';
 import {
   Channel,
   Mode,
@@ -84,7 +83,6 @@ import {
   kitState,
   kitConfig,
   updateScripts,
-  kitStateType,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -174,7 +172,7 @@ const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
   const imgOptions = url.parse((image as { src: string }).src);
 
   // eslint-disable-next-line promise/param-names
-  const { width, height } = await new Promise((resolveImage, rejectImage) => {
+  const { width, height } = await new Promise((resolveImage) => {
     const proto = imgOptions.protocol?.startsWith('https') ? https : http;
     proto.get(imgOptions, (response: any) => {
       const chunks: any = [];
@@ -472,7 +470,7 @@ const kitMessageMap: ChannelHandler = {
       });
 
       widget?.on('will-move', () => {
-        console.log(`${widgetId}: 📦 widget will move`);
+        log.verbose(`${widgetId}: 📦 widget will move`);
         widgetMap[widgetId].moved = true;
       });
 
@@ -739,8 +737,8 @@ const kitMessageMap: ChannelHandler = {
   CLEAR_PROMPT_CACHE: async () => {
     await clearPromptCache();
   },
-  CLEAR_PREVIEW: () => {
-    sendToPrompt(Channel.CLEAR_PREVIEW, ``);
+  CLEAR_TABS: () => {
+    sendToPrompt(Channel.CLEAR_TABS, []);
   },
   SET_EDITOR_CONFIG: (data) => {
     sendToPrompt(Channel.SET_EDITOR_CONFIG, data.value);

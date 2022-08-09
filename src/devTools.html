@@ -37,6 +37,10 @@
 
         console.log(x);
       });
+
+      ipcRenderer.on('LOG', (event, x) => {
+        console.log(x);
+      });
     </script>
   </head>
 

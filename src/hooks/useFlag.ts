@@ -14,12 +14,14 @@ import {
   selectionStartAtom,
   submitValueAtom,
   channelAtom,
-  onShortcutSubmitAtom,
   onShortcutAtom,
   sendShortcutAtom,
+  shortcutsAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
+
+const exclude = ['enter', 'escape', 'up', 'down', 'left', 'right'];
 
 export default () => {
   const [cmd] = useAtom(cmdAtom);
@@ -33,8 +35,7 @@ export default () => {
   const [selectionStart] = useAtom(selectionStartAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
   const [channel] = useAtom(channelAtom);
-  const [onShortcutSubmit] = useAtom(onShortcutSubmitAtom);
-  const [onShortcut] = useAtom(onShortcutAtom);
+  const [promptShortcuts] = useAtom(shortcutsAtom);
   const [, sendShortcut] = useAtom(sendShortcutAtom);
 
   // useHotkeys(
@@ -53,7 +54,10 @@ export default () => {
       value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter'
   );
 
-  const shortcuts = flagsWithShortcuts
+  const flagShortcuts = flagsWithShortcuts
+    .filter(
+      ([key, value]) => value?.shortcut && !exclude.includes(value?.shortcut)
+    )
     .map(([key, value]) => value.shortcut)
     .join(',');
 
@@ -63,43 +67,26 @@ export default () => {
     )?.[0] as string;
 
   useHotkeys(
-    shortcuts.length ? shortcuts : 'f19',
+    flagShortcuts.length ? flagShortcuts : 'f19',
     (event, handler) => {
       if (!inputFocus) return;
       event.preventDefault();
+
+      if (flagValue) return;
 
       setFlag(flagKeyByShortcut(handler.key));
       submit(choices.length ? choices[index].value : input);
     },
     hotkeysOptions,
-    [flags, input, inputFocus, choices, index]
+    [flags, input, inputFocus, choices, index, flagValue]
   );
 
-  const onShortcutSubmits = Object.keys(onShortcutSubmit).length
-    ? Object.keys(onShortcutSubmit).join(',')
+  const onShortcuts = promptShortcuts.length
+    ? promptShortcuts
+        .filter((ps) => ps?.key && !exclude.includes(ps.key))
+        .map((ps) => ps.key)
+        .join(',')
     : `f19`;
-
-  const onShortcuts = Object.keys(onShortcut).length
-    ? Object.keys(onShortcut).join(',')
-    : `f19`;
-
-  useHotkeys(
-    onShortcutSubmits,
-    (event, handler) => {
-      console.log(`useFlag`, {
-        onShortcutSubmit,
-        inputFocus,
-        key: handler.key,
-      });
-      if (!inputFocus) return;
-      event.preventDefault();
-
-      const value = onShortcutSubmit[handler.key];
-      submit(value);
-    },
-    hotkeysOptions,
-    [onShortcutSubmit, onShortcutSubmits, inputFocus]
-  );
 
   useHotkeys(
     onShortcuts,
@@ -107,10 +94,16 @@ export default () => {
       if (!inputFocus) return;
       event.preventDefault();
 
+      if (flagValue) return;
+
+      const found = promptShortcuts.find((ps) => ps.key === handler.key);
+      if (found && found?.flag) {
+        setFlag(found.flag);
+      }
       sendShortcut(handler.key);
     },
     hotkeysOptions,
-    [onShortcutSubmit]
+    [flagValue, inputFocus, promptShortcuts]
   );
 
   useHotkeys(

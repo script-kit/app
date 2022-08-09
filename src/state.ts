@@ -201,6 +201,7 @@ const initState = {
   ready: false,
   settled: false,
   authorized: false,
+  fullDiskAccess: false,
   notifyAuthFail: false,
   mainShortcut: ``,
   isDark: nativeTheme.shouldUseDarkColors,
@@ -221,6 +222,7 @@ const initState = {
   lastOpen: new Date(),
   logLevel: 'info' as LogLevel,
   preventResize: false,
+  trayOpen: false,
 };
 
 nativeTheme.addListener('updated', () => {
