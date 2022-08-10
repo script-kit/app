@@ -14,7 +14,7 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
-import { app, protocol, powerMonitor, shell } from 'electron';
+import { app, protocol, powerMonitor, shell, BrowserWindow } from 'electron';
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
@@ -128,7 +128,7 @@ const arch = getArch();
 const platform = getPlatform();
 const nodeVersion = getNodeVersion();
 
-app.on('before-quit', () => {
+app.on('will-quit', async () => {
   try {
     teardownWatchers();
     sleepSchedule();
@@ -144,22 +144,31 @@ app.on('before-quit', () => {
   }
 
   try {
-    if (kitState.isMac) beforePromptQuit();
+    if (kitState.isMac) await beforePromptQuit();
   } catch (error) {
     log.error(error);
   }
 
   try {
+    log.info(`Destory watcher process`);
     if (watchers?.childWatcher) watchers?.childWatcher?.kill();
   } catch (error) {
     log.error(error);
   }
 
   try {
-    // execSync(`pkill -f 'Kit Helper'`);
-  } catch (error) {
-    log.info(`😬 pkill failed`, { error });
+    log.info(`Destroy all windows`);
+    const browserWindows = BrowserWindow.getAllWindows();
+    browserWindows.forEach((browserWindow) => {
+      browserWindow?.destroy();
+    });
+  } catch (e) {
+    log.warn(`callBeforeQuitAndInstall error`, e);
   }
+
+  log.info(
+    `Remaning browser windows: ${BrowserWindow.getAllWindows()?.length}`
+  );
 });
 
 app.on('window-all-closed', (e: Event) => {
@@ -436,22 +445,26 @@ const ready = async () => {
       log.info(`💻 Mac detected.`);
       const { getAuthStatus } = await import('node-mac-permissions');
       kitState.authorized = getAuthStatus('accessibility') === 'authorized';
-
-      if (kitState.authorized) {
-        await configureInterval();
-        await setupLog(`Tick started`);
-      } else {
-        const id = setInterval(async () => {
-          kitState.authorized = getAuthStatus('accessibility') === 'authorized';
-          if (kitState.authorized) {
-            clearInterval(id);
-            await configureInterval();
-            await setupLog(`Tick started`);
-          }
-        }, 5000);
-      }
     } else {
       kitState.authorized = true;
+    }
+
+    if (kitState.authorized) {
+      log.info(`💻 Accessibility authorized ✅`);
+      await configureInterval();
+      await setupLog(`Tick started`);
+    } else {
+      const id = setInterval(async () => {
+        log.silly(`Checking for accessibility authorization...`);
+        const { getAuthStatus } = await import('node-mac-permissions');
+
+        kitState.authorized = getAuthStatus('accessibility') === 'authorized';
+        if (kitState.authorized) {
+          clearInterval(id);
+          await configureInterval();
+          await setupLog(`Tick started`);
+        }
+      }, 5000);
     }
 
     await setupLog(``);

@@ -3,7 +3,7 @@
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
 import untildify from 'untildify';
-import { keyboard, mouse } from '@nut-tree/nut-js';
+import { keyboard, mouse, Key } from '@nut-tree/nut-js';
 import {
   app,
   clipboard,
@@ -973,6 +973,35 @@ const kitMessageMap: ChannelHandler = {
     child?.send({
       channel,
     });
+  }),
+
+  VERIFY_FULL_DISK_ACCESS: toProcess(async ({ child }, { channel }) => {
+    let value = false;
+    if (kitState.isMac) {
+      const { getAuthStatus, askForFullDiskAccess } = await import(
+        'node-mac-permissions'
+      );
+      const authStatus = await getAuthStatus('full-disk-access');
+      if (authStatus === 'authorized') {
+        value = true;
+      } else {
+        askForFullDiskAccess();
+      }
+    }
+
+    child?.send({ channel, value });
+  }),
+
+  SET_SELECTED_TEXT: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`SET SELECTED TEXT`, value);
+    const prevText = clipboard.readText();
+    clipboard.writeText(value);
+
+    const modifier = kitState.isMac ? Key.LeftSuper : Key.LeftControl;
+    await keyboard.pressKey(modifier, Key.V);
+    await keyboard.releaseKey(modifier, Key.V);
+    child?.send({ channel, value });
+    clipboard.writeText(prevText);
   }),
 };
 

@@ -866,3 +866,8 @@ tracking-normal
 tracking-wide
 tracking-wider
 tracking-widest
+overflow-hidden
+text-ellipsis
+text-clip
+truncate
+min-w-0

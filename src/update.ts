@@ -15,32 +15,10 @@ import {
 import { subscribeKey } from 'valtio/utils';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { spawn } from 'child_process';
-import { destroyTray } from './tray';
 import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
 import { kitState } from './state';
-import { beforePromptQuit } from './prompt';
-import { watchers } from './watcher';
 import { getAssetPath } from './assets';
-
-const callBeforeQuitAndInstall = async () => {
-  try {
-    if (kitState.isMac) {
-      await beforePromptQuit();
-    }
-
-    destroyTray();
-    app.removeAllListeners('window-all-closed');
-    const browserWindows = BrowserWindow.getAllWindows();
-    browserWindows.forEach((browserWindow) => {
-      browserWindow.removeAllListeners('close');
-      browserWindow?.destroy();
-    });
-    watchers?.childWatcher?.kill();
-  } catch (e) {
-    log.warn(`callBeforeQuitAndInstall error`, e);
-  }
-};
 
 export const kitIgnore = () => {
   const isGit = existsSync(kitPath('.kitignore'));
@@ -119,9 +97,6 @@ export const configureAutoUpdate = async () => {
     } catch {
       log.warn(`Couldn't store previous version`);
     }
-
-    log.info(`⏰ Waiting 2.5 seconds before quit and install`);
-    callBeforeQuitAndInstall();
 
     setTimeout(() => {
       log.info('Quit and exit 👋');

@@ -2,13 +2,13 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
 
-import { Config, KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
+import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
 import { subscribeKey } from 'valtio/utils';
 import log, { LogLevel } from 'electron-log';
 import path from 'path';
 import os from 'os';
-import { ChildProcess, execSync } from 'child_process';
+import { ChildProcess } from 'child_process';
 import { app, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
@@ -22,8 +22,8 @@ import {
   mainScriptPath,
   tmpClipboardDir,
 } from '@johnlindquist/kit/cjs/utils';
-import { UI, statuses } from '@johnlindquist/kit/cjs/enum';
-import { noScript, MIN_HEIGHT } from './defaults';
+import { UI } from '@johnlindquist/kit/cjs/enum';
+import { noScript } from './defaults';
 import { ProcessInfo } from './types';
 
 export const makeRestartNecessary = async () => {

@@ -314,10 +314,14 @@ export default function ActionBar() {
         items-center justify-left
 text-sm font-medium
 text-black dark:text-white
-
+truncate
       "
-        dangerouslySetInnerHTML={{ __html: footer }}
-      />
+      >
+        <div
+          className="truncate min-w-0"
+          dangerouslySetInnerHTML={{ __html: footer }}
+        />
+      </motion.div>
       {hasFlags && <MenuButton />}
       {[
         actions

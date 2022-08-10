@@ -4,6 +4,7 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
+import glasstron from 'glasstron';
 import { subscribe } from 'valtio/vanilla';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
@@ -22,8 +23,7 @@ import {
 import os from 'os';
 import path from 'path';
 import log from 'electron-log';
-import { debounce, uniqueId } from 'lodash';
-import minimist from 'minimist';
+import { debounce } from 'lodash';
 import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { getPromptDb } from '@johnlindquist/kit/cjs/db';
@@ -47,9 +47,6 @@ import { emitter, KitEvent } from './events';
 let promptWindow: BrowserWindow;
 let unsub: () => void;
 let unsubKey: () => void;
-
-const miniArgs = minimist(process.argv);
-const { devTools } = miniArgs;
 // log.info(process.argv.join(' '), devTools);
 
 let electronPanelWindow: any = null;
@@ -62,10 +59,12 @@ export const maybeHide = (reason: string) => {
 };
 
 export const beforePromptQuit = async () => {
+  log.info('Before prompt quit');
   promptWindow?.hide();
   return new Promise((resolve) => {
     setTimeout(async () => {
       if (kitState.isMac) {
+        log.info(`Removing panel window`);
         const dummy = new BrowserWindow({
           show: false,
         });
@@ -79,10 +78,16 @@ export const beforePromptQuit = async () => {
 };
 
 export const createPromptWindow = async () => {
+  const blurType = () => {
+    if (kitState.isMac) return 'vibrancy';
+    if (kitState.isWindows) return 'acrylic';
+    return 'blurbehind';
+  };
+
   if (kitState.isMac) {
     electronPanelWindow = await import('@akiflow/electron-panel-window' as any);
   }
-  promptWindow = new BrowserWindow({
+  promptWindow = new glasstron.BrowserWindow({
     titleBarStyle: 'customButtonsOnHover',
     useContentSize: true,
     frame: false,
@@ -107,6 +112,8 @@ export const createPromptWindow = async () => {
     height: DEFAULT_HEIGHT,
     minWidth: MIN_WIDTH,
     minHeight: INPUT_HEIGHT,
+    blur: true,
+    blurType: blurType(),
   });
 
   promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });

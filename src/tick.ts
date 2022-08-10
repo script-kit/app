@@ -167,11 +167,14 @@ const ioEvent = async (e: UiohookKeyboardEvent) => {
 };
 
 export const configureInterval = async () => {
+  log.silly(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
   if (kitState.isMac) {
     ({ default: frontmost } = await import('frontmost-app' as any));
   }
 
+  log.info(`Loading uiohook-napi`);
   const { uIOhook } = await import('uiohook-napi');
+  log.info(`uiohook-napi ${uIOhook ? 'loaded' : 'failed'}`);
   const io$ = new Observable((observer) => {
     uIOhook.on('click', (event) => {
       log.silly(`click`);
