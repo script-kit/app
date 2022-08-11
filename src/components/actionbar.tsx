@@ -279,7 +279,7 @@ export default function ActionBar() {
       >
         <a href="https://scriptkit.com">
           <img
-            src={getAsset('tray/default-Template@2x.png')}
+            src={getAsset('tray', 'default-Template@2x.png')}
             alt="icon"
             className="
           flex

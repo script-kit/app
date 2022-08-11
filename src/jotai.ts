@@ -1307,7 +1307,7 @@ export const appConfigAtom = atom<AppConfig>({
 
 export const getAssetAtom = atom((g) => {
   const { sep, assetPath } = g(appConfigAtom);
-  return (asset: string) => assetPath + sep + asset;
+  return (...parts: string[]) => assetPath + sep + parts.join(sep);
 });
 
 const isReady = atom(false);

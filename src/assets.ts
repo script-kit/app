@@ -5,7 +5,7 @@ import { readFileSync } from 'fs';
 
 const checkPackaged = (name: string) =>
   app.isPackaged
-    ? path.join(process.resourcesPath, '..', name)
+    ? path.join(process.resourcesPath, name)
     : path.join(__dirname, '..', name);
 
 export const getAssetPath = (...paths: string[]): string => {
