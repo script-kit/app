@@ -7,6 +7,10 @@ import {
   screen,
   nativeTheme,
   KeyboardInputEvent,
+  ipcMain,
+  MenuItemConstructorOptions,
+  PopupOptions,
+  Menu,
 } from 'electron';
 import log from 'electron-log';
 import { ensureDir } from 'fs-extra';
@@ -18,7 +22,7 @@ import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
 import { getAssetPath } from './assets';
 import { darkTheme, lightTheme } from './components/themes';
-import { kitState } from './state';
+import { kitState, widgetState } from './state';
 
 export const INSTALL_ERROR = 'install-error';
 
@@ -452,17 +456,19 @@ export const showWidget = async (
     ...options,
   };
 
-  let widgetWindow = null;
+  let widgetWindow: any = null;
   if (kitState.isMac) {
     widgetWindow = new BrowserWindow(bwOptions);
-    if (options.transparent) {
+    if (!options.transparent) {
       widgetWindow.setVibrancy('menu');
     }
   } else {
     widgetWindow = new glasstron.BrowserWindow(bwOptions);
-    widgetWindow.blurType = kitState.isWindows ? 'acrylic' : 'blurbehind';
-    widgetWindow.setBlur(true);
-    widgetWindow.setBackgroundColor(`#00000000`);
+    if (!options.transparent) {
+      widgetWindow.blurType = kitState.isWindows ? 'acrylic' : 'blurbehind';
+      widgetWindow.setBlur(true);
+      widgetWindow.setBackgroundColor(`#00000000`);
+    }
   }
 
   if (options?.ignoreMouse)
@@ -470,6 +476,9 @@ export const showWidget = async (
 
   if (options?.ttl) {
     setTimeout(() => {
+      log.info(
+        `Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`
+      );
       widgetWindow.removeAllListeners();
       widgetWindow.destroy();
     }, options?.ttl);
@@ -484,6 +493,51 @@ export const showWidget = async (
       } else {
         log.error(`Widget ${widgetId} failed to load`);
       }
+    });
+
+    widgetWindow.webContents.on('context-menu', (event: any) => {
+      log.info(`Context menu`);
+      event?.preventDefault();
+
+      if (!widgetWindow) {
+        log.error('🛑 No BrowserWindow found');
+        return;
+      }
+
+      const template: MenuItemConstructorOptions[] = [
+        {
+          label: 'Show Dev Tools',
+          click: () => {
+            log.info(`Show dev tools: ${widgetWindow.id}`);
+            widgetWindow.webContents.openDevTools();
+          },
+        },
+        {
+          label: `Enable Click-Through`,
+          checked: options.ignoreMouse,
+          click: () => {
+            log.info(`Enable click-through on ${widgetWindow.id}`);
+            options.ignoreMouse = !options.ignoreMouse;
+            widgetWindow.setIgnoreMouseEvents(options.ignoreMouse);
+          },
+        },
+        {
+          label: `Disable Click-Though with ${
+            kitState.isMac ? `cmd` : `ctrl`
+          }+L`,
+          enabled: false,
+        },
+
+        {
+          label: 'Close',
+          click: () => {
+            log.info(`Close widget: ${widgetWindow.id}`);
+            widgetWindow.destroy();
+          },
+        },
+      ];
+      const menu = Menu.buildFromTemplate(template);
+      menu.popup(widgetWindow as PopupOptions);
     });
 
     log.info(`Load ${filePath} in ${widgetWindow.id}`);

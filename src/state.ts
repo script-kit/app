@@ -4,12 +4,12 @@
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
-import { subscribeKey } from 'valtio/utils';
+import { subscribeKey, proxySet } from 'valtio/utils';
 import log, { LogLevel } from 'electron-log';
 import path from 'path';
 import os from 'os';
 import { ChildProcess } from 'child_process';
-import { app, nativeTheme } from 'electron';
+import { app, BrowserWindow, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { Script } from '@johnlindquist/kit/types/core';
@@ -161,6 +161,14 @@ const removeP = (pid: number) => {
 //     return false;
 //   }
 // };
+export type WidgetOptions = {
+  id: string;
+  widget: BrowserWindow;
+  child: ChildProcess;
+  moved: boolean;
+  ignoreMouse: boolean;
+  ignoreMeasure: boolean;
+};
 
 const initState = {
   isPanel: false,
@@ -240,6 +248,13 @@ export const kitConfig: Config = proxy(initConfig);
 export const kitState: typeof initState = proxy(initState);
 export type kitStateType = typeof initState;
 
+export const widgetState: { widgets: WidgetOptions[] } = {
+  widgets: [] as WidgetOptions[],
+};
+export const findWidget = (id: string) => {
+  return widgetState.widgets.find((options) => options.id === id)?.widget;
+};
+
 export function isSameScript(promptScriptPath: string) {
   const same =
     path.resolve(kitState.script.filePath || '') ===
@@ -274,3 +289,7 @@ subscribeKey(kitState, 'notifyAuthFail', (notifyAuthFail) => {
     };
   }
 });
+
+// subscribeKey(widgetState, 'widgets', () => {
+//   log.info(`👀 Widgets: ${widgetState.widgets.length}`);
+// });

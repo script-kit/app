@@ -13,11 +13,9 @@ import {
   BrowserWindow,
   ipcMain,
   IpcMainEvent,
-  Menu,
-  MenuItemConstructorOptions,
-  PopupOptions,
 } from 'electron';
 import os from 'os';
+import { remove } from 'lodash';
 
 import { subscribe } from 'valtio';
 import http from 'http';
@@ -27,7 +25,7 @@ import url from 'url';
 import sizeOf from 'image-size';
 import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { ChildProcess, fork } from 'child_process';
+import { fork } from 'child_process';
 import {
   Channel,
   Mode,
@@ -86,6 +84,8 @@ import {
   kitState,
   kitConfig,
   updateScripts,
+  widgetState,
+  findWidget,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -210,16 +210,6 @@ type WidgetData = {
 };
 type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
-const widgetMap: {
-  [widgetId: string]: {
-    widget: BrowserWindow;
-    child: ChildProcess;
-    moved: boolean;
-    ignoreMouse: boolean;
-    ignoreMeasure: boolean;
-  };
-} = {};
-
 const toProcess = <K extends keyof ChannelMap>(
   fn: (processInfo: ProcessInfo, data: SendData<K>) => void
 ) => (data: SendData<K>) => {
@@ -305,10 +295,9 @@ const kitMessageMap: ChannelHandler = {
 
   WIDGET_SET_STATE: toProcess(({ child }, { channel, value }) => {
     const { widgetId, state } = value as any;
-    // log.info({ widgetId }, `${channel}`);
-    if (!widgetMap[widgetId]) return;
 
-    const { widget } = widgetMap[widgetId];
+    const widget = findWidget(widgetId);
+    if (!widget) return;
 
     // log.info(`WIDGET_SET_STATE`, value);
     if (widget) {
@@ -321,8 +310,10 @@ const kitMessageMap: ChannelHandler = {
   WIDGET_FIT: toProcess(({ child }, { channel, value }) => {
     const { widgetId, state } = value as any;
     // log.info({ widgetId }, `${channel}`);
-    if (!widgetMap[widgetId]) return;
-    const { widget } = widgetMap[widgetId];
+
+    const widget = findWidget(widgetId);
+    if (!widget) return;
+
     // log.info(`WIDGET_SET_STATE`, value);
     if (widget) {
       widget?.webContents.send(channel, state);
@@ -335,7 +326,8 @@ const kitMessageMap: ChannelHandler = {
   WIDGET_SET_SIZE: toProcess(({ child }, { value }) => {
     const { widgetId, width, height } = value as any;
     // log.info({ widgetId }, `${channel}`);
-    const { widget } = widgetMap[widgetId];
+    const widget = findWidget(widgetId);
+    if (!widget) return;
 
     // log.info(`WIDGET_SET_STATE`, value);
     if (widget) {
@@ -349,7 +341,8 @@ const kitMessageMap: ChannelHandler = {
   WIDGET_SET_POSITION: toProcess(({ child }, { value }) => {
     const { widgetId, x, y } = value as any;
     // log.info({ widgetId }, `${channel}`);
-    const { widget } = widgetMap[widgetId];
+    const widget = findWidget(widgetId);
+    if (!widget) return;
 
     // log.info(`WIDGET_SET_STATE`, value);
     if (widget) {
@@ -400,7 +393,8 @@ const kitMessageMap: ChannelHandler = {
       //   }
       // };
 
-      widgetMap[widgetId] = {
+      widgetState.widgets.push({
+        id: widgetId,
         widget,
         child,
         moved: false,
@@ -408,7 +402,7 @@ const kitMessageMap: ChannelHandler = {
         ignoreMeasure: Boolean(
           value?.options?.width || value?.options?.height || false
         ),
-      };
+      });
 
       widget.on('resized', () => {
         child.send({
@@ -427,8 +421,11 @@ const kitMessageMap: ChannelHandler = {
       });
 
       const closeHandler = () => {
-        if (widget?.isDestroyed()) return;
-        if (typeof widgetMap?.[widgetId] === 'undefined') return;
+        if (!findWidget(widgetId)) return;
+
+        const w = findWidget(widgetId);
+        if (!w) return;
+        if (w?.isDestroyed()) return;
 
         log.info(`${widgetId}: Widget closed`);
         focusPrompt();
@@ -436,13 +433,14 @@ const kitMessageMap: ChannelHandler = {
           child?.send({
             channel: Channel.WIDGET_END,
             widgetId,
-            ...widget.getBounds(),
+            ...w.getBounds(),
           });
         }
 
-        delete widgetMap?.[widgetId];
-        widget.removeAllListeners();
-        widget.destroy();
+        w.removeAllListeners();
+        w.destroy();
+
+        remove(widgetState.widgets, ({ id }) => id === widgetId);
       };
 
       widget?.webContents.on('before-input-event', (event, input) => {
@@ -451,14 +449,16 @@ const kitMessageMap: ChannelHandler = {
         }
 
         if (input.key === 'l' && (input.control || input.meta)) {
-          if (widgetMap[widgetId]?.ignoreMouse) {
+          const o = widgetState.widgets.find(({ id }) => id === widgetId);
+          if (!o) return;
+          if (o?.ignoreMouse) {
             log.info(`${widgetId}: 🔓 Unlock widget`);
             widget.setIgnoreMouseEvents(false);
-            widgetMap[widgetId].ignoreMouse = false;
+            o.ignoreMouse = false;
           } else {
             log.info(`${widgetId}: 🔒 Lock widget`);
             widget.setIgnoreMouseEvents(true, { forward: true });
-            widgetMap[widgetId].ignoreMouse = true;
+            o.ignoreMouse = true;
           }
         }
       });
@@ -474,7 +474,9 @@ const kitMessageMap: ChannelHandler = {
 
       widget?.on('will-move', () => {
         log.verbose(`${widgetId}: 📦 widget will move`);
-        widgetMap[widgetId].moved = true;
+        const o = widgetState.widgets.find(({ id }) => id === widgetId);
+        if (!o) return;
+        o.moved = true;
       });
 
       child?.send({
@@ -486,18 +488,17 @@ const kitMessageMap: ChannelHandler = {
 
   WIDGET_END: toProcess((_, { value }) => {
     const { widgetId } = value as any;
-
-    if (typeof widgetMap?.[widgetId] === 'undefined') return;
-    const { widget } = widgetMap[widgetId];
+    const widget = findWidget(widgetId);
 
     if (!widget) return;
 
     log.info(`${widgetId}: Widget closed`);
     focusPrompt();
 
-    delete widgetMap?.[widgetId];
     widget.removeAllListeners();
     widget.destroy();
+
+    remove(widgetState.widgets, ({ id }) => id === widgetId);
   }),
 
   WIDGET_CAPTURE_PAGE: toProcess(async ({ child }, { channel, value }) => {
@@ -1286,14 +1287,18 @@ export const processes = new Processes();
 export const handleWidgetEvents = () => {
   const clickHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
-    if (!widgetMap[widgetId]) return;
-    const { widget, child, moved } = widgetMap[widgetId];
+
+    const w = widgetState.widgets.find(({ id }) => id === widgetId);
+    if (!w) return;
+    const { widget, child, moved } = w;
     if (!child) return;
 
     if (moved) {
-      widgetMap[widgetId].moved = false;
+      w.moved = false;
       return;
     }
+
+    log.info(`🔎 click ${widgetId}`);
 
     child?.send({
       ...data,
@@ -1305,7 +1310,9 @@ export const handleWidgetEvents = () => {
 
   const inputHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
-    const { child, widget } = widgetMap[widgetId];
+    const options = widgetState.widgets.find(({ id }) => id === widgetId);
+    if (!options) return;
+    const { child, widget } = options;
     if (!child) return;
 
     child?.send({
@@ -1320,7 +1327,13 @@ export const handleWidgetEvents = () => {
   const measureHandler: WidgetHandler = (event, data: any) => {
     const { widgetId } = data;
     log.info(`📏 ${widgetId} Widget: Fitting to inner child`);
-    const { widget, child, ignoreMeasure } = widgetMap[widgetId];
+    console.log(widgetState.widgets);
+
+    const options = widgetState.widgets.find(({ id }) => id === widgetId);
+    if (!options) return;
+
+    const { widget, child, ignoreMeasure } = options;
+    log.info({ widget, child, ignoreMeasure });
     if (!child || ignoreMeasure) return;
 
     widget.setSize(data.width, data.height, true);
@@ -1328,46 +1341,6 @@ export const handleWidgetEvents = () => {
 
   ipcMain.on(Channel.WIDGET_CLICK, clickHandler);
   ipcMain.on(Channel.WIDGET_INPUT, inputHandler);
-  ipcMain.on('show-context-menu', (event: IpcMainEvent, data) => {
-    const { widgetId } = data;
-    const bw = BrowserWindow.fromWebContents(event.sender) as BrowserWindow;
-    const options = widgetMap[widgetId];
-    if (!bw) {
-      log.error('🛑 No BrowserWindow found');
-      return;
-    }
-
-    const template: MenuItemConstructorOptions[] = [
-      {
-        label: 'Show Dev Tools',
-        click: () => {
-          bw.webContents.openDevTools();
-        },
-      },
-      {
-        label: `Enable Click-Through`,
-        checked: options.ignoreMouse,
-        click: () => {
-          options.ignoreMouse = !options.ignoreMouse;
-          bw.setIgnoreMouseEvents(options.ignoreMouse);
-        },
-      },
-      {
-        label: `Disable Click-Though with ${kitState.isMac ? `cmd` : `ctrl`}+L`,
-        enabled: false,
-      },
-
-      {
-        label: 'Close',
-        click: () => {
-          bw.destroy();
-        },
-      },
-    ];
-    const menu = Menu.buildFromTemplate(template);
-    menu.popup(bw as PopupOptions);
-  });
-
   ipcMain.on('WIDGET_MEASURE', measureHandler);
 };
 

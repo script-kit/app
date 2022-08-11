@@ -372,121 +372,126 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      {/* {JSON.stringify(state)} */}
-      <AnimatePresence key="appComponents">
-        <motion.div
-          animate={controls}
-          transition={{ duration: 0.12 }}
-          onAnimationStart={showIfOpen}
-          onAnimationComplete={hideIfClosed}
-          ref={windowContainerRef}
-          style={
-            {
-              WebkitUserSelect: 'none',
-            } as any
-          }
-          className={`
+      <div
+        className={`
+        w-screen h-screen
+      bg-bg-light dark:bg-bg-dark
+
+      ${
+        appConfig.isMac
+          ? `
+      bg-opacity-themelight
+      dark:bg-opacity-themedark
+      `
+          : `
+      bg-opacity-windows-themelight
+      dark:bg-opacity-windows-themedark
+      `
+      }`}
+      >
+        {/* {JSON.stringify(state)} */}
+        <AnimatePresence key="appComponents">
+          <motion.div
+            animate={controls}
+            transition={{ duration: 0.12 }}
+            onAnimationStart={showIfOpen}
+            onAnimationComplete={hideIfClosed}
+            ref={windowContainerRef}
+            style={
+              {
+                WebkitUserSelect: 'none',
+              } as any
+            }
+            className={`
         ${hidden ? 'hidden' : ''}
         flex flex-col
         w-full h-full
-        bg-bg-light dark:bg-bg-dark
-
-        ${
-          appConfig.isMac
-            ? `
-        bg-opacity-themelight
-        dark:bg-opacity-themedark
-        `
-            : `
-        bg-opacity-windows-themelight
-        dark:bg-opacity-windows-themedark
-        `
-        }
         `}
-          onMouseDown={onMouseDown}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseLeave}
-          onMouseMove={onMouseMove}
-        >
-          <header ref={headerRef} className="relative z-10">
-            <Header />
+            onMouseDown={onMouseDown}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseLeave}
+            onMouseMove={onMouseMove}
+          >
+            <header ref={headerRef} className="relative z-10">
+              <Header />
 
-            {ui === UI.hotkey && (
-              <Hotkey
-                key="AppHotkey"
-                submit={setSubmitValue}
-                onHotkeyHeightChanged={setMainHeight}
-              />
-            )}
-            {ui === UI.arg && <Input key="AppInput" />}
+              {ui === UI.hotkey && (
+                <Hotkey
+                  key="AppHotkey"
+                  submit={setSubmitValue}
+                  onHotkeyHeightChanged={setMainHeight}
+                />
+              )}
+              {ui === UI.arg && <Input key="AppInput" />}
 
-            {hint && <Hint key="AppHint" />}
-            {logHtml?.length > 0 && script?.log !== 'false' && (
-              <Log key="AppLog" />
-            )}
+              {hint && <Hint key="AppHint" />}
+              {logHtml?.length > 0 && script?.log !== 'false' && (
+                <Log key="AppLog" />
+              )}
 
-            {(showTabs || showSelected) && (
-              <div className="max-h-5.5">
-                {showTabs && <Tabs key="AppTabs" />}
-                {showSelected && <Selected key="AppSelected" />}
-              </div>
-            )}
-          </header>
-          <main
-            ref={mainRef}
-            className={`
+              {(showTabs || showSelected) && (
+                <div className="max-h-5.5">
+                  {showTabs && <Tabs key="AppTabs" />}
+                  {showSelected && <Selected key="AppSelected" />}
+                </div>
+              )}
+            </header>
+            <main
+              ref={mainRef}
+              className={`
             flex
         flex-1
 
         w-full max-h-full h-full
         `}
-            onPaste={onPaste}
-            onDrop={(event) => {
-              console.log(`🎉 drop`);
-              onDrop(event);
-            }}
-            onDragEnter={() => {
-              console.log(`drag enter`);
-            }}
-            onDragOver={(event) => {
-              event.stopPropagation();
-              event.preventDefault();
-            }}
-          >
-            <AnimatePresence key="mainComponents">
-              {ui === UI.splash && <Splash />}
-              {ui === UI.drop && <Drop />}
-              {ui === UI.textarea && <TextArea />}
-              {ui === UI.editor && <Editor />}
-              {ui === UI.term && <Terminal />}
-            </AnimatePresence>
-            <AutoSizer>
-              {({ width, height }) => (
-                <>
-                  {(ui === UI.arg && !nullChoices && choices.length > 0 && (
-                    <>
-                      <List height={height} width={width} />
-                    </>
-                  )) ||
-                    (!!(ui === UI.arg || ui === UI.hotkey || ui === UI.div) &&
-                      panelHTML.length > 0 && (
-                        <>
-                          <Panel width={width} height={height} />
-                        </>
-                      )) ||
-                    (ui === UI.form && (
+              onPaste={onPaste}
+              onDrop={(event) => {
+                console.log(`🎉 drop`);
+                onDrop(event);
+              }}
+              onDragEnter={() => {
+                console.log(`drag enter`);
+              }}
+              onDragOver={(event) => {
+                event.stopPropagation();
+                event.preventDefault();
+              }}
+            >
+              <AnimatePresence key="mainComponents">
+                {ui === UI.splash && <Splash />}
+                {ui === UI.drop && <Drop />}
+                {ui === UI.textarea && <TextArea />}
+                {ui === UI.editor && <Editor />}
+                {ui === UI.term && <Terminal />}
+              </AnimatePresence>
+              <AutoSizer>
+                {({ width, height }) => (
+                  <>
+                    {(ui === UI.arg && !nullChoices && choices.length > 0 && (
                       <>
-                        <Form width={width} height={height} />
+                        <List height={height} width={width} />
                       </>
-                    ))}
-                </>
-              )}
-            </AutoSizer>
-          </main>
+                    )) ||
+                      (!!(ui === UI.arg || ui === UI.hotkey || ui === UI.div) &&
+                        panelHTML.length > 0 && (
+                          <>
+                            <Panel width={width} height={height} />
+                          </>
+                        )) ||
+                      (ui === UI.form && (
+                        <>
+                          <Form width={width} height={height} />
+                        </>
+                      ))}
+                  </>
+                )}
+              </AutoSizer>
+            </main>
 
-          <ActionBar />
-        </motion.div>
-      </AnimatePresence>
+            <ActionBar />
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </ErrorBoundary>
   );
 }

@@ -45,6 +45,12 @@ jobs:
 
       - uses: c-hive/gha-yarn-cache@v1
 
+      - name: Verify Yarn and Node versions
+        run: |
+          yarn --version
+          yarn node --version
+          if [[ "$(yarn node --version)" == "v16.4.2" ]]; then exit 0; else exit 1; fi
+
       - name: yarn
         run: |
           if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \

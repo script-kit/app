@@ -92,6 +92,7 @@ module.exports = {
       fontFamily: {
         mono: ['JetBrains Mono'],
         native: ['monospace'],
+        ui: ['system-ui'],
       },
       margin: {
         '2px': '2px',
@@ -315,17 +316,19 @@ module.exports = {
               fontSize: em(22, 16),
               marginBottom: em(22, 22),
               paddingBottom: em(16, 22),
-              borderBottom: '1px solid rgba(130, 130, 130, 0.15)',
+              borderBottom: '1px solid rgba(130, 130, 130, 0.50)',
             },
             h1: {
               fontSize: em(24, 16),
-              fontFamily: theme('fontFamily.mono').join(', '),
-              textTransform: 'uppercase',
+              fontWeight: '600',
+              fontFamily: theme('fontFamily.ui').join(', '),
+              textTransform: 'none',
             },
             h2: {
               fontSize: em(18, 16),
-              fontFamily: theme('fontFamily.mono').join(', '),
-              textTransform: 'uppercase',
+              fontWeight: 'bold',
+              fontFamily: theme('fontFamily.ui').join(', '),
+              textTransform: 'none',
             },
             h3: {
               fontSize: em(16, 16),
