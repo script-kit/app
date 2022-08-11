@@ -363,18 +363,30 @@ export default function ChoiceButton({
               Boolean(Object.keys(flags).length) &&
               !flaggedValue && (
                 <div onClick={onRightClick}>
-                  <MoreThanIcon
+                  <div
                     className={`
-        h-4 w-3 ml-2
+                flex items-center justify-center
+                    text-xs
+                    font-bold
+                    rounded
+
+                    bg-white dark:bg-white
+                    dark:bg-opacity-10 bg-opacity-10
+                    hover:bg-opacity-50 dark:hover:bg-opacity-25
+ ml-2
+        w-6 h-6
+        leading-1
         fill-current
         transition ease-in
         opacity-50
         hover:opacity-80
-        dark:text-white text-black
+        text-black dark:text-white
+        dark:hover:text-primary-light hover:text-primary-dark
 
         `}
-                    viewBox="0 0 32 32"
-                  />
+                  >
+                    →
+                  </div>
                 </div>
               )}
           </div>

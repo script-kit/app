@@ -35,7 +35,7 @@ type Action = {
 
 const transition = { duration: 0.2, ease: 'easeInOut' };
 
-export function MenuButton() {
+export function OptionsButton() {
   const [choices] = useAtom(_choices);
   const [input] = useAtom(inputAtom);
   const [index] = useAtom(_index);
@@ -97,11 +97,14 @@ export function ActionSeparator() {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={transition}
-      className="flex items-center justify-center
-text-sm font-semibold
-text-black dark:text-white text-opacity-25 dark:text-opacity-25
-w-2
-text-center
+      className="
+      flex items-center justify-center
+      font-mono
+      leading-none
+      text-sm font-medium
+      text-black dark:text-white text-opacity-10 dark:text-opacity-25
+      p-0.5
+      text-center
 "
     >
       |
@@ -166,7 +169,8 @@ export function ActionButton(action: Action) {
       disabled={action?.disabled}
       className={`
   flex flex-row items-center justify-center
-  outline-none px-1 py-1
+  outline-none
+  p-1
   font-medium focus:text-primary-dark dark:focus:text-primary-light
 
   text-sm
@@ -192,7 +196,9 @@ export function ActionButton(action: Action) {
             <div
               key={k}
               className="
-          py-.5 px-1.5 mx-0.5
+              flex items-center justify-center
+          w-5 h-5 ml-1
+          leading-none
 
           rounded
           bg-black dark:bg-white dark:bg-opacity-10 bg-opacity-10
@@ -338,17 +344,17 @@ truncate
           dangerouslySetInnerHTML={{ __html: footer }}
         />
       </motion.div>
-      {hasFlags && <MenuButton />}
+      {hasFlags && [
+        <OptionsButton key="options-button" />,
+        <ActionSeparator key="options-separator" />,
+      ]}
       {[
         actions
           .filter((action) => action.position === 'right')
           .flatMap((action, i, array) => [
-            i === 0 && hasFlags ? (
-              <ActionSeparator key={`${action?.key}-separator`} />
-            ) : null,
-            i > 0 ? <ActionSeparator key={`${action?.key}-separator`} /> : null,
             // eslint-disable-next-line react/jsx-key
             <ActionButton {...action} />,
+            <ActionSeparator key={`${action?.key}-separator`} />,
           ]),
         enterButtonName ? (
           <ActionButton

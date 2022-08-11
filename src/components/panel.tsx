@@ -28,8 +28,8 @@ interface PanelProps {
 
 export default function Panel({ width, height }: PanelProps) {
   // useEscape();
-  useEnter(); // Is this needed?
-  useOpen();
+  // useEnter(); // Is this needed?
+  // useOpen();
   const scrollRef: RefObject<any> = useRef(null);
   const [panelHTML] = useAtom(panelHTMLAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);

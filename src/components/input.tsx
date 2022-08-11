@@ -32,7 +32,7 @@ import {
   inputFocusAtom,
   uiAtom,
 } from '../jotai';
-import { useEnter, useFlag, useFocus, useKeyIndex, useTab } from '../hooks';
+import { useEnter, useFocus, useKeyIndex, useTab } from '../hooks';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];

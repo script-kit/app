@@ -14,7 +14,6 @@ import {
   selectionStartAtom,
   submitValueAtom,
   channelAtom,
-  onShortcutAtom,
   sendShortcutAtom,
   shortcutsAtom,
 } from '../jotai';

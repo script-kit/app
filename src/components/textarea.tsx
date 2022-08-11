@@ -19,7 +19,7 @@ import {
 export default function TextArea() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   useFocus(textareaRef);
-  useOpen();
+  // useOpen();
 
   const [options] = useAtom(textareaConfigAtom);
 

@@ -106,7 +106,7 @@ import {
   resizeAtom,
 } from './jotai';
 
-import { useEscape, useFlag, useThemeDetector } from './hooks';
+import { useEscape, useShortcuts, useThemeDetector } from './hooks';
 import Splash from './components/splash';
 import { AppChannel } from './enums';
 import Terminal from './term';
@@ -162,7 +162,7 @@ class ErrorBoundary extends React.Component {
 
 export default function App() {
   const [isMainScript] = useAtom(isMainScriptAtom);
-  const [, setAppConfig] = useAtom(appConfigAtom);
+  const [appConfig, setAppConfig] = useAtom(appConfigAtom);
   const [, setPid] = useAtom(pidAtom);
   const [open, setOpen] = useAtom(openAtom);
   const [, setExit] = useAtom(exitAtom);
@@ -223,7 +223,7 @@ export default function App() {
   const [, setResize] = useAtom(resizeAtom);
   const [, setTabs] = useAtom(_tabs);
 
-  useFlag();
+  useShortcuts();
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -389,6 +389,19 @@ export default function App() {
         ${hidden ? 'hidden' : ''}
         flex flex-col
         w-full h-full
+        bg-bg-light dark:bg-bg-dark
+
+        ${
+          appConfig.isMac
+            ? `
+        bg-opacity-themelight
+        dark:bg-opacity-themedark
+        `
+            : `
+        bg-opacity-windows-themelight
+        dark:bg-opacity-windows-themedark
+        `
+        }
         `}
           onMouseDown={onMouseDown}
           onMouseUp={onMouseUp}

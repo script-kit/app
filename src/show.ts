@@ -1,4 +1,5 @@
 /* eslint-disable import/prefer-default-export */
+import glasstron from 'glasstron';
 import {
   app,
   BrowserWindow,
@@ -435,15 +436,10 @@ export const showWidget = async (
     ? getCenterOnCurrentScreen(options)
     : getTopRightCurrentScreen(options);
 
-  const widgetWindow = new BrowserWindow({
+  const bwOptions: BrowserWindowConstructorOptions = {
     title: 'Script Kit Widget',
     frame: false,
     transparent: true,
-    ...(options?.transparent
-      ? {}
-      : {
-          vibrancy: 'menu',
-        }),
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -454,7 +450,20 @@ export const showWidget = async (
     minHeight: 36,
     minWidth: 36,
     ...options,
-  });
+  };
+
+  let widgetWindow = null;
+  if (kitState.isMac) {
+    widgetWindow = new BrowserWindow(bwOptions);
+    if (options.transparent) {
+      widgetWindow.setVibrancy('menu');
+    }
+  } else {
+    widgetWindow = new glasstron.BrowserWindow(bwOptions);
+    widgetWindow.blurType = kitState.isWindows ? 'acrylic' : 'blurbehind';
+    widgetWindow.setBlur(true);
+    widgetWindow.setBackgroundColor(`#00000000`);
+  }
 
   if (options?.ignoreMouse)
     widgetWindow?.setIgnoreMouseEvents(true, { forward: true });

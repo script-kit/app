@@ -18,6 +18,8 @@
   --color-background-light: 255, 255, 255;
   --opacity-themelight: 33%;
   --opacity-themedark: 33%;
+  --opacity-windows-themelight: 0%;
+  --opacity-windows-themedark: 40%;
 }
 
 @tailwind base;
@@ -44,9 +46,7 @@ html {
 }
 
 body {
-  @apply bg-bg-light dark:bg-bg-dark;
   @apply text-black dark:text-white;
-  @apply bg-opacity-themelight dark:bg-opacity-themedark;
   @apply subpixel-antialiased;
   @apply overflow-hidden;
   @apply h-screen min-h-screen;

@@ -91,6 +91,7 @@ module.exports = {
       }),
       fontFamily: {
         mono: ['JetBrains Mono'],
+        native: ['monospace'],
       },
       margin: {
         '2px': '2px',

@@ -3,17 +3,28 @@ import { app } from 'electron';
 import path from 'path';
 import { readFileSync } from 'fs';
 
+export function slash(p: string) {
+  const isExtendedLengthPath = /^\\\\\?\\/.test(p);
+  const hasNonAscii = /[^\u0000-\u0080]+/.test(p); // eslint-disable-line no-control-regex
+
+  if (isExtendedLengthPath || hasNonAscii) {
+    return p;
+  }
+
+  return p.replace(/\\/g, '/');
+}
+
 const checkPackaged = (name: string) =>
   app.isPackaged
     ? path.resolve(process.resourcesPath, name)
     : path.resolve(__dirname, '..', name);
 
 export const getAssetPath = (...paths: string[]): string => {
-  return path.join(checkPackaged('assets'), ...paths);
+  return slash(path.resolve(checkPackaged('assets'), ...paths));
 };
 
 export const getBinPath = (...paths: string[]): string => {
-  return path.join(checkPackaged(''), ...paths);
+  return slash(path.join(checkPackaged(''), ...paths));
 };
 
 export const getReleaseChannel = () => {

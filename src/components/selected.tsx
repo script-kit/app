@@ -32,19 +32,19 @@ export default function Selected() {
       }
       onClick={onClick}
       className={`
+pb-1
 w-max
 flex flex-row items-center
-text-xs
--mt-0.5  border-b-2
+text-sm
+border-b-2
 text-primary-dark dark:text-primary-light
 border-primary-dark dark:border-primary-light
     hover:cursor-pointer
     `}
     >
       {flagValue ? (
-        <div className="flex flex-row items-center justify-content hover:text-black dark:hover:text-white font-semibold">
-          <i className="ml-1 gg-chevron-left scale-60" some-aria="" />
-          <div className="mr-8 truncate">{selected}</div>
+        <div className="flex flex-row items-center justify-content hover:text-black dark:hover:text-white font-semibold pl-3.5">
+          <div className="mr-8 truncate">← {selected}</div>
         </div>
       ) : (
         <div className="mx-4 py-1 font-mono truncate">{selected}</div>

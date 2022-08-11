@@ -50,6 +50,8 @@ jobs:
           if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
           else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
           yarn
+        with:
+          node-version: 16.14.2
 
       - name: Semantic Release
         id: semantic

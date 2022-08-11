@@ -1,7 +1,7 @@
 export { default as useClose } from './useClose';
 export { default as useEnter } from './useEnter';
 export { default as useEscape } from './useEscape';
-export { default as useFlag } from './useFlag';
+export { default as useShortcuts } from './useShortcuts';
 export { default as useFocus } from './useFocus';
 export { default as useGetDb } from './useGetDb';
 export { default as useKeyDirection } from './useKeyDirection';

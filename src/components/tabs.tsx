@@ -51,7 +51,7 @@ export default function KitTabs() {
               onHoverStart={() => setHover(i)}
               onHoverEnd={() => setHover(-1)}
               className={`
-              text-xs
+              text-sm
               font-medium
               text-black dark:text-white
               relative
@@ -66,7 +66,7 @@ export default function KitTabs() {
                 { '--tw-text-opacity': i === tabIndex ? '1' : '0.75' } as any
               }
               animate={
-                { '--tw-text-opacity': i === tabIndex ? '1' : '0.5' } as any
+                { '--tw-text-opacity': i === tabIndex ? '0.9' : '0.5' } as any
               }
             >
               {tab}
