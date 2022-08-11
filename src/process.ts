@@ -481,7 +481,7 @@ const kitMessageMap: ChannelHandler = {
     }
   ),
 
-  WIDGET_END: toProcess(({ child }, { value }) => {
+  WIDGET_END: toProcess((_, { value }) => {
     const { widgetId } = value as any;
 
     if (typeof widgetMap?.[widgetId] === 'undefined') return;
@@ -569,7 +569,7 @@ const kitMessageMap: ChannelHandler = {
     child?.send({ channel, processes });
   }),
 
-  HIDE_APP: toProcess(({ child, type, scriptPath }, { channel }) => {
+  HIDE_APP: toProcess(({ child, scriptPath }, { channel }) => {
     log.info(`🫣 Hiding app`);
 
     if (!isVisible()) {
@@ -618,13 +618,11 @@ const kitMessageMap: ChannelHandler = {
   SET_STATUS: toProcess(async (_, data) => {
     if (data?.value) kitState.status = data?.value;
   }),
-  SET_SUBMIT_VALUE: toProcess(
-    ({ child, type, scriptPath }, { channel, value }) => {
-      sendToPrompt(Channel.SET_SUBMIT_VALUE, value);
+  SET_SUBMIT_VALUE: toProcess(({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SET_SUBMIT_VALUE, value);
 
-      child?.send({ channel });
-    }
-  ),
+    child?.send({ channel });
+  }),
 
   SET_MODE: (data) => {
     if (data.value === Mode.HOTKEY) {
@@ -920,14 +918,14 @@ const kitMessageMap: ChannelHandler = {
     });
   }),
 
-  TRASH: toProcess(async ({ child }, { channel, value }) => {
-    // const result = await trash(value);
-    // log.info(`TRASH RESULT`, result);
-    // child?.send({
-    //   result,
-    //   channel,
-    // });
-  }),
+  // TRASH: toProcess(async ({ child }, { channel, value }) => {
+  //   // const result = await trash(value);
+  //   // log.info(`TRASH RESULT`, result);
+  //   // child?.send({
+  //   //   result,
+  //   //   channel,
+  //   // });
+  // }),
 
   COPY: toProcess(async ({ child }, { channel, value }) => {
     log.info(`>>>> COPY`);
@@ -987,6 +985,8 @@ const kitMessageMap: ChannelHandler = {
       } else {
         askForFullDiskAccess();
       }
+    } else {
+      value = true;
     }
 
     child?.send({ channel, value });
@@ -1241,7 +1241,7 @@ class Processes extends Array<ProcessInfo> {
 
     warn(`🤔 Can't find idle Prompt Process. Starting another`);
     const newProcess = processes.add(ProcessType.Prompt);
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       setTimeout(() => {
         resolve(newProcess);
       }, 1000);

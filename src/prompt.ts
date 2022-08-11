@@ -19,6 +19,7 @@ import {
   Rectangle,
   powerMonitor,
   shell,
+  BrowserWindowConstructorOptions,
 } from 'electron';
 import os from 'os';
 import path from 'path';
@@ -44,7 +45,12 @@ import { getVersion } from './version';
 import { AppChannel } from './enums';
 import { emitter, KitEvent } from './events';
 
-let promptWindow: BrowserWindow;
+interface GlasstronWindow extends BrowserWindow {
+  blurType: string;
+  setBlur(_: boolean): void;
+}
+
+let promptWindow: GlasstronWindow;
 let unsub: () => void;
 let unsubKey: () => void;
 // log.info(process.argv.join(' '), devTools);
@@ -83,22 +89,14 @@ export const beforePromptQuit = async () => {
 };
 
 export const createPromptWindow = async () => {
-  const blurType = () => {
-    if (kitState.isMac) return 'vibrancy';
-    if (kitState.isWindows) return 'acrylic';
-    return 'blurbehind';
-  };
-
   if (kitState.isMac) {
     electronPanelWindow = await import('@akiflow/electron-panel-window' as any);
   }
-  promptWindow = new glasstron.BrowserWindow({
-    titleBarStyle: 'customButtonsOnHover',
+  const options: BrowserWindowConstructorOptions = {
+    titleBarStyle: kitState.isMac ? 'customButtonsOnHover' : 'hiddenInset',
     useContentSize: true,
     frame: false,
-    transparent: true,
-    vibrancy: 'menu',
-    // visualEffectState: 'active',
+    transparent: !kitState.isWindows,
     show: false,
     // hasShadow: true,
     icon: getAssetPath('icon.png'),
@@ -117,9 +115,30 @@ export const createPromptWindow = async () => {
     height: DEFAULT_HEIGHT,
     minWidth: MIN_WIDTH,
     minHeight: INPUT_HEIGHT,
-    blur: true,
-    blurType: blurType(),
-  });
+  };
+
+  if (kitState.isMac) {
+    promptWindow = new BrowserWindow(options) as GlasstronWindow;
+    promptWindow.setVibrancy('menu');
+  } else {
+    promptWindow = new glasstron.BrowserWindow(options) as GlasstronWindow;
+
+    try {
+      promptWindow.blurType = kitState.isWindows ? 'acrylic' : 'blurbehind';
+      promptWindow.setBlur(true);
+      promptWindow.setBackgroundColor(`#00000000`);
+    } catch (error) {
+      console.error('Failed to set window blur', error);
+    }
+
+    // try {
+    //   const { DwmEnableBlurBehindWindow } = await import('windows-blurbehind');
+    //   DwmEnableBlurBehindWindow(promptWindow, true);
+    // } catch (error) {
+    //   log.error(`Failure to enable blurbehind`);
+    //   log.error(error);
+    // }
+  }
 
   promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 

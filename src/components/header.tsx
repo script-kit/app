@@ -49,7 +49,6 @@ export default function Header() {
         } as any
       }
       className="flex flex-row justify-between w-full
-      bg-white dark:bg-black dark:bg-opacity-25 bg-opacity-25
       "
     >
       <AnimatePresence key="topBar">
