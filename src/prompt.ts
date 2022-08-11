@@ -161,6 +161,10 @@ export const createPromptWindow = async () => {
     });
   });
 
+  promptWindow?.webContents?.on('devtools-closed', () => {
+    maybeHide('Devtools closed');
+  });
+
   //   promptWindow?.webContents?.on('new-window', function (event, url) {
   //     event.preventDefault()
   //     shell.openExternal(url)

@@ -1,10 +1,10 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtomValue, useAtom } from 'jotai';
+import { loadable } from 'jotai/utils';
 import { motion } from 'framer-motion';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback } from 'react';
 import {
-  getAssetAtom,
   flagsAtom,
   _flag,
   _choices,
@@ -19,6 +19,7 @@ import {
   focusedChoiceAtom,
   enterButtonNameAtom,
   enterButtonDisabledAtom,
+  createAssetAtom,
 } from '../jotai';
 
 type Action = {
@@ -208,8 +209,45 @@ export function ActionButton(action: Action) {
   );
 }
 
+const loadableIconAtom = loadable(
+  createAssetAtom('tray', 'default-Template@2x.png')
+);
+
+const IconButton = () => {
+  const [lazyIcon] = useAtom(loadableIconAtom);
+  if (lazyIcon.state === 'hasError') return <span>{lazyIcon.error}</span>;
+  if (lazyIcon.state === 'loading') {
+    return <span>Loading...</span>;
+  }
+
+  return (
+    <motion.button
+      key="icon-button"
+      tabIndex={-1}
+      type="button"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 1] }}
+      transition={transition}
+    >
+      <a href="https://scriptkit.com">
+        <img
+          src={lazyIcon?.data}
+          alt="icon"
+          className="
+    flex
+  h-6 opacity-50 dark:opacity-50 invert dark:invert-0
+  hover:opacity-75 dark:hover:opacity-75
+  items-center justify-center
+  p-1
+  rounded
+  "
+        />
+      </a>
+    </motion.button>
+  );
+};
+
 export default function ActionBar() {
-  const getAsset = useAtomValue(getAssetAtom);
   const [flags] = useAtom(flagsAtom);
   const [footer] = useAtom(footerAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
@@ -269,29 +307,7 @@ export default function ActionBar() {
     h-10
     "
     >
-      <motion.button
-        key="icon-button"
-        tabIndex={-1}
-        type="button"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 1] }}
-        transition={transition}
-      >
-        <a href="https://scriptkit.com">
-          <img
-            src={getAsset('tray', 'default-Template@2x.png')}
-            alt="icon"
-            className="
-          flex
-        h-6 opacity-50 dark:opacity-50 invert dark:invert-0
-        hover:opacity-75 dark:hover:opacity-75
-        items-center justify-center
-        p-1
-        rounded
-        "
-          />
-        </a>
-      </motion.button>
+      <IconButton />
 
       {actions
         .filter((action) => action.position === 'left')

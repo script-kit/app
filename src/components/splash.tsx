@@ -6,9 +6,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, AnimateSharedLayout, motion } from 'framer-motion';
 import { useAtom } from 'jotai';
+import { loadable } from 'jotai/utils';
 import {
   appConfigAtom,
-  getAssetAtom,
+  createAssetAtom,
   runMainScriptAtom,
   splashBodyAtom,
   splashHeaderAtom,
@@ -73,20 +74,23 @@ const questions = [
   `Anything else?`,
 ];
 
+const loadableIconAtom = loadable(createAssetAtom('icon.png'));
+
 function Aside() {
   const [appConfig] = useAtom(appConfigAtom);
-  const [getAsset] = useAtom(getAssetAtom);
   const [body] = useAtom(splashBodyAtom);
   const [header] = useAtom(splashHeaderAtom);
   const [progress] = useAtom(splashProgressAtom);
   const [runMainScript] = useAtom(runMainScriptAtom);
+
+  const [lazyIcon] = useAtom(loadableIconAtom);
 
   return (
     <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12">
       <div className="flex flex-col items-center h-full">
         <div className="relative">
           <img
-            src={getAsset('icon.png')}
+            src={lazyIcon?.data}
             className="w-24 mb-2"
             alt="Script Kit Icon"
           />

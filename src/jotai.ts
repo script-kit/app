@@ -1306,10 +1306,18 @@ export const appConfigAtom = atom<AppConfig>({
   delimiter: '',
 });
 
-export const getAssetAtom = atom((g) => {
-  const { assetPath } = g(appConfigAtom);
-  return (...parts: string[]) => path.join(assetPath, ...parts);
-});
+export const createAssetAtom = (...parts: string[]) =>
+  atom((g) => {
+    return new Promise((resolve, reject) => {
+      ipcRenderer.once(AppChannel.GET_ASSET, (event, { assetPath }) => {
+        resolve(assetPath);
+      });
+
+      ipcRenderer.send(AppChannel.GET_ASSET, {
+        parts,
+      });
+    });
+  });
 
 const isReady = atom(false);
 export const isReadyAtom = atom(

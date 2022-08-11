@@ -487,7 +487,6 @@ const ready = async () => {
     await cacheKitScripts();
     await cacheMenu();
 
-    startIpc();
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);
     // processes.add(ProcessType.Prompt);
@@ -764,6 +763,7 @@ const checkKit = async () => {
       log.info(`Failed to install extensions`, error);
     }
   }
+  startIpc();
   await createPromptWindow();
 
   await setupLog(`Prompt window created`);

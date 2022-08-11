@@ -408,7 +408,7 @@
     "inclusion": "^1.0.1",
     "is-image": "3.0.0",
     "jetbrains-mono": "1.0.6",
-    "jotai": "1.6.1",
+    "jotai": "1.7.8",
     "lodash": "4.17.20",
     "memoize-one": "5.2.1",
     "minimist": "1.2.5",

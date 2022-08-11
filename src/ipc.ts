@@ -42,7 +42,6 @@ import { AppChannel } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
 import { kitConfig, kitState, updateScripts } from './state';
-import { stripAnsi } from './ansi';
 
 const handleChannel = (
   fn: (processInfo: ProcessInfo, message: AppMessage) => void
@@ -75,6 +74,13 @@ export const startIpc = () => {
       }
     }, 1000)
   );
+
+  ipcMain.on(AppChannel.GET_ASSET, (event, { parts }) => {
+    log.info(`📁 GET_ASSET ${parts.join('/')}`);
+    const assetPath = getAssetPath(...parts);
+    log.info(`📁 Asset path: ${assetPath}`);
+    event.sender.send(AppChannel.GET_ASSET, { assetPath });
+  });
 
   ipcMain.on(AppChannel.RESIZE, (event, resizeData: ResizeData) => {
     resize(resizeData);
