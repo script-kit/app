@@ -118,6 +118,13 @@ export const createWidget = async (
         widgetId: window.widgetId,
       })
     })
+
+    window.addEventListener('contextmenu', (e) => {
+      e.preventDefault()
+      ipcRenderer.send('show-context-menu', {
+        widgetId: window.widgetId,
+      })
+    })
     </script>
 
     <script>

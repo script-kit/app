@@ -13,6 +13,9 @@ import {
   BrowserWindow,
   ipcMain,
   IpcMainEvent,
+  Menu,
+  MenuItemConstructorOptions,
+  PopupOptions,
 } from 'electron';
 import os from 'os';
 
@@ -1325,6 +1328,46 @@ export const handleWidgetEvents = () => {
 
   ipcMain.on(Channel.WIDGET_CLICK, clickHandler);
   ipcMain.on(Channel.WIDGET_INPUT, inputHandler);
+  ipcMain.on('show-context-menu', (event: IpcMainEvent, data) => {
+    const { widgetId } = data;
+    const bw = BrowserWindow.fromWebContents(event.sender) as BrowserWindow;
+    const options = widgetMap[widgetId];
+    if (!bw) {
+      log.error('🛑 No BrowserWindow found');
+      return;
+    }
+
+    const template: MenuItemConstructorOptions[] = [
+      {
+        label: 'Show Dev Tools',
+        click: () => {
+          bw.webContents.openDevTools();
+        },
+      },
+      {
+        label: `Enable Click-Through`,
+        checked: options.ignoreMouse,
+        click: () => {
+          options.ignoreMouse = !options.ignoreMouse;
+          bw.setIgnoreMouseEvents(options.ignoreMouse);
+        },
+      },
+      {
+        label: `Disable Click-Though with ${kitState.isMac ? `cmd` : `ctrl`}+L`,
+        enabled: false,
+      },
+
+      {
+        label: 'Close',
+        click: () => {
+          bw.destroy();
+        },
+      },
+    ];
+    const menu = Menu.buildFromTemplate(template);
+    menu.popup(bw as PopupOptions);
+  });
+
   ipcMain.on('WIDGET_MEASURE', measureHandler);
 };
 
