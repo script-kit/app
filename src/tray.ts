@@ -255,11 +255,11 @@ export const openMenu = async (event?: KeyboardEvent) => {
       type: 'checkbox',
       click: () => {
         log.info(
-          `Toggling ignoreBlur to ${!kitState.ignoreBlur ? 'true' : 'false'}`
+          `Toggling ignoreBlur to ${!kitState.preventClose ? 'true' : 'false'}`
         );
-        kitState.ignoreBlur = !kitState.ignoreBlur;
+        kitState.preventClose = !kitState.preventClose;
       },
-      checked: kitState.ignoreBlur,
+      checked: kitState.preventClose,
     });
 
     const contextMenu = Menu.buildFromTemplate([

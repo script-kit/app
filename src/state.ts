@@ -174,6 +174,7 @@ const initState = {
   blurredByKit: false,
   modifiedByUser: false,
   ignoreBlur: false,
+  preventClose: false,
   resize: false,
   prevResize: false,
   promptProcess: undefined as ProcessInfo | undefined,

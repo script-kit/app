@@ -54,7 +54,12 @@ let electronPanelWindow: any = null;
 export const maybeHide = (reason: string) => {
   if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
     log.verbose(`Hiding because ${reason}`);
-    promptWindow?.hide();
+    if (
+      !promptWindow?.webContents?.isDevToolsOpened() &&
+      !kitState.preventClose
+    ) {
+      promptWindow?.hide();
+    }
   }
 };
 
@@ -91,7 +96,7 @@ export const createPromptWindow = async () => {
     titleBarStyle: 'customButtonsOnHover',
     useContentSize: true,
     frame: false,
-    transparent: kitState.isMac,
+    transparent: true,
     vibrancy: 'menu',
     // visualEffectState: 'active',
     show: false,
