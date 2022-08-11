@@ -392,6 +392,7 @@
     "electron-store": "8.0.1",
     "electron-unhandled": "^4.0.1",
     "electron-updater": "4.6.5",
+    "electron-util": "^0.17.2",
     "express": "^4.17.3",
     "express-ws": "^5.0.2",
     "filter-async-rxjs-pipe": "1.0.0",

@@ -8,6 +8,7 @@
 /* eslint-disable guard-for-in */
 import { atom, Getter, Setter } from 'jotai';
 import { QuickScore, Range, createConfig, quickScore } from 'quick-score';
+import path from 'path';
 
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
@@ -1306,8 +1307,8 @@ export const appConfigAtom = atom<AppConfig>({
 });
 
 export const getAssetAtom = atom((g) => {
-  const { sep, assetPath } = g(appConfigAtom);
-  return (...parts: string[]) => assetPath + sep + parts.join(sep);
+  const { assetPath } = g(appConfigAtom);
+  return (...parts: string[]) => path.join(assetPath, ...parts);
 });
 
 const isReady = atom(false);

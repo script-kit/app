@@ -22,6 +22,18 @@ import installExtension, {
 import StreamZip from 'node-stream-zip';
 import tar from 'tar';
 import clipboardy from 'clipboardy';
+import unhandled from 'electron-unhandled';
+import { openNewGitHubIssue, debugInfo } from 'electron-util';
+
+unhandled({
+  reportButton: (error) => {
+    openNewGitHubIssue({
+      user: 'johnlindquist',
+      repo: 'kit',
+      body: `\`\`\`\n${error.stack}\n\`\`\`\n\n---\n\n${debugInfo()}`,
+    });
+  },
+});
 
 if (!app.requestSingleInstanceLock()) {
   app.exit();
