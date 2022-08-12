@@ -61,7 +61,6 @@ jobs:
           yarn electron-builder --publish always -m --${{matrix.arch}}
 
   publish-windows:
-    needs: create-release
     runs-on: windows-2022
 
     strategy:
