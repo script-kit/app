@@ -79,49 +79,49 @@ jobs:
           yarn build
           yarn electron-builder --publish always -m
 
-    publish-windows:
-      runs-on: windows-2022
+  publish-windows:
+    runs-on: windows-2022
 
-      strategy:
-        matrix:
-          include:
-            - arch: x64
-            - arch: arm64
-        fail-fast: false
+    strategy:
+      matrix:
+        include:
+          - arch: x64
+          - arch: arm64
+      fail-fast: false
 
-      steps:
-        - name: Inject slug/short variables
-          uses: rlespinasse/github-slug-action@v3.x
+    steps:
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
 
-        - name: Checkout git repo
-          uses: actions/checkout@v2
+      - name: Checkout git repo
+        uses: actions/checkout@v2
 
-        - name: Install Node, NPM and Yarn
-          uses: actions/setup-node@v2
-          with:
-            node-version: 16.14.2
+      - name: Install Node, NPM and Yarn
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.14.2
 
-        - uses: c-hive/gha-yarn-cache@v1
+      - uses: c-hive/gha-yarn-cache@v1
 
-        - name: yarn
-          run: |
-            yarn add "@johnlindquist/kit"
-            yarn
+      - name: yarn
+        run: |
+          yarn add "@johnlindquist/kit"
+          yarn
 
-        - name: Publish Windows
-          env:
-            # These values are used for auto updates signing
-            CSC_LINK: ${{ secrets.CSC_LINK }}
-            CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-            # This is used for uploading release assets to github
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          run: |
-            DEBUG=electron-rebuild yarn install-electron-deps
-            yarn build
-            echo "\n\n--- Removing mac deps ---"
-            cd ./src
-            yarn remove node-mac-permissions @akiflow/electron-panel-window
-            cat ./package.json
-            cd ..
-            echo "--- Done removing mac deps ---\n\n"
-            yarn electron-builder --publish always -w
+      - name: Publish Windows
+        env:
+          # These values are used for auto updates signing
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          # This is used for uploading release assets to github
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DEBUG=electron-rebuild yarn install-electron-deps
+          yarn build
+          echo "\n\n--- Removing mac deps ---"
+          cd ./src
+          yarn remove node-mac-permissions @akiflow/electron-panel-window
+          cat ./package.json
+          cd ..
+          echo "--- Done removing mac deps ---\n\n"
+          yarn electron-builder --publish always -w
