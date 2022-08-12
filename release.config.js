@@ -1,5 +1,5 @@
 module.exports = {
-  branches: ['main', 'beta', 'alpha'],
+  branches: ['main'],
   plugins: [
     [
       '@semantic-release/npm',

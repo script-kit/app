@@ -10,27 +10,15 @@ on:
       - main
 
 jobs:
-  create-release:
+  publish-mac:
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
         os: [macos-latest]
+        arch: [x64, arm64]
 
     steps:
-      - name: Inject slug/short variables
-        uses: rlespinasse/github-slug-action@v3.x
-
-      - name: Show ref
-        run: |
-          echo "${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}"
-          echo "release_channel=${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
-
-      - name: ls parent paths
-        run: |
-          pwd
-          ls ./
-
       - name: Checkout git repo
         uses: actions/checkout@v2
 
@@ -38,8 +26,6 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 16.14.2
-
-      - uses: c-hive/gha-yarn-cache@v1
 
       - name: Semantic Release
         id: semantic
@@ -50,31 +36,8 @@ jobs:
             [
               '+([0-9])?(.{+([0-9]),x}).x',
               'main',
-              {
-                name: 'beta',
-                prerelease: true
-              },
-              {
-                name: 'alpha',
-                prerelease: true
-              }
+
             ]
-  publish-mac:
-    needs: create-release
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [macos-latest]
-
-    steps:
-      - name: Checkout git repo
-        uses: actions/checkout@v2
-
-      - name: Install Node, NPM and Yarn
-        uses: actions/setup-node@v2
-        with:
-          node-version: 16.14.2
 
       - uses: c-hive/gha-yarn-cache@v1
 
@@ -95,7 +58,7 @@ jobs:
         run: |
           DEBUG=electron-rebuild yarn install-electron-deps
           yarn build
-          yarn electron-builder --publish always -m
+          yarn electron-builder --publish always -m --${{matrix.arch}}
 
   publish-windows:
     needs: create-release
@@ -120,6 +83,18 @@ jobs:
         with:
           node-version: 16.14.2
 
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v2.7.0
+        with:
+          semantic_version: 16
+          branches: |
+            [
+              '+([0-9])?(.{+([0-9]),x}).x',
+              'main',
+
+            ]
+
       - uses: c-hive/gha-yarn-cache@v1
 
       - name: yarn
@@ -135,12 +110,9 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn install-electron-deps
-          yarn build
-          echo "\n\n--- Removing mac deps ---"
           cd ./src
           yarn remove node-mac-permissions @akiflow/electron-panel-window
-          cat ./package.json
           cd ..
-          echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always -w
+          yarn install-electron-deps
+          yarn build
+          yarn electron-builder --publish always -w --${{matrix.arch}}
