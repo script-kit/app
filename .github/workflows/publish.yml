@@ -3,14 +3,18 @@ name: Publish
 on:
   push:
     branches:
+      - alpha
+      - beta
       - main
 
   workflow_dispatch:
     branches:
+      - alpha
+      - beta
       - main
 
 jobs:
-  publish-mac:
+  publish:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -18,6 +22,19 @@ jobs:
         os: [macos-latest]
 
     steps:
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Show ref
+        run: |
+          echo "${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}"
+          echo "release_channel=${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
+
+      - name: ls parent paths
+        run: |
+          pwd
+          ls ./
+
       - name: Checkout git repo
         uses: actions/checkout@v2
 
@@ -25,6 +42,14 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 16.14.2
+
+      - uses: c-hive/gha-yarn-cache@v1
+
+      - name: yarn
+        run: |
+          if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
+          else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
+          yarn
 
       - name: Semantic Release
         id: semantic
@@ -35,17 +60,17 @@ jobs:
             [
               '+([0-9])?(.{+([0-9]),x}).x',
               'main',
-
+              {
+                name: 'beta',
+                prerelease: true
+              },
+              {
+                name: 'alpha',
+                prerelease: true
+              }
             ]
 
-      - uses: c-hive/gha-yarn-cache@v1
-
-      - name: yarn
-        run: |
-          yarn add "@johnlindquist/kit"
-          yarn
-
-      - name: Publish Mac
+      - name: Publish releases
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -58,3 +83,10 @@ jobs:
           DEBUG=electron-rebuild yarn install-electron-deps
           yarn build
           yarn electron-builder --publish always -m
+          echo "\n\n--- Removing mac deps ---"
+          cd ./src
+          yarn remove node-mac-permissions @akiflow/electron-panel-window
+          cat ./package.json
+          cd ..
+          echo "--- Done removing mac deps ---\n\n"
+          yarn electron-builder --publish always -w
