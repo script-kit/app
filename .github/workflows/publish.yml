@@ -10,7 +10,7 @@ on:
       - main
 
 jobs:
-  publish-mac:
+  create-release:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -41,11 +41,6 @@ jobs:
 
       - uses: c-hive/gha-yarn-cache@v1
 
-      - name: yarn
-        run: |
-          yarn add "@johnlindquist/kit"
-          yarn
-
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v2.7.0
@@ -64,6 +59,29 @@ jobs:
                 prerelease: true
               }
             ]
+  publish-mac:
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest]
+
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v2
+
+      - name: Install Node, NPM and Yarn
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.14.2
+
+      - uses: c-hive/gha-yarn-cache@v1
+
+      - name: yarn
+        run: |
+          yarn add "@johnlindquist/kit"
+          yarn
 
       - name: Publish Mac
         env:
@@ -80,6 +98,7 @@ jobs:
           yarn electron-builder --publish always -m
 
   publish-windows:
+    needs: create-release
     runs-on: windows-2022
 
     strategy:
@@ -116,7 +135,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          DEBUG=electron-rebuild yarn install-electron-deps
+          yarn install-electron-deps
           yarn build
           echo "\n\n--- Removing mac deps ---"
           cd ./src
