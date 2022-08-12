@@ -16,7 +16,6 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest]
-        arch: [x64, arm64]
 
     steps:
       - name: Checkout git repo
@@ -58,60 +57,4 @@ jobs:
         run: |
           DEBUG=electron-rebuild yarn install-electron-deps
           yarn build
-          yarn electron-builder --publish always -m --${{matrix.arch}}
-
-  publish-windows:
-    runs-on: windows-2022
-
-    strategy:
-      matrix:
-        include:
-          - arch: x64
-          - arch: arm64
-      fail-fast: false
-
-    steps:
-      - name: Inject slug/short variables
-        uses: rlespinasse/github-slug-action@v3.x
-
-      - name: Checkout git repo
-        uses: actions/checkout@v2
-
-      - name: Install Node, NPM and Yarn
-        uses: actions/setup-node@v2
-        with:
-          node-version: 16.14.2
-
-      - name: Semantic Release
-        id: semantic
-        uses: cycjimmy/semantic-release-action@v2.7.0
-        with:
-          semantic_version: 16
-          branches: |
-            [
-              '+([0-9])?(.{+([0-9]),x}).x',
-              'main',
-
-            ]
-
-      - uses: c-hive/gha-yarn-cache@v1
-
-      - name: yarn
-        run: |
-          yarn add "@johnlindquist/kit"
-          yarn
-
-      - name: Publish Windows
-        env:
-          # These values are used for auto updates signing
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          # This is used for uploading release assets to github
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cd ./src
-          yarn remove node-mac-permissions @akiflow/electron-panel-window
-          cd ..
-          yarn install-electron-deps
-          yarn build
-          yarn electron-builder --publish always -w --${{matrix.arch}}
+          yarn electron-builder --publish always -m
