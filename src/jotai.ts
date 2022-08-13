@@ -35,7 +35,13 @@ import { clamp, debounce, drop as _drop, get, isEqual } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
 import { ProcessInfo, ResizeData, ScoredChoice, Survey } from './types';
-import { BUTTON_HEIGHT, noChoice, noScript, SPLASH_PATH } from './defaults';
+import {
+  BUTTON_HEIGHT,
+  DEFAULT_HEIGHT,
+  noChoice,
+  noScript,
+  SPLASH_PATH,
+} from './defaults';
 
 let placeholderTimeoutId: NodeJS.Timeout;
 
@@ -756,7 +762,7 @@ const mainHeight = atom(0);
 const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
-  // console.log(`resize: ${reason}`);
+  console.log(`resize: ${reason}`);
   if (g(submittedAtom)) return;
 
   const ui = g(uiAtom);
@@ -777,7 +783,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const hasPanel = g(_panelHTML) !== '';
   const nullChoices = g(nullChoicesAtom);
 
-  const mh = nullChoices && !hasPanel ? 0 : g(mainHeight);
+  let mh = nullChoices && !hasPanel ? 0 : g(mainHeight);
   const th = g(topRefAtom)?.clientHeight || 88;
 
   const hasPreview = Boolean(g(hasPreviewAtom));
@@ -795,7 +801,9 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   //   nullChoices,
   // });
 
-  if (currentPromptHasPreviews) return;
+  if (currentPromptHasPreviews && mh < DEFAULT_HEIGHT) {
+    mh = DEFAULT_HEIGHT;
+  }
 
   const data: ResizeData = {
     id: promptData?.id || 'missing',

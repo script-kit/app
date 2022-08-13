@@ -1054,6 +1054,7 @@ export const createMessageHandler = (type: ProcessType) => async (
 
   if (kitMessageMap[data.channel]) {
     type C = keyof ChannelMap;
+    log.verbose(data.channel);
     const channelFn = kitMessageMap[data.channel as C] as (
       data: SendData<C>
     ) => void;

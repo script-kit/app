@@ -97,13 +97,10 @@ export const startIpc = () => {
     }
   );
 
-  ipcMain.on(
-    AppChannel.OPEN_SCRIPT_LOG,
-    async (event, { script }: AppState) => {
-      const logPath = getLogFromScriptPath((script as Script).filePath);
-      await runPromptProcess(kitPath('cli/edit-file.js'), [logPath]);
-    }
-  );
+  ipcMain.on(AppChannel.OPEN_SCRIPT_LOG, async (event, script: Script) => {
+    const logPath = getLogFromScriptPath((script as Script).filePath);
+    await runPromptProcess(kitPath('cli/edit-file.js'), [logPath]);
+  });
 
   ipcMain.on(
     AppChannel.OPEN_SCRIPT_DB,

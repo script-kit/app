@@ -384,8 +384,8 @@ export default function App() {
       dark:bg-opacity-themedark
       `
           : `
-      bg-opacity-windows-themelight
-      dark:bg-opacity-windows-themedark
+      bg-opacity-90
+      dark:bg-opacity-75
       `
       }`}
       >

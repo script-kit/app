@@ -14,6 +14,7 @@ import {
   logHTMLAtom,
   scriptAtom,
 } from '../jotai';
+import { AppChannel } from '../enums';
 
 export default function Log() {
   const [script, setScript] = useAtom(scriptAtom);
@@ -25,7 +26,8 @@ export default function Log() {
   const [logHeight, setLogHeight] = useAtom(logHeightAtom);
 
   const editLog = useCallback(() => {
-    ipcRenderer.send(Channel.OPEN_SCRIPT_LOG, script);
+    console.log(script);
+    ipcRenderer.send(AppChannel.OPEN_SCRIPT_LOG, script);
   }, [script]);
 
   useResizeObserver(divRef, (entry) => {
@@ -83,8 +85,8 @@ export default function Log() {
         <PencilAltIcon
           className={`
         absolute
-        top-4 right-3
-        h-6 w-6
+        top-1.5 right-1.5
+        h-5 w-5
         ${mouseOver ? 'opacity-50' : 'opacity-20'}
         transition ease-in
         hover:cursor-pointer

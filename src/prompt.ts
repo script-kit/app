@@ -189,6 +189,10 @@ export const createPromptWindow = async () => {
   //   promptWindow?.webContents.closeDevTools();
   // });
 
+  promptWindow.webContents.on('devtools-closed', () => {
+    maybeHide('Devtools closed');
+  });
+
   emitter.on(KitEvent.OpenDevTools, () => {
     promptWindow?.webContents?.openDevTools();
   });

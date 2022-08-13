@@ -250,17 +250,17 @@ export const openMenu = async (event?: KeyboardEvent) => {
       },
     });
 
-    toolsSubmenu.push({
-      label: `Prevent Close on Blur`,
-      type: 'checkbox',
-      click: () => {
-        log.info(
-          `Toggling ignoreBlur to ${!kitState.preventClose ? 'true' : 'false'}`
-        );
-        kitState.preventClose = !kitState.preventClose;
-      },
-      checked: kitState.preventClose,
-    });
+    // toolsSubmenu.push({
+    //   label: `Prevent Close on Blur`,
+    //   type: 'checkbox',
+    //   click: () => {
+    //     log.info(
+    //       `Toggling ignoreBlur to ${!kitState.preventClose ? 'true' : 'false'}`
+    //     );
+    //     kitState.preventClose = !kitState.preventClose;
+    //   },
+    //   checked: kitState.preventClose,
+    // });
 
     const contextMenu = Menu.buildFromTemplate([
       ...notifyItems,
