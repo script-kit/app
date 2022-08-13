@@ -781,6 +781,7 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.SET_TEXTAREA_VALUE, data.value);
   },
   SET_LOADING: (data) => {
+    log.verbose(`SET_LOADING`, { data });
     sendToPrompt(Channel.SET_LOADING, data.value);
   },
   SEND_KEYSTROKE: (data) => {

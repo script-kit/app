@@ -49,7 +49,7 @@ export const pidAtom = atom(0);
 export const shortcutsAtom = atom<Shortcut[]>([]);
 
 export const processingAtom = atom(false);
-const rawOpen = atom(false);
+const _open = atom(false);
 export const submittedAtom = atom(false);
 const tabs = atom<string[]>([]);
 export const _tabs = atom(
@@ -273,6 +273,7 @@ export const hintAtom = atom(
 );
 
 const _panelHTML = atom<string>('');
+
 export const panelHTMLAtom = atom(
   (g) => g(_panelHTML),
   (g, s, a: string) => {
@@ -280,10 +281,12 @@ export const panelHTMLAtom = atom(
     if (a) s(scoredChoices, null);
     s(_panelHTML, a);
     s(loadingAtom, false);
+
+    debouncedResize(g, s, 'PANEL_HTML');
   }
 );
 
-const _currentPromptHasPreviews = atom<boolean>(false);
+const _previewVisible = atom<boolean>(false);
 
 const _previewHTML = atom('');
 const closedDiv = `<div/>`;
@@ -291,7 +294,9 @@ export const previewHTMLAtom = atom(
   (g) => g(_previewHTML) || g(promptData)?.preview,
   (g, s, a: string) => {
     // console.log({ preview: '', a });
-    s(_currentPromptHasPreviews, Boolean(a !== '' && a !== closedDiv));
+    const visible = Boolean(a !== '' && a !== closedDiv);
+    s(_previewVisible, visible);
+    if (visible) s(loadingAtom, false);
 
     if (!a || !g(openAtom)) return; // never unset preview to avoid flash of white/black
     const tI = g(_tabIndex);
@@ -513,7 +518,7 @@ export const focusedChoiceAtom = atom(
 export const hasPreviewAtom = atom<boolean>((g) => {
   return (
     Boolean(g(_focused)?.hasPreview || g(promptData)?.hasPreview) ||
-    (g(focusedChoiceAtom) === null && Boolean(g(previewHTMLAtom)))
+    (g(focusedChoiceAtom) === null && g(_previewVisible))
   );
 });
 
@@ -787,7 +792,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const th = g(topRefAtom)?.clientHeight || 88;
 
   const hasPreview = Boolean(g(hasPreviewAtom));
-  const currentPromptHasPreviews = g(_currentPromptHasPreviews);
 
   // console.log({
   //   mainHeight: g(mainHeight),
@@ -801,7 +805,9 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   //   nullChoices,
   // });
 
-  if (currentPromptHasPreviews && mh < DEFAULT_HEIGHT) {
+  console.log({ hasPreview, mh });
+
+  if (hasPreview && mh < DEFAULT_HEIGHT) {
     mh = DEFAULT_HEIGHT;
   }
 
@@ -818,7 +824,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
     previewEnabled: g(previewEnabled),
-    open: g(rawOpen),
+    open: g(_open),
     tabIndex: g(_tabIndex),
     isSplash: g(isSplashAtom),
     hasPreview,
@@ -832,6 +838,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   ipcRenderer.send(AppChannel.RESIZE, data);
 };
+
+const debouncedResize = debounce(resize, 100);
 
 export const topHeightAtom = atom(
   (g) => g(topHeight),
@@ -866,7 +874,7 @@ export const mainHeightAtom = atom(
         s(mainHeight, nextMainHeight);
 
         resize(g, s, 'MAIN_HEIGHT');
-      }, 10);
+      }, 50);
     } else {
       // console.log(`resize: MAIN_HEIGHT`);
       s(mainHeight, nextMainHeight);
@@ -912,7 +920,7 @@ export const promptDataAtom = atom(
     s(_inputChangedAtom, false);
 
     if (a) {
-      s(rawOpen, true);
+      s(_open, true);
       s(_input, '');
       s(submittedAtom, false);
       s(uiAtom, a.ui);
@@ -940,9 +948,8 @@ export const promptDataAtom = atom(
 
       if (a.preview) {
         s(previewHTMLAtom, a.preview);
+        s(_previewVisible, Boolean(a?.preview));
       }
-
-      s(_currentPromptHasPreviews, Boolean(a?.preview));
 
       if (a.panel) {
         s(panelHTMLAtom, a.panel);
@@ -969,9 +976,19 @@ export const promptDataAtom = atom(
       }
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
-      s(onShortcutAtom, a?.onShortcut || {});
       s(shortcutsAtom, a?.shortcuts || []);
-      // s(tabIndex, a.tabIndex);
+
+      if (
+        a?.choicesType === 'null' ||
+        a?.choicesType === 'function' ||
+        a?.choicesType === 'async'
+      ) {
+        s(unfilteredChoicesAtom, []);
+      }
+
+      if (a?.choicesType === 'async') {
+        s(loadingAtom, true);
+      }
       s(promptData, a);
     }
   }
@@ -1152,12 +1169,12 @@ export const submitValueAtom = atom(
 
 export const closedInput = atom('');
 export const openAtom = atom(
-  (g) => g(rawOpen),
+  (g) => g(_open),
   (g, s, a: boolean) => {
     s(mouseEnabledAtom, 0);
 
-    if (g(rawOpen) && a === false) {
-      s(rawOpen, a);
+    if (g(_open) && a === false) {
+      s(_open, a);
 
       // const cachedPreview = g(cachedMainPreview);
       s(_previewHTML, ``);
@@ -1188,7 +1205,7 @@ export const openAtom = atom(
 
       s(pidAtom, 0);
     }
-    s(rawOpen, a);
+    s(_open, a);
   }
 );
 

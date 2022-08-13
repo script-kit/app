@@ -22,7 +22,7 @@ import TopBar from './TopBar';
 export default function Header() {
   const [script] = useAtom(scriptAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
-  const [setOpen] = useAtom(openAtom);
+  const [, setOpen] = useAtom(openAtom);
   const [description] = useAtom(_description);
   const [logo] = useAtom(_logo);
   const [name] = useAtom(_name);

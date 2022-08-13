@@ -214,10 +214,10 @@ export const createPromptWindow = async () => {
   // });
 
   const onBlur = () => {
+    if (promptWindow?.webContents?.isDevToolsOpened()) return;
+
     log.verbose(`Blur: ${kitState.ignoreBlur ? 'ignored' : 'accepted'}`);
     maybeHide('blur');
-
-    if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
     if (os.platform().startsWith('win')) {
       return;
@@ -436,6 +436,7 @@ export const isFocused = () => {
   return promptWindow?.isFocused();
 };
 
+let prevMainHeight = 0;
 export const resize = async ({
   id,
   reason,
@@ -503,16 +504,12 @@ export const resize = async ({
   width = Math.round(width);
   if (currentHeight === height && currentWidth === width) return;
 
-  log.verbose({
-    reason,
-    ui,
-    width,
-    height,
-    mainHeight,
-  });
+  log.verbose({ reason, ui, width, height, mainHeight });
 
-  promptWindow.setSize(width, height);
-
+  const compare = Math.abs(mainHeight - prevMainHeight);
+  log.silly({ compare });
+  promptWindow.setSize(width, height, compare < 100);
+  prevMainHeight = mainHeight;
   kitState.prevResize = true;
 
   if (ui !== UI.arg) savePromptBounds(scriptPath, Bounds.Size);
@@ -729,7 +726,7 @@ export const setPromptData = async (promptData: PromptData) => {
 
   if (
     [UI.term, UI.editor].includes(promptData.ui) ||
-    promptData.scriptPath === mainScriptPath
+    (promptData.scriptPath === mainScriptPath && promptData.tabIndex === 0)
   ) {
     promptWindow.setSize(bounds.width, DEFAULT_HEIGHT);
     log.verbose(`Restoring prompt size:`, bounds.width, DEFAULT_HEIGHT);
