@@ -80,7 +80,6 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          DEBUG=electron-rebuild yarn install-electron-deps
           yarn build
           yarn electron-builder --publish always -m
           echo "\n\n--- Removing mac deps ---"

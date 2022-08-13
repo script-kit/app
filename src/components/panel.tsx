@@ -1,8 +1,8 @@
 /* eslint-disable no-nested-ternary */
-import React, { LegacyRef, RefObject, useEffect, useRef } from 'react';
+import React, { RefObject, useEffect, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
 import { useAtom } from 'jotai';
-import { motion, useAnimation } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 
 import {
@@ -11,14 +11,10 @@ import {
   darkAtom,
   inputFocusAtom,
   uiAtom,
+  shortcutsAtom,
+  flagsAtom,
 } from '../jotai';
-import {
-  useEnter,
-  useEscape,
-  useKeyDirection,
-  useObserveMainHeight,
-  useOpen,
-} from '../hooks';
+import { useKeyDirection, useObserveMainHeight } from '../hooks';
 import { darkTheme, lightTheme } from './themes';
 
 interface PanelProps {
@@ -36,6 +32,8 @@ export default function Panel({ width, height }: PanelProps) {
   const [isDark] = useAtom(darkAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
   const [ui] = useAtom(uiAtom);
+  const [shortcuts] = useAtom(shortcutsAtom);
+  const [flags] = useAtom(flagsAtom);
 
   const divRef = useObserveMainHeight<HTMLDivElement>('.wrapper');
 
@@ -54,7 +52,7 @@ export default function Panel({ width, height }: PanelProps) {
         });
       }
     },
-    [scrollRef?.current, inputFocus]
+    [scrollRef?.current, inputFocus, shortcuts, flags]
   );
 
   return (

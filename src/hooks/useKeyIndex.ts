@@ -7,6 +7,7 @@ import {
   _index,
   mouseEnabledAtom,
   inputFocusAtom,
+  shortcutsAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -16,6 +17,7 @@ export default () => {
   const [, setMouseEnabled] = useAtom(mouseEnabledAtom);
   const [channel] = useAtom(channelAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
+  const [shortcuts] = useAtom(shortcutsAtom);
 
   useHotkeys(
     'up',
@@ -27,7 +29,7 @@ export default () => {
       channel(Channel.UP);
     },
     hotkeysOptions,
-    [index, channel, inputFocus]
+    [index, channel, inputFocus, shortcuts]
   );
 
   useHotkeys(
@@ -40,7 +42,7 @@ export default () => {
       channel(Channel.DOWN);
     },
     hotkeysOptions,
-    [index, channel, inputFocus]
+    [index, channel, inputFocus, shortcuts]
   );
 
   useHotkeys(
@@ -51,7 +53,7 @@ export default () => {
       channel(Channel.LEFT);
     },
     hotkeysOptions,
-    [channel, inputFocus]
+    [channel, inputFocus, shortcuts]
   );
 
   useHotkeys(
@@ -62,6 +64,6 @@ export default () => {
       channel(Channel.RIGHT);
     },
     hotkeysOptions,
-    [channel, inputFocus]
+    [channel, inputFocus, shortcuts]
   );
 };

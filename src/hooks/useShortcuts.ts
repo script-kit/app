@@ -77,7 +77,7 @@ export default () => {
       submit(choices.length ? choices[index].value : input);
     },
     hotkeysOptions,
-    [flags, input, inputFocus, choices, index, flagValue]
+    [flags, input, inputFocus, choices, index, flagValue, flagShortcuts]
   );
 
   const onShortcuts = promptShortcuts.length
@@ -102,7 +102,7 @@ export default () => {
       sendShortcut(handler.key);
     },
     hotkeysOptions,
-    [flagValue, inputFocus, promptShortcuts]
+    [flagValue, inputFocus, promptShortcuts, flagShortcuts]
   );
 
   useHotkeys(
@@ -125,7 +125,18 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [input, inputFocus, choices, index, selectionStart, flagValue, cmd, channel]
+    [
+      input,
+      inputFocus,
+      choices,
+      index,
+      selectionStart,
+      flagValue,
+      cmd,
+      channel,
+      flagShortcuts,
+      promptShortcuts,
+    ]
   );
   useHotkeys(
     `${cmd}+k`,
@@ -141,6 +152,17 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [input, inputFocus, choices, index, selectionStart, flagValue, cmd, channel]
+    [
+      input,
+      inputFocus,
+      choices,
+      index,
+      selectionStart,
+      flagValue,
+      cmd,
+      channel,
+      flagShortcuts,
+      promptShortcuts,
+    ]
   );
 };

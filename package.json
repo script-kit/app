@@ -45,6 +45,7 @@
     ]
   },
   "build": {
+    "buildDependenciesFromSource": false,
     "generateUpdatesFilesForAllChannels": true,
     "detectUpdateChannel": "true",
     "productName": "Kit",

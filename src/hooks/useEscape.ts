@@ -13,6 +13,7 @@ import {
   escapeAtom,
   uiAtom,
   runMainScriptAtom,
+  shortcutsAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 
@@ -28,11 +29,11 @@ export default () => {
   const [prevIndex] = useAtom(prevIndexAtom);
   const [ui] = useAtom(uiAtom);
   const [runMainScript] = useAtom(runMainScriptAtom);
+  const [shortcuts] = useAtom(shortcutsAtom);
 
   useHotkeys(
     'escape',
     (event) => {
-      // console.log(`useEscape`, { flagValue, isReady, ui: ui === UI.splash });
       event.preventDefault();
       if (flagValue) {
         setFlagValue('');
@@ -53,6 +54,7 @@ export default () => {
       isReady,
       ui,
       runMainScript,
+      shortcuts,
     ]
   );
 };

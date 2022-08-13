@@ -422,7 +422,12 @@ export default function App() {
                   onHotkeyHeightChanged={setMainHeight}
                 />
               )}
-              {ui === UI.arg && <Input key="AppInput" />}
+
+              {ui === UI.arg && (
+                <ErrorBoundary>
+                  <Input key="AppInput" />
+                </ErrorBoundary>
+              )}
 
               {hint && <Hint key="AppHint" />}
               {logHtml?.length > 0 && script?.log !== 'false' && (
