@@ -845,10 +845,17 @@ const kitMessageMap: ChannelHandler = {
   GET_EDITOR_HISTORY: toProcess(() => {
     sendToPrompt(Channel.GET_EDITOR_HISTORY);
   }),
-  TERMINATE_PROCESS: (data) => {
-    warn(`${data?.value}: Terminating process ${data.value}`);
-    processes.removeByPid(data?.value);
-  },
+  TERMINATE_PROCESS: toProcess(async ({ child }, { channel, value }) => {
+    warn(`${value}: Terminating process ${value}`);
+    processes.removeByPid(value);
+
+    if (child) {
+      child?.send({
+        channel,
+        value,
+      });
+    }
+  }),
   TERMINAL: (data) => {
     sendToPrompt(Channel.TERMINAL, data.value);
   },
@@ -1055,7 +1062,7 @@ export const createMessageHandler = (type: ProcessType) => async (
 
   if (kitMessageMap[data.channel]) {
     type C = keyof ChannelMap;
-    log.verbose(data.channel);
+    log.verbose(`➡ ${data.channel}`);
     const channelFn = kitMessageMap[data.channel as C] as (
       data: SendData<C>
     ) => void;
@@ -1319,6 +1326,7 @@ export const handleWidgetEvents = () => {
 
     child?.send({
       ...data,
+
       ...widget.getBounds(),
       widgetId,
       pid: child?.pid,
@@ -1329,13 +1337,11 @@ export const handleWidgetEvents = () => {
   const measureHandler: WidgetHandler = (event, data: any) => {
     const { widgetId } = data;
     log.info(`📏 ${widgetId} Widget: Fitting to inner child`);
-    console.log(widgetState.widgets);
 
     const options = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!options) return;
 
     const { widget, child, ignoreMeasure } = options;
-    log.info({ widget, child, ignoreMeasure });
     if (!child || ignoreMeasure) return;
 
     widget.setSize(data.width, data.height, true);

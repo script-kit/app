@@ -198,6 +198,8 @@ export const startIpc = () => {
     ipcMain.on(
       channel,
       handleChannel(async ({ child }, message) => {
+        log.verbose(`⬅ ${channel}`);
+
         if (channel === Channel.ABANDON) {
           log.info(`⚠️ ABANDON`, message.pid);
         }

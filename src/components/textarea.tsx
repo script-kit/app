@@ -1,18 +1,11 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
-import React, { LegacyRef, useRef, useState } from 'react';
+import React, { LegacyRef, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useAtom } from 'jotai';
 
-import { textareaConfigAtom, textareaValueAtom } from '../jotai';
-import {
-  useClose,
-  useFocus,
-  useSave,
-  useOpen,
-  useMountMainHeight,
-  useEscape,
-} from '../hooks';
+import { inputAtom, promptDataAtom } from '../jotai';
+import { useClose, useFocus, useMountMainHeight } from '../hooks';
 
 // RESIZE ME!!!!!
 
@@ -21,9 +14,9 @@ export default function TextArea() {
   useFocus(textareaRef);
   // useOpen();
 
-  const [options] = useAtom(textareaConfigAtom);
+  const [promptData] = useAtom(promptDataAtom);
 
-  const [textAreaValue, setTextAreaValue] = useAtom(textareaValueAtom);
+  const [input, setInput] = useAtom(inputAtom);
 
   // useSave(textAreaValue);
   useClose();
@@ -48,10 +41,10 @@ export default function TextArea() {
           } as any
         }
         onChange={(e) => {
-          setTextAreaValue(e.target.value);
+          setInput(e.target.value);
         }}
-        value={textAreaValue}
-        placeholder={options.placeholder}
+        value={input}
+        placeholder={promptData?.placeholder || 'Enter a value'}
         className={`
         visible-scrollbar
         min-h-64

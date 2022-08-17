@@ -16,6 +16,7 @@ import {
   channelAtom,
   sendShortcutAtom,
   shortcutsAtom,
+  promptDataAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -34,6 +35,7 @@ export default () => {
   const [selectionStart] = useAtom(selectionStartAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
   const [channel] = useAtom(channelAtom);
+  const [promptData] = useAtom(promptDataAtom);
   const [promptShortcuts] = useAtom(shortcutsAtom);
   const [, sendShortcut] = useAtom(sendShortcutAtom);
 
@@ -99,10 +101,19 @@ export default () => {
       if (found && found?.flag) {
         setFlag(found.flag);
       }
+      console.log(`Send shortcut: ${handler.key}`);
       sendShortcut(handler.key);
     },
     hotkeysOptions,
-    [flagValue, inputFocus, promptShortcuts, flagShortcuts]
+    [
+      flagValue,
+      inputFocus,
+      promptShortcuts,
+      flagShortcuts,
+      promptData,
+      sendShortcut,
+      setFlag,
+    ]
   );
 
   useHotkeys(

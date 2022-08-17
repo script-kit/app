@@ -74,6 +74,7 @@ import { PromptData } from '@johnlindquist/kit/types/core';
 import {
   kenvPath,
   kitPath,
+  knodePath,
   KIT_FIRST_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
@@ -358,6 +359,7 @@ const forkOptions: ForkOptions = {
   env: {
     KIT,
     KENV: kenvPath(),
+    KNODE: knodePath(),
     PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
   },
 };
@@ -814,12 +816,6 @@ const checkKit = async () => {
     await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
     const kitTar = getAssetPath('kit.tar.gz');
     await extractTar(kitTar, kitPath());
-
-    const knodePath = (...parts: string[]) =>
-      path.join(
-        process.env.KNODE || path.resolve(homedir(), '.knode'),
-        ...parts.filter(Boolean)
-      );
 
     if (!(await nodeExists())) {
       const { default: tildify } = await import('tildify');

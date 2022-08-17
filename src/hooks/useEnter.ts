@@ -1,5 +1,6 @@
 import { useAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
+import { UI } from '@johnlindquist/kit/cjs/enum';
 import {
   _choices,
   cmdAtom,
@@ -9,6 +10,7 @@ import {
   panelHTMLAtom,
   promptDataAtom,
   submitValueAtom,
+  uiAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 
@@ -21,11 +23,20 @@ export default () => {
   const [panelHTML] = useAtom(panelHTMLAtom);
   const [, setFlag] = useAtom(_flag);
   const [cmd] = useAtom(cmdAtom);
+  const [ui] = useAtom(uiAtom);
 
   useHotkeys(
     `enter`,
     (event) => {
+      if (
+        [UI.editor, UI.textarea, UI.drop, UI.splash, UI.term, UI.drop].includes(
+          ui
+        )
+      ) {
+        return;
+      }
       event.preventDefault();
+
       if (event.metaKey) setFlag(`cmd`);
       if (event.shiftKey) setFlag(`shift`);
       if (event.altKey) setFlag(`opt`);
@@ -40,7 +51,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [input, choices, index, promptDataAtom, panelHTML]
+    [input, choices, index, promptDataAtom, panelHTML, ui]
   );
 
   // useHotkeys(

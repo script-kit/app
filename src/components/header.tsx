@@ -83,7 +83,7 @@ export default function Header() {
               onClick={onProcessButtonClick}
               className="cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold primary-dark text-primary-dark bg-primary-dark dark:bg-primary-light dark:text-primary-light rounded-md bg-opacity-10 dark:bg-opacity-20 hover:bg-opacity-30 dark:hover:bg-opacity-50 "
             >
-              <span className="pl-2">{processes.length}</span>
+              <span className="pl-2">{processes.length - 1}</span>
               <i className="gg-play-button -ml-1.5 scale-75" some-aria="" />
             </button>
           ) : (

@@ -436,7 +436,7 @@ export const isFocused = () => {
   return promptWindow?.isFocused();
 };
 
-let prevMainHeight = 0;
+let prevHeight = 0;
 export const resize = async ({
   id,
   reason,
@@ -506,10 +506,10 @@ export const resize = async ({
 
   log.verbose({ reason, ui, width, height, mainHeight });
 
-  const compare = Math.abs(mainHeight - prevMainHeight);
+  const compare = Math.abs(height - prevHeight);
   log.silly({ compare });
   promptWindow.setSize(width, height, compare < 100);
-  prevMainHeight = mainHeight;
+  prevHeight = mainHeight;
   kitState.prevResize = true;
 
   if (ui !== UI.arg) savePromptBounds(scriptPath, Bounds.Size);

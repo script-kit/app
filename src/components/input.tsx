@@ -71,11 +71,8 @@ export default function Input() {
     };
   }, []);
 
-  // useEscape();
-  useEnter();
   useTab();
   useKeyIndex();
-  // useOpen();
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {

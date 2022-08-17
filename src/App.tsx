@@ -106,7 +106,7 @@ import {
   resizeAtom,
 } from './jotai';
 
-import { useEscape, useShortcuts, useThemeDetector } from './hooks';
+import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
 import Splash from './components/splash';
 import { AppChannel } from './enums';
 import Terminal from './term';
@@ -224,6 +224,7 @@ export default function App() {
   const [, setTabs] = useAtom(_tabs);
 
   useShortcuts();
+  useEnter();
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);

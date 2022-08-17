@@ -14,6 +14,7 @@ import {
   uiAtom,
   runMainScriptAtom,
   shortcutsAtom,
+  promptDataAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 
@@ -30,6 +31,7 @@ export default () => {
   const [ui] = useAtom(uiAtom);
   const [runMainScript] = useAtom(runMainScriptAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
+  const [promptData] = useAtom(promptDataAtom);
 
   useHotkeys(
     'escape',
@@ -55,6 +57,7 @@ export default () => {
       ui,
       runMainScript,
       shortcuts,
+      promptData,
     ]
   );
 };

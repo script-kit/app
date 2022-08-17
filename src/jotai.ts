@@ -7,8 +7,7 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable guard-for-in */
 import { atom, Getter, Setter } from 'jotai';
-import { QuickScore, Range, createConfig, quickScore } from 'quick-score';
-import path from 'path';
+import { QuickScore, createConfig, quickScore } from 'quick-score';
 
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
@@ -17,7 +16,6 @@ import {
   Script,
   PromptData,
   FlagsOptions,
-  PromptConfig,
   Shortcut,
 } from '@johnlindquist/kit/types/core';
 import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
@@ -31,7 +29,7 @@ import {
 } from '@johnlindquist/kit/types/kitapp';
 import { editor } from 'monaco-editor';
 
-import { clamp, debounce, drop as _drop, get, isEqual } from 'lodash';
+import { clamp, debounce, drop as _drop, isEqual } from 'lodash';
 import { ipcRenderer } from 'electron';
 import { AppChannel } from './enums';
 import { ProcessInfo, ResizeData, ScoredChoice, Survey } from './types';
@@ -41,6 +39,7 @@ import {
   noChoice,
   noScript,
   SPLASH_PATH,
+  TOP_HEIGHT,
 } from './defaults';
 
 let placeholderTimeoutId: NodeJS.Timeout;
@@ -159,6 +158,10 @@ export const nullChoicesAtom = atom(
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[] | null) => {
+    if (!g(promptDataAtom)?.preview && !a?.[0]?.hasPreview) {
+      s(previewHTMLAtom, closedDiv);
+    }
+
     s(nullChoicesAtom, a === null);
 
     if (a === null) {
@@ -632,7 +635,7 @@ export const inputAtom = atom(
 
     const flaggedValue = g(flagValueAtom);
 
-    if (!flaggedValue) {
+    if (!flaggedValue && !g(submittedAtom)) {
       const channel = g(channelAtom);
       channel(Channel.INPUT);
     }
@@ -789,7 +792,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const nullChoices = g(nullChoicesAtom);
 
   let mh = nullChoices && !hasPanel ? 0 : g(mainHeight);
-  const th = g(topRefAtom)?.clientHeight || 88;
+  let th = g(topRefAtom)?.clientHeight || 88;
 
   const hasPreview = Boolean(g(hasPreviewAtom));
 
@@ -805,10 +808,12 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   //   nullChoices,
   // });
 
-  console.log({ hasPreview, mh });
-
   if (hasPreview && mh < DEFAULT_HEIGHT) {
     mh = DEFAULT_HEIGHT;
+  }
+
+  if (ui === UI.arg && th < TOP_HEIGHT) {
+    th = TOP_HEIGHT;
   }
 
   const data: ResizeData = {
@@ -989,6 +994,11 @@ export const promptDataAtom = atom(
       if (a?.choicesType === 'async') {
         s(loadingAtom, true);
       }
+
+      if (a?.ui !== UI.arg) {
+        s(previewHTMLAtom, closedDiv);
+      }
+
       s(promptData, a);
     }
   }
@@ -1210,8 +1220,10 @@ export const openAtom = atom(
 );
 
 export const escapeAtom = atom<any>((g) => {
-  return debounce(() => {
-    const channel = g(channelAtom);
+  if (g(shortcutsAtom)?.find((s) => s.key === 'escape')) return () => {};
+  const channel = g(channelAtom);
+
+  return () => {
     // const history = g(scriptHistoryAtom).slice();
     // s(scriptHistoryAtom, []);
 
@@ -1224,8 +1236,7 @@ export const escapeAtom = atom<any>((g) => {
     // } else {
 
     channel(Channel.ESCAPE);
-    // }
-  }, 10);
+  };
 });
 
 export const selectionStartAtom = atom(0);
@@ -1394,6 +1405,9 @@ export const startAtom = atom(null, (g, s, a: string) => {
   // console.log(`🎬 Start ${a}`);
   const history = g(_history);
   const script = g(scriptAtom);
+
+  console.log(`>>>>>> 🤞 <<<<<`);
+  console.log({ history, a, script });
   if (
     g(uiAtom) !== UI.splash &&
     (history.length > 0 || script.filePath === a) &&
@@ -1454,7 +1468,7 @@ export const onShortcutAtom = atom<OnShortcut>({});
 
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
-  // console.log(`🎬 Send shortcut ${shortcut}`);
+  console.log(`🎬 Send shortcut ${shortcut}`);
   channel(Channel.SHORTCUT, { shortcut });
   s(_flag, '');
 });
@@ -1495,20 +1509,19 @@ export const resizeAtom = atom<boolean>(true);
 
 export const enterButtonNameAtom = atom<string>((g) => {
   const ui = g(uiAtom);
-  if ([UI.fields, UI.form, UI.textarea].includes(ui)) return 'Submit';
-  if (ui !== UI.arg) return '';
+  if (ui === UI.splash) return '';
 
   const focusedChoice = g(focusedChoiceAtom);
   if (focusedChoice?.enter) return focusedChoice.enter;
   const pd = g(promptDataAtom);
-  if (pd?.enter) return pd.enter;
 
-  if (focusedChoice?.name === noChoice.name) return 'Submit';
-
-  return 'Select';
+  return pd?.enter;
 });
 
 export const enterButtonDisabledAtom = atom<boolean>((g) => {
+  const ui = g(uiAtom);
+  if ([UI.fields, UI.form, UI.div].includes(ui)) return false;
+
   const pd = g(promptDataAtom);
   if (!pd?.strict) return false;
 

@@ -210,19 +210,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
       {
         label: `Reveal ~/.kit/logs/kit.log in Finder`,
         click: runScript(kitPath('help', 'reveal-kit-log.js')),
-      },
-      {
-        label: `Adjust Log Level`,
-        submenu: log.levels.map(
-          (level) =>
-            ({
-              label: level,
-              click: () => {
-                kitState.logLevel = level as LogLevel;
-              },
-              enabled: kitState.logLevel !== level,
-            } as MenuItemConstructorOptions)
-        ),
       }
     );
 
@@ -232,6 +219,20 @@ export const openMenu = async (event?: KeyboardEvent) => {
         click: runScript(kitPath('help', 'tail-log.js')),
       });
     }
+
+    toolsSubmenu.push({
+      label: `Adjust Log Level`,
+      submenu: log.levels.map(
+        (level) =>
+          ({
+            label: level,
+            click: () => {
+              kitState.logLevel = level as LogLevel;
+            },
+            enabled: kitState.logLevel !== level,
+          } as MenuItemConstructorOptions)
+      ),
+    });
 
     toolsSubmenu.push({
       type: 'separator',
@@ -249,6 +250,88 @@ export const openMenu = async (event?: KeyboardEvent) => {
         runScript(kitPath('cli', 'kit-clear-prompt.js'));
       },
     });
+
+    if (kitState.isMac) {
+      const nmp = await import('node-mac-permissions');
+
+      type AuthType =
+        | 'contacts'
+        | 'calendar'
+        | 'reminders'
+        | 'full-disk-access'
+        | 'camera'
+        | 'photos'
+        | 'speech-recognition'
+        | 'microphone'
+        | 'accessibility'
+        | 'location'
+        | 'screen';
+      const types: AuthType[] = [
+        'accessibility',
+        'calendar',
+        'camera',
+        'contacts',
+        'full-disk-access',
+        'microphone',
+        'photos',
+        'reminders',
+        'screen',
+        'speech-recognition',
+      ];
+
+      const permssionsMenu: MenuItemConstructorOptions[] = [];
+
+      for await (const type of types) {
+        const status = nmp.getAuthStatus(type);
+        permssionsMenu.push({
+          label: type,
+          type: 'checkbox',
+          checked: status === 'authorized',
+          click: () => {
+            switch (type) {
+              case 'accessibility':
+                nmp.askForAccessibilityAccess();
+                break;
+              case 'calendar':
+                nmp.askForCalendarAccess();
+                break;
+              case 'camera':
+                nmp.askForCameraAccess();
+                break;
+              case 'contacts':
+                nmp.askForContactsAccess();
+                break;
+              case 'full-disk-access':
+                nmp.askForFullDiskAccess();
+                break;
+              case 'microphone':
+                nmp.askForMicrophoneAccess();
+                break;
+              case 'photos':
+                nmp.askForPhotosAccess();
+                break;
+              case 'reminders':
+                nmp.askForRemindersAccess();
+                break;
+              case 'screen':
+                nmp.askForScreenCaptureAccess();
+                break;
+              case 'speech-recognition':
+                nmp.askForSpeechRecognitionAccess();
+                break;
+
+              default:
+                break;
+            }
+          },
+        });
+      }
+
+      toolsSubmenu.push({
+        label: 'Permissions',
+        submenu: permssionsMenu,
+      });
+    }
 
     // toolsSubmenu.push({
     //   label: `Prevent Close on Blur`,

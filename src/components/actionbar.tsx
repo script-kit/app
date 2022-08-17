@@ -189,7 +189,7 @@ export function ActionButton(action: Action) {
   `}
       onClick={onClick}
     >
-      <div className="px-1">{action.name}</div>
+      <div className="px-1 truncate min-w-0">{action.name}</div>
       <div className=" flex flex-row">
         {action.shortcut.split('+').map((k) => {
           return (
@@ -261,6 +261,7 @@ export default function ActionBar() {
   const [enterButtonName] = useAtom(enterButtonNameAtom);
   const [disabled] = useAtom(flagValueAtom);
   const [enterButtonDisabled] = useAtom(enterButtonDisabledAtom);
+  const [ui] = useAtom(uiAtom);
 
   const actions: Action[] = Object.entries(flags)
     .filter(([_, flag]) => {
@@ -303,15 +304,23 @@ export default function ActionBar() {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={transition}
-      className="flex flex-row border-t
+      className={`flex flex-row border-t
     dark:border-white dark:border-opacity-5
     border-black border-opacity-5
     bg-white dark:bg-black
+    ${
+      ui === UI.splash
+        ? `
+    bg-opacity-0 dark:bg-opacity-0
+    `
+        : `
     bg-opacity-25 dark:bg-opacity-25
+    `
+    }
+
     py-2 px-4
     items-center
-    h-10
-    "
+    h-10`}
     >
       <IconButton />
 
@@ -354,7 +363,12 @@ truncate
           .flatMap((action, i, array) => [
             // eslint-disable-next-line react/jsx-key
             <ActionButton {...action} />,
-            <ActionSeparator key={`${action?.key}-separator`} />,
+            // eslint-disable-next-line no-nested-ternary
+            i < array.length - 1 ? (
+              <ActionSeparator key={`${action?.key}-separator`} />
+            ) : enterButtonName ? (
+              <ActionSeparator key={`${action?.key}-separator`} />
+            ) : null,
           ]),
         enterButtonName ? (
           <ActionButton

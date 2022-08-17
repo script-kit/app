@@ -104,8 +104,9 @@ export const createWidget = async (
   <script>
 
     document.addEventListener("click", (event) => {
+      let {id = ""} = event.target.closest("*[id]")
       ipcRenderer.send("WIDGET_CLICK", {
-        targetId: event.target.id,
+        targetId: id,
         widgetId: window.widgetId,
       })
     })

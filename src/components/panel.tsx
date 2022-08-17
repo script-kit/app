@@ -81,7 +81,7 @@ export default function Panel({ width, height }: PanelProps) {
         id="panel"
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 1] }}
-        transition={{ duration: 0.5, ease: 'circOut' }}
+        transition={{ duration: 0.25, ease: 'circOut' }}
         className={`
         wrapper
        `}
