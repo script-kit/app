@@ -115,7 +115,7 @@ import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { INSTALL_ERROR, show } from './show';
-import { cacheKitScripts, kitState } from './state';
+import { cacheKitScripts, kitState, online } from './state';
 import { startSK } from './sk';
 import { handleWidgetEvents, processes } from './process';
 import { startIpc } from './ipc';
@@ -384,7 +384,7 @@ const optionalSetupScript = (...args: string[]) => {
     });
 
     child.on('error', (error: Error) => {
-      log.error(`⚠️ Errored on setup script: ${args.join(' ')}`);
+      log.error(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
       resolve('error');
       // reject(error);
       // throw new Error(error.message);
@@ -420,12 +420,10 @@ const systemEvents = () => {
     log.info(`🌄 System waking. Starting watchers.`);
     await setupWatchers();
 
-    setTimeout(async () => {
-      log.info(`Resume tasks`);
-      if (!kitState.updateDownloaded) {
-        checkForUpdates();
-      }
-    }, 5000);
+    log.info(`Resume tasks`);
+    if (!kitState.updateDownloaded) {
+      checkForUpdates();
+    }
 
     kitState.suspended = false;
   });
@@ -1035,7 +1033,10 @@ const checkKit = async () => {
     };
 
     try {
-      await axios.post(`https://scriptkit.com/api/installs`, installInfo);
+      const isOnline = await online();
+      if (isOnline) {
+        await axios.post(`https://scriptkit.com/api/installs`, installInfo);
+      }
     } catch {
       log.info(`Could not post install info`);
     }

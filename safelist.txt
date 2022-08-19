@@ -893,3 +893,9 @@ dark:bg-opacity-themedark
 bg-opacity-windows-themelight
 dark:bg-opacity-windows-themedark
 dark:text-opacity-10
+flex-wrap
+flex-wrap-reverse
+overflow-hidden
+min-w-fit
+flex-shrink
+max-h-10

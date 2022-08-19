@@ -4,6 +4,7 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
+/* eslint-disable consistent-return */
 import glasstron from 'glasstron';
 import { subscribe } from 'valtio/vanilla';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
@@ -13,6 +14,9 @@ import {
   PromptData,
   PromptBounds,
 } from '@johnlindquist/kit/types/core';
+
+import { subscribeKey } from 'valtio/utils';
+
 import {
   BrowserWindow,
   screen,
@@ -57,7 +61,9 @@ let unsubKey: () => void;
 
 let electronPanelWindow: any = null;
 
-export const maybeHide = (reason: string) => {
+export const maybeHide = async (reason: string) => {
+  kitState.scriptPath = '';
+  kitState.promptUI = UI.none;
   if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
     log.verbose(`Hiding because ${reason}`);
     if (
@@ -65,6 +71,9 @@ export const maybeHide = (reason: string) => {
       !kitState.preventClose
     ) {
       promptWindow?.hide();
+      log.verbose(
+        `🙈 maybeHide???: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
+      );
     }
   }
 };
@@ -128,7 +137,7 @@ export const createPromptWindow = async () => {
       promptWindow.setBlur(true);
       promptWindow.setBackgroundColor(`#00000000`);
     } catch (error) {
-      console.error('Failed to set window blur', error);
+      log.error('Failed to set window blur', error);
     }
 
     // try {
@@ -252,18 +261,10 @@ export const createPromptWindow = async () => {
   });
 
   const onMove = async () => {
-    if (kitState.modifiedByUser) {
-      await savePromptBounds(kitState.script.filePath, Bounds.Position);
-    }
-
     kitState.modifiedByUser = false;
   };
 
   const onResized = async () => {
-    if (kitState.modifiedByUser) {
-      await savePromptBounds(kitState.script.filePath, Bounds.Size);
-    }
-
     kitState.modifiedByUser = false;
   };
 
@@ -352,7 +353,8 @@ export const focusPrompt = () => {
   if (
     promptWindow &&
     !promptWindow.isDestroyed() &&
-    !promptWindow?.isFocused()
+    !promptWindow?.isFocused() &&
+    !promptWindow?.webContents?.isDevToolsOpened()
   ) {
     try {
       promptWindow?.focus();
@@ -375,7 +377,10 @@ export const getCurrentScreenFromPrompt = (): Display => {
   return screen.getDisplayNearestPoint(promptWindow.getBounds());
 };
 
-export const getCurrentScreenPromptCache = async (scriptPath: string) => {
+export const getCurrentScreenPromptCache = async (
+  scriptPath: string,
+  { ui, resize }: { ui: UI; resize: boolean } = { ui: UI.none, resize: false }
+) => {
   const currentScreen = getCurrentScreenFromMouse();
   const screenId = String(currentScreen.id);
   const promptDb = await getPromptDb();
@@ -385,7 +390,13 @@ export const getCurrentScreenPromptCache = async (scriptPath: string) => {
 
   // log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
 
-  if (savedPromptBounds) return savedPromptBounds;
+  const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
+  if (isMain) return;
+
+  if (savedPromptBounds) {
+    log.verbose(`Bounds: found saved bounds for ${scriptPath}`);
+    return savedPromptBounds;
+  }
 
   // log.info(`resetPromptBounds`, scriptPath);
   const {
@@ -393,13 +404,39 @@ export const getCurrentScreenPromptCache = async (scriptPath: string) => {
     height: screenHeight,
   } = currentScreen.workAreaSize;
 
-  const height = DEFAULT_HEIGHT;
-  const width = DEFAULT_EXPANDED_WIDTH;
+  let width = DEFAULT_EXPANDED_WIDTH;
+  let height = DEFAULT_HEIGHT;
+
+  if (ui !== UI.none && resize) {
+    if (ui === UI.form) width /= 2;
+    if (ui === UI.drop) {
+      width /= 2;
+      height /= 2;
+    }
+    if (ui === UI.hotkey) {
+      width /= 2;
+    }
+
+    if (ui === UI.div) {
+      width /= 2;
+      height = promptWindow?.getBounds()?.height;
+    }
+
+    if (ui === UI.arg) {
+      width /= 2;
+    }
+  }
+
   const { x: workX, y: workY } = currentScreen.workArea;
   const x = Math.round(screenWidth / 2 - width / 2 + workX);
   const y = Math.round(workY + screenHeight / 8);
 
   const bounds = { x, y, width, height };
+
+  if (ui === UI.none) {
+    log.verbose(`Bounds: No ui, returning default`);
+    return bounds;
+  }
 
   if (!promptDb?.screens) {
     promptDb.screens = {};
@@ -425,11 +462,14 @@ export const getCurrentScreenPromptCache = async (scriptPath: string) => {
 
 export const setBounds = (bounds: Partial<Rectangle>) => {
   promptWindow.setBounds(bounds);
-  savePromptBounds(kitState.script.filePath);
 };
 
 export const isVisible = () => {
   return !promptWindow.isDestroyed() && promptWindow.isVisible();
+};
+
+export const devToolsVisible = () => {
+  return promptWindow.webContents.isDevToolsOpened();
 };
 
 export const isFocused = () => {
@@ -445,11 +485,7 @@ export const resize = async ({
   mainHeight,
   footerHeight,
   ui,
-  hasPanel,
-  hasInput,
-  tabIndex,
   isSplash,
-  nullChoices,
 }: ResizeData) => {
   if (promptId !== id) {
     log.verbose(`📱 Resize: ${id} !== ${promptId}`);
@@ -459,21 +495,17 @@ export const resize = async ({
     log.verbose(`📱 Resize: ${id} modified by user`);
     return;
   }
-  log.verbose(`📱 Resize ${ui}from ${scriptPath}`);
+  log.verbose(`📱 Resize ${ui} from ${scriptPath}`);
 
   if ([UI.term, UI.editor, UI.drop].includes(ui)) return;
 
-  const {
-    width: cachedWidth,
-    height: cachedHeight,
-    x: cachedX,
-    y: cachedY,
-  } = await getCurrentScreenPromptCache(scriptPath);
+  const bounds = await getCurrentScreenPromptCache(scriptPath);
+
+  if (!bounds) return;
+  const { width: cachedWidth, height: cachedHeight } = bounds;
   const {
     width: currentWidth,
     height: currentHeight,
-    x: currentX,
-    y: currentY,
   } = promptWindow.getBounds();
 
   const targetHeight = topHeight + mainHeight + footerHeight;
@@ -508,19 +540,10 @@ export const resize = async ({
 
   const compare = Math.abs(height - prevHeight);
   log.silly({ compare });
-  promptWindow.setSize(width, height, compare < 100);
+  promptWindow.setSize(currentWidth, height, true);
+
+  kitState.resizedByChoices = true && ui === UI.arg;
   prevHeight = mainHeight;
-  kitState.prevResize = true;
-
-  if (ui !== UI.arg) savePromptBounds(scriptPath, Bounds.Size);
-
-  if (ui === UI.arg && !tabIndex && !hasInput) {
-    savePromptBounds(scriptPath, Bounds.Size);
-  }
-
-  if (currentX !== cachedX && currentY !== cachedY) {
-    promptWindow.setPosition(cachedX, cachedY);
-  }
 };
 
 export const sendToPrompt = <K extends keyof ChannelMap>(
@@ -556,14 +579,18 @@ enum Bounds {
 }
 
 export const savePromptBounds = debounce(
-  async (scriptPath: string, b: number = Bounds.Position | Bounds.Size) => {
-    log.info(`💾 Saving prompt bounds`);
+  async (
+    scriptPath: string,
+    bounds: Rectangle,
+    b: number = Bounds.Position | Bounds.Size
+  ) => {
+    const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
+    if (isMain) return;
+
     const currentScreen = getCurrentScreenFromPrompt();
     const promptDb = await getPromptDb();
 
     try {
-      const bounds = promptWindow?.getBounds();
-
       const prevBounds =
         promptDb?.screens?.[String(currentScreen.id)]?.[scriptPath];
 
@@ -604,8 +631,6 @@ const writePromptDb = debounce(
 
 export const hideAppIfNoWindows = (scriptPath = '', reason: string) => {
   if (promptWindow) {
-    if (scriptPath) savePromptBounds(scriptPath, Bounds.Position);
-
     // const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden
 
@@ -629,8 +654,6 @@ export const hideAppIfNoWindows = (scriptPath = '', reason: string) => {
     // if (allWindows.every((window) => !window.isVisible())) {
     // if (app?.hide) app?.hide();
     // }
-
-    savePromptBounds(kitState.script.filePath);
   }
 };
 
@@ -648,6 +671,8 @@ export const setPromptPid = (pid: number) => {
 };
 
 export const setScript = async (script: Script) => {
+  kitState.scriptPath = script.filePath;
+  log.verbose(`setScript ${script.filePath}`);
   if (!script) return;
   // if (promptScript?.filePath === script?.filePath) return;
 
@@ -679,6 +704,8 @@ export const setScript = async (script: Script) => {
     // });
     setChoices(getScriptsMemory());
   }
+
+  log.verbose(`Saving previous script path: ${kitState.prevScriptPath}`);
 };
 
 export const setMode = (mode: Mode) => {
@@ -712,6 +739,10 @@ export const setTabIndex = (tabIndex: number) => {
 let boundsCheck: any = null;
 let promptId = '__unset__';
 export const setPromptData = async (promptData: PromptData) => {
+  kitState.promptUI = promptData.ui;
+  kitState.promptResize = promptData.resize;
+
+  log.verbose(`setPromptData ${promptData.scriptPath}`);
   promptId = promptData.id;
   if (kitState.suspended || kitState.screenLocked) return;
 
@@ -719,22 +750,12 @@ export const setPromptData = async (promptData: PromptData) => {
   if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
 
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
-  // if (!promptWindow?.isVisible())
-  const bounds = await getCurrentScreenPromptCache(promptData.scriptPath);
-  log.verbose(`↖ Opening a ${promptData.ui}`, bounds);
-  promptWindow.setPosition(bounds.x, bounds.y);
 
-  if (
-    [UI.term, UI.editor].includes(promptData.ui) ||
-    (promptData.scriptPath === mainScriptPath && promptData.tabIndex === 0)
-  ) {
-    promptWindow.setSize(bounds.width, DEFAULT_HEIGHT);
-    log.verbose(`Restoring prompt size:`, bounds.width, DEFAULT_HEIGHT);
-  }
-  // if (kitState.prevPromptScriptPath !== promptData.scriptPath) {
-  //   // promptWindow.setBounds(bounds);
-  //   kitState.prevPromptScriptPath = promptData.scriptPath;
-  // }
+  // positionPrompt({
+  //   ui: promptData.ui,
+  //   scriptPath: promptData.scriptPath,
+  //   tabIndex: promptData.tabIndex,
+  // });
 
   showInactive();
 
@@ -807,7 +828,10 @@ export const clearPromptCache = async () => {
   await promptDb.write();
 
   promptWindow?.webContents?.setZoomLevel(0);
-  const bounds = await getCurrentScreenPromptCache(kitState.script.filePath);
+  const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
+    ui: UI.none,
+    resize: false,
+  });
   // log.info(`↖ CLEARED:`, bounds);
   promptWindow.setBounds(bounds);
 };
@@ -841,3 +865,43 @@ export const onHideOnce = (fn: () => void) => {
     promptWindow?.once('hide', handler);
   }
 };
+
+subscribeKey(kitState, 'promptUI', async () => {
+  if (
+    kitState.promptUI === UI.none ||
+    kitState.scriptPath === '' ||
+    !promptWindow?.isVisible()
+  )
+    return;
+
+  const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
+    ui: kitState.promptUI,
+    resize: kitState.promptResize,
+  });
+  log.verbose(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
+
+  promptWindow.setBounds(bounds, promptWindow?.isVisible());
+});
+
+subscribeKey(kitState, 'scriptPath', async () => {
+  kitState.promptUI = UI.none;
+  kitState.promptResize = false;
+  if (kitState.prevScriptPath && !kitState.resizedByChoices) {
+    log.verbose(
+      `>>>> 🎸 Set script: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
+    );
+    savePromptBounds(kitState.prevScriptPath, promptWindow.getBounds());
+  }
+
+  kitState.resizedByChoices = false;
+  if (kitState.scriptPath) {
+    log.verbose(`📄 scriptPath changed: ${kitState.scriptPath}`);
+    const bounds = await getCurrentScreenPromptCache(kitState.scriptPath);
+
+    log.verbose(`↖ Bounds: Script ${kitState.promptUI} ui`, bounds);
+
+    promptWindow.setBounds(bounds, promptWindow?.isVisible());
+  }
+
+  kitState.prevScriptPath = kitState.scriptPath;
+});

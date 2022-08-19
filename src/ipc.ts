@@ -336,6 +336,14 @@ export const startIpc = () => {
     }
   });
 
+  type levelType = 'debug' | 'info' | 'warn' | 'error' | 'silly';
+  ipcMain.on(
+    AppChannel.LOG,
+    async (event, { message, level }: { message: any; level: levelType }) => {
+      log[level](message);
+    }
+  );
+
   // emitter.on(KitEvent.Blur, async () => {
   //   const promptProcessInfo = await processes.findPromptProcess();
 

@@ -12,8 +12,9 @@ import { ChildProcess } from 'child_process';
 import { app, BrowserWindow, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
-import { Script } from '@johnlindquist/kit/types/core';
+import { PromptData, Script } from '@johnlindquist/kit/types/core';
 import { getScripts, getAppDb } from '@johnlindquist/kit/cjs/db';
+import internetAvailable from 'internet-available';
 
 import {
   parseScript,
@@ -184,7 +185,6 @@ const initState = {
   ignoreBlur: false,
   preventClose: false,
   resize: false,
-  prevResize: false,
   promptProcess: undefined as ProcessInfo | undefined,
   isScripts: false,
   isMainScript: () => kitState.script.filePath === mainScriptPath,
@@ -227,11 +227,16 @@ const initState = {
   notifications: [] as KitStatus[],
   downloadPercent: 0,
   applyUpdate: false,
-  prevPromptScriptPath: ``,
   lastOpen: new Date(),
   logLevel: 'info' as LogLevel,
   preventResize: false,
   trayOpen: false,
+  prevScriptPath: ``,
+  promptUI: UI.arg,
+  promptHasPreview: true,
+  promptResize: false,
+  scriptPath: ``,
+  resizedByChoices: false,
 };
 
 nativeTheme.addListener('updated', () => {
@@ -293,3 +298,16 @@ subscribeKey(kitState, 'notifyAuthFail', (notifyAuthFail) => {
 // subscribeKey(widgetState, 'widgets', () => {
 //   log.info(`👀 Widgets: ${widgetState.widgets.length}`);
 // });
+
+export const online = async () => {
+  log.info(`Checking online status...`);
+  const result = await internetAvailable({
+    domainName: 'github.com',
+    timeout: 5000,
+    retries: 3,
+  });
+
+  log.info(`Status: ${result ? 'Online' : 'Offline'}`);
+
+  return result;
+};

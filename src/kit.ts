@@ -23,6 +23,7 @@ import {
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 import {
+  devToolsVisible,
   hideAppIfNoWindows,
   isVisible,
   sendToPrompt,
@@ -91,7 +92,7 @@ export const runPromptProcess = async (
   // const same = processes.endPreviousPromptProcess(promptScriptPath);
   const same = kitState.promptCount === 0 && isSameScript(promptScriptPath);
 
-  if (same && isVisible()) {
+  if (same && isVisible() && !devToolsVisible()) {
     // hideAppIfNoWindows(promptScriptPath);
     log.info(`Same shortcut pressed while process running. `);
     return;

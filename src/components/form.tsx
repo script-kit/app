@@ -9,18 +9,12 @@ import parse, { domToReact } from 'html-react-parser';
 import SimpleBar from 'simplebar-react';
 import { useAtom } from 'jotai';
 import { formDataAtom, formHTMLAtom, submitValueAtom } from '../jotai';
-import { useEscape, useObserveMainHeight } from '../hooks';
+import { useObserveMainHeight } from '../hooks';
 
-export default function Form({
-  width,
-  height,
-}: {
-  width: number;
-  height: number;
-}) {
+export default function Form({ height }: { height: number }) {
   // useEscape();
 
-  const formRef = useObserveMainHeight<HTMLFormElement>('.wrapper');
+  const formRef = useObserveMainHeight<HTMLFormElement>('.wrapper > div');
   const [formHTML] = useAtom(formHTMLAtom);
   const [formData] = useAtom(formDataAtom);
   const [, submit] = useAtom(submitValueAtom);

@@ -62,7 +62,7 @@ export default function Drop() {
   const containerRef = useMountMainHeight();
 
   return (
-    <div ref={containerRef} className="h-full w-full min-h-52">
+    <div ref={containerRef} className="h-full w-full">
       <div
         tabIndex={0}
         role="region"

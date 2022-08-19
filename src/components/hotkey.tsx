@@ -1,10 +1,10 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
-import React, { KeyboardEvent, useCallback, useRef } from 'react';
+import React, { KeyboardEvent, useCallback, useEffect, useRef } from 'react';
 import { KeyData } from '@johnlindquist/kit/types/kitapp';
 
 import { useAtom } from 'jotai';
-import { placeholderAtom, panelHTMLAtom } from '../jotai';
+import { placeholderAtom, panelHTMLAtom, hintAtom } from '../jotai';
 import { useEscape, useFocus } from '../hooks';
 
 interface HotkeyProps {
@@ -101,23 +101,33 @@ const prose = (html: string) => {
 };
 
 const hotkeyProse = (modifierString: string) => {
-  return prose(`<h2><kbd>${modifierString}</kbd></h2>`);
+  return modifierString.trim().replace(/\s/g, '+');
 };
+
+const WAITING = `Waiting for keypress...`;
 
 export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
   const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
-  const [, setPanel] = useAtom(panelHTMLAtom);
+  const [, setHint] = useAtom(hintAtom);
 
   const hotkeyRef = useRef<HTMLInputElement>(null);
   useFocus(hotkeyRef);
+
+  useEffect(() => {
+    setHint(WAITING);
+  }, []);
 
   const onKeyUp = useCallback(
     (event) => {
       event.preventDefault();
       const modifierString = getModifierString(event);
-      setPanel(hotkeyProse(modifierString));
+      if (modifierString) {
+        setHint(hotkeyProse(modifierString));
+      } else {
+        setHint(WAITING);
+      }
     },
-    [setPanel]
+    [setHint]
   );
 
   const onKeyDown = useCallback(
@@ -126,7 +136,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
 
       const { keyData, modifierString } = getKeyData(event);
 
-      setPanel(hotkeyProse(modifierString));
+      setHint(hotkeyProse(modifierString));
 
       if (event.key === 'Escape') {
         return;
@@ -139,7 +149,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
         submit(keyData);
       }
     },
-    [setPanel, submit]
+    [setHint, submit]
   );
 
   return (

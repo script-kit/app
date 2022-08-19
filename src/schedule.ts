@@ -6,7 +6,7 @@ import { Script } from '@johnlindquist/kit/types/core';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { kitPath, kenvPath } from '@johnlindquist/kit/cjs/utils';
 import { runScript } from './kit';
-import { scheduleMap } from './state';
+import { online, scheduleMap } from './state';
 import { processes } from './process';
 
 export const cancelJob = (filePath: string) => {
@@ -46,6 +46,9 @@ export const sleepSchedule = () => {
 
 export const scheduleDownloads = async () => {
   log.info(`schedule downloads`);
+  const isOnline = await online();
+  if (!isOnline) return;
+
   runScript(kitPath('setup', 'downloads.js'));
 
   if (existsSync(kenvPath('kenvs', 'examples'))) {

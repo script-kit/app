@@ -1,15 +1,15 @@
 import useResizeObserver from '@react-hook/resize-observer';
-import { RefObject, useEffect, useRef } from 'react';
-
+import { RefObject, useRef } from 'react';
+import { debounce } from 'lodash';
 import { useAtom } from 'jotai';
-import { mainHeightAtom, heightChangedAtom, openAtom } from '../jotai';
+import { mainHeightAtom, openAtom } from '../jotai';
 
 export default <T extends HTMLElement = HTMLElement>(selector = '') => {
   const containerRef = useRef<T>();
   const [, setMainHeight] = useAtom(mainHeightAtom);
   const [isOpen] = useAtom(openAtom);
 
-  const update = () => {
+  const update = debounce(() => {
     if (!isOpen) return;
     const wrapper: any = document?.querySelector(selector);
     // console.log(`>>> Update`);
@@ -27,7 +27,7 @@ export default <T extends HTMLElement = HTMLElement>(selector = '') => {
         setMainHeight(elHeight);
       }
     }
-  };
+  }, 100);
 
   // useLayoutEffect(update, []);
   useResizeObserver(containerRef as RefObject<HTMLElement>, update);

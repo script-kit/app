@@ -17,7 +17,7 @@ import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { spawn } from 'child_process';
 import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
-import { kitState } from './state';
+import { kitState, online } from './state';
 import { getAssetPath } from './assets';
 
 export const kitIgnore = () => {
@@ -27,6 +27,7 @@ export const kitIgnore = () => {
 };
 
 export const checkForUpdates = async () => {
+  await online();
   log.info('Checking for updates...');
   if (kitState.updateDownloaded) return;
 

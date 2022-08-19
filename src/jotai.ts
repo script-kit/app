@@ -151,7 +151,7 @@ export const nullChoicesAtom = atom(
   (g) => g(_nullChoices) && g(uiAtom) === UI.arg,
   (g, s, a: boolean) => {
     s(_nullChoices, a);
-    if (a) resize(g, s, 'NULL_CHOICES');
+    if (a && g(uiAtom) === UI.arg) resize(g, s, 'NULL_CHOICES');
   }
 );
 
@@ -285,7 +285,7 @@ export const panelHTMLAtom = atom(
     s(_panelHTML, a);
     s(loadingAtom, false);
 
-    debouncedResize(g, s, 'PANEL_HTML');
+    // debouncedResize(g, s, 'PANEL_HTML');
   }
 );
 
@@ -776,11 +776,19 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const ui = g(uiAtom);
 
   // console.log({ ui });
-  if ([UI.term, UI.editor, UI.drop].includes(ui)) return;
+  if ([UI.term, UI.editor, UI.drop, UI.textarea].includes(ui)) return;
+
+  const hasPanel = g(_panelHTML) !== '';
+  const nullChoices = g(nullChoicesAtom);
+
+  let mh = nullChoices && !hasPanel ? 0 : g(mainHeight);
+
+  // UI's where user can set the HTML
+  if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
 
   const r = g(resizeAtom);
 
-  if (!r) return;
+  // if (!r) return;
 
   const promptData = g(promptDataAtom);
 
@@ -788,10 +796,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     promptData?.mode === Mode.FILTER &&
     g(unfilteredChoices).length === 0 &&
     ui === UI.arg;
-  const hasPanel = g(_panelHTML) !== '';
-  const nullChoices = g(nullChoicesAtom);
 
-  let mh = nullChoices && !hasPanel ? 0 : g(mainHeight);
   let th = g(topRefAtom)?.clientHeight || 88;
 
   const hasPreview = Boolean(g(hasPreviewAtom));
@@ -849,8 +854,8 @@ const debouncedResize = debounce(resize, 100);
 export const topHeightAtom = atom(
   (g) => g(topHeight),
   (g, s) => {
-    if (!g(isMainScriptAtom)) {
-      resize(g, s, 'TOP_HEIGHT');
+    if (!g(isMainScriptAtom) && g(uiAtom) === UI.arg) {
+      // resize(g, s, 'TOP_HEIGHT');
     }
   }
 );
@@ -865,8 +870,9 @@ export const mainHeightAtom = atom(
 
     const resizeEnabled = g(resizeAtom) && g(promptData)?.resize;
     const prevHeight = g(mainHeight);
+    if (a === prevHeight) return;
 
-    if (!resizeEnabled && a < prevHeight) return;
+    // if (!resizeEnabled && a < prevHeight) return;
     // if (Math.abs(a - prevHeight) > 2) {
 
     const nextMainHeight = a < 0 ? 0 : a;
@@ -1133,6 +1139,7 @@ export const submitValueAtom = atom(
     // const fC = g(focusedChoiceAtom);
 
     const channel = g(channelAtom);
+
     channel(Channel.VALUE_SUBMITTED, {
       value,
       flag,
@@ -1406,8 +1413,6 @@ export const startAtom = atom(null, (g, s, a: string) => {
   const history = g(_history);
   const script = g(scriptAtom);
 
-  console.log(`>>>>>> 🤞 <<<<<`);
-  console.log({ history, a, script });
   if (
     g(uiAtom) !== UI.splash &&
     (history.length > 0 || script.filePath === a) &&
@@ -1445,9 +1450,7 @@ export const submitSurveyAtom = atom(null, (g, s, a: Survey) => {
 
 export const showTabsAtom = atom((g) => {
   return (
-    [UI.arg, UI.div].includes(g(uiAtom)) &&
-    g(_tabs)?.length > 0 &&
-    !g(flagValueAtom)
+    [UI.arg].includes(g(uiAtom)) && g(_tabs)?.length > 0 && !g(flagValueAtom)
   );
 });
 
@@ -1522,6 +1525,9 @@ export const enterButtonDisabledAtom = atom<boolean>((g) => {
   const ui = g(uiAtom);
   if ([UI.fields, UI.form, UI.div].includes(ui)) return false;
 
+  const p = g(panelHTMLAtom);
+  if (p?.length > 0) return false;
+
   const pd = g(promptDataAtom);
   if (!pd?.strict) return false;
 
@@ -1529,4 +1535,14 @@ export const enterButtonDisabledAtom = atom<boolean>((g) => {
   if (focusedChoice?.name === noChoice.name) return true;
 
   return false;
+});
+
+export const logAtom = atom((g) => {
+  type levelType = 'debug' | 'info' | 'warn' | 'error' | 'silly';
+  return (message: any, level: levelType = 'info') => {
+    ipcRenderer.send(AppChannel.LOG, {
+      message,
+      level,
+    });
+  };
 });

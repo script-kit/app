@@ -28,6 +28,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
 import { AnimatePresence, motion, useAnimation } from 'framer-motion';
+import { debounce } from 'lodash';
 
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
@@ -230,9 +231,12 @@ export default function App() {
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const headerRef: RefObject<HTMLDivElement> = useRef(null);
 
-  useResizeObserver(headerRef, (entry) => {
-    setTopHeight(entry.contentRect.height);
-  });
+  useResizeObserver(
+    headerRef,
+    debounce((entry) => {
+      setTopHeight(entry.contentRect.height);
+    }, 100)
+  );
 
   useThemeDetector();
 

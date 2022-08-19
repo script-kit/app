@@ -29,9 +29,15 @@ export default () => {
     `enter`,
     (event) => {
       if (
-        [UI.editor, UI.textarea, UI.drop, UI.splash, UI.term, UI.drop].includes(
-          ui
-        )
+        [
+          UI.editor,
+          UI.textarea,
+          UI.drop,
+          UI.splash,
+          UI.term,
+          UI.drop,
+          UI.form,
+        ].includes(ui)
       ) {
         return;
       }

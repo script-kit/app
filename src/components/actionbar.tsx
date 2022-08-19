@@ -56,6 +56,7 @@ export function OptionsButton() {
   return (
     <motion.button
       type="button"
+      tabIndex={-1}
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={transition}
@@ -167,6 +168,7 @@ export function ActionButton(action: Action) {
       animate={{ opacity: [0, 1] }}
       transition={transition}
       disabled={action?.disabled}
+      tabIndex={action?.value === 'enter' ? 0 : -1}
       className={`
   flex flex-row items-center justify-center
   outline-none
@@ -177,6 +179,7 @@ export function ActionButton(action: Action) {
   text-black dark:text-white text-opacity-50 dark:text-opacity-50
   rounded
   bg-black dark:bg-white dark:bg-opacity-0 bg-opacity-0
+  h-full;
   ${
     action?.disabled
       ? `brightness-50`
@@ -234,8 +237,9 @@ const IconButton = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={transition}
+      className="min-w-fit min-h-fit"
     >
-      <a href="https://scriptkit.com">
+      <a href="https://scriptkit.com" tabIndex={-1}>
         <img
           src={lazyIcon?.data}
           alt="icon"
@@ -246,6 +250,7 @@ const IconButton = () => {
   items-center justify-center
   p-1
   rounded
+  min-w-fit
   "
         />
       </a>
@@ -319,69 +324,82 @@ export default function ActionBar() {
     }
 
     py-2 px-4
-    items-center
-    h-10`}
+    items-center overflow-hidden
+    h-10 max-h-10`}
     >
       <IconButton />
 
-      {actions
-        .filter((action) => action.position === 'left')
-        .flatMap((action, i, array) => [
-          // eslint-disable-next-line react/jsx-key
-          <ActionButton {...action} />,
-          i < array.length - 1 ? (
-            <ActionSeparator key={`${action?.key}-separator`} />
-          ) : null,
-          i === array.length - 1 && footer?.length ? (
-            <ActionSeparator key={`${action?.key}-separator`} />
-          ) : null,
-        ])}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 1] }}
-        transition={transition}
-        className="flex flex-1 max-h-full
+      <div className="left-container flex flex-row">
+        {actions
+          .filter((action) => action.position === 'left')
+          .flatMap((action, i, array) => [
+            // eslint-disable-next-line react/jsx-key
+            <ActionButton {...action} />,
+            i < array.length - 1 ? (
+              <ActionSeparator key={`${action?.key}-separator`} />
+            ) : null,
+            i === array.length - 1 && footer?.length ? (
+              <ActionSeparator key={`${action?.key}-separator`} />
+            ) : null,
+          ])}
+      </div>
+      {footer?.length ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1] }}
+          transition={transition}
+          className="flex flex-1 max-h-full
         px-2 py-1
         items-center justify-left
 text-sm font-medium
 text-black dark:text-white
 truncate
       "
-      >
-        <div
-          className="truncate min-w-0"
-          dangerouslySetInnerHTML={{ __html: footer }}
-        />
-      </motion.div>
-      {hasFlags && [
-        <OptionsButton key="options-button" />,
-        <ActionSeparator key="options-separator" />,
-      ]}
-      {[
-        actions
-          .filter((action) => action.position === 'right')
-          .flatMap((action, i, array) => [
-            // eslint-disable-next-line react/jsx-key
-            <ActionButton {...action} />,
-            // eslint-disable-next-line no-nested-ternary
-            i < array.length - 1 ? (
-              <ActionSeparator key={`${action?.key}-separator`} />
-            ) : enterButtonName ? (
-              <ActionSeparator key={`${action?.key}-separator`} />
-            ) : null,
-          ]),
-        enterButtonName ? (
-          <ActionButton
-            key="enter-button"
-            name={enterButtonName}
-            position="right"
-            shortcut="⏎"
-            value="enter"
-            flag=""
-            disabled={enterButtonDisabled}
+        >
+          <div
+            className="truncate min-w-0"
+            dangerouslySetInnerHTML={{ __html: footer }}
           />
-        ) : null,
-      ]}
+        </motion.div>
+      ) : (
+        <div className="flex-1 max-h-full" />
+      )}
+
+      <div className="right-container flex flex-row items-center h-full overflow-hidden">
+        <div className="options-container flex flex-row">
+          {hasFlags && [
+            <OptionsButton key="options-button" />,
+            <ActionSeparator key="options-separator" />,
+          ]}
+        </div>
+        <div className="flex flex-row flex-grow-0 items-center overflow-hidden">
+          {actions
+            .filter((action) => action.position === 'right')
+            .flatMap((action, i, array) => [
+              // eslint-disable-next-line react/jsx-key
+              <ActionButton {...action} />,
+              // eslint-disable-next-line no-nested-ternary
+              i < array.length - 1 ? (
+                <ActionSeparator key={`${action?.key}-separator`} />
+              ) : enterButtonName ? (
+                <ActionSeparator key={`${action?.key}-separator`} />
+              ) : null,
+            ])}
+        </div>
+        <div className="enter-container flex flex-row min-w-fit items-center">
+          {enterButtonName ? (
+            <ActionButton
+              key="enter-button"
+              name={enterButtonName}
+              position="right"
+              shortcut="⏎"
+              value="enter"
+              flag=""
+              disabled={enterButtonDisabled}
+            />
+          ) : null}
+        </div>
+      </div>
     </motion.div>
   );
 }
