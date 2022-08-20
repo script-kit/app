@@ -14,7 +14,6 @@ import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { PromptData, Script } from '@johnlindquist/kit/types/core';
 import { getScripts, getAppDb } from '@johnlindquist/kit/cjs/db';
-import internetAvailable from 'internet-available';
 
 import {
   parseScript,
@@ -24,6 +23,7 @@ import {
   tmpClipboardDir,
 } from '@johnlindquist/kit/cjs/utils';
 import { UI } from '@johnlindquist/kit/cjs/enum';
+import internetAvailable from './internet-available';
 import { noScript } from './defaults';
 import { ProcessInfo } from './types';
 
@@ -237,6 +237,8 @@ const initState = {
   promptResize: false,
   scriptPath: ``,
   resizedByChoices: false,
+  initialScriptPath: '',
+  scriptHistory: [] as string[],
 };
 
 nativeTheme.addListener('updated', () => {
@@ -301,13 +303,9 @@ subscribeKey(kitState, 'notifyAuthFail', (notifyAuthFail) => {
 
 export const online = async () => {
   log.info(`Checking online status...`);
-  const result = await internetAvailable({
-    domainName: 'github.com',
-    timeout: 5000,
-    retries: 3,
-  });
+  const result = await internetAvailable();
 
-  log.info(`Status: ${result ? 'Online' : 'Offline'}`);
+  log.info(`🗼 Status: ${result ? 'Online' : 'Offline'}`);
 
   return result;
 };

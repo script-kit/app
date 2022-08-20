@@ -216,10 +216,6 @@ export const startIpc = () => {
           }
         }
 
-        if (channel === Channel.ON_DROP) {
-          showInactive();
-        }
-
         if (channel === Channel.ON_PASTE) {
           const image = clipboard.readImage();
           const size = image.getSize();

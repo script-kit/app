@@ -28,6 +28,7 @@ import { toggleTray } from './tray';
 import { maybeSetLogin } from './settings';
 import { buildScriptChanged } from './build';
 import { addSnippet, removeSnippet } from './tick';
+import { clearPromptCacheFor } from './prompt';
 
 export const cacheMenu = debounce(async () => {
   await updateScripts();
@@ -69,6 +70,10 @@ const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
     backgroundScriptChanged(script);
     buildScriptChanged(script);
     addSnippet(script);
+  }
+
+  if (event === 'change') {
+    clearPromptCacheFor(filePath);
   }
 
   if (updateEventNames.includes(event)) {

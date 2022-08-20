@@ -519,10 +519,16 @@ export const focusedChoiceAtom = atom(
 );
 
 export const hasPreviewAtom = atom<boolean>((g) => {
-  return (
-    Boolean(g(_focused)?.hasPreview || g(promptData)?.hasPreview) ||
-    (g(focusedChoiceAtom) === null && g(_previewVisible))
-  );
+  // const log = g(logAtom);
+  const focusedHasPreview = g(_focused)?.hasPreview;
+
+  const promptHasPreview = g(promptData)?.hasPreview;
+
+  const isFocused = g(focusedChoiceAtom) === null;
+  const previewVisible = g(_previewVisible);
+
+  // log({ focusedHasPreview, promptHasPreview, isFocused, previewVisible });
+  return focusedHasPreview || promptHasPreview || (isFocused && previewVisible);
 });
 
 const prevChoiceId = atom<string>('');
@@ -770,7 +776,8 @@ const mainHeight = atom(0);
 const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
-  console.log(`resize: ${reason}`);
+  // const log = g(logAtom);
+  // log(`resize: ${reason}`);
   if (g(submittedAtom)) return;
 
   const ui = g(uiAtom);
@@ -785,8 +792,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   // UI's where user can set the HTML
   if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
-
-  const r = g(resizeAtom);
 
   // if (!r) return;
 
@@ -821,6 +826,13 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     th = TOP_HEIGHT;
   }
 
+  if (
+    ui === UI.arg &&
+    g(scoredChoices)?.length * BUTTON_HEIGHT > DEFAULT_HEIGHT
+  ) {
+    mh = DEFAULT_HEIGHT;
+  }
+
   const data: ResizeData = {
     id: promptData?.id || 'missing',
     reason,
@@ -849,8 +861,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   ipcRenderer.send(AppChannel.RESIZE, data);
 };
 
-const debouncedResize = debounce(resize, 100);
-
 export const topHeightAtom = atom(
   (g) => g(topHeight),
   (g, s) => {
@@ -868,7 +878,7 @@ export const mainHeightAtom = atom(
       clearTimeout(flickerGuard);
     }
 
-    const resizeEnabled = g(resizeAtom) && g(promptData)?.resize;
+    // const resizeEnabled = g(resizeAtom) && g(promptData)?.resize;
     const prevHeight = g(mainHeight);
     if (a === prevHeight) return;
 
@@ -1471,7 +1481,8 @@ export const onShortcutAtom = atom<OnShortcut>({});
 
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
-  console.log(`🎬 Send shortcut ${shortcut}`);
+  // const log = g(logAtom);
+  // log(`🎬 Send shortcut ${shortcut}`);
   channel(Channel.SHORTCUT, { shortcut });
   s(_flag, '');
 });

@@ -1035,7 +1035,7 @@ const checkKit = async () => {
     try {
       const isOnline = await online();
       if (isOnline) {
-        await axios.post(`https://scriptkit.com/api/installs`, installInfo);
+        axios.post(`https://scriptkit.com/api/installs`, installInfo);
       }
     } catch {
       log.info(`Could not post install info`);
