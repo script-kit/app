@@ -2,9 +2,10 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
 
+import v8 from 'v8';
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import { proxy } from 'valtio/vanilla';
-import { subscribeKey, proxySet } from 'valtio/utils';
+import { proxy, snapshot } from 'valtio/vanilla';
+import { subscribeKey } from 'valtio/utils';
 import log, { LogLevel } from 'electron-log';
 import path from 'path';
 import os from 'os';
@@ -12,8 +13,14 @@ import { ChildProcess } from 'child_process';
 import { app, BrowserWindow, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
-import { PromptData, Script } from '@johnlindquist/kit/types/core';
-import { getScripts, getAppDb } from '@johnlindquist/kit/cjs/db';
+import { debounce } from 'lodash';
+import { Script } from '@johnlindquist/kit/types/core';
+import {
+  getScripts,
+  getAppDb,
+  setScriptTimestamp,
+  getTimestamps,
+} from '@johnlindquist/kit/cjs/db';
 
 import {
   parseScript,
@@ -88,17 +95,19 @@ export const getSchedule = () => {
     });
 };
 
-let scripts: Script[] = [];
-
 export const updateScripts = async () => {
-  scripts = await getScripts(false);
+  await getTimestamps(false);
+  kitState.scripts = await getScripts(false);
 };
 
-export const getScriptsMemory = (): Script[] => {
-  return scripts.filter((script) => !script?.exclude);
-};
+export const scriptChanged = debounce(async (filePath: string) => {
+  await setScriptTimestamp(filePath);
+  kitState.scripts = await getScripts();
+}, 50);
 
-const kitScripts: Script[] = [];
+export const scriptRemoved = debounce(async () => {
+  kitState.scripts = await getScripts(false);
+}, 50);
 
 export const cacheKitScripts = async () => {
   const kitMainPath = kitPath('main');
@@ -106,7 +115,7 @@ export const cacheKitScripts = async () => {
 
   for await (const main of kitMainScripts) {
     const mainScript = await parseScript(kitPath('main', main));
-    kitScripts.push(mainScript);
+    kitState.kitScripts.push(mainScript);
   }
 
   const kitCliPath = kitPath('cli');
@@ -114,16 +123,14 @@ export const cacheKitScripts = async () => {
   const kitCliScripts = kitCliDir.filter((f) => f.endsWith('.js'));
   for await (const cli of kitCliScripts) {
     const cliScript = await parseScript(kitPath('cli', cli));
-    kitScripts.push(cliScript);
+    kitState.kitScripts.push(cliScript);
   }
 };
 
-export const getKitScripts = (): Script[] => {
-  return kitScripts;
-};
-
 export const getKitScript = (filePath: string): Script => {
-  return kitScripts.find((script) => script.filePath === filePath) as Script;
+  return kitState.kitScripts.find(
+    (script) => script.filePath === filePath
+  ) as Script;
 };
 
 const addP = (pi: Partial<ProcessInfo>) => {
@@ -239,6 +246,8 @@ const initState = {
   resizedByChoices: false,
   initialScriptPath: '',
   scriptHistory: [] as string[],
+  scripts: [] as Script[],
+  kitScripts: [] as Script[],
 };
 
 nativeTheme.addListener('updated', () => {
@@ -308,4 +317,12 @@ export const online = async () => {
   log.info(`🗼 Status: ${result ? 'Online' : 'Offline'}`);
 
   return result;
+};
+
+const structuredClone = (obj) => {
+  return v8.deserialize(v8.serialize(obj));
+};
+
+export const getScriptsSnapshot = (): Script[] => {
+  return structuredClone(snapshot(kitState).scripts) as Script[];
 };

@@ -703,6 +703,9 @@ export const setPromptPid = (pid: number) => {
 };
 
 export const setScript = async (script: Script) => {
+  if (!script?.filePath) {
+    return;
+  }
   kitState.scriptPath = script.filePath;
   log.verbose(`setScript ${script.filePath}`);
   if (!script) return;
@@ -724,20 +727,13 @@ export const setScript = async (script: Script) => {
       kitState.lastOpen = new Date();
     }
   }
-
   sendToPrompt(Channel.SET_SCRIPT, script);
 
   if (script.filePath === mainScriptPath) {
-    sendToPrompt(Channel.SET_DESCRIPTION, 'Run Script');
-    // sendToPrompt(Channel.SET_PROMPT_DATA, {
-    //   placeholder: 'Run Script',
-    //   placeholderOnly: false,
-    //   panel: ``,
-    // });
-    setChoices(getScriptsMemory());
+    emitter.emit(KitEvent.MainScript, script);
   }
 
-  log.verbose(`Saving previous script path: ${kitState.prevScriptPath}`);
+  // log.verbose(`Saving previous script path: ${kitState.prevScriptPath}`);
 };
 
 export const setMode = (mode: Mode) => {

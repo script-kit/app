@@ -13,6 +13,7 @@ import {
   kitPath,
   KIT_FIRST_PATH,
 } from '@johnlindquist/kit/cjs/utils';
+
 import {
   unlinkShortcuts,
   updateMainShortcut,
@@ -23,18 +24,16 @@ import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
-import { kitState, updateScripts } from './state';
+import { kitState, scriptChanged, scriptRemoved } from './state';
 import { toggleTray } from './tray';
 import { maybeSetLogin } from './settings';
 import { buildScriptChanged } from './build';
 import { addSnippet, removeSnippet } from './tick';
 import { clearPromptCacheFor } from './prompt';
 
-export const cacheMenu = debounce(async () => {
-  await updateScripts();
-}, 150);
-
-const updateEventNames = ['add', 'change', 'unlink', 'ready'];
+// export const cacheMenu = debounce(async () => {
+//   await updateScripts();
+// }, 150);
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
@@ -53,15 +52,22 @@ const unlink = (filePath: string) => {
   );
 
   if (existsSync(binPath)) rm(binPath);
+
+  scriptRemoved();
 };
 
 type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
-const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
-  log.info(`${event}: ${filePath}`);
+export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
   if (event === 'unlink') {
     unlink(filePath);
   }
-  if (event === 'add' || event === 'change') {
+
+  if (
+    event === 'change' ||
+    event === 'ready' ||
+    (event === 'add' && !kitState.scripts.find((s) => s.filePath === filePath))
+  ) {
+    log.verbose(`${event}: ${filePath}`);
     const script = await parseScript(filePath);
     shortcutScriptChanged(script);
     scheduleScriptChanged(script);
@@ -70,14 +76,12 @@ const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
     backgroundScriptChanged(script);
     buildScriptChanged(script);
     addSnippet(script);
+
+    if (event !== 'ready') scriptChanged(filePath);
   }
 
   if (event === 'change') {
     clearPromptCacheFor(filePath);
-  }
-
-  if (updateEventNames.includes(event)) {
-    await cacheMenu();
   }
 };
 
@@ -126,7 +130,7 @@ export const setupWatchers = async () => {
     }) => {
       const { base } = path.parse(filePath);
       if (base === 'app.json') {
-        if (eventName === 'change') await cacheMenu();
+        // if (eventName === 'change') await cacheMenu();
         await toggleTray();
         await maybeSetLogin();
 

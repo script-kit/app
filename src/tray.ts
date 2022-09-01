@@ -244,7 +244,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
     });
 
     toolsSubmenu.push({
-      label: `Reset Prompt Positions`,
+      label: `Reset Prompt`,
       click: async () => {
         log.info('Resetting prompt cache');
         runScript(kitPath('cli', 'kit-clear-prompt.js'));

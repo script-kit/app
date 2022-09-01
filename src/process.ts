@@ -86,6 +86,7 @@ import {
   updateScripts,
   widgetState,
   findWidget,
+  getScriptsSnapshot,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -979,7 +980,7 @@ const kitMessageMap: ChannelHandler = {
     }
   },
   CLEAR_SCRIPTS_MEMORY: toProcess(async ({ child }, { channel }) => {
-    await updateScripts();
+    // await updateScripts();
     child?.send({
       channel,
     });
@@ -1355,3 +1356,10 @@ export const handleWidgetEvents = () => {
 emitter.on(KitEvent.KillProcess, (pid) => {
   processes.removeByPid(pid);
 });
+
+// emitter.on(KitEvent.MainScript, () => {
+//   sendToPrompt(Channel.SET_DESCRIPTION, 'Run Script');
+//   const scripts = getScriptsSnapshot();
+//   log.verbose({ scripts });
+//   setChoices(formatScriptChoices(scripts));
+// });

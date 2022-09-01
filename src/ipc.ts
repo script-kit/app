@@ -127,7 +127,6 @@ export const startIpc = () => {
       if (descriptionIsInKenv && descriptionIsFile) {
         try {
           await writeFile(description, input);
-          await updateScripts();
           await runPromptProcess(description, []);
         } catch (error) {
           log.error(error);

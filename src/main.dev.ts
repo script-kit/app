@@ -87,6 +87,7 @@ import { subscribeKey } from 'valtio/utils';
 import { createTray, destroyTray } from './tray';
 import {
   cacheMenu,
+  onScriptsChanged,
   setupWatchers,
   teardownWatchers,
   watchers,
@@ -115,7 +116,7 @@ import { APP_NAME, KIT_PROTOCOL } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { INSTALL_ERROR, show } from './show';
-import { cacheKitScripts, kitState, online } from './state';
+import { cacheKitScripts, kitState, online, updateScripts } from './state';
 import { startSK } from './sk';
 import { handleWidgetEvents, processes } from './process';
 import { startIpc } from './ipc';
@@ -450,6 +451,10 @@ const ready = async () => {
     await maybeSetLogin();
     await setupLog(`Tray created`);
 
+    await updateScripts();
+    kitState.scripts.forEach((script) => {
+      onScriptsChanged('ready', script.id);
+    });
     await setupWatchers();
     await setupLog(`Shortcuts Assigned`);
 
@@ -485,7 +490,7 @@ const ready = async () => {
     const isMac = os.platform() === 'darwin';
     if (isMac) startSK();
     await cacheKitScripts();
-    await cacheMenu();
+    // await cacheMenu();
 
     processes.add(ProcessType.Prompt);
     processes.add(ProcessType.Prompt);

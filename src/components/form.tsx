@@ -20,6 +20,9 @@ export default function Form({ height }: { height: number }) {
   const [, submit] = useAtom(submitValueAtom);
 
   useEffect(() => {
+    if (formRef.current) {
+      formRef?.current?.reset();
+    }
     if (formRef?.current?.elements?.[0]) {
       (formRef?.current?.elements as any)?.[0]?.focus();
     } else {
@@ -29,6 +32,7 @@ export default function Form({ height }: { height: number }) {
     formRef?.current?.firstElementChild,
     formRef?.current?.elements,
     formRef,
+    formData,
   ]);
 
   useEffect(() => {

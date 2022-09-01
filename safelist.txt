@@ -899,3 +899,8 @@ overflow-hidden
 min-w-fit
 flex-shrink
 max-h-10
+object-contain
+object-cover
+object-fill
+object-none
+object-scale-down
