@@ -83,10 +83,8 @@ import {
   getSchedule,
   kitState,
   kitConfig,
-  updateScripts,
   widgetState,
   findWidget,
-  getScriptsSnapshot,
 } from './state';
 
 import { emitter, KitEvent } from './events';

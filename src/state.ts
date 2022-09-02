@@ -2,9 +2,8 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
 
-import v8 from 'v8';
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import { proxy, snapshot } from 'valtio/vanilla';
+import { proxy } from 'valtio/vanilla';
 import { subscribeKey } from 'valtio/utils';
 import log, { LogLevel } from 'electron-log';
 import path from 'path';
@@ -319,10 +318,6 @@ export const online = async () => {
   return result;
 };
 
-const structuredClone = (obj) => {
-  return v8.deserialize(v8.serialize(obj));
-};
-
-export const getScriptsSnapshot = (): Script[] => {
-  return structuredClone(snapshot(kitState).scripts) as Script[];
-};
+// export const getScriptsSnapshot = (): Script[] => {
+//   return structuredClone(snapshot(kitState).scripts) as Script[];
+// };

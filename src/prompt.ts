@@ -36,7 +36,7 @@ import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
 import { getAssetPath } from './assets';
-import { getScriptsMemory, kitState } from './state';
+import { kitState } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
