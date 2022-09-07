@@ -410,3 +410,12 @@ body {
 .emoji-picker-react li {
   list-style-type: none;
 }
+
+.emoji-picker-react .emoji button:hover {
+  @apply bg-black dark:bg-white bg-opacity-50 dark:bg-opacity-50;
+}
+
+.emoji-picker-react .emoji button:focus {
+  @apply bg-black dark:bg-white bg-opacity-50 dark:bg-opacity-50;
+  @apply outline outline-1 dark:outline-1 outline-black dark:outline-white;
+}

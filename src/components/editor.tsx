@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
 import { motion } from 'framer-motion';
 import MonacoEditor, { Monaco } from '@monaco-editor/react';
@@ -43,7 +43,10 @@ export default function Editor() {
   // useEscape();
   // useOpen();
 
-  const editorRef = useRef<any>(null);
+  const [
+    editor,
+    setEditorRef,
+  ] = useState<monacoEditor.IStandaloneCodeEditor | null>(null);
 
   const containerRef = useMountMainHeight();
 
@@ -101,10 +104,10 @@ export default function Editor() {
   );
 
   const onMount = useCallback(
-    (editor: monacoEditor.IStandaloneCodeEditor, monaco: Monaco) => {
-      editorRef.current = editor;
+    (mountEditor: monacoEditor.IStandaloneCodeEditor, monaco: Monaco) => {
+      setEditorRef(mountEditor);
 
-      editor.focus();
+      mountEditor.focus();
 
       // monaco.languages.typescript.typescriptDefaults.addExtraLib(
       //   `
@@ -156,7 +159,7 @@ export default function Editor() {
 
       monaco.editor.setTheme(isDark ? 'kit-dark' : 'kit-light');
 
-      editor.layout({
+      mountEditor.layout({
         width: containerRef?.current?.offsetWidth || document.body.offsetWidth,
         height:
           (containerRef?.current?.offsetHeight || document.body.offsetHeight) -
@@ -164,49 +167,38 @@ export default function Editor() {
       });
 
       // if (typeof global?.exports === 'undefined') global.exports = {};
-      editor.focus();
+      mountEditor.focus();
 
-      if (editor?.getDomNode())
-        ((editor.getDomNode() as HTMLElement).style as any).webkitAppRegion =
-          'no-drag';
+      if (mountEditor?.getDomNode())
+        ((mountEditor.getDomNode() as HTMLElement)
+          .style as any).webkitAppRegion = 'no-drag';
 
-      const lineNumber = editor.getModel()?.getLineCount() || 0;
+      const lineNumber = mountEditor.getModel()?.getLineCount() || 0;
 
       if ((config as EditorOptions).scrollTo === 'bottom') {
         const column =
-          (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+          (mountEditor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
 
         const position = { lineNumber, column };
         // console.log({ position });
-        editor.setPosition(position);
+        mountEditor.setPosition(position);
 
-        editor.revealPosition(position);
+        mountEditor.revealPosition(position);
       }
 
       if ((config as EditorOptions).scrollTo === 'center') {
-        editor.revealLineInCenter(Math.floor(lineNumber / 2));
+        mountEditor.revealLineInCenter(Math.floor(lineNumber / 2));
       }
     },
     [config]
   );
-
-  useEffect(() => {
-    if (editorRef?.current) {
-      const e = editorRef.current;
-      e.focus();
-    }
-  }, [editorRef?.current, config]);
 
   const onChange = useCallback((value) => {
     setInputValue(value);
   }, []);
 
   useEffect(() => {
-    // console.log({ ui, open, config, ref: editorRef?.current });
-    if (ui === UI.editor && open) {
-      const editor = editorRef?.current;
-      if (!editor) return;
-
+    if (ui === UI.editor && open && editor) {
       const lineNumber = editor.getModel()?.getLineCount() || 0;
 
       if ((config as EditorOptions).scrollTo === 'bottom') {
@@ -222,8 +214,17 @@ export default function Editor() {
       if ((config as EditorOptions).scrollTo === 'center') {
         editor.revealLineInCenter(Math.floor(lineNumber / 2));
       }
+
+      if (config?.template) {
+        const contribution = editor.getContribution('snippetController2');
+        if (contribution) {
+          (contribution as any).insert(config.template);
+        }
+      }
+
+      editor.focus();
     }
-  }, [open, config, (config as EditorOptions)?.value, editorRef?.current]);
+  }, [open, config, (config as EditorOptions)?.value, editor, ui]);
 
   return (
     <motion.div

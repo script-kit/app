@@ -4,7 +4,11 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import { darkAtom, submitValueAtom } from '../jotai';
 import { useObserveMainHeight } from '../hooks';
 
-const Emoji = ({ width, height }) => {
+type Props = {
+  width: number;
+  height: number;
+};
+const Emoji = ({ width, height }: Props) => {
   const submit = useSetAtom(submitValueAtom);
   const isDark = useAtomValue(darkAtom);
   useObserveMainHeight('.emoji-picker-react');
@@ -18,8 +22,8 @@ const Emoji = ({ width, height }) => {
       pickerStyle={{
         backgroundColor: '#00000000',
         color: isDark ? 'white' : 'black',
-        width,
-        height,
+        width: `${width}px`,
+        height: `${height}px`,
         boxShadow: '0 0 0 0',
         outline: 'none',
         border: 'none',

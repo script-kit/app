@@ -72,6 +72,7 @@ export const maybeHide = async (reason: string) => {
       !promptWindow?.webContents?.isDevToolsOpened() &&
       !kitState.preventClose
     ) {
+      // promptWindow?.blur();
       promptWindow?.hide();
       log.verbose(
         `🙈 maybeHide???: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
@@ -365,6 +366,15 @@ export const focusPrompt = () => {
     }
     // promptWindow?.focusOnWebView();
   }
+};
+
+export const forceFocus = () => {
+  promptWindow?.show();
+  promptWindow?.focus();
+};
+
+export const alwaysOnTop = (onTop: boolean) => {
+  if (promptWindow) promptWindow.setAlwaysOnTop(onTop);
 };
 
 export const endPrompt = async (scriptPath: string) => {
@@ -716,6 +726,7 @@ export const setScript = async (script: Script) => {
   if (!script?.filePath) {
     return;
   }
+  if (promptWindow?.isAlwaysOnTop()) promptWindow?.setAlwaysOnTop(false);
   kitState.scriptPath = script.filePath;
   log.verbose(`setScript ${script.filePath}`);
   if (!script) return;

@@ -55,8 +55,10 @@ import {
 
 import { getLog, warn } from './logs';
 import {
+  alwaysOnTop,
   clearPromptCache,
   focusPrompt,
+  forceFocus,
   getPromptBounds,
   hideAppIfNoWindows,
   isVisible,
@@ -772,6 +774,27 @@ const kitMessageMap: ChannelHandler = {
   CLEAR_PROMPT_CACHE: toProcess(async ({ child }, { channel, value }) => {
     log.verbose(`${channel}: Clearing prompt cache`);
     await clearPromptCache();
+
+    if (child) {
+      child?.send({
+        channel,
+        value,
+      });
+    }
+  }),
+  FOCUS: toProcess(async ({ child }, { channel, value }) => {
+    log.verbose(`${channel}: Manually focusing prompt`);
+    forceFocus();
+
+    if (child) {
+      child?.send({
+        channel,
+      });
+    }
+  }),
+  SET_ALWAYS_ON_TOP: toProcess(async ({ child }, { channel, value }) => {
+    log.verbose(`${channel}: Setting always on top to ${value}`);
+    alwaysOnTop(value as boolean);
 
     if (child) {
       child?.send({
