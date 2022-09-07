@@ -199,7 +199,7 @@ export const unfilteredChoicesAtom = atom(
     ) {
       const codes = [];
       for (const choice of cs) {
-        const code = choice?.name.match(/(?<=\[).(?=\])/i)?.[0] || '';
+        const code = choice?.name?.match(/(?<=\[).(?=\])/i)?.[0] || '';
 
         if (code) {
           codes.push({
@@ -783,7 +783,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const ui = g(uiAtom);
 
   // console.log({ ui });
-  if ([UI.term, UI.editor, UI.drop, UI.textarea].includes(ui)) return;
+  if ([UI.term, UI.editor, UI.drop, UI.textarea, UI.emoji].includes(ui)) return;
 
   const hasPanel = g(_panelHTML) !== '';
   const nullChoices = g(nullChoicesAtom);
@@ -1556,4 +1556,10 @@ export const logAtom = atom((g) => {
       level,
     });
   };
+});
+
+export const addChoiceAtom = atom(null, (g, s, a: Choice) => {
+  const prev = g(unfilteredChoices);
+
+  s(unfilteredChoicesAtom, Array.isArray(prev) ? [...prev, a] : [a]);
 });

@@ -353,6 +353,7 @@ export default function ActionBar() {
         items-center justify-left
 text-sm font-medium
 text-black dark:text-white
+text-opacity-75 dark:text-opacity-75
 truncate
       "
         >

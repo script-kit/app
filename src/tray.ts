@@ -84,6 +84,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
     // }
 
     const runScript = (script: string) => () => {
+      kitState.interruptScript = true;
       emitter.emit(KitEvent.RunPromptProcess, script);
     };
 
@@ -245,10 +246,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     toolsSubmenu.push({
       label: `Reset Prompt`,
-      click: async () => {
-        log.info('Resetting prompt cache');
-        runScript(kitPath('cli', 'kit-clear-prompt.js'));
-      },
+      click: runScript(kitPath('cli', 'kit-clear-prompt.js')),
     });
 
     if (kitState.isMac) {
@@ -330,6 +328,11 @@ export const openMenu = async (event?: KeyboardEvent) => {
       toolsSubmenu.push({
         label: 'Permissions',
         submenu: permssionsMenu,
+      });
+
+      toolsSubmenu.push({
+        label: 'Install VS Code Extension',
+        click: runScript(kitPath('help', 'install-vscode-extension.js')),
       });
     }
 

@@ -9,6 +9,7 @@ import {
   map,
   share,
   switchMap,
+  tap,
 } from 'rxjs/operators';
 import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
@@ -102,6 +103,7 @@ interface ClipboardItem extends Choice {
   type: string;
   timestamp: string;
   maybeSecret: boolean;
+  value: any;
 }
 
 let clipboardHistory: ClipboardItem[] = [];
@@ -134,6 +136,10 @@ export const removeFromClipboardHistory = (itemId: string) => {
   } else {
     log.info(`😅 Could not find ${itemId} in clipboard history`);
   }
+};
+
+export const clearClipboardHistory = () => {
+  clipboardHistory = [];
 };
 
 const ioEvent = async (e: UiohookKeyboardEvent) => {
@@ -205,9 +211,13 @@ export const configureInterval = async () => {
   }).pipe(share());
 
   const clipboardText$: Observable<any> = io$.pipe(
+    tap((event) => {
+      log.silly(`clipboardText$`);
+      log.silly(event);
+    }),
     filter((event: any) => {
-      if (event?.type === 'keypress' && (event.ctrlKey || event.metaKey)) {
-        const key = String.fromCharCode(event.keychar);
+      if (event?.keycode && (event.ctrlKey || event.metaKey)) {
+        const key = toKey(event?.keycode || 0, event.shiftKey);
         return key === 'c' || key === 'x';
       }
 
@@ -316,18 +326,12 @@ export const configureInterval = async () => {
 
     remove(clipboardHistory, (item) => item.value === value);
 
+    log.silly(`📋 Clipboard`, clipboardItem);
+
     clipboardHistory.unshift(clipboardItem);
     if (clipboardHistory.length > 100) {
       clipboardHistory.pop();
     }
-  });
-
-  emitter.on(Channel.REMOVE_CLIPBOARD_HISTORY_ITEM, (id) => {
-    removeFromClipboardHistory(id);
-  });
-
-  emitter.on(Channel.CLEAR_CLIPBOARD_HISTORY, () => {
-    clipboardHistory = [];
   });
 
   subscribeKey(kitState, 'snippet', async (snippet = ``) => {

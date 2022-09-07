@@ -12,6 +12,8 @@ export const MIN_TEXTAREA_HEIGHT = MIN_HEIGHT * 3;
 export const MIN_WIDTH = 256;
 export const DROP_HEIGHT = 232;
 export const BUTTON_HEIGHT = 56;
+export const EMOJI_WIDTH = 278;
+export const EMOJI_HEIGHT = 380;
 
 export const heightMap: { [key in UI]: number } = {
   [UI.none]: INPUT_HEIGHT,

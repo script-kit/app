@@ -379,3 +379,34 @@ body {
     }
   }
 }
+
+.emoji-picker-react {
+  @apply pt-2;
+}
+
+.emoji-picker-react input.emoji-search {
+  background-color: #00000000 !important;
+  border: none;
+  outline: none;
+}
+.emoji-picker-react input.emoji-search:focus {
+  background-color: #00000000 !important;
+  border: none;
+  outline: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .emoji-picker-react .emoji-categories {
+    filter: invert(100%);
+  }
+}
+
+.emoji-picker-react .emoji-group:before {
+  background-color: #00000000 !important;
+  border: none;
+  outline: none;
+}
+
+.emoji-picker-react li {
+  list-style-type: none;
+}

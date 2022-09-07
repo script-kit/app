@@ -23,7 +23,7 @@ import React, {
 import path from 'path';
 import { loader } from '@monaco-editor/react';
 
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
@@ -105,10 +105,12 @@ import {
   onPasteAtom,
   onDropAtom,
   resizeAtom,
+  addChoiceAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
 import Splash from './components/splash';
+import Emoji from './components/emoji';
 import { AppChannel } from './enums';
 import Terminal from './term';
 
@@ -221,8 +223,9 @@ export default function App() {
   const [, setSocketURL] = useAtom(socketURLAtom);
   const [onPaste] = useAtom(onPasteAtom);
   const [onDrop] = useAtom(onDropAtom);
-  const [, setResize] = useAtom(resizeAtom);
-  const [, setTabs] = useAtom(_tabs);
+  const setResize = useSetAtom(resizeAtom);
+  const setTabs = useSetAtom(_tabs);
+  const addChoice = useSetAtom(addChoiceAtom);
 
   useShortcuts();
   useEnter();
@@ -289,6 +292,7 @@ export default function App() {
     [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
     [Channel.TERMINAL]: setSocketURL,
     [Channel.CLEAR_TABS]: setTabs,
+    [Channel.ADD_CHOICE]: addChoice,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -477,11 +481,14 @@ export default function App() {
               <AutoSizer>
                 {({ width, height }) => (
                   <>
-                    {(ui === UI.arg && !nullChoices && choices.length > 0 && (
-                      <>
-                        <List height={height} width={width} />
-                      </>
+                    {(ui === UI.emoji && (
+                      <Emoji width={width} height={height} />
                     )) ||
+                      (ui === UI.arg && !nullChoices && choices.length > 0 && (
+                        <>
+                          <List height={height} width={width} />
+                        </>
+                      )) ||
                       (!!(ui === UI.arg || ui === UI.hotkey || ui === UI.div) &&
                         panelHTML.length > 0 && (
                           <>

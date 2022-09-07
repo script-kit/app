@@ -41,7 +41,11 @@ export const checkForUpdates = async () => {
 
   if ((!kitIgnore() && autoUpdate) || process.env.TEST_UPDATE) {
     log.info(`Auto-update enabled. Checking for update.`);
-    await autoUpdater.checkForUpdates();
+    try {
+      await autoUpdater.checkForUpdates();
+    } catch (error) {
+      log.error(error);
+    }
   }
 };
 

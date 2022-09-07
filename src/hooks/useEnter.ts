@@ -37,6 +37,7 @@ export default () => {
           UI.term,
           UI.drop,
           UI.form,
+          UI.emoji,
         ].includes(ui)
       ) {
         return;

@@ -247,6 +247,7 @@ const initState = {
   scriptHistory: [] as string[],
   scripts: [] as Script[],
   kitScripts: [] as Script[],
+  interruptScript: false,
 };
 
 nativeTheme.addListener('updated', () => {
@@ -311,11 +312,15 @@ subscribeKey(kitState, 'notifyAuthFail', (notifyAuthFail) => {
 
 export const online = async () => {
   log.info(`Checking online status...`);
-  const result = await internetAvailable();
+  try {
+    const result = await internetAvailable();
 
-  log.info(`🗼 Status: ${result ? 'Online' : 'Offline'}`);
+    log.info(`🗼 Status: ${result ? 'Online' : 'Offline'}`);
 
-  return result;
+    return result;
+  } catch (error) {
+    return false;
+  }
 };
 
 // export const getScriptsSnapshot = (): Script[] => {

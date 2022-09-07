@@ -2,7 +2,7 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-console */
 /* eslint-disable import/prefer-default-export */
-import log from 'electron-log';
+import log, { LevelOption } from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
 import fs from 'fs';
 import {
@@ -77,7 +77,11 @@ export const warn = (message: string) => {
   log.warn(message);
 };
 
-if (process.env.NODE_ENV === 'production') {
+if (process.env.LOG_LEVEL) {
+  log.info('🪵 Setting log level', process.env.LOG_LEVEL);
+  log.transports.file.level = process.env.LOG_LEVEL as LevelOption;
+  log.transports.console.level = process.env.LOG_LEVEL as LevelOption;
+} else if (process.env.NODE_ENV === 'production') {
   log.transports.file.level = 'info';
   log.transports.console.level = 'info';
 } else {
@@ -90,3 +94,13 @@ subscribeKey(kitState, 'logLevel', (level) => {
   log.transports.file.level = level;
   log.transports.console.level = level;
 });
+/**
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *  Like this?
+ */

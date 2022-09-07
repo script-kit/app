@@ -50,6 +50,7 @@ import {
   kitPath,
   kenvPath,
   kitDotEnvPath,
+  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { getLog, warn } from './logs';
@@ -91,7 +92,11 @@ import { emitter, KitEvent } from './events';
 import { show, showDevTools, showWidget } from './show';
 
 import { getVersion } from './version';
-import { getClipboardHistory } from './tick';
+import {
+  clearClipboardHistory,
+  getClipboardHistory,
+  removeFromClipboardHistory,
+} from './tick';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
@@ -524,14 +529,21 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
 
-  CLEAR_CLIPBOARD_HISTORY: () => {
-    emitter.emit(Channel.CLEAR_CLIPBOARD_HISTORY);
-  },
+  CLEAR_CLIPBOARD_HISTORY: toProcess(({ child }, { channel, value }) => {
+    log.verbose(channel);
 
-  REMOVE_CLIPBOARD_HISTORY_ITEM: (data: any) => {
-    log.info(`REMOVE_CLIPBOARD_HISTORY_ITEM`, data);
-    emitter.emit(Channel.REMOVE_CLIPBOARD_HISTORY_ITEM, data.value);
-  },
+    clearClipboardHistory();
+
+    child?.send({ channel });
+  }),
+
+  REMOVE_CLIPBOARD_HISTORY_ITEM: toProcess(({ child }, { channel, value }) => {
+    log.verbose(channel, value);
+
+    removeFromClipboardHistory(value);
+
+    child?.send({ channel });
+  }),
 
   TOGGLE_BACKGROUND: (data: any) => {
     emitter.emit(KitEvent.ToggleBackground, data);
@@ -728,20 +740,46 @@ const kitMessageMap: ChannelHandler = {
   UPDATE_APP: () => {
     emitter.emit(KitEvent.CheckForUpdates, true);
   },
-  SET_CHOICES: (data) => {
-    if (kitState.isScripts) {
-      setChoices(formatScriptChoices(data.value));
-    } else {
-      setChoices(data.value);
+  ADD_CHOICE: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.ADD_CHOICE, value);
+
+    if (child) {
+      child?.send({
+        channel,
+        value,
+      });
     }
-  },
+  }),
+
+  SET_CHOICES: toProcess(async ({ child }, { channel, value }) => {
+    if (kitState.isScripts) {
+      setChoices(formatScriptChoices(value));
+    } else {
+      setChoices(value);
+    }
+
+    if (child) {
+      child?.send({
+        channel,
+      });
+    }
+  }),
 
   // UPDATE_PROMPT_WARN: (data) => {
   //   setPlaceholder(data.info as string);
   // },
-  CLEAR_PROMPT_CACHE: async () => {
+
+  CLEAR_PROMPT_CACHE: toProcess(async ({ child }, { channel, value }) => {
+    log.verbose(`${channel}: Clearing prompt cache`);
     await clearPromptCache();
-  },
+
+    if (child) {
+      child?.send({
+        channel,
+        value,
+      });
+    }
+  }),
   CLEAR_TABS: () => {
     sendToPrompt(Channel.CLEAR_TABS, []);
   },
@@ -1287,6 +1325,14 @@ class Processes extends Array<ProcessInfo> {
     this.splice(index, 1);
 
     kitState.removeP(pid);
+
+    // const mainAbandon = kitState.ps.find(
+    //   (p) => p?.scriptPath === mainScriptPath
+    // );
+    // if (mainAbandon?.child) {
+    //   log.info(`Found stray main . Exiting...`);
+    //   mainAbandon?.child?.killed && mainAbandon?.child?.kill();
+    // }
   }
 }
 

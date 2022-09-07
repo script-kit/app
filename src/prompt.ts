@@ -40,6 +40,8 @@ import { kitState } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
+  EMOJI_HEIGHT,
+  EMOJI_WIDTH,
   INPUT_HEIGHT,
   MIN_HEIGHT,
   MIN_WIDTH,
@@ -409,6 +411,10 @@ export const getCurrentScreenPromptCache = async (
     resize: Boolean(resize),
   });
   if (ui !== UI.none && resize) {
+    if (ui === UI.emoji) {
+      width = EMOJI_WIDTH;
+      height = EMOJI_HEIGHT;
+    }
     if (ui === UI.form) width /= 2;
     if (ui === UI.drop) {
       width /= 2;
@@ -662,6 +668,10 @@ const writePromptDb = debounce(
 );
 
 export const hideAppIfNoWindows = (scriptPath = '', reason: string) => {
+  if (kitState.interruptScript) {
+    kitState.interruptScript = false;
+    return;
+  }
   if (promptWindow) {
     // const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden
@@ -904,15 +914,16 @@ const sizeOrBounds = (bounds: Rectangle) => {
     kitState.scriptPath.includes('.kit') &&
     kitState.scriptPath.includes('cli');
 
-  if (isCLI) {
-    promptWindow.setSize(bounds.width, bounds.height, promptWindow.isVisible());
-  } else {
-    promptWindow.setBounds(bounds, promptWindow?.isVisible());
-  }
+  promptWindow.setBounds(bounds, promptWindow?.isVisible());
+  // if (isCLI) {
+  //   promptWindow.setSize(bounds.width, bounds.height, promptWindow.isVisible());
+  // } else {
+  //   promptWindow.setBounds(bounds, promptWindow?.isVisible());
+  // }
 };
 
 subscribeKey(kitState, 'promptUI', async () => {
-  log.verbose({
+  log.silly({
     promptUI: kitState.promptUI,
   });
   if (
