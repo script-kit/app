@@ -1491,7 +1491,10 @@ export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
 export const processesAtom = atom<ProcessInfo[]>([]);
 
 export const setFocusedChoiceAtom = atom(null, (g, s, a: string) => {
-  const i = g(choices).findIndex((c) => c?.item?.id === a);
+  if (!a) return;
+  const i = g(choices).findIndex(
+    (c) => c?.item?.id === a || c?.item?.name === a
+  );
 
   // console.log({ i });
   if (i > -1) {

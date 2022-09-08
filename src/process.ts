@@ -673,9 +673,11 @@ const kitMessageMap: ChannelHandler = {
     kitState.resize = data?.value;
   },
 
-  SET_INPUT: (data) => {
-    setInput(data.value);
-  },
+  SET_INPUT: toProcess(async ({ child }, { channel, value }) => {
+    setInput(value);
+
+    child?.send({ channel, value });
+  }),
 
   SET_PLACEHOLDER: (data) => {
     setPlaceholder(data.value);
@@ -1054,22 +1056,18 @@ const kitMessageMap: ChannelHandler = {
 
   VERIFY_FULL_DISK_ACCESS: toProcess(async ({ child }, { channel }) => {
     let value = false;
-    if (kitState.isMac) {
+    if (process.env.NODE_ENV === 'development' || !kitState.isMac) {
+      value = true;
+    } else {
       const { getAuthStatus, askForFullDiskAccess } = await import(
         'node-mac-permissions'
       );
-      const authStatus = await getAuthStatus('full-disk-access');
+      const authStatus = getAuthStatus('full-disk-access');
       if (authStatus === 'authorized') {
         value = true;
       } else {
         askForFullDiskAccess();
       }
-    } else {
-      value = true;
-    }
-
-    if (process.env.NODE_ENV === 'development') {
-      value = true;
     }
 
     child?.send({ channel, value });
