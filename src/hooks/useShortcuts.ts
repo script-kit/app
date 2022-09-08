@@ -92,7 +92,6 @@ export default () => {
   useHotkeys(
     onShortcuts,
     (event, handler) => {
-      console.log(handler.key);
       event.preventDefault();
 
       if (flagValue) return;
@@ -101,7 +100,6 @@ export default () => {
       if (found && found?.flag) {
         setFlag(found.flag);
       }
-      console.log(`Send shortcut: ${handler.key}`);
       sendShortcut(handler.key);
     },
     hotkeysOptions,
