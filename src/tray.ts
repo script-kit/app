@@ -412,10 +412,13 @@ export const openMenu = async (event?: KeyboardEvent) => {
       },
     ]);
     contextMenu.once('menu-will-close', () => {
-      kitState.status = {
-        status: 'default',
-        message: '',
-      };
+      if (!kitState.starting) {
+        kitState.status = {
+          status: 'default',
+          message: '',
+        };
+      }
+
       kitState.notifyAuthFail = false;
       kitState.trayOpen = false;
     });

@@ -905,7 +905,7 @@ const checkKit = async () => {
         await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
       }
     }
-    await setupLog(`updating ~/.kit packages...`);
+    await setupLog(`Installing ~/.kit packages...`);
     log.info(`PATH:`, options?.env?.PATH);
 
     if (isWin) {
