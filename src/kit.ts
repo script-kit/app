@@ -103,6 +103,7 @@ export const runPromptProcess = async (
   setPromptPid(pid);
 
   const script = await findScript(promptScriptPath);
+
   await setScript({ ...script });
 
   log.info(`${pid}: 🏎 ${promptScriptPath} `);

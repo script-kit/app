@@ -190,7 +190,7 @@ export default function Editor() {
         mountEditor.revealLineInCenter(Math.floor(lineNumber / 2));
       }
     },
-    [config]
+    [config, containerRef, isDark]
   );
 
   const onChange = useCallback((value) => {
@@ -224,7 +224,7 @@ export default function Editor() {
 
       editor.focus();
     }
-  }, [open, config, (config as EditorOptions)?.value, editor, ui]);
+  }, [open, config, editor, ui]);
 
   return (
     <motion.div

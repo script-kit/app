@@ -43,7 +43,7 @@
     pixelmatch "^4.0.2"
     tinycolor2 "^1.4.1"
 
-"@jimp/custom@^0.16.1":
+"@jimp/custom@^0.16.0":
   version "0.16.1"
   resolved "https://registry.yarnpkg.com/@jimp/custom/-/custom-0.16.1.tgz#28b659c59e20a1d75a0c46067bd3f4bd302cf9c5"
   integrity sha512-DNUAHNSiUI/j9hmbatD6WN/EBIyeq4AO0frl5ETtt51VN1SvE4t4v83ZA/V6ikxEf3hxLju4tQ5Pc3zmZkN/3A==
@@ -240,7 +240,7 @@
     "@babel/runtime" "^7.7.2"
     "@jimp/utils" "^0.16.1"
 
-"@jimp/plugins@^0.16.1":
+"@jimp/plugins@^0.16.0":
   version "0.16.1"
   resolved "https://registry.yarnpkg.com/@jimp/plugins/-/plugins-0.16.1.tgz#9f08544c97226d6460a16ced79f57e85bec3257b"
   integrity sha512-c+lCqa25b+4q6mJZSetlxhMoYuiltyS+ValLzdwK/47+aYsq+kcJNl+TuxIEKf59yr9+5rkbpsPkZHLF/V7FFA==
@@ -286,7 +286,7 @@
     "@babel/runtime" "^7.7.2"
     utif "^2.0.1"
 
-"@jimp/types@^0.16.1":
+"@jimp/types@^0.16.0":
   version "0.16.1"
   resolved "https://registry.yarnpkg.com/@jimp/types/-/types-0.16.1.tgz#0dbab37b3202315c91010f16c31766d35a2322cc"
   integrity sha512-g1w/+NfWqiVW4CaXSJyD28JQqZtm2eyKMWPhBBDCJN9nLCN12/Az0WFF3JUAktzdsEC2KRN2AqB1a2oMZBNgSQ==
@@ -307,50 +307,50 @@
     "@babel/runtime" "^7.7.2"
     regenerator-runtime "^0.13.3"
 
-"@nut-tree/libnut-darwin@2.1.8":
-  version "2.1.8"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-darwin/-/libnut-darwin-2.1.8.tgz#ac9595e704d41a18d127afa85db82b5acf2b66a2"
-  integrity sha512-BJ9DHR0FQsxEL9L75jIkRvejH925oNosXrKobhgbOC0DBGIUqtRLMoKcEZfGK8K1if52jQrjTZEXxDUEjMzHgA==
+"@nut-tree/libnut-darwin@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-darwin/-/libnut-darwin-2.2.0.tgz#b82917d6e43b6d7dd048ed6f17c7c7218e42169c"
+  integrity sha512-MSYcsur/n4uTl+Q+3dVhHLKFEeelR4uuDdcCKIc21Tmaod6iL8vy4HRVJO+wSmLdnbNT2Zqur5ufmnwMOVKVTA==
   dependencies:
     bindings "1.5.0"
     cmake-js "6.1.0"
     node-addon-api "3.0.0"
 
-"@nut-tree/libnut-linux@2.1.8":
-  version "2.1.8"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-linux/-/libnut-linux-2.1.8.tgz#ed8e4ba732c7b47aee7682435f15d6b36d30970f"
-  integrity sha512-M9mIFziEQG258GmsKnWdKpIvOT7biScu1s88digYjdwUVjNS/i4yjdJdFJ4L5yRE+vj08wQgQQqAWt8jdHTIEw==
+"@nut-tree/libnut-linux@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-linux/-/libnut-linux-2.2.0.tgz#eecd9d6e70b4d3ac7bd6ffd70706eaf110de8f29"
+  integrity sha512-EFFesR82QQLAb3FZ02uJzRrTkejGFQnRuEfik5AVfNJR7p/rGsguLmzPsuNLb73EqwGkgiLRFthVnBJed+xVxA==
   dependencies:
     bindings "1.5.0"
     cmake-js "6.1.0"
     node-addon-api "3.0.0"
 
-"@nut-tree/libnut-win32@2.1.8":
-  version "2.1.8"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-win32/-/libnut-win32-2.1.8.tgz#0ad98831734f991551419dc3553dbcbc7867769f"
-  integrity sha512-OQS1CJ+YR/XTRCbBxuM99CHmaiR5p0TB0q06nhslgxNo55lU4SL2KdwqPH4PWeMYRvlH6rdoIj8Sw3CYgFI3hg==
+"@nut-tree/libnut-win32@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-win32/-/libnut-win32-2.2.0.tgz#64b9666f7417a3dda615d39ddcae045aaacd2b01"
+  integrity sha512-NpMVe4irbDI7qIEZJuBV4XvLmqTC06pnuF1sEYZ3/51g2cVCbjU0kfJA4Xl91bcqMbvpLCFdfdmKhmcL1x88lw==
   dependencies:
     bindings "1.5.0"
     cmake-js "6.1.0"
     node-addon-api "3.0.0"
 
-"@nut-tree/libnut@2.1.8":
-  version "2.1.8"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut/-/libnut-2.1.8.tgz#a3b7f50d9f47a8aef365754ac1879f40a0ca12f4"
-  integrity sha512-MlEco3EvQQSm+gJKSQnBay+Oe9+iLz0beatFJvKveaJEmfqZzPmMfOdcxcub2uU/Sei8M74Udu+VuKtziGFaAw==
+"@nut-tree/libnut@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut/-/libnut-2.2.0.tgz#20b942e1ac6e4ceaa88ac728afb83e88aed01c23"
+  integrity sha512-KfgEzY5mY4hSIpOCXJjh1XRKyYfZ27eWZN3X3r/ewSTmUx2+oYPEad7aaWxk2E0nMz/i07CW4sluRdLxCAhazQ==
   dependencies:
-    "@nut-tree/libnut-darwin" "2.1.8"
-    "@nut-tree/libnut-linux" "2.1.8"
-    "@nut-tree/libnut-win32" "2.1.8"
+    "@nut-tree/libnut-darwin" "2.2.0"
+    "@nut-tree/libnut-linux" "2.2.0"
+    "@nut-tree/libnut-win32" "2.2.0"
 
-"@nut-tree/nut-js@2.1.1":
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/@nut-tree/nut-js/-/nut-js-2.1.1.tgz#50e35df350bda3e43d8b97774fec9163a46db592"
-  integrity sha512-Q9A4GAq5FoF7Ha80s8++jJBNWu/TEzQs1Uy3EA8Kwbfm4seCyuw+btRlwbu12aCpmmaIbe11q2aFZfOYfu80sg==
+"@nut-tree/nut-js@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@nut-tree/nut-js/-/nut-js-2.2.0.tgz#945db152ecf9d35a742bb58747b4527af8c825a6"
+  integrity sha512-TZjXCTITOtwotTKQ1kNb4+/apEYFtz+iL6I3G5Sr+v6YOuy08gClPE9u3uFJbEjDMeMhMbD+417zbz2+rFptRQ==
   dependencies:
-    "@nut-tree/libnut" "2.1.8"
+    "@nut-tree/libnut" "2.2.0"
     clipboardy "2.3.0"
-    jimp "0.16.1"
+    jimp "0.16.0"
     node-abort-controller "2.0.0"
 
 "@types/core-js@^2.5.4":
@@ -975,15 +975,15 @@ isstream@~0.1.2:
   resolved "https://registry.yarnpkg.com/isstream/-/isstream-0.1.2.tgz#47e63f7af55afa6f92e1500e690eb8b8529c099a"
   integrity sha1-R+Y/evVa+m+S4VAOaQ64uFKcCZo=
 
-jimp@0.16.1:
-  version "0.16.1"
-  resolved "https://registry.yarnpkg.com/jimp/-/jimp-0.16.1.tgz#192f851a30e5ca11112a3d0aa53137659a78ca7a"
-  integrity sha512-+EKVxbR36Td7Hfd23wKGIeEyHbxShZDX6L8uJkgVW3ESA9GiTEPK08tG1XI2r/0w5Ch0HyJF5kPqF9K7EmGjaw==
+jimp@0.16.0:
+  version "0.16.0"
+  resolved "https://registry.yarnpkg.com/jimp/-/jimp-0.16.0.tgz#d01a1709634c22aa113df02076dbe4db7ca55acc"
+  integrity sha512-WRfGlXB6/0xY3mSoskfVhWVNSegVZCgmvunJDc41QthTWi5oRG2FeL7eOcX0zz/Z+dYRu6Q0ibO2yltC+EIptA==
   dependencies:
     "@babel/runtime" "^7.7.2"
-    "@jimp/custom" "^0.16.1"
-    "@jimp/plugins" "^0.16.1"
-    "@jimp/types" "^0.16.1"
+    "@jimp/custom" "^0.16.0"
+    "@jimp/plugins" "^0.16.0"
+    "@jimp/types" "^0.16.0"
     regenerator-runtime "^0.13.3"
 
 jpeg-js@0.4.2:

@@ -21,8 +21,6 @@ import { nanoid } from 'nanoid';
 import { UiohookKeyboardEvent, UiohookKey } from 'uiohook-napi';
 import { tmpClipboardDir, kitPath } from '@johnlindquist/kit/cjs/utils';
 import { Choice, Script } from '@johnlindquist/kit/types/core';
-
-import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { remove } from 'lodash';
 
 import { emitter, KitEvent } from './events';
@@ -342,12 +340,15 @@ export const configureInterval = async () => {
       if (kitConfig.deleteSnippet) {
         const prevDelay = keyboard.config.autoDelayMs;
         keyboard.config.autoDelayMs = 0;
-        snippet.split('').forEach(async () => {
-          await keyboard.type(Key.Backspace);
-        });
+        await Promise.all(
+          snippet.split('').map(() => keyboard.type(Key.Backspace))
+        );
+
         keyboard.config.autoDelayMs = prevDelay;
       }
-      emitter.emit(KitEvent.RunBackgroundProcess, script.filePath);
+      setTimeout(() => {
+        emitter.emit(KitEvent.RunPromptProcess, script.filePath);
+      }, 100);
     }
   });
 

@@ -629,8 +629,8 @@ const kitMessageMap: ChannelHandler = {
         foundP.scriptPath = data.value?.filePath;
       }
       kitState.promptCount = -1;
-      await setScript(data.value);
     }
+    await setScript(data.value);
   }),
   SET_STATUS: toProcess(async (_, data) => {
     if (data?.value) kitState.status = data?.value;
@@ -656,10 +656,17 @@ const kitMessageMap: ChannelHandler = {
     setBounds(data.value);
   },
 
-  SET_IGNORE_BLUR: (data) => {
-    log.info(`SET_IGNORE_BLUR`, { data });
-    kitState.ignoreBlur = data.value;
-  },
+  SET_IGNORE_BLUR: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`SET_IGNORE_BLUR`, { value });
+    kitState.ignoreBlur = value;
+
+    if (child) {
+      child?.send({
+        channel,
+        value,
+      });
+    }
+  }),
 
   SET_RESIZE: (data) => {
     sendToPrompt(Channel.SET_RESIZE, data.value);
@@ -1061,6 +1068,10 @@ const kitMessageMap: ChannelHandler = {
       value = true;
     }
 
+    if (process.env.NODE_ENV === 'development') {
+      value = true;
+    }
+
     child?.send({ channel, value });
   }),
 
@@ -1074,6 +1085,12 @@ const kitMessageMap: ChannelHandler = {
     await keyboard.releaseKey(modifier, Key.V);
     child?.send({ channel, value });
     clipboard.writeText(prevText);
+  }),
+
+  SHOW_EMOJI_PANEL: toProcess(async ({ child }, { channel, value }) => {
+    app.showEmojiPanel();
+
+    child?.send({ channel, value });
   }),
 };
 
