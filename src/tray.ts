@@ -506,9 +506,10 @@ export const createTray = async (checkDb = false, state: trayState) => {
       };
 
       if (kitState.trayOpen) {
-        tray?.closeContextMenu();
         kitState.trayOpen = false;
+        tray?.closeContextMenu();
       } else {
+        kitState.trayOpen = true;
         tray?.popUpContextMenu(
           Menu.buildFromTemplate([
             {
@@ -522,7 +523,6 @@ export const createTray = async (checkDb = false, state: trayState) => {
             },
           ])
         );
-        kitState.trayOpen = true;
       }
     };
 
