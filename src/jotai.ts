@@ -51,7 +51,7 @@ export const processingAtom = atom(false);
 const _open = atom(false);
 export const submittedAtom = atom(false);
 const tabs = atom<string[]>([]);
-export const _tabs = atom(
+export const tabsAtom = atom(
   (g) => g(tabs),
   (g, s, a: string[]) => {
     const prevTabs = g(tabs);
@@ -716,7 +716,7 @@ export const scriptAtom = atom(
     s(_history, [...history, a]);
     // console.clear();
     if (a?.tabs) {
-      s(_tabs, a?.tabs || []);
+      s(tabsAtom, a?.tabs || []);
     }
 
     s(mouseEnabledAtom, 0);
@@ -731,10 +731,10 @@ export const scriptAtom = atom(
     s(submittedAtom, false);
     s(processingAtom, false);
     s(_description, a?.description || '');
-    s(_name, a?.name || '');
+    s(nameAtom, a?.name || '');
     s(loadingAtom, false);
     s(loading, false);
-    s(_logo, a?.logo || '');
+    s(logoAtom, a?.logo || '');
     s(prevChoicesAtom, []);
 
     s(flagsAtom, {});
@@ -949,7 +949,7 @@ export const promptDataAtom = atom(
       s(hintAtom, a.hint);
       s(placeholderAtom, a.placeholder);
       s(selectedAtom, a.selected);
-      s(_tabs, a.tabs);
+      s(tabsAtom, a.tabs);
 
       s(inputAtom, a.input);
       s(filterInputAtom, ``);
@@ -961,7 +961,7 @@ export const promptDataAtom = atom(
       }
 
       if (a.name) {
-        s(_name, a.name);
+        s(nameAtom, a.name);
       }
 
       if (a.description) {
@@ -1070,11 +1070,11 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     index: g(_index),
     flaggedValue: g(_flagged),
     focused: g(_focused),
-    tab: g(_tabs)?.[g(_tabIndex)] || '',
+    tab: g(tabsAtom)?.[g(_tabIndex)] || '',
     history: g(_history) || [],
     modifiers: g(_modifiers),
     count: g(_choices).length || 0,
-    name: g(_name),
+    name: g(nameAtom),
     description: g(_description),
     script: g(_script),
     value: g(_submitValue),
@@ -1324,8 +1324,8 @@ export const previewEnabledAtom = atom(
 
 export const topRefAtom = atom<null | HTMLDivElement>(null);
 export const _description = atom<string>('');
-export const _logo = atom<string>('');
-export const _name = atom<string>('');
+export const logoAtom = atom<string>('');
+export const nameAtom = atom<string>('');
 export const loadingAtom = atom(
   (g) => g(loading),
   debounce((g, s, a: boolean) => {
@@ -1461,7 +1461,7 @@ export const submitSurveyAtom = atom(null, (g, s, a: Survey) => {
 
 export const showTabsAtom = atom((g) => {
   return (
-    [UI.arg].includes(g(uiAtom)) && g(_tabs)?.length > 0 && !g(flagValueAtom)
+    [UI.arg].includes(g(uiAtom)) && g(tabsAtom)?.length > 0 && !g(flagValueAtom)
   );
 });
 

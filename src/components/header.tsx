@@ -8,10 +8,10 @@ import { AnimatePresence } from 'framer-motion';
 import {
   _description,
   mouseEnabledAtom,
-  _name,
+  nameAtom,
   openAtom,
   scriptAtom,
-  _logo,
+  logoAtom,
   processesAtom,
   isMainScriptAtom,
   runProcessesAtom,
@@ -24,8 +24,8 @@ export default function Header() {
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [, setOpen] = useAtom(openAtom);
   const [description] = useAtom(_description);
-  const [logo] = useAtom(_logo);
-  const [name] = useAtom(_name);
+  const [logo] = useAtom(logoAtom);
+  const [name] = useAtom(nameAtom);
   const [processes] = useAtom(processesAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
   const [runProcesses] = useAtom(runProcessesAtom);

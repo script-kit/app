@@ -25,7 +25,7 @@ import {
   submittedAtom,
   submitValueAtom,
   tabIndexAtom,
-  _tabs,
+  tabsAtom,
   ultraShortCodesAtom,
   unfilteredChoicesAtom,
   onInputSubmitAtom,
@@ -47,7 +47,7 @@ export default function Input() {
 
   const [pid] = useAtom(pidAtom);
   const [inputValue, setInput] = useAtom(inputAtom);
-  const [tabs] = useAtom(_tabs);
+  const [tabs] = useAtom(tabsAtom);
   const [, setTabIndex] = useAtom(tabIndexAtom);
   const [unfilteredChoices] = useAtom(unfilteredChoicesAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);

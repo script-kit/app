@@ -23,7 +23,7 @@ import React, {
 import path from 'path';
 import { loader } from '@monaco-editor/react';
 
-import { useAtom, useSetAtom } from 'jotai';
+import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
@@ -49,8 +49,6 @@ import Form from './components/form';
 import {
   editorConfigAtom,
   flagsAtom,
-  formDataAtom,
-  formHTMLAtom,
   hintAtom,
   inputAtom,
   isMouseDownAtom,
@@ -67,7 +65,7 @@ import {
   scriptAtom,
   submitValueAtom,
   tabIndexAtom,
-  _tabs,
+  tabsAtom,
   textareaConfigAtom,
   themeAtom,
   topHeightAtom,
@@ -75,7 +73,7 @@ import {
   unfilteredChoicesAtom,
   topRefAtom,
   _description,
-  _name,
+  nameAtom,
   textareaValueAtom,
   loadingAtom,
   processingAtom,
@@ -92,7 +90,7 @@ import {
   filterInputAtom,
   blurAtom,
   startAtom,
-  _logo,
+  logoAtom,
   getEditorHistoryAtom,
   scoredChoices,
   showTabsAtom,
@@ -164,71 +162,70 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
-  const [isMainScript] = useAtom(isMainScriptAtom);
   const [appConfig, setAppConfig] = useAtom(appConfigAtom);
-  const [, setPid] = useAtom(pidAtom);
   const [open, setOpen] = useAtom(openAtom);
-  const [, setExit] = useAtom(exitAtom);
   const [script, setScript] = useAtom(scriptAtom);
-  const [, setScriptHistory] = useAtom(_history);
-
-  const [, setInput] = useAtom(inputAtom);
-  const [, setPlaceholder] = useAtom(placeholderAtom);
-  const [, setPromptData] = useAtom(promptDataAtom);
-  const [, setTheme] = useAtom(themeAtom);
-  const [, setSplashBody] = useAtom(splashBodyAtom);
-  const [, setSplashHeader] = useAtom(splashHeaderAtom);
-  const [, setSplashProgress] = useAtom(splashProgressAtom);
-
-  const [, setUnfilteredChoices] = useAtom(unfilteredChoicesAtom);
-  const [choices] = useAtom(scoredChoices);
-
-  const [ui] = useAtom(uiAtom);
   const [hint, setHint] = useAtom(hintAtom);
-  const [footer, setFooter] = useAtom(footerAtom);
-
-  const [, setReady] = useAtom(isReadyAtom);
-
-  const [, setTabIndex] = useAtom(tabIndexAtom);
-
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
-  const [, setPreviewHTML] = useAtom(previewHTMLAtom);
   const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
-  const [, setEditorConfig] = useAtom(editorConfigAtom);
-  const [, setTextareaConfig] = useAtom(textareaConfigAtom);
-  const [flags, setFlags] = useAtom(flagsAtom);
-  const [, setMainHeight] = useAtom(mainHeightAtom);
-  const [, setTopHeight] = useAtom(topHeightAtom);
+  const [hidden, setHidden] = useAtom(isHiddenAtom);
 
-  const [, setSubmitValue] = useAtom(submitValueAtom);
-  const [, setMouseEnabled] = useAtom(mouseEnabledAtom);
-  const [showSelected] = useAtom(showSelectedAtom);
-  const [showTabs] = useAtom(showTabsAtom);
-  const [, setTopRef] = useAtom(topRefAtom);
-  const [, setDescription] = useAtom(_description);
-  const [, setName] = useAtom(_name);
-  const [, setTextareaValue] = useAtom(textareaValueAtom);
-  const [, setLoading] = useAtom(loadingAtom);
-  const [processing] = useAtom(processingAtom);
-  const [nullChoices] = useAtom(nullChoicesAtom);
-  const [resizeEnabled] = useAtom(resizeEnabledAtom);
-  const [, setValueInvalid] = useAtom(valueInvalidAtom);
-  const [, setFilterInput] = useAtom(filterInputAtom);
-  const [, setBlur] = useAtom(blurAtom);
-  const [, start] = useAtom(startAtom);
-  const [, setLogo] = useAtom(_logo);
-  const [getEditorHistory] = useAtom(getEditorHistoryAtom);
-  const [, setProcesses] = useAtom(processesAtom);
-  const [, setFocused] = useAtom(setFocusedChoiceAtom);
-  const [, setSocketURL] = useAtom(socketURLAtom);
-  const [onPaste] = useAtom(onPasteAtom);
-  const [onDrop] = useAtom(onDropAtom);
+  const isMainScript = useAtomValue(isMainScriptAtom);
+  const processing = useAtomValue(processingAtom);
+  const resizeEnabled = useAtomValue(resizeEnabledAtom);
+  const ui = useAtomValue(uiAtom);
+  const choices = useAtomValue(scoredChoices);
+  const showSelected = useAtomValue(showSelectedAtom);
+  const showTabs = useAtomValue(showTabsAtom);
+  const nullChoices = useAtomValue(nullChoicesAtom);
+  const getEditorHistory = useAtomValue(getEditorHistoryAtom);
+  const onPaste = useAtomValue(onPasteAtom);
+  const onDrop = useAtomValue(onDropAtom);
+
+  const setPid = useSetAtom(pidAtom);
+  const setExit = useSetAtom(exitAtom);
+  const setScriptHistory = useSetAtom(_history);
+  const setInput = useSetAtom(inputAtom);
+  const setPlaceholder = useSetAtom(placeholderAtom);
+  const setPromptData = useSetAtom(promptDataAtom);
+  const setTheme = useSetAtom(themeAtom);
+  const setSplashBody = useSetAtom(splashBodyAtom);
+  const setSplashHeader = useSetAtom(splashHeaderAtom);
+  const setSplashProgress = useSetAtom(splashProgressAtom);
+  const setUnfilteredChoices = useSetAtom(unfilteredChoicesAtom);
+  const setFooter = useSetAtom(footerAtom);
+  const setReady = useSetAtom(isReadyAtom);
+  const setTabIndex = useSetAtom(tabIndexAtom);
   const setResize = useSetAtom(resizeAtom);
-  const setTabs = useSetAtom(_tabs);
+  const setTabs = useSetAtom(tabsAtom);
   const addChoice = useSetAtom(addChoiceAtom);
+  const setPreviewHTML = useSetAtom(previewHTMLAtom);
+  const setEditorConfig = useSetAtom(editorConfigAtom);
+  const setTextareaConfig = useSetAtom(textareaConfigAtom);
+  const setFlags = useSetAtom(flagsAtom);
+  const setMainHeight = useSetAtom(mainHeightAtom);
+  const setTopHeight = useSetAtom(topHeightAtom);
+  const setSubmitValue = useSetAtom(submitValueAtom);
+  const setMouseEnabled = useSetAtom(mouseEnabledAtom);
+  const setTopRef = useSetAtom(topRefAtom);
+  const setDescription = useSetAtom(_description);
+  const setName = useSetAtom(nameAtom);
+  const setTextareaValue = useSetAtom(textareaValueAtom);
+  const setLoading = useSetAtom(loadingAtom);
+  const setValueInvalid = useSetAtom(valueInvalidAtom);
+  const setFilterInput = useSetAtom(filterInputAtom);
+  const setBlur = useSetAtom(blurAtom);
+  const start = useSetAtom(startAtom);
+  const setLogo = useSetAtom(logoAtom);
+  const setProcesses = useSetAtom(processesAtom);
+  const setFocused = useSetAtom(setFocusedChoiceAtom);
+  const setSocketURL = useSetAtom(socketURLAtom);
+  const setIsMouseDown = useSetAtom(isMouseDownAtom);
 
   useShortcuts();
   useEnter();
+  useThemeDetector();
+  const controls = useAnimation();
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -240,10 +237,6 @@ export default function App() {
       setTopHeight(entry.contentRect.height);
     }, 100)
   );
-
-  useThemeDetector();
-
-  const [, setIsMouseDown] = useAtom(isMouseDownAtom);
 
   type ChannelAtomMap = {
     [key in keyof ChannelMap]: (data: ChannelMap[key]) => void;
@@ -356,9 +349,6 @@ export default function App() {
   //     // windowContainerRef.current.style.width = window.innerWidth + 'px';
   //   }
   // }, [mainHeight, topHeight, windowContainerRef]);
-
-  const [hidden, setHidden] = useAtom(isHiddenAtom);
-  const controls = useAnimation();
 
   useEffect(() => {
     if (open) {
