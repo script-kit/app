@@ -405,7 +405,6 @@ export const editorOptions = atom<editor.IStandaloneEditorConstructionOptions>(
 export const editorConfigAtom = atom(
   (g) => g(editorConfig),
   (g, s, a: EditorOptions) => {
-    console.log({ a });
     s(editorConfig, a);
 
     // s(inputAtom, a.value);

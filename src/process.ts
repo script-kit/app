@@ -931,11 +931,14 @@ const kitMessageMap: ChannelHandler = {
 
   KEYBOARD_TYPE: toProcess(async ({ child }, { channel, value }) => {
     if (!kitState.authorized) kitState.notifyAuthFail = true;
-    log.info(`>>>>>>>>>>>> ${channel}: ${value}`);
+    log.info(`${channel}: ${typeof value} ${value}`);
+    log.info(`${channel}: ${[...value]}`);
     keyboard.config.autoDelayMs = 0;
     kitState.isTyping = true;
     try {
-      await keyboard.type(value);
+      for await (const k of value) {
+        await keyboard.type(k);
+      }
     } catch (error) {
       log.error(`KEYBOARD ERROR TYPE`, error);
     }
@@ -945,7 +948,7 @@ const kitMessageMap: ChannelHandler = {
       child?.send({
         channel,
       });
-    }, 100);
+    }, value.length);
   }),
 
   KEYBOARD_PRESS_KEY: toProcess(async ({ child }, { channel, value }) => {
@@ -1075,14 +1078,15 @@ const kitMessageMap: ChannelHandler = {
 
   SET_SELECTED_TEXT: toProcess(async ({ child }, { channel, value }) => {
     log.info(`SET SELECTED TEXT`, value);
-    const prevText = clipboard.readText();
     clipboard.writeText(value);
 
     const modifier = kitState.isMac ? Key.LeftSuper : Key.LeftControl;
     await keyboard.pressKey(modifier, Key.V);
     await keyboard.releaseKey(modifier, Key.V);
-    child?.send({ channel, value });
-    clipboard.writeText(prevText);
+    setTimeout(() => {
+      child?.send({ channel, value });
+      log.info(`SET SELECTED TEXT DONE`, value);
+    }, 10);
   }),
 
   SHOW_EMOJI_PANEL: toProcess(async ({ child }, { channel, value }) => {

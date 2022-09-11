@@ -1,3 +1,5 @@
+/* eslint-disable no-template-curly-in-string */
+/* eslint-disable no-useless-escape */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
 import { motion } from 'framer-motion';
@@ -16,12 +18,6 @@ import {
 } from '../jotai';
 import { useMountMainHeight } from '../hooks';
 
-class ErrorBoundary extends React.Component {
-  render() {
-    return this.props.children;
-  }
-}
-
 // loader.config({
 //   paths: {
 //     vs: uriFromPath(
@@ -29,6 +25,67 @@ class ErrorBoundary extends React.Component {
 //     ),
 //   },
 // });
+
+const registerPropertiesLanguage = (monaco: Monaco) => {
+  monaco.languages.register({ id: 'properties' });
+
+  // Register a tokens provider for the language
+  monaco.languages.setMonarchTokensProvider('properties', {
+    tokenizer: {
+      root: [
+        [/^\#.*/, 'comment'],
+        [/.*\=/, 'key'],
+        [/^=.*/, 'value'],
+      ],
+    },
+  });
+
+  // Define a new theme that constains only rules that match this language
+  monaco.editor.defineTheme('properties', {
+    base: 'vs',
+    inherit: false,
+    rules: [
+      { token: 'key', foreground: '009968' },
+      { token: 'value', foreground: '009968' },
+      { token: 'comment', foreground: '666666' },
+    ],
+  } as any);
+
+  // Register a comment rule that will let us have comments in properties files
+  monaco.languages.setLanguageConfiguration('properties', {
+    comments: {
+      lineComment: '#',
+      blockComment: ['<#', '#>'],
+    },
+  });
+
+  // Register a completion item provider for the new language
+  monaco.languages.registerCompletionItemProvider('properties', {
+    provideCompletionItems: () => [
+      {
+        label: 'simpleText',
+        kind: monaco.languages.CompletionItemKind.Text,
+      },
+      {
+        label: 'testing',
+        kind: monaco.languages.CompletionItemKind.Keyword,
+        insertText: {
+          value: 'testing(${1:condition})',
+        },
+      },
+      {
+        label: 'ifelse',
+        kind: monaco.languages.CompletionItemKind.Snippet,
+        insertText: {
+          value: ['if (${1:condition}) {', '\t$0', '} else {', '\t', '}'].join(
+            '\n'
+          ),
+        },
+        documentation: 'If-Else Statement',
+      },
+    ],
+  } as any);
+};
 
 export default function Editor() {
   const [config] = useAtom(editorConfigAtom);
@@ -61,6 +118,10 @@ export default function Editor() {
           'editor.background': '#FFFFFF00',
         },
       });
+
+      if (options?.language === 'properties') {
+        registerPropertiesLanguage(monaco);
+      }
 
       if (options?.language === 'typescript') {
         monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({

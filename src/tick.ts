@@ -339,7 +339,7 @@ export const configureInterval = async () => {
       const script = snippetMap.get(snippet) as Script;
       if (kitConfig.deleteSnippet) {
         const prevDelay = keyboard.config.autoDelayMs;
-        keyboard.config.autoDelayMs = 0;
+        keyboard.config.autoDelayMs = 1;
         await Promise.all(
           snippet.split('').map(() => keyboard.type(Key.Backspace))
         );
@@ -348,7 +348,7 @@ export const configureInterval = async () => {
       }
       setTimeout(() => {
         emitter.emit(KitEvent.RunPromptProcess, script.filePath);
-      }, 100);
+      }, snippet.split('').length);
     }
   });
 

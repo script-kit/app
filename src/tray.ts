@@ -510,19 +510,21 @@ export const createTray = async (checkDb = false, state: trayState) => {
         tray?.closeContextMenu();
       } else {
         kitState.trayOpen = true;
-        tray?.popUpContextMenu(
-          Menu.buildFromTemplate([
-            {
-              label: `Script Kit ${getVersion()}`,
-              accelerator: kitState.mainShortcut,
-              enabled: false,
-            },
-            {
-              label: message,
-              icon: menuIcon('busy'),
-            },
-          ])
-        );
+        const startMenu = Menu.buildFromTemplate([
+          {
+            label: `Script Kit ${getVersion()}`,
+            accelerator: kitState.mainShortcut,
+            enabled: false,
+          },
+          {
+            label: message,
+            icon: menuIcon('busy'),
+          },
+        ]);
+        startMenu.once('menu-will-close', () => {
+          kitState.trayOpen = false;
+        });
+        tray?.popUpContextMenu(startMenu);
       }
     };
 
