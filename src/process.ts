@@ -46,11 +46,9 @@ import {
   KIT_APP,
   KIT_APP_PROMPT,
   KIT_FIRST_PATH,
-  execPath,
   kitPath,
   kenvPath,
   kitDotEnvPath,
-  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { getLog, warn } from './logs';
@@ -669,7 +667,6 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_RESIZE: (data) => {
-    sendToPrompt(Channel.SET_RESIZE, data.value);
     kitState.resize = data?.value;
   },
 
@@ -1194,7 +1191,7 @@ const createChild = ({
   const child = fork(entry, args, {
     silent: false,
     // stdio: 'inherit',
-    ...(isWin ? {} : { execPath }),
+    // ...(isWin ? {} : { execPath }),
     cwd: os.homedir(),
     env,
   });

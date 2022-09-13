@@ -878,11 +878,9 @@ export const mainHeightAtom = atom(
       clearTimeout(flickerGuard);
     }
 
-    // const resizeEnabled = g(resizeAtom) && g(promptData)?.resize;
     const prevHeight = g(mainHeight);
     if (a === prevHeight) return;
 
-    // if (!resizeEnabled && a < prevHeight) return;
     // if (Math.abs(a - prevHeight) > 2) {
 
     const nextMainHeight = a < 0 ? 0 : a;
@@ -1223,7 +1221,6 @@ export const openAtom = atom(
       s(resizeData, {});
       s(editorConfigAtom, {});
       s(promptData, null);
-      s(resizeAtom, true);
 
       ipcRenderer.send(AppChannel.END_PROCESS, {
         pid: g(pidAtom),
@@ -1382,12 +1379,6 @@ export const isReadyAtom = atom(
   }
 );
 export const cmdAtom = atom((g) => (g(appConfigAtom).isWin ? 'ctrl' : 'cmd'));
-export const resizeEnabledAtom = atom(
-  (g) =>
-    g(promptDataAtom)?.resize ||
-    g(_panelHTML)?.length > 0 ||
-    !g(_inputChangedAtom)
-);
 
 export const runMainScriptAtom = atom(() => () => {
   ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
@@ -1521,8 +1512,6 @@ export const socketURLAtom = atom(
 );
 
 export const heightChangedAtom = atom<number>(0);
-
-export const resizeAtom = atom<boolean>(true);
 
 export const enterButtonNameAtom = atom<string>((g) => {
   const ui = g(uiAtom);

@@ -9,7 +9,7 @@ import log, { LogLevel } from 'electron-log';
 import path from 'path';
 import os from 'os';
 import { ChildProcess } from 'child_process';
-import { app, BrowserWindow, nativeTheme } from 'electron';
+import { app, BrowserWindow, nativeTheme, Rectangle } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { debounce } from 'lodash';
@@ -190,7 +190,6 @@ const initState = {
   modifiedByUser: false,
   ignoreBlur: false,
   preventClose: false,
-  resize: false,
   promptProcess: undefined as ProcessInfo | undefined,
   isScripts: false,
   isMainScript: () => kitState.script.filePath === mainScriptPath,
@@ -240,7 +239,7 @@ const initState = {
   prevScriptPath: ``,
   promptUI: UI.arg,
   promptHasPreview: true,
-  promptResize: false,
+  resize: false,
   scriptPath: ``,
   resizedByChoices: false,
   initialScriptPath: '',
@@ -248,6 +247,13 @@ const initState = {
   scripts: [] as Script[],
   kitScripts: [] as Script[],
   interruptScript: false,
+  promptId: '__unset__',
+  promptBounds: {
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  },
 };
 
 nativeTheme.addListener('updated', () => {

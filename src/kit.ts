@@ -133,7 +133,7 @@ export const runPromptProcess = async (
 const KIT = kitPath();
 const forkOptions: ForkOptions = {
   cwd: homedir(),
-  execPath,
+  // execPath,
   env: {
     KIT,
     KENV: kenvPath(),

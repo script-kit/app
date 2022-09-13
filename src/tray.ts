@@ -259,7 +259,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
         | 'full-disk-access'
         | 'camera'
         | 'photos'
-        | 'speech-recognition'
         | 'microphone'
         | 'accessibility'
         | 'location'
@@ -274,7 +273,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
         'photos',
         'reminders',
         'screen',
-        'speech-recognition',
       ];
 
       const permssionsMenu: MenuItemConstructorOptions[] = [];

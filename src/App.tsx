@@ -102,7 +102,6 @@ import {
   footerAtom,
   onPasteAtom,
   onDropAtom,
-  resizeAtom,
   addChoiceAtom,
 } from './jotai';
 
@@ -169,10 +168,6 @@ export default function App() {
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
   const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
   const [hidden, setHidden] = useAtom(isHiddenAtom);
-
-  const isMainScript = useAtomValue(isMainScriptAtom);
-  const processing = useAtomValue(processingAtom);
-  const resizeEnabled = useAtomValue(resizeEnabledAtom);
   const ui = useAtomValue(uiAtom);
   const choices = useAtomValue(scoredChoices);
   const showSelected = useAtomValue(showSelectedAtom);
@@ -196,7 +191,6 @@ export default function App() {
   const setFooter = useSetAtom(footerAtom);
   const setReady = useSetAtom(isReadyAtom);
   const setTabIndex = useSetAtom(tabIndexAtom);
-  const setResize = useSetAtom(resizeAtom);
   const setTabs = useSetAtom(tabsAtom);
   const addChoice = useSetAtom(addChoiceAtom);
   const setPreviewHTML = useSetAtom(previewHTMLAtom);
@@ -272,7 +266,6 @@ export default function App() {
     [Channel.SET_LOGO]: setLogo,
     [Channel.SET_PLACEHOLDER]: setPlaceholder,
     [Channel.SET_READY]: setReady,
-    [Channel.SET_RESIZE]: setResize,
     [Channel.SET_SUBMIT_VALUE]: setSubmitValue,
     [Channel.SET_TAB_INDEX]: setTabIndex,
     [Channel.SET_PROMPT_DATA]: setPromptData,

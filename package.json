@@ -22,14 +22,14 @@
     "test-update": "TEST_UPDATE=true yarn start",
     "test": "jest",
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
-    "m1": "PATH=~/.node-versions/node-v16.10.0-darwin-arm64/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --arm64 -c.mac.identity=null --publish never",
-    "m1-dmg": "PATH=~/.node-versions/node-v16.10.0-darwin-arm64/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
-    "mac": "PATH=~/.node-versions/node-v16.10.0-darwin-arm64/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --x64 -c.mac.identity=null --publish never",
+    "m1": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --arm64 -c.mac.identity=null --publish never",
+    "m1-dmg": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
+    "mac": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --x64 -c.mac.identity=null --publish never",
     "win": "yarn build:local && DEBUG_PROD=true npx electron-builder -w",
     "linux": "yarn build:local && DEBUG_PROD=true npx electron-builder -l --publish never",
     "release": "yarn build:local && DEBUG_PROD=true npx electron-builder -c.mac.identity=null --publish never --mac",
     "cp-vs-assets": "cp -R ./node_modules/monaco-editor/min/vs ./assets",
-    "v": "PATH=~/.node-versions/node-v16.10.0-darwin-arm64/bin:$PATH node --version"
+    "v": "PATH=~/.knode/bin:$PATH node --version"
   },
   "lint-staged": {
     "*.{jsx,ts,tsx}": [

@@ -57,8 +57,6 @@ export default function Input() {
   const [, setSelectionStart] = useAtom(selectionStartAtom);
   const [, setModifiers] = useAtom(_modifiers);
   const [ultraShortCodes] = useAtom(ultraShortCodesAtom);
-  const [processing] = useAtom(processingAtom);
-  const [resizeEnabled] = useAtom(resizeEnabledAtom);
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
   const [, setInputFocus] = useAtom(inputFocusAtom);
   const [ui] = useAtom(uiAtom);
