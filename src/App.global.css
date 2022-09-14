@@ -16,7 +16,7 @@
   --color-secondary-dark: 0, 0, 0;
   --color-background-dark: 0, 0, 0;
   --color-background-light: 255, 255, 255;
-  --opacity-themelight: 66%;
+  --opacity-themelight: 33%;
   --opacity-themedark: 66%;
   --opacity-windows-themelight: 0%;
   --opacity-windows-themedark: 40%;
@@ -418,4 +418,25 @@ body {
 .emoji-picker-react .emoji button:focus {
   @apply bg-black dark:bg-white bg-opacity-50 dark:bg-opacity-50;
   @apply outline outline-1 dark:outline-1 outline-black dark:outline-white;
+}
+
+.epr-main {
+  --epr-picker-width: 100%;
+  --epr-picker-height: 100%;
+  --epr-picker-background: #00000000;
+  --epr-category-label-bg-color: #0000000f;
+  --epr-search-input-bg-color-active: #0000000f;
+  --epr-search-input-bg-color: #00000000;
+  --epr-dark: #00000000;
+  --epr-bg-color: #00000000;
+}
+
+.epr-emoji-category-label {
+  --epr-category-label-bg-color: #0000000f;
+  --epr-picker-background: #00000000;
+  --epr-category-label-bg-color: #0000000f;
+  --epr-search-input-bg-color-active: #0000000f;
+  --epr-search-input-bg-color: #00000000;
+  --epr-dark: #00000000;
+  --epr-bg-color: #00000000;
 }

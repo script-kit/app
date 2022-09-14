@@ -3,7 +3,13 @@ import { app } from 'electron';
 import log from 'electron-log';
 
 export const maybeSetLogin = async () => {
+  // Guard in dev environment
+  if (process.env.NODE_ENV === 'development') {
+    app.setLoginItemSettings({ openAtLogin: false });
+    return;
+  }
   const appDb = await getAppDb();
+
   const openAtLoginEnabled = appDb.openAtLogin;
   const { openAtLogin } = app.getLoginItemSettings();
 

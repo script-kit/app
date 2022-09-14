@@ -52,7 +52,6 @@ import {
   hintAtom,
   inputAtom,
   isMouseDownAtom,
-  isMainScriptAtom,
   logHTMLAtom,
   mainHeightAtom,
   mouseEnabledAtom,
@@ -76,14 +75,12 @@ import {
   nameAtom,
   textareaValueAtom,
   loadingAtom,
-  processingAtom,
   exitAtom,
   appConfigAtom,
   splashBodyAtom,
   splashHeaderAtom,
   splashProgressAtom,
   isReadyAtom,
-  resizeEnabledAtom,
   valueInvalidAtom,
   isHiddenAtom,
   _history,
@@ -103,6 +100,9 @@ import {
   onPasteAtom,
   onDropAtom,
   addChoiceAtom,
+  appearanceAtom,
+  boundsAtom,
+  resizingAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -215,6 +215,9 @@ export default function App() {
   const setFocused = useSetAtom(setFocusedChoiceAtom);
   const setSocketURL = useSetAtom(socketURLAtom);
   const setIsMouseDown = useSetAtom(isMouseDownAtom);
+  const setAppearance = useSetAtom(appearanceAtom);
+  const [bounds, setBounds] = useAtom(boundsAtom);
+  const setResizing = useSetAtom(resizingAtom);
 
   useShortcuts();
   useEnter();
@@ -279,6 +282,9 @@ export default function App() {
     [Channel.TERMINAL]: setSocketURL,
     [Channel.CLEAR_TABS]: setTabs,
     [Channel.ADD_CHOICE]: addChoice,
+    [Channel.SET_APPEARANCE]: setAppearance,
+    [Channel.SET_BOUNDS]: setBounds,
+    [Channel.SET_RESIZING]: setResizing,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {

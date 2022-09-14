@@ -254,6 +254,7 @@ const initState = {
     width: 0,
     height: 0,
   },
+  isResizing: false,
 };
 
 nativeTheme.addListener('updated', () => {

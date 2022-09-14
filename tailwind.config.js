@@ -75,7 +75,7 @@ module.exports = {
       pattern: new RegExp(`^(${safeListStartsWith.join('|')})`),
     },
   ],
-  darkMode: 'media',
+  darkMode: 'class',
   variants: {
     extend: {
       borderWidth: ['hover'],

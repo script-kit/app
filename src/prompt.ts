@@ -6,7 +6,7 @@
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable consistent-return */
 import glasstron from 'glasstron';
-import { subscribe } from 'valtio/vanilla';
+import { subscribe, snapshot } from 'valtio/vanilla';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -170,6 +170,7 @@ export const createPromptWindow = async () => {
       isWin: os.platform().startsWith('win'),
       assetPath: getAssetPath(),
       version: getVersion(),
+      isDark: kitState.isDark,
     });
   });
 
@@ -269,10 +270,16 @@ export const createPromptWindow = async () => {
 
   const onResized = async () => {
     kitState.modifiedByUser = false;
+    log.info(`Resized: ${promptWindow?.getSize()}`);
+
+    if (kitState.isResizing) {
+      sendToPrompt(Channel.SET_RESIZING, false);
+      kitState.isResizing = false;
+    }
   };
 
   promptWindow?.on('will-resize', (event, rect) => {
-    log.debug(`will-resize ${rect.width} ${rect.height}`);
+    log.info(`Will Resize ${rect.width} ${rect.height}`);
 
     if (rect.height < MIN_HEIGHT) event.preventDefault();
     if (rect.width < MIN_WIDTH) event.preventDefault();
@@ -283,7 +290,7 @@ export const createPromptWindow = async () => {
   promptWindow?.on('will-move', () => {
     kitState.modifiedByUser = true;
   });
-  promptWindow?.on('resized', debounce(onResized, 500));
+  promptWindow?.on('resized', onResized);
   promptWindow?.on('moved', debounce(onMove, 500));
 
   // promptWindow?.on('show', () => {
@@ -512,7 +519,6 @@ export const isFocused = () => {
   return promptWindow?.isFocused();
 };
 
-let prevHeight = 0;
 let resizeAnimate = true;
 let resizeTimeout = setTimeout(() => {
   resizeAnimate = true;
@@ -549,6 +555,7 @@ export const resize = async ({
   const bounds = await getCurrentScreenPromptCache(scriptPath, {
     ui,
     resize: kitState.resize,
+    bounds: {},
   });
 
   if (!bounds) return;
@@ -591,8 +598,6 @@ export const resize = async ({
   if (hasPreview) {
     width = Math.max(DEFAULT_EXPANDED_WIDTH, width);
   }
-  // const compare = Math.abs(height - prevHeight);
-  // log.silly({ compare });
 
   promptWindow?.setBounds({ x, y, width, height }, resizeAnimate && !hasInput);
 
@@ -605,7 +610,6 @@ export const resize = async ({
   }
 
   kitState.resizedByChoices = true && ui === UI.arg;
-  prevHeight = mainHeight;
 };
 
 export const sendToPrompt = <K extends keyof ChannelMap>(
@@ -901,6 +905,7 @@ export const clearPromptCache = async () => {
   const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
     ui: UI.none,
     resize: false,
+    bounds: {},
   });
   // log.info(`↖ CLEARED:`, bounds);
   promptWindow.setBounds(bounds);
@@ -937,15 +942,21 @@ export const onHideOnce = (fn: () => void) => {
 };
 
 const sizeOrBounds = (bounds: Rectangle) => {
-  log.verbose({
-    current: kitState.scriptPath,
-    prev: kitState?.scriptHistory?.at(-2),
-  });
+  // log.verbose({
+  //   current: kitState.scriptPath,
+  //   prev: kitState?.scriptHistory?.at(-2),
+  // });
+
   // const isCLI =
   //   kitState?.scriptHistory?.at(-2)?.includes('.kit') &&
   //   kitState.scriptPath.includes('.kit') &&
   //   kitState.scriptPath.includes('cli');
+  if (!kitState.isResizing && promptWindow?.isVisible()) {
+    log.info(`Started resizing: ${promptWindow?.getSize()}`);
 
+    sendToPrompt(Channel.SET_RESIZING, true);
+    kitState.isResizing = true;
+  }
   promptWindow.setBounds(bounds, promptWindow?.isVisible());
   // if (isCLI) {
   //   promptWindow.setSize(bounds.width, bounds.height, promptWindow.isVisible());
@@ -973,9 +984,8 @@ subscribeKey(kitState, 'promptId', async () => {
   });
   log.verbose(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
 
-  // if ([UI.div].includes(kitState.promptUI)) return;
+  // If widths or height don't match, send SET_RESIZING to prompt
 
-  // TODO: Block resize for prompts that observe resize?
   sizeOrBounds(bounds);
 });
 

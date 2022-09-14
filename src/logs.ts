@@ -94,13 +94,3 @@ subscribeKey(kitState, 'logLevel', (level) => {
   log.transports.file.level = level;
   log.transports.console.level = level;
 });
-/**
- *
- *
- *
- *
- *
- *
- *
- *  Like this?
- */

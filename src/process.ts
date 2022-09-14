@@ -595,6 +595,8 @@ const kitMessageMap: ChannelHandler = {
 
     kitState.hidden = true;
 
+    // TODO: Windows alt+tab back to previous app
+
     onHideOnce(() => {
       child?.send({
         channel,
@@ -652,6 +654,7 @@ const kitMessageMap: ChannelHandler = {
 
   SET_BOUNDS: (data) => {
     setBounds(data.value);
+    sendToPrompt(Channel.SET_BOUNDS, data.value);
   },
 
   SET_IGNORE_BLUR: toProcess(async ({ child }, { channel, value }) => {
@@ -1088,6 +1091,11 @@ const kitMessageMap: ChannelHandler = {
 
   SHOW_EMOJI_PANEL: toProcess(async ({ child }, { channel, value }) => {
     app.showEmojiPanel();
+
+    child?.send({ channel, value });
+  }),
+  SET_APPEARANCE: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SET_APPEARANCE, value);
 
     child?.send({ channel, value });
   }),

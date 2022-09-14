@@ -30,7 +30,7 @@ import {
 import { editor } from 'monaco-editor';
 
 import { clamp, debounce, drop as _drop, isEqual } from 'lodash';
-import { ipcRenderer } from 'electron';
+import { ipcRenderer, Rectangle } from 'electron';
 import { AppChannel } from './enums';
 import { ProcessInfo, ResizeData, ScoredChoice, Survey } from './types';
 import {
@@ -322,8 +322,6 @@ export const previewHTMLAtom = atom(
 
 const log = atom<string[]>([]);
 
-const darkInit = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
 const convertAtom = atom<(inverse?: boolean) => Convert>((g) => {
   return (inverse = false) => {
     const isDark = g(darkAtom);
@@ -346,13 +344,7 @@ const convertAtom = atom<(inverse?: boolean) => Convert>((g) => {
   };
 });
 
-const dark = atom(darkInit);
-export const darkAtom = atom(
-  (g) => g(dark),
-  (g, s, a: boolean) => {
-    s(dark, a);
-  }
-);
+export const darkAtom = atom<boolean>(false);
 
 export const logHTMLAtom = atom(
   (g) => {
@@ -1555,3 +1547,19 @@ export const addChoiceAtom = atom(null, (g, s, a: Choice) => {
 
   s(unfilteredChoicesAtom, Array.isArray(prev) ? [...prev, a] : [a]);
 });
+
+type Appearance = 'light' | 'dark' | 'auto';
+export const appearanceAtom = atom<Appearance>('auto');
+
+const _boundsAtom = atom<Rectangle>({ x: 0, y: 0, width: 0, height: 0 });
+export const boundsAtom = atom(
+  (g) => g(_boundsAtom),
+  (g, s, a: Rectangle) => {
+    s(resizeCompleteAtom, false);
+    s(_boundsAtom, a);
+  }
+);
+
+export const resizeCompleteAtom = atom(false);
+
+export const resizingAtom = atom(false);

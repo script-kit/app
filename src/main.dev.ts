@@ -112,7 +112,7 @@ import {
   focusPrompt,
   beforePromptQuit,
 } from './prompt';
-import { APP_NAME, KIT_PROTOCOL } from './helpers';
+import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { INSTALL_ERROR, show } from './show';
@@ -644,7 +644,6 @@ ${mainLog}
 };
 
 const extractTar = async (tarFile: string, outDir: string) => {
-  const { default: tildify } = await import('tildify');
   await setupLog(`Extracting ${path.basename(tarFile)} to ${tildify(outDir)}`);
   await ensureDir(outDir);
 
@@ -821,7 +820,6 @@ const checkKit = async () => {
     await extractTar(kitTar, kitPath());
 
     if (!(await nodeExists())) {
-      const { default: tildify } = await import('tildify');
       await setupLog(
         `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
       );
