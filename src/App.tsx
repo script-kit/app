@@ -391,6 +391,7 @@ export default function App() {
         <AnimatePresence key="appComponents">
           <motion.div
             animate={controls}
+            // TODO: Maybe remove animation when not main menu?
             transition={{ duration: 0.12 }}
             onAnimationStart={showIfOpen}
             onAnimationComplete={hideIfClosed}
@@ -401,7 +402,7 @@ export default function App() {
               } as any
             }
             className={`
-        ${hidden ? 'hidden' : ''}
+        ${hidden && appConfig.isMac ? 'hidden' : ''}
         flex flex-col
         w-full h-full
         `}

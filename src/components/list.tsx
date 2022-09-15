@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FixedSizeList as List } from 'react-window';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
 import Preview from './preview';
 import ChoiceButton from './button';
@@ -16,6 +16,7 @@ import {
   hasPreviewAtom,
   previewHTMLAtom,
   heightChangedAtom,
+  itemHeightAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 import { BUTTON_HEIGHT, DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from '../defaults';
@@ -46,6 +47,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [hasPreview] = useAtom(hasPreviewAtom);
   const [previewHTML] = useAtom(previewHTMLAtom);
   const [, setHeightChanged] = useAtom(heightChangedAtom);
+  const itemHeight = useAtomValue(itemHeightAtom);
   // const listWidth = useMotionValue('100%');
 
   const onIndexSubmit = useCallback(
@@ -93,7 +95,7 @@ export default function ChoiceList({ width, height }: ListProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={{ opacity: 1 }}
       animate={{
         opacity: choices?.length ? 1 : 0,
       }}
@@ -125,7 +127,7 @@ export default function ChoiceList({ width, height }: ListProps) {
         innerRef={innerRef}
         height={height}
         itemCount={choices?.length || 0}
-        itemSize={BUTTON_HEIGHT}
+        itemSize={itemHeight}
         width="100%"
         itemData={itemData}
         className={`

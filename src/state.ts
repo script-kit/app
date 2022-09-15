@@ -33,20 +33,6 @@ import internetAvailable from './internet-available';
 import { noScript } from './defaults';
 import { ProcessInfo } from './types';
 
-export const makeRestartNecessary = async () => {
-  const appDb = await getAppDb();
-  appDb.needsRestart = true;
-  await appDb.write();
-};
-export const restartIfNecessary = async () => {
-  const appDb = await getAppDb();
-  if (appDb.needsRestart) {
-    appDb.needsRestart = false;
-    await appDb.write();
-    app.exit(0);
-  }
-};
-
 export const serverState = {
   running: false,
   host: '',
@@ -255,6 +241,7 @@ const initState = {
     height: 0,
   },
   isResizing: false,
+  hasSnippet: false,
 };
 
 nativeTheme.addListener('updated', () => {

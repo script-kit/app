@@ -458,6 +458,9 @@ const choices = atom<ScoredChoice[]>([]);
 
 export const prevIndexAtom = atom(0);
 export const prevInputAtom = atom('');
+
+export const defaultValueAtom = atom('');
+
 export const _index = atom(
   (g) => g(index),
   (g, s, a: number) => {
@@ -473,6 +476,24 @@ export const _index = atom(
     const selected = g(selectedAtom);
     const id = choice?.id;
     const prevId = g(prevChoiceId);
+
+    const defaultValue: any = g(defaultValueAtom);
+
+    if (defaultValue) {
+      const i = cs.findIndex(
+        (c) => c.item?.name === defaultValue || c.item?.value === defaultValue
+      );
+
+      if (i !== -1) {
+        const foundChoice = cs[i].item;
+        if (foundChoice?.id) {
+          s(index, i);
+          s(focusedChoiceAtom, foundChoice);
+          s(prevChoiceId, foundChoice?.id);
+        }
+      }
+      return;
+    }
 
     if (!selected && id && id !== prevId) {
       s(focusedChoiceAtom, choice);
@@ -918,6 +939,9 @@ const checkIfSubmitIsDrop = (checkValue: any) => {
 
 export const footerAtom = atom('');
 
+// Create an itemHeightAtom
+export const itemHeightAtom = atom(BUTTON_HEIGHT);
+
 const promptData = atom<null | PromptData>(null);
 export const promptDataAtom = atom(
   (g) => g(promptData),
@@ -985,6 +1009,10 @@ export const promptDataAtom = atom(
       if (a?.flags) {
         s(flagsAtom, a.flags);
       }
+
+      s(itemHeightAtom, a?.itemHeight || BUTTON_HEIGHT);
+
+      s(defaultValueAtom, a?.defaultValue || '');
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
       s(shortcutsAtom, a?.shortcuts || []);

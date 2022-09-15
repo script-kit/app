@@ -604,9 +604,7 @@ const kitMessageMap: ChannelHandler = {
     });
     hideAppIfNoWindows(scriptPath, 'HIDE_APP event');
   }),
-  NEEDS_RESTART: async () => {
-    await makeRestartNecessary();
-  },
+
   QUIT_APP: () => {
     kitState.allowQuit = true;
     app.quit();

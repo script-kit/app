@@ -37,7 +37,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
     kitState.trayOpen = false;
     return;
   }
-  await restartIfNecessary();
+
   if (event?.metaKey) {
     emitter.emit(
       KitEvent.RunPromptProcess,
@@ -393,6 +393,10 @@ export const openMenu = async (event?: KeyboardEvent) => {
       updateMenu,
       {
         type: 'separator',
+      },
+      {
+        label: `Open Settings`,
+        click: runScript(kitPath('cli', 'settings.js')),
       },
       {
         label: `Change Shortcut`,

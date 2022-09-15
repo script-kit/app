@@ -746,6 +746,7 @@ export const setScript = async (script: Script) => {
   }
   if (promptWindow?.isAlwaysOnTop()) promptWindow?.setAlwaysOnTop(false);
   kitState.scriptPath = script.filePath;
+  kitState.hasSnippet = Boolean(script?.snippet);
   log.verbose(`setScript ${script.filePath}`);
   if (!script) return;
   // if (promptScript?.filePath === script?.filePath) return;
@@ -830,6 +831,10 @@ export const setPromptData = async (promptData: PromptData) => {
   //   scriptPath: promptData.scriptPath,
   //   tabIndex: promptData.tabIndex,
   // });
+
+  // eslint-disable-next-line promise/param-names
+  if (kitState.hasSnippet) await new Promise((r) => setTimeout(r, 50));
+  kitState.hasSnippet = false;
 
   showInactive();
 
@@ -941,30 +946,6 @@ export const onHideOnce = (fn: () => void) => {
   }
 };
 
-const sizeOrBounds = (bounds: Rectangle) => {
-  // log.verbose({
-  //   current: kitState.scriptPath,
-  //   prev: kitState?.scriptHistory?.at(-2),
-  // });
-
-  // const isCLI =
-  //   kitState?.scriptHistory?.at(-2)?.includes('.kit') &&
-  //   kitState.scriptPath.includes('.kit') &&
-  //   kitState.scriptPath.includes('cli');
-  if (!kitState.isResizing && promptWindow?.isVisible()) {
-    log.info(`Started resizing: ${promptWindow?.getSize()}`);
-
-    sendToPrompt(Channel.SET_RESIZING, true);
-    kitState.isResizing = true;
-  }
-  promptWindow.setBounds(bounds, promptWindow?.isVisible());
-  // if (isCLI) {
-  //   promptWindow.setSize(bounds.width, bounds.height, promptWindow.isVisible());
-  // } else {
-  //   promptWindow.setBounds(bounds, promptWindow?.isVisible());
-  // }
-};
-
 subscribeKey(kitState, 'promptId', async () => {
   log.silly({
     promptUI: kitState.promptUI,
@@ -986,7 +967,15 @@ subscribeKey(kitState, 'promptId', async () => {
 
   // If widths or height don't match, send SET_RESIZING to prompt
 
-  sizeOrBounds(bounds);
+  const { width, height } = promptWindow?.getBounds();
+  if (bounds.width !== width || bounds.height !== height) {
+    log.info(`Started resizing: ${promptWindow?.getSize()}`);
+
+    sendToPrompt(Channel.SET_RESIZING, true);
+    kitState.isResizing = true;
+  }
+
+  promptWindow?.setBounds(bounds, promptWindow?.isVisible());
 });
 
 subscribeKey(kitState, 'scriptPath', async () => {
@@ -1014,7 +1003,7 @@ subscribeKey(kitState, 'scriptPath', async () => {
     const bounds = await getCurrentScreenPromptCache(kitState.scriptPath);
 
     log.verbose(`↖ Bounds: Script ${kitState.promptUI} ui`, bounds);
-    sizeOrBounds(bounds);
+    promptWindow.setBounds(bounds, promptWindow?.isVisible());
   }
 
   kitState.prevScriptPath = kitState.scriptPath;

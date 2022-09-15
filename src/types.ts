@@ -3,7 +3,7 @@ import { ProcessType, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import { ChildProcess } from 'child_process';
 
 export interface ScoredChoice {
-  item: Choice;
+  item: Choice<{ id: string; name: string; value: any }>;
   score: number;
   matches: {
     [key: string]: [number, number][];

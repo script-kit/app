@@ -9,26 +9,50 @@ export default () => {
 
   const mqListener = useCallback(
     (e: MediaQueryListEvent) => {
+      if (e.media === 'dark') {
+        // set --opacity-themedark to 88%
+        document.documentElement.style.setProperty(
+          '--opacity-themedark',
+          '88%'
+        );
+      }
+
+      if (e.media === 'light') {
+        document.documentElement.style.setProperty(
+          '--opacity-themelight',
+          '88%'
+        );
+      }
+
+      if (e.media === 'auto') {
+        document.documentElement.style.setProperty(
+          '--opacity-themedark',
+          '66%'
+        );
+        document.documentElement.style.setProperty(
+          '--opacity-themelight',
+          '66%'
+        );
+      }
       if (e.matches) {
         setDark(true);
-        document.body.classList.add('dark');
+        document.documentElement.classList.add('dark');
       } else {
         setDark(false);
-        document.body.classList.remove('dark');
+        document.documentElement.classList.remove('dark');
       }
     },
     [setDark]
   );
 
   useEffect(() => {
-    if (appearance === 'auto') {
-      const darkThemeMq = window.matchMedia('(prefers-color-scheme: dark)');
-      darkThemeMq.addEventListener('change', mqListener);
-      return () => darkThemeMq.removeEventListener('change', mqListener);
-    }
-
     mqListener({
-      matches: appearance === 'dark',
+      media: appearance,
+      matches:
+        appearance === 'dark' ||
+        (appearance === 'auto' &&
+          (window.matchMedia('(prefers-color-scheme: dark)') as MediaQueryList)
+            ?.matches),
     } as MediaQueryListEvent);
 
     return () => {};
@@ -36,5 +60,9 @@ export default () => {
 
   useEffect(() => {
     mqListener(window.matchMedia('(prefers-color-scheme: dark)') as any);
+
+    const darkThemeMq = window.matchMedia('(prefers-color-scheme: dark)');
+    darkThemeMq.addEventListener('change', mqListener);
+    return () => darkThemeMq.removeEventListener('change', mqListener);
   }, []);
 };

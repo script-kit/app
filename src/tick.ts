@@ -150,6 +150,8 @@ const ioEvent = async (e: UiohookKeyboardEvent) => {
 
     if (key === 'backspace') {
       kitState.snippet = kitState.snippet.slice(0, -1);
+    } else if (e?.keycode === 57) {
+      kitState.snippet += '_';
     } else if (
       e.metaKey ||
       e.ctrlKey ||
@@ -334,22 +336,23 @@ export const configureInterval = async () => {
 
   subscribeKey(kitState, 'snippet', async (snippet = ``) => {
     // Use `;;` as "end"?
+    if (!snippet) return;
     if (snippetMap.has(snippet)) {
       log.info(`Running snippet: ${snippet}`);
       const script = snippetMap.get(snippet) as Script;
       if (kitConfig.deleteSnippet) {
         const prevDelay = keyboard.config.autoDelayMs;
-        keyboard.config.autoDelayMs = 1;
-        await Promise.all(
-          snippet.split('').map(() => keyboard.type(Key.Backspace))
-        );
+        keyboard.config.autoDelayMs = 0;
+        for await (const key of snippet) {
+          await keyboard.type(Key.Backspace);
+        }
 
         keyboard.config.autoDelayMs = prevDelay;
       }
-      setTimeout(() => {
-        emitter.emit(KitEvent.RunPromptProcess, script.filePath);
-      }, snippet.split('').length);
+      emitter.emit(KitEvent.RunPromptProcess, script.filePath);
     }
+
+    if (snippet.endsWith('_')) kitState.snippet = '';
   });
 
   subscribeKey(kitState, 'isTyping', () => {
