@@ -57,15 +57,53 @@ const Emoji = ({ width, height }: Props) => {
   return (
     <div
       style={{
-        width: `${width}px`,
-        height: `${height}px`,
+        width: `100%`,
+        height: `100%`,
+        minHeight: `100%`,
+        minWidth: `100%`,
+        visibility: resizing ? 'hidden' : 'visible',
       }}
-      className={`bg-opacity-0 bg-transparent ${resizing ? 'hidden' : ''}`}
     >
+      <style>
+        {`
+        .epr-category-nav{
+          display: ${resizing ? 'none' : 'flex'} !important;
+        }
+        .epr-body{
+          display: ${resizing ? 'none' : 'block'} !important;
+        }
+        .epr-preview{
+          display: ${resizing ? 'none' : 'block'} !important;
+        }
+        .epr-main {
+          min-width: ${width}px;
+          min-height: ${height}px;
+          --epr-picker-width: ${width}px;
+          --epr-picker-height: ${height}px;
+          --epr-picker-background: #00000000;
+          --epr-category-label-bg-color: #0000000f;
+          --epr-search-input-bg-color-active: #0000000f;
+          --epr-search-input-bg-color: #00000000;
+          --epr-dark: #00000000;
+          --epr-bg-color: #00000000;
+        }
+
+        .epr-emoji-category-label {
+          --epr-category-label-bg-color: #0000000f;
+          --epr-picker-background: #00000000;
+          --epr-category-label-bg-color: #0000000f;
+          --epr-search-input-bg-color-active: #0000000f;
+          --epr-search-input-bg-color: #00000000;
+          --epr-dark: #00000000;
+          --epr-bg-color: #00000000;
+        }
+        `}
+      </style>
       <Picker
         autoFocusSearch
         onEmojiClick={onEmojiClick}
         theme={isDark ? Theme.DARK : Theme.LIGHT}
+        lazyLoadEmojis={false}
       />
     </div>
   );

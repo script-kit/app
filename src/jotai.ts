@@ -735,35 +735,14 @@ export const scriptAtom = atom(
     s(_script, a);
 
     // s(unfilteredChoicesAtom, []);
-    s(ultraShortCodesAtom, []);
+
     // s(choices, []);
-    s(logHTMLAtom, '');
-    s(_index, 0);
-    s(_tabIndex, 0);
-    s(submittedAtom, false);
     s(processingAtom, false);
     s(_description, a?.description || '');
     s(nameAtom, a?.name || '');
     s(loadingAtom, false);
     s(loading, false);
     s(logoAtom, a?.logo || '');
-    s(prevChoicesAtom, []);
-
-    s(flagsAtom, {});
-    s(_flagged, '');
-
-    const theme = {
-      '--color-primary-light': a?.['color-primary-light'] || '251, 191, 36',
-      '--color-secondary-light': a?.['color-secondary-light'] || '232, 113, 39',
-      '--color-background-light':
-        a?.['color-background-light'] || '255, 255, 255',
-
-      '--color-primary-dark': a?.['color-primary-dark'] || '79, 70, 229',
-      '--color-secondary-dark': a?.['color-secondary-dark'] || '0, 0, 0',
-      '--color-background-dark': a?.['color-background-dark'] || '0, 0, 0',
-    };
-
-    s(themeAtom, theme);
 
     // s(panelHTMLAtom, `<div/>`);
 
@@ -943,6 +922,16 @@ export const footerAtom = atom('');
 export const itemHeightAtom = atom(BUTTON_HEIGHT);
 
 const promptData = atom<null | PromptData>(null);
+
+const scriptKitTheme = {
+  '--color-primary-light': '251, 191, 36',
+  '--color-secondary-light': '232, 113, 39',
+  '--color-background-light': '255, 255, 255',
+  '--color-primary-dark': '79, 70, 229',
+  '--color-secondary-dark': '0, 0, 0',
+  '--color-background-dark': '0, 0, 0',
+};
+
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
@@ -955,9 +944,14 @@ export const promptDataAtom = atom(
     s(_inputChangedAtom, false);
 
     if (a) {
+      s(themeAtom, a?.theme || scriptKitTheme);
+
       s(_open, true);
       s(_input, '');
+      // s(_index, 0);
+      // s(_tabIndex, 0);
       s(submittedAtom, false);
+      s(logHTMLAtom, '');
       s(uiAtom, a.ui);
       s(hintAtom, a.hint);
       s(placeholderAtom, a.placeholder);
@@ -1016,6 +1010,9 @@ export const promptDataAtom = atom(
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
       s(shortcutsAtom, a?.shortcuts || []);
+
+      s(ultraShortCodesAtom, []);
+      s(prevChoicesAtom, []);
 
       if (
         a?.choicesType === 'null' ||

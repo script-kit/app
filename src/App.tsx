@@ -373,6 +373,7 @@ export default function App() {
       <div
         className={`
         w-screen h-screen
+        min-w-screen min-h-screen
       bg-bg-light dark:bg-bg-dark
 
       ${
@@ -443,8 +444,7 @@ export default function App() {
             <main
               ref={mainRef}
               className={`
-            flex
-        flex-1
+            flex-1
 
         w-full max-h-full h-full
         `}

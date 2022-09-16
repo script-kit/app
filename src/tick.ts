@@ -150,12 +150,14 @@ const ioEvent = async (e: UiohookKeyboardEvent) => {
 
     if (key === 'backspace') {
       kitState.snippet = kitState.snippet.slice(0, -1);
+      // 57 is the space key
     } else if (e?.keycode === 57) {
       kitState.snippet += '_';
     } else if (
       e.metaKey ||
       e.ctrlKey ||
       e.altKey ||
+      e?.keycode === 40 ||
       kitState.isTyping ||
       key.length > 1 ||
       key === ''
@@ -336,20 +338,33 @@ export const configureInterval = async () => {
 
   subscribeKey(kitState, 'snippet', async (snippet = ``) => {
     // Use `;;` as "end"?
-    if (!snippet) return;
-    if (snippetMap.has(snippet)) {
-      log.info(`Running snippet: ${snippet}`);
-      const script = snippetMap.get(snippet) as Script;
-      if (kitConfig.deleteSnippet) {
-        const prevDelay = keyboard.config.autoDelayMs;
-        keyboard.config.autoDelayMs = 0;
-        for await (const key of snippet) {
-          await keyboard.type(Key.Backspace);
-        }
+    if (snippet.length < 2) return;
+    for await (const snippetKey of snippetMap.keys()) {
+      if (snippet.endsWith(snippetKey)) {
+        log.info(`Running snippet: ${snippetKey}`);
+        const script = snippetMap.get(snippetKey) as Script;
+        if (kitConfig.deleteSnippet) {
+          const prevDelay = keyboard.config.autoDelayMs;
+          keyboard.config.autoDelayMs = 0;
 
-        keyboard.config.autoDelayMs = prevDelay;
+          // get postfix from snippetMap
+          if (snippetMap.has(snippetKey)) {
+            const { postfix } = snippetMap.get(snippetKey) || {
+              postfix: false,
+            };
+            const stringToDelete = postfix ? snippet : snippetKey;
+            for await (const k of stringToDelete) {
+              await keyboard.type(Key.Backspace);
+            }
+
+            keyboard.config.autoDelayMs = prevDelay;
+          }
+        }
+        emitter.emit(KitEvent.RunPromptProcess, {
+          scriptPath: script.filePath,
+          args: [snippet.slice(0, -snippetKey?.length)],
+        });
       }
-      emitter.emit(KitEvent.RunPromptProcess, script.filePath);
     }
 
     if (snippet.endsWith('_')) kitState.snippet = '';
@@ -362,7 +377,13 @@ export const configureInterval = async () => {
   io$.subscribe(ioEvent as any);
 };
 
-const snippetMap = new Map<string, Script>();
+const snippetMap = new Map<
+  string,
+  {
+    filePath: string;
+    postfix: boolean;
+  }
+>();
 
 // export const maybeStopKeyLogger = () => {
 //   if (snippetMap.size === 0 && kitState.keyloggerOn) {
@@ -382,7 +403,12 @@ export const addSnippet = (script: Script) => {
   if (script?.snippet) {
     if (kitState.authorized) {
       log.info(`Set snippet: ${script.snippet}`);
-      snippetMap.set(script.snippet, script);
+
+      // If snippet starts with an '*' then it's a postfix
+      snippetMap.set(script.snippet.replace(/^\*/, ''), {
+        filePath: script.filePath,
+        postfix: script.snippet.startsWith('*'),
+      });
     } else {
       kitState.notifyAuthFail = true;
     }

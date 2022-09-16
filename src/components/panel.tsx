@@ -83,7 +83,7 @@ export default function Panel({ width, height }: PanelProps) {
         animate={{ opacity: [0, 1] }}
         transition={{ duration: 0.25, ease: 'circOut' }}
         className={`
-        ${ui === UI.hotkey ? 'h-10' : ''}
+        ${ui === UI.hotkey ? 'h-10' : 'h-full'}
         wrapper
        `}
         ref={divRef as any}

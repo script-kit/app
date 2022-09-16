@@ -16,7 +16,7 @@
   --color-secondary-dark: 0, 0, 0;
   --color-background-dark: 0, 0, 0;
   --color-background-light: 255, 255, 255;
-  --opacity-themelight: 66%;
+  --opacity-themelight: 75%;
   --opacity-themedark: 66%;
   --opacity-windows-themelight: 0%;
   --opacity-windows-themedark: 40%;
@@ -309,25 +309,11 @@ body {
     list-style-type: unset;
   }
 
-  .prose > pre {
-    background: hsla(0, 0%, 40%, 0.1);
-  }
   .prose > blockquote {
     background: hsla(0, 0%, 40%, 0.1);
   }
   .prose > blockquote > p {
     margin: 0;
-  }
-
-  .prose > pre > code {
-    width: 100%;
-  }
-
-  .prose code::before {
-    content: '';
-  }
-  .prose code::after {
-    content: '';
   }
 
   .prose > ul,
@@ -420,23 +406,63 @@ body {
   @apply outline outline-1 dark:outline-1 outline-black dark:outline-white;
 }
 
-.epr-main {
-  --epr-picker-width: 100%;
-  --epr-picker-height: 100%;
-  --epr-picker-background: #00000000;
-  --epr-category-label-bg-color: #0000000f;
-  --epr-search-input-bg-color-active: #0000000f;
-  --epr-search-input-bg-color: #00000000;
-  --epr-dark: #00000000;
-  --epr-bg-color: #00000000;
+.prose > pre {
+  @apply p-0 m-0;
+  @apply bg-white dark:bg-black bg-opacity-0 dark:bg-opacity-0;
+  @apply min-h-8;
 }
 
-.epr-emoji-category-label {
-  --epr-category-label-bg-color: #0000000f;
-  --epr-picker-background: #00000000;
-  --epr-category-label-bg-color: #0000000f;
-  --epr-search-input-bg-color-active: #0000000f;
-  --epr-search-input-bg-color: #00000000;
-  --epr-dark: #00000000;
-  --epr-bg-color: #00000000;
+code.hljs {
+  @apply block;
+  @apply py-4 pl-4 pr-4;
+  @apply leading-snug;
+  @apply bg-primary-dark dark:bg-white dark:bg-opacity-5 bg-opacity-5;
+  @apply border border-black border-opacity-10 dark:border-white dark:border-opacity-10;
+  @apply rounded;
+  @apply mb-6;
+  @apply text-sm;
+  @apply min-h-4;
+}
+
+.hljs-copy-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+.hljs-copy-wrapper:hover .hljs-copy-button,
+.hljs-copy-button:focus {
+  transform: translateX(0);
+}
+.hljs-copy-button {
+  @apply text-black dark:text-white text-opacity-25 dark:text-opacity-25;
+  @apply w-5 h-5 top-1.5 right-1;
+  position: absolute;
+}
+
+.hljs-copy-button:hover {
+  @apply text-black dark:text-white text-opacity-50 dark:text-opacity-50;
+}
+
+.dark .prose > pre,
+.prose > pre {
+  @apply p-0;
+}
+
+.hljs-copy-button[data-copied='true'] {
+  text-indent: 0px; /* Shows the inner text */
+  width: auto;
+  background-image: none;
+}
+
+@media (prefers-reduced-motion) {
+  .hljs-copy-button {
+    transition: none;
+  }
+}
+
+.hljs-copy-checked::after {
+  content: '✓';
+  @apply absolute;
+  @apply text-black dark:text-white text-opacity-50 dark:text-opacity-50;
+  @apply top-1 right-2;
+  @apply text-xs;
 }

@@ -49,15 +49,33 @@ process.on('uncaughtException', (error) => {
   log.warn(error);
 });
 
-emitter.on(KitEvent.RunPromptProcess, (scriptPath: string) => {
-  if (isVisible()) {
-    kitState.ignoreBlur = false;
-    hideAppIfNoWindows('', `run ${scriptPath}`);
-  } else {
-    log.info(`Show App: ${scriptPath}`);
+emitter.on(
+  KitEvent.RunPromptProcess,
+  (
+    scriptOrScriptAndData:
+      | {
+          scriptPath: string;
+          args: string[];
+        }
+      | string
+  ) => {
+    const { scriptPath, args } =
+      typeof scriptOrScriptAndData === 'string'
+        ? {
+            scriptPath: scriptOrScriptAndData,
+            args: [],
+          }
+        : scriptOrScriptAndData;
+
+    if (isVisible()) {
+      kitState.ignoreBlur = false;
+      hideAppIfNoWindows('', `run ${scriptPath}`);
+    } else {
+      log.info(`Show App: ${scriptPath}`);
+    }
+    runPromptProcess(scriptPath, args);
   }
-  runPromptProcess(scriptPath);
-});
+);
 
 emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {
   processes.add(ProcessType.Background, scriptPath);

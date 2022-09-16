@@ -95,7 +95,7 @@ export default function ChoiceList({ width, height }: ListProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 1 }}
+      initial={{ opacity: 0 }}
       animate={{
         opacity: choices?.length ? 1 : 0,
       }}

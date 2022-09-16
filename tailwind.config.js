@@ -150,6 +150,8 @@ module.exports = {
         5.5: '22px',
       },
       minHeight: {
+        4: '1rem',
+        8: '2rem',
         52: '14rem',
         64: '16rem',
         128: '32rem',
@@ -182,14 +184,7 @@ module.exports = {
             'p:first-of-type, h2:first-of-type, h3:first-of-type': {
               marginTop: 0,
             },
-            pre: {
-              backgroundColor: 'rgba(0, 0, 0, 0.05)',
-              padding: '0.5rem',
-            },
-            'pre > code': {
-              color: theme('colors.black'),
-              backgroundColor: 'transparent',
-            },
+
             'p > label': {
               paddingTop: '5rem',
             },
@@ -270,14 +265,6 @@ module.exports = {
             a: {
               color: theme('colors.primary.light'),
             },
-            pre: {
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              padding: '0.5rem',
-            },
-            'pre > code': {
-              color: theme('colors.white'),
-              backgroundColor: 'transparent',
-            },
             'input:focus': {
               border: `1px solid ${theme('colors.white')}`,
             },
@@ -335,9 +322,6 @@ module.exports = {
             },
             h4: {
               fontSize: em(14, 16),
-            },
-            pre: {
-              fontSize: '1em',
             },
             'blockquote p:first-of-type': {
               marginBottom: 0,
