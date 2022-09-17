@@ -5,11 +5,7 @@
 import log, { LevelOption } from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
 import fs from 'fs';
-import {
-  kenvPath,
-  commandFromFilePath,
-  kenvFromFilePath,
-} from '@johnlindquist/kit/cjs/utils';
+import { kenvPath, getLogFromScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { sendToPrompt } from './prompt';
 import { stripAnsi } from './ansi';
@@ -26,20 +22,13 @@ interface Logger {
 
 const logMap = new Map<string, Logger>();
 
-export const getLog = (id: string): Logger => {
+export const getLog = (scriptPath: string): Logger => {
   try {
-    const command = commandFromFilePath(id);
-    const kenv = kenvFromFilePath(id);
-    const isKenv = kenv && kenv !== '.kit';
+    if (logMap.get(scriptPath)) return logMap.get(scriptPath) as Logger;
 
-    if (logMap.get(id)) return logMap.get(id) as Logger;
-
-    const scriptLog = log.create(id);
-    const logPath = kenvPath(
-      ...(isKenv ? ['kenvs', kenv] : []),
-      'logs',
-      `${command}.log`
-    );
+    const scriptLog = log.create(scriptPath);
+    const logPath = getLogFromScriptPath(scriptPath);
+    log.info(`Log path: ${logPath}`);
     scriptLog.transports.file.resolvePath = () => logPath;
     scriptLog.transports.file.level = kitState.logLevel;
 
@@ -56,7 +45,7 @@ export const getLog = (id: string): Logger => {
         fs.writeFileSync(logPath, ``);
       },
     };
-    logMap.set(id, logger);
+    logMap.set(scriptPath, logger);
 
     return logger;
   } catch {

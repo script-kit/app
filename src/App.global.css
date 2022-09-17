@@ -419,7 +419,7 @@ code.hljs {
   @apply bg-primary-dark dark:bg-white dark:bg-opacity-5 bg-opacity-5;
   @apply border border-black border-opacity-10 dark:border-white dark:border-opacity-10;
   @apply rounded;
-  @apply mb-6;
+  @apply my-4;
   @apply text-sm;
   @apply min-h-4;
   white-space: break-spaces;
