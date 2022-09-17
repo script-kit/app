@@ -443,11 +443,7 @@ export default function App() {
             </header>
             <main
               ref={mainRef}
-              className={`
-            flex-1
-
-        w-full max-h-full h-full
-        `}
+              className="flex-1 min-h-0 overflow-y-hidden w-full"
               onPaste={onPaste}
               onDrop={(event) => {
                 console.log(`🎉 drop`);
@@ -467,18 +463,16 @@ export default function App() {
                 {ui === UI.textarea && <TextArea />}
                 {ui === UI.editor && <Editor />}
                 {ui === UI.term && <Terminal />}
+                {ui === UI.emoji && <Emoji />}
               </AnimatePresence>
               <AutoSizer>
                 {({ width, height }) => (
                   <>
-                    {(ui === UI.emoji && (
-                      <Emoji width={width} height={height} />
+                    {(ui === UI.arg && !nullChoices && choices.length > 0 && (
+                      <>
+                        <List height={height} width={width} />
+                      </>
                     )) ||
-                      (ui === UI.arg && !nullChoices && choices.length > 0 && (
-                        <>
-                          <List height={height} width={width} />
-                        </>
-                      )) ||
                       (!!(ui === UI.arg || ui === UI.hotkey || ui === UI.div) &&
                         panelHTML.length > 0 && (
                           <>

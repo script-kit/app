@@ -754,6 +754,8 @@ hover:bg-gray-100
 bg-yellow-500
 tracking-wide
 overflow-hidden
+overflow-y-hidden
+overflow-x-hidden
 w-8
 h-8
 dark:hover:bg-white
@@ -904,3 +906,5 @@ object-cover
 object-fill
 object-none
 object-scale-down
+box-border
+box-content

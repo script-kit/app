@@ -309,7 +309,8 @@ export default function ActionBar() {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={transition}
-      className={`flex flex-row border-t
+      className={`
+      flex flex-row border-t
     dark:border-white dark:border-opacity-5
     border-black border-opacity-5
     bg-white dark:bg-black

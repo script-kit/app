@@ -422,6 +422,7 @@ code.hljs {
   @apply mb-6;
   @apply text-sm;
   @apply min-h-4;
+  white-space: break-spaces;
 }
 
 .hljs-copy-wrapper {
@@ -465,4 +466,10 @@ code.hljs {
   @apply text-black dark:text-white text-opacity-50 dark:text-opacity-50;
   @apply top-1 right-2;
   @apply text-xs;
+}
+
+.prose-sm > h3,
+.prose-sm > h2 {
+  @apply mt-0;
+  @apply p-0;
 }

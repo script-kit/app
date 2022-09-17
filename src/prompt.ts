@@ -204,8 +204,9 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow.webContents.on('devtools-opened', () => {
+    log.info(`Devtools opened. Preventing close and always on top`);
     promptWindow?.setAlwaysOnTop(true);
-    promptWindow?.webContents?.devToolsWebContents?.focus();
+    promptWindow?.webContents?.executeJavaScript(`console.clear()`);
   });
 
   emitter.on(KitEvent.OpenDevTools, () => {
@@ -275,7 +276,7 @@ export const createPromptWindow = async () => {
     log.info(`Resized: ${promptWindow?.getSize()}`);
 
     if (kitState.isResizing) {
-      sendToPrompt(Channel.SET_RESIZING, false);
+      // sendToPrompt(Channel.SET_RESIZING, false);
       kitState.isResizing = false;
     }
   };
@@ -909,13 +910,6 @@ export const clearPromptCache = async () => {
   await promptDb.write();
 
   promptWindow?.webContents?.setZoomLevel(0);
-  const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
-    ui: UI.none,
-    resize: false,
-    bounds: {},
-  });
-  // log.info(`↖ CLEARED:`, bounds);
-  promptWindow.setBounds(bounds);
 };
 
 export const reload = () => {
@@ -973,7 +967,7 @@ subscribeKey(kitState, 'promptId', async () => {
   if (bounds.width !== width || bounds.height !== height) {
     log.info(`Started resizing: ${promptWindow?.getSize()}`);
 
-    sendToPrompt(Channel.SET_RESIZING, true);
+    // sendToPrompt(Channel.SET_RESIZING, true);
     kitState.isResizing = true;
   }
 

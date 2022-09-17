@@ -77,20 +77,18 @@ export const warn = (message: string) => {
   log.warn(message);
 };
 
+log.transports.console.level = 'info';
 if (process.env.LOG_LEVEL) {
   log.info('🪵 Setting log level', process.env.LOG_LEVEL);
   log.transports.file.level = process.env.LOG_LEVEL as LevelOption;
-  log.transports.console.level = process.env.LOG_LEVEL as LevelOption;
 } else if (process.env.NODE_ENV === 'production') {
   log.transports.file.level = 'info';
-  log.transports.console.level = 'info';
 } else {
+  if (log.transports.ipc) log.transports.ipc.level = 'error';
   log.transports.file.level = 'verbose';
-  log.transports.console.level = 'verbose';
 }
 
 subscribeKey(kitState, 'logLevel', (level) => {
   log.info(`📋 Log level set to: ${level}`);
   log.transports.file.level = level;
-  log.transports.console.level = level;
 });

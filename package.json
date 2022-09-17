@@ -442,6 +442,7 @@
     "tailwind-override": "0.0.10",
     "tar": "6.1.11",
     "untildify": "^4.0.0",
+    "use-debounce": "^8.0.4",
     "valtio": "1.5.1",
     "xterm": "4.19.0",
     "xterm-addon-attach": "0.6.0",

@@ -162,7 +162,7 @@ export const unfilteredChoicesAtom = atom(
       s(previewHTMLAtom, closedDiv);
     }
 
-    s(nullChoicesAtom, a === null);
+    s(nullChoicesAtom, a === null && g(uiAtom) === UI.arg);
 
     if (a === null) {
       s(quickScoreAtom, null);

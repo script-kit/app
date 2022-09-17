@@ -18,9 +18,7 @@ import {
   _modifiers,
   pidAtom,
   placeholderAtom,
-  processingAtom,
   promptDataAtom,
-  resizeEnabledAtom,
   selectionStartAtom,
   submittedAtom,
   submitValueAtom,
@@ -32,7 +30,7 @@ import {
   inputFocusAtom,
   uiAtom,
 } from '../jotai';
-import { useEnter, useFocus, useKeyIndex, useTab } from '../hooks';
+import { useFocus, useKeyIndex, useTab } from '../hooks';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];

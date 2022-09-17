@@ -1,15 +1,9 @@
 /* eslint-disable react/jsx-no-duplicate-props */
 import React, { useEffect } from 'react';
+import Picker, { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react';
 import { motion } from 'framer-motion';
-import Picker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import {
-  boundsAtom,
-  darkAtom,
-  resizeCompleteAtom,
-  resizingAtom,
-  submitValueAtom,
-} from '../jotai';
+import { darkAtom, resizingAtom, submitValueAtom } from '../jotai';
 import { useObserveMainHeight } from '../hooks';
 
 type Props = {
@@ -49,37 +43,20 @@ const Emoji = ({ width, height }: Props) => {
   // }, [width, height]);
 
   useEffect(() => {
-    if (!resizing) {
-      (document.querySelector('.epr-search') as HTMLElement).focus();
-    }
-  }, [resizing]);
+    (document.querySelector('.epr-search') as HTMLElement).focus();
+  }, []);
 
   return (
-    <div
-      style={{
-        width: `100%`,
-        height: `100%`,
-        minHeight: `100%`,
-        minWidth: `100%`,
-        visibility: resizing ? 'hidden' : 'visible',
-      }}
-    >
+    <motion.div className="w-full h-full min-w-full min-h-full">
       <style>
         {`
-        .epr-category-nav{
-          display: ${resizing ? 'none' : 'flex'} !important;
-        }
-        .epr-body{
-          display: ${resizing ? 'none' : 'block'} !important;
-        }
-        .epr-preview{
-          display: ${resizing ? 'none' : 'block'} !important;
-        }
-        .epr-main {
-          min-width: ${width}px;
-          min-height: ${height}px;
-          --epr-picker-width: ${width}px;
-          --epr-picker-height: ${height}px;
+        aside.EmojiPickerReact.epr-main {
+          width: 100%;
+          height: 100%;
+          min-width: 100%;
+          min-height: 100%;
+          --epr-picker-width: 100%;
+          --epr-picker-height: 100%;
           --epr-picker-background: #00000000;
           --epr-category-label-bg-color: #0000000f;
           --epr-search-input-bg-color-active: #0000000f;
@@ -104,8 +81,9 @@ const Emoji = ({ width, height }: Props) => {
         onEmojiClick={onEmojiClick}
         theme={isDark ? Theme.DARK : Theme.LIGHT}
         lazyLoadEmojis={false}
+        emojiStyle={EmojiStyle.NATIVE}
       />
-    </div>
+    </motion.div>
   );
 };
 
