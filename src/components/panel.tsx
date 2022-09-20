@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import React, { RefObject, useEffect, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { motion } from 'framer-motion';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 
@@ -13,6 +13,7 @@ import {
   uiAtom,
   shortcutsAtom,
   flagsAtom,
+  containerClassesAtom,
 } from '../jotai';
 import { useKeyDirection, useObserveMainHeight } from '../hooks';
 import { darkTheme, lightTheme } from './themes';
@@ -27,7 +28,8 @@ export default function Panel({ width, height }: PanelProps) {
   // useEnter(); // Is this needed?
   // useOpen();
   const scrollRef: RefObject<any> = useRef(null);
-  const [panelHTML] = useAtom(panelHTMLAtom);
+  const panelHTML = useAtomValue(panelHTMLAtom);
+  const containerClasses = useAtomValue(containerClassesAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [isDark] = useAtom(darkAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
@@ -83,7 +85,8 @@ export default function Panel({ width, height }: PanelProps) {
         animate={{ opacity: [0, 1] }}
         transition={{ duration: 0.25, ease: 'circOut' }}
         className={`
-        ${ui === UI.hotkey ? 'h-10' : 'h-full'}
+        ${ui === UI.hotkey ? 'h-10' : ''}
+        ${containerClasses}
         wrapper
        `}
         ref={divRef as any}

@@ -50,7 +50,6 @@ import {
   SpawnSyncOptions,
   SpawnSyncReturns,
   ForkOptions,
-  execSync,
 } from 'child_process';
 import os, { homedir } from 'os';
 import { ensureDir } from 'fs-extra';
@@ -63,10 +62,7 @@ import {
   rename,
   rm,
   mkdir,
-  copyFile,
 } from 'fs/promises';
-
-import axios from 'axios';
 
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
 import { PromptData } from '@johnlindquist/kit/types/core';
@@ -81,12 +77,15 @@ import {
   execPath,
 } from '@johnlindquist/kit/cjs/utils';
 
-import { getPrefsDb, getShortcutsDb } from '@johnlindquist/kit/cjs/db';
-import { subscribeKey } from 'valtio/utils';
-
-import { createTray, destroyTray } from './tray';
 import {
-  cacheMenu,
+  getPrefsDb,
+  getShortcutsDb,
+  getAppDb,
+} from '@johnlindquist/kit/cjs/db';
+import { subscribeKey } from 'valtio/utils';
+import { assign } from 'lodash';
+import { setupTray, destroyTray } from './tray';
+import {
   onScriptsChanged,
   setupWatchers,
   teardownWatchers,
@@ -116,14 +115,14 @@ import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { INSTALL_ERROR, show } from './show';
-import { cacheKitScripts, kitState, online, updateScripts } from './state';
+import { appDb, cacheKitScripts, kitState, updateScripts } from './state';
 import { startSK } from './sk';
 import { handleWidgetEvents, processes } from './process';
 import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
 import { showError } from './main.dev.templates';
 import { scheduleDownloads, sleepSchedule } from './schedule';
-import { maybeSetLogin } from './settings';
+import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from './defaults';
 import { registerTrayShortcut } from './shortcuts';
 
@@ -446,9 +445,10 @@ const ready = async () => {
     createLogs();
     await prepareProtocols();
     await setupLog(`Protocols Prepared`);
-    await createTray(true, 'default');
+    await setupSettings();
+    await setupTray(true, 'default');
+    assign(appDb, (await getAppDb()).data);
 
-    await maybeSetLogin();
     await setupLog(`Tray created`);
 
     await updateScripts();
@@ -697,7 +697,7 @@ const KIT_NODE_TAR =
   process.env.KIT_NODE_TAR || getAssetPath(`node.${getPlatformExtension()}`);
 
 const checkKit = async () => {
-  await createTray(true, 'busy');
+  await setupTray(true, 'busy');
   await setupLog(`Tray created`);
 
   const options: SpawnSyncOptions = {
@@ -1036,10 +1036,10 @@ const checkKit = async () => {
     };
 
     try {
-      const isOnline = await online();
-      if (isOnline) {
-        axios.post(`https://scriptkit.com/api/installs`, installInfo);
-      }
+      // const isOnline = await online();
+      // if (isOnline) {
+      //   axios.post(`https://scriptkit.com/api/installs`, installInfo);
+      // }
     } catch {
       log.info(`Could not post install info`);
     }

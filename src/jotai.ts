@@ -127,7 +127,7 @@ function scorer(string: string, query: string, matches: number[][]) {
     undefined,
     undefined,
     createConfig({
-      maxIterations: 2 ** 6,
+      maxIterations: 2 ** 4,
     })
   );
 }
@@ -283,7 +283,7 @@ export const panelHTMLAtom = atom(
     if (g(_panelHTML) === a || g(_flagged)) return;
     if (a) s(scoredChoices, null);
     s(_panelHTML, a);
-    s(loadingAtom, false);
+    // s(loadingAtom, false);
 
     // debouncedResize(g, s, 'PANEL_HTML');
   }
@@ -296,10 +296,9 @@ const closedDiv = `<div/>`;
 export const previewHTMLAtom = atom(
   (g) => g(_previewHTML) || g(promptData)?.preview,
   (g, s, a: string) => {
-    // console.log({ preview: '', a });
     const visible = Boolean(a !== '' && a !== closedDiv);
     s(_previewVisible, visible);
-    if (visible) s(loadingAtom, false);
+    // if (visible) s(loadingAtom, false);
 
     if (!a || !g(openAtom)) return; // never unset preview to avoid flash of white/black
     const tI = g(_tabIndex);
@@ -492,6 +491,7 @@ export const _index = atom(
           s(prevChoiceId, foundChoice?.id);
         }
       }
+      s(defaultValueAtom, '');
       return;
     }
 
@@ -552,7 +552,7 @@ export const scoredChoices = atom(
   // This helps skip sending `onNoChoices`
   (g, s, a: ScoredChoice[] | null) => {
     s(submittedAtom, false);
-    s(loadingAtom, false);
+    // s(loadingAtom, false);
     s(choices, a || []);
     const isFilter =
       g(uiAtom) === UI.arg && g(promptData)?.mode === Mode.FILTER;
@@ -578,7 +578,7 @@ export const scoredChoices = atom(
 
     if (a && g(uiAtom) === UI.arg) {
       // console.log(`Resize Button height`);
-      s(mainHeightAtom, a.length * BUTTON_HEIGHT);
+      s(mainHeightAtom, a.length * g(itemHeightAtom));
     }
   }
 );
@@ -631,8 +631,10 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
       debounceSearch(qs, s, input);
     }
   } else if (un.length) {
+    debounceSearch.cancel();
     s(scoredChoices, un.map(createScoredChoice));
   } else {
+    debounceSearch.cancel();
     s(scoredChoices, []);
   }
 };
@@ -876,11 +878,15 @@ export const mainHeightAtom = atom(
     // if (Math.abs(a - prevHeight) > 2) {
 
     const nextMainHeight = a < 0 ? 0 : a;
-
-    if (nextMainHeight === 0) {
+    const itemHeight = g(itemHeightAtom);
+    if (nextMainHeight < itemHeight) {
       flickerGuard = setTimeout(() => {
         // console.log(`flicker guard: ${a} ${nextMainHeight}`);
-        if (nextMainHeight === 0 && g(_panelHTML) !== '') return;
+        if (
+          nextMainHeight < itemHeight &&
+          (g(_panelHTML) !== '' || g(_panelHTML) === closedDiv)
+        )
+          return;
 
         s(mainHeight, nextMainHeight);
 
@@ -944,7 +950,7 @@ export const promptDataAtom = atom(
     s(_inputChangedAtom, false);
 
     if (a) {
-      s(themeAtom, a?.theme || scriptKitTheme);
+      s(themeAtom, { ...scriptKitTheme, ...(a?.theme || {}) });
 
       s(_open, true);
       s(_input, '');
@@ -1341,9 +1347,9 @@ export const logoAtom = atom<string>('');
 export const nameAtom = atom<string>('');
 export const loadingAtom = atom(
   (g) => g(loading),
-  debounce((g, s, a: boolean) => {
+  (g, s, a: boolean) => {
     s(loading, a);
-  }, 500)
+  }
 );
 
 export const exitAtom = atom(
@@ -1588,3 +1594,14 @@ export const boundsAtom = atom(
 export const resizeCompleteAtom = atom(false);
 
 export const resizingAtom = atom(false);
+
+export const containerClassesAtom = atom((g) => {
+  const html = g(panelHTMLAtom);
+  if (!html) return '';
+  // regex match html for classes
+  const matches = html.match(/class="([^"]*)"/);
+  if (matches && matches[1]) {
+    return matches[1];
+  }
+  return ``;
+});

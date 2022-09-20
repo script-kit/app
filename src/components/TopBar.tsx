@@ -6,7 +6,7 @@ export default function TopBar() {
 
   useEffect(() => {
     controls.start({
-      left: ['-15%', '115%'],
+      left: ['-25%', '100%'],
       opacity: [0, 1, 0],
     });
 
@@ -20,7 +20,7 @@ export default function TopBar() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className={`
-      pointer-events-none absolute top-0 left-0 w-screen h-0.5`}
+      pointer-events-none absolute top-0 left-0 w-screen h-1 dark:h-0.5`}
     >
       <motion.div
         animate={controls}
@@ -31,7 +31,11 @@ export default function TopBar() {
 
           duration: window.innerWidth < 400 ? 1.5 : 2.5,
         }}
-        className="bg-primary-dark dark:bg-primary-light h-full w-10 absolute top-0 left-0"
+        className="h-full w-1/4 absolute top-0 left-0
+        bg-gradient-to-r dark:bg-gradient-to-r
+        from-transparent via-primary-dark to-transparent
+        dark:from-transparent dark:via-primary-light dark:to-transparent
+        "
       />
     </motion.div>
   );

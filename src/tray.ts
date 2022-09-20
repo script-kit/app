@@ -24,7 +24,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, getScriptsDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
-import { kitState, restartIfNecessary } from './state';
+import { appDb, kitState, restartIfNecessary } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 
@@ -460,7 +460,7 @@ const menuIcon = (name: iconType) => {
 
 export const getTrayIcon = () => trayIcon('default');
 
-export const createTray = async (checkDb = false, state: trayState) => {
+export const setupTray = async (checkDb = false, state: trayState) => {
   log.info(`🎨 Creating tray...`, { checkDb });
 
   // subscribeKey(kitState, 'isDark', () => {
@@ -538,8 +538,12 @@ export const createTray = async (checkDb = false, state: trayState) => {
     if (!kitState.ready) {
       globalShortcut.unregister('CommandOrControl+;');
     }
-    const appDb = await getAppDb();
-    if (checkDb && typeof appDb?.tray === 'boolean' && appDb.tray === false) {
+    const fileAppDb = await getAppDb();
+    if (
+      checkDb &&
+      typeof fileAppDb?.tray === 'boolean' &&
+      fileAppDb.tray === false
+    ) {
       const notification = new Notification({
         title: `Kit.app started with icon hidden`,
         body: `${getVersion()}`,
@@ -570,18 +574,13 @@ export const destroyTray = () => {
   }
 };
 
-export const toggleTray = async () => {
-  const appDb = await getAppDb();
-  const trayEnabled = appDb.tray;
-  const changed = Boolean(tray) !== trayEnabled;
-  if (changed) {
-    if (tray) {
-      destroyTray();
-    } else {
-      createTray(false, 'default');
-    }
+subscribeKey(appDb, 'tray', () => {
+  if (!appDb.tray && tray) {
+    destroyTray();
+  } else {
+    setupTray(false, 'default');
   }
-};
+});
 
 let leftClickOverride: null | ((event: any) => void) = null;
 export const setTrayMenu = async (scripts: string[]) => {

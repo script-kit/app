@@ -11,8 +11,10 @@
 /* --color-primary-dark: 79, 70, 229; indigo*/
 :root {
   --color-primary-light: 251, 191, 36;
+  --color-primary-light-half: 251, 191, 36, 0.75;
   --color-secondary-light: 232, 113, 39;
   --color-primary-dark: 79, 70, 229;
+  --color-primary-dark-half: 79, 70, 229, 0.75;
   --color-secondary-dark: 0, 0, 0;
   --color-background-dark: 0, 0, 0;
   --color-background-light: 255, 255, 255;
@@ -473,7 +475,6 @@ code.hljs {
   @apply mt-4;
 }
 
-.prose-sm > h3:first-of-type,
-.prose-sm > h2:first-of-type {
+.prose-sm > *:first-child {
   @apply mt-0;
 }

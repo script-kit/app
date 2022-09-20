@@ -9,6 +9,7 @@ import React, { RefObject, useCallback, useEffect, useRef } from 'react';
 import {
   cmdAtom,
   darkAtom,
+  hasPreviewAtom,
   inputFocusAtom,
   mouseEnabledAtom,
   previewHTMLAtom,
@@ -22,6 +23,7 @@ const copiedClipboardSVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill
 export default function Preview() {
   const highlightRef: RefObject<any> = useRef(null);
   const [previewHTML] = useAtom(previewHTMLAtom);
+  const [hasPreview] = useAtom(hasPreviewAtom);
   const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [isDark] = useAtom(darkAtom);
@@ -89,7 +91,7 @@ export default function Preview() {
     <motion.div
       key="preview"
       id="preview"
-      className="overflow-scroll w-full h-full"
+      className="overflow-scroll h-full w-full"
       style={{ userSelect: 'text' }}
       initial={{ opacity: 0, width: 0 }}
       animate={{ opacity: 1, width: '100%' }}

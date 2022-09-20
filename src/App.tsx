@@ -22,6 +22,7 @@ import React, {
 
 import path from 'path';
 import { loader } from '@monaco-editor/react';
+import DOMPurify from 'dompurify';
 
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -253,17 +254,28 @@ export default function App() {
     [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfig,
     [Channel.SET_FLAGS]: setFlags,
     [Channel.SET_FOCUSED]: setFocused,
-    [Channel.SET_DIV_HTML]: setPanelHTML,
+    [Channel.SET_HINT]: (html) => setHint(DOMPurify.sanitize(html)),
+    [Channel.SET_PANEL]: (html) =>
+      setPanelHTML(
+        DOMPurify.sanitize(html, {
+          // allow iframe
+          ADD_TAGS: ['iframe'],
+        })
+      ),
+    [Channel.SET_PREVIEW]: (html) =>
+      setPreviewHTML(
+        DOMPurify.sanitize(html, {
+          // allow iframe
+          ADD_TAGS: ['iframe'],
+        })
+      ),
+    [Channel.SET_FOOTER]: (html) => setFooter(DOMPurify.sanitize(html)),
     [Channel.SET_FILTER_INPUT]: setFilterInput,
-    [Channel.SET_FOOTER]: setFooter,
-    [Channel.SET_HINT]: setHint,
     [Channel.SET_INPUT]: setInput,
     [Channel.SET_LOADING]: setLoading,
     [Channel.SET_NAME]: setName,
     [Channel.SET_TEXTAREA_VALUE]: setTextareaValue,
     [Channel.SET_OPEN]: setOpen,
-    [Channel.SET_PANEL]: setPanelHTML,
-    [Channel.SET_PREVIEW]: setPreviewHTML,
     [Channel.SET_PROMPT_BLURRED]: setBlur,
     [Channel.SET_LOG]: setLogHtml,
     [Channel.SET_LOGO]: setLogo,

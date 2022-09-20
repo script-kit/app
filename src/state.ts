@@ -16,9 +16,9 @@ import { debounce } from 'lodash';
 import { Script } from '@johnlindquist/kit/types/core';
 import {
   getScripts,
-  getAppDb,
   setScriptTimestamp,
   getTimestamps,
+  AppDb,
 } from '@johnlindquist/kit/cjs/db';
 
 import {
@@ -244,6 +244,15 @@ const initState = {
   hasSnippet: false,
 };
 
+const initAppDb = {
+  version: '0.0.0',
+  openAtLogin: true,
+  previewScripts: true,
+  autoUpdate: true,
+  tray: true,
+  appearance: 'auto',
+};
+
 nativeTheme.addListener('updated', () => {
   kitState.isDark = nativeTheme.shouldUseDarkColors;
   // kitState.transparencyEnabled = checkTransparencyEnabled();
@@ -254,6 +263,7 @@ const initConfig: Config = {
   deleteSnippet: true,
 };
 
+export const appDb: typeof initAppDb = proxy(initAppDb);
 export const kitConfig: Config = proxy(initConfig);
 export const kitState: typeof initState = proxy(initState);
 export type kitStateType = typeof initState;

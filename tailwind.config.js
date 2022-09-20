@@ -125,6 +125,8 @@ module.exports = {
         primary: {
           light: colorVar('primary-light'),
           dark: colorVar('primary-dark'),
+          'light-half': colorVar('primary-light-half'),
+          'dark-half': colorVar('primary-dark-half'),
         },
         border: {
           light: colorVar('primary-light'),

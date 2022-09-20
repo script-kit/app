@@ -31,12 +31,12 @@ import log from 'electron-log';
 import { debounce } from 'lodash';
 import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
-import { getPromptDb } from '@johnlindquist/kit/cjs/db';
+import { getPromptDb, AppDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
 import { getAssetPath } from './assets';
-import { kitState } from './state';
+import { appDb, kitState } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
@@ -392,6 +392,10 @@ export const endPrompt = async (scriptPath: string) => {
 };
 
 export const getCurrentScreenFromMouse = (): Display => {
+  if (promptWindow?.isVisible()) {
+    const [x, y] = promptWindow?.getPosition();
+    return screen.getDisplayNearestPoint({ x, y });
+  }
   return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
 };
 
@@ -538,6 +542,20 @@ export const resize = async ({
   hasPreview,
   hasInput,
 }: ResizeData) => {
+  log.info({
+    id,
+    reason,
+    scriptPath,
+    topHeight,
+    mainHeight,
+    footerHeight,
+    ui,
+    isSplash,
+    hasPreview,
+    hasInput,
+    resize: kitState.resize,
+    promptId: kitState.promptId,
+  });
   if (!kitState.resize) return;
 
   if (kitState.promptId !== id) {
@@ -1003,6 +1021,11 @@ subscribeKey(kitState, 'scriptPath', async () => {
   }
 
   kitState.prevScriptPath = kitState.scriptPath;
+});
+
+subscribeKey(appDb, 'appearance', () => {
+  log.info(`🎨 Appearance changed:`, appDb.appearance);
+  sendToPrompt(Channel.SET_APPEARANCE, appDb.appearance as AppDb['appearance']);
 });
 
 export const clearPromptCacheFor = async (scriptPath: string) => {

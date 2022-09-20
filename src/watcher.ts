@@ -1,12 +1,14 @@
 /* eslint-disable no-restricted-syntax */
 import log from 'electron-log';
-import { debounce } from 'lodash';
+import { assign } from 'lodash';
 import path from 'path';
 import { existsSync } from 'fs';
 import { ChildProcess, fork, ForkOptions } from 'child_process';
 import { homedir } from 'os';
 
 import { rm } from 'fs/promises';
+import { getAppDb } from '@johnlindquist/kit/cjs/db';
+
 import {
   parseScript,
   kenvPath,
@@ -24,9 +26,7 @@ import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
-import { kitState, scriptChanged, scriptRemoved } from './state';
-import { toggleTray } from './tray';
-import { maybeSetLogin } from './settings';
+import { appDb, kitState, scriptChanged, scriptRemoved } from './state';
 import { buildScriptChanged } from './build';
 import { addSnippet, removeSnippet } from './tick';
 import { clearPromptCacheFor } from './prompt';
@@ -130,9 +130,9 @@ export const setupWatchers = async () => {
     }) => {
       const { base } = path.parse(filePath);
       if (base === 'app.json') {
-        // if (eventName === 'change') await cacheMenu();
-        await toggleTray();
-        await maybeSetLogin();
+        log.info(`app.json changed`);
+        const currentAppDb = (await getAppDb()).data;
+        assign(appDb, currentAppDb);
 
         return;
       }
