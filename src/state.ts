@@ -176,7 +176,6 @@ const initState = {
   modifiedByUser: false,
   ignoreBlur: false,
   preventClose: false,
-  promptProcess: undefined as ProcessInfo | undefined,
   isScripts: false,
   isMainScript: () => kitState.script.filePath === mainScriptPath,
   promptCount: -1,

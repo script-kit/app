@@ -944,3 +944,7 @@ via-white
 via-transparent
 via-primary-dark-half
 dark:via-primary-light-half
+transition-colors
+transition-all
+duration-300
+duration-1000

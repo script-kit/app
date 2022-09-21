@@ -73,13 +73,11 @@ import {
   setPlaceholder,
   setPreview,
   setPromptData,
-  setPromptPid,
   setPromptProp,
   setScript,
   setTabIndex,
 } from './prompt';
 import {
-  makeRestartNecessary,
   getBackgroundTasks,
   getSchedule,
   kitState,
@@ -230,12 +228,14 @@ const toProcess = <K extends keyof ChannelMap>(
 
   if (
     data.channel !== Channel.HIDE_APP &&
+    isVisible() &&
     !isWidgetMessage &&
-    processInfo?.type === ProcessType.Prompt &&
-    processInfo?.pid !== kitState.promptProcess?.pid
+    processInfo?.pid !== kitState.pid
   ) {
     return warn(
-      `${data?.pid}: ⚠️ ${data.channel} failed. ${data.pid} doesn't match ${kitState.promptProcess?.pid}`
+      `💁‍♂️ ${path.basename(processInfo.scriptPath)}: ${data?.pid}: ${
+        data.channel
+      } ignored on current UI. ${data.pid} doesn't match ${kitState.pid}`
     );
   }
 
@@ -620,6 +620,7 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
   SET_SCRIPT: toProcess(async (processInfo, data) => {
+    // log.info({ processInfo, data });
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
       const foundP = kitState.ps.find((p) => p.pid === processInfo.pid);
@@ -628,7 +629,7 @@ const kitMessageMap: ChannelHandler = {
       }
       kitState.promptCount = -1;
     }
-    await setScript(data.value);
+    await setScript(data.value, processInfo.pid);
   }),
   SET_STATUS: toProcess(async (_, data) => {
     if (data?.value) kitState.status = data?.value;
@@ -716,18 +717,19 @@ const kitMessageMap: ChannelHandler = {
 
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
-  SET_PROMPT_DATA: async (data) => {
-    setPromptPid(data.pid);
-    setPromptData(data.value);
-    kitState.isScripts = Boolean(data.value?.scripts);
+  SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
+    setPromptData(value, pid);
+    kitState.isScripts = Boolean(value?.scripts);
     kitState.promptCount += 1;
 
-    if (data?.value?.ui === UI.term) {
-      const { socketURL } = await startPty(data?.value);
+    if (value?.ui === UI.term) {
+      const { socketURL } = await startPty(value);
 
       sendToPrompt(Channel.TERMINAL, socketURL);
     }
-  },
+
+    child?.send({ channel });
+  }),
   SET_PROMPT_PROP: async (data) => {
     setPromptProp(data.value);
   },
@@ -1291,7 +1293,7 @@ class Processes extends Array<ProcessInfo> {
 
       if (id) clearTimeout(id);
 
-      if (child?.pid === kitState.promptProcess?.pid) {
+      if (child?.pid === kitState?.pid) {
         sendToPrompt(Channel.EXIT, pid);
       }
 
@@ -1327,7 +1329,7 @@ class Processes extends Array<ProcessInfo> {
     );
 
     if (promptProcess) {
-      log.info(`Found:`, promptProcess.scriptPath);
+      log.info(`Found idle process:`, promptProcess.pid);
       return promptProcess;
     }
 
@@ -1357,10 +1359,10 @@ class Processes extends Array<ProcessInfo> {
       child?.removeAllListeners();
       child?.kill();
       log.info(`${pid}: 🛑 removed`);
-      if (kitState.promptProcess?.pid === pid) {
+      if (kitState?.pid === pid) {
         hideAppIfNoWindows(
-          kitState.promptProcess.scriptPath,
-          `remove ${kitState.promptProcess.scriptPath}`
+          kitState.scriptPath,
+          `remove ${kitState.scriptPath}`
         );
       }
     }

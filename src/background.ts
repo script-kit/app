@@ -7,6 +7,7 @@ import { Script } from '@johnlindquist/kit/types/core';
 import { emitter, KitEvent } from './events';
 import { backgroundMap, Background } from './state';
 import { processes } from './process';
+import { runPromptProcess } from './kit';
 
 export const removeBackground = (filePath: string) => {
   log.info(`Removing background process ${filePath}`);
@@ -21,12 +22,15 @@ export const removeBackground = (filePath: string) => {
   }
 };
 
-const startTask = (filePath: string) => {
-  const { child } = processes.add(ProcessType.Background, filePath);
-  backgroundMap.set(filePath, {
-    start: new Date().toString(),
-    child,
-  });
+const startTask = async (filePath: string) => {
+  const processInfo = await runPromptProcess(filePath);
+  if (processInfo) {
+    const { child } = processInfo;
+    backgroundMap.set(filePath, {
+      start: new Date().toString(),
+      child,
+    });
+  }
 };
 
 export const backgroundScriptChanged = ({

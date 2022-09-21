@@ -106,7 +106,6 @@ import {
   destroyPromptWindow,
   sendToPrompt,
   setPromptData,
-  setPromptPid,
   setScript,
   focusPrompt,
   beforePromptQuit,
@@ -734,25 +733,31 @@ const checkKit = async () => {
     });
   };
 
+  const pid = 999999;
+
   const showSplash = async () => {
-    await setScript({
-      name: 'Kit Setup',
-      command: 'splash-screen',
-      filePath: SPLASH_PATH,
-      kenv: '',
-      id: 'spash-screen',
-      type: ProcessType.Prompt,
-      hasPreview: true,
-    });
+    await setScript(
+      {
+        name: 'Kit Setup',
+        command: 'splash-screen',
+        filePath: SPLASH_PATH,
+        kenv: '',
+        id: 'spash-screen',
+        type: ProcessType.Prompt,
+        hasPreview: true,
+      },
+      pid
+    );
 
     sendSplashHeader(`Installing Kit SDK and Kit Environment...`);
 
-    setPromptPid(999999);
-
-    setPromptData({
-      ignoreBlur: true,
-      ui: UI.splash,
-    } as PromptData);
+    setPromptData(
+      {
+        ignoreBlur: true,
+        ui: UI.splash,
+      } as PromptData,
+      pid
+    );
     sendSplashBody(`Starting up...`);
 
     setTimeout(() => {

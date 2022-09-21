@@ -3,6 +3,7 @@ import log from 'electron-log';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { Script } from '@johnlindquist/kit/types/core';
 import { processes } from './process';
+import { runPromptProcess } from './kit';
 
 const validSystemEvents = [
   'suspend',
@@ -26,7 +27,7 @@ validSystemEvents.forEach((systemEvent: any) => {
       eventList.forEach((mappedEvent: string) => {
         if (mappedEvent === systemEvent) {
           log.info(`🗺`, { mappedEvent, scriptPath });
-          processes.add(ProcessType.System, scriptPath);
+          runPromptProcess(scriptPath);
         }
       });
     });

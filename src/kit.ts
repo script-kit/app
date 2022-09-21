@@ -17,9 +17,10 @@ import {
   kenvPath,
   mainScriptPath,
   KIT_FIRST_PATH,
-  execPath,
   getLogFromScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
+import { ProcessInfo } from '@johnlindquist/kit';
+
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 import {
@@ -27,7 +28,6 @@ import {
   hideAppIfNoWindows,
   isVisible,
   sendToPrompt,
-  setPromptPid,
   setScript,
 } from './prompt';
 import { getKitScript, isSameScript, kitState } from './state';
@@ -35,7 +35,7 @@ import { getKitScript, isSameScript, kitState } from './state';
 app.on('second-instance', async (_event, argv) => {
   const { _ } = minimist(argv);
   const [, , argScript, ...argArgs] = _;
-  processes.add(ProcessType.Background, argScript, argArgs);
+  runPromptProcess(argScript, argArgs);
 });
 
 // process.on('unhandledRejection', (reason, p) => {
@@ -78,7 +78,7 @@ emitter.on(
 );
 
 emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {
-  processes.add(ProcessType.Background, scriptPath);
+  runPromptProcess(scriptPath);
 });
 
 const findScript = async (scriptPath: string) => {
@@ -100,12 +100,12 @@ const findScript = async (scriptPath: string) => {
 
 export const runPromptProcess = async (
   promptScriptPath: string,
-  args: string[] = []
-) => {
+  args: string[] = [],
+  force = false
+): Promise<ProcessInfo | null> => {
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
-  // Only abandon if prompt is open or something
-  sendToPrompt(Channel.START, promptScriptPath);
+  sendToPrompt(Channel.START, force ? kitState.scriptPath : promptScriptPath);
   // const same = processes.hidePreviousPromptProcess(promptScriptPath);
   // const same = processes.endPreviousPromptProcess(promptScriptPath);
   const same = kitState.promptCount === 0 && isSameScript(promptScriptPath);
@@ -113,20 +113,25 @@ export const runPromptProcess = async (
   if (same && isVisible() && !devToolsVisible()) {
     // hideAppIfNoWindows(promptScriptPath);
     log.info(`Same shortcut pressed while process running. `);
-    return;
+    return null;
   }
 
   const processInfo = await processes.findIdlePromptProcess();
   const { pid, child } = processInfo;
-  setPromptPid(pid);
 
   const script = await findScript(promptScriptPath);
 
-  await setScript({ ...script });
+  const status = await setScript({ ...script }, pid, force);
+  if (status === 'denied') {
+    log.info(
+      `Another script is already controlling the UI. Denying UI control: ${path.basename(
+        promptScriptPath
+      )}`
+    );
+  }
 
   log.info(`${pid}: 🏎 ${promptScriptPath} `);
   processInfo.scriptPath = promptScriptPath;
-  kitState.promptProcess = processInfo;
 
   // processes.assignScriptToProcess(promptScriptPath, pid);
 
@@ -139,7 +144,7 @@ export const runPromptProcess = async (
     },
   });
 
-  processes.add(ProcessType.Prompt);
+  return processes.add(ProcessType.Prompt);
 };
 
 // export const resetIdlePromptProcess = async () => {

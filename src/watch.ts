@@ -7,6 +7,7 @@ import { app } from 'electron';
 import { Script } from '@johnlindquist/kit/types/core';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { processes } from './process';
+import { runPromptProcess } from './kit';
 
 export const watchMap = new Map();
 
@@ -56,7 +57,7 @@ const addWatch = (watchString: string, scriptPath: string) => {
       log.info({ eventName, filePath });
       if (validWatchEvents.includes(eventName)) {
         log.info(`👀 ${paths} changed`);
-        processes.add(ProcessType.Watch, scriptPath, [filePath, eventName]);
+        runPromptProcess(scriptPath, [filePath, eventName]);
       }
     });
 

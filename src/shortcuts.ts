@@ -15,7 +15,7 @@ import { kitState } from './state';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
   const success = globalShortcut.register(shortcut, async () => {
-    runPromptProcess(filePath);
+    runPromptProcess(filePath, [], true);
     focusPrompt();
   });
 
@@ -129,7 +129,7 @@ export const updateMainShortcut = async (filePath: string) => {
             steal: true,
           });
         } else {
-          await runPromptProcess(mainScriptPath);
+          await runPromptProcess(mainScriptPath, [], true);
         }
       });
 

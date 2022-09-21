@@ -522,6 +522,8 @@ export const focusedChoiceAtom = atom(
     if (choice?.id && g(selectedAtom) === '') {
       if (typeof choice?.preview === 'string') {
         s(previewHTMLAtom, choice?.preview);
+      } else if (!choice?.hasPreview) {
+        s(previewHTMLAtom, closedDiv);
       }
 
       const channel = g(channelAtom);
@@ -745,6 +747,7 @@ export const scriptAtom = atom(
     s(loadingAtom, false);
     s(loading, false);
     s(logoAtom, a?.logo || '');
+    s(themeAtom, scriptKitTheme);
 
     // s(panelHTMLAtom, `<div/>`);
 
@@ -950,7 +953,7 @@ export const promptDataAtom = atom(
     s(_inputChangedAtom, false);
 
     if (a) {
-      s(themeAtom, { ...scriptKitTheme, ...(a?.theme || {}) });
+      if (a?.theme) s(themeAtom, { ...scriptKitTheme, ...(a?.theme || {}) });
 
       s(_open, true);
       s(_input, '');
@@ -1300,6 +1303,7 @@ export const themeAtom = atom(
   (g) => g(theme),
   (g, s, a: { [key: string]: string }) => {
     Object.entries(a).forEach(([key, value]) => {
+      console.log({ key, value });
       document.documentElement.style.setProperty(key, value);
     });
 
@@ -1434,14 +1438,9 @@ export const blurAtom = atom(null, (g) => {
 
 export const startAtom = atom(null, (g, s, a: string) => {
   // console.log(`🎬 Start ${a}`);
-  const history = g(_history);
   const script = g(scriptAtom);
 
-  if (
-    g(uiAtom) !== UI.splash &&
-    (history.length > 0 || script.filePath === a) &&
-    !script?.snippet
-  ) {
+  if (script.filePath === a) {
     const channel = g(channelAtom);
     channel(Channel.ABANDON);
   }

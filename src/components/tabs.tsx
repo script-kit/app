@@ -58,6 +58,7 @@ export default function KitTabs() {
               select-none
               ${tabs.length > 5 ? `px-2` : `px-3`}
               pb-1.5
+              transition-colors
           `}
               key={tab}
               onMouseDown={() => setTabIndex(i)}
@@ -73,7 +74,7 @@ export default function KitTabs() {
 
               {i === tabIndex && open && (
                 <motion.div
-                  className="bg-primary-dark dark:bg-primary-light h-0.5 left-0 right-0 -bottom-px absolute"
+                  className="bg-primary-dark dark:bg-primary-light h-0.5 left-0 right-0 -bottom-px absolute transition-colors"
                   layoutDependency
                   layoutId="selectedTab"
                   transition={{ duration: 0.15 }}
@@ -81,7 +82,7 @@ export default function KitTabs() {
               )}
 
               <motion.div
-                className="bg-black dark:bg-white h-0.5 left-0 right-0 -bottom-px absolute bg-opacity-20 dark:bg-opacity-40"
+                className="bg-black dark:bg-white h-0.5 left-0 right-0 -bottom-px absolute bg-opacity-20 dark:bg-opacity-40 transition-colors"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: i === hover && i !== tabIndex ? 1 : 0 }}
                 transition={{ duration: 0.15 }}

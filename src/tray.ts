@@ -107,7 +107,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
     const authItems: MenuItemConstructorOptions[] = [];
     const updateItems: MenuItemConstructorOptions[] = [];
 
-    if (!kitState.authorized) {
+    if (!kitState.authorized && kitState.isMac) {
       const { askForAccessibilityAccess } = await import(
         'node-mac-permissions'
       );

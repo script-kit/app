@@ -229,7 +229,7 @@ export default function ChoiceButton({
                 {highlight(
                   choice.name,
                   scoredChoice?.matches?.name,
-                  'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-5 text-primary-dark dark:text-primary-light'
+                  'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-5 text-primary-dark dark:text-primary-light transition-colors'
                 )}
               </div>
               {/* Description */}
@@ -251,7 +251,7 @@ export default function ChoiceButton({
                     : highlight(
                         choice?.description || '',
                         scoredChoice?.matches?.description,
-                        'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-15 text-primary-dark dark:text-primary-light'
+                        'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-15 text-primary-dark dark:text-primary-light transition-colors'
                       )}
                 </div>
               )}

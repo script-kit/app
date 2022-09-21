@@ -45,6 +45,7 @@ import {
   INPUT_HEIGHT,
   MIN_HEIGHT,
   MIN_WIDTH,
+  noScript,
 } from './defaults';
 import { ResizeData } from './types';
 import { getVersion } from './version';
@@ -261,9 +262,9 @@ export const createPromptWindow = async () => {
   promptWindow?.on('blur', onBlur);
 
   promptWindow?.webContents?.on('dom-ready', () => {
-    log.info(`🍀 dom-ready on ${kitState.promptProcess?.scriptPath}`);
+    log.info(`🍀 dom-ready on ${kitState?.scriptPath}`);
 
-    hideAppIfNoWindows(kitState?.promptProcess?.scriptPath, 'dom-ready');
+    hideAppIfNoWindows(kitState?.scriptPath, 'dom-ready');
     sendToPrompt(Channel.SET_READY, true);
   });
 
@@ -542,7 +543,7 @@ export const resize = async ({
   hasPreview,
   hasInput,
 }: ResizeData) => {
-  log.info({
+  log.silly({
     id,
     reason,
     scriptPath,
@@ -756,20 +757,36 @@ export const setFooter = (footer: string) => {
   sendToPrompt(Channel.SET_FOOTER, footer);
 };
 
-export const setPromptPid = (pid: number) => {
-  kitState.pid = pid;
-  sendToPrompt(Channel.SET_PID, pid);
+export const pidIsActive = (pid: number) => {
+  log.info(`pidIsActive`, { pid });
+  return kitState.ps.find((p) => p.pid === pid);
 };
 
-export const setScript = async (script: Script) => {
-  if (!script?.filePath) {
-    return;
+export type ScriptTrigger =
+  | 'startup'
+  | 'shortcut'
+  | 'prompt'
+  | 'background'
+  | 'schedule'
+  | 'snippet';
+
+export const setScript = async (
+  script: Script,
+  pid: number,
+  force = false
+): Promise<'denied' | 'allowed'> => {
+  // log.info(`setScript`, { script, pid });
+  if (!force && (!script?.filePath || !pidMatch(pid, `setScript`))) {
+    return 'denied';
   }
+
+  kitState.pid = pid;
+  sendToPrompt(Channel.SET_PID, pid);
+
   if (promptWindow?.isAlwaysOnTop()) promptWindow?.setAlwaysOnTop(false);
   kitState.scriptPath = script.filePath;
   kitState.hasSnippet = Boolean(script?.snippet);
   log.verbose(`setScript ${script.filePath}`);
-  if (!script) return;
   // if (promptScript?.filePath === script?.filePath) return;
 
   kitState.script = script;
@@ -793,6 +810,8 @@ export const setScript = async (script: Script) => {
   if (script.filePath === mainScriptPath) {
     emitter.emit(KitEvent.MainScript, script);
   }
+
+  return 'allowed';
 
   // log.verbose(`Saving previous script path: ${kitState.prevScriptPath}`);
 };
@@ -826,7 +845,20 @@ export const setTabIndex = (tabIndex: number) => {
 };
 
 let boundsCheck: any = null;
-export const setPromptData = async (promptData: PromptData) => {
+
+const pidMatch = (pid: number, message: string) => {
+  if (pid !== kitState.pid && promptWindow?.isVisible()) {
+    log.info(`pid ${pid} doesn't match active pid ${kitState.pid}. ${message}`);
+    return false;
+  }
+
+  return true;
+};
+
+export const setPromptData = async (promptData: PromptData, pid) => {
+  // if (!pidMatch(pid, `setPromptData`)) return;
+  if (promptData?.scriptPath !== kitState.scriptPath) return;
+
   kitState.promptUI = promptData.ui;
   kitState.resize = kitState.resize || promptData.resize;
 

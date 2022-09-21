@@ -5,7 +5,7 @@ import log from 'electron-log';
 import { Script } from '@johnlindquist/kit/types/core';
 import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { kitPath, kenvPath } from '@johnlindquist/kit/cjs/utils';
-import { runScript } from './kit';
+import { runPromptProcess, runScript } from './kit';
 import { online, scheduleMap } from './state';
 import { processes } from './process';
 
@@ -92,8 +92,9 @@ export const scheduleScriptChanged = ({
       log.info(`📆 Schedule string ${scheduleString}:${filePath}`);
 
       const scheduledFunction = () => {
-        log.info(`Running: ${filePath}`, Object.entries(scheduleMap));
-        processes.add(ProcessType.Schedule, filePath);
+        // log.info(`Running: ${filePath}`, Object.entries(scheduleMap));
+        // processes.add(ProcessType.Schedule, filePath);
+        runPromptProcess(filePath);
       };
 
       const job = schedule.scheduleJob(

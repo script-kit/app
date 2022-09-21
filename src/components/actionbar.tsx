@@ -70,6 +70,7 @@ export function OptionsButton() {
   rounded
   bg-black dark:bg-white dark:bg-opacity-0 bg-opacity-0
   hover:bg-opacity-10 dark:hover:bg-opacity-10
+  transition-colors
   "
       onClick={onClick}
     >
@@ -106,6 +107,7 @@ export function ActionSeparator() {
       text-black dark:text-white text-opacity-10 dark:text-opacity-25
       p-0.5
       text-center
+      transition-colors
 "
     >
       |
@@ -187,6 +189,7 @@ export function ActionButton(action: Action) {
   brightness-100
   hover:bg-opacity-10 dark:hover:bg-opacity-10
   hover:text-primary-dark dark:hover:text-primary-light
+  transition-colors
   `
   }
   `}
