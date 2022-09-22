@@ -88,4 +88,4 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always -w
+          yarn electron-builder --publish always -wl

@@ -320,6 +320,7 @@ subscribeKey(kitState, 'notifyAuthFail', (notifyAuthFail) => {
 });
 
 const hideDock = debounce(() => {
+  if (!kitState.isMac) return;
   if (
     app?.dock.isVisible() &&
     widgetState.widgets.length === 0 &&
@@ -331,6 +332,7 @@ const hideDock = debounce(() => {
 }, 250);
 
 const showDock = () => {
+  if (!kitState.isMac) return;
   if (!app?.dock.isVisible()) {
     hideDock.cancel();
     app?.dock?.show();
