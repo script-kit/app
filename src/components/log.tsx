@@ -26,7 +26,6 @@ export default function Log() {
   const [logHeight, setLogHeight] = useAtom(logHeightAtom);
 
   const editLog = useCallback(() => {
-    console.log(script);
     ipcRenderer.send(AppChannel.OPEN_SCRIPT_LOG, script);
   }, [script]);
 

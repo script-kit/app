@@ -10,6 +10,12 @@ export default {
   externals: ['fsevents', ...Object.keys(externals || {})],
 
   module: {
+    parser: {
+      javascript: {
+        // Enable magic comments, disable by default for perf reasons
+        commonjsMagicComments: true,
+      },
+    },
     rules: [
       {
         test: /\.tsx?$/,

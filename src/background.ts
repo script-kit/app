@@ -10,19 +10,16 @@ import { processes } from './process';
 import { runPromptProcess } from './kit';
 
 export const removeBackground = (filePath: string) => {
-  log.info(`Removing background process ${filePath}`);
   if (backgroundMap.get(filePath)) {
     const { child } = backgroundMap.get(filePath) as Background;
     backgroundMap.delete(filePath);
 
-    if (child && !child?.killed) {
-      log.info(`> kill background process: ${filePath} ${child?.pid}`);
-      child?.kill();
-    }
+    processes.removeByPid(child.pid);
   }
 };
 
 const startTask = async (filePath: string) => {
+  removeBackground(filePath);
   const processInfo = await runPromptProcess(filePath);
   if (processInfo) {
     const { child } = processInfo;
@@ -38,17 +35,11 @@ export const backgroundScriptChanged = ({
   kenv,
   background: backgroundString,
 }: Script) => {
+  log.info(`Background script updated: ${filePath}`);
   if (kenv !== '') return;
+  removeBackground(filePath);
 
-  // Task running. File changed
-  if (backgroundMap.get(filePath)) {
-    if (!backgroundString) {
-      removeBackground(filePath);
-      return;
-    }
-    if (backgroundString === 'auto') removeBackground(filePath);
-    startTask(filePath);
-  } else if (backgroundString === 'auto') {
+  if (backgroundString === 'auto') {
     startTask(filePath);
   }
 };

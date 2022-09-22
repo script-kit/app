@@ -70,7 +70,7 @@ export function OptionsButton() {
   rounded
   bg-black dark:bg-white dark:bg-opacity-0 bg-opacity-0
   hover:bg-opacity-10 dark:hover:bg-opacity-10
-  transition-colors
+  transition-all duration-200 ease-in-out
   "
       onClick={onClick}
     >
@@ -83,7 +83,7 @@ export function OptionsButton() {
           rounded
           bg-black dark:bg-white dark:bg-opacity-10 bg-opacity-10
           hover:border-opacity-10 dark:hover:border-opacity-10
-          transition-all duration-200 ease-in-out
+
           "
         >
           {flagValue ? '←' : '→'}
@@ -107,7 +107,6 @@ export function ActionSeparator() {
       text-black dark:text-white text-opacity-10 dark:text-opacity-25
       p-0.5
       text-center
-      transition-colors
 "
     >
       |
@@ -181,7 +180,7 @@ export function ActionButton(action: Action) {
   text-black dark:text-white text-opacity-50 dark:text-opacity-50
   rounded
   bg-black dark:bg-white dark:bg-opacity-0 bg-opacity-0
-  h-full;
+  h-full
   ${
     action?.disabled
       ? `brightness-50`
@@ -189,7 +188,7 @@ export function ActionButton(action: Action) {
   brightness-100
   hover:bg-opacity-10 dark:hover:bg-opacity-10
   hover:text-primary-dark dark:hover:text-primary-light
-  transition-colors
+  transition-all duration-200 ease-in-out
   `
   }
   `}
@@ -209,7 +208,6 @@ export function ActionButton(action: Action) {
           rounded
           bg-black dark:bg-white dark:bg-opacity-10 bg-opacity-10
           hover:border-opacity-10 dark:hover:border-opacity-10
-          transition-all duration-200 ease-in-out
           "
             >
               {k}
@@ -221,9 +219,7 @@ export function ActionButton(action: Action) {
   );
 }
 
-const loadableIconAtom = loadable(
-  createAssetAtom('tray', 'default-Template@2x.png')
-);
+const loadableIconAtom = loadable(createAssetAtom('svg', 'logo.svg'));
 
 const IconButton = () => {
   const [lazyIcon] = useAtom(loadableIconAtom);
@@ -243,19 +239,31 @@ const IconButton = () => {
       className="min-w-fit min-h-fit"
     >
       <a href="https://scriptkit.com" tabIndex={-1}>
-        <img
-          src={lazyIcon?.data}
-          alt="icon"
+        <svg
           className="
-    flex
-  h-6 opacity-50 dark:opacity-50 invert dark:invert-0
-  hover:opacity-75 dark:hover:opacity-75
-  items-center justify-center
-  p-1
-  rounded
-  min-w-fit
-  "
-        />
+        flex
+      h-6 w-6 opacity-50 dark:opacity-50
+      hover:opacity-75 dark:hover:opacity-75
+      items-center justify-center
+      p-1
+      -ml-1
+      rounded
+      min-w-fit
+      text-black dark:text-white
+      hover:text-primary-dark hover:dark:text-primary-light
+      transition-all duration-200 ease-in-out
+      "
+          xmlns="http://www.w3.org/2000/svg"
+          width="32"
+          height="32"
+          fill="currentColor"
+          viewBox="0 0 32 32"
+        >
+          <path
+            fill="currentColor"
+            d="M14 25a2 2 0 0 1 2-2h14a2 2 0 1 1 0 4H16a2 2 0 0 1-2-2ZM0 7.381c0-1.796 1.983-2.884 3.498-1.92l13.728 8.736c1.406.895 1.406 2.946 0 3.84L3.498 26.775C1.983 27.738 0 26.649 0 24.854V7.38Z"
+          />
+        </svg>
       </a>
     </motion.button>
   );

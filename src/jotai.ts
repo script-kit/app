@@ -747,7 +747,7 @@ export const scriptAtom = atom(
     s(loadingAtom, false);
     s(loading, false);
     s(logoAtom, a?.logo || '');
-    s(themeAtom, scriptKitTheme);
+    s(tempThemeAtom, g(themeAtom));
 
     // s(panelHTMLAtom, `<div/>`);
 
@@ -932,14 +932,25 @@ export const itemHeightAtom = atom(BUTTON_HEIGHT);
 
 const promptData = atom<null | PromptData>(null);
 
-const scriptKitTheme = {
+const _themeAtom = atom({
   '--color-primary-light': '251, 191, 36',
   '--color-secondary-light': '232, 113, 39',
   '--color-background-light': '255, 255, 255',
   '--color-primary-dark': '79, 70, 229',
   '--color-secondary-dark': '0, 0, 0',
   '--color-background-dark': '0, 0, 0',
-};
+});
+
+export const themeAtom = atom(
+  (g) => g(_themeAtom),
+  (g, s, a: any) => {
+    Object.entries(a).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(key, value as string);
+    });
+
+    s(_themeAtom, { ...g(_themeAtom), ...a });
+  }
+);
 
 export const promptDataAtom = atom(
   (g) => g(promptData),
@@ -953,7 +964,7 @@ export const promptDataAtom = atom(
     s(_inputChangedAtom, false);
 
     if (a) {
-      if (a?.theme) s(themeAtom, { ...scriptKitTheme, ...(a?.theme || {}) });
+      if (a?.theme) s(tempThemeAtom, { ...g(themeAtom), ...(a?.theme || {}) });
 
       s(_open, true);
       s(_input, '');
@@ -1298,16 +1309,15 @@ const emptyFilePathBounds: FilePathBounds = {
 };
 export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 
-const theme = atom({});
-export const themeAtom = atom(
-  (g) => g(theme),
+const tempTheme = atom({});
+export const tempThemeAtom = atom(
+  (g) => g(tempTheme),
   (g, s, a: { [key: string]: string }) => {
     Object.entries(a).forEach(([key, value]) => {
-      console.log({ key, value });
       document.documentElement.style.setProperty(key, value);
     });
 
-    s(theme, a);
+    s(tempTheme, a);
   }
 );
 

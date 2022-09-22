@@ -105,19 +105,15 @@ export const runPromptProcess = async (
 ): Promise<ProcessInfo | null> => {
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
-  sendToPrompt(Channel.START, force ? kitState.scriptPath : promptScriptPath);
-  // const same = processes.hidePreviousPromptProcess(promptScriptPath);
-  // const same = processes.endPreviousPromptProcess(promptScriptPath);
-  const same = kitState.promptCount === 0 && isSameScript(promptScriptPath);
-
-  if (same && isVisible() && !devToolsVisible()) {
-    // hideAppIfNoWindows(promptScriptPath);
-    log.info(`Same shortcut pressed while process running. `);
-    return null;
-  }
+  // If the window is already open, interrupt the process with the new script
+  if (isVisible())
+    sendToPrompt(Channel.START, force ? kitState.scriptPath : promptScriptPath);
 
   const processInfo = await processes.findIdlePromptProcess();
   const { pid, child } = processInfo;
+
+  log.info(`${pid}: 🏎 ${promptScriptPath} `);
+  processInfo.scriptPath = promptScriptPath;
 
   const script = await findScript(promptScriptPath);
 
@@ -130,9 +126,6 @@ export const runPromptProcess = async (
     );
   }
 
-  log.info(`${pid}: 🏎 ${promptScriptPath} `);
-  processInfo.scriptPath = promptScriptPath;
-
   // processes.assignScriptToProcess(promptScriptPath, pid);
 
   child?.send({
@@ -144,7 +137,9 @@ export const runPromptProcess = async (
     },
   });
 
-  return processes.add(ProcessType.Prompt);
+  processes.add(ProcessType.Prompt);
+
+  return processInfo;
 };
 
 // export const resetIdlePromptProcess = async () => {

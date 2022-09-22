@@ -103,7 +103,9 @@ export const beforePromptQuit = async () => {
 
 export const createPromptWindow = async () => {
   if (kitState.isMac) {
-    electronPanelWindow = await import('@akiflow/electron-panel-window' as any);
+    electronPanelWindow = await import(
+      /* webpackIgnore: true */ '@akiflow/electron-panel-window' as any
+    );
   }
   const options: BrowserWindowConstructorOptions = {
     titleBarStyle: kitState.isMac ? 'customButtonsOnHover' : 'hiddenInset',

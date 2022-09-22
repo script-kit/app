@@ -459,7 +459,9 @@ const ready = async () => {
 
     if (kitState.isMac) {
       log.info(`💻 Mac detected.`);
-      const { getAuthStatus } = await import('node-mac-permissions');
+      const { getAuthStatus } = await import(
+        /* webpackIgnore: true */ 'node-mac-permissions'
+      );
       kitState.authorized = getAuthStatus('accessibility') === 'authorized';
     } else {
       kitState.authorized = true;
@@ -472,7 +474,9 @@ const ready = async () => {
     } else {
       const id = setInterval(async () => {
         log.silly(`Checking for accessibility authorization...`);
-        const { getAuthStatus } = await import('node-mac-permissions');
+        const { getAuthStatus } = await import(
+          /* webpackIgnore: true */ 'node-mac-permissions'
+        );
 
         kitState.authorized = getAuthStatus('accessibility') === 'authorized';
         if (kitState.authorized) {

@@ -99,7 +99,7 @@ export const startIpc = () => {
 
   ipcMain.on(AppChannel.OPEN_SCRIPT_LOG, async (event, script: Script) => {
     const logPath = getLogFromScriptPath((script as Script).filePath);
-    await runPromptProcess(kitPath('cli/edit-file.js'), [logPath]);
+    await runPromptProcess(kitPath('cli/edit-file.js'), [logPath], true);
   });
 
   ipcMain.on(
@@ -113,7 +113,7 @@ export const startIpc = () => {
         'db',
         `_${path.basename(filePath).replace(/js$/, 'json')}`
       );
-      await runPromptProcess(kitPath('cli/edit-file.js'), [dbPath]);
+      await runPromptProcess(kitPath('cli/edit-file.js'), [dbPath], true);
     }
   );
 
@@ -127,7 +127,7 @@ export const startIpc = () => {
       if (descriptionIsInKenv && descriptionIsFile) {
         try {
           await writeFile(description, input);
-          await runPromptProcess(description, []);
+          await runPromptProcess(description, [], true);
         } catch (error) {
           log.error(error);
         }
@@ -138,7 +138,11 @@ export const startIpc = () => {
 
       if (script.filePath && isInKit) return;
 
-      await runPromptProcess(kitPath('cli/edit-file.js'), [script.filePath]);
+      await runPromptProcess(
+        kitPath('cli/edit-file.js'),
+        [script.filePath],
+        true
+      );
     }
   );
 
@@ -146,7 +150,7 @@ export const startIpc = () => {
     AppChannel.EDIT_SCRIPT,
     async (event, { script }: Required<AppState>) => {
       if ((isInDir(kitPath()), script.filePath)) return;
-      await runPromptProcess(kitPath('main/edit.js'), [script.filePath]);
+      await runPromptProcess(kitPath('main/edit.js'), [script.filePath], true);
     }
   );
 
@@ -155,16 +159,16 @@ export const startIpc = () => {
     async (event, { script, focused }: Required<AppState>) => {
       const filePath = (focused as any)?.filePath || script?.filePath;
 
-      await runPromptProcess(kitPath('cli/edit-file.js'), [filePath]);
+      await runPromptProcess(kitPath('cli/edit-file.js'), [filePath], true);
     }
   );
 
   ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, async () => {
-    runPromptProcess(mainScriptPath);
+    runPromptProcess(mainScriptPath, [], true);
   });
 
   ipcMain.on(AppChannel.RUN_PROCESSES_SCRIPT, async () => {
-    runPromptProcess(kitPath('cli', 'processes.js'));
+    runPromptProcess(kitPath('cli', 'processes.js'), [], true);
   });
 
   ipcMain.on(AppChannel.FOCUS_PROMPT, () => {

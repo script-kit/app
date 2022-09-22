@@ -67,7 +67,7 @@ import {
   tabIndexAtom,
   tabsAtom,
   textareaConfigAtom,
-  themeAtom,
+  tempThemeAtom,
   topHeightAtom,
   uiAtom,
   unfilteredChoicesAtom,
@@ -104,6 +104,7 @@ import {
   appearanceAtom,
   boundsAtom,
   resizingAtom,
+  themeAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -185,6 +186,7 @@ export default function App() {
   const setPlaceholder = useSetAtom(placeholderAtom);
   const setPromptData = useSetAtom(promptDataAtom);
   const setTheme = useSetAtom(themeAtom);
+  const setTempTheme = useSetAtom(tempThemeAtom);
   const setSplashBody = useSetAtom(splashBodyAtom);
   const setSplashHeader = useSetAtom(splashHeaderAtom);
   const setSplashProgress = useSetAtom(splashProgressAtom);
@@ -288,6 +290,7 @@ export default function App() {
     [Channel.SET_SPLASH_HEADER]: setSplashHeader,
     [Channel.SET_SPLASH_PROGRESS]: setSplashProgress,
     [Channel.SET_THEME]: setTheme,
+    [Channel.SET_TEMP_THEME]: setTempTheme,
     [Channel.VALUE_INVALID]: setValueInvalid,
     [Channel.START]: start,
     [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
@@ -443,9 +446,6 @@ export default function App() {
               )}
 
               {hint && <Hint key="AppHint" />}
-              {logHtml?.length > 0 && script?.log !== 'false' && (
-                <Log key="AppLog" />
-              )}
 
               {(showTabs || showSelected) && (
                 <div className="max-h-5.5">
@@ -501,7 +501,9 @@ export default function App() {
                 )}
               </AutoSizer>
             </main>
-
+            {logHtml?.length > 0 && script?.log !== 'false' && (
+              <Log key="AppLog" />
+            )}
             <ActionBar />
           </motion.div>
         </AnimatePresence>

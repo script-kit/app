@@ -821,9 +821,26 @@ const kitMessageMap: ChannelHandler = {
   SET_TEXTAREA_CONFIG: (data) => {
     sendToPrompt(Channel.SET_TEXTAREA_CONFIG, data.value);
   },
-  SET_THEME: (data) => {
-    sendToPrompt(Channel.SET_THEME, data.value);
-  },
+
+  SET_THEME: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SET_THEME, value);
+    if (child) {
+      child?.send({
+        channel,
+        value,
+      });
+    }
+  }),
+
+  SET_TEMP_THEME: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SET_TEMP_THEME, value);
+    if (child) {
+      child?.send({
+        channel,
+        value,
+      });
+    }
+  }),
 
   // SET_FORM_HTML: (data) => {
   //   sendToPrompt(Channel.SET_FORM_HTML, data.value);
