@@ -106,8 +106,12 @@ export const runPromptProcess = async (
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
   // If the window is already open, interrupt the process with the new script
-  if (isVisible())
+  if (isVisible()) {
     sendToPrompt(Channel.START, force ? kitState.scriptPath : promptScriptPath);
+    if (kitState.scriptPath === promptScriptPath) {
+      return null;
+    }
+  }
 
   const processInfo = await processes.findIdlePromptProcess();
   const { pid, child } = processInfo;

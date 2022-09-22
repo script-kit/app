@@ -109,7 +109,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     if (!kitState.authorized && kitState.isMac) {
       const { askForAccessibilityAccess } = await import(
-        /* webpackIgnore: true */ 'node-mac-permissions'
+        'node-mac-permissions'
       );
       authItems.push({
         label: `Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
@@ -250,9 +250,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
     });
 
     if (kitState.isMac) {
-      const nmp = await import(
-        /* webpackIgnore: true */ 'node-mac-permissions'
-      );
+      const nmp = await import('node-mac-permissions');
 
       type AuthType =
         | 'contacts'

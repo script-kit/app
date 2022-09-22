@@ -12,8 +12,7 @@ export default {
   module: {
     parser: {
       javascript: {
-        // Enable magic comments, disable by default for perf reasons
-        commonjsMagicComments: true,
+        dynamicImportMode: 'lazy',
       },
     },
     rules: [
