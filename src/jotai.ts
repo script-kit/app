@@ -565,6 +565,7 @@ export const scoredChoices = atom(
       const selected = g(selectedAtom);
 
       if (!selected && a) {
+        s(prevChoiceId, (a[0].item?.id as string) || '');
         s(focusedChoiceAtom, a[0]?.item);
       }
 
@@ -1505,7 +1506,7 @@ export const onShortcutAtom = atom<OnShortcut>({});
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
   // const log = g(logAtom);
-  // log(`🎬 Send shortcut ${shortcut}`);
+  console.log(`🎬 Send shortcut ${shortcut}`);
   channel(Channel.SHORTCUT, { shortcut });
   s(_flag, '');
 });

@@ -159,7 +159,7 @@ export function ActionButton(action: Action) {
         sendShortcut(action.value);
       }
     },
-    [action, choices, input, index, ui, setFlag]
+    [ui, action, setFlag, sendShortcut]
   );
 
   return (

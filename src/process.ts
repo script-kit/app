@@ -300,7 +300,7 @@ const kitMessageMap: ChannelHandler = {
   WIDGET_SET_STATE: toProcess(({ child }, { channel, value }) => {
     const { widgetId, state } = value as any;
 
-    const widget = findWidget(widgetId);
+    const widget = findWidget(widgetId, channel);
     if (!widget) return;
 
     // log.info(`WIDGET_SET_STATE`, value);
@@ -315,7 +315,7 @@ const kitMessageMap: ChannelHandler = {
     const { widgetId, state } = value as any;
     // log.info({ widgetId }, `${channel}`);
 
-    const widget = findWidget(widgetId);
+    const widget = findWidget(widgetId, channel);
     if (!widget) return;
 
     // log.info(`WIDGET_SET_STATE`, value);
@@ -327,10 +327,10 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
 
-  WIDGET_SET_SIZE: toProcess(({ child }, { value }) => {
+  WIDGET_SET_SIZE: toProcess(({ child }, { channel, value }) => {
     const { widgetId, width, height } = value as any;
     // log.info({ widgetId }, `${channel}`);
-    const widget = findWidget(widgetId);
+    const widget = findWidget(widgetId, channel);
     if (!widget) return;
 
     // log.info(`WIDGET_SET_STATE`, value);
@@ -342,10 +342,10 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
 
-  WIDGET_SET_POSITION: toProcess(({ child }, { value }) => {
+  WIDGET_SET_POSITION: toProcess(({ child }, { value, channel }) => {
     const { widgetId, x, y } = value as any;
     // log.info({ widgetId }, `${channel}`);
-    const widget = findWidget(widgetId);
+    const widget = findWidget(widgetId, channel);
     if (!widget) return;
 
     // log.info(`WIDGET_SET_STATE`, value);
@@ -399,8 +399,8 @@ const kitMessageMap: ChannelHandler = {
 
       widgetState.widgets.push({
         id: widgetId,
-        widget,
-        child,
+        wid: widget?.id,
+        pid: child?.pid,
         moved: false,
         ignoreMouse: value?.options?.ignoreMouse || false,
         ignoreMeasure: Boolean(
@@ -425,9 +425,8 @@ const kitMessageMap: ChannelHandler = {
       });
 
       const closeHandler = () => {
-        if (!findWidget(widgetId)) return;
+        const w = findWidget(widgetId, 'CLOSE_HANDLER');
 
-        const w = findWidget(widgetId);
         if (!w) return;
         if (w?.isDestroyed()) return;
 
@@ -490,9 +489,9 @@ const kitMessageMap: ChannelHandler = {
     }
   ),
 
-  WIDGET_END: toProcess((_, { value }) => {
+  WIDGET_END: toProcess((_, { value, channel }) => {
     const { widgetId } = value as any;
-    const widget = findWidget(widgetId);
+    const widget = findWidget(widgetId, channel);
 
     if (!widget) return;
 
@@ -1405,7 +1404,9 @@ export const handleWidgetEvents = () => {
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!w) return;
-    const { widget, child, moved } = w;
+    const { wid, moved, pid } = w;
+    const widget = BrowserWindow.fromId(wid);
+    const { child } = processes.getByPid(pid) as ProcessInfo;
     if (!child) return;
 
     if (moved) {
@@ -1427,8 +1428,10 @@ export const handleWidgetEvents = () => {
     const { widgetId } = data;
     const options = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!options) return;
-    const { child, widget } = options;
-    if (!child) return;
+    const { pid, wid } = options;
+    const widget = BrowserWindow.fromId(wid);
+    const { child } = processes.getByPid(pid) as ProcessInfo;
+    if (!child || !widget) return;
 
     child?.send({
       ...data,
@@ -1447,8 +1450,10 @@ export const handleWidgetEvents = () => {
     const options = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!options) return;
 
-    const { widget, child, ignoreMeasure } = options;
-    if (!child || ignoreMeasure) return;
+    const { wid, ignoreMeasure, pid } = options;
+    const widget = BrowserWindow.fromId(wid);
+    const { child } = processes.getByPid(pid) as ProcessInfo;
+    if (!child || !widget || ignoreMeasure) return;
 
     widget.setSize(data.width, data.height, true);
   };

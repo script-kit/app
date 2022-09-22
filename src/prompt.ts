@@ -18,6 +18,7 @@ import {
 import { subscribeKey } from 'valtio/utils';
 
 import {
+  app,
   BrowserWindow,
   screen,
   Rectangle,
@@ -74,6 +75,7 @@ export const maybeHide = async (reason: string) => {
       !kitState.preventClose
     ) {
       // promptWindow?.blur();
+
       promptWindow?.hide();
       log.verbose(
         `🙈 maybeHide???: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
@@ -217,8 +219,11 @@ export const createPromptWindow = async () => {
   promptWindow?.setMaxListeners(2);
 
   // promptWindow?.webContents.on('before-input-event', (event: any, input) => {
-  //   if (input.key === 'Escape') {
-  //     if (promptWindow) escapePromptWindow(promptWindow);
+  //   if (devToolsVisible()) {
+  //     log.info({ input });
+  //     if (input.key === 'r' && (input.meta || input.control)) {
+  //       reload();
+  //     }
   //   }
   // });
 
@@ -261,6 +266,14 @@ export const createPromptWindow = async () => {
   promptWindow?.webContents?.on('blur', onBlur);
   promptWindow?.on('blur', onBlur);
 
+  promptWindow?.on('hide', () => {
+    kitState.isVisible = false;
+  });
+
+  promptWindow?.on('show', () => {
+    kitState.isVisible = true;
+  });
+
   promptWindow?.webContents?.on('dom-ready', () => {
     log.info(`🍀 dom-ready on ${kitState?.scriptPath}`);
 
@@ -296,12 +309,6 @@ export const createPromptWindow = async () => {
   });
   promptWindow?.on('resized', onResized);
   promptWindow?.on('moved', debounce(onMove, 500));
-
-  // promptWindow?.on('show', () => {
-  //   setTimeout(() => {
-  //     focusPrompt();
-  //   }, 150);
-  // });
 
   // powerMonitor.addListener('user-did-resign-active', () => {
   //   log.info(`🔓 System unlocked. Reloading prompt window.`);

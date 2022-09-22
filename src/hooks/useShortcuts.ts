@@ -21,8 +21,6 @@ import {
 
 import { hotkeysOptions } from './shared';
 
-const exclude = ['enter', 'up', 'down', 'left', 'right'];
-
 export default () => {
   const [cmd] = useAtom(cmdAtom);
   const [choices] = useAtom(_choices);
@@ -56,9 +54,8 @@ export default () => {
   );
 
   const flagShortcuts = flagsWithShortcuts
-    .filter(
-      ([key, value]) => value?.shortcut && !exclude.includes(value?.shortcut)
-    )
+    .filter(([key, value]) => value?.shortcut)
+
     .map(([key, value]) => value.shortcut)
     .join(',');
 
@@ -84,7 +81,7 @@ export default () => {
 
   const onShortcuts = promptShortcuts.length
     ? promptShortcuts
-        .filter((ps) => ps?.key && !exclude.includes(ps.key))
+        .filter((ps) => ps?.key)
         .map((ps) => ps.key)
         .join(',')
     : `f19`;

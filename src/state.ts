@@ -9,7 +9,7 @@ import log, { LogLevel } from 'electron-log';
 import path from 'path';
 import os from 'os';
 import { ChildProcess } from 'child_process';
-import { app, BrowserWindow, nativeTheme, Rectangle } from 'electron';
+import { app, BrowserWindow, Menu, nativeTheme, Rectangle } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { debounce } from 'lodash';
@@ -32,6 +32,7 @@ import { UI } from '@johnlindquist/kit/cjs/enum';
 import internetAvailable from './internet-available';
 import { noScript } from './defaults';
 import { ProcessInfo } from './types';
+import { getAssetPath } from './assets';
 
 export const serverState = {
   running: false,
@@ -156,8 +157,8 @@ const removeP = (pid: number) => {
 // };
 export type WidgetOptions = {
   id: string;
-  widget: BrowserWindow;
-  child: ChildProcess;
+  wid: number;
+  pid: number;
   moved: boolean;
   ignoreMouse: boolean;
   ignoreMeasure: boolean;
@@ -241,6 +242,7 @@ const initState = {
   },
   isResizing: false,
   hasSnippet: false,
+  isVisible: false,
 };
 
 const initAppDb = {
@@ -262,16 +264,24 @@ const initConfig: Config = {
   deleteSnippet: true,
 };
 
+const initWidgets = {
+  widgets: [] as WidgetOptions[],
+};
+
 export const appDb: typeof initAppDb = proxy(initAppDb);
 export const kitConfig: Config = proxy(initConfig);
 export const kitState: typeof initState = proxy(initState);
 export type kitStateType = typeof initState;
 
-export const widgetState: { widgets: WidgetOptions[] } = {
-  widgets: [] as WidgetOptions[],
-};
-export const findWidget = (id: string) => {
-  return widgetState.widgets.find((options) => options.id === id)?.widget;
+export const widgetState: typeof initWidgets = proxy(initWidgets);
+export const findWidget = (id: string, reason = '') => {
+  const options = widgetState.widgets.find((opts) => opts.id === id);
+  if (!options) {
+    log.warn(`${reason}: widget not found: ${id}`);
+    return null;
+  }
+
+  return BrowserWindow.fromId(options.wid);
 };
 
 export function isSameScript(promptScriptPath: string) {
@@ -306,6 +316,52 @@ subscribeKey(kitState, 'notifyAuthFail', (notifyAuthFail) => {
       status: 'warn',
       message: '',
     };
+  }
+});
+
+const hideDock = debounce(() => {
+  if (
+    app?.dock.isVisible() &&
+    widgetState.widgets.length === 0 &&
+    !kitState.isVisible
+  ) {
+    app?.dock?.setIcon(getAssetPath('icon.png'));
+    app?.dock?.hide();
+  }
+}, 250);
+
+const showDock = () => {
+  if (!app?.dock.isVisible()) {
+    hideDock.cancel();
+    app?.dock?.show();
+    app?.dock?.setMenu(
+      Menu.buildFromTemplate([
+        {
+          label: 'Quit',
+          click: () => {
+            app?.quit();
+          },
+        },
+      ])
+    );
+    app?.dock?.setIcon(getAssetPath('icon.png'));
+  }
+};
+
+subscribeKey(widgetState, 'widgets', (widgets) => {
+  log.info(`👀 Widgets: ${JSON.stringify(widgets)}`);
+  if (widgets.length !== 0) {
+    showDock();
+  } else {
+    hideDock();
+  }
+});
+
+subscribeKey(kitState, 'isVisible', (visible) => {
+  if (visible) {
+    showDock();
+  } else {
+    hideDock();
   }
 });
 
