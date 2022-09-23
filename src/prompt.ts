@@ -363,6 +363,7 @@ export const showInactive = () => {
       promptWindow?.showInactive();
       electronPanelWindow?.makeKeyWindow(promptWindow);
     } else {
+      promptWindow?.setAlwaysOnTop(true);
       promptWindow?.show();
     }
   } catch (error) {

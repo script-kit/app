@@ -10,11 +10,6 @@ export default {
   externals: ['fsevents', ...Object.keys(externals || {})],
 
   module: {
-    parser: {
-      javascript: {
-        dynamicImportMode: 'lazy',
-      },
-    },
     rules: [
       {
         test: /\.tsx?$/,
