@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@akiflow/electron-panel-window": "3.2.1",
-    "@nut-tree/nut-js": "2.3.0",
+    "@nut-tree/nut-js": "2.2.1",
     "frontmost-app": "1.0.0",
     "glasstron": "^0.1.1",
     "node-abi": "3.23.0",
