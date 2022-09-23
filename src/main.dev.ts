@@ -623,7 +623,7 @@ const ohNo = async (error: Error) => {
   log.warn(error.message);
   log.warn(error.stack);
   const mainLog = await readFile(
-    path.join(os.homedir(), `Library/Logs/Kit/main.log`),
+    path.resolve(app.getPath('appData'), 'logs', 'main.log'),
     {
       encoding: 'utf8',
     }

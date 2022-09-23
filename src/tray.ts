@@ -522,6 +522,16 @@ export const setupTray = async (checkDb = false, state: trayState) => {
             label: message,
             icon: menuIcon('busy'),
           },
+          // add quit option
+          {
+            label: 'Quit',
+            click: () => {
+              kitState.allowQuit = true;
+              log.info(`Quitting...`);
+              app.quit();
+              app.exit();
+            },
+          },
         ]);
         startMenu.once('menu-will-close', () => {
           kitState.trayOpen = false;

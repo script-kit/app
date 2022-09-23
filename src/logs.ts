@@ -34,13 +34,23 @@ export const getLog = (scriptPath: string): Logger => {
 
     const _info = scriptLog.info.bind(scriptLog);
     const _warn = scriptLog.warn.bind(scriptLog);
+    const _verbose = scriptLog.verbose.bind(scriptLog);
+    const _debug = scriptLog.debug.bind(scriptLog);
+    const _silly = scriptLog.silly.bind(scriptLog);
+
+    const wrap = (fn: (...args: string[]) => void) => (...args: string[]) => {
+      try {
+        fn(...args);
+      } catch (error) {
+        console.log(error);
+      }
+    };
     const logger = {
-      info: (...args: string[]) => {
-        _info(...args.map(stripAnsi));
-      },
-      warn: (...args: string[]) => {
-        _warn(...args.map(stripAnsi));
-      },
+      info: wrap(_info),
+      warn: wrap(_warn),
+      verbose: wrap(_verbose),
+      debug: wrap(_debug),
+      silly: wrap(_silly),
       clear: () => {
         fs.writeFileSync(logPath, ``);
       },
