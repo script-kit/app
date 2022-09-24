@@ -738,7 +738,6 @@ const checkKit = async () => {
   };
 
   const showSplash = async () => {
-    log.info(`🌊 Showing Splash Install Screen`);
     await setScript(
       {
         name: 'Kit Setup',
@@ -755,10 +754,12 @@ const checkKit = async () => {
 
     sendSplashHeader(`Installing Kit SDK and Kit Environment...`);
 
-    setPromptData(
+    log.info(`🌊 Showing Splash Install Screen`);
+    await setPromptData(
       {
         ignoreBlur: true,
         ui: UI.splash,
+        scriptPath: SPLASH_PATH,
       } as PromptData,
       kitState.pid
     );

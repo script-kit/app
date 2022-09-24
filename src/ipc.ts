@@ -23,25 +23,17 @@ import { ProcessInfo } from '@johnlindquist/kit/types/core';
 import { AppMessage, AppState } from '@johnlindquist/kit/types/kitapp';
 import { existsSync, renameSync } from 'fs';
 import { writeFile } from 'fs/promises';
-import isImage from 'is-image';
 import { DownloaderHelper } from 'node-downloader-helper';
 import detect from 'detect-file-type';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 
-import {
-  endPrompt,
-  focusPrompt,
-  isFocused,
-  reload,
-  resize,
-  showInactive,
-} from './prompt';
+import { endPrompt, focusPrompt, isFocused, reload, resize } from './prompt';
 import { runPromptProcess } from './kit';
 import { AppChannel } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
-import { kitConfig, kitState, updateScripts } from './state';
+import { kitConfig, kitState } from './state';
 
 const handleChannel = (
   fn: (processInfo: ProcessInfo, message: AppMessage) => void
