@@ -84,6 +84,7 @@ import {
   kitConfig,
   widgetState,
   findWidget,
+  forceQuit,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -605,9 +606,7 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   QUIT_APP: () => {
-    kitState.allowQuit = true;
-    app.quit();
-    app.exit();
+    forceQuit();
   },
   SET_KIT_STATE: toProcess(async (processInfo, data) => {
     log.info(`SET_KIT_STATE`, data?.value);

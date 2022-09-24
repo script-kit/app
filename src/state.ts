@@ -170,7 +170,7 @@ const initState = {
   ps: [] as Partial<ProcessInfo>[],
   addP,
   removeP,
-  pid: 0,
+  pid: 999999,
   script: noScript,
   ui: UI.arg,
   blurredByKit: false,
@@ -341,7 +341,7 @@ const showDock = () => {
         {
           label: 'Quit',
           click: () => {
-            app?.quit();
+            forceQuit();
           },
         },
       ])
@@ -387,3 +387,18 @@ export const online = async () => {
 // export const getScriptsSnapshot = (): Script[] => {
 //   return structuredClone(snapshot(kitState).scripts) as Script[];
 // };
+
+export const forceQuit = () => {
+  kitState.allowQuit = true;
+  log.info(`👋 Quitting...`);
+  try {
+    BrowserWindow.getAllWindows().forEach((win) => win.destroy());
+    kitState.ps.forEach((p) => {
+      p?.child?.kill();
+    });
+    app.quit();
+    app.exit(0);
+  } catch (e) {
+    log.error(e);
+  }
+};

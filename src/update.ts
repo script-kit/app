@@ -17,7 +17,7 @@ import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { spawn } from 'child_process';
 import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
-import { kitState, online } from './state';
+import { forceQuit, kitState, online } from './state';
 import { getAssetPath } from './assets';
 
 export const kitIgnore = () => {
@@ -135,8 +135,7 @@ export const configureAutoUpdate = async () => {
 
         log.info(`After relaunch attempt`);
 
-        app.quit();
-        app.exit();
+        forceQuit();
       }
     }, 2500);
   });

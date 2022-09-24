@@ -720,7 +720,11 @@ const writePromptDb = debounce(
     if (!promptDb?.screens[screenId]) promptDb.screens[screenId] = {};
 
     promptDb.screens[screenId][scriptPath] = bounds;
-    await promptDb.write();
+    try {
+      await promptDb.write();
+    } catch (error) {
+      log.info(error);
+    }
   },
   100
 );
@@ -965,7 +969,11 @@ export const clearPromptCache = async () => {
   promptDb.screens = {};
 
   log.info(`⛑ Clear prompt cache:`, promptDb);
-  await promptDb.write();
+  try {
+    await promptDb.write();
+  } catch (error) {
+    log.info(error);
+  }
 
   promptWindow?.webContents?.setZoomLevel(0);
 };
@@ -1078,7 +1086,11 @@ export const clearPromptCacheFor = async (scriptPath: string) => {
         log.verbose(`🗑 Clear prompt cache for ${scriptPath} on ${display.id}`);
       }
     }
-    await promptDb.write();
+    try {
+      await promptDb.write();
+    } catch (error) {
+      log.info(error);
+    }
   } catch (e) {
     log.error(e);
   }

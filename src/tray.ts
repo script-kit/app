@@ -24,7 +24,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, getScriptsDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
-import { appDb, kitState, restartIfNecessary } from './state';
+import { appDb, forceQuit, kitState, restartIfNecessary } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 
@@ -406,10 +406,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
       {
         label: 'Quit',
         click: () => {
-          kitState.allowQuit = true;
-          log.info(`Quitting...`);
-          app.quit();
-          app.exit();
+          forceQuit();
         },
       },
     ]);

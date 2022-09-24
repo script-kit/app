@@ -464,7 +464,10 @@ export const _index = atom(
   (g) => g(index),
   (g, s, a: number) => {
     const cs = g(choices);
-    const clampedIndex = clamp(a, 0, cs.length - 1);
+    // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
+    const clampedIndex = a < 0 ? cs.length - 1 : a > cs.length - 1 ? 0 : a;
+
+    // const clampedIndex = clamp(a, 0, cs.length - 1);
 
     if (g(index) !== clampedIndex) {
       s(index, clampedIndex);

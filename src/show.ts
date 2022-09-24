@@ -22,7 +22,7 @@ import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
 import { getAssetPath } from './assets';
 import { darkTheme, lightTheme } from './components/themes';
-import { kitState, widgetState } from './state';
+import { forceQuit, kitState, widgetState } from './state';
 
 export const INSTALL_ERROR = 'install-error';
 
@@ -393,8 +393,7 @@ export const show = async (
           browserWindow?.destroy();
         });
 
-        app.quit();
-        app.exit();
+        forceQuit();
       }
       if (
         BrowserWindow.getAllWindows().every((window) => !window.isVisible())

@@ -16,14 +16,12 @@ import {
   inputAtom,
   modifiers,
   _modifiers,
-  pidAtom,
   placeholderAtom,
   promptDataAtom,
   selectionStartAtom,
   submittedAtom,
   submitValueAtom,
   tabIndexAtom,
-  tabsAtom,
   ultraShortCodesAtom,
   unfilteredChoicesAtom,
   onInputSubmitAtom,
@@ -43,9 +41,7 @@ export default function Input() {
   const inputRef = useRef<HTMLInputElement>(null);
   useFocus(inputRef);
 
-  const [pid] = useAtom(pidAtom);
   const [inputValue, setInput] = useAtom(inputAtom);
-  const [tabs] = useAtom(tabsAtom);
   const [, setTabIndex] = useAtom(tabIndexAtom);
   const [unfilteredChoices] = useAtom(unfilteredChoicesAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);

@@ -24,20 +24,6 @@ import tar from 'tar';
 import clipboardy from 'clipboardy';
 import unhandled from 'electron-unhandled';
 import { openNewGitHubIssue, debugInfo } from 'electron-util';
-
-unhandled({
-  reportButton: (error) => {
-    openNewGitHubIssue({
-      user: 'johnlindquist',
-      repo: 'kit',
-      body: `\`\`\`\n${error.stack}\n\`\`\`\n\n---\n\n${debugInfo()}`,
-    });
-  },
-});
-
-if (!app.requestSingleInstanceLock()) {
-  app.exit();
-}
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import { autoUpdater } from 'electron-updater';
@@ -127,6 +113,24 @@ import { registerTrayShortcut } from './shortcuts';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
+
+unhandled({
+  showDialog: true,
+  logger: (error) => {
+    log.error(error);
+  },
+  reportButton: (error) => {
+    openNewGitHubIssue({
+      user: 'johnlindquist',
+      repo: 'kit',
+      body: `\`\`\`\n${error.stack}\n\`\`\`\n\n---\n\n${debugInfo()}`,
+    });
+  },
+});
+
+if (!app.requestSingleInstanceLock()) {
+  app.exit();
+}
 
 app.setName(APP_NAME);
 
@@ -733,9 +737,8 @@ const checkKit = async () => {
     });
   };
 
-  const pid = 999999;
-
   const showSplash = async () => {
+    log.info(`🌊 Showing Splash Install Screen`);
     await setScript(
       {
         name: 'Kit Setup',
@@ -746,7 +749,8 @@ const checkKit = async () => {
         type: ProcessType.Prompt,
         hasPreview: true,
       },
-      pid
+      kitState.pid,
+      true
     );
 
     sendSplashHeader(`Installing Kit SDK and Kit Environment...`);
@@ -756,7 +760,7 @@ const checkKit = async () => {
         ignoreBlur: true,
         ui: UI.splash,
       } as PromptData,
-      pid
+      kitState.pid
     );
     sendSplashBody(`Starting up...`);
 
@@ -800,7 +804,10 @@ const checkKit = async () => {
     await showSplash();
   }
 
-  if (!(await kitExists()) || (await getStoredVersion()) === '0.0.0') {
+  const storedVersion = await getStoredVersion();
+  log.info(`Stored version: ${storedVersion}`);
+
+  if (!(await kitExists()) || storedVersion === '0.0.0') {
     if (!process.env.KIT_SPLASH) {
       await showSplash();
     }
