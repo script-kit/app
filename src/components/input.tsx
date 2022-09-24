@@ -124,14 +124,11 @@ export default function Input() {
     [
       setSelectionStart,
       setModifiers,
-      unfilteredChoices,
-      tabs,
-      inputValue,
-      setSubmitValue,
-      setTabIndex,
-      pid,
+      ui,
       ultraShortCodes,
-      onInputSubmit,
+      unfilteredChoices,
+      setSubmitValue,
+      inputValue,
     ]
   );
 

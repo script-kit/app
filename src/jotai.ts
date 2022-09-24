@@ -974,6 +974,7 @@ export const promptDataAtom = atom(
       s(submittedAtom, false);
       s(logHTMLAtom, '');
       s(uiAtom, a.ui);
+      s(ultraShortCodesAtom, []);
       s(hintAtom, a.hint);
       s(placeholderAtom, a.placeholder);
       s(selectedAtom, a.selected);
@@ -1031,8 +1032,6 @@ export const promptDataAtom = atom(
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
       s(shortcutsAtom, a?.shortcuts || []);
-
-      s(ultraShortCodesAtom, []);
       s(prevChoicesAtom, []);
 
       if (
@@ -1441,7 +1440,8 @@ export const isHiddenAtom = atom(false);
 
 export const filterInputAtom = atom<string>(``);
 export const blurAtom = atom(null, (g) => {
-  if (g(openAtom)) {
+  const open = g(openAtom);
+  if (open) {
     const channel = g(channelAtom);
     channel(Channel.BLUR);
   }

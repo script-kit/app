@@ -239,14 +239,14 @@ export const createPromptWindow = async () => {
     if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
     log.verbose(`Blur: ${kitState.ignoreBlur ? 'ignored' : 'accepted'}`);
+
+    if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
+      sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
+    }
     maybeHide('blur');
 
     if (os.platform().startsWith('win')) {
       return;
-    }
-
-    if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
-      sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
     }
 
     if (kitState.ignoreBlur) {
