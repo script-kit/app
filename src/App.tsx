@@ -262,6 +262,7 @@ export default function App() {
         DOMPurify.sanitize(html, {
           // allow iframe
           ADD_TAGS: ['iframe'],
+          ALLOW_UNKNOWN_PROTOCOLS: true,
         })
       ),
     [Channel.SET_PREVIEW]: (html) =>
@@ -269,6 +270,7 @@ export default function App() {
         DOMPurify.sanitize(html, {
           // allow iframe
           ADD_TAGS: ['iframe'],
+          ALLOW_UNKNOWN_PROTOCOLS: true,
         })
       ),
     [Channel.SET_FOOTER]: (html) => setFooter(DOMPurify.sanitize(html)),

@@ -948,3 +948,7 @@ transition-colors
 transition-all
 duration-300
 duration-1000
+dark:outline-white
+outline-black
+dark:border-white
+border-black
