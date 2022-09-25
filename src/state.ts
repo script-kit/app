@@ -335,6 +335,7 @@ const showDock = () => {
   if (!kitState.isMac) return;
   if (!app?.dock.isVisible()) {
     hideDock.cancel();
+    app?.dock?.setIcon(getAssetPath('icon.png'));
     app?.dock?.show();
     app?.dock?.setMenu(
       Menu.buildFromTemplate([
