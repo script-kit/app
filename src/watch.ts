@@ -5,8 +5,6 @@ import path from 'path';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
 import { Script } from '@johnlindquist/kit/types/core';
-import { ProcessType } from '@johnlindquist/kit/cjs/enum';
-import { processes } from './process';
 import { runPromptProcess } from './kit';
 
 export const watchMap = new Map();

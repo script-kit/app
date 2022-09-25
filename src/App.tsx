@@ -392,7 +392,7 @@ export default function App() {
         w-screen h-screen
         min-w-screen min-h-screen
       bg-bg-light dark:bg-bg-dark
-      transition-all duration-1000
+      transition-colors duration-200
 
       ${
         appConfig.isMac

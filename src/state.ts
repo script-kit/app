@@ -392,10 +392,13 @@ export const online = async () => {
 export const forceQuit = () => {
   kitState.allowQuit = true;
   log.info(`👋 Quitting...`);
-  try {
-    app.quit();
-    app.exit(0);
-  } catch (e) {
-    log.error(e);
-  }
+
+  setTimeout(() => {
+    try {
+      app.quit();
+      app.exit(0);
+    } catch (e) {
+      log.error(e);
+    }
+  }, 1000);
 };

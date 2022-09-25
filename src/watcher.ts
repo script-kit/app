@@ -5,6 +5,7 @@ import path from 'path';
 import { existsSync } from 'fs';
 import { ChildProcess, fork, ForkOptions } from 'child_process';
 import { homedir } from 'os';
+import { subscribeKey } from 'valtio/utils';
 
 import { rm } from 'fs/promises';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
@@ -147,3 +148,9 @@ export const setupWatchers = async () => {
 
   log.info(`👁 Watch child: ${watchers.childWatcher.pid}`);
 };
+
+subscribeKey(kitState, 'allowQuit', (allowQuit) => {
+  if (allowQuit) {
+    teardownWatchers();
+  }
+});
