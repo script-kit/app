@@ -998,6 +998,30 @@ const checkKit = async () => {
   if (!(await kenvConfigured())) {
     await setupLog(`Run .kenv setup script...`);
     await setupScript(kitPath('setup', 'setup.js'));
+    if (isWin) {
+      const npmResult = await new Promise((resolve, reject) => {
+        const child = fork(
+          knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+          [`i`, kitPath()],
+          {
+            cwd: kenvPath(),
+            env: {
+              ...process.env,
+              PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+            },
+          }
+        );
+        child.on('message', (data) => {
+          sendSplashBody(data.toString());
+        });
+        child.on('exit', () => {
+          resolve('npm install success');
+        });
+        child.on('error', (error) => {
+          reject(error);
+        });
+      });
+    }
     await kenvConfigured();
   }
 

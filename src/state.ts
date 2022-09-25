@@ -393,10 +393,6 @@ export const forceQuit = () => {
   kitState.allowQuit = true;
   log.info(`👋 Quitting...`);
   try {
-    BrowserWindow.getAllWindows().forEach((win) => win.destroy());
-    kitState.ps.forEach((p) => {
-      p?.child?.kill();
-    });
     app.quit();
     app.exit(0);
   } catch (e) {
