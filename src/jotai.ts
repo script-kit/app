@@ -29,7 +29,7 @@ import {
 } from '@johnlindquist/kit/types/kitapp';
 import { editor } from 'monaco-editor';
 
-import { clamp, debounce, drop as _drop, isEqual } from 'lodash';
+import { assign, clamp, debounce, drop as _drop, isEqual } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
 import { AppChannel } from './enums';
 import { ProcessInfo, ResizeData, ScoredChoice, Survey } from './types';
@@ -1618,3 +1618,52 @@ export const containerClassesAtom = atom((g) => {
   }
   return ``;
 });
+
+type AudioOptions = {
+  filePath: string;
+  playbackRate?: number;
+};
+
+export const _audioAtom = atom<AudioOptions | null>(null);
+
+export const audioAtom = atom(
+  (g) => g(_audioAtom),
+  (g, s, a: AudioOptions) => {
+    const audio = document.querySelector('#audio') as HTMLAudioElement;
+    if (a?.filePath) {
+      s(_audioAtom, a);
+      const { filePath, ...options } = a;
+      audio.defaultPlaybackRate = options?.playbackRate || 1.3;
+      audio.playbackRate = options?.playbackRate || 1.3;
+      audio.setAttribute('src', filePath);
+      audio.load();
+      audio.play();
+    } else {
+      audio?.pause();
+      if (audio) s(_audioAtom, null);
+    }
+  }
+);
+
+type SpeakOptions = {
+  text: string;
+  name?: string;
+} & SpeechSynthesisUtterance;
+export const _speechAtom = atom<SpeakOptions | null>(null);
+
+export const speechAtom = atom(
+  (g) => g(_speechAtom),
+  (g, s, a: SpeakOptions) => {
+    if (a) {
+      const utterThis = new SpeechSynthesisUtterance(a?.text);
+      utterThis.rate = a?.rate || 1.3;
+      utterThis.pitch = a?.pitch || 1;
+      utterThis.lang = a?.lang || 'en-US';
+      const voices = window.speechSynthesis.getVoices();
+      utterThis.voice =
+        voices.find((v) => v.name === a?.name) ||
+        window.speechSynthesis.getVoices()[0];
+      window.speechSynthesis.speak(utterThis);
+    }
+  }
+);

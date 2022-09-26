@@ -867,7 +867,7 @@ const pidMatch = (pid: number, message: string) => {
   return true;
 };
 
-export const setPromptData = async (promptData: PromptData, pid) => {
+export const setPromptData = async (promptData: PromptData) => {
   // if (!pidMatch(pid, `setPromptData`)) return;
   if (promptData?.scriptPath !== kitState.scriptPath) return;
 
@@ -983,6 +983,7 @@ export const reload = () => {
 };
 
 export const getPromptBounds = () => promptWindow.getBounds();
+export const getMainPrompt = () => promptWindow;
 
 export const destroyPromptWindow = () => {
   if (promptWindow) {

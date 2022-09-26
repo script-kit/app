@@ -105,6 +105,8 @@ import {
   boundsAtom,
   resizingAtom,
   themeAtom,
+  audioAtom,
+  speechAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -221,6 +223,8 @@ export default function App() {
   const setAppearance = useSetAtom(appearanceAtom);
   const [bounds, setBounds] = useAtom(boundsAtom);
   const setResizing = useSetAtom(resizingAtom);
+  const setAudio = useSetAtom(audioAtom);
+  const setSpeak = useSetAtom(speechAtom);
 
   useShortcuts();
   useEnter();
@@ -302,6 +306,8 @@ export default function App() {
     [Channel.SET_APPEARANCE]: setAppearance,
     [Channel.SET_BOUNDS]: setBounds,
     [Channel.SET_RESIZING]: setResizing,
+    [Channel.PLAY_AUDIO]: setAudio,
+    [Channel.SPEAK_TEXT]: setSpeak,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -510,6 +516,8 @@ export default function App() {
           </motion.div>
         </AnimatePresence>
       </div>
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <audio id="audio" />
     </ErrorBoundary>
   );
 }

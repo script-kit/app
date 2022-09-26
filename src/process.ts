@@ -13,6 +13,8 @@ import {
   BrowserWindow,
   ipcMain,
   IpcMainEvent,
+  dialog,
+  shell,
 } from 'electron';
 import os from 'os';
 import { remove } from 'lodash';
@@ -57,6 +59,7 @@ import {
   clearPromptCache,
   focusPrompt,
   forceFocus,
+  getMainPrompt,
   getPromptBounds,
   hideAppIfNoWindows,
   isVisible,
@@ -1109,6 +1112,45 @@ const kitMessageMap: ChannelHandler = {
   SET_APPEARANCE: toProcess(async ({ child }, { channel, value }) => {
     sendToPrompt(Channel.SET_APPEARANCE, value);
 
+    child?.send({ channel, value });
+  }),
+  SELECT_FILE: toProcess(async ({ child }, { channel, value }) => {
+    // Show electron file selector dialog
+    const response = await dialog.showOpenDialog(getMainPrompt(), {
+      message: 'Select a file',
+      properties: ['openFile'],
+    });
+
+    const returnValue = response.canceled ? '' : response.filePaths[0];
+
+    child?.send({ channel, value: returnValue });
+  }),
+  SELECT_FOLDER: toProcess(async ({ child }, { channel, value }) => {
+    // Show electron file selector dialog
+    const response = await dialog.showOpenDialog(getMainPrompt(), {
+      message: 'Select a file',
+      properties: ['openDirectory'],
+    });
+
+    const returnValue = response.canceled ? '' : response.filePaths[0];
+
+    child?.send({ channel, value: returnValue });
+  }),
+  REVEAL_FILE: toProcess(async ({ child }, { channel, value }) => {
+    shell.showItemInFolder(value);
+
+    child?.send({ channel, value });
+  }),
+  BEEP: toProcess(async ({ child }, { channel, value }) => {
+    shell.beep();
+    child?.send({ channel, value });
+  }),
+  PLAY_AUDIO: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.PLAY_AUDIO, value);
+    child?.send({ channel, value });
+  }),
+  SPEAK_TEXT: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SPEAK_TEXT, value);
     child?.send({ channel, value });
   }),
 };

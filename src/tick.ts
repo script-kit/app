@@ -212,18 +212,26 @@ export const configureInterval = async () => {
     };
   }).pipe(share());
 
+  let previous = 0;
   const clipboardText$: Observable<any> = io$.pipe(
-    tap((event) => {
-      log.silly(`clipboardText$`);
-      log.silly(event);
-    }),
+    // tap((event) => {
+    //   log.silly(`clipboardText$`);
+    //   log.silly(event);
+    // }),
     filter((event: any) => {
       if (event?.keycode && (event.ctrlKey || event.metaKey)) {
         const key = toKey(event?.keycode || 0, event.shiftKey);
         return key === 'c' || key === 'x';
       }
 
-      return event?.type === 'mouseclick';
+      if (event?.button === 1 && previous === 2) {
+        previous = 0;
+        return true;
+      }
+
+      previous = event?.button;
+
+      return false;
     }),
     debounceTime(200),
     switchMap(async () => {
