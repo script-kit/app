@@ -218,7 +218,7 @@ const initState = {
   notifications: [] as KitStatus[],
   downloadPercent: 0,
   applyUpdate: false,
-  lastOpen: new Date(),
+  previousDownload: new Date(),
   logLevel: 'info' as LogLevel,
   preventResize: false,
   trayOpen: false,

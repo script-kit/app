@@ -13,7 +13,6 @@ import {
   uiAtom,
   shortcutsAtom,
   flagsAtom,
-  containerClassesAtom,
 } from '../jotai';
 import { useKeyDirection, useObserveMainHeight } from '../hooks';
 import { darkTheme, lightTheme } from './themes';
@@ -29,7 +28,6 @@ export default function Panel({ width, height }: PanelProps) {
   // useOpen();
   const scrollRef: RefObject<any> = useRef(null);
   const panelHTML = useAtomValue(panelHTMLAtom);
-  const containerClasses = useAtomValue(containerClassesAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [isDark] = useAtom(darkAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
@@ -43,7 +41,7 @@ export default function Panel({ width, height }: PanelProps) {
     if (scrollRef.current && ui === UI.div) {
       scrollRef?.current?.focus();
     }
-  }, [inputFocus, scrollRef]);
+  }, [inputFocus, scrollRef, ui]);
 
   useKeyDirection(
     (key) => {
@@ -86,11 +84,14 @@ export default function Panel({ width, height }: PanelProps) {
         transition={{ duration: 0.25, ease: 'circOut' }}
         className={`
         ${ui === UI.hotkey ? 'h-10' : ''}
-        ${containerClasses}
+        ${panelHTML?.match(/class="([^"]*)"/)?.[1] || ''}
         wrapper
        `}
         ref={divRef as any}
-        dangerouslySetInnerHTML={{ __html: panelHTML }}
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{
+          __html: panelHTML.replace(/class="([^"]*)"/, ''),
+        }}
       />
     </SimpleBar>
   );

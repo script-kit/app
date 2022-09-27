@@ -49,12 +49,10 @@ export const scheduleDownloads = async () => {
   const isOnline = await online();
   if (!isOnline) return;
 
-  runScript(kitPath('setup', 'downloads.js'));
-
-  if (existsSync(kenvPath('kenvs', 'examples'))) {
-    runScript(kitPath('cli', 'kenv-pull.js'), kenvPath(`kenvs`, `examples`));
-
-    // await handleSpawnReturns(`update-examples`, updateExamplesResult);
+  try {
+    runScript(kitPath('setup', 'downloads.js'));
+  } catch (error) {
+    log.error(error);
   }
 };
 

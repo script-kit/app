@@ -506,7 +506,7 @@ const ready = async () => {
 
     scheduleDownloads();
 
-    subscribeKey(kitState, 'lastOpen', async () => {
+    subscribeKey(kitState, 'previousDownload', async () => {
       scheduleDownloads();
     });
 
@@ -993,6 +993,7 @@ const checkKit = async () => {
     await ensureKenvDirs();
 
     optionalSetupScript(kitPath('setup', 'clone-examples.js'));
+    optionalSetupScript(kitPath('setup', 'clone-sponsors.js'));
   }
 
   if (!(await kenvConfigured())) {

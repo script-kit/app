@@ -1278,6 +1278,10 @@ export const escapeAtom = atom<any>((g) => {
   const channel = g(channelAtom);
 
   return () => {
+    const synth = window.speechSynthesis;
+    if (synth.speaking) {
+      synth.cancel();
+    }
     // const history = g(scriptHistoryAtom).slice();
     // s(scriptHistoryAtom, []);
 
@@ -1608,17 +1612,6 @@ export const resizeCompleteAtom = atom(false);
 
 export const resizingAtom = atom(false);
 
-export const containerClassesAtom = atom((g) => {
-  const html = g(panelHTMLAtom);
-  if (!html) return '';
-  // regex match html for classes
-  const matches = html.match(/class="([^"]*)"/);
-  if (matches && matches[1]) {
-    return matches[1];
-  }
-  return ``;
-});
-
 type AudioOptions = {
   filePath: string;
   playbackRate?: number;
@@ -1655,15 +1648,20 @@ export const speechAtom = atom(
   (g) => g(_speechAtom),
   (g, s, a: SpeakOptions) => {
     if (a) {
+      // If SpeechSynthesis is playing, cancel
+      const synth = window.speechSynthesis;
+      if (synth.speaking) {
+        synth.cancel();
+      }
+
       const utterThis = new SpeechSynthesisUtterance(a?.text);
       utterThis.rate = a?.rate || 1.3;
       utterThis.pitch = a?.pitch || 1;
       utterThis.lang = a?.lang || 'en-US';
-      const voices = window.speechSynthesis.getVoices();
+      const voices = synth.getVoices();
       utterThis.voice =
-        voices.find((v) => v.name === a?.name) ||
-        window.speechSynthesis.getVoices()[0];
-      window.speechSynthesis.speak(utterThis);
+        voices.find((v) => v.name === a?.name) || synth.getVoices()[0];
+      synth.speak(utterThis);
     }
   }
 );

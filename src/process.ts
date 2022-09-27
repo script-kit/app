@@ -56,6 +56,7 @@ import {
 import { getLog, warn } from './logs';
 import {
   alwaysOnTop,
+  appToPrompt,
   clearPromptCache,
   focusPrompt,
   forceFocus,
@@ -102,6 +103,7 @@ import {
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
+import { AppChannel } from './enums';
 
 // const trash = async (...args: string[]) => {
 //   const parent = app.isPackaged
@@ -219,6 +221,7 @@ type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 const toProcess = <K extends keyof ChannelMap>(
   fn: (processInfo: ProcessInfo, data: SendData<K>) => void
 ) => (data: SendData<K>) => {
+  log.verbose(`toProcess: ${data.channel}`);
   const processInfo = processes.getByPid(data?.pid);
   const isWidgetMessage = data.channel.includes('WIDGET');
 
@@ -587,24 +590,32 @@ const kitMessageMap: ChannelHandler = {
     child?.send({ channel, processes });
   }),
 
-  HIDE_APP: toProcess(({ child, scriptPath }, { channel }) => {
-    log.info(`🫣 Hiding app`);
+  HIDE_APP: toProcess(async ({ child, scriptPath }, { channel }) => {
+    log.info(`😳 Hiding app`);
 
-    if (!isVisible()) {
-      log.info(`🫣 App is not visible`);
-      child?.send({ channel });
-      return;
+    const handler = () => {
+      log.info(`🫣 App hidden`);
+      kitState.hidden = true;
+      if (!child?.killed) {
+        child?.send({
+          channel,
+        });
+      }
+    };
+
+    if (isVisible()) {
+      onHideOnce(handler);
+    } else {
+      handler();
     }
 
-    kitState.hidden = true;
+    // If windows, alt+tab to back to previous app
+    if (kitState.isWindows) {
+      const modifier = Key.LeftAlt;
+      await keyboard.pressKey(modifier, Key.Tab);
+      await keyboard.releaseKey(modifier, Key.Tab);
+    }
 
-    // TODO: Windows alt+tab back to previous app
-
-    onHideOnce(() => {
-      child?.send({
-        channel,
-      });
-    });
     hideAppIfNoWindows(scriptPath, 'HIDE_APP event');
   }),
 
@@ -621,7 +632,6 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
   SET_SCRIPT: toProcess(async (processInfo, data) => {
-    // log.info({ processInfo, data });
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
       const foundP = kitState.ps.find((p) => p.pid === processInfo.pid);
@@ -719,7 +729,7 @@ const kitMessageMap: ChannelHandler = {
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
   SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
-    setPromptData(value, pid);
+    setPromptData(value);
     kitState.isScripts = Boolean(value?.scripts);
     kitState.promptCount += 1;
 
@@ -1268,6 +1278,11 @@ interface ProcessHandlers {
   reject?: (value: any) => any;
 }
 
+const updateRendererProcesses = () => {
+  const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
+  appToPrompt(AppChannel.PROCESSES, pinfos);
+};
+
 class Processes extends Array<ProcessInfo> {
   public abandonnedProcesses: ProcessInfo[] = [];
 
@@ -1317,6 +1332,8 @@ class Processes extends Array<ProcessInfo> {
 
     this.push(info);
     kitState.addP(info);
+
+    updateRendererProcesses();
 
     if (scriptPath) {
       log.info(`${child.pid}: 🟢 start ${type} ${scriptPath}`);
@@ -1426,6 +1443,8 @@ class Processes extends Array<ProcessInfo> {
     this.splice(index, 1);
 
     kitState.removeP(pid);
+
+    updateRendererProcesses();
 
     // const mainAbandon = kitState.ps.find(
     //   (p) => p?.scriptPath === mainScriptPath

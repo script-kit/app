@@ -16,7 +16,6 @@ import {
   shortcutsAtom,
   uiAtom,
   sendShortcutAtom,
-  focusedChoiceAtom,
   enterButtonNameAtom,
   enterButtonDisabledAtom,
   createAssetAtom,
@@ -321,9 +320,14 @@ export default function ActionBar() {
       animate={{ opacity: [0, 1] }}
       transition={transition}
       className={`
-      flex flex-row border-t
-    dark:border-white dark:border-opacity-5
-    border-black border-opacity-5
+      flex flex-row
+      ${
+        ui === UI.splash
+          ? `border-t
+      dark:border-white dark:border-opacity-5
+      border-black border-opacity-5`
+          : ``
+      }
     bg-white dark:bg-black
     ${
       ui === UI.splash

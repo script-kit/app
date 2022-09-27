@@ -343,7 +343,7 @@ export default function App() {
     ipcRenderer.on(AppChannel.PROCESSES, (_, data) => {
       setProcesses(data);
     });
-  }, []);
+  }, [setProcesses]);
 
   const onMouseDown = useCallback(() => {
     setIsMouseDown(true);

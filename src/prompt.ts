@@ -67,8 +67,6 @@ let electronPanelWindow: any = null;
 
 export const maybeHide = async (reason: string) => {
   if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
-    kitState.scriptPath = '';
-    kitState.promptUI = UI.none;
     log.verbose(`Hiding because ${reason}`);
     if (
       !promptWindow?.webContents?.isDevToolsOpened() &&
@@ -318,21 +316,6 @@ export const createPromptWindow = async () => {
   powerMonitor.on('lock-screen', () => {
     log.info(`🔒 System locked. Reloading prompt window.`);
     reload();
-  });
-
-  if (unsub) unsub();
-
-  unsub = subscribe(kitState.ps, () => {
-    const ps = kitState.ps
-      .filter((p) => p.scriptPath !== '')
-      .map((p) => {
-        const { child, values, ...rest } = p;
-
-        return { ...rest };
-      });
-
-    // log.info(`ps`, ps);
-    appToPrompt(AppChannel.PROCESSES, ps);
   });
 
   if (unsubKey) unsubKey();
@@ -811,10 +794,10 @@ export const setScript = async (
       (tab: string) => !tab.match(/join|live/i)
     );
 
-    const sinceLast = differenceInHours(Date.now(), kitState.lastOpen);
+    const sinceLast = differenceInHours(Date.now(), kitState.previousDownload);
     log.info(`Hours since sync: ${sinceLast}`);
     if (sinceLast > 6) {
-      kitState.lastOpen = new Date();
+      kitState.previousDownload = new Date();
     }
   }
   sendToPrompt(Channel.SET_SCRIPT, script);
@@ -897,10 +880,14 @@ export const setPromptData = async (promptData: PromptData) => {
   //   tabIndex: promptData.tabIndex,
   // });
 
-  // eslint-disable-next-line promise/param-names
-  if (kitState.hasSnippet) await new Promise((r) => setTimeout(r, 50));
-  kitState.hasSnippet = false;
+  if (kitState.hasSnippet) {
+    const timeout = +kitState?.script?.snippetDelay || 120;
+    // eslint-disable-next-line promise/param-names
+    await new Promise((r) => setTimeout(r, timeout));
+    kitState.hasSnippet = false;
+  }
 
+  log.info(`Showing prompt window...`);
   showInactive();
 
   // app.focus({
