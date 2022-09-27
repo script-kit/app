@@ -1035,9 +1035,6 @@ const checkKit = async () => {
   await setupLog(`Creating bins`);
   optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
 
-  let status = 'success';
-  let err = '';
-
   try {
     await verifyInstall();
 
@@ -1061,29 +1058,6 @@ const checkKit = async () => {
     focusPrompt();
   } catch (error) {
     ohNo(error);
-    status = 'fail';
-    err = error.toString();
-  }
-
-  if (requiresInstall) {
-    const installInfo = {
-      version: getVersion(),
-      username: os.userInfo().username,
-      status,
-      platform,
-      timestamp: Date.now(),
-      osversion: os.version(),
-      err,
-    };
-
-    try {
-      // const isOnline = await online();
-      // if (isOnline) {
-      //   axios.post(`https://scriptkit.com/api/installs`, installInfo);
-      // }
-    } catch {
-      log.info(`Could not post install info`);
-    }
   }
 };
 

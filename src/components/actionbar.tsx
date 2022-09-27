@@ -323,10 +323,10 @@ export default function ActionBar() {
       flex flex-row
       ${
         ui === UI.splash
-          ? `border-t
-      dark:border-white dark:border-opacity-5
-      border-black border-opacity-5`
-          : ``
+          ? ``
+          : `border-t
+          dark:border-white dark:border-opacity-5
+          border-black border-opacity-5`
       }
     bg-white dark:bg-black
     ${
