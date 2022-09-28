@@ -34,9 +34,15 @@ import { getKitScript, isSameScript, kitState } from './state';
 import { pathsAreEqual } from './helpers';
 
 app.on('second-instance', async (_event, argv) => {
+  log.info('second-instance', _event, argv);
   const { _ } = minimist(argv);
   const [, , argScript, ...argArgs] = _;
   runPromptProcess(argScript, argArgs);
+});
+
+app.on('activate', async (_event, hasVisibleWindows) => {
+  kitState.isActivated = true;
+  runPromptProcess(mainScriptPath, [], true);
 });
 
 // process.on('unhandledRejection', (reason, p) => {

@@ -596,6 +596,15 @@ const kitMessageMap: ChannelHandler = {
     kitState.hidden = true;
     log.info(`😳 Hiding app`);
 
+    // If windows, alt+tab to back to previous app
+    if (kitState.isWindows) {
+      const modifier = Key.LeftAlt;
+      await keyboard.pressKey(modifier, Key.Tab);
+      await keyboard.releaseKey(modifier, Key.Tab);
+      // wait for alt+tab to finish
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
     const handler = () => {
       log.info(`🫣 App hidden`);
       if (!child?.killed) {
@@ -609,13 +618,6 @@ const kitMessageMap: ChannelHandler = {
       onHideOnce(handler);
     } else {
       handler();
-    }
-
-    // If windows, alt+tab to back to previous app
-    if (kitState.isWindows) {
-      const modifier = Key.LeftAlt;
-      await keyboard.pressKey(modifier, Key.Tab);
-      await keyboard.releaseKey(modifier, Key.Tab);
     }
 
     hideAppIfNoWindows('HIDE_APP event');
@@ -640,7 +642,6 @@ const kitMessageMap: ChannelHandler = {
       if (foundP) {
         foundP.scriptPath = data.value?.filePath;
       }
-      kitState.promptCount = -1;
     }
     await setScript(data.value, processInfo.pid);
   }),
@@ -730,7 +731,6 @@ const kitMessageMap: ChannelHandler = {
   SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
     setPromptData(value);
     kitState.isScripts = Boolean(value?.scripts);
-    kitState.promptCount += 1;
 
     if (value?.ui === UI.term) {
       const { socketURL } = await startPty(value);
@@ -1126,6 +1126,7 @@ const kitMessageMap: ChannelHandler = {
   SELECT_FILE: toProcess(async ({ child }, { channel, value }) => {
     // Show electron file selector dialog
     const response = await dialog.showOpenDialog(getMainPrompt(), {
+      defaultPath: os.homedir(),
       message: 'Select a file',
       properties: ['openFile'],
     });
@@ -1137,6 +1138,7 @@ const kitMessageMap: ChannelHandler = {
   SELECT_FOLDER: toProcess(async ({ child }, { channel, value }) => {
     // Show electron file selector dialog
     const response = await dialog.showOpenDialog(getMainPrompt(), {
+      defaultPath: os.homedir(),
       message: 'Select a file',
       properties: ['openDirectory'],
     });
@@ -1435,6 +1437,7 @@ class Processes extends Array<ProcessInfo> {
       if (kitState?.pid === pid) {
         kitState.scriptPath = '';
         kitState.promptId = '';
+        kitState.promptCount = 0;
       }
     }
     this.splice(index, 1);

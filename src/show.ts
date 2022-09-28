@@ -6,8 +6,6 @@ import {
   BrowserWindowConstructorOptions,
   screen,
   nativeTheme,
-  KeyboardInputEvent,
-  ipcMain,
   MenuItemConstructorOptions,
   PopupOptions,
   Menu,
@@ -15,14 +13,14 @@ import {
 import log from 'electron-log';
 import { ensureDir } from 'fs-extra';
 import path from 'path';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile } from 'fs/promises';
 import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
 import { ShowOptions } from '@johnlindquist/kit/types/kitapp';
 import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
 import { getAssetPath } from './assets';
 import { darkTheme, lightTheme } from './components/themes';
-import { forceQuit, kitState, widgetState } from './state';
+import { forceQuit, kitState } from './state';
 
 export const INSTALL_ERROR = 'install-error';
 
@@ -301,7 +299,6 @@ export const showDevTools = async (value: any) => {
   });
 
   devToolsWindow.webContents.setZoomFactor(1.5);
-
   devToolsWindow.webContents.focus();
 
   // const shortcut: KeyboardInputEvent = {
@@ -339,14 +336,17 @@ export const showDevTools = async (value: any) => {
   devToolsWindow?.loadURL(devToolsUrl, {});
 
   devToolsWindow.show();
-  devToolsWindow.focus();
-  devToolsWindow.webContents.focus();
+  kitState.devToolsCount += 1;
+  // devToolsWindow.focus();
+  // devToolsWindow.webContents.focus();
 
   // setTimeout(() => pressShortcut(shortcut), 2000);
 
   devToolsWindow.webContents.on('devtools-closed', () => {
     log.info(`Close devTools: ${devToolsWindow.id}`);
     devToolsWindow?.destroy();
+    // remove the id from the kitState.devToolsWindows using splice
+    kitState.devToolsCount -= 1;
   });
 };
 

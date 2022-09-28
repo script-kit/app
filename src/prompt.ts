@@ -6,7 +6,6 @@
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable consistent-return */
 import glasstron from 'glasstron';
-import { subscribe, snapshot } from 'valtio/vanilla';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -18,7 +17,6 @@ import {
 import { subscribeKey } from 'valtio/utils';
 
 import {
-  app,
   BrowserWindow,
   screen,
   Rectangle,
@@ -47,7 +45,6 @@ import {
   INPUT_HEIGHT,
   MIN_HEIGHT,
   MIN_WIDTH,
-  noScript,
 } from './defaults';
 import { ResizeData } from './types';
 import { getVersion } from './version';
@@ -235,6 +232,10 @@ export const createPromptWindow = async () => {
   // });
 
   const onBlur = () => {
+    if (kitState.isActivated) {
+      kitState.isActivated = false;
+      return;
+    }
     if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
     log.verbose(`Blur: ${kitState.ignoreBlur ? 'ignored' : 'accepted'}`);
@@ -265,13 +266,13 @@ export const createPromptWindow = async () => {
   promptWindow?.webContents?.on('blur', onBlur);
   promptWindow?.on('blur', onBlur);
 
-  promptWindow?.on('hide', () => {
-    kitState.isVisible = false;
-  });
+  // promptWindow?.on('hide', () => {
+  //   kitState.isVisible = false;
+  // });
 
-  promptWindow?.on('show', () => {
-    kitState.isVisible = true;
-  });
+  // promptWindow?.on('show', () => {
+  //   kitState.isVisible = true;
+  // });
 
   promptWindow?.webContents?.on('dom-ready', () => {
     log.info(`🍀 dom-ready on ${kitState?.scriptPath}`);
@@ -609,17 +610,22 @@ export const resize = async ({
     width = Math.max(DEFAULT_EXPANDED_WIDTH, width);
   }
 
-  promptWindow?.setBounds({ x, y, width, height }, resizeAnimate && !hasInput);
+  if (isVisible()) {
+    promptWindow?.setBounds(
+      { x, y, width, height },
+      resizeAnimate && !hasInput
+    );
 
-  if (resizeTimeout) {
-    clearTimeout(resizeTimeout);
-    resizeAnimate = false;
-    resizeTimeout = setTimeout(() => {
-      resizeAnimate = true;
-    }, 1000);
+    if (resizeTimeout) {
+      clearTimeout(resizeTimeout);
+      resizeAnimate = false;
+      resizeTimeout = setTimeout(() => {
+        resizeAnimate = true;
+      }, 1000);
+    }
+
+    kitState.resizedByChoices = true && ui === UI.arg;
   }
-
-  kitState.resizedByChoices = true && ui === UI.arg;
 };
 
 export const sendToPrompt = <K extends keyof ChannelMap>(
@@ -861,6 +867,7 @@ export const setPromptData = async (promptData: PromptData) => {
   // if (!pidMatch(pid, `setPromptData`)) return;
 
   if (promptData?.scriptPath !== kitState.scriptPath) return;
+  kitState.promptCount += 1;
 
   kitState.shortcutsPaused = promptData.ui === UI.hotkey;
   kitState.promptUI = promptData.ui;
@@ -1027,13 +1034,20 @@ subscribeKey(kitState, 'promptId', async () => {
 
   const { width, height } = promptWindow?.getBounds();
   if (bounds.width !== width || bounds.height !== height) {
-    log.info(`Started resizing: ${promptWindow?.getSize()}`);
+    log.info(
+      `Started resizing: ${promptWindow?.getSize()}. Prompt count: ${
+        kitState.promptCount
+      }`
+    );
 
     // sendToPrompt(Channel.SET_RESIZING, true);
     kitState.isResizing = true;
   }
 
-  promptWindow?.setBounds(bounds, promptWindow?.isVisible());
+  promptWindow?.setBounds(
+    bounds,
+    promptWindow?.isVisible() && kitState.promptCount > 1
+  );
 });
 
 subscribeKey(kitState, 'scriptPath', async () => {
@@ -1058,7 +1072,10 @@ subscribeKey(kitState, 'scriptPath', async () => {
     const bounds = await getCurrentScreenPromptCache(kitState.scriptPath);
 
     log.verbose(`↖ Bounds: Script ${kitState.promptUI} ui`, bounds);
-    promptWindow.setBounds(bounds, promptWindow?.isVisible());
+    promptWindow.setBounds(
+      bounds,
+      promptWindow?.isVisible() && kitState.promptCount > 1
+    );
   }
 
   kitState.prevScriptPath = kitState.scriptPath;

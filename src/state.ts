@@ -9,7 +9,7 @@ import log, { LogLevel } from 'electron-log';
 import path from 'path';
 import os from 'os';
 import { ChildProcess } from 'child_process';
-import { app, BrowserWindow, Menu, nativeTheme, Rectangle } from 'electron';
+import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { debounce } from 'lodash';
@@ -18,7 +18,6 @@ import {
   getScripts,
   setScriptTimestamp,
   getTimestamps,
-  AppDb,
 } from '@johnlindquist/kit/cjs/db';
 
 import {
@@ -179,7 +178,7 @@ const initState = {
   preventClose: false,
   isScripts: false,
   isMainScript: () => kitState.script.filePath === mainScriptPath,
-  promptCount: -1,
+  promptCount: 0,
   isTyping: false,
   snippet: ``,
   socketURL: '',
@@ -242,6 +241,8 @@ const initState = {
   hasSnippet: false,
   isVisible: false,
   shortcutsPaused: false,
+  devToolsCount: 0,
+  isActivated: false,
 };
 
 const initAppDb = {
@@ -286,7 +287,7 @@ export const findWidget = (id: string, reason = '') => {
 export function isSameScript(promptScriptPath: string) {
   const same =
     path.resolve(kitState.script.filePath || '') ===
-      path.resolve(promptScriptPath) && kitState.promptCount === 0;
+      path.resolve(promptScriptPath) && kitState.promptCount === 1;
 
   return same;
 }
@@ -320,11 +321,10 @@ subscribeKey(kitState, 'notifyAuthFail', (notifyAuthFail) => {
 
 const hideDock = debounce(() => {
   if (!kitState.isMac) return;
-  if (
-    app?.dock.isVisible() &&
-    widgetState.widgets.length === 0 &&
-    !kitState.isVisible
-  ) {
+  if (kitState.devToolsCount > 0) return;
+  if (kitState.scriptPath) return;
+  if (widgetState.widgets.length) return;
+  if (app?.dock.isVisible()) {
     app?.dock?.setIcon(getAssetPath('icon.png'));
     app?.dock?.hide();
   }
@@ -359,11 +359,19 @@ subscribeKey(widgetState, 'widgets', (widgets) => {
   }
 });
 
-subscribeKey(kitState, 'isVisible', (visible) => {
-  if (visible) {
+subscribeKey(kitState, 'scriptPath', (scriptPath) => {
+  if (scriptPath) {
     showDock();
   } else {
     hideDock();
+  }
+});
+
+subscribeKey(kitState, 'devToolsCount', (count) => {
+  if (count === 0) {
+    hideDock();
+  } else {
+    showDock();
   }
 });
 
