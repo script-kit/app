@@ -51,6 +51,7 @@ import {
   kitPath,
   kenvPath,
   kitDotEnvPath,
+  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { getLog, warn } from './logs';
@@ -104,6 +105,7 @@ import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
 import { AppChannel } from './enums';
+import { pathsAreEqual } from './helpers';
 
 // const trash = async (...args: string[]) => {
 //   const parent = app.isPackaged
@@ -591,11 +593,11 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   HIDE_APP: toProcess(async ({ child, scriptPath }, { channel }) => {
+    kitState.hidden = true;
     log.info(`😳 Hiding app`);
 
     const handler = () => {
       log.info(`🫣 App hidden`);
-      kitState.hidden = true;
       if (!child?.killed) {
         child?.send({
           channel,
@@ -616,7 +618,7 @@ const kitMessageMap: ChannelHandler = {
       await keyboard.releaseKey(modifier, Key.Tab);
     }
 
-    hideAppIfNoWindows(scriptPath, 'HIDE_APP event');
+    hideAppIfNoWindows('HIDE_APP event');
   }),
 
   QUIT_APP: () => {
@@ -652,9 +654,6 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_MODE: (data) => {
-    if (data.value === Mode.HOTKEY) {
-      emitter.emit(KitEvent.PauseShortcuts);
-    }
     setMode(data.value);
   },
 
@@ -1278,7 +1277,7 @@ interface ProcessHandlers {
   reject?: (value: any) => any;
 }
 
-const updateRendererProcesses = () => {
+const processesChanged = () => {
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
   appToPrompt(AppChannel.PROCESSES, pinfos);
 };
@@ -1333,7 +1332,7 @@ class Processes extends Array<ProcessInfo> {
     this.push(info);
     kitState.addP(info);
 
-    updateRendererProcesses();
+    processesChanged();
 
     if (scriptPath) {
       log.info(`${child.pid}: 🟢 start ${type} ${scriptPath}`);
@@ -1434,17 +1433,16 @@ class Processes extends Array<ProcessInfo> {
       child?.kill();
       log.info(`${pid}: 🛑 removed`);
       if (kitState?.pid === pid) {
-        hideAppIfNoWindows(
-          kitState.scriptPath,
-          `remove ${kitState.scriptPath}`
-        );
+        kitState.scriptPath = '';
+        kitState.promptId = '';
       }
     }
     this.splice(index, 1);
-
     kitState.removeP(pid);
 
-    updateRendererProcesses();
+    // check if two paths are the same
+
+    processesChanged();
 
     // const mainAbandon = kitState.ps.find(
     //   (p) => p?.scriptPath === mainScriptPath
@@ -1457,6 +1455,15 @@ class Processes extends Array<ProcessInfo> {
 }
 
 export const processes = new Processes();
+
+export const removeAbandonnedMain = () => {
+  const mainProcess = processes.find((processInfo) =>
+    pathsAreEqual(processInfo.scriptPath, mainScriptPath)
+  );
+  if (mainProcess && mainProcess.pid !== kitState.pid) {
+    processes.removeByPid(mainProcess.pid);
+  }
+};
 
 export const handleWidgetEvents = () => {
   const clickHandler: WidgetHandler = (event, data) => {
@@ -1524,6 +1531,7 @@ export const handleWidgetEvents = () => {
 };
 
 emitter.on(KitEvent.KillProcess, (pid) => {
+  log.info(`🛑 Kill Process: ${pid}`);
   processes.removeByPid(pid);
 });
 

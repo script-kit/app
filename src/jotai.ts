@@ -1261,12 +1261,6 @@ export const openAtom = atom(
       s(resizeData, {});
       s(editorConfigAtom, {});
       s(promptData, null);
-
-      ipcRenderer.send(AppChannel.END_PROCESS, {
-        pid: g(pidAtom),
-        script: g(scriptAtom),
-      });
-
       s(pidAtom, 0);
     }
     s(_open, a);

@@ -22,7 +22,7 @@ import {
 import { ProcessInfo } from '@johnlindquist/kit';
 
 import { emitter, KitEvent } from './events';
-import { processes } from './process';
+import { processes, removeAbandonnedMain } from './process';
 import {
   devToolsVisible,
   hideAppIfNoWindows,
@@ -31,6 +31,7 @@ import {
   setScript,
 } from './prompt';
 import { getKitScript, isSameScript, kitState } from './state';
+import { pathsAreEqual } from './helpers';
 
 app.on('second-instance', async (_event, argv) => {
   const { _ } = minimist(argv);
@@ -69,7 +70,7 @@ emitter.on(
 
     if (isVisible()) {
       kitState.ignoreBlur = false;
-      hideAppIfNoWindows('', `run ${scriptPath}`);
+      hideAppIfNoWindows(`run ${scriptPath}`);
     } else {
       log.info(`Show App: ${scriptPath}`);
     }
@@ -103,6 +104,9 @@ export const runPromptProcess = async (
   args: string[] = [],
   force = false
 ): Promise<ProcessInfo | null> => {
+  if (pathsAreEqual(promptScriptPath, mainScriptPath)) {
+    removeAbandonnedMain();
+  }
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
   // If the window is already open, interrupt the process with the new script

@@ -101,7 +101,7 @@ function Aside() {
           )}
         </div>
         <h1 className="text-2xl font-semibold mb-1">
-          {progress === 100 ? 'Script Kit Installed' : 'Installing Script Kit'}
+          {progress === 100 ? 'Script Kit Ready' : 'Preparing Kit...'}
         </h1>
         <h3 className="font-normal text-sm opacity-70 text-center leading-tight">
           {header}
@@ -236,7 +236,9 @@ export default function Splash() {
         >
           <fieldset className="space-y-2 p-2">
             <legend className="text-lg opacity-90 w-full h-14">
-              <p>Hey! 👋</p>
+              <p className="text-base mb-2">
+                👋 Your feedback guides Script Kit's future:
+              </p>
               <AnimateSharedLayout type="crossfade">
                 <AnimatePresence key="splashComponents">
                   {question && (

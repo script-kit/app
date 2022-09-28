@@ -28,7 +28,7 @@ import detect from 'detect-file-type';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 
-import { endPrompt, focusPrompt, isFocused, reload, resize } from './prompt';
+import { focusPrompt, isFocused, reload, resize } from './prompt';
 import { runPromptProcess } from './kit';
 import { AppChannel } from './enums';
 import { ResizeData, Survey } from './types';
@@ -44,7 +44,7 @@ const handleChannel = (
   if (processInfo) {
     fn(processInfo, message);
     // log.info(`${message.channel}`, message.pid);
-  } else {
+  } else if (message.pid !== -1) {
     log.warn(`${message.channel} failed on ${message?.pid}`, message);
 
     // log.warn(processInfo?.child, processInfo?.type);
@@ -77,17 +77,6 @@ export const startIpc = () => {
   ipcMain.on(AppChannel.RESIZE, (event, resizeData: ResizeData) => {
     resize(resizeData);
   });
-
-  ipcMain.on(
-    AppChannel.END_PROCESS,
-    async (event, { pid, script }: { pid: number; script: Script }) => {
-      // console.log('␛ ESCAPE_PRESSED', { pid, script });
-      processes.removeByPid(pid);
-      emitter.emit(KitEvent.ResumeShortcuts);
-
-      endPrompt(script.filePath);
-    }
-  );
 
   ipcMain.on(AppChannel.OPEN_SCRIPT_LOG, async (event, script: Script) => {
     const logPath = getLogFromScriptPath((script as Script).filePath);

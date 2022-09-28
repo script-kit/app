@@ -1,6 +1,5 @@
 import log from 'electron-log';
-
-import { ProcessType, Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { parseScript } from '@johnlindquist/kit/cjs/utils';
 import { SendData } from '@johnlindquist/kit/types/kitapp';
 import { Script } from '@johnlindquist/kit/types/core';
@@ -14,6 +13,7 @@ export const removeBackground = (filePath: string) => {
     const { child } = backgroundMap.get(filePath) as Background;
     backgroundMap.delete(filePath);
 
+    log.info('Removing background task', filePath);
     processes.removeByPid(child.pid);
   }
 };
@@ -35,7 +35,6 @@ export const backgroundScriptChanged = ({
   kenv,
   background: backgroundString,
 }: Script) => {
-  log.info(`Background script updated: ${filePath}`);
   if (kenv !== '') return;
   removeBackground(filePath);
 

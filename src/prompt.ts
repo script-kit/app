@@ -25,6 +25,7 @@ import {
   powerMonitor,
   shell,
   BrowserWindowConstructorOptions,
+  Point,
 } from 'electron';
 import os from 'os';
 import path from 'path';
@@ -275,7 +276,7 @@ export const createPromptWindow = async () => {
   promptWindow?.webContents?.on('dom-ready', () => {
     log.info(`🍀 dom-ready on ${kitState?.scriptPath}`);
 
-    hideAppIfNoWindows(kitState?.scriptPath, 'dom-ready');
+    hideAppIfNoWindows('dom-ready');
     sendToPrompt(Channel.SET_READY, true);
   });
 
@@ -377,10 +378,6 @@ export const forceFocus = () => {
 
 export const alwaysOnTop = (onTop: boolean) => {
   if (promptWindow) promptWindow.setAlwaysOnTop(onTop);
-};
-
-export const endPrompt = async (scriptPath: string) => {
-  hideAppIfNoWindows(scriptPath, `end ${scriptPath}`);
 };
 
 export const getCurrentScreenFromMouse = (): Display => {
@@ -657,42 +654,57 @@ enum Bounds {
   Size = 1 << 1,
 }
 
-export const savePromptBounds = debounce(
-  async (
-    scriptPath: string,
-    bounds: Rectangle,
-    b: number = Bounds.Position | Bounds.Size
-  ) => {
-    // const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
-    // if (isMain) return;
+export const pointOnMouseScreen = ({ x, y }: Point) => {
+  const mouseScreen = screen.getDisplayNearestPoint(
+    screen.getCursorScreenPoint()
+  );
+  // if bounds are off screen, don't save
+  const onMouseScreen =
+    x > mouseScreen.bounds.x &&
+    y > mouseScreen.bounds.y &&
+    x < mouseScreen.bounds.x + mouseScreen.bounds.width &&
+    y < mouseScreen.bounds.y + mouseScreen.bounds.height;
 
-    const currentScreen = getCurrentScreenFromPrompt();
-    const promptDb = await getPromptDb();
+  return onMouseScreen;
+};
 
-    try {
-      const prevBounds =
-        promptDb?.screens?.[String(currentScreen.id)]?.[scriptPath];
+export const savePromptBounds = async (
+  scriptPath: string,
+  bounds: Rectangle,
+  b: number = Bounds.Position | Bounds.Size
+) => {
+  // const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
+  // if (isMain) return;
 
-      // Ignore if flag
-      const size = b & Bounds.Size;
-      const position = b & Bounds.Position;
-      const { x, y } = position ? bounds : prevBounds || bounds;
-      const { width, height } = size ? bounds : prevBounds || bounds;
+  if (!pointOnMouseScreen(bounds)) return;
 
-      const promptBounds: PromptBounds = {
-        x,
-        y,
-        width: width < MIN_WIDTH ? MIN_WIDTH : width,
-        height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
-      };
+  const currentScreen = getCurrentScreenFromPrompt();
+  const promptDb = await getPromptDb();
 
-      writePromptDb(String(currentScreen.id), scriptPath, promptBounds);
-    } catch (error) {
-      log.error(error);
-    }
-  },
-  100
-);
+  try {
+    const prevBounds =
+      promptDb?.screens?.[String(currentScreen.id)]?.[scriptPath];
+
+    // Ignore if flag
+    const size = b & Bounds.Size;
+    const position = b & Bounds.Position;
+    const { x, y } = position ? bounds : prevBounds || bounds;
+    const { width, height } = size ? bounds : prevBounds || bounds;
+
+    const promptBounds: PromptBounds = {
+      x,
+      y,
+      width: width < MIN_WIDTH ? MIN_WIDTH : width,
+      height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
+    };
+
+    // if promptBounds is on the current screen
+
+    writePromptDb(String(currentScreen.id), scriptPath, promptBounds);
+  } catch (error) {
+    log.error(error);
+  }
+};
 
 const writePromptDb = debounce(
   async (screenId: string, scriptPath: string, bounds: PromptBounds) => {
@@ -712,7 +724,7 @@ const writePromptDb = debounce(
   100
 );
 
-export const hideAppIfNoWindows = (scriptPath = '', reason: string) => {
+export const hideAppIfNoWindows = (reason: string) => {
   if (kitState.interruptScript) {
     kitState.interruptScript = false;
     return;
@@ -720,11 +732,6 @@ export const hideAppIfNoWindows = (scriptPath = '', reason: string) => {
   if (promptWindow) {
     // const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden
-
-    if (!kitState.hidden) {
-      sendToPrompt(Channel.SET_OPEN, false);
-      kitState.hidden = false;
-    }
 
     kitState.modifiedByUser = false;
     kitState.ignoreBlur = false;
@@ -852,8 +859,10 @@ const pidMatch = (pid: number, message: string) => {
 
 export const setPromptData = async (promptData: PromptData) => {
   // if (!pidMatch(pid, `setPromptData`)) return;
+
   if (promptData?.scriptPath !== kitState.scriptPath) return;
 
+  kitState.shortcutsPaused = promptData.ui === UI.hotkey;
   kitState.promptUI = promptData.ui;
   kitState.resize = kitState.resize || promptData.resize;
 
@@ -887,7 +896,6 @@ export const setPromptData = async (promptData: PromptData) => {
     kitState.hasSnippet = false;
   }
 
-  log.info(`Showing prompt window...`);
   showInactive();
 
   // app.focus({
@@ -1032,24 +1040,21 @@ subscribeKey(kitState, 'scriptPath', async () => {
   kitState.promptUI = UI.none;
   kitState.resize = false;
   kitState.resizedByChoices = false;
-  if (promptWindow?.isVisible()) {
-    kitState.scriptHistory.push(kitState.scriptPath);
-  } else {
-    kitState.scriptHistory = [kitState.scriptPath];
-  }
 
-  if (!promptWindow?.isVisible())
-    kitState.initialScriptPath = kitState.scriptPath;
-
-  if (kitState.prevScriptPath && !kitState.resizedByChoices) {
-    log.verbose(
-      `>>>> 🎸 Set script: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
-    );
-    savePromptBounds(kitState.prevScriptPath, promptWindow.getBounds());
+  if (kitState.scriptPath === '') {
+    if (kitState.prevScriptPath && !kitState.resizedByChoices) {
+      log.verbose(
+        `>>>> 🎸 Set script: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
+      );
+      savePromptBounds(kitState.prevScriptPath, promptWindow.getBounds());
+    }
+    hideAppIfNoWindows(`remove ${kitState.scriptPath}`);
+    sendToPrompt(Channel.SET_OPEN, false);
+    return;
   }
 
   if (kitState.scriptPath && !promptWindow?.isVisible()) {
-    log.verbose(`📄 scriptPath changed: ${kitState.scriptPath}`);
+    log.info(`📄 scriptPath changed: ${kitState.scriptPath}`);
     const bounds = await getCurrentScreenPromptCache(kitState.scriptPath);
 
     log.verbose(`↖ Bounds: Script ${kitState.promptUI} ui`, bounds);

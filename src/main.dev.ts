@@ -994,6 +994,8 @@ const checkKit = async () => {
 
     optionalSetupScript(kitPath('setup', 'clone-examples.js'));
     optionalSetupScript(kitPath('setup', 'clone-sponsors.js'));
+  } else {
+    optionalSetupScript(kitPath('setup', 'build-ts-scripts.js'));
   }
 
   if (!(await kenvConfigured())) {

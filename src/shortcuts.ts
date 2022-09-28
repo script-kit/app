@@ -2,6 +2,7 @@ import { app, globalShortcut, Notification } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { Script } from '@johnlindquist/kit/types/core';
+import { subscribeKey } from 'valtio/utils';
 
 import {
   mainScriptPath,
@@ -146,22 +147,20 @@ export const updateMainShortcut = async (filePath: string) => {
   }
 };
 
-let shortcutsPaused = false;
 const pauseShortcuts = () => {
   log.info(`PAUSING GLOBAL SHORTCUTS`);
-  shortcutsPaused = true;
   globalShortcut.unregisterAll();
 };
 
 const resumeShortcuts = () => {
-  if (shortcutsPaused) {
-    shortcutsPaused = false;
-
-    log.info(`RESUMING GLOBAL SHORTCUTS`);
-
-    shortcutMap.forEach(registerShortcut);
-  }
+  log.info(`RESUMING GLOBAL SHORTCUTS`);
+  shortcutMap.forEach(registerShortcut);
 };
 
-emitter.on(KitEvent.PauseShortcuts, pauseShortcuts);
-emitter.on(KitEvent.ResumeShortcuts, resumeShortcuts);
+subscribeKey(kitState, 'shortcutsPaused', (shortcutsPaused) => {
+  if (shortcutsPaused) {
+    pauseShortcuts();
+  } else {
+    resumeShortcuts();
+  }
+});

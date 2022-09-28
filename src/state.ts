@@ -170,7 +170,7 @@ const initState = {
   ps: [] as Partial<ProcessInfo>[],
   addP,
   removeP,
-  pid: 999999,
+  pid: -1,
   script: noScript,
   ui: UI.arg,
   blurredByKit: false,
@@ -228,8 +228,6 @@ const initState = {
   resize: false,
   scriptPath: ``,
   resizedByChoices: false,
-  initialScriptPath: '',
-  scriptHistory: [] as string[],
   scripts: [] as Script[],
   kitScripts: [] as Script[],
   interruptScript: false,
@@ -243,6 +241,7 @@ const initState = {
   isResizing: false,
   hasSnippet: false,
   isVisible: false,
+  shortcutsPaused: false,
 };
 
 const initAppDb = {

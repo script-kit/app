@@ -2,6 +2,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable jest/no-export */
 /* eslint-disable jest/expect-expect */
+/* eslint-disable no-param-reassign */
 
 import v8 from 'v8';
 import path from 'path';
@@ -24,4 +25,12 @@ export function tildify(absolutePath: string) {
     ? normalizedPath.replace(homeDirectory + path.sep, `~${path.sep}`)
     : normalizedPath
   ).slice(0, -1);
+}
+
+export function pathsAreEqual(path1: string, path2: string) {
+  path1 = path.resolve(path1);
+  path2 = path.resolve(path2);
+  if (process.platform === 'win32')
+    return path1.toLowerCase() === path2.toLowerCase();
+  return path1 === path2;
 }
