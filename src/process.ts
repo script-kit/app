@@ -597,9 +597,11 @@ const kitMessageMap: ChannelHandler = {
     log.info(`😳 Hiding app`);
 
     // If windows, alt+tab to back to previous app
-    if (kitState.isWindows && isVisible()) {
+    if (kitState.isWindows && kitState.promptCount) {
       const modifier = Key.LeftAlt;
       await keyboard.pressKey(modifier, Key.Tab);
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
       await keyboard.releaseKey(modifier, Key.Tab);
       // wait for alt+tab to finish
       await new Promise((resolve) => setTimeout(resolve, 100));

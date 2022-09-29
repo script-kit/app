@@ -359,8 +359,8 @@ subscribeKey(widgetState, 'widgets', (widgets) => {
   }
 });
 
-subscribeKey(kitState, 'scriptPath', (scriptPath) => {
-  if (scriptPath) {
+subscribeKey(kitState, 'promptCount', (promptCount) => {
+  if (promptCount) {
     showDock();
   } else {
     hideDock();
