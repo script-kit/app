@@ -748,6 +748,7 @@ export const scriptAtom = atom(
     s(processingAtom, false);
     s(_description, a?.description || '');
     s(nameAtom, a?.name || '');
+    s(enterAtom, '');
     s(loadingAtom, false);
     s(loading, false);
     s(logoAtom, a?.logo || '');
@@ -1051,6 +1052,10 @@ export const promptDataAtom = atom(
 
       if (a?.ui !== UI.arg) {
         s(previewHTMLAtom, closedDiv);
+      }
+
+      if (a?.enter) {
+        s(enterAtom, a.enter);
       }
 
       s(promptData, a);
@@ -1360,6 +1365,7 @@ export const topRefAtom = atom<null | HTMLDivElement>(null);
 export const _description = atom<string>('');
 export const logoAtom = atom<string>('');
 export const nameAtom = atom<string>('');
+export const enterAtom = atom<string>('');
 export const loadingAtom = atom(
   (g) => g(loading),
   (g, s, a: boolean) => {
@@ -1553,9 +1559,7 @@ export const enterButtonNameAtom = atom<string>((g) => {
 
   const focusedChoice = g(focusedChoiceAtom);
   if (focusedChoice?.enter) return focusedChoice.enter;
-  const pd = g(promptDataAtom);
-
-  return pd?.enter;
+  return g(enterAtom);
 });
 
 export const enterButtonDisabledAtom = atom<boolean>((g) => {

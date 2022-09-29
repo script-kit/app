@@ -55,6 +55,16 @@ export default function Panel({ width, height }: PanelProps) {
     [scrollRef?.current, inputFocus, shortcuts, flags]
   );
 
+  // remove the outermost tags from panelHTML
+  // /^<[^>]+>|<\/[^>]+>$/g
+  let __html = panelHTML.replace(/^<[^>]+>|<\/[^>]+>$/g, '');
+  let containerClasses = '';
+  const [, container] = panelHTML?.match(/class="([^"]*)"/) || ['', ''];
+  if (container) {
+    containerClasses = container;
+    __html = panelHTML.replace(/^<[^>]+>|<\/[^>]+>$/g, '');
+  }
+
   return (
     <SimpleBar
       scrollableNodeProps={{ ref: scrollRef }}
@@ -84,13 +94,13 @@ export default function Panel({ width, height }: PanelProps) {
         transition={{ duration: 0.25, ease: 'circOut' }}
         className={`
         ${ui === UI.hotkey ? 'h-10' : ''}
-        ${panelHTML?.match(/class="([^"]*)"/)?.[1] || ''}
+        ${containerClasses}
         wrapper
        `}
         ref={divRef as any}
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{
-          __html: panelHTML.replace(/class="([^"]*)"/, ''),
+          __html,
         }}
       />
     </SimpleBar>

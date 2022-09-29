@@ -107,6 +107,7 @@ import {
   themeAtom,
   audioAtom,
   speechAtom,
+  enterAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -194,6 +195,7 @@ export default function App() {
   const setSplashProgress = useSetAtom(splashProgressAtom);
   const setUnfilteredChoices = useSetAtom(unfilteredChoicesAtom);
   const setFooter = useSetAtom(footerAtom);
+  const setEnter = useSetAtom(enterAtom);
   const setReady = useSetAtom(isReadyAtom);
   const setTabIndex = useSetAtom(tabIndexAtom);
   const setTabs = useSetAtom(tabsAtom);
@@ -288,6 +290,7 @@ export default function App() {
     [Channel.SET_LOG]: setLogHtml,
     [Channel.SET_LOGO]: setLogo,
     [Channel.SET_PLACEHOLDER]: setPlaceholder,
+    [Channel.SET_ENTER]: setEnter,
     [Channel.SET_READY]: setReady,
     [Channel.SET_SUBMIT_VALUE]: setSubmitValue,
     [Channel.SET_TAB_INDEX]: setTabIndex,

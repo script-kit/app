@@ -693,6 +693,10 @@ const kitMessageMap: ChannelHandler = {
     setPlaceholder(data.value);
   },
 
+  SET_ENTER: (data) => {
+    sendToPrompt(Channel.SET_ENTER, data.value);
+  },
+
   SET_FOOTER: (data) => {
     setFooter(data.value);
   },

@@ -19,6 +19,7 @@ import {
   enterButtonNameAtom,
   enterButtonDisabledAtom,
   createAssetAtom,
+  enterAtom,
 } from '../jotai';
 
 type Action = {
@@ -41,6 +42,7 @@ export function OptionsButton() {
   const [channel] = useAtom(channelAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
   const [ui] = useAtom(uiAtom);
+  const enter = useAtomValue(enterAtom);
 
   const onClick = useCallback(() => {
     if (flagValue) {
