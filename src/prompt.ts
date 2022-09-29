@@ -266,13 +266,13 @@ export const createPromptWindow = async () => {
   promptWindow?.webContents?.on('blur', onBlur);
   promptWindow?.on('blur', onBlur);
 
-  // promptWindow?.on('hide', () => {
-  //   kitState.isVisible = false;
-  // });
+  promptWindow?.on('hide', () => {
+    promptWindow.webContents.setBackgroundThrottling(true);
+  });
 
-  // promptWindow?.on('show', () => {
-  //   kitState.isVisible = true;
-  // });
+  promptWindow?.on('show', () => {
+    promptWindow.webContents.setBackgroundThrottling(false);
+  });
 
   promptWindow?.webContents?.on('dom-ready', () => {
     log.info(`🍀 dom-ready on ${kitState?.scriptPath}`);
@@ -743,12 +743,11 @@ export const hideAppIfNoWindows = (reason: string) => {
     kitState.ignoreBlur = false;
     maybeHide(reason);
 
-    promptWindow.webContents.setBackgroundThrottling(false);
-    setTimeout(() => {
-      if (!promptWindow?.isVisible()) {
-        promptWindow.webContents.setBackgroundThrottling(true);
-      }
-    }, 1000);
+    // setTimeout(() => {
+    //   if (!promptWindow?.isVisible()) {
+    //     promptWindow.webContents.setBackgroundThrottling(true);
+    //   }
+    // }, 1000);
     // setPromptBounds();
 
     // if (allWindows.every((window) => !window.isVisible())) {
@@ -903,6 +902,7 @@ export const setPromptData = async (promptData: PromptData) => {
     kitState.hasSnippet = false;
   }
 
+  promptWindow.webContents.setBackgroundThrottling(false);
   showInactive();
 
   // app.focus({

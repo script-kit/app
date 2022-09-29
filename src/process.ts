@@ -597,7 +597,7 @@ const kitMessageMap: ChannelHandler = {
     log.info(`😳 Hiding app`);
 
     // If windows, alt+tab to back to previous app
-    if (kitState.isWindows) {
+    if (kitState.isWindows && isVisible()) {
       const modifier = Key.LeftAlt;
       await keyboard.pressKey(modifier, Key.Tab);
       await keyboard.releaseKey(modifier, Key.Tab);
@@ -1434,11 +1434,11 @@ class Processes extends Array<ProcessInfo> {
       child?.removeAllListeners();
       child?.kill();
       log.info(`${pid}: 🛑 removed`);
-      if (kitState?.pid === pid) {
-        kitState.scriptPath = '';
-        kitState.promptId = '';
-        kitState.promptCount = 0;
-      }
+    }
+    if (kitState?.pid === pid) {
+      kitState.scriptPath = '';
+      kitState.promptId = '';
+      kitState.promptCount = 0;
     }
     this.splice(index, 1);
     kitState.removeP(pid);
