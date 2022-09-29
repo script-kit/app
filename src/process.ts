@@ -593,18 +593,18 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   HIDE_APP: toProcess(async ({ child, scriptPath }, { channel }) => {
+    if (kitState.isMac && app?.dock) app?.dock?.hide();
+
     kitState.hidden = true;
     log.info(`😳 Hiding app`);
 
     // If windows, alt+tab to back to previous app
     if (kitState.isWindows && kitState.promptCount) {
-      const modifier = Key.LeftAlt;
-      await keyboard.pressKey(modifier, Key.Tab);
-
+      await keyboard.pressKey(Key.LeftAlt);
+      await keyboard.pressKey(Key.Tab);
       await new Promise((resolve) => setTimeout(resolve, 100));
-      await keyboard.releaseKey(modifier, Key.Tab);
-      // wait for alt+tab to finish
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await keyboard.releaseKey(Key.Tab);
+      await keyboard.releaseKey(Key.LeftAlt);
     }
 
     const handler = () => {
@@ -1107,6 +1107,8 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_SELECTED_TEXT: toProcess(async ({ child }, { channel, value }) => {
+    if (kitState.isMac && app?.dock && app?.dock?.isVisible())
+      app?.dock?.hide();
     log.info(`SET SELECTED TEXT`, value);
     clipboard.writeText(value);
 

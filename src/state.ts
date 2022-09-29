@@ -319,19 +319,26 @@ subscribeKey(kitState, 'notifyAuthFail', (notifyAuthFail) => {
   }
 });
 
-const hideDock = debounce(() => {
+export const hideDock = debounce(() => {
   if (!kitState.isMac) return;
   if (kitState.devToolsCount > 0) return;
-  if (kitState.scriptPath) return;
+  if (kitState.promptCount > 0) return;
   if (widgetState.widgets.length) return;
   if (app?.dock.isVisible()) {
     app?.dock?.setIcon(getAssetPath('icon.png'));
     app?.dock?.hide();
   }
-}, 250);
+}, 200);
 
-const showDock = () => {
+export const showDock = () => {
   if (!kitState.isMac) return;
+  if (
+    kitState.devToolsCount === 0 &&
+    kitState.promptCount === 0 &&
+    widgetState.widgets.length === 0
+  )
+    return;
+
   if (!app?.dock.isVisible()) {
     hideDock.cancel();
     app?.dock?.setIcon(getAssetPath('icon.png'));
