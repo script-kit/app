@@ -5,7 +5,6 @@ import {
   Notification,
   Tray,
   Menu,
-  app,
   MenuItemConstructorOptions,
   globalShortcut,
 } from 'electron';
@@ -24,9 +23,10 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, getScriptsDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
-import { appDb, forceQuit, kitState, restartIfNecessary } from './state';
+import { appDb, forceQuit, kitState } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
+import { Trigger } from './enums';
 
 let tray: Tray | null = null;
 
@@ -83,9 +83,16 @@ export const openMenu = async (event?: KeyboardEvent) => {
     //   };
     // }
 
-    const runScript = (script: string) => () => {
-      kitState.interruptScript = true;
-      emitter.emit(KitEvent.RunPromptProcess, script);
+    const runScript = (
+      scriptPath: string,
+      args = [],
+      options = { force: false, trigger: Trigger.App }
+    ) => () => {
+      emitter.emit(KitEvent.RunPromptProcess, {
+        scriptPath,
+        args,
+        options,
+      });
     };
 
     const notifyItems: MenuItemConstructorOptions[] = [];
@@ -353,7 +360,10 @@ export const openMenu = async (event?: KeyboardEvent) => {
         label: `Open Kit.app Prompt`,
         // icon: getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`),
         icon: menuIcon('open'),
-        click: runScript(mainScriptPath),
+        click: runScript(mainScriptPath, [], {
+          force: true,
+          trigger: Trigger.Tray,
+        }),
         accelerator: kitState.mainShortcut,
       },
       {

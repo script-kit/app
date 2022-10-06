@@ -35,4 +35,5 @@ export enum Trigger {
   Kit = 'kit',
   Kar = 'kar',
   Menu = 'menu',
+  Tray = 'tray',
 }

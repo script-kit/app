@@ -733,10 +733,6 @@ const writePromptDb = debounce(
 );
 
 export const hideAppIfNoWindows = (reason: string) => {
-  if (kitState.interruptScript) {
-    kitState.interruptScript = false;
-    return;
-  }
   if (promptWindow) {
     // const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden

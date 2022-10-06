@@ -229,7 +229,6 @@ const initState = {
   resizedByChoices: false,
   scripts: [] as Script[],
   kitScripts: [] as Script[],
-  interruptScript: false,
   promptId: '__unset__',
   promptBounds: {
     x: 0,
