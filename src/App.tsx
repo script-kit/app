@@ -366,15 +366,6 @@ export default function App() {
     if (headerRef?.current) setTopRef(headerRef?.current);
   }, [headerRef, setTopRef]);
 
-  // useEffect(() => {
-  //   if (windowContainerRef?.current) {
-  //     windowContainerRef.current.style.height = `${window.innerHeight}px`;
-  //     windowContainerRef.current.style.top = `0px`;
-  //     windowContainerRef.current.style.left = `0px`;
-  //     // windowContainerRef.current.style.width = window.innerWidth + 'px';
-  //   }
-  // }, [mainHeight, topHeight, windowContainerRef]);
-
   useEffect(() => {
     if (open) {
       controls.start({ opacity: [0, 1] });
