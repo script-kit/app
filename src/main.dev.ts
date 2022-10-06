@@ -284,28 +284,6 @@ const setupDone = () => {
   sendSplashHeader(`Kit SDK Install verified ✅`);
 };
 
-// const configWindowDone = () => {
-//   if (configWindow?.isVisible()) {
-//     configWindow?.webContents.send('UPDATE', {
-//       header: `Script Kit ${getVersion()}`,
-//       spinner: false,
-//       message: `
-//   <div class="flex flex-col justify-center items-center px-8">
-//     <div><span class="font-bold"><kbd>cmd</kbd> <kbd>;</kbd></span> to launch main prompt (or click tray icon)</div>
-//     <div>Right-click tray icon for options</div>
-//   </div>
-//   `.trim(),
-//     });
-//     configWindow?.on('blur', () => {
-//       if (!configWindow?.webContents?.isDevToolsOpened()) {
-//         configWindow?.destroy();
-//       }
-//     });
-//   } else {
-//     configWindow?.destroy();
-//   }
-// };
-
 const setupLog = async (message: string) => {
   sendSplashBody(message);
   log.info(message);

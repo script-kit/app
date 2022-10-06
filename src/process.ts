@@ -1190,45 +1190,7 @@ const kitMessageMap: ChannelHandler = {
 export const createMessageHandler = (type: ProcessType) => async (
   data: GenericSendData
 ) => {
-  // if (data.pid !== processes.promptProcess?.pid) {
-  //   warn(data?.pid, data?.channel, data?.value);
-  //   const processInfo = processes.getByPid(data?.pid);
-  //   if (processInfo?.type === ProcessType.Prompt) {
-  //     const title = 'Script Message Failed';
-  //     const message = `${path.basename(
-  //       data?.kitScript
-  //     )} doesn't match ${path.basename(
-  //       processes.promptProcess?.scriptPath || ''
-  //     )}.\nUse //Background metadata for long-running processes.\nExiting...`;
-  //     warn(
-  //       `${data?.pid} doesn't match ${processes.promptProcess?.pid}`,
-  //       message
-  //     );
-
-  //     processes.removeByPid(data.pid);
-  //     runScript(
-  //       kitPath('cli', 'notify.js'),
-  //       '--title',
-  //       title,
-  //       '--message',
-  //       message
-  //     );
-
-  //     return;
-  //   }
-  // }
   if (!data.kitScript) log.info(data);
-  // if (
-  //   ![Channel.SET_PREVIEW, Channel.SET_LOADING, Channel.KIT_LOG].includes(
-  //     data.channel
-  //   )
-  // ) {
-  //   log.info(
-  //     `${data.channel === Channel.SET_SCRIPT ? `\n\n` : ``}${data.pid}: ${
-  //       data.channel
-  //     } ${type} process ${data.kitScript?.replace(/.*\//gi, '')}`
-  //   );
-  // }
 
   if (kitMessageMap[data.channel]) {
     type C = keyof ChannelMap;
@@ -1317,7 +1279,7 @@ class Processes extends Array<ProcessInfo> {
   }
 
   public add(
-    type: ProcessType,
+    type: ProcessType = ProcessType.Prompt,
     scriptPath = '',
     args: string[] = [],
     { resolve, reject }: ProcessHandlers = {}
@@ -1379,7 +1341,7 @@ class Processes extends Array<ProcessInfo> {
       }
 
       const processInfo = processes.getByPid(pid) as ProcessInfo;
-      if (processInfo.type === ProcessType.Background) {
+      if (processInfo?.type === ProcessType.Background) {
         emitter.emit(KitEvent.RemoveBackground, processInfo.scriptPath);
       }
 

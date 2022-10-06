@@ -46,9 +46,6 @@ const handleChannel = (
     // log.info(`${message.channel}`, message.pid);
   } else if (message.pid !== -1) {
     log.warn(`${message.channel} failed on ${message?.pid}`, message);
-
-    // log.warn(processInfo?.child, processInfo?.type);
-    // console.log(message);
   }
 };
 

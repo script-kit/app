@@ -301,21 +301,6 @@ export const showDevTools = async (value: any) => {
   devToolsWindow.webContents.setZoomFactor(1.5);
   devToolsWindow.webContents.focus();
 
-  // const shortcut: KeyboardInputEvent = {
-  //   type: 'keyDown',
-  //   modifiers: kitState.isMac ? ['cmd', 'alt'] : ['ctrl', 'shift'],
-  //   keyCode: 'j',
-  // };
-
-  // const pressShortcut = (s: KeyboardInputEvent) => {
-  //   s.type = 'keyDown';
-  //   devToolsWindow.webContents.sendInputEvent(s);
-  //   s.type = 'char';
-  //   devToolsWindow.webContents.sendInputEvent(s);
-  //   s.type = 'keyUp';
-  //   devToolsWindow.webContents.sendInputEvent(s);
-  // };
-
   if (value) {
     devToolsWindow.webContents.send('DEVTOOLS', value);
     devToolsWindow.webContents.send('LOG', `Type 'x' to access your object`);
