@@ -3,18 +3,13 @@ import log from 'electron-log';
 import { assign } from 'lodash';
 import path from 'path';
 import { existsSync } from 'fs';
-import { ChildProcess, fork, ForkOptions } from 'child_process';
 
 import { rm } from 'fs/promises';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 
-import {
-  parseScript,
-  kenvPath,
-  kitPath,
-  KIT_FIRST_PATH,
-} from '@johnlindquist/kit/cjs/utils';
+import { parseScript } from '@johnlindquist/kit/cjs/utils';
 
+import { FSWatcher } from 'chokidar';
 import {
   unlinkShortcuts,
   updateMainShortcut,
@@ -29,6 +24,7 @@ import { appDb, kitState, scriptChanged, scriptRemoved } from './state';
 import { buildScriptChanged } from './build';
 import { addSnippet, removeSnippet } from './tick';
 import { clearPromptCacheFor } from './prompt';
+import { startWatching, WatchEvent } from './chokidar';
 
 // export const cacheMenu = debounce(async () => {
 //   await updateScripts();
@@ -55,7 +51,6 @@ const unlink = (filePath: string) => {
   scriptRemoved();
 };
 
-type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
 export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
   if (event === 'unlink') {
     unlink(filePath);
@@ -88,61 +83,34 @@ export const onDbChanged = async (event: any, filePath: string) => {
   updateMainShortcut(filePath);
 };
 
-export const watchers = {
-  childWatcher: null as ChildProcess | null,
-};
+let watchers = [] as FSWatcher[];
 
 export const teardownWatchers = async () => {
-  if (watchers.childWatcher) {
-    watchers.childWatcher.removeAllListeners();
-    watchers.childWatcher.kill();
-    watchers.childWatcher = null;
+  if (watchers.length) {
+    watchers.forEach((watcher) => watcher.close());
+    watchers.length = 0;
   }
 };
 
 export const setupWatchers = async () => {
   await teardownWatchers();
 
-  const forkOptions: ForkOptions = {
-    cwd: kitPath(),
-    env: {
-      KIT: kitPath(),
-      KENV: kenvPath(),
-      PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
-    },
-  };
+  watchers = startWatching(async (eventName: WatchEvent, filePath: string) => {
+    if (!filePath.match(/\.(ts|js|json)$/)) return;
+    log.info(`👀 Watcher: ${eventName} ${filePath}`);
+    const { base } = path.parse(filePath);
+    if (base === 'app.json') {
+      log.info(`app.json changed`);
+      const currentAppDb = (await getAppDb()).data;
+      assign(appDb, currentAppDb);
 
-  const scriptPath = kitPath('setup', 'watcher.js');
-  watchers.childWatcher = fork(scriptPath, forkOptions);
-  watchers.childWatcher.on('error', (error) => {
-    log.error(`😅 Watcher`, error);
-  });
-  watchers.childWatcher.on(
-    'message',
-    async ({
-      eventName,
-      filePath,
-    }: {
-      eventName: WatchEvent;
-      filePath: string;
-    }) => {
-      log.info(`👀 Watcher: ${eventName} ${filePath}`);
-      const { base } = path.parse(filePath);
-      if (base === 'app.json') {
-        log.info(`app.json changed`);
-        const currentAppDb = (await getAppDb()).data;
-        assign(appDb, currentAppDb);
-
-        return;
-      }
-
-      if (base === 'shortcuts.json') {
-        onDbChanged(eventName, filePath);
-        return;
-      }
-      onScriptsChanged(eventName, filePath);
+      return;
     }
-  );
 
-  log.info(`👁 Watch child: ${watchers.childWatcher.pid}`);
+    if (base === 'shortcuts.json') {
+      onDbChanged(eventName, filePath);
+      return;
+    }
+    onScriptsChanged(eventName, filePath);
+  });
 };

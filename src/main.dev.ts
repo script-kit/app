@@ -71,12 +71,7 @@ import {
 import { subscribeKey } from 'valtio/utils';
 import { assign } from 'lodash';
 import { setupTray, destroyTray } from './tray';
-import {
-  onScriptsChanged,
-  setupWatchers,
-  teardownWatchers,
-  watchers,
-} from './watcher';
+import { onScriptsChanged, setupWatchers, teardownWatchers } from './watcher';
 import {
   getArch,
   getAssetPath,
@@ -1027,13 +1022,6 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
 
   try {
     if (kitState.isMac) await beforePromptQuit();
-  } catch (error) {
-    log.error(error);
-  }
-
-  try {
-    log.info(`Destory watcher process`);
-    if (watchers?.childWatcher) watchers?.childWatcher?.kill();
   } catch (error) {
     log.error(error);
   }
