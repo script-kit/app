@@ -110,6 +110,7 @@ import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from './defaults';
 import { registerTrayShortcut } from './shortcuts';
+import { Trigger } from './enums';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -146,49 +147,6 @@ const releaseChannel = getReleaseChannel();
 const arch = getArch();
 const platform = getPlatform();
 const nodeVersion = getNodeVersion();
-
-app.on('will-quit', async () => {
-  try {
-    teardownWatchers();
-    sleepSchedule();
-    destroyTray();
-  } catch (error) {
-    log.error(`😬 ERROR DESTROYING TRAY`, { error });
-  }
-
-  try {
-    app.removeAllListeners('window-all-closed');
-  } catch (error) {
-    log.error(error);
-  }
-
-  try {
-    if (kitState.isMac) await beforePromptQuit();
-  } catch (error) {
-    log.error(error);
-  }
-
-  try {
-    log.info(`Destory watcher process`);
-    if (watchers?.childWatcher) watchers?.childWatcher?.kill();
-  } catch (error) {
-    log.error(error);
-  }
-
-  try {
-    log.info(`Destroy all windows`);
-    const browserWindows = BrowserWindow.getAllWindows();
-    browserWindows.forEach((browserWindow) => {
-      browserWindow?.destroy();
-    });
-  } catch (e) {
-    log.warn(`callBeforeQuitAndInstall error`, e);
-  }
-
-  log.info(
-    `Remaning browser windows: ${BrowserWindow.getAllWindows()?.length}`
-  );
-});
 
 app.on('window-all-closed', (e: Event) => {
   e.preventDefault();
@@ -498,9 +456,9 @@ const ready = async () => {
     await cacheKitScripts();
     // await cacheMenu();
 
-    processes.add(ProcessType.Prompt);
-    processes.add(ProcessType.Prompt);
     // processes.add(ProcessType.Prompt);
+    // processes.add(ProcessType.Prompt);
+    await processes.findIdlePromptProcess();
 
     handleWidgetEvents();
 
@@ -1071,3 +1029,59 @@ try {
 }
 
 app.whenReady().then(checkKit).catch(ohNo);
+
+subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
+  if (!allowQuit) return;
+  log.info(`😬 Tear down all processes before quit`);
+  try {
+    teardownWatchers();
+    sleepSchedule();
+    destroyTray();
+  } catch (error) {
+    log.error(`😬 ERROR DESTROYING TRAY`, { error });
+  }
+
+  try {
+    app.removeAllListeners('window-all-closed');
+  } catch (error) {
+    log.error(error);
+  }
+
+  try {
+    if (kitState.isMac) await beforePromptQuit();
+  } catch (error) {
+    log.error(error);
+  }
+
+  try {
+    log.info(`Destory watcher process`);
+    if (watchers?.childWatcher) watchers?.childWatcher?.kill();
+  } catch (error) {
+    log.error(error);
+  }
+
+  try {
+    log.info(`Destroy all windows`);
+    // const browserWindows = BrowserWindow.getAllWindows();
+    // browserWindows.forEach((browserWindow) => {
+    //   if (!browserWindow.isDestroyed()) browserWindow?.destroy();
+    // });
+  } catch (e) {
+    log.warn(`callBeforeQuitAndInstall error`, e);
+  }
+
+  try {
+    log.info(`Destroy all processes`);
+    processes.forEach((pinfo) => {
+      if (!pinfo?.child.killed) {
+        pinfo?.child?.kill();
+      }
+    });
+  } catch (error) {
+    log.error(error);
+  }
+
+  log.info(
+    `Remaning browser windows: ${BrowserWindow.getAllWindows()?.length}`
+  );
+});

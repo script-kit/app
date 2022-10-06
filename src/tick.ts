@@ -13,19 +13,20 @@ import {
 } from 'rxjs/operators';
 import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
-import { keyboard, Key } from '@nut-tree/nut-js';
 import { format } from 'date-fns';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { nanoid } from 'nanoid';
 import { UiohookKeyboardEvent, UiohookKey } from 'uiohook-napi';
-import { tmpClipboardDir, kitPath } from '@johnlindquist/kit/cjs/utils';
+import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
 import { Choice, Script } from '@johnlindquist/kit/types/core';
 import { remove } from 'lodash';
 
 import { emitter, KitEvent } from './events';
 import { kitConfig, kitState } from './state';
 import { isFocused } from './prompt';
+import { deleteText } from './keyboard';
+import { Trigger } from './enums';
 
 const UiohookToName = Object.fromEntries(
   Object.entries(UiohookKey).map(([k, v]) => [v, k])
@@ -140,23 +141,26 @@ export const clearClipboardHistory = () => {
   clipboardHistory = [];
 };
 
+let prevKey = '';
+const backspace = 'backspace';
 const ioEvent = async (e: UiohookKeyboardEvent) => {
   try {
     kitState.isShiftDown = e.shiftKey;
 
     const key = toKey(e?.keycode || 0, e.shiftKey);
 
-    if (key === 'Shift') return;
+    if (key === 'Shift' || e.metaKey || e.ctrlKey || e.altKey) return;
 
-    if (key === 'backspace') {
+    if (key === backspace) {
       kitState.snippet = kitState.snippet.slice(0, -1);
       // 57 is the space key
     } else if (e?.keycode === 57) {
-      kitState.snippet += '_';
+      if (prevKey === backspace) {
+        kitState.snippet = '';
+      } else {
+        kitState.snippet += '_';
+      }
     } else if (
-      e.metaKey ||
-      e.ctrlKey ||
-      e.altKey ||
       e?.keycode === 40 ||
       kitState.isTyping ||
       key.length > 1 ||
@@ -167,6 +171,7 @@ const ioEvent = async (e: UiohookKeyboardEvent) => {
       kitState.snippet = `${kitState.snippet}${key}`;
       log.silly(kitState.snippet);
     }
+    prevKey = key;
   } catch (error) {
     log.error(error);
   }
@@ -177,7 +182,11 @@ const ioEvent = async (e: UiohookKeyboardEvent) => {
 export const configureInterval = async () => {
   log.silly(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
   if (kitState.isMac) {
-    ({ default: frontmost } = await import('frontmost-app' as any));
+    try {
+      ({ default: frontmost } = await import('frontmost-app' as any));
+    } catch (e) {
+      log.warn(e);
+    }
   }
 
   log.info(`Loading uiohook-napi`);
@@ -236,21 +245,26 @@ export const configureInterval = async () => {
     debounceTime(200),
     switchMap(async () => {
       if (frontmost) {
-        const frontmostApp = await frontmost();
-        const ignoreList = [
-          'onepassword',
-          'keychain',
-          'security',
-          'wallet',
-          'lastpass',
-        ];
+        try {
+          const frontmostApp = await frontmost();
+          const ignoreList = [
+            'onepassword',
+            'keychain',
+            'security',
+            'wallet',
+            'lastpass',
+          ];
 
-        if (ignoreList.find((app) => frontmostApp.bundleId.includes(app))) {
-          log.info(`Ignoring clipboard for ${frontmostApp.bundleId}`);
+          if (ignoreList.find((app) => frontmostApp.bundleId.includes(app))) {
+            log.info(`Ignoring clipboard for ${frontmostApp.bundleId}`);
+            return false;
+          }
+
+          return frontmostApp;
+        } catch (error) {
+          log.warn(error);
           return false;
         }
-
-        return frontmostApp;
       }
 
       return false;
@@ -352,25 +366,23 @@ export const configureInterval = async () => {
         log.info(`Running snippet: ${snippetKey}`);
         const script = snippetMap.get(snippetKey) as Script;
         if (kitConfig.deleteSnippet) {
-          const prevDelay = keyboard.config.autoDelayMs;
-          keyboard.config.autoDelayMs = 0;
-
           // get postfix from snippetMap
           if (snippetMap.has(snippetKey)) {
             const { postfix } = snippetMap.get(snippetKey) || {
               postfix: false,
             };
-            const stringToDelete = postfix ? snippet : snippetKey;
-            for await (const k of stringToDelete) {
-              await keyboard.type(Key.Backspace);
-            }
 
-            keyboard.config.autoDelayMs = prevDelay;
+            const stringToDelete = postfix ? snippet : snippetKey;
+            await deleteText(stringToDelete);
           }
         }
         emitter.emit(KitEvent.RunPromptProcess, {
           scriptPath: script.filePath,
           args: [snippet.slice(0, -snippetKey?.length)],
+          options: {
+            force: false,
+            trigger: Trigger.Snippet,
+          },
         });
       }
     }

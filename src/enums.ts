@@ -23,3 +23,16 @@ export enum AppChannel {
   LOG = 'LOG',
   MAIN_SCRIPT = 'MAIN_SCRIPT',
 }
+
+export enum Trigger {
+  App = 'app',
+  Background = 'background',
+  Schedule = 'schedule',
+  Snippet = 'snippet',
+  System = 'system',
+  Shortcut = 'shortcut',
+  Watch = 'watch',
+  Kit = 'kit',
+  Kar = 'kar',
+  Menu = 'menu',
+}

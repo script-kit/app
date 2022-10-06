@@ -30,7 +30,7 @@ import { processes } from './process';
 
 import { focusPrompt, isFocused, reload, resize } from './prompt';
 import { runPromptProcess } from './kit';
-import { AppChannel } from './enums';
+import { AppChannel, Trigger } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
 import { kitConfig, kitState } from './state';
@@ -80,7 +80,10 @@ export const startIpc = () => {
 
   ipcMain.on(AppChannel.OPEN_SCRIPT_LOG, async (event, script: Script) => {
     const logPath = getLogFromScriptPath((script as Script).filePath);
-    await runPromptProcess(kitPath('cli/edit-file.js'), [logPath], true);
+    await runPromptProcess(kitPath('cli/edit-file.js'), [logPath], {
+      force: true,
+      trigger: Trigger.Kit,
+    });
   });
 
   ipcMain.on(
@@ -94,7 +97,10 @@ export const startIpc = () => {
         'db',
         `_${path.basename(filePath).replace(/js$/, 'json')}`
       );
-      await runPromptProcess(kitPath('cli/edit-file.js'), [dbPath], true);
+      await runPromptProcess(kitPath('cli/edit-file.js'), [dbPath], {
+        force: true,
+        trigger: Trigger.Kit,
+      });
     }
   );
 
@@ -108,7 +114,10 @@ export const startIpc = () => {
       if (descriptionIsInKenv && descriptionIsFile) {
         try {
           await writeFile(description, input);
-          await runPromptProcess(description, [], true);
+          await runPromptProcess(description, [], {
+            force: true,
+            trigger: Trigger.Kit,
+          });
         } catch (error) {
           log.error(error);
         }
@@ -119,11 +128,10 @@ export const startIpc = () => {
 
       if (script.filePath && isInKit) return;
 
-      await runPromptProcess(
-        kitPath('cli/edit-file.js'),
-        [script.filePath],
-        true
-      );
+      await runPromptProcess(kitPath('cli/edit-file.js'), [script.filePath], {
+        force: true,
+        trigger: Trigger.Kit,
+      });
     }
   );
 
@@ -131,7 +139,10 @@ export const startIpc = () => {
     AppChannel.EDIT_SCRIPT,
     async (event, { script }: Required<AppState>) => {
       if ((isInDir(kitPath()), script.filePath)) return;
-      await runPromptProcess(kitPath('main/edit.js'), [script.filePath], true);
+      await runPromptProcess(kitPath('main/edit.js'), [script.filePath], {
+        force: true,
+        trigger: Trigger.Kit,
+      });
     }
   );
 
@@ -140,16 +151,25 @@ export const startIpc = () => {
     async (event, { script, focused }: Required<AppState>) => {
       const filePath = (focused as any)?.filePath || script?.filePath;
 
-      await runPromptProcess(kitPath('cli/edit-file.js'), [filePath], true);
+      await runPromptProcess(kitPath('cli/edit-file.js'), [filePath], {
+        force: true,
+        trigger: Trigger.Kit,
+      });
     }
   );
 
   ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, async () => {
-    runPromptProcess(mainScriptPath, [], true);
+    runPromptProcess(mainScriptPath, [], {
+      force: true,
+      trigger: Trigger.Kit,
+    });
   });
 
   ipcMain.on(AppChannel.RUN_PROCESSES_SCRIPT, async () => {
-    runPromptProcess(kitPath('cli', 'processes.js'), [], true);
+    runPromptProcess(kitPath('cli', 'processes.js'), [], {
+      force: true,
+      trigger: Trigger.Kit,
+    });
   });
 
   ipcMain.on(AppChannel.FOCUS_PROMPT, () => {

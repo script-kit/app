@@ -59,7 +59,7 @@ export const tabsAtom = atom(
     s(tabs, a || []);
   }
 );
-const cachedMainPreview = atom('');
+// const cachedMainPreview = atom('');
 const loading = atom<boolean>(false);
 
 const placeholder = atom('');
@@ -292,7 +292,7 @@ export const panelHTMLAtom = atom(
 const _previewVisible = atom<boolean>(false);
 
 const _previewHTML = atom('');
-const closedDiv = `<div/>`;
+const closedDiv = `<div></div>`;
 export const previewHTMLAtom = atom(
   (g) => g(_previewHTML) || g(promptData)?.preview,
   (g, s, a: string) => {
@@ -305,9 +305,9 @@ export const previewHTMLAtom = atom(
     const iA = g(inputAtom);
     const index = g(_index);
 
-    if (g(isMainScriptAtom) && tI === 0 && iA === '' && index === 0) {
-      s(cachedMainPreview, a);
-    }
+    // if (g(isMainScriptAtom) && tI === 0 && iA === '' && index === 0) {
+    //   s(cachedMainPreview, a);
+    // }
 
     if (g(_previewHTML) !== a) {
       if (a === closedDiv) {
@@ -517,7 +517,7 @@ export const focusedChoiceAtom = atom(
     if (g(submittedAtom)) return;
     // if (g(_focused)?.id === choice?.id) return;
     if (isScript(choice as Choice)) {
-      (choice as Script).hasPreview = true;
+      // (choice as Script).hasPreview = true;
     }
 
     s(_focused, choice || noChoice);
@@ -538,7 +538,8 @@ export const focusedChoiceAtom = atom(
 
 export const hasPreviewAtom = atom<boolean>((g) => {
   // const log = g(logAtom);
-  const focusedHasPreview = g(_focused)?.hasPreview;
+  const focusedHasPreview =
+    g(_focused)?.hasPreview && g(_focused)?.preview !== closedDiv;
 
   const promptHasPreview = g(promptData)?.hasPreview;
 

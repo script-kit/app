@@ -956,3 +956,4 @@ placeholder:tracking-normal
 dark:placeholder:tracking-normal
 tracking-normal
 dark:tracking-normal
+dark:peer-focus:text-primary-light

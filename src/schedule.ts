@@ -8,6 +8,7 @@ import { kitPath, kenvPath } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess, runScript } from './kit';
 import { online, scheduleMap } from './state';
 import { processes } from './process';
+import { Trigger } from './enums';
 
 export const cancelJob = (filePath: string) => {
   let success = false;
@@ -92,7 +93,10 @@ export const scheduleScriptChanged = ({
       const scheduledFunction = () => {
         // log.info(`Running: ${filePath}`, Object.entries(scheduleMap));
         // processes.add(ProcessType.Schedule, filePath);
-        runPromptProcess(filePath);
+        runPromptProcess(filePath, [], {
+          force: false,
+          trigger: Trigger.Schedule,
+        });
       };
 
       const job = schedule.scheduleJob(

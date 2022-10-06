@@ -232,6 +232,7 @@ export const createPromptWindow = async () => {
   // });
 
   const onBlur = () => {
+    if (promptWindow?.isDestroyed()) return;
     if (kitState.isActivated) {
       kitState.isActivated = false;
       return;
@@ -405,6 +406,7 @@ export const getCurrentScreenPromptCache = async (
     bounds: {},
   }
 ) => {
+  if (promptWindow?.isDestroyed()) return;
   const currentScreen = getCurrentScreenFromMouse();
   const screenId = String(currentScreen.id);
   const promptDb = await getPromptDb();
@@ -648,8 +650,8 @@ export const appToPrompt = (channel: AppChannel, data?: any) => {
   // log.info(`>_ ${channel}`);
   if (
     promptWindow &&
-    promptWindow?.webContents &&
-    !promptWindow.isDestroyed()
+    !promptWindow.isDestroyed() &&
+    promptWindow?.webContents
   ) {
     promptWindow?.webContents.send(channel, data);
   }
@@ -1028,6 +1030,7 @@ subscribeKey(kitState, 'promptId', async () => {
     resize: kitState.resize,
     bounds: kitState.promptBounds,
   });
+  if (promptWindow?.isDestroyed()) return;
   log.verbose(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
 
   // If widths or height don't match, send SET_RESIZING to prompt
@@ -1044,6 +1047,7 @@ subscribeKey(kitState, 'promptId', async () => {
     kitState.isResizing = true;
   }
 
+  log.info(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
   promptWindow?.setBounds(
     bounds,
     promptWindow?.isVisible() && kitState.promptCount > 1
@@ -1051,6 +1055,7 @@ subscribeKey(kitState, 'promptId', async () => {
 });
 
 subscribeKey(kitState, 'scriptPath', async () => {
+  if (promptWindow?.isDestroyed()) return;
   kitState.promptUI = UI.none;
   kitState.resize = false;
   kitState.resizedByChoices = false;

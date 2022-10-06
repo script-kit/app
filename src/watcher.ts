@@ -4,8 +4,6 @@ import { assign } from 'lodash';
 import path from 'path';
 import { existsSync } from 'fs';
 import { ChildProcess, fork, ForkOptions } from 'child_process';
-import { homedir } from 'os';
-import { subscribeKey } from 'valtio/utils';
 
 import { rm } from 'fs/promises';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
@@ -106,7 +104,7 @@ export const setupWatchers = async () => {
   await teardownWatchers();
 
   const forkOptions: ForkOptions = {
-    cwd: homedir(),
+    cwd: kitPath(),
     env: {
       KIT: kitPath(),
       KENV: kenvPath(),
@@ -115,11 +113,10 @@ export const setupWatchers = async () => {
   };
 
   const scriptPath = kitPath('setup', 'watcher.js');
-  watchers.childWatcher = fork(
-    kitPath('run', 'terminal.js'),
-    [scriptPath],
-    forkOptions
-  );
+  watchers.childWatcher = fork(scriptPath, forkOptions);
+  watchers.childWatcher.on('error', (error) => {
+    log.error(`😅 Watcher`, error);
+  });
   watchers.childWatcher.on(
     'message',
     async ({
@@ -129,6 +126,7 @@ export const setupWatchers = async () => {
       eventName: WatchEvent;
       filePath: string;
     }) => {
+      log.info(`👀 Watcher: ${eventName} ${filePath}`);
       const { base } = path.parse(filePath);
       if (base === 'app.json') {
         log.info(`app.json changed`);
@@ -148,9 +146,3 @@ export const setupWatchers = async () => {
 
   log.info(`👁 Watch child: ${watchers.childWatcher.pid}`);
 };
-
-subscribeKey(kitState, 'allowQuit', (allowQuit) => {
-  if (allowQuit) {
-    teardownWatchers();
-  }
-});

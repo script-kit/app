@@ -103,6 +103,8 @@ export const configureAutoUpdate = async () => {
       log.warn(`Couldn't store previous version`);
     }
 
+    kitState.allowQuit = true;
+
     setTimeout(() => {
       log.info('Quit and exit 👋');
 
@@ -188,7 +190,6 @@ export const configureAutoUpdate = async () => {
       status: 'default',
       message: '',
     };
-    kitState.allowQuit = true;
 
     kitState.status = {
       status: 'success',

@@ -10,7 +10,7 @@ import path from 'path';
 import { fork, ForkOptions } from 'child_process';
 import { homedir } from 'os';
 
-import { Channel, ProcessType } from '@johnlindquist/kit/cjs/enum';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import {
   parseScript,
   kitPath,
@@ -24,25 +24,31 @@ import { ProcessInfo } from '@johnlindquist/kit';
 import { emitter, KitEvent } from './events';
 import { processes, removeAbandonnedMain } from './process';
 import {
-  devToolsVisible,
   hideAppIfNoWindows,
   isVisible,
   sendToPrompt,
   setScript,
 } from './prompt';
-import { getKitScript, isSameScript, kitState } from './state';
+import { getKitScript, kitState } from './state';
 import { pathsAreEqual } from './helpers';
+import { Trigger } from './enums';
 
 app.on('second-instance', async (_event, argv) => {
   log.info('second-instance', _event, argv);
   const { _ } = minimist(argv);
   const [, , argScript, ...argArgs] = _;
-  runPromptProcess(argScript, argArgs);
+  runPromptProcess(argScript, argArgs, {
+    force: false,
+    trigger: Trigger.Kit,
+  });
 });
 
 app.on('activate', async (_event, hasVisibleWindows) => {
   kitState.isActivated = true;
-  runPromptProcess(mainScriptPath, [], true);
+  runPromptProcess(mainScriptPath, [], {
+    force: true,
+    trigger: Trigger.Kit,
+  });
 });
 
 // process.on('unhandledRejection', (reason, p) => {
@@ -63,14 +69,22 @@ emitter.on(
       | {
           scriptPath: string;
           args: string[];
+          options: {
+            force: boolean;
+            trigger: Trigger;
+          };
         }
       | string
   ) => {
-    const { scriptPath, args } =
+    const { scriptPath, args, options } =
       typeof scriptOrScriptAndData === 'string'
         ? {
             scriptPath: scriptOrScriptAndData,
             args: [],
+            options: {
+              force: false,
+              trigger: Trigger.Kit,
+            },
           }
         : scriptOrScriptAndData;
 
@@ -80,12 +94,15 @@ emitter.on(
     } else {
       log.info(`Show App: ${scriptPath}`);
     }
-    runPromptProcess(scriptPath, args);
+    runPromptProcess(scriptPath, args, options);
   }
 );
 
 emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {
-  runPromptProcess(scriptPath);
+  runPromptProcess(scriptPath, [], {
+    force: false,
+    trigger: Trigger.Background,
+  });
 });
 
 const findScript = async (scriptPath: string) => {
@@ -108,7 +125,13 @@ const findScript = async (scriptPath: string) => {
 export const runPromptProcess = async (
   promptScriptPath: string,
   args: string[] = [],
-  force = false
+  options: {
+    force: boolean;
+    trigger: Trigger;
+  } = {
+    force: false,
+    trigger: Trigger.App,
+  }
 ): Promise<ProcessInfo | null> => {
   if (pathsAreEqual(promptScriptPath, mainScriptPath)) {
     removeAbandonnedMain();
@@ -117,13 +140,20 @@ export const runPromptProcess = async (
 
   // If the window is already open, interrupt the process with the new script
   if (isVisible()) {
-    sendToPrompt(Channel.START, force ? kitState.scriptPath : promptScriptPath);
+    sendToPrompt(
+      Channel.START,
+      options?.force ? kitState.scriptPath : promptScriptPath
+    );
     if (kitState.scriptPath === promptScriptPath) {
       return null;
     }
   }
 
   const processInfo = await processes.findIdlePromptProcess();
+  // Add another to the process pool when exhausted
+  setTimeout(async () => {
+    await processes.findIdlePromptProcess();
+  }, 100);
   const { pid, child } = processInfo;
 
   log.info(`${pid}: 🏎 ${promptScriptPath} `);
@@ -131,7 +161,7 @@ export const runPromptProcess = async (
 
   const script = await findScript(promptScriptPath);
 
-  const status = await setScript({ ...script }, pid, force);
+  const status = await setScript({ ...script }, pid, options?.force);
   if (status === 'denied') {
     log.info(
       `Another script is already controlling the UI. Denying UI control: ${path.basename(
@@ -148,10 +178,11 @@ export const runPromptProcess = async (
     value: {
       script: promptScriptPath,
       args,
+      trigger: options?.trigger,
     },
   });
 
-  processes.add(ProcessType.Prompt);
+  // processes.add(ProcessType.Prompt);
 
   return processInfo;
 };
@@ -200,9 +231,15 @@ export const runScript = (...args: string[]) => {
 
 emitter.on(KitEvent.OpenLog, async (scriptPath) => {
   const logPath = getLogFromScriptPath(scriptPath);
-  await runPromptProcess(kitPath('cli/edit-file.js'), [logPath]);
+  await runPromptProcess(kitPath('cli/edit-file.js'), [logPath], {
+    force: true,
+    trigger: Trigger.Kit,
+  });
 });
 
 emitter.on(KitEvent.OpenScript, async (scriptPath) => {
-  await runPromptProcess(kitPath('cli/edit-file.js'), [scriptPath]);
+  await runPromptProcess(kitPath('cli/edit-file.js'), [scriptPath], {
+    force: true,
+    trigger: Trigger.App,
+  });
 });

@@ -5,6 +5,7 @@ import fs from 'fs';
 import log from 'electron-log';
 import { kitPath, resolveToScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess } from './kit';
+import { Trigger } from './enums';
 
 export const startSK = () => {
   const server = net.createServer((stream) => {
@@ -21,7 +22,11 @@ export const startSK = () => {
           log.info(`🇦🇷 ${scriptPath} ${args}`);
           await runPromptProcess(
             scriptPath,
-            args.map((s: string) => s.replaceAll('$newline$', '\n'))
+            args.map((s: string) => s.replaceAll('$newline$', '\n')),
+            {
+              force: true,
+              trigger: Trigger.Kar,
+            }
           );
           const message = `🕹 sk ${script} ${args}`;
           log.info(message);

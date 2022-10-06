@@ -13,10 +13,14 @@ import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import { focusPrompt, isFocused, isVisible } from './prompt';
 import { kitState } from './state';
+import { Trigger } from './enums';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
   const success = globalShortcut.register(shortcut, async () => {
-    runPromptProcess(filePath, [], true);
+    runPromptProcess(filePath, [], {
+      force: true,
+      trigger: Trigger.Shortcut,
+    });
     focusPrompt();
   });
 
@@ -130,7 +134,10 @@ export const updateMainShortcut = async (filePath: string) => {
             steal: true,
           });
         } else {
-          await runPromptProcess(mainScriptPath, [], true);
+          await runPromptProcess(mainScriptPath, [], {
+            force: true,
+            trigger: Trigger.Menu,
+          });
         }
       });
 

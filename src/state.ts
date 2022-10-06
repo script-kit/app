@@ -404,15 +404,21 @@ export const online = async () => {
 // };
 
 export const forceQuit = () => {
+  log.info(`Begin force quit...`);
   kitState.allowQuit = true;
-  log.info(`👋 Quitting...`);
 
   setTimeout(() => {
     try {
+      log.info(`👋 Quitting...`);
       app.quit();
-      app.exit(0);
+      setTimeout(() => {
+        log.info(`❤️ Bye!`);
+        setTimeout(() => {
+          if (app) app.exit(0);
+        }, 100);
+      }, 100);
     } catch (e) {
       log.error(e);
     }
-  }, 1000);
+  }, 100);
 };

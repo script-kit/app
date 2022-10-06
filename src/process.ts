@@ -106,6 +106,7 @@ import { startPty } from './pty';
 import { createWidget } from './widget';
 import { AppChannel } from './enums';
 import { pathsAreEqual } from './helpers';
+import { deleteText } from './keyboard';
 
 // const trash = async (...args: string[]) => {
 //   const parent = app.isPackaged
@@ -1172,6 +1173,18 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.SPEAK_TEXT, value);
     child?.send({ channel, value });
   }),
+
+  CUT_TEXT: toProcess(async ({ child }, { channel, value }) => {
+    const text = kitState.snippet;
+    log.info(`Yanking text`, text);
+    await deleteText(text);
+    kitState.snippet = '';
+
+    child?.send({
+      channel,
+      value: text,
+    });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (
@@ -1295,21 +1308,6 @@ const processesChanged = () => {
 class Processes extends Array<ProcessInfo> {
   public abandonnedProcesses: ProcessInfo[] = [];
 
-  constructor(...args: ProcessInfo[]) {
-    super(...args);
-
-    setInterval(() => {
-      if (this.abandonnedProcesses.length) {
-        log.info(
-          `Still running:`,
-          this.abandonnedProcesses
-            .filter(({ child }) => !child?.killed)
-            .map(({ pid, scriptPath }) => `${pid} ${scriptPath}`)
-        );
-      }
-    }, 2000);
-  }
-
   public getAllProcessInfo() {
     return this.map(({ scriptPath, type, pid }) => ({
       type,
@@ -1416,13 +1414,7 @@ class Processes extends Array<ProcessInfo> {
       return promptProcess;
     }
 
-    warn(`🤔 Can't find idle Prompt Process. Starting another`);
-    const newProcess = processes.add(ProcessType.Prompt);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(newProcess);
-      }, 1000);
-    });
+    return processes.add(ProcessType.Prompt);
   }
 
   public getByPid(pid: number) {
@@ -1436,9 +1428,7 @@ class Processes extends Array<ProcessInfo> {
     if (index === -1) return;
     const { child, type, scriptPath } = this[index];
     if (!child?.killed) {
-      if (type === ProcessType.Background) {
-        emitter.emit(KitEvent.RemoveBackground, scriptPath);
-      }
+      emitter.emit(KitEvent.RemoveBackground, scriptPath);
       child?.removeAllListeners();
       child?.kill();
       log.info(`${pid}: 🛑 removed`);
@@ -1448,6 +1438,7 @@ class Processes extends Array<ProcessInfo> {
       kitState.promptId = '';
       kitState.promptCount = 0;
     }
+
     this.splice(index, 1);
     kitState.removeP(pid);
 

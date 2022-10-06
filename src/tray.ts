@@ -523,10 +523,7 @@ export const setupTray = async (checkDb = false, state: trayState) => {
           {
             label: 'Quit',
             click: () => {
-              kitState.allowQuit = true;
-              log.info(`Quitting...`);
-              app.quit();
-              app.exit();
+              forceQuit();
             },
           },
         ]);

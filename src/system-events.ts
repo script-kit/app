@@ -1,9 +1,8 @@
 import { powerMonitor } from 'electron';
 import log from 'electron-log';
-import { ProcessType } from '@johnlindquist/kit/cjs/enum';
 import { Script } from '@johnlindquist/kit/types/core';
-import { processes } from './process';
 import { runPromptProcess } from './kit';
+import { Trigger } from './enums';
 
 const validSystemEvents = [
   'suspend',
@@ -27,7 +26,10 @@ validSystemEvents.forEach((systemEvent: any) => {
       eventList.forEach((mappedEvent: string) => {
         if (mappedEvent === systemEvent) {
           log.info(`🗺`, { mappedEvent, scriptPath });
-          runPromptProcess(scriptPath);
+          runPromptProcess(scriptPath, [], {
+            force: false,
+            trigger: Trigger.System,
+          });
         }
       });
     });

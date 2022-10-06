@@ -7,6 +7,7 @@ import { emitter, KitEvent } from './events';
 import { backgroundMap, Background } from './state';
 import { processes } from './process';
 import { runPromptProcess } from './kit';
+import { Trigger } from './enums';
 
 export const removeBackground = (filePath: string) => {
   if (backgroundMap.get(filePath)) {
@@ -20,7 +21,10 @@ export const removeBackground = (filePath: string) => {
 
 const startTask = async (filePath: string) => {
   removeBackground(filePath);
-  const processInfo = await runPromptProcess(filePath);
+  const processInfo = await runPromptProcess(filePath, [], {
+    force: false,
+    trigger: Trigger.Background,
+  });
   if (processInfo) {
     const { child } = processInfo;
     backgroundMap.set(filePath, {

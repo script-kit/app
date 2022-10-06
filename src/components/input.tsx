@@ -97,7 +97,7 @@ export default function Input() {
             } else {
               setSubmitValue(findChoice.value);
             }
-          } else if (unfilteredChoices?.length === 0) {
+          } else {
             setSubmitValue(findCode.code);
           }
         }
