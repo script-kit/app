@@ -354,6 +354,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
     // });
 
     const contextMenu = Menu.buildFromTemplate([
+      ...updateItems,
       ...notifyItems,
       ...authItems,
       {
