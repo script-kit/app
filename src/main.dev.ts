@@ -431,7 +431,8 @@ const ready = async () => {
 
     // processes.add(ProcessType.Prompt);
     // processes.add(ProcessType.Prompt);
-    await processes.findIdlePromptProcess();
+    processes.add(ProcessType.Prompt);
+    processes.add(ProcessType.Prompt);
 
     handleWidgetEvents();
 

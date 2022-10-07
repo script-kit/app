@@ -1284,6 +1284,7 @@ class Processes extends Array<ProcessInfo> {
     args: string[] = [],
     { resolve, reject }: ProcessHandlers = {}
   ): ProcessInfo {
+    log.info(`👶 Create child ${type} process`, scriptPath, args);
     const child = createChild({
       type,
       scriptPath,
@@ -1364,7 +1365,7 @@ class Processes extends Array<ProcessInfo> {
     return info;
   }
 
-  public async findIdlePromptProcess(): Promise<ProcessInfo> {
+  public findIdlePromptProcess(): ProcessInfo {
     const promptProcess = this.find(
       (processInfo) =>
         processInfo.type === ProcessType.Prompt &&
@@ -1407,6 +1408,10 @@ class Processes extends Array<ProcessInfo> {
     // check if two paths are the same
 
     processesChanged();
+
+    if (this.filter((p) => p.scriptPath === '').length < 2) {
+      processes.add(ProcessType.Prompt);
+    }
 
     // const mainAbandon = kitState.ps.find(
     //   (p) => p?.scriptPath === mainScriptPath

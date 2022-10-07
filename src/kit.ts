@@ -149,11 +149,8 @@ export const runPromptProcess = async (
     }
   }
 
-  const processInfo = await processes.findIdlePromptProcess();
+  const processInfo = processes.findIdlePromptProcess();
   // Add another to the process pool when exhausted
-  setTimeout(async () => {
-    await processes.findIdlePromptProcess();
-  }, 100);
   const { pid, child } = processInfo;
 
   log.info(`${pid}: 🏎 ${promptScriptPath} `);
