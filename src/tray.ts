@@ -137,7 +137,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     if (kitState.updateDownloaded) {
       updateItems.push({
-        label: `Update Downloaded. Click to install.`,
+        label: `Update Downloaded. Click to quit and install.`,
         click: () => {
           kitState.applyUpdate = true;
         },

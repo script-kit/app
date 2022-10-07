@@ -110,6 +110,7 @@ export const configureAutoUpdate = async () => {
 
       try {
         autoUpdater.quitAndInstall();
+        forceQuit();
       } catch (e) {
         log.warn(`autoUpdater.quitAndInstall error:`, e);
 

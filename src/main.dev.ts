@@ -1024,10 +1024,15 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
 
   try {
     log.info(`Destroy all windows`);
-    // const browserWindows = BrowserWindow.getAllWindows();
-    // browserWindows.forEach((browserWindow) => {
-    //   if (!browserWindow.isDestroyed()) browserWindow?.destroy();
-    // });
+    const browserWindows = BrowserWindow.getAllWindows();
+    browserWindows.forEach((browserWindow) => {
+      try {
+        browserWindow.close();
+        browserWindow.destroy();
+      } catch (error) {
+        log.error(error);
+      }
+    });
   } catch (e) {
     log.warn(`callBeforeQuitAndInstall error`, e);
   }
