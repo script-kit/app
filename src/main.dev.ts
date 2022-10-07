@@ -958,8 +958,8 @@ const checkKit = async () => {
   await setupLog(`Update .kenv`);
   await setupScript(kitPath('setup', 'patch.js'));
 
-  await setupLog(`Indexing apps`);
-  optionalSetupScript(kitPath('setup', 'app-indexer.js'));
+  // await setupLog(`Indexing apps`);
+  // optionalSetupScript(kitPath('setup', 'app-indexer.js'));
 
   await setupLog(`Creating bins`);
   optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));

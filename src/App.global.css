@@ -489,3 +489,7 @@ code.hljs {
   @apply border dark:border;
   @apply dark:border-white border-black border-opacity-25 dark:border-opacity-25;
 }
+
+#input {
+  font-stretch: 0%;
+}
