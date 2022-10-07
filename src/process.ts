@@ -1409,10 +1409,6 @@ class Processes extends Array<ProcessInfo> {
 
     processesChanged();
 
-    if (this.filter((p) => p.scriptPath === '').length < 2) {
-      processes.add(ProcessType.Prompt);
-    }
-
     // const mainAbandon = kitState.ps.find(
     //   (p) => p?.scriptPath === mainScriptPath
     // );

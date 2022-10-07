@@ -7,6 +7,7 @@ import { app } from 'electron';
 import minimist from 'minimist';
 import log from 'electron-log';
 import path from 'path';
+import { pathExistsSync } from 'fs-extra';
 import { fork, ForkOptions } from 'child_process';
 import { homedir } from 'os';
 
@@ -37,6 +38,7 @@ app.on('second-instance', async (_event, argv) => {
   log.info('second-instance', _event, argv);
   const { _ } = minimist(argv);
   const [, , argScript, ...argArgs] = _;
+  if (!argScript || !pathExistsSync(argScript)) return;
   runPromptProcess(argScript, argArgs, {
     force: false,
     trigger: Trigger.Kit,
@@ -155,6 +157,9 @@ export const runPromptProcess = async (
 
   log.info(`${pid}: 🏎 ${promptScriptPath} `);
   processInfo.scriptPath = promptScriptPath;
+  setTimeout(() => {
+    processes.findIdlePromptProcess();
+  }, 5);
 
   const script = await findScript(promptScriptPath);
 

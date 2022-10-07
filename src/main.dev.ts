@@ -105,7 +105,6 @@ import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from './defaults';
 import { registerTrayShortcut } from './shortcuts';
-import { Trigger } from './enums';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -422,17 +421,13 @@ const ready = async () => {
     }
 
     await setupLog(``);
-    await setupDone();
+    setupDone();
 
     const isMac = os.platform() === 'darwin';
     if (isMac) startSK();
     await cacheKitScripts();
-    // await cacheMenu();
 
-    // processes.add(ProcessType.Prompt);
-    // processes.add(ProcessType.Prompt);
-    processes.add(ProcessType.Prompt);
-    processes.add(ProcessType.Prompt);
+    processes.findIdlePromptProcess();
 
     handleWidgetEvents();
 
