@@ -388,9 +388,6 @@ const ready = async () => {
     await setupLog(`Tray created`);
 
     await updateScripts();
-    kitState.scripts.forEach((script) => {
-      onScriptsChanged('ready', script.id);
-    });
     await setupWatchers();
     await setupLog(`Shortcuts Assigned`);
 

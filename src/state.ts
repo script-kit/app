@@ -82,17 +82,15 @@ export const getSchedule = () => {
 
 export const updateScripts = async () => {
   await getTimestamps(false);
-  kitState.scripts = await getScripts(false);
 };
 
 export const scriptChanged = debounce(async (filePath: string) => {
   await setScriptTimestamp(filePath);
-  kitState.scripts = await getScripts();
-}, 50);
+}, 25);
 
 export const scriptRemoved = debounce(async () => {
   kitState.scripts = await getScripts(false);
-}, 50);
+}, 25);
 
 export const cacheKitScripts = async () => {
   const kitMainPath = kitPath('main');
@@ -227,7 +225,6 @@ const initState = {
   resize: false,
   scriptPath: ``,
   resizedByChoices: false,
-  scripts: [] as Script[],
   kitScripts: [] as Script[],
   promptId: '__unset__',
   promptBounds: {

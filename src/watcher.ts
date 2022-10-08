@@ -61,7 +61,7 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
     // event === 'ready' ||
     event === 'add'
   ) {
-    log.verbose(`👀 Watcher ${event}: ${filePath}`);
+    log.info(`👀 Watcher ${event}: ${filePath}`);
     const script = await parseScript(filePath);
     shortcutScriptChanged(script);
     scheduleScriptChanged(script);
@@ -70,11 +70,10 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
     backgroundScriptChanged(script);
     buildScriptChanged(script);
     addSnippet(script);
-
-    scriptChanged(filePath);
   }
 
   if (event === 'change') {
+    scriptChanged(filePath);
     clearPromptCacheFor(filePath);
   }
 };
