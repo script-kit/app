@@ -1,13 +1,10 @@
 import schedule, { Job } from 'node-schedule';
-import { existsSync } from 'fs';
 
 import log from 'electron-log';
 import { Script } from '@johnlindquist/kit/types/core';
-import { ProcessType } from '@johnlindquist/kit/cjs/enum';
-import { kitPath, kenvPath } from '@johnlindquist/kit/cjs/utils';
+import { kitPath } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess, runScript } from './kit';
 import { online, scheduleMap } from './state';
-import { processes } from './process';
 import { Trigger } from './enums';
 
 export const cancelJob = (filePath: string) => {
@@ -15,9 +12,15 @@ export const cancelJob = (filePath: string) => {
   if (scheduleMap.has(filePath)) {
     log.info(`Unscheduling: ${filePath}`);
     const job = scheduleMap.get(filePath) as Job;
-    success = schedule.cancelJob(job.name);
-    job.cancelNext();
-    job.cancel(true);
+    if (job && job?.name) {
+      try {
+        success = schedule.cancelJob(job.name);
+        job.cancelNext();
+        job.cancel(true);
+      } catch (error) {
+        log.error(error);
+      }
+    }
     scheduleMap.delete(filePath);
   }
 
@@ -34,12 +37,16 @@ export const sleepSchedule = () => {
   // }
 
   for (const [filePath, job] of scheduleMap) {
-    const cancelled = cancelJob(filePath);
-    log.info(
-      `😴 Computer sleeping: ${
-        job.name
-      } won't run again until wake. Cancel Success? ${cancelled ? 'Yes' : 'No'}`
-    );
+    if (job && job.name) {
+      const cancelled = cancelJob(filePath);
+      log.info(
+        `😴 Computer sleeping: ${
+          job.name
+        } won't run again until wake. Cancel Success? ${
+          cancelled ? 'Yes' : 'No'
+        }`
+      );
+    }
   }
 
   scheduleMap.clear();
