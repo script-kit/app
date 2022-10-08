@@ -600,7 +600,8 @@ const cleanKit = async () => {
   log.info(`🧹 Cleaning ${kitPath()}`);
   const pathToClean = kitPath();
 
-  const keep = (file: string) => file === 'db' || file === 'node_modules';
+  const keep = (file: string) =>
+    file === 'db' || file === 'node_modules' || file === 'assets';
 
   // eslint-disable-next-line no-restricted-syntax
   for await (const file of await readdir(pathToClean)) {
