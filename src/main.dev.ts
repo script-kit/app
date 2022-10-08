@@ -1029,7 +1029,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     browserWindows.forEach((browserWindow) => {
       try {
         browserWindow.close();
-        browserWindow.destroy();
+        // browserWindow.destroy();
       } catch (error) {
         log.error(error);
       }

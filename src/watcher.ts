@@ -58,10 +58,10 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
 
   if (
     event === 'change' ||
-    event === 'ready' ||
-    (event === 'add' && !kitState.scripts.find((s) => s.filePath === filePath))
+    // event === 'ready' ||
+    event === 'add'
   ) {
-    log.verbose(`${event}: ${filePath}`);
+    log.verbose(`👀 Watcher ${event}: ${filePath}`);
     const script = await parseScript(filePath);
     shortcutScriptChanged(script);
     scheduleScriptChanged(script);
@@ -71,7 +71,7 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
     buildScriptChanged(script);
     addSnippet(script);
 
-    if (event !== 'ready') scriptChanged(filePath);
+    scriptChanged(filePath);
   }
 
   if (event === 'change') {
@@ -95,9 +95,10 @@ export const teardownWatchers = async () => {
 export const setupWatchers = async () => {
   await teardownWatchers();
 
+  log.info('--- 👀 Watching Scripts ---');
+
   watchers = startWatching(async (eventName: WatchEvent, filePath: string) => {
     if (!filePath.match(/\.(ts|js|json)$/)) return;
-    log.info(`👀 Watcher: ${eventName} ${filePath}`);
     const { base } = path.parse(filePath);
     if (base === 'app.json') {
       log.info(`app.json changed`);
