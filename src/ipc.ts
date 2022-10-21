@@ -244,7 +244,7 @@ export const startIpc = () => {
           channel === Channel.ESCAPE ||
           (channel === Channel.SHORTCUT && message.state.shortcut === 'escape')
         ) {
-          log.info({
+          log.verbose({
             submitted: message.state.submitted,
             debugging: kitState.debugging,
             pid: child.pid,

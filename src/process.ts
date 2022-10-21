@@ -1427,8 +1427,8 @@ class Processes extends Array<ProcessInfo> {
       log.info(`CLOSE`);
     });
 
-    child.on('disconnect', (hmm: any) => {
-      log.info(`DISCONNECT`, { hmm });
+    child.on('disconnect', () => {
+      log.info(`DISCONNECT`);
     });
 
     child.on('exit', (code) => {
