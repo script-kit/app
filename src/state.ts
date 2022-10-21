@@ -163,6 +163,7 @@ export type WidgetOptions = {
 };
 
 const initState = {
+  debugging: false,
   isPanel: false,
   hidden: false,
   ps: [] as Partial<ProcessInfo>[],

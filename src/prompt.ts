@@ -764,6 +764,7 @@ export const setScript = async (
   force = false
 ): Promise<'denied' | 'allowed'> => {
   // log.info(`setScript`, { script, pid });
+
   if (!force && (!script?.filePath || !pidMatch(pid, `setScript`))) {
     return 'denied';
   }
@@ -771,7 +772,8 @@ export const setScript = async (
   kitState.pid = pid;
   sendToPrompt(Channel.SET_PID, pid);
 
-  if (promptWindow?.isAlwaysOnTop()) promptWindow?.setAlwaysOnTop(false);
+  if (promptWindow?.isAlwaysOnTop() && !script?.debug)
+    promptWindow?.setAlwaysOnTop(false);
   kitState.scriptPath = script.filePath;
   kitState.hasSnippet = Boolean(script?.snippet);
   log.verbose(`setScript ${script.filePath}`);

@@ -238,15 +238,26 @@ export const startIpc = () => {
           return; // Only send once above
         }
 
-        if (child) {
-          if (child?.channel) child?.send(message);
+        // log.info(`>>>>>>>>>>>>>>>>> CHANNEL`, channel, message.state.shortcut);
+
+        if (
+          channel === Channel.ESCAPE ||
+          (channel === Channel.SHORTCUT && message.state.shortcut === 'escape')
+        ) {
+          log.info({
+            submitted: message.state.submitted,
+            debugging: kitState.debugging,
+            pid: child.pid,
+          });
+          if (message.state.submitted || kitState.debugging) {
+            kitState.debugging = false;
+            child.kill();
+            return;
+          }
         }
 
-        if (channel === Channel.ESCAPE) {
-          // log.info(message.state);
-          if (message.state.submitted) {
-            child.kill();
-          }
+        if (child) {
+          if (child?.channel) child?.send(message);
         }
       })
     );

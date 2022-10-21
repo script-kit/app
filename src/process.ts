@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
+import detect from 'detect-port';
 import untildify from 'untildify';
 import { keyboard, mouse, Key } from '@nut-tree/nut-js';
 import {
@@ -107,7 +108,7 @@ import {
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
-import { AppChannel } from './enums';
+import { AppChannel, Trigger } from './enums';
 import { pathsAreEqual } from './helpers';
 import { deleteText } from './keyboard';
 
@@ -637,8 +638,36 @@ const kitMessageMap: ChannelHandler = {
       }
     }
   }),
+  DEBUG_SCRIPT: toProcess(async (processInfo, data) => {
+    kitState.debugging = true;
+    processes.removeByPid(processInfo.child?.pid);
+
+    log.info(`DEBUG_SCRIPT`, data?.value?.filePath);
+
+    sendToPrompt(Channel.START, data?.value?.filePath);
+
+    const port = await detect(51515);
+    const pInfo = processes.add(ProcessType.Prompt, '', [], port);
+    pInfo.scriptPath = data?.value?.filePath;
+
+    log.info(`🐞 ${pInfo?.pid}: ${data?.value?.filePath} `);
+
+    await setScript(data.value, pInfo.pid, true);
+
+    // wait 1000ms for script to start
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    pInfo?.child?.send({
+      channel: Channel.VALUE_SUBMITTED,
+      input: '',
+      value: {
+        script: data?.value?.filePath,
+        args: [],
+        trigger: Trigger.App,
+      },
+    });
+  }),
   SET_SCRIPT: toProcess(async (processInfo, data) => {
-    // TODO: Handle Debug metadata
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
       const foundP = kitState.ps.find((p) => p.pid === processInfo.pid);
@@ -1208,6 +1237,7 @@ interface CreateChildInfo {
   type: ProcessType;
   scriptPath?: string;
   runArgs?: string[];
+  port?: number;
   resolve?: (data: any) => void;
   reject?: (error: any) => void;
 }
@@ -1218,6 +1248,7 @@ const createChild = ({
   type,
   scriptPath = 'kit',
   runArgs = [],
+  port = 0,
 }: CreateChildInfo) => {
   let args: string[] = [];
   if (!scriptPath) {
@@ -1243,35 +1274,59 @@ const createChild = ({
     KIT_APP_PATH: app.getAppPath(),
   };
   // console.log({ env });
-  const isWin = os.platform().startsWith('win');
+  // const isWin = os.platform().startsWith('win');
   const child = fork(entry, args, {
     silent: false,
     // ...(isWin ? {} : { execPath }),
     cwd: os.homedir(),
     env,
-    // stdio: 'pipe',
-    // execArgv: ['--inspect=51515'],
+    ...(port
+      ? {
+          stdio: 'pipe',
+          execArgv: [`--inspect=${port}`],
+        }
+      : {}),
   });
 
-  // if (child && child.stdout && child.stderr) {
-  //   log.info(`Created ${type} process`);
-  //   // child.stdout.on('data', (data) => {
-  //   //   log.info(`Child ${type} data`, data);
-  //   // });
+  if (port && child && child.stdout && child.stderr) {
+    log.info(`Created ${type} process`);
+    // child.stdout.on('data', (data) => {
+    //   log.info(`Child ${type} data`, data);
+    // });
 
-  //   child.stderr.on('data', (data) => {
-  //     log.error(`Child ${type} error`, data.toString());
-  //     const [debugUrl] = data.toString().match(/(?<=ws:\/\/).*/g) || [''];
-  //     log.info(`Debug URL: ${debugUrl}`);
+    child.once('disconnect', () => {
+      if (!child.killed) child.kill();
+    });
 
-  //     if (debugUrl) {
-  //       const devToolsUrl = `devtools://devtools/bundled/inspector.html?experiments=true&ws=${debugUrl}`;
+    child.once('exit', () => {
+      kitState.debugging = false;
+    });
 
-  //       log.info(`DevTools URL: ${devToolsUrl}`);
-  //       exec(`open -a "Google Chrome" '${devToolsUrl}'`);
-  //     }
-  //   });
-  // }
+    child.stderr.once('data', (data) => {
+      log.info(data?.toString());
+      const [debugUrl] = data.toString().match(/(?<=ws:\/\/).*/g) || [''];
+
+      if (debugUrl) {
+        kitState.ignoreBlur = true;
+        alwaysOnTop(true);
+        log.info({ debugUrl });
+        const devToolsUrl = `devtools://devtools/bundled/inspector.html?experiments=true&ws=${debugUrl}`;
+        log.info(`DevTools URL: ${devToolsUrl}`);
+
+        if (kitState.isWindows) {
+          // open url in Google Chrome on Windows
+          exec(`start chrome ${devToolsUrl}`, {
+            shell: 'cmd.exe',
+          });
+        } else {
+          // open url in Google Chrome in a new window
+          exec(`open -na "Google Chrome" '${devToolsUrl}'`, {
+            shell: 'bash',
+          });
+        }
+      }
+    });
+  }
 
   return child;
 };
@@ -1324,6 +1379,7 @@ class Processes extends Array<ProcessInfo> {
     type: ProcessType = ProcessType.Prompt,
     scriptPath = '',
     args: string[] = [],
+    port = 0,
     { resolve, reject }: ProcessHandlers = {}
   ): ProcessInfo {
     log.info(`👶 Create child ${type} process`, scriptPath, args);
@@ -1331,6 +1387,7 @@ class Processes extends Array<ProcessInfo> {
       type,
       scriptPath,
       runArgs: args,
+      port,
     });
 
     const info = {
@@ -1370,8 +1427,8 @@ class Processes extends Array<ProcessInfo> {
       log.info(`CLOSE`);
     });
 
-    child.on('disconnect', () => {
-      log.info(`DISCONNECT`);
+    child.on('disconnect', (hmm: any) => {
+      log.info(`DISCONNECT`, { hmm });
     });
 
     child.on('exit', (code) => {

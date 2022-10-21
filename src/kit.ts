@@ -25,6 +25,7 @@ import { ProcessInfo } from '@johnlindquist/kit';
 import { emitter, KitEvent } from './events';
 import { processes, removeAbandonnedMain } from './process';
 import {
+  alwaysOnTop,
   hideAppIfNoWindows,
   isVisible,
   sendToPrompt,
@@ -170,7 +171,8 @@ export const runPromptProcess = async (
   }
 
   // processes.assignScriptToProcess(promptScriptPath, pid);
-
+  alwaysOnTop(true);
+  kitState.ignoreBlur = true;
   child?.send({
     channel: Channel.VALUE_SUBMITTED,
     input: '',
