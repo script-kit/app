@@ -16,7 +16,7 @@ import {
   dialog,
   shell,
 } from 'electron';
-import os from 'os';
+import os, { constants } from 'os';
 import { remove } from 'lodash';
 
 import { subscribe } from 'valtio';
@@ -60,6 +60,7 @@ import { getLog, warn } from './logs';
 import {
   alwaysOnTop,
   appToPrompt,
+  blurPrompt,
   clearPromptCache,
   focusPrompt,
   forceFocus,
@@ -601,7 +602,7 @@ const kitMessageMap: ChannelHandler = {
     kitState.hidden = true;
     log.info(`😳 Hiding app`);
 
-    let handler = () => {
+    const handler = () => {
       log.info(`🫣 App hidden`);
       if (!child?.killed) {
         child?.send({
@@ -610,35 +611,9 @@ const kitMessageMap: ChannelHandler = {
       }
     };
 
-    // If windows, alt+tab to back to previous app
+    // If windows, force blur
     if (kitState.isWindows && kitState.promptCount) {
-      handler = async () => {
-        const activeWindows = (await import('electron-active-window')) as any;
-        const activeWindow = await activeWindows().getActiveWindow();
-        log.info({ result: activeWindow });
-        const focusPath = kitPath('bin', 'windows', 'focus.js');
-        await ensureDir(path.dirname(focusPath));
-        await ensureFile(focusPath);
-        await writeFile(
-          focusPath,
-          `
-var shell = new ActiveXObject("WScript.Shell");
-shell.AppActivate("${activeWindow.windowName}");
-        `
-        );
-
-        await execaCommand(`cscript //nologo ${focusPath}`, {
-          // use windows cmd shell
-          shell: true,
-        });
-
-        log.info(`🫣 App hidden`);
-        if (!child?.killed) {
-          child?.send({
-            channel,
-          });
-        }
-      };
+      blurPrompt();
     }
 
     if (isVisible()) {

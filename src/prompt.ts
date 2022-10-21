@@ -63,6 +63,12 @@ let unsubKey: () => void;
 
 let electronPanelWindow: any = null;
 
+export const blurPrompt = () => {
+  if (promptWindow) {
+    promptWindow.blur();
+  }
+};
+
 export const maybeHide = async (reason: string) => {
   if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
     log.verbose(`Hiding because ${reason}`);

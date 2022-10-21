@@ -21,7 +21,6 @@
     "@akiflow/electron-panel-window": "3.2.1",
     "@nut-tree/nut-js": "2.2.1",
     "chokidar": "^3.5.3",
-    "electron-active-window": "^0.0.6",
     "esbuild": "^0.15.11",
     "frontmost-app": "1.0.0",
     "glasstron": "^0.1.1",
