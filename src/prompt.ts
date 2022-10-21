@@ -29,14 +29,14 @@ import os from 'os';
 import path from 'path';
 import log from 'electron-log';
 import { debounce } from 'lodash';
-import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
+import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
-import { getPromptDb, AppDb } from '@johnlindquist/kit/cjs/db';
+import { AppDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
 import { getAssetPath } from './assets';
-import { appDb, kitState } from './state';
+import { appDb, kitState, getPromptDb } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
@@ -406,7 +406,6 @@ export const getCurrentScreenPromptCache = async (
     bounds: {},
   }
 ) => {
-  if (promptWindow?.isDestroyed()) return;
   const currentScreen = getCurrentScreenFromMouse();
   const screenId = String(currentScreen.id);
   const promptDb = await getPromptDb();
@@ -559,43 +558,20 @@ export const resize = async ({
     return;
   }
   log.verbose(`📱 Resize ${ui} from ${scriptPath}`);
+  if (promptWindow?.isDestroyed()) return;
 
-  // if ([UI.term, UI.editor, UI.drop].includes(ui)) {
-  //   log.verbose(`📱 Resize: ${ui} not resizing`);
-  //   return;
-  // }
-
-  const bounds = await getCurrentScreenPromptCache(scriptPath, {
-    ui,
-    resize: kitState.resize,
-    bounds: {},
-  });
-
-  if (!bounds) return;
-  const { width: cachedWidth, height: cachedHeight, x, y } = bounds;
   const {
     width: currentWidth,
     height: currentHeight,
+    x,
+    y,
   } = promptWindow.getBounds();
 
   const targetHeight = topHeight + mainHeight + footerHeight;
+  const maxHeight = Math.max(DEFAULT_HEIGHT, currentHeight);
 
-  // console.log({ topHeight, mainHeight, footerHeight, targetHeight });
-  // const threeFourths = getCurrentScreenFromPrompt().bounds.height * (3 / 4);
-
-  // const maxHeight = hasPanel
-  //   ? Math.round(threeFourths)
-  //   : Math.max(DEFAULT_HEIGHT, cachedHeight);
-
-  const maxHeight = Math.max(DEFAULT_HEIGHT, cachedHeight);
-
-  let width = cachedWidth;
-
+  let width = currentWidth;
   let height = Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
-
-  // if (!nullChoices && !hasPanel) {
-  //   height = Math.max(cachedHeight, DEFAULT_HEIGHT);
-  // }
 
   if (isSplash) {
     width = DEFAULT_EXPANDED_WIDTH;
@@ -714,23 +690,24 @@ export const savePromptBounds = async (
   }
 };
 
-const writePromptDb = debounce(
-  async (screenId: string, scriptPath: string, bounds: PromptBounds) => {
-    // log.info(`writePromptDb`, { screenId, scriptPath, bounds });
-    const promptDb = await getPromptDb();
+const writePromptDb = async (
+  screenId: string,
+  scriptPath: string,
+  bounds: PromptBounds
+) => {
+  // log.info(`writePromptDb`, { screenId, scriptPath, bounds });
+  const promptDb = await getPromptDb();
 
-    if (!promptDb?.screens) promptDb.screens = {};
-    if (!promptDb?.screens[screenId]) promptDb.screens[screenId] = {};
+  if (!promptDb?.screens) promptDb.screens = {};
+  if (!promptDb?.screens[screenId]) promptDb.screens[screenId] = {};
 
-    promptDb.screens[screenId][scriptPath] = bounds;
-    try {
-      await promptDb.write();
-    } catch (error) {
-      log.info(error);
-    }
-  },
-  100
-);
+  promptDb.screens[screenId][scriptPath] = bounds;
+  try {
+    await promptDb.write();
+  } catch (error) {
+    log.info(error);
+  }
+};
 
 export const hideAppIfNoWindows = (reason: string) => {
   if (promptWindow) {
@@ -915,28 +892,34 @@ export const setPromptData = async (promptData: PromptData) => {
   if (boundsCheck) clearTimeout(boundsCheck);
   boundsCheck = setTimeout(async () => {
     const currentBounds = promptWindow?.getBounds();
+    const currentDisplayBounds = getCurrentScreenFromMouse().bounds;
 
-    const displays = screen.getAllDisplays();
+    const minX = currentDisplayBounds.x;
+    const minY = currentDisplayBounds.y;
+    const maxX = currentDisplayBounds.x + currentDisplayBounds.width;
+    const maxY = currentDisplayBounds.y + currentDisplayBounds.height;
 
-    const minX = displays.reduce((min: number, display) => {
-      const m = min === 0 ? display.bounds.x : min;
-      return Math.min(m, display.bounds.x);
-    }, 0);
+    // const displays = screen.getAllDisplays();
 
-    const maxX = displays.reduce((max: number, display) => {
-      const m = max === 0 ? display.bounds.x + display.bounds.width : max;
-      return Math.max(m, display.bounds.x + display.bounds.width);
-    }, 0);
+    // const minX = displays.reduce((min: number, display) => {
+    //   const m = min === 0 ? display.bounds.x : min;
+    //   return Math.min(m, display.bounds.x);
+    // }, 0);
 
-    const minY = displays.reduce((min: number, display) => {
-      const m = min === 0 ? display.bounds.y : min;
-      return Math.min(m, display.bounds.y);
-    }, 0);
+    // const maxX = displays.reduce((max: number, display) => {
+    //   const m = max === 0 ? display.bounds.x + display.bounds.width : max;
+    //   return Math.max(m, display.bounds.x + display.bounds.width);
+    // }, 0);
 
-    const maxY = displays.reduce((max: number, display) => {
-      const m = max === 0 ? display.bounds.y + display.bounds.height : max;
-      return Math.max(m, display.bounds.y + display.bounds.height);
-    }, 0);
+    // const minY = displays.reduce((min: number, display) => {
+    //   const m = min === 0 ? display.bounds.y : min;
+    //   return Math.min(m, display.bounds.y);
+    // }, 0);
+
+    // const maxY = displays.reduce((max: number, display) => {
+    //   const m = max === 0 ? display.bounds.y + display.bounds.height : max;
+    //   return Math.max(m, display.bounds.y + display.bounds.height);
+    // }, 0);
 
     // log.info(`↖ BOUNDS:`, {
     //   bounds: currentBounds,
@@ -992,6 +975,26 @@ export const destroyPromptWindow = () => {
   }
 };
 
+export const isInDirectory = (filePath: string, dir: string) => {
+  const relative = path.relative(dir, filePath);
+  return !relative.startsWith(`..`) && !path.isAbsolute(relative);
+};
+
+export const isKitScript = (scriptPath: string) => {
+  // if scriptPath is not equal to mainScriptPath, return false
+  if (path.relative(scriptPath, mainScriptPath) === '') {
+    log.info(`>>>> Main script`);
+    return false;
+  }
+  if (isInDirectory(scriptPath, kitPath())) {
+    log.info(`>>>> Kit script`);
+    return true;
+  }
+
+  log.info(`>>>> Not kit script`);
+  return false;
+};
+
 export const onHideOnce = (fn: () => void) => {
   let id: null | NodeJS.Timeout = null;
   if (promptWindow) {
@@ -1021,6 +1024,7 @@ subscribeKey(kitState, 'promptId', async () => {
   // )
   //   return;
 
+  if (promptWindow?.isDestroyed()) return;
   const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
     ui: kitState.promptUI,
     resize: kitState.resize,
@@ -1044,6 +1048,7 @@ subscribeKey(kitState, 'promptId', async () => {
   }
 
   log.info(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
+  // if (isKitScript(kitState.scriptPath)) return;
   promptWindow?.setBounds(
     bounds,
     promptWindow?.isVisible() && kitState.promptCount > 1
@@ -1068,11 +1073,15 @@ subscribeKey(kitState, 'scriptPath', async () => {
     return;
   }
 
+  // if (isKitScript(kitState.scriptPath)) return;
+
   if (kitState.scriptPath && !promptWindow?.isVisible()) {
     log.info(`📄 scriptPath changed: ${kitState.scriptPath}`);
+    if (promptWindow?.isDestroyed()) return;
     const bounds = await getCurrentScreenPromptCache(kitState.scriptPath);
 
     log.verbose(`↖ Bounds: Script ${kitState.promptUI} ui`, bounds);
+
     promptWindow.setBounds(
       bounds,
       promptWindow?.isVisible() && kitState.promptCount > 1

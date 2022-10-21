@@ -18,6 +18,7 @@ import {
   getScripts,
   setScriptTimestamp,
   getTimestamps,
+  getPromptDb as getKitPromptDb,
 } from '@johnlindquist/kit/cjs/db';
 
 import {
@@ -315,15 +316,17 @@ subscribeKey(kitState, 'notifyAuthFail', (notifyAuthFail) => {
   }
 });
 
+let hideIntervalId: NodeJS.Timeout | null = null;
+
 export const hideDock = debounce(() => {
   if (!kitState.isMac) return;
   if (kitState.devToolsCount > 0) return;
   if (kitState.promptCount > 0) return;
   if (widgetState.widgets.length) return;
-  if (app?.dock.isVisible()) {
-    app?.dock?.setIcon(getAssetPath('icon.png'));
-    app?.dock?.hide();
-  }
+
+  app?.dock?.setIcon(getAssetPath('icon.png'));
+  app?.dock?.hide();
+  if (hideIntervalId) clearInterval(hideIntervalId);
 }, 200);
 
 export const showDock = () => {
@@ -350,6 +353,12 @@ export const showDock = () => {
       ])
     );
     app?.dock?.setIcon(getAssetPath('icon.png'));
+
+    if (hideIntervalId) clearInterval(hideIntervalId);
+
+    hideIntervalId = setInterval(() => {
+      hideDock();
+    }, 1000);
   }
 };
 
@@ -417,4 +426,18 @@ export const forceQuit = () => {
       log.error(e);
     }
   }, 100);
+};
+
+let _promptDb: any = null;
+
+export const getPromptDb: typeof getKitPromptDb = async () => {
+  if (!_promptDb) {
+    const promptDb = await getKitPromptDb();
+    _promptDb = promptDb;
+    _promptDb.write = debounce(async () => {
+      await promptDb.write();
+    }, 100);
+  }
+
+  return _promptDb;
 };

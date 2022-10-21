@@ -1366,7 +1366,14 @@ export const topRefAtom = atom<null | HTMLDivElement>(null);
 export const _description = atom<string>('');
 export const logoAtom = atom<string>('');
 export const nameAtom = atom<string>('');
-export const enterAtom = atom<string>('');
+
+const _enterAtom = atom<string>('');
+export const enterAtom = atom(
+  (g) => g(_enterAtom),
+  debounce((g, s, a: string) => {
+    s(_enterAtom, a);
+  }, 100)
+);
 export const loadingAtom = atom(
   (g) => g(loading),
   (g, s, a: boolean) => {
@@ -1557,6 +1564,7 @@ export const heightChangedAtom = atom<number>(0);
 export const enterButtonNameAtom = atom<string>((g) => {
   const ui = g(uiAtom);
   if (ui === UI.splash) return '';
+  if (ui === UI.term) return '';
 
   const focusedChoice = g(focusedChoiceAtom);
   if (focusedChoice?.enter) return focusedChoice.enter;

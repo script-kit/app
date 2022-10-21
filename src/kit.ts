@@ -157,9 +157,6 @@ export const runPromptProcess = async (
 
   log.info(`${pid}: 🏎 ${promptScriptPath} `);
   processInfo.scriptPath = promptScriptPath;
-  setTimeout(() => {
-    processes.findIdlePromptProcess();
-  }, 5);
 
   const script = await findScript(promptScriptPath);
 

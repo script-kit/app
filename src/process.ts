@@ -27,7 +27,7 @@ import url from 'url';
 import sizeOf from 'image-size';
 import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { fork } from 'child_process';
+import { exec, fork } from 'child_process';
 import {
   Channel,
   Mode,
@@ -54,6 +54,8 @@ import {
   mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
+import { execaCommand } from 'execa';
+import { ensureDir, ensureFile } from 'fs-extra';
 import { getLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -599,16 +601,7 @@ const kitMessageMap: ChannelHandler = {
     kitState.hidden = true;
     log.info(`😳 Hiding app`);
 
-    // If windows, alt+tab to back to previous app
-    if (kitState.isWindows && kitState.promptCount) {
-      await keyboard.pressKey(Key.LeftAlt);
-      await keyboard.pressKey(Key.Tab);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      await keyboard.releaseKey(Key.Tab);
-      await keyboard.releaseKey(Key.LeftAlt);
-    }
-
-    const handler = () => {
+    let handler = () => {
       log.info(`🫣 App hidden`);
       if (!child?.killed) {
         child?.send({
@@ -616,6 +609,37 @@ const kitMessageMap: ChannelHandler = {
         });
       }
     };
+
+    // If windows, alt+tab to back to previous app
+    if (kitState.isWindows && kitState.promptCount) {
+      handler = async () => {
+        const activeWindows = (await import('electron-active-window')) as any;
+        const activeWindow = await activeWindows().getActiveWindow();
+        log.info({ result: activeWindow });
+        const focusPath = kitPath('bin', 'windows', 'focus.js');
+        await ensureDir(path.dirname(focusPath));
+        await ensureFile(focusPath);
+        await writeFile(
+          focusPath,
+          `
+var shell = new ActiveXObject("WScript.Shell");
+shell.AppActivate("${activeWindow.windowName}");
+        `
+        );
+
+        await execaCommand(`cscript //nologo ${focusPath}`, {
+          // use windows cmd shell
+          shell: true,
+        });
+
+        log.info(`🫣 App hidden`);
+        if (!child?.killed) {
+          child?.send({
+            channel,
+          });
+        }
+      };
+    }
 
     if (isVisible()) {
       onHideOnce(handler);
@@ -639,6 +663,7 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
   SET_SCRIPT: toProcess(async (processInfo, data) => {
+    // TODO: Handle Debug metadata
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
       const foundP = kitState.ps.find((p) => p.pid === processInfo.pid);
@@ -1246,11 +1271,32 @@ const createChild = ({
   const isWin = os.platform().startsWith('win');
   const child = fork(entry, args, {
     silent: false,
-    // stdio: 'inherit',
     // ...(isWin ? {} : { execPath }),
     cwd: os.homedir(),
     env,
+    // stdio: 'pipe',
+    // execArgv: ['--inspect=51515'],
   });
+
+  // if (child && child.stdout && child.stderr) {
+  //   log.info(`Created ${type} process`);
+  //   // child.stdout.on('data', (data) => {
+  //   //   log.info(`Child ${type} data`, data);
+  //   // });
+
+  //   child.stderr.on('data', (data) => {
+  //     log.error(`Child ${type} error`, data.toString());
+  //     const [debugUrl] = data.toString().match(/(?<=ws:\/\/).*/g) || [''];
+  //     log.info(`Debug URL: ${debugUrl}`);
+
+  //     if (debugUrl) {
+  //       const devToolsUrl = `devtools://devtools/bundled/inspector.html?experiments=true&ws=${debugUrl}`;
+
+  //       log.info(`DevTools URL: ${devToolsUrl}`);
+  //       exec(`open -a "Google Chrome" '${devToolsUrl}'`);
+  //     }
+  //   });
+  // }
 
   return child;
 };
@@ -1265,6 +1311,27 @@ interface ProcessHandlers {
 const processesChanged = () => {
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
   appToPrompt(AppChannel.PROCESSES, pinfos);
+};
+
+const ensureTwoIdleProcesses = () => {
+  setTimeout(() => {
+    const idles = processes
+      .getAllProcessInfo()
+      .filter(
+        (processInfo) =>
+          processInfo.type === ProcessType.Prompt &&
+          processInfo?.scriptPath === ''
+      );
+
+    if (idles.length === 0) {
+      processes.add(ProcessType.Prompt);
+      processes.add(ProcessType.Prompt);
+    }
+
+    if (idles.length === 1) {
+      processes.add(ProcessType.Prompt);
+    }
+  }, 100);
 };
 
 class Processes extends Array<ProcessInfo> {
@@ -1366,15 +1433,16 @@ class Processes extends Array<ProcessInfo> {
   }
 
   public findIdlePromptProcess(): ProcessInfo {
-    const promptProcess = this.find(
+    const idles = this.filter(
       (processInfo) =>
         processInfo.type === ProcessType.Prompt &&
         processInfo?.scriptPath === ''
     );
 
-    if (promptProcess) {
-      log.info(`Found idle process:`, promptProcess.pid);
-      return promptProcess;
+    ensureTwoIdleProcesses();
+
+    if (idles.length) {
+      return idles[0];
     }
 
     return processes.add(ProcessType.Prompt);

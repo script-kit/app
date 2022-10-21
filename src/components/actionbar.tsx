@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import { useAtomValue, useAtom } from 'jotai';
+import { useAtomValue, useAtom, useSetAtom } from 'jotai';
 import { loadable } from 'jotai/utils';
 import { motion } from 'framer-motion';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
@@ -19,7 +19,6 @@ import {
   enterButtonNameAtom,
   enterButtonDisabledAtom,
   createAssetAtom,
-  enterAtom,
 } from '../jotai';
 
 type Action = {
@@ -33,7 +32,7 @@ type Action = {
   arrow?: string;
 };
 
-const transition = { duration: 0.2, ease: 'easeInOut' };
+const transition = { duration: 0.0, ease: 'easeInOut' };
 
 export function OptionsButton() {
   const [choices] = useAtom(_choices);
@@ -41,8 +40,6 @@ export function OptionsButton() {
   const [index] = useAtom(_index);
   const [channel] = useAtom(channelAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
-  const [ui] = useAtom(uiAtom);
-  const enter = useAtomValue(enterAtom);
 
   const onClick = useCallback(() => {
     if (flagValue) {
@@ -135,12 +132,9 @@ export const formatShortcut = (shortcut: string) => {
 };
 
 export function ActionButton(action: Action) {
-  const [choices] = useAtom(_choices);
-  const [input] = useAtom(inputAtom);
-  const [index] = useAtom(_index);
-  const [ui] = useAtom(uiAtom);
-  const [, sendShortcut] = useAtom(sendShortcutAtom);
-  const [, setFlag] = useAtom(_flag);
+  const ui = useAtomValue(uiAtom);
+  const sendShortcut = useSetAtom(sendShortcutAtom);
+  const setFlag = useSetAtom(_flag);
 
   const onClick = useCallback(
     (event) => {
@@ -155,7 +149,6 @@ export function ActionButton(action: Action) {
           el.click();
         }
       } else {
-        console.log(action);
         if (action?.flag) setFlag(action.flag);
         sendShortcut(action.value);
       }
@@ -189,7 +182,7 @@ export function ActionButton(action: Action) {
   brightness-100
   hover:bg-opacity-10 dark:hover:bg-opacity-10
   hover:text-primary-dark dark:hover:text-primary-light
-  transition-all duration-200 ease-in-out
+  transition-all duration-500 ease-in-out
   `
   }
   `}

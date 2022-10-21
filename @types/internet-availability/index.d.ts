@@ -6,3 +6,9 @@ declare module 'internet-avaiable' {
   }): Promise<boolean>;
   export default internetAvailable;
 }
+
+declare module 'windows-active-process' {
+  function getActiveProcessName(): string;
+}
+
+declare module 'electron-active-window' {}
