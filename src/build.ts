@@ -36,7 +36,7 @@ export const buildTSScript = async (scriptPath: string, outPath = '') => {
   }
 
   const outfile = outPath || determineOutFile(scriptPath);
-  const { build } = await import(kitPath('node_modules', 'esbuild'));
+  const { build } = await import('esbuild');
   await build({
     entryPoints: [scriptPath],
     outfile,
