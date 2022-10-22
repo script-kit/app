@@ -264,12 +264,6 @@ export const startIpc = () => {
       })
     );
   }
-  // ipcMain.on(
-  //   Channel.SET_PREVIEW_ENABLED,
-  //   async (event, previewEnabled: boolean) => {
-  //     setPreviewEnabled(previewEnabled);
-  //   }
-  // );
 
   ipcMain.on(
     AppChannel.DRAG_FILE_PATH,
