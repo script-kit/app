@@ -1,6 +1,5 @@
 import log from 'electron-log';
 import path from 'path';
-import { build } from 'esbuild';
 import { debounce } from 'lodash';
 import { readdir } from 'fs/promises';
 import { Script } from '@johnlindquist/kit';
@@ -37,6 +36,7 @@ export const buildTSScript = async (scriptPath: string, outPath = '') => {
   }
 
   const outfile = outPath || determineOutFile(scriptPath);
+  const { build } = await import(kitPath('node_modules', 'esbuild'));
   await build({
     entryPoints: [scriptPath],
     outfile,

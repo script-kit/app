@@ -209,6 +209,11 @@ const newFromProtocol = async (u: string) => {
     if (pathname === 'snippet' || url.host === 'snippet') {
       await cliFromParams('snippet', url.searchParams);
     }
+
+    if (pathname === 'kenv') {
+      const repo = url.searchParams.get('repo');
+      await runPromptProcess(kitPath('cli', 'kenv-clone.js'), [repo || '']);
+    }
   }
 };
 
