@@ -240,6 +240,8 @@ export const startIpc = () => {
 
         // log.info(`>>>>>>>>>>>>>>>>> CHANNEL`, channel, message.state.shortcut);
 
+        if (channel === Channel.BLUR && kitState.debugging) return;
+
         if (
           channel === Channel.ESCAPE ||
           (channel === Channel.SHORTCUT && message.state.shortcut === 'escape')

@@ -1302,7 +1302,7 @@ const createChild = ({
 
     child.once('exit', () => {
       kitState.debugging = false;
-      if (win) {
+      if (win && !win.isDestroyed()) {
         win.close();
       }
     });

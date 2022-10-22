@@ -70,6 +70,7 @@ export const blurPrompt = () => {
 };
 
 export const maybeHide = async (reason: string) => {
+  if (kitState.debugging) return;
   if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
     log.verbose(`Hiding because ${reason}`);
     if (
