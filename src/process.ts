@@ -97,7 +97,7 @@ import {
 } from './state';
 
 import { emitter, KitEvent } from './events';
-import { show, showDevTools, showWidget } from './show';
+import { show, showDevTools, showInspector, showWidget } from './show';
 
 import { getVersion } from './version';
 import {
@@ -1288,6 +1288,8 @@ const createChild = ({
       : {}),
   });
 
+  let win: BrowserWindow | null = null;
+
   if (port && child && child.stdout && child.stderr) {
     log.info(`Created ${type} process`);
     // child.stdout.on('data', (data) => {
@@ -1300,9 +1302,12 @@ const createChild = ({
 
     child.once('exit', () => {
       kitState.debugging = false;
+      if (win) {
+        win.close();
+      }
     });
 
-    child.stderr.once('data', (data) => {
+    child.stderr.once('data', async (data) => {
       log.info(data?.toString());
       const [debugUrl] = data.toString().match(/(?<=ws:\/\/).*/g) || [''];
 
@@ -1313,17 +1318,7 @@ const createChild = ({
         const devToolsUrl = `devtools://devtools/bundled/inspector.html?experiments=true&ws=${debugUrl}`;
         log.info(`DevTools URL: ${devToolsUrl}`);
 
-        if (kitState.isWindows) {
-          // open url in Google Chrome on Windows
-          exec(`start chrome ${devToolsUrl}`, {
-            shell: 'cmd.exe',
-          });
-        } else {
-          // open url in Google Chrome in a new window
-          exec(`open -na "Google Chrome" '${devToolsUrl}'`, {
-            shell: 'bash',
-          });
-        }
+        win = showInspector(devToolsUrl);
       }
     });
   }

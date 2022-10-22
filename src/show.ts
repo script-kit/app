@@ -275,7 +275,23 @@ const getTopRightCurrentScreen = (
   };
 };
 
-export const showDevTools = async (value: any) => {
+export const showInspector = (url: string) => {
+  const win = new BrowserWindow({
+    width: 1024,
+    height: 768,
+    center: true,
+    webPreferences: {
+      zoomFactor: 1,
+      devTools: true,
+    },
+  });
+
+  win.loadURL(url);
+
+  return win;
+};
+
+export const showDevTools = async (value: any, url = '') => {
   const center = getCenterOnCurrentScreen({ width: 800, height: 600 });
 
   const devToolsWindow = new BrowserWindow({
