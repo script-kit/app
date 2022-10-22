@@ -1,15 +1,16 @@
 /* eslint-disable no-restricted-syntax */
 import log from 'electron-log';
-import { assign } from 'lodash';
+import { assign, debounce } from 'lodash';
 import path from 'path';
 import { existsSync } from 'fs';
 
 import { rm } from 'fs/promises';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 
-import { parseScript } from '@johnlindquist/kit/cjs/utils';
+import { parseScript, kitPath, kenvPath } from '@johnlindquist/kit/cjs/utils';
 
 import { FSWatcher } from 'chokidar';
+import { ChildProcess, fork } from 'child_process';
 import {
   unlinkShortcuts,
   updateMainShortcut,
@@ -21,7 +22,6 @@ import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
 import { appDb, kitState, scriptChanged, scriptRemoved } from './state';
-import { buildScriptChanged } from './build';
 import { addSnippet, removeSnippet } from './tick';
 import { clearPromptCacheFor } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
@@ -51,6 +51,18 @@ const unlink = (filePath: string) => {
   scriptRemoved();
 };
 
+const buildScriptChanged = debounce((filePath: string) => {
+  if (filePath.endsWith('.ts')) {
+    log.info(`🏗️ Build ${filePath}`);
+    fork(kitPath('build', 'ts.js'), [filePath], {
+      env: assign({}, process.env, {
+        KIT: kitPath(),
+        KENV: kenvPath(),
+      }),
+    });
+  }
+}, 150);
+
 export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
   if (event === 'unlink') {
     unlink(filePath);
@@ -68,7 +80,7 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
     systemScriptChanged(script);
     watchScriptChanged(script);
     backgroundScriptChanged(script);
-    buildScriptChanged(script);
+    buildScriptChanged(script?.filePath);
     addSnippet(script);
   }
 

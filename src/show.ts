@@ -445,6 +445,7 @@ export const showWidget = async (
     title: 'Script Kit Widget',
     frame: false,
     transparent: true,
+    titleBarStyle: 'customButtonsOnHover',
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
