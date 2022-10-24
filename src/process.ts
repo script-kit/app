@@ -597,6 +597,12 @@ const kitMessageMap: ChannelHandler = {
     child?.send({ channel, processes });
   }),
 
+  BLUR_APP: toProcess(({ child }, { channel }) => {
+    blurPrompt();
+
+    child?.send({ channel });
+  }),
+
   HIDE_APP: toProcess(async ({ child, scriptPath }, { channel }) => {
     if (kitState.isMac && app?.dock) app?.dock?.hide();
 
@@ -613,7 +619,7 @@ const kitMessageMap: ChannelHandler = {
     };
 
     // If windows, force blur
-    if (kitState.isWindows && kitState.promptCount) {
+    if (kitState.isWindows) {
       blurPrompt();
     }
 

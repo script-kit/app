@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable no-nested-ternary */
 import React, { useCallback } from 'react';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { XIcon } from '@heroicons/react/outline';
 import { AnimatePresence } from 'framer-motion';
 import {
@@ -16,8 +16,57 @@ import {
   isMainScriptAtom,
   runProcessesAtom,
   loadingAtom,
+  kitStateAtom,
+  applyUpdateAtom,
 } from '../jotai';
 import TopBar from './TopBar';
+
+const TopLeftButton = () => {
+  const name = useAtomValue(nameAtom);
+
+  const isMainScript = useAtomValue(isMainScriptAtom);
+  const processes = useAtomValue(processesAtom);
+
+  const runProcesses = useAtomValue(runProcessesAtom);
+  const applyUpdate = useAtomValue(applyUpdateAtom);
+  const kitState = useAtomValue(kitStateAtom);
+
+  const onProcessButtonClick = useCallback(() => {
+    runProcesses();
+  }, [processes, runProcesses]);
+
+  const onUpdateButtonClick = useCallback(() => {
+    applyUpdate();
+  }, [applyUpdate]);
+
+  if (kitState.updateDownloaded) {
+    return (
+      <button
+        type="button"
+        onClick={onUpdateButtonClick}
+        className="cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold primary-dark text-primary-dark bg-primary-dark dark:bg-primary-light dark:text-primary-light rounded-md bg-opacity-10 dark:bg-opacity-20 hover:bg-opacity-30 dark:hover:bg-opacity-50 "
+      >
+        <span className="pl-2">Update</span>
+        <i className="gg-play-button -ml-1.5 scale-75" some-aria="" />
+      </button>
+    );
+  }
+
+  if (isMainScript && processes?.length > 1) {
+    return (
+      <button
+        type="button"
+        onClick={onProcessButtonClick}
+        className="cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold primary-dark text-primary-dark bg-primary-dark dark:bg-primary-light dark:text-primary-light rounded-md bg-opacity-10 dark:bg-opacity-20 hover:bg-opacity-30 dark:hover:bg-opacity-50 "
+      >
+        <span className="pl-2">{processes.length - 1}</span>
+        <i className="gg-play-button -ml-1.5 scale-75" some-aria="" />
+      </button>
+    );
+  }
+
+  return <span className="truncate">{name}</span>;
+};
 
 export default function Header() {
   const [script] = useAtom(scriptAtom);
@@ -28,17 +77,12 @@ export default function Header() {
   const [name] = useAtom(nameAtom);
   const [processes] = useAtom(processesAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
-  const [runProcesses] = useAtom(runProcessesAtom);
   const [loading] = useAtom(loadingAtom);
   const [open] = useAtom(openAtom);
 
   const onXClick = useCallback(() => {
     setOpen(false);
   }, [setOpen]);
-
-  const onProcessButtonClick = useCallback(() => {
-    runProcesses();
-  }, [processes, runProcesses]);
 
   return (
     <div
@@ -77,18 +121,7 @@ export default function Header() {
           )}
         </div>
         <span className="flex flex-row items-end pl-1 text-right">
-          {isMainScript && processes?.length > 1 ? (
-            <button
-              type="button"
-              onClick={onProcessButtonClick}
-              className="cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold primary-dark text-primary-dark bg-primary-dark dark:bg-primary-light dark:text-primary-light rounded-md bg-opacity-10 dark:bg-opacity-20 hover:bg-opacity-30 dark:hover:bg-opacity-50 "
-            >
-              <span className="pl-2">{processes.length - 1}</span>
-              <i className="gg-play-button -ml-1.5 scale-75" some-aria="" />
-            </button>
-          ) : (
-            <span className="truncate">{name}</span>
-          )}
+          <TopLeftButton />
 
           {script?.twitter && (
             <span>

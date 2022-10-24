@@ -108,6 +108,7 @@ import {
   audioAtom,
   speechAtom,
   enterAtom,
+  kitStateAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -227,6 +228,7 @@ export default function App() {
   const setResizing = useSetAtom(resizingAtom);
   const setAudio = useSetAtom(audioAtom);
   const setSpeak = useSetAtom(speechAtom);
+  const setKitState = useSetAtom(kitStateAtom);
 
   useShortcuts();
   useEnter();
@@ -335,10 +337,18 @@ export default function App() {
       }
     });
 
+    const kitStateCallback = (_, data) => {
+      setKitState(data);
+    };
+
+    ipcRenderer.on(AppChannel.KIT_STATE, kitStateCallback);
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
       });
+
+      ipcRenderer.off(AppChannel.KIT_STATE, kitStateCallback);
     };
   }, [messageMap]);
 
@@ -461,7 +471,7 @@ export default function App() {
             </header>
             <main
               ref={mainRef}
-              className="flex-1 min-h-0 overflow-y-hidden w-full"
+              className="flex-1 min-h-1 overflow-y-hidden w-full"
               onPaste={onPaste}
               onDrop={(event) => {
                 console.log(`🎉 drop`);

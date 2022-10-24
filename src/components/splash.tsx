@@ -103,10 +103,10 @@ function Aside() {
         <h1 className="text-2xl font-semibold mb-1">
           {progress === 100 ? 'Script Kit Ready' : 'Preparing Kit...'}
         </h1>
-        <h3 className="font-normal text-sm opacity-70 text-center leading-tight">
+        <h3 className="font-normal text-sm opacity-70 text-center leading-tight mx-6">
           {header}
         </h3>
-        <h3 className="font-normal text-sm opacity-70 text-center leading-tight">
+        <h3 className="font-normal text-sm opacity-70 text-center leading-tight mx-6">
           {body}
         </h3>
         {progress === 100 && (

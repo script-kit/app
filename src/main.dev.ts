@@ -644,6 +644,7 @@ const checkKit = async () => {
       KENV: kenvPath(),
       PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
     },
+    stdio: 'pipe',
   };
 
   log.info(`🧐 Checking ${KIT}`, options);
@@ -889,9 +890,18 @@ const checkKit = async () => {
       const npmResult = await new Promise((resolve, reject) => {
         const child = spawn(
           knodePath('bin', 'npm'),
-          [`i`, `--production`, `--no-progress`, `--quiet`],
+          [`i`, `--production`, `--loglevel`, `verbose`],
           options
         );
+
+        child.stdout.on('data', (data) => {
+          sendSplashBody(data.toString());
+        });
+
+        child.stderr.on('data', (data) => {
+          sendSplashBody(data.toString());
+        });
+
         child.on('message', (data: any) => {
           sendSplashBody(data.toString());
         });
@@ -902,6 +912,7 @@ const checkKit = async () => {
           reject(error);
         });
       });
+
       log.info({ npmResult });
     }
 

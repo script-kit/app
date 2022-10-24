@@ -873,42 +873,22 @@ export const topHeightAtom = atom(
   }
 );
 
-let flickerGuard: any = null;
 export const mainHeightAtom = atom(
   (g) => g(mainHeight),
   (g, s, a: number) => {
-    if (flickerGuard) {
-      clearTimeout(flickerGuard);
-    }
-
     const prevHeight = g(mainHeight);
     if (a === prevHeight) return;
 
-    // if (Math.abs(a - prevHeight) > 2) {
-
     const nextMainHeight = a < 0 ? 0 : a;
-    const itemHeight = g(itemHeightAtom);
-    if (nextMainHeight < itemHeight) {
-      flickerGuard = setTimeout(() => {
-        // console.log(`flicker guard: ${a} ${nextMainHeight}`);
-        if (
-          nextMainHeight < itemHeight &&
-          (g(_panelHTML) !== '' || g(_panelHTML) === closedDiv)
-        )
-          return;
 
-        s(mainHeight, nextMainHeight);
-
-        resize(g, s, 'MAIN_HEIGHT');
-      }, 50);
-    } else {
-      // console.log(`resize: MAIN_HEIGHT`);
-      s(mainHeight, nextMainHeight);
-
-      resize(g, s, 'MAIN_HEIGHT');
+    if (nextMainHeight === 0) {
+      if (g(panelHTMLAtom) !== '') return;
+      if (g(scoredChoices).length > 0) return;
     }
+
+    s(mainHeight, nextMainHeight);
+    resize(g, s, 'MAIN_HEIGHT');
   }
-  // }
 );
 
 const checkIfSubmitIsDrop = (checkValue: any) => {
@@ -1440,6 +1420,10 @@ export const runProcessesAtom = atom(() => () => {
   ipcRenderer.send(AppChannel.RUN_PROCESSES_SCRIPT);
 });
 
+export const applyUpdateAtom = atom(() => () => {
+  ipcRenderer.send(AppChannel.APPLY_UPDATE);
+});
+
 export const valueInvalidAtom = atom(null, (g, s, a: string) => {
   if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
   s(processingAtom, false);
@@ -1670,5 +1654,21 @@ export const speechAtom = atom(
         voices.find((v) => v.name === a?.name) || synth.getVoices()[0];
       synth.speak(utterThis);
     }
+  }
+);
+
+export const updateAvailableAtom = atom(false);
+
+export const _kitStateAtom = atom({
+  updateDownloaded: false,
+});
+
+export const kitStateAtom = atom(
+  (g) => g(_kitStateAtom),
+  (g, s, a: any) => {
+    s(_kitStateAtom, {
+      ...g(_kitStateAtom),
+      ...a,
+    });
   }
 );

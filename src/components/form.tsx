@@ -11,7 +11,13 @@ import { useAtom } from 'jotai';
 import { formDataAtom, formHTMLAtom, submitValueAtom } from '../jotai';
 import { useObserveMainHeight } from '../hooks';
 
-export default function Form({ height }: { height: number }) {
+export default function Form({
+  widght,
+  height,
+}: {
+  widght: number;
+  height: number;
+}) {
   // useEscape();
 
   const formRef = useObserveMainHeight<HTMLFormElement>('.wrapper > div');

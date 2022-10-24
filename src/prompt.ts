@@ -89,7 +89,8 @@ export const maybeHide = async (reason: string) => {
 
 export const beforePromptQuit = async () => {
   log.info('Before prompt quit');
-  promptWindow?.hide();
+  if (promptWindow && !promptWindow?.isDestroyed()) promptWindow?.hide();
+
   return new Promise((resolve) => {
     setTimeout(async () => {
       if (kitState.isMac) {
@@ -98,8 +99,11 @@ export const beforePromptQuit = async () => {
           show: false,
         });
         electronPanelWindow.makeKeyWindow(dummy);
-        electronPanelWindow.makeWindow(promptWindow);
-        promptWindow?.close();
+
+        if (promptWindow && !promptWindow?.isDestroyed()) {
+          electronPanelWindow.makeWindow(promptWindow);
+          promptWindow?.close();
+        }
         resolve(true);
       }
     });
@@ -978,7 +982,7 @@ export const getPromptBounds = () => promptWindow.getBounds();
 export const getMainPrompt = () => promptWindow;
 
 export const destroyPromptWindow = () => {
-  if (promptWindow) {
+  if (promptWindow && !promptWindow?.isDestroyed()) {
     hideAppIfNoWindows(`__destroy__`);
     promptWindow.destroy();
   }
@@ -1103,6 +1107,20 @@ subscribeKey(kitState, 'scriptPath', async () => {
 subscribeKey(appDb, 'appearance', () => {
   log.info(`🎨 Appearance changed:`, appDb.appearance);
   sendToPrompt(Channel.SET_APPEARANCE, appDb.appearance as AppDb['appearance']);
+});
+
+const setKitStateAtom = (partialState: Partial<typeof kitState>) => {
+  if (
+    promptWindow &&
+    !promptWindow.isDestroyed() &&
+    promptWindow?.webContents
+  ) {
+    promptWindow?.webContents.send(AppChannel.KIT_STATE, partialState);
+  }
+};
+
+subscribeKey(kitState, 'updateDownloaded', (updateDownloaded) => {
+  setKitStateAtom({ updateDownloaded });
 });
 
 export const clearPromptCacheFor = async (scriptPath: string) => {

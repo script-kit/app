@@ -22,6 +22,8 @@ export enum AppChannel {
   RUN_PROCESSES_SCRIPT = 'RUN_PROCESSES_SCRIPT',
   LOG = 'LOG',
   MAIN_SCRIPT = 'MAIN_SCRIPT',
+  KIT_STATE = 'STATE',
+  APPLY_UPDATE = 'APPLY_UPDATE',
 }
 
 export enum Trigger {
