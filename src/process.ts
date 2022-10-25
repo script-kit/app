@@ -1327,6 +1327,9 @@ const createChild = ({
         log.info(`DevTools URL: ${devToolsUrl}`);
 
         win = showInspector(devToolsUrl);
+        setTimeout(() => {
+          win?.setAlwaysOnTop(false);
+        }, 500);
       }
     });
   }

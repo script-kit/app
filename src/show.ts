@@ -284,7 +284,12 @@ export const showInspector = (url: string) => {
     webPreferences: {
       zoomFactor: 1,
       devTools: true,
+      sandbox: false,
+      nodeIntegration: true,
+      contextIsolation: false,
+      webSecurity: false,
     },
+    alwaysOnTop: true,
   });
 
   win.loadURL(url);
