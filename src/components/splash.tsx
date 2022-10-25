@@ -106,7 +106,7 @@ function Aside() {
         <h3 className="font-normal text-sm opacity-70 text-center leading-tight mx-6">
           {header}
         </h3>
-        <h3 className="font-normal text-sm opacity-70 text-center leading-tight mx-6">
+        <h3 className="font-normal text-xs opacity-70 text-center leading-tight px-6">
           {body}
         </h3>
         {progress === 100 && (

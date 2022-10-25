@@ -1,0 +1,4 @@
+owner: johnlindquist
+repo: kitapp-test-update
+provider: github
+updaterCacheDirName: Kit

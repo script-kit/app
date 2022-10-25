@@ -4,6 +4,7 @@ import log from 'electron-log';
 import os from 'os';
 import path from 'path';
 import { existsSync } from 'fs';
+import { copyFile } from 'fs/promises';
 import { readdir, remove } from 'fs-extra';
 import { once } from 'lodash';
 import {
@@ -39,6 +40,10 @@ export const checkForUpdates = async () => {
     ? (await getAppDb())?.autoUpdate
     : true;
 
+  if (process.env.TEST_UPDATE) {
+    autoUpdater.forceDevUpdateConfig = true;
+  }
+
   if ((!kitIgnore() && autoUpdate) || process.env.TEST_UPDATE) {
     log.info(`Auto-update enabled. Checking for update.`);
     try {
@@ -62,7 +67,10 @@ let updateInfo = null as any;
 export const configureAutoUpdate = async () => {
   log.info(`Configuring auto-update`);
   if (process.env.TEST_UPDATE) {
-    autoUpdater.updateConfigPath = getAssetPath('dev-app-update.yml');
+    await copyFile(
+      getAssetPath('dev-app-update.yml'),
+      path.join(app.getAppPath(), 'dev-app-update.yml')
+    );
     try {
       const cachePath = path.resolve(
         app.getPath('userData'),
@@ -247,7 +255,7 @@ export const configureAutoUpdate = async () => {
     };
     kitState.status = {
       status: 'warn',
-      message: `Auto-updater unavailable`,
+      message: `Auto-updater error. Check logs..`,
     };
     // log.error('There was a problem updating Kit.app');
     log.error(message);
