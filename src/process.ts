@@ -754,9 +754,11 @@ const kitMessageMap: ChannelHandler = {
   SET_TAB_INDEX: (data) => {
     setTabIndex(data.value);
   },
-  DEV_TOOLS: (data) => {
-    showDevTools(data.value);
-  },
+  DEV_TOOLS: toProcess(async ({ child }, { channel, value }) => {
+    showDevTools(value);
+
+    child?.send({ channel });
+  }),
   // SHOW_TEXT: (data) => {
   //   setBlurredByKit();
 

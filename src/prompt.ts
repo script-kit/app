@@ -65,6 +65,8 @@ let electronPanelWindow: any = null;
 
 export const blurPrompt = () => {
   if (promptWindow) {
+    promptWindow.minimize();
+    promptWindow.hide();
     promptWindow.blur();
   }
 };
@@ -362,6 +364,7 @@ export const showInactive = () => {
     } else {
       promptWindow?.setAlwaysOnTop(true);
       promptWindow?.show();
+      promptWindow?.restore();
     }
   } catch (error) {
     log.error(error);

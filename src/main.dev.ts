@@ -860,6 +860,19 @@ const checkKit = async () => {
           [`i`, `--production`, `--no-progress`, `--quiet`],
           options
         );
+
+        if (child.stdout) {
+          child.stdout.on('data', (data) => {
+            sendSplashBody(data.toString());
+          });
+        }
+
+        if (child.stderr) {
+          child.stderr.on('data', (data) => {
+            sendSplashBody(data.toString());
+          });
+        }
+
         child.on('message', (data) => {
           sendSplashBody(data.toString());
         });
@@ -893,14 +906,17 @@ const checkKit = async () => {
           [`i`, `--production`, `--loglevel`, `verbose`],
           options
         );
+        if (child.stdout) {
+          child.stdout.on('data', (data) => {
+            sendSplashBody(data.toString());
+          });
+        }
 
-        child.stdout.on('data', (data) => {
-          sendSplashBody(data.toString());
-        });
-
-        child.stderr.on('data', (data) => {
-          sendSplashBody(data.toString());
-        });
+        if (child.stderr) {
+          child.stderr.on('data', (data) => {
+            sendSplashBody(data.toString());
+          });
+        }
 
         child.on('message', (data: any) => {
           sendSplashBody(data.toString());

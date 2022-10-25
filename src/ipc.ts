@@ -348,6 +348,11 @@ export const startIpc = () => {
     }
   );
 
+  ipcMain.on(AppChannel.APPLY_UPDATE, async (event, data: any) => {
+    log.info(`🚀 Applying update`);
+    kitState.applyUpdate = true;
+  });
+
   // emitter.on(KitEvent.Blur, async () => {
   //   const promptProcessInfo = await processes.findPromptProcess();
 
