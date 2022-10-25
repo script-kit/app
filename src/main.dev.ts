@@ -267,6 +267,7 @@ const createLogs = () => {
 
 const sendSplashBody = (message: string) => {
   if (message.includes('object')) return;
+  if (message.toLowerCase().includes('warn')) return;
   sendToPrompt(Channel.SET_SPLASH_BODY, message);
 };
 
@@ -303,12 +304,25 @@ const forkOptions: ForkOptions = {
     KNODE: knodePath(),
     PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
   },
+  stdio: 'pipe',
 };
 
 const optionalSetupScript = (...args: string[]) => {
   return new Promise((resolve, reject) => {
     log.info(`Running optional setup script: ${args.join(' ')}`);
     const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
+
+    if (child?.stdout) {
+      child.stdout.on('data', (data) => {
+        setupLog(data.toString());
+      });
+    }
+
+    if (child?.stderr) {
+      child.stderr.on('data', (data) => {
+        setupLog(data.toString());
+      });
+    }
 
     child.on('message', (data) => {
       const dataString = typeof data === 'string' ? data : data.toString();
@@ -857,7 +871,7 @@ const checkKit = async () => {
       const npmResult = await new Promise((resolve, reject) => {
         const child = fork(
           knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-          [`i`, `--production`, `--no-progress`, `--quiet`],
+          [`i`, `--production`, `--loglevel`, `verbose`],
           options
         );
 

@@ -283,6 +283,7 @@ export const panelHTMLAtom = atom(
     if (g(_panelHTML) === a || g(_flagged)) return;
     if (a) s(scoredChoices, null);
     s(_panelHTML, a);
+    if (a) s(loadingAtom, false);
     // s(loadingAtom, false);
 
     // debouncedResize(g, s, 'PANEL_HTML');
