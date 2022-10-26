@@ -25,6 +25,7 @@ import { appDb, kitState, scriptChanged, scriptRemoved } from './state';
 import { addSnippet, removeSnippet } from './tick';
 import { clearPromptCacheFor } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
+import { emitter, KitEvent } from './events';
 
 // export const cacheMenu = debounce(async () => {
 //   await updateScripts();
@@ -126,3 +127,7 @@ export const setupWatchers = async () => {
     onScriptsChanged(eventName, filePath);
   });
 };
+
+emitter.on(KitEvent.RestartWatcher, async () => {
+  await setupWatchers();
+});

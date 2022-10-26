@@ -200,6 +200,7 @@ const initState = {
   ready: false,
   settled: false,
   authorized: false,
+  requiresAuthorizedRestart: false,
   fullDiskAccess: false,
   notifyAuthFail: false,
   mainShortcut: ``,
@@ -213,6 +214,7 @@ const initState = {
     status: 'default',
     message: '',
   } as KitStatus,
+  scriptError: false,
 
   notifications: [] as KitStatus[],
   downloadPercent: 0,

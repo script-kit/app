@@ -20,6 +20,7 @@ export enum KitEvent {
   TrayClick = 'TrayClick',
   OpenDevTools = 'OpenDevTools',
   MainScript = 'MainScript',
+  RestartWatcher = 'RestartWatcher',
 }
 
 interface KitEmitter {

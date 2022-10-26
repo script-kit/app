@@ -7,6 +7,8 @@ import {
   Menu,
   MenuItemConstructorOptions,
   globalShortcut,
+  app,
+  shell,
 } from 'electron';
 import path from 'path';
 import log, { LogLevel } from 'electron-log';
@@ -27,6 +29,7 @@ import { appDb, forceQuit, kitState } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 import { Trigger } from './enums';
+import { repairKitSDKNodeModules } from './repair';
 
 let tray: Tray | null = null;
 
@@ -132,6 +135,26 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
       authItems.push({
         type: 'separator',
+      });
+    }
+
+    if (kitState.requiresAuthorizedRestart) {
+      updateItems.push({
+        label: `Click to Restart Kit and Apply Permissions Changes`,
+        click: () => {
+          app.relaunch();
+          // electron quit and restart
+          forceQuit();
+        },
+      });
+    }
+
+    if (kitState.scriptError) {
+      updateItems.push({
+        label: `Script Error. Click to Reveal Log`,
+        click: () => {
+          shell.openExternal(kitPath('logs', 'kit.log'));
+        },
       });
     }
 
@@ -336,6 +359,28 @@ export const openMenu = async (event?: KeyboardEvent) => {
       });
 
       toolsSubmenu.push({
+        type: 'separator',
+      });
+
+      toolsSubmenu.push({
+        label: 'Restart Script Watcher',
+        click: () => {
+          emitter.emit(KitEvent.RestartWatcher);
+        },
+      });
+
+      toolsSubmenu.push({
+        label: 'Repair Kit SDK node_modules',
+        click: () => {
+          repairKitSDKNodeModules();
+        },
+      });
+
+      toolsSubmenu.push({
+        type: 'separator',
+      });
+
+      toolsSubmenu.push({
         label: 'Install VS Code Extension',
         click: runScript(kitPath('help', 'install-vscode-extension.js')),
       });
@@ -398,7 +443,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         enabled: false,
       },
       {
-        label: `Dev Tools`,
+        label: `Debug`,
         submenu: toolsSubmenu,
       },
       updateMenu,
@@ -431,6 +476,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
       kitState.notifyAuthFail = false;
       kitState.trayOpen = false;
+      kitState.scriptError = false;
     });
     tray?.popUpContextMenu(contextMenu);
     kitState.trayOpen = true;

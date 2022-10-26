@@ -432,6 +432,11 @@ const ready = async () => {
           clearInterval(id);
           await configureInterval();
           await setupLog(`Tick started`);
+          kitState.requiresAuthorizedRestart = true;
+          kitState.status = {
+            status: 'warn',
+            message: '',
+          };
         }
       }, 5000);
     }

@@ -1457,13 +1457,40 @@ class Processes extends Array<ProcessInfo> {
         resolve(processInfo?.values);
       }
 
-      log.info(
-        `${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
-      );
+      if (code === 0) {
+        log.info(
+          `${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
+        );
+      } else {
+        log.error(
+          `${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
+        );
+        log.error(
+          `👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors`
+        );
+
+        kitState.status = {
+          status: 'warn',
+          message: ``,
+        };
+
+        kitState.scriptError = true;
+      }
+
       processes.removeByPid(pid);
     });
 
     child.on('error', (error) => {
+      log.error(`ERROR`, { pid, error });
+      log.error(
+        `👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors`
+      );
+      kitState.status = {
+        status: 'warn',
+        message: ``,
+      };
+
+      kitState.scriptError = true;
       if (reject) reject(error);
     });
 

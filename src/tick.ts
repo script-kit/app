@@ -180,7 +180,7 @@ const ioEvent = async (e: UiohookKeyboardEvent) => {
 };
 
 export const configureInterval = async () => {
-  log.silly(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
+  log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
   if (kitState.isMac) {
     try {
       ({ default: frontmost } = await import('frontmost-app' as any));

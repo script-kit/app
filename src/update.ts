@@ -249,23 +249,26 @@ export const configureAutoUpdate = async () => {
   });
 
   autoUpdater.on('error', (message) => {
-    kitState.status = {
-      status: 'default',
-      message: '',
-    };
+    // kitState.status = {
+    //   status: 'default',
+    //   message: '',
+    // };
     kitState.status = {
       status: 'warn',
       message: `Auto-updater error. Check logs..`,
     };
+
+    kitState.updateDownloaded = false;
+
     // log.error('There was a problem updating Kit.app');
     log.error(message);
 
-    setTimeout(() => {
-      kitState.status = {
-        status: 'default',
-        message: '',
-      };
-    }, 5000);
+    // setTimeout(() => {
+    //   kitState.status = {
+    //     status: 'default',
+    //     message: '',
+    //   };
+    // }, 5000);
 
     // const notification = new Notification({
     //   title: `There was a problem downloading the Kit.app update`,
