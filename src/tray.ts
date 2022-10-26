@@ -122,13 +122,13 @@ export const openMenu = async (event?: KeyboardEvent) => {
         'node-mac-permissions'
       );
       authItems.push({
-        label: `Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
+        label: `Click to Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
         click: () => askForAccessibilityAccess(),
         icon: menuIcon(kitState.notifyAuthFail ? 'warn' : 'cogwheel'),
       });
 
       authItems.push({
-        label: `Learn More About Permissions`,
+        label: `Select to Learn More About Permissions`,
         click: runScript(kitPath('help', 'authorized-info.js')),
         icon: menuIcon('open_in_new'),
       });
@@ -151,10 +151,11 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     if (kitState.scriptError) {
       updateItems.push({
-        label: `Script Error. Click to Reveal Log`,
+        label: `Error Detected. Click to Reveal Log`,
         click: () => {
-          shell.openExternal(kitPath('logs', 'kit.log'));
+          shell.openPath(kitPath('logs', 'kit.log'));
         },
+        icon: menuIcon('warn'),
       });
     }
 
@@ -370,7 +371,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
       });
 
       toolsSubmenu.push({
-        label: 'Repair Kit SDK node_modules',
+        label: 'Force Repair Kit SDK. Will Automatically Restart',
         click: () => {
           repairKitSDKNodeModules();
         },

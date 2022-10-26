@@ -444,3 +444,15 @@ export const getPromptDb: typeof getKitPromptDb = async () => {
 
   return _promptDb;
 };
+
+subscribeKey(
+  kitState,
+  'requiresAuthorizedRestart',
+  (requiresAuthorizedRestart) => {
+    if (requiresAuthorizedRestart) {
+      log.info(`👋 Restarting...`);
+      app.relaunch();
+      forceQuit();
+    }
+  }
+);

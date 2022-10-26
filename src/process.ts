@@ -1461,7 +1461,7 @@ class Processes extends Array<ProcessInfo> {
         log.info(
           `${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
         );
-      } else {
+      } else if (typeof code === 'number') {
         log.error(
           `${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
         );
