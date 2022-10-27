@@ -21,6 +21,7 @@ export enum KitEvent {
   OpenDevTools = 'OpenDevTools',
   MainScript = 'MainScript',
   RestartWatcher = 'RestartWatcher',
+  TeardownWatchers = 'TeardownWatchers',
 }
 
 interface KitEmitter {

@@ -128,6 +128,8 @@ export const setupWatchers = async () => {
   });
 };
 
+emitter.on(KitEvent.TeardownWatchers, teardownWatchers);
+
 emitter.on(KitEvent.RestartWatcher, async () => {
   await setupWatchers();
 });

@@ -11,6 +11,7 @@ import {
   shell,
 } from 'electron';
 import path from 'path';
+import { rm } from 'fs/promises';
 import log, { LogLevel } from 'electron-log';
 import { KitStatus, Status } from '@johnlindquist/kit/types/kitapp';
 import { subscribeKey } from 'valtio/utils';
@@ -19,6 +20,7 @@ import os from 'os';
 import {
   kenvPath,
   kitPath,
+  knodePath,
   mainScriptPath,
   isFile,
   getLogFromScriptPath,
@@ -29,7 +31,6 @@ import { appDb, forceQuit, kitState } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 import { Trigger } from './enums';
-import { repairKitSDKNodeModules } from './repair';
 
 let tray: Tray | null = null;
 
@@ -358,34 +359,45 @@ export const openMenu = async (event?: KeyboardEvent) => {
         label: 'Permissions',
         submenu: permssionsMenu,
       });
-
-      toolsSubmenu.push({
-        type: 'separator',
-      });
-
-      toolsSubmenu.push({
-        label: 'Restart Script Watcher',
-        click: () => {
-          emitter.emit(KitEvent.RestartWatcher);
-        },
-      });
-
-      toolsSubmenu.push({
-        label: 'Force Repair Kit SDK. Will Automatically Restart',
-        click: () => {
-          repairKitSDKNodeModules();
-        },
-      });
-
-      toolsSubmenu.push({
-        type: 'separator',
-      });
-
-      toolsSubmenu.push({
-        label: 'Install VS Code Extension',
-        click: runScript(kitPath('help', 'install-vscode-extension.js')),
-      });
     }
+
+    toolsSubmenu.push({
+      type: 'separator',
+    });
+
+    toolsSubmenu.push({
+      label: 'Restart Script Watcher',
+      click: () => {
+        emitter.emit(KitEvent.RestartWatcher);
+      },
+    });
+
+    toolsSubmenu.push({
+      label: 'Force Repair Kit SDK. Will Automatically Restart',
+      click: async () => {
+        log.warn(`Repairing kit SDK node_modules...`);
+        emitter.emit(KitEvent.TeardownWatchers);
+        try {
+          await rm(knodePath(), { recursive: true, force: true });
+          await rm(kitPath(), { recursive: true, force: true });
+        } catch (error) {
+          log.error(error);
+        }
+
+        app.relaunch();
+
+        forceQuit();
+      },
+    });
+
+    toolsSubmenu.push({
+      type: 'separator',
+    });
+
+    toolsSubmenu.push({
+      label: 'Install VS Code Extension',
+      click: runScript(kitPath('help', 'install-vscode-extension.js')),
+    });
 
     // toolsSubmenu.push({
     //   label: `Prevent Close on Blur`,
@@ -417,8 +429,12 @@ export const openMenu = async (event?: KeyboardEvent) => {
         type: 'separator',
       },
       {
-        label: `Join Community`,
-        click: runScript(kitPath('help', 'get-help.js')),
+        label: `Script Kit Forum`,
+        click: () => {
+          shell.openExternal(
+            `https://github.com/johnlindquist/kit/discussions`
+          );
+        },
         icon: menuIcon('github'),
       },
       {
@@ -428,12 +444,16 @@ export const openMenu = async (event?: KeyboardEvent) => {
       },
       {
         label: `Follow on Twitter`,
-        click: runScript(kitPath('help', 'follow.js')),
+        click: () => {
+          shell.openExternal(`https://twitter.com/scriptkitapp`);
+        },
         icon: menuIcon('twitter'),
       },
       {
         label: `Browse Community Scripts`,
-        click: runScript(kitPath('cli', 'browse-examples.js')),
+        click: () => {
+          shell.openExternal(`https://scriptkit.com/scripts`);
+        },
         icon: menuIcon('browse'),
       },
       {
@@ -515,7 +535,7 @@ const menuIcon = (name: iconType) => {
 
 export const getTrayIcon = () => trayIcon('default');
 
-export const setupTray = async (checkDb = false, state: trayState) => {
+export const setupTray = async (checkDb = false, state: Status) => {
   log.info(`🎨 Creating tray...`, { checkDb });
 
   // subscribeKey(kitState, 'isDark', () => {
