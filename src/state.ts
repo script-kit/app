@@ -245,6 +245,7 @@ const initState = {
   isActivated: false,
   quitAndInstall: false,
   relaunch: false,
+  manualUpdateCheck: false,
 };
 
 const initAppDb = {

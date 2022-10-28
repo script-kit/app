@@ -31,6 +31,7 @@ import { appDb, forceQuit, kitState } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 import { Trigger } from './enums';
+import { mainLogPath, updateLogPath } from './logs';
 
 let tray: Tray | null = null;
 
@@ -241,8 +242,10 @@ export const openMenu = async (event?: KeyboardEvent) => {
         type: 'separator',
       },
       {
-        label: `Reveal ~/.kit/logs/kit.log in Finder`,
-        click: runScript(kitPath('help', 'reveal-kit-log.js')),
+        label: `Open kit.log`,
+        click: async () => {
+          shell.openPath(kitPath('logs', 'kit.log'));
+        },
       }
     );
 
@@ -272,7 +275,25 @@ export const openMenu = async (event?: KeyboardEvent) => {
     });
 
     toolsSubmenu.push({
-      label: `Reveal ~/.kenv in Finder`,
+      label: `Open main.log`,
+      click: () => {
+        shell.openPath(mainLogPath);
+      },
+    });
+
+    toolsSubmenu.push({
+      label: `Open update.log`,
+      click: () => {
+        shell.openPath(updateLogPath);
+      },
+    });
+
+    toolsSubmenu.push({
+      type: 'separator',
+    });
+
+    toolsSubmenu.push({
+      label: `Reveal ~/.kenv`,
       click: runScript(kitPath('help', 'reveal-kenv.js')),
     });
 

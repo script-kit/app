@@ -105,6 +105,7 @@ import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from './defaults';
 import { registerTrayShortcut } from './shortcuts';
+import { mainLog, mainLogPath, updateLog } from './logs';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -583,22 +584,19 @@ const verifyInstall = async () => {
 const ohNo = async (error: Error) => {
   log.warn(error.message);
   log.warn(error.stack);
-  const mainLog = await readFile(
-    path.resolve(app.getPath('appData'), 'logs', 'main.log'),
-    {
-      encoding: 'utf8',
-    }
-  );
+  const mainLogContents = await readFile(mainLogPath, {
+    encoding: 'utf8',
+  });
 
   await clipboardy.write(
     `
 ${error.message}
 ${error.stack}
-${mainLog}
+${mainLogContents}
   `.trim()
   );
   destroyPromptWindow();
-  await show(INSTALL_ERROR, showError(error, mainLog));
+  await show(INSTALL_ERROR, showError(error, mainLogContents));
 
   throw new Error(error.message);
 };
@@ -1057,31 +1055,32 @@ app.whenReady().then(checkKit).catch(ohNo);
 subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   if (!allowQuit) return;
   if (kitState.relaunch) {
+    mainLog.info(`🚀 Kit.app should relaunch after quit...`);
     app.relaunch();
   }
-  log.info(`😬 Tear down all processes before quit`);
+  mainLog.info(`😬 Tear down all processes before quit`);
   try {
     teardownWatchers();
     sleepSchedule();
     destroyTray();
   } catch (error) {
-    log.error(`😬 ERROR DESTROYING TRAY`, { error });
+    mainLog.error(`😬 ERROR DESTROYING TRAY`, { error });
   }
 
   try {
     app.removeAllListeners('window-all-closed');
   } catch (error) {
-    log.error(error);
+    mainLog.error(error);
   }
 
   try {
     if (kitState.isMac) await beforePromptQuit();
   } catch (error) {
-    log.error(error);
+    mainLog.error(error);
   }
 
   try {
-    log.info(`Destroy all windows`);
+    mainLog.info(`Destroy all windows`);
     const browserWindows = BrowserWindow.getAllWindows();
     browserWindows.forEach((browserWindow) => {
       try {
@@ -1089,15 +1088,15 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
         browserWindow.close();
         // browserWindow.destroy();
       } catch (error) {
-        log.error(error);
+        mainLog.error(error);
       }
     });
   } catch (e) {
-    log.warn(`callBeforeQuitAndInstall error`, e);
+    mainLog.warn(`callBeforeQuitAndInstall error`, e);
   }
 
   try {
-    log.info(`Destroy all processes`);
+    mainLog.info(`Destroy all processes`);
     processes.forEach((pinfo) => {
       if (!pinfo?.child.killed) {
         pinfo?.child?.removeAllListeners();
@@ -1105,16 +1104,18 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
       }
     });
   } catch (error) {
-    log.error(error);
+    mainLog.error(error);
   }
 
-  log.info(
+  mainLog.info(
     `Remaning browser windows: ${BrowserWindow.getAllWindows()?.length}`
   );
 
   if (kitState.quitAndInstall) {
+    updateLog.log(`🚀 Quit and install`);
     autoUpdater.quitAndInstall();
   } else {
+    mainLog.info(`🚀 Quit`);
     app?.quit();
   }
 

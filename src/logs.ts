@@ -3,16 +3,34 @@
 /* eslint-disable no-console */
 /* eslint-disable import/prefer-default-export */
 import log, { LevelOption } from 'electron-log';
+import * as path from 'path';
 import { subscribeKey } from 'valtio/utils';
 import fs from 'fs';
 import { kenvPath, getLogFromScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { app } from 'electron';
 import { sendToPrompt } from './prompt';
 import { stripAnsi } from './ansi';
 import { kitState } from './state';
 
+const isDev = process.env.NODE_ENV === 'development';
+
+if (isDev) {
+  app.setAppLogsPath(app.getPath('logs').replace('Electron', 'Kit'));
+}
+
 export const consoleLog = log.create('consoleLog');
 consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
+
+export const updateLogPath = path.resolve(app.getPath('logs'), 'update.log');
+export const updateLog = log.create('updateLog');
+updateLog.transports.file.resolvePath = () => updateLogPath;
+log.info({ updateLogPath });
+
+export const mainLogPath = path.resolve(app.getPath('logs'), 'main.log');
+export const mainLog = log.create('mainLog');
+mainLog.transports.file.resolvePath = () => mainLogPath;
+log.info({ mainLogPath });
 
 interface Logger {
   info: (...args: string[]) => void;

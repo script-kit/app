@@ -13,6 +13,7 @@ import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
 import { forceQuit, kitState, online } from './state';
+import { updateLog } from './logs';
 
 export const kitIgnore = () => {
   const isGit = existsSync(kitPath('.kitignore'));
@@ -21,35 +22,37 @@ export const kitIgnore = () => {
 };
 
 export const checkForUpdates = async () => {
+  updateLog.log('🔍 Checking for updates');
   const isOnline = await online();
 
   if (!isOnline) {
-    log.info('Not online. Skipping update check.');
+    updateLog.info('Not online. Skipping update check.');
     return;
   }
 
-  log.info('Checking for updates...');
-  if (kitState.updateDownloaded) return;
+  updateLog.info('Online. Continuing update check.');
 
   // TODO: Prompt to apply update
   const isWin = os.platform().startsWith('win');
   if (isWin) return; // TODO: Get a Windows app cert
 
-  const autoUpdate = existsSync(appDbPath)
-    ? (await getAppDb())?.autoUpdate
-    : true;
+  // const autoUpdate = existsSync(appDbPath)
+  //   ? (await getAppDb())?.autoUpdate
+  //   : true;
 
   if (process.env.TEST_UPDATE) {
     autoUpdater.forceDevUpdateConfig = true;
   }
 
-  if ((!kitIgnore() && autoUpdate) || process.env.TEST_UPDATE) {
-    log.info(`Auto-update enabled. Checking for update.`);
+  if (!kitIgnore() || process.env.TEST_UPDATE) {
     try {
-      await autoUpdater.checkForUpdates();
+      const result = await autoUpdater.checkForUpdates();
+      updateLog.info('Update check result', result);
     } catch (error) {
-      log.error(error);
+      updateLog.error(error);
     }
+  } else {
+    updateLog.info('Denied. Found .kitignore');
   }
 };
 
@@ -61,17 +64,16 @@ const parseChannel = (version: string) => {
   return 'main';
 };
 
-let manualUpdateCheck = false;
 let updateInfo = null as any;
 export const configureAutoUpdate = async () => {
-  log.info(
+  updateLog.info(
     `Configuring auto-update: ${process.env.TEST_UPDATE ? 'TEST' : 'PROD'}`
   );
   if (process.env.TEST_UPDATE) {
-    log.info(`Forcing dev update config`);
+    updateLog.info(`Forcing dev update config`);
     const devUpdateFilePath = path.join(app.getAppPath(), 'dev-app-update.yml');
     const contents = await readFile(devUpdateFilePath, 'utf8');
-    log.info(`Update config: ${contents}`);
+    updateLog.info(`Update config: ${contents}`);
     autoUpdater.updateConfigPath = devUpdateFilePath;
 
     try {
@@ -86,16 +88,16 @@ export const configureAutoUpdate = async () => {
       if (files) {
         for await (const file of files) {
           const filePath = path.resolve(cachePath, file);
-          log.info(`Deleting ${filePath}`);
+          updateLog.info(`Deleting ${filePath}`);
           await remove(filePath);
         }
       }
     } catch (error) {
-      log.error(`Error deleting pending updates`, error);
+      updateLog.error(`Error deleting pending updates`, error);
     }
   }
 
-  autoUpdater.logger = log;
+  autoUpdater.logger = updateLog;
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
 
@@ -104,24 +106,24 @@ export const configureAutoUpdate = async () => {
     const newVersion = updateInfo?.version;
 
     try {
-      log.info(`⏫ Updating from ${version} to ${newVersion}`);
+      updateLog.info(`⏫ Updating from ${version} to ${newVersion}`);
       if (version === updateInfo?.version) {
-        log.warn(`Downloaded same version 🤔`);
+        updateLog.warn(`Downloaded same version 🤔`);
         return;
       }
       await storeVersion(version);
     } catch {
-      log.warn(`Couldn't store previous version`);
+      updateLog.warn(`Couldn't store previous version`);
     }
 
-    log.info('Quit and exit 👋');
+    updateLog.info('Quit and exit 👋');
 
     try {
       kitState.relaunch = true;
       kitState.quitAndInstall = true;
       forceQuit();
     } catch (e) {
-      log.warn(`autoUpdater.quitAndInstall error:`, e);
+      updateLog.warn(`autoUpdater.quitAndInstall error:`, e);
       forceQuit();
     }
   });
@@ -139,7 +141,7 @@ export const configureAutoUpdate = async () => {
       status: 'update',
       message: `Downloading update ${info.version}...`,
     };
-    log.info('Update available.', info);
+    updateLog.info('Update available.', info);
 
     const version = getVersion();
     const newVersion = info?.version;
@@ -148,21 +150,21 @@ export const configureAutoUpdate = async () => {
     const newChannel = parseChannel(newVersion);
 
     if (currentChannel === newChannel || process.env.TEST_UPDATE) {
-      log.info(`Downloading update`);
+      updateLog.info(`Downloading update`);
 
       try {
         const result = await autoUpdater.downloadUpdate();
-        log.info(`After downloadUpdate`);
-        log.info({ result });
+        updateLog.info(`After downloadUpdate`);
+        updateLog.info({ result });
       } catch (error) {
-        log.error(`Error downloading update`, error);
+        updateLog.error(`Error downloading update`, error);
       }
     } else if (version === newVersion) {
-      log.info(
+      updateLog.info(
         `Blocking update. You're version is ${version} and found ${newVersion}`
       );
     } else {
-      log.info(
+      updateLog.info(
         `Blocking update. You're on ${currentChannel}, but requested ${newChannel}`
       );
     }
@@ -180,10 +182,10 @@ export const configureAutoUpdate = async () => {
       message: ``,
     };
 
-    log.info(`⬇️ Update downloaded`);
+    updateLog.info(`⬇️ Update downloaded`);
 
     if (kitState.downloadPercent === 100) {
-      // await applyUpdate();
+      updateLog.info(`💯 Download complete`);
     }
   });
 
@@ -193,28 +195,37 @@ export const configureAutoUpdate = async () => {
       message: '',
     };
 
-    log.info('Update not available...');
-    log.info(info);
+    updateLog.info('Update not available...');
+    updateLog.info(info);
 
-    if (manualUpdateCheck) {
+    if (kitState.manualUpdateCheck) {
       kitState.status = {
         status: 'success',
         message: `Kit.app is on the latest version`,
       };
 
-      manualUpdateCheck = false;
+      kitState.manualUpdateCheck = false;
     }
   });
 
   autoUpdater.on('checking-for-update', () => {
-    log.info('Checking for update...');
+    updateLog.info('Begin checking for update...');
+  });
+
+  autoUpdater.on('update-available', () => {
+    updateLog.info('Update available');
+    kitState.manualUpdateCheck = false;
+  });
+
+  autoUpdater.on('update-cancelled', () => {
+    updateLog.info('Update cancelled');
   });
 
   autoUpdater.on('download-progress', async (progressObj) => {
     let logMessage = `Download speed: ${progressObj.bytesPerSecond}`;
     logMessage = `${logMessage} - Downloaded ${progressObj.percent}%`;
     logMessage = `${logMessage} (${progressObj.transferred}/${progressObj.total})`;
-    log.info(logMessage);
+    updateLog.info(logMessage);
 
     kitState.downloadPercent = progressObj.percent;
 
@@ -236,7 +247,7 @@ export const configureAutoUpdate = async () => {
     kitState.updateDownloaded = false;
 
     // log.error('There was a problem updating Kit.app');
-    log.error(message);
+    updateLog.error(message);
 
     // setTimeout(() => {
     //   kitState.status = {
@@ -259,7 +270,7 @@ export const configureAutoUpdate = async () => {
       status: 'busy',
       message: `Checking for update...`,
     };
-    manualUpdateCheck = true;
+    kitState.manualUpdateCheck = true;
     await checkForUpdates();
   });
 };
