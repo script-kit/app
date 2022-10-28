@@ -10,7 +10,7 @@ import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { parseScript, kitPath, kenvPath } from '@johnlindquist/kit/cjs/utils';
 
 import { FSWatcher } from 'chokidar';
-import { ChildProcess, fork } from 'child_process';
+import { fork } from 'child_process';
 import {
   unlinkShortcuts,
   updateMainShortcut,
@@ -21,7 +21,7 @@ import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
-import { appDb, kitState, scriptChanged, scriptRemoved } from './state';
+import { appDb, scriptChanged, scriptRemoved } from './state';
 import { addSnippet, removeSnippet } from './tick';
 import { clearPromptCacheFor } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
@@ -99,7 +99,10 @@ let watchers = [] as FSWatcher[];
 
 export const teardownWatchers = async () => {
   if (watchers.length) {
-    watchers.forEach((watcher) => watcher.close());
+    watchers.forEach((watcher) => {
+      watcher.removeAllListeners();
+      watcher.close();
+    });
     watchers.length = 0;
   }
 };

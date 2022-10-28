@@ -1323,7 +1323,7 @@ const createChild = ({
         kitState.ignoreBlur = true;
         alwaysOnTop(true);
         log.info({ debugUrl });
-        const devToolsUrl = `devtools://devtools/bundled/inspector.html?experiments=true&ws=${debugUrl}`;
+        const devToolsUrl = `devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=${debugUrl}`;
         log.info(`DevTools URL: ${devToolsUrl}`);
 
         win = showInspector(devToolsUrl);

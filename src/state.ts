@@ -414,21 +414,6 @@ export const online = async () => {
 export const forceQuit = () => {
   log.info(`Begin force quit...`);
   kitState.allowQuit = true;
-
-  setTimeout(() => {
-    try {
-      log.info(`👋 Quitting...`);
-      app.quit();
-      setTimeout(() => {
-        log.info(`❤️ Bye!`);
-        setTimeout(() => {
-          if (app) app.exit(0);
-        }, 100);
-      }, 100);
-    } catch (e) {
-      log.error(e);
-    }
-  }, 100);
 };
 
 let _promptDb: any = null;

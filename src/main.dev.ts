@@ -1106,4 +1106,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   log.info(
     `Remaning browser windows: ${BrowserWindow.getAllWindows()?.length}`
   );
+
+  app?.quit();
+  app?.exit(0);
 });

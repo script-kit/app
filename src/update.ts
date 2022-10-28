@@ -1,25 +1,18 @@
-import { app, BrowserWindow, Notification } from 'electron';
+import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import os from 'os';
 import path from 'path';
 import { existsSync } from 'fs';
-import { copyFile } from 'fs/promises';
+import { readFile } from 'fs/promises';
 import { readdir, remove } from 'fs-extra';
 import { once } from 'lodash';
-import {
-  kitPath,
-  appDbPath,
-  KIT_FIRST_PATH,
-  kenvPath,
-} from '@johnlindquist/kit/cjs/utils';
+import { kitPath, appDbPath } from '@johnlindquist/kit/cjs/utils';
 import { subscribeKey } from 'valtio/utils';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
-import { spawn } from 'child_process';
 import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
 import { forceQuit, kitState, online } from './state';
-import { getAssetPath } from './assets';
 
 export const kitIgnore = () => {
   const isGit = existsSync(kitPath('.kitignore'));
@@ -28,7 +21,13 @@ export const kitIgnore = () => {
 };
 
 export const checkForUpdates = async () => {
-  await online();
+  const isOnline = await online();
+
+  if (!isOnline) {
+    log.info('Not online. Skipping update check.');
+    return;
+  }
+
   log.info('Checking for updates...');
   if (kitState.updateDownloaded) return;
 
@@ -65,12 +64,16 @@ const parseChannel = (version: string) => {
 let manualUpdateCheck = false;
 let updateInfo = null as any;
 export const configureAutoUpdate = async () => {
-  log.info(`Configuring auto-update`);
+  log.info(
+    `Configuring auto-update: ${process.env.TEST_UPDATE ? 'TEST' : 'PROD'}`
+  );
   if (process.env.TEST_UPDATE) {
-    await copyFile(
-      getAssetPath('dev-app-update.yml'),
-      path.join(app.getAppPath(), 'dev-app-update.yml')
-    );
+    log.info(`Forcing dev update config`);
+    const devUpdateFilePath = path.join(app.getAppPath(), 'dev-app-update.yml');
+    const contents = await readFile(devUpdateFilePath, 'utf8');
+    log.info(`Update config: ${contents}`);
+    autoUpdater.updateConfigPath = devUpdateFilePath;
+
     try {
       const cachePath = path.resolve(
         app.getPath('userData'),
@@ -111,54 +114,24 @@ export const configureAutoUpdate = async () => {
       log.warn(`Couldn't store previous version`);
     }
 
-    kitState.allowQuit = true;
-
     setTimeout(() => {
       log.info('Quit and exit 👋');
 
       try {
+        app?.relaunch();
         autoUpdater.quitAndInstall();
         forceQuit();
       } catch (e) {
         log.warn(`autoUpdater.quitAndInstall error:`, e);
-
-        const KIT = kitPath();
-
-        log.info(`Before relaunch attempt`);
-
-        try {
-          const child = spawn(`./script`, [`./cli/open-app.js`], {
-            cwd: KIT,
-            detached: true,
-            env: {
-              KIT,
-              KENV: kenvPath(),
-              PATH: KIT_FIRST_PATH,
-            },
-          });
-
-          child.on('message', (data) => {
-            log.info(data.toString());
-          });
-        } catch (spawnError) {
-          log.warn(`spawn open-app error`, spawnError);
-        }
-
-        log.info(`After relaunch attempt`);
-
         forceQuit();
       }
-    }, 2500);
+    }, 1000);
   });
 
   subscribeKey(kitState, 'applyUpdate', async (update) => {
     if (update) {
       await applyUpdate();
     }
-  });
-
-  autoUpdater.on('before-quit-for-update', () => {
-    log.info(`Before quit for update...`);
   });
 
   autoUpdater.on('update-available', async (info) => {
