@@ -7,6 +7,9 @@
 import v8 from 'v8';
 import path from 'path';
 import os from 'os';
+import log from 'electron-log';
+
+import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 
 export const APP_NAME = 'Kit';
 export const KIT_PROTOCOL = 'kit';
@@ -27,6 +30,11 @@ export function tildify(absolutePath: string) {
   ).slice(0, -1);
 }
 
+export const isInDirectory = (filePath: string, dir: string) => {
+  const relative = path.relative(dir, filePath);
+  return !relative.startsWith(`..`) && !path.isAbsolute(relative);
+};
+
 export function pathsAreEqual(path1: string, path2: string) {
   path1 = path.resolve(path1);
   path2 = path.resolve(path2);
@@ -34,3 +42,19 @@ export function pathsAreEqual(path1: string, path2: string) {
     return path1.toLowerCase() === path2.toLowerCase();
   return path1 === path2;
 }
+
+export const isKitScript = (scriptPath: string) => {
+  // if scriptPath is not equal to mainScriptPath, return false
+  if (path.relative(scriptPath, mainScriptPath) === '') {
+    log.verbose(`>>>> Main script: ${scriptPath}`);
+    return false;
+  }
+
+  if (isInDirectory(scriptPath, kitPath())) {
+    log.verbose(`>>>> Kit script: ${scriptPath}`);
+    return true;
+  }
+
+  log.verbose(`>>>> Not kit script: ${scriptPath}`);
+  return false;
+};

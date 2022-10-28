@@ -109,7 +109,7 @@ import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
 import { AppChannel, Trigger } from './enums';
-import { pathsAreEqual } from './helpers';
+import { isKitScript, pathsAreEqual } from './helpers';
 import { deleteText } from './keyboard';
 
 // const trash = async (...args: string[]) => {
@@ -1554,12 +1554,14 @@ class Processes extends Array<ProcessInfo> {
 
 export const processes = new Processes();
 
-export const removeAbandonnedMain = () => {
-  const mainProcess = processes.find((processInfo) =>
-    pathsAreEqual(processInfo.scriptPath, mainScriptPath)
+export const removeAbandonnedKit = () => {
+  const kitProcess = processes.find((processInfo) =>
+    isKitScript(processInfo.scriptPath)
   );
-  if (mainProcess && mainProcess.pid !== kitState.pid) {
-    processes.removeByPid(mainProcess.pid);
+
+  if (kitProcess) {
+    log.info(`🛑 Cancel main menu process: ${kitProcess.scriptPath}`);
+    processes.removeByPid(kitProcess.pid);
   }
 };
 

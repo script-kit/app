@@ -1550,6 +1550,8 @@ export const enterButtonNameAtom = atom<string>((g) => {
   const ui = g(uiAtom);
   if (ui === UI.splash) return '';
   if (ui === UI.term) return '';
+  if (ui === UI.editor) return '';
+  if (ui === UI.hotkey) return '';
 
   const focusedChoice = g(focusedChoiceAtom);
   if (focusedChoice?.enter) return focusedChoice.enter;

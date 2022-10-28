@@ -23,7 +23,7 @@ import {
 import { ProcessInfo } from '@johnlindquist/kit';
 
 import { emitter, KitEvent } from './events';
-import { processes, removeAbandonnedMain } from './process';
+import { processes, removeAbandonnedKit } from './process';
 import {
   alwaysOnTop,
   hideAppIfNoWindows,
@@ -137,7 +137,7 @@ export const runPromptProcess = async (
   }
 ): Promise<ProcessInfo | null> => {
   if (pathsAreEqual(promptScriptPath, mainScriptPath)) {
-    removeAbandonnedMain();
+    removeAbandonnedKit();
   }
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 

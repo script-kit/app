@@ -991,26 +991,6 @@ export const destroyPromptWindow = () => {
   }
 };
 
-export const isInDirectory = (filePath: string, dir: string) => {
-  const relative = path.relative(dir, filePath);
-  return !relative.startsWith(`..`) && !path.isAbsolute(relative);
-};
-
-export const isKitScript = (scriptPath: string) => {
-  // if scriptPath is not equal to mainScriptPath, return false
-  if (path.relative(scriptPath, mainScriptPath) === '') {
-    log.info(`>>>> Main script`);
-    return false;
-  }
-  if (isInDirectory(scriptPath, kitPath())) {
-    log.info(`>>>> Kit script`);
-    return true;
-  }
-
-  log.info(`>>>> Not kit script`);
-  return false;
-};
-
 export const onHideOnce = (fn: () => void) => {
   let id: null | NodeJS.Timeout = null;
   if (promptWindow) {
