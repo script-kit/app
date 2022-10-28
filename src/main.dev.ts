@@ -1056,6 +1056,9 @@ app.whenReady().then(checkKit).catch(ohNo);
 
 subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   if (!allowQuit) return;
+  if (kitState.relaunch) {
+    app.relaunch();
+  }
   log.info(`😬 Tear down all processes before quit`);
   try {
     teardownWatchers();
@@ -1082,6 +1085,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     const browserWindows = BrowserWindow.getAllWindows();
     browserWindows.forEach((browserWindow) => {
       try {
+        browserWindow.removeAllListeners();
         browserWindow.close();
         // browserWindow.destroy();
       } catch (error) {
@@ -1096,6 +1100,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     log.info(`Destroy all processes`);
     processes.forEach((pinfo) => {
       if (!pinfo?.child.killed) {
+        pinfo?.child?.removeAllListeners();
         pinfo?.child?.kill();
       }
     });
@@ -1107,6 +1112,11 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     `Remaning browser windows: ${BrowserWindow.getAllWindows()?.length}`
   );
 
-  app?.quit();
+  if (kitState.quitAndInstall) {
+    autoUpdater.quitAndInstall();
+  } else {
+    app?.quit();
+  }
+
   app?.exit(0);
 });

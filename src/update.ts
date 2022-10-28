@@ -114,18 +114,16 @@ export const configureAutoUpdate = async () => {
       log.warn(`Couldn't store previous version`);
     }
 
-    setTimeout(() => {
-      log.info('Quit and exit 👋');
+    log.info('Quit and exit 👋');
 
-      try {
-        app?.relaunch();
-        autoUpdater.quitAndInstall();
-        forceQuit();
-      } catch (e) {
-        log.warn(`autoUpdater.quitAndInstall error:`, e);
-        forceQuit();
-      }
-    }, 1000);
+    try {
+      kitState.relaunch = true;
+      kitState.quitAndInstall = true;
+      forceQuit();
+    } catch (e) {
+      log.warn(`autoUpdater.quitAndInstall error:`, e);
+      forceQuit();
+    }
   });
 
   subscribeKey(kitState, 'applyUpdate', async (update) => {

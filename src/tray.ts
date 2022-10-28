@@ -143,7 +143,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
       updateItems.push({
         label: `Click to Restart Kit and Apply Permissions Changes`,
         click: () => {
-          app.relaunch();
+          kitState.relaunch = true;
           // electron quit and restart
           forceQuit();
         },
@@ -384,8 +384,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
           log.error(error);
         }
 
-        app.relaunch();
-
+        kitState.relaunch = true;
         forceQuit();
       },
     });

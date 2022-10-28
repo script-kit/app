@@ -243,6 +243,8 @@ const initState = {
   shortcutsPaused: false,
   devToolsCount: 0,
   isActivated: false,
+  quitAndInstall: false,
+  relaunch: false,
 };
 
 const initAppDb = {
@@ -436,7 +438,7 @@ subscribeKey(
   (requiresAuthorizedRestart) => {
     if (requiresAuthorizedRestart) {
       log.info(`👋 Restarting...`);
-      app.relaunch();
+      kitState.relaunch = true;
       forceQuit();
     }
   }
