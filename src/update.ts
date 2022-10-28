@@ -119,7 +119,6 @@ export const configureAutoUpdate = async () => {
     updateLog.info('Quit and exit 👋');
 
     try {
-      kitState.relaunch = true;
       kitState.quitAndInstall = true;
       forceQuit();
     } catch (e) {
