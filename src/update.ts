@@ -179,9 +179,13 @@ export const configureAutoUpdate = async () => {
     if (currentChannel === newChannel || process.env.TEST_UPDATE) {
       log.info(`Downloading update`);
 
-      const result = await autoUpdater.downloadUpdate();
-      log.info(`After downloadUpdate`);
-      log.info({ result });
+      try {
+        const result = await autoUpdater.downloadUpdate();
+        log.info(`After downloadUpdate`);
+        log.info({ result });
+      } catch (error) {
+        log.error(`Error downloading update`, error);
+      }
     } else if (version === newVersion) {
       log.info(
         `Blocking update. You're version is ${version} and found ${newVersion}`

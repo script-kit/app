@@ -377,7 +377,13 @@ const systemEvents = () => {
 
     log.info(`Resume tasks`);
     if (!kitState.updateDownloaded) {
-      checkForUpdates();
+      setTimeout(() => {
+        try {
+          checkForUpdates();
+        } catch (error) {
+          log.error(`Error checking for updates`, error);
+        }
+      }, 10000);
     }
 
     kitState.suspended = false;
