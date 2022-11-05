@@ -4,7 +4,10 @@ import {
   shortcutsPath,
   kenvPath,
   appDbPath,
+  userDbPath,
 } from '@johnlindquist/kit/cjs/utils';
+
+import { getUserDb } from '@johnlindquist/kit/cjs/db';
 
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
 type WatcherCallback = (
@@ -19,7 +22,7 @@ export const startWatching = (callback: WatcherCallback) => {
     }
   );
   const jsonWatcher = chokidar
-    .watch([appDbPath, shortcutsPath])
+    .watch([appDbPath, shortcutsPath, userDbPath])
     .on('all', callback);
 
   kenvScriptsWatcher.on('all', callback);

@@ -19,6 +19,8 @@ import {
   setScriptTimestamp,
   getTimestamps,
   getPromptDb as getKitPromptDb,
+  UserDb,
+  AppDb,
 } from '@johnlindquist/kit/cjs/db';
 
 import {
@@ -214,7 +216,7 @@ const initState = {
     status: 'default',
     message: '',
   } as KitStatus,
-  scriptError: false,
+  scriptErrorPath: '',
 
   notifications: [] as KitStatus[],
   downloadPercent: 0,
@@ -246,9 +248,11 @@ const initState = {
   quitAndInstall: false,
   relaunch: false,
   manualUpdateCheck: false,
+  user: {} as UserDb,
+  isSponsor: false,
 };
 
-const initAppDb = {
+const initAppDb: AppDb = {
   version: '0.0.0',
   openAtLogin: true,
   previewScripts: true,
@@ -271,7 +275,7 @@ const initWidgets = {
   widgets: [] as WidgetOptions[],
 };
 
-export const appDb: typeof initAppDb = proxy(initAppDb);
+export const appDb: AppDb = proxy(initAppDb);
 export const kitConfig: Config = proxy(initConfig);
 export const kitState: typeof initState = proxy(initState);
 export type kitStateType = typeof initState;
@@ -444,3 +448,10 @@ subscribeKey(
     }
   }
 );
+
+subscribeKey(kitState, 'scriptErrorPath', (scriptErrorPath) => {
+  kitState.status = {
+    status: scriptErrorPath ? 'warn' : 'default',
+    message: ``,
+  };
+});

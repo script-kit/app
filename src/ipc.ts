@@ -348,6 +348,13 @@ export const startIpc = () => {
     }
   );
 
+  ipcMain.on(AppChannel.LOGIN, async () => {
+    runPromptProcess(kitPath('pro', 'login.js'), [], {
+      force: true,
+      trigger: Trigger.App,
+    });
+  });
+
   ipcMain.on(AppChannel.APPLY_UPDATE, async (event, data: any) => {
     log.info(`🚀 Applying update`);
     kitState.applyUpdate = true;

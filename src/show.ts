@@ -21,6 +21,7 @@ import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 import { getAssetPath } from './assets';
 import { darkTheme, lightTheme } from './components/themes';
 import { forceQuit, kitState } from './state';
+import { getCurrentScreenFromMouse } from './prompt';
 
 export const INSTALL_ERROR = 'install-error';
 
@@ -280,7 +281,6 @@ export const showInspector = (url: string) => {
     title: 'Script Kit Inspector',
     width: 1024,
     height: 768,
-    center: true,
     webPreferences: {
       zoomFactor: 1,
       devTools: true,
@@ -293,6 +293,11 @@ export const showInspector = (url: string) => {
   });
 
   win.loadURL(url);
+
+  // Position win to bottom right of current screen
+  const currentScreen = getCurrentScreenFromMouse();
+  const { x, y, width, height } = currentScreen.workArea;
+  win.setPosition(x + width - win.getSize()[0], y + height - win.getSize()[1]);
 
   return win;
 };
@@ -320,7 +325,7 @@ export const showDevTools = async (value: any, url = '') => {
     mode: 'detach',
   });
 
-  devToolsWindow.webContents.setZoomFactor(1.5);
+  devToolsWindow.webContents.setZoomFactor(1);
   devToolsWindow.webContents.focus();
 
   if (value) {

@@ -151,13 +151,32 @@ export const openMenu = async (event?: KeyboardEvent) => {
       });
     }
 
-    if (kitState.scriptError) {
+    if (kitState.scriptErrorPath) {
+      let logPath = kitPath('logs', 'kit.log');
+      if (kitState.scriptErrorPath) {
+        logPath = getLogFromScriptPath(kitState.scriptErrorPath);
+      }
       updateItems.push({
-        label: `Error Detected. Click to Reveal Log`,
-        click: () => {
-          shell.openPath(kitPath('logs', 'kit.log'));
-        },
+        label: `Error Running ${path.basename(kitState.scriptErrorPath || '')}`,
+        submenu: [
+          {
+            label: `Open ${path.basename(kitState.scriptErrorPath)}`,
+            click: () => {
+              shell.openPath(kitState.scriptErrorPath);
+            },
+          },
+          {
+            label: `Open ${path.basename(logPath)}`,
+            click: () => {
+              shell.openPath(logPath);
+            },
+          },
+        ],
         icon: menuIcon('warn'),
+      });
+
+      updateItems.push({
+        type: 'separator',
       });
     }
 
@@ -517,7 +536,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
       kitState.notifyAuthFail = false;
       kitState.trayOpen = false;
-      kitState.scriptError = false;
+      kitState.scriptErrorPath = '';
     });
     tray?.popUpContextMenu(contextMenu);
     kitState.trayOpen = true;

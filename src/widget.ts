@@ -114,6 +114,9 @@ export const createWidget = async (
     document.addEventListener("click", (event) => {
       let {id = ""} = event.target.closest("*[id]")
       ipcRenderer.send("WIDGET_CLICK", {
+        dataset: {
+          ...event.target.dataset
+        },
         targetId: id,
         widgetId: window.widgetId,
       })
@@ -122,6 +125,9 @@ export const createWidget = async (
 
     document.addEventListener("input", (event) => {
       ipcRenderer.send("WIDGET_INPUT", {
+        dataset: {
+          ...event.target.dataset
+        },
         targetId: event.target.id,
         value: event.target.value,
         widgetId: window.widgetId,

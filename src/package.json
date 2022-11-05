@@ -19,13 +19,13 @@
   },
   "dependencies": {
     "@akiflow/electron-panel-window": "3.2.1",
-    "@nut-tree/nut-js": "2.2.1",
-    "chokidar": "^3.5.3",
+    "@nut-tree/nut-js": "2.3.0",
+    "chokidar": "3.5.3",
     "frontmost-app": "1.0.0",
-    "glasstron": "^0.1.1",
-    "node-abi": "3.23.0",
+    "glasstron": "0.1.1",
+    "node-abi": "3.28.0",
     "node-mac-permissions": "2.2.1",
     "node-pty": "0.10.1",
-    "uiohook-napi": "1.2.0"
+    "uiohook-napi": "1.5.0"
   }
 }

@@ -109,6 +109,7 @@ import {
   speechAtom,
   enterAtom,
   kitStateAtom,
+  userAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -220,6 +221,7 @@ export default function App() {
   const start = useSetAtom(startAtom);
   const setLogo = useSetAtom(logoAtom);
   const setProcesses = useSetAtom(processesAtom);
+  const setUser = useSetAtom(userAtom);
   const setFocused = useSetAtom(setFocusedChoiceAtom);
   const setSocketURL = useSetAtom(socketURLAtom);
   const setIsMouseDown = useSetAtom(isMouseDownAtom);
@@ -356,7 +358,11 @@ export default function App() {
     ipcRenderer.on(AppChannel.PROCESSES, (_, data) => {
       setProcesses(data);
     });
-  }, [setProcesses]);
+
+    ipcRenderer.on(AppChannel.USER_CHANGED, (_, data) => {
+      setUser(data);
+    });
+  }, [setProcesses, setUser]);
 
   const onMouseDown = useCallback(() => {
     setIsMouseDown(true);

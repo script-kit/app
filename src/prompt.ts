@@ -36,7 +36,7 @@ import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
 import { getAssetPath } from './assets';
-import { appDb, kitState, getPromptDb } from './state';
+import { appDb, kitState, getPromptDb, userDb } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
@@ -50,6 +50,7 @@ import { ResizeData } from './types';
 import { getVersion } from './version';
 import { AppChannel } from './enums';
 import { emitter, KitEvent } from './events';
+import { pathsAreEqual } from './helpers';
 
 interface GlasstronWindow extends BrowserWindow {
   blurType: string;
@@ -215,14 +216,28 @@ export const createPromptWindow = async () => {
     maybeHide('Devtools closed');
   });
 
-  promptWindow.webContents.on('devtools-opened', () => {
-    log.info(`Devtools opened. Preventing close and always on top`);
-    promptWindow?.setAlwaysOnTop(true);
-    promptWindow?.webContents?.executeJavaScript(`console.clear()`);
-  });
+  // capture open devtools shortcut on promptWindow
+  // promptWindow.webContents.on('before-input-event', (event, input) => {
+  //   log.info(input);
+  //   if (input.type === 'keyDown' && input.key === 'F12') {
+  //     event.preventDefault();
+  //   }
+
+  //   const modifiers = kitState.isWindows
+  //     ? input.control && input.shift
+  //     : input.meta && input.alt;
+
+  //   if (input.type === 'keyDown' && input.code === 'KeyI' && modifiers) {
+  //     log.info(`🫴 Opening devtools`);
+  //     event.preventDefault();
+  //   }
+  // });
 
   emitter.on(KitEvent.OpenDevTools, () => {
-    promptWindow?.webContents?.openDevTools();
+    promptWindow?.webContents?.openDevTools({
+      activate: true,
+      mode: 'detach',
+    });
   });
 
   promptWindow?.setMaxListeners(2);
@@ -636,8 +651,6 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
 };
 
 export const appToPrompt = (channel: AppChannel, data?: any) => {
-  // log.info(`>_ ${channel} ${data?.kitScript}`);
-  // log.info(`>_ ${channel}`);
   if (
     promptWindow &&
     !promptWindow.isDestroyed() &&
@@ -1051,11 +1064,15 @@ subscribeKey(kitState, 'promptId', async () => {
   );
 });
 
-subscribeKey(kitState, 'scriptPath', async () => {
+subscribeKey(kitState, 'scriptPath', async (scriptPath) => {
   if (promptWindow?.isDestroyed()) return;
   kitState.promptUI = UI.none;
   kitState.resize = false;
   kitState.resizedByChoices = false;
+
+  if (pathsAreEqual(scriptPath || '', kitState.scriptErrorPath)) {
+    kitState.scriptErrorPath = '';
+  }
 
   if (kitState.scriptPath === '') {
     if (kitState.prevScriptPath && !kitState.resizedByChoices) {

@@ -57,6 +57,7 @@ import {
 
 import { execaCommand } from 'execa';
 import { ensureDir, ensureFile } from 'fs-extra';
+import axios from 'axios';
 import { getLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -94,6 +95,7 @@ import {
   widgetState,
   findWidget,
   forceQuit,
+  online,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -177,6 +179,42 @@ export const formatScriptChoices = (data: Choice[]) => {
   });
 
   return choices;
+};
+
+export const sponsorCheck = async () => {
+  log.info('Checking sponsor status...');
+
+  const isOnline = await online();
+
+  if (isOnline && !kitState.isSponsor) {
+    const response = await axios.post(
+      `https://scriptkit.com/api/check-sponsor`,
+      kitState.user
+    );
+
+    log.info(`🕵️‍♀️ Sponsor check response`, JSON.stringify(response.data));
+    log.info({
+      id: response.data.id,
+      node_id: kitState.user.node_id,
+    });
+
+    if (kitState.user.node_id && response.data.id === kitState.user.node_id) {
+      log.info('User is sponsor');
+      kitState.isSponsor = true;
+    } else {
+      log.info('User is not sponsor');
+      kitState.isSponsor = false;
+
+      emitter.emit(KitEvent.RunPromptProcess, {
+        scriptPath: kitPath('pro', 'sponsor.js'),
+        args: ['Debugger'],
+        options: {
+          force: true,
+          trigger: Trigger.App,
+        },
+      });
+    }
+  }
 };
 
 export type ChannelHandler = {
@@ -320,6 +358,25 @@ const kitMessageMap: ChannelHandler = {
     // log.info(`WIDGET_SET_STATE`, value);
     if (widget) {
       widget?.webContents.send(channel, state);
+    } else {
+      warn(`${widgetId}: widget not found. Terminating process.`);
+      child?.kill();
+    }
+  }),
+
+  WIDGET_CALL: toProcess(({ child }, { channel, value }) => {
+    const { widgetId, method, args } = value as any;
+
+    const widget = findWidget(widgetId, channel);
+    if (!widget) return;
+
+    // log.info(`WIDGET_CALL`, value);
+    if (widget) {
+      try {
+        (widget as any)?.[method]?.(...args);
+      } catch (error) {
+        log.error(error);
+      }
     } else {
       warn(`${widgetId}: widget not found. Terminating process.`);
       child?.kill();
@@ -645,6 +702,9 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
   DEBUG_SCRIPT: toProcess(async (processInfo, data) => {
+    await sponsorCheck();
+    if (!kitState.isSponsor) return;
+
     kitState.debugging = true;
     processes.removeByPid(processInfo.child?.pid);
 
@@ -1287,7 +1347,10 @@ const createChild = ({
     silent: false,
     // ...(isWin ? {} : { execPath }),
     cwd: os.homedir(),
-    env,
+    env: {
+      ...env,
+      KIT_DEBUG: port ? '1' : '0',
+    },
     ...(port
       ? {
           stdio: 'pipe',
@@ -1368,6 +1431,18 @@ const ensureTwoIdleProcesses = () => {
       processes.add(ProcessType.Prompt);
     }
   }, 100);
+};
+
+const setTrayScriptError = (pid: number) => {
+  try {
+    const { scriptPath: errorScriptPath } = processes.getByPid(pid) || {
+      scriptPath: '',
+    };
+
+    kitState.scriptErrorPath = errorScriptPath;
+  } catch {
+    kitState.scriptErrorPath = '';
+  }
 };
 
 class Processes extends Array<ProcessInfo> {
@@ -1469,12 +1544,7 @@ class Processes extends Array<ProcessInfo> {
           `👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors`
         );
 
-        kitState.status = {
-          status: 'warn',
-          message: ``,
-        };
-
-        kitState.scriptError = true;
+        setTrayScriptError(pid);
       }
 
       processes.removeByPid(pid);
@@ -1490,7 +1560,7 @@ class Processes extends Array<ProcessInfo> {
         message: ``,
       };
 
-      kitState.scriptError = true;
+      setTrayScriptError(pid);
       if (reject) reject(error);
     });
 

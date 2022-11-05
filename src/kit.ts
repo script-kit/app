@@ -136,7 +136,7 @@ export const runPromptProcess = async (
     trigger: Trigger.App,
   }
 ): Promise<ProcessInfo | null> => {
-  if (pathsAreEqual(promptScriptPath, mainScriptPath)) {
+  if (pathsAreEqual(promptScriptPath || '', mainScriptPath)) {
     removeAbandonnedKit();
   }
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);

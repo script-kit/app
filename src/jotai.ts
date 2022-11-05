@@ -8,7 +8,7 @@
 /* eslint-disable guard-for-in */
 import { atom, Getter, Setter } from 'jotai';
 import { QuickScore, createConfig, quickScore } from 'quick-score';
-
+import { UserDb } from '@johnlindquist/kit/cjs/db';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
 import {
@@ -1675,3 +1675,11 @@ export const kitStateAtom = atom(
     });
   }
 );
+
+export const loginAtom = atom((g) => {
+  return () => {
+    ipcRenderer.send(AppChannel.LOGIN);
+  };
+});
+
+export const userAtom = atom<UserDb>({});

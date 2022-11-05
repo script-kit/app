@@ -3,9 +3,10 @@ import log from 'electron-log';
 import { assign, debounce } from 'lodash';
 import path from 'path';
 import { existsSync } from 'fs';
+import { snapshot } from 'valtio';
 
 import { rm } from 'fs/promises';
-import { getAppDb } from '@johnlindquist/kit/cjs/db';
+import { getAppDb, getUserDb } from '@johnlindquist/kit/cjs/db';
 
 import { parseScript, kitPath, kenvPath } from '@johnlindquist/kit/cjs/utils';
 
@@ -21,11 +22,12 @@ import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
-import { appDb, scriptChanged, scriptRemoved } from './state';
+import { appDb, kitState, scriptChanged, scriptRemoved, userDb } from './state';
 import { addSnippet, removeSnippet } from './tick';
-import { clearPromptCacheFor } from './prompt';
+import { appToPrompt, clearPromptCacheFor, sendToPrompt } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
+import { AppChannel } from './enums';
 
 // export const cacheMenu = debounce(async () => {
 //   await updateScripts();
@@ -120,6 +122,17 @@ export const setupWatchers = async () => {
       const currentAppDb = (await getAppDb()).data;
       assign(appDb, currentAppDb);
 
+      return;
+    }
+
+    if (base === 'user.json') {
+      kitState.isSponsor = false;
+      log.info(`user.json changed`);
+      const currentUserDb = (await getUserDb()).data;
+      kitState.user = currentUserDb;
+
+      log.info(`Send user.json to prompt`, snapshot(kitState.user));
+      appToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
       return;
     }
 

@@ -960,3 +960,11 @@ dark:peer-focus:text-primary-light
 cursor-pointer
 break-all
 break-words
+border-t-2
+border-t-4
+border-white
+border-light
+border-dark
+rounded-md
+hover:opacity-100
+dark:hover:opacity-100

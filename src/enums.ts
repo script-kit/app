@@ -24,6 +24,8 @@ export enum AppChannel {
   MAIN_SCRIPT = 'MAIN_SCRIPT',
   KIT_STATE = 'STATE',
   APPLY_UPDATE = 'APPLY_UPDATE',
+  LOGIN = 'LOGIN',
+  USER_CHANGED = 'USER_CHANGED',
 }
 
 export enum Trigger {
