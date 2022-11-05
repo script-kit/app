@@ -125,25 +125,7 @@
               "public.unix-executable"
             ]
           }
-        ],
-        "NSAppleEventsUsageDescription": "Kit.app wants to use AppleScript.",
-        "NSCalendarsUsageDescription": "Kit.app wants to access Calendar data.",
-        "NSCameraUsageDescription": "Kit.app wants to use the Camera.",
-        "NSContactsUsageDescription": "Kit.app wants to access your Contacts.",
-        "NSDesktopFolderUsageDescription": "Kit.app wants to access the Desktop folder.",
-        "NSDocumentsFolderUsageDescription": "Kit.app wants to access the Documents folder.",
-        "NSDownloadsFolderUsageDescription": "Kit.app wants to access the Downloads folder.",
-        "NSFileProviderDomainUsageDescription": "Kit.app wants to access files managed by a file provider.",
-        "NSFileProviderPresenceUsageDescription": "Kit.app wants to be informed when other apps access files that it manages.",
-        "NSLocationUsageDescription": "Kit.app wants to access your location information.",
-        "NSMicrophoneUsageDescription": "Kit.app wants to use your microphone.",
-        "NSMotionUsageDescription": "Kit.app wants to use the device’s accelerometer.",
-        "NSNetworkVolumesUsageDescription": "Kit.app wants to access files on a network volume.",
-        "NSPhotoLibraryUsageDescription": "Kit.app wants to access the photo library.",
-        "NSRemindersUsageDescription": "Kit.app wants to access your reminders.",
-        "NSRemovableVolumesUsageDescription": "Kit.app wants to access files on a removable volume.",
-        "NSSpeechRecognitionUsageDescription": "Kit.app wants to send user data to Apple’s speech recognition servers.",
-        "NSSystemAdministrationUsageDescription": "This action wants to browse files on your system"
+        ]
       }
     },
     "dmg": {
@@ -172,6 +154,18 @@
         }
       ],
       "category": "Development"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": "x64"
+        },
+        {
+          "target": "nsis",
+          "arch": "arm64"
+        }
+      ]
     },
     "directories": {
       "app": "src",
