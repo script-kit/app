@@ -52,11 +52,8 @@ import {
   kitPath,
   kenvPath,
   kitDotEnvPath,
-  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
-import { execaCommand } from 'execa';
-import { ensureDir, ensureFile } from 'fs-extra';
 import axios from 'axios';
 import { getLog, warn } from './logs';
 import {
@@ -181,12 +178,15 @@ export const formatScriptChoices = (data: Choice[]) => {
   return choices;
 };
 
-export const sponsorCheck = async () => {
+export const sponsorCheck = async (feature: string) => {
   log.info('Checking sponsor status...');
 
   const isOnline = await online();
+  if (!isOnline || process.env.NODE_ENV === 'development') {
+    kitState.isSponsor = true;
+  }
 
-  if (isOnline && !kitState.isSponsor) {
+  if (!kitState.isSponsor) {
     const response = await axios.post(
       `https://scriptkit.com/api/check-sponsor`,
       kitState.user
@@ -207,7 +207,7 @@ export const sponsorCheck = async () => {
 
       emitter.emit(KitEvent.RunPromptProcess, {
         scriptPath: kitPath('pro', 'sponsor.js'),
-        args: ['Debugger'],
+        args: [feature],
         options: {
           force: true,
           trigger: Trigger.App,
@@ -702,7 +702,7 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
   DEBUG_SCRIPT: toProcess(async (processInfo, data) => {
-    await sponsorCheck();
+    await sponsorCheck('Debugging Scripts');
     if (!kitState.isSponsor) return;
 
     kitState.debugging = true;
@@ -937,6 +937,8 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_THEME: toProcess(async ({ child }, { channel, value }) => {
+    await sponsorCheck('Custom Themes');
+    if (!kitState.isSponsor) return;
     sendToPrompt(Channel.SET_THEME, value);
     if (child) {
       child?.send({

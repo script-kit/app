@@ -121,9 +121,9 @@ export const createPromptWindow = async () => {
     titleBarStyle: kitState.isMac ? 'customButtonsOnHover' : 'hiddenInset',
     useContentSize: true,
     frame: false,
+    hasShadow: true,
     transparent: !kitState.isWindows,
     show: false,
-    // hasShadow: true,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -469,20 +469,20 @@ export const getCurrentScreenPromptCache = async (
     }
     if (ui === UI.form) width /= 2;
     if (ui === UI.drop) {
-      width /= 2;
+      // width /= 2;
       height /= 2;
     }
     if (ui === UI.hotkey) {
-      width /= 2;
+      // width /= 2;
     }
 
     if (ui === UI.div) {
-      width /= 2;
+      // width /= 2;
       height = promptWindow?.getBounds()?.height;
     }
 
     if (ui === UI.arg) {
-      width /= 2;
+      // width /= 2;
     }
 
     if (ui === UI.editor || ui === UI.textarea) {
@@ -618,8 +618,13 @@ export const resize = async ({
   }
 
   if (isVisible()) {
+    // promptWindow?.setBounds(
+    //   { x, y, width, height },
+    //   resizeAnimate && !hasInput
+    // );
+
     promptWindow?.setBounds(
-      { x, y, width, height },
+      { x, y, width: currentWidth, height },
       resizeAnimate && !hasInput
     );
 

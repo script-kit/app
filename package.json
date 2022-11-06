@@ -155,18 +155,6 @@
       ],
       "category": "Development"
     },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": "x64"
-        },
-        {
-          "target": "nsis",
-          "arch": "arm64"
-        }
-      ]
-    },
     "directories": {
       "app": "src",
       "buildResources": "assets",

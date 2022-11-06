@@ -90,9 +90,11 @@ module.exports = {
         'random-shapes': "url('/src/svg/ui/random-shapes.svg')",
       }),
       fontFamily: {
-        mono: ['JetBrains Mono'],
-        native: ['monospace'],
-        ui: ['system-ui'],
+        sans: ['var(--sans-font)'],
+        serif: ['var(--serif-font)'],
+        mono: ['var(--mono-font)'],
+        native: ['var(--native-font)'],
+        ui: ['var(--ui-font)'],
       },
       margin: {
         '2px': '2px',

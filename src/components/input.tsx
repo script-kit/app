@@ -177,7 +177,6 @@ export default function Input() {
       placeholder-black placeholder-opacity-40
       tracking-normal dark:tracking-normal
       placeholder:tracking-normal dark:placeholder:tracking-normal
-      font-ui dark:font-ui
       h-14
       ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 px-4 py-0
       focus:border-none border-none`}

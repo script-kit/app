@@ -68,6 +68,7 @@ export default function Panel({ width, height }: PanelProps) {
   return (
     <SimpleBar
       scrollableNodeProps={{ ref: scrollRef }}
+      autoHide={false}
       style={
         {
           cursor: mouseEnabled ? 'auto' : 'none',

@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import { useAtom, useAtomValue } from 'jotai';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, Fragment } from 'react';
 import { motion } from 'framer-motion';
 import {
   loginAtom,
@@ -38,7 +38,6 @@ const GithubIcon = ({ className }) => (
 );
 
 const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
-  const login = useAtomValue(loginAtom);
   const user = useAtomValue(userAtom);
 
   if (tab === 'Account__') {
@@ -68,7 +67,7 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
     );
   }
 
-  return tab;
+  return <span>{tab}</span>;
 };
 
 export default function KitTabs() {
@@ -110,7 +109,7 @@ export default function KitTabs() {
         {tabs.map((tab: string, i: number) => {
           return (
             // I need to research a11y for apps vs. "sites"
-            <>
+            <Fragment key={tab}>
               {tab === 'Account__' && <div className="flex-grow" />}
               <motion.div
                 ref={(el) => {
@@ -156,7 +155,7 @@ export default function KitTabs() {
                   transition={{ duration: 0.15 }}
                 />
               </motion.div>
-            </>
+            </Fragment>
           );
         })}
       </motion.div>
