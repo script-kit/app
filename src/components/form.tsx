@@ -42,6 +42,10 @@ export default function Form({
   ]);
 
   useEffect(() => {
+    const handler = () => {
+      (document as any).kitForm?.requestSubmit();
+    };
+
     if (formData) {
       const data: any = formData;
       for (const el of formRef?.current?.elements as any) {
@@ -66,13 +70,22 @@ export default function Form({
         if (wrapper) {
           wrapper.tabIndex = -1;
         }
+        const enterButton = document.querySelector('button[tabindex="0"]');
+        if (enterButton) {
+          enterButton.addEventListener('click', handler);
+        }
       }
     }
-  }, [formData]);
+    return () => {
+      document
+        ?.querySelector('button[tabindex="0"]')
+        ?.removeEventListener('click', handler);
+    };
+  }, [formData, formRef]);
 
   const onLocalSubmit = useCallback(
-    (event) => {
-      event.preventDefault();
+    (event?: any) => {
+      if (event) event.preventDefault();
 
       const data: any = new FormData(formRef?.current);
 
@@ -133,6 +146,7 @@ export default function Form({
       }
     >
       <form
+        name="kitForm"
         onChange={onFormChange}
         ref={formRef}
         onKeyDown={onFormKeyDown}

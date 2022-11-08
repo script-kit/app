@@ -77,10 +77,9 @@ export default function Drop() {
         w-full h-full
         drop-component
         flex flex-col justify-center items-center
-        text-black dark:text-white text-xl
+        text-white dark:text-white text-xl
         focus:outline-none outline-none
         ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0
-        bg-white dark:bg-black
         transition ease-in-out duration-500 ${
           dropReady ? `opacity-75 shadow-inner` : `opacity-25`
         }

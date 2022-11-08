@@ -170,10 +170,10 @@ module.exports = {
       typography: (theme) => ({
         DEFAULT: {
           css: {
-            '--tw-prose-headings': theme('colors.white'),
-            '--tw-prose-code': theme('colors.white'),
-            '--tw-prose-links': theme('colors.white'),
-            '--tw-prose-pre-code': theme('colors.white'),
+            '--tw-prose-headings': theme('colors.black'),
+            '--tw-prose-code': theme('colors.black'),
+            '--tw-prose-links': theme('colors.black'),
+            '--tw-prose-pre-code': theme('colors.black'),
             maxWidth: '100%',
             color: theme('colors.black'),
             a: {

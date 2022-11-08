@@ -112,8 +112,12 @@ let watchers = [] as FSWatcher[];
 export const teardownWatchers = async () => {
   if (watchers.length) {
     watchers.forEach((watcher) => {
-      watcher.removeAllListeners();
-      watcher.close();
+      try {
+        watcher.removeAllListeners();
+        watcher.close();
+      } catch (error) {
+        log.error(error);
+      }
     });
     watchers.length = 0;
   }

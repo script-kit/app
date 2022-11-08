@@ -1003,3 +1003,17 @@ bg-primary-dark dark:bg-primary-light
 hover:invert dark:hover:invert
 hover:bg-opacity-25 dark:hover:bg-opacity-25
 pb-4px
+border-l-2
+border-opacity-25
+border-r-2
+bg-gray
+bg-opacity-50
+focus:text-contrast-light
+dark:focus:text-contrast-dark
+bg-black dark:bg-white
+bg-opacity-0 dark:bg-opacity-0
+hover:bg-opacity-25 dark:hover:bg-opacity-25
+hover:invert dark:hover:invert
+focus:bg-opacity-25 dark:focus:bg-opacity-25
+focus:invert dark:focus:invert
+focus:border-contrast-light dark:focus:border-contrast-dark

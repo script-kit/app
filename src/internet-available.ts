@@ -24,37 +24,41 @@ export default function internetAvailable(
 
   return new Promise(function (resolve, reject) {
     // Create instance of the DNS resolver
-    const socket = dns({
-      timeout,
-      retries,
-    });
-
-    // Run the dns lowlevel lookup
-    socket.query(
-      {
-        questions: [
-          {
-            type: 'A',
-            name: domainName,
-          },
-        ],
-      },
-      port,
-      host
-    );
-
-    // DNS Address solved, internet available
-    socket.on('response', () => {
-      socket.destroy(() => {
-        resolve(true);
+    try {
+      const socket = dns({
+        timeout,
+        retries,
       });
-    });
 
-    // Verify for timeout of the request (cannot reach server)
-    socket.on('timeout', () => {
-      socket.destroy(() => {
-        resolve(false);
+      // Run the dns lowlevel lookup
+      socket.query(
+        {
+          questions: [
+            {
+              type: 'A',
+              name: domainName,
+            },
+          ],
+        },
+        port,
+        host
+      );
+
+      // DNS Address solved, internet available
+      socket.on('response', () => {
+        socket.destroy(() => {
+          resolve(true);
+        });
       });
-    });
+
+      // Verify for timeout of the request (cannot reach server)
+      socket.on('timeout', () => {
+        socket.destroy(() => {
+          resolve(false);
+        });
+      });
+    } catch (error) {
+      resolve(false);
+    }
   });
 }

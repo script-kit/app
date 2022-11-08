@@ -57,12 +57,3 @@ export interface Survey {
   subscribe: boolean;
   contact: boolean;
 }
-
-export type ProcessInfo = {
-  pid: number;
-  child: ChildProcess;
-  type: ProcessType;
-  scriptPath: string;
-  values: any[];
-  date: Date;
-};

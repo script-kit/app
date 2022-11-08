@@ -19,7 +19,7 @@ import {
 } from 'electron';
 import os, { constants } from 'os';
 import { remove } from 'lodash';
-
+import ContrastColor from 'contrast-color';
 import { subscribe } from 'valtio';
 import http from 'http';
 import path from 'path';
@@ -52,6 +52,7 @@ import {
   kitPath,
   kenvPath,
   kitDotEnvPath,
+  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import axios from 'axios';
@@ -108,12 +109,7 @@ import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
 import { AppChannel, Trigger } from './enums';
-import {
-  isKitScript,
-  maybeConvertColors,
-  pathsAreEqual,
-  toRgb,
-} from './helpers';
+import { isKitScript, toHex, toRgb, pathsAreEqual } from './helpers';
 import { deleteText } from './keyboard';
 
 // const trash = async (...args: string[]) => {
@@ -129,6 +125,54 @@ import { deleteText } from './keyboard';
 
 //   return pExec(`${bin} ${args.join(' ')}`);
 // };
+
+export const maybeConvertColors = (value: any) => {
+  if (value.foreground) {
+    value['--color-white'] = toRgb(value.foreground);
+    value['--color-black'] = toRgb(value.foreground);
+  }
+  if (value.accent) {
+    value['--color-primary-light'] = toRgb(value.accent);
+    value['--color-primary-dark'] = toRgb(value.accent);
+
+    const contrast = ContrastColor.contrastColor({
+      bgColor: toHex(value.accent),
+    }) as string;
+
+    log.info({ contrast });
+
+    value['--color-contrast-light'] = toRgb(contrast);
+    value['--color-contrast-dark'] = toRgb(contrast);
+  }
+
+  if (value.background) {
+    value['--color-background-light'] = toRgb(value.background);
+    value['--color-background-dark'] = toRgb(value.background);
+
+    const cc = new ContrastColor({
+      bgColor: toHex(value.background),
+    });
+    const result = cc.contrastColor();
+    log.info({ result });
+
+    const appearance = result === '#FFFFFF' ? 'dark' : 'light';
+    log.info(`💄 Setting appearance to ${appearance}`);
+
+    sendToPrompt(Channel.SET_APPEARANCE, appearance);
+  }
+
+  if (value.opacity) {
+    value['--opacity-light'] = value.opacity;
+    value['--opacity-dark'] = value.opacity;
+  }
+
+  log.info(value);
+
+  if (value.background) delete value.background;
+  if (value.foreground) delete value.foreground;
+  if (value.accent) delete value.accent;
+  if (value.opacity) delete value.opacity;
+};
 
 export const formatScriptChoices = (data: Choice[]) => {
   const dataChoices: Script[] = (data || []) as Script[];
@@ -951,6 +995,7 @@ const kitMessageMap: ChannelHandler = {
   SET_THEME: toProcess(async ({ child }, { channel, value }) => {
     await sponsorCheck('Custom Themes');
     if (!kitState.isSponsor) return;
+
     maybeConvertColors(value);
 
     sendToPrompt(Channel.SET_THEME, value);
@@ -1430,6 +1475,19 @@ interface ProcessHandlers {
 const processesChanged = () => {
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
   appToPrompt(AppChannel.PROCESSES, pinfos);
+
+  const mains = processes.filter((p) =>
+    pathsAreEqual(p.scriptPath, mainScriptPath)
+  );
+
+  // kill all but the newest
+  if (mains.length > 1) {
+    const [, ...others] = mains.sort((a, b) => b.pid - a.pid);
+    others.forEach((p) => {
+      log.info(`Killing stray main process ${p.pid}`);
+      p.child.kill();
+    });
+  }
 };
 
 const ensureTwoIdleProcesses = () => {
@@ -1497,7 +1555,7 @@ class Processes extends Array<ProcessInfo> {
       type,
       scriptPath,
       values: [],
-      date: new Date(),
+      date: Date.now(),
     };
 
     this.push(info);

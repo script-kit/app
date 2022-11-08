@@ -86,7 +86,7 @@ function Aside() {
   const [lazyIcon] = useAtom(loadableIconAtom);
 
   return (
-    <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12">
+    <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner">
       <div className="flex flex-col items-center h-full">
         <div className="relative">
           <img
@@ -226,10 +226,10 @@ export default function Splash() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="grid grid-cols-8 left-0 top-0 fixed w-screen h-screen bg-white bg-opacity-40 dark:bg-black dark:bg-opacity-40"
+      className="grid grid-cols-8 left-0 top-0 fixed w-screen h-screen"
     >
       <Aside />
-      <main className="bg-white bg-opacity-5 col-span-5 h-full p-6">
+      <main className="bg-white dark:bg-black dark:bg-opacity-0 col-span-5 h-full p-6">
         <form
           onSubmit={handleOnSubmit}
           className="flex flex-col h-full justify-center"
@@ -256,7 +256,7 @@ export default function Splash() {
                 </AnimatePresence>
               </AnimateSharedLayout>
             </legend>
-            <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 flex flex-col">
+            <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-50 border dark:border-white dark:border-opacity-25 flex flex-col">
               <motion.textarea
                 autoFocus
                 tabIndex={0}
@@ -269,7 +269,7 @@ export default function Splash() {
                 id="answer"
                 required={contact && !subscribe}
                 placeholder="Type your answer here..."
-                className="text-lg w-full rounded-md border-none bg-transparent px-5 py-3"
+                className="text-lg w-full rounded-md border-none bg-transparent dark:bg-transparent px-5 py-3"
                 rows={5}
               />
             </motion.div>
@@ -309,7 +309,7 @@ export default function Splash() {
                 </motion.div>
               )}
               {!hideEmail ? (
-                <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-75 border border-white border-opacity-15 my-3">
+                <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-50 border dark:border-white dark:border-opacity-25 my-3">
                   <label
                     className={`px-5 py-3 absolute ${
                       emailRequired
@@ -327,7 +327,7 @@ export default function Splash() {
                     value={email}
                     type="email"
                     id="email"
-                    className="px-5 pl-20 py-3 border-none bg-transparent w-full rounded-md"
+                    className="px-5 pl-20 py-3 border-none bg-transparent dark:bg-transparent w-full rounded-md"
                     placeholder="you@company.com"
                   />
                 </motion.div>
@@ -337,7 +337,7 @@ export default function Splash() {
             <motion.div className="flex flex-row justify-between w-full pt-2">
               <button
                 type="submit"
-                className="rounded-md bg-primary-light dark:bg-bg-light bg-opacity-75 dark:bg-opacity-20 hover:bg-opacity-100 dark:hover:bg-opacity-30 transition px-5 py-2 font-medium h-10"
+                className="rounded-md bg-primary-light dark:bg-bg-light hover:bg-opacity-50 dark:bg-opacity-20 dark:hover:bg-opacity-30 transition px-5 py-2 font-medium h-10"
               >
                 {isSubmitting ? <Spinner /> : 'Send'}
               </button>

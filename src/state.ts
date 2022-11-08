@@ -13,7 +13,7 @@ import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { debounce } from 'lodash';
-import { Script } from '@johnlindquist/kit/types/core';
+import { Script, ProcessInfo } from '@johnlindquist/kit/types/core';
 import {
   getScripts,
   setScriptTimestamp,
@@ -33,7 +33,6 @@ import {
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import internetAvailable from './internet-available';
 import { noScript } from './defaults';
-import { ProcessInfo } from './types';
 import { getAssetPath } from './assets';
 
 export const serverState = {

@@ -36,6 +36,10 @@ const bg = `
 bg-black dark:bg-white
 bg-opacity-0 dark:bg-opacity-0
 hover:bg-opacity-25 dark:hover:bg-opacity-25
+hover:invert dark:hover:invert
+focus:bg-opacity-25 dark:focus:bg-opacity-25
+focus:invert dark:focus:invert
+focus:border-contrast-light dark:focus:border-contrast-dark
 `;
 
 const transition = { duration: 0.0, ease: 'easeInOut' };
@@ -66,8 +70,8 @@ export function OptionsButton() {
       transition={transition}
       className={`
   flex flex-row items-center justify-center
-  outline-none px-1 py-0.5
-  font-medium focus:text-primary-dark dark:focus:text-primary-light
+  outline-none p-1
+  font-medium
   text-sm
   text-contrast-light dark:text-contrast-dark
 
@@ -173,8 +177,7 @@ export function ActionButton(action: Action) {
   flex flex-row items-center justify-center
   outline-none
   p-1
-  font-medium focus:text-primary-dark dark:focus:text-primary-light
-
+  font-medium
   text-sm
   text-contrast-light dark:text-contrast-dark
 
@@ -338,14 +341,14 @@ export default function ActionBar() {
     bg-opacity-0 dark:bg-opacity-0
     `
         : `
-    bg-opacity-90 dark:bg-opacity-90
+    bg-opacity-80 dark:bg-opacity-80
     `
     }
 
     px-4
     justify-center items-center
     overflow-hidden
-    h-9 max-h-9`}
+    h-8 max-h-8`}
     >
       <IconButton />
 

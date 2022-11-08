@@ -9,7 +9,6 @@ import { readdir, remove } from 'fs-extra';
 import { once } from 'lodash';
 import { kitPath, appDbPath } from '@johnlindquist/kit/cjs/utils';
 import { subscribeKey } from 'valtio/utils';
-import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
 import { forceQuit, kitState, online } from './state';

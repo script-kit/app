@@ -38,14 +38,18 @@ export const sleepSchedule = () => {
 
   for (const [filePath, job] of scheduleMap) {
     if (job && job.name) {
-      const cancelled = cancelJob(filePath);
-      log.info(
-        `😴 Computer sleeping: ${
-          job.name
-        } won't run again until wake. Cancel Success? ${
-          cancelled ? 'Yes' : 'No'
-        }`
-      );
+      try {
+        const cancelled = cancelJob(filePath);
+        log.info(
+          `😴 Computer sleeping: ${
+            job.name
+          } won't run again until wake. Cancel Success? ${
+            cancelled ? 'Yes' : 'No'
+          }`
+        );
+      } catch (error) {
+        log.error(error);
+      }
     }
   }
 

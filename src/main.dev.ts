@@ -774,9 +774,93 @@ const checkKit = async () => {
     log.info(`🔥 Starting Kit First Install`);
   }
 
+  if (!(await nodeExists())) {
+    await setupLog(
+      `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
+    );
+
+    if (existsSync(KIT_NODE_TAR)) {
+      if (existsSync(knodePath())) {
+        await setupLog(`Removing old node ${tildify(knodePath())}`);
+        await rm(knodePath(), {
+          recursive: true,
+          force: true,
+        });
+      }
+
+      await setupLog(`Create node dir ${tildify(knodePath())}`);
+      await mkdir(knodePath());
+
+      log.info(`Found ${KIT_NODE_TAR}. Extracting...`);
+
+      if (platform === 'win') {
+        log.info(`Extracting ${KIT_NODE_TAR} to ${tildify(knodePath())}`);
+
+        try {
+          // const copyPath = path.resolve(homedir(), 'node.zip');
+          // await copyFile(KIT_NODE_TAR, copyPath);
+          // const d = await Open.file(copyPath);
+          // await d.extract({ path: knodePath(), concurrency: 5 });
+          /* eslint-disable new-cap */
+          const zip = new StreamZip.async({ file: KIT_NODE_TAR });
+
+          await zip.extract(null, knodePath());
+          await zip.close();
+
+          const nodeDir = await readdir(knodePath());
+          const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));
+          if (nodeDirName) {
+            await rename(knodePath(nodeDirName), knodePath('bin'));
+            log.info(await readdir(knodePath('bin')));
+            await chmod(knodePath('bin', 'npm.cmd'), 0o755);
+            await chmod(knodePath('bin', 'node.exe'), 0o755);
+          } else {
+            log.warn(`Couldn't find node dir in ${nodeDir}`);
+          }
+        } catch (error) {
+          log.error(error);
+        }
+      }
+
+      if (platform === 'darwin') {
+        await tar.x({
+          file: KIT_NODE_TAR,
+          C: knodePath(),
+          strip: 1,
+        });
+      }
+
+      if (platform === 'linux') {
+        const extractNode = spawnSync(
+          `tar --strip-components 1 -xf '${getAssetPath(
+            'node.tar.xz'
+          )}' --directory '${knodePath}'`,
+          {
+            shell: true,
+          }
+        );
+
+        await handleSpawnReturns(`extract node`, extractNode);
+        // await tar.x({
+        //   file: KIT_NODE_TAR,
+        //   C: kitPath('node'),
+        //   strip: 1,
+        // });
+      }
+    } else {
+      const installScript = `./build/install-node.sh`;
+      await chmod(kitPath(installScript), 0o755);
+      const nodeInstallResult = spawnSync(
+        installScript,
+        ` --prefix node --platform darwin`.split(' '),
+        options
+      );
+      await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
+    }
+  }
+
   const requiresInstall = (await versionMismatch()) || !(await kitExists());
   log.info(`Requires install: ${requiresInstall}`);
-
   if (await isContributor()) {
     await setupLog(`Welcome fellow contributor! Thanks for all you do!`);
   } else if (requiresInstall) {
@@ -790,90 +874,6 @@ const checkKit = async () => {
     const kitTar = getAssetPath('kit.tar.gz');
     await extractTar(kitTar, kitPath());
 
-    if (!(await nodeExists())) {
-      await setupLog(
-        `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
-      );
-
-      if (existsSync(KIT_NODE_TAR)) {
-        if (existsSync(knodePath())) {
-          await setupLog(`Removing old node ${tildify(knodePath())}`);
-          await rm(knodePath(), {
-            recursive: true,
-            force: true,
-          });
-        }
-
-        await setupLog(`Create node dir ${tildify(knodePath())}`);
-        await mkdir(knodePath());
-
-        log.info(`Found ${KIT_NODE_TAR}. Extracting...`);
-
-        if (platform === 'win') {
-          log.info(`Extracting ${KIT_NODE_TAR} to ${tildify(knodePath())}`);
-
-          try {
-            // const copyPath = path.resolve(homedir(), 'node.zip');
-            // await copyFile(KIT_NODE_TAR, copyPath);
-            // const d = await Open.file(copyPath);
-            // await d.extract({ path: knodePath(), concurrency: 5 });
-            /* eslint-disable new-cap */
-            const zip = new StreamZip.async({ file: KIT_NODE_TAR });
-
-            await zip.extract(null, knodePath());
-            await zip.close();
-
-            const nodeDir = await readdir(knodePath());
-            const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));
-            if (nodeDirName) {
-              await rename(knodePath(nodeDirName), knodePath('bin'));
-              log.info(await readdir(knodePath('bin')));
-              await chmod(knodePath('bin', 'npm.cmd'), 0o755);
-              await chmod(knodePath('bin', 'node.exe'), 0o755);
-            } else {
-              log.warn(`Couldn't find node dir in ${nodeDir}`);
-            }
-          } catch (error) {
-            log.error(error);
-          }
-        }
-
-        if (platform === 'darwin') {
-          await tar.x({
-            file: KIT_NODE_TAR,
-            C: knodePath(),
-            strip: 1,
-          });
-        }
-
-        if (platform === 'linux') {
-          const extractNode = spawnSync(
-            `tar --strip-components 1 -xf '${getAssetPath(
-              'node.tar.xz'
-            )}' --directory '${knodePath}'`,
-            {
-              shell: true,
-            }
-          );
-
-          await handleSpawnReturns(`extract node`, extractNode);
-          // await tar.x({
-          //   file: KIT_NODE_TAR,
-          //   C: kitPath('node'),
-          //   strip: 1,
-          // });
-        }
-      } else {
-        const installScript = `./build/install-node.sh`;
-        await chmod(kitPath(installScript), 0o755);
-        const nodeInstallResult = spawnSync(
-          installScript,
-          ` --prefix node --platform darwin`.split(' '),
-          options
-        );
-        await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
-      }
-    }
     await setupLog(`Installing ~/.kit packages...`);
     log.info(`PATH:`, options?.env?.PATH);
 

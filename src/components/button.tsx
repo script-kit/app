@@ -371,17 +371,17 @@ export default function ChoiceButton({
                     rounded
 
                     bg-white dark:bg-white
-                    dark:bg-opacity-10 bg-opacity-10
-                    hover:bg-opacity-50 dark:hover:bg-opacity-25
+                    hover:bg-white dark:hover:bg-white
+                    bg-opacity-10 dark:bg-opacity-10
+                    hover:bg-opacity-25 dark:hover:bg-opacity-25
  ml-2
         w-6 h-6
         leading-1
         fill-current
         transition ease-in
         opacity-50
-        hover:opacity-80
         text-black dark:text-white
-        dark:hover:text-primary-light hover:text-primary-dark
+        hover:text-white dark:hover:text-primary-light
 
         `}
                   >
