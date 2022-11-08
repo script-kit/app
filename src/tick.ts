@@ -199,8 +199,7 @@ export const configureInterval = async () => {
     });
 
     uIOhook.on('keydown', (event) => {
-      log.silly(`keydown`);
-      // log.info(String.fromCharCode(event.keychar));
+      log.silly({ event: 'keydown', key: String.fromCharCode(event.keycode) });
       observer.next(event);
     });
 

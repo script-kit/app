@@ -108,7 +108,12 @@ import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
 import { AppChannel, Trigger } from './enums';
-import { isKitScript, pathsAreEqual } from './helpers';
+import {
+  isKitScript,
+  maybeConvertColors,
+  pathsAreEqual,
+  toRgb,
+} from './helpers';
 import { deleteText } from './keyboard';
 
 // const trash = async (...args: string[]) => {
@@ -182,23 +187,30 @@ export const sponsorCheck = async (feature: string) => {
   log.info('Checking sponsor status...');
 
   const isOnline = await online();
-  if (!isOnline || process.env.NODE_ENV === 'development') {
+  if (!isOnline || process.env.KIT_SPONSOR === 'development') {
     kitState.isSponsor = true;
   }
 
   if (!kitState.isSponsor) {
     const response = await axios.post(
       `https://scriptkit.com/api/check-sponsor`,
-      kitState.user
+      {
+        ...kitState.user,
+        feature,
+      }
     );
 
-    log.info(`🕵️‍♀️ Sponsor check response`, JSON.stringify(response.data));
-    log.info({
-      id: response.data.id,
-      node_id: kitState.user.node_id,
-    });
+    // check for axios post error
+    if (response.status !== 200) {
+      log.error('Error checking sponsor status', response);
+    }
 
-    if (kitState.user.node_id && response.data.id === kitState.user.node_id) {
+    log.info(`🕵️‍♀️ Sponsor check response`, JSON.stringify(response.data));
+
+    if (
+      (kitState.user.node_id && response.data.id === kitState.user.node_id) ||
+      response.status !== 200
+    ) {
       log.info('User is sponsor');
       kitState.isSponsor = true;
     } else {
@@ -939,6 +951,8 @@ const kitMessageMap: ChannelHandler = {
   SET_THEME: toProcess(async ({ child }, { channel, value }) => {
     await sponsorCheck('Custom Themes');
     if (!kitState.isSponsor) return;
+    maybeConvertColors(value);
+
     sendToPrompt(Channel.SET_THEME, value);
     if (child) {
       child?.send({
@@ -949,6 +963,7 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_TEMP_THEME: toProcess(async ({ child }, { channel, value }) => {
+    maybeConvertColors(value);
     sendToPrompt(Channel.SET_TEMP_THEME, value);
     if (child) {
       child?.send({
@@ -1364,6 +1379,9 @@ const createChild = ({
   let win: BrowserWindow | null = null;
 
   if (port && child && child.stdout && child.stderr) {
+    sendToPrompt(Channel.SET_PROMPT_DATA, {
+      ui: UI.debugger,
+    } as any);
     log.info(`Created ${type} process`);
     // child.stdout.on('data', (data) => {
     //   log.info(`Child ${type} data`, data);

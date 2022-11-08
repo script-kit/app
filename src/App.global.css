@@ -10,18 +10,20 @@
 } */ /* FBBF24 */ /* 4F46E5 */
 /* --color-primary-dark: 79, 70, 229; indigo*/
 :root {
+  --color-white: 255, 255, 255;
+  --color-black: 0, 0, 0;
   --color-primary-light: 251, 191, 36;
   --color-primary-light-half: 251, 191, 36, 0.75;
-  --color-secondary-light: 232, 113, 39;
+  /* --color-secondary-light: 232, 113, 39; */
   --color-primary-dark: 79, 70, 229;
   --color-primary-dark-half: 79, 70, 229, 0.75;
-  --color-secondary-dark: 0, 0, 0;
+  /* --color-secondary-dark: 0, 0, 0; */
   --color-background-dark: 0, 0, 0;
   --color-background-light: 255, 255, 255;
-  --opacity-themelight: 75%;
-  --opacity-themedark: 66%;
-  --opacity-windows-themelight: 0%;
-  --opacity-windows-themedark: 40%;
+  --color-contrast-dark: 0, 0, 0;
+  --color-contrast-light: 255, 255, 255;
+  --opacity-light: 0.9;
+  --opacity-dark: 0.75;
   --mono-font: JetBrains Mono;
   --sans-font: 'ui-sans-serif', 'system-ui', '-apple-system',
     'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial',

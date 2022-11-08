@@ -412,7 +412,6 @@ export default function App() {
       dark:border-white dark:border-opacity-5
       border-black border-opacity-5
 
-
       ${
         appConfig.isMac
           ? `
@@ -423,7 +422,9 @@ export default function App() {
       bg-opacity-90
       dark:bg-opacity-75
       `
-      }`}
+      }
+
+      `}
       >
         {/* {JSON.stringify(state)} */}
         <AnimatePresence key="appComponents">
@@ -498,6 +499,7 @@ export default function App() {
                 {ui === UI.editor && <Editor />}
                 {ui === UI.term && <Terminal />}
                 {ui === UI.emoji && <Emoji />}
+                {/* {ui === UI.inspector && <Inspector />} */}
               </AnimatePresence>
               <AutoSizer>
                 {({ width, height }) => (

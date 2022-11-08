@@ -32,6 +32,12 @@ type Action = {
   arrow?: string;
 };
 
+const bg = `
+bg-black dark:bg-white
+bg-opacity-0 dark:bg-opacity-0
+hover:bg-opacity-25 dark:hover:bg-opacity-25
+`;
+
 const transition = { duration: 0.0, ease: 'easeInOut' };
 
 export function OptionsButton() {
@@ -58,18 +64,18 @@ export function OptionsButton() {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={transition}
-      className="
+      className={`
   flex flex-row items-center justify-center
-  outline-none px-1 py-1
+  outline-none px-1 py-0.5
   font-medium focus:text-primary-dark dark:focus:text-primary-light
-  hover:text-primary-dark dark:hover:text-primary-light
   text-sm
-  text-black dark:text-white text-opacity-50 dark:text-opacity-50
+  text-contrast-light dark:text-contrast-dark
+
+  ${bg}
+
   rounded
-  bg-black dark:bg-white dark:bg-opacity-0 bg-opacity-0
-  hover:bg-opacity-10 dark:hover:bg-opacity-10
   transition-all duration-200 ease-in-out
-  "
+  `}
       onClick={onClick}
     >
       <div className="px-1">{flagValue ? 'Back' : 'Options'}</div>
@@ -81,7 +87,6 @@ export function OptionsButton() {
           rounded
           bg-black dark:bg-white dark:bg-opacity-10 bg-opacity-10
           hover:border-opacity-10 dark:hover:border-opacity-10
-
           "
         >
           {flagValue ? '←' : '→'}
@@ -102,7 +107,7 @@ export function ActionSeparator() {
       font-mono
       leading-none
       text-sm font-medium
-      text-black dark:text-white text-opacity-10 dark:text-opacity-25
+      text-contrast-light dark:text-contrast-dark text-opacity-10 dark:text-opacity-25
       p-0.5
       text-center
 "
@@ -171,18 +176,19 @@ export function ActionButton(action: Action) {
   font-medium focus:text-primary-dark dark:focus:text-primary-light
 
   text-sm
-  text-black dark:text-white text-opacity-50 dark:text-opacity-50
+  text-contrast-light dark:text-contrast-dark
+
+
   rounded
-  bg-black dark:bg-white dark:bg-opacity-0 bg-opacity-0
+
+  ${bg}
   h-full
   ${
     action?.disabled
       ? `brightness-50`
       : `
   brightness-100
-  hover:bg-opacity-10 dark:hover:bg-opacity-10
-  hover:text-primary-dark dark:hover:text-primary-light
-  transition-all duration-500 ease-in-out
+  transition-all duration-200 ease-in-out
   `
   }
   `}
@@ -234,19 +240,21 @@ const IconButton = () => {
     >
       <a href="https://scriptkit.com" tabIndex={-1}>
         <svg
-          className="
+          className={`
         flex
-      h-6 w-6 opacity-50 dark:opacity-50
-      hover:opacity-75 dark:hover:opacity-75
+      h-6 w-7
+
       items-center justify-center
       p-1
-      -ml-1
+      -ml-1 mb-px
       rounded
       min-w-fit
-      text-black dark:text-white
-      hover:text-primary-dark hover:dark:text-primary-light
+      text-contrast-light dark:text-contrast-dark
+
+      ${bg}
+
       transition-all duration-200 ease-in-out
-      "
+      `}
           xmlns="http://www.w3.org/2000/svg"
           width="32"
           height="32"
@@ -323,24 +331,25 @@ export default function ActionBar() {
           dark:border-white dark:border-opacity-5
           border-black border-opacity-5`
       }
-    bg-white dark:bg-black
+    bg-primary-dark dark:bg-primary-light
     ${
       ui === UI.splash
         ? `
     bg-opacity-0 dark:bg-opacity-0
     `
         : `
-    bg-opacity-25 dark:bg-opacity-25
+    bg-opacity-90 dark:bg-opacity-90
     `
     }
 
-    py-2 px-4
-    items-center overflow-hidden
-    h-10 max-h-10`}
+    px-4
+    justify-center items-center
+    overflow-hidden
+    h-9 max-h-9`}
     >
       <IconButton />
 
-      <div className="left-container flex flex-row">
+      <div className="left-container flex flex-row justify-center items-center pb-px">
         {actions
           .filter((action) => action.position === 'left')
           .flatMap((action, i, array) => [
@@ -359,17 +368,17 @@ export default function ActionBar() {
           initial={{ opacity: 0 }}
           animate={{ opacity: [0, 1] }}
           transition={transition}
-          className="flex flex-1 max-h-full
-        px-2 py-1
+          className="flex flex-1 max-h-full h-full
+        px-2
         items-center justify-left
 text-sm font-medium
-text-black dark:text-white
+text-contrast-light dark:text-contrast-dark
 text-opacity-75 dark:text-opacity-75
 truncate
       "
         >
           <div
-            className="truncate min-w-0"
+            className="truncate min-w-0 pb-px"
             dangerouslySetInnerHTML={{ __html: footer }}
           />
         </motion.div>
@@ -377,7 +386,7 @@ truncate
         <div className="flex-1 max-h-full" />
       )}
 
-      <div className="right-container flex flex-row items-center h-full overflow-hidden">
+      <div className="right-container flex flex-row justify-center items-center pb-px overflow-hidden">
         <div className="options-container flex flex-row">
           {hasFlags && [
             <OptionsButton key="options-button" />,

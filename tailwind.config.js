@@ -101,7 +101,9 @@ module.exports = {
         '3px': '3px',
       },
       padding: {
+        '2px': '2px',
         '3px': '3px',
+        '4px': '4px',
       },
       scale: {
         60: '.60',
@@ -113,13 +115,19 @@ module.exports = {
         15: '.15',
         18: '.18',
         40: '.40',
-        themelight: 'var(--opacity-themelight)',
-        themedark: 'var(--opacity-themedark)',
+        themelight: 'var(--opacity-light)',
+        themedark: 'var(--opacity-dark)',
       },
       colors: {
         ...defaultTheme.colors,
         ...colors,
+        white: colorVar('white'),
+        black: colorVar('black'),
         gray: colors.coolGray,
+        contrast: {
+          dark: colorVar('contrast-dark'),
+          light: colorVar('contrast-light'),
+        },
         bg: {
           dark: colorVar('background-dark'),
           light: colorVar('background-light'),
@@ -133,10 +141,6 @@ module.exports = {
         border: {
           light: colorVar('primary-light'),
           dark: colorVar('primary-dark'),
-        },
-        secondary: {
-          light: colorVar('secondary-light'),
-          dark: colorVar('secondary-dark'),
         },
         gradient: {
           white: '#ffffffcc',
@@ -166,6 +170,10 @@ module.exports = {
       typography: (theme) => ({
         DEFAULT: {
           css: {
+            '--tw-prose-headings': theme('colors.white'),
+            '--tw-prose-code': theme('colors.white'),
+            '--tw-prose-links': theme('colors.white'),
+            '--tw-prose-pre-code': theme('colors.white'),
             maxWidth: '100%',
             color: theme('colors.black'),
             a: {

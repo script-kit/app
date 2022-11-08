@@ -8,6 +8,8 @@ import v8 from 'v8';
 import path from 'path';
 import os from 'os';
 import log from 'electron-log';
+import colors from 'color-name';
+import { contrastColor } from 'contrast-color';
 
 import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 
@@ -57,4 +59,70 @@ export const isKitScript = (scriptPath: string) => {
 
   log.verbose(`>>>> Not kit script: ${scriptPath}`);
   return false;
+};
+
+export const toRgb = (hexOrRgbOrName: string) => {
+  if (hexOrRgbOrName.includes(',')) return hexOrRgbOrName;
+  if (colors[hexOrRgbOrName]) return colors[hexOrRgbOrName].join(',');
+
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(
+    hexOrRgbOrName
+  );
+
+  if (!result) return `0, 0, 0`;
+
+  const r = parseInt(result[1], 16);
+  const g = parseInt(result[2], 16);
+  const b = parseInt(result[3], 16);
+
+  return `${r}, ${g}, ${b}`;
+};
+
+export const toHex = (hexOrRgbOrName: string) => {
+  if (hexOrRgbOrName.includes(',')) {
+    const [r, g, b] = hexOrRgbOrName.split(',').map((c) => parseInt(c, 10));
+
+    return `#${r.toString(16)}${g.toString(16)}${b.toString(16)}`;
+  }
+
+  if (colors[hexOrRgbOrName]) return colors[hexOrRgbOrName].join(',');
+
+  return hexOrRgbOrName;
+};
+
+export const maybeConvertColors = (value: any) => {
+  if (value.foreground) {
+    value['--color-white'] = toRgb(value.foreground);
+    value['--color-black'] = toRgb(value.foreground);
+  }
+  if (value.accent) {
+    value['--color-primary-light'] = toRgb(value.accent);
+    value['--color-primary-dark'] = toRgb(value.accent);
+
+    const contrast = contrastColor({
+      bgColor: toHex(value.accent),
+    }) as string;
+
+    log.info({ contrast });
+
+    value['--color-contrast-light'] = toRgb(contrast);
+    value['--color-contrast-dark'] = toRgb(contrast);
+  }
+
+  if (value.background) {
+    value['--color-background-light'] = toRgb(value.background);
+    value['--color-background-dark'] = toRgb(value.background);
+  }
+
+  if (value.opacity) {
+    value['--opacity-light'] = value.opacity;
+    value['--opacity-dark'] = value.opacity;
+  }
+
+  log.info(value);
+
+  if (value.background) delete value.background;
+  if (value.foreground) delete value.foreground;
+  if (value.accent) delete value.accent;
+  if (value.opacity) delete value.opacity;
 };

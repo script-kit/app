@@ -57,11 +57,21 @@ const unlink = (filePath: string) => {
 const buildScriptChanged = debounce((filePath: string) => {
   if (filePath.endsWith('.ts')) {
     log.info(`🏗️ Build ${filePath}`);
-    fork(kitPath('build', 'ts.js'), [filePath], {
+    const child = fork(kitPath('build', 'ts.js'), [filePath], {
       env: assign({}, process.env, {
         KIT: kitPath(),
         KENV: kenvPath(),
       }),
+    });
+
+    // log error
+    child.on('error', (error: any) => {
+      log.error(error);
+    });
+
+    // log exit
+    child.on('exit', (code) => {
+      log.info(`🏗️ Build ${filePath} exited with code ${code}`);
     });
   }
 }, 150);

@@ -9,31 +9,31 @@ export default () => {
 
   const mqListener = useCallback(
     (e: MediaQueryListEvent) => {
-      if (e.media === 'dark') {
-        // set --opacity-themedark to 88%
-        document.documentElement.style.setProperty(
-          '--opacity-themedark',
-          '88%'
-        );
-      }
+      // if (e.media === 'dark') {
+      //   // set --opacity-themedark to 88%
+      //   document.documentElement.style.setProperty(
+      //     '--opacity-themedark',
+      //     '88%'
+      //   );
+      // }
 
-      if (e.media === 'light') {
-        document.documentElement.style.setProperty(
-          '--opacity-themelight',
-          '88%'
-        );
-      }
+      // if (e.media === 'light') {
+      //   document.documentElement.style.setProperty(
+      //     '--opacity-themelight',
+      //     '88%'
+      //   );
+      // }
 
-      if (e.media === 'auto') {
-        document.documentElement.style.setProperty(
-          '--opacity-themedark',
-          '66%'
-        );
-        document.documentElement.style.setProperty(
-          '--opacity-themelight',
-          '66%'
-        );
-      }
+      // if (e.media === 'auto') {
+      //   document.documentElement.style.setProperty(
+      //     '--opacity-themedark',
+      //     '66%'
+      //   );
+      //   document.documentElement.style.setProperty(
+      //     '--opacity-themelight',
+      //     '66%'
+      //   );
+      // }
       if (e.matches) {
         setDark(true);
         document.documentElement.classList.add('dark');

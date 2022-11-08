@@ -920,22 +920,38 @@ export const itemHeightAtom = atom(BUTTON_HEIGHT);
 const promptData = atom<null | PromptData>(null);
 
 const _themeAtom = atom({
+  '--color-white': '255, 255, 255',
+  '--color-black': '0, 0, 0',
   '--color-primary-light': '251, 191, 36',
-  '--color-secondary-light': '232, 113, 39',
-  '--color-background-light': '255, 255, 255',
   '--color-primary-dark': '79, 70, 229',
-  '--color-secondary-dark': '0, 0, 0',
+  '--color-contrast-light': '255, 255, 255',
+  '--color-contrast-dark': '0, 0, 0',
+  '--color-background-light': '255, 255, 255',
   '--color-background-dark': '0, 0, 0',
+  '--opacity-light': '0.9',
+  '--opacity-dark': '0.75',
 });
 
 export const themeAtom = atom(
   (g) => g(_themeAtom),
-  (g, s, a: any) => {
+  (
+    g,
+    s,
+    a: {
+      [key: string]: string;
+    }
+  ) => {
+    const prevTheme: any = g(_themeAtom);
+
     Object.entries(a).forEach(([key, value]) => {
-      document.documentElement.style.setProperty(key, value as string);
+      document.documentElement.style.setProperty(key, value);
     });
 
-    s(_themeAtom, { ...g(_themeAtom), ...a });
+    const newTheme = { ...prevTheme, ...a };
+
+    g(logAtom)(`theme: ${JSON.stringify(newTheme)}`);
+
+    s(_themeAtom, newTheme);
   }
 );
 

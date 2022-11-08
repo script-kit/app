@@ -285,11 +285,11 @@ export const createPromptWindow = async () => {
       kitState.blurredByKit = false;
     }
 
-    if (!kitState.isMac)
-      sendToPrompt(Channel.SET_THEME, {
-        '--opacity-themedark': '100%',
-        '--opacity-themelight': '100%',
-      });
+    // if (!kitState.isMac)
+    //   sendToPrompt(Channel.SET_THEME, {
+    //     '--opacity-themedark': '100%',
+    //     '--opacity-themelight': '100%',
+    //   });
   };
 
   promptWindow?.webContents?.on('blur', onBlur);

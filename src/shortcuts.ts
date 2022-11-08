@@ -16,19 +16,23 @@ import { kitState } from './state';
 import { Trigger } from './enums';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
-  const success = globalShortcut.register(shortcut, async () => {
-    runPromptProcess(filePath, [], {
-      force: true,
-      trigger: Trigger.Shortcut,
+  try {
+    const success = globalShortcut.register(shortcut, async () => {
+      runPromptProcess(filePath, [], {
+        force: true,
+        trigger: Trigger.Shortcut,
+      });
+      focusPrompt();
     });
-    focusPrompt();
-  });
 
-  if (!success) {
-    log.info(`Failed to register: ${shortcut} to ${filePath}`);
+    if (!success) {
+      log.info(`Failed to register: ${shortcut} to ${filePath}`);
+    }
+
+    return success;
+  } catch (error) {
+    return false;
   }
-
-  return success;
 };
 
 export const registerTrayShortcut = () => {

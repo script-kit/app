@@ -965,6 +965,41 @@ border-t-4
 border-white
 border-light
 border-dark
+rounded
 rounded-md
+rounded-lg
 hover:opacity-100
 dark:hover:opacity-100
+bg-opacity-20
+dark:bg-opacity-20
+text-contrast-light
+text-contrast-dark
+dark:text-contrast-light
+dark:text-contrast-dark
+hover:bg-opacity-15
+dark:hover:bg-opacity-15
+
+shadow-inherit
+shadow-current
+shadow-black
+dark:shadow-black
+shadow-white
+dark:shadow-white
+shadow-lg
+dark:shadow-lg
+shadow-sm
+shadow-inner
+hover:shadow-inner
+dark:hover:shadow-inner
+hover:shadow-current
+hover:shadow-sm
+bg-contrast-dark dark:bg-contrast-light
+bg-opacity-0
+dark:bg-opacity-0
+hover:bg-opacity-10
+dark:hover:bg-opacity-20
+dark:hover:bg-opacity-100
+bg-primary-dark dark:bg-primary-light
+hover:invert dark:hover:invert
+hover:bg-opacity-25 dark:hover:bg-opacity-25
+pb-4px
