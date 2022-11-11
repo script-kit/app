@@ -6,11 +6,7 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import { darkAtom, resizingAtom, submitValueAtom } from '../jotai';
 import { useObserveMainHeight } from '../hooks';
 
-type Props = {
-  width: number;
-  height: number;
-};
-const Emoji = ({ width, height }: Props) => {
+const Emoji = () => {
   const submit = useSetAtom(submitValueAtom);
   const isDark = useAtomValue(darkAtom);
   const resizing = useAtomValue(resizingAtom);

@@ -1017,3 +1017,12 @@ hover:invert dark:hover:invert
 focus:bg-opacity-25 dark:focus:bg-opacity-25
 focus:invert dark:focus:invert
 focus:border-contrast-light dark:focus:border-contrast-dark
+text-opacity-10
+dark:text-opacity-10
+text-opacity-25
+dark:text-opacity-25
+text-red-500
+dark:text-red-500
+mb-2px
+mb-3px
+mb-4px

@@ -163,6 +163,11 @@ export type WidgetOptions = {
   ignoreMeasure: boolean;
 };
 
+export type WindowsOptions = {
+  id: string;
+  wid: number;
+};
+
 const initState = {
   debugging: false,
   isPanel: false,
@@ -249,6 +254,19 @@ const initState = {
   manualUpdateCheck: false,
   user: {} as UserDb,
   isSponsor: false,
+  theme: {
+    '--color-white': '255, 255, 255',
+    '--color-black': '0, 0, 0',
+    '--color-primary-light': '251, 191, 36',
+    '--color-primary-dark': '79, 70, 229',
+    '--color-contrast-light': '255, 255, 255',
+    '--color-contrast-dark': '0, 0, 0',
+    '--color-background-light': '255, 255, 255',
+    '--color-background-dark': '0, 0, 0',
+    '--opacity-light': '0.9',
+    '--opacity-dark': '0.75',
+  },
+  appearance: 'auto' as 'auto' | 'light' | 'dark',
 };
 
 const initAppDb: AppDb = {
@@ -274,12 +292,17 @@ const initWidgets = {
   widgets: [] as WidgetOptions[],
 };
 
+const initWindows = {
+  windows: [] as WindowOptions[],
+};
+
 export const appDb: AppDb = proxy(initAppDb);
 export const kitConfig: Config = proxy(initConfig);
 export const kitState: typeof initState = proxy(initState);
 export type kitStateType = typeof initState;
 
 export const widgetState: typeof initWidgets = proxy(initWidgets);
+export const windowsState: typeof initWindows = proxy(initWindows);
 export const findWidget = (id: string, reason = '') => {
   const options = widgetState.widgets.find((opts) => opts.id === id);
   if (!options) {
@@ -332,6 +355,7 @@ export const hideDock = debounce(() => {
   if (kitState.devToolsCount > 0) return;
   if (kitState.promptCount > 0) return;
   if (widgetState.widgets.length) return;
+  if (windowsState.windows.length) return;
 
   app?.dock?.setIcon(getAssetPath('icon.png'));
   app?.dock?.hide();
@@ -374,6 +398,14 @@ export const showDock = () => {
 subscribeKey(widgetState, 'widgets', (widgets) => {
   log.info(`👀 Widgets: ${JSON.stringify(widgets)}`);
   if (widgets.length !== 0) {
+    showDock();
+  } else {
+    hideDock();
+  }
+});
+subscribeKey(windowsState, 'windows', (windows) => {
+  log.info(`👀 Widgets: ${JSON.stringify(windows)}`);
+  if (windows.length !== 0) {
     showDock();
   } else {
     hideDock();

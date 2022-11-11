@@ -28,6 +28,12 @@ export enum AppChannel {
   USER_CHANGED = 'USER_CHANGED',
 }
 
+export enum WindowChannel {
+  SET_LAST_LOG_LINE = 'LOG_LINE',
+  SET_EDITOR_LOG_MODE = 'SET_EDITOR_LOG_MODE',
+  SET_LOG_VALUE = 'SET_LOG_VALUE',
+}
+
 export enum Trigger {
   App = 'app',
   Background = 'background',

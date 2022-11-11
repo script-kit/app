@@ -18,7 +18,7 @@ import {
   shell,
 } from 'electron';
 import os, { constants } from 'os';
-import { remove } from 'lodash';
+import { assign, remove } from 'lodash';
 import ContrastColor from 'contrast-color';
 import { subscribe } from 'valtio';
 import http from 'http';
@@ -28,7 +28,7 @@ import url from 'url';
 import sizeOf from 'image-size';
 import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { exec, fork } from 'child_process';
+import { ChildProcess, exec, fork } from 'child_process';
 import {
   Channel,
   Mode,
@@ -109,8 +109,10 @@ import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
 import { AppChannel, Trigger } from './enums';
-import { isKitScript, toHex, toRgb, pathsAreEqual } from './helpers';
+import { isKitScript, toRgb, pathsAreEqual } from './helpers';
+import { toHex } from './color-utils';
 import { deleteText } from './keyboard';
+import { showLogWindow } from './window';
 
 // const trash = async (...args: string[]) => {
 //   const parent = app.isPackaged
@@ -128,36 +130,42 @@ import { deleteText } from './keyboard';
 
 export const maybeConvertColors = (value: any) => {
   if (value.foreground) {
-    value['--color-white'] = toRgb(value.foreground);
-    value['--color-black'] = toRgb(value.foreground);
+    const foreground = toRgb(value.foreground);
+    value['--color-white'] = foreground;
+    value['--color-black'] = foreground;
+    value.foregroundHex = toHex(foreground);
   }
   if (value.accent) {
-    value['--color-primary-light'] = toRgb(value.accent);
-    value['--color-primary-dark'] = toRgb(value.accent);
+    const accent = toRgb(value.accent);
+    value['--color-primary-light'] = accent;
+    value['--color-primary-dark'] = accent;
+    value.accentHex = toHex(accent);
 
     const contrast = ContrastColor.contrastColor({
       bgColor: toHex(value.accent),
     }) as string;
 
-    log.info({ contrast });
-
-    value['--color-contrast-light'] = toRgb(contrast);
-    value['--color-contrast-dark'] = toRgb(contrast);
+    const contrastRgb = toRgb(contrast);
+    value['--color-contrast-light'] = contrastRgb;
+    value['--color-contrast-dark'] = contrastRgb;
+    value.contrastHex = contrast;
   }
 
   if (value.background) {
-    value['--color-background-light'] = toRgb(value.background);
-    value['--color-background-dark'] = toRgb(value.background);
+    const background = toRgb(value.background);
+    value['--color-background-light'] = background;
+    value['--color-background-dark'] = background;
+    value.backgroundHex = toHex(value.background);
 
     const cc = new ContrastColor({
       bgColor: toHex(value.background),
     });
     const result = cc.contrastColor();
-    log.info({ result });
 
     const appearance = result === '#FFFFFF' ? 'dark' : 'light';
     log.info(`💄 Setting appearance to ${appearance}`);
 
+    kitState.appearance = appearance;
     sendToPrompt(Channel.SET_APPEARANCE, appearance);
   }
 
@@ -172,6 +180,10 @@ export const maybeConvertColors = (value: any) => {
   if (value.foreground) delete value.foreground;
   if (value.accent) delete value.accent;
   if (value.opacity) delete value.opacity;
+
+  // Save theme as JSON to disk
+  const themePath = kitPath('db', 'theme.json');
+  writeFile(themePath, JSON.stringify(value, null, 2));
 };
 
 export const formatScriptChoices = (data: Choice[]) => {
@@ -350,6 +362,16 @@ const toProcess = <K extends keyof ChannelMap>(
   return fn(processInfo, data);
 };
 
+const childSend = (child: ChildProcess, data: any) => {
+  try {
+    if (child && child?.connected) {
+      child.send(data);
+    }
+  } catch (error) {
+    log.error('childSend error', error);
+  }
+};
+
 const kitMessageMap: ChannelHandler = {
   [Channel.CONSOLE_LOG]: (data) => {
     getLog(data.kitScript).info(data?.value || Value.Undefined);
@@ -366,7 +388,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   GET_SCRIPTS_STATE: toProcess(({ child }, { channel }) => {
-    child?.send({
+    childSend(child, {
       channel,
       schedule: getSchedule(),
       tasks: getBackgroundTasks(),
@@ -374,20 +396,20 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   GET_SCHEDULE: toProcess(({ child }, { channel }) => {
-    child?.send({ channel, schedule: getSchedule() });
+    childSend(child, { channel, schedule: getSchedule() });
   }),
 
   GET_BOUNDS: toProcess(({ child }, { channel }) => {
     const bounds = getPromptBounds();
-    child?.send({ channel, bounds });
+    childSend(child, { channel, bounds });
   }),
 
   GET_BACKGROUND: toProcess(({ child }, { channel }) => {
-    child?.send({ channel, tasks: getBackgroundTasks() });
+    childSend(child, { channel, tasks: getBackgroundTasks() });
   }),
 
   GET_CLIPBOARD_HISTORY: toProcess(({ child }, { channel }) => {
-    child?.send({
+    childSend(child, {
       channel,
       history: getClipboardHistory(),
     });
@@ -536,7 +558,7 @@ const kitMessageMap: ChannelHandler = {
       });
 
       widget.on('resized', () => {
-        child.send({
+        childSend(child, {
           channel: Channel.WIDGET_RESIZED,
           widgetId,
           ...widget.getBounds(),
@@ -544,7 +566,7 @@ const kitMessageMap: ChannelHandler = {
       });
 
       widget.on('moved', () => {
-        child.send({
+        childSend(child, {
           channel: Channel.WIDGET_MOVED,
           widgetId,
           ...widget.getBounds(),
@@ -560,7 +582,7 @@ const kitMessageMap: ChannelHandler = {
         log.info(`${widgetId}: Widget closed`);
         focusPrompt();
         if (child?.channel) {
-          child?.send({
+          childSend(child, {
             channel: Channel.WIDGET_END,
             widgetId,
             ...w.getBounds(),
@@ -609,7 +631,7 @@ const kitMessageMap: ChannelHandler = {
         o.moved = true;
       });
 
-      child?.send({
+      childSend(child, {
         channel,
         widgetId,
       });
@@ -641,13 +663,13 @@ const kitMessageMap: ChannelHandler = {
       log.info(`Captured page for widget ${widgetId} to ${imagePath}`);
       await writeFile(imagePath, image.toPNG());
 
-      child?.send({
+      childSend(child, {
         channel,
         imagePath,
       });
     } else {
       const imagePath = `⚠️ Failed to capture page for widget ${widgetId}`;
-      child?.send({
+      childSend(child, {
         channel,
         imagePath,
       });
@@ -660,7 +682,7 @@ const kitMessageMap: ChannelHandler = {
 
     clearClipboardHistory();
 
-    child?.send({ channel });
+    childSend(child, { channel });
   }),
 
   REMOVE_CLIPBOARD_HISTORY_ITEM: toProcess(({ child }, { channel, value }) => {
@@ -668,7 +690,7 @@ const kitMessageMap: ChannelHandler = {
 
     removeFromClipboardHistory(value);
 
-    child?.send({ channel });
+    childSend(child, { channel });
   }),
 
   TOGGLE_BACKGROUND: (data: any) => {
@@ -683,37 +705,37 @@ const kitMessageMap: ChannelHandler = {
       y: cursor.y,
     });
 
-    child?.send({ channel, activeScreen });
+    childSend(child, { channel, activeScreen });
   }),
   GET_SCREENS_INFO: toProcess(({ child }, { channel }) => {
     const displays = screen.getAllDisplays();
 
-    child?.send({ channel, displays });
+    childSend(child, { channel, displays });
   }),
   GET_ACTIVE_APP: toProcess(async ({ child }, { channel }) => {
     if (kitState.isMac) {
       const { default: frontmost } = await import('frontmost-app' as any);
       const frontmostApp = await frontmost();
-      child?.send({ channel, app: frontmostApp });
+      childSend(child, { channel, app: frontmostApp });
     } else {
       // TODO: implement for windows
-      child?.send({ channel, app: {} });
+      childSend(child, { channel, app: {} });
     }
   }),
 
   GET_MOUSE: toProcess(({ child }, { channel }) => {
     const mouseCursor = screen.getCursorScreenPoint();
-    child?.send({ channel, mouseCursor });
+    childSend(child, { channel, mouseCursor });
   }),
 
   GET_PROCESSES: toProcess(({ child }, { channel }) => {
-    child?.send({ channel, processes });
+    childSend(child, { channel, processes });
   }),
 
   BLUR_APP: toProcess(({ child }, { channel }) => {
     blurPrompt();
 
-    child?.send({ channel });
+    childSend(child, { channel });
   }),
 
   HIDE_APP: toProcess(async ({ child, scriptPath }, { channel }) => {
@@ -725,7 +747,7 @@ const kitMessageMap: ChannelHandler = {
     const handler = () => {
       log.info(`🫣 App hidden`);
       if (!child?.killed) {
-        child?.send({
+        childSend(child, {
           channel,
         });
       }
@@ -779,7 +801,7 @@ const kitMessageMap: ChannelHandler = {
     // wait 1000ms for script to start
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    pInfo?.child?.send({
+    childSend(pInfo?.child, {
       channel: Channel.VALUE_SUBMITTED,
       input: '',
       value: {
@@ -805,7 +827,7 @@ const kitMessageMap: ChannelHandler = {
   SET_SUBMIT_VALUE: toProcess(({ child }, { channel, value }) => {
     sendToPrompt(Channel.SET_SUBMIT_VALUE, value);
 
-    child?.send({ channel });
+    childSend(child, { channel });
   }),
 
   SET_MODE: (data) => {
@@ -826,7 +848,7 @@ const kitMessageMap: ChannelHandler = {
     kitState.ignoreBlur = value;
 
     if (child) {
-      child?.send({
+      childSend(child, {
         channel,
         value,
       });
@@ -840,7 +862,7 @@ const kitMessageMap: ChannelHandler = {
   SET_INPUT: toProcess(async ({ child }, { channel, value }) => {
     setInput(value);
 
-    child?.send({ channel, value });
+    childSend(child, { channel, value });
   }),
 
   SET_PLACEHOLDER: (data) => {
@@ -863,6 +885,12 @@ const kitMessageMap: ChannelHandler = {
     setPreview(data.value);
   },
 
+  SET_SHORTCUTS: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SET_SHORTCUTS, value);
+
+    childSend(child, { channel, value });
+  }),
+
   CONSOLE_CLEAR: () => {
     setLog(Channel.CONSOLE_CLEAR);
   },
@@ -873,8 +901,19 @@ const kitMessageMap: ChannelHandler = {
   DEV_TOOLS: toProcess(async ({ child }, { channel, value }) => {
     showDevTools(value);
 
-    child?.send({ channel });
+    childSend(child, { channel });
   }),
+  SHOW_LOG_WINDOW: toProcess(
+    async ({ child, scriptPath, pid }, { channel, value }) => {
+      await showLogWindow({
+        scriptPath: value || scriptPath,
+        pid,
+      });
+
+      childSend(child, { channel });
+    }
+  ),
+
   // SHOW_TEXT: (data) => {
   //   setBlurredByKit();
 
@@ -898,7 +937,7 @@ const kitMessageMap: ChannelHandler = {
       sendToPrompt(Channel.TERMINAL, socketURL);
     }
 
-    child?.send({ channel });
+    childSend(child, { channel });
   }),
   SET_PROMPT_PROP: async (data) => {
     setPromptProp(data.value);
@@ -925,7 +964,7 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.ADD_CHOICE, value);
 
     if (child) {
-      child?.send({
+      childSend(child, {
         channel,
         value,
       });
@@ -940,7 +979,7 @@ const kitMessageMap: ChannelHandler = {
     }
 
     if (child) {
-      child?.send({
+      childSend(child, {
         channel,
       });
     }
@@ -955,7 +994,7 @@ const kitMessageMap: ChannelHandler = {
     await clearPromptCache();
 
     if (child) {
-      child?.send({
+      childSend(child, {
         channel,
         value,
       });
@@ -966,7 +1005,7 @@ const kitMessageMap: ChannelHandler = {
     forceFocus();
 
     if (child) {
-      child?.send({
+      childSend(child, {
         channel,
       });
     }
@@ -976,7 +1015,7 @@ const kitMessageMap: ChannelHandler = {
     alwaysOnTop(value as boolean);
 
     if (child) {
-      child?.send({
+      childSend(child, {
         channel,
         value,
       });
@@ -998,9 +1037,11 @@ const kitMessageMap: ChannelHandler = {
 
     maybeConvertColors(value);
 
+    assign(kitState.theme, value);
+
     sendToPrompt(Channel.SET_THEME, value);
     if (child) {
-      child?.send({
+      childSend(child, {
         channel,
         value,
       });
@@ -1011,7 +1052,7 @@ const kitMessageMap: ChannelHandler = {
     maybeConvertColors(value);
     sendToPrompt(Channel.SET_TEMP_THEME, value);
     if (child) {
-      child?.send({
+      childSend(child, {
         channel,
         value,
       });
@@ -1109,7 +1150,7 @@ const kitMessageMap: ChannelHandler = {
     processes.removeByPid(value);
 
     if (child) {
-      child?.send({
+      childSend(child, {
         channel,
         value,
       });
@@ -1135,7 +1176,7 @@ const kitMessageMap: ChannelHandler = {
 
     setTimeout(() => {
       kitState.isTyping = false;
-      child?.send({
+      childSend(child, {
         channel,
       });
     }, value.length);
@@ -1146,7 +1187,7 @@ const kitMessageMap: ChannelHandler = {
     log.info(`PRESSING KEY`, { value });
     await keyboard.pressKey(...(value as any));
 
-    child?.send({
+    childSend(child, {
       channel,
       value,
     });
@@ -1159,7 +1200,7 @@ const kitMessageMap: ChannelHandler = {
 
     await keyboard.releaseKey(...(value as any));
 
-    child?.send({
+    childSend(child, {
       channel,
       value,
     });
@@ -1168,7 +1209,7 @@ const kitMessageMap: ChannelHandler = {
   MOUSE_LEFT_CLICK: toProcess(async ({ child }, { channel, value }) => {
     await mouse.leftClick();
 
-    child?.send({
+    childSend(child, {
       channel,
       value,
     });
@@ -1177,7 +1218,7 @@ const kitMessageMap: ChannelHandler = {
   MOUSE_RIGHT_CLICK: toProcess(async ({ child }, { channel, value }) => {
     await mouse.rightClick();
 
-    child?.send({
+    childSend(child, {
       channel,
       value,
     });
@@ -1186,7 +1227,7 @@ const kitMessageMap: ChannelHandler = {
   MOUSE_MOVE: toProcess(async ({ child }, { channel, value }) => {
     await mouse.move(value);
 
-    child?.send({
+    childSend(child, {
       channel,
       value,
     });
@@ -1195,7 +1236,7 @@ const kitMessageMap: ChannelHandler = {
   // TRASH: toProcess(async ({ child }, { channel, value }) => {
   //   // const result = await trash(value);
   //   // log.info(`TRASH RESULT`, result);
-  //   // child?.send({
+  //   // childSend(child, {
   //   //   result,
   //   //   channel,
   //   // });
@@ -1205,7 +1246,7 @@ const kitMessageMap: ChannelHandler = {
     log.info(`>>>> COPY`);
     clipboard.writeText(value);
 
-    child?.send({
+    childSend(child, {
       channel,
     });
   }),
@@ -1217,7 +1258,7 @@ const kitMessageMap: ChannelHandler = {
     const value = clipboard.readText();
     log.info(`>>>> PASTE`, value);
 
-    child?.send({
+    childSend(child, {
       value,
       channel,
     });
@@ -1242,7 +1283,7 @@ const kitMessageMap: ChannelHandler = {
   },
   CLEAR_SCRIPTS_MEMORY: toProcess(async ({ child }, { channel }) => {
     // await updateScripts();
-    child?.send({
+    childSend(child, {
       channel,
     });
   }),
@@ -1263,7 +1304,7 @@ const kitMessageMap: ChannelHandler = {
       }
     }
 
-    child?.send({ channel, value });
+    childSend(child, { channel, value });
   }),
 
   SET_SELECTED_TEXT: toProcess(async ({ child }, { channel, value }) => {
@@ -1276,7 +1317,7 @@ const kitMessageMap: ChannelHandler = {
     await keyboard.pressKey(modifier, Key.V);
     await keyboard.releaseKey(modifier, Key.V);
     setTimeout(() => {
-      child?.send({ channel, value });
+      childSend(child, { channel, value });
       log.info(`SET SELECTED TEXT DONE`, value);
     }, 10);
   }),
@@ -1284,12 +1325,12 @@ const kitMessageMap: ChannelHandler = {
   SHOW_EMOJI_PANEL: toProcess(async ({ child }, { channel, value }) => {
     app.showEmojiPanel();
 
-    child?.send({ channel, value });
+    childSend(child, { channel, value });
   }),
   SET_APPEARANCE: toProcess(async ({ child }, { channel, value }) => {
     sendToPrompt(Channel.SET_APPEARANCE, value);
 
-    child?.send({ channel, value });
+    childSend(child, { channel, value });
   }),
   SELECT_FILE: toProcess(async ({ child }, { channel, value }) => {
     // Show electron file selector dialog
@@ -1301,7 +1342,7 @@ const kitMessageMap: ChannelHandler = {
 
     const returnValue = response.canceled ? '' : response.filePaths[0];
 
-    child?.send({ channel, value: returnValue });
+    childSend(child, { channel, value: returnValue });
   }),
   SELECT_FOLDER: toProcess(async ({ child }, { channel, value }) => {
     // Show electron file selector dialog
@@ -1313,24 +1354,24 @@ const kitMessageMap: ChannelHandler = {
 
     const returnValue = response.canceled ? '' : response.filePaths[0];
 
-    child?.send({ channel, value: returnValue });
+    childSend(child, { channel, value: returnValue });
   }),
   REVEAL_FILE: toProcess(async ({ child }, { channel, value }) => {
     shell.showItemInFolder(value);
 
-    child?.send({ channel, value });
+    childSend(child, { channel, value });
   }),
   BEEP: toProcess(async ({ child }, { channel, value }) => {
     shell.beep();
-    child?.send({ channel, value });
+    childSend(child, { channel, value });
   }),
   PLAY_AUDIO: toProcess(async ({ child }, { channel, value }) => {
     sendToPrompt(Channel.PLAY_AUDIO, value);
-    child?.send({ channel, value });
+    childSend(child, { channel, value });
   }),
   SPEAK_TEXT: toProcess(async ({ child }, { channel, value }) => {
     sendToPrompt(Channel.SPEAK_TEXT, value);
-    child?.send({ channel, value });
+    childSend(child, { channel, value });
   }),
 
   CUT_TEXT: toProcess(async ({ child }, { channel, value }) => {
@@ -1339,7 +1380,7 @@ const kitMessageMap: ChannelHandler = {
     await deleteText(text);
     kitState.snippet = '';
 
-    child?.send({
+    childSend(child, {
       channel,
       value: text,
     });
@@ -1357,7 +1398,11 @@ export const createMessageHandler = (type: ProcessType) => async (
     const channelFn = kitMessageMap[data.channel as C] as (
       data: SendData<C>
     ) => void;
-    channelFn(data);
+    try {
+      channelFn(data);
+    } catch (error) {
+      log.error(`Error in channel ${data.channel}`, error);
+    }
   } else {
     warn(`Channel ${data?.channel} not found on ${type}.`);
   }
@@ -1731,7 +1776,7 @@ export const handleWidgetEvents = () => {
 
     log.info(`🔎 click ${widgetId}`);
 
-    child?.send({
+    childSend(child, {
       ...data,
       ...widget.getBounds(),
       pid: child.pid,
@@ -1748,7 +1793,7 @@ export const handleWidgetEvents = () => {
     const { child } = processes.getByPid(pid) as ProcessInfo;
     if (!child || !widget) return;
 
-    child?.send({
+    childSend(child, {
       ...data,
 
       ...widget.getBounds(),

@@ -70,7 +70,7 @@ export function OptionsButton() {
       transition={transition}
       className={`
   flex flex-row items-center justify-center
-  outline-none p-1
+  outline-none py-0.5 px-1
   font-medium
   text-sm
   text-contrast-light dark:text-contrast-dark
@@ -82,7 +82,7 @@ export function OptionsButton() {
   `}
       onClick={onClick}
     >
-      <div className="px-1">{flagValue ? 'Back' : 'Options'}</div>
+      <div className="px-0.5 mr-0.5">{flagValue ? 'Back' : 'Options'}</div>
       <div className=" flex flex-row">
         <div
           className="
@@ -176,42 +176,40 @@ export function ActionButton(action: Action) {
       className={`
   flex flex-row items-center justify-center
   outline-none
-  p-1
+  py-0.5 px-1.5
   font-medium
   text-sm
-  text-contrast-light dark:text-contrast-dark
-
 
   rounded
 
-  ${bg}
   h-full
-  ${
-    action?.disabled
-      ? `brightness-50`
-      : `
-  brightness-100
   transition-all duration-200 ease-in-out
-  `
-  }
+  text-contrast-light dark:text-contrast-dark
+  ${action?.disabled ? `text-opacity-25 dark:text-opacity-25` : bg}
   `}
       onClick={onClick}
     >
-      <div className="px-1 truncate min-w-0">{action.name}</div>
+      <div
+        className={`px-2px truncate min-w-0 mr-0.5
+      `}
+      >
+        {action.name}
+      </div>
+
       <div className=" flex flex-row">
         {action.shortcut.split('+').map((k) => {
           return (
             <div
               key={k}
-              className="
+              className={`
               flex items-center justify-center
-          w-5 h-5 ml-1
+          w-5 h-5 ml-0.5
           leading-none
 
           rounded
           bg-black dark:bg-white dark:bg-opacity-10 bg-opacity-10
           hover:border-opacity-10 dark:hover:border-opacity-10
-          "
+          `}
             >
               {k}
             </div>
@@ -249,7 +247,7 @@ const IconButton = () => {
 
       items-center justify-center
       p-1
-      -ml-1 mb-px
+      -ml-1 mb-0.5
       rounded
       min-w-fit
       text-contrast-light dark:text-contrast-dark
@@ -348,7 +346,7 @@ export default function ActionBar() {
     px-4
     justify-center items-center
     overflow-hidden
-    h-8 max-h-8`}
+    h-7 max-h-7`}
     >
       <IconButton />
 

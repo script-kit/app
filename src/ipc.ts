@@ -42,7 +42,12 @@ const handleChannel = (
   const processInfo = processes.getByPid(message?.pid);
 
   if (processInfo) {
-    fn(processInfo, message);
+    try {
+      fn(processInfo, message);
+    } catch (error) {
+      log.error(`${message.channel} errored on ${message?.pid}`, message);
+    }
+
     // log.info(`${message.channel}`, message.pid);
   } else if (message.pid !== -1) {
     log.warn(`${message.channel} failed on ${message?.pid}`, message);

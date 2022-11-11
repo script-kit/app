@@ -41,6 +41,7 @@ import {
   SPLASH_PATH,
   TOP_HEIGHT,
 } from './defaults';
+import { toHex } from './color-utils';
 
 let placeholderTimeoutId: NodeJS.Timeout;
 
@@ -1448,7 +1449,7 @@ export const valueInvalidAtom = atom(null, (g, s, a: string) => {
   s(_inputChangedAtom, false);
   if (typeof a === 'string') {
     const getConvert = g(convertAtom);
-    s(footerAtom, getConvert(true).toHtml(a));
+    s(hintAtom, getConvert(true).toHtml(a));
   }
 });
 
@@ -1699,3 +1700,27 @@ export const loginAtom = atom((g) => {
 });
 
 export const userAtom = atom<UserDb>({});
+export const editorLogModeAtom = atom(false);
+export const lastLogLineAtom = atom<string>('');
+export const logValueAtom = atom<string>('');
+
+export const editorThemeAtom = atom<{ foreground: string; background: string }>(
+  (g) => {
+    const appearance = g(appearanceAtom);
+    const isDark = appearance === 'auto' ? g(darkAtom) : appearance === 'dark';
+    const theme = g(themeAtom);
+
+    const editorTheme = {
+      foreground: toHex(
+        isDark ? theme['--color-white'] : theme['--color-black']
+      ),
+      background: toHex(
+        isDark
+          ? theme['--color-background-dark']
+          : theme['--color-background-light']
+      ),
+    };
+
+    return editorTheme;
+  }
+);

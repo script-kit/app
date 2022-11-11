@@ -172,7 +172,9 @@ export const runPromptProcess = async (
 
   // processes.assignScriptToProcess(promptScriptPath, pid);
   alwaysOnTop(true);
-  kitState.ignoreBlur = true;
+  if (!pathsAreEqual(promptScriptPath || '', mainScriptPath)) {
+    kitState.ignoreBlur = true;
+  }
   child?.send({
     channel: Channel.VALUE_SUBMITTED,
     input: '',

@@ -1,100 +1,211 @@
-/* eslint-disable jsx-a11y/mouse-events-have-key-events */
-import React, { RefObject, useCallback, useRef, useState } from 'react';
-import SimpleBar from 'simplebar-react';
+/* eslint-disable no-template-curly-in-string */
+/* eslint-disable no-useless-escape */
+import React, { useCallback, useEffect, useState } from 'react';
+import { useAtom, useAtomValue } from 'jotai';
 import { motion } from 'framer-motion';
-import useResizeObserver from '@react-hook/resize-observer';
-import { PencilAltIcon } from '@heroicons/react/outline';
-import parse from 'html-react-parser';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
-import { useAtom } from 'jotai';
-import { ipcRenderer } from 'electron';
+import MonacoEditor, { Monaco } from '@monaco-editor/react';
+
+import { editor as monacoEditor, Range } from 'monaco-editor';
+import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import {
-  isKitScriptAtom,
-  logHeightAtom,
-  logHTMLAtom,
-  scriptAtom,
+  darkAtom,
+  editorConfigAtom,
+  editorOptions,
+  editorThemeAtom,
+  lastLogLineAtom,
+  logValueAtom,
 } from '../jotai';
-import { AppChannel } from '../enums';
+import { useMountMainHeight } from '../hooks';
+import { kitLight, nightOwl } from '../editor-themes';
 
-export default function Log() {
-  const [script, setScript] = useAtom(scriptAtom);
-  const containerRef: RefObject<any> = useRef(null);
-  const divRef: RefObject<any> = useRef(null);
-  const [mouseOver, setMouseOver] = useState(false);
+const registerLogLanguage = (
+  monaco: Monaco,
+  theme: { foreground: string; background: string }
+) => {
+  monaco.languages.register({ id: 'log' });
 
-  const [logHTML] = useAtom(logHTMLAtom);
-  const [logHeight, setLogHeight] = useAtom(logHeightAtom);
-
-  const editLog = useCallback(() => {
-    ipcRenderer.send(AppChannel.OPEN_SCRIPT_LOG, script);
-  }, [script]);
-
-  useResizeObserver(divRef, (entry) => {
-    if (entry?.contentRect?.height) {
-      setLogHeight(entry.contentRect.height);
-      const curr = containerRef?.current;
-      if (curr) {
-        curr?.scrollTo({ top: curr?.scrollHeight, behavior: 'smooth' });
-      }
-    }
+  // Register a tokens provider for the language
+  monaco.languages.setMonarchTokensProvider('log', {
+    tokenizer: {
+      root: [
+        [/^.*info\]/, 'info'],
+        [/^.*warn\]/, 'warn'],
+        // [/^.*error\]/, 'error'],
+        // [/^.*debug\]/, 'debug'],
+        // [/^.*trace\]/, 'trace'],
+        // [/^.*fatal\]/, 'fatal'],
+      ],
+    },
   });
 
-  // useEffect(() => {
-  //   if (containerRef?.current?.firstElementChild) {
-  //     onPanelHeightChanged(
-  //       containerRef?.current?.firstElementChild?.clientHeight
-  //     );
-  //   }
-  // }, [onPanelHeightChanged, containerRef?.current?.firstElementChild]);
+  // Define a new theme that contains only rules that match this language
+  monaco.editor.defineTheme('log-light', {
+    base: 'vs',
+    inherit: false,
+    rules: [
+      // info gray
+      { token: 'info', foreground: '808080' },
+      // warn yellow
+      {
+        token: 'warn',
+        foreground: '0000ff',
+        fontStyle: 'bold',
+      },
+      // // error red
+      // { token: 'error', foreground: 'ff0000' },
+      // // debug blue
+      // { token: 'debug', foreground: '0000ff' },
+      // // trace purple
+      // { token: 'trace', foreground: '800080' },
+      // // fatal red
+      // { token: 'fatal', foreground: 'ff0000' },
+    ],
+    colors: {
+      'editor.foreground': theme.foreground,
+      'editor.background': theme.background,
+    },
+  });
+
+  monaco.editor.defineTheme('log-dark', {
+    base: 'vs-dark',
+    inherit: false,
+    rules: [
+      { token: 'info', foreground: '808080' },
+      { token: 'warn', foreground: 'ffff00' },
+      // { token: 'error', foreground: 'ff0000', fontStyle: 'bold' },
+      // { token: 'notice', foreground: 'FFA500' },
+      // { token: 'debug', foreground: '008000' },
+      // { token: 'date', foreground: '008800' },
+    ],
+
+    colors: {
+      'editor.foreground': theme.foreground,
+      'editor.background': theme.background,
+    },
+  });
+};
+
+export default function Log() {
+  const [config] = useAtom(editorConfigAtom);
+  const [isDark] = useAtom(darkAtom);
+  const [options] = useAtom(editorOptions);
+  const lastLogLine = useAtomValue(lastLogLineAtom);
+  const logValue = useAtomValue(logValueAtom);
+  const [mouseOver, setMouseOver] = useState(false);
+  const theme = useAtomValue(editorThemeAtom);
+
+  const [
+    editor,
+    setEditorRef,
+  ] = useState<monacoEditor.IStandaloneCodeEditor | null>(null);
+
+  const containerRef = useMountMainHeight();
+
+  const onBeforeMount = useCallback(
+    (monaco: Monaco) => {
+      monaco.editor.defineTheme('kit-dark', nightOwl);
+      monaco.editor.defineTheme('kit-light', kitLight);
+
+      registerLogLanguage(monaco, theme);
+    },
+    [theme]
+  );
+
+  const onMount = useCallback(
+    (mountEditor: monacoEditor.IStandaloneCodeEditor, monaco: Monaco) => {
+      setEditorRef(mountEditor);
+
+      // mountEditor.focus();
+
+      monaco.editor.setTheme(isDark ? 'kit-dark' : 'kit-light');
+
+      mountEditor.layout({
+        width: containerRef?.current?.offsetWidth || document.body.offsetWidth,
+        height:
+          (containerRef?.current?.offsetHeight || document.body.offsetHeight) -
+          24,
+      });
+
+      // if (typeof global?.exports === 'undefined') global.exports = {};
+      // mountEditor.focus();
+
+      if (mountEditor?.getDomNode())
+        ((mountEditor.getDomNode() as HTMLElement)
+          .style as any).webkitAppRegion = 'no-drag';
+
+      const lineNumber = mountEditor.getModel()?.getLineCount() || 0;
+
+      if ((config as EditorOptions).scrollTo === 'bottom') {
+        const column =
+          (mountEditor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+
+        const position = { lineNumber, column };
+        // console.log({ position });
+        mountEditor.setPosition(position);
+
+        mountEditor.revealPosition(position);
+      }
+
+      if ((config as EditorOptions).scrollTo === 'center') {
+        mountEditor.revealLineInCenter(Math.floor(lineNumber / 2));
+      }
+    },
+    [config, containerRef, isDark]
+  );
+
+  useEffect(() => {
+    if (editor) {
+      // set position to the end of the file
+      const lineNumber = editor.getModel()?.getLineCount() || 0;
+      const range = new Range(lineNumber, 1, lineNumber, 1);
+
+      const id = { major: 1, minor: 1 };
+      const op = {
+        identifier: id,
+        range,
+        text: `${lastLogLine}\n`,
+        forceMoveMarkers: true,
+      };
+
+      editor.executeEdits('my-source', [op]);
+    }
+  }, [editor, lastLogLine]);
+
+  useEffect(() => {
+    if (!editor || mouseOver) return;
+    editor.setScrollPosition({
+      scrollTop: editor.getScrollHeight(),
+    });
+  }, [mouseOver, editor, lastLogLine]);
 
   return (
     <motion.div
-      key="log"
-      className="relative"
-      onMouseOver={() => setMouseOver(true)}
-      onMouseOut={() => setMouseOver(false)}
+      onMouseEnter={() => setMouseOver(true)}
+      onMouseLeave={() => setMouseOver(false)}
+      key="editor"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 1] }}
+      transition={{ duration: 0.5, ease: 'circOut' }}
+      ref={containerRef}
+      className={`
+    w-full h-full`}
     >
-      <SimpleBar
-        forceVisible="y"
-        className="log
-        w-full h-16
-        bg-black text-white dark:bg-white dark:text-black
-        bg-opacity-80 dark:bg-opacity-90
-        font-mono text-xs
-        hover:cursor-auto
-        "
-        scrollableNodeProps={{ ref: containerRef }}
-        style={
-          {
-            WebkitAppRegion: 'no-drag',
-            WebkitUserSelect: 'text',
-          } as any
-        }
-      >
-        <div
-          className={`
-       px-4
-        `}
-          ref={divRef}
-        >
-          {parse(`${logHTML}`)}
-        </div>
-      </SimpleBar>
-      {!script.name?.startsWith('error') && (
-        <PencilAltIcon
-          className={`
-        absolute
-        top-1.5 right-1.5
-        h-5 w-5
-        ${mouseOver ? 'opacity-50' : 'opacity-20'}
-        transition ease-in
-        hover:cursor-pointer
-        hover:opacity-100
-        text-white dark:text-black
-        `}
-          onClick={editLog}
-        />
-      )}
+      <MonacoEditor
+        className="w-full h-full"
+        beforeMount={onBeforeMount}
+        onMount={onMount}
+        language="log"
+        options={{
+          ...options,
+          fontSize: 14,
+          scrollbar: { vertical: 'hidden' },
+          language: 'log',
+          theme: isDark ? 'log-dark' : 'log-light',
+          minimap: { enabled: true },
+        }}
+        value={logValue}
+        theme={isDark ? 'log-dark' : 'log-light'}
+      />
     </motion.div>
   );
 }

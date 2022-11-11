@@ -44,6 +44,7 @@ import Hint from './components/hint';
 import Selected from './components/selected';
 import TextArea from './components/textarea';
 import Panel from './components/panel';
+import Console from './components/console';
 import Log from './components/log';
 import Header from './components/header';
 import Form from './components/form';
@@ -110,12 +111,16 @@ import {
   enterAtom,
   kitStateAtom,
   userAtom,
+  lastLogLineAtom,
+  editorLogModeAtom,
+  logValueAtom,
+  shortcutsAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
 import Splash from './components/splash';
 import Emoji from './components/emoji';
-import { AppChannel } from './enums';
+import { AppChannel, WindowChannel } from './enums';
 import Terminal from './term';
 
 function ensureFirstBackSlash(str: string) {
@@ -231,6 +236,10 @@ export default function App() {
   const setAudio = useSetAtom(audioAtom);
   const setSpeak = useSetAtom(speechAtom);
   const setKitState = useSetAtom(kitStateAtom);
+  const setLastLogLine = useSetAtom(lastLogLineAtom);
+  const setLogValue = useSetAtom(logValueAtom);
+  const setEditorLogMode = useSetAtom(editorLogModeAtom);
+  const setShortcuts = useSetAtom(shortcutsAtom);
 
   useShortcuts();
   useEnter();
@@ -315,6 +324,7 @@ export default function App() {
     [Channel.SET_RESIZING]: setResizing,
     [Channel.PLAY_AUDIO]: setAudio,
     [Channel.SPEAK_TEXT]: setSpeak,
+    [Channel.SET_SHORTCUTS]: setShortcuts,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -327,6 +337,10 @@ export default function App() {
 
       document?.activeElement?.dispatchEvent(keyboardEvent);
     },
+
+    [WindowChannel.SET_LAST_LOG_LINE]: setLastLogLine,
+    [WindowChannel.SET_LOG_VALUE]: setLogValue,
+    [WindowChannel.SET_EDITOR_LOG_MODE]: setEditorLogMode,
   };
 
   useEffect(() => {
@@ -450,32 +464,34 @@ export default function App() {
             onMouseLeave={onMouseLeave}
             onMouseMove={onMouseMove}
           >
-            <header ref={headerRef} className="relative z-10">
-              <Header />
+            {ui !== UI.log && (
+              <header ref={headerRef} className="relative z-10">
+                <Header />
 
-              {ui === UI.hotkey && (
-                <Hotkey
-                  key="AppHotkey"
-                  submit={setSubmitValue}
-                  onHotkeyHeightChanged={setMainHeight}
-                />
-              )}
+                {ui === UI.hotkey && (
+                  <Hotkey
+                    key="AppHotkey"
+                    submit={setSubmitValue}
+                    onHotkeyHeightChanged={setMainHeight}
+                  />
+                )}
 
-              {ui === UI.arg && (
-                <ErrorBoundary>
-                  <Input key="AppInput" />
-                </ErrorBoundary>
-              )}
+                {ui === UI.arg && (
+                  <ErrorBoundary>
+                    <Input key="AppInput" />
+                  </ErrorBoundary>
+                )}
 
-              {hint && <Hint key="AppHint" />}
+                {hint && <Hint key="AppHint" />}
 
-              {(showTabs || showSelected) && (
-                <div className="max-h-5.5">
-                  {showTabs && <Tabs key="AppTabs" />}
-                  {showSelected && <Selected key="AppSelected" />}
-                </div>
-              )}
-            </header>
+                {(showTabs || showSelected) && (
+                  <div className="max-h-5.5">
+                    {showTabs && <Tabs key="AppTabs" />}
+                    {showSelected && <Selected key="AppSelected" />}
+                  </div>
+                )}
+              </header>
+            )}
             <main
               ref={mainRef}
               className="flex-1 min-h-1 overflow-y-hidden w-full"
@@ -497,6 +513,7 @@ export default function App() {
                 {ui === UI.drop && <Drop />}
                 {ui === UI.textarea && <TextArea />}
                 {ui === UI.editor && <Editor />}
+                {ui === UI.log && <Log />}
                 {ui === UI.term && <Terminal />}
                 {ui === UI.emoji && <Emoji />}
                 {/* {ui === UI.inspector && <Inspector />} */}
@@ -525,7 +542,7 @@ export default function App() {
               </AutoSizer>
             </main>
             {logHtml?.length > 0 && script?.log !== 'false' && (
-              <Log key="AppLog" />
+              <Console key="AppLog" />
             )}
             <ActionBar />
           </motion.div>

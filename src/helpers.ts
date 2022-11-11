@@ -9,10 +9,8 @@ import path from 'path';
 import os from 'os';
 import log from 'electron-log';
 import colors from 'color-name';
-import ContrastColor from 'contrast-color';
 
 import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
-import { kitState } from './state';
 
 export const APP_NAME = 'Kit';
 export const KIT_PROTOCOL = 'kit';
@@ -77,16 +75,4 @@ export const toRgb = (hexOrRgbOrName: string) => {
   const b = parseInt(result[3], 16);
 
   return `${r}, ${g}, ${b}`;
-};
-
-export const toHex = (hexOrRgbOrName: string) => {
-  if (hexOrRgbOrName.includes(',')) {
-    const [r, g, b] = hexOrRgbOrName.split(',').map((c) => parseInt(c, 10));
-
-    return `#${r.toString(16)}${g.toString(16)}${b.toString(16)}`;
-  }
-
-  if (colors[hexOrRgbOrName]) return colors[hexOrRgbOrName].join(',');
-
-  return hexOrRgbOrName;
 };
