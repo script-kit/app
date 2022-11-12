@@ -146,6 +146,7 @@ export const setupWatchers = async () => {
       kitState.user = currentUserDb;
 
       log.info(`Send user.json to prompt`, snapshot(kitState.user));
+
       appToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
       return;
     }

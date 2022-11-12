@@ -122,6 +122,7 @@ import Splash from './components/splash';
 import Emoji from './components/emoji';
 import { AppChannel, WindowChannel } from './enums';
 import Terminal from './term';
+import Inspector from './components/inspector';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -516,7 +517,7 @@ export default function App() {
                 {ui === UI.log && <Log />}
                 {ui === UI.term && <Terminal />}
                 {ui === UI.emoji && <Emoji />}
-                {/* {ui === UI.inspector && <Inspector />} */}
+                {ui === UI.debugger && <Inspector />}
               </AnimatePresence>
               <AutoSizer>
                 {({ width, height }) => (

@@ -789,6 +789,9 @@ const kitMessageMap: ChannelHandler = {
     log.info(`DEBUG_SCRIPT`, data?.value?.filePath);
 
     sendToPrompt(Channel.START, data?.value?.filePath);
+    sendToPrompt(Channel.SET_PROMPT_DATA, {
+      ui: UI.debugger,
+    });
 
     const port = await detect(51515);
     const pInfo = processes.add(ProcessType.Prompt, '', [], port);
@@ -905,6 +908,8 @@ const kitMessageMap: ChannelHandler = {
   }),
   SHOW_LOG_WINDOW: toProcess(
     async ({ child, scriptPath, pid }, { channel, value }) => {
+      await sponsorCheck('Log Window');
+      if (!kitState.isSponsor) return;
       await showLogWindow({
         scriptPath: value || scriptPath,
         pid,
