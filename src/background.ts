@@ -21,6 +21,9 @@ export const removeBackground = (filePath: string) => {
 
 const startTask = async (filePath: string) => {
   removeBackground(filePath);
+  if (filePath.endsWith('.ts')) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
   const processInfo = await runPromptProcess(filePath, [], {
     force: false,
     trigger: Trigger.Background,

@@ -22,7 +22,14 @@ import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
-import { appDb, kitState, scriptChanged, scriptRemoved, userDb } from './state';
+import {
+  appDb,
+  kitState,
+  scriptChanged,
+  scriptRemoved,
+  sponsorCheck,
+  userDb,
+} from './state';
 import { addSnippet, removeSnippet } from './tick';
 import { appToPrompt, clearPromptCacheFor, sendToPrompt } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
@@ -144,6 +151,8 @@ export const setupWatchers = async () => {
       log.info(`user.json changed`);
       const currentUserDb = (await getUserDb()).data;
       kitState.user = currentUserDb;
+
+      sponsorCheck('Login', false);
 
       log.info(`Send user.json to prompt`, snapshot(kitState.user));
 

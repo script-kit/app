@@ -31,9 +31,12 @@ import {
   tmpClipboardDir,
 } from '@johnlindquist/kit/cjs/utils';
 import { UI } from '@johnlindquist/kit/cjs/enum';
+import axios from 'axios';
 import internetAvailable from './internet-available';
 import { noScript } from './defaults';
 import { getAssetPath } from './assets';
+import { emitter, KitEvent } from './events';
+import { Trigger } from './enums';
 
 export const serverState = {
   running: false,
@@ -486,3 +489,49 @@ subscribeKey(kitState, 'scriptErrorPath', (scriptErrorPath) => {
     message: ``,
   };
 });
+
+export const sponsorCheck = async (feature: string, block = true) => {
+  log.info('Checking sponsor status...');
+
+  const isOnline = await online();
+  if (!isOnline || process.env.KIT_SPONSOR === 'development') {
+    kitState.isSponsor = true;
+  }
+
+  if (!kitState.isSponsor) {
+    const response = await axios.post(
+      `https://scriptkit.com/api/check-sponsor`,
+      {
+        ...kitState.user,
+        feature,
+      }
+    );
+
+    // check for axios post error
+    if (response.status !== 200) {
+      log.error('Error checking sponsor status', response);
+    }
+
+    log.info(`🕵️‍♀️ Sponsor check response`, JSON.stringify(response.data));
+
+    if (
+      (kitState.user.node_id && response.data.id === kitState.user.node_id) ||
+      response.status !== 200
+    ) {
+      log.info('User is sponsor');
+      kitState.isSponsor = true;
+    } else if (block) {
+      log.info('User is not sponsor');
+      kitState.isSponsor = false;
+
+      emitter.emit(KitEvent.RunPromptProcess, {
+        scriptPath: kitPath('pro', 'sponsor.js'),
+        args: [feature],
+        options: {
+          force: true,
+          trigger: Trigger.App,
+        },
+      });
+    }
+  }
+};

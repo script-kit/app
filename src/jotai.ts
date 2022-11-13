@@ -1680,6 +1680,7 @@ export const speechAtom = atom(
 export const updateAvailableAtom = atom(false);
 
 export const _kitStateAtom = atom({
+  isSponsor: false,
   updateDownloaded: false,
 });
 
@@ -1724,3 +1725,5 @@ export const editorThemeAtom = atom<{ foreground: string; background: string }>(
     return editorTheme;
   }
 );
+
+export const isSponsorAtom = atom(false);

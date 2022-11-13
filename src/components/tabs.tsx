@@ -4,7 +4,7 @@ import { useAtom, useAtomValue } from 'jotai';
 import React, { useRef, useState, useEffect, Fragment } from 'react';
 import { motion } from 'framer-motion';
 import {
-  loginAtom,
+  kitStateAtom,
   mouseEnabledAtom,
   openAtom,
   tabIndexAtom,
@@ -39,16 +39,35 @@ const GithubIcon = ({ className }) => (
 
 const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
   const user = useAtomValue(userAtom);
+  const kitState = useAtomValue(kitStateAtom);
 
   if (tab === 'Account__') {
     if (user.login) {
       return (
-        <div className="flex flex-row justify-center items-center">
+        <div className="flex flex-row justify-center items-center -mb-1">
           <span>{user?.name?.split(' ')?.[0] || user.login}</span>
+          {kitState.isSponsor && (
+            <svg
+              height="24"
+              width="24"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              className={`absolute z-0 h-4 -right-0.5 -top-1.5 text-primary-dark dark:text-primary-light
+              ${selected ? `opacity-100` : `opacity-50`}
+              `}
+            >
+              <g fill="currentColor">
+                <path
+                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"
+                  fill="currentColor"
+                />
+              </g>
+            </svg>
+          )}
           <img
             alt="avatar"
             src={user.avatar_url}
-            className={`w-5 rounded-full ml-2 ${
+            className={`w-6 rounded-full ml-2 z-10 ${
               selected ? `opacity-100` : `opacity-50`
             } transition-opacity `}
           />
@@ -59,7 +78,7 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
       <div className="flex flex-row justify-center items-center">
         <span>Sign In</span>
         <GithubIcon
-          className={`ml-2 mb-0.5 ${
+          className={`ml-2 mb-0.5  ${
             selected ? `opacity-100` : `opacity-50`
           } transition-opacity`}
         />

@@ -1026,3 +1026,8 @@ dark:text-red-500
 mb-2px
 mb-3px
 mb-4px
+-right-0.5
+-right-1
+-top-0.5
+-top-1
+-top-1.5

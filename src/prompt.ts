@@ -1114,6 +1114,11 @@ subscribeKey(appDb, 'appearance', () => {
   sendToPrompt(Channel.SET_APPEARANCE, appDb.appearance as AppDb['appearance']);
 });
 
+subscribeKey(kitState, 'isSponsor', (isSponsor) => {
+  log.info(`🎨 Sponsor changed:`, isSponsor);
+  setKitStateAtom({ isSponsor });
+});
+
 const setKitStateAtom = (partialState: Partial<typeof kitState>) => {
   if (
     promptWindow &&

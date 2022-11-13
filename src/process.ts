@@ -94,6 +94,7 @@ import {
   findWidget,
   forceQuit,
   online,
+  sponsorCheck,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -129,6 +130,9 @@ import { showLogWindow } from './window';
 // };
 
 export const maybeConvertColors = (value: any) => {
+  // eslint-disable-next-line no-multi-assign
+  value['--opacity-light'] = value['--opacity-dark'] = value.opacity || '1';
+
   if (value.foreground) {
     const foreground = toRgb(value.foreground);
     value['--color-white'] = foreground;
@@ -237,52 +241,6 @@ export const formatScriptChoices = (data: Choice[]) => {
   });
 
   return choices;
-};
-
-export const sponsorCheck = async (feature: string) => {
-  log.info('Checking sponsor status...');
-
-  const isOnline = await online();
-  if (!isOnline || process.env.KIT_SPONSOR === 'development') {
-    kitState.isSponsor = true;
-  }
-
-  if (!kitState.isSponsor) {
-    const response = await axios.post(
-      `https://scriptkit.com/api/check-sponsor`,
-      {
-        ...kitState.user,
-        feature,
-      }
-    );
-
-    // check for axios post error
-    if (response.status !== 200) {
-      log.error('Error checking sponsor status', response);
-    }
-
-    log.info(`🕵️‍♀️ Sponsor check response`, JSON.stringify(response.data));
-
-    if (
-      (kitState.user.node_id && response.data.id === kitState.user.node_id) ||
-      response.status !== 200
-    ) {
-      log.info('User is sponsor');
-      kitState.isSponsor = true;
-    } else {
-      log.info('User is not sponsor');
-      kitState.isSponsor = false;
-
-      emitter.emit(KitEvent.RunPromptProcess, {
-        scriptPath: kitPath('pro', 'sponsor.js'),
-        args: [feature],
-        options: {
-          force: true,
-          trigger: Trigger.App,
-        },
-      });
-    }
-  }
 };
 
 export type ChannelHandler = {

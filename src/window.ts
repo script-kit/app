@@ -50,7 +50,7 @@ export const createWindow = async ({
 
   // TODO: combine these into one channel
   win.webContents.send(Channel.SET_APPEARANCE, kitState.appearance);
-  win.webContents.send(Channel.SET_THEME, snapshot(kitState.theme));
+  win.webContents.send(Channel.SET_THEME, kitState.theme);
   win.webContents.send(Channel.SET_PROMPT_DATA, {
     ui,
   });
