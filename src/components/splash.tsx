@@ -229,7 +229,7 @@ export default function Splash() {
       className="grid grid-cols-8 left-0 top-0 fixed w-screen h-screen"
     >
       <Aside />
-      <main className="bg-white dark:bg-black dark:bg-opacity-0 col-span-5 h-full p-6">
+      <main className="bg-white dark:bg-black bg:opacity-0 dark:bg-opacity-0 col-span-5 w-full h-full p-6">
         <form
           onSubmit={handleOnSubmit}
           className="flex flex-col h-full justify-center"

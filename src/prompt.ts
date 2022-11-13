@@ -98,14 +98,20 @@ export const beforePromptQuit = async () => {
     setTimeout(async () => {
       if (kitState.isMac) {
         log.info(`Removing panel window`);
+        promptWindow?.hide();
         const dummy = new BrowserWindow({
           show: false,
         });
         electronPanelWindow.makeKeyWindow(dummy);
 
         if (promptWindow && !promptWindow?.isDestroyed()) {
-          electronPanelWindow.makeWindow(promptWindow);
-          promptWindow?.close();
+          try {
+            electronPanelWindow.makeWindow(promptWindow);
+            promptWindow?.close();
+            log.info(`Closed prompt window`);
+          } catch (error) {
+            log.error(error);
+          }
         }
         resolve(true);
       }

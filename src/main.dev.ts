@@ -1085,9 +1085,11 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     const browserWindows = BrowserWindow.getAllWindows();
     browserWindows.forEach((browserWindow) => {
       try {
-        browserWindow.removeAllListeners();
-        browserWindow.close();
-        // browserWindow.destroy();
+        if (!browserWindow.isDestroyed()) {
+          browserWindow.removeAllListeners();
+          browserWindow.close();
+          browserWindow.destroy();
+        }
       } catch (error) {
         mainLog.error(error);
       }
@@ -1104,6 +1106,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
         pinfo?.child?.kill();
       }
     });
+    processes.length = 0;
   } catch (error) {
     mainLog.error(error);
   }
