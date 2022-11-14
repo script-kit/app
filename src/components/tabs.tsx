@@ -52,8 +52,8 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
               width="24"
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
-              className={`absolute z-0 h-4 -right-0.5 -top-1.5 text-primary-dark dark:text-primary-light
-              ${selected ? `opacity-100` : `opacity-50`}
+              className={`absolute z-20 h-4 -right-0.5 -top-1 text-primary-dark dark:text-primary-light
+              opacity-90
               `}
             >
               <g fill="currentColor">
@@ -67,9 +67,8 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
           <img
             alt="avatar"
             src={user.avatar_url}
-            className={`w-6 rounded-full ml-2 z-10 ${
-              selected ? `opacity-100` : `opacity-50`
-            } transition-opacity `}
+            className={`w-6 rounded-full
+            ml-2 relative z-0`}
           />
         </div>
       );
@@ -78,9 +77,8 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
       <div className="flex flex-row justify-center items-center">
         <span>Sign In</span>
         <GithubIcon
-          className={`ml-2 mb-0.5  ${
-            selected ? `opacity-100` : `opacity-50`
-          } transition-opacity`}
+          className={`ml-2 mb-0.5
+        opacity-100`}
         />
       </div>
     );
@@ -153,7 +151,15 @@ export default function KitTabs() {
                   { '--tw-text-opacity': i === tabIndex ? '1' : '0.75' } as any
                 }
                 animate={
-                  { '--tw-text-opacity': i === tabIndex ? '0.9' : '0.5' } as any
+                  {
+                    '--tw-text-opacity':
+                      // eslint-disable-next-line no-nested-ternary
+                      i === tabIndex
+                        ? '0.9'
+                        : tab === 'Account__'
+                        ? '0.9'
+                        : '0.5',
+                  } as any
                 }
               >
                 <TabName tab={tab} selected={i === tabIndex} />

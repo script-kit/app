@@ -14,6 +14,7 @@ import {
   PromptBounds,
 } from '@johnlindquist/kit/types/core';
 
+import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 
 import {
@@ -903,6 +904,8 @@ export const setPromptData = async (promptData: PromptData) => {
   if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
 
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
+  // TODO: Combine types for sendToPrompt and appToPrompt?
+  appToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
 
   // positionPrompt({
   //   ui: promptData.ui,
