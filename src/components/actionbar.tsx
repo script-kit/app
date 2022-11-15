@@ -82,7 +82,7 @@ export function OptionsButton() {
   `}
       onClick={onClick}
     >
-      <div className="px-0.5 mr-0.5">{flagValue ? 'Back' : 'Options'}</div>
+      <div className="px-0.5 mr-0.5">{flagValue ? 'Back' : 'Actions'}</div>
       <div className=" flex flex-row">
         <div
           className="

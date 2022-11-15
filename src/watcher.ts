@@ -28,10 +28,9 @@ import {
   scriptChanged,
   scriptRemoved,
   sponsorCheck,
-  userDb,
 } from './state';
 import { addSnippet, removeSnippet } from './tick';
-import { appToPrompt, clearPromptCacheFor, sendToPrompt } from './prompt';
+import { appToPrompt, clearPromptCacheFor } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel } from './enums';
@@ -130,6 +129,23 @@ export const teardownWatchers = async () => {
   }
 };
 
+export const checkUserDb = async (eventName: string) => {
+  kitState.isSponsor = false;
+  log.info(`user.json ${eventName}`);
+
+  const currentUserDb = (await getUserDb()).data;
+  kitState.user = currentUserDb;
+
+  if (eventName === 'unlink') return;
+  if (kitState?.user?.login) {
+    sponsorCheck('Login', false);
+  }
+
+  log.info(`Send user.json to prompt`, snapshot(kitState.user));
+
+  appToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
+};
+
 export const setupWatchers = async () => {
   await teardownWatchers();
 
@@ -147,16 +163,7 @@ export const setupWatchers = async () => {
     }
 
     if (base === 'user.json') {
-      kitState.isSponsor = false;
-      log.info(`user.json changed`);
-      const currentUserDb = (await getUserDb()).data;
-      kitState.user = currentUserDb;
-
-      sponsorCheck('Login', false);
-
-      log.info(`Send user.json to prompt`, snapshot(kitState.user));
-
-      appToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
+      checkUserDb(eventName);
       return;
     }
 

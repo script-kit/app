@@ -320,6 +320,15 @@ body {
     list-style-type: unset;
   }
 
+  .prose table {
+    @apply -mt-2;
+    table-layout: fixed;
+  }
+
+  .prose table thead {
+    @apply text-base dark:text-base;
+  }
+
   .prose > blockquote {
     background: hsla(0, 0%, 40%, 0.1);
   }

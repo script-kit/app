@@ -97,6 +97,8 @@ export const beforePromptQuit = async () => {
 
   return new Promise((resolve) => {
     setTimeout(async () => {
+      if (promptWindow?.isDestroyed()) return resolve(true);
+
       if (kitState.isMac) {
         log.info(`Removing panel window`);
         promptWindow?.hide();
@@ -116,7 +118,7 @@ export const beforePromptQuit = async () => {
         }
         resolve(true);
       }
-    });
+    }, 100);
   });
 };
 
@@ -555,6 +557,7 @@ export const isFocused = () => {
 
 let resizeAnimate = true;
 let resizeTimeout = setTimeout(() => {
+  if (promptWindow?.isDestroyed()) return;
   resizeAnimate = true;
 }, 1000);
 export const resize = async ({
@@ -639,6 +642,7 @@ export const resize = async ({
       clearTimeout(resizeTimeout);
       resizeAnimate = false;
       resizeTimeout = setTimeout(() => {
+        if (promptWindow?.isDestroyed()) return;
         resizeAnimate = true;
       }, 1000);
     }
@@ -934,6 +938,7 @@ export const setPromptData = async (promptData: PromptData) => {
 
   if (boundsCheck) clearTimeout(boundsCheck);
   boundsCheck = setTimeout(async () => {
+    if (promptWindow?.isDestroyed()) return;
     const currentBounds = promptWindow?.getBounds();
     const currentDisplayBounds = getCurrentScreenFromMouse().bounds;
 
@@ -1028,6 +1033,7 @@ export const onHideOnce = (fn: () => void) => {
     };
 
     id = setTimeout(() => {
+      if (promptWindow?.isDestroyed()) return;
       promptWindow?.removeListener('hide', handler);
     }, 1000);
 

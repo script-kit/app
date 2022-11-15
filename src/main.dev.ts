@@ -1120,7 +1120,9 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     autoUpdater.quitAndInstall();
   } else {
     mainLog.info(`🚀 Quit`);
-    app?.quit();
+    setTimeout(() => {
+      app?.quit();
+    }, 1000);
   }
 
   app?.exit(0);

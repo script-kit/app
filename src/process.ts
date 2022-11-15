@@ -1348,6 +1348,14 @@ const kitMessageMap: ChannelHandler = {
       value: text,
     });
   }),
+  PRO_STATUS: toProcess(async ({ child }, { channel, value }) => {
+    const isSponsor = await sponsorCheck('Check Status', false);
+    log.info(`PRO STATUS`, JSON.stringify({ isSponsor }));
+    childSend(child, {
+      channel,
+      value: isSponsor,
+    });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (

@@ -491,11 +491,16 @@ subscribeKey(kitState, 'scriptErrorPath', (scriptErrorPath) => {
 });
 
 export const sponsorCheck = async (feature: string, block = true) => {
-  log.info('Checking sponsor status...');
+  log.info(
+    `Checking sponsor status... login: ${kitState?.user?.login} ${
+      kitState.isSponsor ? '✅' : '❌'
+    }`
+  );
 
   const isOnline = await online();
   if (!isOnline || process.env.KIT_SPONSOR === 'development') {
     kitState.isSponsor = true;
+    return true;
   }
 
   if (!kitState.isSponsor) {
@@ -507,6 +512,8 @@ export const sponsorCheck = async (feature: string, block = true) => {
       }
     );
 
+    log.info(`Response status: ${response.status}`);
+
     // check for axios post error
     if (response.status !== 200) {
       log.error('Error checking sponsor status', response);
@@ -515,12 +522,22 @@ export const sponsorCheck = async (feature: string, block = true) => {
     log.info(`🕵️‍♀️ Sponsor check response`, JSON.stringify(response.data));
 
     if (
-      (kitState.user.node_id && response.data.id === kitState.user.node_id) ||
-      response.status !== 200
+      response.data &&
+      kitState.user.node_id &&
+      response.data.id === kitState.user.node_id
     ) {
       log.info('User is sponsor');
       kitState.isSponsor = true;
-    } else if (block) {
+      return true;
+    }
+
+    if (response.status !== 200) {
+      log.error('Sponsor check service is down. Granting temp sponsor status');
+      kitState.isSponsor = true;
+      return true;
+    }
+
+    if (block) {
       log.info('User is not sponsor');
       kitState.isSponsor = false;
 
@@ -532,6 +549,11 @@ export const sponsorCheck = async (feature: string, block = true) => {
           trigger: Trigger.App,
         },
       });
+
+      return false;
     }
+
+    return false;
   }
+  return true;
 };
