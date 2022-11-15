@@ -86,7 +86,7 @@ function Aside() {
   const [lazyIcon] = useAtom(loadableIconAtom);
 
   return (
-    <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner">
+    <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner bg-bg-light dark:bg-bg-dark bg-opacity-90 dark:bg-opacity-90">
       <div className="flex flex-col items-center h-full">
         <div className="relative">
           <img
@@ -229,7 +229,7 @@ export default function Splash() {
       className="grid grid-cols-8 left-0 top-0 fixed w-screen h-screen"
     >
       <Aside />
-      <main className="bg-white dark:bg-black bg:opacity-0 dark:bg-opacity-0 col-span-5 w-full h-full p-6">
+      <main className="bg-bg-light dark:bg-black bg:opacity-0 dark:bg-opacity-0 col-span-5 w-full h-full p-6">
         <form
           onSubmit={handleOnSubmit}
           className="flex flex-col h-full justify-center"

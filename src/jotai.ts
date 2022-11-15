@@ -929,8 +929,8 @@ const _themeAtom = atom({
   '--color-contrast-dark': '0, 0, 0',
   '--color-background-light': '255, 255, 255',
   '--color-background-dark': '0, 0, 0',
-  '--opacity-light': '0.9',
-  '--opacity-dark': '0.75',
+  '--opacity-light': '0.8',
+  '--opacity-dark': '0.7',
 });
 
 export const themeAtom = atom(
