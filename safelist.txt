@@ -1051,3 +1051,14 @@ dark:hover:opacity-80
 bg-opacity-80
 dark:bg-opacity-80
 justify-evenly
+justify-self-auto
+justify-self-start
+justify-self-end
+justify-self-center
+justify-self-stretch
+​self-auto
+self-start
+self-end
+self-center
+self-stretch
+self-baseline
