@@ -1050,3 +1050,4 @@ hover:opacity-80
 dark:hover:opacity-80
 bg-opacity-80
 dark:bg-opacity-80
+justify-evenly

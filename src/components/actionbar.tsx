@@ -339,7 +339,7 @@ export default function ActionBar() {
     bg-opacity-0 dark:bg-opacity-0
     `
         : `
-    bg-opacity-80 dark:bg-opacity-80
+    bg-opacity-90 dark:bg-opacity-90
     `
     }
 
