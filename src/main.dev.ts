@@ -1053,33 +1053,7 @@ try {
 
 app.whenReady().then(checkKit).catch(ohNo);
 
-subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
-  if (!allowQuit) return;
-  if (kitState.relaunch) {
-    mainLog.info(`🚀 Kit.app should relaunch after quit...`);
-    app.relaunch();
-  }
-  mainLog.info(`😬 Tear down all processes before quit`);
-  try {
-    teardownWatchers();
-    sleepSchedule();
-    destroyTray();
-  } catch (error) {
-    mainLog.error(`😬 ERROR DESTROYING TRAY`, { error });
-  }
-
-  try {
-    app.removeAllListeners('window-all-closed');
-  } catch (error) {
-    mainLog.error(error);
-  }
-
-  try {
-    if (kitState.isMac) await beforePromptQuit();
-  } catch (error) {
-    mainLog.error(error);
-  }
-
+const destroyAllWindows = () => {
   try {
     mainLog.info(`Destroy all windows`);
     const browserWindows = BrowserWindow.getAllWindows();
@@ -1097,6 +1071,36 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   } catch (e) {
     mainLog.warn(`callBeforeQuitAndInstall error`, e);
   }
+};
+
+subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
+  if (!allowQuit) return;
+  if (kitState.relaunch) {
+    mainLog.info(`🚀 Kit.app should relaunch after quit...`);
+    app.relaunch();
+  }
+  mainLog.info(`😬 Tear down all processes before quit`);
+  try {
+    teardownWatchers();
+    sleepSchedule();
+    // destroyTray();
+  } catch (error) {
+    mainLog.error(`😬 ERROR DESTROYING TRAY`, { error });
+  }
+
+  try {
+    app.removeAllListeners('window-all-closed');
+  } catch (error) {
+    mainLog.error(error);
+  }
+
+  try {
+    if (kitState.isMac) await beforePromptQuit();
+  } catch (error) {
+    mainLog.error(error);
+  }
+
+  destroyAllWindows();
 
   try {
     mainLog.info(`Destroy all processes`);
@@ -1115,15 +1119,39 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     `Remaning browser windows: ${BrowserWindow.getAllWindows()?.length}`
   );
 
+  // Ensure all browser windows are closed before quitting
+
   if (kitState.quitAndInstall) {
     updateLog.log(`🚀 Quit and install`);
-    autoUpdater.quitAndInstall();
+
+    setTimeout(() => {
+      try {
+        updateLog.log(`Try Quit and install...`);
+        autoUpdater.quitAndInstall();
+      } catch (error) {
+        autoUpdater.autoInstallOnAppQuit = true;
+        mainLog.error(error);
+        updateLog.error(error);
+        app.quit();
+        app.exit(0);
+      }
+      setTimeout(() => {
+        try {
+          destroyAllWindows();
+          app.quit();
+          app.exit(0);
+        } catch (error) {
+          mainLog.error(error);
+          updateLog.error(error);
+          app.exit(1);
+        }
+      }, 1000);
+    }, 1000);
   } else {
     mainLog.info(`🚀 Quit`);
-    setTimeout(() => {
-      app?.quit();
-    }, 1000);
+    app?.quit();
+    app?.exit(0);
   }
 
-  app?.exit(0);
+  // app?.exit(0);
 });

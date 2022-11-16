@@ -20,7 +20,7 @@ import {
 import os, { constants } from 'os';
 import { assign, remove } from 'lodash';
 import ContrastColor from 'contrast-color';
-import { subscribe } from 'valtio';
+import { snapshot, subscribe } from 'valtio';
 import http from 'http';
 import path from 'path';
 import https from 'https';
@@ -1119,6 +1119,28 @@ const kitMessageMap: ChannelHandler = {
       });
     }
   }),
+  GET_MAC_WINDOWS: toProcess(async ({ child }, { channel, value }) => {
+    const { getWindows } = await import('mac-windows');
+    const windows = await getWindows(
+      value || {
+        showAllWindows: true,
+        onScreenOnly: false,
+      }
+    );
+
+    childSend(child, {
+      channel,
+      value: windows,
+    });
+  }),
+
+  GET_APP_STATE: toProcess(async ({ child }, { channel, value }) => {
+    childSend(child, {
+      channel,
+      value: snapshot(kitState),
+    });
+  }),
+
   TERMINAL: (data) => {
     sendToPrompt(Channel.TERMINAL, data.value);
   },

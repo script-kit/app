@@ -1,5 +1,6 @@
 import os from 'os';
 import { WebSocket } from 'ws';
+import { KIT_FIRST_PATH } from '@johnlindquist/kit/cjs/utils';
 import untildify from 'untildify';
 
 import log from 'electron-log';
@@ -42,7 +43,11 @@ export const startPty = async (config: any = {}) => {
       cols: 80,
       rows: 24,
       cwd: untildify(config?.cwd || os.homedir()),
-      env: config?.env || process.env,
+      env: {
+        ...process.env,
+        ...config?.env,
+        PATH: KIT_FIRST_PATH,
+      },
       encoding: 'utf8',
     }
   );

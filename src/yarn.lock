@@ -1164,6 +1164,11 @@ lru-cache@^6.0.0:
   dependencies:
     yallist "^4.0.0"
 
+mac-windows@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/mac-windows/-/mac-windows-1.0.0.tgz#d5c40f548f94ea075005af7ca766811324638326"
+  integrity sha512-jntT8ejkd+qW8fdVvqBEALeKpAHQ1ovoSsh//PUUnHUIQz0YCkXDdmat1Vd3T31oSMbpuKpTnTUtRAo3EYLSkQ==
+
 memory-stream@0:
   version "0.0.3"
   resolved "https://registry.yarnpkg.com/memory-stream/-/memory-stream-0.0.3.tgz#ebe8dd1c3b8bc38c0e7941e9ddd5aebe6b4de83f"
