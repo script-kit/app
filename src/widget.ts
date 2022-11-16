@@ -68,7 +68,7 @@ export const createWidget = async (
     }
 
     * {pointer-events: all;}
-    ${isWin ? `` : `.draggable {-webkit-app-region: drag;}`}
+    .draggable {-webkit-app-region: drag;}
   </style>
     <script>
       const { ipcRenderer } = require('electron');
