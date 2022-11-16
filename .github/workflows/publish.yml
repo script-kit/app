@@ -84,7 +84,7 @@ jobs:
           yarn electron-builder --publish always -m
           echo "\n\n--- Removing mac deps ---"
           cd ./src
-          yarn remove node-mac-permissions @akiflow/electron-panel-window mac-windows
+          yarn remove node-mac-permissions @akiflow/electron-panel-window
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
