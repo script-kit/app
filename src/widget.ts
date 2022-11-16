@@ -1,4 +1,5 @@
 import path from 'path';
+import os from 'os';
 import { outputFile } from 'fs-extra';
 import { app, BrowserWindowConstructorOptions } from 'electron';
 import { kenvPath } from '@johnlindquist/kit/cjs/utils';
@@ -23,6 +24,8 @@ export const createWidget = async (
   const stylePath = path.resolve(app.getAppPath(), 'dist', 'style.css');
 
   const petiteVuePath = getAssetPath('petite-vue.es.js');
+
+  const isWin = os.platform() === 'win32';
 
   await outputFile(
     filePath,
@@ -65,7 +68,7 @@ export const createWidget = async (
     }
 
     * {pointer-events: all;}
-    .draggable {-webkit-app-region: drag;}
+    ${isWin ? `` : `.draggable {-webkit-app-region: drag;}`}
   </style>
     <script>
       const { ipcRenderer } = require('electron');
@@ -103,11 +106,19 @@ export const createWidget = async (
     })
   </script>
 
+  ${
+    isWin
+      ? `<div class="absolute top-0 left-0 h-8 w-screen draggable"></div>`
+      : ``
+  }
+
   <template id="widget-template">
     ${html}
   </template>
 
-  <div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="flex justify-center items-center v-screen h-screen draggable"></div>
+  <div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="flex justify-center items-center v-screen h-screen ${
+    isWin ? `` : `draggable`
+  }"></div>
 
   <script>
 

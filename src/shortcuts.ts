@@ -1,4 +1,4 @@
-import { app, globalShortcut, Notification } from 'electron';
+import { app, globalShortcut } from 'electron';
 import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import { Script } from '@johnlindquist/kit/types/core';
@@ -11,7 +11,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
-import { focusPrompt, isFocused, isVisible } from './prompt';
+import { focusPrompt, isFocused, isVisible, reload } from './prompt';
 import { kitState } from './state';
 import { Trigger } from './enums';
 
@@ -39,6 +39,18 @@ export const registerTrayShortcut = () => {
   const success = globalShortcut.register('CommandOrControl+Shift+;', () => {
     emitter.emit(KitEvent.TrayClick);
   });
+
+  if (process.env.NODE_ENV === 'development') {
+    globalShortcut.register('Option+;', async () => {
+      reload();
+      // wait for reload to finish
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await runPromptProcess(mainScriptPath, [], {
+        force: true,
+        trigger: Trigger.Menu,
+      });
+    });
+  }
 
   log.verbose(`Tray shortcut registered: ${success ? 'success' : 'fail'}`);
 };

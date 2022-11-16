@@ -233,6 +233,7 @@ export const unfilteredChoicesAtom = atom(
       // }
 
       const prevCId = g(prevChoiceId);
+
       const prevIndex = g(isMainScriptAtom)
         ? 0
         : cs.findIndex((c) => c?.id === prevCId);
@@ -1071,9 +1072,10 @@ export const flagValueAtom = atom(
 
     if (a === '') {
       s(_input, g(prevInputAtom));
-      s(_index, g(prevIndexAtom));
+
       s(selectedAtom, '');
       s(unfilteredChoicesAtom, g(prevChoicesAtom));
+      s(_index, g(prevIndexAtom));
     } else {
       s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
       s(prevIndexAtom, g(_index));
@@ -1523,7 +1525,8 @@ export const onShortcutAtom = atom<OnShortcut>({});
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
   // const log = g(logAtom);
-  console.log(`🎬 Send shortcut ${shortcut}`);
+  g(logAtom)(`🎬 Send shortcut ${shortcut}`);
+
   channel(Channel.SHORTCUT, { shortcut });
   s(_flag, '');
 });

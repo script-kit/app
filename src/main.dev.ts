@@ -70,8 +70,8 @@ import {
 } from '@johnlindquist/kit/cjs/db';
 import { subscribeKey } from 'valtio/utils';
 import { assign } from 'lodash';
-import { setupTray, destroyTray } from './tray';
-import { onScriptsChanged, setupWatchers, teardownWatchers } from './watcher';
+import { setupTray } from './tray';
+import { setupWatchers, teardownWatchers } from './watcher';
 import {
   getArch,
   getAssetPath,
@@ -80,7 +80,7 @@ import {
   getPlatformExtension,
   getReleaseChannel,
 } from './assets';
-import { configureInterval } from './tick';
+import { configureInterval, destroyInterval } from './tick';
 import {
   clearPromptCache,
   createPromptWindow,
@@ -367,6 +367,7 @@ const systemEvents = () => {
     log.info(`😴 System suspending. Removing watchers.`);
     teardownWatchers();
     sleepSchedule();
+    destroyInterval();
 
     kitState.suspended = true;
     // app?.hide();
@@ -385,6 +386,12 @@ const systemEvents = () => {
           log.error(`Error checking for updates`, error);
         }
       }, 10000);
+    }
+
+    if (kitState.authorized) {
+      log.info(`💻 Accessibility authorized ✅`);
+      await configureInterval();
+      await setupLog(`Tick started`);
     }
 
     kitState.suspended = false;
@@ -1129,6 +1136,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
         updateLog.log(`Try Quit and install...`);
         autoUpdater.quitAndInstall();
       } catch (error) {
+        kitState.relaunch = true;
         autoUpdater.autoInstallOnAppQuit = true;
         mainLog.error(error);
         updateLog.error(error);

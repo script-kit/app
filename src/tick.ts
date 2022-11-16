@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import { clipboard, NativeImage } from 'electron';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import {
   debounceTime,
   delay,
@@ -179,6 +179,9 @@ const ioEvent = async (e: UiohookKeyboardEvent) => {
   // log.info(kitState.snippet);
 };
 
+let io$Sub: Subscription | null = null;
+let clipboard$Sub: Subscription | null = null;
+
 export const configureInterval = async () => {
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
   if (kitState.isMac) {
@@ -213,9 +216,11 @@ export const configureInterval = async () => {
     // });
 
     // Register and start hook
+    log.info(`🟢 Starting keyboard and mouse watcher`);
     uIOhook.start();
 
     return () => {
+      log.info(`🛑 Stopping keyboard and mouse watcher`);
       uIOhook.stop();
     };
   }).pipe(share());
@@ -313,87 +318,97 @@ export const configureInterval = async () => {
 }
 */
 
-  clipboardText$.subscribe(async ({ text, app }: ClipboardApp) => {
-    let value = '';
-    let type = '';
-    const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
+  if (!clipboard$Sub)
+    clipboard$Sub = clipboardText$.subscribe(
+      async ({ text, app }: ClipboardApp) => {
+        let value = '';
+        let type = '';
+        const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
 
-    if (typeof text === 'string') {
-      type = 'text';
-      value = text;
-    } else {
-      type = 'image';
-      value = path.join(tmpClipboardDir, `${timestamp}.png`);
-      await writeFile(value, (text as NativeImage).toPNG());
-    }
+        if (typeof text === 'string') {
+          type = 'text';
+          value = text;
+        } else {
+          type = 'image';
+          value = path.join(tmpClipboardDir, `${timestamp}.png`);
+          await writeFile(value, (text as NativeImage).toPNG());
+        }
 
-    // TODO: Consider filtering consecutive characters without a space
-    const maybeSecret = Boolean(
-      type === 'text' &&
-        value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-z0-9-]{5,})$/gi)
+        // TODO: Consider filtering consecutive characters without a space
+        const maybeSecret = Boolean(
+          type === 'text' &&
+            value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-z0-9-]{5,})$/gi)
+        );
+
+        const appName = isFocused() ? 'Script Kit' : app.localizedName;
+
+        // log.info({ appName, text });
+
+        const clipboardItem = {
+          id: nanoid(),
+          name: type === 'image' ? value : value.trim().slice(0, 40),
+          description: `${appName} - ${timestamp}`,
+          value,
+          type,
+          timestamp,
+          maybeSecret,
+        };
+
+        remove(clipboardHistory, (item) => item.value === value);
+
+        log.silly(`📋 Clipboard`, clipboardItem);
+
+        clipboardHistory.unshift(clipboardItem);
+        if (clipboardHistory.length > 100) {
+          clipboardHistory.pop();
+        }
+      }
     );
 
-    const appName = isFocused() ? 'Script Kit' : app.localizedName;
+  if (!io$Sub) io$Sub = io$.subscribe(ioEvent as any);
+};
 
-    // log.info({ appName, text });
+subscribeKey(kitState, 'snippet', async (snippet = ``) => {
+  // Use `;;` as "end"?
+  if (snippet.length < 2) return;
+  for await (const snippetKey of snippetMap.keys()) {
+    if (snippet.endsWith(snippetKey)) {
+      log.info(`Running snippet: ${snippetKey}`);
+      const script = snippetMap.get(snippetKey) as Script;
+      if (kitConfig.deleteSnippet) {
+        // get postfix from snippetMap
+        if (snippetMap.has(snippetKey)) {
+          const { postfix } = snippetMap.get(snippetKey) || {
+            postfix: false,
+          };
 
-    const clipboardItem = {
-      id: nanoid(),
-      name: type === 'image' ? value : value.trim().slice(0, 40),
-      description: `${appName} - ${timestamp}`,
-      value,
-      type,
-      timestamp,
-      maybeSecret,
-    };
-
-    remove(clipboardHistory, (item) => item.value === value);
-
-    log.silly(`📋 Clipboard`, clipboardItem);
-
-    clipboardHistory.unshift(clipboardItem);
-    if (clipboardHistory.length > 100) {
-      clipboardHistory.pop();
-    }
-  });
-
-  subscribeKey(kitState, 'snippet', async (snippet = ``) => {
-    // Use `;;` as "end"?
-    if (snippet.length < 2) return;
-    for await (const snippetKey of snippetMap.keys()) {
-      if (snippet.endsWith(snippetKey)) {
-        log.info(`Running snippet: ${snippetKey}`);
-        const script = snippetMap.get(snippetKey) as Script;
-        if (kitConfig.deleteSnippet) {
-          // get postfix from snippetMap
-          if (snippetMap.has(snippetKey)) {
-            const { postfix } = snippetMap.get(snippetKey) || {
-              postfix: false,
-            };
-
-            const stringToDelete = postfix ? snippet : snippetKey;
-            await deleteText(stringToDelete);
-          }
+          const stringToDelete = postfix ? snippet : snippetKey;
+          await deleteText(stringToDelete);
         }
-        emitter.emit(KitEvent.RunPromptProcess, {
-          scriptPath: script.filePath,
-          args: [snippet.slice(0, -snippetKey?.length)],
-          options: {
-            force: false,
-            trigger: Trigger.Snippet,
-          },
-        });
       }
+      emitter.emit(KitEvent.RunPromptProcess, {
+        scriptPath: script.filePath,
+        args: [snippet.slice(0, -snippetKey?.length)],
+        options: {
+          force: false,
+          trigger: Trigger.Snippet,
+        },
+      });
     }
+  }
 
-    if (snippet.endsWith('_')) kitState.snippet = '';
-  });
+  if (snippet.endsWith('_')) kitState.snippet = '';
+});
 
-  subscribeKey(kitState, 'isTyping', () => {
-    kitState.snippet = ``;
-  });
+subscribeKey(kitState, 'isTyping', () => {
+  kitState.snippet = ``;
+});
 
-  io$.subscribe(ioEvent as any);
+export const destroyInterval = () => {
+  if (io$Sub) io$Sub.unsubscribe();
+  io$Sub = null;
+  if (clipboard$Sub) clipboard$Sub.unsubscribe();
+  clipboard$Sub = null;
 };
 
 const snippetMap = new Map<
