@@ -1090,13 +1090,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     sleepSchedule();
     // destroyTray();
   } catch (error) {
-    mainLog.error(`😬 ERROR DESTROYING TRAY`, { error });
-  }
-
-  try {
-    app.removeAllListeners('window-all-closed');
-  } catch (error) {
-    mainLog.error(error);
+    mainLog.error(`😬 Error Teardown and Sleep`, { error });
   }
 
   try {
