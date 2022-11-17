@@ -7,18 +7,18 @@ import MonacoEditor, { Monaco } from '@monaco-editor/react';
 
 import { editor as monacoEditor, Range } from 'monaco-editor';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
+import { ipcRenderer } from 'electron';
 import {
   cmdAtom,
   darkAtom,
   editorConfigAtom,
   editorOptions,
   editorThemeAtom,
-  lastLogLineAtom,
-  logValueAtom,
   shortcutsAtom,
 } from '../jotai';
 import { useMountMainHeight } from '../hooks';
 import { kitLight, nightOwl } from '../editor-themes';
+import { WindowChannel } from '../enums';
 
 const registerLogLanguage = (
   monaco: Monaco,
@@ -91,9 +91,9 @@ export default function Log() {
   const [config] = useAtom(editorConfigAtom);
   const [isDark] = useAtom(darkAtom);
   const [options] = useAtom(editorOptions);
-  const lastLogLine = useAtomValue(lastLogLineAtom);
-  const [logValue, setLogValue] = useAtom(logValueAtom);
+  const [logValue, setLogValue] = useState(``);
   const [mouseOver, setMouseOver] = useState(false);
+
   const theme = useAtomValue(editorThemeAtom);
   const [, setShortcuts] = useAtom(shortcutsAtom);
   const cmd = useAtomValue(cmdAtom);
@@ -153,35 +153,50 @@ export default function Log() {
       if ((config as EditorOptions).scrollTo === 'center') {
         mountEditor.revealLineInCenter(Math.floor(lineNumber / 2));
       }
+
+      ipcRenderer.send(WindowChannel.MOUNTED);
     },
     [config, containerRef, isDark]
   );
 
   useEffect(() => {
     if (editor) {
-      // set position to the end of the file
-      const lineNumber = editor.getModel()?.getLineCount() || 0;
-      const range = new Range(lineNumber, 1, lineNumber, 1);
+      ipcRenderer.on(WindowChannel.SET_LAST_LOG_LINE, (event, lastLogLine) => {
+        // set position to the end of the file
+        const lineNumber = editor.getModel()?.getLineCount() || 0;
+        const range = new Range(lineNumber, 1, lineNumber, 1);
 
-      const id = { major: 1, minor: 1 };
-      const op = {
-        identifier: id,
-        range,
-        text: `${lastLogLine}\n`,
-        forceMoveMarkers: true,
-      };
+        const id = { major: 1, minor: 1 };
+        const op = {
+          identifier: id,
+          range,
+          text: `${lastLogLine}\n`,
+          forceMoveMarkers: true,
+        };
 
-      editor.executeEdits('my-source', [op]);
-      setLogValue(editor.getValue());
+        editor.executeEdits('my-source', [op]);
+        setLogValue(editor.getValue());
+      });
     }
-  }, [editor, lastLogLine]);
+  }, [editor, setLogValue]);
+
+  useEffect(() => {
+    if (editor) {
+      ipcRenderer.on(WindowChannel.SET_LOG_VALUE, (event, newLog) => {
+        setLogValue(newLog);
+        editor.setValue(newLog);
+
+        console.log({ newLog });
+      });
+    }
+  }, [editor]);
 
   useEffect(() => {
     if (!editor || mouseOver) return;
     editor.setScrollPosition({
       scrollTop: editor.getScrollHeight(),
     });
-  }, [mouseOver, editor, lastLogLine]);
+  }, [mouseOver, editor, logValue]);
 
   useEffect(() => {
     setShortcuts([

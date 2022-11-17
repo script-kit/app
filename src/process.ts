@@ -17,7 +17,7 @@ import {
   dialog,
   shell,
 } from 'electron';
-import os, { constants } from 'os';
+import os from 'os';
 import { assign, remove } from 'lodash';
 import ContrastColor from 'contrast-color';
 import { snapshot, subscribe } from 'valtio';
@@ -28,14 +28,8 @@ import url from 'url';
 import sizeOf from 'image-size';
 import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { ChildProcess, exec, fork } from 'child_process';
-import {
-  Channel,
-  Mode,
-  ProcessType,
-  Value,
-  UI,
-} from '@johnlindquist/kit/cjs/enum';
+import { ChildProcess, fork } from 'child_process';
+import { Channel, ProcessType, Value, UI } from '@johnlindquist/kit/cjs/enum';
 import { Choice, Script, ProcessInfo } from '@johnlindquist/kit/types/core';
 
 import {
@@ -55,7 +49,6 @@ import {
   mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
-import axios from 'axios';
 import { getLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -93,7 +86,6 @@ import {
   widgetState,
   findWidget,
   forceQuit,
-  online,
   sponsorCheck,
 } from './state';
 
@@ -114,6 +106,7 @@ import { isKitScript, toRgb, pathsAreEqual } from './helpers';
 import { toHex } from './color-utils';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
+import { stripAnsi } from './ansi';
 
 // const trash = async (...args: string[]) => {
 //   const parent = app.isPackaged
@@ -778,6 +771,20 @@ const kitMessageMap: ChannelHandler = {
   SET_SCRIPT: toProcess(async (processInfo, data) => {
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
+
+      if (processInfo.child.stdout && processInfo.child.stderr) {
+        const scriptLog = getLog(processInfo.scriptPath);
+        processInfo.child.stdout.removeAllListeners();
+        processInfo.child.stderr.removeAllListeners();
+
+        const routeToScriptLog = (d: any) => {
+          scriptLog.info(`\n${stripAnsi(d.toString())}`);
+        };
+
+        processInfo.child.stdout?.on('data', routeToScriptLog);
+        processInfo.child.stderr?.on('data', routeToScriptLog);
+      }
+
       const foundP = kitState.ps.find((p) => p.pid === processInfo.pid);
       if (foundP) {
         foundP.scriptPath = data.value?.filePath;
@@ -1433,7 +1440,8 @@ const createChild = ({
   // console.log({ env });
   // const isWin = os.platform().startsWith('win');
   const child = fork(entry, args, {
-    silent: false,
+    silent: true,
+    stdio: 'pipe',
     // ...(isWin ? {} : { execPath }),
     cwd: os.homedir(),
     env: {

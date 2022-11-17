@@ -90,7 +90,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     const runScript = (
       scriptPath: string,
-      args = [],
+      args: string[] = [],
       options = { force: false, trigger: Trigger.App }
     ) => () => {
       emitter.emit(KitEvent.RunPromptProcess, {
@@ -161,9 +161,14 @@ export const openMenu = async (event?: KeyboardEvent) => {
         submenu: [
           {
             label: `Open ${path.basename(kitState.scriptErrorPath)}`,
-            click: () => {
-              shell.openPath(kitState.scriptErrorPath);
-            },
+            click: runScript(
+              kitPath('cli', 'edit-script.js'),
+              [kitState.scriptErrorPath],
+              {
+                force: true,
+                trigger: Trigger.Tray,
+              }
+            ),
           },
           {
             label: `Open ${path.basename(logPath)}`,

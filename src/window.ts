@@ -1,5 +1,6 @@
 import { BrowserWindow } from 'electron';
 import log from 'electron-log';
+import path from 'path';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { getLogFromScriptPath } from '@johnlindquist/kit/cjs/utils';
 import Tail from 'tail';
@@ -47,6 +48,10 @@ export const createWindow = async ({
 
   await win.loadURL(`file://${__dirname}/index.html?vs=${getAssetPath('vs')}`);
 
+  win.webContents.executeJavaScript(`
+  document.title = '${title}'
+  `);
+
   // TODO: combine these into one channel
   try {
     win.webContents.send(Channel.SET_APPEARANCE, kitState.appearance);
@@ -78,7 +83,8 @@ export const showLogWindow = async ({
   }
 
   const logPath = getLogFromScriptPath(scriptPath);
-  const win = await createWindow({ ui: UI.log, scriptPath, title: logPath });
+  const { base: title } = path.parse(logPath);
+  const win = await createWindow({ ui: UI.log, scriptPath, title });
   const currentScreen = getCurrentScreenFromMouse();
   const { x, y, width, height } = currentScreen.workArea;
   win.setSize(480, 800);
@@ -107,31 +113,33 @@ export const showLogWindow = async ({
         win.webContents.send(WindowChannel.SET_LOG_VALUE, '');
       }
     }
-  });
 
-  const tail = new Tail.Tail(logPath, {
-    fromBeginning: true,
-    follow: true,
-  });
+    if (channel === WindowChannel.MOUNTED) {
+      const tail = new Tail.Tail(logPath, {
+        fromBeginning: true,
+        follow: true,
+      });
 
-  let contents = '';
-  try {
-    contents = await readFile(logPath, 'utf8');
+      let contents = '';
+      try {
+        contents = await readFile(logPath, 'utf8');
 
-    if (contents && !win.isDestroyed()) {
-      win.webContents.send(WindowChannel.SET_LOG_VALUE, contents);
+        if (contents && !win.isDestroyed()) {
+          win.webContents.send(WindowChannel.SET_LOG_VALUE, contents);
+        }
+      } catch (err) {
+        log.info('no log file found');
+      }
+
+      tail.on('line', (data) => {
+        log.info({ data });
+        if (win.isDestroyed()) return;
+        win.webContents.send(WindowChannel.SET_LAST_LOG_LINE, data);
+      });
+
+      win.on('close', () => {
+        tail.unwatch();
+      });
     }
-  } catch (err) {
-    log.info('no log file found');
-  }
-
-  tail.on('line', (data) => {
-    log.info({ data });
-    if (win.isDestroyed()) return;
-    win.webContents.send(WindowChannel.SET_LAST_LOG_LINE, data);
-  });
-
-  win.on('close', () => {
-    tail.unwatch();
   });
 };
