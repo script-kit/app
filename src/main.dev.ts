@@ -61,6 +61,7 @@ import {
   KIT_FIRST_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
+  execPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import {
