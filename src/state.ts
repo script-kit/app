@@ -454,11 +454,6 @@ export const online = async () => {
 
 export const forceQuit = () => {
   log.info(`Begin force quit...`);
-  if (kitState.allowQuit) {
-    log.info(`👋 Force Quit...`);
-    app.quit();
-    app.exit(0);
-  }
   kitState.allowQuit = true;
 };
 

@@ -1,6 +1,7 @@
 import os from 'os';
+import path from 'path';
 import { WebSocket } from 'ws';
-import { KIT_FIRST_PATH } from '@johnlindquist/kit/cjs/utils';
+import { knodePath } from '@johnlindquist/kit/cjs/utils';
 import untildify from 'untildify';
 
 import log from 'electron-log';
@@ -45,8 +46,7 @@ export const startPty = async (config: any = {}) => {
       cwd: untildify(config?.cwd || os.homedir()),
       env: {
         ...process.env,
-        ...config?.env,
-        PATH: KIT_FIRST_PATH,
+        PATH: `${knodePath('bin')}${path.delimiter}${process.env.PATH}`,
       },
       encoding: 'utf8',
     }

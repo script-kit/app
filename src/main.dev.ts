@@ -38,6 +38,7 @@ import {
   ForkOptions,
 } from 'child_process';
 import os, { homedir } from 'os';
+import semver from 'semver';
 import { ensureDir } from 'fs-extra';
 import { existsSync } from 'fs';
 import {
@@ -620,13 +621,15 @@ const extractTar = async (tarFile: string, outDir: string) => {
   });
 };
 
-const versionMismatch = async () => {
+const currentVersionIsGreater = async () => {
   const currentVersion = getVersion();
-  await setupLog(`App version: ${currentVersion}`);
+  const storedVersion = await getStoredVersion();
 
-  const previousVersion = await getStoredVersion();
-  await setupLog(`Previous version: ${previousVersion}`);
-  return currentVersion !== previousVersion;
+  await setupLog(
+    `Stored version: ${storedVersion} -> Current version: ${currentVersion}`
+  );
+
+  return semver.gt(currentVersion, storedVersion);
 };
 
 const cleanKit = async () => {
@@ -866,7 +869,8 @@ const checkKit = async () => {
     }
   }
 
-  const requiresInstall = (await versionMismatch()) || !(await kitExists());
+  const requiresInstall =
+    (await currentVersionIsGreater()) || !(await kitExists());
   log.info(`Requires install: ${requiresInstall}`);
   if (await isContributor()) {
     await setupLog(`Welcome fellow contributor! Thanks for all you do!`);
@@ -1034,7 +1038,7 @@ const checkKit = async () => {
     kitState.updateInstalling = false;
     kitState.installing = false;
 
-    log.info(`kitState`, kitState);
+    // log.info(`kitState`, kitState);
 
     registerTrayShortcut();
 
@@ -1050,13 +1054,6 @@ const checkKit = async () => {
     ohNo(error);
   }
 };
-
-try {
-  log.info(`🧹 Cleaning abandonned 'Kit Helper' processes`);
-  // execSync(`pkill -f 'Kit Helper'`);
-} catch (error) {
-  log.info(`👍 No abandonned 'Kit Helper' processes found`);
-}
 
 app.whenReady().then(checkKit).catch(ohNo);
 
@@ -1129,37 +1126,20 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   // Ensure all browser windows are closed before quitting
 
   if (kitState.quitAndInstall) {
-    updateLog.log(`🚀 Quit and install`);
-
-    setTimeout(() => {
-      try {
-        updateLog.log(`Try Quit and install...`);
-        autoUpdater.quitAndInstall();
-      } catch (error) {
-        kitState.relaunch = true;
-        autoUpdater.autoInstallOnAppQuit = true;
-        mainLog.error(error);
-        updateLog.error(error);
-        app.quit();
-        app.exit(0);
-      }
-      setTimeout(() => {
-        try {
-          destroyAllWindows();
-          app.quit();
-          app.exit(0);
-        } catch (error) {
-          mainLog.error(error);
-          updateLog.error(error);
-          app.exit(1);
-        }
-      }, 1000);
-    }, 1000);
-  } else {
-    mainLog.info(`🚀 Quit`);
-    app?.quit();
-    app?.exit(0);
+    app?.relaunch();
   }
 
-  // app?.exit(0);
+  try {
+    mainLog.info(`🚀 Quit`);
+    setTimeout(() => {
+      destroyAllWindows();
+      app?.exit(0);
+    }, 2000);
+    app?.quit();
+  } catch (error) {
+    mainLog.error(error);
+    destroyAllWindows();
+    app?.quit();
+    app?.exit();
+  }
 });

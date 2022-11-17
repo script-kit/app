@@ -25,10 +25,8 @@
   --opacity-light: 0.8;
   --opacity-dark: 0.7;
   --mono-font: JetBrains Mono;
-  --sans-font: 'ui-sans-serif', 'system-ui', '-apple-system',
-    'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial',
-    '"Noto Sans"', 'sans-serif', '"Apple Color Emoji"', '"Segoe UI Emoji"',
-    '"Segoe UI Symbol"', '"Noto Color Emoji"';
+  --sans-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
     'serif';
 }
@@ -516,6 +514,7 @@ ul {
   @apply dark:border-white border-black border-opacity-25 dark:border-opacity-25;
 }
 
-#input {
-  font-stretch: 0%;
+code::before,
+code::after {
+  content: none !important;
 }
