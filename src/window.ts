@@ -2,7 +2,6 @@ import { BrowserWindow } from 'electron';
 import log from 'electron-log';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { getLogFromScriptPath } from '@johnlindquist/kit/cjs/utils';
-import { snapshot } from 'valtio';
 import Tail from 'tail';
 import { readFile, stat, writeFile } from 'fs/promises';
 import { getAssetPath } from './assets';

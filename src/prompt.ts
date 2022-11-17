@@ -59,10 +59,6 @@ interface GlasstronWindow extends BrowserWindow {
 }
 
 let promptWindow: GlasstronWindow;
-let unsub: () => void;
-let unsubKey: () => void;
-// log.info(process.argv.join(' '), devTools);
-
 let electronPanelWindow: any = null;
 
 export const blurPrompt = () => {
@@ -92,37 +88,32 @@ export const maybeHide = async (reason: string) => {
   }
 };
 
-export const beforePromptQuit = async () => {
+export const beforePromptQuit = () => {
   log.info('Before prompt quit');
   if (promptWindow && !promptWindow?.isDestroyed()) promptWindow?.hide();
 
-  return new Promise((resolve) => {
-    setTimeout(async () => {
-      if (promptWindow?.isDestroyed()) return resolve(true);
+  if (promptWindow?.isDestroyed()) return;
 
-      if (kitState.isMac) {
-        log.info(`Removing panel window`);
-        promptWindow?.hide();
-        const dummy = new BrowserWindow({
-          title: 'dummy',
-          show: false,
-        });
-        electronPanelWindow.makeKeyWindow(dummy);
+  if (kitState.isMac) {
+    log.info(`Removing panel window`);
+    promptWindow?.hide();
+    const dummy = new BrowserWindow({
+      title: 'dummy',
+      show: false,
+    });
+    electronPanelWindow.makeKeyWindow(dummy);
 
-        if (promptWindow && !promptWindow?.isDestroyed()) {
-          try {
-            electronPanelWindow.makeWindow(promptWindow);
-            promptWindow?.close();
-            dummy?.close();
-            log.info(`Closed prompt window`);
-          } catch (error) {
-            log.error(error);
-          }
-        }
-        resolve(true);
+    if (promptWindow && !promptWindow?.isDestroyed()) {
+      try {
+        electronPanelWindow.makeWindow(promptWindow);
+        promptWindow?.close();
+        dummy?.close();
+        log.info(`Closed prompt window`);
+      } catch (error) {
+        log.error(error);
       }
-    }, 100);
-  });
+    }
+  }
 };
 
 export const createPromptWindow = async () => {
@@ -366,8 +357,6 @@ export const createPromptWindow = async () => {
     log.info(`🔒 System locked. Reloading prompt window.`);
     reload();
   });
-
-  if (unsubKey) unsubKey();
 
   return promptWindow;
 };

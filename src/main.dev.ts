@@ -1071,18 +1071,12 @@ const checkKit = async () => {
 app.whenReady().then(checkKit).catch(ohNo);
 
 const destroyAllWindows = () => {
-  ipcMain.removeAllListeners();
   try {
     const browserWindows = BrowserWindow.getAllWindows();
     browserWindows.forEach((browserWindow: BrowserWindow) => {
       try {
         if (browserWindow && !browserWindow.isDestroyed()) {
           mainLog.info(`Destroying ${browserWindow.getTitle()}`);
-          browserWindow?.webContents.removeAllListeners();
-          // destroy the webContents
-          browserWindow?.hide();
-          browserWindow?.removeAllListeners();
-          browserWindow?.close();
           browserWindow?.destroy();
         }
       } catch (error) {
@@ -1097,7 +1091,7 @@ const destroyAllWindows = () => {
 subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   mainLog.info('allowQuit begin...');
 
-  app?.removeAllListeners('window-all-closed');
+  // app?.removeAllListeners('window-all-closed');
   if (!allowQuit) return;
   if (kitState.relaunch) {
     mainLog.info(`🚀 Kit.app should relaunch after quit...`);
@@ -1108,6 +1102,9 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     teardownWatchers();
     sleepSchedule();
     destroyInterval();
+    subs.forEach((sub) => sub());
+    subs.length = 0;
+    clearAll();
 
     // destroyTray();
   } catch (error) {
@@ -1116,7 +1113,11 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
 
   try {
     mainLog.info(`😬 beforePromptQuit`);
-    if (kitState.isMac) await beforePromptQuit();
+    if (kitState.isMac) {
+      beforePromptQuit();
+      // wait 250ms
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
   } catch (error) {
     mainLog.error(error);
   }
@@ -1138,8 +1139,6 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     `Remaining browser windows: ${BrowserWindow.getAllWindows()?.length}`
   );
   try {
-    clearAll();
-    subs.forEach((sub) => sub());
     destroyAllWindows();
   } catch (error) {
     mainLog.error(error);

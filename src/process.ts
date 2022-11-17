@@ -292,6 +292,9 @@ type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 const toProcess = <K extends keyof ChannelMap>(
   fn: (processInfo: ProcessInfo, data: SendData<K>) => void
 ) => (data: SendData<K>) => {
+  if (kitState.allowQuit)
+    return warn(`⚠️  Tried to send data to ${data.channel} after quit`);
+
   log.verbose(`toProcess: ${data.channel}`);
   const processInfo = processes.getByPid(data?.pid);
   const isWidgetMessage = data.channel.includes('WIDGET');
@@ -1497,6 +1500,7 @@ interface ProcessHandlers {
 }
 
 const processesChanged = () => {
+  if (kitState.allowQuit) return;
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
   appToPrompt(AppChannel.PROCESSES, pinfos);
 
