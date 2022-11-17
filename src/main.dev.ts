@@ -1106,6 +1106,8 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     subs.length = 0;
     clearAll();
 
+    mainLog.info(`Cleared out everything...`);
+
     // destroyTray();
   } catch (error) {
     mainLog.error(`😬 Error Teardown and Sleep`, { error });
