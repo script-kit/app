@@ -514,7 +514,7 @@ ul {
   @apply dark:border-white border-black border-opacity-25 dark:border-opacity-25;
 }
 
-code::before,
+.prose code::before,
 code::after {
   content: none !important;
 }
