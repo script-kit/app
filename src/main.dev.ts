@@ -1155,7 +1155,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     autoUpdater?.quitAndInstall();
     // Wait 3 seconds
     mainLog.info(`😬 After quitAndInstall`);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     mainLog.info(`😬 After quitAndInstall wait...`);
   }
 
