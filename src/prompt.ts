@@ -106,8 +106,6 @@ export const beforePromptQuit = () => {
     if (promptWindow && !promptWindow?.isDestroyed()) {
       try {
         electronPanelWindow.makeWindow(promptWindow);
-        promptWindow?.close();
-        dummy?.close();
         log.info(`Closed prompt window`);
       } catch (error) {
         log.error(error);
