@@ -145,6 +145,7 @@ const platform = getPlatform();
 const nodeVersion = getNodeVersion();
 
 app.on('window-all-closed', (e: Event) => {
+  mainLog.log(`🪟 window-all-closed`);
   e.preventDefault();
 });
 
@@ -1058,6 +1059,7 @@ const checkKit = async () => {
 app.whenReady().then(checkKit).catch(ohNo);
 
 const destroyAllWindows = () => {
+  mainLog.info(`😬 destroyAllWindows`);
   try {
     mainLog.info(`Destroy all windows`);
     const browserWindows = BrowserWindow.getAllWindows();
@@ -1094,6 +1096,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   }
 
   try {
+    mainLog.info(`😬 beforePromptQuit`);
     if (kitState.isMac) await beforePromptQuit();
   } catch (error) {
     mainLog.error(error);
@@ -1121,7 +1124,11 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   // Ensure all browser windows are closed before quitting
 
   if (kitState.quitAndInstall) {
-    app?.relaunch();
+    mainLog.info(`😬 Before quitAndInstall`);
+    autoUpdater?.quitAndInstall();
+    // Wait 3 seconds
+    mainLog.info(`😬 After quitAndInstall`);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   }
 
   try {
