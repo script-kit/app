@@ -61,7 +61,6 @@ import {
   KIT_FIRST_PATH,
   tmpClipboardDir,
   tmpDownloadsDir,
-  execPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import {
@@ -154,6 +153,10 @@ Release channel: ${releaseChannel}
 Arch: ${arch}
 Platform: ${platform}
 Node version: ${nodeVersion}
+Electron version: ${process.versions.electron}
+Electron Node version: ${process.versions.node}
+Electron Chromium version: ${process.versions.chrome}
+Electron execPath: ${process.execPath}
 `);
 
 const KIT = kitPath();
