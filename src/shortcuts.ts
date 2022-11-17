@@ -12,7 +12,7 @@ import {
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import { focusPrompt, isFocused, isVisible, reload } from './prompt';
-import { kitState } from './state';
+import { kitState, subs } from './state';
 import { Trigger } from './enums';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
@@ -180,10 +180,16 @@ const resumeShortcuts = () => {
   shortcutMap.forEach(registerShortcut);
 };
 
-subscribeKey(kitState, 'shortcutsPaused', (shortcutsPaused) => {
-  if (shortcutsPaused) {
-    pauseShortcuts();
-  } else {
-    resumeShortcuts();
+const subShortcutsPaused = subscribeKey(
+  kitState,
+  'shortcutsPaused',
+  (shortcutsPaused) => {
+    if (shortcutsPaused) {
+      pauseShortcuts();
+    } else {
+      resumeShortcuts();
+    }
   }
-});
+);
+
+subs.push(subShortcutsPaused);

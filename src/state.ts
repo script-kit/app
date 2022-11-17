@@ -324,7 +324,7 @@ export function isSameScript(promptScriptPath: string) {
   return same;
 }
 
-subscribeKey(kitState, 'status', (status: KitStatus) => {
+const subStatus = subscribeKey(kitState, 'status', (status: KitStatus) => {
   if (status.status !== 'default' && status.message) {
     kitState.notifications.push(status);
     log.info(`👀 Status: ${JSON.stringify(status)}`);
@@ -333,7 +333,7 @@ subscribeKey(kitState, 'status', (status: KitStatus) => {
   }
 });
 
-subscribeKey(kitState, 'ready', (ready) => {
+const subReady = subscribeKey(kitState, 'ready', (ready) => {
   if (ready) {
     kitState.status = {
       status: 'default',
@@ -342,14 +342,18 @@ subscribeKey(kitState, 'ready', (ready) => {
   }
 });
 
-subscribeKey(kitState, 'notifyAuthFail', (notifyAuthFail) => {
-  if (notifyAuthFail) {
-    kitState.status = {
-      status: 'warn',
-      message: '',
-    };
+const subNotifyAuthFail = subscribeKey(
+  kitState,
+  'notifyAuthFail',
+  (notifyAuthFail) => {
+    if (notifyAuthFail) {
+      kitState.status = {
+        status: 'warn',
+        message: '',
+      };
+    }
   }
-});
+);
 
 let hideIntervalId: NodeJS.Timeout | null = null;
 
@@ -398,7 +402,7 @@ export const showDock = () => {
   }
 };
 
-subscribeKey(widgetState, 'widgets', (widgets) => {
+const subWidgets = subscribeKey(widgetState, 'widgets', (widgets) => {
   log.info(`👀 Widgets: ${JSON.stringify(widgets)}`);
   if (widgets.length !== 0) {
     showDock();
@@ -406,7 +410,7 @@ subscribeKey(widgetState, 'widgets', (widgets) => {
     hideDock();
   }
 });
-subscribeKey(windowsState, 'windows', (windows) => {
+const subWindows = subscribeKey(windowsState, 'windows', (windows) => {
   log.info(`👀 Widgets: ${JSON.stringify(windows)}`);
   if (windows.length !== 0) {
     showDock();
@@ -415,7 +419,7 @@ subscribeKey(windowsState, 'windows', (windows) => {
   }
 });
 
-subscribeKey(kitState, 'promptCount', (promptCount) => {
+const subPromptCount = subscribeKey(kitState, 'promptCount', (promptCount) => {
   if (promptCount) {
     showDock();
   } else {
@@ -423,7 +427,7 @@ subscribeKey(kitState, 'promptCount', (promptCount) => {
   }
 });
 
-subscribeKey(kitState, 'devToolsCount', (count) => {
+const subDevToolsCount = subscribeKey(kitState, 'devToolsCount', (count) => {
   if (count === 0) {
     hideDock();
   } else {
@@ -471,7 +475,7 @@ export const getPromptDb: typeof getKitPromptDb = async () => {
   return _promptDb;
 };
 
-subscribeKey(
+const subRequiresAuthorizedRestart = subscribeKey(
   kitState,
   'requiresAuthorizedRestart',
   (requiresAuthorizedRestart) => {
@@ -483,12 +487,16 @@ subscribeKey(
   }
 );
 
-subscribeKey(kitState, 'scriptErrorPath', (scriptErrorPath) => {
-  kitState.status = {
-    status: scriptErrorPath ? 'warn' : 'default',
-    message: ``,
-  };
-});
+const subScriptErrorPath = subscribeKey(
+  kitState,
+  'scriptErrorPath',
+  (scriptErrorPath) => {
+    kitState.status = {
+      status: scriptErrorPath ? 'warn' : 'default',
+      message: ``,
+    };
+  }
+);
 
 export const sponsorCheck = async (feature: string, block = true) => {
   log.info(
@@ -557,3 +565,17 @@ export const sponsorCheck = async (feature: string, block = true) => {
   }
   return true;
 };
+
+// subs is an array of functions
+export const subs: (() => void)[] = [];
+subs.push(
+  subRequiresAuthorizedRestart,
+  subScriptErrorPath,
+  subPromptCount,
+  subDevToolsCount,
+  subWidgets,
+  subWindows,
+  subStatus,
+  subReady,
+  subNotifyAuthFail
+);

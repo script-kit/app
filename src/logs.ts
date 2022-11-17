@@ -11,7 +11,7 @@ import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { app } from 'electron';
 import { sendToPrompt } from './prompt';
 import { stripAnsi } from './ansi';
-import { kitState } from './state';
+import { kitState, subs } from './state';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -105,7 +105,9 @@ if (process.env.LOG_LEVEL) {
   log.transports.file.level = 'verbose';
 }
 
-subscribeKey(kitState, 'logLevel', (level) => {
+const subLogLevel = subscribeKey(kitState, 'logLevel', (level) => {
   log.info(`📋 Log level set to: ${level}`);
   log.transports.file.level = level;
 });
+
+subs.push(subLogLevel);

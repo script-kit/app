@@ -37,7 +37,7 @@ import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
 import { getAssetPath } from './assets';
-import { appDb, kitState, getPromptDb, userDb } from './state';
+import { appDb, kitState, getPromptDb, userDb, subs } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
@@ -66,6 +66,7 @@ let unsubKey: () => void;
 let electronPanelWindow: any = null;
 
 export const blurPrompt = () => {
+  if (!promptWindow?.isDestroyed()) return;
   if (promptWindow) {
     promptWindow.minimize();
     promptWindow.hide();
@@ -103,6 +104,7 @@ export const beforePromptQuit = async () => {
         log.info(`Removing panel window`);
         promptWindow?.hide();
         const dummy = new BrowserWindow({
+          title: 'dummy',
           show: false,
         });
         electronPanelWindow.makeKeyWindow(dummy);
@@ -111,6 +113,7 @@ export const beforePromptQuit = async () => {
           try {
             electronPanelWindow.makeWindow(promptWindow);
             promptWindow?.close();
+            dummy?.close();
             log.info(`Closed prompt window`);
           } catch (error) {
             log.error(error);
@@ -194,6 +197,12 @@ export const createPromptWindow = async () => {
       version: getVersion(),
       isDark: kitState.isDark,
     });
+  });
+
+  // reload if unresponsive
+  promptWindow?.webContents?.on('unresponsive', () => {
+    log.error(`Prompt window unresponsive. Reloading`);
+    promptWindow?.reload();
   });
 
   //   promptWindow?.webContents?.on('new-window', function (event, url) {
@@ -1041,7 +1050,7 @@ export const onHideOnce = (fn: () => void) => {
   }
 };
 
-subscribeKey(kitState, 'promptId', async () => {
+const subPromptId = subscribeKey(kitState, 'promptId', async () => {
   log.silly({
     promptUI: kitState.promptUI,
     promptId: kitState.promptId,
@@ -1084,52 +1093,56 @@ subscribeKey(kitState, 'promptId', async () => {
   );
 });
 
-subscribeKey(kitState, 'scriptPath', async (scriptPath) => {
-  if (promptWindow?.isDestroyed()) return;
-  kitState.promptUI = UI.none;
-  kitState.resize = false;
-  kitState.resizedByChoices = false;
-
-  if (pathsAreEqual(scriptPath || '', kitState.scriptErrorPath)) {
-    kitState.scriptErrorPath = '';
-  }
-
-  if (kitState.scriptPath === '') {
-    if (kitState.prevScriptPath && !kitState.resizedByChoices) {
-      log.verbose(
-        `>>>> 🎸 Set script: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
-      );
-      savePromptBounds(kitState.prevScriptPath, promptWindow.getBounds());
-    }
-    hideAppIfNoWindows(`remove ${kitState.scriptPath}`);
-    sendToPrompt(Channel.SET_OPEN, false);
-    return;
-  }
-
-  // if (isKitScript(kitState.scriptPath)) return;
-
-  if (kitState.scriptPath && !promptWindow?.isVisible()) {
-    log.info(`📄 scriptPath changed: ${kitState.scriptPath}`);
+const subScriptPath = subscribeKey(
+  kitState,
+  'scriptPath',
+  async (scriptPath) => {
     if (promptWindow?.isDestroyed()) return;
-    const bounds = await getCurrentScreenPromptCache(kitState.scriptPath);
+    kitState.promptUI = UI.none;
+    kitState.resize = false;
+    kitState.resizedByChoices = false;
 
-    log.verbose(`↖ Bounds: Script ${kitState.promptUI} ui`, bounds);
+    if (pathsAreEqual(scriptPath || '', kitState.scriptErrorPath)) {
+      kitState.scriptErrorPath = '';
+    }
 
-    promptWindow.setBounds(
-      bounds,
-      promptWindow?.isVisible() && kitState.promptCount > 1
-    );
+    if (kitState.scriptPath === '') {
+      if (kitState.prevScriptPath && !kitState.resizedByChoices) {
+        log.verbose(
+          `>>>> 🎸 Set script: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
+        );
+        savePromptBounds(kitState.prevScriptPath, promptWindow.getBounds());
+      }
+      hideAppIfNoWindows(`remove ${kitState.scriptPath}`);
+      sendToPrompt(Channel.SET_OPEN, false);
+      return;
+    }
+
+    // if (isKitScript(kitState.scriptPath)) return;
+
+    if (kitState.scriptPath && !promptWindow?.isVisible()) {
+      log.info(`📄 scriptPath changed: ${kitState.scriptPath}`);
+      if (promptWindow?.isDestroyed()) return;
+      const bounds = await getCurrentScreenPromptCache(kitState.scriptPath);
+
+      log.verbose(`↖ Bounds: Script ${kitState.promptUI} ui`, bounds);
+
+      promptWindow.setBounds(
+        bounds,
+        promptWindow?.isVisible() && kitState.promptCount > 1
+      );
+    }
+
+    kitState.prevScriptPath = kitState.scriptPath;
   }
+);
 
-  kitState.prevScriptPath = kitState.scriptPath;
-});
-
-subscribeKey(appDb, 'appearance', () => {
+const subAppearance = subscribeKey(appDb, 'appearance', () => {
   log.info(`🎨 Appearance changed:`, appDb.appearance);
   sendToPrompt(Channel.SET_APPEARANCE, appDb.appearance as AppDb['appearance']);
 });
 
-subscribeKey(kitState, 'isSponsor', (isSponsor) => {
+const subIsSponsor = subscribeKey(kitState, 'isSponsor', (isSponsor) => {
   log.info(`🎨 Sponsor changed:`, isSponsor);
   setKitStateAtom({ isSponsor });
 });
@@ -1144,9 +1157,13 @@ const setKitStateAtom = (partialState: Partial<typeof kitState>) => {
   }
 };
 
-subscribeKey(kitState, 'updateDownloaded', (updateDownloaded) => {
-  setKitStateAtom({ updateDownloaded });
-});
+const subUpdateDownloaded = subscribeKey(
+  kitState,
+  'updateDownloaded',
+  (updateDownloaded) => {
+    setKitStateAtom({ updateDownloaded });
+  }
+);
 
 export const clearPromptCacheFor = async (scriptPath: string) => {
   try {
@@ -1167,3 +1184,15 @@ export const clearPromptCacheFor = async (scriptPath: string) => {
     log.error(e);
   }
 };
+
+export const clearAll = async () => {
+  clearTimeout(boundsCheck);
+};
+
+subs.push(
+  subPromptId,
+  subScriptPath,
+  subAppearance,
+  subIsSponsor,
+  subUpdateDownloaded
+);

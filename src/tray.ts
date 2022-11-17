@@ -27,7 +27,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, getScriptsDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
-import { appDb, forceQuit, kitState } from './state';
+import { appDb, forceQuit, kitState, subs } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 import { Trigger } from './enums';
@@ -695,13 +695,15 @@ export const destroyTray = () => {
   }
 };
 
-subscribeKey(appDb, 'tray', () => {
+const subTray = subscribeKey(appDb, 'tray', () => {
   if (!appDb.tray && tray) {
     destroyTray();
   } else {
     setupTray(false, 'default');
   }
 });
+
+subs.push(subTray);
 
 let leftClickOverride: null | ((event: any) => void) = null;
 export const setTrayMenu = async (scripts: string[]) => {

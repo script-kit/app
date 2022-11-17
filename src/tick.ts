@@ -23,7 +23,7 @@ import { Choice, Script } from '@johnlindquist/kit/types/core';
 import { remove } from 'lodash';
 
 import { emitter, KitEvent } from './events';
-import { kitConfig, kitState } from './state';
+import { kitConfig, kitState, subs } from './state';
 import { isFocused } from './prompt';
 import { deleteText } from './keyboard';
 import { Trigger } from './enums';
@@ -368,7 +368,7 @@ export const configureInterval = async () => {
   if (!io$Sub) io$Sub = io$.subscribe(ioEvent as any);
 };
 
-subscribeKey(kitState, 'snippet', async (snippet = ``) => {
+const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
   // Use `;;` as "end"?
   if (snippet.length < 2) return;
   for await (const snippetKey of snippetMap.keys()) {
@@ -400,7 +400,7 @@ subscribeKey(kitState, 'snippet', async (snippet = ``) => {
   if (snippet.endsWith('_')) kitState.snippet = '';
 });
 
-subscribeKey(kitState, 'isTyping', () => {
+const subIsTyping = subscribeKey(kitState, 'isTyping', () => {
   kitState.snippet = ``;
 });
 
@@ -456,3 +456,5 @@ export const removeSnippet = (filePath: string) => {
     }
   }
 };
+
+subs.push(subSnippet, subIsTyping);

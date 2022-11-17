@@ -14,7 +14,14 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
-import { app, protocol, powerMonitor, shell, BrowserWindow } from 'electron';
+import {
+  app,
+  protocol,
+  powerMonitor,
+  shell,
+  BrowserWindow,
+  ipcMain,
+} from 'electron';
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
@@ -91,12 +98,13 @@ import {
   setScript,
   focusPrompt,
   beforePromptQuit,
+  clearAll,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { INSTALL_ERROR, show } from './show';
-import { appDb, cacheKitScripts, kitState, updateScripts } from './state';
+import { appDb, cacheKitScripts, kitState, subs, updateScripts } from './state';
 import { startSK } from './sk';
 import { handleWidgetEvents, processes } from './process';
 import { startIpc } from './ipc';
@@ -1063,16 +1071,19 @@ const checkKit = async () => {
 app.whenReady().then(checkKit).catch(ohNo);
 
 const destroyAllWindows = () => {
-  mainLog.info(`😬 destroyAllWindows`);
+  ipcMain.removeAllListeners();
   try {
-    mainLog.info(`Destroy all windows`);
     const browserWindows = BrowserWindow.getAllWindows();
-    browserWindows.forEach((browserWindow) => {
+    browserWindows.forEach((browserWindow: BrowserWindow) => {
       try {
-        if (!browserWindow.isDestroyed()) {
-          browserWindow.removeAllListeners();
-          browserWindow.close();
-          browserWindow.destroy();
+        if (browserWindow && !browserWindow.isDestroyed()) {
+          mainLog.info(`Destroying ${browserWindow.getTitle()}`);
+          browserWindow?.webContents.removeAllListeners();
+          // destroy the webContents
+          browserWindow?.hide();
+          browserWindow?.removeAllListeners();
+          browserWindow?.close();
+          browserWindow?.destroy();
         }
       } catch (error) {
         mainLog.error(error);
@@ -1085,6 +1096,8 @@ const destroyAllWindows = () => {
 
 subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   mainLog.info('allowQuit begin...');
+
+  app?.removeAllListeners('window-all-closed');
   if (!allowQuit) return;
   if (kitState.relaunch) {
     mainLog.info(`🚀 Kit.app should relaunch after quit...`);
@@ -1094,6 +1107,8 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   try {
     teardownWatchers();
     sleepSchedule();
+    destroyInterval();
+
     // destroyTray();
   } catch (error) {
     mainLog.error(`😬 Error Teardown and Sleep`, { error });
@@ -1105,8 +1120,6 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   } catch (error) {
     mainLog.error(error);
   }
-
-  destroyAllWindows();
 
   try {
     mainLog.info(`Destroy all processes`);
@@ -1120,36 +1133,38 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   } catch (error) {
     mainLog.error(error);
   }
-
+  // Ensure all browser windows are closed before quitting
   mainLog.info(
-    `Remaning browser windows: ${BrowserWindow.getAllWindows()?.length}`
+    `Remaining browser windows: ${BrowserWindow.getAllWindows()?.length}`
   );
-
-  // wait 1 second
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  try {
+    clearAll();
+    subs.forEach((sub) => sub());
+    destroyAllWindows();
+  } catch (error) {
+    mainLog.error(error);
+  }
 
   // Ensure all browser windows are closed before quitting
+  mainLog.info(
+    `Remaining browser windows: ${BrowserWindow.getAllWindows()?.length}`
+  );
 
   if (kitState.quitAndInstall) {
     mainLog.info(`😬 Before quitAndInstall`);
     autoUpdater?.quitAndInstall();
     // Wait 3 seconds
     mainLog.info(`😬 After quitAndInstall`);
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     mainLog.info(`😬 After quitAndInstall wait...`);
   }
 
   try {
     mainLog.info(`🚀 Quit`);
-    setTimeout(() => {
-      destroyAllWindows();
-      app?.exit(0);
-    }, 2000);
     app?.quit();
   } catch (error) {
     mainLog.error(error);
-    destroyAllWindows();
     app?.quit();
-    app?.exit();
+    app?.exit(0);
   }
 });
