@@ -48,11 +48,15 @@ export const createWindow = async ({
   await win.loadURL(`file://${__dirname}/index.html?vs=${getAssetPath('vs')}`);
 
   // TODO: combine these into one channel
-  win.webContents.send(Channel.SET_APPEARANCE, kitState.appearance);
-  win.webContents.send(Channel.SET_THEME, kitState.theme);
-  win.webContents.send(Channel.SET_PROMPT_DATA, {
-    ui,
-  });
+  try {
+    win.webContents.send(Channel.SET_APPEARANCE, kitState.appearance);
+    win.webContents.send(Channel.SET_THEME, kitState.theme);
+    win.webContents.send(Channel.SET_PROMPT_DATA, {
+      ui,
+    });
+  } catch (error) {
+    log.error(error);
+  }
 
   return win;
 };
@@ -93,6 +97,17 @@ export const showLogWindow = async ({
     //   `Log file not found. Creating ${logPath} from app.`
     // );
   }
+
+  // get ipc events from the window
+  win.webContents.on('ipc-message', async (event, channel, message) => {
+    if (channel === Channel.SHORTCUT) {
+      if (message?.state?.shortcut?.endsWith('l')) {
+        log.info(`Clearing log file ${logPath}`);
+        await writeFile(logPath, '');
+        win.webContents.send(WindowChannel.SET_LOG_VALUE, '');
+      }
+    }
+  });
 
   const tail = new Tail.Tail(logPath, {
     fromBeginning: true,

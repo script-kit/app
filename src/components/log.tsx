@@ -8,12 +8,14 @@ import MonacoEditor, { Monaco } from '@monaco-editor/react';
 import { editor as monacoEditor, Range } from 'monaco-editor';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import {
+  cmdAtom,
   darkAtom,
   editorConfigAtom,
   editorOptions,
   editorThemeAtom,
   lastLogLineAtom,
   logValueAtom,
+  shortcutsAtom,
 } from '../jotai';
 import { useMountMainHeight } from '../hooks';
 import { kitLight, nightOwl } from '../editor-themes';
@@ -90,9 +92,11 @@ export default function Log() {
   const [isDark] = useAtom(darkAtom);
   const [options] = useAtom(editorOptions);
   const lastLogLine = useAtomValue(lastLogLineAtom);
-  const logValue = useAtomValue(logValueAtom);
+  const [logValue, setLogValue] = useAtom(logValueAtom);
   const [mouseOver, setMouseOver] = useState(false);
   const theme = useAtomValue(editorThemeAtom);
+  const [, setShortcuts] = useAtom(shortcutsAtom);
+  const cmd = useAtomValue(cmdAtom);
 
   const [
     editor,
@@ -168,6 +172,7 @@ export default function Log() {
       };
 
       editor.executeEdits('my-source', [op]);
+      setLogValue(editor.getValue());
     }
   }, [editor, lastLogLine]);
 
@@ -177,6 +182,16 @@ export default function Log() {
       scrollTop: editor.getScrollHeight(),
     });
   }, [mouseOver, editor, lastLogLine]);
+
+  useEffect(() => {
+    setShortcuts([
+      {
+        name: 'Clear Log',
+        key: `${cmd}+l`,
+        bar: 'right',
+      },
+    ]);
+  }, [cmd, setShortcuts]);
 
   return (
     <motion.div

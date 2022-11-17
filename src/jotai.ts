@@ -1130,11 +1130,9 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
 export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
   const state = g(appStateAtom);
   const pid = g(pidAtom);
-
-  if (!pid) return;
   const appMessage: AppMessage = {
     channel,
-    pid,
+    pid: pid || 0,
     state: {
       ...state,
       ...override,

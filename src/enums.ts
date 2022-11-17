@@ -32,6 +32,7 @@ export enum WindowChannel {
   SET_LAST_LOG_LINE = 'LOG_LINE',
   SET_EDITOR_LOG_MODE = 'SET_EDITOR_LOG_MODE',
   SET_LOG_VALUE = 'SET_LOG_VALUE',
+  CLEAR_LOG = 'CLEAR_LOG',
 }
 
 export enum Trigger {

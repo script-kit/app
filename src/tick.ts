@@ -209,15 +209,19 @@ let clipboard$Sub: Subscription | null = null;
 export const configureInterval = async () => {
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
   if (!keymap) {
-    keymap = nativeKeymap.getKeyMap();
-    nativeKeymap.onDidChangeKeyboardLayout(() => {
+    try {
+      ({ default: nativeKeymap } = await import('native-keymap' as any));
       keymap = nativeKeymap.getKeyMap();
-    });
+      nativeKeymap.onDidChangeKeyboardLayout(() => {
+        keymap = nativeKeymap.getKeyMap();
+      });
+    } catch (e) {
+      log.error(e);
+    }
   }
   if (kitState.isMac) {
     try {
       ({ default: frontmost } = await import('frontmost-app' as any));
-      ({ default: nativeKeymap } = await import('native-keymap' as any));
     } catch (e) {
       log.warn(e);
     }
