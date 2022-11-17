@@ -1124,6 +1124,9 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     `Remaning browser windows: ${BrowserWindow.getAllWindows()?.length}`
   );
 
+  // wait 1 second
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   // Ensure all browser windows are closed before quitting
 
   if (kitState.quitAndInstall) {
