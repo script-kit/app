@@ -1078,6 +1078,7 @@ const destroyAllWindows = () => {
 };
 
 subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
+  mainLog.info('allowQuit begin...');
   if (!allowQuit) return;
   if (kitState.relaunch) {
     mainLog.info(`🚀 Kit.app should relaunch after quit...`);
