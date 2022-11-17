@@ -458,3 +458,9 @@ export const removeSnippet = (filePath: string) => {
 };
 
 subs.push(subSnippet, subIsTyping);
+
+emitter.on(KitEvent.RestartKeyWatcher, async () => {
+  destroyInterval();
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  configureInterval();
+});

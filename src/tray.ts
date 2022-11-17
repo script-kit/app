@@ -406,6 +406,13 @@ export const openMenu = async (event?: KeyboardEvent) => {
     });
 
     toolsSubmenu.push({
+      label: 'Restart Key Watcher',
+      click: () => {
+        emitter.emit(KitEvent.RestartKeyWatcher);
+      },
+    });
+
+    toolsSubmenu.push({
       label: 'Restart Script Watcher',
       click: () => {
         emitter.emit(KitEvent.RestartWatcher);

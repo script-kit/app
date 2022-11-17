@@ -22,6 +22,7 @@ export enum KitEvent {
   MainScript = 'MainScript',
   RestartWatcher = 'RestartWatcher',
   TeardownWatchers = 'TeardownWatchers',
+  RestartKeyWatcher = 'RestartKeyWatcher',
 }
 
 interface KitEmitter {

@@ -22,6 +22,7 @@
     "start:main": "cross-env NODE_ENV=development electron --trace-warnings -r ./.erb/scripts/BabelRegister ./src/main.dev.ts",
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
     "test-update": "TEST_UPDATE=true yarn start",
+    "test-m1-update": "TEST_UPDATE=true yarn m1",
     "test": "jest",
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
     "m1": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --arm64 -c.mac.identity=null --publish never",
