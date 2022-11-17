@@ -17,7 +17,11 @@ import { format } from 'date-fns';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { nanoid } from 'nanoid';
-import { UiohookKeyboardEvent, UiohookKey } from 'uiohook-napi';
+import {
+  UiohookKeyboardEvent,
+  UiohookKey,
+  UiohookMouseEvent,
+} from 'uiohook-napi';
 import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
 import { Choice, Script } from '@johnlindquist/kit/types/core';
 import { remove } from 'lodash';
@@ -27,6 +31,7 @@ import { kitConfig, kitState, subs } from './state';
 import { isFocused } from './prompt';
 import { deleteText } from './keyboard';
 import { Trigger } from './enums';
+import { chars } from './chars';
 
 const UiohookToName = Object.fromEntries(
   Object.entries(UiohookKey).map(([k, v]) => [v, k])
@@ -67,7 +72,17 @@ const ShiftMap = {
 type KeyCodes = keyof typeof ShiftMap;
 
 const toKey = (keycode: number, shift = false) => {
-  const key: string = UiohookToName[keycode] || '';
+  let key: string = UiohookToName[keycode] || '';
+  if (keymap) {
+    const char = chars[keycode];
+    if (char) {
+      const keymapChar = keymap?.[char];
+      if (keymapChar) {
+        key = keymapChar?.value;
+      }
+    }
+  }
+
   if (shift) {
     return ShiftMap[key as KeyCodes] || key;
   }
@@ -107,6 +122,8 @@ interface ClipboardItem extends Choice {
 
 let clipboardHistory: ClipboardItem[] = [];
 let frontmost: any = null;
+let nativeKeymap: any = null;
+let keymap: any = null;
 export const getClipboardHistory = () => {
   if (kitState.authorized) {
     return clipboardHistory;
@@ -143,8 +160,15 @@ export const clearClipboardHistory = () => {
 
 let prevKey = '';
 const backspace = 'backspace';
-const ioEvent = async (e: UiohookKeyboardEvent) => {
+const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
   try {
+    if ((event as UiohookMouseEvent).button) {
+      kitState.snippet = '';
+      return;
+    }
+
+    const e = event as UiohookKeyboardEvent;
+
     kitState.isShiftDown = e.shiftKey;
 
     const key = toKey(e?.keycode || 0, e.shiftKey);
@@ -184,9 +208,16 @@ let clipboard$Sub: Subscription | null = null;
 
 export const configureInterval = async () => {
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
+  if (!keymap) {
+    keymap = nativeKeymap.getKeyMap();
+    nativeKeymap.onDidChangeKeyboardLayout(() => {
+      keymap = nativeKeymap.getKeyMap();
+    });
+  }
   if (kitState.isMac) {
     try {
       ({ default: frontmost } = await import('frontmost-app' as any));
+      ({ default: nativeKeymap } = await import('native-keymap' as any));
     } catch (e) {
       log.warn(e);
     }
@@ -202,7 +233,11 @@ export const configureInterval = async () => {
     });
 
     uIOhook.on('keydown', (event) => {
-      log.silly({ event: 'keydown', key: String.fromCharCode(event.keycode) });
+      log.silly({
+        event: 'keydown',
+        key: String.fromCharCode(event.keycode),
+      });
+
       observer.next(event);
     });
 
