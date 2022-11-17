@@ -1136,6 +1136,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     // Wait 3 seconds
     mainLog.info(`😬 After quitAndInstall`);
     await new Promise((resolve) => setTimeout(resolve, 3000));
+    mainLog.info(`😬 After quitAndInstall wait...`);
   }
 
   try {
