@@ -1495,6 +1495,15 @@ const createChild = ({
         }, 500);
       }
     });
+
+    const scriptLog = getLog(scriptPath);
+
+    const routeToScriptLog = (d: any) => {
+      scriptLog.info(`\n${stripAnsi(d.toString())}`);
+    };
+
+    child.stdout?.on('data', routeToScriptLog);
+    child.stderr?.on('data', routeToScriptLog);
   }
 
   return child;

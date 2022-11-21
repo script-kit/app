@@ -7,6 +7,7 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable guard-for-in */
 import { atom, Getter, Setter } from 'jotai';
+import DOMPurify from 'dompurify';
 import { QuickScore, createConfig, quickScore } from 'quick-score';
 import { UserDb } from '@johnlindquist/kit/cjs/db';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
@@ -280,7 +281,12 @@ export const hintAtom = atom(
 const _panelHTML = atom<string>('');
 
 export const panelHTMLAtom = atom(
-  (g) => g(_panelHTML),
+  (g) =>
+    DOMPurify.sanitize(g(_panelHTML), {
+      // allow iframe
+      ADD_TAGS: ['iframe'],
+      ALLOW_UNKNOWN_PROTOCOLS: true,
+    }),
   (g, s, a: string) => {
     if (g(_panelHTML) === a || g(_flagged)) return;
     if (a) s(scoredChoices, null);
@@ -297,7 +303,12 @@ const _previewVisible = atom<boolean>(false);
 const _previewHTML = atom('');
 const closedDiv = `<div></div>`;
 export const previewHTMLAtom = atom(
-  (g) => g(_previewHTML) || g(promptData)?.preview,
+  (g) =>
+    DOMPurify.sanitize(g(_previewHTML) || g(promptData)?.preview, {
+      // allow iframe
+      ADD_TAGS: ['iframe'],
+      ALLOW_UNKNOWN_PROTOCOLS: true,
+    }),
   (g, s, a: string) => {
     const visible = Boolean(a !== '' && a !== closedDiv);
     s(_previewVisible, visible);
@@ -675,7 +686,8 @@ export const inputAtom = atom(
 
     s(_index, 0);
 
-    const mode = g(promptData)?.mode;
+    // If the promptData isn't set, default to FILTER
+    const mode = g(promptData)?.mode || Mode.FILTER;
 
     // TODO: Investigate eliminating modes and bringing/generating over to kit + setChoices(). Probably would be too slow.
 

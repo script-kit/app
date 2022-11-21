@@ -277,22 +277,8 @@ export default function App() {
     [Channel.SET_FLAGS]: setFlags,
     [Channel.SET_FOCUSED]: setFocused,
     [Channel.SET_HINT]: (html) => setHint(DOMPurify.sanitize(html)),
-    [Channel.SET_PANEL]: (html) =>
-      setPanelHTML(
-        DOMPurify.sanitize(html, {
-          // allow iframe
-          ADD_TAGS: ['iframe'],
-          ALLOW_UNKNOWN_PROTOCOLS: true,
-        })
-      ),
-    [Channel.SET_PREVIEW]: (html) =>
-      setPreviewHTML(
-        DOMPurify.sanitize(html, {
-          // allow iframe
-          ADD_TAGS: ['iframe'],
-          ALLOW_UNKNOWN_PROTOCOLS: true,
-        })
-      ),
+    [Channel.SET_PANEL]: setPanelHTML,
+    [Channel.SET_PREVIEW]: setPreviewHTML,
     [Channel.SET_FOOTER]: (html) => setFooter(DOMPurify.sanitize(html)),
     [Channel.SET_FILTER_INPUT]: setFilterInput,
     [Channel.SET_INPUT]: setInput,

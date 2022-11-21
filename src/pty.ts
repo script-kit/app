@@ -1,7 +1,5 @@
 import os from 'os';
-import path from 'path';
 import { WebSocket } from 'ws';
-import { knodePath } from '@johnlindquist/kit/cjs/utils';
 import untildify from 'untildify';
 
 import log from 'electron-log';
@@ -44,11 +42,11 @@ export const startPty = async (config: any = {}) => {
       cols: 80,
       rows: 24,
       cwd: untildify(config?.cwd || os.homedir()),
+      encoding: 'utf8',
       env: {
         ...process.env,
-        PATH: `${knodePath('bin')}${path.delimiter}${process.env.PATH}`,
+        ...config?.env,
       },
-      encoding: 'utf8',
     }
   );
 
