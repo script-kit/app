@@ -178,5 +178,9 @@ export const setupWatchers = async () => {
 emitter.on(KitEvent.TeardownWatchers, teardownWatchers);
 
 emitter.on(KitEvent.RestartWatcher, async () => {
-  await setupWatchers();
+  try {
+    await setupWatchers();
+  } catch (error) {
+    log.error(error);
+  }
 });

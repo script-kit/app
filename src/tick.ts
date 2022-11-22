@@ -72,21 +72,26 @@ const ShiftMap = {
 type KeyCodes = keyof typeof ShiftMap;
 
 const toKey = (keycode: number, shift = false) => {
-  let key: string = UiohookToName[keycode] || '';
-  if (keymap) {
-    const char = chars[keycode];
-    if (char) {
-      const keymapChar = keymap?.[char];
-      if (keymapChar) {
-        key = keymapChar?.value;
+  try {
+    let key: string = UiohookToName[keycode] || '';
+    if (keymap) {
+      const char = chars[keycode];
+      if (char) {
+        const keymapChar = keymap?.[char];
+        if (keymapChar) {
+          key = keymapChar?.value;
+        }
       }
     }
-  }
 
-  if (shift) {
-    return ShiftMap[key as KeyCodes] || key;
+    if (shift) {
+      return ShiftMap[key as KeyCodes] || key;
+    }
+    return key.toLowerCase();
+  } catch (error) {
+    log.error(error);
+    return '';
   }
-  return key.toLowerCase();
 };
 
 type FrontmostApp = {
@@ -232,17 +237,25 @@ export const configureInterval = async () => {
   log.info(`uiohook-napi ${uIOhook ? 'loaded' : 'failed'}`);
   const io$ = new Observable((observer) => {
     uIOhook.on('click', (event) => {
-      log.silly(`click`);
-      observer.next(event);
+      try {
+        log.silly(`click`);
+        observer.next(event);
+      } catch (error) {
+        log.error(error);
+      }
     });
 
     uIOhook.on('keydown', (event) => {
-      log.silly({
-        event: 'keydown',
-        key: String.fromCharCode(event.keycode),
-      });
+      try {
+        log.silly({
+          event: 'keydown',
+          key: String.fromCharCode(event.keycode),
+        });
 
-      observer.next(event);
+        observer.next(event);
+      } catch (error) {
+        log.error(error);
+      }
     });
 
     // ioHook.on('keyup', (event) => {
@@ -499,7 +512,11 @@ export const removeSnippet = (filePath: string) => {
 subs.push(subSnippet, subIsTyping);
 
 emitter.on(KitEvent.RestartKeyWatcher, async () => {
-  destroyInterval();
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  configureInterval();
+  try {
+    destroyInterval();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    configureInterval();
+  } catch (error) {
+    log.warn(error);
+  }
 });

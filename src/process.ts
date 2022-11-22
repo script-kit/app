@@ -721,9 +721,10 @@ const kitMessageMap: ChannelHandler = {
     hideAppIfNoWindows('HIDE_APP event');
   }),
 
-  QUIT_APP: () => {
+  QUIT_APP: toProcess(async ({ child }, { channel, value }) => {
+    await new Promise((resolve) => setTimeout(resolve, 250));
     forceQuit();
-  },
+  }),
   SET_KIT_STATE: toProcess(async (processInfo, data) => {
     log.info(`SET_KIT_STATE`, data?.value);
     for (const [key, value] of Object.entries(data?.value)) {

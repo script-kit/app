@@ -7,8 +7,6 @@ import {
   userDbPath,
 } from '@johnlindquist/kit/cjs/utils';
 
-import { getUserDb } from '@johnlindquist/kit/cjs/db';
-
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
 type WatcherCallback = (
   eventName: WatchEvent,

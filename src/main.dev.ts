@@ -99,6 +99,7 @@ import {
   focusPrompt,
   beforePromptQuit,
   clearAll,
+  forceHide,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';

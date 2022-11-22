@@ -88,6 +88,12 @@ export const maybeHide = async (reason: string) => {
   }
 };
 
+export const forceHide = () => {
+  if (promptWindow?.isVisible()) {
+    promptWindow?.hide();
+  }
+};
+
 export const beforePromptQuit = () => {
   log.info('Before prompt quit');
   if (promptWindow && !promptWindow?.isDestroyed()) promptWindow?.hide();

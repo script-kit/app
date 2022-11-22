@@ -7,7 +7,6 @@ import {
   Menu,
   MenuItemConstructorOptions,
   globalShortcut,
-  app,
   shell,
 } from 'electron';
 import path from 'path';
