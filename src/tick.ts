@@ -168,7 +168,7 @@ const backspace = 'backspace';
 const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
   try {
     if ((event as UiohookMouseEvent).button) {
-      log.silly('Mouse', event);
+      log.silly('Clicked. Clearing snippet.');
       kitState.snippet = '';
       return;
     }
@@ -272,6 +272,7 @@ export const configureInterval = async () => {
 
     // Register and start hook
     try {
+      log.info(`Attempting to start uiohook-napi...`);
       uIOhook.start();
       log.info(`🟢 Started keyboard and mouse watcher`);
     } catch (e) {
