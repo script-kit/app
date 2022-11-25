@@ -4,7 +4,8 @@ import { Script } from '@johnlindquist/kit/types/core';
 export const DEFAULT_LIST_WIDTH = 300; // 256;
 export const DEFAULT_WIDTH = 300; // 256;
 export const DEFAULT_EXPANDED_WIDTH = 768;
-export const DEFAULT_HEIGHT = 480; // Math.round((DEFAULT_EXPANDED_WIDTH * 10) / 16); // 480;
+export const DEFAULT_HEIGHT =
+  process.env.KIT_TIKTOK === 'development' ? 1040 : 480; // Math.round((DEFAULT_EXPANDED_WIDTH * 10) / 16); // 480;
 export const INPUT_HEIGHT = 32;
 export const TOP_HEIGHT = 80;
 export const MIN_HEIGHT = TOP_HEIGHT;
@@ -14,6 +15,7 @@ export const DROP_HEIGHT = 232;
 export const BUTTON_HEIGHT = 56;
 export const EMOJI_WIDTH = 278;
 export const EMOJI_HEIGHT = 380;
+export const ZOOM_LEVEL = process.env.KIT_TIKTOK === 'development' ? 2 : 0;
 
 export const heightMap: { [key in UI]: number } = {
   [UI.none]: INPUT_HEIGHT,

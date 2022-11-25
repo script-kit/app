@@ -171,6 +171,32 @@ export type WindowsOptions = {
   wid: number;
 };
 
+export const checkAccessibility = () =>
+  new Promise((resolve, reject) => {
+    log.verbose(`🔑 Checking accessibility permissions...`);
+    if (kitState.isMac) {
+      log.verbose(`💻 Mac detected.`);
+      import('node-mac-permissions')
+        .then(({ getAuthStatus }) => {
+          kitState.authorized = getAuthStatus('accessibility') === 'authorized';
+          log.verbose(
+            `🔑 Accessibility permissions: ${kitState.authorized ? '✅' : '❌'}`
+          );
+          resolve(kitState.authorized);
+          return true;
+        })
+        .catch((error) => {
+          log.error(`🔑 Error checking accessibility permissions: ${error}`);
+          reject(error);
+          return false;
+        });
+    } else {
+      log.info(`💻 Not Mac. Skipping accessibility check.`);
+      kitState.authorized = true;
+      resolve(kitState.authorized);
+    }
+  });
+
 const initState = {
   debugging: false,
   isPanel: false,
@@ -325,9 +351,10 @@ export function isSameScript(promptScriptPath: string) {
 }
 
 const subStatus = subscribeKey(kitState, 'status', (status: KitStatus) => {
+  log.info(`👀 Status: ${JSON.stringify(status)}`);
+
   if (status.status !== 'default' && status.message) {
     kitState.notifications.push(status);
-    log.info(`👀 Status: ${JSON.stringify(status)}`);
   } else if (kitState.notifications.length > 0) {
     kitState.notifications = [];
   }

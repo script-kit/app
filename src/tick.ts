@@ -168,6 +168,7 @@ const backspace = 'backspace';
 const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
   try {
     if ((event as UiohookMouseEvent).button) {
+      log.silly('Mouse', event);
       kitState.snippet = '';
       return;
     }
@@ -176,7 +177,15 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
 
     kitState.isShiftDown = e.shiftKey;
 
-    const key = toKey(e?.keycode || 0, e.shiftKey);
+    let key = '';
+    try {
+      key = toKey(e?.keycode || 0, e.shiftKey);
+      log.silly(`key: ${key}`);
+    } catch (error) {
+      log.error(error);
+      kitState.snippet = '';
+      return;
+    }
 
     if (key === 'Shift' || e.metaKey || e.ctrlKey || e.altKey) return;
 
@@ -238,7 +247,6 @@ export const configureInterval = async () => {
   const io$ = new Observable((observer) => {
     uIOhook.on('click', (event) => {
       try {
-        log.silly(`click`);
         observer.next(event);
       } catch (error) {
         log.error(error);
@@ -247,11 +255,6 @@ export const configureInterval = async () => {
 
     uIOhook.on('keydown', (event) => {
       try {
-        log.silly({
-          event: 'keydown',
-          key: String.fromCharCode(event.keycode),
-        });
-
         observer.next(event);
       } catch (error) {
         log.error(error);
@@ -268,8 +271,15 @@ export const configureInterval = async () => {
     // });
 
     // Register and start hook
-    log.info(`🟢 Starting keyboard and mouse watcher`);
-    uIOhook.start();
+    try {
+      uIOhook.start();
+      log.info(`🟢 Started keyboard and mouse watcher`);
+    } catch (e) {
+      log.error(`🔴 Failed to start keyboard and mouse watcher`);
+      log.error(e);
+
+      observer.unsubscribe();
+    }
 
     return () => {
       log.info(`🛑 Stopping keyboard and mouse watcher`);
@@ -328,11 +338,25 @@ export const configureInterval = async () => {
     filter((value) => value !== false),
     delay(100),
     map((app: ClipboardApp) => {
-      const text = clipboard.readText();
-      return {
-        app,
-        text,
-      };
+      try {
+        const text = clipboard.readText();
+        if (text && text.length < 1000) {
+          return {
+            app,
+            text,
+          };
+        }
+        return {
+          app,
+          text: '',
+        };
+      } catch (e) {
+        log.error(e);
+        return {
+          app: '',
+          text: '',
+        };
+      }
     }),
     filter((value) => (value as any)?.text),
     distinctUntilChanged((a, b) => a.text === b.text)
@@ -457,10 +481,15 @@ const subIsTyping = subscribeKey(kitState, 'isTyping', () => {
 });
 
 export const destroyInterval = () => {
-  if (io$Sub) io$Sub.unsubscribe();
-  io$Sub = null;
-  if (clipboard$Sub) clipboard$Sub.unsubscribe();
-  clipboard$Sub = null;
+  try {
+    if (io$Sub) io$Sub.unsubscribe();
+    io$Sub = null;
+    if (clipboard$Sub) clipboard$Sub.unsubscribe();
+    clipboard$Sub = null;
+    log.info(`🔥 Destroyed interval`);
+  } catch (e) {
+    log.error(e);
+  }
 };
 
 const snippetMap = new Map<
@@ -515,7 +544,12 @@ emitter.on(KitEvent.RestartKeyWatcher, async () => {
   try {
     destroyInterval();
     await new Promise((resolve) => setTimeout(resolve, 500));
-    configureInterval();
+    if (kitState.authorized) {
+      log.info('📕 Authorized. Starting key watcher...');
+      configureInterval();
+    } else {
+      log.info('📕 Not authorized, not starting key watcher');
+    }
   } catch (error) {
     log.warn(error);
   }

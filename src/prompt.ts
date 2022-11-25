@@ -46,6 +46,7 @@ import {
   INPUT_HEIGHT,
   MIN_HEIGHT,
   MIN_WIDTH,
+  ZOOM_LEVEL,
 } from './defaults';
 import { ResizeData } from './types';
 import { getVersion } from './version';
@@ -173,6 +174,7 @@ export const createPromptWindow = async () => {
   }
 
   promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
 
   // promptWindow.setTouchBar(touchbar);
 
@@ -1008,7 +1010,7 @@ export const clearPromptCache = async () => {
     log.info(error);
   }
 
-  promptWindow?.webContents?.setZoomLevel(0);
+  promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
 };
 
 export const reload = () => {

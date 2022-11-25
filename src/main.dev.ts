@@ -105,7 +105,14 @@ import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { INSTALL_ERROR, show } from './show';
-import { appDb, cacheKitScripts, kitState, subs, updateScripts } from './state';
+import {
+  appDb,
+  cacheKitScripts,
+  checkAccessibility,
+  kitState,
+  subs,
+  updateScripts,
+} from './state';
 import { startSK } from './sk';
 import { handleWidgetEvents, processes } from './process';
 import { startIpc } from './ipc';
@@ -440,13 +447,7 @@ const ready = async () => {
     await setupWatchers();
     await setupLog(`Shortcuts Assigned`);
 
-    if (kitState.isMac) {
-      log.info(`💻 Mac detected.`);
-      const { getAuthStatus } = await import('node-mac-permissions');
-      kitState.authorized = getAuthStatus('accessibility') === 'authorized';
-    } else {
-      kitState.authorized = true;
-    }
+    await checkAccessibility();
 
     if (kitState.authorized) {
       log.info(`💻 Accessibility authorized ✅`);
@@ -455,9 +456,7 @@ const ready = async () => {
     } else {
       const id = setInterval(async () => {
         log.silly(`Checking for accessibility authorization...`);
-        const { getAuthStatus } = await import('node-mac-permissions');
-
-        kitState.authorized = getAuthStatus('accessibility') === 'authorized';
+        await checkAccessibility();
         if (kitState.authorized) {
           clearInterval(id);
           await configureInterval();

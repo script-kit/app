@@ -119,12 +119,15 @@ export const openMenu = async (event?: KeyboardEvent) => {
     const updateItems: MenuItemConstructorOptions[] = [];
 
     if (!kitState.authorized && kitState.isMac) {
-      const { askForAccessibilityAccess } = await import(
-        'node-mac-permissions'
-      );
       authItems.push({
         label: `Click to Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
-        click: () => askForAccessibilityAccess(),
+        click: async () => {
+          const { askForAccessibilityAccess } = await import(
+            'node-mac-permissions'
+          );
+
+          askForAccessibilityAccess();
+        },
         icon: menuIcon(kitState.notifyAuthFail ? 'warn' : 'cogwheel'),
       });
 
@@ -324,86 +327,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
       label: `Reset Prompt`,
       click: runScript(kitPath('cli', 'kit-clear-prompt.js')),
     });
-
-    if (kitState.isMac) {
-      const nmp = await import('node-mac-permissions');
-
-      type AuthType =
-        | 'contacts'
-        | 'calendar'
-        | 'reminders'
-        | 'full-disk-access'
-        | 'camera'
-        | 'photos'
-        | 'microphone'
-        | 'accessibility'
-        | 'location'
-        | 'screen';
-      const types: AuthType[] = [
-        'accessibility',
-        'calendar',
-        'camera',
-        'contacts',
-        'full-disk-access',
-        'microphone',
-        'photos',
-        'reminders',
-        'screen',
-      ];
-
-      const permssionsMenu: MenuItemConstructorOptions[] = [];
-
-      for await (const type of types) {
-        const status = nmp.getAuthStatus(type);
-        permssionsMenu.push({
-          label: type,
-          type: 'checkbox',
-          checked: status === 'authorized',
-          click: () => {
-            switch (type) {
-              case 'accessibility':
-                nmp.askForAccessibilityAccess();
-                break;
-              case 'calendar':
-                nmp.askForCalendarAccess();
-                break;
-              case 'camera':
-                nmp.askForCameraAccess();
-                break;
-              case 'contacts':
-                nmp.askForContactsAccess();
-                break;
-              case 'full-disk-access':
-                nmp.askForFullDiskAccess();
-                break;
-              case 'microphone':
-                nmp.askForMicrophoneAccess();
-                break;
-              case 'photos':
-                nmp.askForPhotosAccess();
-                break;
-              case 'reminders':
-                nmp.askForRemindersAccess();
-                break;
-              case 'screen':
-                nmp.askForScreenCaptureAccess();
-                break;
-              case 'speech-recognition':
-                nmp.askForSpeechRecognitionAccess();
-                break;
-
-              default:
-                break;
-            }
-          },
-        });
-      }
-
-      toolsSubmenu.push({
-        label: 'Permissions',
-        submenu: permssionsMenu,
-      });
-    }
 
     toolsSubmenu.push({
       type: 'separator',
@@ -615,7 +538,12 @@ export const setupTray = async (checkDb = false, state: Status) => {
     tray.setIgnoreDoubleClickEvents(true);
 
     subscribeKey(kitState, 'status', (status: KitStatus) => {
-      tray?.setImage(trayIcon(status.status));
+      try {
+        log.info(`🎨 Tray status: ${status.status}`);
+        tray?.setImage(trayIcon(status.status));
+      } catch (error) {
+        log.error(error);
+      }
     });
   }
   if (kitState.starting) {
