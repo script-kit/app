@@ -45,6 +45,10 @@ jobs:
 
       - uses: c-hive/gha-yarn-cache@v2
 
+      - name: yarn
+        run: |
+          yarn
+
       - name: yarn add @johnlindquist/kit
         run: |
           cd ./src
