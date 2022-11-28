@@ -23,7 +23,12 @@ const go = async () => {
 
   const tar = await import('tar');
 
-  const nodeModulesKit = path.resolve('node_modules', '@johnlindquist', 'kit');
+  const nodeModulesKit = path.resolve(
+    'src',
+    'node_modules',
+    '@johnlindquist',
+    'kit'
+  );
 
   console.log({ nodeModulesKit });
 
