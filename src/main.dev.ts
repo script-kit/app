@@ -14,14 +14,7 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
-import {
-  app,
-  protocol,
-  powerMonitor,
-  shell,
-  BrowserWindow,
-  ipcMain,
-} from 'electron';
+import { app, protocol, powerMonitor, shell, BrowserWindow } from 'electron';
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
@@ -99,7 +92,6 @@ import {
   focusPrompt,
   beforePromptQuit,
   clearAll,
-  forceHide,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -122,7 +114,7 @@ import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from './defaults';
 import { registerTrayShortcut } from './shortcuts';
-import { mainLog, mainLogPath, updateLog } from './logs';
+import { mainLog, mainLogPath } from './logs';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';

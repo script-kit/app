@@ -181,6 +181,7 @@ export const startIpc = () => {
 
   for (const channel of [
     Channel.INPUT,
+    Channel.CHANGE,
     Channel.CHOICE_FOCUSED,
     Channel.CHOICES,
     Channel.NO_CHOICES,

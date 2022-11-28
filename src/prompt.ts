@@ -122,6 +122,7 @@ export const beforePromptQuit = () => {
 };
 
 export const createPromptWindow = async () => {
+  log.silly(`function: createPromptWindow`);
   if (kitState.isMac) {
     electronPanelWindow = await import('@akiflow/electron-panel-window' as any);
   }
@@ -184,6 +185,7 @@ export const createPromptWindow = async () => {
   // promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   promptWindow?.webContents?.on('did-finish-load', () => {
+    log.silly(`event: did-finish-load`);
     sendToPrompt(Channel.APP_CONFIG, {
       delimiter: path.delimiter,
       sep: path.sep,
@@ -207,13 +209,14 @@ export const createPromptWindow = async () => {
   //     shell.openExternal(url)
   // })
 
-  promptWindow?.webContents?.setWindowOpenHandler(async ({ url }) => {
+  promptWindow?.webContents?.setWindowOpenHandler(({ url }) => {
     log.info(`Opening ${url}`);
     shell.openExternal(url);
 
     return { action: 'deny' };
   });
 
+  log.silly(`Loading prompt window html`);
   await promptWindow.loadURL(
     `file://${__dirname}/index.html?vs=${getAssetPath('vs')}`
   );
@@ -227,6 +230,7 @@ export const createPromptWindow = async () => {
   // });
 
   promptWindow.webContents.on('devtools-closed', () => {
+    log.silly(`event: devtools-closed`);
     promptWindow?.setAlwaysOnTop(false);
     maybeHide('Devtools closed');
   });
@@ -249,6 +253,7 @@ export const createPromptWindow = async () => {
   // });
 
   emitter.on(KitEvent.OpenDevTools, () => {
+    log.silly(`event: OpenDevTools`);
     promptWindow?.webContents?.openDevTools({
       activate: true,
       mode: 'detach',
@@ -275,6 +280,7 @@ export const createPromptWindow = async () => {
   // });
 
   const onBlur = () => {
+    log.silly(`event: onBlur`);
     if (promptWindow?.isDestroyed()) return;
     if (kitState.isActivated) {
       kitState.isActivated = false;
@@ -311,10 +317,12 @@ export const createPromptWindow = async () => {
   promptWindow?.on('blur', onBlur);
 
   promptWindow?.on('hide', () => {
+    log.silly(`event: hide`);
     promptWindow.webContents.setBackgroundThrottling(true);
   });
 
   promptWindow?.on('show', () => {
+    log.silly(`event: show`);
     promptWindow.webContents.setBackgroundThrottling(false);
   });
 
@@ -326,10 +334,12 @@ export const createPromptWindow = async () => {
   });
 
   const onMove = async () => {
+    log.silly(`event: onMove`);
     kitState.modifiedByUser = false;
   };
 
   const onResized = async () => {
+    log.silly(`event: onResized`);
     kitState.modifiedByUser = false;
     log.info(`Resized: ${promptWindow?.getSize()}`);
 
@@ -340,7 +350,7 @@ export const createPromptWindow = async () => {
   };
 
   promptWindow?.on('will-resize', (event, rect) => {
-    log.info(`Will Resize ${rect.width} ${rect.height}`);
+    log.silly(`Will Resize ${rect.width} ${rect.height}`);
 
     if (rect.height < MIN_HEIGHT) event.preventDefault();
     if (rect.width < MIN_WIDTH) event.preventDefault();
@@ -349,6 +359,7 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.on('will-move', () => {
+    log.silly(`event: will-move`);
     kitState.modifiedByUser = true;
   });
   promptWindow?.on('resized', onResized);
@@ -381,6 +392,7 @@ export const logFocus = () => {
 };
 
 export const showInactive = () => {
+  log.silly(`event: showInactive`);
   if (!kitState.isPanel && electronPanelWindow) {
     electronPanelWindow.makePanel(promptWindow);
     kitState.isPanel = true;
@@ -400,6 +412,7 @@ export const showInactive = () => {
 };
 
 export const focusPrompt = () => {
+  log.silly(`👁️  Focusing prompt`);
   if (
     promptWindow &&
     !promptWindow.isDestroyed() &&
@@ -416,15 +429,18 @@ export const focusPrompt = () => {
 };
 
 export const forceFocus = () => {
+  log.silly(`function: forceFocus`);
   promptWindow?.show();
   promptWindow?.focus();
 };
 
 export const alwaysOnTop = (onTop: boolean) => {
+  log.silly(`function: alwaysOnTop`);
   if (promptWindow) promptWindow.setAlwaysOnTop(onTop);
 };
 
 export const getCurrentScreenFromMouse = (): Display => {
+  log.silly(`function: getCurrentScreenFromMouse`);
   if (promptWindow?.isVisible()) {
     const [x, y] = promptWindow?.getPosition();
     return screen.getDisplayNearestPoint({ x, y });
@@ -433,6 +449,7 @@ export const getCurrentScreenFromMouse = (): Display => {
 };
 
 export const getCurrentScreenFromPrompt = (): Display => {
+  log.silly(`function: getCurrentScreenFromPrompt`);
   return screen.getDisplayNearestPoint(promptWindow.getBounds());
 };
 
@@ -448,6 +465,7 @@ export const getCurrentScreenPromptCache = async (
     bounds: {},
   }
 ) => {
+  log.silly(`function: getCurrentScreenPromptCache`);
   const currentScreen = getCurrentScreenFromMouse();
   const screenId = String(currentScreen.id);
   const promptDb = await getPromptDb();
@@ -544,23 +562,28 @@ export const getCurrentScreenPromptCache = async (
 };
 
 export const setBounds = (bounds: Partial<Rectangle>) => {
+  log.silly(`function: setBounds`);
   promptWindow.setBounds(bounds);
 };
 
 export const isVisible = () => {
+  log.silly(`function: isVisible`);
   return !promptWindow.isDestroyed() && promptWindow.isVisible();
 };
 
 export const devToolsVisible = () => {
+  log.silly(`function: devToolsVisible`);
   return promptWindow.webContents.isDevToolsOpened();
 };
 
 export const isFocused = () => {
+  log.silly(`function: isFocused`);
   return promptWindow?.isFocused();
 };
 
 let resizeAnimate = true;
 let resizeTimeout = setTimeout(() => {
+  log.silly(`function: resizeTimeout`);
   if (promptWindow?.isDestroyed()) return;
   resizeAnimate = true;
 }, 1000);
@@ -590,6 +613,7 @@ export const resize = async ({
     resize: kitState.resize,
     promptId: kitState.promptId,
   });
+  log.silly(`function: resize`);
   if (!kitState.resize) return;
 
   if (kitState.promptId !== id) {
@@ -659,18 +683,19 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
   channel: K,
   data?: ChannelMap[K]
 ) => {
-  // log.info(`>_ ${channel} ${data?.kitScript}`);
+  log.silly(`sendToPrompt: ${String(channel)} ${data?.kitScript}`);
   // log.info(`>_ ${channel}`);
   if (
     promptWindow &&
     !promptWindow.isDestroyed() &&
     promptWindow?.webContents
   ) {
-    promptWindow?.webContents.send(channel, data);
+    promptWindow?.webContents.send(String(channel), data);
   }
 };
 
 export const appToPrompt = (channel: AppChannel, data?: any) => {
+  log.silly(`appToPrompt: ${String(channel)} ${data?.kitScript}`);
   if (
     promptWindow &&
     !promptWindow.isDestroyed() &&
@@ -686,6 +711,7 @@ enum Bounds {
 }
 
 export const pointOnMouseScreen = ({ x, y }: Point) => {
+  log.silly(`function: pointOnMouseScreen`);
   const mouseScreen = screen.getDisplayNearestPoint(
     screen.getCursorScreenPoint()
   );
@@ -704,6 +730,7 @@ export const savePromptBounds = async (
   bounds: Rectangle,
   b: number = Bounds.Position | Bounds.Size
 ) => {
+  log.silly(`function: savePromptBounds`);
   // const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
   // if (isMain) return;
 
@@ -742,7 +769,7 @@ const writePromptDb = async (
   scriptPath: string,
   bounds: PromptBounds
 ) => {
-  // log.info(`writePromptDb`, { screenId, scriptPath, bounds });
+  log.silly(`writePromptDb`, { screenId, scriptPath, bounds });
   const promptDb = await getPromptDb();
 
   if (!promptDb?.screens) promptDb.screens = {};
@@ -757,6 +784,7 @@ const writePromptDb = async (
 };
 
 export const hideAppIfNoWindows = (reason: string) => {
+  log.silly(`function: hideAppIfNoWindows: ${reason}`);
   if (promptWindow) {
     // const allWindows = BrowserWindow.getAllWindows();
     // Check if all other windows are hidden

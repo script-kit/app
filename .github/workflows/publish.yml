@@ -45,11 +45,12 @@ jobs:
 
       - uses: c-hive/gha-yarn-cache@v2
 
-      - name: yarn
+      - name: yarn add @johnlindquist/kit
         run: |
+          cd ./src
           if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
           else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
-          yarn
+          cd ..
 
       - name: Semantic Release
         id: semantic

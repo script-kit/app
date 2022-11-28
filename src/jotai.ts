@@ -662,6 +662,11 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
 
 const _inputChangedAtom = atom(false);
 
+export const changeAtom = atom((g) => (data: any) => {
+  const channel = g(channelAtom);
+  channel(Channel.CHANGE, { value: data });
+});
+
 export const inputAtom = atom(
   (g) => g(_input),
   (g, s, a: string) => {

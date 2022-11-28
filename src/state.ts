@@ -533,7 +533,11 @@ export const sponsorCheck = async (feature: string, block = true) => {
   );
 
   const isOnline = await online();
-  if (!isOnline || process.env.KIT_SPONSOR === 'development') {
+  if (
+    !isOnline ||
+    (process.env.KIT_SPONSOR === 'development' &&
+      os.userInfo().username === 'johnlindquist')
+  ) {
     kitState.isSponsor = true;
     return true;
   }

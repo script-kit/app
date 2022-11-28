@@ -7,8 +7,13 @@
 import React, { useCallback, KeyboardEvent, useEffect } from 'react';
 import parse, { domToReact } from 'html-react-parser';
 import SimpleBar from 'simplebar-react';
-import { useAtom } from 'jotai';
-import { formDataAtom, formHTMLAtom, submitValueAtom } from '../jotai';
+import { useAtom, useAtomValue } from 'jotai';
+import {
+  changeAtom,
+  formDataAtom,
+  formHTMLAtom,
+  submitValueAtom,
+} from '../jotai';
 import { useObserveMainHeight } from '../hooks';
 
 export default function Form({
@@ -24,6 +29,7 @@ export default function Form({
   const [formHTML] = useAtom(formHTMLAtom);
   const [formData] = useAtom(formDataAtom);
   const [, submit] = useAtom(submitValueAtom);
+  const onChange = useAtomValue(changeAtom);
 
   useEffect(() => {
     if (formRef.current) {
@@ -83,34 +89,38 @@ export default function Form({
     };
   }, [formData, formRef]);
 
+  const getFormJSON = useCallback(() => {
+    const data: any = new FormData(formRef?.current);
+
+    const names: any = {};
+    // const arrays: any = [];
+
+    for (const el of (formRef?.current as any)?.elements) {
+      if (names[el.name] === false) {
+        names[el.name] = true;
+      } else {
+        names[el.name] = false;
+      }
+    }
+
+    const formJSON = Object.fromEntries(data.entries());
+
+    for (const [key, value] of Object.entries(names)) {
+      if (key && value) {
+        formJSON[key] = data.getAll(key);
+      }
+    }
+
+    return formJSON;
+  }, [formRef]);
+
   const onLocalSubmit = useCallback(
     (event?: any) => {
       if (event) event.preventDefault();
 
-      const data: any = new FormData(formRef?.current);
-
-      const names: any = {};
-      // const arrays: any = [];
-
-      for (const el of (formRef?.current as any)?.elements) {
-        if (names[el.name] === false) {
-          names[el.name] = true;
-        } else {
-          names[el.name] = false;
-        }
-      }
-
-      const formJSON = Object.fromEntries(data.entries());
-
-      for (const [key, value] of Object.entries(names)) {
-        if (key && value) {
-          formJSON[key] = data.getAll(key);
-        }
-      }
-
-      submit(formJSON);
+      submit(getFormJSON());
     },
-    [submit]
+    [getFormJSON, submit]
   );
 
   const onFormKeyDown = useCallback(
@@ -131,7 +141,15 @@ export default function Form({
     [onLocalSubmit]
   );
 
-  const onFormChange = useCallback(() => {}, []);
+  const onFormChange = useCallback(
+    (event?: any) => {
+      if (event) event.preventDefault();
+
+      const values = Object.values(getFormJSON());
+      onChange(values);
+    },
+    [getFormJSON, onChange]
+  );
 
   return (
     <SimpleBar
