@@ -42,11 +42,11 @@ const go = async () => {
 
   // Install the dependencies for the kit package
   chdir(kitDir);
-  console.log(`cwd for yarn`, process.cwd()))
+  console.log(`cwd for yarn`, process.cwd());
   await execa(`yarn`, { shell: true });
 
   chdir(process.env.PWD);
-  console.log(`cwd for tar`, process.cwd()))
+  console.log(`cwd for tar`, process.cwd());
 
   await tar.c(
     {
