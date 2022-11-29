@@ -16,7 +16,8 @@ let releaseResponse = await octokit.rest.repos.createRelease({
 });
 
 let kitFiles = await readdir(kitPath());
-let kitTarPath = home('kit.tar.gz');
+let name = 'kit.tar.gz';
+let kitTarPath = home(name);
 console.log({ kitFiles });
 
 console.log(`Tar ${kitPath()} to ${kitTarPath}`);
@@ -43,7 +44,7 @@ await tar.c(
 let uploadResponse = await octokit.rest.repos.uploadReleaseAsset({
   ...github.context.repo,
   release_id: releaseResponse.data.id,
-  name: path.basename(url),
+  name,
   data: await readFile(kitTarPath),
 });
 
