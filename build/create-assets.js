@@ -63,6 +63,7 @@ const go = async () => {
     ['.']
   );
 
+  console.log(`Removing`, kitDir);
   await rm(kitDir, {
     recursive: true,
     force: true,
