@@ -34,10 +34,10 @@ const go = async () => {
       file: './assets/kit.tar.gz',
       follow: true,
       filter: (item) => {
-        // if (item.match(/^.{0,2}node/)) {
-        //   console.log(`SKIPPING`, item);
-        //   return false;
-        // }
+        if (item.match(/^.{0,2}node/)) {
+          console.log(`SKIPPING`, item);
+          return false;
+        }
         if (item.includes('kit.sock')) return false;
 
         return true;
