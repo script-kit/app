@@ -53,13 +53,6 @@ jobs:
           if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
           else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
 
-      - name: yarn add @johnlindquist/kit to assets
-        run: |
-          cd ./assets
-          if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
-          else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
-          cd ..
-
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v2.7.0

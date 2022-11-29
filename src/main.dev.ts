@@ -889,7 +889,6 @@ const checkKit = async () => {
     await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
     const kitTar = getAssetPath('kit.tar.gz');
     await extractTar(kitTar, kitPath());
-    await extractTar(kitTar, getAssetPath());
 
     await setupLog(`Installing ~/.kit packages...`);
     log.info(`PATH:`, options?.env?.PATH);
