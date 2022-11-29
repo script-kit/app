@@ -18,6 +18,7 @@ import {
   shell,
 } from 'electron';
 import os from 'os';
+import dotenv from 'dotenv';
 import { assign, remove } from 'lodash';
 import ContrastColor from 'contrast-color';
 import { snapshot, subscribe } from 'valtio';
@@ -49,6 +50,7 @@ import {
   mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
+import { existsSync } from 'fs';
 import { getLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -1431,6 +1433,15 @@ const createChild = ({
   }
 
   const entry = type === ProcessType.Prompt ? KIT_APP_PROMPT : KIT_APP;
+
+  // Check if kitDotEnvPath() is a file
+
+  let kitEnv = {};
+  const kitEnvPath = kitDotEnvPath();
+  if (existsSync(kitEnvPath)) {
+    kitEnv = dotenv.parse(kitDotEnvPath);
+  }
+
   const env = {
     ...process.env,
     NODE_NO_WARNINGS: '1',
@@ -1444,6 +1455,7 @@ const createChild = ({
     FORCE_COLOR: '1',
     PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
     KIT_APP_PATH: app.getAppPath(),
+    ...kitEnv,
   };
   // console.log({ env });
   // const isWin = os.platform().startsWith('win');

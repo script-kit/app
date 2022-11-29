@@ -381,6 +381,7 @@
     "detect-file-type": "0.2.8",
     "dns-socket": "^4.2.2",
     "dompurify": "^2.4.0",
+    "dotenv": "^16.0.3",
     "electron-context-menu": "^3.3.0",
     "electron-debug": "3.1.0",
     "electron-log": "4.2.4",
