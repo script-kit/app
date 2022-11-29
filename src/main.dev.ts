@@ -106,7 +106,7 @@ import {
   updateScripts,
 } from './state';
 import { startSK } from './sk';
-import { handleWidgetEvents, processes } from './process';
+import { destroyAllProcesses, handleWidgetEvents, processes } from './process';
 import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
 import { showError } from './main.dev.templates';
@@ -1119,14 +1119,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   }
 
   try {
-    mainLog.info(`Destroy all processes`);
-    processes.forEach((pinfo) => {
-      if (!pinfo?.child.killed) {
-        pinfo?.child?.removeAllListeners();
-        pinfo?.child?.kill();
-      }
-    });
-    processes.length = 0;
+    destroyAllProcesses();
   } catch (error) {
     mainLog.error(error);
   }

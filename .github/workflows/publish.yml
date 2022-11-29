@@ -72,11 +72,14 @@ jobs:
               }
             ]
 
+      - name: Echo the version number
+        run: echo ${{ steps.semantic.outputs.new_version }}
+
       - name: Publish Kit
         uses: johnlindquist/kit-action@main
         with:
           script: 'publish-kit'
-          args: ${{ steps.semantic.outputs.new_version }}
+          args: '${{ steps.semantic.outputs.new_version }}'
 
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'

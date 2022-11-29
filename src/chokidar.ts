@@ -35,5 +35,7 @@ export const startWatching = (callback: WatcherCallback) => {
     kenvScriptsWatcher.unwatch(path.resolve(filePath, 'scripts', '*'));
   });
 
-  return [kenvScriptsWatcher, jsonWatcher, kenvsWatcher];
+  const kenvEnvWatcher = chokidar.watch(kenvPath('.env'));
+
+  return [kenvScriptsWatcher, jsonWatcher, kenvsWatcher, kenvEnvWatcher];
 };

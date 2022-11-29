@@ -51,7 +51,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 
 import { existsSync } from 'fs';
-import { getLog, warn } from './logs';
+import { getLog, mainLog, warn } from './logs';
 import {
   alwaysOnTop,
   appToPrompt,
@@ -1555,7 +1555,7 @@ const processesChanged = () => {
   }
 };
 
-const ensureTwoIdleProcesses = () => {
+export const ensureTwoIdleProcesses = () => {
   setTimeout(() => {
     const idles = processes
       .getAllProcessInfo()
@@ -1847,6 +1847,17 @@ emitter.on(KitEvent.KillProcess, (pid) => {
   log.info(`🛑 Kill Process: ${pid}`);
   processes.removeByPid(pid);
 });
+
+export const destroyAllProcesses = () => {
+  mainLog.info(`Destroy all processes`);
+  processes.forEach((pinfo) => {
+    if (!pinfo?.child.killed) {
+      pinfo?.child?.removeAllListeners();
+      pinfo?.child?.kill();
+    }
+  });
+  processes.length = 0;
+};
 
 // emitter.on(KitEvent.MainScript, () => {
 //   sendToPrompt(Channel.SET_DESCRIPTION, 'Run Script');

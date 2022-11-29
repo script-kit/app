@@ -34,6 +34,7 @@ import { appToPrompt, clearPromptCacheFor } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel } from './enums';
+import { destroyAllProcesses, ensureTwoIdleProcesses } from './process';
 
 // export const cacheMenu = debounce(async () => {
 //   await updateScripts();
@@ -154,6 +155,14 @@ export const setupWatchers = async () => {
   watchers = startWatching(async (eventName: WatchEvent, filePath: string) => {
     if (!filePath.match(/\.(ts|js|json)$/)) return;
     const { base } = path.parse(filePath);
+
+    if (base === '.env') {
+      log.info(`🌎 .env ${eventName}`);
+
+      destroyAllProcesses();
+      ensureTwoIdleProcesses();
+    }
+
     if (base === 'app.json') {
       log.info(`app.json changed`);
       const currentAppDb = (await getAppDb()).data;
