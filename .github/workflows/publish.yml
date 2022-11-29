@@ -54,26 +54,17 @@ jobs:
           else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
 
       - name: Semantic Release
-        id: semantic
         uses: cycjimmy/semantic-release-action@v3
-        with:
-          semantic_version: 16
-          branches: |
-            [
-              '+([0-9])?(.{+([0-9]),x}).x',
-              'main',
-              {
-                name: 'beta',
-                prerelease: true
-              },
-              {
-                name: 'alpha',
-                prerelease: true
-              }
-            ]
+        id: semantic # Need an `id` for output variables
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Echo the version number
-        run: echo ${{ steps.semantic.outputs.new_version }}
+        run: |
+          echo ${{ steps.semantic.outputs.new_release_version }}
+          echo ${{ steps.semantic.outputs.new_release_major_version }}
+          echo ${{ steps.semantic.outputs.new_release_minor_version }}
+          echo ${{ steps.semantic.outputs.new_release_patch_version }}
 
       - name: Publish Kit
         uses: johnlindquist/kit-action@main
