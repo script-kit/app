@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Inject slug/short variables
-        uses: rlespinasse/github-slug-action@v3.x
+        uses: rlespinasse/github-slug-action@v4
 
       - name: Show ref
         run: |
@@ -36,14 +36,14 @@ jobs:
           ls ./
 
       - name: Checkout git repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install Node, NPM and Yarn
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: 16.14.2
 
-      - uses: c-hive/gha-yarn-cache@v2
+      - uses: c-hive/gha-yarn-cache@v3
 
       - name: yarn
         run: yarn
@@ -70,7 +70,7 @@ jobs:
         uses: johnlindquist/kit-action@main
         with:
           script: 'publish-kit'
-          args: '${{ steps.semantic.outputs.new_version }}'
+          args: ${{ steps.semantic.outputs.new_release_version }}
 
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
