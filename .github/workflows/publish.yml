@@ -55,7 +55,7 @@ jobs:
 
       - name: Semantic Release
         id: semantic
-        uses: cycjimmy/semantic-release-action@v2.7.0
+        uses: cycjimmy/semantic-release-action@v3
         with:
           semantic_version: 16
           branches: |
@@ -71,6 +71,15 @@ jobs:
                 prerelease: true
               }
             ]
+
+      - name: Publish Kit
+        uses: johnlindquist/kit-action@main
+        with:
+          script: 'publish-kit'
+          args: ${{ steps.semantic.outputs.new_version }}
+
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
       - name: Publish releases
         env:
