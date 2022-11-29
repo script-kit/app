@@ -290,9 +290,10 @@ export const configureInterval = async () => {
     }
 
     return () => {
-      log.info(`🛑 Stopping keyboard and mouse watcher`);
+      log.info(`🛑 Attempting to stop keyboard and mouse watcher`);
       uIOhook.removeAllListeners();
       uIOhook.stop();
+      log.info(`🛑 Successfully stopped keyboard and mouse watcher`);
       kitState.uiohookRunning = false;
     };
   }).pipe(share());

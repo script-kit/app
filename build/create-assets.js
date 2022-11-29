@@ -11,7 +11,7 @@ const go = async () => {
   } = await execa(`git rev-parse --abbrev-ref HEAD`, { shell: true });
   console.log({ releaseChannel });
 
-  const { writeFile, cp } = await import('fs/promises');
+  const { writeFile, cp, rm } = await import('fs/promises');
   const releaseChannelTxt = path.resolve(
     process.env.PWD,
     'assets',
@@ -28,7 +28,7 @@ const go = async () => {
   // Recusively copy the contents of the kit package into the assets folder
 
   const kitDir = path.resolve('.', 'assets', 'kit');
-  const { ensureDir, rm } = await import('fs-extra');
+  const { ensureDir } = await import('fs-extra');
   await ensureDir(kitDir);
 
   await cp(nodeModulesKit, kitDir, {
@@ -65,6 +65,7 @@ const go = async () => {
 
   await rm(kitDir, {
     recursive: true,
+    force: true,
   });
 
   const { default: download } = await import('download');
