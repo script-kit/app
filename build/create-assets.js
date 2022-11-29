@@ -28,7 +28,7 @@ const go = async () => {
   // Recusively copy the contents of the kit package into the assets folder
 
   const kitDir = path.resolve('.', 'assets', 'kit');
-  const { ensureDir, rmdir } = await import('fs-extra');
+  const { ensureDir, rm } = await import('fs-extra');
   await ensureDir(kitDir);
 
   await cp(nodeModulesKit, kitDir, {
@@ -63,7 +63,9 @@ const go = async () => {
     ['.']
   );
 
-  await rmdir(kitDir);
+  await rm(kitDir, {
+    recursive: true,
+  });
 
   const { default: download } = await import('download');
 
