@@ -27,7 +27,7 @@ const go = async () => {
 
   // Recusively copy the contents of the kit package into the assets folder
 
-  const kitDir = path.resolve(process.env.PWD, 'assets', 'kit');
+  const kitDir = path.resolve('.', 'assets', 'kit');
   const { ensureDir } = await import('fs-extra');
   await ensureDir(kitDir);
 
@@ -36,8 +36,11 @@ const go = async () => {
   });
 
   // Install the dependencies for the kit package
-  await execa(`cd ${kitDir} && yarn`, { shell: true });
-  await execa(`cd ${process.env.PWD}`);
+  console.log(path.resolve('.', 'assets', 'kit'));
+  chdir('./assets/kit');
+  await execa(`yarn`, { shell: true });
+  console.log(`PWD`, process.env.PWD);
+  chdir(process.env.PWD);
 
   console.log({ nodeModulesKit });
 
