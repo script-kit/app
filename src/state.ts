@@ -296,6 +296,7 @@ const initState = {
     '--opacity-dark': '0.75',
   },
   appearance: 'auto' as 'auto' | 'light' | 'dark',
+  uiohookRunning: false,
 };
 
 const initAppDb: AppDb = {

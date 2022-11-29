@@ -864,6 +864,10 @@ bg-opacity-50
 dark:bg-opacity-50
 text-opacity-75
 dark:text-opacity-75
+text-opacity-90
+dark:text-opacity-90
+text-opacity-80
+dark:text-opacity-80
 outline
 outline-1
 tracking-tighter

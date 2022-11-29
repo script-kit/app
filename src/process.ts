@@ -236,6 +236,19 @@ export const formatScriptChoices = (data: Choice[]) => {
   return choices;
 };
 
+export const setTheme = async (value: any, check = true) => {
+  if (check) {
+    await sponsorCheck('Custom Themes');
+    if (!kitState.isSponsor) return;
+  }
+
+  maybeConvertColors(value);
+
+  assign(kitState.theme, value);
+
+  sendToPrompt(Channel.SET_THEME, value);
+};
+
 export type ChannelHandler = {
   [key in keyof ChannelMap]: (data: SendData<key>) => void;
 };
@@ -1006,14 +1019,8 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_THEME: toProcess(async ({ child }, { channel, value }) => {
-    await sponsorCheck('Custom Themes');
-    if (!kitState.isSponsor) return;
+    await setTheme(value);
 
-    maybeConvertColors(value);
-
-    assign(kitState.theme, value);
-
-    sendToPrompt(Channel.SET_THEME, value);
     if (child) {
       childSend(child, {
         channel,

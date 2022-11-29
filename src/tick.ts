@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { clipboard, NativeImage } from 'electron';
+import { clipboard, NativeImage, systemPreferences } from 'electron';
 import { Observable, Subscription } from 'rxjs';
 import {
   debounceTime,
@@ -273,7 +273,14 @@ export const configureInterval = async () => {
     // Register and start hook
     try {
       log.info(`Attempting to start uiohook-napi...`);
-      uIOhook.start();
+      if (systemPreferences.isTrustedAccessibilityClient(true)) {
+        log.info(`Trust check passed`);
+        if (!kitState.uiohookRunning) {
+          log.info(`Not running. Starting...`);
+          uIOhook.start();
+          kitState.uiohookRunning = true;
+        }
+      }
       log.info(`🟢 Started keyboard and mouse watcher`);
     } catch (e) {
       log.error(`🔴 Failed to start keyboard and mouse watcher`);
@@ -284,7 +291,9 @@ export const configureInterval = async () => {
 
     return () => {
       log.info(`🛑 Stopping keyboard and mouse watcher`);
+      uIOhook.removeAllListeners();
       uIOhook.stop();
+      kitState.uiohookRunning = false;
     };
   }).pipe(share());
 

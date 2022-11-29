@@ -28,7 +28,7 @@ const go = async () => {
   // Recusively copy the contents of the kit package into the assets folder
 
   const kitDir = path.resolve('.', 'assets', 'kit');
-  const { ensureDir } = await import('fs-extra');
+  const { ensureDir, rmdir } = await import('fs-extra');
   await ensureDir(kitDir);
 
   await cp(nodeModulesKit, kitDir, {
@@ -37,7 +37,7 @@ const go = async () => {
 
   // Install the dependencies for the kit package
   console.log(path.resolve('.', 'assets', 'kit'));
-  chdir('./assets/kit');
+  chdir(kitDir);
   await execa(`yarn`, { shell: true });
   console.log(`PWD`, process.env.PWD);
   chdir(process.env.PWD);
@@ -46,15 +46,15 @@ const go = async () => {
 
   await tar.c(
     {
-      cwd: nodeModulesKit,
+      cwd: kitDir,
       gzip: true,
       file: './assets/kit.tar.gz',
       follow: true,
       filter: (item) => {
-        if (item.match(/^.{0,2}node/)) {
-          console.log(`SKIPPING`, item);
-          return false;
-        }
+        // if (item.match(/^.{0,2}node/)) {
+        //   console.log(`SKIPPING`, item);
+        //   return false;
+        // }
         if (item.includes('kit.sock')) return false;
 
         return true;
@@ -62,6 +62,8 @@ const go = async () => {
     },
     ['.']
   );
+
+  await rmdir(kitDir);
 
   const { default: download } = await import('download');
 
