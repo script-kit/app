@@ -27,7 +27,12 @@ const go = async () => {
 
   // Recusively copy the contents of the kit package into the assets folder
 
+  console.log(`PWD`, process.env.PWD);
   const kitDir = path.resolve('.', 'assets', 'kit');
+  const outTarz = path.resolve('.', 'assets', 'kit.tar.gz');
+
+  console.log(`Tar ${kitDir} to ${outTarz}`);
+
   const { ensureDir } = await import('fs-extra');
   await ensureDir(kitDir);
 
@@ -36,19 +41,18 @@ const go = async () => {
   });
 
   // Install the dependencies for the kit package
-  console.log(path.resolve('.', 'assets', 'kit'));
   chdir(kitDir);
+  console.log(`cwd for yarn`, process.cwd()))
   await execa(`yarn`, { shell: true });
-  console.log(`PWD`, process.env.PWD);
-  chdir(process.env.PWD);
 
-  console.log({ nodeModulesKit });
+  chdir(process.env.PWD);
+  console.log(`cwd for tar`, process.cwd()))
 
   await tar.c(
     {
       cwd: kitDir,
       gzip: true,
-      file: './assets/kit.tar.gz',
+      file: outTarz,
       follow: true,
       filter: (item) => {
         // if (item.match(/^.{0,2}node/)) {
@@ -63,11 +67,11 @@ const go = async () => {
     ['.']
   );
 
-  console.log(`Removing`, kitDir);
-  await rm(kitDir, {
-    recursive: true,
-    force: true,
-  });
+  // console.log(`Removing`, kitDir);
+  // await rm(kitDir, {
+  //   recursive: true,
+  //   force: true,
+  // });
 
   const { default: download } = await import('download');
 
