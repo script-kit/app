@@ -74,13 +74,6 @@ jobs:
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
-      - name: pwd
-        run: pwd
-      # Echo all the files in the current directory
-
-      - name: ls
-        run: ls -la
-
       - name: cat scripts/package.json
         run: cat scripts/package.json
 
