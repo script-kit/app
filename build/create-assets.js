@@ -1,65 +1,57 @@
-const go = async () => {
-  const { chdir } = await import('process');
-  const path = await import('path');
+/* eslint-disable */
 
-  console.log(`PWD`, process.env.PWD);
-  chdir(process.env.PWD);
+import '@johnlindquist/kit';
 
-  const { execa } = await import('execa');
-  const {
-    stdout: releaseChannel,
-  } = await execa(`git rev-parse --abbrev-ref HEAD`, { shell: true });
-  console.log({ releaseChannel });
+let { chdir } = await import('process');
+let tar = await npm('tar');
 
-  const { writeFile } = await import('fs/promises');
-  const releaseChannelTxt = path.resolve(
-    process.env.PWD,
-    'assets',
-    'release_channel.txt'
-  );
-  console.log({ releaseChannelTxt });
+console.log(`PWD`, process.env.PWD);
+chdir(process.env.PWD);
 
-  await writeFile(releaseChannelTxt, releaseChannel);
+let { stdout: releaseChannel } = await exec(`git rev-parse --abbrev-ref HEAD`);
+console.log({ releaseChannel });
 
-  const tar = await import('tar');
+let releaseChannelTxt = path.resolve(
+  process.env.PWD,
+  'assets',
+  'release_channel.txt'
+);
+console.log({ releaseChannelTxt });
 
-  const nodeModulesKit = path.resolve('node_modules', '@johnlindquist', 'kit');
-  const outTarz = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
+await writeFile(releaseChannelTxt, releaseChannel);
 
-  console.log(`Tar ${nodeModulesKit} to ${outTarz}`);
+let nodeModulesKit = path.resolve('node_modules', '@johnlindquist', 'kit');
+let outTarz = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
 
-  await tar.c(
-    {
-      cwd: nodeModulesKit,
-      gzip: true,
-      file: outTarz,
-      follow: true,
-      filter: (item) => {
-        if (item.match(/^.{0,2}node/)) {
-          console.log(`SKIPPING`, item);
-          return false;
-        }
-        if (item.includes('kit.sock')) return false;
+console.log(`Tar ${nodeModulesKit} to ${outTarz}`);
 
-        return true;
-      },
+await tar.c(
+  {
+    cwd: nodeModulesKit,
+    gzip: true,
+    file: outTarz,
+    follow: true,
+    filter: (item) => {
+      if (item.match(/^.{0,2}node/)) {
+        console.log(`SKIPPING`, item);
+        return false;
+      }
+      if (item.includes('kit.sock')) return false;
+
+      return true;
     },
-    ['.']
-  );
+  },
+  ['.']
+);
 
-  // console.log(`Removing`, kitDir);
-  // await rm(kitDir, {
-  //   recursive: true,
-  //   force: true,
-  // });
+// console.log(`Removing`, kitDir);
+// await rm(kitDir, {
+//   recursive: true,
+//   force: true,
+// });
 
-  const { default: download } = await import('download');
-
-  await download(
-    `https://github.com/johnlindquist/kenv/tarball/${releaseChannel}`,
-    path.resolve(process.env.PWD, 'assets'),
-    { filename: 'kenv.tar.gz' }
-  );
-};
-
-go();
+await download(
+  `https://github.com/johnlindquist/kenv/tarball/${releaseChannel}`,
+  path.resolve(process.env.PWD, 'assets'),
+  { filename: 'kenv.tar.gz' }
+);

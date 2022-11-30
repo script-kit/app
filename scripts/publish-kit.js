@@ -1,5 +1,6 @@
-// disable linting for this file
 /* eslint-disable */
+
+import '@johnlindquist/kit';
 
 console.log(`🕵️‍♀️ process.env.KENV_PKG_DIR:`, process.env.KENV_PKG_DIR);
 console.log(`kenvPkgPath:`, kenvPath(process.env.KENV_PKG_DIR || ''));
