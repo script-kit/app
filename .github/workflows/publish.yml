@@ -70,6 +70,16 @@ jobs:
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
+      # Echo all the files in the current directory
+
+      - name: ls
+        run: ls -la
+
+      # Echo the contents of package.json
+
+      - name: cat package.json
+        run: cat package.json
+
       - name: Publish releases
         env:
           # These values are used for auto updates signing
