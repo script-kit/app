@@ -1,6 +1,9 @@
 // disable linting for this file
 /* eslint-disable */
 
+console.log(`🕵️‍♀️ process.env.KENV_PKG_DIR:`, process.env.KENV_PKG_DIR);
+console.log(`kenvPkgPath:`, kenvPath(process.env.KENV_PKG_DIR || ''));
+
 let tar = await npm('tar');
 
 let version = await arg('Enter the version number');
