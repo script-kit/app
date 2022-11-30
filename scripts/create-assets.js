@@ -2,6 +2,8 @@
 
 // import '@johnlindquist/kit';
 
+console.log("Creating assets");
+
 let { chdir } = await import('process');
 let tar = await npm('tar');
 
