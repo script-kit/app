@@ -70,12 +70,13 @@ jobs:
         with:
           script: 'publish-kit'
           args: ${{ steps.semantic.outputs.new_release_version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets
         uses: johnlindquist/kit-action@main
         with:
           script: 'create-assets'
-
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
