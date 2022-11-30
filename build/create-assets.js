@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-import '@johnlindquist/kit';
+// import '@johnlindquist/kit';
 
 let { chdir } = await import('process');
 let tar = await npm('tar');

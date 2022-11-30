@@ -159,8 +159,7 @@ export const setupWatchers = async () => {
     if (base === '.env') {
       log.info(`🌎 .env ${eventName}`);
 
-      destroyAllProcesses();
-      ensureTwoIdleProcesses();
+      return;
     }
 
     if (base === 'app.json') {
