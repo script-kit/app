@@ -43,14 +43,6 @@ jobs:
         run: |
           echo ${{ steps.semantic.outputs.new_release_version }}
 
-      - name: Publish Kit
-        uses: johnlindquist/kit-action@main
-        with:
-          script: 'publish-kit'
-          args: ${{ steps.semantic.outputs.new_release_version }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Create Assets
         uses: johnlindquist/kit-action@main
         with:
@@ -88,3 +80,11 @@ jobs:
           cd ..
           echo "--- Done removing mac deps ---\n\n"
           yarn electron-builder --publish always -wl
+
+      - name: Publish Kit
+        uses: johnlindquist/kit-action@main
+        with:
+          script: 'publish-kit'
+          args: ${{ steps.semantic.outputs.new_release_version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
