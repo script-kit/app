@@ -41,6 +41,8 @@ await tar.c(
   ['.']
 );
 
+console.log(`Uploading ${name} to releases...`);
+
 let uploadResponse = await octokit.rest.repos.uploadReleaseAsset({
   ...github.context.repo,
   release_id: releaseResponse.data.id,
