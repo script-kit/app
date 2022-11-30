@@ -86,6 +86,9 @@ jobs:
       - name: cat package.json
         run: cat package.json
 
+      - name: yarn time!
+        run: yarn
+
       - name: Publish releases
         env:
           # These values are used for auto updates signing

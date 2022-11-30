@@ -50,7 +50,7 @@ import {
   mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { getLog, mainLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -1439,7 +1439,7 @@ const createChild = ({
   let kitEnv = {};
   const kitEnvPath = kitDotEnvPath();
   if (existsSync(kitEnvPath)) {
-    kitEnv = dotenv.parse(kitDotEnvPath);
+    kitEnv = dotenv.parse(readFileSync(kitEnvPath));
   }
 
   const env = {
