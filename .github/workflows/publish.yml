@@ -30,30 +30,8 @@ jobs:
           echo "${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}"
           echo "release_channel=${{ env.GITHUB_BASE_REF_SLUG || env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
 
-      - name: ls parent paths
-        run: |
-          pwd
-          ls ./
-
       - name: Checkout git repo
         uses: actions/checkout@v3
-
-      # echo current directory
-      - name: pwd
-        run: pwd
-
-      - name: Install Node, NPM and Yarn
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16.14.2
-
-      - name: yarn
-        run: yarn
-
-      - name: yarn add @johnlindquist/kit
-        run: |
-          if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
-          else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
 
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v3
@@ -80,8 +58,16 @@ jobs:
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
-      - name: yarn time!
-        run: yarn
+      - name: Install Node, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.14.2
+
+      - name: yarn && yarn add @johnlindquist/kit
+        run: |
+          yarn
+          if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
+          else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
 
       - name: Publish releases
         env:
