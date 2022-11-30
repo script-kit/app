@@ -80,12 +80,6 @@ jobs:
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
-      - name: cat scripts/package.json
-        run: cat scripts/package.json
-
-      - name: cat package.json
-        run: cat package.json
-
       - name: yarn time!
         run: yarn
 
