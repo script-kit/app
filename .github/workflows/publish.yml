@@ -47,6 +47,13 @@ jobs:
         run: |
           echo ${{ steps.semantic.outputs.new_release_version }}
 
+      - name: Create Assets
+        uses: johnlindquist/kit-action@main
+        with:
+          script: 'create-assets'
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
       - name: Publish Kit
         uses: johnlindquist/kit-action@main
         with:
@@ -54,13 +61,6 @@ jobs:
           args: ${{ steps.semantic.outputs.new_release_version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Assets
-        uses: johnlindquist/kit-action@main
-        with:
-          script: 'create-assets'
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
       - name: Install Node, NPM and Yarn
         uses: actions/setup-node@v3
