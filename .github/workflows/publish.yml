@@ -39,21 +39,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # install jq for a github workflow
-      - name: Install jq
+      - name: Verify that Semantic Release updated src/package.json
         run: |
-          sudo apt-get update
-          sudo apt-get install jq
-
-      # Verify that Semantic Release updated src/package.json
-      - name: Verify package.json
-        run: |
-          echo "package_version=$(jq -r .version src/package.json)" >> $GITHUB_ENV
-          echo "release_version=${{ steps.semantic.outputs.new_version }}" >> $GITHUB_ENV
-          if [ "${{ env.package_version }}" != "${{ env.release_version }}" ]; then
-            echo "package.json version (${{ env.package_version }}) does not match release version (${{ env.release_version }})"
-            exit 1
-          fi
+          cat src/package.json
       # - name: Echo the version number
       #   run: |
       #     echo ${{ steps.semantic.outputs.new_release_version }}
