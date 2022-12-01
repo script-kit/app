@@ -1,5 +1,4 @@
 /* eslint-disable */
-
 // import '@johnlindquist/kit';
 
 console.log(`🕵️‍♀️ process.env.KENV_PKG_DIR:`, process.env.KENV_PKG_DIR);
@@ -68,5 +67,6 @@ let kitUrlFilePath = path.resolve(process.env.PWD, 'assets', 'kit_url.txt');
 console.log({ kitUrlFilePath, url });
 
 await writeFile(kitUrlFilePath, url);
+await copyFile(kitTarPath, path.resolve(process.env.PWD, 'assets', name));
 
 export {};
