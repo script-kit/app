@@ -8,28 +8,18 @@ console.log(`kenvPkgPath:`, kenvPath(process.env.KENV_PKG_DIR || ''));
 let tar = await npm('tar');
 
 let version = await arg('Enter the version number');
-let tag = `v${version}`;
+let tag_name = `v${version}`;
 
-console.log(`⭐️ Starting Kit release for ${tag}`);
+console.log(`⭐️ Starting Kit release for ${tag_name}`);
 
 let octokit = github.getOctokit(await env('GITHUB_TOKEN'));
 
-// let releaseResponse = await octokit.rest.repos.createRelease({
-//   ...github.context.repo,
-//   tag_name: version,
-//   draft: true,
-//   prerelease: true,
-// });
-
-let releaseResponse = await octokit.request(
-  'GET /repos/{owner}/{repo}/releases/tags/{tag}',
-  {
-    ...github.context.repo,
-    tag,
-  }
-);
-
-console.log({ releaseResponse });
+let releaseResponse = await octokit.rest.repos.createRelease({
+  ...github.context.repo,
+  tag_name,
+  draft: true,
+  prerelease: true,
+});
 
 let kitFiles = await readdir(kitPath());
 let name = 'kit.tar.gz';

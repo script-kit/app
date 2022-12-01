@@ -281,6 +281,33 @@ export default function Editor() {
     }
   }, [open, config, editor, ui]);
 
+  useEffect(() => {
+    if (ui === UI.editor && open && editor) {
+      const lineNumber = editor.getModel()?.getLineCount() || 0;
+
+      if ((config as EditorOptions).scrollTo === 'bottom') {
+        const column =
+          (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+
+        const position = { lineNumber, column };
+        editor.setPosition(position);
+
+        editor.revealPosition(position);
+      }
+
+      if ((config as EditorOptions).scrollTo === 'center') {
+        editor.revealLineInCenter(Math.floor(lineNumber / 2));
+      }
+
+      if (config?.template) {
+        const contribution = editor.getContribution('snippetController2');
+        if (contribution) {
+          (contribution as any).insert(config.template);
+        }
+      }
+    }
+  }, [open, config, editor, ui]);
+
   return (
     <motion.div
       key="editor"
