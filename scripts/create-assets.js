@@ -30,10 +30,28 @@ await download(
   { filename: 'kenv.tar.gz' }
 );
 
-await download(
-  `https://github.com/johnlindquist/kit/tarball/${releaseChannel}`,
-  path.resolve(process.env.PWD, 'assets'),
-  { filename: 'kit.tar.gz' }
+let nodeModulesKit = path.resolve('node_modules', '@johnlindquist', 'kit');
+let outTarz = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
+
+console.log(`Tar ${nodeModulesKit} to ${outTarz}`);
+
+await tar.c(
+  {
+    cwd: nodeModulesKit,
+    gzip: true,
+    file: outTarz,
+    follow: true,
+    filter: (item) => {
+      if (item.match(/^.{0,2}node/)) {
+        console.log(`SKIPPING`, item);
+        return false;
+      }
+      if (item.includes('kit.sock')) return false;
+
+      return true;
+    },
+  },
+  ['.']
 );
 
 // Experimental Kit bundle download...
