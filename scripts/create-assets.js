@@ -30,7 +30,7 @@ await download(
   { filename: 'kenv.tar.gz' }
 );
 
-let nodeModulesKit = path.resolve('node_modules', '@johnlindquist', 'kit');
+let nodeModulesKit = kitPath();
 let outTarz = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
 
 console.log(`Tar ${nodeModulesKit} to ${outTarz}`);
