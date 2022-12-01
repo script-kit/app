@@ -2,6 +2,9 @@
 
 // import '@johnlindquist/kit';
 
+let { chdir } = await import('process');
+let tar = await npm('tar');
+
 console.log('Creating assets');
 
 console.log(`🕵️‍♀️ process.env.SCRIPTS_DIR:`, process.env.SCRIPTS_DIR);
@@ -37,9 +40,6 @@ await download(
 
 // Need to consider "esbuild" for each platform and architecture
 // Create a string  that defines all of the supported architectures in a .yarnrc.yml file
-
-let { chdir } = await import('process');
-let tar = await npm('tar');
 
 let version = await arg('Enter the version number');
 let tag_name = `v${version}`;
