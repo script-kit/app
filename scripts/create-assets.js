@@ -88,7 +88,7 @@ let kitUrlFilePath = path.resolve(process.env.PWD, 'assets', 'kit_url.txt');
 console.log({ kitUrlFilePath, url });
 
 await writeFile(kitUrlFilePath, url);
-await copyFile(kitTarPath, path.resolve(process.env.PWD, 'assets', name));
+// await copyFile(kitTarPath, path.resolve(process.env.PWD, 'assets', name));
 
 await download(
   `https://github.com/johnlindquist/kenv/tarball/${releaseChannel}`,

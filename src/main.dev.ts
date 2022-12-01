@@ -891,13 +891,13 @@ const checkKit = async () => {
 
     const kitTar = getAssetPath('kit.tar.gz');
 
-    // if (existsSync(getAssetPath('kit_url.txt'))) {
-    //   const kitUrl = (
-    //     await readFile(getAssetPath('kit_url.txt'), 'utf8')
-    //   ).trim();
-    //   await setupLog(`Using kit url from kit_url.txt: ${kitUrl}`);
-    //   await download(kitUrl, kitTar);
-    // }
+    if (existsSync(getAssetPath('kit_url.txt'))) {
+      const kitUrl = (
+        await readFile(getAssetPath('kit_url.txt'), 'utf8')
+      ).trim();
+      await setupLog(`Using kit url from kit_url.txt: ${kitUrl}`);
+      await download(kitUrl, kitTar);
+    }
 
     await extractTar(kitTar, kitPath());
 

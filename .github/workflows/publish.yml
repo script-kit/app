@@ -54,7 +54,7 @@ jobs:
           args: ${{ steps.semantic.outputs.new_release_version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Install Node, NPM and Yarn
         uses: actions/setup-node@v3
         with:
@@ -64,6 +64,7 @@ jobs:
           yarn
           if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
           else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
+
       - name: Publish releases
         env:
           # These values are used for auto updates signing
