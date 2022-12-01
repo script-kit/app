@@ -245,43 +245,44 @@ export const configureInterval = async () => {
   const { uIOhook } = await import('uiohook-napi');
   log.info(`uiohook-napi ${uIOhook ? 'loaded' : 'failed'}`);
   const io$ = new Observable((observer) => {
-    uIOhook.on('click', (event) => {
-      try {
-        observer.next(event);
-      } catch (error) {
-        log.error(error);
-      }
-    });
-
-    uIOhook.on('keydown', (event) => {
-      try {
-        observer.next(event);
-      } catch (error) {
-        log.error(error);
-      }
-    });
-
-    // ioHook.on('keyup', (event) => {
-    //   if (event.ctrlKey || event.metaKey) {
-    //     // log.info(event);
-    //     setTimeout(() => {
-    //       observer.next(event);
-    //     }, 100);
-    //   }
-    // });
-
-    // Register and start hook
     try {
       log.info(`Attempting to start uiohook-napi...`);
       if (systemPreferences.isTrustedAccessibilityClient(true)) {
+        log.info(`Remove listeners just in case 😅...`);
+        uIOhook.removeAllListeners();
+        log.info(`stop just in case 😅...`);
+        uIOhook.stop();
+
+        log.info(`Adding click listeners...`);
+        uIOhook.on('click', (event) => {
+          try {
+            observer.next(event);
+          } catch (error) {
+            log.error(error);
+          }
+        });
+
+        log.info(`Adding keydown listeners...`);
+        uIOhook.on('keydown', (event) => {
+          try {
+            observer.next(event);
+          } catch (error) {
+            log.error(error);
+          }
+        });
+
         log.info(`Trust check passed`);
         if (!kitState.uiohookRunning) {
           log.info(`Not running. Starting...`);
           uIOhook.start();
           kitState.uiohookRunning = true;
+          log.info(`🟢 Started keyboard and mouse watcher`);
+        } else {
+          log.info(`Already running. Skipping...`);
         }
+      } else {
+        log.info(`Trust check failed`);
       }
-      log.info(`🟢 Started keyboard and mouse watcher`);
     } catch (e) {
       log.error(`🔴 Failed to start keyboard and mouse watcher`);
       log.error(e);

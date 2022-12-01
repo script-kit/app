@@ -892,11 +892,13 @@ const checkKit = async () => {
     const kitTar = getAssetPath('kit.tar.gz');
 
     if (existsSync(getAssetPath('kit_url.txt'))) {
-      const kitUrl = (
-        await readFile(getAssetPath('kit_url.txt'), 'utf8')
-      ).trim();
+      const kitUrl = await readFile(getAssetPath('kit_url.txt'), 'utf8');
       await setupLog(`Using kit url from kit_url.txt: ${kitUrl}`);
-      await download(kitUrl, kitTar);
+      try {
+        await download(kitUrl.trim(), kitTar);
+      } catch (error) {
+        log.error(error);
+      }
     }
 
     await extractTar(kitTar, kitPath());

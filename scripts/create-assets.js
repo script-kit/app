@@ -38,7 +38,6 @@ let releaseResponse = await octokit.rest.repos.createRelease({
   ...github.context.repo,
   tag_name,
   name: tag_name,
-  draft: true,
   prerelease: true,
 });
 
