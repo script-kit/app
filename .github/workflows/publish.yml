@@ -39,6 +39,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # install jq for a github workflow
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install jq
+
       # Verify that Semantic Release updated src/package.json
       - name: Verify package.json
         run: |
