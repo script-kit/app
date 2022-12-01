@@ -62,6 +62,11 @@ let uploadResponse = await octokit.rest.repos.uploadReleaseAsset({
   data: await readFile(kitTarPath),
 });
 
-console.log(`url: ${uploadResponse.data.browser_download_url}`);
+let url = uploadResponse.data.browser_download_url;
+
+let kitUrlFilePath = path.resolve(process.env.PWD, 'assets', 'kit_url.txt');
+console.log({ kitUrlFilePath, url });
+
+await writeFile(kitUrlFilePath, url);
 
 export {};

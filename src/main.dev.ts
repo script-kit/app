@@ -21,6 +21,7 @@ import installExtension, {
 
 import StreamZip from 'node-stream-zip';
 import tar from 'tar';
+import download from 'download';
 import clipboardy from 'clipboardy';
 import unhandled from 'electron-unhandled';
 import { openNewGitHubIssue, debugInfo } from 'electron-util';
@@ -887,7 +888,17 @@ const checkKit = async () => {
     }
 
     await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
+
     const kitTar = getAssetPath('kit.tar.gz');
+
+    if (existsSync(getAssetPath('kit_url.txt'))) {
+      const kitUrl = (
+        await readFile(getAssetPath('kit_url.txt'), 'utf8')
+      ).trim();
+      await setupLog(`Using kit url from kit_url.txt: ${kitUrl}`);
+      await download(kitUrl, kitTar);
+    }
+
     await extractTar(kitTar, kitPath());
 
     await setupLog(`Installing ~/.kit packages...`);
