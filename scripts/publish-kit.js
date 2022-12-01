@@ -17,6 +17,7 @@ let octokit = github.getOctokit(await env('GITHUB_TOKEN'));
 let releaseResponse = await octokit.rest.repos.createRelease({
   ...github.context.repo,
   tag_name,
+  name: tag_name,
   draft: true,
   prerelease: true,
 });
@@ -26,7 +27,12 @@ let name = 'kit.tar.gz';
 let kitTarPath = home(name);
 console.log({ kitFiles });
 
-console.log(`Tar ${kitPath()} to ${kitTarPath}`);
+await $`cd ${kitPath()} && npm i`;
+
+let kitModules = await readdir(kitPath('node_modules'));
+console.log({ kitModules });
+
+await console.log(`Tar ${kitPath()} to ${kitTarPath}`);
 
 await tar.c(
   {
