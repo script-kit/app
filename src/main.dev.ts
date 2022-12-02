@@ -435,25 +435,17 @@ const ready = async () => {
 
     await checkAccessibility();
 
-    if (kitState.authorized) {
+    const isMac = os.platform() === 'darwin';
+
+    if (kitState.authorized && appDb?.authorized) {
       log.info(`💻 Accessibility authorized ✅`);
       await configureInterval();
       await setupLog(`Tick started`);
-    } else {
-      const id = setInterval(async () => {
-        log.silly(`Checking for accessibility authorization...`);
-        await checkAccessibility();
-        if (kitState.authorized) {
-          clearInterval(id);
-          kitState.requiresAuthorizedRestart = true;
-        }
-      }, 5000);
     }
 
     await setupLog(``);
     setupDone();
 
-    const isMac = os.platform() === 'darwin';
     if (isMac) startSK();
     await cacheKitScripts();
 

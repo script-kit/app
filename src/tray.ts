@@ -253,6 +253,23 @@ export const openMenu = async (event?: KeyboardEvent) => {
         type: 'separator',
       });
     }
+    const experimentalSubmenu: MenuItemConstructorOptions[] = [];
+
+    experimentalSubmenu.push({
+      label: 'Experimental Features May Freeze Kit',
+      enabled: false,
+    });
+
+    experimentalSubmenu.push({
+      type: 'separator',
+    });
+
+    experimentalSubmenu.push({
+      label: 'Start Snippet/Clipboard Watcher',
+      click: () => {
+        emitter.emit(KitEvent.RestartKeyWatcher);
+      },
+    });
 
     const toolsSubmenu: MenuItemConstructorOptions[] = [];
 
@@ -330,13 +347,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     toolsSubmenu.push({
       type: 'separator',
-    });
-
-    toolsSubmenu.push({
-      label: 'Restart Key Watcher',
-      click: () => {
-        emitter.emit(KitEvent.RestartKeyWatcher);
-      },
     });
 
     toolsSubmenu.push({
@@ -435,6 +445,10 @@ export const openMenu = async (event?: KeyboardEvent) => {
       {
         label: `Script Kit ${getVersion()}`,
         enabled: false,
+      },
+      {
+        label: `Experimental`,
+        submenu: experimentalSubmenu,
       },
       {
         label: `Debug`,

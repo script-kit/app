@@ -1281,12 +1281,10 @@ node-addon-api@^4.0.0:
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-4.3.0.tgz#52a1a0b475193e0928e98e0426a0d1254782b77f"
   integrity sha512-73sE9+3UaLYYFmDsFZnqCInzPyh3MqIwZO9cw58yIqAZhONrrabrYyYe3TuIqtIiOuTXVhsGau8hcrhhwSsDIQ==
 
-node-global-key-listener@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/node-global-key-listener/-/node-global-key-listener-0.1.1.tgz#2697bcb5366b963b1aac6c9d5f72759c876d35bc"
-  integrity sha512-xPuMrjVDJSMWg1VchV4ynrE3I1nCtk84NRZWRr4WiPBAeauBEvmE7bMMmvLZbS7F5Z+xdK6YIhazhervyBINLw==
-  dependencies:
-    sudo-prompt "^9.2.1"
+node-gyp-build@4.x.x:
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.5.0.tgz#7a64eefa0b21112f89f58379da128ac177f20e40"
+  integrity sha512-2iGbaQBV+ITgCz76ZEjmhUKAKVf7xfY1sRl4UiKQspfZMH2h06SyhNsnSVy50cwkFQDGLyif6m/6uFXHkOZ6rg==
 
 node-mac-permissions@2.2.1:
   version "2.2.1"
@@ -1676,11 +1674,6 @@ strip-json-comments@~2.0.1:
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-2.0.1.tgz#3c531942e908c2697c0ec344858c286c7ca0a60a"
   integrity sha1-PFMZQukIwml8DsNEhYwobHygpgo=
 
-sudo-prompt@^9.2.1:
-  version "9.2.1"
-  resolved "https://registry.yarnpkg.com/sudo-prompt/-/sudo-prompt-9.2.1.tgz#77efb84309c9ca489527a4e749f287e6bdd52afd"
-  integrity sha512-Mu7R0g4ig9TUuGSxJavny5Rv0egCEtpZRNMrZaYS1vxkiIxGiGUwoezU3LazIQ+KE04hTrTfNPgxU5gzi7F5Pw==
-
 tar@^4:
   version "4.4.19"
   resolved "https://registry.yarnpkg.com/tar/-/tar-4.4.19.tgz#2e4d7263df26f2b914dee10c825ab132123742f3"
@@ -1735,6 +1728,13 @@ tweetnacl@^0.14.3, tweetnacl@~0.14.0:
   version "0.14.5"
   resolved "https://registry.yarnpkg.com/tweetnacl/-/tweetnacl-0.14.5.tgz#5ae68177f192d4456269d108afa93ff8743f4f64"
   integrity sha1-WuaBd/GS1EViadEIr6k/+HQ/T2Q=
+
+uiohook-napi@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/uiohook-napi/-/uiohook-napi-1.5.0.tgz#6b84724dff5a95e9b636f29f9c9d2c1babe6485c"
+  integrity sha512-/bqSKDCfPxgUyFPPOqf6yTBCF4g8KjRihdpJLnQgFF0RTYVVG3w1KVCVpdDJSN5is8jqKUjjYKEiPZaYiuca9g==
+  dependencies:
+    node-gyp-build "4.x.x"
 
 universalify@^0.1.0:
   version "0.1.2"

@@ -3,16 +3,16 @@
 /* eslint-disable no-nested-ternary */
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import { proxy } from 'valtio/vanilla';
+import { proxy, subscribe } from 'valtio/vanilla';
 import { subscribeKey } from 'valtio/utils';
 import log, { LogLevel } from 'electron-log';
+import { assign, debounce } from 'lodash';
 import path from 'path';
 import os from 'os';
 import { ChildProcess } from 'child_process';
 import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
-import { debounce } from 'lodash';
 import { Script, ProcessInfo } from '@johnlindquist/kit/types/core';
 import {
   getScripts,
@@ -21,6 +21,7 @@ import {
   getPromptDb as getKitPromptDb,
   UserDb,
   AppDb,
+  getAppDb,
 } from '@johnlindquist/kit/cjs/db';
 
 import {
@@ -305,6 +306,7 @@ const initAppDb: AppDb = {
   autoUpdate: true,
   tray: true,
   appearance: 'auto',
+  authorized: false,
 };
 
 nativeTheme.addListener('updated', () => {
@@ -610,3 +612,15 @@ subs.push(
   subReady,
   subNotifyAuthFail
 );
+
+export const updateAppDb = async (settings: Partial<AppDb>) => {
+  const db = await getAppDb();
+  assign(db, settings);
+  assign(appDb, settings);
+
+  try {
+    await db.write();
+  } catch (error) {
+    log.info(error);
+  }
+};
