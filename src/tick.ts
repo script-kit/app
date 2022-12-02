@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { clipboard, NativeImage, systemPreferences } from 'electron';
+import { clipboard, NativeImage } from 'electron';
 import { Observable, Subscription } from 'rxjs';
 import {
   debounceTime,
@@ -11,17 +11,17 @@ import {
   switchMap,
   tap,
 } from 'rxjs/operators';
+import {
+  IGlobalKeyEvent,
+  IGlobalKeyDownMap,
+  IGlobalKey,
+} from 'node-global-key-listener';
 import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
 import { format } from 'date-fns';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { nanoid } from 'nanoid';
-import {
-  UiohookKeyboardEvent,
-  UiohookKey,
-  UiohookMouseEvent,
-} from 'uiohook-napi';
 import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
 import { Choice, Script } from '@johnlindquist/kit/types/core';
 import { remove } from 'lodash';
@@ -31,20 +31,6 @@ import { kitConfig, kitState, subs } from './state';
 import { isFocused } from './prompt';
 import { deleteText } from './keyboard';
 import { Trigger } from './enums';
-import { chars } from './chars';
-
-const UiohookToName = Object.fromEntries(
-  Object.entries(UiohookKey).map(([k, v]) => [v, k])
-);
-
-UiohookToName[UiohookKey.Comma] = ',';
-UiohookToName[UiohookKey.Period] = '.';
-UiohookToName[UiohookKey.Slash] = '/';
-UiohookToName[UiohookKey.Backslash] = '\\';
-UiohookToName[UiohookKey.Semicolon] = ';';
-UiohookToName[UiohookKey.Equal] = '=';
-UiohookToName[UiohookKey.Minus] = '-';
-UiohookToName[UiohookKey.Quote] = "'";
 
 const ShiftMap = {
   '`': '~',
@@ -71,11 +57,33 @@ const ShiftMap = {
 };
 type KeyCodes = keyof typeof ShiftMap;
 
-const toKey = (keycode: number, shift = false) => {
+const KeySym: {
+  [key: string]: string;
+} = {
+  EQUALS: '=',
+  MINUS: '-',
+  SQUARE_BRACKET_OPEN: '[',
+  SQUARE_BRACKET_CLOSE: ']',
+  SEMICOLON: ';',
+  QUOTE: "'",
+  BACKSLASH: '\\',
+  COMMA: ',',
+  DOT: '.',
+  FORWARD_SLASH: '/',
+};
+
+const convertKey = (key: string) => {
+  if (KeySym[key]) {
+    return KeySym[key];
+  }
+
+  return key;
+};
+
+const toKey = (char: string, shift = false) => {
   try {
-    let key: string = UiohookToName[keycode] || '';
+    let key: string = convertKey(char) || '';
     if (keymap) {
-      const char = chars[keycode];
       if (char) {
         const keymapChar = keymap?.[char];
         if (keymapChar) {
@@ -164,22 +172,26 @@ export const clearClipboardHistory = () => {
 };
 
 let prevKey = '';
-const backspace = 'backspace';
-const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
+const backspace = 'BACKSPACE';
+const space = 'SPACE';
+const enter = 'RETURN';
+
+const ioEvent = async ({
+  event,
+  isDown,
+}: {
+  event: IGlobalKeyEvent;
+  isDown: IGlobalKeyDownMap;
+}) => {
   try {
-    if ((event as UiohookMouseEvent).button) {
-      log.silly('Clicked. Clearing snippet.');
-      kitState.snippet = '';
-      return;
-    }
-
-    const e = event as UiohookKeyboardEvent;
-
-    kitState.isShiftDown = e.shiftKey;
+    kitState.isShiftDown = Boolean(
+      isDown['LEFT SHIFT'] || isDown['RIGHT SHIFT']
+    );
 
     let key = '';
+
     try {
-      key = toKey(e?.keycode || 0, e.shiftKey);
+      key = toKey(event.name || '', kitState.isShiftDown);
       log.silly(`key: ${key}`);
     } catch (error) {
       log.error(error);
@@ -187,19 +199,27 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
       return;
     }
 
-    if (key === 'Shift' || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (
+      isDown['LEFT META'] ||
+      isDown['RIGHT META'] ||
+      isDown['LEFT CTRL'] ||
+      isDown['RIGHT CTRL'] ||
+      isDown['LEFT ALT'] ||
+      isDown['RIGHT ALT']
+    )
+      return;
 
     if (key === backspace) {
       kitState.snippet = kitState.snippet.slice(0, -1);
       // 57 is the space key
-    } else if (e?.keycode === 57) {
+    } else if (key === space) {
       if (prevKey === backspace) {
         kitState.snippet = '';
       } else {
         kitState.snippet += '_';
       }
     } else if (
-      e?.keycode === 40 ||
+      key === enter ||
       kitState.isTyping ||
       key.length > 1 ||
       key === ''
@@ -242,35 +262,21 @@ export const configureInterval = async () => {
   }
 
   log.info(`Loading uiohook-napi`);
-  const { uIOhook } = await import('uiohook-napi');
-  log.info(`uiohook-napi ${uIOhook ? 'loaded' : 'failed'}`);
+  const { GlobalKeyboardListener } = await import('node-global-key-listener');
+  const v = new GlobalKeyboardListener();
+  log.info(`uiohook-napi ${v ? 'loaded' : 'failed'}`);
+
   const io$ = new Observable((observer) => {
     try {
-      log.info(`Attempting to start uiohook-napi...`);
+      log.info(`Attempting to start node-global-key-listener...`);
 
-      log.info(`Adding click listeners...`);
-      uIOhook.on('click', (event) => {
-        try {
-          observer.next(event);
-        } catch (error) {
-          log.error(error);
+      v.addListener((event, isDown) => {
+        if (event.state === 'DOWN') {
+          observer.next({ event, isDown });
         }
       });
 
-      log.info(`Adding keydown listeners...`);
-      uIOhook.on('keydown', (event) => {
-        try {
-          observer.next(event);
-        } catch (error) {
-          log.error(error);
-        }
-      });
-
-      log.info(`The line right before uIOhook.start()...`);
-      uIOhook.start();
-      log.info(`The line right after uIOhook.start()...`);
-
-      log.info(`🟢 Started keyboard and mouse watcher`);
+      log.info(`🟢 Started keyboard watcher`);
     } catch (e) {
       log.error(`🔴 Failed to start keyboard and mouse watcher`);
       log.error(e);
@@ -280,8 +286,8 @@ export const configureInterval = async () => {
 
     return () => {
       log.info(`🛑 Attempting to stop keyboard and mouse watcher`);
-      uIOhook.removeAllListeners();
-      uIOhook.stop();
+      v.kill();
+
       log.info(`🛑 Successfully stopped keyboard and mouse watcher`);
     };
   }).pipe(share());
@@ -392,6 +398,8 @@ export const configureInterval = async () => {
   pid: 812
 }
 */
+  if (!io$Sub) io$Sub = io$.subscribe(ioEvent as any);
+  return;
 
   if (!clipboard$Sub)
     clipboard$Sub = clipboardText$.subscribe(
@@ -439,8 +447,6 @@ export const configureInterval = async () => {
         }
       }
     );
-
-  if (!io$Sub) io$Sub = io$.subscribe(ioEvent as any);
 };
 
 const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
