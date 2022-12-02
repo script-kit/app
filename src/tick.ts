@@ -247,42 +247,30 @@ export const configureInterval = async () => {
   const io$ = new Observable((observer) => {
     try {
       log.info(`Attempting to start uiohook-napi...`);
-      if (systemPreferences.isTrustedAccessibilityClient(true)) {
-        log.info(`Remove listeners just in case 😅...`);
-        uIOhook.removeAllListeners();
-        log.info(`stop just in case 😅...`);
-        uIOhook.stop();
 
-        log.info(`Adding click listeners...`);
-        uIOhook.on('click', (event) => {
-          try {
-            observer.next(event);
-          } catch (error) {
-            log.error(error);
-          }
-        });
-
-        log.info(`Adding keydown listeners...`);
-        uIOhook.on('keydown', (event) => {
-          try {
-            observer.next(event);
-          } catch (error) {
-            log.error(error);
-          }
-        });
-
-        log.info(`Trust check passed`);
-        if (!kitState.uiohookRunning) {
-          log.info(`Not running. Starting...`);
-          uIOhook.start();
-          kitState.uiohookRunning = true;
-          log.info(`🟢 Started keyboard and mouse watcher`);
-        } else {
-          log.info(`Already running. Skipping...`);
+      log.info(`Adding click listeners...`);
+      uIOhook.on('click', (event) => {
+        try {
+          observer.next(event);
+        } catch (error) {
+          log.error(error);
         }
-      } else {
-        log.info(`Trust check failed`);
-      }
+      });
+
+      log.info(`Adding keydown listeners...`);
+      uIOhook.on('keydown', (event) => {
+        try {
+          observer.next(event);
+        } catch (error) {
+          log.error(error);
+        }
+      });
+
+      log.info(`The line right before uIOhook.start()...`);
+      uIOhook.start();
+      log.info(`The line right after uIOhook.start()...`);
+
+      log.info(`🟢 Started keyboard and mouse watcher`);
     } catch (e) {
       log.error(`🔴 Failed to start keyboard and mouse watcher`);
       log.error(e);
@@ -295,7 +283,6 @@ export const configureInterval = async () => {
       uIOhook.removeAllListeners();
       uIOhook.stop();
       log.info(`🛑 Successfully stopped keyboard and mouse watcher`);
-      kitState.uiohookRunning = false;
     };
   }).pipe(share());
 
@@ -492,7 +479,7 @@ const subIsTyping = subscribeKey(kitState, 'isTyping', () => {
   kitState.snippet = ``;
 });
 
-export const destroyInterval = () => {
+const destroyInterval = () => {
   try {
     if (io$Sub) io$Sub.unsubscribe();
     io$Sub = null;

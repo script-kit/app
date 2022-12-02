@@ -82,7 +82,7 @@ import {
   getPlatformExtension,
   getReleaseChannel,
 } from './assets';
-import { configureInterval, destroyInterval } from './tick';
+import { configureInterval } from './tick';
 import {
   clearPromptCache,
   createPromptWindow,
@@ -382,7 +382,6 @@ const systemEvents = () => {
     log.info(`😴 System suspending. Removing watchers.`);
     teardownWatchers();
     sleepSchedule();
-    destroyInterval();
 
     kitState.suspended = true;
     // app?.hide();
@@ -401,12 +400,6 @@ const systemEvents = () => {
           log.error(`Error checking for updates`, error);
         }
       }, 10000);
-    }
-
-    if (kitState.authorized) {
-      log.info(`💻 Accessibility authorized ✅`);
-      await configureInterval();
-      await setupLog(`Tick started`);
     }
 
     kitState.suspended = false;
@@ -452,13 +445,7 @@ const ready = async () => {
         await checkAccessibility();
         if (kitState.authorized) {
           clearInterval(id);
-          await configureInterval();
-          await setupLog(`Tick started`);
           kitState.requiresAuthorizedRestart = true;
-          kitState.status = {
-            status: 'warn',
-            message: '',
-          };
         }
       }, 5000);
     }
