@@ -108,12 +108,14 @@ export const beforePromptQuit = () => {
       title: 'dummy',
       show: false,
     });
+    log.info(`Dumnmy window created`);
     electronPanelWindow.makeKeyWindow(dummy);
+    log.info(`Dummy window made key`);
 
     if (promptWindow && !promptWindow?.isDestroyed()) {
       try {
         electronPanelWindow.makeWindow(promptWindow);
-        log.info(`Closed prompt window`);
+        log.info(`Prompt window made key`);
       } catch (error) {
         log.error(error);
       }
