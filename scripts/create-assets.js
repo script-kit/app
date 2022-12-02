@@ -93,6 +93,7 @@ let releaseResponse = await octokit.rest.repos.createRelease({
   tag_name,
   name: tag_name,
   prerelease: true,
+  draft: true,
 });
 
 let kitFiles = await readdir(kitPath());
