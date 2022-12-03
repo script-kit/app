@@ -37,7 +37,7 @@ w-max
 flex flex-row items-center
 text-sm
 border-b-2
-text-primary-dark dark:text-contrast-dark dark:text-opacity-90
+text-primary-dark dark:text-yellow dark:text-opacity-90
 border-primary-dark dark:border-primary-light
     hover:cursor-pointer
     `}

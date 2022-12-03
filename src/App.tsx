@@ -408,7 +408,10 @@ export default function App() {
         className={`
         w-screen h-screen
         min-w-screen min-h-screen
-      bg-bg-light dark:bg-bg-dark
+
+      bg-bg-dark
+      dark:bg-bg-dark
+
       transition-colors duration-200
       dark:border-white dark:border-opacity-5
       border-black border-opacity-5

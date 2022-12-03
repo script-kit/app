@@ -4,59 +4,23 @@ import { useCallback, useEffect } from 'react';
 import { appearanceAtom, darkAtom, openAtom } from '../jotai';
 
 export default () => {
-  const setDark = useSetAtom(darkAtom);
-  const appearance = useAtomValue(appearanceAtom);
-
-  const mqListener = useCallback(
-    (e: MediaQueryListEvent) => {
-      // if (e.media === 'dark') {
-      //   // set --opacity-themedark to 88%
-      //   document.documentElement.style.setProperty(
-      //     '--opacity-themedark',
-      //     '88%'
-      //   );
-      // }
-
-      // if (e.media === 'light') {
-      //   document.documentElement.style.setProperty(
-      //     '--opacity-themelight',
-      //     '88%'
-      //   );
-      // }
-
-      // if (e.media === 'auto') {
-      //   document.documentElement.style.setProperty(
-      //     '--opacity-themedark',
-      //     '66%'
-      //   );
-      //   document.documentElement.style.setProperty(
-      //     '--opacity-themelight',
-      //     '66%'
-      //   );
-      // }
-      if (e.matches) {
-        setDark(true);
-        document.documentElement.classList.add('dark');
-      } else {
-        setDark(false);
-        document.documentElement.classList.remove('dark');
-      }
-    },
-    [setDark]
-  );
+  const [isDark] = useAtom(darkAtom);
 
   useEffect(() => {
-    mqListener({
-      media: appearance,
-      matches:
-        appearance === 'dark' ||
-        (appearance === 'auto' &&
-          (window.matchMedia('(prefers-color-scheme: dark)') as MediaQueryList)
-            ?.matches),
-    } as MediaQueryListEvent);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
 
-    return () => {};
-  }, [appearance]);
+  const mqListener = useCallback((e: MediaQueryListEvent) => {
+    if (e.matches) {
+      document.documentElement.style.setProperty('--opacity-dark', '0.5');
+    } else {
+      document.documentElement.style.setProperty('--opacity-dark', '0.85');
+    }
+  }, []);
 
   useEffect(() => {
     mqListener(window.matchMedia('(prefers-color-scheme: dark)') as any);

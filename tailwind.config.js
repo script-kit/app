@@ -131,6 +131,7 @@ module.exports = {
         bg: {
           dark: colorVar('background-dark'),
           light: colorVar('background-light'),
+          yellow: colorVar('yellow'),
         },
         primary: {
           light: colorVar('primary-light'),
@@ -138,9 +139,11 @@ module.exports = {
           'light-half': colorVar('primary-light-half'),
           'dark-half': colorVar('primary-dark-half'),
         },
+        yellow: colorVar('yellow'),
         border: {
           light: colorVar('primary-light'),
           dark: colorVar('primary-dark'),
+          yellow: colorVar('yellow'),
         },
         gradient: {
           white: '#ffffffcc',

@@ -52,7 +52,7 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
               width="24"
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
-              className={`absolute z-20 h-4 -right-0.5 -top-1 text-primary-dark dark:text-primary-light
+              className={`absolute z-20 h-4 -right-0.5 -top-1 text-primary-dark dark:text-white
               opacity-90
               `}
             >
@@ -166,7 +166,7 @@ export default function KitTabs() {
 
                 {i === tabIndex && open && (
                   <motion.div
-                    className="bg-primary-dark dark:bg-contrast-light dark:bg-opacity-75 h-0.5 left-0 right-0 -bottom-px absolute transition-colors"
+                    className="bg-primary-dark dark:bg-yellow dark:bg-opacity-80 h-0.5 left-0 right-0 -bottom-px absolute transition-colors"
                     layoutDependency
                     layoutId="selectedTab"
                     transition={{ duration: 0.15 }}
@@ -174,7 +174,7 @@ export default function KitTabs() {
                 )}
 
                 <motion.div
-                  className="bg-black dark:bg-white h-0.5 left-0 right-0 -bottom-px absolute bg-opacity-20 dark:bg-opacity-40 transition-colors"
+                  className="bg-black dark:bg-yellow h-0.5 left-0 right-0 -bottom-px absolute bg-opacity-20 dark:bg-opacity-40 transition-colors"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: i === hover && i !== tabIndex ? 1 : 0 }}
                   transition={{ duration: 0.15 }}

@@ -3,7 +3,7 @@ import { getVersion } from './version';
 
 export const SPINNER = `
 <svg
-class="animate-spin h-6 w-6 text-primary-dark dark:text-primary-light"
+class="animate-spin h-6 w-6 text-primary-dark dark:text-yellow
 xmlns="http://www.w3.org/2000/svg"
 fill="none"
 viewBox="0 0 24 24"

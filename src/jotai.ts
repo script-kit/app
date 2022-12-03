@@ -357,7 +357,7 @@ const convertAtom = atom<(inverse?: boolean) => Convert>((g) => {
   };
 });
 
-export const darkAtom = atom<boolean>(false);
+export const darkAtom = atom<boolean>(true);
 
 export const logHTMLAtom = atom(
   (g) => {
@@ -947,8 +947,8 @@ const _themeAtom = atom({
   '--color-contrast-dark': '255, 255, 255',
   '--color-background-light': '255, 255, 255',
   '--color-background-dark': '0, 0, 0',
-  '--opacity-light': '0.8',
-  '--opacity-dark': '0.5',
+  '--opacity-light': '0.85',
+  '--opacity-dark': '0.85',
 });
 
 export const themeAtom = atom(

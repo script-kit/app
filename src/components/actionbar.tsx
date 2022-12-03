@@ -36,13 +36,13 @@ const bg = `
 bg-black dark:bg-white
 bg-opacity-0 dark:bg-opacity-0
 hover:bg-opacity-25 dark:hover:bg-opacity-10
-hover:invert dark:hover:invert-0
+hover:invert dark:hover:invert-0 dark:hover:text-opacity-100
 focus:bg-opacity-25 dark:focus:bg-opacity-10
 focus:invert dark:focus:invert-0
 focus:border-contrast-light dark:focus:border-contrast-dark
 `;
 
-const textContrast = `text-contrast-light text-opacity-100 dark:text-contrast-dark dark:text-opacity-80`;
+const textContrast = `text-contrast-light text-opacity-100 dark:text-yellow dark:text-opacity-90`;
 
 const transition = { duration: 0.0, ease: 'easeInOut' };
 
@@ -91,7 +91,7 @@ export function OptionsButton() {
           py-.5 px-1 mx-0.5
 
           rounded
-          bg-black dark:bg-white dark:bg-opacity-10 bg-opacity-10
+          bg-black dark:bg-primary-light dark:bg-opacity-10 bg-opacity-10
           hover:border-opacity-10 dark:hover:border-opacity-10
           "
         >
@@ -113,7 +113,7 @@ export function ActionSeparator() {
       font-mono
       leading-none
       text-sm font-medium
-      text-contrast-light dark:text-contrast-dark text-opacity-10 dark:text-opacity-25
+      text-contrast-light dark:text-yellow text-opacity-10 dark:text-opacity-25
       p-0.5
       text-center
 "
@@ -188,7 +188,7 @@ export function ActionButton(action: Action) {
   transition-all duration-200 ease-in-out
   ${
     action?.disabled
-      ? `text-contrast-light text-opacity-25 dark:text-contrast-dark dark:text-opacity-25`
+      ? `text-contrast-light text-opacity-25 dark:text-yellow dark:text-opacity-25`
       : `${bg} ${textContrast}`
   }
   `}

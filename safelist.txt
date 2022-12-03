@@ -1071,3 +1071,6 @@ dark:hover:bg-opacity-90
 dark:hover:bg-opacity-100
 dark:hover:invert-0
 dark:focus:invert-0
+dark:text-opacity-85
+dark:bg-opacity-80
+dark:shadow-yellow/15
