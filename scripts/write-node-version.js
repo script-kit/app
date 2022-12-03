@@ -6,6 +6,8 @@ const version = require('../package.json').devDependencies.electron;
 // find the electron release from the version
 const release = releases.find((r) => r.tag_name === `v${version}`);
 
+console.log({ version, release });
+
 // get the node version from the release
 const nodeVersion = release.deps.node;
 

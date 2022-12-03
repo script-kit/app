@@ -63,6 +63,7 @@ let promptWindow: GlasstronWindow;
 let electronPanelWindow: any = null;
 
 export const blurPrompt = () => {
+  log.silly(`blurPrompt`);
   if (!promptWindow?.isDestroyed()) return;
   if (promptWindow) {
     promptWindow.minimize();
@@ -1026,6 +1027,7 @@ export const setPromptData = async (promptData: PromptData) => {
 };
 
 export const setChoices = (choices: Choice[]) => {
+  log.silly(`setChoices`, { length: choices.length });
   sendToPrompt(Channel.SET_UNFILTERED_CHOICES, choices);
 };
 

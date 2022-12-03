@@ -37,6 +37,8 @@ import {
   SpawnSyncOptions,
   SpawnSyncReturns,
   ForkOptions,
+  exec,
+  execFileSync,
 } from 'child_process';
 import os, { homedir } from 'os';
 import semver from 'semver';
@@ -82,7 +84,7 @@ import {
   getPlatformExtension,
   getReleaseChannel,
 } from './assets';
-import { configureInterval } from './tick';
+import { configureInterval, destroyInterval } from './tick';
 import {
   clearPromptCache,
   createPromptWindow,
@@ -163,6 +165,7 @@ Release channel: ${releaseChannel}
 Arch: ${arch}
 Platform: ${platform}
 Node version: ${nodeVersion}
+Node path: ${execPath}
 Electron version: ${process.versions.electron}
 Electron Node version: ${process.versions.node}
 Electron Chromium version: ${process.versions.chrome}
@@ -769,7 +772,17 @@ const checkKit = async () => {
     log.info(`🔥 Starting Kit First Install`);
   }
 
-  if (!(await nodeExists())) {
+  let nodeVersionMatch = true;
+
+  if (await nodeExists()) {
+    log.info(`👍 Node Exists`);
+    // Compare nodeVersion to execPath
+    const execPathVersion = execFileSync(execPath, ['--version']);
+    log.info(`existingNode ${nodeVersion}, execPath: ${execPathVersion}`);
+    nodeVersionMatch = execPathVersion.toString().trim() === nodeVersion.trim();
+  }
+
+  if (!(await nodeExists()) || !nodeVersionMatch) {
     await setupLog(
       `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
     );
@@ -995,6 +1008,7 @@ const checkKit = async () => {
   if (!(await kenvConfigured())) {
     await setupLog(`Run .kenv setup script...`);
     await setupScript(kitPath('setup', 'setup.js'));
+
     if (isWin) {
       const npmResult = await new Promise((resolve, reject) => {
         const child = fork(

@@ -186,7 +186,9 @@ export const maybeConvertColors = (value: any) => {
 };
 
 export const formatScriptChoices = (data: Choice[]) => {
+  log.verbose('formatScriptChoices');
   const dataChoices: Script[] = (data || []) as Script[];
+  log.verbose('formatScriptChoices', { length: dataChoices.length });
   const choices = dataChoices.map((script) => {
     if (!script.description && script.name !== script.command) {
       script.description = script.command;
@@ -917,6 +919,7 @@ const kitMessageMap: ChannelHandler = {
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
   SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
+    log.silly(`SET_PROMPT_DATA`, { value });
     setPromptData(value);
     kitState.isScripts = Boolean(value?.scripts);
 
@@ -961,6 +964,7 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_CHOICES: toProcess(async ({ child }, { channel, value }) => {
+    log.silly(`SET_CHOICES`, { isScripts: kitState.isScripts });
     if (kitState.isScripts) {
       setChoices(formatScriptChoices(value));
     } else {

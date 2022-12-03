@@ -508,7 +508,7 @@ const subIsTyping = subscribeKey(kitState, 'isTyping', () => {
   kitState.snippet = ``;
 });
 
-const destroyInterval = () => {
+export const destroyInterval = () => {
   try {
     if (io$Sub) io$Sub.unsubscribe();
     io$Sub = null;
