@@ -58,7 +58,7 @@ jobs:
       - name: Install Node, NPM and Yarn
         uses: actions/setup-node@v3
         with:
-          node-version: 16.15.0
+          node-version: 16.16.0
       - name: yarn && yarn add @johnlindquist/kit
         run: |
           yarn

@@ -962,6 +962,7 @@ tracking-normal
 dark:tracking-normal
 dark:peer-focus:text-primary-light
 cursor-pointer
+dark:cursor-pointer
 break-all
 break-words
 border-t-2
@@ -1066,3 +1067,7 @@ self-end
 self-center
 self-stretch
 self-baseline
+dark:hover:bg-opacity-90
+dark:hover:bg-opacity-100
+dark:hover:invert-0
+dark:focus:invert-0

@@ -1120,7 +1120,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     mainLog.info(`😬 startPromptQuit`);
     if (kitState.isMac) {
       mainLog.info(`😬 beforePromptQuit`);
-      beforePromptQuit();
+      await beforePromptQuit();
       mainLog.info(`😬 afterPromptQuit`);
       // wait 250ms
       await new Promise((resolve) => setTimeout(resolve, 250));

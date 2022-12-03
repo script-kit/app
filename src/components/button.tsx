@@ -21,7 +21,7 @@ import {
   isMouseDownAtom,
   _modifiers,
 } from '../jotai';
-import { ReactComponent as MoreThanIcon } from '../svg/ui/icons8-more-than.svg';
+
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
 import { AppChannel } from '../enums';
 
@@ -229,7 +229,7 @@ export default function ChoiceButton({
                 {highlight(
                   choice.name,
                   scoredChoice?.matches?.name,
-                  'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-5 text-primary-dark dark:text-primary-light transition-colors'
+                  'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-5 text-primary-dark dark:text-contrast-dark dark:text-opacity-75 transition-colors'
                 )}
               </div>
               {/* Description */}
@@ -239,7 +239,7 @@ export default function ChoiceButton({
                 <div
                   className={`text-xs truncate transition-opacity ease-in-out duration-200 pb-1 ${
                     index === currentIndex
-                      ? `opacity-100 dark:text-primary-light text-primary-dark`
+                      ? `opacity-100 dark:opacity-75 dark:text-opacity-75 dark:text-contrast-dark text-primary-dark`
                       : `opacity-60`
                   }
 
@@ -251,7 +251,7 @@ export default function ChoiceButton({
                     : highlight(
                         choice?.description || '',
                         scoredChoice?.matches?.description,
-                        'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-15 text-primary-dark dark:text-primary-light transition-colors'
+                        'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-15 text-primary-dark dark:text-contrast-dark dark:text-opacity-75 transition-colors'
                       )}
                 </div>
               )}
@@ -301,7 +301,7 @@ export default function ChoiceButton({
                     {highlight(
                       choice.friendlyShortcut,
                       scoredChoice?.matches?.friendlyShortcut,
-                      'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light text-opacity-100'
+                      'bg-white bg-opacity-0 text-primary-dark dark:text-contrast-dark dark:text-opacity-75 text-opacity-100'
                     )}
                   </div>
                 )}
@@ -315,7 +315,7 @@ export default function ChoiceButton({
                     {highlight(
                       choice.kenv,
                       scoredChoice?.matches?.kenv,
-                      'bg-white bg-opacity-0 text-primary-dark dark:text-primary-light'
+                      'bg-white bg-opacity-0 text-primary-dark dark:text-contrast-dark dark:text-opacity-75'
                     )}
                   </div>
                 )}

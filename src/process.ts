@@ -186,9 +186,8 @@ export const maybeConvertColors = (value: any) => {
 };
 
 export const formatScriptChoices = (data: Choice[]) => {
-  log.verbose('formatScriptChoices');
   const dataChoices: Script[] = (data || []) as Script[];
-  log.verbose('formatScriptChoices', { length: dataChoices.length });
+  log.verbose('formatScriptChoices', { length: dataChoices?.length || 0 });
   const choices = dataChoices.map((script) => {
     if (!script.description && script.name !== script.command) {
       script.description = script.command;

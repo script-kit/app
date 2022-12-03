@@ -166,7 +166,7 @@ export default function KitTabs() {
 
                 {i === tabIndex && open && (
                   <motion.div
-                    className="bg-primary-dark dark:bg-primary-light h-0.5 left-0 right-0 -bottom-px absolute transition-colors"
+                    className="bg-primary-dark dark:bg-contrast-light dark:bg-opacity-75 h-0.5 left-0 right-0 -bottom-px absolute transition-colors"
                     layoutDependency
                     layoutId="selectedTab"
                     transition={{ duration: 0.15 }}

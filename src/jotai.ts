@@ -941,14 +941,14 @@ const promptData = atom<null | PromptData>(null);
 const _themeAtom = atom({
   '--color-white': '255, 255, 255',
   '--color-black': '0, 0, 0',
-  '--color-primary-light': '251, 191, 36',
+  '--color-primary-light': '56, 56, 56',
   '--color-primary-dark': '79, 70, 229',
   '--color-contrast-light': '255, 255, 255',
-  '--color-contrast-dark': '0, 0, 0',
+  '--color-contrast-dark': '255, 255, 255',
   '--color-background-light': '255, 255, 255',
   '--color-background-dark': '0, 0, 0',
   '--opacity-light': '0.8',
-  '--opacity-dark': '0.7',
+  '--opacity-dark': '0.5',
 });
 
 export const themeAtom = atom(

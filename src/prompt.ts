@@ -96,7 +96,7 @@ export const forceHide = () => {
   }
 };
 
-export const beforePromptQuit = () => {
+export const beforePromptQuit = async () => {
   log.info('Before prompt quit');
   if (promptWindow && !promptWindow?.isDestroyed()) promptWindow?.hide();
 
@@ -105,18 +105,22 @@ export const beforePromptQuit = () => {
   if (kitState.isMac) {
     log.info(`Removing panel window`);
     promptWindow?.hide();
+    // wait for one tick
+
+    log.info(`Dumnmy window created`);
     const dummy = new BrowserWindow({
       title: 'dummy',
       show: false,
     });
-    log.info(`Dumnmy window created`);
-    electronPanelWindow.makeKeyWindow(dummy);
-    log.info(`Dummy window made key`);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     if (promptWindow && !promptWindow?.isDestroyed()) {
       try {
+        electronPanelWindow.makeKeyWindow(dummy);
+        log.info(`Dumnmy makeKeyWindow complete`);
         electronPanelWindow.makeWindow(promptWindow);
-        log.info(`Prompt window made key`);
+        log.info(`Prompt makeWindow complete`);
       } catch (error) {
         log.error(error);
       }
@@ -1027,7 +1031,7 @@ export const setPromptData = async (promptData: PromptData) => {
 };
 
 export const setChoices = (choices: Choice[]) => {
-  log.silly(`setChoices`, { length: choices.length });
+  log.silly(`setChoices`, { length: choices?.length || 0 });
   sendToPrompt(Channel.SET_UNFILTERED_CHOICES, choices);
 };
 

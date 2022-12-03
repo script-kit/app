@@ -4635,14 +4635,14 @@ caniuse-api@^3.0.0:
     lodash.uniq "^4.5.0"
 
 caniuse-db@^1.0.30001090:
-  version "1.0.30001435"
-  resolved "https://registry.yarnpkg.com/caniuse-db/-/caniuse-db-1.0.30001435.tgz#66735b0d0328a3f3553de8a68f31092f69b607cf"
-  integrity sha512-smsMDvw7O77c7DsfRfyTt3z/XnQTzTsQB74vLlwJKxGq0ISqHrL2XioCxZkYiCjSWQKBqOZI1CpB8aokVsHmQw==
+  version "1.0.30001436"
+  resolved "https://registry.yarnpkg.com/caniuse-db/-/caniuse-db-1.0.30001436.tgz#0bed720b4252fc35a8051d40590611b22739d06a"
+  integrity sha512-Su//K/Gv8RpgXWwbh8jM2w6GsGccvojwFJ0FNEdRARowtFngnRK86E8keFN5JZobYQti00JWGAoRHS75PcQH2g==
 
 caniuse-lite@^1.0.0, caniuse-lite@^1.0.30001272, caniuse-lite@^1.0.30001400:
-  version "1.0.30001435"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001435.tgz#502c93dbd2f493bee73a408fe98e98fb1dad10b2"
-  integrity sha512-kdCkUTjR+v4YAJelyiDTqiu82BDr4W4CP5sgTA0ZBmqn30XfS2ZghPLMowik9TPhS+psWJiUNxsqLyurDbmutA==
+  version "1.0.30001436"
+  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001436.tgz#22d7cbdbbbb60cdc4ca1030ccd6dea9f5de4848b"
+  integrity sha512-ZmWkKsnC2ifEPoWUvSAIGyOYwT+keAaaWPHiQ9DfMqS1t6tfuyFYoWR78TeZtznkEQ64+vGXH9cZrElwR2Mrxg==
 
 capture-exit@^2.0.0:
   version "2.0.0"
@@ -6735,10 +6735,10 @@ electron-util@^0.17.2:
     electron-is-dev "^1.1.0"
     new-github-issue-url "^0.2.1"
 
-electron@20.3.6:
-  version "20.3.6"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-20.3.6.tgz#d7818528c3fd37978e449ca30be224f626188d07"
-  integrity sha512-Ig0v38KIDrjO/KWR12IzoHfS3Jq95FB46weXq74eLFW/pug/m0CngjHpBjITKm6eXleL5V6rAXm6zM4ahyc1JQ==
+electron@21.1.1:
+  version "21.1.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-21.1.1.tgz#3ee427e31cccafbce45bebd32f2a8eba9e3399ca"
+  integrity sha512-EM2hvRJtiS3n54yx25Z0Qv54t3LGG+WjUHf1AOl+PKjQj+fmXnjIgVeIF9pM21kP1BTcyjrgvN6Sff0A45OB6A==
   dependencies:
     "@electron/get" "^1.14.1"
     "@types/node" "^16.11.26"

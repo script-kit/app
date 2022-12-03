@@ -1724,7 +1724,7 @@ tweetnacl@^0.14.3, tweetnacl@~0.14.0:
   resolved "https://registry.yarnpkg.com/tweetnacl/-/tweetnacl-0.14.5.tgz#5ae68177f192d4456269d108afa93ff8743f4f64"
   integrity sha512-KXXFFdAbFXY4geFIwoyNK+f5Z1b7swfXABfL7HXCmoIWMKU3dmS26672A4EeQtDzLKy7SXmfBu51JolvEKwtGA==
 
-uiohook-napi@^1.5.0:
+uiohook-napi@1.5.0:
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/uiohook-napi/-/uiohook-napi-1.5.0.tgz#6b84724dff5a95e9b636f29f9c9d2c1babe6485c"
   integrity sha512-/bqSKDCfPxgUyFPPOqf6yTBCF4g8KjRihdpJLnQgFF0RTYVVG3w1KVCVpdDJSN5is8jqKUjjYKEiPZaYiuca9g==

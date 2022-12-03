@@ -35,12 +35,14 @@ type Action = {
 const bg = `
 bg-black dark:bg-white
 bg-opacity-0 dark:bg-opacity-0
-hover:bg-opacity-25 dark:hover:bg-opacity-25
-hover:invert dark:hover:invert
-focus:bg-opacity-25 dark:focus:bg-opacity-25
-focus:invert dark:focus:invert
+hover:bg-opacity-25 dark:hover:bg-opacity-10
+hover:invert dark:hover:invert-0
+focus:bg-opacity-25 dark:focus:bg-opacity-10
+focus:invert dark:focus:invert-0
 focus:border-contrast-light dark:focus:border-contrast-dark
 `;
+
+const textContrast = `text-contrast-light text-opacity-100 dark:text-contrast-dark dark:text-opacity-80`;
 
 const transition = { duration: 0.0, ease: 'easeInOut' };
 
@@ -73,7 +75,7 @@ export function OptionsButton() {
   outline-none py-0.5 px-1
   font-medium
   text-sm
-  text-contrast-light dark:text-contrast-dark
+  text-contrast-light ${textContrast}
 
   ${bg}
 
@@ -184,8 +186,11 @@ export function ActionButton(action: Action) {
 
   h-full
   transition-all duration-200 ease-in-out
-  text-contrast-light dark:text-contrast-dark
-  ${action?.disabled ? `text-opacity-25 dark:text-opacity-25` : bg}
+  ${
+    action?.disabled
+      ? `text-contrast-light text-opacity-25 dark:text-contrast-dark dark:text-opacity-25`
+      : `${bg} ${textContrast}`
+  }
   `}
       onClick={onClick}
     >
@@ -207,7 +212,7 @@ export function ActionButton(action: Action) {
           leading-none
 
           rounded
-          bg-black dark:bg-white dark:bg-opacity-10 bg-opacity-10
+          bg-black dark:bg-primary-light dark:bg-opacity-10 bg-opacity-10
           hover:border-opacity-10 dark:hover:border-opacity-10
           `}
             >
@@ -250,7 +255,7 @@ const IconButton = () => {
       -ml-1 mb-0.5
       rounded
       min-w-fit
-      text-contrast-light dark:text-contrast-dark
+      text-contrast-light ${textContrast}
 
       ${bg}
 
@@ -369,14 +374,14 @@ export default function ActionBar() {
           initial={{ opacity: 0 }}
           animate={{ opacity: [0, 1] }}
           transition={transition}
-          className="flex flex-1 max-h-full h-full
+          className={`flex flex-1 max-h-full h-full
         px-2
         items-center justify-left
 text-sm font-medium
-text-contrast-light dark:text-contrast-dark
-text-opacity-75 dark:text-opacity-75
+text-contrast-light ${textContrast}
+text-opacity-75
 truncate
-      "
+      `}
         >
           <div
             className="truncate min-w-0 pb-px"
