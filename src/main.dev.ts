@@ -440,12 +440,6 @@ const ready = async () => {
 
     const isMac = os.platform() === 'darwin';
 
-    if (kitState.authorized && appDb?.authorized) {
-      log.info(`💻 Accessibility authorized ✅`);
-      await configureInterval();
-      await setupLog(`Tick started`);
-    }
-
     await setupLog(``);
     setupDone();
 
@@ -463,6 +457,19 @@ const ready = async () => {
     });
 
     systemEvents();
+
+    if (!isMac) {
+      configureInterval();
+    } else {
+      setTimeout(() => {
+        if (kitState.authorized && appDb?.authorized) {
+          log.info(
+            `💻 Accessibility authorized ✅. Starting key and clipboard watchers...`
+          );
+          configureInterval();
+        }
+      }, 10000);
+    }
 
     log.info(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {

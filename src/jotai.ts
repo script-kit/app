@@ -1160,7 +1160,7 @@ export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
 });
 
 export const onPasteAtom = atom((g) => (event: any) => {
-  event.preventDefault();
+  if (g(uiAtom) === UI.editor) event.preventDefault();
   const channel = g(channelAtom);
   channel(Channel.ON_PASTE);
 });
@@ -1745,3 +1745,4 @@ export const editorThemeAtom = atom<{ foreground: string; background: string }>(
 );
 
 export const isSponsorAtom = atom(false);
+export const isDefaultTheme = atom(true);

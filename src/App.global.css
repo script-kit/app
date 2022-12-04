@@ -352,7 +352,7 @@ body {
   }
 
   .prose kbd {
-    @apply text-primary-dark dark:text-primary-light;
+    @apply text-primary-dark dark:text-yellow;
     @apply text-sm font-mono font-bold;
   }
 
@@ -506,7 +506,7 @@ ul {
 
 .prose > kbd {
   /* Styles for keyboard shortcut */
-  @apply text-primary-dark dark:text-primary-light;
+  @apply text-primary-dark dark:text-yellow;
   @apply text-sm font-mono font-bold;
   @apply dark:bg-white bg-black bg-opacity-10 dark:bg-opacity-10;
   @apply rounded;

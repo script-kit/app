@@ -245,6 +245,10 @@ export const setTheme = async (value: any, check = true) => {
     if (!kitState.isSponsor) return;
   }
 
+  const isDark = Object.values(value || {}).length === 0;
+  log.info({ isDark });
+  sendToPrompt(Channel.SET_DARK, isDark);
+
   maybeConvertColors(value);
 
   assign(kitState.theme, value);

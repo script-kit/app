@@ -1,18 +1,18 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useAtom } from 'jotai';
 import { useCallback, useEffect } from 'react';
-import { appearanceAtom, darkAtom, openAtom } from '../jotai';
+import { isDefaultTheme } from '../jotai';
 
 export default () => {
-  const [isDark] = useAtom(darkAtom);
+  const [isDefault] = useAtom(isDefaultTheme);
 
   useEffect(() => {
-    if (isDark) {
+    if (isDefault) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [isDark]);
+  }, [isDefault]);
 
   const mqListener = useCallback((e: MediaQueryListEvent) => {
     if (e.matches) {
