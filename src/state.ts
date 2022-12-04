@@ -198,6 +198,8 @@ export const checkAccessibility = () =>
     }
   });
 
+const isMac = os.platform() === 'darwin';
+
 const initState = {
   debugging: false,
   isPanel: false,
@@ -219,7 +221,7 @@ const initState = {
   snippet: ``,
   socketURL: '',
   isShiftDown: false,
-  isMac: os.platform() === 'darwin',
+  isMac,
   isWindows: os.platform() === 'win32',
   isLinux: os.platform() === 'linux',
   // transparencyEnabled: checkTransparencyEnabled(),
@@ -297,6 +299,7 @@ const initState = {
     '--opacity-dark': '0.75',
   },
   appearance: 'auto' as 'auto' | 'light' | 'dark',
+  watcherEnabled: !isMac,
 };
 
 const initAppDb: AppDb = {

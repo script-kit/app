@@ -265,9 +265,12 @@ export const openMenu = async (event?: KeyboardEvent) => {
     });
 
     experimentalSubmenu.push({
-      label: 'Start Snippet/Clipboard Watcher',
+      label: `${
+        kitState.watcherEnabled ? 'Stop' : 'Start'
+      } Snippet/Clipboard Watcher`,
+      checked: kitState.watcherEnabled,
       click: () => {
-        emitter.emit(KitEvent.RestartKeyWatcher);
+        kitState.watcherEnabled = !kitState.watcherEnabled;
       },
     });
 

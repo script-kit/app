@@ -297,6 +297,7 @@ export const configureInterval = async () => {
 
       log.info(`The line right before uIOhook.start()...`);
       uIOhook.start();
+      kitState.watcherEnabled = true;
       log.info(`The line right after uIOhook.start()...`);
 
       log.info(`🟢 Started keyboard and mouse watcher`);
@@ -311,6 +312,7 @@ export const configureInterval = async () => {
       log.info(`🛑 Attempting to stop keyboard and mouse watcher`);
       uIOhook.removeAllListeners();
       uIOhook.stop();
+      kitState.watcherEnabled = false;
       log.info(`🛑 Successfully stopped keyboard and mouse watcher`);
     };
   }).pipe(share());
@@ -566,19 +568,27 @@ export const removeSnippet = (filePath: string) => {
   }
 };
 
-subs.push(subSnippet, subIsTyping);
+let prevWatcherEnabled = kitState.watcherEnabled;
+const watcherEnabledSub = subscribeKey(
+  kitState,
+  'watcherEnabled',
+  async (watcherEnabled) => {
+    if (watcherEnabled === prevWatcherEnabled) return;
 
-emitter.on(KitEvent.RestartKeyWatcher, async () => {
-  try {
-    destroyInterval();
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    if (kitState.authorized) {
-      log.info('📕 Authorized. Starting key watcher...');
-      preStartConfigureInterval();
+    if (watcherEnabled) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (kitState.authorized) {
+        log.info('📕 Authorized. Starting key watcher...');
+        preStartConfigureInterval();
+      } else {
+        log.info('📕 Not authorized, not starting key watcher');
+      }
     } else {
-      log.info('📕 Not authorized, not starting key watcher');
+      destroyInterval();
     }
-  } catch (error) {
-    log.warn(error);
+
+    prevWatcherEnabled = watcherEnabled;
   }
-});
+);
+
+subs.push(subSnippet, subIsTyping, watcherEnabledSub);
