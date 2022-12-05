@@ -8,23 +8,14 @@
 /* .hljs {
   background: rgba(0, 0, 0, 0.2);
 } */ /* FBBF24 */ /* 4F46E5 */
-/* --color-primary-dark: 79, 70, 229; indigo*/
+/* --color-primary: 79, 70, 229; indigo*/
 :root {
-  --color-white: 255, 255, 255;
-  --color-black: 0, 0, 0;
-  --color-primary-light: 251, 191, 36;
-  --color-primary-light-half: 251, 191, 36, 0.75;
-  --color-yellow: 251, 191, 36;
-  /* --color-secondary-light: 232, 113, 39; */
-  --color-primary-dark: 79, 70, 229;
-  --color-primary-dark-half: 79, 70, 229, 0.75;
-  /* --color-secondary-dark: 0, 0, 0; */
-  --color-background-dark: 0, 0, 0;
-  --color-background-light: 255, 255, 255;
-  --color-contrast-dark: 0, 0, 0;
-  --color-contrast-light: 255, 255, 255;
-  --opacity-light: 0.85;
-  --opacity-dark: 0.85;
+  --color-text: 255, 255, 255;
+  --color-primary: 251, 191, 36;
+  --color-secondary: 52, 52, 52;
+  --color-contrast: 251, 191, 36;
+  --color-background: 0, 0, 0;
+  --opacity: 0.85;
   --mono-font: JetBrains Mono;
   --sans-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
@@ -56,7 +47,7 @@ html {
 }
 
 body {
-  @apply text-black dark:text-white;
+  @apply text-text-base dark:text-white;
   @apply subpixel-antialiased;
   @apply overflow-hidden;
   @apply h-screen min-h-screen;
@@ -325,11 +316,11 @@ body {
   }
 
   .prose table thead {
-    @apply text-base dark:text-base;
+    @apply text-base;
   }
 
   .prose > blockquote {
-    background: hsla(0, 0%, 40%, 0.1);
+    @apply bg-text-base bg-opacity-5;
   }
   .prose > blockquote > p {
     margin: 0;
@@ -352,7 +343,7 @@ body {
   }
 
   .prose kbd {
-    @apply text-primary-dark dark:text-yellow;
+    @apply text-base;
     @apply text-sm font-mono font-bold;
   }
 
@@ -361,7 +352,7 @@ body {
   }
 
   .kit-form * {
-    @apply text-black bg-white bg-opacity-0 dark:bg-black dark:text-white dark:bg-opacity-0;
+    @apply text-text-base bg-white bg-opacity-0 dark:bg-black dark:text-white dark:bg-opacity-0;
   }
 
   .loading::placeholder {
@@ -439,7 +430,7 @@ code.hljs {
   @apply block;
   @apply py-4 pl-4 pr-4;
   @apply leading-snug;
-  @apply bg-primary-dark dark:bg-white dark:bg-opacity-5 bg-opacity-5;
+  @apply bg-text-base bg-opacity-5;
   @apply border border-black border-opacity-10 dark:border-white dark:border-opacity-10;
   @apply rounded;
   @apply my-4;
@@ -457,13 +448,13 @@ code.hljs {
   transform: translateX(0);
 }
 .hljs-copy-button {
-  @apply text-black dark:text-white text-opacity-25 dark:text-opacity-25;
+  @apply text-text-base dark:text-white text-opacity-25 dark:text-opacity-25;
   @apply w-5 h-5 mt-0.5 top-5 right-1;
   position: absolute;
 }
 
 .hljs-copy-button:hover {
-  @apply text-black dark:text-white text-opacity-50 dark:text-opacity-50;
+  @apply text-text-base dark:text-white text-opacity-50 dark:text-opacity-50;
 }
 
 .dark .prose > pre,
@@ -486,7 +477,7 @@ code.hljs {
 .hljs-copy-checked::after {
   content: '✓';
   @apply absolute;
-  @apply text-black dark:text-white text-opacity-50 dark:text-opacity-50;
+  @apply text-text-base dark:text-white text-opacity-50 dark:text-opacity-50;
   @apply top-1 right-2;
   @apply text-xs;
 }
@@ -506,7 +497,7 @@ ul {
 
 .prose > kbd {
   /* Styles for keyboard shortcut */
-  @apply text-primary-dark dark:text-yellow;
+  @apply text-base;
   @apply text-sm font-mono font-bold;
   @apply dark:bg-white bg-black bg-opacity-10 dark:bg-opacity-10;
   @apply rounded;

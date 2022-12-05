@@ -168,13 +168,8 @@ export default function ChoiceButton({
 
       ${
         index === currentIndex
-          ? `bg-black bg-opacity-[0.05]
-          dark:bg-white dark:bg-opacity-5
-            ${
-              mouseEnabled
-                ? `active:bg-opacity-10 active:dark:bg-opacity-10`
-                : ``
-            }
+          ? `bg-secondary bg-opacity-50
+            ${mouseEnabled ? `active:bg-opacity-10 ` : ``}
             `
           : ``
       } ${overrideTailwindClasses(`
@@ -188,8 +183,10 @@ export default function ChoiceButton({
         px-4
         justify-between
         items-center
+        outline-none
         focus:outline-none
-        transition-shadow ease-in-out duration-200
+        transition-colors
+        ease-in-out duration-200
         ${choice?.className}
         ${index === currentIndex ? `opacity-100` : `opacity-90`}
       `)}`}
@@ -229,7 +226,7 @@ export default function ChoiceButton({
                 {highlight(
                   choice.name,
                   scoredChoice?.matches?.name,
-                  'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-5 text-primary-dark dark:text-yellow dark:text-opacity-90 transition-colors'
+                  'bg-primary dark:bg-primary dark:bg-opacity-15 bg-opacity-5 text-primary dark:text-base dark:text-opacity-90 transition-colors'
                 )}
               </div>
               {/* Description */}
@@ -239,7 +236,7 @@ export default function ChoiceButton({
                 <div
                   className={`text-xs truncate transition-opacity ease-in-out duration-200 pb-1 ${
                     index === currentIndex
-                      ? `opacity-100 dark:opacity-100 dark:text-yellow dark:text-opacity-85 text-primary-dark`
+                      ? `opacity-100 dark:opacity-100 dark:text-base dark:text-opacity-85 text-primary`
                       : `opacity-60`
                   }
 
@@ -251,7 +248,7 @@ export default function ChoiceButton({
                     : highlight(
                         choice?.description || '',
                         scoredChoice?.matches?.description,
-                        'bg-primary-dark dark:bg-primary-light dark:bg-opacity-15 bg-opacity-15 text-primary-dark dark:text-yellow dark:text-opacity-75 transition-colors'
+                        'bg-primary dark:bg-primary dark:bg-opacity-15 bg-opacity-15 text-primary dark:text-base dark:text-opacity-75 transition-colors'
                       )}
                 </div>
               )}
@@ -279,7 +276,7 @@ export default function ChoiceButton({
                     transition={{ duration: 0.1 }}
                     alt="icon"
                     className={`
-    border-2 border-black dark:border-white border-opacity-50
+    border-2 border-bg-base border-opacity-50
     rounded-full
     h-6 mx-1
     `}
@@ -301,7 +298,7 @@ export default function ChoiceButton({
                     {highlight(
                       choice.friendlyShortcut,
                       scoredChoice?.matches?.friendlyShortcut,
-                      'bg-white bg-opacity-0 text-primary-dark dark:text-yellow dark:text-opacity-75 text-opacity-100'
+                      'bg-text-base bg-opacity-0 text-primary text-opacity-100'
                     )}
                   </div>
                 )}
@@ -315,7 +312,7 @@ export default function ChoiceButton({
                     {highlight(
                       choice.kenv,
                       scoredChoice?.matches?.kenv,
-                      'bg-white bg-opacity-0 text-primary-dark dark:text-yellow dark:text-opacity-75'
+                      'bg-text-base bg-opacity-0 text-primary'
                     )}
                   </div>
                 )}
@@ -332,7 +329,7 @@ export default function ChoiceButton({
         fill-current
         transition ease-in
         opacity-50
-        dark:text-white text-black
+        text-text-base
 
         `}
                   viewBox="0 0 32 32"
@@ -370,18 +367,18 @@ export default function ChoiceButton({
                     font-bold
                     rounded
 
-                    bg-white dark:bg-white
-                    hover:bg-white dark:hover:bg-white
-                    bg-opacity-10 dark:bg-opacity-10
-                    hover:bg-opacity-25 dark:hover:bg-opacity-25
+                    text-primary
+                    opacity-75
+                    bg-text-base
+                    bg-opacity-10
+                    hover:bg-opacity-20
+
  ml-2
         w-6 h-6
         leading-1
         fill-current
         transition ease-in
-        opacity-50
-        text-black dark:text-white
-        hover:text-white dark:hover:text-primary-light
+
 
         `}
                   >

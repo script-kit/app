@@ -171,10 +171,9 @@ export default function Input() {
         disabled={submitted}
         autoFocus
         className={`
-      bg-transparent w-full text-black dark:text-white focus:outline-none outline-none
+      bg-transparent w-full text-text-base focus:outline-none outline-none
       text-2xl
-      dark:placeholder-white dark:placeholder-opacity-25
-      placeholder-black placeholder-opacity-40
+      placeholder-text-base placeholder-opacity-25
       tracking-normal dark:tracking-normal
       placeholder:tracking-normal dark:placeholder:tracking-normal
       h-14

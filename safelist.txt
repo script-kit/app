@@ -751,7 +751,7 @@ text-sm
 text-xs
 dark:hover:bg-gray-800
 hover:bg-gray-100
-bg-yellow-500
+bg-default-500
 tracking-wide
 overflow-hidden
 overflow-y-hidden
@@ -764,8 +764,8 @@ hover:bg-opacity-5
 dark:hover:bg-opacity-5
 bg-teal-500
 border
-border-yellow-500
-text-yellow-500
+border-default-500
+text-base-500
 static
 fixed
 absolute
@@ -777,17 +777,17 @@ pointer-events-none
 bg-opacity-[0.05]
 flex-1
 border-b
-focus:text-primary-dark
-dark:focus:text-primary-light
+focus:text-primary
+dark:focus:text-primary
 focus:font-bold
-focus:text-primary-dark
-peer-focus:text-primary-dark
-peer-focus:dark:text-primary-light
+focus:text-primary
+peer-focus:text-primary
+peer-focus:dark:text-primary
 peer-focus:font-bold
-peer-focus:text-primary-dark
+peer-focus:text-primary
 peer
-peer-focus:text-primary-light
-peer-focus:dark:text-primary-dark
+peer-focus:text-primary
+peer-focus:dark:text-primary
 underline
 focus:underline
 underline-offset-1
@@ -795,8 +795,8 @@ underline-offset-2
 underline-offset-4
 underline-offset-8
 dark:border-opacity-15
-hover:text-primary-dark
-dark:hover:text-primary-light
+hover:text-primary
+dark:hover:text-primary
 hover:underline
 dark:hover:underline
 placeholder-opacity-40
@@ -917,37 +917,37 @@ object-scale-down
 box-border
 box-content
 bg-gradient-to-b
-from-bg-primary-dark
-from-bg-primary-light
+from-bg-primary
+from-bg-primary
 to-transparent
 dark:to-transparent
 bg-gradient-to-b
 dark:bg-gradient-to-b
-dark:from-primary-light
-dark:from-primary-light
-dark:via-primary-light
-from-bg-primary-light
+dark:from-primary
+dark:from-primary
+dark:via-primary
+from-bg-primary
 from-white
 dark:from-white
 to-black
 dark:to-black
 from-transparent
 dark:from-transparent
-via-primary-dark
-dark:via-primary-light
+via-primary
+dark:via-primary
 to-transparent
 dark:to-transparent
 bg-gradient-to-r
 dark:bg-gradient-to-r
-dark:via--primary-light
-dark:from--primary-light
-dark:from-primary-light
-via-primary-dark
+dark:via--primary
+dark:from--primary
+dark:from-primary
+via-primary
 via-black
 via-white
 via-transparent
-via-primary-dark-half
-dark:via-primary-light-half
+via-primary-half
+dark:via-primary-half
 transition-colors
 transition-all
 duration-300
@@ -960,7 +960,7 @@ placeholder:tracking-normal
 dark:placeholder:tracking-normal
 tracking-normal
 dark:tracking-normal
-dark:peer-focus:text-primary-light
+dark:peer-focus:text-primary
 cursor-pointer
 dark:cursor-pointer
 break-all
@@ -968,8 +968,7 @@ break-words
 border-t-2
 border-t-4
 border-white
-border-light
-border-dark
+border-primary
 rounded
 rounded-md
 rounded-lg
@@ -977,10 +976,9 @@ hover:opacity-100
 dark:hover:opacity-100
 bg-opacity-20
 dark:bg-opacity-20
-text-contrast-light
-text-contrast-dark
-dark:text-contrast-light
-dark:text-contrast-dark
+text-contrast
+dark:text-contrast
+dark:text-contrast
 hover:bg-opacity-15
 dark:hover:bg-opacity-15
 
@@ -998,13 +996,13 @@ hover:shadow-inner
 dark:hover:shadow-inner
 hover:shadow-current
 hover:shadow-sm
-bg-contrast-dark dark:bg-contrast-light
+bg-contrast dark:bg-contrast
 bg-opacity-0
 dark:bg-opacity-0
 hover:bg-opacity-10
 dark:hover:bg-opacity-20
 dark:hover:bg-opacity-100
-bg-primary-dark dark:bg-primary-light
+bg-primary dark:bg-primary
 hover:invert dark:hover:invert
 hover:bg-opacity-25 dark:hover:bg-opacity-25
 pb-4px
@@ -1013,15 +1011,15 @@ border-opacity-25
 border-r-2
 bg-gray
 bg-opacity-50
-focus:text-contrast-light
-dark:focus:text-contrast-dark
+focus:text-contrast
+dark:focus:text-contrast
 bg-black dark:bg-white
 bg-opacity-0 dark:bg-opacity-0
 hover:bg-opacity-25 dark:hover:bg-opacity-25
 hover:invert dark:hover:invert
 focus:bg-opacity-25 dark:focus:bg-opacity-25
 focus:invert dark:focus:invert
-focus:border-contrast-light dark:focus:border-contrast-dark
+focus:border-contrast dark:focus:border-contrast
 text-opacity-10
 dark:text-opacity-10
 text-opacity-25
@@ -1043,10 +1041,10 @@ shadow-white
 dark:hover:contrast-75
 brightness-50
 dark:brightness-50
-shadow-primary-dark/5
-dark:shadow-primary-light/5
-shadow-primary-dark/25
-dark:shadow-primary-light/25
+shadow-primary/5
+dark:shadow-primary/5
+shadow-primary/25
+dark:shadow-primary/25
 list-inside
 transition-colors
 dark:transition-colors
@@ -1073,4 +1071,22 @@ dark:hover:invert-0
 dark:focus:invert-0
 dark:text-opacity-85
 dark:bg-opacity-80
-dark:shadow-yellow/15
+dark:shadow-default/15
+bg-base
+placeholder-text-opacity-25
+border-opacity-10
+border-secondary
+bg-secondary
+bg-opacity-25
+hover:bg-opacity-100
+focus:bg-opacity-100
+focus:border-secondary
+hover:bg-opacity-50
+focus:bg-opacity-50
+focus:border-secondary
+hover:bg-opacity-50
+focus:bg-opacity-50
+border-opacity-90
+border-opacity-0
+outline-none
+hover:bg-opacity-20

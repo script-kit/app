@@ -3,7 +3,7 @@ import { getVersion } from './version';
 
 export const SPINNER = `
 <svg
-class="animate-spin h-6 w-6 text-primary-dark dark:text-yellow
+class="animate-spin h-6 w-6 text-primary dark:text-base
 xmlns="http://www.w3.org/2000/svg"
 fill="none"
 viewBox="0 0 24 24"
@@ -43,6 +43,6 @@ export const showError = (error: Error, mainLog: string) => `
 
 <h2>Error: ${error.message}</h2>
 
-<textarea class="font-mono w-full h-full text-xs text-black">${mainLog}</textarea>
+<textarea class="font-mono w-full h-full text-xs text-text-base">${mainLog}</textarea>
 </body>
 `;

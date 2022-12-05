@@ -938,18 +938,32 @@ export const itemHeightAtom = atom(BUTTON_HEIGHT);
 
 const promptData = atom<null | PromptData>(null);
 
-const _themeAtom = atom({
-  '--color-white': '255, 255, 255',
-  '--color-black': '0, 0, 0',
-  '--color-primary-light': '56, 56, 56',
-  '--color-primary-dark': '79, 70, 229',
-  '--color-contrast-light': '255, 255, 255',
-  '--color-contrast-dark': '255, 255, 255',
-  '--color-background-light': '255, 255, 255',
-  '--color-background-dark': '0, 0, 0',
-  '--opacity-light': '0.85',
-  '--opacity-dark': '0.85',
-});
+const getPromptValueByName = (name: string) => {
+  return (
+    document.getElementById('root')?.style.getPropertyValue('name') ||
+    '255, 0, 0'
+  );
+};
+
+const themeProperties = [
+  'color-white',
+  'color-black',
+  'color-primary',
+  'color-secondary',
+  'color-contrast',
+  'color-background',
+  'opacity',
+];
+
+const _themeAtom = atom(
+  Object.keys(themeProperties).reduce(
+    (acc: { [key: string]: string }, key: string) => {
+      acc[key] = getPromptValueByName(key);
+      return acc;
+    },
+    {}
+  )
+);
 
 export const themeAtom = atom(
   (g) => g(_themeAtom),

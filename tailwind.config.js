@@ -2,11 +2,12 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
 const peers = require('tailwindcss/peers');
-delete colors['lightBlue'];
-delete colors['coolGray'];
-delete colors['blueGray'];
-delete colors['trueGray'];
-delete colors['warmGray'];
+
+delete colors.lightBlue;
+delete colors.coolGray;
+delete colors.blueGray;
+delete colors.trueGray;
+delete colors.warmGray;
 
 const colorVar = (name) => (v) => {
   const { opacityVariable, opacityValue } = v;
@@ -48,9 +49,6 @@ const safeListStartsWith = [
   `w{0,2}-(\d\/\d|\d.\d|\d{1,3}|full|screen|auto)`,
   'leading',
   'prose',
-  'prose-dark',
-  'dark:prose-dark',
-  'dark:focus',
   'focus',
   'prose-sm',
   '-?inset',
@@ -75,16 +73,30 @@ module.exports = {
       pattern: new RegExp(`^(${safeListStartsWith.join('|')})`),
     },
   ],
-  darkMode: 'class',
   variants: {
     extend: {
       borderWidth: ['hover'],
-      textOpacity: ['dark'],
-      placeholderOpacity: ['dark'],
-      typography: ['dark'],
     },
   },
   theme: {
+    colors: {
+      ...defaultTheme.colors,
+      ...colors,
+      gray: colors.coolGray,
+      primary: colorVar('primary'),
+      secondary: colorVar('secondary'),
+      contrast: colorVar('contrast'),
+      gradient: {
+        white: '#ffffffcc',
+        dark: '#4F46E511',
+      },
+      bg: {
+        base: colorVar('background'),
+      },
+      text: {
+        base: colorVar('text'),
+      },
+    },
     extend: {
       backgroundImage: (theme) => ({
         'random-shapes': "url('/src/svg/ui/random-shapes.svg')",
@@ -111,45 +123,14 @@ module.exports = {
         70: '.70',
       },
       opacity: {
+        3: '.03',
         12: '.12',
         15: '.15',
         18: '.18',
         40: '.40',
-        themelight: 'var(--opacity-light)',
-        themedark: 'var(--opacity-dark)',
+        base: 'var(--opacity)',
       },
-      colors: {
-        ...defaultTheme.colors,
-        ...colors,
-        white: colorVar('white'),
-        black: colorVar('black'),
-        gray: colors.coolGray,
-        contrast: {
-          dark: colorVar('contrast-dark'),
-          light: colorVar('contrast-light'),
-        },
-        bg: {
-          dark: colorVar('background-dark'),
-          light: colorVar('background-light'),
-          yellow: colorVar('yellow'),
-        },
-        primary: {
-          light: colorVar('primary-light'),
-          dark: colorVar('primary-dark'),
-          'light-half': colorVar('primary-light-half'),
-          'dark-half': colorVar('primary-dark-half'),
-        },
-        yellow: colorVar('yellow'),
-        border: {
-          light: colorVar('primary-light'),
-          dark: colorVar('primary-dark'),
-          yellow: colorVar('yellow'),
-        },
-        gradient: {
-          white: '#ffffffcc',
-          dark: '#4F46E511',
-        },
-      },
+
       minWidth: {
         0: '0',
         '1/4': '25%',
@@ -173,14 +154,15 @@ module.exports = {
       typography: (theme) => ({
         DEFAULT: {
           css: {
-            '--tw-prose-headings': theme('colors.black'),
-            '--tw-prose-code': theme('colors.black'),
-            '--tw-prose-links': theme('colors.black'),
-            '--tw-prose-pre-code': theme('colors.black'),
+            '--tw-prose-headings': theme('colors.text.base'),
+            '--tw-prose-code': theme('colors.text.base'),
+            '--tw-prose-quotes': theme('colors.text.base'),
+            '--tw-prose-links': theme('colors.text.base'),
+            '--tw-prose-pre-code': theme('colors.text.base'),
             maxWidth: '100%',
-            color: theme('colors.black'),
+            color: theme('colors.text.base'),
             a: {
-              color: theme('colors.primary.dark'),
+              color: theme('colors.primary'),
             },
             code: {
               padding: '1px 3px',
@@ -210,18 +192,18 @@ module.exports = {
               margin: '0 .75rem 0 .5rem',
             },
             'input:focus': {
-              border: `1px solid ${theme('colors.black')}`,
+              border: `1px solid ${theme('colors.text.base')}`,
             },
             'input:focus-visible': {
-              outline: `1px solid ${theme('colors.black')}`,
+              outline: `1px solid ${theme('colors.text.base')}`,
             },
             'input:not([type]),select': {
-              border: `1px solid ${theme('colors.black')}`,
-              color: theme('colors.black'),
+              border: `1px solid ${theme('colors.text.base')}`,
+              color: theme('colors.text.base'),
               padding: '0 2rem 0 0.5rem',
             },
             'input:checked': {
-              color: theme('colors.black'),
+              color: theme('colors.text.base'),
               outline: 'none',
             },
             'input[type="checkbox"]': {
@@ -232,7 +214,7 @@ module.exports = {
               marginRight: '.5rem',
             },
             'input[type="submit"]': {
-              outline: '1px solid ' + theme('colors.black'),
+              outline: `1px solid ${theme('colors.text.base')}`,
               padding: '0.25rem .5rem',
             },
             'input[type="submit"]:hover': {
@@ -243,12 +225,12 @@ module.exports = {
               marginBottom: '.25rem',
             },
             'ul > li::marker': {
-              color: 'rgba(0, 0, 0, 0.35)',
+              color: theme('colors.text.fade'),
             },
             blockquote: {
               padding: '1rem',
-              backgroundColor: 'rgba(0, 0, 0.05)',
-              borderLeft: `2px solid ${theme('colors.primary.dark')}`,
+              borderLeft: `2px solid ${theme('colors.primary')}`,
+              fontWeight: '400',
               fontStyle: 'normal',
             },
             'blockquote p:first-of-type::before': {
@@ -256,56 +238,6 @@ module.exports = {
             },
             'blockquote p:first-of-type::after': {
               content: 'none',
-            },
-          },
-        },
-        dark: {
-          css: {
-            '*': { color: theme('colors.white') },
-            'h1, h2, h3, h4, h5': {
-              color: theme('colors.white'),
-            },
-            'code:before': {
-              content: 'none',
-            },
-            'code:after': {
-              content: 'none',
-            },
-            code: {
-              padding: '1px 3px',
-              borderRadius: 2,
-              color: theme('colors.white'),
-              background: 'rgba(255, 255, 255, 0.1)',
-            },
-            a: {
-              color: theme('colors.primary.light'),
-            },
-            'input:focus': {
-              border: `1px solid ${theme('colors.white')}`,
-            },
-            'input:focus-visible': {
-              outline: `1px solid ${theme('colors.white')}`,
-            },
-            'input:not([type]),select': {
-              border: `1px solid ${theme('colors.white')}`,
-              color: theme('colors.white'),
-              padding: '0 2rem 0 0.5rem',
-            },
-            'input[type="submit"]': {
-              outline: '1px solid white',
-              padding: '0.25rem .5rem',
-              color: theme('colors.secondary.white'),
-            },
-            'input[type="submit"]:hover': {
-              cursor: 'pointer',
-              backgroundColor: `rgba(255, 255, 255, 33%)`,
-            },
-            'ul > li::marker': {
-              color: 'rgba(255, 255, 255, 0.35)',
-            },
-            blockquote: {
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderLeft: `2px solid ${theme('colors.primary.light')}`,
             },
           },
         },

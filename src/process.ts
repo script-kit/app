@@ -125,6 +125,7 @@ import { stripAnsi } from './ansi';
 // };
 
 export const maybeConvertColors = (value: any) => {
+  log.info(`Convert Colors: ${value}`);
   // eslint-disable-next-line no-multi-assign
   value['--opacity-light'] = value['--opacity-dark'] = value.opacity || '1';
 
@@ -136,8 +137,8 @@ export const maybeConvertColors = (value: any) => {
   }
   if (value.accent) {
     const accent = toRgb(value.accent);
-    value['--color-primary-light'] = accent;
-    value['--color-primary-dark'] = accent;
+    value['--color-primary'] = accent;
+    value['--color-primary'] = accent;
     value.accentHex = toHex(accent);
 
     const contrast = ContrastColor.contrastColor({

@@ -10,7 +10,7 @@ const Inspector = () => {
       transition={{ duration: 0.25, ease: 'circOut' }}
       className="w-full h-full min-w-full min-h-full p-5"
     >
-      <div className="text-2xl text-black dark:text-white">
+      <div className="text-2xl text-text-base dark:text-white">
         Debugger Opening...
       </div>
     </motion.div>

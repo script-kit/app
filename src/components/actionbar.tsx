@@ -33,16 +33,12 @@ type Action = {
 };
 
 const bg = `
-bg-black dark:bg-white
-bg-opacity-0 dark:bg-opacity-0
-hover:bg-opacity-25 dark:hover:bg-opacity-10
-hover:invert dark:hover:invert-0 dark:hover:text-opacity-100
-focus:bg-opacity-25 dark:focus:bg-opacity-10
-focus:invert dark:focus:invert-0
-focus:border-contrast-light dark:focus:border-contrast-dark
+bg-text-base bg-opacity-0
+hover:bg-opacity-10
+focus:bg-opacity-20
 `;
 
-const textContrast = `text-contrast-light text-opacity-100 dark:text-yellow dark:text-opacity-90`;
+const textContrast = `text-contrast text-opacity-90`;
 
 const transition = { duration: 0.0, ease: 'easeInOut' };
 
@@ -75,7 +71,7 @@ export function OptionsButton() {
   outline-none py-0.5 px-1
   font-medium
   text-sm
-  text-contrast-light ${textContrast}
+  text-contrast ${textContrast}
 
   ${bg}
 
@@ -91,7 +87,7 @@ export function OptionsButton() {
           py-.5 px-1 mx-0.5
 
           rounded
-          bg-black dark:bg-primary-light dark:bg-opacity-10 bg-opacity-10
+          bg-secondary bg-opacity-10
           hover:border-opacity-10 dark:hover:border-opacity-10
           "
         >
@@ -113,7 +109,8 @@ export function ActionSeparator() {
       font-mono
       leading-none
       text-sm font-medium
-      text-contrast-light dark:text-yellow text-opacity-10 dark:text-opacity-25
+      text-primary  text-opacity-10
+      bg-opacity-0
       p-0.5
       text-center
 "
@@ -188,7 +185,7 @@ export function ActionButton(action: Action) {
   transition-all duration-200 ease-in-out
   ${
     action?.disabled
-      ? `text-contrast-light text-opacity-25 dark:text-yellow dark:text-opacity-25`
+      ? `text-contrast text-opacity-25 dark:text-base dark:text-opacity-25`
       : `${bg} ${textContrast}`
   }
   `}
@@ -212,8 +209,9 @@ export function ActionButton(action: Action) {
           leading-none
 
           rounded
-          bg-black dark:bg-primary-light dark:bg-opacity-10 bg-opacity-10
+          bg-secondary bg-opacity-10
           hover:border-opacity-10 dark:hover:border-opacity-10
+
           `}
             >
               {k}
@@ -255,7 +253,7 @@ const IconButton = () => {
       -ml-1 mb-0.5
       rounded
       min-w-fit
-      text-contrast-light ${textContrast}
+      text-contrast ${textContrast}
 
       ${bg}
 
@@ -334,17 +332,16 @@ export default function ActionBar() {
         ui === UI.splash
           ? ``
           : `border-t
-          dark:border-white dark:border-opacity-5
-          border-black border-opacity-5`
+          border-secondary`
       }
-    bg-primary-dark dark:bg-primary-light
+      bg-secondary
     ${
       ui === UI.splash
         ? `
-    bg-opacity-0 dark:bg-opacity-0
+    bg-opacity-0
     `
         : `
-    bg-opacity-90 dark:bg-opacity-90
+        bg-opacity-50
     `
     }
 
@@ -378,7 +375,7 @@ export default function ActionBar() {
         px-2
         items-center justify-left
 text-sm font-medium
-text-contrast-light ${textContrast}
+text-contrast ${textContrast}
 text-opacity-75
 truncate
       `}

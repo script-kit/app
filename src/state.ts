@@ -33,11 +33,27 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import axios from 'axios';
+import { readFileSync } from 'fs';
 import internetAvailable from './internet-available';
 import { noScript } from './defaults';
 import { getAssetPath } from './assets';
 import { emitter, KitEvent } from './events';
 import { Trigger } from './enums';
+
+const css = readFileSync(path.resolve(__dirname, './App.global.css'), 'utf8');
+
+// read the :root css variables from the css file and create a theme object
+const theme = css
+  .match(/:root\s*{([^}]*)}/)?.[1]
+  .split(';')
+  .map((s) => s.trim())
+  .filter((s) => s)
+  .reduce((acc, s) => {
+    const [key, value] = s.split(':');
+    return { ...acc, [key.trim()]: value.trim() };
+  }, {});
+
+log.info({ theme });
 
 export const serverState = {
   running: false,
@@ -286,18 +302,7 @@ const initState = {
   manualUpdateCheck: false,
   user: {} as UserDb,
   isSponsor: false,
-  theme: {
-    '--color-white': '255, 255, 255',
-    '--color-black': '0, 0, 0',
-    '--color-primary-light': '251, 191, 36',
-    '--color-primary-dark': '79, 70, 229',
-    '--color-contrast-light': '255, 255, 255',
-    '--color-contrast-dark': '0, 0, 0',
-    '--color-background-light': '255, 255, 255',
-    '--color-background-dark': '0, 0, 0',
-    '--opacity-light': '0.9',
-    '--opacity-dark': '0.75',
-  },
+  theme,
   appearance: 'auto' as 'auto' | 'light' | 'dark',
   watcherEnabled: !isMac,
 };

@@ -106,7 +106,7 @@ export default function ChoiceList({ width, height }: ListProps) {
       list-component
       flex flex-row
       w-full
-      overflow-y-hidden border-t dark:border-white dark:border-opacity-5 border-black border-opacity-5
+      overflow-y-hidden border-t border-secondary
       `}
       style={
         {
@@ -133,14 +133,10 @@ export default function ChoiceList({ width, height }: ListProps) {
         className={`
         wrapper
         px-0 flex flex-col
-        text-black dark:text-white
+        text-text-base dark:text-white
         overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20
 
-        ${
-          previewEnabled && hasPreview
-            ? 'border-r dark:border-white border-black dark:border-opacity-5 border-opacity-5'
-            : ''
-        }
+        ${previewEnabled && hasPreview ? 'border-r  border-secondary' : ''}
         `}
         // onItemsRendered={onItemsRendered}
       >

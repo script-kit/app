@@ -112,7 +112,7 @@ function Aside() {
         {progress === 100 && (
           <div className="pt-3 flex flex-col px-4">
             <button
-              className="rounded-md shadow-md px-5 py-2 bg-gradient-to-b from-yellow-400 to-amber-500 text-black font-semibold"
+              className="rounded-md shadow-md px-5 py-2 bg-gradient-to-b from-default-400 to-amber-500 text-text-base font-semibold"
               type="button"
               onClick={() => {
                 runMainScript();
@@ -141,7 +141,7 @@ function Aside() {
             <a
               key={href}
               href={href}
-              className="no-underline flex items-center justify-center w-full dark:text-white text-black text-sm font-normal opacity-70 hover:opacity-100 p-1 transition"
+              className="no-underline flex items-center justify-center w-full dark:text-white text-text-base text-sm font-normal opacity-70 hover:opacity-100 p-1 transition"
             >
               {label}
             </a>
@@ -313,7 +313,7 @@ export default function Splash() {
                   <label
                     className={`px-5 py-3 absolute ${
                       emailRequired
-                        ? "after:content-['*'] after:absolute dark:after:text-primary-light after:text-primary-dark"
+                        ? "after:content-['*'] after:absolute dark:after:text-primary after:text-primary"
                         : ''
                     }`}
                     htmlFor="email"
@@ -337,7 +337,7 @@ export default function Splash() {
             <motion.div className="flex flex-row justify-between w-full pt-2">
               <button
                 type="submit"
-                className="rounded-md bg-primary-light dark:bg-bg-light hover:bg-opacity-50 dark:bg-opacity-20 dark:hover:bg-opacity-30 transition px-5 py-2 font-medium h-10"
+                className="rounded-md bg-primary dark:bg-bg-light hover:bg-opacity-50 dark:bg-opacity-20 dark:hover:bg-opacity-30 transition px-5 py-2 font-medium h-10"
               >
                 {isSubmitting ? <Spinner /> : 'Send'}
               </button>

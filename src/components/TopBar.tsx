@@ -32,9 +32,9 @@ export default function TopBar() {
           duration: window.innerWidth < 400 ? 1.5 : 2.5,
         }}
         className="h-full w-1/4 absolute top-0 left-0
-        bg-gradient-to-r dark:bg-gradient-to-r
-        from-transparent via-primary-dark to-transparent
-        dark:from-transparent dark:via-primary-light dark:to-transparent
+        bg-gradient-to-r
+        from-transparent via-primary to-transparent
+        dark:from-transparent dark:via-primary dark:to-transparent
         "
       />
     </motion.div>

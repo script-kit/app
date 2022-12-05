@@ -31,14 +31,6 @@ export const createWidget = async (
     filePath,
     `
     <script>
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-      if(e.matches) {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-      }
-    })
-
     let u = new URL(window.location.href)
     window.widgetId = u.searchParams.get("widgetId")
     </script>
@@ -171,12 +163,6 @@ export const createWidget = async (
       fitWidget()
     })
 
-    let matches = window.matchMedia('(prefers-color-scheme: dark)')
-    if(matches.matches) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
     </script>
   `
   );

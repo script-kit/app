@@ -413,18 +413,16 @@ export default function App() {
         w-screen h-screen
         min-w-screen min-h-screen
 
-      bg-bg-dark
-      dark:bg-bg-dark
+      bg-bg-base
+      text-text-base
 
       transition-colors duration-200
-      dark:border-white dark:border-opacity-5
-      border-black border-opacity-5
+      border-secondary border-opacity-5
 
       ${
         appConfig.isMac
           ? `
-      bg-opacity-themelight
-      dark:bg-opacity-themedark
+      bg-opacity-base
       `
           : `
       bg-opacity-90

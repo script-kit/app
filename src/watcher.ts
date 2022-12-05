@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 import log from 'electron-log';
-import { assign, debounce } from 'lodash';
+import { add, assign, debounce } from 'lodash';
 import path from 'path';
 import { existsSync } from 'fs';
 import { snapshot } from 'valtio';
@@ -30,7 +30,7 @@ import {
   sponsorCheck,
 } from './state';
 import { addSnippet, removeSnippet } from './tick';
-import { appToPrompt, clearPromptCacheFor } from './prompt';
+import { appToPrompt, clearPromptCacheFor, logFocus } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel } from './enums';
@@ -59,6 +59,37 @@ const unlink = (filePath: string) => {
   if (existsSync(binPath)) rm(binPath);
 
   scriptRemoved();
+};
+
+const logEvents: { event: WatchEvent; filePath: string }[] = [];
+
+const logAllEvents = () => {
+  const adds: string[] = [];
+  const changes: string[] = [];
+  const removes: string[] = [];
+
+  logEvents.forEach(({ event, filePath }) => {
+    if (event === 'add') adds.push(filePath);
+    if (event === 'change') changes.push(filePath);
+    if (event === 'unlink') removes.push(filePath);
+  });
+
+  if (add.length) log.info('adds', adds);
+  if (changes.length) log.info('changes', changes);
+  if (removes.length) log.info('removes', removes);
+
+  adds.length = 0;
+  changes.length = 0;
+  removes.length = 0;
+
+  logEvents.length = 0;
+};
+
+const debouncedLogAllEvents = debounce(logAllEvents, 1000);
+
+const logQueue = (event: WatchEvent, filePath: string) => {
+  logEvents.push({ event, filePath });
+  debouncedLogAllEvents();
 };
 
 const buildScriptChanged = debounce((filePath: string) => {
@@ -93,7 +124,7 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
     // event === 'ready' ||
     event === 'add'
   ) {
-    log.info(`👀 Watcher ${event}: ${filePath}`);
+    logQueue(event, filePath);
     const script = await parseScript(filePath);
     shortcutScriptChanged(script);
     scheduleScriptChanged(script);

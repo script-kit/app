@@ -52,7 +52,7 @@ export default function Console() {
         forceVisible="y"
         className="log
         w-full h-16
-        bg-black text-white dark:bg-white dark:text-black
+        bg-black text-white dark:bg-white dark:text-text-base
         bg-opacity-80 dark:bg-opacity-90
         font-mono text-xs
         hover:cursor-auto
@@ -84,7 +84,7 @@ export default function Console() {
         transition ease-in
         hover:cursor-pointer
         hover:opacity-100
-        text-white dark:text-black
+        text-white dark:text-text-base
         `}
           onClick={editLog}
         />

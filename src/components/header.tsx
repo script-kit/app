@@ -46,9 +46,9 @@ const TopLeftButton = () => {
         onClick={onUpdateButtonClick}
         // add the hand pointer cursor
         className="
-        cursor-pointer dark:cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold
-        primary-dark text-primary-dark bg-primary-dark dark:bg-primary-light dark:text-yellow rounded-md bg-opacity-10
-        dark:bg-opacity-75 hover:bg-opacity-30 dark:hover:bg-opacity-100
+        cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold
+        primary text-primary bg-text-base rounded-md bg-opacity-10
+        hover:bg-opacity-20
 
         "
       >
@@ -63,7 +63,7 @@ const TopLeftButton = () => {
       <button
         type="button"
         onClick={onProcessButtonClick}
-        className="cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold primary-dark text-primary-dark bg-primary-dark dark:bg-primary-light dark:text-yellow rounded-md bg-opacity-10 dark:bg-opacity-75 hover:bg-opacity-30 dark:hover:bg-opacity-100 "
+        className="cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold primary text-primary text-opacity-90 bg-text-base rounded-md bg-opacity-10 hover:bg-opacity-20"
       >
         <span className="pl-2">{processes.length - 1}</span>
         <i className="gg-play-button -ml-1.5 scale-75" some-aria="" />
@@ -114,7 +114,7 @@ export default function Header() {
         className={`
         w-full
       text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row
-      dark:text-yellow text-primary-dark items-center ${
+      dark:text-base text-primary items-center ${
         isMainScript && processes?.length > 1 ? `-my-1` : ``
       }
       `}
@@ -145,8 +145,8 @@ export default function Header() {
             className="h-3 w-3
           absolute top-0 right-0
           m-1.5
-          text-primary-dark dark:text-yellow
-          hover:text-primary-black hover:dark:text-yellow
+          text-primary dark:text-base
+          hover:text-primary-black hover:dark:text-base
           "
           />
         </div>
