@@ -1102,3 +1102,4 @@ transition-all
 duration-200
 text-opacity-80
 outline-bg-base
+bg-opacity-40

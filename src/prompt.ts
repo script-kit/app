@@ -80,9 +80,12 @@ export const maybeHide = async (reason: string) => {
       !promptWindow?.webContents?.isDevToolsOpened() &&
       !kitState.preventClose
     ) {
-      // promptWindow?.blur();
-
+      if (!kitState.isMac) {
+        promptWindow?.minimize();
+        promptWindow?.blur();
+      }
       promptWindow?.hide();
+
       log.verbose(
         `🙈 maybeHide???: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
       );
@@ -922,11 +925,15 @@ export const setPromptData = async (promptData: PromptData) => {
   }
 
   promptWindow.webContents.setBackgroundThrottling(false);
-  promptWindow?.showInactive();
-  promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
-  setTimeout(() => {
-    promptWindow?.setAlwaysOnTop(false);
-  }, 1000);
+  if (kitState.isMac) {
+    promptWindow?.showInactive();
+    promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
+    setTimeout(() => {
+      promptWindow?.setAlwaysOnTop(false);
+    }, 1000);
+  } else {
+    promptWindow?.show();
+  }
 
   // app.focus({
   //   steal: true,

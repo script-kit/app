@@ -86,7 +86,7 @@ function Aside() {
   const [lazyIcon] = useAtom(loadableIconAtom);
 
   return (
-    <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner bg-bg-base bg-opacity-0">
+    <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner bg-bg-base bg-opacity-40">
       <div className="flex flex-col items-center h-full">
         <div className="relative">
           <img
@@ -227,7 +227,7 @@ export default function Splash() {
       className="grid grid-cols-8 left-0 top-0 fixed w-screen h-screen"
     >
       <Aside />
-      <main className="bg-secondary bg-opacity-25 col-span-5 w-full h-full p-6">
+      <main className="bg-secondary bg-opacity-50 col-span-5 w-full h-full p-6">
         <form
           onSubmit={handleOnSubmit}
           className="flex flex-col h-full justify-center"
@@ -254,7 +254,7 @@ export default function Splash() {
                 </AnimatePresence>
               </AnimateSharedLayout>
             </legend>
-            <motion.div className="rounded-md bg-bg-base bg-opacity-50 border border-text-base border-opacity-25 focus:border-opacity-100 flex flex-col">
+            <motion.div className="rounded-md bg-text-base bg-opacity-3 border border-text-base border-opacity-25 focus:border-opacity-100 flex flex-col">
               <motion.textarea
                 autoFocus
                 tabIndex={0}
@@ -280,7 +280,7 @@ export default function Splash() {
                     checked={contact}
                     onChange={(e) => setContact(e?.target?.checked || false)}
                     id="contact"
-                    className=" bg-bg-base bg-opacity-10 rounded-sm  border border-text-base border-opacity-25 "
+                    className="bg-text-base bg-opacity-3 rounded-sm  border border-text-base border-opacity-25 "
                   />
                   <label htmlFor="contact" className="pl-2">
                     Contact me with an example of my script idea
@@ -298,7 +298,7 @@ export default function Splash() {
                         setSubscribe(e?.target?.checked || false)
                       }
                       id="subscribe"
-                      className="bg-bg-base bg-opacity-10 rounded-sm  border border-text-base border-opacity-25 "
+                      className="bg-text-base bg-opacity-3 rounded-sm  border border-text-base border-opacity-25 "
                     />
                     <label htmlFor="subscribe" className="pl-2">
                       Receive Script Kit Tips, Tricks, and News
@@ -307,7 +307,7 @@ export default function Splash() {
                 </motion.div>
               )}
               {!hideEmail ? (
-                <motion.div className="rounded-md bg-bg-base bg-opacity-50 border border-text-base border-opacity-25  my-3">
+                <motion.div className="rounded-md bg-text-base bg-opacity-3 border border-text-base border-opacity-25  my-3">
                   <label
                     className={`px-5 py-3 absolute ${
                       emailRequired
