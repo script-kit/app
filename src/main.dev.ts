@@ -1171,17 +1171,17 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   }
 });
 
-app.on('before-quit', () => {
-  mainLog.info(`before-quit`);
-  log.info(`before-quit`);
-});
+// app.on('before-quit', () => {
+//   mainLog.info(`before-quit`);
+//   log.info(`before-quit`);
+// });
 
-app.on('will-quit', () => {
-  mainLog.info(`will-quit`);
-  log.info(`will-quit`);
-});
+// app.on('will-quit', () => {
+//   mainLog.info(`will-quit`);
+//   log.info(`will-quit`);
+// });
 
-app.on('quit', () => {
-  mainLog.info(`quit`);
-  log.info(`quit`);
-});
+// app.on('quit', () => {
+//   mainLog.info(`quit`);
+//   log.info(`quit`);
+// });
