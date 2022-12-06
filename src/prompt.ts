@@ -80,11 +80,10 @@ export const maybeHide = async (reason: string) => {
       !promptWindow?.webContents?.isDevToolsOpened() &&
       !kitState.preventClose
     ) {
-      if (!kitState.isMac) {
-        promptWindow?.minimize();
-        promptWindow?.blur();
-      }
       promptWindow?.hide();
+      if (!kitState.isMac) {
+        app?.hide();
+      }
 
       log.verbose(
         `🙈 maybeHide???: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `

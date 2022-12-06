@@ -25,7 +25,7 @@
     "native-keymap": "^3.3.1",
     "node-abi": "3.30.0",
     "node-mac-permissions": "2.2.1",
-    "node-pty": "0.10.1",
+    "node-pty-prebuilt-multiarch": "^0.10.1-pre.5",
     "uiohook-napi": "1.5.0"
   }
 }
