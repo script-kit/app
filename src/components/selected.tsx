@@ -43,7 +43,7 @@ border-primary border-opacity-0
     `}
     >
       {flagValue ? (
-        <div className="flex flex-row items-center justify-content hover:text-text-base dark:hover:text-white font-semibold pl-3.5">
+        <div className="flex flex-row items-center justify-content hover:text-text-base font-semibold pl-3.5">
           <div className="mr-8 truncate">← {selected}</div>
         </div>
       ) : (

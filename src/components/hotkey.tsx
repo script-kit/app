@@ -95,7 +95,7 @@ const getKeyData = (
 };
 
 const prose = (html: string) => {
-  return `<div class="p-5 prose dark:prose-dark">
+  return `<div class="p-5 prose">
   ${html}
   </div>`;
 };

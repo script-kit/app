@@ -49,8 +49,8 @@ export default function TextArea() {
         visible-scrollbar
         min-h-64
         w-full h-full
-        bg-transparent text-text-base dark:text-white focus:outline-none outline-none text-md
-        dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40
+        bg-transparent text-text-base  focus:outline-none outline-none text-md
+         placeholder-black placeholder-opacity-40
         ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-4
         focus:border-none border-none
         `}

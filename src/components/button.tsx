@@ -165,7 +165,7 @@ export default function ChoiceButton({
         ...style,
       }}
       className={`
-
+      text-text-base
       ${
         index === currentIndex
           ? `bg-secondary bg-opacity-50

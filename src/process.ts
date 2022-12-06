@@ -918,7 +918,7 @@ const kitMessageMap: ChannelHandler = {
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
   SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
-    log.silly(`SET_PROMPT_DATA`, { value });
+    log.silly(`SET_PROMPT_DATA`);
     setPromptData(value);
     kitState.isScripts = Boolean(value?.scripts);
 

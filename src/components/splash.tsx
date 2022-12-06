@@ -139,7 +139,7 @@ function Aside() {
             <a
               key={href}
               href={href}
-              className="no-underline flex items-center justify-center w-full dark:text-white text-text-base text-sm font-normal opacity-70 hover:opacity-100 p-1 transition"
+              className="no-underline flex items-center justify-center w-full text-text-base text-sm font-normal opacity-70 hover:opacity-100 p-1 transition"
             >
               {label}
             </a>
@@ -227,7 +227,7 @@ export default function Splash() {
       className="grid grid-cols-8 left-0 top-0 fixed w-screen h-screen"
     >
       <Aside />
-      <main className="bg-secondary bg-opacity-50 col-span-5 w-full h-full p-6">
+      <main className="bg-secondary bg-opacity-25 col-span-5 w-full h-full p-6">
         <form
           onSubmit={handleOnSubmit}
           className="flex flex-col h-full justify-center"
@@ -254,7 +254,7 @@ export default function Splash() {
                 </AnimatePresence>
               </AnimateSharedLayout>
             </legend>
-            <motion.div className="rounded-md bg-text-base bg-opacity-3 border border-text-base border-opacity-25 focus:border-opacity-100 flex flex-col">
+            <motion.div className="rounded-md bg-bg-base bg-opacity-50 border border-text-base border-opacity-25 focus:border-opacity-100 flex flex-col">
               <motion.textarea
                 autoFocus
                 tabIndex={0}
@@ -267,7 +267,7 @@ export default function Splash() {
                 id="answer"
                 required={contact && !subscribe}
                 placeholder="Type your answer here..."
-                className="placeholder-text-base placeholder-opacity-25 text-lg w-full rounded-md border-none bg-transparent dark:bg-transparent px-5 py-3"
+                className="placeholder-text-base placeholder-opacity-25 text-lg w-full rounded-md border-none bg-transparent px-5 py-3"
                 rows={5}
               />
             </motion.div>
@@ -307,11 +307,11 @@ export default function Splash() {
                 </motion.div>
               )}
               {!hideEmail ? (
-                <motion.div className="rounded-md bg-text-base bg-opacity-3 border border-text-base border-opacity-25  my-3">
+                <motion.div className="rounded-md bg-bg-base bg-opacity-50 border border-text-base border-opacity-25  my-3">
                   <label
                     className={`px-5 py-3 absolute ${
                       emailRequired
-                        ? "after:content-['*'] after:absolute dark:after:text-primary after:text-primary"
+                        ? "after:content-['*'] after:absolute after:text-primary"
                         : ''
                     }`}
                     htmlFor="email"

@@ -84,7 +84,7 @@ import {
   getPlatformExtension,
   getReleaseChannel,
 } from './assets';
-import { configureInterval, destroyInterval } from './tick';
+import { configureInterval, destroyInterval, pantsKick } from './tick';
 import {
   clearPromptCache,
   createPromptWindow,
@@ -407,7 +407,7 @@ const systemEvents = () => {
 
     kitState.suspended = false;
 
-    configureIntervalMac();
+    configureIntervalMac(pantsKick);
   });
 
   powerMonitor.addListener('lock-screen', async () => {
@@ -421,13 +421,13 @@ const systemEvents = () => {
   });
 };
 
-const configureIntervalMac = () => {
+const configureIntervalMac = (fn = configureInterval) => {
   setTimeout(() => {
     if (kitState.isMac && kitState.authorized && appDb?.authorized) {
       log.info(
-        `💻 Accessibility authorized ✅. Starting key and clipboard watchers...`
+        `💻 Accessibility authorized ✅. Kicking uiohook in the pants 👖`
       );
-      configureInterval();
+      fn();
     }
   }, 5000);
 };

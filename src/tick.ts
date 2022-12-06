@@ -21,6 +21,7 @@ import {
   UiohookKeyboardEvent,
   UiohookKey,
   UiohookMouseEvent,
+  uIOhook,
 } from 'uiohook-napi';
 import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
 import { Choice, Script } from '@johnlindquist/kit/types/core';
@@ -226,6 +227,12 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
 let io$Sub: Subscription | null = null;
 let clipboard$Sub: Subscription | null = null;
 
+export const pantsKick = async () => {
+  log.info(`Kicking pants...`);
+  uIOhook.start();
+  log.info(`Pants kicked!`);
+};
+
 export const preStartConfigureInterval = async () => {
   if (kitState.authorized) {
     log.info(`💻 Accessibility authorized ✅`);
@@ -270,10 +277,8 @@ export const configureInterval = async () => {
     }
   }
 
-  log.info(`Loading uiohook-napi`);
-  const { uIOhook } = await import('uiohook-napi');
-  log.info(`uiohook-napi ${uIOhook ? 'loaded' : 'failed'}`);
   const io$ = new Observable((observer) => {
+    log.info(`Creating new Observable for uiohook-napi...`);
     try {
       log.info(`Attempting to start uiohook-napi...`);
 
@@ -310,7 +315,6 @@ export const configureInterval = async () => {
 
     return () => {
       log.info(`🛑 Attempting to stop keyboard and mouse watcher`);
-      uIOhook.removeAllListeners();
       uIOhook.stop();
       kitState.watcherEnabled = false;
       log.info(`🛑 Successfully stopped keyboard and mouse watcher`);

@@ -174,8 +174,8 @@ export default function Input() {
       bg-transparent w-full text-text-base focus:outline-none outline-none
       text-2xl
       placeholder-text-base placeholder-opacity-25
-      tracking-normal dark:tracking-normal
-      placeholder:tracking-normal dark:placeholder:tracking-normal
+      tracking-normal
+      placeholder:tracking-normal
       h-14
       ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 px-4 py-0
       focus:border-none border-none`}

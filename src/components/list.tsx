@@ -133,7 +133,7 @@ export default function ChoiceList({ width, height }: ListProps) {
         className={`
         wrapper
         px-0 flex flex-col
-        text-text-base dark:text-white
+        text-text-base
         overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20
 
         ${previewEnabled && hasPreview ? 'border-r  border-secondary' : ''}

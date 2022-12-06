@@ -20,7 +20,7 @@ export default function TopBar() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className={`
-      pointer-events-none absolute top-0 left-0 w-screen h-0.75 dark:h-0.5`}
+      pointer-events-none absolute top-0 left-0 w-screen h-0.75`}
     >
       <motion.div
         animate={controls}

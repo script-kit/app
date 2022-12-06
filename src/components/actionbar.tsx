@@ -88,7 +88,7 @@ export function OptionsButton() {
 
           rounded
           bg-secondary bg-opacity-10
-          hover:border-opacity-10 dark:hover:border-opacity-10
+          hover:border-opacity-10
           "
         >
           {flagValue ? '←' : '→'}
@@ -184,9 +184,7 @@ export function ActionButton(action: Action) {
   h-full
   transition-all duration-200 ease-in-out
   ${
-    action?.disabled
-      ? `text-contrast text-opacity-25 dark:text-base dark:text-opacity-25`
-      : `${bg} ${textContrast}`
+    action?.disabled ? `text-contrast text-opacity-25` : `${bg} ${textContrast}`
   }
   `}
       onClick={onClick}
@@ -210,7 +208,7 @@ export function ActionButton(action: Action) {
 
           rounded
           bg-secondary bg-opacity-10
-          hover:border-opacity-10 dark:hover:border-opacity-10
+          hover:border-opacity-10
 
           `}
             >

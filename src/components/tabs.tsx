@@ -137,7 +137,7 @@ export default function KitTabs() {
                 className={`
               text-sm
               font-medium
-              text-text-base dark:text-white
+              text-text-base
               relative
               select-none
               ${tabs.length > 5 ? `px-2` : `px-3`}

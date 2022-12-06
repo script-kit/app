@@ -114,14 +114,14 @@ export default function Header() {
         className={`
         w-full
       text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row
-      dark:text-base text-primary items-center ${
+      text-primary items-center ${
         isMainScript && processes?.length > 1 ? `-my-1` : ``
       }
       `}
       >
         <div className="flex flex-row">
           {logo ? (
-            <img src={logo} alt={name} className="h-4 pr-2 dark:invert" />
+            <img src={logo} alt={name} className="h-4 pr-2" />
           ) : (
             <span className="pr-1 truncate">{description}</span>
           )}
@@ -145,8 +145,8 @@ export default function Header() {
             className="h-3 w-3
           absolute top-0 right-0
           m-1.5
-          text-primary dark:text-base
-          hover:text-primary-black hover:dark:text-base
+          text-primary
+          hover:text-primary-black
           "
           />
         </div>

@@ -5,7 +5,7 @@ export default function Keep() {
     <div
       className="
 
-  border-gray dark:focus:border-primary focus:border-primary w-full
+  border-gray focus:border-primary w-full
   "
     />
   );
