@@ -422,7 +422,6 @@ export default function App() {
       `
           : `
       bg-opacity-90
-      dark:bg-opacity-75
       `
       }
 

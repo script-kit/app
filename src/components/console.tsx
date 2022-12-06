@@ -84,7 +84,7 @@ export default function Console() {
         transition ease-in
         hover:cursor-pointer
         hover:opacity-100
-        text-white dark:text-text-base
+        text-text-base
         `}
           onClick={editLog}
         />

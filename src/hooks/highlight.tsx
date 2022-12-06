@@ -2,7 +2,7 @@
 /* eslint-disable no-nested-ternary */
 import React, { ReactElement } from 'react';
 
-const className = 'dark:text-primary text-primary';
+const className = 'text-primary';
 
 const highlightAdjacentAndWordStart = (name: string, input: string) => {
   const inputLetters = input?.toLowerCase().split('');

@@ -1743,8 +1743,8 @@ export const editorThemeAtom = atom<{ foreground: string; background: string }>(
     const theme = g(themeAtom);
 
     const editorTheme = {
-      foreground: toHex(theme['--color-text-base']),
-      background: toHex(theme['--color-bg-base']),
+      foreground: toHex(theme['--color-text']),
+      background: toHex(theme['--color-background']),
     };
 
     return editorTheme;

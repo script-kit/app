@@ -226,7 +226,7 @@ export default function ChoiceButton({
                 {highlight(
                   choice.name,
                   scoredChoice?.matches?.name,
-                  'bg-primary dark:bg-primary dark:bg-opacity-15 bg-opacity-5 text-primary dark:text-base dark:text-opacity-90 transition-colors'
+                  'bg-primary bg-opacity-5 text-primary transition-colors'
                 )}
               </div>
               {/* Description */}
@@ -236,7 +236,7 @@ export default function ChoiceButton({
                 <div
                   className={`text-xs truncate transition-opacity ease-in-out duration-200 pb-1 ${
                     index === currentIndex
-                      ? `opacity-100 dark:opacity-100 dark:text-base dark:text-opacity-85 text-primary`
+                      ? `opacity-100 text-primary`
                       : `opacity-60`
                   }
 
@@ -248,7 +248,7 @@ export default function ChoiceButton({
                     : highlight(
                         choice?.description || '',
                         scoredChoice?.matches?.description,
-                        'bg-primary dark:bg-primary dark:bg-opacity-15 bg-opacity-15 text-primary dark:text-base dark:text-opacity-75 transition-colors'
+                        'bg-primary bg-opacity-15 text-primary transition-colors'
                       )}
                 </div>
               )}
