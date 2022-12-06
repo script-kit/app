@@ -2,14 +2,6 @@
 # yarn lockfile v1
 
 
-"@akiflow/electron-panel-window@4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@akiflow/electron-panel-window/-/electron-panel-window-4.1.0.tgz#7672c7395d13aa50bdc2d8ef00d695f95a7cc328"
-  integrity sha512-bKp/TheoMTLwBqZ2/QjmE8Y1emnwVmaiGz65RVHYm6pgX+XsE3n9BTbQ8V4r1SEMICHA0w1WKddD578nSqeoNw==
-  dependencies:
-    bindings "1.5.0"
-    nan "2.17.0"
-
 "@babel/runtime@^7.7.2":
   version "7.20.6"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.20.6.tgz#facf4879bfed9b5326326273a64220f099b0fce3"
@@ -1234,7 +1226,7 @@ ms@2.1.2:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
   integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
 
-nan@2.17.0, nan@^2.14.0:
+nan@^2.14.0:
   version "2.17.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.17.0.tgz#c0150a2368a182f033e9aa5195ec76ea41a199cb"
   integrity sha512-2ZTgtl0nJsO0KQCjEpxcIr5D+Yv90plTitZt9JBfQvVJDS5seMl3FOvsh3+9CoYWXf/1l5OaZzzF6nDm4cagaQ==

@@ -104,6 +104,7 @@ import {
   appDb,
   cacheKitScripts,
   checkAccessibility,
+  initKeymap,
   kitState,
   subs,
   updateScripts,
@@ -147,7 +148,7 @@ if (app?.dock) {
 
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
 if (app?.dock) {
-  app?.dock?.hide();
+  // app?.dock?.hide();
   app?.dock?.setIcon(getAssetPath('icon.png'));
 }
 const releaseChannel = getReleaseChannel();
@@ -437,9 +438,11 @@ const ready = async () => {
     await ensureKitDirs();
     await ensureKenvDirs();
     createLogs();
+    await initKeymap();
     await prepareProtocols();
     await setupLog(`Protocols Prepared`);
     await setupSettings();
+
     await setupTray(true, 'default');
     assign(appDb, (await getAppDb()).data);
 
@@ -1127,19 +1130,6 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     // destroyTray();
   } catch (error) {
     mainLog.error(`😬 Error Teardown and Sleep`, { error });
-  }
-
-  try {
-    mainLog.info(`😬 startPromptQuit`);
-    if (kitState.isMac) {
-      mainLog.info(`😬 beforePromptQuit`);
-      await beforePromptQuit();
-      mainLog.info(`😬 afterPromptQuit`);
-      // wait 250ms
-      await new Promise((resolve) => setTimeout(resolve, 250));
-    }
-  } catch (error) {
-    mainLog.error(error);
   }
 
   try {

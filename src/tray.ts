@@ -253,24 +253,31 @@ export const openMenu = async (event?: KeyboardEvent) => {
         type: 'separator',
       });
     }
-    const experimentalSubmenu: MenuItemConstructorOptions[] = [];
+    const watcherSubmenu: MenuItemConstructorOptions[] = [];
 
-    experimentalSubmenu.push({
-      label: 'Experimental Features May Freeze Kit',
+    watcherSubmenu.push({
+      label: 'Control Watchers',
       enabled: false,
     });
 
-    experimentalSubmenu.push({
+    watcherSubmenu.push({
       type: 'separator',
     });
 
-    experimentalSubmenu.push({
+    watcherSubmenu.push({
       label: `${
         kitState.watcherEnabled ? 'Stop' : 'Start'
       } Snippet/Clipboard Watcher`,
       checked: kitState.watcherEnabled,
       click: () => {
         kitState.watcherEnabled = !kitState.watcherEnabled;
+      },
+    });
+
+    watcherSubmenu.push({
+      label: `Wake Watcher (use when snippets aren't firing)`,
+      click: () => {
+        kitState.wakeWatcher = new Date().getTime();
       },
     });
 
@@ -450,8 +457,8 @@ export const openMenu = async (event?: KeyboardEvent) => {
         enabled: false,
       },
       {
-        label: `Experimental`,
-        submenu: experimentalSubmenu,
+        label: `Watchers`,
+        submenu: watcherSubmenu,
       },
       {
         label: `Debug`,

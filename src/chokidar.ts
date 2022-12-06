@@ -3,6 +3,7 @@ import chokidar from 'chokidar';
 import {
   shortcutsPath,
   kenvPath,
+  kitPath,
   appDbPath,
   userDbPath,
 } from '@johnlindquist/kit/cjs/utils';
@@ -19,6 +20,7 @@ export const startWatching = (callback: WatcherCallback) => {
       depth: 0,
     }
   );
+
   const jsonWatcher = chokidar
     .watch([appDbPath, shortcutsPath, userDbPath])
     .on('all', callback);
@@ -35,7 +37,25 @@ export const startWatching = (callback: WatcherCallback) => {
     kenvScriptsWatcher.unwatch(path.resolve(filePath, 'scripts', '*'));
   });
 
-  const kenvEnvWatcher = chokidar.watch(kenvPath('.env'));
+  const kenvEnvWatcher = chokidar.watch(kenvPath('.env'), {
+    disableGlobbing: true,
+    ignoreInitial: true,
+  });
 
-  return [kenvScriptsWatcher, jsonWatcher, kenvsWatcher, kenvEnvWatcher];
+  kenvEnvWatcher.on('all', callback);
+
+  const runWatcher = chokidar.watch(kitPath('run.txt'), {
+    disableGlobbing: true,
+    ignoreInitial: true,
+  });
+
+  runWatcher.on('all', callback);
+
+  return [
+    kenvScriptsWatcher,
+    jsonWatcher,
+    kenvsWatcher,
+    kenvEnvWatcher,
+    runWatcher,
+  ];
 };

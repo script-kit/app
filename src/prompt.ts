@@ -18,6 +18,7 @@ import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 
 import {
+  app,
   BrowserWindow,
   screen,
   Rectangle,
@@ -60,7 +61,6 @@ interface GlasstronWindow extends BrowserWindow {
 }
 
 let promptWindow: GlasstronWindow;
-let electronPanelWindow: any = null;
 
 export const blurPrompt = () => {
   log.silly(`blurPrompt`);
@@ -96,43 +96,9 @@ export const forceHide = () => {
   }
 };
 
-export const beforePromptQuit = async () => {
-  log.info('Before prompt quit');
-  if (promptWindow && !promptWindow?.isDestroyed()) promptWindow?.hide();
-
-  if (promptWindow?.isDestroyed()) return;
-
-  if (kitState.isMac) {
-    log.info(`Removing panel window`);
-    promptWindow?.hide();
-    // wait for one tick
-
-    log.info(`Dumnmy window created`);
-    const dummy = new BrowserWindow({
-      title: 'dummy',
-      show: false,
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    if (promptWindow && !promptWindow?.isDestroyed()) {
-      try {
-        electronPanelWindow.makeKeyWindow(dummy);
-        log.info(`Dumnmy makeKeyWindow complete`);
-        electronPanelWindow.makeWindow(promptWindow);
-        log.info(`Prompt makeWindow complete`);
-      } catch (error) {
-        log.error(error);
-      }
-    }
-  }
-};
-
 export const createPromptWindow = async () => {
   log.silly(`function: createPromptWindow`);
-  if (kitState.isMac) {
-    electronPanelWindow = await import('@akiflow/electron-panel-window' as any);
-  }
+
   const options: BrowserWindowConstructorOptions = {
     titleBarStyle: kitState.isMac ? 'customButtonsOnHover' : 'hiddenInset',
     useContentSize: true,
@@ -156,6 +122,7 @@ export const createPromptWindow = async () => {
     height: DEFAULT_HEIGHT,
     minWidth: MIN_WIDTH,
     minHeight: INPUT_HEIGHT,
+    type: 'panel',
   };
 
   if (kitState.isMac) {
@@ -295,6 +262,8 @@ export const createPromptWindow = async () => {
     }
     if (promptWindow?.webContents?.isDevToolsOpened()) return;
 
+    // if (!promptWindow?.isFocused()) return;
+
     log.verbose(`Blur: ${kitState.ignoreBlur ? 'ignored' : 'accepted'}`);
 
     if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
@@ -320,7 +289,14 @@ export const createPromptWindow = async () => {
     //   });
   };
 
-  promptWindow?.webContents?.on('blur', onBlur);
+  promptWindow?.webContents?.on('focus', () => {
+    log.info(`WebContents Focus`);
+    kitState.allowBlur = false;
+  });
+  promptWindow?.on('focus', () => {
+    log.info(`Focus`);
+  });
+  // promptWindow?.webContents?.on('blur', onBlur);
   promptWindow?.on('blur', onBlur);
 
   promptWindow?.on('hide', () => {
@@ -329,6 +305,7 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.on('show', () => {
+    // kitState.allowBlur = false;
     log.silly(`event: show`);
     promptWindow.webContents.setBackgroundThrottling(false);
   });
@@ -396,26 +373,6 @@ export const logFocus = () => {
       focused: promptWindow.isFocused(),
     })}`
   );
-};
-
-export const showInactive = () => {
-  log.silly(`event: showInactive`);
-  if (!kitState.isPanel && electronPanelWindow) {
-    electronPanelWindow.makePanel(promptWindow);
-    kitState.isPanel = true;
-  }
-  try {
-    if (electronPanelWindow && kitState.ready) {
-      promptWindow?.showInactive();
-      electronPanelWindow?.makeKeyWindow(promptWindow);
-    } else {
-      promptWindow?.setAlwaysOnTop(true);
-      promptWindow?.show();
-      promptWindow?.restore();
-    }
-  } catch (error) {
-    log.error(error);
-  }
 };
 
 export const focusPrompt = () => {
@@ -690,7 +647,8 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
   channel: K,
   data?: ChannelMap[K]
 ) => {
-  log.silly(`sendToPrompt: ${String(channel)}`, data);
+  if (process.env.KIT_SILLY)
+    log.silly(`sendToPrompt: ${String(channel)}`, data);
   // log.info(`>_ ${channel}`);
   if (
     promptWindow &&
@@ -964,7 +922,11 @@ export const setPromptData = async (promptData: PromptData) => {
   }
 
   promptWindow.webContents.setBackgroundThrottling(false);
-  showInactive();
+  promptWindow?.showInactive();
+  promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
+  setTimeout(() => {
+    promptWindow?.setAlwaysOnTop(false);
+  }, 1000);
 
   // app.focus({
   //   steal: true,

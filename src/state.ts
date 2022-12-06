@@ -52,7 +52,7 @@ const css = `
 `;
 
 // read the :root css variables from the css file and create a theme object
-const theme =
+export const theme =
   css
     .match(/:root\s*{([^}]*)}/)?.[1]
     .split(';')
@@ -313,6 +313,8 @@ const initState = {
   theme,
   appearance: 'auto' as 'auto' | 'light' | 'dark',
   watcherEnabled: !isMac,
+  wakeWatcher: new Date().getTime(),
+  allowBlur: true,
 };
 
 const initAppDb: AppDb = {
@@ -615,6 +617,15 @@ export const sponsorCheck = async (feature: string, block = true) => {
   return true;
 };
 
+// sub to allowBlur
+const subAllowBlur = subscribeKey(kitState, 'allowBlur', (allowBlur) => {
+  if (!allowBlur) {
+    setTimeout(() => {
+      kitState.allowBlur = true;
+    }, 100);
+  }
+});
+
 // subs is an array of functions
 export const subs: (() => void)[] = [];
 subs.push(
@@ -626,7 +637,8 @@ subs.push(
   subWindows,
   subStatus,
   subReady,
-  subNotifyAuthFail
+  subNotifyAuthFail,
+  subAllowBlur
 );
 
 export const updateAppDb = async (settings: Partial<AppDb>) => {
@@ -638,5 +650,123 @@ export const updateAppDb = async (settings: Partial<AppDb>) => {
     await db.write();
   } catch (error) {
     log.info(error);
+  }
+};
+
+let keymap: any = null;
+let nativeKeymap: any = null;
+
+export const getKeyMap = () => {
+  return keymap || null;
+};
+
+const defaultKeyMap: {
+  [key: string]: string;
+} = {
+  KeyA: 'a',
+  KeyB: 'b',
+  KeyC: 'c',
+  KeyD: 'd',
+  KeyE: 'e',
+  KeyF: 'f',
+  KeyG: 'g',
+  KeyH: 'h',
+  KeyI: 'i',
+  KeyJ: 'j',
+  KeyK: 'k',
+  KeyL: 'l',
+  KeyM: 'm',
+  KeyN: 'n',
+  KeyO: 'o',
+  KeyP: 'p',
+  KeyQ: 'q',
+  KeyR: 'r',
+  KeyS: 's',
+  KeyT: 't',
+  KeyU: 'u',
+  KeyV: 'v',
+  KeyW: 'w',
+  KeyX: 'x',
+  KeyY: 'y',
+  KeyZ: 'z',
+  Digit0: '0',
+  Digit1: '1',
+  Digit2: '2',
+  Digit3: '3',
+  Digit4: '4',
+  Digit5: '5',
+  Digit6: '6',
+  Digit7: '7',
+  Digit8: '8',
+  Digit9: '9',
+  Numpad0: '0',
+  Numpad1: '1',
+  Numpad2: '2',
+  Numpad3: '3',
+  Numpad4: '4',
+  Numpad5: '5',
+  Numpad6: '6',
+  Numpad7: '7',
+  Numpad8: '8',
+  Numpad9: '9',
+  NumpadAdd: '+',
+  NumpadSubtract: '-',
+  NumpadMultiply: '*',
+  NumpadDivide: '/',
+  Space: ' ',
+  Minus: '-',
+  Equal: '=',
+  BracketLeft: '[',
+  BracketRight: ']',
+  Backslash: '\\',
+  Semicolon: ';',
+  Quote: "'",
+  Comma: ',',
+  Period: '.',
+  Slash: '/',
+  Backquote: '`',
+};
+
+export const convertKey = (sourceKey: string) => {
+  if (keymap) {
+    const result = Object.entries(keymap).find(
+      ([, { value }]: [string, any]) =>
+        value.toLowerCase() === sourceKey.toLowerCase()
+    ) || [''];
+
+    const targetKey = result[0];
+    log.info(
+      `🔑 Converting key: ${sourceKey} -> ${targetKey}`,
+      sourceKey,
+      targetKey
+    );
+
+    if (targetKey) {
+      const target = defaultKeyMap?.[targetKey]?.toUpperCase() || '';
+      log.info(`🔑 Converted key: ${targetKey} -> ${target}`);
+      return target || sourceKey;
+    }
+  }
+
+  return sourceKey;
+};
+
+export const initKeymap = async () => {
+  log.info(`🔑 Initializing keymap...`);
+  if (!keymap) {
+    try {
+      ({ default: nativeKeymap } = await import('native-keymap' as any));
+      keymap = nativeKeymap.getKeyMap();
+      log.info(`Set keymap`);
+      nativeKeymap.onDidChangeKeyboardLayout(() => {
+        keymap = nativeKeymap.getKeyMap();
+
+        log.info(`🔑 Keymap changed: ${JSON.stringify(keymap)}`);
+      });
+
+      log.info(`🔑 Keymap: ${JSON.stringify(keymap)}`);
+    } catch (e) {
+      log.error(e);
+    }
   }
 };

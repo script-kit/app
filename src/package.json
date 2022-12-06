@@ -18,7 +18,6 @@
     "@types/regenerator-runtime": "^0.13.0"
   },
   "dependencies": {
-    "@akiflow/electron-panel-window": "4.1.0",
     "@nut-tree/nut-js": "2.2.1",
     "chokidar": "3.5.3",
     "frontmost-app": "1.0.0",

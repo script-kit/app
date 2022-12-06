@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { clipboard, NativeImage, systemPreferences } from 'electron';
+import { clipboard, NativeImage } from 'electron';
 import { Observable, Subscription } from 'rxjs';
 import {
   debounceTime,
@@ -9,7 +9,6 @@ import {
   map,
   share,
   switchMap,
-  tap,
 } from 'rxjs/operators';
 import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
@@ -30,6 +29,7 @@ import { remove } from 'lodash';
 import { emitter, KitEvent } from './events';
 import {
   checkAccessibility,
+  getKeyMap,
   kitConfig,
   kitState,
   subs,
@@ -81,6 +81,7 @@ type KeyCodes = keyof typeof ShiftMap;
 const toKey = (keycode: number, shift = false) => {
   try {
     let key: string = UiohookToName[keycode] || '';
+    const keymap = getKeyMap();
     if (keymap) {
       const char = chars[keycode];
       if (char) {
@@ -134,8 +135,6 @@ interface ClipboardItem extends Choice {
 
 let clipboardHistory: ClipboardItem[] = [];
 let frontmost: any = null;
-let nativeKeymap: any = null;
-let keymap: any = null;
 export const getClipboardHistory = () => {
   if (kitState.authorized) {
     return clipboardHistory;
@@ -258,17 +257,7 @@ export const preStartConfigureInterval = async () => {
 
 export const configureInterval = async () => {
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
-  if (!keymap) {
-    try {
-      ({ default: nativeKeymap } = await import('native-keymap' as any));
-      keymap = nativeKeymap.getKeyMap();
-      nativeKeymap.onDidChangeKeyboardLayout(() => {
-        keymap = nativeKeymap.getKeyMap();
-      });
-    } catch (e) {
-      log.error(e);
-    }
-  }
+
   if (kitState.isMac) {
     try {
       ({ default: frontmost } = await import('frontmost-app' as any));
@@ -595,4 +584,9 @@ const watcherEnabledSub = subscribeKey(
   }
 );
 
-subs.push(subSnippet, subIsTyping, watcherEnabledSub);
+// sub to wakeWatcher
+const subWakeWatcher = subscribeKey(kitState, 'wakeWatcher', (wakeWatcher) => {
+  pantsKick();
+});
+
+subs.push(subSnippet, subIsTyping, watcherEnabledSub, subWakeWatcher);

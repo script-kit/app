@@ -12,12 +12,19 @@ import {
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import { focusPrompt, isFocused, isVisible, reload } from './prompt';
-import { kitState, subs } from './state';
+import { convertKey, kitState, subs } from './state';
 import { Trigger } from './enums';
 
 const registerShortcut = (shortcut: string, filePath: string) => {
+  // use convertKey to convert the final character in the shortcut to the correct key
+
+  const convertedKey = convertKey(shortcut.slice(-1)).toUpperCase();
+  const finalShortcut = `${shortcut.slice(0, -1)}${convertedKey}`;
+
+  log.verbose(`Converted shortcut from ${shortcut} to ${finalShortcut}`);
+
   try {
-    const success = globalShortcut.register(shortcut, async () => {
+    const success = globalShortcut.register(finalShortcut, async () => {
       runPromptProcess(filePath, [], {
         force: true,
         trigger: Trigger.Shortcut,
@@ -36,12 +43,16 @@ const registerShortcut = (shortcut: string, filePath: string) => {
 };
 
 export const registerTrayShortcut = () => {
-  const success = globalShortcut.register('CommandOrControl+Shift+;', () => {
-    emitter.emit(KitEvent.TrayClick);
-  });
+  const semicolon = convertKey(';');
+  const success = globalShortcut.register(
+    `CommandOrControl+Shift+${semicolon}`,
+    () => {
+      emitter.emit(KitEvent.TrayClick);
+    }
+  );
 
   if (process.env.NODE_ENV === 'development') {
-    globalShortcut.register('Option+;', async () => {
+    globalShortcut.register(`Option+${semicolon}`, async () => {
       reload();
       // wait for reload to finish
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -131,18 +142,22 @@ export const updateMainShortcut = async (filePath: string) => {
     const rawShortcut = settings?.shortcuts?.[mainScriptPath];
 
     const shortcut = rawShortcut ? shortcutNormalizer(rawShortcut) : '';
+    const convertedKey = convertKey(shortcut.slice(-1)).toUpperCase();
+    const finalShortcut = `${shortcut.slice(0, -1)}${convertedKey}`;
 
-    if (shortcut) {
+    log.verbose(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
+
+    if (finalShortcut) {
       const oldShortcut = shortcutMap.get(mainScriptPath);
 
-      if (shortcut === oldShortcut) return;
+      if (finalShortcut === oldShortcut) return;
 
       if (oldShortcut) {
         globalShortcut.unregister(oldShortcut);
         shortcutMap.delete(mainScriptPath);
       }
 
-      const ret = globalShortcut.register(shortcut, async () => {
+      const ret = globalShortcut.register(finalShortcut, async () => {
         log.info(`🏚  main shortcut`);
         if (isVisible() && !isFocused()) {
           focusPrompt();
@@ -158,13 +173,13 @@ export const updateMainShortcut = async (filePath: string) => {
       });
 
       if (!ret) {
-        log.warn(`Failed to register: ${shortcut} to ${mainScriptPath}`);
+        log.warn(`Failed to register: ${finalShortcut} to ${mainScriptPath}`);
       }
 
-      if (ret && globalShortcut.isRegistered(shortcut)) {
-        kitState.mainShortcut = shortcut;
-        log.info(`Registered ${shortcut} to ${mainScriptPath}`);
-        shortcutMap.set(mainScriptPath, shortcut);
+      if (ret && globalShortcut.isRegistered(finalShortcut)) {
+        kitState.mainShortcut = finalShortcut;
+        log.info(`Registered ${finalShortcut} to ${mainScriptPath}`);
+        shortcutMap.set(mainScriptPath, finalShortcut);
       }
     }
   }

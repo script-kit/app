@@ -5,10 +5,15 @@ import path from 'path';
 import { existsSync } from 'fs';
 import { snapshot } from 'valtio';
 
-import { rm } from 'fs/promises';
+import { rm, readFile } from 'fs/promises';
 import { getAppDb, getUserDb } from '@johnlindquist/kit/cjs/db';
 
-import { parseScript, kitPath, kenvPath } from '@johnlindquist/kit/cjs/utils';
+import {
+  parseScript,
+  kitPath,
+  kenvPath,
+  resolveToScriptPath,
+} from '@johnlindquist/kit/cjs/utils';
 
 import { FSWatcher } from 'chokidar';
 import { fork } from 'child_process';
@@ -30,11 +35,10 @@ import {
   sponsorCheck,
 } from './state';
 import { addSnippet, removeSnippet } from './tick';
-import { appToPrompt, clearPromptCacheFor, logFocus } from './prompt';
+import { appToPrompt, clearPromptCacheFor } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
-import { AppChannel } from './enums';
-import { destroyAllProcesses, ensureTwoIdleProcesses } from './process';
+import { AppChannel, Trigger } from './enums';
 
 // export const cacheMenu = debounce(async () => {
 //   await updateScripts();
@@ -184,8 +188,29 @@ export const setupWatchers = async () => {
   log.info('--- 👀 Watching Scripts ---');
 
   watchers = startWatching(async (eventName: WatchEvent, filePath: string) => {
-    if (!filePath.match(/\.(ts|js|json)$/)) return;
+    if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
     const { base } = path.parse(filePath);
+
+    if (base === 'run.txt') {
+      log.info(`run.txt ${eventName}`);
+      const runPath = kitPath('run.txt');
+      if (eventName === 'add' || eventName === 'change') {
+        const runText = await readFile(runPath, 'utf8');
+        const [scriptPath, ...args] = runText.trim().split(' ');
+        log.info(`run.txt ${eventName}`, scriptPath, args);
+        emitter.emit(KitEvent.RunPromptProcess, {
+          scriptPath: resolveToScriptPath(scriptPath, kenvPath()),
+          args: args || [],
+          options: {
+            force: true,
+            trigger: Trigger.RunTxt,
+          },
+        });
+      } else {
+        log.info(`run.txt removed`);
+      }
+      return;
+    }
 
     if (base === '.env') {
       log.info(`🌎 .env ${eventName}`);
