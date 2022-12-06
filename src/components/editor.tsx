@@ -9,6 +9,7 @@ import { editor as monacoEditor } from 'monaco-editor';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import {
+  appearanceAtom,
   darkAtom,
   editorConfigAtom,
   editorOptions,
@@ -90,7 +91,7 @@ const registerPropertiesLanguage = (monaco: Monaco) => {
 
 export default function Editor() {
   const [config] = useAtom(editorConfigAtom);
-  const [isDark] = useAtom(darkAtom);
+  const [kitIsDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
   const [inputValue, setInputValue] = useAtom(inputAtom);
   const [ui] = useAtom(uiAtom);
@@ -212,7 +213,7 @@ export default function Editor() {
 
       // editor.setModel(model);
 
-      monaco.editor.setTheme(isDark ? 'kit-dark' : 'kit-light');
+      monaco.editor.setTheme(kitIsDark ? 'kit-dark' : 'kit-light');
 
       mountEditor.layout({
         width: containerRef?.current?.offsetWidth || document.body.offsetWidth,
@@ -245,7 +246,7 @@ export default function Editor() {
         mountEditor.revealLineInCenter(Math.floor(lineNumber / 2));
       }
     },
-    [config, containerRef, isDark]
+    [config, containerRef, kitIsDark]
   );
 
   const onChange = useCallback((value) => {
@@ -281,6 +282,9 @@ export default function Editor() {
     }
   }, [open, config, editor, ui]);
 
+  const theme = kitIsDark ? 'kit-dark' : 'kit-light';
+  console.log(`Building Editor...`, theme);
+
   return (
     <motion.div
       key="editor"
@@ -297,7 +301,7 @@ export default function Editor() {
         beforeMount={onBeforeMount}
         onMount={onMount}
         language={(config as EditorOptions)?.language || 'markdown'}
-        theme={isDark ? 'kit-dark' : 'kit-light'}
+        theme={theme}
         options={options}
         path="file:///index.ts"
         value={inputValue}

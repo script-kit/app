@@ -357,7 +357,9 @@ const convertAtom = atom<(inverse?: boolean) => Convert>((g) => {
   };
 });
 
-export const darkAtom = atom<boolean>(true);
+export const darkAtom = atom((g) => {
+  return g(appearanceAtom) === 'dark';
+});
 
 export const logHTMLAtom = atom(
   (g) => {
@@ -946,13 +948,12 @@ const getPromptValueByName = (name: string) => {
 };
 
 const themeProperties = [
-  'color-white',
-  'color-black',
-  'color-primary',
-  'color-secondary',
-  'color-contrast',
-  'color-background',
-  'opacity',
+  '--color-text',
+  '--color-primary',
+  '--color-secondary',
+  '--color-contrast',
+  '--color-background',
+  '--opacity',
 ];
 
 const _themeAtom = atom(
@@ -1639,8 +1640,8 @@ export const addChoiceAtom = atom(null, (g, s, a: Choice) => {
   s(unfilteredChoicesAtom, Array.isArray(prev) ? [...prev, a] : [a]);
 });
 
-type Appearance = 'light' | 'dark' | 'auto';
-export const appearanceAtom = atom<Appearance>('auto');
+type Appearance = 'light' | 'dark';
+export const appearanceAtom = atom<Appearance>('dark');
 
 const _boundsAtom = atom<Rectangle>({ x: 0, y: 0, width: 0, height: 0 });
 export const boundsAtom = atom(
@@ -1739,19 +1740,11 @@ export const logValueAtom = atom<string>('');
 
 export const editorThemeAtom = atom<{ foreground: string; background: string }>(
   (g) => {
-    const appearance = g(appearanceAtom);
-    const isDark = appearance === 'auto' ? g(darkAtom) : appearance === 'dark';
     const theme = g(themeAtom);
 
     const editorTheme = {
-      foreground: toHex(
-        isDark ? theme['--color-white'] : theme['--color-black']
-      ),
-      background: toHex(
-        isDark
-          ? theme['--color-background-dark']
-          : theme['--color-background-light']
-      ),
+      foreground: toHex(theme['--color-text-base']),
+      background: toHex(theme['--color-bg-base']),
     };
 
     return editorTheme;

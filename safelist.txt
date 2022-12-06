@@ -1090,3 +1090,15 @@ border-opacity-90
 border-opacity-0
 outline-none
 hover:bg-opacity-20
+h-0.75
+bg-gradient-to-b
+from-text-base
+from-secondary
+to-primary
+from-bg-base
+border-opacity-50
+hover:shadow-primary/50
+transition-all
+duration-200
+text-opacity-80
+outline-bg-base

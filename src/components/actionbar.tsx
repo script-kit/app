@@ -71,7 +71,7 @@ export function OptionsButton() {
   outline-none py-0.5 px-1
   font-medium
   text-sm
-  text-contrast ${textContrast}
+  ${textContrast}
 
   ${bg}
 
@@ -109,7 +109,7 @@ export function ActionSeparator() {
       font-mono
       leading-none
       text-sm font-medium
-      text-primary  text-opacity-10
+      text-contrast  text-opacity-10
       bg-opacity-0
       p-0.5
       text-center
@@ -253,7 +253,7 @@ const IconButton = () => {
       -ml-1 mb-0.5
       rounded
       min-w-fit
-      text-contrast ${textContrast}
+      ${textContrast}
 
       ${bg}
 
@@ -375,7 +375,7 @@ export default function ActionBar() {
         px-2
         items-center justify-left
 text-sm font-medium
-text-contrast ${textContrast}
+${textContrast}
 text-opacity-75
 truncate
       `}

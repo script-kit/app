@@ -52,7 +52,7 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
               width="24"
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
-              className={`absolute z-20 h-4 -right-0.5 -top-1 text-primary dark:text-white
+              className={`absolute z-20 h-4 -right-0.5 -top-1 text-primary
               opacity-90
               `}
             >

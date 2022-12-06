@@ -266,7 +266,11 @@ export const startIpc = () => {
         }
 
         if (child) {
-          if (child?.channel) child?.send(message);
+          try {
+            if (child?.channel) child?.send(message);
+          } catch (e) {
+            log.error(e);
+          }
         }
       })
     );

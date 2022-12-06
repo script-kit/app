@@ -26,7 +26,7 @@ import {
 
 const Spinner = () => (
   <svg
-    className="animate-spin h-6 w-6 text-white text-opacity-75 dark:text-white dark:text-opacity-75"
+    className="animate-spin h-6 w-6 text-text-base text-opacity-75"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
@@ -86,7 +86,7 @@ function Aside() {
   const [lazyIcon] = useAtom(loadableIconAtom);
 
   return (
-    <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner bg-bg-light dark:bg-bg-dark bg-opacity-90 dark:bg-opacity-90">
+    <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner bg-bg-base bg-opacity-0">
       <div className="flex flex-col items-center h-full">
         <div className="relative">
           <img
@@ -95,7 +95,7 @@ function Aside() {
             alt="Script Kit Icon"
           />
           {progress !== 100 && (
-            <div className="absolute right-0 top-0 bg-black rounded-full p-2 bg-opacity-80 backdrop-blur-lg">
+            <div className="absolute right-0 top-0 bg-bg-base rounded-full p-2 bg-opacity-80 backdrop-blur-lg">
               <Spinner />
             </div>
           )}
@@ -112,7 +112,7 @@ function Aside() {
         {progress === 100 && (
           <div className="pt-3 flex flex-col px-4">
             <button
-              className="rounded-md shadow-md px-5 py-2 bg-gradient-to-b from-default-400 to-amber-500 text-text-base font-semibold"
+              className="rounded-md shadow-md px-5 py-2 bg-primary text-bg-base bg-opacity-90 hover:bg-opacity-100 font-semibold shadow-primary/25 hover:shadow-primary/50 transition-all duration-200"
               type="button"
               onClick={() => {
                 runMainScript();
@@ -120,13 +120,11 @@ function Aside() {
             >
               Launch with{' '}
               <span className="text-sm">
-                <kbd className="bg-amber-600 rounded-md bg-opacity-50 p-1">
+                <kbd className="bg-primary rounded-md bg-opacity-25 p-1">
                   {appConfig?.isMac ? 'CMD' : 'CTRL'}
                 </kbd>
                 <kbd>+</kbd>
-                <kbd className="bg-amber-600 rounded-md bg-opacity-50 p-1">
-                  ;
-                </kbd>
+                <kbd className="bg-primary rounded-md bg-opacity-25 p-1">;</kbd>
               </span>
             </button>
             <span className="text-xxs px-5 py-4 leading-tight text-center">
@@ -229,7 +227,7 @@ export default function Splash() {
       className="grid grid-cols-8 left-0 top-0 fixed w-screen h-screen"
     >
       <Aside />
-      <main className="bg-bg-light dark:bg-black bg:opacity-0 dark:bg-opacity-0 col-span-5 w-full h-full p-6">
+      <main className="bg-secondary bg-opacity-50 col-span-5 w-full h-full p-6">
         <form
           onSubmit={handleOnSubmit}
           className="flex flex-col h-full justify-center"
@@ -256,7 +254,7 @@ export default function Splash() {
                 </AnimatePresence>
               </AnimateSharedLayout>
             </legend>
-            <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-50 border dark:border-white dark:border-opacity-25 flex flex-col">
+            <motion.div className="rounded-md bg-text-base bg-opacity-3 border border-text-base border-opacity-25 focus:border-opacity-100 flex flex-col">
               <motion.textarea
                 autoFocus
                 tabIndex={0}
@@ -269,7 +267,7 @@ export default function Splash() {
                 id="answer"
                 required={contact && !subscribe}
                 placeholder="Type your answer here..."
-                className="text-lg w-full rounded-md border-none bg-transparent dark:bg-transparent px-5 py-3"
+                className="placeholder-text-base placeholder-opacity-25 text-lg w-full rounded-md border-none bg-transparent dark:bg-transparent px-5 py-3"
                 rows={5}
               />
             </motion.div>
@@ -282,7 +280,7 @@ export default function Splash() {
                     checked={contact}
                     onChange={(e) => setContact(e?.target?.checked || false)}
                     id="contact"
-                    className="dark:bg-white bg-black dark:bg-opacity-20 bg-opacity-10 rounded-sm"
+                    className=" bg-bg-base bg-opacity-10 rounded-sm  border border-text-base border-opacity-25 "
                   />
                   <label htmlFor="contact" className="pl-2">
                     Contact me with an example of my script idea
@@ -300,7 +298,7 @@ export default function Splash() {
                         setSubscribe(e?.target?.checked || false)
                       }
                       id="subscribe"
-                      className="dark:bg-white bg-black dark:bg-opacity-20 bg-opacity-10 rounded-sm"
+                      className="bg-bg-base bg-opacity-10 rounded-sm  border border-text-base border-opacity-25 "
                     />
                     <label htmlFor="subscribe" className="pl-2">
                       Receive Script Kit Tips, Tricks, and News
@@ -309,7 +307,7 @@ export default function Splash() {
                 </motion.div>
               )}
               {!hideEmail ? (
-                <motion.div className="rounded-md bg-bg-light dark:bg-bg-dark bg-opacity-50 dark:bg-opacity-50 border dark:border-white dark:border-opacity-25 my-3">
+                <motion.div className="rounded-md bg-text-base bg-opacity-3 border border-text-base border-opacity-25  my-3">
                   <label
                     className={`px-5 py-3 absolute ${
                       emailRequired
@@ -327,7 +325,7 @@ export default function Splash() {
                     value={email}
                     type="email"
                     id="email"
-                    className="px-5 pl-20 py-3 border-none bg-transparent dark:bg-transparent w-full rounded-md"
+                    className="placeholder-text-base placeholder-opacity-25 px-5 pl-20 py-3 border-none bg-transparent w-full rounded-md"
                     placeholder="you@company.com"
                   />
                 </motion.div>
@@ -337,7 +335,7 @@ export default function Splash() {
             <motion.div className="flex flex-row justify-between w-full pt-2">
               <button
                 type="submit"
-                className="rounded-md bg-primary dark:bg-bg-light hover:bg-opacity-50 dark:bg-opacity-20 dark:hover:bg-opacity-30 transition px-5 py-2 font-medium h-10"
+                className="rounded-md bg-primary text-bg-base hover:bg-opacity-50 transition px-5 py-2 font-medium h-10"
               >
                 {isSubmitting ? <Spinner /> : 'Send'}
               </button>

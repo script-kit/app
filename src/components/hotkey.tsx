@@ -167,7 +167,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
       autoFocus
       className={`
       hotkey-component
-      bg-transparent w-full text-text-base dark:text-white focus:outline-none outline-none text-xl dark:placeholder-white dark:placeholder-opacity-40 placeholder-black placeholder-opacity-40 h-16
+      bg-transparent w-full text-text-base  focus:outline-none outline-none text-xl   placeholder-bg-base placeholder-opacity-40 h-16
   ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
   focus:border-none border-none`}
       onKeyDown={onKeyDown}

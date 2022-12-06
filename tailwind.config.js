@@ -130,7 +130,6 @@ module.exports = {
         40: '.40',
         base: 'var(--opacity)',
       },
-
       minWidth: {
         0: '0',
         '1/4': '25%',
@@ -139,6 +138,7 @@ module.exports = {
         full: '100%',
       },
       height: {
+        0.75: '0.1875rem',
         5.5: '22px',
       },
       minHeight: {
@@ -159,6 +159,12 @@ module.exports = {
             '--tw-prose-quotes': theme('colors.text.base'),
             '--tw-prose-links': theme('colors.text.base'),
             '--tw-prose-pre-code': theme('colors.text.base'),
+            thead: {
+              borderBottomColor: theme('colors.secondary'),
+            },
+            tr: {
+              borderBottomColor: theme('colors.secondary'),
+            },
             maxWidth: '100%',
             color: theme('colors.text.base'),
             a: {

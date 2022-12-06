@@ -690,7 +690,7 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
   channel: K,
   data?: ChannelMap[K]
 ) => {
-  log.silly(`sendToPrompt: ${String(channel)} ${data?.kitScript}`);
+  log.silly(`sendToPrompt: ${String(channel)}`, data);
   // log.info(`>_ ${channel}`);
   if (
     promptWindow &&

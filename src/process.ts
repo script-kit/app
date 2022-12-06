@@ -127,35 +127,31 @@ import { stripAnsi } from './ansi';
 export const maybeConvertColors = (value: any) => {
   log.info(`Convert Colors: ${value}`);
   // eslint-disable-next-line no-multi-assign
-  value['--opacity-light'] = value['--opacity-dark'] = value.opacity || '1';
+  value['--opacity'] = value.opacity || '0.85';
 
   if (value.foreground) {
     const foreground = toRgb(value.foreground);
-    value['--color-white'] = foreground;
-    value['--color-black'] = foreground;
-    value.foregroundHex = toHex(foreground);
+    value['--color-text'] = foreground;
   }
   if (value.accent) {
     const accent = toRgb(value.accent);
     value['--color-primary'] = accent;
-    value['--color-primary'] = accent;
-    value.accentHex = toHex(accent);
+    value['--color-contrast'] = accent;
+  }
 
-    const contrast = ContrastColor.contrastColor({
-      bgColor: toHex(value.accent),
-    }) as string;
+  if (value.ui) {
+    const ui = toRgb(value.ui);
+    value['--color-secondary'] = toRgb(ui);
+  }
 
-    const contrastRgb = toRgb(contrast);
-    value['--color-contrast-light'] = contrastRgb;
-    value['--color-contrast-dark'] = contrastRgb;
-    value.contrastHex = contrast;
+  if (value.contrast) {
+    const contrast = toRgb(value.contrast);
+    value['--color-contrast'] = toRgb(contrast);
   }
 
   if (value.background) {
     const background = toRgb(value.background);
-    value['--color-background-light'] = background;
-    value['--color-background-dark'] = background;
-    value.backgroundHex = toHex(value.background);
+    value['--color-background'] = background;
 
     const cc = new ContrastColor({
       bgColor: toHex(value.background),
@@ -170,8 +166,7 @@ export const maybeConvertColors = (value: any) => {
   }
 
   if (value.opacity) {
-    value['--opacity-light'] = value.opacity;
-    value['--opacity-dark'] = value.opacity;
+    value['--opacity'] = value.opacity;
   }
 
   log.info(value);
@@ -246,11 +241,11 @@ export const setTheme = async (value: any, check = true) => {
     if (!kitState.isSponsor) return;
   }
 
-  const isDark = Object.values(value || {}).length === 0;
-  log.info({ isDark });
-  sendToPrompt(Channel.SET_DARK, isDark);
+  log.info(`Before`, value);
 
   maybeConvertColors(value);
+
+  log.info(`After`, value);
 
   assign(kitState.theme, value);
 

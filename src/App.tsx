@@ -115,8 +115,6 @@ import {
   editorLogModeAtom,
   logValueAtom,
   shortcutsAtom,
-  darkAtom,
-  isDefaultTheme,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -219,7 +217,6 @@ export default function App() {
   const setSubmitValue = useSetAtom(submitValueAtom);
   const setMouseEnabled = useSetAtom(mouseEnabledAtom);
   const setTopRef = useSetAtom(topRefAtom);
-  const setDark = useSetAtom(isDefaultTheme);
   const setDescription = useSetAtom(_description);
   const setName = useSetAtom(nameAtom);
   const setTextareaValue = useSetAtom(textareaValueAtom);
@@ -274,7 +271,6 @@ export default function App() {
     [Channel.SET_SCRIPT]: setScript,
     [Channel.SET_SCRIPT_HISTORY]: setScriptHistory,
     [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
-    [Channel.SET_DARK]: setDark,
     [Channel.SET_DESCRIPTION]: setDescription,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfig,
     [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfig,

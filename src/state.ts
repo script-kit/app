@@ -33,27 +33,35 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import axios from 'axios';
-import { readFileSync } from 'fs';
 import internetAvailable from './internet-available';
 import { noScript } from './defaults';
 import { getAssetPath } from './assets';
 import { emitter, KitEvent } from './events';
 import { Trigger } from './enums';
 
-const css = readFileSync(path.resolve(__dirname, './App.global.css'), 'utf8');
+// const css = readFileSync(path.resolve(__dirname, './App.global.css'), 'utf8');
+const css = `
+:root {
+  --color-text: 255, 255, 255;
+  --color-primary: 251, 191, 36;
+  --color-secondary: 52, 52, 52;
+  --color-contrast: 251, 191, 36;
+  --color-background: 0, 0, 0;
+  --opacity: 0.85;
+}
+`;
 
 // read the :root css variables from the css file and create a theme object
-const theme = css
-  .match(/:root\s*{([^}]*)}/)?.[1]
-  .split(';')
-  .map((s) => s.trim())
-  .filter((s) => s)
-  .reduce((acc, s) => {
-    const [key, value] = s.split(':');
-    return { ...acc, [key.trim()]: value.trim() };
-  }, {});
-
-log.info({ theme });
+const theme =
+  css
+    .match(/:root\s*{([^}]*)}/)?.[1]
+    .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s)
+    .reduce((acc, s) => {
+      const [key, value] = s.split(':');
+      return { ...acc, [key.trim()]: value.trim() };
+    }, {}) || {};
 
 export const serverState = {
   running: false,
@@ -448,7 +456,7 @@ const subWidgets = subscribeKey(widgetState, 'widgets', (widgets) => {
   }
 });
 const subWindows = subscribeKey(windowsState, 'windows', (windows) => {
-  log.info(`👀 Widgets: ${JSON.stringify(windows)}`);
+  log.info(`👀 Windows: ${JSON.stringify(windows)}`);
   if (windows.length !== 0) {
     showDock();
   } else {

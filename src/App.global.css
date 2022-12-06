@@ -412,17 +412,17 @@ body {
 }
 
 .emoji-picker-react .emoji button:hover {
-  @apply bg-black dark:bg-white bg-opacity-50 dark:bg-opacity-50;
+  @apply bg-bg-base bg-opacity-50;
 }
 
 .emoji-picker-react .emoji button:focus {
-  @apply bg-black dark:bg-white bg-opacity-50 dark:bg-opacity-50;
-  @apply outline outline-1 dark:outline-1 outline-black dark:outline-white;
+  @apply bg-bg-base bg-opacity-50;
+  @apply outline outline-1 outline-bg-base;
 }
 
 .prose > pre {
   @apply p-0 m-0;
-  @apply bg-white dark:bg-black bg-opacity-0 dark:bg-opacity-0;
+  @apply bg-text-base bg-opacity-0;
   @apply min-h-8;
 }
 
@@ -431,7 +431,7 @@ code.hljs {
   @apply py-4 pl-4 pr-4;
   @apply leading-snug;
   @apply bg-text-base bg-opacity-5;
-  @apply border border-black border-opacity-10 dark:border-white dark:border-opacity-10;
+  @apply border border-bg-base border-opacity-10;
   @apply rounded;
   @apply my-4;
   @apply text-sm;
@@ -497,16 +497,21 @@ ul {
 
 .prose > kbd {
   /* Styles for keyboard shortcut */
-  @apply text-base;
+  @apply text-text-base;
   @apply text-sm font-mono font-bold;
-  @apply dark:bg-white bg-black bg-opacity-10 dark:bg-opacity-10;
+  @apply bg-bg-base bg-opacity-10;
   @apply rounded;
   @apply px-1;
-  @apply border dark:border;
-  @apply dark:border-white border-black border-opacity-25 dark:border-opacity-25;
+  @apply border;
+  @apply border-bg-base border-opacity-25;
 }
 
 .prose code::before,
 code::after {
   content: none !important;
+}
+
+.prose .hljs {
+  @apply text-text-base text-opacity-80;
+  @apply font-mono font-bold;
 }

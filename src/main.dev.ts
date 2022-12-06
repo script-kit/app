@@ -406,6 +406,8 @@ const systemEvents = () => {
     }
 
     kitState.suspended = false;
+
+    configureIntervalMac();
   });
 
   powerMonitor.addListener('lock-screen', async () => {
@@ -417,6 +419,17 @@ const systemEvents = () => {
     kitState.screenLocked = false;
     kitState.isSponsor = false;
   });
+};
+
+const configureIntervalMac = () => {
+  setTimeout(() => {
+    if (kitState.isMac && kitState.authorized && appDb?.authorized) {
+      log.info(
+        `💻 Accessibility authorized ✅. Starting key and clipboard watchers...`
+      );
+      configureInterval();
+    }
+  }, 5000);
 };
 
 const ready = async () => {
@@ -461,14 +474,7 @@ const ready = async () => {
     if (!isMac) {
       configureInterval();
     } else {
-      setTimeout(() => {
-        if (kitState.authorized && appDb?.authorized) {
-          log.info(
-            `💻 Accessibility authorized ✅. Starting key and clipboard watchers...`
-          );
-          configureInterval();
-        }
-      }, 10000);
+      configureIntervalMac();
     }
 
     log.info(`NODE_ENV`, process.env.NODE_ENV);
