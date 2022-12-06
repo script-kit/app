@@ -22,7 +22,7 @@ export const startPty = async (config: any = {}) => {
 
   const { default: express } = await import('express');
   const { default: expressWs } = await import('express-ws');
-  const pty = await import('node-pty-prebuilt-multiarch');
+  const pty = await import('node-pty');
 
   const command = config?.input || '';
   if (command) log.info(`Terminal command:`, { command });
