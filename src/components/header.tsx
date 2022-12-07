@@ -44,6 +44,7 @@ const TopLeftButton = () => {
       <button
         type="button"
         onClick={onUpdateButtonClick}
+        tabIndex={-1}
         // add the hand pointer cursor
         className="
         cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold
@@ -62,6 +63,7 @@ const TopLeftButton = () => {
     return (
       <button
         type="button"
+        tabIndex={-1}
         onClick={onProcessButtonClick}
         className="cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold primary text-primary text-opacity-90 bg-text-base rounded-md bg-opacity-10 hover:bg-opacity-20"
       >

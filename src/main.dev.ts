@@ -1120,6 +1120,16 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     mainLog.error(error);
   }
 
+  app?.removeAllListeners('window-all-closed');
+  app?.removeAllListeners();
+
+  BrowserWindow.getAllWindows().forEach((win) => {
+    if (!win?.isDestroyed()) {
+      win.removeAllListeners();
+      win?.destroy();
+    }
+  });
+
   try {
     mainLog.info(`🚀 Quit`);
     app?.quit();
