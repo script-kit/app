@@ -79,13 +79,11 @@ export const maybeHide = async (reason: string) => {
       !promptWindow?.webContents?.isDevToolsOpened() &&
       !kitState.preventClose
     ) {
-      promptWindow?.hide();
-
       if (!kitState.isMac) {
-        // Check if there are any windows with focus
-        const focusedWindow = BrowserWindow.getFocusedWindow();
-        if (!focusedWindow) promptWindow?.minimize();
+        promptWindow?.minimize();
       }
+
+      promptWindow?.hide();
 
       log.verbose(
         `🙈 maybeHide???: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
