@@ -564,13 +564,17 @@ export const sponsorCheck = async (feature: string, block = true) => {
   }
 
   if (!kitState.isSponsor) {
-    const response = await axios.post(
-      `https://scriptkit.com/api/check-sponsor`,
-      {
+    let response = null;
+    try {
+      response = await axios.post(`https://scriptkit.com/api/check-sponsor`, {
         ...kitState.user,
         feature,
-      }
-    );
+      });
+    } catch (error) {
+      log.error('Error checking sponsor status', error);
+      kitState.isSponsor = true;
+      return true;
+    }
 
     log.info(`Response status: ${response.status}`);
 

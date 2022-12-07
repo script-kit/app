@@ -82,7 +82,9 @@ export const maybeHide = async (reason: string) => {
       !kitState.preventClose
     ) {
       if (!kitState.isMac) {
-        promptWindow?.minimize();
+        // Check if there are any windows with focus
+        const focusedWindow = BrowserWindow.getFocusedWindow();
+        if (!focusedWindow) promptWindow?.minimize();
       }
       promptWindow?.hide();
 
