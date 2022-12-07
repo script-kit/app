@@ -26,6 +26,7 @@ import {
   shell,
   BrowserWindowConstructorOptions,
   Point,
+  TouchBar,
 } from 'electron';
 import os from 'os';
 import path from 'path';
@@ -153,7 +154,22 @@ export const createPromptWindow = async () => {
   promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
 
-  // promptWindow.setTouchBar(touchbar);
+  if (kitState.isMac) {
+    const touchbar = new TouchBar({
+      items: [
+        new TouchBar.TouchBarLabel({
+          label: `Script Kit ${getVersion()}`,
+          accessibilityLabel: 'Hello',
+        }),
+      ],
+    });
+
+    try {
+      promptWindow.setTouchBar(touchbar);
+    } catch (error) {
+      log.error(error);
+    }
+  }
 
   // if (!kitState.isMac) {
   //   promptWindow.setAlwaysOnTop(true, 'modal-panel');
