@@ -315,6 +315,7 @@ const initState = {
   watcherEnabled: !isMac,
   wakeWatcher: new Date().getTime(),
   allowBlur: true,
+  keymap: null as any,
 };
 
 const initAppDb: AppDb = {
@@ -653,12 +654,7 @@ export const updateAppDb = async (settings: Partial<AppDb>) => {
   }
 };
 
-let keymap: any = null;
 let nativeKeymap: any = null;
-
-export const getKeyMap = () => {
-  return keymap || null;
-};
 
 const defaultKeyMap: {
   [key: string]: string;
@@ -728,8 +724,8 @@ const defaultKeyMap: {
 };
 
 export const convertKey = (sourceKey: string) => {
-  if (keymap) {
-    const result = Object.entries(keymap).find(
+  if (kitState.keymap) {
+    const result = Object.entries(kitState.keymap).find(
       ([, { value }]: [string, any]) =>
         value.toLowerCase() === sourceKey.toLowerCase()
     ) || [''];
@@ -753,18 +749,16 @@ export const convertKey = (sourceKey: string) => {
 
 export const initKeymap = async () => {
   log.info(`🔑 Initializing keymap...`);
-  if (!keymap) {
+  if (!kitState.keymap) {
     try {
       ({ default: nativeKeymap } = await import('native-keymap' as any));
-      keymap = nativeKeymap.getKeyMap();
+      kitState.keymap = nativeKeymap.getKeyMap();
       log.info(`Set keymap`);
       nativeKeymap.onDidChangeKeyboardLayout(() => {
-        keymap = nativeKeymap.getKeyMap();
-
-        log.info(`🔑 Keymap changed: ${JSON.stringify(keymap)}`);
+        kitState.keymap = nativeKeymap.getKeyMap();
       });
 
-      log.info(`🔑 Keymap: ${JSON.stringify(keymap)}`);
+      log.info(`🔑 Keymap: ${JSON.stringify(kitState.keymap)}`);
     } catch (e) {
       log.error(e);
     }

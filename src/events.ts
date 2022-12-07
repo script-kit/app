@@ -23,6 +23,7 @@ export enum KitEvent {
   RestartWatcher = 'RestartWatcher',
   TeardownWatchers = 'TeardownWatchers',
   RestartKeyWatcher = 'RestartKeyWatcher',
+  KeymapChanged = 'KeymapChanged',
 }
 
 interface KitEmitter {

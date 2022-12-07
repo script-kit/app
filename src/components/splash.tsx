@@ -112,7 +112,7 @@ function Aside() {
         {progress === 100 && (
           <div className="pt-3 flex flex-col px-4">
             <button
-              className="rounded-md shadow-md px-5 py-2 bg-primary text-bg-base bg-opacity-90 hover:bg-opacity-100 font-semibold shadow-primary/25 hover:shadow-primary/50 transition-all duration-200"
+              className="border border-text-base border-opacity-25 rounded-md shadow-md px-5 py-2 bg-primary text-bg-base bg-opacity-90 hover:bg-opacity-100 font-semibold shadow-primary/25 hover:shadow-primary/50 transition-all duration-200"
               type="button"
               onClick={() => {
                 runMainScript();
@@ -335,7 +335,7 @@ export default function Splash() {
             <motion.div className="flex flex-row justify-between w-full pt-2">
               <button
                 type="submit"
-                className="rounded-md bg-primary text-bg-base hover:bg-opacity-50 transition px-5 py-2 font-medium h-10"
+                className="border border-text-base border-opacity-25 rounded-md bg-primary text-bg-base bg-opacity-90 hover:bg-opacity-100 hover:shadow-primary/25 transition-all px-5 py-2 font-medium h-10"
               >
                 {isSubmitting ? <Spinner /> : 'Send'}
               </button>

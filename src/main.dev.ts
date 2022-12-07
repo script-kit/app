@@ -37,7 +37,6 @@ import {
   SpawnSyncOptions,
   SpawnSyncReturns,
   ForkOptions,
-  exec,
   execFileSync,
 } from 'child_process';
 import os, { homedir } from 'os';
@@ -93,7 +92,6 @@ import {
   setPromptData,
   setScript,
   focusPrompt,
-  beforePromptQuit,
   clearAll,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
@@ -122,6 +120,31 @@ import { mainLog, mainLogPath } from './logs';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
+
+// ignore lint rules for the following function
+/* eslint-disable */
+(function () {
+  if (!process.env.NODE_EXTRA_CA_CERTS) return;
+  let extraca: any = null;
+  try {
+    extraca = require('fs').readFileSync(process.env.NODE_EXTRA_CA_CERTS);
+  } catch (e) {
+    return;
+  }
+
+  // @ts-ignore
+  const NativeSecureContext = process.binding('crypto').SecureContext;
+  const oldaddRootCerts = NativeSecureContext.prototype.addRootCerts;
+  NativeSecureContext.prototype.addRootCerts = function () {
+    // @ts-ignore
+    const ret = oldaddRootCerts.apply(this, ...args);
+    if (extraca) {
+      this.addCACert(extraca);
+      return ret;
+    }
+  };
+})();
+/* eslint-enable */
 
 unhandled({
   showDialog: true,
@@ -647,6 +670,7 @@ const cleanKit = async () => {
   for await (const file of await readdir(pathToClean)) {
     if (keep(file)) {
       log.info(`👍 Keeping ${file}`);
+      // eslint-disable-next-line no-continue
       continue;
     }
 

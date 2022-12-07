@@ -4,6 +4,13 @@
 @import '@vscode/codicons/dist/codicon.css';
 @import 'xterm/css/xterm.css';
 
+/*
+Favicon gradient
+<stop stop-color="#FFE86F" />
+<stop offset=".333" stop-color="#FED533" />
+<stop offset=".714" stop-color="#FFB800" />
+<stop offset="1" stop-color="#FFA800" /> */
+
 /* @import '../node_modules/highlight.js/styles/solarized-light.css'; */
 /* .hljs {
   background: rgba(0, 0, 0, 0.2);

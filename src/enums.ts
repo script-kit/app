@@ -39,6 +39,7 @@ export enum WindowChannel {
 export enum Trigger {
   App = 'app',
   Background = 'background',
+  Info = 'info',
   Schedule = 'schedule',
   Snippet = 'snippet',
   System = 'system',
