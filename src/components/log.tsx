@@ -202,7 +202,7 @@ export default function Log() {
     setShortcuts([
       {
         name: 'Clear Log',
-        key: `${cmd}+l`,
+        key: `${cmd}+y`,
         bar: 'right',
       },
     ]);

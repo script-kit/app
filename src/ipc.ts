@@ -267,8 +267,9 @@ export const startIpc = () => {
 
         if (child) {
           try {
-            if (child?.channel) child?.send(message);
+            if (child?.channel && child.connected) child?.send(message);
           } catch (e) {
+            log.error(`📤 ${channel} ERROR`, message);
             log.error(e);
           }
         }

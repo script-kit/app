@@ -871,6 +871,7 @@ export const setTabIndex = (tabIndex: number) => {
 };
 
 let boundsCheck: any = null;
+let topTimeout: any = null;
 
 const pidMatch = (pid: number, message: string) => {
   if (pid !== kitState.pid && promptWindow?.isVisible()) {
@@ -927,7 +928,7 @@ export const setPromptData = async (promptData: PromptData) => {
   if (kitState.isMac) {
     promptWindow?.showInactive();
     promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
-    setTimeout(() => {
+    topTimeout = setTimeout(() => {
       promptWindow?.setAlwaysOnTop(false);
     }, 1000);
   } else {
@@ -1185,7 +1186,9 @@ export const clearPromptCacheFor = async (scriptPath: string) => {
 };
 
 export const clearAll = async () => {
-  clearTimeout(boundsCheck);
+  if (boundsCheck) clearTimeout(boundsCheck);
+  if (resizeTimeout) clearTimeout(resizeTimeout);
+  if (topTimeout) clearTimeout(topTimeout);
 };
 
 subs.push(

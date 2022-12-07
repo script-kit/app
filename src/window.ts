@@ -108,7 +108,7 @@ export const showLogWindow = async ({
   // get ipc events from the window
   win.webContents.on('ipc-message', async (event, channel, message) => {
     if (channel === Channel.SHORTCUT) {
-      if (message?.state?.shortcut?.endsWith('l')) {
+      if (message?.state?.shortcut?.endsWith('y')) {
         log.info(`Clearing log file ${logPath}`);
         await writeFile(logPath, '');
         win.webContents.send(WindowChannel.SET_LOG_VALUE, '');

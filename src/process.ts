@@ -795,6 +795,7 @@ const kitMessageMap: ChannelHandler = {
         processInfo.child.stderr.removeAllListeners();
 
         const routeToScriptLog = (d: any) => {
+          if (processInfo?.child?.killed) return;
           scriptLog.info(`\n${stripAnsi(d.toString())}`);
         };
 
@@ -1491,7 +1492,9 @@ const createChild = ({
     // });
 
     child.once('disconnect', () => {
-      if (!child.killed) child.kill();
+      if (!child.killed) {
+        child.kill();
+      }
     });
 
     child.once('exit', () => {

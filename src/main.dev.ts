@@ -1089,24 +1089,6 @@ const checkKit = async () => {
 
 app.whenReady().then(checkKit).catch(ohNo);
 
-const destroyAllWindows = () => {
-  try {
-    const browserWindows = BrowserWindow.getAllWindows();
-    browserWindows.forEach((browserWindow: BrowserWindow) => {
-      try {
-        if (browserWindow && !browserWindow.isDestroyed()) {
-          mainLog.info(`Destroying ${browserWindow.getTitle()}`);
-          browserWindow?.destroy();
-        }
-      } catch (error) {
-        mainLog.error(error);
-      }
-    });
-  } catch (e) {
-    mainLog.warn(`callBeforeQuitAndInstall error`, e);
-  }
-};
-
 subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   mainLog.info('allowQuit begin...');
 
@@ -1136,29 +1118,6 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     destroyAllProcesses();
   } catch (error) {
     mainLog.error(error);
-  }
-  // Ensure all browser windows are closed before quitting
-  mainLog.info(
-    `Remaining browser windows: ${BrowserWindow.getAllWindows()?.length}`
-  );
-  try {
-    destroyAllWindows();
-  } catch (error) {
-    mainLog.error(error);
-  }
-
-  // Ensure all browser windows are closed before quitting
-  mainLog.info(
-    `Remaining browser windows: ${BrowserWindow.getAllWindows()?.length}`
-  );
-
-  if (kitState.quitAndInstall) {
-    mainLog.info(`😬 Before quitAndInstall`);
-    autoUpdater?.quitAndInstall();
-    // Wait 3 seconds
-    mainLog.info(`😬 After quitAndInstall`);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    mainLog.info(`😬 After quitAndInstall wait...`);
   }
 
   try {
