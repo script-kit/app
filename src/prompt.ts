@@ -64,11 +64,9 @@ interface GlasstronWindow extends BrowserWindow {
 let promptWindow: GlasstronWindow;
 
 export const blurPrompt = () => {
-  log.silly(`blurPrompt`);
-  if (!promptWindow?.isDestroyed()) return;
+  log.info(`blurPrompt`);
+  if (promptWindow?.isDestroyed()) return;
   if (promptWindow) {
-    promptWindow.minimize();
-    promptWindow.hide();
     promptWindow.blur();
   }
 };
@@ -81,12 +79,13 @@ export const maybeHide = async (reason: string) => {
       !promptWindow?.webContents?.isDevToolsOpened() &&
       !kitState.preventClose
     ) {
+      promptWindow?.hide();
+
       if (!kitState.isMac) {
         // Check if there are any windows with focus
         const focusedWindow = BrowserWindow.getFocusedWindow();
         if (!focusedWindow) promptWindow?.minimize();
       }
-      promptWindow?.hide();
 
       log.verbose(
         `🙈 maybeHide???: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
@@ -1203,10 +1202,14 @@ export const clearPromptCacheFor = async (scriptPath: string) => {
   }
 };
 
-export const clearAll = async () => {
-  if (boundsCheck) clearTimeout(boundsCheck);
-  if (resizeTimeout) clearTimeout(resizeTimeout);
-  if (topTimeout) clearTimeout(topTimeout);
+export const clearPromptTimers = async () => {
+  try {
+    if (boundsCheck) clearTimeout(boundsCheck);
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    if (topTimeout) clearTimeout(topTimeout);
+  } catch (e) {
+    log.error(e);
+  }
 };
 
 subs.push(

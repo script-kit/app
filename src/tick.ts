@@ -232,6 +232,8 @@ export const pantsKick = async () => {
   log.info(`Pants kicked!`);
 };
 
+let accessibilityInterval: any = null;
+
 export const preStartConfigureInterval = async () => {
   if (kitState.authorized) {
     log.info(`💻 Accessibility authorized ✅`);
@@ -243,12 +245,12 @@ export const preStartConfigureInterval = async () => {
 
     askForAccessibilityAccess();
 
-    const id = setInterval(async () => {
+    accessibilityInterval = setInterval(async () => {
       log.silly(`Checking for accessibility authorization...`);
       await checkAccessibility();
       if (kitState.authorized) {
         await updateAppDb({ authorized: true });
-        clearInterval(id);
+        clearInterval(accessibilityInterval);
         kitState.requiresAuthorizedRestart = true;
       }
     }, 5000);
@@ -590,3 +592,7 @@ const subWakeWatcher = subscribeKey(kitState, 'wakeWatcher', (wakeWatcher) => {
 });
 
 subs.push(subSnippet, subIsTyping, watcherEnabledSub, subWakeWatcher);
+
+export const clearTickTimers = () => {
+  if (accessibilityInterval) clearInterval(accessibilityInterval);
+};

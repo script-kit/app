@@ -723,11 +723,6 @@ const kitMessageMap: ChannelHandler = {
       }
     };
 
-    // If windows, force blur
-    if (kitState.isWindows) {
-      blurPrompt();
-    }
-
     if (isVisible()) {
       onHideOnce(handler);
     } else {

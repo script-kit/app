@@ -83,7 +83,12 @@ import {
   getPlatformExtension,
   getReleaseChannel,
 } from './assets';
-import { configureInterval, destroyInterval, pantsKick } from './tick';
+import {
+  clearTickTimers,
+  configureInterval,
+  destroyInterval,
+  pantsKick,
+} from './tick';
 import {
   clearPromptCache,
   createPromptWindow,
@@ -92,7 +97,7 @@ import {
   setPromptData,
   setScript,
   focusPrompt,
-  clearAll,
+  clearPromptTimers,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -102,6 +107,7 @@ import {
   appDb,
   cacheKitScripts,
   checkAccessibility,
+  clearStateTimers,
   initKeymap,
   kitState,
   subs,
@@ -404,6 +410,8 @@ const ensureKenvDirs = async () => {
   await ensureDir(kenvPath('assets'));
 };
 
+let resumeTimeout: any = null;
+
 const systemEvents = () => {
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);
@@ -420,7 +428,7 @@ const systemEvents = () => {
 
     log.info(`Resume tasks`);
     if (!kitState.updateDownloaded) {
-      setTimeout(() => {
+      resumeTimeout = setTimeout(() => {
         try {
           checkForUpdates();
         } catch (error) {
@@ -445,8 +453,10 @@ const systemEvents = () => {
   });
 };
 
+let macAccessibiltyInterval: any = null;
+
 const configureIntervalMac = (fn = configureInterval) => {
-  setTimeout(() => {
+  macAccessibiltyInterval = setTimeout(() => {
     if (kitState.isMac && kitState.authorized && appDb?.authorized) {
       log.info(
         `💻 Accessibility authorized ✅. Kicking uiohook in the pants 👖`
@@ -1097,9 +1107,7 @@ const checkKit = async () => {
 
     await ready();
     kitState.ready = true;
-    setTimeout(() => {
-      kitState.settled = true;
-    }, 4000);
+
     sendToPrompt(Channel.SET_READY, true);
 
     focusPrompt();
@@ -1124,9 +1132,19 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     teardownWatchers();
     sleepSchedule();
     destroyInterval();
-    subs.forEach((sub) => sub());
+    subs.forEach((sub) => {
+      try {
+        sub();
+      } catch (error) {
+        mainLog.error(`😬 Error unsubscribing`, { error });
+      }
+    });
     subs.length = 0;
-    clearAll();
+    clearPromptTimers();
+    clearTickTimers();
+    clearStateTimers();
+    if (macAccessibiltyInterval) clearInterval(macAccessibiltyInterval);
+    if (resumeTimeout) clearTimeout(resumeTimeout);
 
     mainLog.info(`Cleared out everything...`);
 

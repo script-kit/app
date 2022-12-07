@@ -260,7 +260,6 @@ const initState = {
   allowQuit: false,
   // updateError: false,
   ready: false,
-  settled: false,
   authorized: false,
   requiresAuthorizedRestart: false,
   fullDiskAccess: false,
@@ -767,4 +766,8 @@ export const initKeymap = async () => {
       log.error(e);
     }
   }
+};
+
+export const clearStateTimers = () => {
+  if (hideIntervalId) clearInterval(hideIntervalId);
 };
