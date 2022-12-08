@@ -19,7 +19,7 @@ import {
 } from 'electron';
 import os from 'os';
 import dotenv from 'dotenv';
-import { assign, remove } from 'lodash';
+import { assign, remove, debounce } from 'lodash';
 import ContrastColor from 'contrast-color';
 import { snapshot, subscribe } from 'valtio';
 import http from 'http';
@@ -171,6 +171,7 @@ export const maybeConvertColors = (value: any) => {
 
   log.info(value);
 
+  if (value.ui) delete value.ui;
   if (value.background) delete value.background;
   if (value.foreground) delete value.foreground;
   if (value.accent) delete value.accent;
@@ -1537,7 +1538,7 @@ interface ProcessHandlers {
   reject?: (value: any) => any;
 }
 
-const processesChanged = () => {
+const processesChanged = debounce(() => {
   if (kitState.allowQuit) return;
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
   appToPrompt(AppChannel.PROCESSES, pinfos);
@@ -1554,7 +1555,7 @@ const processesChanged = () => {
       p.child.kill();
     });
   }
-};
+}, 10);
 
 export const ensureTwoIdleProcesses = () => {
   setTimeout(() => {
@@ -1749,20 +1750,12 @@ class Processes extends Array<ProcessInfo> {
       kitState.promptCount = 0;
     }
 
-    this.splice(index, 1);
-    kitState.removeP(pid);
+    if (this.find((i) => i.pid === pid)) {
+      this.splice(index, 1);
+      kitState.removeP(pid);
 
-    // check if two paths are the same
-
-    processesChanged();
-
-    // const mainAbandon = kitState.ps.find(
-    //   (p) => p?.scriptPath === mainScriptPath
-    // );
-    // if (mainAbandon?.child) {
-    //   log.info(`Found stray main . Exiting...`);
-    //   mainAbandon?.child?.killed && mainAbandon?.child?.kill();
-    // }
+      processesChanged();
+    }
   }
 }
 

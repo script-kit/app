@@ -29,7 +29,6 @@ import { remove } from 'lodash';
 import { emitter, KitEvent } from './events';
 import {
   checkAccessibility,
-  getKeyMap,
   kitConfig,
   kitState,
   subs,
@@ -81,11 +80,10 @@ type KeyCodes = keyof typeof ShiftMap;
 const toKey = (keycode: number, shift = false) => {
   try {
     let key: string = UiohookToName[keycode] || '';
-    const keymap = getKeyMap();
-    if (keymap) {
+    if (kitState.keymap) {
       const char = chars[keycode];
       if (char) {
-        const keymapChar = keymap?.[char];
+        const keymapChar = kitState.keymap?.[char];
         if (keymapChar) {
           key = keymapChar?.value;
         }

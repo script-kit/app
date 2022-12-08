@@ -185,16 +185,8 @@ export const runPromptProcess = async (
     },
   });
 
-  // processes.add(ProcessType.Prompt);
-
   return processInfo;
 };
-
-// export const resetIdlePromptProcess = async () => {
-//   const { pid } = processes.findPromptProcess();
-//   processes.removeByPid(pid);
-//   processes.add(ProcessType.Prompt);
-// };
 
 const KIT = kitPath();
 const forkOptions: ForkOptions = {
