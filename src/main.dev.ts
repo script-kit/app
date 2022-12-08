@@ -1170,8 +1170,13 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   });
 
   try {
-    mainLog.info(`🚀 Quit`);
-    app?.quit();
+    if (kitState?.quitAndInstall) {
+      mainLog.info(`🚀 Quit and Install`);
+      autoUpdater?.quitAndInstall();
+    } else {
+      mainLog.info(`🚀 Quit`);
+      app?.quit();
+    }
   } catch (error) {
     mainLog.error(error);
     app?.quit();
