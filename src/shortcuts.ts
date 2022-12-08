@@ -8,8 +8,8 @@ import { subscribeKey } from 'valtio/utils';
 import {
   mainScriptPath,
   shortcutsPath,
-  shortcutNormalizer,
   kitPath,
+  shortcutNormalizer,
 } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
@@ -39,9 +39,10 @@ const validateAccelerator = (shortcut: string) => {
 
 const infoScript = kitPath('cli', 'info.js');
 
-const defaultFail = (
+const conversionFail = (
   shortcut: string,
-  filePath: string
+  filePath: string,
+  otherPath = ''
 ) => `# Shortcut Conversion Failed
 
 Attempted to convert to a valid shortcut, but result was invalid:
@@ -59,6 +60,14 @@ const registerFail = (shortcut: string, filePath: string) =>
 <code>${shortcut}</code> is already registered to ${path.basename(filePath)}
 `;
 
+const alreadyFail = (shortcut: string, filePath: string, otherPath = '') =>
+  `# Shortcut Registration Failed
+
+Attempting to assign <code>${shortcut}</code> to ${filePath}...
+
+<code>${shortcut}</code> is already registered to ${path.basename(otherPath)}
+`;
+
 const mainFail = (shortcut: string, filePath: string) =>
   `# Failed to Register Main Shortcut
 
@@ -66,12 +75,15 @@ const mainFail = (shortcut: string, filePath: string) =>
 
 const shortcutInfo = async (
   shortcut: string,
-  filePath: string,
-  md = defaultFail
+  targetScriptPath: string,
+  md = conversionFail,
+  otherScriptPath = ''
 ) => {
+  const markdown = md(shortcut, targetScriptPath, otherScriptPath);
+  log.info(markdown);
   runPromptProcess(
     infoScript,
-    [path.basename(filePath), shortcut, md(shortcut, filePath)],
+    [path.basename(targetScriptPath), shortcut, markdown],
     {
       force: true,
       trigger: Trigger.Info,
@@ -80,14 +92,8 @@ const shortcutInfo = async (
 };
 
 const registerShortcut = (shortcut: string, filePath: string) => {
-  // use convertKey to convert the final character in the shortcut to the correct key
-
-  const finalShortcut = convertShortcut(shortcut, filePath);
-  log.verbose(`Converted shortcut from ${shortcut} to ${finalShortcut}`);
-  if (!finalShortcut) return false;
-
   try {
-    const success = globalShortcut.register(finalShortcut, async () => {
+    const success = globalShortcut.register(shortcut, async () => {
       runPromptProcess(filePath, [], {
         force: true,
         trigger: Trigger.Shortcut,
@@ -106,12 +112,12 @@ const registerShortcut = (shortcut: string, filePath: string) => {
   }
 };
 
-export const registerTrayShortcut = () => {
+export const registerKillLatestShortcut = () => {
   const semicolon = convertKey(';');
   const success = globalShortcut.register(
     `CommandOrControl+Shift+${semicolon}`,
     () => {
-      emitter.emit(KitEvent.TrayClick);
+      emitter.emit(KitEvent.RemoveMostRecent);
     }
   );
 
@@ -152,19 +158,21 @@ export const unlinkShortcuts = (filePath: string) => {
   }
 };
 
-export const shortcutScriptChanged = ({
-  shortcut,
-  filePath,
-  friendlyShortcut,
-}: Script) => {
+export const shortcutScriptChanged = ({ filePath, shortcut }: Script) => {
+  const convertedShortcut = convertShortcut(shortcut, filePath);
   const oldShortcut = shortcutMap.get(filePath);
-  const sameScript = oldShortcut === shortcut;
+  const sameScript = oldShortcut === convertedShortcut;
 
   // Handle existing shortcuts
 
-  const exists = [...shortcutMap.entries()].find(([, s]) => s === shortcut);
+  const exists = [...shortcutMap.entries()].find(
+    ([, s]) => s === convertedShortcut
+  );
   if (exists && !sameScript) {
-    shortcutInfo(shortcut, exists[0], registerFail);
+    log.info(
+      `Shortcut ${convertedShortcut} already registered to ${exists[0]}`
+    );
+    shortcutInfo(convertedShortcut, filePath, alreadyFail, exists[0]);
 
     return;
   }
@@ -172,7 +180,7 @@ export const shortcutScriptChanged = ({
   if (oldShortcut) {
     // No change
     if (sameScript) {
-      const message = `${shortcut} is already registered to ${filePath}`;
+      const message = `${convertedShortcut} is already registered to ${filePath}`;
       log.info(message);
 
       return;
@@ -184,46 +192,54 @@ export const shortcutScriptChanged = ({
     log.info(`Unregistered ${oldShortcut} from ${filePath}`);
   }
 
-  if (!shortcut) return;
+  if (!convertedShortcut) {
+    // log.info(`No shortcut found for ${filePath}`);
+    return;
+  }
+
+  log.info(`Found shortcut: ${convertedShortcut} for ${filePath}`);
   // At this point, we know it's a new shortcut, so register it
 
-  const registerSuccess = registerShortcut(shortcut, filePath);
+  const registerSuccess = registerShortcut(convertedShortcut, filePath);
 
-  if (registerSuccess && globalShortcut.isRegistered(shortcut)) {
-    log.info(`Registered ${shortcut} to ${filePath}`);
-    shortcutMap.set(filePath, shortcut);
+  if (registerSuccess && globalShortcut.isRegistered(convertedShortcut)) {
+    log.info(`Registered ${convertedShortcut} to ${filePath}`);
+    shortcutMap.set(filePath, convertedShortcut);
   }
 };
 
 const convertShortcut = (shortcut: string, filePath: string): string => {
-  const sourceKey = shortcut?.split('+')?.pop();
-  log.info(`Shortcut main key: ${sourceKey}`);
+  if (!shortcut?.length) return '';
+  const normalizedShortcut = shortcutNormalizer(shortcut);
+  log.info({ shortcut, normalizedShortcut });
+  const [sourceKey, ...mods] = normalizedShortcut
+    .trim()
+    ?.split(/\+| /)
+    .reverse();
+  // log.info(`Shortcut main key: ${sourceKey}`);
 
-  if (!sourceKey) {
-    shortcutInfo(shortcut, filePath);
+  if (!mods.length || !sourceKey?.length) {
+    if (!mods.length) log.info('No modifiers found');
+    if (!sourceKey?.length) log.info('No main key found');
+    // shortcutInfo(normalizedShortcut, filePath);
     return '';
   }
 
   if (sourceKey?.length > 1) {
-    if (!validateAccelerator(shortcut)) {
-      shortcutInfo(shortcut, filePath);
+    if (!validateAccelerator(normalizedShortcut)) {
+      log.info(`Invalid shortcut: ${normalizedShortcut}`);
+      shortcutInfo(normalizedShortcut, filePath);
       return '';
     }
 
-    return shortcut;
+    return normalizedShortcut;
   }
 
   const convertedKey = convertKey(sourceKey).toUpperCase();
-  const mods = shortcut?.split('+')?.slice(0, -1).join('+');
-  const finalShortcut = `${mods}+${convertedKey}`;
+  const finalShortcut = `${mods.reverse().join('+')}+${convertedKey}`;
 
   if (!validateAccelerator(finalShortcut)) {
-    shortcutInfo(shortcut, filePath);
-    return '';
-  }
-
-  if (!validateAccelerator(finalShortcut)) {
-    shortcutInfo(shortcut, filePath);
+    shortcutInfo(finalShortcut, filePath);
     return '';
   }
 
@@ -235,9 +251,8 @@ export const updateMainShortcut = async (filePath: string) => {
   if (filePath === shortcutsPath) {
     log.info(`SHORTCUTS DB CHANGED:`, filePath);
     const settings = JSON.parse(await readFile(filePath, 'utf-8'));
-    const rawShortcut = settings?.shortcuts?.[mainScriptPath];
+    const shortcut = settings?.shortcuts?.[mainScriptPath];
 
-    const shortcut = rawShortcut ? shortcutNormalizer(rawShortcut) : '';
     const finalShortcut = convertShortcut(shortcut, filePath);
     if (!finalShortcut) return;
 

@@ -24,11 +24,13 @@ export enum KitEvent {
   TeardownWatchers = 'TeardownWatchers',
   RestartKeyWatcher = 'RestartKeyWatcher',
   KeymapChanged = 'KeymapChanged',
+  RemoveMostRecent = 'RemoveMostRecent',
 }
 
 interface KitEmitter {
   emit(event: KitEvent | Channel, data?: any): void;
   on(event: KitEvent | Channel, listener: (data: any) => void): void;
+  removeAllListeners(): ReturnType<EventEmitter['removeAllListeners']>;
 }
 
 export const emitter: KitEmitter = new EventEmitter();

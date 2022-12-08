@@ -1153,13 +1153,21 @@ const kitMessageMap: ChannelHandler = {
 
   KEYBOARD_TYPE: toProcess(async ({ child }, { channel, value }) => {
     if (!kitState.authorized) kitState.notifyAuthFail = true;
-    log.info(`${channel}: ${typeof value} ${value}`);
+    log.info(`${channel}: ${typeof value} ${value}`, {
+      isArray: Array.isArray(value),
+    });
     log.info(`${channel}: ${[...value]}`);
-    keyboard.config.autoDelayMs = 0;
+    const firstItem = value?.[0];
+    log.info({ type: typeof firstItem, firstItem });
+    keyboard.config.autoDelayMs = kitState?.keyboardConfig?.autoDelayMs || 0;
     kitState.isTyping = true;
+
     try {
-      for await (const k of value) {
-        await keyboard.type(k);
+      for await (const k of typeof firstItem === 'string'
+        ? firstItem.split('')
+        : value) {
+        log.info({ k, value });
+        if (!kitState.cancelTyping) await keyboard.type(k);
       }
     } catch (error) {
       log.error(`KEYBOARD ERROR TYPE`, error);
@@ -1167,6 +1175,8 @@ const kitMessageMap: ChannelHandler = {
 
     setTimeout(() => {
       kitState.isTyping = false;
+      kitState.cancelTyping = false;
+      keyboard.config.autoDelayMs = 0;
       childSend(child, {
         channel,
       });
@@ -1257,7 +1267,7 @@ const kitMessageMap: ChannelHandler = {
 
   KEYBOARD_CONFIG: async (data) => {
     if (data?.value) {
-      keyboard.config = data.value;
+      kitState.keyboardConfig = data.value;
     }
   },
   SET_CONFIG: async (data) => {
@@ -1757,6 +1767,16 @@ class Processes extends Array<ProcessInfo> {
       processesChanged();
     }
   }
+
+  public removeMostRecentPrompt() {
+    const info = this.find(
+      (processInfo) =>
+        processInfo.scriptPath && processInfo.type === ProcessType.Prompt
+    );
+    if (info) {
+      this.removeByPid(info.pid);
+    }
+  }
 }
 
 export const processes = new Processes();
@@ -1853,6 +1873,10 @@ export const destroyAllProcesses = () => {
   processes.length = 0;
 };
 
+emitter.on(
+  KitEvent.RemoveMostRecent,
+  processes.removeMostRecentPrompt.bind(processes)
+);
 // emitter.on(KitEvent.MainScript, () => {
 //   sendToPrompt(Channel.SET_DESCRIPTION, 'Run Script');
 //   const scripts = getScriptsSnapshot();

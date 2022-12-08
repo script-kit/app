@@ -13,6 +13,7 @@ import { ChildProcess } from 'child_process';
 import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
+import { KeyboardClass } from '@nut-tree/nut-js';
 import { Script, ProcessInfo } from '@johnlindquist/kit/types/core';
 import {
   getScripts,
@@ -315,6 +316,10 @@ const initState = {
   wakeWatcher: new Date().getTime(),
   allowBlur: true,
   keymap: null as any,
+  keyboardConfig: {
+    autoDelayMs: 0,
+  } as KeyboardClass['config'],
+  cancelTyping: false,
 };
 
 const initAppDb: AppDb = {

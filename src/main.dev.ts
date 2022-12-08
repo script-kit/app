@@ -14,7 +14,14 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
-import { app, protocol, powerMonitor, shell, BrowserWindow } from 'electron';
+import {
+  app,
+  protocol,
+  powerMonitor,
+  shell,
+  BrowserWindow,
+  crashReporter,
+} from 'electron';
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
@@ -121,8 +128,9 @@ import { showError } from './main.dev.templates';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from './defaults';
-import { registerTrayShortcut } from './shortcuts';
+import { registerKillLatestShortcut } from './shortcuts';
 import { mainLog, mainLogPath } from './logs';
+import { emitter } from './events';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -151,6 +159,8 @@ process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
   };
 })();
 /* eslint-enable */
+
+crashReporter.start({ submitURL: '', uploadToServer: false });
 
 unhandled({
   showDialog: true,
@@ -1103,7 +1113,7 @@ const checkKit = async () => {
 
     // log.info(`kitState`, kitState);
 
-    registerTrayShortcut();
+    registerKillLatestShortcut();
 
     await ready();
     kitState.ready = true;
@@ -1145,6 +1155,8 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     clearStateTimers();
     if (macAccessibiltyInterval) clearInterval(macAccessibiltyInterval);
     if (resumeTimeout) clearTimeout(resumeTimeout);
+    // destory event emitter named "emitter"
+    if (emitter) emitter.removeAllListeners();
 
     mainLog.info(`Cleared out everything...`);
 

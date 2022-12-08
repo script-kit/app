@@ -179,6 +179,11 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
 
     const e = event as UiohookKeyboardEvent;
 
+    if (e.keycode === UiohookKey.Escape && kitState.isTyping) {
+      log.info(`✋ Cancel typing`);
+      kitState.cancelTyping = true;
+    }
+
     kitState.isShiftDown = e.shiftKey;
 
     let key = '';
