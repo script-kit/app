@@ -2,9 +2,9 @@
 import log from 'electron-log';
 import { add, assign, debounce } from 'lodash';
 import path from 'path';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { snapshot } from 'valtio';
-
+import dotenv from 'dotenv';
 import { rm, readFile } from 'fs/promises';
 import { getAppDb, getUserDb } from '@johnlindquist/kit/cjs/db';
 
@@ -214,6 +214,10 @@ export const setupWatchers = async () => {
 
     if (base === '.env') {
       log.info(`🌎 .env ${eventName}`);
+
+      if (existsSync(filePath)) {
+        kitState.kenvEnv = dotenv.parse(readFileSync(filePath));
+      }
 
       return;
     }

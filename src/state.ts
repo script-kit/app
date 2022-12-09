@@ -320,6 +320,7 @@ const initState = {
     autoDelayMs: 0,
   } as KeyboardClass['config'],
   cancelTyping: false,
+  kenvEnv: {} as Record<string, string>,
 };
 
 const initAppDb: AppDb = {

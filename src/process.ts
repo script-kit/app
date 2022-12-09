@@ -18,7 +18,6 @@ import {
   shell,
 } from 'electron';
 import os from 'os';
-import dotenv from 'dotenv';
 import { assign, remove, debounce } from 'lodash';
 import ContrastColor from 'contrast-color';
 import { snapshot, subscribe } from 'valtio';
@@ -50,7 +49,7 @@ import {
   mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
-import { existsSync, readFileSync } from 'fs';
+import { subscribeKey } from 'valtio/utils';
 import { getLog, mainLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -1468,13 +1467,7 @@ const createChild = ({
 
   const entry = type === ProcessType.Prompt ? KIT_APP_PROMPT : KIT_APP;
 
-  // Check if kitDotEnvPath() is a file
-
-  // let kitEnv = {};
-  // const kitEnvPath = kitDotEnvPath();
-  // if (existsSync(kitEnvPath)) {
-  //   kitEnv = dotenv.parse(readFileSync(kitEnvPath));
-  // }
+  const PATH = KIT_FIRST_PATH + path.delimiter + process?.env?.PATH;
 
   const env = {
     ...process.env,
@@ -1487,8 +1480,9 @@ const createChild = ({
     KIT_APP_VERSION: getVersion(),
     PROCESS_TYPE: type,
     FORCE_COLOR: '1',
-    PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+    PATH,
     KIT_APP_PATH: app.getAppPath(),
+    ...kitState.kenvEnv,
   };
   // console.log({ env });
   // const isWin = os.platform().startsWith('win');
@@ -1590,7 +1584,20 @@ const processesChanged = debounce(() => {
   }
 }, 10);
 
+export const clearIdleProcesses = () => {
+  log.info(`Reset all idle processes`);
+  processes.getAllProcessInfo().forEach((processInfo) => {
+    if (
+      processInfo.type === ProcessType.Prompt &&
+      processInfo.scriptPath === ''
+    ) {
+      processes.removeByPid(processInfo.pid);
+    }
+  });
+};
+
 export const ensureTwoIdleProcesses = () => {
+  log.info(`Ensure two idle processes`);
   setTimeout(() => {
     const idles = processes
       .getAllProcessInfo()
@@ -1601,12 +1608,18 @@ export const ensureTwoIdleProcesses = () => {
       );
 
     if (idles.length === 0) {
+      log.info(`Add two idle processes`);
       processes.add(ProcessType.Prompt);
       processes.add(ProcessType.Prompt);
     }
 
     if (idles.length === 1) {
+      log.info(`Add one idle process`);
       processes.add(ProcessType.Prompt);
+    }
+
+    if (idles.length === 2) {
+      log.info(`No need to add idle processes`);
     }
   }, 100);
 };
@@ -1906,3 +1919,10 @@ emitter.on(
 //   log.verbose({ scripts });
 //   setChoices(formatScriptChoices(scripts));
 // });
+
+subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
+  if (Object.keys(kenvEnv).length === 0) return;
+  if (processes.getAllProcessInfo().length === 0) return;
+  clearIdleProcesses();
+  ensureTwoIdleProcesses();
+});

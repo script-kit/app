@@ -39,7 +39,6 @@ export const startWatching = (callback: WatcherCallback) => {
 
   const kenvEnvWatcher = chokidar.watch(kenvPath('.env'), {
     disableGlobbing: true,
-    ignoreInitial: true,
   });
 
   kenvEnvWatcher.on('all', callback);
