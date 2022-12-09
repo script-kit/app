@@ -50,6 +50,7 @@ import Header from './components/header';
 import Form from './components/form';
 import {
   editorConfigAtom,
+  editorSuggestionsAtom,
   flagsAtom,
   hintAtom,
   inputAtom,
@@ -115,6 +116,7 @@ import {
   editorLogModeAtom,
   logValueAtom,
   shortcutsAtom,
+  editorAppendAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -210,6 +212,8 @@ export default function App() {
   const addChoice = useSetAtom(addChoiceAtom);
   const setPreviewHTML = useSetAtom(previewHTMLAtom);
   const setEditorConfig = useSetAtom(editorConfigAtom);
+  const setEditorSuggestions = useSetAtom(editorSuggestionsAtom);
+  const setEditorAppendValue = useSetAtom(editorAppendAtom);
   const setTextareaConfig = useSetAtom(textareaConfigAtom);
   const setFlags = useSetAtom(flagsAtom);
   const setMainHeight = useSetAtom(mainHeightAtom);
@@ -273,6 +277,8 @@ export default function App() {
     [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
     [Channel.SET_DESCRIPTION]: setDescription,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfig,
+    [Channel.SET_EDITOR_SUGGESTIONS]: setEditorSuggestions,
+    [Channel.APPEND_EDITOR_VALUE]: setEditorAppendValue,
     [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfig,
     [Channel.SET_FLAGS]: setFlags,
     [Channel.SET_FOCUSED]: setFocused,

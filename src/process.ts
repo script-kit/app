@@ -1013,9 +1013,34 @@ const kitMessageMap: ChannelHandler = {
   CLEAR_TABS: () => {
     sendToPrompt(Channel.CLEAR_TABS, []);
   },
-  SET_EDITOR_CONFIG: (data) => {
-    sendToPrompt(Channel.SET_EDITOR_CONFIG, data.value);
-  },
+
+  SET_EDITOR_CONFIG: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SET_EDITOR_CONFIG, value);
+
+    childSend(child, {
+      channel,
+      value,
+    });
+  }),
+
+  SET_EDITOR_SUGGESTIONS: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SET_EDITOR_SUGGESTIONS, value);
+
+    childSend(child, {
+      channel,
+      value,
+    });
+  }),
+
+  APPEND_EDITOR_VALUE: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.APPEND_EDITOR_VALUE, value);
+
+    childSend(child, {
+      channel,
+      value,
+    });
+  }),
+
   SET_TEXTAREA_CONFIG: (data) => {
     sendToPrompt(Channel.SET_TEXTAREA_CONFIG, data.value);
   },
@@ -1166,7 +1191,6 @@ const kitMessageMap: ChannelHandler = {
       for await (const k of typeof firstItem === 'string'
         ? firstItem.split('')
         : value) {
-        log.info({ k, value });
         if (!kitState.cancelTyping) await keyboard.type(k);
       }
     } catch (error) {

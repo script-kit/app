@@ -35,7 +35,7 @@ export const startPty = async (config: any = {}) => {
 
   t = pty.spawn(
     config?.env?.KIT_SHELL ||
-      (process.platform === 'win32' ? 'cmd.exe' : 'zsh'),
+      (process.platform === 'win32' ? 'pwsh.exe' : 'zsh'),
     [],
     {
       name: 'xterm-256color',

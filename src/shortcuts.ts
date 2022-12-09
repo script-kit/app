@@ -2,8 +2,8 @@ import { app, globalShortcut } from 'electron';
 import log from 'electron-log';
 import path from 'path';
 import { readFile } from 'fs/promises';
-import { Script } from '@johnlindquist/kit/types/core';
 import { subscribeKey } from 'valtio/utils';
+import { debounce } from 'lodash';
 
 import {
   mainScriptPath,
@@ -104,6 +104,8 @@ const registerShortcut = (shortcut: string, filePath: string) => {
     if (!success) {
       log.info(`Failed to register: ${shortcut} to ${filePath}`);
       shortcutInfo(shortcut, filePath, registerFail);
+    } else {
+      log.info(`Registered: ${shortcut} to ${filePath}`);
     }
 
     return success;
@@ -158,8 +160,14 @@ export const unlinkShortcuts = (filePath: string) => {
   }
 };
 
-export const shortcutScriptChanged = ({ filePath, shortcut }: Script) => {
-  const convertedShortcut = convertShortcut(shortcut, filePath);
+export const shortcutScriptChanged = ({
+  filePath,
+  shortcut,
+}: {
+  filePath: string;
+  shortcut: string;
+}) => {
+  const convertedShortcut = convertShortcut(shortcut || '', filePath);
   const oldShortcut = shortcutMap.get(filePath);
   const sameScript = oldShortcut === convertedShortcut;
 
@@ -302,7 +310,15 @@ const pauseShortcuts = () => {
 
 const resumeShortcuts = () => {
   log.info(`RESUMING GLOBAL SHORTCUTS`);
-  shortcutMap.forEach(registerShortcut);
+  shortcutMap.forEach((shortcut, filePath) => {
+    const convertedShortcut = convertShortcut(shortcut, filePath);
+    log.info({
+      filePath,
+      shortcut,
+      convertedShortcut,
+    });
+    registerShortcut(convertedShortcut, filePath);
+  });
 };
 
 const subShortcutsPaused = subscribeKey(
@@ -322,15 +338,19 @@ subs.push(subShortcutsPaused);
 // sub to keymap
 let prevKeymap: any = null;
 
-const subKeymap = subscribeKey(kitState, 'keymap', async (keymap) => {
-  log.info(`🔑 Keymap changed: ${JSON.stringify(keymap)}`);
-  if (prevKeymap) {
-    pauseShortcuts();
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    resumeShortcuts();
-  }
+const subKeymap = subscribeKey(
+  kitState,
+  'keymap',
+  debounce(async (keymap) => {
+    log.info(`Handling keymap change...`);
+    if (prevKeymap) {
+      pauseShortcuts();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      resumeShortcuts();
+    }
 
-  prevKeymap = keymap;
-});
+    prevKeymap = keymap;
+  }, 200)
+);
 
 subs.push(subKeymap);

@@ -436,6 +436,12 @@ export const editorConfigAtom = atom(
 
     if (typeof a?.value === 'undefined') return;
 
+    if (a?.suggestions) {
+      s(editorSuggestionsAtom, a.suggestions || []);
+    }
+
+    s(editorAppendAtom, '');
+
     const channel = g(channelAtom);
     channel(Channel.INPUT, { input: a.value });
   }
@@ -1154,6 +1160,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     script: g(_script),
     value: g(_submitValue),
     submitted: g(submittedAtom),
+    cursor: g(editorCursorPosAtom),
   };
 
   return state;
@@ -1753,3 +1760,6 @@ export const editorThemeAtom = atom<{ foreground: string; background: string }>(
 
 export const isSponsorAtom = atom(false);
 export const isDefaultTheme = atom(true);
+export const editorSuggestionsAtom = atom<string[]>([]);
+export const editorCursorPosAtom = atom<number>(0);
+export const editorAppendAtom = atom<string>('');

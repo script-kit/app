@@ -739,11 +739,6 @@ export const convertKey = (sourceKey: string) => {
     ) || [''];
 
     const targetKey = result[0];
-    log.info(
-      `🔑 Converting key: ${sourceKey} -> ${targetKey}`,
-      sourceKey,
-      targetKey
-    );
 
     if (targetKey) {
       const target = defaultKeyMap?.[targetKey]?.toUpperCase() || '';
@@ -755,16 +750,47 @@ export const convertKey = (sourceKey: string) => {
   return sourceKey;
 };
 
+let prevKeyMap = {};
 export const initKeymap = async () => {
   log.info(`🔑 Initializing keymap...`);
   if (!kitState.keymap) {
     try {
       ({ default: nativeKeymap } = await import('native-keymap' as any));
-      kitState.keymap = nativeKeymap.getKeyMap();
-      log.info(`Set keymap`);
-      nativeKeymap.onDidChangeKeyboardLayout(() => {
-        kitState.keymap = nativeKeymap.getKeyMap();
-      });
+      let keymap = nativeKeymap.getKeyMap();
+
+      let value = keymap?.KeyA.value;
+      const alpha = /[A-Za-z]/;
+
+      log.info(`🔑 Keymap`, { a: value });
+
+      if (value && value.match(alpha)) {
+        kitState.keymap = keymap;
+      } else {
+        log.info(
+          `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`
+        );
+      }
+
+      nativeKeymap.onDidChangeKeyboardLayout(
+        debounce(() => {
+          keymap = nativeKeymap.getKeyMap();
+          value = keymap?.KeyA.value;
+
+          if (value && value.match(alpha)) {
+            // Check if keymap changed
+            if (JSON.stringify(keymap) !== JSON.stringify(prevKeyMap)) {
+              kitState.keymap = keymap;
+              prevKeyMap = keymap;
+            } else {
+              log.info('Keymap not changed');
+            }
+          } else {
+            log.info(
+              `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`
+            );
+          }
+        }, 500)
+      );
 
       log.info(`🔑 Keymap: ${JSON.stringify(kitState.keymap)}`);
     } catch (e) {

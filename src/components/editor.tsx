@@ -1,18 +1,21 @@
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-useless-escape */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion } from 'framer-motion';
-import MonacoEditor, { Monaco } from '@monaco-editor/react';
+import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
 
-import { editor as monacoEditor } from 'monaco-editor';
+import { editor as monacoEditor, Range } from 'monaco-editor';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import {
   appearanceAtom,
   darkAtom,
+  editorAppendAtom,
   editorConfigAtom,
+  editorCursorPosAtom,
   editorOptions,
+  editorSuggestionsAtom,
   inputAtom,
   openAtom,
   uiAtom,
@@ -94,18 +97,56 @@ export default function Editor() {
   const [kitIsDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
   const [inputValue, setInputValue] = useAtom(inputAtom);
+  const setCursorPosition = useSetAtom(editorCursorPosAtom);
   const [ui] = useAtom(uiAtom);
   const [options] = useAtom(editorOptions);
+  const [editorSuggestions] = useAtom(editorSuggestionsAtom);
+  const editorAppend = useAtomValue(editorAppendAtom);
+  const disposeRef = useRef<any>(null);
+
+  const m = useMonaco();
 
   // useSave(inputValue);
   // useClose();
   // useEscape();
   // useOpen();
 
+  useEffect(() => {
+    if (!m) return;
+
+    if (disposeRef?.current) disposeRef?.current?.dispose();
+    if (options?.language === 'markdown' || options?.language === 'md') {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      disposeRef.current = m.languages.registerCompletionItemProvider(
+        'markdown',
+        {
+          async provideCompletionItems(model, position) {
+            // clear previous suggestions
+
+            const suggestions = editorSuggestions?.map((str: string) => ({
+              label: str,
+              insertText: str,
+            }));
+
+            return {
+              suggestions,
+            };
+          },
+        }
+      );
+    }
+  }, [editorSuggestions, m, options]);
+
   const [
     editor,
     setEditorRef,
   ] = useState<monacoEditor.IStandaloneCodeEditor | null>(null);
+
+  useEffect(() => {
+    if (editorSuggestions.length && options.language === 'markdown') {
+      editor?.getAction('editor.action.triggerSuggest')?.run();
+    }
+  }, [editorSuggestions, editor, options]);
 
   const containerRef = useMountMainHeight();
 
@@ -249,9 +290,21 @@ export default function Editor() {
     [config, containerRef, kitIsDark]
   );
 
-  const onChange = useCallback((value) => {
-    setInputValue(value);
-  }, []);
+  const onChange = useCallback(
+    (value) => {
+      if (!editor) return;
+      if (!editor?.getModel()) return;
+      if (!editor?.getPosition()) return;
+      setCursorPosition(
+        editor
+          ?.getModel()
+          ?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) ||
+          0
+      );
+      setInputValue(value);
+    },
+    [editor, setCursorPosition, setInputValue]
+  );
 
   useEffect(() => {
     if (ui === UI.editor && open && editor) {
@@ -282,8 +335,28 @@ export default function Editor() {
     }
   }, [open, config, editor, ui]);
 
+  useEffect(() => {
+    if (editor && editorAppend) {
+      // set position to the end of the file
+      const lineNumber = editor.getModel()?.getLineCount() || 0;
+      const column = editor.getModel()?.getLineMaxColumn(lineNumber) || 0;
+      const range = new Range(lineNumber, column, lineNumber, column);
+
+      const id = { major: 1, minor: 1 };
+      const op = {
+        identifier: id,
+        range,
+        text: editorAppend,
+        forceMoveMarkers: true,
+      };
+
+      editor.executeEdits('my-source', [op]);
+      // scroll to bottom
+      editor.revealLine(lineNumber + 1);
+    }
+  }, [editor, editorAppend]);
+
   const theme = kitIsDark ? 'kit-dark' : 'kit-light';
-  console.log(`Building Editor...`, theme);
 
   return (
     <motion.div
