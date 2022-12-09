@@ -793,7 +793,15 @@ export const initKeymap = async () => {
         }, 500)
       );
 
-      log.info(`🔑 Keymap: ${JSON.stringify(kitState.keymap)}`);
+      if (kitState.keymap)
+        log.info(
+          `🔑 Keymap: ${JSON.stringify(
+            Object.entries(kitState.keymap).map(([k, v]: any) => {
+              if (v?.value) return `${k} -> ${v.value}`;
+              return `${k} -> null`;
+            })
+          )}`
+        );
     } catch (e) {
       log.error(e);
     }
