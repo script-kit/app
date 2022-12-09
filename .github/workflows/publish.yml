@@ -62,8 +62,7 @@ jobs:
       - name: yarn && yarn add @johnlindquist/kit
         run: |
           yarn
-          if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
-          else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
+          yarn add "@johnlindquist/kit"
 
       - name: Publish releases
         env:
@@ -92,8 +91,7 @@ jobs:
       - name: yarn && yarn add @johnlindquist/kit
         run: |
           yarn
-          if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
-          else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
+          yarn add "@johnlindquist/kit"
 
       - name: Publish releases
         env:
@@ -119,8 +117,7 @@ jobs:
       - name: yarn && yarn add @johnlindquist/kit
         run: |
           yarn
-          if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
-          else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
+          yarn add "@johnlindquist/kit"
 
       - name: Publish releases
         env:
