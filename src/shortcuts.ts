@@ -11,6 +11,7 @@ import {
   kitPath,
   shortcutNormalizer,
 } from '@johnlindquist/kit/cjs/utils';
+
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import { focusPrompt, isFocused, isVisible, reload } from './prompt';
@@ -223,6 +224,8 @@ const convertShortcut = (shortcut: string, filePath: string): string => {
   const [sourceKey, ...mods] = normalizedShortcut
     .trim()
     ?.split(/\+| /)
+    .map((str: string) => str.trim())
+    .filter(Boolean)
     .reverse();
   // log.info(`Shortcut main key: ${sourceKey}`);
 

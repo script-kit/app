@@ -1470,11 +1470,11 @@ const createChild = ({
 
   // Check if kitDotEnvPath() is a file
 
-  let kitEnv = {};
-  const kitEnvPath = kitDotEnvPath();
-  if (existsSync(kitEnvPath)) {
-    kitEnv = dotenv.parse(readFileSync(kitEnvPath));
-  }
+  // let kitEnv = {};
+  // const kitEnvPath = kitDotEnvPath();
+  // if (existsSync(kitEnvPath)) {
+  //   kitEnv = dotenv.parse(readFileSync(kitEnvPath));
+  // }
 
   const env = {
     ...process.env,
@@ -1489,7 +1489,6 @@ const createChild = ({
     FORCE_COLOR: '1',
     PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
     KIT_APP_PATH: app.getAppPath(),
-    ...kitEnv,
   };
   // console.log({ env });
   // const isWin = os.platform().startsWith('win');
