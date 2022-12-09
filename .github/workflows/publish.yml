@@ -14,13 +14,9 @@ on:
       - main
 
 jobs:
-  publish:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [macos-latest]
-
+  prep:
+    name: Prep
+    runs-on: ubuntu-latest
     steps:
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v4
@@ -55,6 +51,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  publish-win:
+    name: Publish Windows
+    runs-on: windows-latest
+    steps:
+      - name: Install Node, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.17.1
+      - name: yarn && yarn add @johnlindquist/kit
+        run: |
+          yarn
+          if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
+          else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
+
+      - name: Publish releases
+        env:
+          # These values are used for auto updates signing
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          # This is used for uploading release assets to github
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          yarn build
+          cd ./src
+          yarn remove node-mac-permissions
+          cd ..
+          yarn electron-builder --publish always -w
+
+  publish-mac:
+    name: Publish Mac
+    runs-on: macos-latest
+    steps:
       - name: Install Node, NPM and Yarn
         uses: actions/setup-node@v3
         with:
@@ -77,10 +107,33 @@ jobs:
         run: |
           yarn build
           yarn electron-builder --publish always -m
-          echo "\n\n--- Removing mac deps ---"
+
+  publish-linux:
+    name: Publish Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Node, NPM and Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.17.1
+      - name: yarn && yarn add @johnlindquist/kit
+        run: |
+          yarn
+          if [ "${{ env.release_channel }}" = "main" ]; then yarn add "@johnlindquist/kit"; \
+          else yarn add "@johnlindquist/kit@${{ env.release_channel }}"; fi
+
+      - name: Publish releases
+        env:
+          # These values are used for auto updates signing
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          # This is used for uploading release assets to github
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          yarn build
           cd ./src
           yarn remove node-mac-permissions
-          cat ./package.json
           cd ..
-          echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always -wl
+          yarn electron-builder --publish always -l

@@ -196,7 +196,9 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
       return;
     }
 
-    if (key === 'Shift' || e.metaKey || e.ctrlKey || e.altKey) return;
+    // Ignore modifier keys
+    // 42 is shift
+    if (e.keycode === 42 || e.metaKey || e.ctrlKey || e.altKey) return;
 
     if (key === backspace) {
       kitState.snippet = kitState.snippet.slice(0, -1);
@@ -487,6 +489,7 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
           };
 
           const stringToDelete = postfix ? snippet : snippetKey;
+          log.silly({ stringToDelete, postfix });
           await deleteText(stringToDelete);
         }
       }
