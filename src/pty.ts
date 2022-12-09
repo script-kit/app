@@ -1,7 +1,7 @@
 import os from 'os';
 import { WebSocket } from 'ws';
 import untildify from 'untildify';
-
+import { KIT_FIRST_PATH, KIT_DEFAULT_PATH } from '@johnlindquist/kit/cjs/utils';
 import log from 'electron-log';
 import { Server } from 'net';
 import getPort from './get-port';
@@ -33,6 +33,7 @@ export const startPty = async (config: any = {}) => {
   let port: string | number = ``;
   let socketURL = ``;
 
+  log.info(`🐲 >_ Starting pty server with PATH`, KIT_FIRST_PATH);
   t = pty.spawn(
     config?.env?.KIT_SHELL ||
       (process.platform === 'win32' ? 'pwsh.exe' : 'zsh'),
@@ -44,13 +45,12 @@ export const startPty = async (config: any = {}) => {
       cwd: untildify(config?.cwd || os.homedir()),
       encoding: 'utf8',
       env: {
-        ...process.env,
-        ...config?.env,
+        PATH: KIT_FIRST_PATH,
       },
     }
   );
 
-  app.ws('/terminals/:pid', function (ws, req) {
+  app.ws('/terminals/:pid', (ws, req) => {
     log.info('Connected to terminal ', t.pid);
 
     if (command) {
