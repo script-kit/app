@@ -108,6 +108,7 @@ import { toHex } from './color-utils';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';
+import { darkTheme, lightTheme } from './components/themes';
 
 // const trash = async (...args: string[]) => {
 //   const parent = app.isPackaged
@@ -488,7 +489,8 @@ const kitMessageMap: ChannelHandler = {
       }
     ) => {
       const { command, html, options } = value;
-      const filePath = await createWidget(command, html, options);
+      const theme = kitState.isDark ? darkTheme : lightTheme;
+      const filePath = await createWidget(command, html, options, theme);
       kitState.blurredByKit = true;
       const widgetId = Date.now().toString();
       const widget = await showWidget(widgetId, filePath, options);
@@ -1197,6 +1199,7 @@ const kitMessageMap: ChannelHandler = {
     }
 
     setTimeout(() => {
+      kitState.snippet = '';
       kitState.isTyping = false;
       kitState.cancelTyping = false;
       keyboard.config.autoDelayMs = 0;
@@ -1341,6 +1344,7 @@ const kitMessageMap: ChannelHandler = {
     await keyboard.pressKey(modifier, Key.V);
     await keyboard.releaseKey(modifier, Key.V);
     setTimeout(() => {
+      kitState.snippet = '';
       childSend(child, { channel, value });
       log.info(`SET SELECTED TEXT DONE`, value);
     }, 10);
@@ -1390,7 +1394,16 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, value });
   }),
   PLAY_AUDIO: toProcess(async ({ child }, { channel, value }) => {
+    try {
+      log.info(`🔊 Playing ${value}`);
+    } catch (error) {
+      log.error(`🔊 Error playing ${value}`, error);
+    }
     sendToPrompt(Channel.PLAY_AUDIO, value);
+    // childSend(child, { channel, value });
+  }),
+  STOP_AUDIO: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.STOP_AUDIO, value);
     childSend(child, { channel, value });
   }),
   SPEAK_TEXT: toProcess(async ({ child }, { channel, value }) => {

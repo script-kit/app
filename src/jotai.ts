@@ -393,7 +393,7 @@ const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   minimap: {
     enabled: false,
   },
-  wordWrap: 'bounded',
+  wordWrap: 'on',
   lineNumbers: 'off',
   glyphMargin: false,
   scrollBeyondLastLine: false,
@@ -1672,16 +1672,34 @@ export const _audioAtom = atom<AudioOptions | null>(null);
 
 export const audioAtom = atom(
   (g) => g(_audioAtom),
-  (g, s, a: AudioOptions) => {
-    const audio = document.querySelector('#audio') as HTMLAudioElement;
+  (g, s, a: AudioOptions | null) => {
+    console.log(`Audio options`, a);
+
+    let audio: null | HTMLAudioElement = document.querySelector(
+      '#audio'
+    ) as HTMLAudioElement;
+
+    // create audio element
+    if (!audio) {
+      audio = document.createElement('audio');
+      audio.id = 'audio';
+      document.body.appendChild(audio);
+    }
     if (a?.filePath) {
       s(_audioAtom, a);
       const { filePath, ...options } = a;
-      audio.defaultPlaybackRate = options?.playbackRate || 1.3;
-      audio.playbackRate = options?.playbackRate || 1.3;
+      audio.defaultPlaybackRate = options?.playbackRate || 1;
+      audio.playbackRate = options?.playbackRate || 1;
+      // allow all from cross origin
+      audio.crossOrigin = 'anonymous';
       audio.setAttribute('src', filePath);
-      audio.load();
       audio.play();
+
+      // listen for when the audio ends
+      audio.addEventListener('ended', () => {
+        s(_audioAtom, null);
+        g(channelAtom)(Channel.PLAY_AUDIO);
+      });
     } else {
       audio?.pause();
       if (audio) s(_audioAtom, null);
@@ -1727,6 +1745,9 @@ export const _kitStateAtom = atom({
 export const kitStateAtom = atom(
   (g) => g(_kitStateAtom),
   (g, s, a: any) => {
+    if (a?.escapePressed) {
+      s(audioAtom, null);
+    }
     s(_kitStateAtom, {
       ...g(_kitStateAtom),
       ...a,

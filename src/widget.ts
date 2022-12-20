@@ -17,7 +17,8 @@ export type WidgetOptions = BrowserWindowConstructorOptions & {
 export const createWidget = async (
   command: string,
   html = '<h1>html undefined</h1>',
-  options: WidgetOptions = {}
+  options: WidgetOptions = {},
+  theme = ''
 ) => {
   const filePath = kenvPath('.widgets', `${command}.html`);
 
@@ -38,6 +39,7 @@ export const createWidget = async (
       ?.map((lib: string) => `<script src="https://unpkg.com/${lib}"></script>`)
       .join('\n')}
     <link rel="stylesheet" href="${stylePath}">
+    <style type="text/css">${theme}</style>
     <style>
     body {
       ${

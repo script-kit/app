@@ -159,6 +159,8 @@ module.exports = {
             '--tw-prose-quotes': theme('colors.text.base'),
             '--tw-prose-links': theme('colors.text.base'),
             '--tw-prose-pre-code': theme('colors.text.base'),
+            '--tw-prose-bold': theme('colors.text.base'),
+            '--tw-prose-italic': theme('colors.text.base'),
             thead: {
               borderBottomColor: theme('colors.secondary'),
             },

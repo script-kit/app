@@ -321,6 +321,7 @@ const initState = {
   } as KeyboardClass['config'],
   cancelTyping: false,
   kenvEnv: {} as Record<string, string>,
+  escapePressed: false,
 };
 
 const initAppDb: AppDb = {
@@ -557,7 +558,6 @@ export const sponsorCheck = async (feature: string, block = true) => {
       kitState.isSponsor ? '✅' : '❌'
     }`
   );
-
   const isOnline = await online();
   if (
     !isOnline ||

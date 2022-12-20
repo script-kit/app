@@ -166,7 +166,7 @@ export const shortcutScriptChanged = ({
   shortcut,
 }: {
   filePath: string;
-  shortcut: string;
+  shortcut?: string;
 }) => {
   const convertedShortcut = convertShortcut(shortcut || '', filePath);
   const oldShortcut = shortcutMap.get(filePath);

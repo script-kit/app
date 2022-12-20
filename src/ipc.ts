@@ -201,6 +201,7 @@ export const startIpc = () => {
     Channel.SHORTCUT,
     Channel.ON_PASTE,
     Channel.ON_DROP,
+    Channel.PLAY_AUDIO,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(

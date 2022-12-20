@@ -1180,6 +1180,14 @@ const subUpdateDownloaded = subscribeKey(
   }
 );
 
+const subEscapePressed = subscribeKey(
+  kitState,
+  'escapePressed',
+  (escapePressed) => {
+    setKitStateAtom({ escapePressed });
+  }
+);
+
 export const clearPromptCacheFor = async (scriptPath: string) => {
   try {
     const displays = screen.getAllDisplays();
@@ -1215,5 +1223,6 @@ subs.push(
   subScriptPath,
   subAppearance,
   subIsSponsor,
-  subUpdateDownloaded
+  subUpdateDownloaded,
+  subEscapePressed
 );

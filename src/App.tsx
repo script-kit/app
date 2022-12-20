@@ -316,6 +316,7 @@ export default function App() {
     [Channel.SET_BOUNDS]: setBounds,
     [Channel.SET_RESIZING]: setResizing,
     [Channel.PLAY_AUDIO]: setAudio,
+    [Channel.STOP_AUDIO]: () => setAudio(null),
     [Channel.SPEAK_TEXT]: setSpeak,
     [Channel.SET_SHORTCUTS]: setShortcuts,
 

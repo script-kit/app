@@ -39,6 +39,7 @@ import { appToPrompt, clearPromptCacheFor } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel, Trigger } from './enums';
+import { runScript } from './kit';
 
 // export const cacheMenu = debounce(async () => {
 //   await updateScripts();
@@ -118,9 +119,23 @@ const buildScriptChanged = debounce((filePath: string) => {
   }
 }, 150);
 
+const unlinkBin = (filePath: string) => {
+  const binPath = path.resolve(
+    path.dirname(path.dirname(filePath)),
+    'bin',
+    path.basename(filePath)
+  );
+
+  // if binPath exists, remove it
+  if (existsSync(binPath)) {
+    unlink(binPath);
+  }
+};
+
 export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
   if (event === 'unlink') {
     unlink(filePath);
+    unlinkBin(filePath);
   }
 
   if (
@@ -142,6 +157,28 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
   if (event === 'change') {
     scriptChanged(filePath);
     clearPromptCacheFor(filePath);
+  }
+
+  if (event === 'add') {
+    if (kitState.ready) {
+      log.info();
+      setTimeout(async () => {
+        try {
+          const binDirPath = path.resolve(
+            path.dirname(path.dirname(filePath)),
+            'bin'
+          );
+          const command = path.parse(filePath).name;
+          const binFilePath = path.resolve(binDirPath, command);
+          if (!existsSync(binFilePath)) {
+            log.info(`🔗 Creating bin for ${command}`);
+            await runScript(kitPath('cli', 'create-bin'), 'scripts', filePath);
+          }
+        } catch (error) {
+          log.error(error);
+        }
+      }, 1000);
+    }
   }
 };
 

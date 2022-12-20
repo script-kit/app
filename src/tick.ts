@@ -167,6 +167,8 @@ export const clearClipboardHistory = () => {
   clipboardHistory = [];
 };
 
+const SPACE = '_';
+
 let prevKey = '';
 const backspace = 'backspace';
 const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
@@ -179,9 +181,17 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
 
     const e = event as UiohookKeyboardEvent;
 
-    if (e.keycode === UiohookKey.Escape && kitState.isTyping) {
-      log.info(`✋ Cancel typing`);
-      kitState.cancelTyping = true;
+    if (e.keycode === UiohookKey.Escape) {
+      if (kitState.isTyping) {
+        log.info(`✋ Cancel typing`);
+        kitState.cancelTyping = true;
+      }
+    }
+
+    if (kitState.isTyping) {
+      kitState.snippet = '';
+      log.silly(`Ignoring snippet while Kit.app typing`);
+      return;
     }
 
     kitState.isShiftDown = e.shiftKey;
@@ -189,36 +199,46 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
     let key = '';
     try {
       key = toKey(e?.keycode || 0, e.shiftKey);
-      log.silly(`key: ${key}`);
+      log.silly(`key: ${key} code: ${e?.keycode}`);
     } catch (error) {
       log.error(error);
       kitState.snippet = '';
       return;
     }
 
-    // Ignore modifier keys
     // 42 is shift
-    if (e.keycode === 42 || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.keycode === UiohookKey.Shift || e.keycode === UiohookKey.ShiftRight) {
+      log.silly(`Ignoring shift key`);
+      return;
+    }
+
+    // Clear on modifier key
+    if (e.metaKey || e.ctrlKey || e.altKey) {
+      log.silly(`Ignoring modifier key and clearing snippet`);
+      kitState.snippet = '';
+      return;
+    }
 
     if (key === backspace) {
+      log.silly(`Backspace: Removing last character from snippet`);
       kitState.snippet = kitState.snippet.slice(0, -1);
       // 57 is the space key
-    } else if (e?.keycode === 57) {
-      if (prevKey === backspace) {
+    } else if (e?.keycode === UiohookKey.Space) {
+      log.silly(`Space: Adding space to snippet`);
+      if (prevKey === backspace || kitState.snippet.length === 0) {
         kitState.snippet = '';
       } else {
-        kitState.snippet += '_';
+        kitState.snippet += SPACE;
       }
     } else if (
-      e?.keycode === 40 ||
-      kitState.isTyping ||
+      e?.keycode === UiohookKey.Quote ||
       key.length > 1 ||
       key === ''
     ) {
       kitState.snippet = ``;
     } else {
       kitState.snippet = `${kitState.snippet}${key}`;
-      log.silly(kitState.snippet);
+      log.silly(`kitState.snippet = `, kitState.snippet);
     }
     prevKey = key;
   } catch (error) {
@@ -291,8 +311,20 @@ export const configureInterval = async () => {
       uIOhook.on('keydown', (event) => {
         try {
           observer.next(event);
+
+          if (event.keycode === UiohookKey.Escape) {
+            log.info(`✋ Escape pressed`);
+            kitState.escapePressed = true;
+          }
         } catch (error) {
           log.error(error);
+        }
+      });
+
+      uIOhook.on('keyup', (event) => {
+        if (event.keycode === UiohookKey.Escape) {
+          log.info(`✋ Escape released`);
+          kitState.escapePressed = false;
         }
       });
 
@@ -490,7 +522,12 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
 
           const stringToDelete = postfix ? snippet : snippetKey;
           log.silly({ stringToDelete, postfix });
+          kitState.snippet = '';
+
           await deleteText(stringToDelete);
+
+          // debugging: wait 100ms for the text to be deleted
+          // await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
       emitter.emit(KitEvent.RunPromptProcess, {
@@ -502,13 +539,15 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
         },
       });
     }
-  }
 
-  if (snippet.endsWith('_')) kitState.snippet = '';
+    if (snippet.endsWith(SPACE)) {
+      kitState.snippet = '';
+    }
+  }
 });
 
 const subIsTyping = subscribeKey(kitState, 'isTyping', () => {
-  kitState.snippet = ``;
+  log.silly(`📕 isTyping: ${kitState.isTyping ? 'true' : 'false'}`);
 });
 
 export const destroyInterval = () => {
