@@ -6,6 +6,7 @@ on:
       - alpha
       - beta
       - main
+      - windows
 
   workflow_dispatch:
     branches:
@@ -19,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [windows-latest]
 
     steps:
       - name: Inject slug/short variables
@@ -76,11 +77,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           yarn build
-          yarn electron-builder --publish always -m
-          echo "\n\n--- Removing mac deps ---"
           cd ./src
           yarn remove node-mac-permissions
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always -wl
+          yarn electron-builder --publish always -w
