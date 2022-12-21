@@ -25,12 +25,14 @@ jobs:
     steps:
       - name: Checkout git repo
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          branch: ${{ github.ref }}
 
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v3
         id: semantic # Need an `id` for output variables
         with:
-          dry_run: true
           branches: |
             [
               '+([0-9])?(.{+([0-9]),x}).x',
@@ -46,13 +48,6 @@ jobs:
       - name: Verify that Semantic Release updated src/package.json
         run: |
           cat src/package.json
-
-      - name: Echo the version number
-        uses: johnlindquist/kit-action@main
-        with:
-          script: echo $RELEASE_VERSION
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets
         uses: johnlindquist/kit-action@main
