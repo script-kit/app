@@ -3,7 +3,7 @@
 // import '@johnlindquist/kit';
 
 let { chdir } = await import('process');
-let tar = await npm('tar');
+let tar = await import('tar');
 
 console.log('Creating assets');
 
