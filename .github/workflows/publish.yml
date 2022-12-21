@@ -41,6 +41,11 @@ jobs:
             ]
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Write the version number to the GITHUB env
+        run: |
+          echo "new_release_version: ${{ steps.semantic.outputs.new_release_version }}"
+          echo "RELEASE_VERSION=${{ steps.semantic.outputs.new_release_version }}" >> $GITHUB_ENV
+          echo "release version: $RELEASE_VERSION"
 
       - name: Verify that Semantic Release updated src/package.json
         run: |
@@ -49,7 +54,7 @@ jobs:
       - name: Echo the version number
         uses: johnlindquist/kit-action@main
         with:
-          script: echo ${{ steps.semantic.outputs.new_release_version }}
+          script: echo $RELEASE_VERSION
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

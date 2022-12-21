@@ -102,7 +102,6 @@ export const createPromptWindow = async () => {
   log.silly(`function: createPromptWindow`);
 
   const options: BrowserWindowConstructorOptions = {
-    titleBarStyle: kitState.isMac ? 'customButtonsOnHover' : 'hiddenInset',
     useContentSize: true,
     frame: false,
     hasShadow: true,
@@ -947,7 +946,7 @@ export const setPromptData = async (promptData: PromptData) => {
       promptWindow?.setAlwaysOnTop(false);
     }, 1000);
   } else {
-    promptWindow?.show();
+    promptWindow?.maximize();
   }
 
   // app.focus({
