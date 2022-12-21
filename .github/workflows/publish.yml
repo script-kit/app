@@ -13,6 +13,7 @@ on:
       - alpha
       - beta
       - main
+      - windows
 
 jobs:
   publish:
