@@ -79,8 +79,12 @@ supportedArchitectures:
 // Create a .yarnrc.yml file in the kit directory
 await writeFile(kitPath('.yarnrc.yml'), yarnrc);
 
-chdir(kitPath())
-await $`yarn`;
+//chdir(kitPath())
+//await $`yarn`;
+
+await exec('yarn', {
+  cwd: kitPath()
+})
 
 let kitModules = await readdir(kitPath('node_modules'));
 console.log({ kitModules });
