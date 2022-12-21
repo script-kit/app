@@ -32,6 +32,8 @@ jobs:
         with:
           branches: |
             [
+              '+([0-9])?(.{+([0-9]),x}).x',
+              'main',
               {
                 name: 'windows',
                 prerelease: true
