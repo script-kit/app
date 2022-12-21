@@ -29,6 +29,14 @@ jobs:
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v3
         id: semantic # Need an `id` for output variables
+        with:
+          branches: |
+            [
+              {
+                name: 'windows',
+                prerelease: true
+              }
+            ]
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
