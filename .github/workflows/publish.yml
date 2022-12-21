@@ -62,7 +62,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install tar with npm
-        run: npm install tar
+        run: |
+          cd scripts
+          npm install -D tar
+          cd ..
 
       - name: Create Assets
         uses: johnlindquist/kit-action@main
