@@ -36,7 +36,7 @@ export const startPty = async (config: any = {}) => {
   log.info(`🐲 >_ Starting pty server with PATH`, KIT_FIRST_PATH);
   t = pty.spawn(
     config?.env?.KIT_SHELL ||
-      (process.platform === 'win32' ? 'pwsh.exe' : 'zsh'),
+      (process.platform === 'win32' ? 'cmd.exe' : 'zsh'),
     [],
     {
       name: 'xterm-256color',

@@ -17,9 +17,10 @@ on:
 
 jobs:
   publish:
-    matrix:
-      os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - name: Checkout git repo
