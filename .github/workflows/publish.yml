@@ -85,4 +85,5 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
+          yarn electron-rebuild -f -o node-pty -m src
           yarn electron-builder --publish always --win
