@@ -52,6 +52,7 @@
   },
   "build": {
     "buildDependenciesFromSource": false,
+    "npmRebuild": false,
     "generateUpdatesFilesForAllChannels": true,
     "detectUpdateChannel": "true",
     "productName": "Kit",
@@ -102,6 +103,26 @@
           "arch": "arm64"
         }
       ],
+      "win": {
+        "target": [
+          {
+            "target": "nsis",
+            "arch": "x64"
+          },
+          {
+            "target": "zip",
+            "arch": "x64"
+          },
+          {
+            "target": "nsis",
+            "arch": "arm64"
+          },
+          {
+            "target": "zip",
+            "arch": "arm64"
+          }
+        ]
+      },
       "type": "distribution",
       "hardenedRuntime": true,
       "entitlements": "assets/entitlements.mac.plist",
