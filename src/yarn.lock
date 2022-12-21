@@ -299,48 +299,48 @@
     "@babel/runtime" "^7.7.2"
     regenerator-runtime "^0.13.3"
 
-"@nut-tree/libnut-darwin@2.3.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-darwin/-/libnut-darwin-2.3.0.tgz#93eec6d6f6c3744506fff035864c0054f4c25b2f"
-  integrity sha512-hbNW0WN5Olrrcl59sNXCdJCHmaclwk5G/FMQcP8NoTNWkSv2L+zxXZ5dNt13DErCv9HCvMrof20nBz82LArNXg==
+"@nut-tree/libnut-darwin@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-darwin/-/libnut-darwin-2.2.0.tgz#b82917d6e43b6d7dd048ed6f17c7c7218e42169c"
+  integrity sha512-MSYcsur/n4uTl+Q+3dVhHLKFEeelR4uuDdcCKIc21Tmaod6iL8vy4HRVJO+wSmLdnbNT2Zqur5ufmnwMOVKVTA==
   dependencies:
     bindings "1.5.0"
     cmake-js "6.1.0"
     node-addon-api "3.0.0"
 
-"@nut-tree/libnut-linux@2.3.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-linux/-/libnut-linux-2.3.0.tgz#ea9fc5de54744c549941c4574c50fa15fe4a888b"
-  integrity sha512-Hc2GsW4/BNYViqqaaaQCytj2C4NWNCJGGhCbznjyqI2cAHU3y5Hx+Frlkcnohfo+ofyOZOlPDQSxtP+E4tmVOw==
+"@nut-tree/libnut-linux@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-linux/-/libnut-linux-2.2.0.tgz#eecd9d6e70b4d3ac7bd6ffd70706eaf110de8f29"
+  integrity sha512-EFFesR82QQLAb3FZ02uJzRrTkejGFQnRuEfik5AVfNJR7p/rGsguLmzPsuNLb73EqwGkgiLRFthVnBJed+xVxA==
   dependencies:
     bindings "1.5.0"
     cmake-js "6.1.0"
     node-addon-api "3.0.0"
 
-"@nut-tree/libnut-win32@2.3.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-win32/-/libnut-win32-2.3.0.tgz#206d8524ca2ba126f946eb98821398d7812459eb"
-  integrity sha512-2v9fBVekJn9ktyI2IWmYlLzNqGBdkaSscfqKmT7Kdzshh6nbsqeawRmhFc4IgTOJBSruz7oc6AWAWsRk9OL3FQ==
+"@nut-tree/libnut-win32@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-win32/-/libnut-win32-2.2.0.tgz#64b9666f7417a3dda615d39ddcae045aaacd2b01"
+  integrity sha512-NpMVe4irbDI7qIEZJuBV4XvLmqTC06pnuF1sEYZ3/51g2cVCbjU0kfJA4Xl91bcqMbvpLCFdfdmKhmcL1x88lw==
   dependencies:
     bindings "1.5.0"
     cmake-js "6.1.0"
     node-addon-api "3.0.0"
 
-"@nut-tree/libnut@2.3.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut/-/libnut-2.3.0.tgz#1f0482a7b69b897eff43e5b868fb312e55b2e6c5"
-  integrity sha512-EAbwcA3xv4zZWX8EmcKzWlWON1hf/IxJsMAdApRqObhoarpBQO28DoHAxZW7HQPP/T9S1YrLHONjGxwUzippQQ==
+"@nut-tree/libnut@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut/-/libnut-2.2.0.tgz#20b942e1ac6e4ceaa88ac728afb83e88aed01c23"
+  integrity sha512-KfgEzY5mY4hSIpOCXJjh1XRKyYfZ27eWZN3X3r/ewSTmUx2+oYPEad7aaWxk2E0nMz/i07CW4sluRdLxCAhazQ==
   dependencies:
-    "@nut-tree/libnut-darwin" "2.3.0"
-    "@nut-tree/libnut-linux" "2.3.0"
-    "@nut-tree/libnut-win32" "2.3.0"
+    "@nut-tree/libnut-darwin" "2.2.0"
+    "@nut-tree/libnut-linux" "2.2.0"
+    "@nut-tree/libnut-win32" "2.2.0"
 
-"@nut-tree/nut-js@2.3.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@nut-tree/nut-js/-/nut-js-2.3.0.tgz#5f414dd7e46b25a5fca194dd389bcd6c8021afe6"
-  integrity sha512-QOQeuwlB1e+Ctj7h0lcIzxeWs1tR8DACxCURDsS/TxsYP0SqNBsc+ov4GjwJGOI80WOe00gXahnqVPie4qjfSg==
+"@nut-tree/nut-js@2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@nut-tree/nut-js/-/nut-js-2.2.1.tgz#b0b69e2e290afbc665a69537f6448dcd994293e2"
+  integrity sha512-m1n1xpFlTT/9eiLdz0cgc9wDCn57or52PlNpozMkckuaopeq0K5vmB49/7X7+zoBO7dULpa1DLcfFt9MxJpfbw==
   dependencies:
-    "@nut-tree/libnut" "2.3.0"
+    "@nut-tree/libnut" "2.2.0"
     clipboardy "2.3.0"
     jimp "0.16.2"
     node-abort-controller "2.0.0"
@@ -1281,7 +1281,7 @@ node-mac-permissions@2.2.1:
     bindings "^1.5.0"
     node-addon-api "^3.0.2"
 
-node-pty@^0.11.0-beta26:
+node-pty@0.11.0-beta26:
   version "0.11.0-beta26"
   resolved "https://registry.yarnpkg.com/node-pty/-/node-pty-0.11.0-beta26.tgz#59b58d5ebcf10cba1a85593b2f8395b22fa685c1"
   integrity sha512-txc5z6KVdVKaEoybgN6NlS7ldZJyeFvhrkfafOsNm6IiLqhY5F0y+U4ZQeZpqU3hxDg708bwajoqyTpMYst6Ng==

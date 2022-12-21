@@ -51,8 +51,8 @@
     ]
   },
   "build": {
-    "buildDependenciesFromSource": false,
-    "npmRebuild": false,
+    "buildDependenciesFromSource": true,
+    "npmRebuild": true,
     "generateUpdatesFilesForAllChannels": true,
     "detectUpdateChannel": "true",
     "productName": "Kit",
