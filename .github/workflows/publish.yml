@@ -41,14 +41,13 @@ jobs:
       - name: Verify that Semantic Release updated src/package.json
         run: |
           cat src/package.json
+          echo ${{ steps.semantic.outputs.new_release_version }} > semantic-version.txt
 
       - name: Upload Semantic Version Artifact
         uses: actions/upload-artifact@v2
         with:
           name: semantic-version
           path: semantic-version.txt
-        run: |
-          echo ${{ steps.semantic.outputs.new_release_version }} > semantic-version.txt
 
   publish:
     needs: semantic
