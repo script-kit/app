@@ -6,6 +6,7 @@
   "main": "./main.prod.js",
   "author": {
     "name": "John Lindquist",
+    "email": "john+github@scriptkit.com",
     "url": "https://github.com/johnlindquist/kitapp"
   },
   "scripts": {
