@@ -62,6 +62,7 @@ await tar.c(
 let version = await arg('Enter the version number');
 let platform = await arg('Enter the platform');
 let arch = await arg('Enter the architecture');
+let release_id = await arg("Enter the release's id");
 let tag_name = `v${version}`;
 
 console.log(`PWD`, process.env.PWD);
@@ -96,10 +97,13 @@ console.log(`⭐️ Starting Kit release for ${tag_name}`);
 let octokit = github.getOctokit(await env('GITHUB_TOKEN'));
 
 // get release id from tag_name
-let releaseResponse = await octokit.rest.repos.getReleaseByTag({
+let releaseResponse = await octokit.rest.repos.getRelease({
   ...github.context.repo,
-  tag: tag_name,
+  release_id,
 });
+
+console.log(`Release Response:`);
+console.log(releaseResponse?.data || 'No release found');
 
 let kitFiles = await readdir(kitPath());
 let name = `kit-${platform}-${arch}.tar.gz`;
