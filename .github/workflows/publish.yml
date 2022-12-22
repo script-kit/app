@@ -6,14 +6,12 @@ on:
       - alpha
       - beta
       - main
-      - windows
 
   workflow_dispatch:
     branches:
       - alpha
       - beta
       - main
-      - windows
 
 jobs:
   semantic:
@@ -25,16 +23,6 @@ jobs:
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v3
         id: semantic # Need an `id` for output variables
-        with:
-          branches: |
-            [
-              '+([0-9])?(.{+([0-9]),x}).x',
-              'main',
-              {
-                name: 'windows',
-                prerelease: true
-              }
-            ]
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
