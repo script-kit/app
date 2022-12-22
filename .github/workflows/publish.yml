@@ -65,11 +65,19 @@ jobs:
         with:
           name: semantic-version
 
-      - name: Set Semantic Version
+      - name: Set Semantic Version Nix
+        if: ${{ matrix.os != 'windows-latest' }}
         run: |
           echo "Semantic Version: $(cat semantic-version.txt)"
           # Set the semantic version as an environment variable
           echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
+
+      - name: Set Semantic Version Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          echo "Semantic Version: $(cat semantic-version.txt)"
+          # Set the semantic version as an environment variable
+          echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Create Assets
         uses: johnlindquist/kit-action@main
