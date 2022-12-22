@@ -74,7 +74,7 @@ jobs:
       - name: Create Assets
         uses: johnlindquist/kit-action@main
         with:
-          script: create-assets $SEMANTIC_VERSION
+          script: create-assets ${{ env.SEMANTIC_VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
