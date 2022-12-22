@@ -946,7 +946,8 @@ export const setPromptData = async (promptData: PromptData) => {
       promptWindow?.setAlwaysOnTop(false);
     }, 1000);
   } else {
-    promptWindow?.maximize();
+    promptWindow?.restore();
+    promptWindow?.show();
   }
 
   // app.focus({
