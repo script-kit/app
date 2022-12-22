@@ -83,6 +83,9 @@
         ]
       }
     ],
+    "win": {
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
+    },
     "mac": {
       "type": "distribution",
       "hardenedRuntime": true,

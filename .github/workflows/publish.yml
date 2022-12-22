@@ -51,7 +51,7 @@ jobs:
           path: semantic-version.txt
 
       - name: Upload Release id Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: release-id
           path: release-id.txt
@@ -62,19 +62,19 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        arch: [x64, arm64]
+        arch: [x64, arm64, ia32]
 
     steps:
       - name: Checkout git repo
         uses: actions/checkout@v3
 
       - name: Download Semantic Version Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: semantic-version
 
       - name: Download Release id Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: release-id
 
@@ -140,7 +140,10 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --win --${{ matrix.arch }}
+          # Append the arch to the end of the exe name
+          mv ./dist/win-unpacked/MyApp.exe ./dist/win-unpacked/MyApp-${{ matrix.arch }}.exe
+          # Target all windows distros
+          yarn electron-builder --publish always --win nsis --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'

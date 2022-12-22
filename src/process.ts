@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
+import { randomUUID } from 'crypto';
 import detect from 'detect-port';
 import untildify from 'untildify';
 import { keyboard, mouse, Key } from '@nut-tree/nut-js';
@@ -1176,6 +1177,107 @@ const kitMessageMap: ChannelHandler = {
   TERMINAL: (data) => {
     sendToPrompt(Channel.TERMINAL, data.value);
   },
+  CLIPBOARD_READ_TEXT: toProcess(async ({ child }, { channel, value }) => {
+    const text = await clipboard.readText();
+    childSend(child, {
+      channel,
+      value: text,
+    });
+  }),
+
+  CLIPBOARD_READ_IMAGE: toProcess(async ({ child }, { channel, value }) => {
+    const image = clipboard.readImage();
+    // write image to a tmp file path with a uuid name
+    const tmpPath = path.join(os.tmpdir(), `kit-${randomUUID()}.png`);
+    await writeFile(tmpPath, image.toPNG());
+
+    childSend(child, {
+      channel,
+      value: tmpPath,
+    });
+  }),
+  CLIPBOARD_READ_RTF: toProcess(async ({ child }, { channel, value }) => {
+    const rtf = await clipboard.readRTF();
+    childSend(child, {
+      channel,
+      value: rtf,
+    });
+  }),
+  CLIPBOARD_READ_HTML: toProcess(async ({ child }, { channel, value }) => {
+    const html = await clipboard.readHTML();
+    childSend(child, {
+      channel,
+      value: html,
+    });
+  }),
+  CLIPBOARD_READ_BOOKMARK: toProcess(async ({ child }, { channel, value }) => {
+    const bookmark = await clipboard.readBookmark();
+    childSend(child, {
+      channel,
+      value: bookmark,
+    });
+  }),
+  CLIPBOARD_READ_FIND_TEXT: toProcess(async ({ child }, { channel, value }) => {
+    const findText = await clipboard.readFindText();
+    childSend(child, {
+      channel,
+      value: findText,
+    });
+  }),
+
+  CLIPBOARD_WRITE_TEXT: toProcess(async ({ child }, { channel, value }) => {
+    await clipboard.writeText(value);
+    childSend(child, {
+      channel,
+      value,
+    });
+  }),
+  CLIPBOARD_WRITE_IMAGE: toProcess(async ({ child }, { channel, value }) => {
+    const image = nativeImage.createFromPath(value);
+    await clipboard.writeImage(image);
+    childSend(child, {
+      channel,
+      value,
+    });
+  }),
+  CLIPBOARD_WRITE_RTF: toProcess(async ({ child }, { channel, value }) => {
+    await clipboard.writeRTF(value);
+    childSend(child, {
+      channel,
+      value,
+    });
+  }),
+  CLIPBOARD_WRITE_HTML: toProcess(async ({ child }, { channel, value }) => {
+    await clipboard.writeHTML(value);
+    childSend(child, {
+      channel,
+      value,
+    });
+  }),
+
+  CLIPBOARD_WRITE_BOOKMARK: toProcess(async ({ child }, { channel, value }) => {
+    await clipboard.writeBookmark(value.title, value.url);
+    childSend(child, {
+      channel,
+      value,
+    });
+  }),
+  CLIPBOARD_WRITE_FIND_TEXT: toProcess(
+    async ({ child }, { channel, value }) => {
+      await clipboard.writeFindText(value);
+      childSend(child, {
+        channel,
+        value,
+      });
+    }
+  ),
+  CLIPBOARD_CLEAR: toProcess(async ({ child }, { channel, value }) => {
+    await clipboard.clear();
+    childSend(child, {
+      channel,
+      value,
+    });
+  }),
 
   KEYBOARD_TYPE: toProcess(async ({ child }, { channel, value }) => {
     if (!kitState.authorized) kitState.notifyAuthFail = true;
