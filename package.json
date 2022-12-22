@@ -83,45 +83,7 @@
         ]
       }
     ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": "x64"
-        },
-        {
-          "target": "zip",
-          "arch": "x64"
-        },
-        {
-          "target": "nsis",
-          "arch": "arm64"
-        },
-        {
-          "target": "zip",
-          "arch": "arm64"
-        }
-      ]
-    },
     "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": "x64"
-        },
-        {
-          "target": "zip",
-          "arch": "x64"
-        },
-        {
-          "target": "dmg",
-          "arch": "arm64"
-        },
-        {
-          "target": "zip",
-          "arch": "arm64"
-        }
-      ],
       "type": "distribution",
       "hardenedRuntime": true,
       "entitlements": "assets/entitlements.mac.plist",
@@ -166,16 +128,6 @@
       ]
     },
     "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": "x64"
-        },
-        {
-          "target": "AppImage",
-          "arch": "arm64"
-        }
-      ],
       "category": "Development"
     },
     "directories": {

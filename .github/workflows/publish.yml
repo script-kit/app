@@ -171,7 +171,8 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --linux --${{ matrix.arch }}
+          # Target all linux distros
+          yarn electron-builder --publish always --linux AppImage deb rpm --${{ matrix.arch }}
 
       - name: Publish mac
         if: matrix.os == 'macos-latest'
