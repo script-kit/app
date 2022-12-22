@@ -60,6 +60,8 @@ await tar.c(
 // Create a string  that defines all of the supported architectures in a .yarnrc.yml file
 
 let version = await arg('Enter the version number');
+let platform = await arg('Enter the platform');
+let arch = await arg('Enter the architecture');
 let tag_name = `v${version}`;
 
 console.log(`PWD`, process.env.PWD);
@@ -93,16 +95,14 @@ console.log(`⭐️ Starting Kit release for ${tag_name}`);
 
 let octokit = github.getOctokit(await env('GITHUB_TOKEN'));
 
-let releaseResponse = await octokit.rest.repos.createRelease({
+// get release id from tag_name
+let releaseResponse = await octokit.rest.repos.getReleaseByTag({
   ...github.context.repo,
-  tag_name,
-  name: tag_name,
-  prerelease: true,
-  draft: true,
+  tag: tag_name,
 });
 
 let kitFiles = await readdir(kitPath());
-let name = 'kit.tar.gz';
+let name = `kit-${platform}-${arch}.tar.gz`;
 let kitTarPath = home(name);
 console.log({ kitFiles });
 

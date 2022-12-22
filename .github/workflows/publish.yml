@@ -42,6 +42,14 @@ jobs:
         run: |
           cat src/package.json
           echo ${{ steps.semantic.outputs.new_release_version }} > semantic-version.txt
+          echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: johnlindquist/kit-action@main
+        with:
+          script: create-release ${{ env.SEMANTIC_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Semantic Version Artifact
         uses: actions/upload-artifact@v2
@@ -55,6 +63,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
+        arch: [x64, arm64]
 
     steps:
       - name: Checkout git repo
@@ -89,7 +98,7 @@ jobs:
       - name: Create Assets
         uses: johnlindquist/kit-action@main
         with:
-          script: create-assets ${{ env.SEMANTIC_VERSION }}
+          script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} ${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -119,7 +128,7 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --win
+          yarn electron-builder --publish always --win --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
@@ -138,7 +147,7 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --linux
+          yarn electron-builder --publish always --linux --${{ matrix.arch }}
 
       - name: Publish mac
         if: matrix.os == 'macos-latest'
@@ -152,4 +161,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           yarn build
-          yarn electron-builder --publish always --mac
+          yarn electron-builder --publish always --mac --${{ matrix.arch }}
