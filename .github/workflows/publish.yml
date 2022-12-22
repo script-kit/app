@@ -140,10 +140,7 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          # Append the arch to the end of the exe name
-          mv ./dist/win-unpacked/MyApp.exe ./dist/win-unpacked/MyApp-${{ matrix.arch }}.exe
-          # Target all windows distros
-          yarn electron-builder --publish always --win nsis --${{ matrix.arch }}
+          yarn electron-builder --publish always --win --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
