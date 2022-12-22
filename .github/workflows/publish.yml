@@ -82,7 +82,7 @@ jobs:
       - name: Write the Semantic Version to src/package.json version property
         uses: sergeysova/jq-action@v2
         with:
-          cmd: 'jq .version=${{ env.SEMANTIC_VERSION }} src/package.json > src/package.json'
+          cmd: 'jq .version=env.SEMANTIC_VERSION src/package.json > src/package.json'
 
       - name: Create Assets
         uses: johnlindquist/kit-action@main
