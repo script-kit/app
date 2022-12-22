@@ -16,21 +16,11 @@ on:
       - windows
 
 jobs:
-  publish:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
-
+  semantic:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout git repo
         uses: actions/checkout@v3
-
-      - name: Echo current branch
-        run: |
-          echo $GITHUB_REF
-          echo $GITHUB_HEAD_REF
-          echo $GITHUB_BASE_REF
 
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v3
@@ -52,10 +42,39 @@ jobs:
         run: |
           cat src/package.json
 
+      - name: Upload Semantic Version Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: semantic-version
+          path: semantic-version.txt
+        run: |
+          echo ${{ steps.semantic.outputs.new_release_version }} > semantic-version.txt
+
+  publish:
+    needs: semantic
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v3
+
+      - name: Download Semantic Version Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: semantic-version
+      - shell: bash
+        run: |
+          echo "Semantic Version: $(cat semantic-version.txt)"
+          # Set the semantic version as an environment variable
+          echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
+
       - name: Create Assets
         uses: johnlindquist/kit-action@main
         with:
-          script: create-assets ${{ steps.semantic.outputs.new_release_version }}
+          script: create-assets $SEMANTIC_VERSION
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
