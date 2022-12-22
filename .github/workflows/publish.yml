@@ -45,7 +45,7 @@ jobs:
           echo ${{ steps.create_release.outputs.result }} > release-id.txt
 
       - name: Upload Semantic Version Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: semantic-version
           path: semantic-version.txt
@@ -62,7 +62,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        arch: [x64, arm64, ia32]
+        arch: [x64, arm64]
 
     steps:
       - name: Checkout git repo

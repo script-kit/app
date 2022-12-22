@@ -17,6 +17,7 @@ import {
   IpcMainEvent,
   dialog,
   shell,
+  globalShortcut,
 } from 'electron';
 import os from 'os';
 import { assign, remove, debounce } from 'lodash';
@@ -1279,6 +1280,74 @@ const kitMessageMap: ChannelHandler = {
     });
   }),
 
+  REGISTER_GLOBAL_SHORTCUT: toProcess(
+    async ({ child, scriptPath }, { channel, value }) => {
+      log.info(`App: registering global shortcut ${value}`);
+      const result = globalShortcut.register(value, () => {
+        log.info(
+          `Global shortcut: Sending ${value} on ${Channel.GLOBAL_SHORTCUT_PRESSED}`
+        );
+        childSend(child, {
+          channel: Channel.GLOBAL_SHORTCUT_PRESSED,
+          value,
+        });
+      });
+
+      if (result) {
+        if (!childShortcutMap.has(child)) {
+          childShortcutMap.set(child, [value]);
+        } else {
+          childShortcutMap.get(child)?.push(value);
+        }
+
+        childSend(child, {
+          channel,
+          value,
+        });
+      } else {
+        log.error(`Global shortcut: ${value} failed to register`);
+        const infoScript = kitPath('cli', 'info.js');
+        const markdown = `# Failed to register global shortcut: ${value}`;
+        emitter.emit(KitEvent.RunPromptProcess, {
+          scriptPath: infoScript,
+          args: [path.basename(scriptPath), value, markdown],
+          options: {
+            force: true,
+            trigger: Trigger.App,
+          },
+        });
+
+        childSend(child, {
+          channel,
+          value: false,
+        });
+      }
+    }
+  ),
+
+  UNREGISTER_GLOBAL_SHORTCUT: toProcess(
+    async ({ child }, { channel, value }) => {
+      log.info(`App: unregistering global shortcut ${value}`);
+
+      if (childShortcutMap.has(child)) {
+        const shortcuts = childShortcutMap.get(child);
+        const index = shortcuts?.indexOf(value);
+        if (index !== -1) {
+          shortcuts?.splice(index, 1);
+        }
+        if (shortcuts?.length === 0) {
+          childShortcutMap.delete(child);
+        }
+      }
+
+      globalShortcut.unregister(value);
+      childSend(child, {
+        channel,
+        value,
+      });
+    }
+  ),
+
   KEYBOARD_TYPE: toProcess(async ({ child }, { channel, value }) => {
     if (!kitState.authorized) kitState.notifyAuthFail = true;
     log.info(`${channel}: ${typeof value} ${value}`, {
@@ -1751,6 +1820,8 @@ const setTrayScriptError = (pid: number) => {
   }
 };
 
+const childShortcutMap = new Map<ChildProcess, string[]>();
+
 class Processes extends Array<ProcessInfo> {
   public abandonnedProcesses: ProcessInfo[] = [];
 
@@ -1820,7 +1891,6 @@ class Processes extends Array<ProcessInfo> {
 
     child.on('exit', (code) => {
       log.info(`EXIT`, { pid, code });
-
       if (id) clearTimeout(id);
 
       if (child?.pid === kitState?.pid) {
@@ -1903,6 +1973,17 @@ class Processes extends Array<ProcessInfo> {
       emitter.emit(KitEvent.RemoveBackground, scriptPath);
       child?.removeAllListeners();
       child?.kill();
+
+      if (childShortcutMap.has(child)) {
+        log.info(`Unregistering shortcuts for child: ${child.pid}`);
+        const shortcuts = childShortcutMap.get(child) || [];
+        shortcuts.forEach((shortcut) => {
+          log.info(`Unregistering shortcut: ${shortcut}`);
+          globalShortcut.unregister(shortcut);
+        });
+        childShortcutMap.delete(child);
+      }
+
       log.info(`${pid}: 🛑 removed`);
     }
     if (kitState?.pid === pid) {
