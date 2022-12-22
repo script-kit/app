@@ -54,7 +54,7 @@ jobs:
 
       - name: Write the Release id to release-id.txt
         run: |
-          echo ${{ steps.create_release.outputs.release_id }} > release-id.txt
+          echo ${{ steps.create_release.outputs.result }} > release-id.txt
 
       - name: Upload Semantic Version Artifact
         uses: actions/upload-artifact@v2
