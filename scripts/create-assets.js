@@ -83,8 +83,8 @@ await writeFile(kitPath('.yarnrc.yml'), yarnrc);
 //await $`yarn`;
 
 await exec('yarn', {
-  cwd: kitPath()
-})
+  cwd: kitPath(),
+});
 
 let kitModules = await readdir(kitPath('node_modules'));
 console.log({ kitModules });
@@ -93,13 +93,21 @@ console.log(`⭐️ Starting Kit release for ${tag_name}`);
 
 let octokit = github.getOctokit(await env('GITHUB_TOKEN'));
 
-let releaseResponse = await octokit.rest.repos.createRelease({
+// check if release already exists
+let release = await octokit.rest.repos.getReleaseByTag({
   ...github.context.repo,
-  tag_name,
-  name: tag_name,
-  prerelease: true,
-  draft: true,
+  tag: tag_name,
 });
+
+if (!release) {
+  release = await octokit.rest.repos.createRelease({
+    ...github.context.repo,
+    tag_name,
+    name: tag_name,
+    prerelease: true,
+    draft: true,
+  });
+}
 
 let kitFiles = await readdir(kitPath());
 let name = 'kit.tar.gz';
@@ -131,7 +139,7 @@ console.log(`Uploading ${name} to releases...`);
 
 let uploadResponse = await octokit.rest.repos.uploadReleaseAsset({
   ...github.context.repo,
-  release_id: releaseResponse.data.id,
+  release_id: release.data.id,
   name,
   data: await readFile(kitTarPath),
 });

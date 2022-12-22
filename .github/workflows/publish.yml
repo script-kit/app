@@ -79,6 +79,11 @@ jobs:
           # Set the semantic version as an environment variable
           echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: Write the Semantic Version to src/package.json version property
+        uses: sergeysova/jq-action@v2
+        with:
+          cmd: 'jq .version=${{ env.SEMANTIC_VERSION }} src/package.json > src/package.json'
+
       - name: Create Assets
         uses: johnlindquist/kit-action@main
         with:
