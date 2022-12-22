@@ -93,21 +93,13 @@ console.log(`⭐️ Starting Kit release for ${tag_name}`);
 
 let octokit = github.getOctokit(await env('GITHUB_TOKEN'));
 
-// check if release already exists
-let release = await octokit.rest.repos.getReleaseByTag({
+let releaseResponse = await octokit.rest.repos.createRelease({
   ...github.context.repo,
-  tag: tag_name,
+  tag_name,
+  name: tag_name,
+  prerelease: true,
+  draft: true,
 });
-
-if (!release) {
-  release = await octokit.rest.repos.createRelease({
-    ...github.context.repo,
-    tag_name,
-    name: tag_name,
-    prerelease: true,
-    draft: true,
-  });
-}
 
 let kitFiles = await readdir(kitPath());
 let name = 'kit.tar.gz';
@@ -139,7 +131,7 @@ console.log(`Uploading ${name} to releases...`);
 
 let uploadResponse = await octokit.rest.repos.uploadReleaseAsset({
   ...github.context.repo,
-  release_id: release.data.id,
+  release_id: releaseResponse.data.id,
   name,
   data: await readFile(kitTarPath),
 });
