@@ -65,7 +65,8 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: semantic-version
-      - shell: bash
+
+      - name: Set Semantic Version
         run: |
           echo "Semantic Version: $(cat semantic-version.txt)"
           # Set the semantic version as an environment variable
