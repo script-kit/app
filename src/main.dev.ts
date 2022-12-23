@@ -966,84 +966,71 @@ const checkKit = async () => {
     // await setupLog(`Installing ~/.kit packages...`);
     log.info(`PATH:`, options?.env?.PATH);
 
-    // if (isWin) {
-    //   const npmResult = await new Promise((resolve, reject) => {
-    //     const child = fork(
-    //       knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-    //       [`i`, `--production`, `--loglevel`, `verbose`],
-    //       options
-    //     );
+    if (existsSync(kitPath()) && !existsSync(kitPath('node_modules'))) {
+      await setupLog(`node_modules not found. Installing kit packages...`);
+      if (isWin) {
+        const npmResult = await new Promise((resolve, reject) => {
+          const child = fork(
+            knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+            [`i`, `--production`, `--loglevel`, `verbose`],
+            options
+          );
 
-    //     if (child.stdout) {
-    //       child.stdout.on('data', (data) => {
-    //         sendSplashBody(data.toString());
-    //       });
-    //     }
+          if (child.stdout) {
+            child.stdout.on('data', (data) => {
+              sendSplashBody(data.toString());
+            });
+          }
 
-    //     if (child.stderr) {
-    //       child.stderr.on('data', (data) => {
-    //         sendSplashBody(data.toString());
-    //       });
-    //     }
+          if (child.stderr) {
+            child.stderr.on('data', (data) => {
+              sendSplashBody(data.toString());
+            });
+          }
 
-    //     child.on('message', (data) => {
-    //       sendSplashBody(data.toString());
-    //     });
-    //     child.on('exit', () => {
-    //       resolve('npm install success');
-    //     });
-    //     child.on('error', (error) => {
-    //       reject(error);
-    //     });
-    //   });
-    //   // const kitAppResult = await new Promise((resolve, reject) => {
-    //   //   const child = fork(
-    //   //     kitPath('node', 'bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-    //   //     [`i`, `@johnlindquist/kitdeps@0.0.1`, `--no-progress`, `--quiet`],
-    //   //     options
-    //   //   );
-    //   //   child.on('message', (data) => {
-    //   //     sendSplashBody(data.toString());
-    //   //   });
-    //   //   child.on('exit', () => {
-    //   //     resolve('npm install success');
-    //   //   });
-    //   //   child.on('error', (error) => {
-    //   //     reject(error);
-    //   //   });
-    //   // });
-    // } else {
-    //   const npmResult = await new Promise((resolve, reject) => {
-    //     const child = spawn(
-    //       knodePath('bin', 'npm'),
-    //       [`i`, `--production`, `--loglevel`, `verbose`],
-    //       options
-    //     );
-    //     if (child.stdout) {
-    //       child.stdout.on('data', (data) => {
-    //         sendSplashBody(data.toString());
-    //       });
-    //     }
+          child.on('message', (data) => {
+            sendSplashBody(data.toString());
+          });
+          child.on('exit', () => {
+            resolve('npm install success');
+          });
+          child.on('error', (error) => {
+            reject(error);
+          });
+        });
+      } else {
+        const npmResult = await new Promise((resolve, reject) => {
+          const child = spawn(
+            knodePath('bin', 'npm'),
+            [`i`, `--production`, `--loglevel`, `verbose`],
+            options
+          );
+          if (child.stdout) {
+            child.stdout.on('data', (data) => {
+              sendSplashBody(data.toString());
+            });
+          }
 
-    //     if (child.stderr) {
-    //       child.stderr.on('data', (data) => {
-    //         sendSplashBody(data.toString());
-    //       });
-    //     }
+          if (child.stderr) {
+            child.stderr.on('data', (data) => {
+              sendSplashBody(data.toString());
+            });
+          }
 
-    //     child.on('message', (data: any) => {
-    //       sendSplashBody(data.toString());
-    //     });
-    //     child.on('exit', (code) => {
-    //       resolve(`Deps install exit code ${code}`);
-    //     });
-    //     child.on('error', (error: any) => {
-    //       reject(error);
-    //     });
-    //   });
+          child.on('message', (data: any) => {
+            sendSplashBody(data.toString());
+          });
+          child.on('exit', (code) => {
+            resolve(`Deps install exit code ${code}`);
+          });
+          child.on('error', (error: any) => {
+            reject(error);
+          });
+        });
 
-    //   log.info({ npmResult });
-    // }
+        log.info({ npmResult });
+      }
+    }
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));
     await clearPromptCache();

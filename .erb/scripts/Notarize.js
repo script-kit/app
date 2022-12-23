@@ -1,4 +1,3 @@
-const { spawn } = require('child_process');
 const { notarize } = require('electron-notarize');
 const { build } = require('../../package.json');
 
@@ -21,22 +20,13 @@ exports.default = async function notarizeMacos(context) {
   }
 
   const appName = context.packager.appInfo.productFilename;
-  const appPath = `${appOutDir}/${appName}.app`;
 
-  try {
-    await notarize({
-      tool: 'notarytool',
-      appBundleId: build.appId,
-      appPath,
-      appleId: process.env.APPLE_ID,
-      appleIdPassword: process.env.APPLE_ID_PASS,
-      teamId: '9822B7V7MD',
-    });
-  } catch (error) {
-    if (error.message?.includes('Failed to staple')) {
-      spawn(`xcrun`, ['stapler', 'staple', appPath]);
-    } else {
-      throw error;
-    }
-  }
+  await notarize({
+    tool: 'notarytool',
+    appBundleId: build.appId,
+    appPath: `${appOutDir}/${appName}.app`,
+    appleId: process.env.APPLE_ID,
+    appleIdPassword: process.env.APPLE_ID_PASS,
+    teamId: '9822B7V7MD',
+  });
 };

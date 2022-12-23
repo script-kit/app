@@ -113,24 +113,27 @@ console.log({ kitFiles });
 
 await console.log(`Tar ${kitPath()} to ${kitTarPath}`);
 
-await tar.c(
-  {
-    cwd: kitPath(),
-    gzip: true,
-    file: kitTarPath,
-    follow: true,
-    filter: (item) => {
-      // if (item.match(/^.{0,2}node/)) {
-      //   console.log(`SKIPPING`, item);
-      //   return false;
-      // }
-      if (item.includes('kit.sock')) return false;
+await exec(`npm i -g npm-pack-all`);
+await exec(`npm-pack-all ${kitPath()} --output ${kitTarPath}`);
 
-      return true;
-    },
-  },
-  ['.']
-);
+// await tar.c(
+//   {
+//     cwd: kitPath(),
+//     gzip: true,
+//     file: kitTarPath,
+//     follow: true,
+//     filter: (item) => {
+//       // if (item.match(/^.{0,2}node/)) {
+//       //   console.log(`SKIPPING`, item);
+//       //   return false;
+//       // }
+//       if (item.includes('kit.sock')) return false;
+
+//       return true;
+//     },
+//   },
+//   ['.']
+// );
 
 console.log(`Uploading ${name} to releases...`);
 
@@ -149,4 +152,4 @@ console.log({ kitUrlFilePath, url });
 await writeFile(kitUrlFilePath, url);
 
 // overwrite the release with the new asset
-// await copyFile(kitTarPath, outTarz);
+await copyFile(kitTarPath, outTarz);
