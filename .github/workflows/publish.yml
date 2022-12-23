@@ -134,6 +134,11 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+
+          echo "npm_config_arch=${{ matrix.arch }}" >> $GITHUB_ENV
+          echo "npm_config_target_arch=${{ matrix.arch }}" >> $GITHUB_ENV
+          echo "npm_config_target_platform=${{ matrix.os }}" >> $GITHUB_ENV
+
           yarn build
           cd ./src
           yarn remove node-mac-permissions
@@ -153,6 +158,11 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+
+          echo "npm_config_arch=${{ matrix.arch }}" >> $GITHUB_ENV
+          echo "npm_config_target_arch=${{ matrix.arch }}" >> $GITHUB_ENV
+          echo "npm_config_target_platform=${{ matrix.os }}" >> $GITHUB_ENV
+
           yarn build
           cd ./src
           yarn remove node-mac-permissions
@@ -173,5 +183,10 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+
+          echo "npm_config_arch=${{ matrix.arch }}" >> $GITHUB_ENV
+          echo "npm_config_target_arch=${{ matrix.arch }}" >> $GITHUB_ENV
+          echo "npm_config_target_platform=${{ matrix.os }}" >> $GITHUB_ENV
+
           yarn build
           yarn electron-builder --publish always --mac --${{ matrix.arch }}

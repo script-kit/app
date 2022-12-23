@@ -73,13 +73,23 @@ console.log(`PWD`, process.env.PWD);
 //chdir(kitPath())
 //await $`yarn`;
 
+console.log({
+  version,
+  platform,
+  arch,
+  release_id,
+  tag_name,
+  osName,
+});
+
+console.log({
+  npm_config_platform: process.env.npm_config_platform,
+  npm_config_arch: process.env.npm_config_arch,
+  npm_config_target_arch: process.env.npm_config_target_arch,
+});
+
 await exec('yarn', {
   cwd: kitPath(),
-  env: {
-    ...process.env,
-    npm_config_platform: osName,
-    npm_config_arch: arch,
-  },
 });
 
 let kitModules = await readdir(kitPath('node_modules'));
