@@ -114,7 +114,7 @@ console.log({ kitFiles });
 await console.log(`Tar ${kitPath()} to ${kitTarPath}`);
 
 await exec(`npm i -g npm-pack-all`);
-await exec(`npm-pack-all ${kitPath()} --output ${kitTarPath}`);
+await exec(`npm-pack-all --output ${kitTarPath}`);
 
 // await tar.c(
 //   {
