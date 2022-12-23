@@ -113,9 +113,13 @@ console.log({ kitFiles });
 
 await console.log(`Tar ${kitPath()} to ${kitTarPath}`);
 
+console.log(`Before npm i -g npm-pack-all`);
 await exec(`npm i -g npm-pack-all`);
+console.log(`After npm i -g npm-pack-all`);
 chdir(kitPath());
-await exec(`npm-pack-all --output ${kitTarPath}`);
+console.log(`Before npm-pack-all --output ${kitTarPath}`);
+await exec(`npx npm-pack-all --output ${kitTarPath}`);
+console.log(`After npm-pack-all --output ${kitTarPath}`);
 
 // await tar.c(
 //   {
