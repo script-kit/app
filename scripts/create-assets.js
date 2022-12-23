@@ -57,7 +57,6 @@ await tar.c(
 // Experimental Kit bundle download...
 
 // Need to consider "esbuild" for each platform and architecture
-// Create a string  that defines all of the supported architectures in a .yarnrc.yml file
 
 let version = await arg('Enter the version number');
 let platform = await arg('Enter the platform');
@@ -71,24 +70,16 @@ if (platform === 'ubuntu-latest') osName = 'linux';
 
 console.log(`PWD`, process.env.PWD);
 
-let yarnrc = `
-supportedArchitectures:
-  os:
-    - "${osName}"
-  cpu:
-    - "${arch}"
-`;
-
-console.log({ yarnrc });
-
-// Create a .yarnrc.yml file in the kit directory
-await writeFile(kitPath('.yarnrc.yml'), yarnrc);
-
 //chdir(kitPath())
 //await $`yarn`;
 
 await exec('yarn', {
   cwd: kitPath(),
+  env: {
+    ...process.env,
+    npm_config_platform: osName,
+    npm_config_arch: arch,
+  },
 });
 
 let kitModules = await readdir(kitPath('node_modules'));
@@ -150,4 +141,4 @@ console.log({ kitUrlFilePath, url });
 await writeFile(kitUrlFilePath, url);
 
 // overwrite the release with the new asset
-// await copyFile(kitTarPath, outTarz);
+await copyFile(kitTarPath, outTarz);
