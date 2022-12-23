@@ -149,4 +149,4 @@ console.log({ kitUrlFilePath, url });
 await writeFile(kitUrlFilePath, url);
 
 // overwrite the release with the new asset
-// await copyFile(kitTarPath, outTarz);
+await copyFile(kitTarPath, outTarz);
