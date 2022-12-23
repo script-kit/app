@@ -63,7 +63,7 @@ const page = (body: string, options: ShowOptions) => {
 
 
     <style>
-    ${nativeTheme.shouldUseDarkColors ? darkTheme : lightTheme}
+    ${darkTheme}
     </style>
     <script>
 

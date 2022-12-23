@@ -58,6 +58,7 @@ import {
   rename,
   rm,
   mkdir,
+  writeFile,
 } from 'fs/promises';
 
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
@@ -951,7 +952,8 @@ const checkKit = async () => {
         const kitUrl = await readFile(getAssetPath('kit_url.txt'), 'utf8');
         await setupLog(`Download SDK from ${kitUrl}`);
         log.info(`Downloading pre-bundled kit...`);
-        await download(kitUrl.trim(), kitTar);
+        const buffer = await download(kitUrl.trim());
+        await writeFile(kitTar, buffer);
         log.info(`Downloading complete. Beginning extraction...`);
       } catch (error) {
         log.error(error);
