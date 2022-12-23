@@ -944,15 +944,15 @@ const checkKit = async () => {
     const kitTar = getAssetPath('kit.tar.gz');
 
     if (
-      process.env.KIT_EXPERIMENTAL &&
+      // process.env.KIT_EXPERIMENTAL &&
       existsSync(getAssetPath('kit_url.txt'))
     ) {
-      const kitUrl = await readFile(getAssetPath('kit_url.txt'), 'utf8');
-      await setupLog(`Using kit url from kit_url.txt: ${kitUrl}`);
       try {
+        const kitUrl = await readFile(getAssetPath('kit_url.txt'), 'utf8');
+        await setupLog(`Download SDK from ${kitUrl}`);
         log.info(`Downloading pre-bundled kit...`);
         await download(kitUrl.trim(), kitTar);
-        log.info(`Downloading complete`);
+        log.info(`Downloading complete. Beginning extraction...`);
       } catch (error) {
         log.error(error);
       }

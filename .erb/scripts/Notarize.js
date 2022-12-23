@@ -1,3 +1,4 @@
+const { spawn } = require('child_process');
 const { notarize } = require('electron-notarize');
 const { build } = require('../../package.json');
 
