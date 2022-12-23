@@ -10,7 +10,14 @@ import os from 'os';
 import log from 'electron-log';
 import colors from 'color-name';
 
-import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
+import {
+  mainScriptPath,
+  kitPath,
+  shortcutNormalizer,
+} from '@johnlindquist/kit/cjs/utils';
+import { emitter, KitEvent } from './events';
+import { Trigger } from './enums';
+import { convertKey } from './state';
 
 export const APP_NAME = 'Kit';
 export const KIT_PROTOCOL = 'kit';
@@ -75,4 +82,100 @@ export const toRgb = (hexOrRgbOrName: string) => {
   const b = parseInt(result[3], 16);
 
   return `${r}, ${g}, ${b}`;
+};
+
+const validateAccelerator = (shortcut: string) => {
+  const parts = shortcut.split('+');
+  let keyFound = false;
+  return parts.every((val, index) => {
+    const isKey = keyCodes.test(val);
+    const isModifier = modifiers.test(val);
+    if (isKey) {
+      // Key must be unique
+      if (keyFound) return false;
+      keyFound = true;
+    }
+    // Key is required
+    if (index === parts.length - 1 && !keyFound) return false;
+    return isKey || isModifier;
+  });
+};
+
+const modifiers = /^(Command|Cmd|Control|Ctrl|CommandOrControl|CmdOrCtrl|Alt|Option|AltGr|Shift|Super)$/;
+const keyCodes = /^([0-9A-Z)!@#$%^&*(:+<_>?~{|}";=,\-./`[\\\]']|F1*[1-9]|F10|F2[0-4]|Plus|Space|Tab|Backspace|Delete|Insert|Return|Enter|Up|Down|Left|Right|Home|End|PageUp|PageDown|Escape|Esc|VolumeUp|VolumeDown|VolumeMute|MediaNextTrack|MediaPreviousTrack|MediaStop|MediaPlayPause|PrintScreen)$/;
+
+const infoScript = kitPath('cli', 'info.js');
+
+const conversionFail = (
+  shortcut: string,
+  filePath: string,
+  otherPath = ''
+) => `# Shortcut Conversion Failed
+
+Attempted to convert to a valid shortcut, but result was invalid:
+
+<code>${shortcut}</code>
+
+Please open ${path.basename(
+  filePath
+)} and try again or ask a question in our [Github Discussions](https://github.com/johnlindquist/kit/discussions)
+`;
+
+export const shortcutInfo = async (
+  shortcut: string,
+  targetScriptPath: string,
+  md = conversionFail,
+  otherScriptPath = ''
+) => {
+  const markdown = md(shortcut, targetScriptPath, otherScriptPath);
+  log.info(markdown);
+
+  emitter.emit(KitEvent.RunPromptProcess, {
+    scriptPath: infoScript,
+    args: [path.basename(targetScriptPath), shortcut, markdown],
+    options: {
+      force: true,
+      trigger: Trigger.Info,
+    },
+  });
+};
+
+export const convertShortcut = (shortcut: string, filePath: string): string => {
+  if (!shortcut?.length) return '';
+  const normalizedShortcut = shortcutNormalizer(shortcut);
+  log.info({ shortcut, normalizedShortcut });
+  const [sourceKey, ...mods] = normalizedShortcut
+    .trim()
+    ?.split(/\+| /)
+    .map((str: string) => str.trim())
+    .filter(Boolean)
+    .reverse();
+  // log.info(`Shortcut main key: ${sourceKey}`);
+
+  if (!mods.length || !sourceKey?.length) {
+    if (!mods.length) log.info('No modifiers found');
+    if (!sourceKey?.length) log.info('No main key found');
+    // shortcutInfo(normalizedShortcut, filePath);
+    return '';
+  }
+
+  if (sourceKey?.length > 1) {
+    if (!validateAccelerator(normalizedShortcut)) {
+      log.info(`Invalid shortcut: ${normalizedShortcut}`);
+      shortcutInfo(normalizedShortcut, filePath);
+      return '';
+    }
+
+    return normalizedShortcut;
+  }
+
+  const convertedKey = convertKey(sourceKey).toUpperCase();
+  const finalShortcut = `${mods.reverse().join('+')}+${convertedKey}`;
+
+  if (!validateAccelerator(finalShortcut)) {
+    shortcutInfo(finalShortcut, filePath);
+    return '';
+  }
+
+  return finalShortcut;
 };

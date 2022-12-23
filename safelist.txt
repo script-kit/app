@@ -1012,3 +1012,7 @@ duration-200
 text-opacity-80
 outline-bg-base
 bg-opacity-40
+overflow-auto
+overflow-scroll
+overflow-x-auto
+overflow-y-auto

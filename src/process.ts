@@ -105,7 +105,7 @@ import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
 import { AppChannel, Trigger } from './enums';
-import { isKitScript, toRgb, pathsAreEqual } from './helpers';
+import { isKitScript, toRgb, pathsAreEqual, convertShortcut } from './helpers';
 import { toHex } from './color-utils';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
@@ -1282,8 +1282,12 @@ const kitMessageMap: ChannelHandler = {
 
   REGISTER_GLOBAL_SHORTCUT: toProcess(
     async ({ child, scriptPath }, { channel, value }) => {
-      log.info(`App: registering global shortcut ${value}`);
-      const result = globalShortcut.register(value, () => {
+      const properShortcut = convertShortcut(value, scriptPath);
+      log.info(
+        `App: registering global shortcut ${value} as ${properShortcut}`
+      );
+      const result = globalShortcut.register(properShortcut, async () => {
+        kitState.shortcutPressed = properShortcut;
         log.info(
           `Global shortcut: Sending ${value} on ${Channel.GLOBAL_SHORTCUT_PRESSED}`
         );
@@ -1293,11 +1297,13 @@ const kitMessageMap: ChannelHandler = {
         });
       });
 
+      log.info(`Shortcut ${value}: ${result ? 'success' : 'failure'}}`);
+
       if (result) {
         if (!childShortcutMap.has(child)) {
-          childShortcutMap.set(child, [value]);
+          childShortcutMap.set(child, [properShortcut]);
         } else {
-          childShortcutMap.get(child)?.push(value);
+          childShortcutMap.get(child)?.push(properShortcut);
         }
 
         childSend(child, {
@@ -1305,7 +1311,9 @@ const kitMessageMap: ChannelHandler = {
           value,
         });
       } else {
-        log.error(`Global shortcut: ${value} failed to register`);
+        log.error(
+          `😅 Kit.app: Global shortcut: ${value} as ${properShortcut} failed to register`
+        );
         const infoScript = kitPath('cli', 'info.js');
         const markdown = `# Failed to register global shortcut: ${value}`;
         emitter.emit(KitEvent.RunPromptProcess, {
@@ -1326,9 +1334,10 @@ const kitMessageMap: ChannelHandler = {
   ),
 
   UNREGISTER_GLOBAL_SHORTCUT: toProcess(
-    async ({ child }, { channel, value }) => {
+    async ({ child, scriptPath }, { channel, value }) => {
       log.info(`App: unregistering global shortcut ${value}`);
 
+      const properShortcut = convertShortcut(value, scriptPath);
       if (childShortcutMap.has(child)) {
         const shortcuts = childShortcutMap.get(child);
         const index = shortcuts?.indexOf(value);
@@ -1340,7 +1349,7 @@ const kitMessageMap: ChannelHandler = {
         }
       }
 
-      globalShortcut.unregister(value);
+      globalShortcut.unregister(properShortcut);
       childSend(child, {
         channel,
         value,
@@ -1349,6 +1358,35 @@ const kitMessageMap: ChannelHandler = {
   ),
 
   KEYBOARD_TYPE: toProcess(async ({ child }, { channel, value }) => {
+    if (kitState.shortcutPressed) {
+      // Get the modifiers from the accelerator
+      const modifiers = kitState.shortcutPressed.split('+');
+      // Remove the last item, which is the key
+      const mainKey: any = modifiers.pop() || '';
+
+      log.info(`Pressing ${mainKey}`);
+
+      if (Key?.[mainKey]) {
+        log.info(`Releasing ${mainKey}`);
+        await keyboard.releaseKey(Key[mainKey] as any);
+      }
+    }
+
+    //   modifiers.forEach(async (modifier) => {
+    //     log.info(`Releasing ${modifier}`);
+    //     if (modifier === 'Control')
+    //       await keyboard.releaseKey(Key.LeftControl, Key.RightControl);
+
+    //     if (modifier === 'Command')
+    //       await keyboard.releaseKey(Key.LeftSuper, Key.RightSuper);
+
+    //     if (modifier === 'Alt' || modifier === 'Option')
+    //       await keyboard.releaseKey(Key.LeftAlt, Key.RightAlt);
+
+    //     if (modifier === 'Shift')
+    //       await keyboard.releaseKey(Key.LeftShift, Key.RightShift);
+    //   });
+    // }
     if (!kitState.authorized) kitState.notifyAuthFail = true;
     log.info(`${channel}: ${typeof value} ${value}`, {
       isArray: Array.isArray(value),
@@ -1979,7 +2017,12 @@ class Processes extends Array<ProcessInfo> {
         const shortcuts = childShortcutMap.get(child) || [];
         shortcuts.forEach((shortcut) => {
           log.info(`Unregistering shortcut: ${shortcut}`);
-          globalShortcut.unregister(shortcut);
+
+          try {
+            globalShortcut.unregister(shortcut);
+          } catch (error) {
+            log.error(`Error unregistering shortcut: ${shortcut}`, error);
+          }
         });
         childShortcutMap.delete(child);
       }

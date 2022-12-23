@@ -5,55 +5,14 @@ import { readFile } from 'fs/promises';
 import { subscribeKey } from 'valtio/utils';
 import { debounce } from 'lodash';
 
-import {
-  mainScriptPath,
-  shortcutsPath,
-  kitPath,
-  shortcutNormalizer,
-} from '@johnlindquist/kit/cjs/utils';
+import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import { focusPrompt, isFocused, isVisible, reload } from './prompt';
 import { convertKey, kitState, subs } from './state';
 import { Trigger } from './enums';
-
-const modifiers = /^(Command|Cmd|Control|Ctrl|CommandOrControl|CmdOrCtrl|Alt|Option|AltGr|Shift|Super)$/;
-const keyCodes = /^([0-9A-Z)!@#$%^&*(:+<_>?~{|}";=,\-./`[\\\]']|F1*[1-9]|F10|F2[0-4]|Plus|Space|Tab|Backspace|Delete|Insert|Return|Enter|Up|Down|Left|Right|Home|End|PageUp|PageDown|Escape|Esc|VolumeUp|VolumeDown|VolumeMute|MediaNextTrack|MediaPreviousTrack|MediaStop|MediaPlayPause|PrintScreen)$/;
-
-const validateAccelerator = (shortcut: string) => {
-  const parts = shortcut.split('+');
-  let keyFound = false;
-  return parts.every((val, index) => {
-    const isKey = keyCodes.test(val);
-    const isModifier = modifiers.test(val);
-    if (isKey) {
-      // Key must be unique
-      if (keyFound) return false;
-      keyFound = true;
-    }
-    // Key is required
-    if (index === parts.length - 1 && !keyFound) return false;
-    return isKey || isModifier;
-  });
-};
-
-const infoScript = kitPath('cli', 'info.js');
-
-const conversionFail = (
-  shortcut: string,
-  filePath: string,
-  otherPath = ''
-) => `# Shortcut Conversion Failed
-
-Attempted to convert to a valid shortcut, but result was invalid:
-
-<code>${shortcut}</code>
-
-Please open ${path.basename(
-  filePath
-)} and try again or ask a question in our [Github Discussions](https://github.com/johnlindquist/kit/discussions)
-`;
+import { convertShortcut, shortcutInfo } from './helpers';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -74,27 +33,10 @@ const mainFail = (shortcut: string, filePath: string) =>
 
 <code>${shortcut}</code> failed to register. May already be registered to another app.`;
 
-const shortcutInfo = async (
-  shortcut: string,
-  targetScriptPath: string,
-  md = conversionFail,
-  otherScriptPath = ''
-) => {
-  const markdown = md(shortcut, targetScriptPath, otherScriptPath);
-  log.info(markdown);
-  runPromptProcess(
-    infoScript,
-    [path.basename(targetScriptPath), shortcut, markdown],
-    {
-      force: true,
-      trigger: Trigger.Info,
-    }
-  );
-};
-
 const registerShortcut = (shortcut: string, filePath: string) => {
   try {
     const success = globalShortcut.register(shortcut, async () => {
+      kitState.shortcutPressed = shortcut;
       runPromptProcess(filePath, [], {
         force: true,
         trigger: Trigger.Shortcut,
@@ -117,12 +59,11 @@ const registerShortcut = (shortcut: string, filePath: string) => {
 
 export const registerKillLatestShortcut = () => {
   const semicolon = convertKey(';');
-  const success = globalShortcut.register(
-    `CommandOrControl+Shift+${semicolon}`,
-    () => {
-      emitter.emit(KitEvent.RemoveMostRecent);
-    }
-  );
+  const killLatestShortcut = `CommandOrControl+Shift+${semicolon}`;
+  const success = globalShortcut.register(killLatestShortcut, () => {
+    kitState.shortcutPressed = killLatestShortcut;
+    emitter.emit(KitEvent.RemoveMostRecent);
+  });
 
   if (process.env.NODE_ENV === 'development') {
     globalShortcut.register(`Option+${semicolon}`, async () => {
@@ -217,46 +158,6 @@ export const shortcutScriptChanged = ({
   }
 };
 
-const convertShortcut = (shortcut: string, filePath: string): string => {
-  if (!shortcut?.length) return '';
-  const normalizedShortcut = shortcutNormalizer(shortcut);
-  log.info({ shortcut, normalizedShortcut });
-  const [sourceKey, ...mods] = normalizedShortcut
-    .trim()
-    ?.split(/\+| /)
-    .map((str: string) => str.trim())
-    .filter(Boolean)
-    .reverse();
-  // log.info(`Shortcut main key: ${sourceKey}`);
-
-  if (!mods.length || !sourceKey?.length) {
-    if (!mods.length) log.info('No modifiers found');
-    if (!sourceKey?.length) log.info('No main key found');
-    // shortcutInfo(normalizedShortcut, filePath);
-    return '';
-  }
-
-  if (sourceKey?.length > 1) {
-    if (!validateAccelerator(normalizedShortcut)) {
-      log.info(`Invalid shortcut: ${normalizedShortcut}`);
-      shortcutInfo(normalizedShortcut, filePath);
-      return '';
-    }
-
-    return normalizedShortcut;
-  }
-
-  const convertedKey = convertKey(sourceKey).toUpperCase();
-  const finalShortcut = `${mods.reverse().join('+')}+${convertedKey}`;
-
-  if (!validateAccelerator(finalShortcut)) {
-    shortcutInfo(finalShortcut, filePath);
-    return '';
-  }
-
-  return finalShortcut;
-};
-
 export const updateMainShortcut = async (filePath: string) => {
   log.info(`Updating main shortcut for ${filePath}`);
   if (filePath === shortcutsPath) {
@@ -279,6 +180,7 @@ export const updateMainShortcut = async (filePath: string) => {
     }
 
     const ret = globalShortcut.register(finalShortcut, async () => {
+      kitState.shortcutPressed = finalShortcut;
       log.info(`🏚  main shortcut`);
       if (isVisible() && !isFocused()) {
         focusPrompt();

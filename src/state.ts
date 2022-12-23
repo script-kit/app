@@ -322,6 +322,7 @@ const initState = {
   cancelTyping: false,
   kenvEnv: {} as Record<string, string>,
   escapePressed: false,
+  shortcutPressed: '',
 };
 
 const initAppDb: AppDb = {

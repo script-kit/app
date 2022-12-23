@@ -12,6 +12,7 @@ export type WidgetOptions = BrowserWindowConstructorOptions & {
   title?: string;
   ignoreMouse?: boolean;
   ttl?: number;
+  containerClass?: string;
 };
 
 export const createWidget = async (
@@ -110,9 +111,9 @@ export const createWidget = async (
     ${html}
   </template>
 
-  <div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="flex justify-center items-center v-screen h-screen ${
-    isWin ? `` : `draggable`
-  }"></div>
+  <div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="${
+    options.containerClass
+  } ${isWin ? `` : `draggable`}"></div>
 
   <script>
 
