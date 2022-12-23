@@ -74,11 +74,12 @@ console.log(`PWD`, process.env.PWD);
 let yarnrc = `
 supportedArchitectures:
   os:
-    - ${osName}
-
+    - "${osName}"
   cpu:
-    - ${arch}
+    - "${arch}"
 `;
+
+console.log({ yarnrc });
 
 // Create a .yarnrc.yml file in the kit directory
 await writeFile(kitPath('.yarnrc.yml'), yarnrc);
@@ -113,32 +114,24 @@ console.log({ kitFiles });
 
 await console.log(`Tar ${kitPath()} to ${kitTarPath}`);
 
-console.log(`Before npm i -g npm-pack-all`);
-await exec(`npm i -g npm-pack-all`);
-console.log(`After npm i -g npm-pack-all`);
-chdir(kitPath());
-console.log(`Before npm-pack-all --output ${kitTarPath}`);
-await exec(`npx npm-pack-all --output ${kitTarPath}`);
-console.log(`After npm-pack-all --output ${kitTarPath}`);
+await tar.c(
+  {
+    cwd: kitPath(),
+    gzip: true,
+    file: kitTarPath,
+    follow: true,
+    filter: (item) => {
+      // if (item.match(/^.{0,2}node/)) {
+      //   console.log(`SKIPPING`, item);
+      //   return false;
+      // }
+      if (item.includes('kit.sock')) return false;
 
-// await tar.c(
-//   {
-//     cwd: kitPath(),
-//     gzip: true,
-//     file: kitTarPath,
-//     follow: true,
-//     filter: (item) => {
-//       // if (item.match(/^.{0,2}node/)) {
-//       //   console.log(`SKIPPING`, item);
-//       //   return false;
-//       // }
-//       if (item.includes('kit.sock')) return false;
-
-//       return true;
-//     },
-//   },
-//   ['.']
-// );
+      return true;
+    },
+  },
+  ['.']
+);
 
 console.log(`Uploading ${name} to releases...`);
 
@@ -157,4 +150,4 @@ console.log({ kitUrlFilePath, url });
 await writeFile(kitUrlFilePath, url);
 
 // overwrite the release with the new asset
-await copyFile(kitTarPath, outTarz);
+// await copyFile(kitTarPath, outTarz);

@@ -945,7 +945,7 @@ const checkKit = async () => {
     const kitTar = getAssetPath('kit.tar.gz');
 
     if (
-      // process.env.KIT_EXPERIMENTAL &&
+      process.env.KIT_EXPERIMENTAL &&
       existsSync(getAssetPath('kit_url.txt'))
     ) {
       try {
