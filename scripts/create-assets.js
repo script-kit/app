@@ -141,7 +141,7 @@ let uploadResponse = await octokit.rest.repos.uploadReleaseAsset({
   data: await readFile(kitTarPath),
 });
 
-let url = uploadResponse.data.browser_download_url;
+let url = `https://github.com/johnlindquist/kitapp/releases/download/${tag_name}/${name}`;
 
 let kitUrlFilePath = path.resolve(process.env.PWD, 'assets', 'kit_url.txt');
 console.log({ kitUrlFilePath, url });
@@ -149,4 +149,4 @@ console.log({ kitUrlFilePath, url });
 await writeFile(kitUrlFilePath, url);
 
 // overwrite the release with the new asset
-await copyFile(kitTarPath, outTarz);
+// await copyFile(kitTarPath, outTarz);
