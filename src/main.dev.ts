@@ -1039,6 +1039,7 @@ const checkKit = async () => {
     //       reject(error);
     //     });
     //   });
+
     //   log.info({ npmResult });
     // }
 
