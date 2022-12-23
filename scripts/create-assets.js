@@ -65,18 +65,19 @@ let arch = await arg('Enter the architecture');
 let release_id = await arg("Enter the release's id");
 let tag_name = `v${version}`;
 
+let osName = 'darwin';
+if (platform === 'windows-latest') osName = 'win32';
+if (platform === 'ubuntu-latest') osName = 'linux';
+
 console.log(`PWD`, process.env.PWD);
 
 let yarnrc = `
 supportedArchitectures:
   os:
-    - linux
-    - darwin
-    - win32
+    - ${osName}
 
   cpu:
-    - x64
-    - arm64
+    - ${arch}
 `;
 
 // Create a .yarnrc.yml file in the kit directory
@@ -146,4 +147,6 @@ let kitUrlFilePath = path.resolve(process.env.PWD, 'assets', 'kit_url.txt');
 console.log({ kitUrlFilePath, url });
 
 await writeFile(kitUrlFilePath, url);
-// await copyFile(kitTarPath, path.resolve(process.env.PWD, 'assets', name));
+
+// overwrite the release with the new asset
+await copyFile(kitTarPath, outTarz);
