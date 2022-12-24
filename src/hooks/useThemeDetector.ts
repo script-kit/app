@@ -4,7 +4,7 @@ import { useCallback, useEffect } from 'react';
 export default () => {
   const mqListener = useCallback((e: MediaQueryListEvent) => {
     if (e.matches) {
-      document.documentElement.style.setProperty('--opacity', '0.5');
+      document.documentElement.style.setProperty('--opacity', '0.75');
     } else {
       document.documentElement.style.setProperty('--opacity', '0.85');
     }

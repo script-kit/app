@@ -5,6 +5,7 @@ import { KIT_FIRST_PATH } from '@johnlindquist/kit/cjs/utils';
 import log from 'electron-log';
 import { Server } from 'net';
 import getPort from './get-port';
+import { kitState } from './state';
 
 let t: any = null;
 let server: Server | null = null;
@@ -36,6 +37,10 @@ export const startPty = async (config: any = {}) => {
   let socketURL = ``;
 
   log.info(`🐲 >_ Starting pty server with PATH`, KIT_FIRST_PATH);
+
+  let env = { ...config.env, PATH: KIT_FIRST_PATH };
+  if (kitState.isWindows) env = { ...process.env, ...env };
+
   t = pty.spawn(
     config?.env?.KIT_SHELL ||
       (process.platform === 'win32' ? 'cmd.exe' : 'zsh'),
@@ -47,9 +52,7 @@ export const startPty = async (config: any = {}) => {
       rows: 24,
       cwd: untildify(config?.cwd || os.homedir()),
       encoding: USE_BINARY ? null : 'utf8',
-      env: {
-        PATH: KIT_FIRST_PATH,
-      },
+      env,
     }
   );
 

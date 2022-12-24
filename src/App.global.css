@@ -22,6 +22,7 @@ Favicon gradient
   --color-secondary: 52, 52, 52;
   --color-contrast: 251, 191, 36;
   --color-background: 0, 0, 0;
+  /* Check useThemeDetector... */
   --opacity: 0.9;
   --mono-font: JetBrains Mono;
   --sans-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
