@@ -421,16 +421,7 @@ export default function App() {
 
       transition-colors duration-200
       border-secondary border-opacity-5
-
-      ${
-        appConfig.isMac
-          ? `
       bg-opacity-base
-      `
-          : `
-      bg-opacity-90
-      `
-      }
 
       `}
       >

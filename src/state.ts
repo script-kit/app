@@ -48,7 +48,7 @@ const css = `
   --color-secondary: 52, 52, 52;
   --color-contrast: 251, 191, 36;
   --color-background: 0, 0, 0;
-  --opacity: 0.85;
+  --opacity: 0.9;
 }
 `;
 

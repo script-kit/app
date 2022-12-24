@@ -128,7 +128,7 @@ export const createPromptWindow = async () => {
 
   if (kitState.isMac) {
     promptWindow = new BrowserWindow(options) as GlasstronWindow;
-    promptWindow.setVibrancy('menu');
+    promptWindow.setVibrancy('sidebar');
   } else {
     promptWindow = new glasstron.BrowserWindow(options) as GlasstronWindow;
 
