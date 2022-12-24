@@ -38,23 +38,33 @@ export const startPty = async (config: any = {}) => {
 
   log.info(`🐲 >_ Starting pty server with PATH`, KIT_FIRST_PATH);
 
-  let env = { ...config.env, PATH: KIT_FIRST_PATH };
-  if (kitState.isWindows) env = { ...process.env, ...env };
+  let env: any = { PATH: KIT_FIRST_PATH };
+  log.info(`BEFORE`);
+  log.info({ env });
+  if (kitState.isWindows) {
+    env = {
+      ...process.env,
+      ...config?.env,
+    };
+    env.PATH = KIT_FIRST_PATH;
+  }
 
-  t = pty.spawn(
+  log.info(`AFTER`);
+  log.info({ env });
+
+  const shell =
     config?.env?.KIT_SHELL ||
-      (process.platform === 'win32' ? 'cmd.exe' : 'zsh'),
-    [],
-    {
-      useConpty: false,
-      name: 'xterm-256color',
-      cols: 80,
-      rows: 24,
-      cwd: untildify(config?.cwd || os.homedir()),
-      encoding: USE_BINARY ? null : 'utf8',
-      env,
-    }
-  );
+    (process.platform === 'win32' ? 'cmd.exe' : 'zsh');
+
+  t = pty.spawn(shell, [], {
+    useConpty: false,
+    name: 'xterm-256color',
+    cols: 80,
+    rows: 24,
+    cwd: untildify(config?.cwd || os.homedir()),
+    encoding: USE_BINARY ? null : 'utf8',
+    env,
+  });
 
   app.ws('/terminals/:pid', (ws, req) => {
     log.info('Connected to terminal ', t.pid);
