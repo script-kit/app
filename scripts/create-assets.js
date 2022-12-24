@@ -130,7 +130,7 @@ console.log(`Release Response:`);
 console.log(releaseResponse?.data || 'No release found');
 
 let kitFiles = await readdir(kitPath());
-let name = `SDK-${platform}-${arch}.tar.gz`;
+let name = `SDK-${version}-${platform}-${arch}.tar.gz`;
 let kitTarPath = home(name);
 console.log({ kitFiles });
 

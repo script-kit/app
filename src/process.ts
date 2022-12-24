@@ -788,7 +788,11 @@ const kitMessageMap: ChannelHandler = {
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
 
-      if (processInfo.child.stdout && processInfo.child.stderr) {
+      if (
+        processInfo.child.stdout &&
+        processInfo.child.stderr &&
+        kitState.isMac
+      ) {
         const scriptLog = getLog(processInfo.scriptPath);
         processInfo.child.stdout.removeAllListeners();
         processInfo.child.stderr.removeAllListeners();
