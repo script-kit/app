@@ -59,14 +59,14 @@ await tar.c(
 // Need to consider "esbuild" for each platform and architecture
 
 let version = await arg('Enter the version number');
-let platform = await arg('Enter the platform');
+let platform = await arg('Enter the platform'); // macos-12, windows-latest, ubuntu-latest
 let arch = await arg('Enter the architecture');
 let release_id = await arg("Enter the release's id");
 let tag_name = `v${version}`;
 
 if (platform.startsWith('mac')) platform = 'darwin';
 if (platform.startsWith('win')) platform = 'win32';
-if (platform.startsWith('lin')) platform = 'linux';
+if (platform.startsWith('ubuntu')) platform = 'linux';
 
 let osName = 'macOS';
 if (platform === 'win32') osName = 'Windows';
