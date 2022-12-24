@@ -48,7 +48,6 @@ export const startPty = async (config: any = {}) => {
       cwd: untildify(config?.cwd || os.homedir()),
       encoding: USE_BINARY ? null : 'utf8',
       env: {
-        ...process.env,
         PATH: KIT_FIRST_PATH,
       },
     }
