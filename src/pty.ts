@@ -1,7 +1,7 @@
 import os from 'os';
 import { WebSocket } from 'ws';
 import untildify from 'untildify';
-import { KIT_FIRST_PATH, KIT_DEFAULT_PATH } from '@johnlindquist/kit/cjs/utils';
+import { KIT_FIRST_PATH } from '@johnlindquist/kit/cjs/utils';
 import log from 'electron-log';
 import { Server } from 'net';
 import getPort from './get-port';
@@ -116,21 +116,37 @@ export const startPty = async (config: any = {}) => {
         sendData(data);
       } catch (ex) {
         // The WebSocket is not open, ignore
+        log.error(`Error sending data to pty`, ex);
       }
     });
 
     t.onExit(() => {
-      ws.close();
-      if (t) t.kill();
-      if (server) server.close();
-      // t = null;
+      try {
+        ws.close();
+        if (t) t.kill();
+        if (server) server.close();
+        // t = null;
+      } catch (error) {
+        log.error(`Error closing pty`, error);
+      }
     });
     ws.on('message', (msg: string) => {
-      t.write(msg);
+      try {
+        t.write(msg);
+      } catch (error) {
+        log.error(`Error writing to pty`, error);
+      }
     });
     ws.on('close', () => {
-      if (t) t.kill();
-      if (server) server.close();
+      try {
+        if (t) t.kill();
+        if (server) server.close();
+      } catch (error) {
+        log.error(`Error closing pty`, error);
+      }
+    });
+    ws.on('error', (error: any) => {
+      log.error(`Error on pty`, error);
     });
   });
 

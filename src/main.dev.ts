@@ -848,6 +848,22 @@ const checkKit = async () => {
       `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
     );
 
+    const nodeUrlPath = getAssetPath('node_url.txt');
+    if (
+      // process.env.KIT_EXPERIMENTAL &&
+      existsSync(nodeUrlPath)
+    ) {
+      try {
+        const nodeUrl = await readFile(nodeUrlPath, 'utf8');
+        await setupLog(`Download SDK from ${nodeUrl}`);
+        const buffer = await download(nodeUrl.trim());
+        await writeFile(KIT_NODE_TAR, buffer);
+        log.info(`Node download complete. Beginning extraction...`);
+      } catch (error) {
+        log.error(error);
+      }
+    }
+
     if (existsSync(KIT_NODE_TAR)) {
       if (existsSync(knodePath())) {
         await setupLog(`Removing old node ${tildify(knodePath())}`);
