@@ -9,7 +9,7 @@ const VERSION =
   fs.readFileSync('./assets/node.txt', 'utf-8').trim();
 
 exports.default = async function notarizeMacos(context) {
-  console.log(`>>> AFTER PACK:`);
+  console.log(`>>> AFTER PACK: - Bundle Node.js ${VERSION}`);
 
   /** @type typeof import("electron-builder").AfterPackContext */
   let { electronPlatformName, appOutDir, arch } = context;
