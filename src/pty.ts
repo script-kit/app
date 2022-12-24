@@ -39,18 +39,15 @@ export const startPty = async (config: any = {}) => {
   log.info(`🐲 >_ Starting pty server with PATH`, KIT_FIRST_PATH);
 
   let env: any = { PATH: KIT_FIRST_PATH };
-  log.info(`BEFORE`);
-  log.info({ env });
+
   if (kitState.isWindows) {
     env = {
       ...process.env,
       ...config?.env,
     };
     env.PATH = KIT_FIRST_PATH;
+    env.Path = KIT_FIRST_PATH;
   }
-
-  log.info(`AFTER`);
-  log.info({ env });
 
   const shell =
     config?.env?.KIT_SHELL ||
