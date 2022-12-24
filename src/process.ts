@@ -784,7 +784,7 @@ const kitMessageMap: ChannelHandler = {
       },
     });
   }),
-  SET_SCRIPT: toProcess(async (processInfo, data) => {
+  SET_SCRIPT: toProcess(async (processInfo: ProcessInfo, data) => {
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
 
@@ -799,7 +799,10 @@ const kitMessageMap: ChannelHandler = {
         };
 
         processInfo.child.stdout?.on('data', routeToScriptLog);
+        processInfo.child.stdout?.on('error', routeToScriptLog);
+
         processInfo.child.stderr?.on('data', routeToScriptLog);
+        processInfo.child.stderr?.on('error', routeToScriptLog);
       }
 
       const foundP = kitState.ps.find((p) => p.pid === processInfo.pid);

@@ -92,6 +92,10 @@ await exec('yarn', {
   cwd: kitPath(),
 });
 
+await exec(`yarn add esbuild-${platform}-${arch}`, {
+  cwd: kitPath(),
+});
+
 let kitModules = await readdir(kitPath('node_modules'));
 console.log({ kitModules });
 
@@ -151,4 +155,4 @@ console.log({ kitUrlFilePath, url });
 await writeFile(kitUrlFilePath, url);
 
 // overwrite the release with the new asset
-await copyFile(kitTarPath, outTarz);
+// await copyFile(kitTarPath, outTarz);
