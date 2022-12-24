@@ -87,7 +87,7 @@ console.log({
   npm_config_target_arch: process.env.npm_config_target_arch,
 });
 
-let command = `npm i --target_arch=${arch} --target_platform=${platform} --production`;
+let command = `npm i --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
 console.log(`Running ${command} in ${kitPath()}`);
 
 await exec(command, {
