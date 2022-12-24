@@ -79,7 +79,6 @@ console.log({
   arch,
   release_id,
   tag_name,
-  osName,
 });
 
 console.log({
