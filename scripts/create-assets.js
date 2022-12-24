@@ -87,20 +87,23 @@ console.log({
   npm_config_target_arch: process.env.npm_config_target_arch,
 });
 
-await exec('yarn', {
+let command = `npm i --target_arch=${arch} --target_platform=${platform}`;
+console.log(`Running ${command} in ${kitPath()}`);
+
+await exec(command, {
   cwd: kitPath(),
 });
 
-await exec(`yarn add esbuild`, {
-  cwd: kitPath(),
-  env: {
-    ...process.env,
-    npm_config_platform: platform,
-    npm_config_target_platform: platform,
-    npm_config_arch: arch,
-    npm_config_target_arch: arch,
-  },
-});
+// await exec(`npm i`, {
+//   cwd: kitPath(),
+//   env: {
+//     ...process.env,
+//     npm_config_platform: platform,
+//     npm_config_target_platform: platform,
+//     npm_config_arch: arch,
+//     npm_config_target_arch: arch,
+//   },
+// });
 
 let kitModules = await readdir(kitPath('node_modules'));
 console.log({ kitModules });
