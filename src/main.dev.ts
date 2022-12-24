@@ -855,7 +855,7 @@ const checkKit = async () => {
     ) {
       try {
         const nodeUrl = await readFile(nodeUrlPath, 'utf8');
-        await setupLog(`Download SDK from ${nodeUrl}`);
+        await setupLog(`Download node.js from ${nodeUrl}`);
         const buffer = await download(nodeUrl.trim());
         await writeFile(KIT_NODE_TAR, buffer);
         log.info(`Node download complete. Beginning extraction...`);

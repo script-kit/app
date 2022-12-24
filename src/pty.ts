@@ -41,6 +41,7 @@ export const startPty = async (config: any = {}) => {
       (process.platform === 'win32' ? 'cmd.exe' : 'zsh'),
     [],
     {
+      useConpty: false,
       name: 'xterm-256color',
       cols: 80,
       rows: 24,

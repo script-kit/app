@@ -98,11 +98,11 @@ await exec(command, {
   cwd: kitPath(),
 });
 
-let esbuildCommand = `npm i --target_arch=${arch} --target_platform=${platform} --production esbuild --prefer-dedupe`;
-console.log(`Running ${esbuildCommand} in ${kitPath()}`);
-await exec(esbuildCommand, {
-  cwd: kitPath(),
-});
+// let esbuildCommand = `npm i --target_arch=${arch} --target_platform=${platform} --production esbuild --prefer-dedupe`;
+// console.log(`Running ${esbuildCommand} in ${kitPath()}`);
+// await exec(esbuildCommand, {
+//   cwd: kitPath(),
+// });
 
 // await exec(`npm i`, {
 //   cwd: kitPath(),
