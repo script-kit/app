@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import glasstron from 'glasstron';
+import glasstron from 'glasstron-clarity';
 import {
   app,
   BrowserWindow,
@@ -475,10 +475,11 @@ export const showWidget = async (
       widgetWindow.setVibrancy('menu');
     }
   } else {
-    widgetWindow = new glasstron.BrowserWindow(bwOptions);
+    widgetWindow = new glasstron.BrowserWindow({
+      ...bwOptions,
+      blur: true,
+    });
     if (!options.transparent) {
-      widgetWindow.blurType = kitState.isWindows ? 'acrylic' : 'blurbehind';
-      widgetWindow.setBlur(true);
       widgetWindow.setBackgroundColor(`#00000000`);
     }
   }

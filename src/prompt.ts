@@ -5,7 +5,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable consistent-return */
-import glasstron from 'glasstron';
+import glasstron from 'glasstron-clarity';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -56,12 +56,7 @@ import { AppChannel } from './enums';
 import { emitter, KitEvent } from './events';
 import { pathsAreEqual } from './helpers';
 
-interface GlasstronWindow extends BrowserWindow {
-  blurType: string;
-  setBlur(_: boolean): void;
-}
-
-let promptWindow: GlasstronWindow;
+let promptWindow: BrowserWindow;
 
 export const blurPrompt = () => {
   log.info(`blurPrompt`);
@@ -127,14 +122,15 @@ export const createPromptWindow = async () => {
   };
 
   if (kitState.isMac) {
-    promptWindow = new BrowserWindow(options) as GlasstronWindow;
+    promptWindow = new BrowserWindow(options);
     promptWindow.setVibrancy('sidebar');
   } else {
-    promptWindow = new glasstron.BrowserWindow(options) as GlasstronWindow;
+    promptWindow = new glasstron.BrowserWindow({
+      ...options,
+      blur: true,
+    });
 
     try {
-      promptWindow.blurType = kitState.isWindows ? 'acrylic' : 'blurbehind';
-      promptWindow.setBlur(true);
       promptWindow.setBackgroundColor(`#00000000`);
     } catch (error) {
       log.error('Failed to set window blur', error);
