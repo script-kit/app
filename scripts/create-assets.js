@@ -87,10 +87,16 @@ console.log({
   npm_config_target_arch: process.env.npm_config_target_arch,
 });
 
-let command = `npm i --target_arch=${arch} --target_platform=${platform}`;
+let command = `npm i --target_arch=${arch} --target_platform=${platform} --production`;
 console.log(`Running ${command} in ${kitPath()}`);
 
 await exec(command, {
+  cwd: kitPath(),
+});
+
+let esbuildCommand = `npm i --target_arch=${arch} --target_platform=${platform} --production esbuild`;
+console.log(`Running ${esbuildCommand} in ${kitPath()}`);
+await exec(esbuildCommand, {
   cwd: kitPath(),
 });
 
@@ -106,7 +112,9 @@ await exec(command, {
 // });
 
 let kitModules = await readdir(kitPath('node_modules'));
-console.log({ kitModules });
+console.log({
+  kitModules: kitModules.filter((item) => item.includes('esbuild')),
+});
 
 console.log(`⭐️ Starting Kit release for ${tag_name}`);
 
