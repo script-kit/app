@@ -9,6 +9,8 @@ import getPort from './get-port';
 let t: any = null;
 let server: Server | null = null;
 
+const USE_BINARY = os.platform() !== 'win32';
+
 export const startPty = async (config: any = {}) => {
   // clear before use
   try {
@@ -43,7 +45,7 @@ export const startPty = async (config: any = {}) => {
       cols: 80,
       rows: 24,
       cwd: untildify(config?.cwd || os.homedir()),
-      encoding: 'utf8',
+      encoding: USE_BINARY ? null : 'utf8',
       env: {
         PATH: KIT_FIRST_PATH,
       },
@@ -55,7 +57,11 @@ export const startPty = async (config: any = {}) => {
 
     if (command) {
       setTimeout(() => {
-        t.write(`${command}\n`);
+        if (USE_BINARY) {
+          t.write(`${command}\n`);
+        } else {
+          t.write(`${command}\r\n`);
+        }
       }, 250);
     }
 
@@ -103,8 +109,7 @@ export const startPty = async (config: any = {}) => {
         }
       };
     }
-    const sendData =
-      process.platform !== 'win32' ? bufferUtf8(ws, 5) : bufferString(ws, 5);
+    const sendData = USE_BINARY ? bufferUtf8(ws, 5) : bufferString(ws, 5);
 
     t.onData((data: any) => {
       try {
@@ -120,10 +125,10 @@ export const startPty = async (config: any = {}) => {
       if (server) server.close();
       // t = null;
     });
-    ws.on('message', function (msg: string) {
+    ws.on('message', (msg: string) => {
       t.write(msg);
     });
-    ws.on('close', function () {
+    ws.on('close', () => {
       if (t) t.kill();
       if (server) server.close();
     });
