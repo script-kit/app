@@ -64,9 +64,9 @@ let arch = await arg('Enter the architecture');
 let release_id = await arg("Enter the release's id");
 let tag_name = `v${version}`;
 
-let osName = 'darwin';
-if (platform === 'windows-latest') osName = 'win32';
-if (platform === 'ubuntu-latest') osName = 'linux';
+if (platform.startsWith('mac')) platform = 'darwin';
+if (platform.startsWith('win')) platform = 'win32';
+if (platform.startsWith('lin')) platform = 'linux';
 
 console.log(`PWD`, process.env.PWD);
 
@@ -92,8 +92,15 @@ await exec('yarn', {
   cwd: kitPath(),
 });
 
-await exec(`yarn add esbuild-${platform}-${arch}`, {
+await exec(`yarn add esbuild`, {
   cwd: kitPath(),
+  env: {
+    ...process.env,
+    npm_config_platform: platform,
+    npm_config_target_platform: platform,
+    npm_config_arch: arch,
+    npm_config_target_arch: arch,
+  },
 });
 
 let kitModules = await readdir(kitPath('node_modules'));
