@@ -63,6 +63,7 @@ jobs:
       matrix:
         os: [macos-12, windows-latest, ubuntu-latest]
         arch: [x64, arm64]
+        node: [16.17.1]
 
     steps:
       - name: Checkout git repo
@@ -141,7 +142,7 @@ jobs:
       - name: Install Node, NPM and Yarn
         uses: actions/setup-node@v3
         with:
-          node-version: 16.17.1
+          node-version: ${{ matrix.node }}
       - name: yarn && yarn add @johnlindquist/kit
         run: |
           yarn

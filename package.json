@@ -84,9 +84,10 @@
       }
     ],
     "win": {
-      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
+      "artifactName": "${productName}-Windows-${version}-${arch}.${ext}"
     },
     "mac": {
+      "artifactName": "${productName}-macOS-${version}-${arch}.${ext}",
       "type": "distribution",
       "hardenedRuntime": true,
       "entitlements": "assets/entitlements.mac.plist",
@@ -131,6 +132,7 @@
       ]
     },
     "linux": {
+      "artifactName": "${productName}-Linux-${version}-${arch}.${ext}",
       "category": "Development"
     },
     "directories": {

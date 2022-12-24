@@ -68,6 +68,10 @@ if (platform.startsWith('mac')) platform = 'darwin';
 if (platform.startsWith('win')) platform = 'win32';
 if (platform.startsWith('lin')) platform = 'linux';
 
+let osName = 'macOS';
+if (platform === 'win32') osName = 'Windows';
+if (platform === 'linux') osName = 'Linux';
+
 console.log(`PWD`, process.env.PWD);
 
 //chdir(kitPath())
@@ -94,7 +98,7 @@ await exec(command, {
   cwd: kitPath(),
 });
 
-let esbuildCommand = `npm i --target_arch=${arch} --target_platform=${platform} --production esbuild`;
+let esbuildCommand = `npm i --target_arch=${arch} --target_platform=${platform} --production esbuild --prefer-dedupe`;
 console.log(`Running ${esbuildCommand} in ${kitPath()}`);
 await exec(esbuildCommand, {
   cwd: kitPath(),
@@ -130,7 +134,7 @@ console.log(`Release Response:`);
 console.log(releaseResponse?.data || 'No release found');
 
 let kitFiles = await readdir(kitPath());
-let name = `SDK-${version}-${platform}-${arch}.tar.gz`;
+let name = `Kit-SDK-${osName}-${version}-${arch}.tar.gz`;
 let kitTarPath = home(name);
 console.log({ kitFiles });
 
