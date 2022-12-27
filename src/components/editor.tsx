@@ -1,12 +1,12 @@
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-useless-escape */
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion } from 'framer-motion';
-import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
-
+import MonacoEditor, { Monaco, useMonaco, loader } from '@monaco-editor/react';
 import { editor as monacoEditor, Range } from 'monaco-editor';
-import { UI } from '@johnlindquist/kit/cjs/enum';
+import { UI } from '@johnlindquist/kit/core/enum';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import {
   appearanceAtom,
@@ -23,13 +23,27 @@ import {
 import { useMountMainHeight } from '../hooks';
 import { kitLight, nightOwl } from '../editor-themes';
 
-// loader.config({
-//   paths: {
-//     vs: uriFromPath(
-//       path.join(__dirname, '../node_modules/monaco-editor/min/vs')
-//     ),
+// import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+// import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
+// import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
+// import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+// import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
+
+// self.MonacoEnvironment = {
+//   getWorker(_: unknown, label: string) {
+//     if (label === 'json') return new jsonWorker();
+
+//     if (label === 'css' || label === 'scss' || label === 'less')
+//       return new cssWorker();
+
+//     if (label === 'html' || label === 'handlebars' || label === 'razor')
+//       return new htmlWorker();
+
+//     if (label === 'typescript' || label === 'javascript') return new tsWorker();
+
+//     return new editorWorker();
 //   },
-// });
+// };
 
 const registerPropertiesLanguage = (monaco: Monaco) => {
   monaco.languages.register({ id: 'properties' });

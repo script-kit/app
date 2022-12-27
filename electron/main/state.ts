@@ -14,7 +14,7 @@ import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { KeyboardClass } from '@nut-tree/nut-js';
-import { Script, ProcessInfo } from '@johnlindquist/kit/types/core';
+import { Script, ProcessInfo } from '@johnlindquist/kit/types/cjs';
 import {
   getScripts,
   setScriptTimestamp,

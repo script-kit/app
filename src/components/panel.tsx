@@ -3,7 +3,7 @@ import React, { RefObject, useEffect, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
 import { useAtom, useAtomValue } from 'jotai';
 import { motion } from 'framer-motion';
-import { UI } from '@johnlindquist/kit/cjs/enum';
+import { UI } from '@johnlindquist/kit/core/enum';
 
 import {
   mouseEnabledAtom,

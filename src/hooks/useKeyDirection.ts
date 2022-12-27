@@ -2,7 +2,7 @@ import { useAtom } from 'jotai';
 import { debounce } from 'lodash';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { cmdAtom, inputFocusAtom } from '../jotai';
-import { hotkeysOptions } from './shared';
+import { hotkeysOptions } from './hooksConfig';
 
 export default (
   fn: (direction: 'up' | 'down' | 'left' | 'right') => void,

@@ -3,12 +3,12 @@ import React, { RefObject, useCallback, useRef, useState } from 'react';
 import SimpleBar from 'simplebar-react';
 import { motion } from 'framer-motion';
 import useResizeObserver from '@react-hook/resize-observer';
-import { PencilAltIcon } from '@heroicons/react/outline';
+// import { PencilAltIcon } from '@heroicons';
 import parse from 'html-react-parser';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { logHeightAtom, logHTMLAtom, scriptAtom } from '../jotai';
-import { AppChannel } from '../enums';
+import { AppChannel } from 'shared/enums';
 
 export default function Console() {
   const [script, setScript] = useAtom(scriptAtom);
@@ -75,19 +75,20 @@ export default function Console() {
         </div>
       </SimpleBar>
       {!script.name?.startsWith('error') && (
-        <PencilAltIcon
-          className={`
-        absolute
-        top-1.5 right-1.5
-        h-5 w-5
-        ${mouseOver ? 'opacity-50' : 'opacity-20'}
-        transition ease-in
-        hover:cursor-pointer
-        hover:opacity-100
-        text-text-base
-        `}
-          onClick={editLog}
-        />
+        <div>hi</div>
+        // <PencilAltIcon
+        //   className={`
+        // absolute
+        // top-1.5 right-1.5
+        // h-5 w-5
+        // ${mouseOver ? 'opacity-50' : 'opacity-20'}
+        // transition ease-in
+        // hover:cursor-pointer
+        // hover:opacity-100
+        // text-text-base
+        // `}
+        //   onClick={editLog}
+        // />
       )}
     </motion.div>
   );

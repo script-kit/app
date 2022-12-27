@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { UI } from '@johnlindquist/kit/cjs/enum';
+import { UI } from '@johnlindquist/kit/core/enum';
 import {
   _choices,
   cmdAtom,
@@ -12,7 +12,7 @@ import {
   submitValueAtom,
   uiAtom,
 } from '../jotai';
-import { hotkeysOptions } from './shared';
+import { hotkeysOptions } from './hooksConfig';
 
 export default () => {
   const [choices] = useAtom(_choices);

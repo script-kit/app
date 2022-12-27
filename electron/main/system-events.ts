@@ -1,6 +1,6 @@
 import { powerMonitor } from 'electron';
 import log from 'electron-log';
-import { Script } from '@johnlindquist/kit/types/core';
+import { Script } from '@johnlindquist/kit/types/cjs';
 import { runPromptProcess } from './kit';
 import { Trigger } from './enums';
 

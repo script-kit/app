@@ -9,7 +9,7 @@ import React, { useCallback, useEffect, useState, DragEvent } from 'react';
 import parse from 'html-react-parser';
 
 import { overrideTailwindClasses } from 'tailwind-override';
-import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types/core';
+import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types/cjs';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { motion } from 'framer-motion';
@@ -22,8 +22,8 @@ import {
   _modifiers,
 } from '../jotai';
 
-import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
-import { AppChannel } from '../enums';
+// import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
+import { AppChannel } from 'shared/enums';
 
 function highlight(
   string: string,
@@ -323,7 +323,8 @@ export default function ChoiceButton({
                 style={{ aspectRatio: '1/1' }}
                 className="h-8 flex flex-row items-center justify-center"
               >
-                <NoImageIcon
+                <div>weird</div>
+                {/* <NoImageIcon
                   className={`
         h-1/2
         fill-current
@@ -333,7 +334,7 @@ export default function ChoiceButton({
 
         `}
                   viewBox="0 0 32 32"
-                />
+                /> */}
               </div>
             )}
             {/* {choice?.img && !imageFail && (

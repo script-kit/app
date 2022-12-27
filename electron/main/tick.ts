@@ -23,7 +23,7 @@ import {
   uIOhook,
 } from 'uiohook-napi';
 import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
-import { Choice, Script } from '@johnlindquist/kit/types/core';
+import { Choice, Script } from '@johnlindquist/kit/types/cjs';
 import { remove } from 'lodash';
 
 import { emitter, KitEvent } from './events';

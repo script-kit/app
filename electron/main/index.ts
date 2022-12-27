@@ -62,7 +62,7 @@ import {
 } from 'fs/promises';
 
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
-import { PromptData } from '@johnlindquist/kit/types/core';
+import { PromptData } from '@johnlindquist/kit/types/cjs';
 
 import {
   kenvPath,
@@ -132,6 +132,12 @@ import { SPLASH_PATH } from './defaults';
 import { registerKillLatestShortcut } from './shortcuts';
 import { mainLog, mainLogPath } from './logs';
 import { emitter } from './events';
+
+process.env.DIST_ELECTRON = path.join(__dirname, '../..');
+process.env.DIST = path.join(process.env.DIST_ELECTRON, '../dist');
+process.env.PUBLIC = app.isPackaged
+  ? process.env.DIST
+  : path.join(process.env.DIST_ELECTRON, '../assets');
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';

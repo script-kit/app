@@ -1,4 +1,4 @@
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel } from '@johnlindquist/kit/core/enum';
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
@@ -10,7 +10,7 @@ import {
   shortcutsAtom,
 } from '../jotai';
 
-import { hotkeysOptions } from './shared';
+import { hotkeysOptions } from './hooksConfig';
 
 export default () => {
   const [index, setIndex] = useAtom(_index);

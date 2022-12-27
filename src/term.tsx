@@ -10,7 +10,7 @@ import { AttachAddon } from 'xterm-addon-attach';
 import useResizeObserver from '@react-hook/resize-observer';
 import { motion } from 'framer-motion';
 import { debounce } from 'lodash';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel } from '@johnlindquist/kit/core/enum';
 import { useAtom } from 'jotai';
 import {
   darkAtom,

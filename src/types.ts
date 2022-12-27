@@ -1,5 +1,5 @@
-import { Choice } from '@johnlindquist/kit/types/core';
-import { ProcessType, Mode, UI } from '@johnlindquist/kit/cjs/enum';
+import { Choice } from '@johnlindquist/kit/types/cjs';
+import { ProcessType, Mode, UI } from '@johnlindquist/kit/core/enum';
 import { ChildProcess } from 'child_process';
 
 export interface ScoredChoice {

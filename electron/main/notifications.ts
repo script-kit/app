@@ -71,8 +71,10 @@ export const showNotification = (html: string, options: any = {}) => {
       y: cursor.y,
     });
 
-    const { width: screenWidth, height: screenHeight } =
-      distScreen.workAreaSize;
+    const {
+      width: screenWidth,
+      height: screenHeight,
+    } = distScreen.workAreaSize;
     const width = Math.floor((screenWidth / 4) * distScreen.scaleFactor);
     const height = Math.floor((screenHeight / 4) * distScreen.scaleFactor);
     const x = Math.floor(screenWidth * distScreen.scaleFactor - width); // * distScreen.scaleFactor

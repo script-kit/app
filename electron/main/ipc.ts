@@ -19,7 +19,7 @@ import {
   kenvPath,
   isFile,
 } from '@johnlindquist/kit/cjs/utils';
-import { ProcessInfo } from '@johnlindquist/kit/types/core';
+import { ProcessInfo } from '@johnlindquist/kit/types/cjs';
 import { AppMessage, AppState } from '@johnlindquist/kit/types/kitapp';
 import { existsSync, renameSync } from 'fs';
 import { writeFile } from 'fs/promises';

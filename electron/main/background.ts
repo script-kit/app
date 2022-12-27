@@ -2,7 +2,7 @@ import log from 'electron-log';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { parseScript } from '@johnlindquist/kit/cjs/utils';
 import { SendData } from '@johnlindquist/kit/types/kitapp';
-import { Script } from '@johnlindquist/kit/types/core';
+import { Script } from '@johnlindquist/kit/types/cjs';
 import { emitter, KitEvent } from './events';
 import { backgroundMap, Background } from './state';
 import { processes } from './process';

@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
-import { hotkeysOptions } from './shared';
+import { hotkeysOptions } from './hooksConfig';
 import { cmdAtom, openAtom } from '../jotai';
 
 export default () => {

@@ -1,39 +1,24 @@
 {
   "compilerOptions": {
-    "target": "ES2018",
-    "module": "CommonJS",
-    "lib": ["dom", "esnext"],
-    "declaration": true,
-    "declarationMap": true,
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "noEmit": true,
     "jsx": "react",
-    "strict": true,
-    "pretty": true,
-    "sourceMap": true,
-    /* Additional Checks */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    /* Module Resolution Options */
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "allowJs": true,
-    "baseUrl": "./",
     "paths": {
-      "@johnlindquist/kit/cjs/*": ["./node_modules/@johnlindquist/kit/core/*"]
+      "shared/*": ["./electron/main/*"],
     }
   },
-  "exclude": [
-    "test",
-    "release",
-    "src/main.prod.js",
-    "src/renderer.prod.js",
-    "src/dist",
-    ".erb/dll",
-    "node_modules",
-    "assets"
-  ]
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

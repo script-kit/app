@@ -12,7 +12,7 @@ import {
   Script,
   PromptData,
   PromptBounds,
-} from '@johnlindquist/kit/types/core';
+} from '@johnlindquist/kit/types/cjs';
 
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
@@ -202,10 +202,12 @@ export const createPromptWindow = async () => {
     return { action: 'deny' };
   });
 
-  log.silly(`Loading prompt window html`);
-  await promptWindow.loadURL(
-    `file://${__dirname}/index.html?vs=${getAssetPath('vs')}`
-  );
+  log.info(`Loading prompt window html`);
+  log.info({
+    VITE_DEV_SERVER_URL: process.env.VITE_DEV_SERVER_URL,
+  });
+  // shell.openExternal(process.env.VITE_DEV_SERVER_URL);
+  await promptWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
 
   // promptWindow.on('ready-to-show', function () {
   //   promptWindow.showInactive();

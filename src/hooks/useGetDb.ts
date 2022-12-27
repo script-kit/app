@@ -4,8 +4,8 @@ import { useAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { appStateAtom, cmdAtom } from '../jotai';
 
-import { hotkeysOptions } from './shared';
-import { AppChannel } from '../enums';
+import { hotkeysOptions } from './hooksConfig';
+import { AppChannel } from 'shared/enums';
 
 export default () => {
   const [cmd] = useAtom(cmdAtom);

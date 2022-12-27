@@ -8,8 +8,8 @@ import React, {
   useEffect,
 } from 'react';
 import { motion } from 'framer-motion';
-import { UI } from '@johnlindquist/kit/cjs/enum';
-import { Choice } from '@johnlindquist/kit/types/core';
+import { UI } from '@johnlindquist/kit/core/enum';
+import { Choice } from '@johnlindquist/kit/types/cjs';
 import { useAtom } from 'jotai';
 
 import {

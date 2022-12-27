@@ -4,7 +4,7 @@ import chokidar from 'chokidar';
 import path from 'path';
 import { FSWatcher } from 'fs';
 import { app } from 'electron';
-import { Script } from '@johnlindquist/kit/types/core';
+import { Script } from '@johnlindquist/kit/types/cjs';
 import { runPromptProcess } from './kit';
 import { Trigger } from './enums';
 

@@ -19,7 +19,7 @@ import { ShowOptions } from '@johnlindquist/kit/types/kitapp';
 import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
 import { getAssetPath } from './assets';
-import { darkTheme, lightTheme } from './components/themes';
+import { darkTheme, lightTheme } from './themes';
 import { forceQuit, kitState } from './state';
 import { getCurrentScreenFromMouse } from './prompt';
 

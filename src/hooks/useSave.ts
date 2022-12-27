@@ -5,7 +5,7 @@ import { useAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { cmdAtom, submitValueAtom } from '../jotai';
 
-import { hotkeysOptions } from './shared';
+import { hotkeysOptions } from './hooksConfig';
 
 export default (value: any) => {
   const [, submit] = useAtom(submitValueAtom);

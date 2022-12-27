@@ -9,8 +9,8 @@
 import { atom, Getter, Setter } from 'jotai';
 import DOMPurify from 'dompurify';
 import { QuickScore, createConfig, quickScore } from 'quick-score';
-import { UserDb } from '@johnlindquist/kit/cjs/db';
-import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
+import { UserDb } from '@johnlindquist/kit/core/db';
+import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
 import Convert from 'ansi-to-html';
 import {
   Choice,
@@ -18,8 +18,8 @@ import {
   PromptData,
   FlagsOptions,
   Shortcut,
-} from '@johnlindquist/kit/types/core';
-import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
+} from '@johnlindquist/kit/types/cjs';
+import { mainScriptPath, kitPath } from '@johnlindquist/kit/core/utils';
 import {
   EditorConfig,
   TextareaConfig,
@@ -32,7 +32,7 @@ import { editor } from 'monaco-editor';
 
 import { assign, clamp, debounce, drop as _drop, isEqual } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
-import { AppChannel } from './enums';
+import { AppChannel } from 'shared/enums';
 import { ProcessInfo, ResizeData, ScoredChoice, Survey } from './types';
 import {
   BUTTON_HEIGHT,
@@ -42,7 +42,8 @@ import {
   SPLASH_PATH,
   TOP_HEIGHT,
 } from './defaults';
-import { toHex } from './color-utils';
+
+import { toHex } from 'shared/color-utils';
 
 let placeholderTimeoutId: NodeJS.Timeout;
 

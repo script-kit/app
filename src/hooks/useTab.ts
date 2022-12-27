@@ -1,9 +1,9 @@
 import { useAtom } from 'jotai';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel } from '@johnlindquist/kit/core/enum';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import { channelAtom, inputAtom, tabIndexAtom, tabsAtom } from '../jotai';
-import { hotkeysOptions } from './shared';
+import { hotkeysOptions } from './hooksConfig';
 
 export default () => {
   const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);

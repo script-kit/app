@@ -32,7 +32,7 @@ import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
 import { Channel, ProcessType, Value, UI } from '@johnlindquist/kit/cjs/enum';
-import { Choice, Script, ProcessInfo } from '@johnlindquist/kit/types/core';
+import { Choice, Script, ProcessInfo } from '@johnlindquist/kit/types/cjs';
 
 import {
   ChannelMap,
@@ -110,7 +110,7 @@ import { toHex } from './color-utils';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';
-import { darkTheme, lightTheme } from './components/themes';
+import { darkTheme, lightTheme } from './themes';
 
 // const trash = async (...args: string[]) => {
 //   const parent = app.isPackaged
@@ -1532,15 +1532,16 @@ const kitMessageMap: ChannelHandler = {
     if (process.env.NODE_ENV === 'development' || !kitState.isMac) {
       value = true;
     } else {
-      const { getAuthStatus, askForFullDiskAccess } = await import(
-        'node-mac-permissions'
-      );
-      const authStatus = getAuthStatus('full-disk-access');
-      if (authStatus === 'authorized') {
-        value = true;
-      } else {
-        askForFullDiskAccess();
-      }
+      value = true;
+      // const { getAuthStatus, askForFullDiskAccess } = await import(
+      //   'node-mac-permissions'
+      // );
+      // const authStatus = getAuthStatus('full-disk-access');
+      // if (authStatus === 'authorized') {
+      //   value = true;
+      // } else {
+      //   askForFullDiskAccess();
+      // }
     }
 
     childSend(child, { channel, value });

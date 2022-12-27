@@ -1,5 +1,5 @@
-import { ProcessType, UI } from '@johnlindquist/kit/core/enum';
-import { Script } from '@johnlindquist/kit/types';
+import { ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
+import { Script } from '@johnlindquist/kit/types/cjs';
 
 export const DEFAULT_LIST_WIDTH = 300; // 256;
 export const DEFAULT_WIDTH = 300; // 256;

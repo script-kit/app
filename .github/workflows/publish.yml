@@ -6,6 +6,7 @@ on:
       - alpha
       - beta
       - main
+      - vite
 
   workflow_dispatch:
     branches:
@@ -139,14 +140,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Node, NPM and Yarn
+      - name: Install node.js
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - name: yarn && yarn add @johnlindquist/kit
+
+      - name: npm i && npm i @johnlindquist/kit
         run: |
-          yarn
-          yarn add "@johnlindquist/kit"
+          npm i
+          npm i "@johnlindquist/kit"
 
       - name: Publish windows
         if: matrix.os == 'windows-latest'
@@ -159,14 +161,10 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-
-          yarn build
-          cd ./src
-          yarn remove node-mac-permissions
-          cat ./package.json
-          cd ..
+          npm un node-mac-permissions
+          npm run build
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --win --${{ matrix.arch }}
+          npx run electron-builder --publish always --win --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
@@ -179,15 +177,10 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-
-          yarn build
-          cd ./src
-          yarn remove node-mac-permissions
-          cat ./package.json
-          cd ..
+          npm un node-mac-permissions
+          npm run build
           echo "--- Done removing mac deps ---\n\n"
-          # Target all linux distros
-          yarn electron-builder --publish always --linux AppImage deb rpm --${{ matrix.arch }}
+          npx run electron-builder --publish always --win --${{ matrix.arch }}
 
       - name: Publish mac
         if: matrix.os == 'macos-12'
@@ -200,6 +193,5 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-
-          yarn build
-          yarn electron-builder --publish always --mac --${{ matrix.arch }}
+          npm run build
+          npx run electron-builder --publish always --win --${{ matrix.arch }}

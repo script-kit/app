@@ -1,4 +1,4 @@
-import { UI } from '@johnlindquist/kit/cjs/enum';
+import { UI } from '@johnlindquist/kit/core/enum';
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
@@ -16,7 +16,7 @@ import {
   shortcutsAtom,
   promptDataAtom,
 } from '../jotai';
-import { hotkeysOptions } from './shared';
+import { hotkeysOptions } from './hooksConfig';
 
 export default () => {
   const [open] = useAtom(openAtom);

@@ -6,7 +6,7 @@ import log from 'electron-log';
 export const getVersion = () => {
   if (process.env.NODE_ENV === 'development') {
     // eslint-disable-next-line global-require
-    return require('./package.json').version;
+    return '0.0.0-development';
   }
   return app.getVersion();
 };

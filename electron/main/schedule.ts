@@ -1,7 +1,7 @@
 import schedule, { Job } from 'node-schedule';
 
 import log from 'electron-log';
-import { Script } from '@johnlindquist/kit/types/core';
+import { Script } from '@johnlindquist/kit/types/cjs';
 import { kitPath } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess, runScript } from './kit';
 import { online, scheduleMap } from './state';

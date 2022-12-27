@@ -2,53 +2,15 @@
   "name": "kit",
   "productName": "Kit",
   "description": "The Script Kit App",
-  "scripts": {
-    "build": "concurrently \"yarn build:main\" \"yarn build:renderer\"",
-    "build:local": "node ./build/local-assets.js && concurrently \"yarn build:main\" \"yarn build:renderer\"",
-    "build:main": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.babel.js",
-    "build:renderer": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.renderer.prod.babel.js",
-    "rebuild": "DEBUG=electron-rebuild electron-rebuild --openssl_fips=0 --parallel --types prod,dev,optional --module-dir src",
-    "lint": "cross-env NODE_ENV=development eslint . --cache --ext .js,.jsx,.ts,.tsx",
-    "package": "yarn build && npx electron-builder build --publish never",
-    "webpack-dev": "yarn cross-env NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js",
-    "build-dll": "yarn cross-env NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js",
-    "yarn-dedupe": "yarn-deduplicate yarn.lock",
-    "install-electron-deps": "node -r @babel/register .erb/scripts/CheckNativeDep.js && npx electron-builder install-app-deps",
-    "silly": "LOG_LEVEL=silly yarn start",
-    "start": "node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
-    "sponsor": "KIT_SPONSOR=development yarn start",
-    "tiktok": "KIT_SPONSOR=development KIT_TIKTOK=development yarn start",
-    "splash": "KIT_SPLASH=true yarn start",
-    "start:install": "source ./build/tmp-kit.sh && node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
-    "start:main": "cross-env NODE_ENV=development electron --trace-warnings -r ./.erb/scripts/BabelRegister ./src/main.dev.ts",
-    "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
-    "test-update": "TEST_UPDATE=true yarn start",
-    "test-m1-update": "TEST_UPDATE=true yarn m1",
-    "test": "jest",
-    "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
-    "m1": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --arm64 -c.mac.identity=null --publish never",
-    "m1-dmg": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
-    "mac": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --x64 -c.mac.identity=null --publish never",
-    "win": "yarn build:local && DEBUG_PROD=true npx electron-builder -w",
-    "linux": "yarn build:local && DEBUG_PROD=true npx electron-builder -l --publish never",
-    "release": "yarn build:local && DEBUG_PROD=true npx electron-builder -c.mac.identity=null --publish never --mac",
-    "cp-vs-assets": "cp -R ./node_modules/monaco-editor/min/vs ./assets",
-    "v": "PATH=~/.knode/bin:$PATH node --version",
-    "write-node-version": "node ./scripts/write-node-version.js"
+  "main": "dist-electron/main/index.js",
+  "debug": {
+    "env": {
+      "VITE_DEV_SERVER_URL": "http://127.0.0.1:7777"
+    }
   },
-  "lint-staged": {
-    "*.{jsx,ts,tsx}": [
-      "cross-env NODE_ENV=development eslint --cache"
-    ],
-    "{*.json,.{babelrc,eslintrc,prettierrc}}": [
-      "prettier --ignore-path .eslintignore --parser json --write"
-    ],
-    "*.{css,scss}": [
-      "prettier --ignore-path .eslintignore --single-quote --write"
-    ],
-    "*.{html,md,yml}": [
-      "prettier --ignore-path .eslintignore --single-quote --write"
-    ]
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build"
   },
   "build": {
     "buildDependenciesFromSource": false,
@@ -226,10 +188,8 @@
     "@babel/register": "7.12.1",
     "@electron/rebuild": "^3.2.10",
     "@fullhuman/postcss-purgecss": "4.0.2",
-    "@pmmmwh/react-refresh-webpack-plugin": "0.4.3",
     "@semantic-release/npm": "7.0.10",
     "@simbathesailor/use-what-changed": "2.0.0",
-    "@svgr/webpack": "5.5.0",
     "@tailwindcss/forms": "0.4.0",
     "@tailwindcss/typography": "0.5.0",
     "@teamsupercell/typings-for-css-modules-loader": "2.4.0",
@@ -257,7 +217,6 @@
     "@types/react": "17.0.11",
     "@types/react-dom": "^18.0.6",
     "@types/react-router-dom": "5.1.6",
-    "@types/react-test-renderer": "16.9.3",
     "@types/react-virtualized-auto-sizer": "1.0.0",
     "@types/react-window": "1.8.5",
     "@types/sane": "^2.0.1",
@@ -269,12 +228,12 @@
     "@types/webpack-env": "1.15.2",
     "@typescript-eslint/eslint-plugin": "4.8.1",
     "@typescript-eslint/parser": "4.8.1",
+    "@vitejs/plugin-react": "^3.0.0",
     "babel-eslint": "10.1.0",
     "babel-jest": "26.1.0",
     "babel-loader": "8.2.4",
     "babel-plugin-dev-expression": "0.2.2",
     "babel-plugin-transform-react-remove-prop-types": "0.4.24",
-    "browserslist-config-erb": "0.0.1",
     "chalk": "4.1.0",
     "concurrently": "5.3.0",
     "core-js": "3.6.5",
@@ -287,23 +246,6 @@
     "electron-devtools-installer": "3.2.0",
     "electron-notarize": "1.2.1",
     "electron-releases": "3.1171.0",
-    "enzyme": "3.11.0",
-    "enzyme-adapter-react-16": "1.15.3",
-    "enzyme-to-json": "3.5.0",
-    "eslint": "7.5.0",
-    "eslint-config-airbnb": "18.2.0",
-    "eslint-config-airbnb-typescript": "12.0.0",
-    "eslint-config-erb": "2.0.0",
-    "eslint-config-prettier": "6.11.0",
-    "eslint-import-resolver-webpack": "0.13.0",
-    "eslint-plugin-compat": "3.8.0",
-    "eslint-plugin-import": "2.22.0",
-    "eslint-plugin-jest": "24.1.3",
-    "eslint-plugin-jsx-a11y": "6.4.1",
-    "eslint-plugin-prettier": "3.1.4",
-    "eslint-plugin-promise": "4.2.1",
-    "eslint-plugin-react": "7.20.6",
-    "eslint-plugin-react-hooks": "4.0.8",
     "execa": "^6.1.0",
     "file-loader": "6.2.0",
     "husky": "4.2.5",
@@ -315,31 +257,27 @@
     "mocha": "9.0.3",
     "node-gyp": "9.3.0",
     "opencollective-postinstall": "2.0.3",
-    "optimize-css-assets-webpack-plugin": "5.0.3",
     "postcss-cli": "8.3.1",
     "postcss-loader": "7.0.2",
     "prettier": "2.0.5",
     "purgecss": "4.0.2",
     "react-refresh": "0.9.0",
-    "react-test-renderer": "17.0.1",
     "rimraf": "3.0.0",
     "style-loader": "3.3.1",
     "tailwindcss": "3.2.4",
-    "terser-webpack-plugin": "5.0.3",
     "typescript": "4.0.5",
     "url-loader": "4.1.1",
-    "webpack": "5.60.0",
-    "webpack-bundle-analyzer": "4.1.0",
-    "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "3.11.0",
-    "webpack-merge": "5.8.0",
-    "yarn-deduplicate": "3.1.0"
+    "vite": "^4.0.3",
+    "vite-electron-plugin": "^0.6.2",
+    "vite-plugin-electron": "^0.11.1",
+    "vite-plugin-electron-renderer": "^0.11.3"
   },
   "dependencies": {
     "@fontsource/fira-mono": "^4.5.8",
     "@fontsource/jetbrains-mono": "^4.5.9",
-    "@heroicons/react": "1.0.4",
+    "@heroicons/react": "2.0.13",
     "@monaco-editor/react": "^4.4.6",
+    "@nut-tree/nut-js": "^2.3.0",
     "@react-hook/resize-observer": "1.2.0",
     "@rooks/use-previous": "4.10.0",
     "@types/detect-port": "^1.3.2",
@@ -348,7 +286,7 @@
     "ansi-to-html": "0.7.0",
     "autoprefixer": "10.4.0",
     "axios": "1.1.3",
-    "chokidar": "3.5.3",
+    "chokidar": "^3.5.3",
     "clipboardy": "2.3.0",
     "color-name": "^1.1.4",
     "contrast-color": "^1.0.1",
@@ -370,8 +308,10 @@
     "express-ws": "^5.0.2",
     "filter-async-rxjs-pipe": "1.0.0",
     "framer-motion": "6.3.3",
+    "frontmost-app": "^1.0.0",
     "fs-extra": "10.0.0",
     "get-port": "^6.1.2",
+    "glasstron-clarity": "^0.1.25",
     "he": "1.2.0",
     "hex-rgb": "^5.0.0",
     "history": "5.3.0",
@@ -388,9 +328,12 @@
     "memoize-one": "5.2.1",
     "minimist": "1.2.5",
     "monaco-editor": "0.34.1",
-    "monaco-editor-webpack-plugin": "7.0.1",
     "nanoid": "3.1.30",
+    "native-keymap": "^3.3.2",
+    "node-abi": "^3.30.0",
     "node-downloader-helper": "1.0.18",
+    "node-mac-permissions": "^2.2.1",
+    "node-pty": "^0.10.1",
     "node-schedule": "2.1.0",
     "node-stream-zip": "^1.15.0",
     "postcss": "8.4.19",
@@ -400,8 +343,8 @@
     "react-dom": "18.0.0",
     "react-hotkeys-hook": "3.3.2",
     "react-is-mounted-hook": "1.1.1",
-    "react-virtualized-auto-sizer": "1.0.5",
-    "react-window": "1.8.6",
+    "react-virtualized-auto-sizer": "1.0.7",
+    "react-window": "1.8.8",
     "regenerator-runtime": "0.13.5",
     "rxjs": "6.6.7",
     "sane": "^5.0.1",
@@ -411,6 +354,7 @@
     "tail": "^2.2.4",
     "tailwind-override": "0.6.1",
     "tar": "6.1.11",
+    "uiohook-napi": "^1.5.0",
     "untildify": "^4.0.0",
     "valtio": "1.5.1",
     "xterm": "4.19.0",
@@ -421,8 +365,7 @@
     "xterm-addon-serialize": "0.6.1",
     "xterm-addon-unicode11": "0.3.0",
     "xterm-addon-web-links": "0.5.1",
-    "xterm-addon-webgl": "0.11.4",
-    "xterm-for-react": "1.0.4"
+    "xterm-addon-webgl": "0.11.4"
   },
   "engines": {
     "node": ">=14.17.0"
@@ -455,10 +398,5 @@
     "baseBranches": [
       "next"
     ]
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
   }
 }

@@ -20,6 +20,7 @@ const checkPackaged = (name: string) =>
     : path.resolve(__dirname, '..', name);
 
 export const getAssetPath = (...paths: string[]): string => {
+  return path.resolve('assets', ...paths);
   return slash(path.resolve(checkPackaged('assets'), ...paths));
 };
 

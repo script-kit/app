@@ -21,7 +21,6 @@ import React, {
 } from 'react';
 
 import path from 'path';
-import { loader } from '@monaco-editor/react';
 import DOMPurify from 'dompurify';
 
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
@@ -30,8 +29,10 @@ import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
 import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import { debounce } from 'lodash';
+import * as monaco from 'monaco-editor';
+import { loader } from '@monaco-editor/react';
 
-import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
+import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
 import Tabs from './components/tabs';
 import List from './components/list';
@@ -122,7 +123,7 @@ import {
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
 import Splash from './components/splash';
 import Emoji from './components/emoji';
-import { AppChannel, WindowChannel } from './enums';
+import { AppChannel, WindowChannel } from 'shared/enums';
 import Terminal from './term';
 import Inspector from './components/inspector';
 
@@ -135,13 +136,7 @@ function uriFromPath(_path: string) {
   return encodeURI(`file://${ensureFirstBackSlash(pathName)}`);
 }
 
-const vs = uriFromPath(path.join(__dirname, '../assets/vs'));
-
-loader.config({
-  paths: {
-    vs,
-  },
-});
+// const vs = uriFromPath(path.join(__dirname, '../assets/vs'));
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -336,6 +331,10 @@ export default function App() {
     [WindowChannel.SET_LOG_VALUE]: setLogValue,
     [WindowChannel.SET_EDITOR_LOG_MODE]: setEditorLogMode,
   };
+
+  useEffect(() => {
+    loader.config({ monaco });
+  }, []);
 
   useEffect(() => {
     Object.entries(messageMap).forEach(([key, fn]) => {
