@@ -5,4 +5,4 @@ let packageJson = await readJson(packageJsonPath);
 
 packageJson.version = await arg('Enter the version number');
 
-await writeJson(path.resolve(packageJsonPath, packageJson));
+await writeJson(packageJsonPath, packageJson);
