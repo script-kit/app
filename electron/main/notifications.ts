@@ -2,6 +2,7 @@
 import { app, BrowserWindow, screen } from 'electron';
 import { getAssetPath } from './assets';
 import { KIT_PROTOCOL } from './helpers';
+import { getIcon } from './public';
 
 let notificationWindow: BrowserWindow | null = null;
 
@@ -12,7 +13,7 @@ export const createNotification = async () => {
     transparent: true,
     backgroundColor: '#00000000',
     show: false,
-    icon: getAssetPath('icon.png'),
+    icon: getIcon(),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,

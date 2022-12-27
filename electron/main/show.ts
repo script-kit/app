@@ -22,6 +22,7 @@ import { getAssetPath } from './assets';
 import { darkTheme, lightTheme } from './themes';
 import { forceQuit, kitState } from './state';
 import { getCurrentScreenFromMouse } from './prompt';
+import { getIcon } from './public';
 
 export const INSTALL_ERROR = 'install-error';
 
@@ -381,7 +382,7 @@ export const show = async (
       : {
           vibrancy: 'menu',
         }),
-    icon: getAssetPath('icon.png'),
+    icon: getIcon(),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -456,7 +457,7 @@ export const showWidget = async (
     frame: false,
     transparent: true,
     titleBarStyle: 'customButtonsOnHover',
-    icon: getAssetPath('icon.png'),
+    icon: getIcon(),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,

@@ -38,6 +38,7 @@ import axios from 'axios';
 import internetAvailable from './internet-available';
 import { getAssetPath } from './assets';
 import { emitter, KitEvent } from './events';
+import { getIcon } from './public';
 
 // const css = readFileSync(path.resolve(__dirname, './App.global.css'), 'utf8');
 const css = `
@@ -418,7 +419,7 @@ export const hideDock = debounce(() => {
   if (widgetState.widgets.length) return;
   if (windowsState.windows.length) return;
 
-  app?.dock?.setIcon(getAssetPath('icon.png'));
+  app?.dock?.setIcon(getIcon());
   app?.dock?.hide();
   if (hideIntervalId) clearInterval(hideIntervalId);
 }, 200);
@@ -434,7 +435,7 @@ export const showDock = () => {
 
   if (!app?.dock.isVisible()) {
     hideDock.cancel();
-    app?.dock?.setIcon(getAssetPath('icon.png'));
+    app?.dock?.setIcon(getIcon());
     app?.dock?.show();
     app?.dock?.setMenu(
       Menu.buildFromTemplate([
@@ -446,7 +447,7 @@ export const showDock = () => {
         },
       ])
     );
-    app?.dock?.setIcon(getAssetPath('icon.png'));
+    app?.dock?.setIcon(getIcon());
 
     if (hideIntervalId) clearInterval(hideIntervalId);
 

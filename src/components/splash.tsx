@@ -6,7 +6,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, AnimateSharedLayout, motion } from 'framer-motion';
 import { useAtom } from 'jotai';
-import { loadable } from 'jotai/utils';
 import {
   appConfigAtom,
   createAssetAtom,
@@ -74,8 +73,6 @@ const questions = [
   `Anything else?`,
 ];
 
-const loadableIconAtom = loadable(createAssetAtom('icon.png'));
-
 function Aside() {
   const [appConfig] = useAtom(appConfigAtom);
   const [body] = useAtom(splashBodyAtom);
@@ -83,17 +80,11 @@ function Aside() {
   const [progress] = useAtom(splashProgressAtom);
   const [runMainScript] = useAtom(runMainScriptAtom);
 
-  const [lazyIcon] = useAtom<any>(loadableIconAtom);
-
   return (
     <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner">
       <div className="flex flex-col items-center h-full">
         <div className="relative">
-          <img
-            src={lazyIcon?.data}
-            className="w-24 mb-2"
-            alt="Script Kit Icon"
-          />
+          <img src="/icon.png" className="w-24 mb-2" alt="Script Kit Icon" />
           {progress !== 100 && (
             <div className="absolute right-0 top-0 bg-bg-base rounded-full p-2 bg-opacity-80 backdrop-blur-lg">
               <Spinner />

@@ -28,7 +28,7 @@ export const CONFIG_SPLASH = `
   <h1 class="header pt-4 -mb-2">Kit ${getVersion()}</h1>
   <div>Configuring ~/.kit and ~/.kenv...</div>
 
-  <img src="${getAssetPath('icon.png')}" class="w-16"/>
+  <img src="/icon.png" class="w-16"/>
   <div class="spinner">${SPINNER}</div>
   <div class="message py-4 w-10/12 text-center truncate"></div>
 </body>

@@ -9,6 +9,7 @@ import { readFile, stat, writeFile } from 'fs/promises';
 import { getAssetPath } from './assets';
 import { kitState, windowsState } from './state';
 import { getCurrentScreenFromMouse } from './prompt';
+import { getIcon } from './public';
 
 export const createWindow = async ({
   ui,
@@ -22,7 +23,7 @@ export const createWindow = async ({
   const win = new BrowserWindow({
     width: 800,
     height: 600,
-    icon: getAssetPath('icon.png'),
+    icon: getIcon(),
     // transparent: true,
     webPreferences: {
       nodeIntegration: true,

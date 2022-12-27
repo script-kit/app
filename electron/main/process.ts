@@ -3,7 +3,6 @@
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
 import { randomUUID } from 'crypto';
-import detect from 'detect-port';
 import untildify from 'untildify';
 import { keyboard, mouse, Key } from '@nut-tree/nut-js';
 import {
@@ -769,6 +768,7 @@ const kitMessageMap: ChannelHandler = {
       ui: UI.debugger,
     });
 
+    const { default: detect } = await import('detect-port');
     const port = await detect(51515);
     const pInfo = processes.add(ProcessType.Prompt, '', [], port);
     pInfo.scriptPath = data?.value?.filePath;

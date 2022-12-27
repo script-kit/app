@@ -57,6 +57,7 @@ import { ResizeData } from './types';
 import { getVersion } from './version';
 import { emitter, KitEvent } from './events';
 import { pathsAreEqual } from './helpers';
+import { getIcon } from './public';
 
 let promptWindow: BrowserWindow;
 
@@ -104,7 +105,7 @@ export const createPromptWindow = async () => {
     hasShadow: true,
     transparent: !kitState.isWindows,
     show: false,
-    icon: getAssetPath('icon.png'),
+    icon: getIcon(),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
