@@ -173,7 +173,7 @@ jobs:
         run: |
           npm i
           npm run build
-          ./node_modules/.bin/electron-builder --publish always --linux --${{ matrix.arch }}
+          ./node_modules/.bin/electron-builder --publish always --linux AppImage deb rpm --${{ matrix.arch }}
 
       - name: Publish mac
         if: matrix.os == 'macos-12'
