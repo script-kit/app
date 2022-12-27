@@ -145,6 +145,10 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      - name: Install electron-builder and typescript compiler
+        run: |
+          npm i -g electron-builder typescript
+
       - name: Publish windows
         if: matrix.os == 'windows-latest'
         env:
@@ -158,7 +162,7 @@ jobs:
         run: |
           npm i
           npm run build
-          ./node_modules/.bin/electron-builder --publish always --win --${{ matrix.arch }}
+          electron-builder --publish always --win --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
@@ -173,7 +177,7 @@ jobs:
         run: |
           npm i
           npm run build
-          ./node_modules/.bin/electron-builder --publish always --linux AppImage deb rpm --${{ matrix.arch }}
+          electron-builder --publish always --linux AppImage deb rpm --${{ matrix.arch }}
 
       - name: Publish mac
         if: matrix.os == 'macos-12'
@@ -189,4 +193,4 @@ jobs:
           npm i
           npm i node-mac-permissions
           npm run build
-          ./node_modules/.bin/electron-builder --publish always --mac --${{ matrix.arch }}
+          electron-builder --publish always --mac --${{ matrix.arch }}
