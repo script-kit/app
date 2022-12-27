@@ -145,6 +145,11 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      # If not mac, uninstall node-mac-permssions
+      - name: Uninstall node-mac-permissions
+        if: ${{ matrix.os != 'macos-12' }}
+        run: npm un node-mac-permissions
+
       - name: npm i && npm i @johnlindquist/kit
         run: |
           npm i
@@ -161,9 +166,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm un node-mac-permissions
           npm run build
-          echo "--- Done removing mac deps ---\n\n"
           npx run electron-builder --publish always --win --${{ matrix.arch }}
 
       - name: Publish linux
@@ -177,9 +180,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm un node-mac-permissions
           npm run build
-          echo "--- Done removing mac deps ---\n\n"
           npx run electron-builder --publish always --win --${{ matrix.arch }}
 
       - name: Publish mac
