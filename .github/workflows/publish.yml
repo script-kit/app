@@ -144,6 +144,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
+          cache: ${{ matrix.os }}-node-${{ matrix.node }}-${{ matrix.arch }}-npm-${{ hashFiles('**/package-lock.json') }}
+          cache-dependency-path: package-lock.json
 
       - name: Publish windows
         if: matrix.os == 'windows-latest'
@@ -158,7 +160,7 @@ jobs:
         run: |
           npm i
           npm run build
-          npx electron-builder --publish always --win --${{ matrix.arch }}
+          ./node_modules/.bin/electron-builder --publish always --win --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
@@ -173,7 +175,7 @@ jobs:
         run: |
           npm i
           npm run build
-          npx electron-builder --publish always --win --${{ matrix.arch }}
+          ./node_modules/.bin/electron-builder --publish always --linux --${{ matrix.arch }}
 
       - name: Publish mac
         if: matrix.os == 'macos-12'
@@ -189,4 +191,4 @@ jobs:
           npm i
           npm i node-mac-permissions
           npm run build
-          npx electron-builder --publish always --win --${{ matrix.arch }}
+          ./node_modules/.bin/electron-builder --publish always --mac --${{ matrix.arch }}
