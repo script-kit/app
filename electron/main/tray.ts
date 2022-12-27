@@ -29,7 +29,7 @@ import { getAssetPath } from './assets';
 import { appDb, forceQuit, kitState, subs } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
-import { Trigger } from 'kit-common';
+import { Trigger } from '@johnlindquist/kit/cjs/enum';
 import { mainLogPath, updateLogPath } from './logs';
 
 let tray: Tray | null = null;

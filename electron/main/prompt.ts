@@ -38,8 +38,6 @@ import { AppDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
-import { getAssetPath } from './assets';
-import { appDb, kitState, getPromptDb, userDb, subs } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
@@ -49,10 +47,14 @@ import {
   MIN_HEIGHT,
   MIN_WIDTH,
   ZOOM_LEVEL,
-} from 'kit-common';
+} from '@johnlindquist/kit/cjs/defaults';
+import { AppChannel } from '@johnlindquist/kit/cjs/enum';
+
+import { getAssetPath } from './assets';
+import { appDb, kitState, getPromptDb, userDb, subs } from './state';
+
 import { ResizeData } from './types';
 import { getVersion } from './version';
-import { AppChannel } from 'kit-common';
 import { emitter, KitEvent } from './events';
 import { pathsAreEqual } from './helpers';
 

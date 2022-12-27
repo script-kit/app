@@ -6,12 +6,12 @@ import { subscribeKey } from 'valtio/utils';
 import { debounce } from 'lodash';
 
 import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
+import { Trigger } from '@johnlindquist/kit/cjs/enum';
 
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import { focusPrompt, isFocused, isVisible, reload } from './prompt';
 import { convertKey, kitState, subs } from './state';
-import { Trigger } from 'kit-common';
 import { convertShortcut, shortcutInfo } from './helpers';
 
 const registerFail = (shortcut: string, filePath: string) =>

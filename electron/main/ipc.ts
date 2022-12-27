@@ -9,7 +9,7 @@ import path from 'path';
 import { debounce } from 'lodash';
 import axios from 'axios';
 import { Script } from '@johnlindquist/kit';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel, AppChannel, Trigger } from '@johnlindquist/kit/cjs/enum';
 import {
   kitPath,
   getLogFromScriptPath,
@@ -30,7 +30,6 @@ import { processes } from './process';
 
 import { focusPrompt, isFocused, reload, resize } from './prompt';
 import { runPromptProcess } from './kit';
-import { AppChannel, Trigger } from 'kit-common';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
 import { kitConfig, kitState } from './state';

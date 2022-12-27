@@ -10,6 +10,7 @@ import parse from 'html-react-parser';
 
 import { overrideTailwindClasses } from 'tailwind-override';
 import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types';
+import { AppChannel } from '@johnlindquist/kit/core/enum';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { motion } from 'framer-motion';
@@ -23,7 +24,6 @@ import {
 } from '../jotai';
 
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
-import { AppChannel } from 'kit-common';
 
 function highlight(
   string: string,

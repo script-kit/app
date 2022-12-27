@@ -7,6 +7,7 @@ import MonacoEditor, { Monaco } from '@monaco-editor/react';
 
 import { editor as monacoEditor, Range } from 'monaco-editor';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
+import { WindowChannel } from '@johnlindquist/kit/core/enum';
 import { ipcRenderer } from 'electron';
 import {
   cmdAtom,
@@ -18,7 +19,6 @@ import {
 } from '../jotai';
 import { useMountMainHeight } from '../hooks';
 import { kitLight, nightOwl } from '../editor-themes';
-import { WindowChannel } from 'kit-common';
 
 const registerLogLanguage = (
   monaco: Monaco,

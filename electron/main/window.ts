@@ -2,13 +2,12 @@ import { BrowserWindow } from 'electron';
 import { snapshot } from 'valtio';
 import log from 'electron-log';
 import path from 'path';
-import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
+import { Channel, UI, WindowChannel } from '@johnlindquist/kit/cjs/enum';
 import { getLogFromScriptPath } from '@johnlindquist/kit/cjs/utils';
 import Tail from 'tail';
 import { readFile, stat, writeFile } from 'fs/promises';
 import { getAssetPath } from './assets';
 import { kitState, windowsState } from './state';
-import { WindowChannel } from 'kit-common';
 import { getCurrentScreenFromMouse } from './prompt';
 
 export const createWindow = async ({

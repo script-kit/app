@@ -11,7 +11,7 @@ import { pathExistsSync } from 'fs-extra';
 import { fork, ForkOptions } from 'child_process';
 import { homedir } from 'os';
 
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel, Trigger } from '@johnlindquist/kit/cjs/enum';
 import {
   parseScript,
   kitPath,
@@ -33,7 +33,6 @@ import {
 } from './prompt';
 import { getKitScript, kitState } from './state';
 import { pathsAreEqual } from './helpers';
-import { Trigger } from 'kit-common';
 
 app.on('second-instance', async (_event, argv) => {
   log.info('second-instance', _event, argv);

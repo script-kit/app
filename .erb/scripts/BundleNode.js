@@ -51,7 +51,7 @@ exports.default = async function notarizeMacos(context) {
   console.log(`✅ Download complete. Verifying...`);
 
   const assets = await readdir(assetsPath);
-  console.log(assets);
+  // console.log(assets);
   const hasArch = assets.includes(archTxt);
   const hasPlatform = assets.includes(platformTxt);
   const hasNodeTxt = assets.includes(nodeTxt);

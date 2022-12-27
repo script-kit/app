@@ -19,7 +19,10 @@ import {
   itemHeightAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
-import { DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from 'kit-common';
+import {
+  DEFAULT_LIST_WIDTH,
+  DEFAULT_WIDTH,
+} from '@johnlindquist/kit/core/defaults';
 
 const createItemData = memoize(
   (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>

@@ -32,13 +32,12 @@ import {
   mainScriptPath,
   tmpClipboardDir,
 } from '@johnlindquist/kit/cjs/utils';
-import { UI } from '@johnlindquist/kit/cjs/enum';
+import { UI, Trigger } from '@johnlindquist/kit/cjs/enum';
+import { noScript } from '@johnlindquist/kit/cjs/defaults';
 import axios from 'axios';
 import internetAvailable from './internet-available';
-import { noScript } from 'kit-common';
 import { getAssetPath } from './assets';
 import { emitter, KitEvent } from './events';
-import { Trigger } from 'kit-common';
 
 // const css = readFileSync(path.resolve(__dirname, './App.global.css'), 'utf8');
 const css = `

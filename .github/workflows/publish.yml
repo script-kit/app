@@ -145,11 +145,6 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: npm i && npm i @johnlindquist/kit
-        run: |
-          npm i
-          npm i "@johnlindquist/kit"
-
       - name: Publish windows
         if: matrix.os == 'windows-latest'
         env:
@@ -161,6 +156,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          npm i
           npm run build
           npx electron-builder --publish always --win --${{ matrix.arch }}
 
@@ -175,6 +171,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          npm i
           npm run build
           npx electron-builder --publish always --win --${{ matrix.arch }}
 
@@ -189,6 +186,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          npm i
           npm i node-mac-permissions
           npm run build
           npx electron-builder --publish always --win --${{ matrix.arch }}

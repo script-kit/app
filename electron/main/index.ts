@@ -123,7 +123,7 @@ import { runPromptProcess } from './kit';
 import { showError } from './main.dev.templates';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
-import { SPLASH_PATH } from 'kit-common';
+import { SPLASH_PATH } from '@johnlindquist/kit/cjs/defaults';
 import { registerKillLatestShortcut } from './shortcuts';
 import { mainLog, mainLogPath } from './logs';
 import { emitter } from './events';

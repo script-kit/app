@@ -7,6 +7,7 @@ import { snapshot } from 'valtio';
 import dotenv from 'dotenv';
 import { rm, readFile } from 'fs/promises';
 import { getAppDb, getUserDb } from '@johnlindquist/kit/cjs/db';
+import { AppChannel, Trigger } from '@johnlindquist/kit/cjs/enum';
 
 import {
   parseScript,
@@ -38,7 +39,6 @@ import { addSnippet, removeSnippet } from './tick';
 import { appToPrompt, clearPromptCacheFor } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
-import { AppChannel, Trigger } from 'kit-common';
 import { runScript } from './kit';
 
 // export const cacheMenu = debounce(async () => {

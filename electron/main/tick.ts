@@ -15,7 +15,6 @@ import { subscribeKey } from 'valtio/utils';
 import { format } from 'date-fns';
 import { writeFile } from 'fs/promises';
 import path from 'path';
-import { nanoid } from 'nanoid';
 import {
   UiohookKeyboardEvent,
   UiohookKey,
@@ -24,6 +23,7 @@ import {
 } from 'uiohook-napi';
 import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
 import { Choice, Script } from '@johnlindquist/kit/types/cjs';
+import { Trigger } from '@johnlindquist/kit/cjs/enum';
 import { remove } from 'lodash';
 
 import { emitter, KitEvent } from './events';
@@ -36,7 +36,6 @@ import {
 } from './state';
 import { isFocused } from './prompt';
 import { deleteText } from './keyboard';
-import { Trigger } from 'kit-common';
 import { chars } from './chars';
 
 const UiohookToName = Object.fromEntries(
@@ -283,6 +282,7 @@ export const preStartConfigureInterval = async () => {
 };
 
 export const configureInterval = async () => {
+  const { nanoid } = await import('nanoid');
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
 
   if (kitState.isMac) {

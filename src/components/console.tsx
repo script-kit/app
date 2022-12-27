@@ -7,8 +7,8 @@ import useResizeObserver from '@react-hook/resize-observer';
 import parse from 'html-react-parser';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
+import { AppChannel } from '@johnlindquist/kit/core/enum';
 import { logHeightAtom, logHTMLAtom, scriptAtom } from '../jotai';
-import { AppChannel } from 'kit-common';
 
 export default function Console() {
   const [script, setScript] = useAtom(scriptAtom);

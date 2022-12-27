@@ -31,7 +31,14 @@ import sizeOf from 'image-size';
 import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { ChildProcess, fork } from 'child_process';
-import { Channel, ProcessType, Value, UI } from '@johnlindquist/kit/cjs/enum';
+import {
+  Channel,
+  ProcessType,
+  Value,
+  UI,
+  AppChannel,
+  Trigger,
+} from '@johnlindquist/kit/cjs/enum';
 import { Choice, Script, ProcessInfo } from '@johnlindquist/kit/types/cjs';
 
 import {
@@ -104,9 +111,8 @@ import {
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
-import { AppChannel, Trigger } from 'kit-common';
 import { isKitScript, toRgb, pathsAreEqual, convertShortcut } from './helpers';
-import { toHex } from 'kit-common';
+import { toHex } from '@johnlindquist/kit/cjs/color';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';

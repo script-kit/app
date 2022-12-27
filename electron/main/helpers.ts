@@ -16,7 +16,7 @@ import {
   shortcutNormalizer,
 } from '@johnlindquist/kit/cjs/utils';
 import { emitter, KitEvent } from './events';
-import { Trigger } from 'kit-common';
+import { Trigger } from '@johnlindquist/kit/cjs/enum';
 import { convertKey } from './state';
 
 export const APP_NAME = 'Kit';

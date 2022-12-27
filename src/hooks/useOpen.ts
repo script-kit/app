@@ -1,10 +1,10 @@
 import { ipcRenderer } from 'electron';
 import { useAtom } from 'jotai';
+import { AppChannel } from '@johnlindquist/kit/core/enum';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import { appStateAtom, _choices, cmdAtom, _index } from '../jotai';
 import { hotkeysOptions } from './hooksConfig';
-import { AppChannel } from 'kit-common';
 
 export default () => {
   const [choices] = useAtom(_choices);

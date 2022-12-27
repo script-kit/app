@@ -1,5 +1,5 @@
 import log from 'electron-log';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel, Trigger } from '@johnlindquist/kit/cjs/enum';
 import { parseScript } from '@johnlindquist/kit/cjs/utils';
 import { SendData } from '@johnlindquist/kit/types/kitapp';
 import { Script } from '@johnlindquist/kit/types/cjs';
@@ -7,7 +7,6 @@ import { emitter, KitEvent } from './events';
 import { backgroundMap, Background } from './state';
 import { processes } from './process';
 import { runPromptProcess } from './kit';
-import { Trigger } from 'kit-common';
 
 export const removeBackground = (filePath: string) => {
   if (backgroundMap.get(filePath)) {

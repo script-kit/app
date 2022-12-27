@@ -32,7 +32,12 @@ import { debounce } from 'lodash';
 import * as monaco from 'monaco-editor';
 import { loader } from '@monaco-editor/react';
 
-import { Channel, UI } from '@johnlindquist/kit/core/enum';
+import {
+  AppChannel,
+  Channel,
+  UI,
+  WindowChannel,
+} from '@johnlindquist/kit/core/enum';
 import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
 import Tabs from './components/tabs';
 import List from './components/list';
@@ -123,7 +128,6 @@ import {
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
 import Splash from './components/splash';
 import Emoji from './components/emoji';
-import { AppChannel, WindowChannel } from 'kit-common';
 import Terminal from './term';
 import Inspector from './components/inspector';
 

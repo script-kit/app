@@ -3,9 +3,9 @@
 import net from 'net';
 import fs from 'fs';
 import log from 'electron-log';
+import { Trigger } from '@johnlindquist/kit/cjs/enum';
 import { kitPath, resolveToScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess } from './kit';
-import { Trigger } from 'kit-common';
 
 export const startSK = () => {
   const server = net.createServer((stream) => {

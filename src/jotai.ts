@@ -10,7 +10,7 @@ import { atom, Getter, Setter } from 'jotai';
 import DOMPurify from 'dompurify';
 import { QuickScore, createConfig, quickScore } from 'quick-score';
 import { UserDb } from '@johnlindquist/kit/core/db';
-import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
+import { AppChannel, Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
 import Convert from 'ansi-to-html';
 import {
   Choice,
@@ -36,15 +36,15 @@ import { editor } from 'monaco-editor';
 import { debounce, drop as _drop, isEqual } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
 import {
-  AppChannel,
   BUTTON_HEIGHT,
   DEFAULT_HEIGHT,
   noChoice,
   noScript,
   SPLASH_PATH,
   TOP_HEIGHT,
-  toHex,
-} from 'kit-common';
+} from '@johnlindquist/kit/core/defaults';
+
+import { toHex } from '@johnlindquist/kit/core/color';
 import { ResizeData, ScoredChoice, Survey } from './types';
 
 let placeholderTimeoutId: NodeJS.Timeout;
