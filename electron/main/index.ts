@@ -21,10 +21,6 @@ process.env.PUBLIC = process.env.VITE_DEV_SERVER_URL
   ? path.join(process.env.DIST_ELECTRON, '../public')
   : process.env.DIST;
 
-process.env.ASSETS = process.env.VITE_DEV_SERVER_URL
-  ? path.join(process.env.DIST_ELECTRON, '../assets')
-  : process.env.DIST;
-
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 

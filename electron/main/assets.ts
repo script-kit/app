@@ -16,11 +16,11 @@ export function slash(p: string) {
 
 const checkPackaged = (name: string) =>
   app.isPackaged
-    ? path.resolve(app.getPath(''), name)
-    : path.resolve(__dirname, '..', name);
+    ? path.resolve(process.resourcesPath, name)
+    : path.resolve(process.cwd(), name);
 
 export const getAssetPath = (...paths: string[]): string => {
-  return path.join(process.env.ASSETS, ...paths);
+  return slash(path.resolve(checkPackaged('assets'), ...paths));
 };
 
 export const getBinPath = (...paths: string[]): string => {
