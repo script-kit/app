@@ -144,8 +144,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-          cache: ${{ matrix.os }}-node-${{ matrix.node }}-${{ matrix.arch }}-npm-${{ hashFiles('**/package-lock.json') }}
-          cache-dependency-path: package-lock.json
 
       - name: Publish windows
         if: matrix.os == 'windows-latest'
