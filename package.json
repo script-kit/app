@@ -12,7 +12,8 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:common && tsc && vite build",
-    "build:common": "cd kit-common && tsc -p tsconfig.common.json"
+    "build:common": "cd kit-common && tsc -p tsconfig.common.json",
+    "m1": "npm run build && electron-builder --mac --arm64 --publish never"
   },
   "build": {
     "buildDependenciesFromSource": false,
@@ -25,7 +26,8 @@
       "**\\*.{node,dll}"
     ],
     "files": [
-      "dist/",
+      "dist-electron",
+      "dist",
       "fonts/**",
       "node_modules/",
       "index.html",
@@ -100,7 +102,6 @@
       "category": "Development"
     },
     "directories": {
-      "app": "src",
       "buildResources": "assets",
       "output": "release"
     },
@@ -154,8 +155,7 @@
       "json"
     ],
     "moduleDirectories": [
-      "node_modules",
-      "src/node_modules"
+      "node_modules"
     ],
     "modulePathIgnorePatterns": [
       ".history"
@@ -213,7 +213,7 @@
     "cross-env": "7.0.2",
     "css-loader": "6.7.1",
     "detect-port": "^1.5.1",
-    "download": "8.0.0",
+    "download": "^8.0.0",
     "electron": "22",
     "electron-builder": "23.3.3",
     "electron-devtools-installer": "3.2.0",

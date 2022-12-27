@@ -22,13 +22,9 @@ import {
   BrowserWindow,
   crashReporter,
 } from 'electron';
-import installExtension, {
-  REACT_DEVELOPER_TOOLS,
-} from 'electron-devtools-installer';
 
 import StreamZip from 'node-stream-zip';
 import tar from 'tar';
-import download from 'download';
 import clipboardy from 'clipboardy';
 import unhandled from 'electron-unhandled';
 import { openNewGitHubIssue, debugInfo } from 'electron-util';
@@ -234,6 +230,9 @@ if (
 
 // fmkadmapgofadopljbjfkapdkoienihi
 const installExtensions = async () => {
+  const { default: installExtension, REACT_DEVELOPER_TOOLS } = await import(
+    'electron-devtools-installer'
+  );
   const result = await installExtension(REACT_DEVELOPER_TOOLS, {
     loadExtensionOptions: { allowFileAccess: true },
   }).catch((error) => {
@@ -861,6 +860,7 @@ const checkKit = async () => {
       try {
         const nodeUrl = await readFile(nodeUrlPath, 'utf8');
         await setupLog(`Download node.js from ${nodeUrl}`);
+        const { default: download } = await import('download');
         const buffer = await download(nodeUrl.trim());
         await writeFile(KIT_NODE_TAR, buffer);
         log.info(`Node download complete. Beginning extraction...`);
@@ -973,6 +973,7 @@ const checkKit = async () => {
         const kitUrl = await readFile(getAssetPath('kit_url.txt'), 'utf8');
         await setupLog(`Download SDK from ${kitUrl}`);
         log.info(`Downloading pre-bundled kit...`);
+        const { default: download } = await import('download');
         const buffer = await download(kitUrl.trim());
         await writeFile(kitTar, buffer);
         log.info(`Downloading complete. Beginning extraction...`);
