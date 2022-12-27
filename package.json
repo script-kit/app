@@ -306,7 +306,6 @@
     "native-keymap": "^3.3.2",
     "node-abi": "^3.30.0",
     "node-downloader-helper": "1.0.18",
-    "node-mac-permissions": "^2.2.1",
     "node-pty": "^0.10.1",
     "node-schedule": "2.1.0",
     "node-stream-zip": "^1.15.0",
