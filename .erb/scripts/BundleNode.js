@@ -61,7 +61,4 @@ exports.default = async function notarizeMacos(context) {
     console.log(`🔴 Oh no...`);
     process.exit(1);
   }
-
-  const pkg = fs.readFileSync('./src/package.json', 'utf-8');
-  console.log({ pkg });
 };
