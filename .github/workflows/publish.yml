@@ -147,7 +147,7 @@ jobs:
 
       - name: Install electron-builder and typescript compiler
         run: |
-          npm i -g electron-builder typescript
+          npm i -g node-gyp electron-builder typescript
 
       - name: npm install
         run: npm i
