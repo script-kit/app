@@ -27,9 +27,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify that Semantic Release updated src/package.json
+      - name: Verify that Semantic Release updated package.json
         run: |
-          cat src/package.json
+          cat package.json
           echo ${{ steps.semantic.outputs.new_release_version }} > semantic-version.txt
           echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
 
@@ -126,7 +126,7 @@ jobs:
           # echo "npm_config_arch=${{ matrix.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           # echo "npm_config_target_arch=${{ matrix.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Write the Semantic Version to src/package.json version property
+      - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
         with:
           script: update-package-version ${{ env.SEMANTIC_VERSION }}

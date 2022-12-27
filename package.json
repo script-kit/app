@@ -2,6 +2,7 @@
   "name": "kit",
   "productName": "Kit",
   "description": "The Script Kit App",
+  "version": "0.0.0-development",
   "main": "dist-electron/main/index.js",
   "debug": {
     "env": {
