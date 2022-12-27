@@ -9,7 +9,7 @@ import React, {
 } from 'react';
 import { motion } from 'framer-motion';
 import { UI } from '@johnlindquist/kit/core/enum';
-import { Choice } from '@johnlindquist/kit/types/cjs';
+import { Choice } from '@johnlindquist/kit/types';
 import { useAtom } from 'jotai';
 
 import {

@@ -33,7 +33,7 @@ import {
 } from './prompt';
 import { getKitScript, kitState } from './state';
 import { pathsAreEqual } from './helpers';
-import { Trigger } from './enums';
+import { Trigger } from 'kit-common';
 
 app.on('second-instance', async (_event, argv) => {
   log.info('second-instance', _event, argv);

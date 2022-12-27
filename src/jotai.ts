@@ -18,7 +18,9 @@ import {
   PromptData,
   FlagsOptions,
   Shortcut,
-} from '@johnlindquist/kit/types/cjs';
+  AppState,
+  ProcessInfo,
+} from '@johnlindquist/kit/types';
 import { mainScriptPath, kitPath } from '@johnlindquist/kit/core/utils';
 import {
   EditorConfig,
@@ -26,24 +28,24 @@ import {
   EditorOptions,
   AppConfig,
   AppMessage,
-  AppState,
+  AudioOptions,
+  Appearance,
 } from '@johnlindquist/kit/types/kitapp';
 import { editor } from 'monaco-editor';
 
-import { assign, clamp, debounce, drop as _drop, isEqual } from 'lodash';
+import { debounce, drop as _drop, isEqual } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
-import { AppChannel } from 'shared/enums';
-import { ProcessInfo, ResizeData, ScoredChoice, Survey } from './types';
 import {
+  AppChannel,
   BUTTON_HEIGHT,
   DEFAULT_HEIGHT,
   noChoice,
   noScript,
   SPLASH_PATH,
   TOP_HEIGHT,
-} from './defaults';
-
-import { toHex } from 'shared/color-utils';
+  toHex,
+} from 'kit-common';
+import { ResizeData, ScoredChoice, Survey } from './types';
 
 let placeholderTimeoutId: NodeJS.Timeout;
 
@@ -252,7 +254,7 @@ export const uiAtom = atom(
   (g) => g(_ui),
   (g, s, a: UI) => {
     s(_ui, a);
-    if (a & (UI.arg | UI.textarea | UI.hotkey | UI.splash)) {
+    if ([UI.arg, UI.textarea, UI.hotkey, UI.splash].includes(a)) {
       s(inputFocusAtom, true);
     }
     // s(previewHTMLAtom, g(cachedMainPreview));
@@ -283,7 +285,7 @@ const _panelHTML = atom<string>('');
 
 export const panelHTMLAtom = atom(
   (g) =>
-    DOMPurify.sanitize(g(_panelHTML), {
+    DOMPurify.sanitize(g(_panelHTML) as string, {
       // allow iframe
       ADD_TAGS: ['iframe'],
       ALLOW_UNKNOWN_PROTOCOLS: true,
@@ -305,7 +307,7 @@ const _previewHTML = atom('');
 const closedDiv = `<div></div>`;
 export const previewHTMLAtom = atom(
   (g) =>
-    DOMPurify.sanitize(g(_previewHTML) || g(promptData)?.preview, {
+    DOMPurify.sanitize((g(_previewHTML) || g(promptData)?.preview) as string, {
       // allow iframe
       ADD_TAGS: ['iframe'],
       ALLOW_UNKNOWN_PROTOCOLS: true,
@@ -386,7 +388,7 @@ const editorConfig = atom<EditorConfig | null>({
   value: '',
   language: 'markdown',
   extraLibs: [],
-} as EditorOptions);
+});
 
 const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   fontFamily: 'JetBrains Mono',
@@ -412,7 +414,7 @@ export const editorOptions = atom<editor.IStandaloneEditorConstructionOptions>(
 
 export const editorConfigAtom = atom(
   (g) => g(editorConfig),
-  (g, s, a: EditorOptions) => {
+  (g, s, a: EditorConfig) => {
     s(editorConfig, a);
 
     // s(inputAtom, a.value);
@@ -427,24 +429,26 @@ export const editorConfigAtom = atom(
       onBlur,
       ignoreBlur,
       extraLibs,
+      value,
+      suggestions,
       ...options
-    } = a;
+    } = a as EditorOptions;
 
     s(editorOptions, {
       ...defaultEditorOptions,
       ...(options as editor.IStandaloneEditorConstructionOptions),
     });
 
-    if (typeof a?.value === 'undefined') return;
+    if (typeof value === 'undefined') return;
 
-    if (a?.suggestions) {
-      s(editorSuggestionsAtom, a.suggestions || []);
+    if (suggestions) {
+      s(editorSuggestionsAtom, suggestions || []);
     }
 
     s(editorAppendAtom, '');
 
     const channel = g(channelAtom);
-    channel(Channel.INPUT, { input: a.value });
+    channel(Channel.INPUT, { input: (a as EditorOptions)?.value || '' });
   }
 );
 
@@ -536,7 +540,7 @@ const _flagged = atom<Choice | string>('');
 const _focused = atom(noChoice as Choice);
 export const focusedChoiceAtom = atom(
   (g) => g(_focused),
-  (g, s, choice: Choice) => {
+  (g, s, choice: Choice | null) => {
     if (g(submittedAtom)) return;
     // if (g(_focused)?.id === choice?.id) return;
     if (isScript(choice as Choice)) {
@@ -619,12 +623,15 @@ export const _choices = atom((g) =>
 
 export const _input = atom('');
 
-const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
-  if (!a) return false;
-  const result = search(qs, a);
-  s(scoredChoices, result);
-  return true;
-}, 250); // TODO: too slow for emojis
+const debounceSearch = debounce(
+  (qs: QuickScoreInterface, s: Setter, a: string) => {
+    if (!a) return false;
+    const result = search(qs, a);
+    s(scoredChoices, result);
+    return true;
+  },
+  250
+); // TODO: too slow for emojis
 
 const prevFilteredInputAtom = atom('');
 
@@ -1122,7 +1129,7 @@ export const flagValueAtom = atom(
       s(inputAtom, '');
 
       const flagChoices: Choice[] = Object.entries(g(flagsAtom)).map(
-        ([key, value]) => {
+        ([key, value]: any) => {
           return {
             command: value?.name,
             filePath: value?.name,
@@ -1648,26 +1655,23 @@ export const addChoiceAtom = atom(null, (g, s, a: Choice) => {
   s(unfilteredChoicesAtom, Array.isArray(prev) ? [...prev, a] : [a]);
 });
 
-type Appearance = 'light' | 'dark';
 export const appearanceAtom = atom<Appearance>('dark');
 
 const _boundsAtom = atom<Rectangle>({ x: 0, y: 0, width: 0, height: 0 });
 export const boundsAtom = atom(
   (g) => g(_boundsAtom),
-  (g, s, a: Rectangle) => {
+  (g, s, a: Partial<Rectangle>) => {
     s(resizeCompleteAtom, false);
-    s(_boundsAtom, a);
+    s(_boundsAtom, {
+      ...g(_boundsAtom),
+      ...a,
+    });
   }
 );
 
 export const resizeCompleteAtom = atom(false);
 
 export const resizingAtom = atom(false);
-
-type AudioOptions = {
-  filePath: string;
-  playbackRate?: number;
-};
 
 export const _audioAtom = atom<AudioOptions | null>(null);
 

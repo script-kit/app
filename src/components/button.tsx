@@ -9,7 +9,7 @@ import React, { useCallback, useEffect, useState, DragEvent } from 'react';
 import parse from 'html-react-parser';
 
 import { overrideTailwindClasses } from 'tailwind-override';
-import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types/cjs';
+import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { motion } from 'framer-motion';
@@ -23,7 +23,7 @@ import {
 } from '../jotai';
 
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
-import { AppChannel } from 'shared/enums';
+import { AppChannel } from 'kit-common';
 
 function highlight(
   string: string,
@@ -140,7 +140,9 @@ export default function ChoiceButton({
       return Object.keys(choice).includes(m);
     }) as keyof ScriptMetadata;
 
-    setModifierDescription(((choice as unknown) as ScriptMetadata)?.[modifier]);
+    setModifierDescription(
+      ((choice as unknown) as ScriptMetadata)?.[modifier] as any
+    );
   }, [modifiers]);
 
   return (

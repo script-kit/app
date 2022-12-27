@@ -3,7 +3,7 @@
 /* eslint-disable no-nested-ternary */
 import React, { useCallback } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
-import { XIcon } from '@heroicons/react/outline';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { AnimatePresence } from 'framer-motion';
 import {
   _description,
@@ -143,7 +143,7 @@ export default function Header() {
       </div>
       {false && mouseEnabled && (
         <div onClick={onXClick} className="w-6 h-6 hover:cursor-pointer">
-          <XIcon
+          <XMarkIcon
             className="h-3 w-3
           absolute top-0 right-0
           m-1.5

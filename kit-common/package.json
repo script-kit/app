@@ -1,0 +1,13 @@
+{
+  "author": "John Lindquist",
+  "name": "kit-common",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p ./tsconfig.common.json",
+    "watch": "tsc -w -p ./tsconfig.common.json"
+  },
+  "dependencies": {
+    "color-name": "^2.0.0"
+  }
+}

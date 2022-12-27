@@ -12,7 +12,7 @@ import {
   userAtom,
 } from '../jotai';
 
-const GithubIcon = ({ className }) => (
+const GithubIcon = ({ className }: { className: string }) => (
   <svg
     width="16"
     height="16"

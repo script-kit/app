@@ -17,10 +17,10 @@ import {
 import { useObserveMainHeight } from '../hooks';
 
 export default function Form({
-  widght,
+  width,
   height,
 }: {
-  widght: number;
+  width: number;
   height: number;
 }) {
   // useEscape();
@@ -166,7 +166,7 @@ export default function Form({
       <form
         name="kitForm"
         onChange={onFormChange}
-        ref={formRef}
+        ref={formRef as any}
         onKeyDown={onFormKeyDown}
         onSubmit={onLocalSubmit}
         className={`

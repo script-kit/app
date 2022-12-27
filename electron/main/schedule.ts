@@ -5,7 +5,7 @@ import { Script } from '@johnlindquist/kit/types/cjs';
 import { kitPath } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess, runScript } from './kit';
 import { online, scheduleMap } from './state';
-import { Trigger } from './enums';
+import { Trigger } from 'kit-common';
 
 export const cancelJob = (filePath: string) => {
   let success = false;

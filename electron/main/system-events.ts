@@ -2,7 +2,7 @@ import { powerMonitor } from 'electron';
 import log from 'electron-log';
 import { Script } from '@johnlindquist/kit/types/cjs';
 import { runPromptProcess } from './kit';
-import { Trigger } from './enums';
+import { Trigger } from 'kit-common';
 
 const validSystemEvents = [
   'suspend',

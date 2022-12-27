@@ -7,7 +7,7 @@ import { emitter, KitEvent } from './events';
 import { backgroundMap, Background } from './state';
 import { processes } from './process';
 import { runPromptProcess } from './kit';
-import { Trigger } from './enums';
+import { Trigger } from 'kit-common';
 
 export const removeBackground = (filePath: string) => {
   if (backgroundMap.get(filePath)) {

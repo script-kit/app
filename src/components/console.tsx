@@ -8,7 +8,7 @@ import parse from 'html-react-parser';
 import { useAtom } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { logHeightAtom, logHTMLAtom, scriptAtom } from '../jotai';
-import { AppChannel } from 'shared/enums';
+import { AppChannel } from 'kit-common';
 
 export default function Console() {
   const [script, setScript] = useAtom(scriptAtom);

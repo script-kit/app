@@ -35,10 +35,10 @@ import {
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import axios from 'axios';
 import internetAvailable from './internet-available';
-import { noScript } from './defaults';
+import { noScript } from 'kit-common';
 import { getAssetPath } from './assets';
 import { emitter, KitEvent } from './events';
-import { Trigger } from './enums';
+import { Trigger } from 'kit-common';
 
 // const css = readFileSync(path.resolve(__dirname, './App.global.css'), 'utf8');
 const css = `

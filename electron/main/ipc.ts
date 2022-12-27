@@ -30,7 +30,7 @@ import { processes } from './process';
 
 import { focusPrompt, isFocused, reload, resize } from './prompt';
 import { runPromptProcess } from './kit';
-import { AppChannel, Trigger } from './enums';
+import { AppChannel, Trigger } from 'kit-common';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
 import { kitConfig, kitState } from './state';

@@ -5,7 +5,7 @@ import fs from 'fs';
 import log from 'electron-log';
 import { kitPath, resolveToScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess } from './kit';
-import { Trigger } from './enums';
+import { Trigger } from 'kit-common';
 
 export const startSK = () => {
   const server = net.createServer((stream) => {

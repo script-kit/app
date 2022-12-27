@@ -123,7 +123,7 @@ import {
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
 import Splash from './components/splash';
 import Emoji from './components/emoji';
-import { AppChannel, WindowChannel } from 'shared/enums';
+import { AppChannel, WindowChannel } from 'kit-common';
 import Terminal from './term';
 import Inspector from './components/inspector';
 
@@ -261,8 +261,23 @@ export default function App() {
     [key in keyof ChannelMap]: (data: ChannelMap[key]) => void;
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const messageMap: ChannelAtomMap = {
+  type WindowChannelMap = {
+    [WindowChannel.SET_LAST_LOG_LINE]: string;
+    [WindowChannel.SET_LOG_VALUE]: string;
+    [WindowChannel.SET_EDITOR_LOG_MODE]: boolean;
+  };
+
+  type WindowChannelAtomMap = {
+    [key in keyof WindowChannelMap]: (data: WindowChannelMap[key]) => void;
+  };
+
+  const windowMessageMap: WindowChannelAtomMap = {
+    [WindowChannel.SET_LAST_LOG_LINE]: setLastLogLine,
+    [WindowChannel.SET_LOG_VALUE]: setLogValue,
+    [WindowChannel.SET_EDITOR_LOG_MODE]: setEditorLogMode,
+  };
+
+  const messageMap: Partial<ChannelAtomMap> = {
     // [Channel.RESET_PROMPT]: resetPromptHandler,
     [Channel.APP_CONFIG]: setAppConfig,
     [Channel.EXIT]: setExit,
@@ -305,7 +320,7 @@ export default function App() {
     [Channel.START]: start,
     [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
     [Channel.TERMINAL]: setSocketURL,
-    [Channel.CLEAR_TABS]: setTabs,
+    [Channel.CLEAR_TABS]: () => setTabs([]),
     [Channel.ADD_CHOICE]: addChoice,
     [Channel.SET_APPEARANCE]: setAppearance,
     [Channel.SET_BOUNDS]: setBounds,
@@ -322,14 +337,10 @@ export default function App() {
         shiftKey: keyData.shift,
         altKey: keyData.option,
         ...keyData,
-      });
+      } as any);
 
       document?.activeElement?.dispatchEvent(keyboardEvent);
     },
-
-    [WindowChannel.SET_LAST_LOG_LINE]: setLastLogLine,
-    [WindowChannel.SET_LOG_VALUE]: setLogValue,
-    [WindowChannel.SET_EDITOR_LOG_MODE]: setEditorLogMode,
   };
 
   useEffect(() => {
@@ -341,12 +352,12 @@ export default function App() {
       if (ipcRenderer.listenerCount(key) === 0) {
         ipcRenderer.on(key, (_, data) => {
           // if (data?.kitScript) setScriptName(data?.kitScript);
-          (fn as (data: ChannelAtomMap[keyof ChannelAtomMap]) => void)(data);
+          (fn as (data: ChannelMap[keyof ChannelAtomMap]) => void)(data);
         });
       }
     });
 
-    const kitStateCallback = (_, data) => {
+    const kitStateCallback = (_: any, data: any) => {
       setKitState(data);
     };
 
@@ -360,6 +371,25 @@ export default function App() {
       ipcRenderer.off(AppChannel.KIT_STATE, kitStateCallback);
     };
   }, [messageMap]);
+
+  useEffect(() => {
+    Object.entries(windowMessageMap).forEach(([key, fn]) => {
+      if (ipcRenderer.listenerCount(key) === 0) {
+        ipcRenderer.on(key, (_, data) => {
+          // if (data?.kitScript) setScriptName(data?.kitScript);
+          (fn as (data: WindowChannelMap[keyof WindowChannelAtomMap]) => void)(
+            data
+          );
+        });
+      }
+    });
+
+    return () => {
+      Object.entries(windowMessageMap).forEach(([key, fn]) => {
+        ipcRenderer.off(key, fn);
+      });
+    };
+  }, [windowMessageMap]);
 
   useEffect(() => {
     ipcRenderer.on(AppChannel.PROCESSES, (_, data) => {

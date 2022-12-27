@@ -38,7 +38,7 @@ import { addSnippet, removeSnippet } from './tick';
 import { appToPrompt, clearPromptCacheFor } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
-import { AppChannel, Trigger } from './enums';
+import { AppChannel, Trigger } from 'kit-common';
 import { runScript } from './kit';
 
 // export const cacheMenu = debounce(async () => {

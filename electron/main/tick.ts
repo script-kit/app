@@ -36,7 +36,7 @@ import {
 } from './state';
 import { isFocused } from './prompt';
 import { deleteText } from './keyboard';
-import { Trigger } from './enums';
+import { Trigger } from 'kit-common';
 import { chars } from './chars';
 
 const UiohookToName = Object.fromEntries(

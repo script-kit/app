@@ -49,10 +49,10 @@ import {
   MIN_HEIGHT,
   MIN_WIDTH,
   ZOOM_LEVEL,
-} from './defaults';
+} from 'kit-common';
 import { ResizeData } from './types';
 import { getVersion } from './version';
-import { AppChannel } from './enums';
+import { AppChannel } from 'kit-common';
 import { emitter, KitEvent } from './events';
 import { pathsAreEqual } from './helpers';
 

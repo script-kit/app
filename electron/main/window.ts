@@ -8,7 +8,7 @@ import Tail from 'tail';
 import { readFile, stat, writeFile } from 'fs/promises';
 import { getAssetPath } from './assets';
 import { kitState, windowsState } from './state';
-import { WindowChannel } from './enums';
+import { WindowChannel } from 'kit-common';
 import { getCurrentScreenFromMouse } from './prompt';
 
 export const createWindow = async ({

@@ -104,9 +104,9 @@ import {
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { startPty } from './pty';
 import { createWidget } from './widget';
-import { AppChannel, Trigger } from './enums';
+import { AppChannel, Trigger } from 'kit-common';
 import { isKitScript, toRgb, pathsAreEqual, convertShortcut } from './helpers';
-import { toHex } from './color-utils';
+import { toHex } from 'kit-common';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';

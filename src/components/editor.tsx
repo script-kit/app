@@ -134,7 +134,7 @@ export default function Editor() {
       disposeRef.current = m.languages.registerCompletionItemProvider(
         'markdown',
         {
-          async provideCompletionItems(model, position) {
+          async provideCompletionItems() {
             // clear previous suggestions
 
             const suggestions = editorSuggestions?.map((str: string) => ({
@@ -146,7 +146,7 @@ export default function Editor() {
               suggestions,
             };
           },
-        }
+        } as any
       );
     }
   }, [editorSuggestions, m, options]);
@@ -338,10 +338,10 @@ export default function Editor() {
         editor.revealLineInCenter(Math.floor(lineNumber / 2));
       }
 
-      if (config?.template) {
+      if ((config as any)?.template) {
         const contribution = editor.getContribution('snippetController2');
-        if (contribution) {
-          (contribution as any).insert(config.template);
+        if (contribution && config) {
+          (contribution as any).insert((config as any).template as any);
         }
       }
 

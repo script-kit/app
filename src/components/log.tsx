@@ -18,7 +18,7 @@ import {
 } from '../jotai';
 import { useMountMainHeight } from '../hooks';
 import { kitLight, nightOwl } from '../editor-themes';
-import { WindowChannel } from 'shared/enums';
+import { WindowChannel } from 'kit-common';
 
 const registerLogLanguage = (
   monaco: Monaco,

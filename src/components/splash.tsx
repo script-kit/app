@@ -83,7 +83,7 @@ function Aside() {
   const [progress] = useAtom(splashProgressAtom);
   const [runMainScript] = useAtom(runMainScriptAtom);
 
-  const [lazyIcon] = useAtom(loadableIconAtom);
+  const [lazyIcon] = useAtom<any>(loadableIconAtom);
 
   return (
     <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner">
@@ -237,7 +237,7 @@ export default function Splash() {
               <p className="text-base mb-2">
                 👋 Your feedback guides Script Kit's future:
               </p>
-              <AnimateSharedLayout type="crossfade">
+              <AnimateSharedLayout>
                 <AnimatePresence key="splashComponents">
                   {question && (
                     <motion.p
