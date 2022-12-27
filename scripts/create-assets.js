@@ -15,6 +15,10 @@ chdir(process.env.PWD);
 let { stdout: releaseChannel } = await exec(`git rev-parse --abbrev-ref HEAD`);
 console.log({ releaseChannel });
 
+// TODO: This is a hack to get the release channel to be "main" for now
+console.log(`Maybe switch to branch or stick to main?`);
+releaseChannel = 'main';
+
 let releaseChannelTxt = path.resolve(
   process.env.PWD,
   'assets',
