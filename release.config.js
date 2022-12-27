@@ -1,5 +1,5 @@
 module.exports = {
-  branches: ['main'],
+  branches: ['main', 'vite'],
   plugins: [
     [
       '@semantic-release/npm',
