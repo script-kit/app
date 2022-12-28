@@ -141,17 +141,17 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: powershell
         run: |
-          $WhereNode = Get-Command node | Select-Object -ExpandProperty Definition
-          $NodeDirPath = Split-Path $WhereNode -Parent
-          [Version]$npmVersion = npm --version
-          if ($npmVersion -lt [Version]"7.0") {
-            $NodeModulesPath = $NodeDirPath + "\node_modules\npm\node_modules\npm-lifecycle"
-          } else {
-            $NodeModulesPath = $NodeDirPath + "\node_modules\npm\node_modules\@npmcli\run-script"
-          }
-          cd $NodeModulesPath
-          npm install node-gyp@latest
-          npx node-gyp install
+          # $WhereNode = Get-Command node | Select-Object -ExpandProperty Definition
+          # $NodeDirPath = Split-Path $WhereNode -Parent
+          # [Version]$npmVersion = npm --version
+          # if ($npmVersion -lt [Version]"7.0") {
+          #   $NodeModulesPath = $NodeDirPath + "\node_modules\npm\node_modules\npm-lifecycle"
+          # } else {
+          #   $NodeModulesPath = $NodeDirPath + "\node_modules\npm\node_modules\@npmcli\run-script"
+          # }
+          # cd $NodeModulesPath
+          # npm install node-gyp@latest
+          node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
 
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
