@@ -173,7 +173,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # npx node-gyp install
+          npx node-gyp install
           # DEBUG=electron-rebuild npx electron-rebuild
           .\\node_modules\\.bin\\electron-rebuild --parallel --force --types prod,dev,optional --module-dir .
           npm i --force
