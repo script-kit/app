@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npx tsc && vite build",
+    "build": "npx tsc && npx vite build",
     "m1": "npm run build && electron-builder --mac --arm64 -c.mac.identity=null --publish never",
     "publish": "npm run build && electron-builder --publish always"
   },
