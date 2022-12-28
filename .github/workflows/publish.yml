@@ -145,8 +145,9 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: yarn && yarn add @johnlindquist/kit
         run: |
-          yarn
-          yarn add "@johnlindquist/kit"
+          npm i
+          npm i "@johnlindquist/kit"
+          npm i -g electron-builder
 
       - name: Publish windows
         if: matrix.os == 'windows-latest'
@@ -160,46 +161,42 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
 
-          yarn build
+          npm run build
           cd ./src
-          yarn remove node-mac-permissions
+          npm un node-mac-permissions
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --win --${{ matrix.arch }}
-
-      - name: Publish linux
-        if: matrix.os == 'ubuntu-latest'
-        env:
-          # These values are used for auto updates signing
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          # This is used for uploading release assets to github
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-
-          yarn build
-          cd ./src
-          yarn remove node-mac-permissions
-          cat ./package.json
-          cd ..
-          echo "--- Done removing mac deps ---\n\n"
-          # Target all linux distros
-          yarn electron-builder --publish always --linux AppImage deb rpm --${{ matrix.arch }}
-
-      - name: Publish mac
-        if: matrix.os == 'macos-12'
-        env:
-          # These values are used for auto updates signing
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          # This is used for uploading release assets to github
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-
-          yarn build
-          yarn electron-builder --publish always --mac --${{ matrix.arch }}
+          electron-builder --publish always --win --${{ matrix.arch }}
+      # - name: Publish linux
+      #   if: matrix.os == 'ubuntu-latest'
+      #   env:
+      #     # These values are used for auto updates signing
+      #     APPLE_ID: ${{ secrets.APPLE_ID }}
+      #     APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
+      #     CSC_LINK: ${{ secrets.CSC_LINK }}
+      #     CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      #     # This is used for uploading release assets to github
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: |
+      #     yarn build
+      #     cd ./src
+      #     yarn remove node-mac-permissions
+      #     cat ./package.json
+      #     cd ..
+      #     echo "--- Done removing mac deps ---\n\n"
+      #     # Target all linux distros
+      #     yarn electron-builder --publish always --linux AppImage deb rpm --${{ matrix.arch }}
+      # - name: Publish mac
+      #   if: matrix.os == 'macos-12'
+      #   env:
+      #     # These values are used for auto updates signing
+      #     APPLE_ID: ${{ secrets.APPLE_ID }}
+      #     APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
+      #     CSC_LINK: ${{ secrets.CSC_LINK }}
+      #     CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      #     # This is used for uploading release assets to github
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: |
+      #     yarn build
+      #     yarn electron-builder --publish always --mac --${{ matrix.arch }}
