@@ -62,7 +62,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-12]
+        os: [macos-12, ubuntu-latest, windows-latest]
         arch: [x64, arm64]
         node: [16.17.1]
 
