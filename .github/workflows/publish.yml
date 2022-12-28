@@ -149,9 +149,6 @@ jobs:
         run: |
           npm i -g node-gyp@9.3.1 @electron/rebuild@3.2.10 electron-builder@23.6.0 typescript
 
-      - name: npm install
-        run: npm i
-
       - name: Publish windows
         if: matrix.os == 'windows-latest'
         env:
