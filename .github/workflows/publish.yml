@@ -152,8 +152,6 @@ jobs:
           cd $NodeModulesPath
           npm install node-gyp@latest
           npx node-gyp install
-          npm i -g electron-builder
-          #  node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
 
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
