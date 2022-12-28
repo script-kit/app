@@ -143,14 +143,9 @@ jobs:
         run: |
           $WhereNode = Get-Command node | Select-Object -ExpandProperty Definition
           $NodeDirPath = Split-Path $WhereNode -Parent
-          [Version]$npmVersion = npm --version
-          if ($npmVersion -lt [Version]"7.0") {
-            $NodeModulesPath = $NodeDirPath + "\node_modules\npm\node_modules\npm-lifecycle"
-          } else {
-            $NodeModulesPath = $NodeDirPath + "\node_modules\npm\node_modules\@npmcli\run-script"
-          }
+          $NodeModulesPath = $NodeDirPath + "\node_modules\npm\node_modules\@npmcli\run-script"
           cd $NodeModulesPath
-          npm install node-gyp@latest
+          npm install node-gyp@9.0.0
           npx node-gyp install
 
       - name: Write the Semantic Version to package.json version property
@@ -178,6 +173,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          npx node-gyp install
           npm i --force
           npm run publish -- --win --${{ matrix.arch }}
 
