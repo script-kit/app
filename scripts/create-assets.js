@@ -63,7 +63,7 @@ await tar.c(
 // Need to consider "esbuild" for each platform and architecture
 
 let version = await arg('Enter the version number');
-let platform = await arg('Enter the platform'); // macos-12, windows-latest, ubuntu-latest
+let platform = await arg('Enter the platform'); // macos-12, windows-2019, ubuntu-latest
 let arch = await arg('Enter the architecture');
 let release_id = await arg("Enter the release's id");
 let tag_name = `v${version}`;

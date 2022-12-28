@@ -62,7 +62,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-12, ubuntu-latest]
+        os: [macos-12, windows-2019, ubuntu-latest]
         arch: [x64, arm64]
         node: [16.17.1]
 
@@ -81,7 +81,7 @@ jobs:
           name: release-id
 
       - name: Set Semantic Version Nix
-        if: ${{ matrix.os != 'windows-latest' }}
+        if: ${{ matrix.os != 'windows-2019' }}
         run: |
           echo "Semantic Version: $(cat semantic-version.txt)"
           # Set the semantic version as an environment variable
@@ -93,7 +93,7 @@ jobs:
 
           # If matrix.os is macos-12, set npm_config_platform to darwin
           # If matrix.os is ubuntu-latest, set npm_config_platform to linux
-          # If matrix.os is windows-latest, set npm_config_platform to win32
+          # If matrix.os is windows-2019, set npm_config_platform to win32
 
           # if [[ "${{ matrix.os }}" == "macos-12" ]]; then
           #   echo "npm_config_platform=darwin" >> $GITHUB_ENV
@@ -101,7 +101,7 @@ jobs:
           # elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
           #   echo "npm_config_platform=linux" >> $GITHUB_ENV
           #   echo "npm_config_target_platform=linux" >> $GITHUB_ENV
-          # elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          # elif [[ "${{ matrix.os }}" == "windows-2019" ]]; then
           #   echo "npm_config_platform=win32" >> $GITHUB_ENV
           #   echo "npm_config_target_platform=win32" >> $GITHUB_ENV
           # fi
@@ -110,7 +110,7 @@ jobs:
           # echo "npm_config_target_arch=${{ matrix.arch }}" >> $GITHUB_ENV
 
       - name: Set Semantic Version Windows
-        if: ${{ matrix.os == 'windows-latest' }}
+        if: ${{ matrix.os == 'windows-2019' }}
         run: |
           echo "Semantic Version: $(cat semantic-version.txt)"
           # Set the semantic version as an environment variable
@@ -132,23 +132,23 @@ jobs:
           node-version: ${{ matrix.node }}
 
       # - name: Install Windows install tools
-      #   if: ${{ matrix.os == 'windows-latest' }}
+      #   if: ${{ matrix.os == 'windows-2019' }}
       #   run: |
       #     npm install --global node-gyp@9.0.0
       #     npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
 
       # - name: Install node-gyp
-      #   if: matrix.os == 'windows-latest'
+      #   if: matrix.os == 'windows-2019'
       #   run: |
       #     echo 'C:\Program Files (x86)\WiX Toolset v3.11\bin' >> $GITHUB_PATH
       #     npm config set node-gyp "$GITHUB_WORKSPACE\node_modules\node-gyp\bin\node-gyp.js"
 
-      - name: ⬆️ Upgrade node-gyp
-        if: matrix.os == 'windows-latest'
-        shell: powershell
-        run: |
-          npm install --global node-gyp@9
-          npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
+      # - name: ⬆️ Upgrade node-gyp
+      #   if: matrix.os == 'windows-2019'
+      #   shell: powershell
+      #   run: |
+      #     npm install --global node-gyp@9
+      #     npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
 
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
@@ -165,7 +165,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish windows
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2019'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
