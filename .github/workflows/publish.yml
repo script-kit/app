@@ -140,6 +140,7 @@ jobs:
       - name: Install node-gyp
         if: matrix.os == 'windows-latest'
         run: |
+          npm i -g node-gyp
           node-gyp install
           node-gyp rebuild
 
