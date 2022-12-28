@@ -133,30 +133,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+
       - name: Create Assets
         uses: johnlindquist/kit-action@main
         with:
           script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} ${{ matrix.arch }} ${{ env.RELEASE_ID }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node }}
-
-      - name: Install electron-builder and typescript compiler
-        run: |
-          npm i -g node-gyp@9.3.1 @electron/rebuild@3.2.10 electron-builder@23.6.0 typescript
-
-      # If node-gyp cache exists on Windows, remove it
-      - name: Remove node-gyp cache
-        if: matrix.os == 'windows-latest'
-        run: |
-          Remove-Item -Path "$env:USERPROFILE\.node_gyp" -Recurse -Force
-
-      - name: npm i
-        run: npm i
 
       - name: Publish windows
         if: matrix.os == 'windows-latest'
@@ -169,8 +156,9 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm run build
-          electron-builder --publish always --win --${{ matrix.arch }}
+          yarn
+          yarn build
+          yarn electron-builder --publish always --win --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
@@ -183,8 +171,9 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm run build
-          electron-builder --publish always --linux AppImage deb rpm --${{ matrix.arch }}
+          yarn
+          yarn build
+          yarn electron-builder --publish always --linux AppImage deb rpm --${{ matrix.arch }}
 
       - name: Publish mac
         if: matrix.os == 'macos-12'
@@ -197,6 +186,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm i node-mac-permissions
-          npm run build
-          electron-builder --publish always --mac --${{ matrix.arch }}
+          yarn
+          yarn add node-mac-permissions
+          yarn build
+          yarn electron-builder --publish always --mac --${{ matrix.arch }}
