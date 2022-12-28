@@ -126,17 +126,17 @@ jobs:
           # echo "npm_config_arch=${{ matrix.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           # echo "npm_config_target_arch=${{ matrix.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: Install node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
         with:
           script: update-package-version ${{ env.SEMANTIC_VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node }}
 
       - name: Create Assets
         uses: johnlindquist/kit-action@main
@@ -156,9 +156,8 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn
-          yarn build
-          yarn electron-builder --publish always --win --${{ matrix.arch }}
+          npm i
+          npm run publish -- --win --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
@@ -171,9 +170,8 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn
-          yarn build
-          yarn electron-builder --publish always --linux AppImage deb rpm --${{ matrix.arch }}
+          npm i
+          npm run publish -- --linux AppImage deb rpm --${{ matrix.arch }}
 
       - name: Publish mac
         if: matrix.os == 'macos-12'
@@ -186,7 +184,6 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn
-          yarn add node-mac-permissions
-          yarn build
-          yarn electron-builder --publish always --mac --${{ matrix.arch }}
+          npm i
+          npm i node-mac-permissions
+          npm run publish -- --mac --${{ matrix.arch }}
