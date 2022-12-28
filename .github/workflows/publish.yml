@@ -134,7 +134,7 @@ jobs:
       - name: Install Windows install tools
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          npm i typescript vite node-gyp@9.0.0
+          npm i node-gyp@9.0.0
 
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
