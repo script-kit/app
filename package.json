@@ -70,7 +70,11 @@
       }
     ],
     "win": {
-      "artifactName": "${productName}-Windows-${version}-${arch}.${ext}"
+      "artifactName": "${productName}-Windows-${version}-${arch}.${ext}",
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.png"
     },
     "mac": {
       "artifactName": "${productName}-macOS-${version}-${arch}.${ext}",
