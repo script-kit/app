@@ -142,7 +142,6 @@ jobs:
         run: |
           npm i -g node-gyp
           node-gyp install
-          node-gyp rebuild
 
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
