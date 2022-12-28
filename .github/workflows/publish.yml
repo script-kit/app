@@ -137,12 +137,6 @@ jobs:
       #     npm install --global node-gyp@9.0.0
       #     npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
 
-      # - name: Install node-gyp
-      #   if: matrix.os == 'windows-latest'
-      #   run: |
-      #     echo 'C:\Program Files (x86)\WiX Toolset v3.11\bin' >> $GITHUB_PATH
-      #     npm config set node-gyp "$GITHUB_WORKSPACE\node_modules\node-gyp\bin\node-gyp.js"
-
       - name: ⬆️ Upgrade node-gyp
         if: matrix.os == 'windows-latest'
         shell: powershell
@@ -157,6 +151,7 @@ jobs:
           }
           cd $NodeModulesPath
           npm install node-gyp@latest
+          npx node-gyp install
 
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
