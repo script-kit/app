@@ -61,8 +61,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-12, windows-latest, ubuntu-latest]
-        arch: [x64, arm64]
+        os: [windows-latest]
+        arch: [x64]
         node: [16.17.1]
 
     steps:
@@ -145,9 +145,9 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: yarn && yarn add @johnlindquist/kit
         run: |
-          npm i
-          npm i "@johnlindquist/kit"
-          npm i -g electron-builder
+          npm i --force
+          npm i @johnlindquist/kit --force
+          npm i -g electron-builder --force
 
       - name: Publish windows
         if: matrix.os == 'windows-latest'
