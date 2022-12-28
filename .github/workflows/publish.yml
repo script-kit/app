@@ -145,10 +145,6 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Delete node-gyp cache
-        run: Remove-Item -Recurse -Force %LocalAppData%/node-gyp/Cache
-        if: matrix.os == 'windows-latest'
-
       - name: Install electron-builder and typescript compiler
         run: |
           npm i -g node-gyp@9.3.1 @electron/rebuild@3.2.10 electron-builder@23.6.0 typescript
