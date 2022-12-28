@@ -140,9 +140,8 @@ jobs:
       - name: Install node-gyp
         if: matrix.os == 'windows-latest'
         run: |
-          npm install -g node-gyp --force
-          npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
-          npm i node-gyp --target_arch=${{ matrix.arch }} --target_platform=win32 --production --prefer-dedupe --force
+          node-gyp install
+          node-gyp rebuild
 
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
@@ -169,7 +168,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm i
+          npm i --force
           npm run publish -- --win --${{ matrix.arch }}
 
       - name: Publish linux
@@ -183,7 +182,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm i
+          npm i --force
           npm run publish -- --linux AppImage deb rpm --${{ matrix.arch }}
 
       - name: Publish mac
@@ -197,6 +196,6 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm i
-          npm i node-mac-permissions
+          npm i --force
+          npm i node-mac-permissions --force
           npm run publish -- --mac --${{ matrix.arch }}
