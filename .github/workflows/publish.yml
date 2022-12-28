@@ -131,6 +131,11 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      - name: Install Windows install tools
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          npm i -g typescript vite node-gyp@9.0.0
+
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
         with:
@@ -157,7 +162,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm i
-          npm i -g typescript vite node-gyp@9.0.0
           npm run publish -- --win --${{ matrix.arch }}
 
       - name: Publish linux
