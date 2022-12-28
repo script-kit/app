@@ -131,13 +131,14 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Install Windows install tools
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          npm install --global node-gyp@9.0.0
-          npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
+      # - name: Install Windows install tools
+      #   if: ${{ matrix.os == 'windows-latest' }}
+      #   run: |
+      #     npm install --global node-gyp@9.0.0
+      #     npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
 
       - name: Write the Semantic Version to package.json version property
+        if: matrix.os !='windows-latest'
         uses: johnlindquist/kit-action@main
         with:
           script: update-package-version ${{ env.SEMANTIC_VERSION }}
@@ -145,6 +146,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets
+        if: matrix.os !='windows-latest'
         uses: johnlindquist/kit-action@main
         with:
           script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} ${{ matrix.arch }} ${{ env.RELEASE_ID }}
