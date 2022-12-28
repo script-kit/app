@@ -171,6 +171,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm i
+          npm i -g typescript vite
           npm run publish -- --linux AppImage deb rpm --${{ matrix.arch }}
 
       - name: Publish mac
