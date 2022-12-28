@@ -145,18 +145,9 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Update node-gyp
-        if: matrix.os == 'windows-latest'
-        run: |
-          $WhereNode = Get-Command node | Select-Object -ExpandProperty Definition
-          $NodeDirPath = Split-Path $WhereNode -Parent
-          $NodeModulesPath = $NodeDirPath + "\node_modules\npm\node_modules\npm-lifecycle"
-          cd $NodeModulesPath
-          npm install node-gyp@latest
-
       - name: Install electron-builder and typescript compiler
         run: |
-          npm i -g node-gyp@latest electron-builder typescript
+          npm i -g node-gyp@9.3.1 @electron/rebuild@3.2.10 electron-builder@23.6.0 typescript
 
       - name: npm install
         run: npm i
