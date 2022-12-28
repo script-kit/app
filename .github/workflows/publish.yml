@@ -134,7 +134,8 @@ jobs:
       - name: Install Windows install tools
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          npm i node-gyp@9.0.0
+          npm install --global node-gyp@9.0.0
+          npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
 
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
