@@ -37,7 +37,6 @@
   "homepage": "https://github.com/johnlindquist/kitapp#readme",
   "build": {
     "buildDependenciesFromSource": false,
-    "npmRebuild": false,
     "generateUpdatesFilesForAllChannels": true,
     "detectUpdateChannel": "true",
     "productName": "Kit",

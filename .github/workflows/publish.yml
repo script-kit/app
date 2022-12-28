@@ -137,6 +137,11 @@ jobs:
       #     npm install --global node-gyp@9.0.0
       #     npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
 
+      - name: Install node-gyp with --devdir
+        if: matrix.os == 'windows-latest'
+        run: |
+          npm i -g node-gyp; node-gyp install; node-gyp install --devdir="$env:USERPROFILE\.electron-gyp" --target=$(jq -r .devDependencies.electron package.json) --dist-url="https://electronjs.org/headers"
+
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
         with:
