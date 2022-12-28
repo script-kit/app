@@ -179,7 +179,7 @@ jobs:
           electron-rebuild --version 22.0.0 --parallel --force --types prod,dev,optional --module-dir .
           npm i --force
           npm run build
-          electron-builder --publish always --win --${{ matrix.arch }}
+          electron-builder --publish always --win --${{ matrix.arch }} -c.build.nodeGypRebuild=false
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
