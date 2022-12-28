@@ -140,9 +140,9 @@ jobs:
       - name: Install node-gyp with --devdir
         if: matrix.os == 'windows-latest'
         run: |
-          # npx node-gyp install
           npm install -g node-gyp
           npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
+          npx node-gyp install
 
       - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
