@@ -1,6 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { app } from 'electron';
 import path from 'path';
+import log from 'electron-log';
 import { readFileSync } from 'fs';
 
 export function slash(p: string) {
@@ -14,10 +15,18 @@ export function slash(p: string) {
   return p.replace(/\\/g, '/');
 }
 
-const checkPackaged = (name: string) =>
-  app.isPackaged
+const checkPackaged = (name: string) => {
+  log.info(`app.isPackaged: ${app.isPackaged ? 'true' : 'false'}}`);
+  log.info({ resourcesPath: process.resourcesPath });
+
+  const filePath = app.isPackaged
     ? path.resolve(process.resourcesPath, name)
     : path.resolve(process.cwd(), name);
+
+  log.info({ filePath });
+
+  return filePath;
+};
 
 export const getAssetPath = (...paths: string[]): string => {
   return slash(path.resolve(checkPackaged('assets'), ...paths));

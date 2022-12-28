@@ -13,6 +13,7 @@ import {
   PromptData,
   PromptBounds,
 } from '@johnlindquist/kit/types/cjs';
+import url from 'url';
 
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
@@ -210,7 +211,20 @@ export const createPromptWindow = async () => {
     VITE_DEV_SERVER_URL: process.env.VITE_DEV_SERVER_URL,
   });
   // shell.openExternal(process.env.VITE_DEV_SERVER_URL);
-  await promptWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+
+  if (process.env.VITE_DEV_SERVER_URL) {
+    // electron-vite-vue#298
+    await promptWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+    // Open devTool if the app is not packaged
+    // win.webContents.openDevTools();
+  } else {
+    const indexHtml = path.join(process.env.DIST, 'index.html');
+    // convert indexHtml to file:// url
+    const fileUrl = url.pathToFileURL(indexHtml).toString();
+
+    log.info(`Loading prompt window html from ${fileUrl}`);
+    await promptWindow.loadURL(fileUrl);
+  }
 
   // promptWindow.on('ready-to-show', function () {
   //   promptWindow.showInactive();
