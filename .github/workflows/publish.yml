@@ -173,7 +173,9 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx node-gyp install
+          # npx node-gyp install
+          # DEBUG=electron-rebuild npx electron-rebuild
+          DEBUG=electron-rebuild .\\node_modules\\.bin\\electron-rebuild --parallel --force --types prod,dev,optional --module-dir .
           npm i --force
           npm run publish -- --win --${{ matrix.arch }}
 
@@ -202,7 +204,6 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx node-gyp install
           npm i --force
           npm i node-mac-permissions --force
           npm run publish -- --mac --${{ matrix.arch }}
