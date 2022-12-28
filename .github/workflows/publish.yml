@@ -175,10 +175,11 @@ jobs:
         run: |
           npx node-gyp install
           # DEBUG=electron-rebuild npx electron-rebuild
-          npm i -g @electron/rebuild
+          npm i -g @electron/rebuild electron-builder
           electron-rebuild --version 22.0.0 --parallel --force --types prod,dev,optional --module-dir .
           npm i --force
-          npm run publish -- --win --${{ matrix.arch }}
+          npm run build
+          electron-builder --publish always --win --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
