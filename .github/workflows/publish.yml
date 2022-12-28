@@ -157,7 +157,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm i
-          npm i -g typescript vite
+          npm i -g typescript vite node-gyp@9.0.0
           npm run publish -- --win --${{ matrix.arch }}
 
       - name: Publish linux
