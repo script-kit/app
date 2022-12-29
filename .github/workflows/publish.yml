@@ -175,7 +175,7 @@ jobs:
         run: |
           npx node-gyp install
           npm i --force
-          yarn release -- --win --${{ matrix.arch }}
+          npm run release -- --win --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
