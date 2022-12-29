@@ -173,7 +173,7 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # npx node-gyp install
+          npx node-gyp install
           npm i --force
           yarn release -- --win --${{ matrix.arch }}
 
