@@ -180,7 +180,7 @@ jobs:
           npm i --force
           # npm run build
           # electron-builder --config.nodeGypRebuild=false --publish always --win --${{ matrix.arch }}
-          yarn publish --win --${{ matrix.arch }}
+          yarn publish -- --win --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
