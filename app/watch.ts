@@ -46,7 +46,7 @@ const addWatch = (watchString: string, scriptPath: string) => {
       ? JSON.parse(pathsString).map(normalizePath(scriptPath))
       : normalizePath(scriptPath)(pathsString);
 
-    log.info(`Watched paths:`, { paths });
+    // log.info(`Watched paths:`, { paths });
 
     const watcher = chokidar.watch(paths, {
       ignoreInitial: true,

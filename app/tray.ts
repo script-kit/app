@@ -8,6 +8,7 @@ import {
   MenuItemConstructorOptions,
   globalShortcut,
   shell,
+  systemPreferences,
 } from 'electron';
 import path from 'path';
 import { rm } from 'fs/promises';
@@ -122,11 +123,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
       authItems.push({
         label: `Click to Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
         click: async () => {
-          const { askForAccessibilityAccess } = await import(
-            'node-mac-permissions'
-          );
-
-          askForAccessibilityAccess();
+          systemPreferences.isTrustedAccessibilityClient(true);
         },
         icon: menuIcon(kitState.notifyAuthFail ? 'warn' : 'cogwheel'),
       });

@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import { clipboard, NativeImage } from 'electron';
+import { clipboard, NativeImage, systemPreferences } from 'electron';
 import { Observable, Subscription } from 'rxjs';
 import {
   debounceTime,
@@ -265,9 +265,8 @@ export const preStartConfigureInterval = async () => {
     await configureInterval();
   } else {
     await updateAppDb({ authorized: false });
-    const { askForAccessibilityAccess } = await import('node-mac-permissions');
 
-    askForAccessibilityAccess();
+    // systemPreferences.isTrustedAccessibilityClient(true);
 
     accessibilityInterval = setInterval(async () => {
       log.silly(`Checking for accessibility authorization...`);

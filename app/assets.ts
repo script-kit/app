@@ -16,14 +16,14 @@ export function slash(p: string) {
 }
 
 const checkPackaged = (name: string) => {
-  log.info(`app.isPackaged: ${app.isPackaged ? 'true' : 'false'}}`);
-  log.info({ resourcesPath: process.resourcesPath });
+  // log.info(`app.isPackaged: ${app.isPackaged ? 'true' : 'false'}}`);
+  // log.info({ resourcesPath: process.resourcesPath });
 
   const filePath = app.isPackaged
     ? path.resolve(process.resourcesPath, name)
     : path.resolve(process.cwd(), name);
 
-  log.info({ filePath });
+  // log.info({ filePath });
 
   return filePath;
 };

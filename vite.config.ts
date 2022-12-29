@@ -11,16 +11,94 @@ rmSync(path.join(__dirname, 'dist-electron'), { recursive: true, force: true });
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // optimizeDeps: {
+  //   exclude: [
+  //     'chokidar', // C++
+  //     'frontmost-app', // C++
+  //     'glasstron-clarity', // C++
+  //     'node-pty', // C++
+  //     'node-mac-permissions', // C++
+  //     'native-keymap', // C++
+  //     'uiohook', // C++
+  //     '@nut-tree/nut-js', // C++
+  //     'express',
+  //     'express-ws',
+  //     'get-port',
+  //     'fs-extra',
+  //     'image-size',
+  //     'node-stream-zip',
+  //     'tar',
+  //     'tail',
+  //     'download', // esm
+  //     'nanoid', // esm
+  //   ],
+  // },
   resolve: {
     alias: {
       '@': path.join(__dirname, 'src'),
       styles: path.join(__dirname, 'src/assets/styles'),
     },
   },
+  // build: {
+  //   minify: false,
+  //   rollupOptions: {
+  //     external: [
+  //       'chokidar', // C++
+  //       'frontmost-app', // C++
+  //       'glasstron-clarity', // C++
+  //       'node-pty', // C++
+  //       'node-mac-permissions', // C++
+  //       'native-keymap', // C++
+  //       'uiohook', // C++
+  //       '@nut-tree/nut-js', // C++
+  //       'express',
+  //       'express-ws',
+  //       'get-port',
+  //       'fs-extra',
+  //       'image-size',
+  //       'node-stream-zip',
+  //       'tar',
+  //       'tail',
+
+  //       'download', // esm
+  //       'nanoid', // esm
+  //     ],
+  //   },
+  // },
   plugins: [
     react(),
     electron({
-      include: ['electron/main'],
+      include: ['app'],
+
+      // api: {
+      //   vite: {
+      //     config: {
+      //       esbuild: {
+      //         exclude: [
+      //           'chokidar', // C++
+      //           'frontmost-app', // C++
+      //           'glasstron-clarity', // C++
+      //           'node-pty', // C++
+      //           'node-mac-permissions', // C++
+      //           'native-keymap', // C++
+      //           'uiohook', // C++
+      //           '@nut-tree/nut-js', // C++
+      //           'express',
+      //           'express-ws',
+      //           'get-port',
+      //           'fs-extra',
+      //           'image-size',
+      //           'node-stream-zip',
+      //           'tar',
+      //           'tail',
+
+      //           'download', // esm
+      //           'nanoid', // esm
+      //         ],
+      //       },
+      //     },
+      //   },
+      // },
 
       transformOptions: {
         sourcemap: !!process.env.VSCODE_DEBUG,
@@ -45,6 +123,11 @@ export default defineConfig({
     // Use Node.js API in the Renderer-process
     renderer({
       nodeIntegration: true,
+      optimizeDeps: {
+        buildOptions: {
+          external: ['express'],
+        },
+      },
     }),
   ],
   server: process.env.VSCODE_DEBUG

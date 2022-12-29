@@ -14,7 +14,7 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
-process.env.DIST_ELECTRON = path.join(__dirname, '../');
+process.env.DIST_ELECTRON = path.join(__dirname, './');
 process.env.DIST = path.join(process.env.DIST_ELECTRON, '../dist');
 
 process.env.PUBLIC = process.env.VITE_DEV_SERVER_URL
@@ -26,6 +26,7 @@ process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 
 import {
   app,
+  clipboard,
   protocol,
   powerMonitor,
   shell,
@@ -35,7 +36,6 @@ import {
 
 import StreamZip from 'node-stream-zip';
 import tar from 'tar';
-import clipboardy from 'clipboardy';
 import unhandled from 'electron-unhandled';
 import { openNewGitHubIssue, debugInfo } from 'electron-util';
 import 'regenerator-runtime/runtime';
@@ -651,7 +651,7 @@ const ohNo = async (error: Error) => {
     encoding: 'utf8',
   });
 
-  await clipboardy.write(
+  await clipboard.writeText(
     `
 ${error.message}
 ${error.stack}

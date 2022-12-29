@@ -35,6 +35,7 @@ import { getKitScript, kitState } from './state';
 import { pathsAreEqual } from './helpers';
 
 app.on('second-instance', async (_event, argv) => {
+  if (process.env.NODE_ENV === 'development') return;
   log.info('second-instance', _event, argv);
   const { _ } = minimist(argv);
   const [, , argScript, ...argArgs] = _;
