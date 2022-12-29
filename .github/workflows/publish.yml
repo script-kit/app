@@ -180,7 +180,7 @@ jobs:
           npm i --force
           # npm run build
           # electron-builder --config.nodeGypRebuild=false --publish always --win --${{ matrix.arch }}
-          yarn publish -- --win --${{ matrix.arch }}
+          yarn release -- --win --${{ matrix.arch }}
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
@@ -194,7 +194,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm i --force
-          npm run publish -- --linux AppImage deb rpm --${{ matrix.arch }}
+          npm run release -- --linux AppImage deb rpm --${{ matrix.arch }}
 
       - name: Publish mac
         if: matrix.os == 'macos-12'
@@ -209,4 +209,4 @@ jobs:
         run: |
           npm i --force
           npm i node-mac-permissions --force
-          npm run publish -- --mac --${{ matrix.arch }}
+          npm run release -- --mac --${{ matrix.arch }}
