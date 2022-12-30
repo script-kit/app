@@ -109,11 +109,11 @@ export default defineConfig({
     // Use Node.js API in the Renderer-process
     renderer({
       nodeIntegration: true,
-      // optimizeDeps: {
-      //   buildOptions: {
-      //     external: ['native-keymap', 'esbuild', 'frontmost-app'],
-      //   },
-      // },
+      optimizeDeps: {
+        buildOptions: {
+          external: ['@johnlindquist/kit'],
+        },
+      },
     }),
   ],
   server: process.env.VSCODE_DEBUG
