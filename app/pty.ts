@@ -6,6 +6,9 @@ import log from 'electron-log';
 import { Server } from 'net';
 import getPort from './get-port';
 import { kitState } from './state';
+import express from 'express';
+import expressWs from 'express-ws';
+import * as pty from 'node-pty';
 
 let t: any = null;
 let server: Server | null = null;
@@ -22,10 +25,6 @@ export const startPty = async (config: any = {}) => {
   } catch (error) {
     // ignore
   }
-
-  const { default: express } = await import('express');
-  const { default: expressWs } = await import('express-ws');
-  const pty = await import('node-pty');
 
   const command = config?.input || '';
   if (command) log.info(`Terminal command:`, { command });

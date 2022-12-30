@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "m1": "electron-builder --mac dir --arm64 -c.mac.identity=null --publish never",
+    "m1": "npm run build && electron-builder --mac dir --arm64 -c.mac.identity=null --publish never",
     "release": "npm run build && electron-builder --publish always"
   },
   "repository": {
@@ -47,7 +47,8 @@
     ],
     "files": [
       "dist-electron",
-      "dist"
+      "dist",
+      ".esmodule/**"
     ],
     "afterSign": ".erb/scripts/Notarize.js",
     "afterPack": ".erb/scripts/BundleNode.js",
@@ -231,8 +232,9 @@
     "typescript": "4.9.4",
     "url-loader": "4.1.1",
     "vite": "^4.0.3",
-    "vite-electron-plugin": "^0.6.4",
-    "vite-plugin-electron-renderer": "^0.11.3"
+    "vite-electron-plugin": "^0.7.1",
+    "vite-plugin-electron-renderer": "^0.11.3",
+    "vite-plugin-esmodule": "^1.4.4"
   },
   "dependencies": {
     "@fontsource/fira-mono": "^4.5.8",
@@ -294,7 +296,6 @@
     "native-keymap": "^3.3.2",
     "node-abi": "^3.30.0",
     "node-downloader-helper": "1.0.18",
-    "node-mac-permissions": "^2.2.1",
     "node-pty": "^0.11.0-beta26",
     "node-schedule": "2.1.0",
     "node-stream-zip": "^1.15.0",

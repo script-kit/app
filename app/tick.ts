@@ -25,6 +25,9 @@ import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
 import { Choice, Script } from '@johnlindquist/kit/types/cjs';
 import { Trigger } from '@johnlindquist/kit/cjs/enum';
 import { remove } from 'lodash';
+import { nanoid } from 'nanoid';
+
+import frontmost from 'frontmost-app';
 
 import { emitter, KitEvent } from './events';
 import {
@@ -281,12 +284,11 @@ export const preStartConfigureInterval = async () => {
 };
 
 export const configureInterval = async () => {
-  const { nanoid } = await import('nanoid');
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
 
   if (kitState.isMac) {
     try {
-      ({ default: frontmost } = await import('frontmost-app' as any));
+      // ({ default: frontmost } = await import('frontmost-app' as any));
     } catch (e) {
       log.warn(e);
     }
@@ -371,7 +373,7 @@ export const configureInterval = async () => {
     }),
     debounceTime(200),
     switchMap(async () => {
-      if (frontmost) {
+      if (kitState.isMac && frontmost) {
         try {
           const frontmostApp = await frontmost();
           const ignoreList = [
@@ -385,6 +387,8 @@ export const configureInterval = async () => {
           if (ignoreList.find((app) => frontmostApp.bundleId.includes(app))) {
             log.info(`Ignoring clipboard for ${frontmostApp.bundleId}`);
             return false;
+          } else {
+            log.info(`Using clipboard for ${frontmostApp.bundleId}`);
           }
 
           return frontmostApp;

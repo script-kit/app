@@ -203,5 +203,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm i --force
-          npm i node-mac-permissions --force
           npm run release -- --mac --${{ matrix.arch }}

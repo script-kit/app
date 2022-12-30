@@ -10,7 +10,13 @@ import { assign, debounce } from 'lodash';
 import path from 'path';
 import os from 'os';
 import { ChildProcess } from 'child_process';
-import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  nativeTheme,
+  systemPreferences,
+} from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { KeyboardClass } from '@nut-tree/nut-js';
@@ -35,6 +41,9 @@ import {
 import { UI, Trigger } from '@johnlindquist/kit/cjs/enum';
 import { noScript } from '@johnlindquist/kit/cjs/defaults';
 import axios from 'axios';
+
+import nativeKeymap from 'native-keymap';
+
 import internetAvailable from './internet-available';
 import { getAssetPath } from './assets';
 import { emitter, KitEvent } from './events';
@@ -202,20 +211,19 @@ export const checkAccessibility = () =>
     log.verbose(`🔑 Checking accessibility permissions...`);
     if (kitState.isMac) {
       log.verbose(`💻 Mac detected.`);
-      import('node-mac-permissions')
-        .then(({ getAuthStatus }) => {
-          kitState.authorized = getAuthStatus('accessibility') === 'authorized';
-          log.verbose(
-            `🔑 Accessibility permissions: ${kitState.authorized ? '✅' : '❌'}`
-          );
-          resolve(kitState.authorized);
-          return true;
-        })
-        .catch((error) => {
-          log.error(`🔑 Error checking accessibility permissions: ${error}`);
-          reject(error);
-          return false;
-        });
+      const trusted = systemPreferences.isTrustedAccessibilityClient(true);
+      log.info({ trusted });
+      if (trusted) {
+        kitState.authorized = true;
+        log.verbose(
+          `🔑 Accessibility permissions: ${kitState.authorized ? '✅' : '❌'}`
+        );
+        resolve(kitState.authorized);
+      } else {
+        log.error(`🔑 Error checking accessibility permissions`);
+        reject(false);
+        return false;
+      }
     } else {
       log.info(`💻 Not Mac. Skipping accessibility check.`);
       kitState.authorized = true;
@@ -664,8 +672,6 @@ export const updateAppDb = async (settings: Partial<AppDb>) => {
   }
 };
 
-let nativeKeymap: any = null;
-
 const defaultKeyMap: {
   [key: string]: string;
 } = {
@@ -757,7 +763,6 @@ export const initKeymap = async () => {
   log.info(`🔑 Initializing keymap...`);
   if (!kitState.keymap) {
     try {
-      ({ default: nativeKeymap } = await import('native-keymap' as any));
       let keymap = nativeKeymap.getKeyMap();
 
       let value = keymap?.KeyA.value;

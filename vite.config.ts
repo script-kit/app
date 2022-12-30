@@ -3,7 +3,12 @@ import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import electron from 'vite-electron-plugin';
-import { customStart, loadViteEnv, alias } from 'vite-electron-plugin/plugin';
+import {
+  customStart,
+  loadViteEnv,
+  alias,
+  esmodule,
+} from 'vite-electron-plugin/plugin';
 import renderer from 'vite-plugin-electron-renderer';
 import pkg from './package.json';
 
@@ -69,41 +74,22 @@ export default defineConfig({
     react(),
     electron({
       include: ['app'],
-
-      // api: {
-      //   vite: {
-      //     config: {
-      //       esbuild: {
-      //         exclude: [
-      //           'chokidar', // C++
-      //           'frontmost-app', // C++
-      //           'glasstron-clarity', // C++
-      //           'node-pty', // C++
-      //           'node-mac-permissions', // C++
-      //           'native-keymap', // C++
-      //           'uiohook', // C++
-      //           '@nut-tree/nut-js', // C++
-      //           'express',
-      //           'express-ws',
-      //           'get-port',
-      //           'fs-extra',
-      //           'image-size',
-      //           'node-stream-zip',
-      //           'tar',
-      //           'tail',
-
-      //           'download', // esm
-      //           'nanoid', // esm
-      //         ],
-      //       },
-      //     },
-      //   },
-      // },
-
+      api: {
+        vite: {
+          config: {
+            // esbuild: {
+            //   exclude: ['esbuild', 'native-keymap', 'frontmost-app'],
+            // },
+          },
+        },
+      },
       transformOptions: {
         sourcemap: !!process.env.VSCODE_DEBUG,
       },
       plugins: [
+        esmodule({
+          include: ['execa', 'nanoid', 'download'],
+        }),
         ...(process.env.VSCODE_DEBUG
           ? [
               // Will start Electron via VSCode Debug
@@ -123,11 +109,11 @@ export default defineConfig({
     // Use Node.js API in the Renderer-process
     renderer({
       nodeIntegration: true,
-      optimizeDeps: {
-        buildOptions: {
-          external: ['express'],
-        },
-      },
+      // optimizeDeps: {
+      //   buildOptions: {
+      //     external: ['native-keymap', 'esbuild', 'frontmost-app'],
+      //   },
+      // },
     }),
   ],
   server: process.env.VSCODE_DEBUG

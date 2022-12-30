@@ -57,6 +57,8 @@ import {
   mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
+import frontmost from 'frontmost-app';
+
 import { subscribeKey } from 'valtio/utils';
 import { getLog, mainLog, warn } from './logs';
 import {
@@ -693,7 +695,6 @@ const kitMessageMap: ChannelHandler = {
   }),
   GET_ACTIVE_APP: toProcess(async ({ child }, { channel }) => {
     if (kitState.isMac) {
-      const { default: frontmost } = await import('frontmost-app' as any);
       const frontmostApp = await frontmost();
       childSend(child, { channel, app: frontmostApp });
     } else {
@@ -1539,15 +1540,6 @@ const kitMessageMap: ChannelHandler = {
       value = true;
     } else {
       value = true;
-      // const { getAuthStatus, askForFullDiskAccess } = await import(
-      //   'node-mac-permissions'
-      // );
-      // const authStatus = getAuthStatus('full-disk-access');
-      // if (authStatus === 'authorized') {
-      //   value = true;
-      // } else {
-      //   askForFullDiskAccess();
-      // }
     }
 
     childSend(child, { channel, value });

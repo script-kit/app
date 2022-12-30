@@ -38,7 +38,6 @@ import StreamZip from 'node-stream-zip';
 import tar from 'tar';
 import unhandled from 'electron-unhandled';
 import { openNewGitHubIssue, debugInfo } from 'electron-util';
-import 'regenerator-runtime/runtime';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
@@ -84,6 +83,9 @@ import {
   getShortcutsDb,
   getAppDb,
 } from '@johnlindquist/kit/cjs/db';
+
+import download from 'download';
+
 import { subscribeKey } from 'valtio/utils';
 import { assign } from 'lodash';
 import { setupTray } from './tray';
@@ -862,7 +864,6 @@ const checkKit = async () => {
       try {
         const nodeUrl = await readFile(nodeUrlPath, 'utf8');
         await setupLog(`Download node.js from ${nodeUrl}`);
-        const { default: download } = await import('download');
         const buffer = await download(nodeUrl.trim());
         await writeFile(KIT_NODE_TAR, buffer);
         log.info(`Node download complete. Beginning extraction...`);
@@ -975,7 +976,6 @@ const checkKit = async () => {
         const kitUrl = await readFile(getAssetPath('kit_url.txt'), 'utf8');
         await setupLog(`Download SDK from ${kitUrl}`);
         log.info(`Downloading pre-bundled kit...`);
-        const { default: download } = await import('download');
         const buffer = await download(kitUrl.trim());
         await writeFile(kitTar, buffer);
         log.info(`Downloading complete. Beginning extraction...`);

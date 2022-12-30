@@ -34,9 +34,6 @@ log.info({ mainLogPath });
 
 log.info(`
 
-
-
-
 🟢🟢 🟢  !!!SCRIPT KIT TIME!!! 🟢 🟢 🟢 `);
 
 interface Logger {
@@ -101,6 +98,7 @@ export const warn = (message: string) => {
   log.warn(message);
 };
 
+process.env.LOG_LEVEL = 'silly';
 log.transports.console.level = 'info';
 if (process.env.LOG_LEVEL) {
   log.info('🪵 Setting log level', process.env.LOG_LEVEL);
