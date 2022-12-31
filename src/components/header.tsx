@@ -6,7 +6,7 @@ import { useAtom, useAtomValue } from 'jotai';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { AnimatePresence } from 'framer-motion';
 import {
-  _description,
+  descriptionAtom,
   mouseEnabledAtom,
   nameAtom,
   openAtom,
@@ -80,7 +80,7 @@ export default function Header() {
   const [script] = useAtom(scriptAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [, setOpen] = useAtom(openAtom);
-  const [description] = useAtom(_description);
+  const [description] = useAtom(descriptionAtom);
   const [logo] = useAtom(logoAtom);
   const [name] = useAtom(nameAtom);
   const [processes] = useAtom(processesAtom);

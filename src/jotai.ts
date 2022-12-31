@@ -31,7 +31,6 @@ import {
   AudioOptions,
   Appearance,
 } from '@johnlindquist/kit/types/kitapp';
-import { editor } from 'monaco-editor';
 
 import { debounce, drop as _drop, isEqual } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
@@ -253,6 +252,7 @@ const _ui = atom<UI>(UI.arg);
 export const uiAtom = atom(
   (g) => g(_ui),
   (g, s, a: UI) => {
+    console.log(`UI: ${a}`);
     s(_ui, a);
     if ([UI.arg, UI.textarea, UI.hotkey, UI.splash].includes(a)) {
       s(inputFocusAtom, true);
@@ -390,6 +390,8 @@ const editorConfig = atom<EditorConfig | null>({
   extraLibs: [],
 });
 
+import type { editor } from 'monaco-editor';
+
 const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   fontFamily: 'JetBrains Mono',
   fontSize: 18,
@@ -415,6 +417,7 @@ export const editorOptions = atom<editor.IStandaloneEditorConstructionOptions>(
 export const editorConfigAtom = atom(
   (g) => g(editorConfig),
   (g, s, a: EditorConfig) => {
+    console.log('editorConfigAtom', a);
     s(editorConfig, a);
 
     // s(inputAtom, a.value);
@@ -783,7 +786,8 @@ export const scriptAtom = atom(
 
     // s(choices, []);
     s(processingAtom, false);
-    s(_description, a?.description || '');
+    console.log('scriptAtom', a);
+    s(descriptionAtom, a?.description || '');
     s(nameAtom, a?.name || '');
     s(enterAtom, '');
     s(loadingAtom, false);
@@ -1006,6 +1010,7 @@ export const themeAtom = atom(
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
+    console.log('promptDataAtom', a);
     const prevPromptData = g(promptData);
 
     if (prevPromptData?.ui === UI.editor && g(_inputChangedAtom)) {
@@ -1044,7 +1049,8 @@ export const promptDataAtom = atom(
       }
 
       if (a.description) {
-        s(_description, a.description || g(scriptAtom)?.description || '');
+        console.log('description', a.description);
+        s(descriptionAtom, a.description || g(scriptAtom)?.description || '');
       }
 
       if (a.preview) {
@@ -1164,7 +1170,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     modifiers: g(_modifiers),
     count: g(_choices).length || 0,
     name: g(nameAtom),
-    description: g(_description),
+    description: g(descriptionAtom),
     script: g(_script),
     value: g(_submitValue),
     submitted: g(submittedAtom),
@@ -1408,9 +1414,24 @@ export const previewEnabledAtom = atom(
 );
 
 export const topRefAtom = atom<null | HTMLDivElement>(null);
-export const _description = atom<string>('');
+const _description = atom<string>('');
+export const descriptionAtom = atom(
+  (g) => g(_description),
+  (g, s, a: string) => {
+    console.log('description', a);
+    s(_description, a);
+  }
+);
+const _nameAtom = atom<string>('');
+export const nameAtom = atom(
+  (g) => g(_nameAtom),
+  (g, s, a: string) => {
+    console.log('name', a);
+    s(_nameAtom, a);
+  }
+);
+
 export const logoAtom = atom<string>('');
-export const nameAtom = atom<string>('');
 
 const _enterAtom = atom<string>('');
 export const enterAtom = atom(
@@ -1750,6 +1771,7 @@ export const _kitStateAtom = atom({
 export const kitStateAtom = atom(
   (g) => g(_kitStateAtom),
   (g, s, a: any) => {
+    console.log(`Kit state`, a);
     if (a?.escapePressed) {
       s(audioAtom, null);
     }

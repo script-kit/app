@@ -77,7 +77,7 @@ import {
   uiAtom,
   unfilteredChoicesAtom,
   topRefAtom,
-  _description,
+  descriptionAtom,
   nameAtom,
   textareaValueAtom,
   loadingAtom,
@@ -127,39 +127,6 @@ import Splash from './components/splash';
 import Emoji from './components/emoji';
 import Terminal from './term';
 import Inspector from './components/inspector';
-import MonacoEditor, { Monaco, useMonaco, loader } from '@monaco-editor/react';
-// @ts-ignore
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-// @ts-ignore
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
-// @ts-ignore
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
-// @ts-ignore
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
-// @ts-ignore
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
-
-import * as monaco from 'monaco-editor';
-
-self.MonacoEnvironment = {
-  getWorker(_, label) {
-    if (label === 'json') {
-      return new jsonWorker();
-    }
-    if (label === 'css' || label === 'scss' || label === 'less') {
-      return new cssWorker();
-    }
-    if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return new htmlWorker();
-    }
-    if (label === 'typescript' || label === 'javascript') {
-      return new tsWorker();
-    }
-    return new editorWorker();
-  },
-};
-
-// const vs = uriFromPath(path.join(__dirname, '../assets/vs'));
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor
@@ -239,7 +206,7 @@ export default function App() {
   const setSubmitValue = useSetAtom(submitValueAtom);
   const setMouseEnabled = useSetAtom(mouseEnabledAtom);
   const setTopRef = useSetAtom(topRefAtom);
-  const setDescription = useSetAtom(_description);
+  const setDescription = useSetAtom(descriptionAtom);
   const setName = useSetAtom(nameAtom);
   const setTextareaValue = useSetAtom(textareaValueAtom);
   const setLoading = useSetAtom(loadingAtom);
@@ -263,10 +230,6 @@ export default function App() {
   const setLogValue = useSetAtom(logValueAtom);
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
-
-  useEffect(() => {
-    loader.config({ monaco });
-  }, []);
 
   useShortcuts();
   useEnter();

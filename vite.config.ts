@@ -10,19 +10,41 @@ import {
   esmodule,
   copy,
 } from 'vite-electron-plugin/plugin';
-import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 import renderer from 'vite-plugin-electron-renderer';
+import jotaiDebugLabel from 'jotai/babel/plugin-debug-label';
+import jotaiReactRefresh from 'jotai/babel/plugin-react-refresh';
+
 import pkg from './package.json';
 
 rmSync(path.join(__dirname, 'dist-electron'), { recursive: true, force: true });
 
+const prefix = `monaco-editor/esm/vs`;
+
 export default defineConfig({
+  // build: {
+  //   rollupOptions: {
+  //     output: {
+  //       manualChunks: {
+  //         editorWorker: [`${prefix}/editor/editor.worker?worker`],
+  //         jsonWorker: [`${prefix}/language/json/json.worker?worker`],
+  //         cssWorker: [`${prefix}/language/css/css.worker?worker`],
+  //         htmlWorker: [`${prefix}/language/html/html.worker?worker`],
+  //         tsWorker: [`${prefix}/language/typescript/ts.worker?worker`],
+  //       },
+  //     },
+  //   },
+  // },
   resolve: {
     alias: {
       '@': path.join(__dirname, 'src'),
       styles: path.join(__dirname, 'src/assets/styles'),
+      // '/monaco-editor/': path.resolve(
+      //   __dirname,
+      //   'node_modules/monaco-editor/esm/'
+      // ),
     },
   },
+
   plugins: [
     react(),
     // monacoEditorPlugin({
@@ -37,6 +59,12 @@ export default defineConfig({
         sourcemap: true,
       },
       plugins: [
+        // copy([
+        //   {
+        //     from: 'node_modules/monaco-editor/**/*',
+        //     to: 'assets/monaco-editor',
+        //   },
+        // ]),
         esmodule({
           include: ['execa', 'nanoid', 'download'],
         }),
@@ -44,6 +72,17 @@ export default defineConfig({
     }),
     renderer({
       nodeIntegration: true,
+      // optimizeDeps: {
+      //   buildOptions: {
+      //     external: [
+      //       `monaco-editor/esm/vs/language/json/json.worker`,
+      //       `monaco-editor/esm/vs/language/css/css.worker`,
+      //       `monaco-editor/esm/vs/language/html/html.worker`,
+      //       `monaco-editor/esm/vs/language/typescript/ts.worker`,
+      //       `monaco-editor/esm/vs/editor/editor.worker`,
+      //     ],
+      //   },
+      // },
     }),
   ],
   server: process.env.VSCODE_DEBUG

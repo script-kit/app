@@ -45,7 +45,6 @@ import axios from 'axios';
 import nativeKeymap from 'native-keymap';
 
 import internetAvailable from './internet-available';
-import { getAssetPath } from './assets';
 import { emitter, KitEvent } from './events';
 import { getIcon } from './public';
 

@@ -1,6 +1,6 @@
-import { editor as monacoEditor } from 'monaco-editor';
+import type { editor } from 'monaco-editor';
 
-export const nightOwl: monacoEditor.IStandaloneThemeData = {
+export const nightOwl: editor.IStandaloneThemeData = {
   base: 'vs-dark',
   inherit: true,
   rules: [
@@ -683,7 +683,7 @@ export const nightOwl: monacoEditor.IStandaloneThemeData = {
   },
 };
 
-export const kitLight: monacoEditor.IStandaloneThemeData = {
+export const kitLight: editor.IStandaloneThemeData = {
   base: 'vs',
   inherit: true,
   rules: [],
