@@ -25,6 +25,7 @@ export enum KitEvent {
   RestartKeyWatcher = 'RestartKeyWatcher',
   KeymapChanged = 'KeymapChanged',
   RemoveMostRecent = 'RemoveMostRecent',
+  ReloadWindow = 'ReloadWindow',
 }
 
 interface KitEmitter {

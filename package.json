@@ -35,103 +35,6 @@
     "ts"
   ],
   "homepage": "https://github.com/johnlindquist/kitapp#readme",
-  "build": {
-    "buildDependenciesFromSource": false,
-    "generateUpdatesFilesForAllChannels": true,
-    "detectUpdateChannel": "true",
-    "productName": "Kit",
-    "appId": "app.scriptkit",
-    "asar": true,
-    "asarUnpack": [
-      "**\\*.{node,dll}"
-    ],
-    "files": [
-      "dist-electron",
-      "dist",
-      ".esmodule/**"
-    ],
-    "afterSign": ".erb/scripts/Notarize.js",
-    "afterPack": ".erb/scripts/BundleNode.js",
-    "protocols": [
-      {
-        "name": "kit",
-        "role": "Viewer",
-        "schemes": [
-          "kit"
-        ]
-      }
-    ],
-    "win": {
-      "artifactName": "${productName}-Windows-${version}-${arch}.${ext}"
-    },
-    "mac": {
-      "artifactName": "${productName}-macOS-${version}-${arch}.${ext}",
-      "type": "distribution",
-      "hardenedRuntime": true,
-      "entitlements": "assets/entitlements.mac.plist",
-      "entitlementsInherit": "assets/entitlements.mac.plist",
-      "gatekeeperAssess": false,
-      "extendInfo": {
-        "CFBundleDocumentTypes": [
-          {
-            "CFBundleTypeName": "Folders",
-            "CFBundleTypeRole": "Viewer",
-            "LSHandlerRank": "Alternate",
-            "LSItemContentTypes": [
-              "public.folder",
-              "com.apple.bundle",
-              "com.apple.package",
-              "com.apple.resolvable"
-            ]
-          },
-          {
-            "CFBundleTypeName": "UnixExecutables",
-            "CFBundleTypeRole": "Shell",
-            "LSHandlerRank": "Alternate",
-            "LSItemContentTypes": [
-              "public.unix-executable"
-            ]
-          }
-        ]
-      }
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    },
-    "linux": {
-      "artifactName": "${productName}-Linux-${version}-${arch}.${ext}",
-      "category": "Development"
-    },
-    "directories": {
-      "buildResources": "assets",
-      "output": "release"
-    },
-    "extraResources": [
-      {
-        "from": "assets",
-        "to": "assets",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
-    "publish": {
-      "provider": "github",
-      "owner": "johnlindquist",
-      "repo": "kitapp"
-    }
-  },
   "jest": {
     "resolver": "jest-node-exports-resolver",
     "testURL": "http://localhost/",
@@ -222,7 +125,6 @@
     "lint-staged": "12.1.2",
     "mini-css-extract-plugin": "2.6.0",
     "mocha": "9.0.3",
-    "monaco-editor": "^0.34.1",
     "opencollective-postinstall": "2.0.3",
     "postcss-cli": "8.3.1",
     "postcss-loader": "7.0.2",
@@ -246,7 +148,7 @@
     "@fontsource/jetbrains-mono": "^4.5.9",
     "@heroicons/react": "^2.0.13",
     "@johnlindquist/kit": "^0.39.9",
-    "@monaco-editor/react": "^4.4.6",
+    "@monaco-editor/react": "^4.4.5",
     "@nut-tree/nut-js": "^2.2.1",
     "@react-hook/resize-observer": "1.2.0",
     "@rooks/use-previous": "4.10.0",
@@ -276,7 +178,7 @@
     "express": "^4.18.2",
     "express-ws": "^5.0.2",
     "filter-async-rxjs-pipe": "1.0.0",
-    "framer-motion": "6.3.3",
+    "framer-motion": "^8.0.2",
     "frontmost-app": "^1.0.0",
     "fs-extra": "10.0.0",
     "get-port": "^6.1.2",
@@ -323,6 +225,7 @@
     "uiohook-napi": "^1.5.0",
     "untildify": "^4.0.0",
     "valtio": "1.5.1",
+    "vite-plugin-monaco-editor": "^1.1.0",
     "xterm-addon-attach": "0.6.0",
     "xterm-addon-fit": "0.5.0",
     "xterm-addon-ligatures": "0.5.2",

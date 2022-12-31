@@ -8,112 +8,42 @@ import {
   loadViteEnv,
   alias,
   esmodule,
+  copy,
 } from 'vite-electron-plugin/plugin';
+import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 import renderer from 'vite-plugin-electron-renderer';
 import pkg from './package.json';
 
 rmSync(path.join(__dirname, 'dist-electron'), { recursive: true, force: true });
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  // optimizeDeps: {
-  //   exclude: [
-  //     'chokidar', // C++
-  //     'frontmost-app', // C++
-  //     'glasstron-clarity', // C++
-  //     'node-pty', // C++
-  //     'node-mac-permissions', // C++
-  //     'native-keymap', // C++
-  //     'uiohook', // C++
-  //     '@nut-tree/nut-js', // C++
-  //     'express',
-  //     'express-ws',
-  //     'get-port',
-  //     'fs-extra',
-  //     'image-size',
-  //     'node-stream-zip',
-  //     'tar',
-  //     'tail',
-  //     'download', // esm
-  //     'nanoid', // esm
-  //   ],
-  // },
   resolve: {
     alias: {
       '@': path.join(__dirname, 'src'),
       styles: path.join(__dirname, 'src/assets/styles'),
     },
   },
-  // build: {
-  //   minify: false,
-  //   rollupOptions: {
-  //     external: [
-  //       'chokidar', // C++
-  //       'frontmost-app', // C++
-  //       'glasstron-clarity', // C++
-  //       'node-pty', // C++
-  //       'node-mac-permissions', // C++
-  //       'native-keymap', // C++
-  //       'uiohook', // C++
-  //       '@nut-tree/nut-js', // C++
-  //       'express',
-  //       'express-ws',
-  //       'get-port',
-  //       'fs-extra',
-  //       'image-size',
-  //       'node-stream-zip',
-  //       'tar',
-  //       'tail',
-
-  //       'download', // esm
-  //       'nanoid', // esm
-  //     ],
-  //   },
-  // },
   plugins: [
     react(),
+    // monacoEditorPlugin({
+    //   publicPath: 'workers',
+    //   customDistPath: (root: string, buildOutDir: string, base: string) =>
+    //     `${root}/${buildOutDir}/workers`,
+    // }),
+
     electron({
       include: ['app'],
-      api: {
-        vite: {
-          config: {
-            // esbuild: {
-            //   exclude: ['esbuild', 'native-keymap', 'frontmost-app'],
-            // },
-          },
-        },
-      },
       transformOptions: {
-        sourcemap: !!process.env.VSCODE_DEBUG,
+        sourcemap: true,
       },
       plugins: [
         esmodule({
           include: ['execa', 'nanoid', 'download'],
         }),
-        ...(process.env.VSCODE_DEBUG
-          ? [
-              // Will start Electron via VSCode Debug
-              customStart(
-                debounce(() =>
-                  console.log(
-                    /* For `.vscode/.debug.script.mjs` */ '[startup] Electron App'
-                  )
-                )
-              ),
-            ]
-          : []),
-        // Allow use `import.meta.env.VITE_SOME_KEY` in Electron-Main
-        loadViteEnv(),
       ],
     }),
-    // Use Node.js API in the Renderer-process
     renderer({
       nodeIntegration: true,
-      optimizeDeps: {
-        buildOptions: {
-          external: ['@johnlindquist/kit'],
-        },
-      },
     }),
   ],
   server: process.env.VSCODE_DEBUG
@@ -127,11 +57,3 @@ export default defineConfig({
     : undefined,
   clearScreen: false,
 });
-
-function debounce<Fn extends (...args: any[]) => void>(fn: Fn, delay = 299) {
-  let t: NodeJS.Timeout;
-  return ((...args) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...args), delay);
-  }) as Fn;
-}

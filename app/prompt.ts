@@ -265,6 +265,11 @@ export const createPromptWindow = async () => {
     });
   });
 
+  emitter.on(KitEvent.ReloadWindow, () => {
+    log.silly(`event: ReloadWindow`);
+    promptWindow?.reload();
+  });
+
   promptWindow?.setMaxListeners(2);
 
   // promptWindow?.webContents.on('before-input-event', (event: any, input) => {

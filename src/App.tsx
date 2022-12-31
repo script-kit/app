@@ -20,7 +20,6 @@ import React, {
   useRef,
 } from 'react';
 
-import path from 'path';
 import DOMPurify from 'dompurify';
 
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
@@ -29,8 +28,6 @@ import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer } from 'electron';
 import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import { debounce } from 'lodash';
-import * as monaco from 'monaco-editor';
-import { loader } from '@monaco-editor/react';
 
 import {
   AppChannel,
@@ -130,15 +127,37 @@ import Splash from './components/splash';
 import Emoji from './components/emoji';
 import Terminal from './term';
 import Inspector from './components/inspector';
+import MonacoEditor, { Monaco, useMonaco, loader } from '@monaco-editor/react';
+// @ts-ignore
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+// @ts-ignore
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+// @ts-ignore
+import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
+// @ts-ignore
+import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
+// @ts-ignore
+import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
 
-function ensureFirstBackSlash(str: string) {
-  return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
-}
+import * as monaco from 'monaco-editor';
 
-function uriFromPath(_path: string) {
-  const pathName = path.resolve(_path).replace(/\\/g, '/');
-  return encodeURI(`file://${ensureFirstBackSlash(pathName)}`);
-}
+self.MonacoEnvironment = {
+  getWorker(_, label) {
+    if (label === 'json') {
+      return new jsonWorker();
+    }
+    if (label === 'css' || label === 'scss' || label === 'less') {
+      return new cssWorker();
+    }
+    if (label === 'html' || label === 'handlebars' || label === 'razor') {
+      return new htmlWorker();
+    }
+    if (label === 'typescript' || label === 'javascript') {
+      return new tsWorker();
+    }
+    return new editorWorker();
+  },
+};
 
 // const vs = uriFromPath(path.join(__dirname, '../assets/vs'));
 
@@ -245,6 +264,10 @@ export default function App() {
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
 
+  useEffect(() => {
+    loader.config({ monaco });
+  }, []);
+
   useShortcuts();
   useEnter();
   useThemeDetector();
@@ -346,10 +369,6 @@ export default function App() {
       document?.activeElement?.dispatchEvent(keyboardEvent);
     },
   };
-
-  useEffect(() => {
-    loader.config({ monaco });
-  }, []);
 
   useEffect(() => {
     Object.entries(messageMap).forEach(([key, fn]) => {

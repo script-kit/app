@@ -14,6 +14,7 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
+process.env.IS_PACKAGED = app.isPackaged ? 'true' : 'false';
 process.env.DIST_ELECTRON = path.join(__dirname, './');
 process.env.DIST = path.join(process.env.DIST_ELECTRON, '../dist');
 

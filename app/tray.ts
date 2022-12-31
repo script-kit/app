@@ -287,6 +287,13 @@ export const openMenu = async (event?: KeyboardEvent) => {
       },
     });
 
+    toolsSubmenu.push({
+      label: `Reload Window`,
+      click: async () => {
+        emitter.emit(KitEvent.ReloadWindow);
+      },
+    });
+
     toolsSubmenu.push(
       {
         type: 'separator',
