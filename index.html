@@ -12,6 +12,17 @@
   </head>
   <body>
     <div id="root"></div>
+    <div id="a11y"></div>
     <script type="module" src="/src/index.tsx"></script>
+    <script>
+      // Weird hack to remove the a11y children due to monaco bug
+      const a11y = document.getElementById('a11y');
+      a11y.addEventListener('DOMNodeInserted', () => {
+        // remove all children
+        while (a11y.firstChild) {
+          a11y.removeChild(a11y.firstChild);
+        }
+      });
+    </script>
   </body>
 </html>

@@ -8,7 +8,6 @@ import { AnimatePresence, AnimateSharedLayout, motion } from 'framer-motion';
 import { useAtom } from 'jotai';
 import {
   appConfigAtom,
-  createAssetAtom,
   runMainScriptAtom,
   splashBodyAtom,
   splashHeaderAtom,
@@ -84,7 +83,7 @@ function Aside() {
     <aside className="col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner">
       <div className="flex flex-col items-center h-full">
         <div className="relative">
-          <img src="/icon.png" className="w-24 mb-2" alt="Script Kit Icon" />
+          <img src="./icon.png" className="w-24 mb-2" alt="Script Kit Icon" />
           {progress !== 100 && (
             <div className="absolute right-0 top-0 bg-bg-base rounded-full p-2 bg-opacity-80 backdrop-blur-lg">
               <Spinner />

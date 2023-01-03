@@ -676,6 +676,7 @@ export const nightOwl: editor.IStandaloneThemeData = {
     'editor.background': '#00000000',
     'editor.selectionBackground': '#ffffff22',
     'editor.lineHighlightBackground': '#ffffff01',
+    'editor.lineHighlightBorder': '#ffffff00',
     'editorCursor.foreground': '#80a4c2',
     'editorWhitespace.foreground': '#2e2040',
     'editorIndentGuide.background': '#5e81ce52',
@@ -689,5 +690,6 @@ export const kitLight: editor.IStandaloneThemeData = {
   rules: [],
   colors: {
     'editor.background': '#FFFFFF00',
+    'editor.lineHighlightBorder': '#ffffff00',
   },
 };

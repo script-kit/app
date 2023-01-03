@@ -1,9 +1,10 @@
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-useless-escape */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, memo } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion } from 'framer-motion';
+import path from 'path';
 import MonacoEditor, { Monaco, useMonaco, loader } from '@monaco-editor/react';
 import { editor as monacoEditor, Range } from 'monaco-editor';
 import { UI } from '@johnlindquist/kit/core/enum';
@@ -22,68 +23,7 @@ import {
 import { useMountMainHeight } from '../hooks';
 import { kitLight, nightOwl } from '../editor-themes';
 
-import * as monaco from 'monaco-editor';
-// @ts-ignore
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-// @ts-ignore
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
-// @ts-ignore
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
-// @ts-ignore
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
-// @ts-ignore
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
-
-self.MonacoEnvironment = {
-  getWorker(_, label) {
-    // async getWorker(_, label) {
-    // const { default: jsonWorker } = await import(
-    //   // @ts-ignore
-    //   'monaco-editor/esm/vs/language/json/json.worker?worker'
-    // );
-    // const { default: cssWorker } = await import(
-    //   // @ts-ignore
-    //   'monaco-editor/esm/vs/language/css/css.worker?worker'
-    // );
-    // const { default: htmlWorker } = await import(
-    //   // @ts-ignore
-    //   'monaco-editor/esm/vs/language/html/html.worker?worker'
-    // );
-    // const { default: tsWorker } = await import(
-    //   // @ts-ignore
-    //   'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
-    // );
-    // const { default: editorWorker } = await import(
-    //   // @ts-ignore
-    //   'monaco-editor/esm/vs/editor/editor.worker?worker'
-    // );
-
-    console.log({
-      _,
-      label,
-      editorWorker,
-      jsonWorker,
-      cssWorker,
-      htmlWorker,
-      tsWorker,
-    });
-    if (label === 'json') {
-      return new jsonWorker();
-    }
-    if (label === 'css' || label === 'scss' || label === 'less') {
-      return new cssWorker();
-    }
-    if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return new htmlWorker();
-    }
-    if (label === 'typescript' || label === 'javascript') {
-      return new tsWorker();
-    }
-    return new editorWorker();
-  },
-};
-
-loader.config({ monaco });
+import Boundary from '../boundary';
 
 const registerPropertiesLanguage = (monaco: Monaco) => {
   monaco.languages.register({ id: 'properties' });
@@ -146,7 +86,7 @@ const registerPropertiesLanguage = (monaco: Monaco) => {
   } as any);
 };
 
-export default function Editor() {
+export default memo(function Editor() {
   const [config] = useAtom(editorConfigAtom);
   const [kitIsDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
@@ -417,24 +357,26 @@ export default function Editor() {
       key="editor"
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
-      transition={{ duration: 0.5, ease: 'circOut' }}
+      transition={{ duration: 0.1, ease: 'circOut' }}
       ref={containerRef}
       className={`
       pt-3 -mb-3
     w-full h-full`}
     >
-      <MonacoEditor
-        className="w-full h-full"
-        beforeMount={onBeforeMount}
-        onMount={onMount}
-        language={(config as EditorOptions)?.language || 'markdown'}
-        // language="typescript"
-        theme={theme}
-        options={options}
-        path="file:///index.ts"
-        value={inputValue}
-        onChange={onChange}
-      />
+      <Boundary>
+        <MonacoEditor
+          className="w-full h-full"
+          beforeMount={onBeforeMount}
+          onMount={onMount}
+          language={(config as EditorOptions)?.language || 'markdown'}
+          // language="typescript"
+          theme={theme}
+          options={options}
+          path="file:///index.ts"
+          value={inputValue}
+          onChange={onChange}
+        />
+      </Boundary>
     </motion.div>
   );
-}
+});

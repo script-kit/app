@@ -18,7 +18,6 @@ import {
   sendShortcutAtom,
   enterButtonNameAtom,
   enterButtonDisabledAtom,
-  createAssetAtom,
 } from '../jotai';
 
 type Action = {
@@ -221,15 +220,7 @@ export function ActionButton(action: Action) {
   );
 }
 
-const loadableIconAtom = loadable(createAssetAtom('svg', 'logo.svg'));
-
 const IconButton = () => {
-  const [lazyIcon] = useAtom(loadableIconAtom);
-  if (lazyIcon.state === 'hasError') return <span>{lazyIcon.error}</span>;
-  if (lazyIcon.state === 'loading') {
-    return <span>Loading...</span>;
-  }
-
   return (
     <motion.button
       key="icon-button"

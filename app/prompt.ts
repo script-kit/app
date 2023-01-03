@@ -112,6 +112,8 @@ export const createPromptWindow = async () => {
       contextIsolation: false,
       devTools: true,
       backgroundThrottling: false,
+      experimentalFeatures: true,
+      nodeIntegrationInWorker: true,
     },
     closable: false,
     minimizable: false,
@@ -175,7 +177,7 @@ export const createPromptWindow = async () => {
   // promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   promptWindow?.webContents?.on('did-finish-load', () => {
-    log.silly(`event: did-finish-load`);
+    log.silly(`promptEvent: did-finish-load`);
     sendToPrompt(Channel.APP_CONFIG, {
       delimiter: path.delimiter,
       sep: path.sep,
@@ -190,8 +192,41 @@ export const createPromptWindow = async () => {
 
   // reload if unresponsive
   promptWindow?.webContents?.on('unresponsive', () => {
-    log.error(`Prompt window unresponsive. Reloading`);
+    log.error(`promptEvent: Prompt window unresponsive. Reloading`);
     promptWindow?.reload();
+  });
+
+  promptWindow?.webContents?.on('render-process-gone', () => {
+    log.error(`promptEvent:Prompt window render process gone. Reloading`);
+    promptWindow?.reload();
+  });
+
+  promptWindow?.webContents?.on('did-start-loading', () => {
+    log.info(`promptEvent: did-start-loading`);
+  });
+
+  promptWindow?.webContents?.on('did-stop-loading', () => {
+    log.info(`promptEvent: did-stop-loading`);
+  });
+
+  promptWindow?.webContents?.on('did-fail-load', () => {
+    log.info(`promptEvent: did-fail-load`);
+  });
+
+  promptWindow?.webContents?.on('did-fail-provisional-load', () => {
+    log.info(`promptEvent: did-fail-provisional-load`);
+  });
+
+  promptWindow?.webContents?.on('did-frame-finish-load', () => {
+    log.info(`promptEvent: did-frame-finish-load`);
+  });
+
+  promptWindow?.webContents?.on('did-navigate', () => {
+    log.info(`promptEvent: did-navigate`);
+  });
+
+  promptWindow?.webContents?.on('did-navigate-in-page', () => {
+    log.info(`promptEvent: did-navigate-in-page`);
   });
 
   //   promptWindow?.webContents?.on('new-window', function (event, url) {
@@ -200,7 +235,7 @@ export const createPromptWindow = async () => {
   // })
 
   promptWindow?.webContents?.setWindowOpenHandler(({ url }) => {
-    log.info(`Opening ${url}`);
+    log.info(`promptEvent: Opening ${url}`);
     shell.openExternal(url);
 
     return { action: 'deny' };
@@ -235,7 +270,7 @@ export const createPromptWindow = async () => {
   // });
 
   promptWindow.webContents.on('devtools-closed', () => {
-    log.silly(`event: devtools-closed`);
+    log.silly(`promptEvent: devtools-closed`);
     promptWindow?.setAlwaysOnTop(false);
     maybeHide('Devtools closed');
   });
@@ -258,7 +293,7 @@ export const createPromptWindow = async () => {
   // });
 
   emitter.on(KitEvent.OpenDevTools, () => {
-    log.silly(`event: OpenDevTools`);
+    log.silly(`promptEvent: OpenDevTools`);
     promptWindow?.webContents?.openDevTools({
       activate: true,
       mode: 'detach',
@@ -266,7 +301,7 @@ export const createPromptWindow = async () => {
   });
 
   emitter.on(KitEvent.ReloadWindow, () => {
-    log.silly(`event: ReloadWindow`);
+    log.silly(`promptEvent: ReloadWindow`);
     promptWindow?.reload();
   });
 
@@ -290,7 +325,7 @@ export const createPromptWindow = async () => {
   // });
 
   const onBlur = () => {
-    log.silly(`event: onBlur`);
+    log.silly(`promptEvent: onBlur`);
     if (promptWindow?.isDestroyed()) return;
     if (kitState.isActivated) {
       kitState.isActivated = false;
@@ -336,13 +371,13 @@ export const createPromptWindow = async () => {
   promptWindow?.on('blur', onBlur);
 
   promptWindow?.on('hide', () => {
-    log.silly(`event: hide`);
+    log.silly(`promptEvent: hide`);
     promptWindow.webContents.setBackgroundThrottling(true);
   });
 
   promptWindow?.on('show', () => {
     // kitState.allowBlur = false;
-    log.silly(`event: show`);
+    log.silly(`promptEvent: show`);
     promptWindow.webContents.setBackgroundThrottling(false);
   });
 
@@ -354,12 +389,12 @@ export const createPromptWindow = async () => {
   });
 
   const onMove = async () => {
-    log.silly(`event: onMove`);
+    log.silly(`promptEvent: onMove`);
     kitState.modifiedByUser = false;
   };
 
   const onResized = async () => {
-    log.silly(`event: onResized`);
+    log.silly(`promptEvent: onResized`);
     kitState.modifiedByUser = false;
     log.info(`Resized: ${promptWindow?.getSize()}`);
 
@@ -379,7 +414,7 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.on('will-move', () => {
-    log.silly(`event: will-move`);
+    log.silly(`promptEvent: will-move`);
     kitState.modifiedByUser = true;
   });
   promptWindow?.on('resized', onResized);

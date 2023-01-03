@@ -6,4 +6,5 @@ import './App.global.css';
 const container = document.getElementById('root');
 
 const root = createRoot(container as Element);
+
 root.render(<App />);

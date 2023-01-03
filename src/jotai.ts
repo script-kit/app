@@ -408,6 +408,10 @@ const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   roundedSelection: false,
   renderWhitespace: 'none',
   trimAutoWhitespace: true,
+  accessibilitySupport: 'off',
+  autoDetectHighContrast: false,
+  ariaContainerElement: document.getElementById('a11y') as HTMLElement,
+  renderLineHighlight: 'none',
 };
 
 export const editorOptions = atom<editor.IStandaloneEditorConstructionOptions>(
@@ -1049,7 +1053,6 @@ export const promptDataAtom = atom(
       }
 
       if (a.description) {
-        console.log('description', a.description);
         s(descriptionAtom, a.description || g(scriptAtom)?.description || '');
       }
 
@@ -1418,7 +1421,6 @@ const _description = atom<string>('');
 export const descriptionAtom = atom(
   (g) => g(_description),
   (g, s, a: string) => {
-    console.log('description', a);
     s(_description, a);
   }
 );
