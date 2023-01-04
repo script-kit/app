@@ -4,8 +4,7 @@
 import { useCallback, useEffect, useRef, useState, memo } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion } from 'framer-motion';
-import path from 'path';
-import MonacoEditor, { Monaco, useMonaco, loader } from '@monaco-editor/react';
+import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
 import { editor as monacoEditor, Range } from 'monaco-editor';
 import { UI } from '@johnlindquist/kit/core/enum';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
@@ -21,70 +20,14 @@ import {
   uiAtom,
 } from '../jotai';
 import { useMountMainHeight } from '../hooks';
-import { kitLight, nightOwl } from '../editor-themes';
+import {
+  registerPropertiesLanguage,
+  setupMarkdownAutocomplete,
+  setupTypeScript,
+  setupJavaScript,
+} from '../monaco/utils';
 
 import Boundary from '../boundary';
-
-const registerPropertiesLanguage = (monaco: Monaco) => {
-  monaco.languages.register({ id: 'properties' });
-
-  // Register a tokens provider for the language
-  monaco.languages.setMonarchTokensProvider('properties', {
-    tokenizer: {
-      root: [
-        [/^\#.*/, 'comment'],
-        [/.*\=/, 'key'],
-        [/^=.*/, 'value'],
-      ],
-    },
-  });
-
-  // Define a new theme that constains only rules that match this language
-  monaco.editor.defineTheme('properties', {
-    base: 'vs',
-    inherit: false,
-    rules: [
-      { token: 'key', foreground: '009968' },
-      { token: 'value', foreground: '009968' },
-      { token: 'comment', foreground: '666666' },
-    ],
-  } as any);
-
-  // Register a comment rule that will let us have comments in properties files
-  monaco.languages.setLanguageConfiguration('properties', {
-    comments: {
-      lineComment: '#',
-      blockComment: ['<#', '#>'],
-    },
-  });
-
-  // Register a completion item provider for the new language
-  monaco.languages.registerCompletionItemProvider('properties', {
-    provideCompletionItems: () => [
-      {
-        label: 'simpleText',
-        kind: monaco.languages.CompletionItemKind.Text,
-      },
-      {
-        label: 'testing',
-        kind: monaco.languages.CompletionItemKind.Keyword,
-        insertText: {
-          value: 'testing(${1:condition})',
-        },
-      },
-      {
-        label: 'ifelse',
-        kind: monaco.languages.CompletionItemKind.Snippet,
-        insertText: {
-          value: ['if (${1:condition}) {', '\t$0', '} else {', '\t', '}'].join(
-            '\n'
-          ),
-        },
-        documentation: 'If-Else Statement',
-      },
-    ],
-  } as any);
-};
 
 export default memo(function Editor() {
   const [config] = useAtom(editorConfigAtom);
@@ -98,38 +41,17 @@ export default memo(function Editor() {
   const editorAppend = useAtomValue(editorAppendAtom);
   const disposeRef = useRef<any>(null);
 
-  const m = useMonaco();
-
-  // useSave(inputValue);
-  // useClose();
-  // useEscape();
-  // useOpen();
+  const monaco = useMonaco();
 
   useEffect(() => {
-    if (!m) return;
+    if (!monaco) return;
 
     if (disposeRef?.current) disposeRef?.current?.dispose();
     if (options?.language === 'markdown' || options?.language === 'md') {
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      disposeRef.current = m.languages.registerCompletionItemProvider(
-        'markdown',
-        {
-          async provideCompletionItems() {
-            // clear previous suggestions
-
-            const suggestions = editorSuggestions?.map((str: string) => ({
-              label: str,
-              insertText: str,
-            }));
-
-            return {
-              suggestions,
-            };
-          },
-        } as any
-      );
+      disposeRef.current = setupMarkdownAutocomplete(monaco);
     }
-  }, [editorSuggestions, m, options]);
+  }, [editorSuggestions, monaco, options]);
 
   const [
     editor,
@@ -146,49 +68,16 @@ export default memo(function Editor() {
 
   const onBeforeMount = useCallback(
     (monaco: Monaco) => {
-      monaco.editor.defineTheme('kit-dark', nightOwl);
-      monaco.editor.defineTheme('kit-light', kitLight);
-
       if (options?.language === 'properties') {
         registerPropertiesLanguage(monaco);
       }
 
       if (options?.language === 'typescript') {
-        monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-          noSyntaxValidation: false,
-          noSemanticValidation: false,
-        });
-
-        monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-          target: monaco.languages.typescript.ScriptTarget.ESNext,
-          allowNonTsExtensions: true,
-          moduleResolution:
-            monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-          module: monaco.languages.typescript.ModuleKind.ESNext,
-          lib: ['esnext'],
-          jsx: monaco.languages.typescript.JsxEmit.React,
-          reactNamespace: 'React',
-          typeRoots: ['node_modules/@types'],
-        });
+        setupTypeScript(monaco);
       }
 
       if (options?.language === 'javascript') {
-        monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-          noSyntaxValidation: false,
-          noSemanticValidation: true,
-        });
-
-        monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-          target: monaco.languages.typescript.ScriptTarget.ESNext,
-          allowNonTsExtensions: true,
-          moduleResolution:
-            monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-          module: monaco.languages.typescript.ModuleKind.ESNext,
-          lib: ['esnext'],
-          jsx: monaco.languages.typescript.JsxEmit.React,
-          reactNamespace: 'React',
-          typeRoots: ['node_modules/@types'],
-        });
+        setupJavaScript(monaco);
       }
     },
     [options]
@@ -369,7 +258,6 @@ export default memo(function Editor() {
           beforeMount={onBeforeMount}
           onMount={onMount}
           language={(config as EditorOptions)?.language || 'markdown'}
-          // language="typescript"
           theme={theme}
           options={options}
           path="file:///index.ts"
