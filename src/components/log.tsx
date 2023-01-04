@@ -18,7 +18,6 @@ import {
   shortcutsAtom,
 } from '../jotai';
 import { useMountMainHeight } from '../hooks';
-import { kitLight, nightOwl } from '../editor-themes';
 
 const registerLogLanguage = (
   monaco: Monaco,
@@ -107,9 +106,6 @@ export default function Log() {
 
   const onBeforeMount = useCallback(
     (monaco: Monaco) => {
-      monaco.editor.defineTheme('kit-dark', nightOwl);
-      monaco.editor.defineTheme('kit-light', kitLight);
-
       registerLogLanguage(monaco, theme);
     },
     [theme]
