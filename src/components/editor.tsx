@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState, memo } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion } from 'framer-motion';
-import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
+import MonacoEditor, { Monaco, useMonaco, loader } from '@monaco-editor/react';
 import { editor as monacoEditor, Range } from 'monaco-editor';
 import { UI } from '@johnlindquist/kit/core/enum';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
@@ -26,6 +26,11 @@ import {
   setupTypeScript,
   setupJavaScript,
 } from '../monaco/utils';
+
+import { kitLight, nightOwl } from '../monaco/themes';
+
+import * as monaco from 'monaco-editor';
+loader.config({ monaco });
 
 import Boundary from '../boundary';
 
@@ -68,6 +73,8 @@ export default memo(function Editor() {
 
   const onBeforeMount = useCallback(
     (monaco: Monaco) => {
+      monaco.editor.defineTheme('kit-dark', nightOwl);
+      monaco.editor.defineTheme('kit-light', kitLight);
       if (options?.language === 'properties') {
         registerPropertiesLanguage(monaco);
       }

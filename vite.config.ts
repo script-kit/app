@@ -50,7 +50,7 @@ export default defineConfig({
       ],
     }),
     renderer({
-      nodeIntegration: true,
+      // nodeIntegration: true,
       optimizeDeps: {
         // include: ['monaco-editor', '@monaco-editor/react'],
         buildOptions: {
