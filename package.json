@@ -138,7 +138,7 @@
     "typescript": "4.9.4",
     "url-loader": "4.1.1",
     "vite": "^4.0.3",
-    "vite-electron-plugin": "^0.7.2",
+    "vite-electron-plugin": "^0.7.1",
     "vite-plugin-electron-renderer": "^0.11.4",
     "vite-plugin-esmodule": "^1.4.4",
     "xterm": "^4.19.0"
