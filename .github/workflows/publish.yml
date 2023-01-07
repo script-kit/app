@@ -185,17 +185,13 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Install xz
-          sudo apt-get install xz-utils
-
           yarn build
           cd ./src
           yarn remove node-mac-permissions
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          # Target all linux distros
-          yarn electron-builder --publish always --linux AppImage deb rpm --x64 --arm64
+          yarn electron-builder --publish always --linux --x64 --arm64
 
       - name: Publish mac
         if: matrix.os == 'macos-12'
