@@ -4,7 +4,6 @@
 
 let { chdir } = await import('process');
 import { rm } from 'fs/promises';
-import { copyFileSync } from 'fs';
 let tar = await npm('tar');
 
 let createPathResolver = (parentDir) => (...parts) => {
@@ -47,11 +46,13 @@ let kitPathCopy = createPathResolver(
   home(`kit-${version}-${platform}-${arch}`)
 );
 
+await ensureDir(kitPathCopy());
+
 let command = `npm i --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
 console.log(`Running ${command} in ${kitPathCopy()}`);
 
 // copy kitPath() contents to kitPathCopy
-copyFileSync(kitPath(), kitPathCopy());
+cp('-R', kitPath(), kitPathCopy());
 
 await exec(command, {
   cwd: kitPathCopy(),
