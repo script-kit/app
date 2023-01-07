@@ -76,7 +76,7 @@ try {
 
 try {
   let esbuildCommand = `npm i @esbuild/${platform}-${arch}`;
-  console.log(`Running ${esbuildCommand} in ${newKitPath()}`
+  console.log(`Running ${esbuildCommand} in ${newKitPath()}`);
   await exec(esbuildCommand, {
     cwd: newKitPath(),
   });
