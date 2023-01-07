@@ -54,9 +54,18 @@ console.log(`Running ${command} in ${kitPathCopy()}`);
 // copy kitPath() contents to kitPathCopy
 cp('-R', kitPath(), kitPathCopy());
 
-await exec(command, {
-  cwd: kitPathCopy(),
+console.log({
+  pathCheck: await readdir(kitPathCopy()),
 });
+
+try {
+  await exec(command, {
+    cwd: kitPathCopy(),
+  });
+} catch (e) {
+  console.log(e);
+  process.exit(1);
+}
 
 let kitModules = await readdir(kitPathCopy('node_modules'));
 console.log({
