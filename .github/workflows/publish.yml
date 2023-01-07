@@ -62,7 +62,6 @@ jobs:
     strategy:
       matrix:
         os: [macos-12, windows-latest, ubuntu-latest]
-        arch: [x64, arm64]
         node: [16.17.1]
 
     steps:
@@ -79,7 +78,7 @@ jobs:
         with:
           name: release-id
 
-      - name: Set Semantic Version Nix
+      - name: Nix - Set Semantic Version
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           echo "Semantic Version: $(cat semantic-version.txt)"
@@ -90,25 +89,7 @@ jobs:
           # Set the release id as an environment variable
           echo "RELEASE_ID=$(cat release-id.txt)" >> $GITHUB_ENV
 
-          # If matrix.os is macos-12, set npm_config_platform to darwin
-          # If matrix.os is ubuntu-latest, set npm_config_platform to linux
-          # If matrix.os is windows-latest, set npm_config_platform to win32
-
-          # if [[ "${{ matrix.os }}" == "macos-12" ]]; then
-          #   echo "npm_config_platform=darwin" >> $GITHUB_ENV
-          #   echo "npm_config_target_platform=darwin" >> $GITHUB_ENV
-          # elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-          #   echo "npm_config_platform=linux" >> $GITHUB_ENV
-          #   echo "npm_config_target_platform=linux" >> $GITHUB_ENV
-          # elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          #   echo "npm_config_platform=win32" >> $GITHUB_ENV
-          #   echo "npm_config_target_platform=win32" >> $GITHUB_ENV
-          # fi
-
-          # echo "npm_config_arch=${{ matrix.arch }}" >> $GITHUB_ENV
-          # echo "npm_config_target_arch=${{ matrix.arch }}" >> $GITHUB_ENV
-
-      - name: Set Semantic Version Windows
+      - name: Windows - Set Semantic Version
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
           echo "Semantic Version: $(cat semantic-version.txt)"
@@ -119,12 +100,6 @@ jobs:
           # Set the release id as an environment variable
           echo "RELEASE_ID=$(cat release-id.txt)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-          # echo "npm_config_target_platform=win32" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          # echo "npm_config_platform=win32" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-          # echo "npm_config_arch=${{ matrix.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          # echo "npm_config_target_arch=${{ matrix.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
       - name: Write the Semantic Version to src/package.json version property
         uses: johnlindquist/kit-action@main
         with:
@@ -132,10 +107,34 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Assets
+      - name: Nix - Write the current branch to a releaseChannel env var
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+
+      - name: Windows - Write the current branch to a releaseChannel env var
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Download kenv
         uses: johnlindquist/kit-action@main
         with:
-          script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} ${{ matrix.arch }} ${{ env.RELEASE_ID }}
+          script: download-kenv ${{ env.RELEASE_CHANNEL }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Assets for x64
+        uses: johnlindquist/kit-action@main
+        with:
+          script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} x64 ${{ env.RELEASE_ID }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Assets for arm64
+        uses: johnlindquist/kit-action@main
+        with:
+          script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} arm64 ${{ env.RELEASE_ID }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -166,7 +165,7 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --win --${{ matrix.arch }}
+          yarn electron-builder --publish always --win --x64 --arm64
 
       - name: Publish linux
         if: matrix.os == 'ubuntu-latest'
@@ -187,7 +186,7 @@ jobs:
           cd ..
           echo "--- Done removing mac deps ---\n\n"
           # Target all linux distros
-          yarn electron-builder --publish always --linux AppImage deb rpm --${{ matrix.arch }}
+          yarn electron-builder --publish always --linux AppImage deb rpm --x64 --arm64
 
       - name: Publish mac
         if: matrix.os == 'macos-12'
@@ -202,4 +201,4 @@ jobs:
         run: |
 
           yarn build
-          yarn electron-builder --publish always --mac --${{ matrix.arch }}
+          yarn electron-builder --publish always --mac --x64 --arm64

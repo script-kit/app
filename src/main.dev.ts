@@ -84,10 +84,8 @@ import { assign } from 'lodash';
 import { setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
 import {
-  getArch,
   getAssetPath,
   getNodeVersion,
-  getPlatform,
   getPlatformExtension,
   getReleaseChannel,
 } from './assets';
@@ -192,8 +190,8 @@ if (app?.dock) {
   app?.dock?.setIcon(getAssetPath('icon.png'));
 }
 const releaseChannel = getReleaseChannel();
-const arch = getArch();
-const platform = getPlatform();
+const arch = os.arch();
+const platform = os.platform();
 const nodeVersion = getNodeVersion();
 
 app.on('window-all-closed', (e: Event) => {
@@ -959,13 +957,14 @@ const checkKit = async () => {
     await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
 
     const kitTar = getAssetPath('kit.tar.gz');
+    const fileName = `kit_url_${platform}_${arch}.txt`;
 
     if (
       // process.env.KIT_EXPERIMENTAL &&
-      existsSync(getAssetPath('kit_url.txt'))
+      existsSync(getAssetPath(fileName))
     ) {
       try {
-        const kitUrl = await readFile(getAssetPath('kit_url.txt'), 'utf8');
+        const kitUrl = await readFile(getAssetPath(fileName), 'utf8');
         await setupLog(`Download SDK from ${kitUrl}`);
         log.info(`Downloading pre-bundled kit...`);
         const buffer = await download(kitUrl.trim());

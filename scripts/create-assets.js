@@ -5,30 +5,7 @@
 let { chdir } = await import('process');
 let tar = await npm('tar');
 
-console.log('Creating assets');
-
-console.log(`🕵️‍♀️ process.env.SCRIPTS_DIR:`, process.env.SCRIPTS_DIR);
-console.log(`kenvPkgPath:`, kenvPath(process.env.SCRIPTS_DIR || ''));
-
 chdir(process.env.PWD);
-
-let { stdout: releaseChannel } = await exec(`git rev-parse --abbrev-ref HEAD`);
-console.log({ releaseChannel });
-
-let releaseChannelTxt = path.resolve(
-  process.env.PWD,
-  'assets',
-  'release_channel.txt'
-);
-console.log({ releaseChannelTxt });
-
-await writeFile(releaseChannelTxt, releaseChannel);
-
-await download(
-  `https://github.com/johnlindquist/kenv/tarball/${releaseChannel}`,
-  path.resolve(process.env.PWD, 'assets'),
-  { filename: 'kenv.tar.gz' }
-);
 
 let nodeModulesKit = kitPath();
 let outTarz = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
@@ -85,13 +62,7 @@ console.log({
   tag_name,
 });
 
-console.log({
-  npm_config_platform: process.env.npm_config_platform,
-  npm_config_arch: process.env.npm_config_arch,
-  npm_config_target_arch: process.env.npm_config_target_arch,
-});
-
-let command = `npm i --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
+let command = `npm ci --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
 console.log(`Running ${command} in ${kitPath()}`);
 
 await exec(command, {
@@ -169,8 +140,9 @@ let uploadResponse = await octokit.rest.repos.uploadReleaseAsset({
 });
 
 let url = `https://github.com/johnlindquist/kitapp/releases/download/${tag_name}/${name}`;
+let fileName = `kit_url_${platform}_${arch}.txt`;
 
-let kitUrlFilePath = path.resolve(process.env.PWD, 'assets', 'kit_url.txt');
+let kitUrlFilePath = path.resolve(process.env.PWD, 'assets', fileName);
 console.log({ kitUrlFilePath, url });
 
 await writeFile(kitUrlFilePath, url);

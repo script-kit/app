@@ -2,6 +2,7 @@
 import { app } from 'electron';
 import path from 'path';
 import { readFileSync } from 'fs';
+import os from 'os';
 
 export function slash(p: string) {
   const isExtendedLengthPath = /^\\\\\?\\/.test(p);
@@ -35,24 +36,8 @@ export const getReleaseChannel = () => {
   }
 };
 
-export const getArch = () => {
-  try {
-    return readFileSync(getAssetPath('arch.txt'), 'utf-8').trim();
-  } catch (error) {
-    return 'arm64';
-  }
-};
-
-export const getPlatform = () => {
-  try {
-    return readFileSync(getAssetPath('platform.txt'), 'utf-8').trim();
-  } catch (error) {
-    return 'darwin';
-  }
-};
-
 export const getPlatformExtension = (): string => {
-  const platform = getPlatform();
+  const platform = os.platform();
   const win = platform.startsWith('win');
   const mac = platform.startsWith('darwin');
   const linux = platform.startsWith('linux');
