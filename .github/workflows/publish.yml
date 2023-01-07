@@ -185,6 +185,8 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          sudo snap install snapcraft --classic
+
           yarn build
           cd ./src
           yarn remove node-mac-permissions
