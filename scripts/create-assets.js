@@ -75,13 +75,10 @@ try {
 }
 
 try {
-  let esbuildCommand = `npm i @esbuild/${platform}-${arch} --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
+  let esbuildCommand = `npm i @esbuild/${platform}-${arch}`;
+  console.log(`Running ${esbuildCommand} in ${newKitPath()}`
   await exec(esbuildCommand, {
     cwd: newKitPath(),
-    env: {
-      npm_config_arch: arch,
-      npm_config_platform: platform,
-    },
   });
 } catch (e) {
   console.log(e);
