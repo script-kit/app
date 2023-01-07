@@ -74,16 +74,16 @@ try {
   process.exit(1);
 }
 
-try {
-  let esbuildCommand = `npm i @esbuild/${platform}-${arch}`;
-  console.log(`Running ${esbuildCommand} in ${newKitPath()}`);
-  await exec(esbuildCommand, {
-    cwd: newKitPath(),
-  });
-} catch (e) {
-  console.log(e);
-  process.exit(1);
-}
+// try {
+//   let esbuildCommand = `npm i @esbuild/${platform}-${arch}`;
+//   console.log(`Running ${esbuildCommand} in ${newKitPath()}`);
+//   await exec(esbuildCommand, {
+//     cwd: newKitPath(),
+//   });
+// } catch (e) {
+//   console.log(e);
+//   process.exit(1);
+// }
 
 let kitModules = await readdir(newKitPath('node_modules'));
 console.log({

@@ -987,7 +987,7 @@ const checkKit = async () => {
           knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
           [
             `i`,
-            `@esbuild/${platform}-${arch}`,
+            `esbuild`,
             `--production`,
             `--prefer-dedupe`,
             `--loglevel`,
@@ -1015,7 +1015,8 @@ const checkKit = async () => {
           resolve('npm install success');
         });
         child.on('error', (error) => {
-          reject(error);
+          log.warn({ error });
+          resolve(`Deps install error ${error}`);
         });
       });
     } else {
@@ -1024,7 +1025,7 @@ const checkKit = async () => {
           knodePath('bin', 'npm'),
           [
             `i`,
-            `@esbuild/${platform}-${arch}`,
+            `esbuild`,
             `--production`,
             `--prefer-dedupe`,
             `--loglevel`,
@@ -1051,7 +1052,8 @@ const checkKit = async () => {
           resolve(`Deps install exit code ${code}`);
         });
         child.on('error', (error: any) => {
-          reject(error);
+          log.warn({ error });
+          resolve(`Deps install error ${error}`);
         });
       });
 
