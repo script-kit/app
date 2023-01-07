@@ -185,6 +185,8 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Install xz
+          sudo apt-get install xz-utils
 
           yarn build
           cd ./src
