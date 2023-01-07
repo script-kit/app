@@ -54,20 +54,22 @@ console.log(`Running ${command} in ${kitPathCopy()}`);
 // copy kitPath() contents to kitPathCopy
 cp('-R', kitPath(), kitPathCopy());
 
+let newKitPath = createPathResolver(kitPathCopy('kit'));
+
 console.log({
-  pathCheck: await readdir(kitPathCopy()),
+  pathCheck: await readdir(newKitPath()),
 });
 
 try {
   await exec(command, {
-    cwd: kitPathCopy(),
+    cwd: newKitPath(),
   });
 } catch (e) {
   console.log(e);
   process.exit(1);
 }
 
-let kitModules = await readdir(kitPathCopy('node_modules'));
+let kitModules = await readdir(newKitPath('node_modules'));
 console.log({
   kitModules: kitModules.filter((item) => item.includes('esbuild')),
 });
@@ -85,16 +87,16 @@ let releaseResponse = await octokit.rest.repos.getRelease({
 console.log(`Release Response:`);
 console.log(releaseResponse?.data || 'No release found');
 
-let kitFiles = await readdir(kitPathCopy());
+let kitFiles = await readdir(newKitPath());
 let name = `Kit-SDK-${osName}-${version}-${arch}.tar.gz`;
 let kitTarPath = home(name);
 console.log({ kitFiles });
 
-await console.log(`Tar ${kitPathCopy()} to ${kitTarPath}`);
+await console.log(`Tar ${newKitPath()} to ${kitTarPath}`);
 
 await tar.c(
   {
-    cwd: kitPathCopy(),
+    cwd: newKitPath(),
     gzip: true,
     file: kitTarPath,
     follow: true,
