@@ -124,6 +124,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create Kit tarball
+        uses: johnlindquist/kit-action@main
+        with:
+          script: create-kit-tar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Assets for x64
         uses: johnlindquist/kit-action@main
         with:

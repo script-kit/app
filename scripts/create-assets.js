@@ -3,35 +3,15 @@
 // import '@johnlindquist/kit';
 
 let { chdir } = await import('process');
+import { rm } from 'fs/promises';
+import { copyFileSync } from 'fs';
 let tar = await npm('tar');
 
+let createPathResolver = (parentDir: string) => (...parts: string[]) => {
+  return path.resolve(parentDir, ...parts);
+};
+
 chdir(process.env.PWD);
-
-let nodeModulesKit = kitPath();
-let outTarz = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
-
-console.log(`Tar ${nodeModulesKit} to ${outTarz}`);
-
-await tar.c(
-  {
-    cwd: nodeModulesKit,
-    gzip: true,
-    file: outTarz,
-    follow: true,
-    filter: (item) => {
-      if (item.match(/^.{0,2}node/)) {
-        console.log(`SKIPPING`, item);
-        return false;
-      }
-      if (item.includes('kit.sock')) return false;
-
-      return true;
-    },
-  },
-  ['.']
-);
-
-// Experimental Kit bundle download...
 
 // Need to consider "esbuild" for each platform and architecture
 
@@ -51,9 +31,6 @@ if (platform === 'linux') osName = 'Linux';
 
 console.log(`PWD`, process.env.PWD);
 
-//chdir(kitPath())
-//await $`yarn`;
-
 console.log({
   version,
   platform,
@@ -62,31 +39,25 @@ console.log({
   tag_name,
 });
 
-let command = `npm ci --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
-console.log(`Running ${command} in ${kitPath()}`);
+if (await isDir('node_modules')) {
+  await rm('node_modules', { recursive: true });
+}
+
+let kitPathCopy = createPathResolver(
+  home(`kit-${version}-${platform}-${arch}`)
+);
+
+let command = `npm i --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
+console.log(`Running ${command} in ${kitPathCopy()}`);
+
+// copy kitPath() contents to kitPathCopy
+copyFileSync(kitPath(), kitPathCopy());
 
 await exec(command, {
-  cwd: kitPath(),
+  cwd: kitPathCopy(),
 });
 
-// let esbuildCommand = `npm i --target_arch=${arch} --target_platform=${platform} --production esbuild --prefer-dedupe`;
-// console.log(`Running ${esbuildCommand} in ${kitPath()}`);
-// await exec(esbuildCommand, {
-//   cwd: kitPath(),
-// });
-
-// await exec(`npm i`, {
-//   cwd: kitPath(),
-//   env: {
-//     ...process.env,
-//     npm_config_platform: platform,
-//     npm_config_target_platform: platform,
-//     npm_config_arch: arch,
-//     npm_config_target_arch: arch,
-//   },
-// });
-
-let kitModules = await readdir(kitPath('node_modules'));
+let kitModules = await readdir(kitPathCopy('node_modules'));
 console.log({
   kitModules: kitModules.filter((item) => item.includes('esbuild')),
 });
@@ -104,16 +75,16 @@ let releaseResponse = await octokit.rest.repos.getRelease({
 console.log(`Release Response:`);
 console.log(releaseResponse?.data || 'No release found');
 
-let kitFiles = await readdir(kitPath());
+let kitFiles = await readdir(kitPathCopy());
 let name = `Kit-SDK-${osName}-${version}-${arch}.tar.gz`;
 let kitTarPath = home(name);
 console.log({ kitFiles });
 
-await console.log(`Tar ${kitPath()} to ${kitTarPath}`);
+await console.log(`Tar ${kitPathCopy()} to ${kitTarPath}`);
 
 await tar.c(
   {
-    cwd: kitPath(),
+    cwd: kitPathCopy(),
     gzip: true,
     file: kitTarPath,
     follow: true,
