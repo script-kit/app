@@ -63,6 +63,10 @@ console.log({
 try {
   await exec(command, {
     cwd: newKitPath(),
+    env: {
+      npm_config_arch: arch,
+      npm_config_platform: platform,
+    },
   });
 } catch (e) {
   console.log(e);
