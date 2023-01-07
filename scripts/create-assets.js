@@ -33,6 +33,7 @@ console.log(`PWD`, process.env.PWD);
 console.log({
   version,
   platform,
+  osName,
   arch,
   release_id,
   tag_name,
@@ -62,6 +63,20 @@ console.log({
 
 try {
   await exec(command, {
+    cwd: newKitPath(),
+    env: {
+      npm_config_arch: arch,
+      npm_config_platform: platform,
+    },
+  });
+} catch (e) {
+  console.log(e);
+  process.exit(1);
+}
+
+try {
+  let esbuildCommand = `npm i @esbuild/${platform}-${arch} --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
+  await exec(esbuildCommand, {
     cwd: newKitPath(),
     env: {
       npm_config_arch: arch,

@@ -985,7 +985,14 @@ const checkKit = async () => {
       const npmResult = await new Promise((resolve, reject) => {
         const child = fork(
           knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-          [`i`, `--production`, `--prefer-dedupe`, `--loglevel`, `verbose`],
+          [
+            `i`,
+            `@esbuild/${platform}-${arch}`,
+            `--production`,
+            `--prefer-dedupe`,
+            `--loglevel`,
+            `verbose`,
+          ],
           options
         );
 
@@ -1015,7 +1022,14 @@ const checkKit = async () => {
       const npmResult = await new Promise((resolve, reject) => {
         const child = spawn(
           knodePath('bin', 'npm'),
-          [`i`, `--production`, `--prefer-dedupe`, `--loglevel`, `verbose`],
+          [
+            `i`,
+            `@esbuild/${platform}-${arch}`,
+            `--production`,
+            `--prefer-dedupe`,
+            `--loglevel`,
+            `verbose`,
+          ],
           options
         );
         if (child.stdout) {
