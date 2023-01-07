@@ -7,7 +7,7 @@ import { rm } from 'fs/promises';
 import { copyFileSync } from 'fs';
 let tar = await npm('tar');
 
-let createPathResolver = (parentDir: string) => (...parts: string[]) => {
+let createPathResolver = (parentDir) => (...parts) => {
   return path.resolve(parentDir, ...parts);
 };
 
