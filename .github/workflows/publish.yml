@@ -185,15 +185,13 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sudo snap install snapcraft --classic
-
           yarn build
           cd ./src
           yarn remove node-mac-permissions
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --linux --x64 --arm64
+          yarn electron-builder --publish always --linux AppImage --x64 --arm64
 
       - name: Publish mac
         if: matrix.os == 'macos-12'
