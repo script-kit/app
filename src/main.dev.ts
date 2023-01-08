@@ -877,7 +877,7 @@ const checkKit = async () => {
 
       log.info(`Found ${KIT_NODE_TAR}. Extracting...`);
 
-      if (platform === 'win') {
+      if (platform === 'win32') {
         log.info(`Extracting ${KIT_NODE_TAR} to ${tildify(knodePath())}`);
 
         try {
@@ -991,6 +991,7 @@ const checkKit = async () => {
         [
           `i`,
           `esbuild@0.16.15`,
+          `-–save-exact`,
           `--production`,
           `--prefer-dedupe`,
           `--loglevel`,
