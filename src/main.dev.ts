@@ -59,6 +59,7 @@ import {
   rm,
   mkdir,
   writeFile,
+  copyFile,
 } from 'fs/promises';
 
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
@@ -981,87 +982,68 @@ const checkKit = async () => {
     // await setupLog(`Installing ~/.kit packages...`);
     log.info(`PATH:`, options?.env?.PATH);
 
-    if (isWin) {
-      const npmResult = await new Promise((resolve, reject) => {
-        const child = fork(
-          knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-          [
-            `i`,
-            `esbuild`,
-            `--production`,
-            `--prefer-dedupe`,
-            `--loglevel`,
-            `verbose`,
-          ],
-          options
-        );
+    const npmResult = await new Promise((resolve, reject) => {
+      const npmPath = isWin
+        ? knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js')
+        : knodePath('bin', 'npm');
+      const child = fork(
+        npmPath,
+        [
+          `i`,
+          `esbuild@0.16.15`,
+          `--production`,
+          `--prefer-dedupe`,
+          `--loglevel`,
+          `verbose`,
+        ],
+        options
+      );
 
-        if (child.stdout) {
-          child.stdout.on('data', (data) => {
-            sendSplashBody(data.toString());
-          });
-        }
-
-        if (child.stderr) {
-          child.stderr.on('data', (data) => {
-            sendSplashBody(data.toString());
-          });
-        }
-
-        child.on('message', (data) => {
+      if (child.stdout) {
+        child.stdout.on('data', (data) => {
           sendSplashBody(data.toString());
         });
-        child.on('exit', () => {
-          resolve('npm install success');
-        });
-        child.on('error', (error) => {
-          log.warn({ error });
-          resolve(`Deps install error ${error}`);
-        });
-      });
-    } else {
-      const npmResult = await new Promise((resolve, reject) => {
-        const child = spawn(
-          knodePath('bin', 'npm'),
-          [
-            `i`,
-            `esbuild`,
-            `--production`,
-            `--prefer-dedupe`,
-            `--loglevel`,
-            `verbose`,
-          ],
-          options
-        );
-        if (child.stdout) {
-          child.stdout.on('data', (data) => {
-            sendSplashBody(data.toString());
-          });
-        }
+      }
 
-        if (child.stderr) {
-          child.stderr.on('data', (data) => {
-            sendSplashBody(data.toString());
-          });
-        }
-
-        child.on('message', (data: any) => {
+      if (child.stderr) {
+        child.stderr.on('data', (data) => {
           sendSplashBody(data.toString());
         });
-        child.on('exit', (code) => {
-          resolve(`Deps install exit code ${code}`);
-        });
-        child.on('error', (error: any) => {
-          log.warn({ error });
-          resolve(`Deps install error ${error}`);
-        });
-      });
+      }
 
-      log.info({ npmResult });
-    }
+      child.on('message', (data) => {
+        sendSplashBody(data.toString());
+      });
+      child.on('exit', () => {
+        resolve('npm install success');
+      });
+      child.on('error', (error) => {
+        log.warn({ error });
+        resolve(`Deps install error ${error}`);
+      });
+    });
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));
     await clearPromptCache();
+
+    // Overwite node_modules/node-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/Resources/Terminal.icns with assets/icon.icns
+    try {
+      await copyFile(
+        getAssetPath('icon.icns'),
+        kitPath(
+          'node_modules',
+          'node-notifier',
+          'vendor',
+          'mac.noindex',
+          'terminal-notifier.app',
+          'Contents',
+          'Resources',
+          'Terminal.icns'
+        )
+      );
+    } catch (error) {
+      log.error(error);
+    }
   }
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);

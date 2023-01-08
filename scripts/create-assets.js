@@ -49,9 +49,6 @@ let kitPathCopy = createPathResolver(
 
 await ensureDir(kitPathCopy());
 
-let command = `npm i --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
-console.log(`Running ${command} in ${kitPathCopy()}`);
-
 // copy kitPath() contents to kitPathCopy
 cp('-R', kitPath(), kitPathCopy());
 
@@ -61,7 +58,23 @@ console.log({
   pathCheck: await readdir(newKitPath()),
 });
 
+// Clear out arch-specific node_modules
 try {
+  let command = `npm un esbuild`;
+  console.log(`Running ${command} in ${kitPathCopy()}`);
+
+  await exec(command, {
+    cwd: newKitPath(),
+  });
+} catch (e) {
+  console.log(e);
+  process.exit(1);
+}
+
+try {
+  let command = `npm i --target_arch=${arch} --target_platform=${platform} --production --prefer-dedupe`;
+  console.log(`Running ${command} in ${kitPathCopy()}`);
+
   await exec(command, {
     cwd: newKitPath(),
     env: {

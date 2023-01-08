@@ -9,6 +9,7 @@ import {
   globalShortcut,
   shell,
 } from 'electron';
+
 import path from 'path';
 import { rm } from 'fs/promises';
 import log, { LogLevel } from 'electron-log';
@@ -390,6 +391,30 @@ export const openMenu = async (event?: KeyboardEvent) => {
     toolsSubmenu.push({
       label: 'Install VS Code Extension',
       click: runScript(kitPath('help', 'install-vscode-extension.js')),
+    });
+
+    toolsSubmenu.push({
+      type: 'separator',
+    });
+
+    // Request Notifications Permission
+
+    toolsSubmenu.push({
+      label: `Test Notification Permission`,
+      click: async () => {
+        new Notification({
+          title: 'Kit.app Notification',
+          body: 'This is a test notification from Kit.app',
+        }).show();
+
+        // wait 2 seconds to see if it worked
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        runScript(kitPath('debug', 'test-notification.js'), [], {
+          force: true,
+          trigger: Trigger.Tray,
+        });
+      },
     });
 
     // toolsSubmenu.push({
