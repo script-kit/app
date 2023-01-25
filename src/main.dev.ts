@@ -932,7 +932,12 @@ const checkKit = async () => {
         // });
       }
     } else {
-      const installKit = spawnSync(`npx @johnlindquist/install-kit`);
+      const installKit = spawnSync(`npx @johnlindquist/install-kit`, {
+        env: {
+          ...process.env,
+          KIT_APP_VERSION: getVersion(),
+        },
+      });
 
       await handleSpawnReturns(`Installing using npx...`, installKit);
     }
