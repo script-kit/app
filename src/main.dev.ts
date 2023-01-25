@@ -932,14 +932,9 @@ const checkKit = async () => {
         // });
       }
     } else {
-      const installScript = `./build/install-node.sh`;
-      await chmod(kitPath(installScript), 0o755);
-      const nodeInstallResult = spawnSync(
-        installScript,
-        ` --prefix node --platform darwin`.split(' '),
-        options
-      );
-      await handleSpawnReturns(`install-node.sh`, nodeInstallResult);
+      const installKit = spawnSync(`npx @johnlindquist/install-kit`);
+
+      await handleSpawnReturns(`Installing using npx...`, installKit);
     }
   }
 

@@ -71,7 +71,8 @@ export const startPty = async (config: any = {}) => {
         if (USE_BINARY) {
           t.write(`${command}\n`);
         } else {
-          t.write(`${command}\r\n`);
+          // Todo: on Windows this was also submitted the first prompt argument on
+          t.write(`${command}\r`);
         }
       }, 250);
     }
