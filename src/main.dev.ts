@@ -26,9 +26,6 @@ import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
 
-import StreamZip from 'node-stream-zip';
-import tar from 'tar';
-import download from 'download';
 import clipboardy from 'clipboardy';
 import unhandled from 'electron-unhandled';
 import { openNewGitHubIssue, debugInfo } from 'electron-util';
@@ -36,11 +33,10 @@ import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+
 import path from 'path';
 import {
   fork,
-  spawn,
-  spawnSync,
   SpawnSyncOptions,
   SpawnSyncReturns,
   ForkOptions,
@@ -50,17 +46,7 @@ import os, { homedir } from 'os';
 import semver from 'semver';
 import { ensureDir } from 'fs-extra';
 import { existsSync } from 'fs';
-import {
-  chmod,
-  lstat,
-  readdir,
-  readFile,
-  rename,
-  rm,
-  mkdir,
-  writeFile,
-  copyFile,
-} from 'fs/promises';
+import { readdir, readFile, copyFile } from 'fs/promises';
 
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
 import { PromptData } from '@johnlindquist/kit/types/core';
@@ -84,12 +70,7 @@ import { subscribeKey } from 'valtio/utils';
 import { assign } from 'lodash';
 import { setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
-import {
-  getAssetPath,
-  getNodeVersion,
-  getPlatformExtension,
-  getReleaseChannel,
-} from './assets';
+import { getAssetPath, getNodeVersion, getReleaseChannel } from './assets';
 import {
   clearTickTimers,
   configureInterval,
@@ -107,7 +88,12 @@ import {
   clearPromptTimers,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
-import { getVersion, getStoredVersion, storeVersion } from './version';
+import {
+  getVersion,
+  getStoredVersion,
+  storeVersion,
+  getVersonFromText,
+} from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { INSTALL_ERROR, show } from './show';
 import {
@@ -211,6 +197,10 @@ Electron Node version: ${process.versions.node}
 Electron Chromium version: ${process.versions.chrome}
 Electron execPath: ${process.execPath}
 `);
+
+process.env.NODE_VERSION = nodeVersion;
+process.env.KIT_APP_VERSION =
+  process.env.NODE_ENV === 'production' ? getVersion() : getVersonFromText();
 
 const KIT = kitPath();
 
@@ -529,7 +519,7 @@ const ready = async () => {
   }
 };
 
-const handleSpawnReturns = async (
+const handleLogMessage = async (
   message: string,
   result: SpawnSyncReturns<any>,
   required = true
@@ -564,13 +554,6 @@ const kitExists = async () => {
   await setupLog(`kit${doesKitExist ? `` : ` not`} found`);
 
   return doesKitExist;
-};
-
-const kitUserDataExists = async () => {
-  const userDataExists = existsSync(app.getPath('userData'));
-  await setupLog(`kit user data ${userDataExists ? `` : ` not`} found`);
-
-  return userDataExists;
 };
 
 const isContributor = async () => {
@@ -657,17 +640,6 @@ ${mainLogContents}
   throw new Error(error.message);
 };
 
-const extractTar = async (tarFile: string, outDir: string) => {
-  await setupLog(`Extracting ${path.basename(tarFile)} to ${tildify(outDir)}`);
-  await ensureDir(outDir);
-
-  await tar.x({
-    file: tarFile,
-    C: outDir,
-    strip: 1,
-  });
-};
-
 const currentVersionIsGreater = async () => {
   const currentVersion = getVersion();
   const storedVersion = await getStoredVersion();
@@ -679,40 +651,37 @@ const currentVersionIsGreater = async () => {
   return semver.gt(currentVersion, storedVersion);
 };
 
-const cleanKit = async () => {
-  log.info(`🧹 Cleaning ${kitPath()}`);
-  const pathToClean = kitPath();
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
 
-  const keep = (file: string) =>
-    file === 'db' || file === 'node_modules' || file === 'assets';
+// Convert fork into a promise
+const installKit = (part: string) => {
+  return new Promise((resolve, reject) => {
+    const child = fork(
+      // resolve to node_modules in the parent directory
+      path.resolve(
+        __dirname,
+        '../node_modules/@johnlindquist/install-kit/index.js'
+      ),
+      [`--${part}`]
+    );
 
-  // eslint-disable-next-line no-restricted-syntax
-  for await (const file of await readdir(pathToClean)) {
-    if (keep(file)) {
-      log.info(`👍 Keeping ${file}`);
-      // eslint-disable-next-line no-continue
-      continue;
-    }
+    child.on('message', (data) => {
+      const dataString = data.toString();
+      sendSplashBody(dataString);
+    });
 
-    const filePath = path.resolve(pathToClean, file);
-    const stat = await lstat(filePath);
-    if (stat.isDirectory()) {
-      await rm(filePath, { recursive: true, force: true });
-      log.info(`🧹 Cleaning dir ${filePath}`);
-    } else {
-      await rm(filePath);
-      log.info(`🧹 Cleaning file ${filePath}`);
-    }
-  }
+    child.on('exit', () => {
+      sendSplashBody(`✅ Successfully installed ${part}`);
+      resolve('success');
+    });
+
+    child.on('error', (error: Error) => {
+      reject(error);
+      ohNo(error);
+    });
+  });
 };
-
-const cleanUserData = async () => {
-  const pathToClean = app.getPath('userData');
-  await rm(pathToClean, { recursive: true, force: true });
-};
-
-const KIT_NODE_TAR =
-  process.env.KIT_NODE_TAR || getAssetPath(`node.${getPlatformExtension()}`);
 
 const checkKit = async () => {
   await setupTray(true, 'busy');
@@ -784,6 +753,19 @@ const checkKit = async () => {
     setTimeout(() => {
       focusPrompt();
     }, 500);
+
+    // override console.log to send to splash screen
+
+    console.log = (...args: any[]) => {
+      sendSplashBody(args.join(' '));
+      originalConsoleLog(...args);
+    };
+
+    // override console.error to send to splash screen
+    console.error = (...args: any[]) => {
+      sendSplashBody(args.join(' '));
+      originalConsoleError(...args);
+    };
   };
 
   if (process.env.NODE_ENV === 'development') {
@@ -797,8 +779,6 @@ const checkKit = async () => {
   await createPromptWindow();
 
   await setupLog(`Prompt window created`);
-
-  const isWin = os.platform().startsWith('win');
 
   await setupLog(`\n\n---------------------------------`);
   await setupLog(`Launching Script Kit  ${getVersion()}`);
@@ -847,100 +827,7 @@ const checkKit = async () => {
       `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
     );
 
-    const nodeUrlPath = getAssetPath('node_url.txt');
-    if (
-      // process.env.KIT_EXPERIMENTAL &&
-      existsSync(nodeUrlPath)
-    ) {
-      try {
-        const nodeUrl = await readFile(nodeUrlPath, 'utf8');
-        await setupLog(`Download node.js from ${nodeUrl}`);
-        const buffer = await download(nodeUrl.trim());
-        await writeFile(KIT_NODE_TAR, buffer);
-        log.info(`Node download complete. Beginning extraction...`);
-      } catch (error) {
-        log.error(error);
-      }
-    }
-
-    if (existsSync(KIT_NODE_TAR)) {
-      if (existsSync(knodePath())) {
-        await setupLog(`Removing old node ${tildify(knodePath())}`);
-        await rm(knodePath(), {
-          recursive: true,
-          force: true,
-        });
-      }
-
-      await setupLog(`Create node dir ${tildify(knodePath())}`);
-      await mkdir(knodePath());
-
-      log.info(`Found ${KIT_NODE_TAR}. Extracting...`);
-
-      if (platform === 'win32') {
-        log.info(`Extracting ${KIT_NODE_TAR} to ${tildify(knodePath())}`);
-
-        try {
-          // const copyPath = path.resolve(homedir(), 'node.zip');
-          // await copyFile(KIT_NODE_TAR, copyPath);
-          // const d = await Open.file(copyPath);
-          // await d.extract({ path: knodePath(), concurrency: 5 });
-          /* eslint-disable new-cap */
-          const zip = new StreamZip.async({ file: KIT_NODE_TAR });
-
-          await zip.extract(null, knodePath());
-          await zip.close();
-
-          const nodeDir = await readdir(knodePath());
-          const nodeDirName = nodeDir.find((n) => n.startsWith('node-'));
-          if (nodeDirName) {
-            await rename(knodePath(nodeDirName), knodePath('bin'));
-            log.info(await readdir(knodePath('bin')));
-            await chmod(knodePath('bin', 'npm.cmd'), 0o755);
-            await chmod(knodePath('bin', 'node.exe'), 0o755);
-          } else {
-            log.warn(`Couldn't find node dir in ${nodeDir}`);
-          }
-        } catch (error) {
-          log.error(error);
-        }
-      }
-
-      if (platform === 'darwin') {
-        await tar.x({
-          file: KIT_NODE_TAR,
-          C: knodePath(),
-          strip: 1,
-        });
-      }
-
-      if (platform === 'linux') {
-        const extractNode = spawnSync(
-          `tar --strip-components 1 -xf '${getAssetPath(
-            'node.tar.xz'
-          )}' --directory '${knodePath}'`,
-          {
-            shell: true,
-          }
-        );
-
-        await handleSpawnReturns(`extract node`, extractNode);
-        // await tar.x({
-        //   file: KIT_NODE_TAR,
-        //   C: kitPath('node'),
-        //   strip: 1,
-        // });
-      }
-    } else {
-      const installKit = spawnSync(`npx @johnlindquist/install-kit`, {
-        env: {
-          ...process.env,
-          KIT_APP_VERSION: getVersion(),
-        },
-      });
-
-      await handleSpawnReturns(`Installing using npx...`, installKit);
-    }
+    await installKit('node');
   }
 
   const requiresInstall =
@@ -949,80 +836,11 @@ const checkKit = async () => {
   if (await isContributor()) {
     await setupLog(`Welcome fellow contributor! Thanks for all you do!`);
   } else if (requiresInstall) {
-    if (await kitExists()) {
-      kitState.updateInstalling = true;
-      await setupLog(`Cleaning previous .kit`);
-      await cleanKit();
-    }
+    await installKit('kit');
 
-    await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
-
-    const kitTar = getAssetPath('kit.tar.gz');
-    const fileName = `kit_url_${platform}_${arch}.txt`;
-
-    if (
-      // process.env.KIT_EXPERIMENTAL &&
-      existsSync(getAssetPath(fileName))
-    ) {
-      try {
-        const kitUrl = await readFile(getAssetPath(fileName), 'utf8');
-        await setupLog(`Download SDK from ${kitUrl}`);
-        log.info(`Downloading pre-bundled kit...`);
-        const buffer = await download(kitUrl.trim());
-        await writeFile(kitTar, buffer);
-        log.info(`Downloading complete. Beginning extraction...`);
-      } catch (error) {
-        log.error(error);
-      }
-    }
-
-    await extractTar(kitTar, kitPath());
     await setupLog(`.kit installed`);
 
-    // await setupLog(`Installing ~/.kit packages...`);
-    log.info(`PATH:`, options?.env?.PATH);
-
-    const npmResult = await new Promise((resolve, reject) => {
-      const npmPath = isWin
-        ? knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js')
-        : knodePath('bin', 'npm');
-      const child = fork(
-        npmPath,
-        [
-          `i`,
-          `esbuild@0.16.15`,
-          `-–save-exact`,
-          `--production`,
-          `--prefer-dedupe`,
-          `--loglevel`,
-          `verbose`,
-        ],
-        options
-      );
-
-      if (child.stdout) {
-        child.stdout.on('data', (data) => {
-          sendSplashBody(data.toString());
-        });
-      }
-
-      if (child.stderr) {
-        child.stderr.on('data', (data) => {
-          sendSplashBody(data.toString());
-        });
-      }
-
-      child.on('message', (data) => {
-        sendSplashBody(data.toString());
-      });
-      child.on('exit', () => {
-        resolve('npm install success');
-      });
-      child.on('error', (error) => {
-        log.warn({ error });
-        resolve(`Deps install error ${error}`);
-      });
-    });
+    await installKit('esbuild');
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));
     await clearPromptCache();
@@ -1053,47 +871,21 @@ const checkKit = async () => {
     // Step 4: Use kit wrapper to run setup.js script
     // configWindow?.show();
     await setupLog(`Extract tar to ~/.kenv...`);
-    const kenvTar = getAssetPath('kenv.tar.gz');
-    await extractTar(kenvTar, kenvPath());
+
+    await installKit('kenv');
+
     log.info(await readdir(kenvPath()));
 
     await kenvExists();
     await ensureKenvDirs();
-
-    optionalSetupScript(kitPath('setup', 'clone-examples.js'));
-    optionalSetupScript(kitPath('setup', 'clone-sponsors.js'));
   } else {
     optionalSetupScript(kitPath('setup', 'build-ts-scripts.js'));
   }
 
   if (!(await kenvConfigured())) {
     await setupLog(`Run .kenv setup script...`);
-    await setupScript(kitPath('setup', 'setup.js'));
 
-    if (isWin) {
-      const npmResult = await new Promise((resolve, reject) => {
-        const child = fork(
-          knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-          [`i`, kitPath()],
-          {
-            cwd: kenvPath(),
-            env: {
-              ...process.env,
-              PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
-            },
-          }
-        );
-        child.on('message', (data) => {
-          sendSplashBody(data.toString());
-        });
-        child.on('exit', () => {
-          resolve('npm install success');
-        });
-        child.on('error', (error) => {
-          reject(error);
-        });
-      });
-    }
+    await installKit('setup');
     await kenvConfigured();
   }
 
@@ -1120,6 +912,10 @@ const checkKit = async () => {
     kitState.ready = true;
 
     sendToPrompt(Channel.SET_READY, true);
+
+    // restore console.log and console.error
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
 
     focusPrompt();
   } catch (error) {

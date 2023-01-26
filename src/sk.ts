@@ -28,13 +28,29 @@ export const startSK = () => {
               trigger: Trigger.Kar,
             }
           );
-          const message = `🕹 sk ${script} ${args}`;
+          const message = `🚗💨 ~/.kit/kar ${script} ${args}`;
           log.info(message);
-          stream.write(message);
+          // stream.write(message);
+          // Replay with proper http message
+          stream.write(
+            `HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: ${message.length}
+
+${message}`
+          );
         } else {
           const message = `🕹 sk needs a script!`;
           log.info(message);
-          stream.write(message);
+          // stream.write(message);
+          // Replay with not found http message
+          stream.write(
+            `HTTP/1.1 404 Not Found
+Content-Type: text/plain
+Content-Length: ${message.length}
+
+${message}`
+          );
         }
         stream.end();
       } catch (error) {

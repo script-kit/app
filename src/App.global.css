@@ -392,6 +392,10 @@ body {
   font-stretch: condensed;
 }
 
+* {
+  font-stretch: condensed !important;
+}
+
 #input::placeholder {
   font-stretch: condensed;
 }

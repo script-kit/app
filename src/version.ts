@@ -1,8 +1,15 @@
 import { app } from 'electron';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import log from 'electron-log';
+import fs from 'fs';
+import { getAssetPath } from './assets';
 
 // eslint-disable-next-line import/prefer-default-export
+export const getVersonFromText = () => {
+  const versionPath = getAssetPath('version.txt');
+  return fs.readFileSync(versionPath, 'utf8').trim();
+};
+
 export const getVersion = () => {
   if (process.env.NODE_ENV === 'development') {
     // eslint-disable-next-line global-require
