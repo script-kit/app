@@ -147,6 +147,13 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "node_modules/@johnlindquist/install-kit",
+        "to": "install-kit",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "publish": {

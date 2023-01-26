@@ -656,20 +656,39 @@ const originalConsoleError = console.error;
 
 // Convert fork into a promise
 const installKit = (part: string) => {
-  return new Promise((resolve, reject) => {
-    const child = fork(
-      // resolve to node_modules in the parent directory
-      path.resolve(
-        __dirname,
-        '../node_modules/@johnlindquist/install-kit/index.js'
-      ),
-      [`--${part}`]
-    );
+  const installKitPath =
+    process.env.NODE_ENV === 'development'
+      ? path.resolve(
+          __dirname,
+          '../node_modules/@johnlindquist/install-kit/index.js'
+        )
+      : path.resolve(process.resourcesPath, 'install-kit', 'index.js');
 
-    child.on('message', (data) => {
-      const dataString = data.toString();
-      sendSplashBody(dataString);
+  log.info(`installKitPath --${part}`, installKitPath);
+  return new Promise((resolve, reject) => {
+    const child = fork(installKitPath, [`--${part}`], {
+      stdio: 'pipe',
     });
+
+    if (child?.stdout) {
+      log.info(`child.stdout`, child.stdout);
+      child.stdout.on('data', (data) => {
+        log.info(`message typeof data`, typeof data);
+        const dataString = typeof data === 'string' ? data : data.toString();
+        log.info(`Message:`, JSON.stringify(dataString));
+        sendSplashBody(dataString);
+      });
+    }
+
+    if (child?.stderr) {
+      log.info(`child.stderr`, child.stderr);
+      child.stderr.on('data', (data) => {
+        log.info(`message typeof data`, typeof data);
+        const dataString = typeof data === 'string' ? data : data.toString();
+        log.info(`Message:`, JSON.stringify(dataString));
+        sendSplashBody(dataString);
+      });
+    }
 
     child.on('exit', () => {
       sendSplashBody(`✅ Successfully installed ${part}`);
@@ -677,6 +696,7 @@ const installKit = (part: string) => {
     });
 
     child.on('error', (error: Error) => {
+      log.info(error.message);
       reject(error);
       ohNo(error);
     });
@@ -705,10 +725,21 @@ const checkKit = async () => {
       log.info(`🔨 Running Setup Script ${args.join(' ')}`);
       const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
 
-      child.on('message', (data) => {
-        const dataString = data.toString();
-        log.info(args[0], dataString);
-      });
+      if (child.stdout) {
+        child.stdout.on('data', (data) => {
+          const dataString = typeof data === 'string' ? data : data.toString();
+          log.info(dataString);
+          sendSplashBody(dataString);
+        });
+      }
+
+      if (child.stderr) {
+        child.stderr.on('data', (data) => {
+          const dataString = typeof data === 'string' ? data : data.toString();
+          log.info(dataString);
+          sendSplashBody(dataString);
+        });
+      }
 
       child.on('exit', () => {
         log.info(`✅ Successfully ran ${args.join(' ')}`);
