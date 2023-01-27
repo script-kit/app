@@ -49,7 +49,7 @@ import {
 import os, { homedir } from 'os';
 import semver from 'semver';
 import { ensureDir, writeFile, lstat } from 'fs-extra';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { readdir, readFile, copyFile, rm } from 'fs/promises';
 
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
@@ -155,10 +155,20 @@ unhandled({
     log.error(error);
   },
   reportButton: (error) => {
+    let mainLogContents = '';
+
+    try {
+      mainLogContents = readFileSync(mainLogPath, 'utf8');
+    } catch (readLogError) {
+      log.error({ readLogError });
+    }
+
     openNewGitHubIssue({
       user: 'johnlindquist',
       repo: 'kit',
-      body: `\`\`\`\n${error.stack}\n\`\`\`\n\n---\n\n${debugInfo()}`,
+      body: `\`\`\`\n${
+        error.stack
+      }\n\`\`\`\n\n${mainLogContents}\n\n${debugInfo()}`,
     });
   },
 });
@@ -412,7 +422,7 @@ const downloadKit = async () => {
 
   const kitSDK = `Kit-SDK-${uppercaseOSName}-${version}-${process.arch}.${extension}`;
   const file = osTmpPath(kitSDK);
-  const url = `https://github.com/johnlindquist/kitapp/releases/download/v${version}/download/${kitSDK}`;
+  const url = `https://github.com/johnlindquist/kitapp/releases/download/v${version}/${kitSDK}`;
 
   log.info(`Downloading Kit SDK from ${url}`);
   const buffer = await download(url);
