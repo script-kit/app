@@ -37,6 +37,7 @@ import log from 'electron-log';
 
 import path from 'path';
 import tar from 'tar';
+import download from 'download';
 import {
   fork,
   SpawnSyncOptions,
