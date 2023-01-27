@@ -2045,22 +2045,12 @@
     execa "6.1.0"
     open "8.4.0"
 
-"@johnlindquist/install-kit@^1.2.1":
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/install-kit/-/install-kit-1.2.1.tgz#bcfe3b1d41ea89261ee10850a1e7d00809a0d59c"
-  integrity sha512-vvh2TX4P2PAQJ6OSasuYjDbHPpyU083KglG2C/eB9hdKcQG01yGFhsqvCOqd13yEIqEarymVylAoX7qeqv3qZg==
-  dependencies:
-    "@johnlindquist/kit" "*"
-    download "^8.0.0"
-    node-stream-zip "^1.15.0"
-    tar "^6.1.13"
-
 "@johnlindquist/kit-internal@1.13.1":
   version "1.13.1"
   resolved "https://registry.yarnpkg.com/@johnlindquist/kit-internal/-/kit-internal-1.13.1.tgz#a94851d34d1930fe0516ed8712944c6de0fbb693"
   integrity sha512-l8zGhDRfP3jfBKGLQKujGFfvFkYK/ssHBbpLK/p0FjyMi1obWU6ibE4KdZyULmdvUJ9OwHk7xICkeWcisBBE3Q==
 
-"@johnlindquist/kit@*", "@johnlindquist/kit@^0.39.14":
+"@johnlindquist/kit@^0.39.14":
   version "0.39.14"
   resolved "https://registry.yarnpkg.com/@johnlindquist/kit/-/kit-0.39.14.tgz#d41cfac2a9f8738036a80dbd697fbb06b0b60b39"
   integrity sha512-7xtYLfF04LQr0sNJHqMq9Nte8+jEGH/2fMjqIEYZw1MRHTi7Ket0/JSaixRCkUvZ8K77hBxKlkSqG1B36tY9IA==
@@ -7202,7 +7192,7 @@ dotenv@^9.0.2:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-9.0.2.tgz#dacc20160935a37dea6364aa1bef819fb9b6ab05"
   integrity sha512-I9OvvrHp4pIARv4+x9iuewrWycX6CcZtoAu1XrzPxc5UygMJXJZYmBsynku8IkrJwgypE5DGNjDPmPRhDCptUg==
 
-download@8.0.0, download@^8.0.0:
+download@8.0.0:
   version "8.0.0"
   resolved "https://registry.yarnpkg.com/download/-/download-8.0.0.tgz#afc0b309730811731aae9f5371c9f46be73e51b1"
   integrity sha512-ASRY5QhDk7FK+XrQtQyvhpDKanLluEEQtWl/J7Lxuf/b+i8RYh997QeXvL85xitrmRKVlx9c7eTrcRdq2GS4eA==
@@ -12603,7 +12593,7 @@ minipass-sized@^1.0.3:
   dependencies:
     minipass "^3.0.0"
 
-minipass@*, minipass@^4.0.0:
+minipass@*:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/minipass/-/minipass-4.0.0.tgz#7cebb0f9fa7d56f0c5b17853cbe28838a8dbbd3b"
   integrity sha512-g2Uuh2jEKoht+zvO6vJqXmYpflPqzRBT+Th2h01DKh5z7wbY/AZ2gCQ78cP70YoHPyFdY30YBV5WxgLOEwOykw==
@@ -17157,18 +17147,6 @@ tar@^6.0.5, tar@^6.1.11, tar@^6.1.2:
     chownr "^2.0.0"
     fs-minipass "^2.0.0"
     minipass "^3.0.0"
-    minizlib "^2.1.1"
-    mkdirp "^1.0.3"
-    yallist "^4.0.0"
-
-tar@^6.1.13:
-  version "6.1.13"
-  resolved "https://registry.yarnpkg.com/tar/-/tar-6.1.13.tgz#46e22529000f612180601a6fe0680e7da508847b"
-  integrity sha512-jdIBIN6LTIe2jqzay/2vtYLlBHa3JF42ot3h1dW8Q0PaAG4v8rm0cvpVePtau5C6OKXGGcgO9q2AMNSWxiLqKw==
-  dependencies:
-    chownr "^2.0.0"
-    fs-minipass "^2.0.0"
-    minipass "^4.0.0"
     minizlib "^2.1.1"
     mkdirp "^1.0.3"
     yallist "^4.0.0"

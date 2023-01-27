@@ -37,6 +37,7 @@ import log from 'electron-log';
 
 import path from 'path';
 import tar from 'tar';
+import StreamZip from 'node-stream-zip';
 import download from 'download';
 import {
   fork,
@@ -47,7 +48,7 @@ import {
 } from 'child_process';
 import os, { homedir } from 'os';
 import semver from 'semver';
-import { ensureDir, writeFile } from 'fs-extra';
+import { ensureDir, writeFile, lstat } from 'fs-extra';
 import { existsSync } from 'fs';
 import { readdir, readFile, copyFile, rm } from 'fs/promises';
 
@@ -209,13 +210,193 @@ process.env.KIT_APP_VERSION =
 
 const KIT = kitPath();
 
-const downloadKit = async () => {
-  // cleanup any existing .kit directory
-  if (await isDir(kitPath())) {
-    await rm(kitPath(), {
+const installEsbuild = async () => {
+  const options: SpawnSyncOptions = {
+    cwd: KIT,
+    encoding: 'utf-8',
+    env: {
+      KIT,
+      KENV: kenvPath(),
+      PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+    },
+    stdio: 'pipe',
+  };
+
+  const npmResult = await new Promise((resolve, reject) => {
+    const npmPath = isWin
+      ? knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js')
+      : knodePath('bin', 'npm');
+    const child = fork(
+      npmPath,
+      [
+        `i`,
+        `esbuild@0.16.15`,
+        `-–save-exact`,
+        `--production`,
+        `--prefer-dedupe`,
+        `--loglevel`,
+        `verbose`,
+      ],
+      options
+    );
+
+    if (child.stdout) {
+      child.stdout.on('data', (data) => {
+        sendSplashBody(data.toString());
+      });
+    }
+
+    if (child.stderr) {
+      child.stderr.on('data', (data) => {
+        sendSplashBody(data.toString());
+      });
+    }
+
+    child.on('message', (data) => {
+      sendSplashBody(data.toString());
+    });
+    child.on('exit', () => {
+      resolve('npm install success');
+    });
+    child.on('error', (error) => {
+      log.warn({ error });
+      resolve(`Deps install error ${error}`);
+    });
+  });
+};
+
+const downloadNode = async () => {
+  // cleanup any existing knode directory
+  if (await isDir(knodePath())) {
+    await rm(knodePath(), {
       recursive: true,
       force: true,
     });
+  }
+
+  const osTmpPath = createPathResolver(os.tmpdir());
+
+  const extension = process.platform === 'win32' ? 'zip' : 'tar.gz';
+
+  // download node v16.7.1 based on the current platform and architecture
+  // Examples:
+  // Mac arm64: https://nodejs.org/dist/v16.17.1/node-v16.17.1-darwin-arm64.tar.gz
+  // Linux x64: https://nodejs.org/dist/v16.17.1/node-v16.17.1-linux-x64.tar.gz
+  // Windows x64: https://nodejs.org/dist/v16.17.1/node-v16.17.1-win-x64.zip
+
+  // Node dist url uses "win", not "win32"
+  const nodePlatform = process.platform === 'win32' ? 'win' : process.platform;
+  const node = `node-${nodeVersion}-${nodePlatform}-${process.arch}.${extension}`;
+  const file = osTmpPath(node);
+  const url = `https://nodejs.org/dist/${nodeVersion}/${node}`;
+
+  console.log(`Downloading node from ${url}`);
+  const buffer = await download(url);
+
+  console.log(`Writing node to ${file}`);
+  await writeFile(file, buffer);
+
+  console.log(`Ensuring ${knodePath()} exists`);
+  await ensureDir(knodePath());
+  console.log(`Beginning extraction to ${knodePath()}`);
+
+  // if mac or linux, extract the tar.gz
+  if (nodePlatform === 'win') {
+    // eslint-disable-next-line
+    const zip = new StreamZip.async({ file });
+
+    const fileName = path.parse(node).name;
+    console.log(`Extacting ${fileName} to ${knodePath('bin')}`);
+    // node-16.17.1-win-x64
+    await zip.extract(fileName, knodePath('bin'));
+    await zip.close();
+  } else {
+    await tar.x({
+      file,
+      C: knodePath(),
+      strip: 1,
+    });
+  }
+
+  console.log(`Removing ${file}`);
+
+  await rm(file);
+};
+
+const downloadKenv = async () => {
+  // cleanup any existing knode directory
+  if (await isDir(kenvPath())) {
+    log.info(`${kenvPath()} already exists. Skipping download.`);
+    // Todo: Maybe prompt to delete?
+    // await rm(kenvPath(), {
+    //   recursive: true,
+    //   force: true,
+    // })
+  } else {
+    const osTmpPath = createPathResolver(os.tmpdir());
+
+    const fileName = `kenv.zip`;
+    const file = osTmpPath(fileName);
+    const url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
+
+    console.log(`Downloading node from ${url}`);
+    const buffer = await download(url);
+
+    console.log(`Writing node to ${file}`);
+    await writeFile(file, buffer);
+
+    // eslint-disable-next-line
+    const zip = new StreamZip.async({ file });
+
+    console.log(`Extacting ${fileName} to ${kenvPath()}`);
+
+    await ensureDir(kenvPath());
+    await zip.extract('kenv', kenvPath());
+    await zip.close();
+
+    console.log(`Removing ${file}`);
+
+    await rm(file);
+
+    console.log(
+      `Ensuring ${kenvPath('kenvs')} and ${kenvPath('assets')} exists`
+    );
+    await ensureDir(kenvPath('kenvs'));
+    await ensureDir(kenvPath('assets'));
+  }
+};
+
+const cleanKit = async () => {
+  log.info(`🧹 Cleaning ${kitPath()}`);
+  const pathToClean = kitPath();
+
+  const keep = (file: string) =>
+    file === 'db' || file === 'node_modules' || file === 'assets';
+
+  // eslint-disable-next-line no-restricted-syntax
+  for await (const file of await readdir(pathToClean)) {
+    if (keep(file)) {
+      log.info(`👍 Keeping ${file}`);
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+
+    const filePath = path.resolve(pathToClean, file);
+    const stat = await lstat(filePath);
+    if (stat.isDirectory()) {
+      await rm(filePath, { recursive: true, force: true });
+      log.info(`🧹 Cleaning dir ${filePath}`);
+    } else {
+      await rm(filePath);
+      log.info(`🧹 Cleaning file ${filePath}`);
+    }
+  }
+};
+
+const downloadKit = async () => {
+  // cleanup any existing .kit directory
+  if (await isDir(kitPath())) {
+    await cleanKit();
   }
 
   const osTmpPath = createPathResolver(os.tmpdir());
@@ -707,66 +888,6 @@ const currentVersionIsGreater = async () => {
   return semver.gt(currentVersion, storedVersion);
 };
 
-const originalConsoleLog = console.log;
-const originalConsoleError = console.error;
-
-// Convert fork into a promise
-const installKit = (part: string) => {
-  const installKitPath =
-    process.env.NODE_ENV === 'development'
-      ? path.resolve(
-          __dirname,
-          '../node_modules/@johnlindquist/install-kit/index.js'
-        )
-      : path.resolve(process.resourcesPath, 'install-kit', 'index.js');
-
-  log.info(`installKitPath --${part}`, installKitPath);
-  return new Promise((resolve, reject) => {
-    const child = fork(installKitPath, [`--${part}`], {
-      stdio: 'pipe',
-      env: {
-        ...process.env,
-        KIT: kitPath(),
-        KENV: kenvPath(),
-      },
-    });
-
-    if (child?.stdout) {
-      child.stdout.on('data', (data) => {
-        log.info(`message typeof data`, typeof data);
-        const dataString = typeof data === 'string' ? data : data.toString();
-        log.info(`Message:`, JSON.stringify(dataString));
-        sendSplashBody(dataString);
-      });
-    }
-
-    if (child?.stderr) {
-      child.stderr.on('data', (data) => {
-        log.info(`message typeof data`, typeof data);
-        const dataString = typeof data === 'string' ? data : data.toString();
-        log.info(`Message:`, JSON.stringify(dataString));
-        sendSplashBody(dataString);
-      });
-    }
-
-    child.on('exit', (code) => {
-      if (code === 0) {
-        sendSplashBody(`✅ Successfully installed ${part}`);
-        resolve('success');
-      } else {
-        sendSplashBody(`❌ Failed to install ${part}`);
-        reject(new Error(`Failed to install ${part}`));
-      }
-    });
-
-    child.on('error', (error: Error) => {
-      log.info(error.message);
-      reject(error);
-      ohNo(error);
-    });
-  });
-};
-
 const checkKit = async () => {
   await setupTray(true, 'busy');
   await setupLog(`Tray created`);
@@ -852,19 +973,6 @@ const checkKit = async () => {
     setTimeout(() => {
       focusPrompt();
     }, 500);
-
-    // override console.log to send to splash screen
-
-    console.log = (...args: any[]) => {
-      sendSplashBody(args.join(' '));
-      originalConsoleLog(...args);
-    };
-
-    // override console.error to send to splash screen
-    console.error = (...args: any[]) => {
-      sendSplashBody(args.join(' '));
-      originalConsoleError(...args);
-    };
   };
 
   if (process.env.NODE_ENV === 'development') {
@@ -926,7 +1034,7 @@ const checkKit = async () => {
       `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
     );
 
-    await installKit('node');
+    await downloadNode();
   }
 
   const requiresInstall =
@@ -939,7 +1047,7 @@ const checkKit = async () => {
 
     await setupLog(`.kit installed`);
 
-    await installKit('esbuild');
+    await installEsbuild();
 
     await setupScript(kitPath('setup', 'chmod-helpers.js'));
     await clearPromptCache();
@@ -971,7 +1079,7 @@ const checkKit = async () => {
     // configWindow?.show();
     await setupLog(`Extract tar to ~/.kenv...`);
 
-    await installKit('kenv');
+    await downloadKenv();
 
     log.info(await readdir(kenvPath()));
 
@@ -984,7 +1092,7 @@ const checkKit = async () => {
   if (!(await kenvConfigured())) {
     await setupLog(`Run .kenv setup script...`);
 
-    await installKit('setup');
+    await setupScript(kitPath('setup', 'setup.js'));
     await kenvConfigured();
   }
 
@@ -1011,10 +1119,6 @@ const checkKit = async () => {
     kitState.ready = true;
 
     sendToPrompt(Channel.SET_READY, true);
-
-    // restore console.log and console.error
-    console.log = originalConsoleLog;
-    console.error = originalConsoleError;
 
     focusPrompt();
   } catch (error) {

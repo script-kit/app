@@ -147,13 +147,6 @@
         "filter": [
           "**/*"
         ]
-      },
-      {
-        "from": "node_modules/@johnlindquist/install-kit",
-        "to": "install-kit",
-        "filter": [
-          "**/*"
-        ]
       }
     ],
     "publish": {
@@ -346,7 +339,6 @@
     "@fontsource/fira-mono": "^4.5.8",
     "@fontsource/jetbrains-mono": "^4.5.9",
     "@heroicons/react": "1.0.4",
-    "@johnlindquist/install-kit": "^1.2.1",
     "@johnlindquist/kit": "^0.39.14",
     "@monaco-editor/react": "^4.4.6",
     "@react-hook/resize-observer": "1.2.0",
