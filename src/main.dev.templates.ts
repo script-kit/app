@@ -35,7 +35,7 @@ export const CONFIG_SPLASH = `
 `;
 
 export const showError = (error: Error, mainLog: string) => `
-<body class="p-1 h-screen w-screen flex flex-col">
+<body class="p-6 h-screen w-screen flex flex-col">
 <h1>Kit ${getVersion()} failed to install</h1>
 <div>Please share the logs below (already copied to clipboard): </div>
 <div class="italic">Note: Kit exits when you close this window</div>
@@ -43,6 +43,6 @@ export const showError = (error: Error, mainLog: string) => `
 
 <h2>Error: ${error.message}</h2>
 
-<textarea class="font-mono w-full h-full text-xs text-text-base">${mainLog}</textarea>
+<textarea class="bg-bg-base font-mono w-full h-full text-xs text-text-base">${mainLog}</textarea>
 </body>
 `;

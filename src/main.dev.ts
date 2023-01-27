@@ -1,5 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-continue */
+/* eslint-disable no-nested-ternary */
 /* eslint-disable import/first */
 /* eslint-disable jest/no-identical-title */
 /* eslint-disable jest/expect-expect */
@@ -35,6 +36,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 
 import path from 'path';
+import tar from 'tar';
 import {
   fork,
   SpawnSyncOptions,
@@ -44,9 +46,9 @@ import {
 } from 'child_process';
 import os, { homedir } from 'os';
 import semver from 'semver';
-import { ensureDir } from 'fs-extra';
+import { ensureDir, writeFile } from 'fs-extra';
 import { existsSync } from 'fs';
-import { readdir, readFile, copyFile } from 'fs/promises';
+import { readdir, readFile, copyFile, rm } from 'fs/promises';
 
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
 import { PromptData } from '@johnlindquist/kit/types/core';
@@ -59,6 +61,8 @@ import {
   tmpClipboardDir,
   tmpDownloadsDir,
   execPath,
+  createPathResolver,
+  isDir,
 } from '@johnlindquist/kit/cjs/utils';
 
 import {
@@ -203,6 +207,52 @@ process.env.KIT_APP_VERSION =
   process.env.NODE_ENV === 'production' ? getVersion() : getVersonFromText();
 
 const KIT = kitPath();
+
+const downloadKit = async () => {
+  // cleanup any existing .kit directory
+  if (await isDir(kitPath())) {
+    await rm(kitPath(), {
+      recursive: true,
+      force: true,
+    });
+  }
+
+  const osTmpPath = createPathResolver(os.tmpdir());
+
+  const version = process.env.KIT_APP_VERSION;
+  const extension = 'tar.gz';
+
+  /* eslint-disable no-nested-ternary */
+  const uppercaseOSName =
+    process.platform === 'win32'
+      ? 'Windows'
+      : process.platform === 'linux'
+      ? 'Linux'
+      : 'macOS';
+  const kitSDK = `Kit-SDK-${uppercaseOSName}-${version}-${process.arch}.${extension}`;
+  const file = osTmpPath(kitSDK);
+  const url = `https://github.com/johnlindquist/kitapp/releases/latest/download/${kitSDK}`;
+
+  console.log(`Downloading Kit SDK from ${url}`);
+  const buffer = await download(url);
+
+  console.log(`Writing kit to ${file}`);
+  await writeFile(file, buffer);
+
+  console.log(`Ensuring ${kitPath()} exists`);
+  await ensureDir(kitPath());
+
+  console.log(`Beginning extraction to ${kitPath()}`);
+  await tar.x({
+    file,
+    C: kitPath(),
+    strip: 1,
+  });
+
+  console.log(`Removing ${file}`);
+
+  await rm(file);
+};
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -382,9 +432,14 @@ const optionalSetupScript = (...args: string[]) => {
       }
     });
 
-    child.on('exit', () => {
-      log.info(`✅ Successfully ran setup script: ${args.join(' ')}`);
-      resolve('success');
+    child.on('exit', (code) => {
+      if (code === 0) {
+        log.info(`✅ Setup script completed: ${args.join(' ')}`);
+        resolve('done');
+      } else {
+        log.info(`⚠️ Setup script exited with code ${code}: ${args.join(' ')}`);
+        resolve('error');
+      }
     });
 
     child.on('error', (error: Error) => {
@@ -668,10 +723,14 @@ const installKit = (part: string) => {
   return new Promise((resolve, reject) => {
     const child = fork(installKitPath, [`--${part}`], {
       stdio: 'pipe',
+      env: {
+        ...process.env,
+        KIT: kitPath(),
+        KENV: kenvPath(),
+      },
     });
 
     if (child?.stdout) {
-      log.info(`child.stdout`, child.stdout);
       child.stdout.on('data', (data) => {
         log.info(`message typeof data`, typeof data);
         const dataString = typeof data === 'string' ? data : data.toString();
@@ -681,7 +740,6 @@ const installKit = (part: string) => {
     }
 
     if (child?.stderr) {
-      log.info(`child.stderr`, child.stderr);
       child.stderr.on('data', (data) => {
         log.info(`message typeof data`, typeof data);
         const dataString = typeof data === 'string' ? data : data.toString();
@@ -690,9 +748,14 @@ const installKit = (part: string) => {
       });
     }
 
-    child.on('exit', () => {
-      sendSplashBody(`✅ Successfully installed ${part}`);
-      resolve('success');
+    child.on('exit', (code) => {
+      if (code === 0) {
+        sendSplashBody(`✅ Successfully installed ${part}`);
+        resolve('success');
+      } else {
+        sendSplashBody(`❌ Failed to install ${part}`);
+        reject(new Error(`Failed to install ${part}`));
+      }
     });
 
     child.on('error', (error: Error) => {
@@ -741,9 +804,13 @@ const checkKit = async () => {
         });
       }
 
-      child.on('exit', () => {
-        log.info(`✅ Successfully ran ${args.join(' ')}`);
-        resolve('success');
+      child.on('exit', (code) => {
+        log.info(`🔨 Setup Script exited with code ${code}`);
+        if (code === 0) {
+          resolve('success');
+        } else {
+          reject(new Error('Setup script failed'));
+        }
       });
 
       child.on('error', (error: Error) => {
@@ -867,7 +934,7 @@ const checkKit = async () => {
   if (await isContributor()) {
     await setupLog(`Welcome fellow contributor! Thanks for all you do!`);
   } else if (requiresInstall) {
-    await installKit('kit');
+    await downloadKit();
 
     await setupLog(`.kit installed`);
 
