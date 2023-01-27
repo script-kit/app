@@ -152,7 +152,7 @@ crashReporter.start({ submitURL: '', uploadToServer: false });
 unhandled({
   showDialog: true,
   logger: (error) => {
-    log.error(error);
+    ohNo(error);
   },
   reportButton: (error) => {
     let mainLogContents = '';
@@ -227,6 +227,7 @@ const installEsbuild = async () => {
   };
 
   const npmResult = await new Promise((resolve, reject) => {
+    const isWin = os.platform().startsWith('win');
     const npmPath = isWin
       ? knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js')
       : knodePath('bin', 'npm');
@@ -294,15 +295,15 @@ const downloadNode = async () => {
   const file = osTmpPath(node);
   const url = `https://nodejs.org/dist/${nodeVersion}/${node}`;
 
-  log.info(`Downloading node from ${url}`);
+  sendSplashBody(`Downloading node from ${url}`);
   const buffer = await download(url);
 
-  log.info(`Writing node to ${file}`);
+  sendSplashBody(`Writing node to ${file}`);
   await writeFile(file, buffer);
 
-  log.info(`Ensuring ${knodePath()} exists`);
+  sendSplashBody(`Ensuring ${knodePath()} exists`);
   await ensureDir(knodePath());
-  log.info(`Beginning extraction to ${knodePath()}`);
+  sendSplashBody(`Beginning extraction to ${knodePath()}`);
 
   // if mac or linux, extract the tar.gz
   if (nodePlatform === 'win') {
@@ -310,7 +311,7 @@ const downloadNode = async () => {
     const zip = new StreamZip.async({ file });
 
     const fileName = path.parse(node).name;
-    log.info(`Extacting ${fileName} to ${knodePath('bin')}`);
+    sendSplashBody(`Extacting ${fileName} to ${knodePath('bin')}`);
     // node-16.17.1-win-x64
     await zip.extract(fileName, knodePath('bin'));
     await zip.close();
@@ -322,7 +323,7 @@ const downloadNode = async () => {
     });
   }
 
-  log.info(`Removing ${file}`);
+  sendSplashBody(`Removing ${file}`);
 
   await rm(file);
 };
@@ -330,7 +331,7 @@ const downloadNode = async () => {
 const downloadKenv = async () => {
   // cleanup any existing knode directory
   if (await isDir(kenvPath())) {
-    log.info(`${kenvPath()} already exists. Skipping download.`);
+    sendSplashBody(`${kenvPath()} already exists. Skipping download.`);
     // Todo: Maybe prompt to delete?
     // await rm(kenvPath(), {
     //   recursive: true,
@@ -343,26 +344,28 @@ const downloadKenv = async () => {
     const file = osTmpPath(fileName);
     const url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
 
-    log.info(`Downloading node from ${url}`);
+    sendSplashBody(`Downloading node from ${url}`);
     const buffer = await download(url);
 
-    log.info(`Writing node to ${file}`);
+    sendSplashBody(`Writing node to ${file}`);
     await writeFile(file, buffer);
 
     // eslint-disable-next-line
     const zip = new StreamZip.async({ file });
 
-    log.info(`Extacting ${fileName} to ${kenvPath()}`);
+    sendSplashBody(`Extacting ${fileName} to ${kenvPath()}`);
 
     await ensureDir(kenvPath());
     await zip.extract('kenv', kenvPath());
     await zip.close();
 
-    log.info(`Removing ${file}`);
+    sendSplashBody(`Removing ${file}`);
 
     await rm(file);
 
-    log.info(`Ensuring ${kenvPath('kenvs')} and ${kenvPath('assets')} exists`);
+    sendSplashBody(
+      `Ensuring ${kenvPath('kenvs')} and ${kenvPath('assets')} exists`
+    );
     await ensureDir(kenvPath('kenvs'));
     await ensureDir(kenvPath('assets'));
   }
@@ -424,23 +427,23 @@ const downloadKit = async () => {
   const file = osTmpPath(kitSDK);
   const url = `https://github.com/johnlindquist/kitapp/releases/download/v${version}/${kitSDK}`;
 
-  log.info(`Downloading Kit SDK from ${url}`);
+  sendSplashBody(`Downloading Kit SDK from ${url}`);
   const buffer = await download(url);
 
-  log.info(`Writing kit to ${file}`);
+  sendSplashBody(`Writing kit to ${file}`);
   await writeFile(file, buffer);
 
-  log.info(`Ensuring ${kitPath()} exists`);
+  sendSplashBody(`Ensuring ${kitPath()} exists`);
   await ensureDir(kitPath());
 
-  log.info(`Beginning extraction to ${kitPath()}`);
+  sendSplashBody(`Beginning extraction to ${kitPath()}`);
   await tar.x({
     file,
     C: kitPath(),
     strip: 1,
   });
 
-  log.info(`Removing ${file}`);
+  sendSplashBody(`Removing ${file}`);
 
   await rm(file);
 };
@@ -556,6 +559,7 @@ const createLogs = () => {
 };
 
 const sendSplashBody = (message: string) => {
+  log.info(`SPLASH BODY: ${message}`);
   if (message.includes('object')) return;
   if (message.toLowerCase().includes('warn')) return;
   sendToPrompt(Channel.SET_SPLASH_BODY, message);
@@ -866,7 +870,10 @@ const verifyInstall = async () => {
   throw new Error(`Install not verified...`);
 };
 
+let isOhNo = false;
 const ohNo = async (error: Error) => {
+  if (isOhNo) return;
+  isOhNo = true;
   log.warn(error.message);
   log.warn(error.stack);
   const mainLogContents = await readFile(mainLogPath, {

@@ -103,7 +103,15 @@ export default function Form({
       }
     }
 
-    const formJSON = Object.fromEntries(data.entries());
+    // if one of the values of the FormData is a File, then assign the key to the file path
+    const formJSON = Object.fromEntries(
+      data.entries().map(([key, value]: [string, File | string]) => {
+        if (value instanceof File) {
+          return [key, value.path];
+        }
+        return [key, value];
+      })
+    );
 
     for (const [key, value] of Object.entries(names)) {
       if (key && value) {
