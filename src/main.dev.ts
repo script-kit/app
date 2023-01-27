@@ -398,12 +398,16 @@ const cleanKit = async () => {
   }
 };
 
-const downloadKit = async () => {
-  // cleanup any existing .kit directory
-  if (await isDir(kitPath())) {
-    await cleanKit();
-  }
+const extractKitTar = async (file: string) => {
+  sendSplashBody(`Extract Kit SDK to ${kitPath()}`);
+  await tar.x({
+    file,
+    C: kitPath(),
+    strip: 1,
+  });
+};
 
+const downloadKit = async () => {
   const osTmpPath = createPathResolver(os.tmpdir());
 
   const version = process.env.KIT_APP_VERSION;
@@ -436,16 +440,9 @@ const downloadKit = async () => {
   sendSplashBody(`Ensuring ${kitPath()} exists`);
   await ensureDir(kitPath());
 
-  sendSplashBody(`Extract Kit SDK to ${kitPath()}`);
-  await tar.x({
-    file,
-    C: kitPath(),
-    strip: 1,
-  });
-
   sendSplashBody(`Removing ${file}`);
 
-  await rm(file);
+  return file;
 };
 
 if (process.env.NODE_ENV === 'production') {
@@ -1059,13 +1056,41 @@ const checkKit = async () => {
   if (await isContributor()) {
     await setupLog(`Welcome fellow contributor! Thanks for all you do!`);
   } else if (requiresInstall) {
-    await downloadKit();
+    if (await kitExists()) {
+      kitState.updateInstalling = true;
+      await setupLog(`Cleaning previous .kit`);
+      await cleanKit();
+    }
+
+    await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
+
+    const kitTar = getAssetPath('kit.tar.gz');
+
+    if (existsSync(getAssetPath(kitTar))) {
+      try {
+        await extractKitTar(kitTar);
+      } catch (error) {
+        try {
+          const file = await downloadKit();
+          await extractKitTar(file);
+        } catch (downloadError) {
+          log.error(downloadError);
+        }
+      }
+    } else {
+      const file = await downloadKit();
+      await extractKitTar(file);
+    }
 
     await setupLog(`.kit installed`);
 
     await installEsbuild();
 
-    await setupScript(kitPath('setup', 'chmod-helpers.js'));
+    try {
+      await setupScript(kitPath('setup', 'chmod-helpers.js'));
+    } catch (error) {
+      log.error(error);
+    }
     await clearPromptCache();
 
     // Overwite node_modules/node-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/Resources/Terminal.icns with assets/icon.icns
