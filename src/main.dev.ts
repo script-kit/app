@@ -235,7 +235,7 @@ const installEsbuild = async () => {
       npmPath,
       [
         `i`,
-        `esbuild@0.16.15`,
+        `esbuild@0.17.4`,
         `-–save-exact`,
         `--production`,
         `--prefer-dedupe`,
@@ -303,7 +303,7 @@ const downloadNode = async () => {
 
   sendSplashBody(`Ensuring ${knodePath()} exists`);
   await ensureDir(knodePath());
-  sendSplashBody(`Beginning extraction to ${knodePath()}`);
+  sendSplashBody(`Extracting node to ${knodePath()}`);
 
   // if mac or linux, extract the tar.gz
   if (nodePlatform === 'win') {
@@ -311,7 +311,7 @@ const downloadNode = async () => {
     const zip = new StreamZip.async({ file });
 
     const fileName = path.parse(node).name;
-    sendSplashBody(`Extacting ${fileName} to ${knodePath('bin')}`);
+    sendSplashBody(`Extacting ${fileName} to ${knodePath()}`);
     // node-16.17.1-win-x64
     await zip.extract(fileName, knodePath('bin'));
     await zip.close();
@@ -427,16 +427,16 @@ const downloadKit = async () => {
   const file = osTmpPath(kitSDK);
   const url = `https://github.com/johnlindquist/kitapp/releases/download/v${version}/${kitSDK}`;
 
-  sendSplashBody(`Downloading Kit SDK from ${url}`);
+  sendSplashBody(`Download Kit SDK from ${url}`);
   const buffer = await download(url);
 
-  sendSplashBody(`Writing kit to ${file}`);
+  sendSplashBody(`Writing Kit SDK to ${file}`);
   await writeFile(file, buffer);
 
   sendSplashBody(`Ensuring ${kitPath()} exists`);
   await ensureDir(kitPath());
 
-  sendSplashBody(`Beginning extraction to ${kitPath()}`);
+  sendSplashBody(`Extract Kit SDK to ${kitPath()}`);
   await tar.x({
     file,
     C: kitPath(),
@@ -1101,6 +1101,9 @@ const checkKit = async () => {
 
     await kenvExists();
     await ensureKenvDirs();
+
+    optionalSetupScript(kitPath('setup', 'clone-examples.js'));
+    optionalSetupScript(kitPath('setup', 'clone-sponsors.js'));
   } else {
     optionalSetupScript(kitPath('setup', 'build-ts-scripts.js'));
   }
