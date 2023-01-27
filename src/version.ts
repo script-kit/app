@@ -5,7 +5,7 @@ import fs from 'fs';
 import { getAssetPath } from './assets';
 
 // eslint-disable-next-line import/prefer-default-export
-export const getVersonFromText = () => {
+export const getVersionFromText = () => {
   const versionPath = getAssetPath('version.txt');
   return fs.readFileSync(versionPath, 'utf8').trim();
 };
@@ -13,7 +13,7 @@ export const getVersonFromText = () => {
 export const getVersion = () => {
   if (process.env.NODE_ENV === 'development') {
     // eslint-disable-next-line global-require
-    return require('./package.json').version;
+    return getVersionFromText();
   }
   return app.getVersion();
 };

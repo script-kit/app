@@ -94,12 +94,7 @@ import {
   clearPromptTimers,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
-import {
-  getVersion,
-  getStoredVersion,
-  storeVersion,
-  getVersonFromText,
-} from './version';
+import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import { INSTALL_ERROR, show } from './show';
 import {
@@ -205,8 +200,7 @@ Electron execPath: ${process.execPath}
 `);
 
 process.env.NODE_VERSION = nodeVersion;
-process.env.KIT_APP_VERSION =
-  process.env.NODE_ENV === 'production' ? getVersion() : getVersonFromText();
+process.env.KIT_APP_VERSION = getVersion();
 
 const KIT = kitPath();
 
@@ -290,15 +284,15 @@ const downloadNode = async () => {
   const file = osTmpPath(node);
   const url = `https://nodejs.org/dist/${nodeVersion}/${node}`;
 
-  console.log(`Downloading node from ${url}`);
+  log.info(`Downloading node from ${url}`);
   const buffer = await download(url);
 
-  console.log(`Writing node to ${file}`);
+  log.info(`Writing node to ${file}`);
   await writeFile(file, buffer);
 
-  console.log(`Ensuring ${knodePath()} exists`);
+  log.info(`Ensuring ${knodePath()} exists`);
   await ensureDir(knodePath());
-  console.log(`Beginning extraction to ${knodePath()}`);
+  log.info(`Beginning extraction to ${knodePath()}`);
 
   // if mac or linux, extract the tar.gz
   if (nodePlatform === 'win') {
@@ -306,7 +300,7 @@ const downloadNode = async () => {
     const zip = new StreamZip.async({ file });
 
     const fileName = path.parse(node).name;
-    console.log(`Extacting ${fileName} to ${knodePath('bin')}`);
+    log.info(`Extacting ${fileName} to ${knodePath('bin')}`);
     // node-16.17.1-win-x64
     await zip.extract(fileName, knodePath('bin'));
     await zip.close();
@@ -318,7 +312,7 @@ const downloadNode = async () => {
     });
   }
 
-  console.log(`Removing ${file}`);
+  log.info(`Removing ${file}`);
 
   await rm(file);
 };
@@ -339,28 +333,26 @@ const downloadKenv = async () => {
     const file = osTmpPath(fileName);
     const url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
 
-    console.log(`Downloading node from ${url}`);
+    log.info(`Downloading node from ${url}`);
     const buffer = await download(url);
 
-    console.log(`Writing node to ${file}`);
+    log.info(`Writing node to ${file}`);
     await writeFile(file, buffer);
 
     // eslint-disable-next-line
     const zip = new StreamZip.async({ file });
 
-    console.log(`Extacting ${fileName} to ${kenvPath()}`);
+    log.info(`Extacting ${fileName} to ${kenvPath()}`);
 
     await ensureDir(kenvPath());
     await zip.extract('kenv', kenvPath());
     await zip.close();
 
-    console.log(`Removing ${file}`);
+    log.info(`Removing ${file}`);
 
     await rm(file);
 
-    console.log(
-      `Ensuring ${kenvPath('kenvs')} and ${kenvPath('assets')} exists`
-    );
+    log.info(`Ensuring ${kenvPath('kenvs')} and ${kenvPath('assets')} exists`);
     await ensureDir(kenvPath('kenvs'));
     await ensureDir(kenvPath('assets'));
   }
@@ -411,27 +403,34 @@ const downloadKit = async () => {
       : process.platform === 'linux'
       ? 'Linux'
       : 'macOS';
+
+  // Download Kit SDK based on the current platform and architecture
+  // Examples:
+  // Mac arm64: https://github.com/johnlindquist/kitapp/releases/download/v1.40.70/Kit-SDK-macOS-1.40.70-arm64.tar.gz
+  // Linux x64: https://github.com/johnlindquist/kitapp/releases/download/v1.40.70/Kit-SDK-Linux-1.40.70-x64.tar.gz
+  // Windows x64: https://github.com/johnlindquist/kitapp/releases/download/v1.40.70/Kit-SDK-macOS-1.40.70-x64.tar.gz
+
   const kitSDK = `Kit-SDK-${uppercaseOSName}-${version}-${process.arch}.${extension}`;
   const file = osTmpPath(kitSDK);
-  const url = `https://github.com/johnlindquist/kitapp/releases/latest/download/${kitSDK}`;
+  const url = `https://github.com/johnlindquist/kitapp/releases/download/v${version}/download/${kitSDK}`;
 
-  console.log(`Downloading Kit SDK from ${url}`);
+  log.info(`Downloading Kit SDK from ${url}`);
   const buffer = await download(url);
 
-  console.log(`Writing kit to ${file}`);
+  log.info(`Writing kit to ${file}`);
   await writeFile(file, buffer);
 
-  console.log(`Ensuring ${kitPath()} exists`);
+  log.info(`Ensuring ${kitPath()} exists`);
   await ensureDir(kitPath());
 
-  console.log(`Beginning extraction to ${kitPath()}`);
+  log.info(`Beginning extraction to ${kitPath()}`);
   await tar.x({
     file,
     C: kitPath(),
     strip: 1,
   });
 
-  console.log(`Removing ${file}`);
+  log.info(`Removing ${file}`);
 
   await rm(file);
 };
@@ -481,7 +480,7 @@ const cliFromParams = async (cli: string, params: URLSearchParams) => {
 
 const newFromProtocol = async (u: string) => {
   const url = new URL(u);
-  console.log({ url });
+  log.info({ url });
   if (url.protocol === 'kit:') {
     const pathname = url.pathname.replace('//', '');
     if (pathname === 'new') {
