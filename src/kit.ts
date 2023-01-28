@@ -158,6 +158,7 @@ export const runPromptProcess = async (
 
   log.info(`${pid}: 🏎 ${promptScriptPath} `);
   processInfo.scriptPath = promptScriptPath;
+  processInfo.date = Date.now();
 
   const script = await findScript(promptScriptPath);
 

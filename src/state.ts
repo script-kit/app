@@ -13,7 +13,6 @@ import { ChildProcess } from 'child_process';
 import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
-import { KeyboardClass } from '@nut-tree/nut-js';
 import { Script, ProcessInfo } from '@johnlindquist/kit/types/core';
 import {
   getScripts,
@@ -224,6 +223,9 @@ export const checkAccessibility = () =>
   });
 
 const isMac = os.platform() === 'darwin';
+const isWin = os.platform() === 'win32';
+const isLinux = os.platform() === 'linux';
+const arch = os.arch();
 
 const initState = {
   debugging: false,
@@ -318,11 +320,13 @@ const initState = {
   keymap: null as any,
   keyboardConfig: {
     autoDelayMs: 0,
-  } as KeyboardClass['config'],
+  } as any,
   cancelTyping: false,
   kenvEnv: {} as Record<string, string>,
   escapePressed: false,
   shortcutPressed: '',
+  supportsNut:
+    isMac || (isWin && arch === 'x64') || (isLinux && arch === 'x64'),
 };
 
 const initAppDb: AppDb = {

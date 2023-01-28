@@ -5,7 +5,6 @@ import log from 'electron-log';
 import { randomUUID } from 'crypto';
 import detect from 'detect-port';
 import untildify from 'untildify';
-import { keyboard, mouse, Key } from '@nut-tree/nut-js';
 import {
   app,
   clipboard,
@@ -1361,6 +1360,14 @@ const kitMessageMap: ChannelHandler = {
   ),
 
   KEYBOARD_TYPE: toProcess(async ({ child }, { channel, value }) => {
+    if (!kitState.supportsNut) {
+      log.warn(
+        `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`
+      );
+      return;
+    }
+
+    const { keyboard, Key } = await import('@nut-tree/nut-js');
     if (kitState.shortcutPressed) {
       // Get the modifiers from the accelerator
       const modifiers = kitState.shortcutPressed.split('+');
@@ -1422,6 +1429,14 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   KEYBOARD_PRESS_KEY: toProcess(async ({ child }, { channel, value }) => {
+    if (!kitState.supportsNut) {
+      log.warn(
+        `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`
+      );
+      return;
+    }
+    const { keyboard } = await import('@nut-tree/nut-js');
+
     if (!kitState.authorized) kitState.notifyAuthFail = true;
     log.info(`PRESSING KEY`, { value });
     await keyboard.pressKey(...(value as any));
@@ -1433,6 +1448,14 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   KEYBOARD_RELEASE_KEY: toProcess(async ({ child }, { channel, value }) => {
+    if (!kitState.supportsNut) {
+      log.warn(
+        `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`
+      );
+      return;
+    }
+    const { keyboard, Key } = await import('@nut-tree/nut-js');
+
     await new Promise((resolve) => {
       setTimeout(resolve, 25);
     });
@@ -1547,6 +1570,14 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_SELECTED_TEXT: toProcess(async ({ child }, { channel, value }) => {
+    if (!kitState.supportsNut) {
+      log.warn(
+        `SET_SELECTED_TEXT: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`
+      );
+      return;
+    }
+    const { keyboard, Key } = await import('@nut-tree/nut-js');
+
     if (kitState.isMac && app?.dock && app?.dock?.isVisible())
       app?.dock?.hide();
     log.info(`SET SELECTED TEXT`, value);

@@ -1,8 +1,15 @@
-import { keyboard, Key } from '@nut-tree/nut-js';
 import log from 'electron-log';
 import { kitState } from './state';
 
 export const deleteText = async (stringToDelete = '') => {
+  if (!kitState.supportsNut) {
+    log.warn(
+      `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`
+    );
+    return;
+  }
+
+  const { keyboard, Key } = await import('@nut-tree/nut-js');
   const prevDelay = keyboard.config.autoDelayMs;
   keyboard.config.autoDelayMs = 0;
 

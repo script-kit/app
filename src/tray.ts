@@ -9,7 +9,7 @@ import {
   globalShortcut,
   shell,
 } from 'electron';
-
+import { formatDistanceToNow } from 'date-fns';
 import path from 'path';
 import { rm } from 'fs/promises';
 import log, { LogLevel } from 'electron-log';
@@ -214,7 +214,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         enabled: false,
       });
 
-      for await (const { pid, scriptPath } of kitState.ps) {
+      for await (const { pid, scriptPath, date } of kitState.ps) {
         if (scriptPath) {
           const logItems: MenuItemConstructorOptions[] = [];
           const maybeLog = getLogFromScriptPath(scriptPath);
@@ -229,9 +229,24 @@ export const openMenu = async (event?: KeyboardEvent) => {
               },
             });
           }
+          let uptimeLabel = ``;
+
+          try {
+            uptimeLabel = `uptime: ${formatDistanceToNow(
+              new Date(date as number)
+            )}`;
+          } catch (error) {
+            // ignore
+          }
+
           runningScripts.push({
             label: path.basename(scriptPath as string),
             submenu: [
+              // Conditionally show uptime label
+              ...(uptimeLabel ? [{ label: uptimeLabel }] : []),
+              {
+                label: `Process ID: ${pid}`,
+              },
               {
                 label: 'Terminate',
                 click: () => {
