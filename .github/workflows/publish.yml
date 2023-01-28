@@ -185,7 +185,8 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-
+          # lol, have to add it back so it will build
+          yarn add node-mac-permissions
           yarn build
           cd ./src
           yarn remove @nut-tree/nut-js
@@ -225,6 +226,8 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # lol, have to add it back so it will build
+          yarn add node-mac-permissions
           yarn build
           cd ./src
           yarn remove @nut-tree/nut-js
