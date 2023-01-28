@@ -74,6 +74,7 @@
     ],
     "afterSign": ".erb/scripts/Notarize.js",
     "afterPack": ".erb/scripts/BundleNode.js",
+    "beforePack": ".erb/scripts/BeforePack.js",
     "protocols": [
       {
         "name": "kit",
