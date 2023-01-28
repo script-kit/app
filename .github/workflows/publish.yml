@@ -188,7 +188,6 @@ jobs:
 
           yarn build
           cd ./src
-          yarn remove node-mac-permissions
           yarn remove @nut-tree/nut-js
           cat ./package.json
           cd ..
@@ -228,7 +227,6 @@ jobs:
         run: |
           yarn build
           cd ./src
-          yarn remove node-mac-permissions
           yarn remove @nut-tree/nut-js
           cat ./package.json
           cd ..
