@@ -423,7 +423,8 @@
     "xterm-addon-unicode11": "0.3.0",
     "xterm-addon-web-links": "0.5.1",
     "xterm-addon-webgl": "0.11.4",
-    "xterm-for-react": "1.0.4"
+    "xterm-for-react": "1.0.4",
+    "@johnlindquist/kit": "latest"
   },
   "engines": {
     "node": ">=14.17.0"
