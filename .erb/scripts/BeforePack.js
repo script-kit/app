@@ -34,6 +34,8 @@ exports.default = async function notarizeMacos(context) {
     if (arm64) {
       // remove @nut-tree/nut-js from package.json
       delete pkgJson.dependencies['@nut-tree/nut-js'];
+      // remote uiohook-napi from package.json
+      delete pkgJson.dependencies['uiohook-napi'];
       await writeFile(srcPkgPath, JSON.stringify(pkgJson, null, 2));
     }
   }
