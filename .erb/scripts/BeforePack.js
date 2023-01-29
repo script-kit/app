@@ -22,6 +22,7 @@ exports.default = async function notarizeMacos(context) {
   const x64 = Arch.x64 === arch;
 
   const srcPkgPath = path.resolve(appOutDir, '..', '..', 'src', 'package.json');
+  console.log({ srcPkgPath });
 
   if (linux || win) {
     // remove node-mac-permissions from package.json

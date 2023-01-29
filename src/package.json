@@ -10,8 +10,8 @@
     "url": "https://github.com/johnlindquist/kitapp"
   },
   "scripts": {
-    "electron-rebuild": "DEBUG=electron-rebuild node -r ../.erb/scripts/BabelRegister.js ../.erb/scripts/ElectronRebuild.js",
-    "postinstall": "DEBUG=electron-rebuild npx electron-rebuild"
+    "electron-rebuild": "node -r ../.erb/scripts/BabelRegister.js ../.erb/scripts/ElectronRebuild.js",
+    "postinstall": "npx electron-rebuild"
   },
   "license": "MIT",
   "devDependencies": {
