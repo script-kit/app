@@ -15,44 +15,44 @@ exports.default = async function notarizeMacos(context) {
     arch,
   });
 
-  const win = electronPlatformName.startsWith('win');
-  const mac = electronPlatformName.startsWith('darwin');
-  const linux = electronPlatformName.startsWith('linux');
-  const arm64 = Arch.arm64 === arch;
-  const x64 = Arch.x64 === arch;
+  // const win = electronPlatformName.startsWith('win');
+  // const mac = electronPlatformName.startsWith('darwin');
+  // const linux = electronPlatformName.startsWith('linux');
+  // const arm64 = Arch.arm64 === arch;
+  // const x64 = Arch.x64 === arch;
 
-  if (linux || win) {
-    console.log(await readdir(`${appOutDir}/resources`));
-    console.log(`--\n\n--`);
-    console.log(await readdir(`${appOutDir}/resources/app.asar.unpacked`));
-    console.log(`--\n\n--`);
-    console.log(
-      `Before:`,
-      await readdir(`${appOutDir}/resources/app.asar.unpacked/node_modules`)
-    );
-    console.log(`--\n\n--`);
-    await rm(
-      `${appOutDir}/resources/app.asar.unpacked/node_modules/node-mac-permissions`,
-      { recursive: true, force: true }
-    );
+  // if (linux || win) {
+  //   console.log(await readdir(`${appOutDir}/resources`));
+  //   console.log(`--\n\n--`);
+  //   console.log(await readdir(`${appOutDir}/resources/app.asar.unpacked`));
+  //   console.log(`--\n\n--`);
+  //   console.log(
+  //     `Before:`,
+  //     await readdir(`${appOutDir}/resources/app.asar.unpacked/node_modules`)
+  //   );
+  //   console.log(`--\n\n--`);
+  //   await rm(
+  //     `${appOutDir}/resources/app.asar.unpacked/node_modules/node-mac-permissions`,
+  //     { recursive: true, force: true }
+  //   );
 
-    if (arm64) {
-      await rm(
-        `${appOutDir}/resources/app.asar.unpacked/node_modules/@nut-tree/nut-js`,
-        { recursive: true, force: true }
-      );
-    }
+  //   if (arm64) {
+  //     await rm(
+  //       `${appOutDir}/resources/app.asar.unpacked/node_modules/@nut-tree/nut-js`,
+  //       { recursive: true, force: true }
+  //     );
+  //   }
 
-    console.log(
-      `After:`,
-      await readdir(`${appOutDir}/resources/app.asar.unpacked/node_modules`)
-    );
-    console.log(`--\n\n--`);
-  }
+  //   console.log(
+  //     `After:`,
+  //     await readdir(`${appOutDir}/resources/app.asar.unpacked/node_modules`)
+  //   );
+  //   console.log(`--\n\n--`);
+  // }
 
-  // add @johnlindquist/kit to package.json
-  const pkg = fs.readFileSync('./package.json', 'utf-8');
-  const pkgJson = JSON.parse(pkg);
+  // // add @johnlindquist/kit to package.json
+  // const pkg = fs.readFileSync('./package.json', 'utf-8');
+  // const pkgJson = JSON.parse(pkg);
 
   // if (!mac) {
   //   const pkgJson = JSON.parse(pkg);
