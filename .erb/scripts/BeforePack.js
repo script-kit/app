@@ -9,7 +9,7 @@ exports.default = async function notarizeMacos(context) {
   let { electronPlatformName, appOutDir, arch } = context;
   let archCode = Object.entries(Arch).find(([key, value]) => value === arch)[0];
 
-  await console.log(`>>> Before Pack:`, {
+  await console.log(`\n\n ---------- Before Pack:`, {
     electronPlatformName,
     appOutDir,
     arch,
@@ -21,7 +21,7 @@ exports.default = async function notarizeMacos(context) {
   const arm64 = Arch.arm64 === arch;
   const x64 = Arch.x64 === arch;
 
-  const srcPkgPath = path.resolve(appOutDir, '..', 'src/package.json');
+  const srcPkgPath = path.resolve(appOutDir, '..', '..', 'src', 'package.json');
 
   if (linux || win) {
     // remove node-mac-permissions from package.json
