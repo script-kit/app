@@ -1,5 +1,5 @@
-const fs = require('fs');
-const { readdir, rm } = require('fs/promises');
+const { readdir, rm, readFile, writeFile } = require('fs/promises');
+const path = require('path');
 const { Arch, BeforePackContext } = require('electron-builder');
 
 // Use jsdoc to type the context to BeforePackContext
@@ -15,40 +15,28 @@ exports.default = async function notarizeMacos(context) {
     arch,
   });
 
-  // const win = electronPlatformName.startsWith('win');
-  // const mac = electronPlatformName.startsWith('darwin');
-  // const linux = electronPlatformName.startsWith('linux');
-  // const arm64 = Arch.arm64 === arch;
-  // const x64 = Arch.x64 === arch;
+  const win = electronPlatformName.startsWith('win');
+  const mac = electronPlatformName.startsWith('darwin');
+  const linux = electronPlatformName.startsWith('linux');
+  const arm64 = Arch.arm64 === arch;
+  const x64 = Arch.x64 === arch;
 
-  // if (linux || win) {
-  //   console.log(await readdir(`${appOutDir}/resources`));
-  //   console.log(`--\n\n--`);
-  //   console.log(await readdir(`${appOutDir}/resources/app.asar.unpacked`));
-  //   console.log(`--\n\n--`);
-  //   console.log(
-  //     `Before:`,
-  //     await readdir(`${appOutDir}/resources/app.asar.unpacked/node_modules`)
-  //   );
-  //   console.log(`--\n\n--`);
-  //   await rm(
-  //     `${appOutDir}/resources/app.asar.unpacked/node_modules/node-mac-permissions`,
-  //     { recursive: true, force: true }
-  //   );
+  const srcPkgPath = path.resolve(appOutDir, '..', 'src/package.json');
 
-  //   if (arm64) {
-  //     await rm(
-  //       `${appOutDir}/resources/app.asar.unpacked/node_modules/@nut-tree/nut-js`,
-  //       { recursive: true, force: true }
-  //     );
-  //   }
+  if (linux || win) {
+    // remove node-mac-permissions from package.json
+    const pkg = await readFile(srcPkgPath, 'utf-8');
+    const pkgJson = JSON.parse(pkg);
+    console.log(`Deleting node-mac-permissions from package.json`);
+    delete pkgJson.dependencies['node-mac-permissions'];
+    await writeFile(srcPkgPath, JSON.stringify(pkgJson, null, 2));
 
-  //   console.log(
-  //     `After:`,
-  //     await readdir(`${appOutDir}/resources/app.asar.unpacked/node_modules`)
-  //   );
-  //   console.log(`--\n\n--`);
-  // }
+    if (arm64) {
+      // remove @nut-tree/nut-js from package.json
+      delete pkgJson.dependencies['@nut-tree/nut-js'];
+      await writeFile(srcPkgPath, JSON.stringify(pkgJson, null, 2));
+    }
+  }
 
   // // add @johnlindquist/kit to package.json
   // const pkg = fs.readFileSync('./package.json', 'utf-8');
@@ -68,6 +56,6 @@ exports.default = async function notarizeMacos(context) {
   //   fs.writeFileSync('./src/package.json', JSON.stringify(pkgJson, null, 2));
   // }
 
-  const afterPkg = fs.readFileSync('./src/package.json', 'utf-8');
+  const afterPkg = await readFile(srcPkgPath, 'utf-8');
   console.log({ pkg: JSON.stringify(afterPkg.dependencies) });
 };
