@@ -9,8 +9,6 @@ exports.default = async function notarizeMacos(context) {
   let { electronPlatformName, appOutDir, arch } = context;
   let archCode = Object.entries(Arch).find(([key, value]) => value === arch)[0];
 
-  const files = await readdir(appOutDir);
-
   await console.log(`>>> Before Pack:`, {
     electronPlatformName,
     appOutDir,
