@@ -168,12 +168,13 @@ unhandled({
       log.error({ readLogError });
     }
 
+    // get last 10 lines of main log
+    const lastLines = mainLogContents.split('\n').slice(-10).join('\n');
+
     openNewGitHubIssue({
       user: 'johnlindquist',
       repo: 'kit',
-      body: `\`\`\`\n${
-        error.stack
-      }\n\`\`\`\n\n${mainLogContents}\n\n${debugInfo()}`,
+      body: `\`\`\`\n${error.stack}\n\`\`\`\n\n${lastLines}\n\n${debugInfo()}`,
     });
   },
 });
@@ -1056,10 +1057,13 @@ const checkKit = async () => {
       process.env.KIT_NODE_TAR ||
       getAssetPath(`node.${getPlatformExtension()}`);
 
+    log.info(`KIT_NODE_TAR: ${KIT_NODE_TAR}`);
+
     const nodeTar = existsSync(KIT_NODE_TAR)
       ? KIT_NODE_TAR
       : await downloadNode();
 
+    log.info(`nodeTar: ${nodeTar}`);
     await extractNode(nodeTar);
   }
 
@@ -1078,6 +1082,15 @@ const checkKit = async () => {
     await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
 
     const kitTar = getAssetPath('kit.tar.gz');
+
+    log.info(`kitTar: ${kitTar}`);
+
+    try {
+      const fileAssets = await readdir(getAssetPath());
+      log.info(`fileAssets: ${fileAssets}`);
+    } catch (error) {
+      log.error(error);
+    }
 
     if (existsSync(getAssetPath(kitTar))) {
       try {

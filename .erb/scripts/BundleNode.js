@@ -51,8 +51,10 @@ exports.default = async function notarizeMacos(context) {
   fs.writeFileSync(`${assetsPath}${platformTxt}`, electronPlatformName);
   fs.writeFileSync(`${assetsPath}node_url.txt`, url.trim());
 
+  const outPath = path.resolve(assetsPath, nodeTar);
+  console.log(`Writing ${nodeTar} to ${outPath}`);
   const buffer = await download(url);
-  await writeFile(path.resolve(assetsPath, nodeTar), buffer);
+  await writeFile(outPath, buffer);
   console.log(`✅ Download complete. Verifying...`);
 
   const assets = await readdir(assetsPath);
