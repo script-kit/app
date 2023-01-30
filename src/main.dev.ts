@@ -279,20 +279,33 @@ const installEsbuild = async () => {
 const extractNode = async (file: string) => {
   log.info(`extractNode ${file}`);
   if (file.endsWith('.zip')) {
-    // eslint-disable-next-line
-    const zip = new StreamZip.async({ file });
+    try {
+      // eslint-disable-next-line
+      const zip = new StreamZip.async({ file });
 
-    sendSplashBody(`Unzipping ${file} to ${knodePath()}`);
-    // node-16.17.1-win-x64
-    await zip.extract(file, knodePath('bin'));
-    await zip.close();
+      sendSplashBody(`Unzipping ${file} to ${knodePath()}`);
+      // node-16.17.1-win-x64
+      const fileName = path.parse(file).name;
+      console.log(`Extacting ${fileName} to ${knodePath('bin')}`);
+      // node-16.17.1-win-x64
+      await zip.extract(fileName, knodePath('bin'));
+      await zip.close();
+    } catch (error) {
+      log.error({ error });
+      ohNo(error);
+    }
   } else {
     sendSplashBody(`Untarring ${file} to ${knodePath()}`);
-    await tar.x({
-      file,
-      C: knodePath(),
-      strip: 1,
-    });
+    try {
+      await tar.x({
+        file,
+        C: knodePath(),
+        strip: 1,
+      });
+    } catch (error) {
+      log.error({ error });
+      ohNo(error);
+    }
   }
 };
 
