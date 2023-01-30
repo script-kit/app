@@ -277,17 +277,17 @@ const installEsbuild = async () => {
 };
 
 const extractNode = async (file: string) => {
-  const nodePlatform = process.platform === 'win32' ? 'win' : process.platform;
-  if (nodePlatform === 'win') {
+  log.info(`extractNode ${file}`);
+  if (file.endsWith('.zip')) {
     // eslint-disable-next-line
     const zip = new StreamZip.async({ file });
 
-    const fileName = path.parse(file).name;
-    sendSplashBody(`Extacting ${fileName} to ${knodePath()}`);
+    sendSplashBody(`Unzipping ${file} to ${knodePath()}`);
     // node-16.17.1-win-x64
-    await zip.extract(fileName, knodePath('bin'));
+    await zip.extract(file, knodePath('bin'));
     await zip.close();
   } else {
+    sendSplashBody(`Untarring ${file} to ${knodePath()}`);
     await tar.x({
       file,
       C: knodePath(),
@@ -405,7 +405,7 @@ const cleanKit = async () => {
 };
 
 const extractKitTar = async (file: string) => {
-  sendSplashBody(`Extract Kit SDK to ${kitPath()}`);
+  sendSplashBody(`Extracting Kit SDK to ${kitPath()}...`);
   await tar.x({
     file,
     C: kitPath(),
@@ -1092,8 +1092,10 @@ const checkKit = async () => {
       log.error(error);
     }
 
-    if (existsSync(getAssetPath(kitTar))) {
+    const kitTarExists = existsSync(kitTar);
+    if (kitTarExists) {
       try {
+        log.info(`Kit tar exists in assets. Extracting...`);
         await extractKitTar(kitTar);
       } catch (error) {
         try {
@@ -1104,6 +1106,9 @@ const checkKit = async () => {
         }
       }
     } else {
+      log.info(
+        `Kit tar doesn't exist in assets. Downloading then extracting...`
+      );
       const file = await downloadKit();
       await extractKitTar(file);
     }
@@ -1144,7 +1149,7 @@ const checkKit = async () => {
   if (!(await kenvExists())) {
     // Step 4: Use kit wrapper to run setup.js script
     // configWindow?.show();
-    await setupLog(`Extract tar to ~/.kenv...`);
+    await setupLog(`Extracting kenv.tar to ~/.kenv...`);
 
     await downloadKenv();
 
