@@ -32,7 +32,7 @@ exports.default = async function notarizeMacos(context) {
   const win = electronPlatformName.startsWith('win');
   const mac = electronPlatformName.startsWith('darwin');
   const linux = electronPlatformName.startsWith('linux');
-  const extension = mac ? 'tar.gz' : linux ? 'tar.xz' : 'zip';
+  const extension = win ? 'zip' : 'tar.gz';
   const url = `https://nodejs.org/dist/${VERSION}/node-${VERSION}-${electronPlatformName}-${archCode}.${extension}`;
 
   console.log(`Downloading ${url}`);
@@ -49,6 +49,9 @@ exports.default = async function notarizeMacos(context) {
   fs.writeFileSync(`${assetsPath}${archTxt}`, archCode);
   fs.writeFileSync(`${assetsPath}${platformTxt}`, electronPlatformName);
   fs.writeFileSync(`${assetsPath}node_url.txt`, url.trim());
+
+  const buffer = await download(url);
+  await writeFile(path.resolve(assetsPath, nodeTar), buffer);
   console.log(`✅ Download complete. Verifying...`);
 
   const assets = await readdir(assetsPath);

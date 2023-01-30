@@ -76,7 +76,12 @@ import { subscribeKey } from 'valtio/utils';
 import { assign } from 'lodash';
 import { setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
-import { getAssetPath, getNodeVersion, getReleaseChannel } from './assets';
+import {
+  getAssetPath,
+  getNodeVersion,
+  getReleaseChannel,
+  getPlatformExtension,
+} from './assets';
 import {
   clearTickTimers,
   configureInterval,
@@ -270,6 +275,26 @@ const installEsbuild = async () => {
   });
 };
 
+const extractNode = async (file: string) => {
+  const nodePlatform = process.platform === 'win32' ? 'win' : process.platform;
+  if (nodePlatform === 'win') {
+    // eslint-disable-next-line
+    const zip = new StreamZip.async({ file });
+
+    const fileName = path.parse(file).name;
+    sendSplashBody(`Extacting ${fileName} to ${knodePath()}`);
+    // node-16.17.1-win-x64
+    await zip.extract(fileName, knodePath('bin'));
+    await zip.close();
+  } else {
+    await tar.x({
+      file,
+      C: knodePath(),
+      strip: 1,
+    });
+  }
+};
+
 const downloadNode = async () => {
   // cleanup any existing knode directory
   if (await isDir(knodePath())) {
@@ -305,27 +330,7 @@ const downloadNode = async () => {
   await ensureDir(knodePath());
   sendSplashBody(`Extracting node to ${knodePath()}`);
 
-  // if mac or linux, extract the tar.gz
-  if (nodePlatform === 'win') {
-    // eslint-disable-next-line
-    const zip = new StreamZip.async({ file });
-
-    const fileName = path.parse(node).name;
-    sendSplashBody(`Extacting ${fileName} to ${knodePath()}`);
-    // node-16.17.1-win-x64
-    await zip.extract(fileName, knodePath('bin'));
-    await zip.close();
-  } else {
-    await tar.x({
-      file,
-      C: knodePath(),
-      strip: 1,
-    });
-  }
-
-  sendSplashBody(`Removing ${file}`);
-
-  await rm(file);
+  return file;
 };
 
 const downloadKenv = async () => {
@@ -1047,7 +1052,15 @@ const checkKit = async () => {
       `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
     );
 
-    await downloadNode();
+    const KIT_NODE_TAR =
+      process.env.KIT_NODE_TAR ||
+      getAssetPath(`node.${getPlatformExtension()}`);
+
+    const nodeTar = existsSync(KIT_NODE_TAR)
+      ? KIT_NODE_TAR
+      : await downloadNode();
+
+    await extractNode(nodeTar);
   }
 
   const requiresInstall =

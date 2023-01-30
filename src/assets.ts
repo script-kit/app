@@ -39,12 +39,7 @@ export const getReleaseChannel = () => {
 export const getPlatformExtension = (): string => {
   const platform = os.platform();
   const win = platform.startsWith('win');
-  const mac = platform.startsWith('darwin');
-  const linux = platform.startsWith('linux');
-  if (mac) return 'tar.gz';
-  if (linux) return 'tar.xz';
-  if (win) return 'zip';
-  throw new Error('Unsupported platform');
+  return win ? 'zip' : 'tar.gz';
 };
 
 export const getNodeVersion = () => {
