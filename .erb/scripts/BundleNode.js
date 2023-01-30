@@ -1,6 +1,6 @@
 const { build } = require('../../package.json');
 const fs = require('fs');
-const { readdir, rm } = require('fs/promises');
+const { readdir, rm, writeFile } = require('fs/promises');
 
 const download = require('download');
 const { Arch } = require('electron-builder');
