@@ -1,5 +1,6 @@
 const { build } = require('../../package.json');
 const fs = require('fs');
+const path = require('path');
 const { readdir, rm, writeFile } = require('fs/promises');
 
 const download = require('download');
