@@ -350,10 +350,10 @@ const downloadKenv = async () => {
     const file = osTmpPath(fileName);
     const url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
 
-    sendSplashBody(`Downloading node from ${url}`);
+    sendSplashBody(`Downloading Kit Environment from ${url}....`);
     const buffer = await download(url);
 
-    sendSplashBody(`Writing node to ${file}`);
+    sendSplashBody(`Writing Kit Environment to ${file}`);
     await writeFile(file, buffer);
 
     // eslint-disable-next-line
@@ -405,7 +405,7 @@ const cleanKit = async () => {
 };
 
 const extractKitTar = async (file: string) => {
-  sendSplashBody(`Extracting Kit SDK to ${kitPath()}...`);
+  sendSplashBody(`Extracting Kit SDK from ${file} to ${kitPath()}...`);
   await tar.x({
     file,
     C: kitPath(),
@@ -1053,18 +1053,10 @@ const checkKit = async () => {
       `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
     );
 
-    const KIT_NODE_TAR =
-      process.env.KIT_NODE_TAR ||
-      getAssetPath(`node.${getPlatformExtension()}`);
+    const nodePath = await downloadNode();
 
-    log.info(`KIT_NODE_TAR: ${KIT_NODE_TAR}`);
-
-    const nodeTar = existsSync(KIT_NODE_TAR)
-      ? KIT_NODE_TAR
-      : await downloadNode();
-
-    log.info(`nodeTar: ${nodeTar}`);
-    await extractNode(nodeTar);
+    log.info(`nodePath: ${nodePath}`);
+    await extractNode(nodePath);
   }
 
   const requiresInstall =
@@ -1092,26 +1084,8 @@ const checkKit = async () => {
       log.error(error);
     }
 
-    const kitTarExists = existsSync(kitTar);
-    if (kitTarExists) {
-      try {
-        log.info(`Kit tar exists in assets. Extracting...`);
-        await extractKitTar(kitTar);
-      } catch (error) {
-        try {
-          const file = await downloadKit();
-          await extractKitTar(file);
-        } catch (downloadError) {
-          log.error(downloadError);
-        }
-      }
-    } else {
-      log.info(
-        `Kit tar doesn't exist in assets. Downloading then extracting...`
-      );
-      const file = await downloadKit();
-      await extractKitTar(file);
-    }
+    const file = await downloadKit();
+    await extractKitTar(file);
 
     await setupLog(`.kit installed`);
 

@@ -117,19 +117,19 @@ jobs:
         run: |
           echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Download kenv
-        uses: johnlindquist/kit-action@main
-        with:
-          script: download-kenv ${{ env.RELEASE_CHANNEL }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Download kenv
+      #   uses: johnlindquist/kit-action@main
+      #   with:
+      #     script: download-kenv ${{ env.RELEASE_CHANNEL }}
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Kit tarball
-        uses: johnlindquist/kit-action@main
-        with:
-          script: create-kit-tar
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Create Kit tarball
+      #   uses: johnlindquist/kit-action@main
+      #   with:
+      #     script: create-kit-tar
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets for x64
         uses: johnlindquist/kit-action@main
