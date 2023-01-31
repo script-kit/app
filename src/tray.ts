@@ -747,4 +747,5 @@ export const setTrayMenu = async (scripts: string[]) => {
   }
 };
 
+// Can also use the OPEN_MENU channel
 emitter.on(KitEvent.TrayClick, openMenu);
