@@ -183,6 +183,13 @@ if (!app.requestSingleInstanceLock()) {
   app.exit();
 }
 
+const isLinux = process.platform === 'linux';
+
+if (isLinux) {
+  app.commandLine.appendSwitch('enable-transparent-visuals');
+  app.disableHardwareAcceleration();
+}
+
 app.setName(APP_NAME);
 if (app?.dock) {
   app?.dock?.setIcon(getAssetPath('icon.png'));
