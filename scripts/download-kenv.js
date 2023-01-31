@@ -2,9 +2,6 @@
 
 // import '@johnlindquist/kit';
 
-let { chdir } = await import('process');
-let tar = await npm('tar');
-
 console.log('Creating assets');
 
 console.log(`🕵️‍♀️ process.env.SCRIPTS_DIR:`, process.env.SCRIPTS_DIR);
@@ -23,8 +20,8 @@ console.log({ releaseChannelTxt });
 
 await writeFile(releaseChannelTxt, releaseChannel);
 
-await download(
-  `https://github.com/johnlindquist/kenv/tarball/${releaseChannel}`,
-  path.resolve(process.env.PWD, 'assets'),
-  { filename: 'kenv.tar.gz' }
-);
+const url = `https://github.com/johnlindquist/kenv/releases/latest/download/kenv.zip`;
+
+await download(url, path.resolve(process.env.PWD, 'assets'), {
+  filename: 'kenv.zip',
+});

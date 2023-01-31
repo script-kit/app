@@ -347,47 +347,37 @@ const downloadNode = async () => {
   return file;
 };
 
+const extractKenv = async (file: string) => {
+  // eslint-disable-next-line
+  const zip = new StreamZip.async({ file });
+
+  const fileName = path.parse(file).base;
+
+  sendSplashBody(`Extacting ${fileName} to ${kenvPath()}`);
+
+  await ensureDir(kenvPath());
+  await zip.extract('kenv', kenvPath());
+  await zip.close();
+};
+
 const downloadKenv = async () => {
-  // cleanup any existing knode directory
   if (await isDir(kenvPath())) {
     sendSplashBody(`${kenvPath()} already exists. Skipping download.`);
-    // Todo: Maybe prompt to delete?
-    // await rm(kenvPath(), {
-    //   recursive: true,
-    //   force: true,
-    // })
-  } else {
-    const osTmpPath = createPathResolver(os.tmpdir());
-
-    const fileName = `kenv.zip`;
-    const file = osTmpPath(fileName);
-    const url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
-
-    sendSplashBody(`Downloading Kit Environment from ${url}....`);
-    const buffer = await download(url);
-
-    sendSplashBody(`Writing Kit Environment to ${file}`);
-    await writeFile(file, buffer);
-
-    // eslint-disable-next-line
-    const zip = new StreamZip.async({ file });
-
-    sendSplashBody(`Extacting ${fileName} to ${kenvPath()}`);
-
-    await ensureDir(kenvPath());
-    await zip.extract('kenv', kenvPath());
-    await zip.close();
-
-    sendSplashBody(`Removing ${file}`);
-
-    await rm(file);
-
-    sendSplashBody(
-      `Ensuring ${kenvPath('kenvs')} and ${kenvPath('assets')} exists`
-    );
-    await ensureDir(kenvPath('kenvs'));
-    await ensureDir(kenvPath('assets'));
+    return '';
   }
+  const osTmpPath = createPathResolver(os.tmpdir());
+
+  const fileName = `kenv.zip`;
+  const file = osTmpPath(fileName);
+  const url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
+
+  sendSplashBody(`Downloading Kit Environment from ${url}....`);
+  const buffer = await download(url);
+
+  sendSplashBody(`Writing Kit Environment to ${file}`);
+  await writeFile(file, buffer);
+
+  return file;
 };
 
 const cleanKit = async () => {
@@ -1066,10 +1056,19 @@ const checkKit = async () => {
       `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
     );
 
-    const nodePath = await downloadNode();
+    let nodeFilePath = '';
+    const bundledNodePath =
+      process.env.KIT_BUNDLED_NODE_PATH ||
+      getAssetPath(`node.${getPlatformExtension()}`);
 
-    log.info(`nodePath: ${nodePath}`);
-    await extractNode(nodePath);
+    if (existsSync(bundledNodePath)) {
+      nodeFilePath = bundledNodePath;
+    } else {
+      nodeFilePath = await downloadNode();
+    }
+
+    log.info(`nodePath: ${nodeFilePath}`);
+    await extractNode(nodeFilePath);
   }
 
   const requiresInstall =
@@ -1097,8 +1096,20 @@ const checkKit = async () => {
       log.error(error);
     }
 
-    const file = await downloadKit();
-    await extractKitTar(file);
+    let kitZipPath = '';
+
+    const bundledKitPath =
+      process.env.KIT_BUNDLED_PATH || getAssetPath(`kit.tar.gz`);
+
+    if (existsSync(bundledKitPath)) {
+      log.info(`📦 Kit file exists at ${bundledKitPath}`);
+      kitZipPath = bundledKitPath;
+    } else {
+      log.info(`📦 Kit file doesn't exist at ${bundledKitPath}`);
+      kitZipPath = await downloadKit();
+    }
+
+    await extractKitTar(kitZipPath);
 
     await setupLog(`.kit installed`);
 
@@ -1136,9 +1147,22 @@ const checkKit = async () => {
   if (!(await kenvExists())) {
     // Step 4: Use kit wrapper to run setup.js script
     // configWindow?.show();
-    await setupLog(`Extracting kenv.tar to ~/.kenv...`);
+    await setupLog(`Extracting kenv.zip to ~/.kenv...`);
 
-    await downloadKenv();
+    let kenvZipPath = '';
+
+    const bundledKenvPath =
+      process.env.KIT_BUNDLED_KENV_PATH || getAssetPath('kenv.zip');
+
+    if (existsSync(bundledKenvPath)) {
+      log.info(`📦 Kenv file exists at ${bundledKenvPath}`);
+      kenvZipPath = bundledKenvPath;
+    } else {
+      log.info(`📦 Kenv file doesn't exist at ${bundledKenvPath}`);
+      kenvZipPath = await downloadKenv();
+    }
+
+    await extractKenv(kenvZipPath);
 
     log.info(await readdir(kenvPath()));
 
