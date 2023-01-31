@@ -110,6 +110,7 @@ import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';
 import { darkTheme, lightTheme } from './components/themes';
+import { getAssetPath } from './assets';
 
 // const trash = async (...args: string[]) => {
 //   const parent = app.isPackaged
@@ -297,6 +298,8 @@ type WidgetData = {
   value?: any;
   width?: number;
   height?: number;
+  filePath?: string;
+  iconPath?: string;
 };
 type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
@@ -1684,6 +1687,20 @@ const kitMessageMap: ChannelHandler = {
     }
     childSend(child, { channel, value });
   }),
+  START_DRAG: toProcess(async ({ child }, { channel, value }) => {
+    const prompt = getMainPrompt();
+    if (prompt) {
+      try {
+        prompt.webContents.startDrag({
+          file: value?.filePath,
+          icon: value?.iconPath || getAssetPath('icons8-file-50.png'),
+        });
+      } catch (error) {
+        log.error(`Error starting drag`, error);
+      }
+    }
+    childSend(child, { channel, value });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (
@@ -2138,6 +2155,30 @@ export const handleWidgetEvents = () => {
     });
   };
 
+  const mouseDownHandler: WidgetHandler = (event, data) => {
+    const { widgetId } = data;
+    log.info(`🔽 mouseDown ${widgetId}`);
+
+    const w = widgetState.widgets.find(({ id }) => id === widgetId);
+    if (!w) return;
+    const { wid, moved, pid } = w;
+    const widget = BrowserWindow.fromId(wid);
+    const { child } = processes.getByPid(pid) as ProcessInfo;
+    if (!child) return;
+
+    // if (moved) {
+    //   w.moved = false;
+    //   return;
+    // }
+
+    childSend(child, {
+      ...data,
+      ...widget.getBounds(),
+      pid: child.pid,
+      channel: Channel.WIDGET_MOUSE_DOWN,
+    });
+  };
+
   const inputHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
     const options = widgetState.widgets.find(({ id }) => id === widgetId);
@@ -2157,6 +2198,26 @@ export const handleWidgetEvents = () => {
     });
   };
 
+  const dragHandler: WidgetHandler = (event, data) => {
+    const { widgetId } = data;
+    log.info(`📦 ${data.widgetId} Widget: Dragging file`, data);
+    const options = widgetState.widgets.find(({ id }) => id === widgetId);
+    if (!options) return;
+    const { pid, wid } = options;
+    const widget = BrowserWindow.fromId(wid);
+    const { child } = processes.getByPid(pid) as ProcessInfo;
+    if (!child || !widget) return;
+
+    try {
+      event.sender.startDrag({
+        file: data?.filePath as string,
+        icon: data?.iconPath as string,
+      });
+    } catch (error) {
+      log.error(error);
+    }
+  };
+
   const measureHandler: WidgetHandler = (event, data: any) => {
     const { widgetId } = data;
     log.info(`📏 ${widgetId} Widget: Fitting to inner child`);
@@ -2173,7 +2234,9 @@ export const handleWidgetEvents = () => {
   };
 
   ipcMain.on(Channel.WIDGET_CLICK, clickHandler);
+  ipcMain.on(Channel.WIDGET_MOUSE_DOWN, mouseDownHandler);
   ipcMain.on(Channel.WIDGET_INPUT, inputHandler);
+  ipcMain.on(Channel.WIDGET_DRAG_START, dragHandler);
   ipcMain.on('WIDGET_MEASURE', measureHandler);
 };
 

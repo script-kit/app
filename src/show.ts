@@ -126,6 +126,13 @@ const page = (body: string, options: ShowOptions) => {
       })
     })
 
+    // add "mousedown" handler
+    document.addEventListener("mousedown", (event) => {
+      ipcRenderer.send("WIDGET_MOUSE_DOWN", {
+        targetId: event.target.id,
+        windowId: window.id
+      })
+    })
 
     document.addEventListener("input", (event) => {
       ipcRenderer.send("WIDGET_INPUT", {

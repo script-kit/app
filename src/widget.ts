@@ -63,7 +63,16 @@ export const createWidget = async (
     }
 
     * {pointer-events: all;}
-    .draggable {-webkit-app-region: drag;}
+    .draggable {
+      ${
+        options?.draggable
+          ? `
+          -webkit-app-region: drag;
+      `
+          : ``
+      }
+
+    }
   </style>
     <script>
       const { ipcRenderer } = require('electron');
@@ -120,6 +129,18 @@ export const createWidget = async (
     document.addEventListener("click", (event) => {
       let {id = ""} = event.target.closest("*[id]")
       ipcRenderer.send("WIDGET_CLICK", {
+        dataset: {
+          ...event.target.dataset
+        },
+        targetId: id,
+        widgetId: window.widgetId,
+      })
+    })
+
+    // add "mousedown" handler
+    document.addEventListener("mousedown", (event) => {
+      let {id = ""} = event.target.closest("*[id]")
+      ipcRenderer.send("WIDGET_MOUSE_DOWN", {
         dataset: {
           ...event.target.dataset
         },
