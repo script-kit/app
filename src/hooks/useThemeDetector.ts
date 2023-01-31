@@ -1,12 +1,18 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+import { platform } from 'process';
 import { useCallback, useEffect } from 'react';
 
 export default () => {
+  // set a variable to "isLinux". Don't use "platform" because it's deprecated
+  const isLinux = platform === 'linux';
+
   const mqListener = useCallback((e: MediaQueryListEvent) => {
-    if (e.matches) {
+    if (isLinux) {
+      document.documentElement.style.setProperty('--opacity', '1');
+    } else if (e.matches) {
       document.documentElement.style.setProperty('--opacity', '0.75');
     } else {
-      document.documentElement.style.setProperty('--opacity', '0.85');
+      document.documentElement.style.setProperty('--opacity', '0.80');
     }
   }, []);
 

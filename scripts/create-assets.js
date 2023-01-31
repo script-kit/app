@@ -155,9 +155,11 @@ let url = `https://github.com/johnlindquist/kitapp/releases/download/${tag_name}
 let fileName = `kit_url_${platform}_${arch}.txt`;
 
 let kitUrlFilePath = path.resolve(process.env.PWD, 'assets', fileName);
+let kitTarFilePath = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
 console.log({ kitUrlFilePath, url });
 
 await writeFile(kitUrlFilePath, url);
+await writeFile(await readFile(kitTarPath), kitTarPath);
 
 // overwrite the release with the new asset
 // await copyFile(kitTarPath, outTarz);

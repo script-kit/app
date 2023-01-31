@@ -39,6 +39,11 @@ import { getAssetPath } from './assets';
 import { emitter, KitEvent } from './events';
 import { Trigger } from './enums';
 
+const isMac = os.platform() === 'darwin';
+const isWin = os.platform() === 'win32';
+const isLinux = os.platform() === 'linux';
+const arch = os.arch();
+
 // const css = readFileSync(path.resolve(__dirname, './App.global.css'), 'utf8');
 const css = `
 :root {
@@ -221,11 +226,6 @@ export const checkAccessibility = () =>
       resolve(kitState.authorized);
     }
   });
-
-const isMac = os.platform() === 'darwin';
-const isWin = os.platform() === 'win32';
-const isLinux = os.platform() === 'linux';
-const arch = os.arch();
 
 const initState = {
   debugging: false,

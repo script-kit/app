@@ -124,12 +124,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Kit tarball
-        uses: johnlindquist/kit-action@main
-        with:
-          script: create-kit-tar
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # This script created a tar without the node_modules folder. Moved logic to create-assets
+      # - name: Create Kit tarball
+      #   uses: johnlindquist/kit-action@main
+      #   with:
+      #     script: create-kit-tar
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets for x64
         uses: johnlindquist/kit-action@main
@@ -190,7 +191,7 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --linux AppImage deb --x64
+          yarn electron-builder --publish always --linux AppImage --x64 deb --x64
 
       - name: Publish mac
         if: matrix.os == 'macos-12'

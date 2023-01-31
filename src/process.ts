@@ -238,10 +238,10 @@ export const formatScriptChoices = (data: Choice[]) => {
 };
 
 export const setTheme = async (value: any, check = true) => {
-  if (check) {
-    await sponsorCheck('Custom Themes');
-    if (!kitState.isSponsor) return;
-  }
+  // if (check) {
+  //   await sponsorCheck('Custom Themes');
+  //   if (!kitState.isSponsor) return;
+  // }
 
   log.info(`Before`, value);
 
@@ -1675,6 +1675,13 @@ const kitMessageMap: ChannelHandler = {
   }),
   OPEN_MENU: toProcess(async ({ child }, { channel, value }) => {
     emitter.emit(KitEvent.TrayClick);
+    childSend(child, { channel, value });
+  }),
+  OPEN_DEV_TOOLS: toProcess(async ({ child }, { channel, value }) => {
+    const prompt = getMainPrompt();
+    if (prompt) {
+      prompt.webContents.openDevTools();
+    }
     childSend(child, { channel, value });
   }),
 };
