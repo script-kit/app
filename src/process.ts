@@ -1673,6 +1673,10 @@ const kitMessageMap: ChannelHandler = {
       value: isSponsor,
     });
   }),
+  OPEN_MENU: toProcess(async ({ child }, { channel, value }) => {
+    emitter.emit(KitEvent.TrayClick);
+    childSend(child, { channel, value });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (

@@ -100,7 +100,6 @@ export const createPromptWindow = async () => {
     useContentSize: true,
     frame: false,
     hasShadow: true,
-    transparent: !kitState.isWindows,
     show: false,
     icon: getAssetPath('icon.png'),
     webPreferences: {
@@ -122,7 +121,10 @@ export const createPromptWindow = async () => {
   };
 
   if (kitState.isMac) {
-    promptWindow = new BrowserWindow(options);
+    promptWindow = new BrowserWindow({
+      ...options,
+      transparent: true,
+    });
     promptWindow.setVibrancy('sidebar');
   } else {
     promptWindow = new glasstron.BrowserWindow({

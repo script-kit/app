@@ -297,6 +297,7 @@ const extractNode = async (file: string) => {
   } else {
     sendSplashBody(`Untarring ${file} to ${knodePath()}`);
     try {
+      await ensureDir(knodePath());
       await tar.x({
         file,
         C: knodePath(),
@@ -409,6 +410,7 @@ const cleanKit = async () => {
 
 const extractKitTar = async (file: string) => {
   sendSplashBody(`Extracting Kit SDK from ${file} to ${kitPath()}...`);
+  await ensureDir(kitPath());
   await tar.x({
     file,
     C: kitPath(),
@@ -1096,20 +1098,20 @@ const checkKit = async () => {
       log.error(error);
     }
 
-    let kitZipPath = '';
+    let kitTarPath = '';
 
     const bundledKitPath =
       process.env.KIT_BUNDLED_PATH || getAssetPath(`kit.tar.gz`);
 
     if (existsSync(bundledKitPath)) {
       log.info(`📦 Kit file exists at ${bundledKitPath}`);
-      kitZipPath = bundledKitPath;
+      kitTarPath = bundledKitPath;
     } else {
       log.info(`📦 Kit file doesn't exist at ${bundledKitPath}`);
-      kitZipPath = await downloadKit();
+      kitTarPath = await downloadKit();
     }
 
-    await extractKitTar(kitZipPath);
+    await extractKitTar(kitTarPath);
 
     await setupLog(`.kit installed`);
 
