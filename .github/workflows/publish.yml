@@ -191,7 +191,7 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --linux AppImage --x64 deb --x64
+          yarn electron-builder --publish always --linux AppImage --x64
 
       - name: Publish mac
         if: matrix.os == 'macos-12'
