@@ -149,6 +149,42 @@ export const createWidget = async (
       })
     })
 
+    // document.addEventListener("dragstart", event => {
+    //   event.preventDefault()
+    //   event.dataTransfer.effectAllowed = "all";
+    //   event.dataTransfer.dropEffect = "move"
+    // })
+    document.addEventListener("dragenter", event => {
+        event.preventDefault()
+    })
+    document.addEventListener("dragover", event => {
+        event.dataTransfer.dropEffect = 'copy';
+        event.preventDefault()
+    })
+
+    // add "drop" handler
+    document.addEventListener("drop", (event) => {
+      event.preventDefault();
+      let {id = ""} = event.target.closest("*[id]")
+      // get the files from the event
+      let files = [];
+      let eFiles = event.dataTransfer.files;
+
+      Object.keys(eFiles).forEach((key) => {
+        if (eFiles[key]?.path) {
+          files.push(eFiles[key].path);
+        }
+      });
+      ipcRenderer.send("WIDGET_DROP", {
+        dataset: {
+          ...event.target.dataset,
+          files
+        },
+        targetId: id,
+        widgetId: window.widgetId,
+      })
+    })
+
 
     document.addEventListener("input", (event) => {
       ipcRenderer.send("WIDGET_INPUT", {

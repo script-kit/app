@@ -2155,6 +2155,26 @@ export const handleWidgetEvents = () => {
     });
   };
 
+  const dropHandler: WidgetHandler = (event, data) => {
+    const { widgetId } = data;
+
+    const w = widgetState.widgets.find(({ id }) => id === widgetId);
+    if (!w) return;
+    const { wid, moved, pid } = w;
+    const widget = BrowserWindow.fromId(wid);
+    const { child } = processes.getByPid(pid) as ProcessInfo;
+    if (!child) return;
+
+    log.info(`💧 drop ${widgetId}`);
+
+    childSend(child, {
+      ...data,
+      ...widget.getBounds(),
+      pid: child.pid,
+      channel: Channel.WIDGET_DROP,
+    });
+  };
+
   const mouseDownHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
     log.info(`🔽 mouseDown ${widgetId}`);
@@ -2234,6 +2254,7 @@ export const handleWidgetEvents = () => {
   };
 
   ipcMain.on(Channel.WIDGET_CLICK, clickHandler);
+  ipcMain.on(Channel.WIDGET_DROP, dropHandler);
   ipcMain.on(Channel.WIDGET_MOUSE_DOWN, mouseDownHandler);
   ipcMain.on(Channel.WIDGET_INPUT, inputHandler);
   ipcMain.on(Channel.WIDGET_DRAG_START, dragHandler);
