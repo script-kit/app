@@ -71,7 +71,10 @@ export const createWidget = async (
       `
           : ``
       }
+    }
 
+    .drag-shadow {
+      box-shadow: inset 0 0 .75rem #000000;
     }
   </style>
     <script>
@@ -154,9 +157,28 @@ export const createWidget = async (
     //   event.dataTransfer.effectAllowed = "all";
     //   event.dataTransfer.dropEffect = "move"
     // })
+
+    let __widgetContainer = document.getElementById("__widget-container")
     document.addEventListener("dragenter", event => {
+        // add tailwind inner drop shadow
+        console.log("dragenter")
+        __widgetContainer.classList.add("drag-shadow")
         event.preventDefault()
     })
+
+    document.addEventListener("dragend", event => {
+      // remove tailwind inner drop shadow
+      console.log("dragend")
+      __widgetContainer.classList.remove("drag-shadow")
+    })
+
+    document.addEventListener("dragleave", event => {
+      // remove tailwind inner drop shadow
+      console.log("dragleave")
+      __widgetContainer.classList.remove("drag-shadow")
+    })
+
+
     document.addEventListener("dragover", event => {
         event.dataTransfer.dropEffect = 'copy';
         event.preventDefault()
@@ -164,6 +186,7 @@ export const createWidget = async (
 
     // add "drop" handler
     document.addEventListener("drop", (event) => {
+      __widgetContainer.classList.remove("drag-shadow")
       event.preventDefault();
       let {id = ""} = event.target.closest("*[id]")
       // get the files from the event
