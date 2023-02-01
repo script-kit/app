@@ -144,11 +144,13 @@ await tar.c(
 
 console.log(`Uploading ${name} to releases...`);
 
+let data = await readFile(kitTarPath);
+
 let uploadResponse = await octokit.rest.repos.uploadReleaseAsset({
   ...github.context.repo,
   release_id: releaseResponse.data.id,
   name,
-  data: await readFile(kitTarPath),
+  data,
 });
 
 let url = `https://github.com/johnlindquist/kitapp/releases/download/${tag_name}/${name}`;
@@ -159,7 +161,7 @@ let kitTarFilePath = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
 console.log({ kitUrlFilePath, url });
 
 await writeFile(kitUrlFilePath, url);
-await writeFile(await readFile(kitTarPath), kitTarPath);
+await writeFile(data, kitTarFilePath);
 
 // overwrite the release with the new asset
 // await copyFile(kitTarPath, outTarz);
