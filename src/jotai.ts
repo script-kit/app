@@ -581,6 +581,27 @@ export const scoredChoices = atom(
   (g, s, a: ScoredChoice[] | null) => {
     s(submittedAtom, false);
     // s(loadingAtom, false);
+    if (g(isMainScriptAtom)) {
+      // Check if the input matches the shortcode of one of the scripts
+      const input = g(inputAtom);
+      const shortcodeMatch = g(unfilteredChoices).find((c) => {
+        return (c as Script).alias === input;
+      });
+
+      if (a && shortcodeMatch) {
+        // Find the index of the matched script
+        const aliasMatch = a.find((c) => {
+          return (c.item as Script).alias === input;
+        });
+
+        // If the alias matches, move to front of the list
+        if (aliasMatch) {
+          const aliasIndex = a.indexOf(aliasMatch);
+          a.splice(aliasIndex, 1);
+          a.unshift(aliasMatch);
+        }
+      }
+    }
     s(choices, a || []);
     const isFilter =
       g(uiAtom) === UI.arg && g(promptData)?.mode === Mode.FILTER;
@@ -652,12 +673,14 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
     // }
   }
 
+  const searchDebounce = g(searchDebounceAtom);
+
   if (qs && input) {
-    if (un.length < 1000) {
+    if (un.length > 1000 && searchDebounce) {
+      debounceSearch(qs, s, input);
+    } else {
       const result = search(qs, input);
       s(scoredChoices, result);
-    } else {
-      debounceSearch(qs, s, input);
     }
   } else if (un.length) {
     debounceSearch.cancel();
@@ -1142,6 +1165,7 @@ export const flagValueAtom = atom(
 
 export const _flag = atom('');
 const _submitValue = atom('');
+export const searchDebounceAtom = atom(true);
 
 export const appStateAtom = atom<AppState>((g: Getter) => {
   const state = {

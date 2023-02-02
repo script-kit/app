@@ -117,6 +117,7 @@ import {
   logValueAtom,
   shortcutsAtom,
   editorAppendAtom,
+  searchDebounceAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -245,6 +246,7 @@ export default function App() {
   const setLogValue = useSetAtom(logValueAtom);
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
+  const setSearchDebounce = useSetAtom(searchDebounceAtom);
 
   useShortcuts();
   useEnter();
@@ -319,6 +321,7 @@ export default function App() {
     [Channel.STOP_AUDIO]: () => setAudio(null),
     [Channel.SPEAK_TEXT]: setSpeak,
     [Channel.SET_SHORTCUTS]: setShortcuts,
+    [Channel.SET_SEARCH_DEBOUNCE]: setSearchDebounce,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {

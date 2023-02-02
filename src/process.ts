@@ -89,6 +89,7 @@ import {
   findWidget,
   forceQuit,
   sponsorCheck,
+  appDb,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -2293,4 +2294,9 @@ subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
   if (processes.getAllProcessInfo().length === 0) return;
   clearIdleProcesses();
   ensureTwoIdleProcesses();
+});
+
+subscribeKey(appDb, 'searchDebounce', (searchDebounce) => {
+  log.info(`🔎 search debounce: ${searchDebounce ? 'on' : 'off'}`);
+  sendToPrompt(Channel.SET_SEARCH_DEBOUNCE, searchDebounce);
 });

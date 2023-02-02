@@ -184,6 +184,11 @@ export const createPromptWindow = async () => {
       version: getVersion(),
       isDark: kitState.isDark,
     });
+
+    // TODO: Consider how db/*.json files should sync with renderer process
+    // This is a single property of app.json. So consider a .json file for the renderer process
+    // Can chokidar run from the renderer process and skip the main process?
+    sendToPrompt(Channel.SET_SEARCH_DEBOUNCE, appDb.searchDebounce || true);
   });
 
   // reload if unresponsive

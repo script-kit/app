@@ -574,7 +574,6 @@ const createLogs = () => {
 };
 
 const sendSplashBody = (message: string) => {
-  log.info(`SPLASH BODY: ${message}`);
   if (message.includes('object')) return;
   if (message.toLowerCase().includes('warn')) return;
   sendToPrompt(Channel.SET_SPLASH_BODY, message);

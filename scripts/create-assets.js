@@ -161,7 +161,10 @@ let kitTarFilePath = path.resolve(process.env.PWD, 'assets', 'kit.tar.gz');
 console.log({ kitUrlFilePath, url });
 
 await writeFile(kitUrlFilePath, url);
-await writeFile(data, kitTarFilePath);
+// TODO: determine if I want to bundle
+// Benefits: Faster install
+// Downsides: Larger download, more complicated CI (x64, arm64, etc in different steps)
+// await writeFile(kitTarFilePath, data);
 
 // overwrite the release with the new asset
 // await copyFile(kitTarPath, outTarz);
