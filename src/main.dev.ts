@@ -183,6 +183,8 @@ if (!app.requestSingleInstanceLock()) {
   app.exit();
 }
 
+app.commandLine.appendSwitch('ignore-certificate-errors');
+
 const isLinux = process.platform === 'linux';
 
 if (isLinux) {
@@ -203,7 +205,7 @@ if (app?.dock) {
 const releaseChannel = getReleaseChannel();
 const arch = os.arch();
 const platform = os.platform();
-const nodeVersion = getNodeVersion();
+const nodeVersion = `v${process.versions.node}`;
 
 app.on('window-all-closed', (e: Event) => {
   mainLog.log(`🪟 window-all-closed`);
@@ -342,10 +344,14 @@ const downloadNode = async () => {
   const file = osTmpPath(node);
   const url = `https://nodejs.org/dist/${nodeVersion}/${node}`;
 
-  sendSplashBody(`Downloading node from ${url}`);
+  const downloadingMessage = `Downloading node from ${url}`;
+  log.info(downloadingMessage);
+  sendSplashBody(downloadingMessage);
   const buffer = await download(url);
 
-  sendSplashBody(`Writing node to ${file}`);
+  const writingNodeMessage = `Writing node to ${file}`;
+  log.info(writingNodeMessage);
+  sendSplashBody(writingNodeMessage);
   await writeFile(file, buffer);
 
   sendSplashBody(`Ensuring ${knodePath()} exists`);

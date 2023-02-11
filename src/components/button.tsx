@@ -185,8 +185,6 @@ export default function ChoiceButton({
         items-center
         outline-none
         focus:outline-none
-        transition-colors
-        ease-in-out duration-200
         ${choice?.className}
         ${index === currentIndex ? `opacity-100` : `opacity-90`}
       `)}`}

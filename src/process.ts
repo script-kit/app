@@ -615,7 +615,7 @@ const kitMessageMap: ChannelHandler = {
     }
   ),
 
-  WIDGET_END: toProcess((_, { value, channel }) => {
+  WIDGET_END: toProcess(({ child }, { value, channel }) => {
     const { widgetId } = value as any;
     const widget = findWidget(widgetId, channel);
 
@@ -628,6 +628,13 @@ const kitMessageMap: ChannelHandler = {
     widget.destroy();
 
     remove(widgetState.widgets, ({ id }) => id === widgetId);
+
+    if (child?.channel) {
+      childSend(child, {
+        channel: Channel.WIDGET_END,
+        widgetId,
+      });
+    }
   }),
 
   WIDGET_CAPTURE_PAGE: toProcess(async ({ child }, { channel, value }) => {

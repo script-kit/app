@@ -281,8 +281,8 @@
     "css-loader": "6.7.1",
     "detect-port": "^1.5.1",
     "download": "8.0.0",
-    "electron": "22.0.3",
-    "electron-builder": "23.3.3",
+    "electron": "23.0.0",
+    "electron-builder": "^23.6.0",
     "electron-devtools-installer": "3.2.0",
     "electron-notarize": "1.2.1",
     "electron-releases": "3.1171.0",
@@ -338,6 +338,7 @@
     "@fontsource/fira-mono": "^4.5.8",
     "@fontsource/jetbrains-mono": "^4.5.9",
     "@heroicons/react": "1.0.4",
+    "@johnlindquist/kit": "latest",
     "@monaco-editor/react": "^4.4.6",
     "@react-hook/resize-observer": "1.2.0",
     "@rooks/use-previous": "4.10.0",
@@ -389,6 +390,7 @@
     "monaco-editor": "0.34.1",
     "monaco-editor-webpack-plugin": "7.0.1",
     "nanoid": "3.1.30",
+    "node-abi": "^3.33.0",
     "node-downloader-helper": "1.0.18",
     "node-schedule": "2.1.0",
     "node-stream-zip": "^1.15.0",
@@ -421,8 +423,7 @@
     "xterm-addon-unicode11": "0.3.0",
     "xterm-addon-web-links": "0.5.1",
     "xterm-addon-webgl": "0.11.4",
-    "xterm-for-react": "1.0.4",
-    "@johnlindquist/kit": "latest"
+    "xterm-for-react": "1.0.4"
   },
   "engines": {
     "node": ">=14.17.0"

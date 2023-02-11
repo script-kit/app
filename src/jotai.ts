@@ -234,12 +234,19 @@ export const unfilteredChoicesAtom = atom(
       // }
 
       const prevCId = g(prevChoiceId);
+      console.log({ prevCId });
 
-      const prevIndex = g(isMainScriptAtom)
-        ? 0
-        : cs.findIndex((c) => c?.id === prevCId);
+      // const prevIndex = g(isMainScriptAtom)
+      //   ? 0
+      //   : cs.findIndex((c) => c?.id === prevCId);
 
-      s(_index, prevIndex || 0);
+      // TODO: Figure out scenarios where
+      // scoredChoices shouldn't check for the prevCId...
+      const nextIndex = g(scoredChoices).findIndex(
+        (sc) => sc.item.id === prevCId
+      );
+
+      s(_index, nextIndex > 0 ? nextIndex : 0);
     }
   }
 );
@@ -513,7 +520,8 @@ export const _index = atom(
         if (foundChoice?.id) {
           s(index, i);
           s(focusedChoiceAtom, foundChoice);
-          s(prevChoiceId, foundChoice?.id);
+          console.log(`i!== -1: Setting prevChoiceId to ${foundChoice?.id}`);
+          // s(prevChoiceId, foundChoice?.id);
         }
       }
       s(defaultValueAtom, '');
@@ -522,7 +530,10 @@ export const _index = atom(
 
     if (!selected && id && id !== prevId) {
       s(focusedChoiceAtom, choice);
-      s(prevChoiceId, id);
+      console.log(
+        `!selected && id && id !== prevId: Setting prevChoiceId to ${id}`
+      );
+      // s(prevChoiceId, id);
     }
   }
 );
@@ -572,7 +583,14 @@ export const hasPreviewAtom = atom<boolean>((g) => {
   return focusedHasPreview || promptHasPreview || (isFocused && previewVisible);
 });
 
-const prevChoiceId = atom<string>('');
+const _prevChoiceId = atom<string>('');
+const prevChoiceId = atom(
+  (g) => g(_prevChoiceId),
+  (g, s, a: string) => {
+    s(_prevChoiceId, a);
+    console.log(`Setting prevChoiceId to ${a}`);
+  }
+);
 
 export const scoredChoices = atom(
   (g) => g(choices),
@@ -611,8 +629,11 @@ export const scoredChoices = atom(
     if (a?.length) {
       const selected = g(selectedAtom);
 
-      if (!selected && a) {
-        s(prevChoiceId, (a[0].item?.id as string) || '');
+      if (!selected && a && !g(promptData)?.defaultChoiceId) {
+        console.log(
+          `!selected && a: Setting prevChoiceId to ${a[0].item?.id || ''}`
+        );
+        // s(prevChoiceId, (a[0].item?.id as string) || '');
         s(focusedChoiceAtom, a[0]?.item);
       }
 
@@ -1076,6 +1097,7 @@ export const promptDataAtom = atom(
       }
 
       if (a.defaultChoiceId) {
+        console.log(`defaultChoiceId: ${a.defaultChoiceId}`);
         s(prevChoiceId, a.defaultChoiceId);
       }
 
@@ -1243,6 +1265,11 @@ export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
     if (g(submittedAtom)) return;
+    const focusedChoice = g(scoredChoices)?.[g(_index)]?.item;
+    if (focusedChoice?.id) {
+      console.log(`focusedChoice.id: ${focusedChoice.id}`);
+      s(prevChoiceId, focusedChoice.id);
+    }
     // let submitted = g(submittedAtom);
     // if (submitted) return;
 

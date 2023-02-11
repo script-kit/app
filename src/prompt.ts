@@ -194,6 +194,10 @@ export const createPromptWindow = async () => {
   // reload if unresponsive
   promptWindow?.webContents?.on('unresponsive', () => {
     log.error(`Prompt window unresponsive. Reloading`);
+    if (promptWindow?.isDestroyed()) {
+      log.error(`Prompt window is destroyed. Not reloading`);
+      return;
+    }
     promptWindow?.reload();
   });
 
@@ -825,8 +829,10 @@ export const setScript = async (
   kitState.pid = pid;
   sendToPrompt(Channel.SET_PID, pid);
 
-  if (promptWindow?.isAlwaysOnTop() && !script?.debug)
-    promptWindow?.setAlwaysOnTop(false);
+  if (promptWindow?.isAlwaysOnTop() && !script?.debug) {
+    // promptWindow?.setAlwaysOnTop(false);
+    log.warn(`Prompt is always on top, but not a debug script`);
+  }
   kitState.scriptPath = script.filePath;
   kitState.hasSnippet = Boolean(script?.snippet);
   log.verbose(`setScript ${script.filePath}`);
@@ -944,9 +950,16 @@ export const setPromptData = async (promptData: PromptData) => {
   promptWindow.webContents.setBackgroundThrottling(false);
   if (kitState.isMac) {
     promptWindow?.showInactive();
-    promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
+    // 0 second setTimeout
+    setTimeout(() => {
+      promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
+    }, 0);
+
+    if (topTimeout) clearTimeout(topTimeout);
     topTimeout = setTimeout(() => {
-      promptWindow?.setAlwaysOnTop(false);
+      if (kitState.ignoreBlur) {
+        promptWindow?.setAlwaysOnTop(false);
+      }
     }, 1000);
   } else {
     promptWindow?.show();
@@ -1036,6 +1049,10 @@ export const clearPromptCache = async () => {
 };
 
 export const reload = () => {
+  if (promptWindow?.isDestroyed()) {
+    log.warn(`Prompt window is destroyed. Not reloading.`);
+    return;
+  }
   promptWindow?.reload();
 };
 
