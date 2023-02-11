@@ -36,10 +36,20 @@ import { pathsAreEqual } from './helpers';
 import { Trigger } from './enums';
 
 app.on('second-instance', async (_event, argv) => {
-  log.info('second-instance', _event, argv);
+  log.info('second-instance', argv);
   const { _ } = minimist(argv);
   const [, , argScript, ...argArgs] = _;
-  if (!argScript || !pathExistsSync(argScript)) return;
+
+  // on windows, the protocol is passed as the argScript
+  if (argScript.startsWith('kit:')) {
+    log.info('Detected kit: protocol:', argScript);
+    app.emit('open-url', null, argScript);
+  }
+
+  if (!argScript || !pathExistsSync(argScript)) {
+    log.info(`${argScript} does not exist. Ignoring.`);
+    return;
+  }
   runPromptProcess(argScript, argArgs, {
     force: false,
     trigger: Trigger.Kit,
