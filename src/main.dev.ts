@@ -552,7 +552,7 @@ app.on('web-contents-created', (_, contents) => {
 const prepareProtocols = async () => {
   app.on('open-url', async (e, u) => {
     log.info(`URL PROTOCOL`, u);
-    e.preventDefault();
+    if (e) e.preventDefault();
     await newFromProtocol(u);
   });
 
