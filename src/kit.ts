@@ -41,9 +41,10 @@ app.on('second-instance', async (_event, argv) => {
   const [, , argScript, ...argArgs] = _;
 
   // on windows, the protocol is passed as the argScript
-  if (argScript.startsWith('kit:')) {
-    log.info('Detected kit: protocol:', argScript);
-    app.emit('open-url', null, argScript);
+  const maybeProtocol = argv?.[2];
+  if (maybeProtocol?.startsWith('kit:')) {
+    log.info('Detected kit: protocol:', maybeProtocol);
+    app.emit('open-url', null, maybeProtocol);
   }
 
   if (!argScript || !pathExistsSync(argScript)) {
