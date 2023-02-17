@@ -8717,6 +8717,11 @@ font-ligatures@^1.4.1:
     lru-cache "^6.0.0"
     opentype.js "^0.8.0"
 
+fontfaceobserver@2.*:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/fontfaceobserver/-/fontfaceobserver-2.3.0.tgz#5fb392116e75d5024b7ec8e4f2ce92106d1488c8"
+  integrity sha512-6FPvD/IVyT4ZlNe7Wcn5Fb/4ChigpucKYSvD6a+0iMoLn2inpo711eyIcKjmDtE5XNcgAkSH9uN/nfAeZzHEfg==
+
 for-in@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/for-in/-/for-in-1.0.2.tgz#81068d295a8142ec0ac726c6e2200c30fb6d5e80"
@@ -18388,6 +18393,13 @@ xterm-for-react@1.0.4:
   dependencies:
     prop-types "^15.7.2"
     xterm "^4.5.0"
+
+xterm-webfont@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/xterm-webfont/-/xterm-webfont-2.0.0.tgz#c4d730bd36121d193c1c9ea8744f529b368c0154"
+  integrity sha512-i0MMpWvpvl56VJDF34WPieTAgAM0dPVpTQ4odGFy3nlo8aQVnu5jdAfMf02eSqG03tBg0gdlY00PjGXDA/I2Yw==
+  dependencies:
+    fontfaceobserver "2.*"
 
 xterm@4.19.0, xterm@^4.5.0:
   version "4.19.0"

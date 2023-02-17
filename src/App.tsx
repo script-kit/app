@@ -118,6 +118,7 @@ import {
   shortcutsAtom,
   editorAppendAtom,
   searchDebounceAtom,
+  appDbAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -178,6 +179,7 @@ class ErrorBoundary extends React.Component {
 
 export default function App() {
   const [appConfig, setAppConfig] = useAtom(appConfigAtom);
+  const [appDb, setAppDb] = useAtom(appDbAtom);
   const [open, setOpen] = useAtom(openAtom);
   const [script, setScript] = useAtom(scriptAtom);
   const [hint, setHint] = useAtom(hintAtom);
@@ -246,7 +248,6 @@ export default function App() {
   const setLogValue = useSetAtom(logValueAtom);
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
-  const setSearchDebounce = useSetAtom(searchDebounceAtom);
 
   useShortcuts();
   useEnter();
@@ -272,6 +273,7 @@ export default function App() {
   const messageMap: ChannelAtomMap = {
     // [Channel.RESET_PROMPT]: resetPromptHandler,
     [Channel.APP_CONFIG]: setAppConfig,
+    [Channel.APP_DB]: setAppDb,
     [Channel.EXIT]: setExit,
     [Channel.SET_PID]: setPid,
     [Channel.SET_SCRIPT]: setScript,
@@ -321,7 +323,6 @@ export default function App() {
     [Channel.STOP_AUDIO]: () => setAudio(null),
     [Channel.SPEAK_TEXT]: setSpeak,
     [Channel.SET_SHORTCUTS]: setShortcuts,
-    [Channel.SET_SEARCH_DEBOUNCE]: setSearchDebounce,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {

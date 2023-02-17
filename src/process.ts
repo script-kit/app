@@ -2303,7 +2303,7 @@ subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
   ensureTwoIdleProcesses();
 });
 
-subscribeKey(appDb, 'searchDebounce', (searchDebounce) => {
-  log.info(`🔎 search debounce: ${searchDebounce ? 'on' : 'off'}`);
-  sendToPrompt(Channel.SET_SEARCH_DEBOUNCE, searchDebounce);
+subscribe(appDb, (db) => {
+  log.info(`db changed`, { ...appDb });
+  sendToPrompt(Channel.APP_DB, { ...appDb });
 });

@@ -9,7 +9,7 @@
 import { atom, Getter, Setter } from 'jotai';
 import DOMPurify from 'dompurify';
 import { QuickScore, createConfig, quickScore } from 'quick-score';
-import { UserDb } from '@johnlindquist/kit/cjs/db';
+import { AppDb, UserDb } from '@johnlindquist/kit/cjs/db';
 import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
 import {
@@ -694,10 +694,8 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
     // }
   }
 
-  const searchDebounce = g(searchDebounceAtom);
-
   if (qs && input) {
-    if (un.length > 1000 && searchDebounce) {
+    if (un.length > 1000 && g(appDbAtom).searchDebounce) {
       debounceSearch(qs, s, input);
     } else {
       const result = search(qs, input);
@@ -916,7 +914,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     topHeight: th,
     ui,
     mainHeight: mh,
-    footerHeight: 40,
+    footerHeight: 28,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
@@ -1188,6 +1186,7 @@ export const flagValueAtom = atom(
 export const _flag = atom('');
 const _submitValue = atom('');
 export const searchDebounceAtom = atom(true);
+export const termFontAtom = atom('monospace');
 
 export const appStateAtom = atom<AppState>((g: Getter) => {
   const state = {
@@ -1495,6 +1494,15 @@ export const appConfigAtom = atom<AppConfig>({
   version: '',
   delimiter: '',
 });
+
+const _appDbAtom = atom<Partial<AppDb>>({});
+export const appDbAtom = atom(
+  (g) => g(_appDbAtom),
+  (g, s, a: Partial<AppDb>) => {
+    // assign properties from a into appDb
+    s(_appDbAtom, { ...g(_appDbAtom), ...a });
+  }
+);
 
 export const createAssetAtom = (...parts: string[]) =>
   atom((g) => {

@@ -126,6 +126,7 @@ import { emitter } from './events';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 // ignore lint rules for the following function
 /* eslint-disable */
@@ -1217,6 +1218,8 @@ const checkKit = async () => {
 
     await ready();
     kitState.ready = true;
+
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
 
     sendToPrompt(Channel.SET_READY, true);
 

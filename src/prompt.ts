@@ -183,12 +183,17 @@ export const createPromptWindow = async () => {
       assetPath: getAssetPath(),
       version: getVersion(),
       isDark: kitState.isDark,
+      searchDebounce: appDb.searchDebounce || true,
+      termFont: appDb.termFont || 'monospace',
     });
+
+    sendToPrompt(Channel.APP_DB, { ...appDb });
 
     // TODO: Consider how db/*.json files should sync with renderer process
     // This is a single property of app.json. So consider a .json file for the renderer process
     // Can chokidar run from the renderer process and skip the main process?
-    sendToPrompt(Channel.SET_SEARCH_DEBOUNCE, appDb.searchDebounce || true);
+    // sendToPrompt(Channel.SET_SEARCH_DEBOUNCE, appDb.searchDebounce || true);
+    // sendToPrompt(Channel.SET_SEARCH_DEBOUNCE, appDb.termFont || true);
   });
 
   // reload if unresponsive
@@ -909,11 +914,18 @@ export const setPromptData = async (promptData: PromptData) => {
   // if (!pidMatch(pid, `setPromptData`)) return;
 
   if (promptData?.scriptPath !== kitState.scriptPath) return;
+  setTimeout(
+    () => {
+      kitState.resize = kitState.resize || promptData.resize;
+    },
+    // instant if first prompt, otherwise wait for prompt to load
+    kitState.promptCount > 0 ? 100 : 0
+  );
+
   kitState.promptCount += 1;
 
   kitState.shortcutsPaused = promptData.ui === UI.hotkey;
   kitState.promptUI = promptData.ui;
-  kitState.resize = kitState.resize || promptData.resize;
 
   log.verbose(`setPromptData ${promptData.scriptPath}`);
 

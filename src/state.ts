@@ -337,6 +337,8 @@ const initAppDb: AppDb = {
   tray: true,
   appearance: 'auto',
   authorized: false,
+  searchDebounce: true,
+  termFont: 'monospace',
 };
 
 nativeTheme.addListener('updated', () => {

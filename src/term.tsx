@@ -13,9 +13,11 @@ import { debounce } from 'lodash';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 import {
+  appDbAtom,
   darkAtom,
   openAtom,
   submitValueAtom,
+  termFontAtom,
   webSocketAtom,
   webSocketOpenAtom,
 } from './jotai';
@@ -137,6 +139,8 @@ export default function Terminal() {
     }
   }, [xtermRef?.current?.terminal, wsOpen]);
 
+  const [appDb] = useAtom(appDbAtom);
+
   return (
     <motion.div
       key="terminal"
@@ -154,7 +158,7 @@ export default function Terminal() {
 
           "
           options={{
-            fontFamily: 'monospace',
+            fontFamily: appDb?.termFont || 'monospace',
             allowTransparency: true,
             theme: isDark ? darkTheme : defaultTheme,
           }}
