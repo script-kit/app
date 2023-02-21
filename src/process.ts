@@ -596,8 +596,12 @@ const kitMessageMap: ChannelHandler = {
       child?.on('close', closeHandler);
       const un = subscribe(kitState.ps, () => {
         if (!kitState.ps.find((p) => p.pid === child?.pid)) {
-          closeHandler();
-          un();
+          try {
+            closeHandler();
+            un();
+          } catch (error) {
+            log.error(error);
+          }
         }
       });
 
