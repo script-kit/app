@@ -348,7 +348,8 @@ const downloadNode = async () => {
   const downloadingMessage = `Downloading node from ${url}`;
   log.info(downloadingMessage);
   sendSplashBody(downloadingMessage);
-  const buffer = await download(url);
+  const options = { insecure: true, rejectUnauthorized: false };
+  const buffer = await download(url, undefined, options);
 
   const writingNodeMessage = `Writing node to ${file}`;
   log.info(writingNodeMessage);
@@ -387,7 +388,8 @@ const downloadKenv = async () => {
   const url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
 
   sendSplashBody(`Downloading Kit Environment from ${url}....`);
-  const buffer = await download(url);
+  const options = { insecure: true, rejectUnauthorized: false };
+  const buffer = await download(url, undefined, options);
 
   sendSplashBody(`Writing Kit Environment to ${file}`);
   await writeFile(file, buffer);
@@ -457,7 +459,8 @@ const downloadKit = async () => {
   const url = `https://github.com/johnlindquist/kitapp/releases/download/v${version}/${kitSDK}`;
 
   sendSplashBody(`Download Kit SDK from ${url}`);
-  const buffer = await download(url);
+  const options = { insecure: true, rejectUnauthorized: false };
+  const buffer = await download(url, undefined, options);
 
   sendSplashBody(`Writing Kit SDK to ${file}`);
   await writeFile(file, buffer);
