@@ -73,6 +73,10 @@ export function Chat() {
         className="kit-chat-messages"
         toBottomHeight="100%"
         notchStyle={{ display: 'none' }}
+        // Copy the content of the message on click
+        onClick={(e: any) => {
+          navigator.clipboard.writeText(e.text);
+        }}
       />
       <Input
         referance={inputRef}

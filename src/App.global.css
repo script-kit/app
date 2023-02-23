@@ -548,7 +548,7 @@ code::after {
 }
 
 .kit-chat-submit {
-  @apply bg-bg-base text-contrast text-base bg-opacity-0;
+  @apply bg-secondary bg-opacity-75 text-contrast text-base px-2 py-0.5;
 }
 
 .rce-container-mbox {
@@ -557,19 +557,19 @@ code::after {
 
 .rce-mbox:has(.left) {
   /* inverted with half opacity */
-  @apply bg-text-base text-bg-base ml-6 mr-24;
+  @apply text-text-base bg-bg-base bg-opacity-0 ml-6 mr-24 border border-text-base border-opacity-15;
 }
 
 .rce-mbox:has(.right) {
   /* inverted with half opacity */
-  @apply bg-secondary text-contrast mr-6 ml-24;
+  @apply bg-text-base bg-opacity-10 text-text-base mr-6 ml-24;
 }
 
 .rce-mbox:has(.left),
 .rce-mbox:has(.right) {
   user-select: text;
   min-width: 1rem;
-  @apply bg-opacity-80 border border-contrast border-opacity-25 whitespace-pre-wrap;
+  @apply whitespace-pre-wrap px-2.5 text-opacity-90;
 }
 
 .rce-mbox .left::after {
@@ -578,4 +578,8 @@ code::after {
 
 .rce-mbox .right::after {
   content: '';
+}
+
+.rce-input-buttons {
+  @apply mr-1;
 }
