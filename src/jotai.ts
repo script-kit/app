@@ -32,6 +32,7 @@ import { editor } from 'monaco-editor';
 
 import { assign, clamp, debounce, drop as _drop, isEqual } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
+import { MessageType } from 'react-chat-elements';
 import { AppChannel } from './enums';
 import { ProcessInfo, ResizeData, ScoredChoice, Survey } from './types';
 import {
@@ -234,7 +235,7 @@ export const unfilteredChoicesAtom = atom(
       // }
 
       const prevCId = g(prevChoiceId);
-      console.log({ prevCId });
+      // console.log({ prevCId });
 
       // const prevIndex = g(isMainScriptAtom)
       //   ? 0
@@ -401,6 +402,7 @@ const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
     enabled: false,
   },
   wordWrap: 'on',
+  wrappingStrategy: 'advanced',
   lineNumbers: 'off',
   glyphMargin: false,
   scrollBeyondLastLine: false,
@@ -520,7 +522,7 @@ export const _index = atom(
         if (foundChoice?.id) {
           s(index, i);
           s(focusedChoiceAtom, foundChoice);
-          console.log(`i!== -1: Setting prevChoiceId to ${foundChoice?.id}`);
+          // console.log(`i!== -1: Setting prevChoiceId to ${foundChoice?.id}`);
           // s(prevChoiceId, foundChoice?.id);
         }
       }
@@ -530,9 +532,9 @@ export const _index = atom(
 
     if (!selected && id && id !== prevId) {
       s(focusedChoiceAtom, choice);
-      console.log(
-        `!selected && id && id !== prevId: Setting prevChoiceId to ${id}`
-      );
+      // console.log(
+      //   `!selected && id && id !== prevId: Setting prevChoiceId to ${id}`
+      // );
       // s(prevChoiceId, id);
     }
   }
@@ -1316,6 +1318,7 @@ export const submitValueAtom = atom(
 
     s(_submitValue, value);
     s(flagsAtom, {});
+    s(chatMessagesAtom, []);
 
     if (g(webSocketAtom)) {
       g(webSocketAtom)?.close();
@@ -1843,3 +1846,65 @@ export const isDefaultTheme = atom(true);
 export const editorSuggestionsAtom = atom<string[]>([]);
 export const editorCursorPosAtom = atom<number>(0);
 export const editorAppendAtom = atom<string>('');
+export const colorAtom = atom((g) => {
+  return async () => {
+    // Create new EyeDropper
+    try {
+      const eyeDropper = new EyeDropper();
+      const color = await eyeDropper.open();
+      const channel = Channel.GET_COLOR;
+
+      const pid = g(pidAtom);
+      const appMessage = {
+        channel,
+        pid: pid || 0,
+        value: color,
+      };
+
+      ipcRenderer.send(channel, appMessage);
+      return color;
+    } catch (error) {
+      console.log(error);
+    }
+    return '';
+  };
+});
+
+const _chatMessagesAtom = atom<Partial<MessageType>[]>([]);
+export const chatMessagesAtom = atom(
+  (g) => g(_chatMessagesAtom),
+  (g, s, a: Partial<MessageType>[]) => {
+    s(_chatMessagesAtom, a);
+
+    const appMessage = {
+      channel: Channel.CHAT_MESSAGES_CHANGE,
+      value: a,
+      pid: g(pidAtom),
+    };
+    ipcRenderer.send(Channel.CHAT_MESSAGES_CHANGE, appMessage);
+  }
+);
+
+export const chatMessageSubmitAtom = atom(null, (g, s, a: string) => {
+  const appMessage = {
+    channel: Channel.CHAT_SUBMIT,
+    value: a,
+    pid: g(pidAtom),
+  };
+  ipcRenderer.send(Channel.CHAT_SUBMIT, appMessage);
+});
+
+export const addChatMessageAtom = atom(null, (g, s, a: MessageType) => {
+  const prev = g(chatMessagesAtom);
+  const updated = [...prev, a];
+  s(chatMessagesAtom, updated);
+});
+
+export const updateLastChatMessageAtom = atom(null, (g, s, a: MessageType) => {
+  const prev = g(chatMessagesAtom);
+  const messages = [...prev];
+  // append the text from a to the text of the last message
+  messages[messages.length - 1].text += a.text;
+
+  s(chatMessagesAtom, messages);
+});

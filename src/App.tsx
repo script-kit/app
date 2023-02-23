@@ -117,8 +117,11 @@ import {
   logValueAtom,
   shortcutsAtom,
   editorAppendAtom,
-  searchDebounceAtom,
   appDbAtom,
+  colorAtom,
+  chatMessagesAtom,
+  addChatMessageAtom,
+  updateLastChatMessageAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -127,6 +130,7 @@ import Emoji from './components/emoji';
 import { AppChannel, WindowChannel } from './enums';
 import Terminal from './term';
 import Inspector from './components/inspector';
+import { Chat } from './components/chat';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -178,6 +182,7 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function App() {
+  const [pid, setPid] = useAtom(pidAtom);
   const [appConfig, setAppConfig] = useAtom(appConfigAtom);
   const [appDb, setAppDb] = useAtom(appDbAtom);
   const [open, setOpen] = useAtom(openAtom);
@@ -186,16 +191,20 @@ export default function App() {
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
   const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
   const [hidden, setHidden] = useAtom(isHiddenAtom);
+  const [chatMessages, setChatMessages] = useAtom(chatMessagesAtom);
+  const addChatMessage = useSetAtom(addChatMessageAtom);
+  const updateChatLastMessage = useSetAtom(updateLastChatMessageAtom);
+
   const ui = useAtomValue(uiAtom);
   const choices = useAtomValue(scoredChoices);
   const showSelected = useAtomValue(showSelectedAtom);
   const showTabs = useAtomValue(showTabsAtom);
   const nullChoices = useAtomValue(nullChoicesAtom);
   const getEditorHistory = useAtomValue(getEditorHistoryAtom);
+  const getColor = useAtomValue(colorAtom);
   const onPaste = useAtomValue(onPasteAtom);
   const onDrop = useAtomValue(onDropAtom);
 
-  const setPid = useSetAtom(pidAtom);
   const setExit = useSetAtom(exitAtom);
   const setScriptHistory = useSetAtom(_history);
   const setInput = useSetAtom(inputAtom);
@@ -313,6 +322,7 @@ export default function App() {
     [Channel.VALUE_INVALID]: setValueInvalid,
     [Channel.START]: start,
     [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
+    [Channel.GET_COLOR]: () => getColor(),
     [Channel.TERMINAL]: setSocketURL,
     [Channel.CLEAR_TABS]: setTabs,
     [Channel.ADD_CHOICE]: addChoice,
@@ -323,6 +333,9 @@ export default function App() {
     [Channel.STOP_AUDIO]: () => setAudio(null),
     [Channel.SPEAK_TEXT]: setSpeak,
     [Channel.SET_SHORTCUTS]: setShortcuts,
+    [Channel.CHAT_SET_MESSAGES]: setChatMessages,
+    [Channel.CHAT_ADD_MESSAGE]: addChatMessage,
+    [Channel.CHAT_UPDATE_LAST_MESSAGE]: updateChatLastMessage,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -331,7 +344,7 @@ export default function App() {
         shiftKey: keyData.shift,
         altKey: keyData.option,
         ...keyData,
-      });
+      } as any);
 
       document?.activeElement?.dispatchEvent(keyboardEvent);
     },
@@ -340,6 +353,32 @@ export default function App() {
     [WindowChannel.SET_LOG_VALUE]: setLogValue,
     [WindowChannel.SET_EDITOR_LOG_MODE]: setEditorLogMode,
   };
+
+  const ipcGet = useCallback(
+    (channel: string, value: any) => {
+      const handler = async () => {
+        ipcRenderer.send(channel, {
+          channel,
+          pid: pid || 0,
+          value,
+        });
+      };
+      ipcRenderer.on(channel, handler);
+
+      return () => {
+        ipcRenderer.off(channel, handler);
+      };
+    },
+    [pid]
+  );
+
+  useEffect(() => {
+    const removeChatMessages = ipcGet(Channel.CHAT_GET_MESSAGES, chatMessages);
+
+    return () => {
+      removeChatMessages();
+    };
+  }, [chatMessages, ipcGet]);
 
   useEffect(() => {
     Object.entries(messageMap).forEach(([key, fn]) => {
@@ -506,6 +545,7 @@ export default function App() {
                 {ui === UI.term && <Terminal />}
                 {ui === UI.emoji && <Emoji />}
                 {ui === UI.debugger && <Inspector />}
+                {ui === UI.chat && <Chat />}
               </AnimatePresence>
               <AutoSizer>
                 {({ width, height }) => (

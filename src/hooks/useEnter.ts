@@ -39,6 +39,7 @@ export default () => {
           UI.form,
           UI.emoji,
           UI.fields,
+          UI.chat,
         ].includes(ui)
       ) {
         return;

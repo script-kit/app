@@ -40,12 +40,7 @@ export default function Form({
     } else {
       formRef?.current?.focus();
     }
-  }, [
-    formRef?.current?.firstElementChild,
-    formRef?.current?.elements,
-    formRef,
-    formData,
-  ]);
+  }, [formRef, formData]);
 
   useEffect(() => {
     const handler = () => {
@@ -91,31 +86,30 @@ export default function Form({
 
   const getFormJSON = useCallback(() => {
     const data: any = new FormData(formRef?.current);
+    const els: any[] = Array.from((formRef?.current as any)?.elements);
 
-    const names: any = {};
-    // const arrays: any = [];
-
-    for (const el of (formRef?.current as any)?.elements) {
-      if (names[el.name] === false) {
-        names[el.name] = true;
-      } else {
-        names[el.name] = false;
+    // create an array of names which have more than one element
+    const multis = els.reduce((acc: string[], curr: any) => {
+      if (
+        curr.name &&
+        els.filter((e) => e !== curr).find((e: any) => e.name === curr.name) &&
+        !acc.includes(curr.name)
+      ) {
+        acc.push(curr.name);
       }
-    }
 
-    // if one of the values of the FormData is a File, then assign the key to the file path
-    const formJSON = Object.fromEntries(
-      data.entries().map(([key, value]: [string, File | string]) => {
-        if (value instanceof File) {
-          return [key, value.path];
+      return acc;
+    }, []);
+
+    const formJSON = {};
+    for (const el of els) {
+      if (el.name) {
+        if (multis.includes(el.name)) {
+          formJSON[el.name] = data.getAll(el.name);
+        } else {
+          const value = data.get(el.name);
+          formJSON[el.name] = value?.path || value;
         }
-        return [key, value];
-      })
-    );
-
-    for (const [key, value] of Object.entries(names)) {
-      if (key && value) {
-        formJSON[key] = data.getAll(key);
       }
     }
 

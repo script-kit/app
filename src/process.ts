@@ -59,6 +59,7 @@ import {
   clearPromptCache,
   focusPrompt,
   forceFocus,
+  getFromPrompt,
   getMainPrompt,
   getPromptBounds,
   hideAppIfNoWindows,
@@ -1711,6 +1712,27 @@ const kitMessageMap: ChannelHandler = {
         log.error(`Error starting drag`, error);
       }
     }
+    childSend(child, { channel, value });
+  }),
+  GET_COLOR: toProcess(async ({ child }, { channel }) => {
+    sendToPrompt(Channel.GET_COLOR);
+  }),
+  CHAT_GET_MESSAGES: toProcess(async ({ child }, { channel, value }) => {
+    getFromPrompt(child, channel, value);
+  }),
+  CHAT_SET_MESSAGES: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(channel, value);
+
+    childSend(child, { channel, value });
+  }),
+  CHAT_ADD_MESSAGE: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(channel, value);
+
+    childSend(child, { channel, value });
+  }),
+  CHAT_UPDATE_LAST_MESSAGE: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(channel, value);
+
     childSend(child, { channel, value });
   }),
 };

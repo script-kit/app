@@ -87,7 +87,10 @@ export default function Drop() {
         placeholder={placeholder}
         onDragEnter={onDragEnter}
         onDragLeave={onDragLeave}
-        onDragOver={(event) => event.preventDefault()}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
         onDrop={onDrop}
       >
         <h2 className="pointer-events-none mb-0">

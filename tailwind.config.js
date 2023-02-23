@@ -122,6 +122,10 @@ module.exports = {
         65: '.65',
         70: '.70',
       },
+      // add border-t-1
+      borderWidth: {
+        1: '1px',
+      },
       opacity: {
         3: '.03',
         12: '.12',

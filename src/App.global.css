@@ -3,6 +3,7 @@
 @import 'simplebar/dist/simplebar.min.css';
 @import '@vscode/codicons/dist/codicon.css';
 @import 'xterm/css/xterm.css';
+@import 'react-chat-elements/dist/main.css';
 
 /*
 Favicon gradient
@@ -530,4 +531,51 @@ code::after {
 .prose .hljs {
   @apply text-text-base text-opacity-80;
   @apply font-mono font-bold;
+}
+
+.kit-chat-messages {
+  @apply flex-1 overflow-auto p-2;
+}
+
+.kit-chat-input,
+.kit-chat-input > input {
+  @apply bg-bg-base text-text-base outline-none px-2 bg-opacity-0 border-t-1 border-secondary border-opacity-75 placeholder:text-text-base placeholder:text-opacity-25;
+}
+
+.rce-input,
+.rce-input:focus {
+  @apply bg-bg-base bg-opacity-0 text-text-base outline-none focus:outline-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-25 focus:ring-contrast rounded-sm;
+}
+
+.kit-chat-submit {
+  @apply bg-bg-base text-contrast text-base bg-opacity-0;
+}
+
+.rce-container-mbox {
+  @apply w-full font-normal py-1 my-2;
+}
+
+.rce-mbox:has(.left) {
+  /* inverted with half opacity */
+  @apply bg-text-base text-bg-base ml-6 mr-24;
+}
+
+.rce-mbox:has(.right) {
+  /* inverted with half opacity */
+  @apply bg-secondary text-contrast mr-6 ml-24;
+}
+
+.rce-mbox:has(.left),
+.rce-mbox:has(.right) {
+  user-select: text;
+  min-width: 1rem;
+  @apply bg-opacity-80 border border-contrast border-opacity-25 whitespace-pre-wrap;
+}
+
+.rce-mbox .left::after {
+  content: '';
+}
+
+.rce-mbox .right::after {
+  content: '';
 }

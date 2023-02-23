@@ -459,7 +459,7 @@ const downloadKit = async () => {
   const url = `https://github.com/johnlindquist/kitapp/releases/download/v${version}/${kitSDK}`;
 
   sendSplashBody(`Download Kit SDK from ${url}`);
-  const options = { insecure: true, rejectUnauthorized: false };
+  const options = { rejectUnauthorized: false };
   const buffer = await download(url, undefined, options);
 
   sendSplashBody(`Writing Kit SDK to ${file}`);

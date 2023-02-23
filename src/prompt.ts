@@ -27,6 +27,8 @@ import {
   BrowserWindowConstructorOptions,
   Point,
   TouchBar,
+  ipcRenderer,
+  ipcMain,
 } from 'electron';
 import os from 'os';
 import path from 'path';
@@ -38,6 +40,7 @@ import { AppDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
+import { ChildProcess } from 'child_process';
 import { getAssetPath } from './assets';
 import { appDb, kitState, getPromptDb, userDb, subs } from './state';
 import {
@@ -107,6 +110,7 @@ export const createPromptWindow = async () => {
       contextIsolation: false,
       devTools: true,
       backgroundThrottling: false,
+      experimentalFeatures: true,
     },
     closable: false,
     minimizable: false,
@@ -683,6 +687,35 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
     !promptWindow.isDestroyed() &&
     promptWindow?.webContents
   ) {
+    promptWindow?.webContents.send(String(channel), data);
+  }
+};
+
+export const getFromPrompt = <K extends keyof ChannelMap>(
+  child: ChildProcess,
+  channel: K,
+  data?: ChannelMap[K]
+) => {
+  if (process.env.KIT_SILLY)
+    log.silly(`sendToPrompt: ${String(channel)}`, data);
+  // log.info(`>_ ${channel}`);
+  if (
+    promptWindow &&
+    !promptWindow.isDestroyed() &&
+    promptWindow?.webContents
+  ) {
+    ipcMain.removeAllListeners(String(channel));
+    ipcMain.once(String(channel), (event, { value }) => {
+      log.silly(`getFromPrompt: ${String(channel)}`, value);
+      try {
+        // log.info('childSend', channel, value, child, child?.connected);
+        if (child && child?.connected) {
+          child.send({ channel, value });
+        }
+      } catch (error) {
+        log.error('childSend error', error);
+      }
+    });
     promptWindow?.webContents.send(String(channel), data);
   }
 };

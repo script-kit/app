@@ -306,6 +306,21 @@ export default function Editor() {
     [editor, setCursorPosition, setInputValue]
   );
 
+  // When inputValue changes, respect scrollTo bottom
+  useEffect(() => {
+    if (editor && (config as EditorOptions).scrollTo === 'bottom') {
+      const lineNumber = editor.getModel()?.getLineCount() || 0;
+
+      const column =
+        (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+
+      const position = { lineNumber, column };
+      editor.setPosition(position);
+
+      editor.revealPosition(position);
+    }
+  }, [inputValue, config, editor]);
+
   useEffect(() => {
     if (ui === UI.editor && open && editor) {
       const lineNumber = editor.getModel()?.getLineCount() || 0;
