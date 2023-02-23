@@ -145,7 +145,7 @@ export default function Form({
 
   const onFormChange = useCallback(
     (event?: any) => {
-      if (event) event.preventDefault();
+      // if (event) event.preventDefault();
 
       const values = Object.values(getFormJSON());
       onChange(values);
