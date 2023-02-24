@@ -30,7 +30,7 @@ import {
 } from '@johnlindquist/kit/types/kitapp';
 import { editor } from 'monaco-editor';
 
-import { assign, clamp, debounce, drop as _drop, isEqual } from 'lodash';
+import { debounce, drop as _drop, isEqual } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
 import { MessageType } from 'react-chat-elements';
 import { AppChannel } from './enums';
@@ -590,7 +590,7 @@ const prevChoiceId = atom(
   (g) => g(_prevChoiceId),
   (g, s, a: string) => {
     s(_prevChoiceId, a);
-    console.log(`Setting prevChoiceId to ${a}`);
+    // console.log(`Setting prevChoiceId to ${a}`);
   }
 );
 
@@ -632,9 +632,9 @@ export const scoredChoices = atom(
       const selected = g(selectedAtom);
 
       if (!selected && a && !g(promptData)?.defaultChoiceId) {
-        console.log(
-          `!selected && a: Setting prevChoiceId to ${a[0].item?.id || ''}`
-        );
+        // console.log(
+        //   `!selected && a: Setting prevChoiceId to ${a[0].item?.id || ''}`
+        // );
         // s(prevChoiceId, (a[0].item?.id as string) || '');
         s(focusedChoiceAtom, a[0]?.item);
       }
@@ -1143,6 +1143,9 @@ export const promptDataAtom = atom(
 
       s(promptData, a);
     }
+
+    const channel = g(channelAtom);
+    channel(Channel.ON_INIT);
   }
 );
 
@@ -1282,6 +1285,7 @@ export const submitValueAtom = atom(
     // const fC = g(focusedChoiceAtom);
 
     const channel = g(channelAtom);
+    channel(Channel.ON_SUBMIT);
 
     channel(Channel.VALUE_SUBMITTED, {
       value,
@@ -1881,17 +1885,13 @@ export const chatMessagesAtom = atom(
       value: a,
       pid: g(pidAtom),
     };
-    ipcRenderer.send(Channel.CHAT_MESSAGES_CHANGE, appMessage);
+    // ipcRenderer.send(Channel.CHAT_MESSAGES_CHANGE, appMessage);
   }
 );
 
 export const chatMessageSubmitAtom = atom(null, (g, s, a: string) => {
-  const appMessage = {
-    channel: Channel.CHAT_SUBMIT,
-    value: a,
-    pid: g(pidAtom),
-  };
-  ipcRenderer.send(Channel.CHAT_SUBMIT, appMessage);
+  const channel = g(channelAtom);
+  channel(Channel.ON_SUBMIT);
 });
 
 export const addChatMessageAtom = atom(null, (g, s, a: MessageType) => {
@@ -1900,11 +1900,18 @@ export const addChatMessageAtom = atom(null, (g, s, a: MessageType) => {
   s(chatMessagesAtom, updated);
 });
 
-export const updateLastChatMessageAtom = atom(null, (g, s, a: MessageType) => {
+export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
   const prev = g(chatMessagesAtom);
   const messages = [...prev];
   // append the text from a to the text of the last message
-  messages[messages.length - 1].text += a.text;
+  try {
+    messages[messages.length - 1].text = (
+      messages[messages.length - 1].text + a
+    ).trim();
 
-  s(chatMessagesAtom, messages);
+    s(chatMessagesAtom, messages);
+  } catch (error) {
+    console.log(error);
+    s(chatMessagesAtom, []);
+  }
 });

@@ -339,6 +339,7 @@ const initAppDb: AppDb = {
   authorized: false,
   searchDebounce: true,
   termFont: 'monospace',
+  convertKeymap: true,
 };
 
 nativeTheme.addListener('updated', () => {
@@ -740,6 +741,10 @@ const defaultKeyMap: {
 };
 
 export const convertKey = (sourceKey: string) => {
+  if (typeof appDb?.convertKey === 'boolean' && !appDb.convertKey) {
+    log.info(`🔑 Skipping key conversion: ${sourceKey}`);
+    return sourceKey;
+  }
   if (kitState.keymap) {
     const result = Object.entries(kitState.keymap).find(
       ([, { value }]: [string, any]) =>

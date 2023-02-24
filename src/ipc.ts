@@ -204,7 +204,8 @@ export const startIpc = () => {
     Channel.PLAY_AUDIO,
     Channel.GET_COLOR,
     Channel.CHAT_MESSAGES_CHANGE,
-    Channel.CHAT_SUBMIT,
+    Channel.ON_INIT,
+    Channel.ON_SUBMIT,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(

@@ -1,19 +1,25 @@
 import { useAtom, useSetAtom } from 'jotai';
 import React, { ReactNode, useEffect } from 'react';
 import { MessageList, Input, Button, MessageType } from 'react-chat-elements';
-import { chatMessagesAtom, chatMessageSubmitAtom } from '../jotai';
+import {
+  chatMessagesAtom,
+  chatMessageSubmitAtom,
+  placeholderAtom,
+  inputAtom,
+} from '../jotai';
 
 export function Chat() {
   // Ref for the input
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Create currentMessage state
-  const [currentMessage, setCurrentMessage] = React.useState('');
+  const [currentMessage, setCurrentMessage] = useAtom(inputAtom);
 
   // Create messages state array
   const [messages, setMessages] = useAtom(chatMessagesAtom);
 
   const submitMessage = useSetAtom(chatMessageSubmitAtom);
+  const [placeholder] = useAtom(placeholderAtom);
 
   useEffect(() => {
     // Focus the input when the component mounts
@@ -67,9 +73,8 @@ export function Chat() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      {/* Cast MessageList to ReactNode */}
       <MessageList
-        dataSource={messages}
+        dataSource={messages as MessageType[]}
         className="kit-chat-messages"
         toBottomHeight="100%"
         notchStyle={{ display: 'none' }}
@@ -82,7 +87,7 @@ export function Chat() {
         referance={inputRef}
         className="kit-chat-input"
         inputStyle={{ fontSize: '1rem' }}
-        placeholder="Type here..."
+        placeholder={placeholder}
         rightButtons={
           <Button
             className="kit-chat-submit"

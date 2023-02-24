@@ -128,10 +128,17 @@ import { getAssetPath } from './assets';
 //   return pExec(`${bin} ${args.join(' ')}`);
 // };
 
-export const maybeConvertColors = (value: any) => {
+export const maybeConvertColors = (value: any = {}) => {
   log.info(`Convert Colors: ${value}`);
-  // eslint-disable-next-line no-multi-assign
-  value['--opacity'] = value.opacity || '0.85';
+
+  // eslint-disable-next-line prettier/prettier
+  value.foreground ||= value?.['--color-text'];
+  value.background ||= value?.['--color-background'];
+  value.accent ||= value?.['--color-primary'];
+  value.ui ||= value?.['--color-secondary'];
+  value.contrast ||= value?.['--color-contrast'];
+  value.opacity ||= value?.['--opacity'] || '0.85';
+
 
   if (value.foreground) {
     const foreground = toRgb(value.foreground);
@@ -240,7 +247,7 @@ export const formatScriptChoices = (data: Choice[]) => {
   return choices;
 };
 
-export const setTheme = async (value: any, check = true) => {
+export const setTheme = async (value: any = {}, check = true) => {
   // if (check) {
   //   await sponsorCheck('Custom Themes');
   //   if (!kitState.isSponsor) return;
@@ -1730,7 +1737,7 @@ const kitMessageMap: ChannelHandler = {
 
     childSend(child, { channel, value });
   }),
-  CHAT_UPDATE_LAST_MESSAGE: toProcess(async ({ child }, { channel, value }) => {
+  CHAT_PUSH_TOKEN: toProcess(async ({ child }, { channel, value }) => {
     sendToPrompt(channel, value);
 
     childSend(child, { channel, value });
@@ -2321,6 +2328,10 @@ emitter.on(
 //   log.verbose({ scripts });
 //   setChoices(formatScriptChoices(scripts));
 // });
+
+emitter.on(KitEvent.DID_FINISH_LOAD, () => {
+  setTheme({ ...kitState.theme });
+});
 
 subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
   if (Object.keys(kenvEnv).length === 0) return;

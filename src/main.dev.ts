@@ -113,7 +113,12 @@ import {
   updateScripts,
 } from './state';
 import { startSK } from './sk';
-import { destroyAllProcesses, handleWidgetEvents, processes } from './process';
+import {
+  destroyAllProcesses,
+  handleWidgetEvents,
+  processes,
+  setTheme,
+} from './process';
 import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
 import { showError } from './main.dev.templates';
@@ -712,6 +717,7 @@ const systemEvents = () => {
     }
 
     kitState.suspended = false;
+    setTheme({});
 
     configureIntervalMac(pantsKick);
   });

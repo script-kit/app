@@ -192,6 +192,7 @@ export const createPromptWindow = async () => {
     });
 
     sendToPrompt(Channel.APP_DB, { ...appDb });
+    emitter.emit(KitEvent.DID_FINISH_LOAD);
 
     // TODO: Consider how db/*.json files should sync with renderer process
     // This is a single property of app.json. So consider a .json file for the renderer process
@@ -208,6 +209,7 @@ export const createPromptWindow = async () => {
       return;
     }
     promptWindow?.reload();
+    emitter.emit(KitEvent.PROMPT_RELOAD);
   });
 
   //   promptWindow?.webContents?.on('new-window', function (event, url) {
@@ -945,6 +947,9 @@ const pidMatch = (pid: number, message: string) => {
 
 export const setPromptData = async (promptData: PromptData) => {
   // if (!pidMatch(pid, `setPromptData`)) return;
+  if (typeof promptData?.alwaysOnTop === 'boolean') {
+    alwaysOnTop(promptData.alwaysOnTop);
+  }
 
   if (promptData?.scriptPath !== kitState.scriptPath) return;
   setTimeout(
@@ -1094,11 +1099,13 @@ export const clearPromptCache = async () => {
 };
 
 export const reload = () => {
+  log.info(`Reloading prompt window...`);
   if (promptWindow?.isDestroyed()) {
     log.warn(`Prompt window is destroyed. Not reloading.`);
     return;
   }
   promptWindow?.reload();
+  emitter.emit(KitEvent.PROMPT_RELOAD);
 };
 
 export const getPromptBounds = () => promptWindow.getBounds();

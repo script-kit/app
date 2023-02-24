@@ -121,7 +121,7 @@ import {
   colorAtom,
   chatMessagesAtom,
   addChatMessageAtom,
-  updateLastChatMessageAtom,
+  chatPushTokenAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -193,7 +193,7 @@ export default function App() {
   const [hidden, setHidden] = useAtom(isHiddenAtom);
   const [chatMessages, setChatMessages] = useAtom(chatMessagesAtom);
   const addChatMessage = useSetAtom(addChatMessageAtom);
-  const updateChatLastMessage = useSetAtom(updateLastChatMessageAtom);
+  const chatPushToken = useSetAtom(chatPushTokenAtom);
 
   const ui = useAtomValue(uiAtom);
   const choices = useAtomValue(scoredChoices);
@@ -335,7 +335,7 @@ export default function App() {
     [Channel.SET_SHORTCUTS]: setShortcuts,
     [Channel.CHAT_SET_MESSAGES]: setChatMessages,
     [Channel.CHAT_ADD_MESSAGE]: addChatMessage,
-    [Channel.CHAT_UPDATE_LAST_MESSAGE]: updateChatLastMessage,
+    [Channel.CHAT_PUSH_TOKEN]: chatPushToken,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {

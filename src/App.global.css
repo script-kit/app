@@ -570,6 +570,9 @@ code::after {
   user-select: text;
   min-width: 1rem;
   @apply whitespace-pre-wrap px-2.5 text-opacity-90;
+  @apply shadow-sm;
+  @apply focus:shadow-md;
+  @apply py-1 px-3;
 }
 
 .rce-mbox .left::after {
