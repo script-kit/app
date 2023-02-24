@@ -1271,7 +1271,7 @@ export const submitValueAtom = atom(
     if (g(submittedAtom)) return;
     const focusedChoice = g(scoredChoices)?.[g(_index)]?.item;
     if (focusedChoice?.id) {
-      console.log(`focusedChoice.id: ${focusedChoice.id}`);
+      // console.log(`focusedChoice.id: ${focusedChoice.id}`);
       s(prevChoiceId, focusedChoice.id);
     }
     // let submitted = g(submittedAtom);
@@ -1739,7 +1739,7 @@ export const _audioAtom = atom<AudioOptions | null>(null);
 export const audioAtom = atom(
   (g) => g(_audioAtom),
   (g, s, a: AudioOptions | null) => {
-    console.log(`Audio options`, a);
+    // console.log(`Audio options`, a);
 
     let audio: null | HTMLAudioElement = document.querySelector(
       '#audio'
