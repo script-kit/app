@@ -51,6 +51,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 
 import { subscribeKey } from 'valtio/utils';
+import { pathExistsSync } from 'fs-extra';
 import { getLog, mainLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -188,9 +189,14 @@ export const maybeConvertColors = (value: any = {}) => {
   if (value.accent) delete value.accent;
   if (value.opacity) delete value.opacity;
 
-  // Save theme as JSON to disk
-  const themePath = kitPath('db', 'theme.json');
-  writeFile(themePath, JSON.stringify(value, null, 2));
+
+  // if kitPath exists
+  if(pathExistsSync(kitPath('db'))){
+    // Save theme as JSON to disk
+    const themePath = kitPath('db', 'theme.json');
+    writeFile(themePath, JSON.stringify(value, null, 2));
+  }
+
 };
 
 export const formatScriptChoices = (data: Choice[]) => {

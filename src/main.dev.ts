@@ -78,7 +78,6 @@ import { setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
 import {
   getAssetPath,
-  getNodeVersion,
   getReleaseChannel,
   getPlatformExtension,
 } from './assets';
@@ -113,12 +112,7 @@ import {
   updateScripts,
 } from './state';
 import { startSK } from './sk';
-import {
-  destroyAllProcesses,
-  handleWidgetEvents,
-  processes,
-  setTheme,
-} from './process';
+import { destroyAllProcesses, handleWidgetEvents, processes } from './process';
 import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
 import { showError } from './main.dev.templates';
@@ -717,7 +711,6 @@ const systemEvents = () => {
     }
 
     kitState.suspended = false;
-    setTheme({});
 
     configureIntervalMac(pantsKick);
   });
