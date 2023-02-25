@@ -105,7 +105,20 @@ const buildScriptChanged = debounce((filePath: string) => {
         KIT: kitPath(),
         KENV: kenvPath(),
       }),
+      stdio: 'pipe',
     });
+
+    if (child?.stdout) {
+      child.stdout.on('data', (data) => {
+        log.info(data.toString());
+      });
+    }
+
+    if (child?.stderr) {
+      child.stderr.on('data', (data) => {
+        log.error(data.toString());
+      });
+    }
 
     // log error
     child.on('error', (error: any) => {
