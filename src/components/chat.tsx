@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from 'react';
 
-import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 
 import classNames from 'classnames';
 import { FaChevronDown } from 'react-icons/fa';
@@ -27,7 +27,6 @@ import {
   placeholderAtom,
   inputAtom,
   channelAtom,
-  _index,
 } from '../jotai';
 
 const ChatList: FC<IMessageListProps> = ({
@@ -65,7 +64,7 @@ const ChatList: FC<IMessageListProps> = ({
     }
 
     prevProps.current = props;
-  }, [prevProps, props]);
+  }, [checkScroll, prevProps, referance]);
 
   const getBottom = (e: any) => {
     if (e.current)
@@ -308,6 +307,7 @@ export function Chat() {
   // Ref for the input
   const inputRef = React.useRef<HTMLInputElement>(null);
   const messagesRef = React.useRef<HTMLDivElement>(null);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
 
   // Create currentMessage state
   const [currentMessage, setCurrentMessage] = useAtom(inputAtom);
@@ -324,7 +324,8 @@ export function Chat() {
     if (inputRef.current) {
       inputRef.current.focus();
       // set the tabindex of the input to 0
-      inputRef.current.tabIndex = 0;
+      inputRef.current.setAttribute('tabindex', '0');
+      buttonRef.current?.setAttribute('tabindex', '-1');
     }
   }, []);
 
@@ -395,7 +396,7 @@ export function Chat() {
         let newIndex = i + direction;
         if (newIndex > messages.length) {
           inputRef.current?.focus();
-          channel(Channel.ITEM_FOCUSED, { index: -1 });
+          channel(Channel.MESSAGE_FOCUSED, { index: -1 });
           return;
         }
 
@@ -410,10 +411,17 @@ export function Chat() {
         if (element) {
           element?.focus();
           const focusIndex = messages.length - newIndex;
-          channel(Channel.ITEM_FOCUSED, { index: focusIndex });
+          channel(Channel.MESSAGE_FOCUSED, { index: focusIndex });
         }
         // else if not a modifier key, focus the input
-      } else if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        // else if not the tab key, focus the input
+      } else if (
+        !e.shiftKey &&
+        !e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        e.key !== 'Tab'
+      ) {
         inputRef.current?.focus();
       }
     },
@@ -465,6 +473,7 @@ export function Chat() {
         placeholder={placeholder}
         rightButtons={
           <Button
+            buttonRef={buttonRef}
             className="kit-chat-submit"
             backgroundColor=""
             color=""
