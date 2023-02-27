@@ -122,6 +122,7 @@ import {
   chatMessagesAtom,
   addChatMessageAtom,
   chatPushTokenAtom,
+  setChatMessageAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -194,6 +195,7 @@ export default function App() {
   const [chatMessages, setChatMessages] = useAtom(chatMessagesAtom);
   const addChatMessage = useSetAtom(addChatMessageAtom);
   const chatPushToken = useSetAtom(chatPushTokenAtom);
+  const setChatMessage = useSetAtom(setChatMessageAtom);
 
   const ui = useAtomValue(uiAtom);
   const choices = useAtomValue(scoredChoices);
@@ -336,6 +338,7 @@ export default function App() {
     [Channel.CHAT_SET_MESSAGES]: setChatMessages,
     [Channel.CHAT_ADD_MESSAGE]: addChatMessage,
     [Channel.CHAT_PUSH_TOKEN]: chatPushToken,
+    [Channel.CHAT_SET_MESSAGE]: setChatMessage,
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {

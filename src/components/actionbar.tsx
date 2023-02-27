@@ -1,9 +1,13 @@
+/* eslint-disable jsx-a11y/anchor-is-valid */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtomValue, useAtom, useSetAtom } from 'jotai';
 import { loadable } from 'jotai/utils';
 import { motion } from 'framer-motion';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback } from 'react';
+import { ipcRenderer } from 'electron';
 import {
   flagsAtom,
   _flag,
@@ -20,6 +24,7 @@ import {
   enterButtonDisabledAtom,
   createAssetAtom,
 } from '../jotai';
+import { AppChannel } from '../enums';
 
 type Action = {
   name: string;
@@ -240,7 +245,13 @@ const IconButton = () => {
       transition={transition}
       className="min-w-fit min-h-fit"
     >
-      <a href="https://scriptkit.com" tabIndex={-1}>
+      <a
+        onClick={(e) => {
+          e.preventDefault();
+          ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+        }}
+        tabIndex={-1}
+      >
         <svg
           className={`
         flex

@@ -903,15 +903,19 @@ const ohNo = async (error: Error) => {
     encoding: 'utf8',
   });
 
-  await clipboardy.write(
-    `
-${error.message}
-${error.stack}
-${mainLogContents}
-  `.trim()
-  );
-  destroyPromptWindow();
-  await show(INSTALL_ERROR, showError(error, mainLogContents));
+  try {
+    await clipboardy.write(
+      `
+  ${error.message}
+  ${error.stack}
+  ${mainLogContents}
+    `.trim()
+    );
+    destroyPromptWindow();
+    await show(INSTALL_ERROR, showError(error, mainLogContents));
+  } catch (copyError) {
+    shell.openExternal(mainLogPath);
+  }
 
   throw new Error(error.message);
 };

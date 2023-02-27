@@ -183,6 +183,7 @@ export const startIpc = () => {
     Channel.INPUT,
     Channel.CHANGE,
     Channel.CHOICE_FOCUSED,
+    Channel.ITEM_FOCUSED,
     Channel.CHOICES,
     Channel.NO_CHOICES,
     Channel.BACK,

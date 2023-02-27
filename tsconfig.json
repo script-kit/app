@@ -34,6 +34,13 @@
     "src/dist",
     ".erb/dll",
     "node_modules",
-    "assets"
+    "assets",
+    ".vscode",
+    ".erb",
+    "build",
+    "dist",
+    "dist-electron",
+    "scripts",
+    "logs"
   ]
 }

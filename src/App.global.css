@@ -557,7 +557,7 @@ code::after {
 
 .rce-mbox:has(.left) {
   /* inverted with half opacity */
-  @apply text-text-base bg-bg-base bg-opacity-0 ml-6 mr-24 border border-text-base border-opacity-15;
+  @apply text-text-base bg-bg-base bg-opacity-0 ml-6 mr-24;
 }
 
 .rce-mbox:has(.right) {
@@ -573,6 +573,7 @@ code::after {
   @apply shadow-sm;
   @apply focus:shadow-md;
   @apply py-1 px-3;
+  @apply border border-text-base border-opacity-15;
 }
 
 .rce-mbox .left::after {
@@ -585,4 +586,17 @@ code::after {
 
 .rce-input-buttons {
   @apply mr-1;
+}
+
+.rce-mbox-text .prose {
+  @apply p-0 whitespace-normal;
+}
+
+.rce-mbox [tabIndex] {
+  @apply focus:ring-0;
+  @apply focus:outline-none;
+  @apply focus:border-none;
+}
+.rce-mbox:has([tabIndex]:focus) {
+  @apply border border-contrast border-opacity-75;
 }

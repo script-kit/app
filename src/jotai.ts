@@ -1885,7 +1885,7 @@ export const chatMessagesAtom = atom(
       value: a,
       pid: g(pidAtom),
     };
-    // ipcRenderer.send(Channel.CHAT_MESSAGES_CHANGE, appMessage);
+    ipcRenderer.send(Channel.CHAT_MESSAGES_CHANGE, appMessage);
   }
 );
 
@@ -1915,3 +1915,19 @@ export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
     s(chatMessagesAtom, []);
   }
 });
+
+export const setChatMessageAtom = atom(
+  null,
+  (g, s, a: { index: number; message: MessageType }) => {
+    const prev = g(chatMessagesAtom);
+    const messages = [...prev];
+    // set message at index, allow for negative index
+    const messageIndex = a.index < 0 ? messages.length + a.index : a.index;
+    try {
+      messages[messageIndex] = a.message;
+      s(chatMessagesAtom, messages);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+);
