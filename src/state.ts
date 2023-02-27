@@ -340,6 +340,7 @@ const initAppDb: AppDb = {
   searchDebounce: true,
   termFont: 'monospace',
   convertKeymap: true,
+  cachePrompt: true,
 };
 
 nativeTheme.addListener('updated', () => {

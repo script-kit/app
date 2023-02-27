@@ -17,6 +17,7 @@ import {
   previewHTMLAtom,
   heightChangedAtom,
   itemHeightAtom,
+  appDbAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 import { BUTTON_HEIGHT, DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from '../defaults';
@@ -46,6 +47,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [previewEnabled] = useAtom(previewEnabledAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
   const [previewHTML] = useAtom(previewHTMLAtom);
+  const [appDb] = useAtom(appDbAtom);
   const [, setHeightChanged] = useAtom(heightChangedAtom);
   const itemHeight = useAtomValue(itemHeightAtom);
   // const listWidth = useMotionValue('100%');
@@ -136,7 +138,11 @@ export default function ChoiceList({ width, height }: ListProps) {
         text-text-base
         overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20
 
-        ${previewEnabled && hasPreview ? 'border-r  border-secondary' : ''}
+        ${
+          !appDb.mini && previewEnabled && hasPreview
+            ? 'border-r  border-secondary'
+            : ''
+        }
         `}
         // onItemsRendered={onItemsRendered}
       >
@@ -145,7 +151,7 @@ export default function ChoiceList({ width, height }: ListProps) {
 
       {/* {previewEnabled && <Preview />} */}
       <AnimatePresence key="previewComponents">
-        {previewHTML && <Preview key="AppPreview" />}
+        {!appDb.mini && previewHTML && <Preview key="AppPreview" />}
       </AnimatePresence>
     </motion.div>
   );

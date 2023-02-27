@@ -4,6 +4,7 @@ import { useAtom, useAtomValue } from 'jotai';
 import React, { useRef, useState, useEffect, Fragment } from 'react';
 import { motion } from 'framer-motion';
 import {
+  appDbAtom,
   kitStateAtom,
   mouseEnabledAtom,
   openAtom,
@@ -88,6 +89,7 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
 };
 
 export default function KitTabs() {
+  const appDb = useAtomValue(appDbAtom);
   const [tabs] = useAtom(tabsAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);

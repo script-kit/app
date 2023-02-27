@@ -46,6 +46,7 @@ import { appDb, kitState, getPromptDb, userDb, subs } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
+  DEFAULT_WIDTH,
   EMOJI_HEIGHT,
   EMOJI_WIDTH,
   INPUT_HEIGHT,
@@ -60,6 +61,10 @@ import { emitter, KitEvent } from './events';
 import { pathsAreEqual } from './helpers';
 
 let promptWindow: BrowserWindow;
+
+const getDefaultWidth = () => {
+  return appDb.mini ? DEFAULT_WIDTH : DEFAULT_EXPANDED_WIDTH;
+};
 
 export const blurPrompt = () => {
   log.info(`blurPrompt`);
@@ -117,7 +122,7 @@ export const createPromptWindow = async () => {
     maximizable: false,
     movable: true,
     skipTaskbar: true,
-    width: DEFAULT_EXPANDED_WIDTH,
+    width: getDefaultWidth(),
     height: DEFAULT_HEIGHT,
     minWidth: MIN_WIDTH,
     minHeight: INPUT_HEIGHT,
@@ -484,7 +489,7 @@ export const getCurrentScreenPromptCache = async (
     height: screenHeight,
   } = currentScreen.workAreaSize;
 
-  let width = DEFAULT_EXPANDED_WIDTH;
+  let width = getDefaultWidth();
   let height = DEFAULT_HEIGHT;
 
   log.verbose({
@@ -515,7 +520,7 @@ export const getCurrentScreenPromptCache = async (
     }
 
     if (ui === UI.editor || ui === UI.textarea) {
-      width = Math.max(width, DEFAULT_EXPANDED_WIDTH);
+      width = Math.max(width, getDefaultWidth());
       height = Math.max(height, DEFAULT_HEIGHT);
     }
   }
@@ -650,7 +655,7 @@ export const resize = async ({
   log.verbose({ reason, ui, width, height, mainHeight });
 
   if (hasPreview) {
-    width = Math.max(DEFAULT_EXPANDED_WIDTH, width);
+    width = Math.max(getDefaultWidth(), width);
   }
 
   if (isVisible()) {
@@ -758,6 +763,10 @@ export const savePromptBounds = async (
   bounds: Rectangle,
   b: number = Bounds.Position | Bounds.Size
 ) => {
+  if (!appDb.cachePrompt) {
+    log.info(`Cache prompt disabled. Ignore saving bounds`);
+    return;
+  }
   log.silly(`function: savePromptBounds`);
   // const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
   // if (isMain) return;
@@ -1259,6 +1268,18 @@ const subEscapePressed = subscribeKey(
   }
 );
 
+const subAppDbMini = subscribeKey(appDb, 'mini', (mini) => {
+  clearPromptCache();
+});
+
+const subAppDbCachePrompt = subscribeKey(
+  appDb,
+  'cachePrompt',
+  (cachePrompt) => {
+    clearPromptCache();
+  }
+);
+
 export const clearPromptCacheFor = async (scriptPath: string) => {
   try {
     const displays = screen.getAllDisplays();
@@ -1295,5 +1316,7 @@ subs.push(
   subAppearance,
   subIsSponsor,
   subUpdateDownloaded,
-  subEscapePressed
+  subEscapePressed,
+  subAppDbMini,
+  subAppDbCachePrompt
 );

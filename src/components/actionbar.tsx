@@ -23,6 +23,7 @@ import {
   enterButtonNameAtom,
   enterButtonDisabledAtom,
   createAssetAtom,
+  appDbAtom,
 } from '../jotai';
 import { AppChannel } from '../enums';
 
@@ -293,6 +294,7 @@ export default function ActionBar() {
   const [disabled] = useAtom(flagValueAtom);
   const [enterButtonDisabled] = useAtom(enterButtonDisabledAtom);
   const [ui] = useAtom(uiAtom);
+  const [appDb] = useAtom(appDbAtom);
 
   const actions: Action[] = Object.entries(flags)
     .filter(([_, flag]) => {
@@ -363,7 +365,7 @@ export default function ActionBar() {
 
       <div className="left-container flex flex-row justify-center items-center pb-px">
         {actions
-          .filter((action) => action.position === 'left')
+          .filter((action) => action.position === 'left' && !appDb?.mini)
           .flatMap((action, i, array) => [
             // eslint-disable-next-line react/jsx-key
             <ActionButton {...action} />,
@@ -398,7 +400,11 @@ truncate
         <div className="flex-1 max-h-full" />
       )}
 
-      <div className="right-container flex flex-row justify-center items-center pb-px overflow-hidden">
+      <div
+        className={`
+      ${appDb?.mini ? `w-full justify-between` : `justify-center`}
+      right-container flex flex-row items-center pb-px overflow-hidden`}
+      >
         <div className="options-container flex flex-row">
           {hasFlags && [
             <OptionsButton key="options-button" />,
@@ -407,7 +413,7 @@ truncate
         </div>
         <div className="flex flex-row flex-grow-0 items-center overflow-hidden">
           {actions
-            .filter((action) => action.position === 'right')
+            .filter((action) => action.position === 'right' && !appDb?.mini)
             .flatMap((action, i, array) => [
               // eslint-disable-next-line react/jsx-key
               <ActionButton {...action} />,

@@ -55,7 +55,14 @@ const _open = atom(false);
 export const submittedAtom = atom(false);
 const tabs = atom<string[]>([]);
 export const tabsAtom = atom(
-  (g) => g(tabs),
+  (g) => {
+    if (g(appDbAtom).mini) {
+      return g(tabs).filter((t, i) => {
+        return t === `Account__` || i < 2;
+      });
+    }
+    return g(tabs);
+  },
   (g, s, a: string[]) => {
     const prevTabs = g(tabs);
     if (isEqual(prevTabs, a)) return;
