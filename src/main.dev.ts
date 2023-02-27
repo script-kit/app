@@ -22,6 +22,7 @@ import {
   shell,
   BrowserWindow,
   crashReporter,
+  screen,
 } from 'electron';
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
@@ -686,6 +687,21 @@ const ensureKenvDirs = async () => {
 let resumeTimeout: any = null;
 
 const systemEvents = () => {
+  screen.addListener('display-added', () => {
+    log.info(`🖥️ Display added`);
+    clearPromptCache();
+  });
+
+  screen.addListener('display-removed', () => {
+    log.info(`🖥️ Display removed`);
+    clearPromptCache();
+  });
+
+  screen.addListener('display-metrics-changed', () => {
+    log.info(`🖥️ Display metrics changed`);
+    clearPromptCache();
+  });
+
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);
     teardownWatchers();
