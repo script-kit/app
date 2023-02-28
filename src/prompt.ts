@@ -1233,11 +1233,6 @@ const subScriptPath = subscribeKey(
   }
 );
 
-const subAppearance = subscribeKey(appDb, 'appearance', () => {
-  log.info(`🎨 Appearance changed:`, appDb.appearance);
-  sendToPrompt(Channel.SET_APPEARANCE, appDb.appearance as AppDb['appearance']);
-});
-
 const subIsSponsor = subscribeKey(kitState, 'isSponsor', (isSponsor) => {
   log.info(`🎨 Sponsor changed:`, isSponsor);
   setKitStateAtom({ isSponsor });
@@ -1314,7 +1309,6 @@ export const clearPromptTimers = async () => {
 subs.push(
   subPromptId,
   subScriptPath,
-  subAppearance,
   subIsSponsor,
   subUpdateDownloaded,
   subEscapePressed,

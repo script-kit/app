@@ -335,7 +335,6 @@ const initAppDb: AppDb = {
   previewScripts: true,
   autoUpdate: true,
   tray: true,
-  appearance: 'auto',
   authorized: false,
   searchDebounce: true,
   termFont: 'monospace',

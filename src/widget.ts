@@ -73,6 +73,11 @@ export const createWidget = async (
       }
     }
 
+    *:not(.draggable) {
+      -webkit-app-region: no-drag;
+    }
+
+
     .drag-shadow {
       box-shadow: inset 0 0 .75rem #000000;
     }
