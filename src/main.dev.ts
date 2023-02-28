@@ -74,7 +74,7 @@ import {
   getAppDb,
 } from '@johnlindquist/kit/cjs/db';
 import { subscribeKey } from 'valtio/utils';
-import { assign } from 'lodash';
+import { assign, debounce } from 'lodash';
 import { setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
 import {
@@ -687,20 +687,29 @@ const ensureKenvDirs = async () => {
 let resumeTimeout: any = null;
 
 const systemEvents = () => {
-  screen.addListener('display-added', () => {
-    log.info(`🖥️ Display added`);
-    clearPromptCache();
-  });
+  screen.addListener(
+    'display-added',
+    debounce(() => {
+      log.info(`🖥️ Display added`);
+      clearPromptCache();
+    }, 1000)
+  );
 
-  screen.addListener('display-removed', () => {
-    log.info(`🖥️ Display removed`);
-    clearPromptCache();
-  });
+  screen.addListener(
+    'display-removed',
+    debounce(() => {
+      log.info(`🖥️ Display removed`);
+      clearPromptCache();
+    }, 1000)
+  );
 
-  screen.addListener('display-metrics-changed', () => {
-    log.info(`🖥️ Display metrics changed`);
-    clearPromptCache();
-  });
+  screen.addListener(
+    'display-metrics-changed',
+    debounce(() => {
+      log.info(`🖥️ Display metrics changed`);
+      clearPromptCache();
+    }, 1000)
+  );
 
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);

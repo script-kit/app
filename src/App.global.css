@@ -600,3 +600,14 @@ code::after {
 .rce-mbox:has([tabIndex]:focus) {
   @apply border border-contrast border-opacity-75;
 }
+
+.kit-form input,
+.kit-form textarea,
+.kit-form select,
+.kit-form button {
+  @apply ring-1 ring-text-base ring-opacity-25 !important;
+  @apply focus:ring-contrast focus:ring-opacity-75 !important;
+  @apply outline-0 outline-contrast !important;
+  @apply border-none !important;
+  /* make !important */
+}

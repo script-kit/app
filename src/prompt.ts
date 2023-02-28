@@ -1094,11 +1094,12 @@ export const setChoices = (choices: Choice[]) => {
 };
 
 export const clearPromptCache = async () => {
-  const promptDb = await getPromptDb();
-  promptDb.screens = {};
-
-  log.info(`⛑ Clear prompt cache:`, promptDb);
   try {
+    const promptDb = await getPromptDb();
+    promptDb.screens = {};
+
+    log.info(`⛑ Clear prompt cache:`, promptDb);
+
     await promptDb.write();
   } catch (error) {
     log.info(error);

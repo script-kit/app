@@ -1023,3 +1023,13 @@ ring
 ring-4
 ring-8
 ring-inset
+focus:ring-0
+focus:outline-none
+ring-1
+ring-text-base
+ring-opacity-25
+focus:ring-contrast
+focus:ring-opacity-75
+outline-0
+outline-contrast
+border-none
