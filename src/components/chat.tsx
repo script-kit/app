@@ -1,3 +1,4 @@
+/* eslint-disable react/no-danger */
 import { useAtom, useSetAtom } from 'jotai';
 import React, {
   useEffect,
@@ -8,6 +9,7 @@ import React, {
   useCallback,
 } from 'react';
 
+import DOMPurify from 'dompurify';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 
 import classNames from 'classnames';
@@ -197,14 +199,13 @@ const ChatList: FC<IMessageListProps> = ({
       {!!props.children && props.isShowChild && props.children}
       <div ref={referance} onScroll={onScroll} className="rce-mlist">
         {props.dataSource.map((x, i: number, array) => {
-          // eslint-disable-next-line react/no-danger
           const text = (
             <div
               tabIndex={array.length - i}
               onFocus={onFocus}
               onCopy={onCopy}
               dangerouslySetInnerHTML={{
-                __html: x.text,
+                __html: DOMPurify.sanitize(x.text || ''),
               }}
             />
           );
