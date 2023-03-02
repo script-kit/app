@@ -95,7 +95,7 @@ export default function Preview() {
       style={{ userSelect: 'text' }}
       initial={{ opacity: 0, width: 0 }}
       animate={{ opacity: 1, width: '100%' }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.15 }}
       exit={{ opacity: 0, width: 0 }}
       // onMouseUp={onMouseUp}
       ref={highlightRef}

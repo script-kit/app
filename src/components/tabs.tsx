@@ -119,8 +119,9 @@ export default function KitTabs() {
         } as any
       }
       layout="position"
-      initial={{ opacity: 0, y: `1rem` }}
-      animate={{ opacity: 1, y: `0px`, position: 'relative' }}
+      initial={{ opacity: 0, y: `1rem`, height: 0 }}
+      animate={{ opacity: 1, y: `0px`, position: 'relative', height: 'auto' }}
+      exit={{ opacity: 0, y: `1rem`, height: '100px' }}
       transition={{ duration: 0.15 }}
     >
       <motion.div className="flex flex-row px-1 whitespace-nowrap">

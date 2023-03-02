@@ -611,3 +611,16 @@ code::after {
   @apply border-none !important;
   /* make !important */
 }
+
+.rce-mbox code.language-markdown {
+  @apply text-text-base text-opacity-90;
+  @apply font-mono font-normal;
+  @apply text-xs;
+  @apply px-4 py-2;
+  @apply flex;
+}
+
+.rce-mbox ul li,
+.rce-mbox ol li {
+  @apply -mb-2.5;
+}

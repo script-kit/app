@@ -199,13 +199,14 @@ const ChatList: FC<IMessageListProps> = ({
       {!!props.children && props.isShowChild && props.children}
       <div ref={referance} onScroll={onScroll} className="rce-mlist">
         {props.dataSource.map((x, i: number, array) => {
+          const __html = DOMPurify.sanitize(`${x.text}` || '');
           const text = (
             <div
               tabIndex={array.length - i}
               onFocus={onFocus}
               onCopy={onCopy}
               dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(x.text || ''),
+                __html,
               }}
             />
           );

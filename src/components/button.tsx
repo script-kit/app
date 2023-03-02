@@ -212,7 +212,9 @@ export default function ChoiceButton({
                 alt={choice.description || ''}
                 onError={() => setImageFail(true)}
                 className={`
-                h-12 rounded
+                h-12
+                w-12
+                rounded
                 mr-2
                 ${index === currentIndex ? `opacity-100` : `opacity-80`}
                 `}
