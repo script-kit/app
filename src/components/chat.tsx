@@ -1,5 +1,7 @@
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/no-danger */
 import { useAtom, useSetAtom } from 'jotai';
+import parse from 'html-react-parser';
 import React, {
   useEffect,
   FC,
@@ -9,7 +11,6 @@ import React, {
   useCallback,
 } from 'react';
 
-import DOMPurify from 'dompurify';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 
 import classNames from 'classnames';
@@ -188,6 +189,42 @@ const ChatList: FC<IMessageListProps> = ({
     e.stopPropagation();
     const text = e.currentTarget.innerText;
     navigator.clipboard.writeText(text);
+
+    // Change class from .kit-mbox-copyable to .kit-mbox-copied
+    const element = e.currentTarget;
+    element.classList.remove('kit-mbox-copyable');
+    if (!element.classList.contains('kit-mbox-copied')) {
+      element.classList.add('kit-mbox-copied');
+    }
+  };
+
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const onMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Change class from .kit-mbox-copied to .kit-mbox-copyable
+    const element = e.currentTarget;
+    element.classList.remove('kit-mbox-copied');
+    if (!element.classList.contains('kit-mbox-copyable')) {
+      element.classList.add('kit-mbox-copyable');
+    }
+  };
+
+  const onMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Change class from .kit-mbox-copied to .kit-mbox-copyable
+    const element = e.currentTarget;
+    element.classList.remove('kit-mbox-copied');
+    if (!element.classList.contains('kit-mbox-copyable')) {
+      element.classList.add('kit-mbox-copyable');
+    }
   };
 
   return (
@@ -199,16 +236,35 @@ const ChatList: FC<IMessageListProps> = ({
       {!!props.children && props.isShowChild && props.children}
       <div ref={referance} onScroll={onScroll} className="rce-mlist">
         {props.dataSource.map((x, i: number, array) => {
-          const __html = DOMPurify.sanitize(`${x.text}` || '');
           const text = (
             <div
-              tabIndex={array.length - i}
-              onFocus={onFocus}
               onCopy={onCopy}
-              dangerouslySetInnerHTML={{
-                __html,
-              }}
-            />
+              onFocus={onFocus}
+              className="kit-mbox-wrapper"
+              tabIndex={array.length - i}
+            >
+              {parse(x.text || '', {
+                replace: (domNode: any) => {
+                  // If the node is a table, list, or codeblock, click to copy
+                  if (
+                    domNode.name === 'table' ||
+                    domNode.name === 'ul' ||
+                    domNode.name === 'ol' ||
+                    domNode.name === 'pre'
+                  ) {
+                    domNode.attribs = {
+                      ...domNode.attribs,
+                      onClick: onCopy,
+                      onMouseDown,
+                      onMouseLeave,
+                      onMouseEnter,
+                    };
+                  }
+
+                  return domNode;
+                },
+              })}
+            </div>
           );
 
           return (
@@ -332,6 +388,8 @@ export function Chat() {
   }, []);
 
   // Create onSubmit handler
+  const clearRef = useRef<(() => void) | null>(null);
+
   const onSubmit = useCallback(
     (e: any) => {
       e.preventDefault();
@@ -345,7 +403,7 @@ export function Chat() {
       ]);
       submitMessage(currentMessage);
       setCurrentMessage('');
-      e.currentTarget.value = '';
+      if (clearRef.current) clearRef.current();
     },
     [currentMessage, messages, setCurrentMessage, setMessages, submitMessage]
   );
@@ -471,6 +529,9 @@ export function Chat() {
       <Input
         autoHeight
         multiline
+        clear={(c) => {
+          clearRef.current = c;
+        }}
         referance={inputRef}
         className="kit-chat-input"
         inputStyle={{ fontSize: '1rem' }}

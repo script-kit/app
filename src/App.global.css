@@ -631,7 +631,7 @@ code::after {
 
 .rce-mbox ul li,
 .rce-mbox ol li {
-  @apply -mb-2.5;
+  @apply -mt-1;
 }
 
 .Toastify__toast-theme--light {
@@ -659,4 +659,25 @@ code::after {
 
 .Toastify__toast-container {
   @apply w-48;
+}
+
+.kit-mbox-copyable:hover {
+  @apply bg-text-base/5;
+}
+
+/* Add the text "copy" in the bottom right */
+.kit-mbox-copyable:hover::after {
+  @apply absolute;
+  @apply text-text-base/50;
+  @apply bottom-2 right-3;
+  @apply text-xs;
+  content: 'Copy';
+}
+
+.kit-mbox-copied:hover::after {
+  @apply absolute;
+  @apply text-text-base/50;
+  @apply bottom-2 right-3;
+  @apply text-xs;
+  content: 'Copied';
 }
