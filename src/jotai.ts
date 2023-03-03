@@ -75,7 +75,7 @@ const loading = atom<boolean>(false);
 const placeholder = atom('');
 export const placeholderAtom = atom(
   (g) => g(placeholder),
-  (g, s, a: string) => {
+  (_g, s, a: string) => {
     s(placeholder, a);
     if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
   }
@@ -264,7 +264,7 @@ export const prevChoicesAtom = atom<Choice[]>([]);
 const _ui = atom<UI>(UI.arg);
 export const uiAtom = atom(
   (g) => g(_ui),
-  (g, s, a: UI) => {
+  (_g, s, a: UI) => {
     s(_ui, a);
     if (a & (UI.arg | UI.textarea | UI.hotkey | UI.splash)) {
       s(inputFocusAtom, true);
@@ -472,7 +472,7 @@ export const textareaValueAtom = atom<string>('');
 
 export const textareaConfigAtom = atom(
   (g) => g(textareaConfig),
-  (g, s, a: TextareaConfig) => {
+  (_g, s, a: TextareaConfig) => {
     s(textareaConfig, a);
     s(textareaValueAtom, a?.value || '');
   }
@@ -595,7 +595,7 @@ export const hasPreviewAtom = atom<boolean>((g) => {
 const _prevChoiceId = atom<string>('');
 const prevChoiceId = atom(
   (g) => g(_prevChoiceId),
-  (g, s, a: string) => {
+  (_g, s, a: string) => {
     s(_prevChoiceId, a);
     // console.log(`Setting prevChoiceId to ${a}`);
   }
@@ -775,7 +775,7 @@ export const inputAtom = atom(
 const _flagsAtom = atom<FlagsOptions>({});
 export const flagsAtom = atom(
   (g) => g(_flagsAtom),
-  (g, s, a: FlagsOptions) => {
+  (_g, s, a: FlagsOptions) => {
     s(_flagsAtom, a);
   }
 );
@@ -945,7 +945,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
 export const topHeightAtom = atom(
   (g) => g(topHeight),
-  (g, s) => {
+  (g, _s) => {
     if (!g(isMainScriptAtom) && g(uiAtom) === UI.arg) {
       // resize(g, s, 'TOP_HEIGHT');
     }
@@ -997,7 +997,7 @@ export const itemHeightAtom = atom(BUTTON_HEIGHT);
 
 const promptData = atom<null | PromptData>(null);
 
-const getPromptValueByName = (name: string) => {
+const getPromptValueByName = (_name: string) => {
   return (
     document.getElementById('root')?.style.getPropertyValue('name') ||
     '255, 0, 0'
@@ -1420,7 +1420,7 @@ export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 const tempTheme = atom({});
 export const tempThemeAtom = atom(
   (g) => g(tempTheme),
-  (g, s, a: { [key: string]: string }) => {
+  (_g, s, a: { [key: string]: string }) => {
     Object.entries(a).forEach(([key, value]) => {
       document.documentElement.style.setProperty(key, value);
     });
@@ -1471,13 +1471,13 @@ export const nameAtom = atom<string>('');
 const _enterAtom = atom<string>('');
 export const enterAtom = atom(
   (g) => g(_enterAtom),
-  debounce((g, s, a: string) => {
+  debounce((_g, s, a: string) => {
     s(_enterAtom, a);
   }, 100)
 );
 export const loadingAtom = atom(
   (g) => g(loading),
-  (g, s, a: boolean) => {
+  (_g, s, a: boolean) => {
     s(loading, a);
   }
 );
@@ -1519,9 +1519,9 @@ export const appDbAtom = atom(
 );
 
 export const createAssetAtom = (...parts: string[]) =>
-  atom((g) => {
+  atom(() => {
     return new Promise((resolve, reject) => {
-      ipcRenderer.once(AppChannel.GET_ASSET, (event, { assetPath }) => {
+      ipcRenderer.once(AppChannel.GET_ASSET, (_event, { assetPath }) => {
         resolve(assetPath);
       });
 
@@ -1536,7 +1536,7 @@ export const isReadyAtom = atom(
   (g) => {
     return g(isReady);
   },
-  (g, s, a: boolean) => {
+  (_g, s, a: boolean) => {
     s(isReady, a);
   }
 );
@@ -1607,7 +1607,7 @@ export const getEditorHistoryAtom = atom((g) => () => {
   channel(Channel.GET_EDITOR_HISTORY, { editorHistory: g(editorHistory) });
 });
 
-export const submitSurveyAtom = atom(null, (g, s, a: Survey) => {
+export const submitSurveyAtom = atom(null, (_g, _s, a: Survey) => {
   ipcRenderer.send(AppChannel.FEEDBACK, a);
 });
 
@@ -1661,7 +1661,7 @@ export const webSocketOpenAtom = atom(false);
 export const _socketURLAtom = atom<string>('');
 export const socketURLAtom = atom(
   (g) => g(_socketURLAtom),
-  (g, s, a: string) => {
+  (_g, s, a: string) => {
     s(_socketURLAtom, a);
 
     if (a) {
@@ -1704,7 +1704,7 @@ export const enterButtonDisabledAtom = atom<boolean>((g) => {
   return false;
 });
 
-export const logAtom = atom((g) => {
+export const logAtom = atom((_g) => {
   type levelType = 'debug' | 'info' | 'warn' | 'error' | 'silly';
   return (message: any, level: levelType = 'info') => {
     ipcRenderer.send(AppChannel.LOG, {
@@ -1726,7 +1726,7 @@ export const appearanceAtom = atom<Appearance>('dark');
 const _boundsAtom = atom<Rectangle>({ x: 0, y: 0, width: 0, height: 0 });
 export const boundsAtom = atom(
   (g) => g(_boundsAtom),
-  (g, s, a: Rectangle) => {
+  (_g, s, a: Rectangle) => {
     s(resizeCompleteAtom, false);
     s(_boundsAtom, a);
   }
@@ -1788,7 +1788,7 @@ export const _speechAtom = atom<SpeakOptions | null>(null);
 
 export const speechAtom = atom(
   (g) => g(_speechAtom),
-  (g, s, a: SpeakOptions) => {
+  (_g, _s, a: SpeakOptions) => {
     if (a) {
       // If SpeechSynthesis is playing, cancel
       const synth = window.speechSynthesis;
@@ -1828,7 +1828,7 @@ export const kitStateAtom = atom(
   }
 );
 
-export const loginAtom = atom((g) => {
+export const loginAtom = atom((_g) => {
   return () => {
     ipcRenderer.send(AppChannel.LOGIN);
   };
@@ -1896,7 +1896,7 @@ export const chatMessagesAtom = atom(
   }
 );
 
-export const chatMessageSubmitAtom = atom(null, (g, s, a: string) => {
+export const chatMessageSubmitAtom = atom(null, (g, _s, _a: string) => {
   const channel = g(channelAtom);
   channel(Channel.ON_SUBMIT);
 });

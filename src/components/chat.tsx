@@ -469,6 +469,8 @@ export function Chat() {
         }}
       />
       <Input
+        autoHeight
+        multiline
         referance={inputRef}
         className="kit-chat-input"
         inputStyle={{ fontSize: '1rem' }}

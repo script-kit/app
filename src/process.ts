@@ -1753,6 +1753,11 @@ const kitMessageMap: ChannelHandler = {
 
     childSend(child, { channel, value });
   }),
+  TOAST: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(channel, value);
+
+    childSend(child, { channel, value });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (

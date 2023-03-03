@@ -19,6 +19,7 @@ import React, {
   useEffect,
   useRef,
 } from 'react';
+import { ToastContainer, toast, cssTransition } from 'react-toastify';
 
 import path from 'path';
 import { loader } from '@monaco-editor/react';
@@ -280,13 +281,21 @@ export default function App() {
     [key in keyof ChannelMap]: (data: ChannelMap[key]) => void;
   };
 
+  type ToastData = {
+    text: Parameters<typeof toast>[0];
+    options?: Parameters<typeof toast>[1];
+  };
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const messageMap: ChannelAtomMap = {
     // [Channel.RESET_PROMPT]: resetPromptHandler,
     [Channel.APP_CONFIG]: setAppConfig,
     [Channel.APP_DB]: setAppDb,
     [Channel.EXIT]: setExit,
-    [Channel.SET_PID]: setPid,
+    [Channel.SET_PID]: (pid) => {
+      toast.dismiss();
+      setPid(pid);
+    },
     [Channel.SET_SCRIPT]: setScript,
     [Channel.SET_SCRIPT_HISTORY]: setScriptHistory,
     [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
@@ -339,6 +348,9 @@ export default function App() {
     [Channel.CHAT_ADD_MESSAGE]: addChatMessage,
     [Channel.CHAT_PUSH_TOKEN]: chatPushToken,
     [Channel.CHAT_SET_MESSAGE]: setChatMessage,
+    [Channel.TOAST]: ({ text, options }: ToastData) => {
+      toast(text, options);
+    },
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -539,6 +551,17 @@ export default function App() {
                 event.preventDefault();
               }}
             >
+              <ToastContainer
+                pauseOnFocusLoss={false}
+                position="bottom-center"
+                transition={cssTransition({
+                  // don't fade in/out
+                  enter: 'animate__animated animate__slideInUp',
+                  exit: 'animate__animated animate__slideOutDown',
+                  collapseDuration: 0,
+                  collapse: true,
+                })}
+              />
               <AnimatePresence key="mainComponents">
                 {ui === UI.splash && <Splash />}
                 {ui === UI.drop && <Drop />}

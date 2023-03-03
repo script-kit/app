@@ -2168,7 +2168,7 @@
   dependencies:
     state-local "^1.0.6"
 
-"@monaco-editor/react@^4.4.6":
+"@monaco-editor/react@4.4.6":
   version "4.4.6"
   resolved "https://registry.yarnpkg.com/@monaco-editor/react/-/react-4.4.6.tgz#8ae500b0edf85276d860ed702e7056c316548218"
   integrity sha512-Gr3uz3LYf33wlFE3eRnta4RxP5FSNxiIV9ENn2D2/rN8KgGAD8ecvcITRtsbbyuOuNkwbuHYxfeaz2Vr+CtyFA==
@@ -3856,6 +3856,11 @@ amdefine@>=0.0.4:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/amdefine/-/amdefine-1.0.1.tgz#4a5282ac164729e93619bcfd3ad151f817ce91f5"
   integrity sha512-S2Hw0TtNkMJhIabBwIojKL9YHO5T0n5eNqWJ7Lrlel/zDbftQpxpapi8tZs3X1HWa+u+QeydGmzzNU0m09+Rcg==
+
+animate.css@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/animate.css/-/animate.css-4.1.1.tgz#614ec5a81131d7e4dc362a58143f7406abd68075"
+  integrity sha512-+mRmCTv6SbCmtYJCN4faJMNFVNN5EuCTTprDTAo7YzIGji2KADmakjVA3+8mVDkZ2Bf09vayB35lSQIex2+QaQ==
 
 ansi-align@^2.0.0:
   version "2.0.0"
@@ -5565,7 +5570,7 @@ clone@^1.0.2:
   resolved "https://registry.yarnpkg.com/clone/-/clone-1.0.4.tgz#da309cc263df15994c688ca902179ca3c7cd7c7e"
   integrity sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==
 
-clsx@^1.2.1:
+clsx@^1.1.1, clsx@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/clsx/-/clsx-1.2.1.tgz#0ddc4a20a549b59c93a4116bb26f5294ca17dc12"
   integrity sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==
@@ -7287,10 +7292,10 @@ electron-util@^0.17.2:
     electron-is-dev "^1.1.0"
     new-github-issue-url "^0.2.1"
 
-electron@23.1.0:
-  version "23.1.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-23.1.0.tgz#92c6a1480754bb83155d9d783bef6fec414cf2c8"
-  integrity sha512-LRgACMpVrmjfYWPgCSyJ+TFQ/FPeniOowpO57z0xUcTchfC7EH+5rUncgYN+uMvqePiYDce+ywZeCIFaO8x/Nw==
+electron@^23.1.0:
+  version "23.1.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-23.1.1.tgz#20b603e69919b263ef9e4a51b72a9615ce86dc5b"
+  integrity sha512-junV1NzPx5T8Mx9+o8fMWK1Q5WOtG5vggiM09PGYg/6zTcGDL3DjGVHeUa/97gx7ErXL37DrFnxNg6+ePWprDg==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^16.11.26"
@@ -12486,10 +12491,10 @@ monaco-editor-webpack-plugin@7.0.1:
   dependencies:
     loader-utils "^2.0.2"
 
-monaco-editor@0.34.1:
-  version "0.34.1"
-  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.34.1.tgz#1b75c4ad6bc4c1f9da656d740d98e0b850a22f87"
-  integrity sha512-FKc80TyiMaruhJKKPz5SpJPIjL+dflGvz4CpuThaPMc94AyN7SeC9HQ8hrvaxX7EyHdJcUY5i4D0gNyJj1vSZQ==
+monaco-editor@0.36.1:
+  version "0.36.1"
+  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.36.1.tgz#aad528c815605307473a1634612946921d8079b5"
+  integrity sha512-/CaclMHKQ3A6rnzBzOADfwdSJ25BFoFT0Emxsc4zYVyav5SkK9iA6lEtIeuN/oRYbwPgviJT+t3l+sjFa28jYg==
 
 mothership@~0.3.0:
   version "0.3.0"
@@ -14812,6 +14817,13 @@ react-test-renderer@17.0.1:
     react-is "^17.0.1"
     react-shallow-renderer "^16.13.1"
     scheduler "^0.20.1"
+
+react-toastify@^9.1.1:
+  version "9.1.1"
+  resolved "https://registry.yarnpkg.com/react-toastify/-/react-toastify-9.1.1.tgz#9280caea4a13dc1739c350d90660a630807bf10b"
+  integrity sha512-pkFCla1z3ve045qvjEmn2xOJOy4ZciwRXm1oMPULVkELi5aJdHCN/FHnuqXq8IwGDLB7PPk2/J6uP9D8ejuiRw==
+  dependencies:
+    clsx "^1.1.1"
 
 react-virtualized-auto-sizer@1.0.7:
   version "1.0.7"

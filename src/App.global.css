@@ -4,6 +4,9 @@
 @import '@vscode/codicons/dist/codicon.css';
 @import 'xterm/css/xterm.css';
 @import 'react-chat-elements/dist/main.css';
+@import 'react-toastify/dist/ReactToastify.css';
+/* import animate.css */
+@import 'animate.css/animate.min.css';
 
 /*
 Favicon gradient
@@ -30,6 +33,10 @@ Favicon gradient
     Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
     'serif';
+
+  --animate-duration: 0.1s;
+  --animate-delay: 0.1s;
+  --animate-repeat: 1;
 }
 
 @tailwind base;
@@ -569,6 +576,7 @@ code::after {
 .rce-mbox:has(.right) {
   user-select: text;
   min-width: 1rem;
+  min-height: 1.5rem;
   @apply whitespace-pre-wrap px-2.5 text-opacity-90;
   @apply shadow-sm;
   @apply focus:shadow-md;
@@ -623,4 +631,31 @@ code::after {
 .rce-mbox ul li,
 .rce-mbox ol li {
   @apply -mb-2.5;
+}
+
+.Toastify__toast-theme--light {
+  @apply bg-secondary/50;
+  /* blur */
+  @apply text-text-base/100;
+  @apply border-2 border-secondary;
+  @apply h-12 min-h-8;
+  @apply text-sm;
+}
+
+.Toastify__close-button--light {
+  @apply text-contrast font-bold;
+}
+
+.Toastify__toast-body {
+  @apply pt-1;
+}
+
+.Toastify__progress-bar-theme--light {
+  /* background gradient from bg-base to contrast. Contrast at 75 opacity */
+  @apply bg-gradient-to-r from-contrast/30 to-contrast/90;
+  @apply h-0.75;
+}
+
+.Toastify__toast-container {
+  @apply w-48;
 }
