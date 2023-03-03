@@ -142,12 +142,14 @@ module.exports = {
         full: '100%',
       },
       height: {
+        5.5: '1.375rem',
         0.75: '0.1875rem',
-        5.5: '22px',
+        11: '2.75rem',
       },
       minHeight: {
         4: '1rem',
         8: '2rem',
+        11: '2.75rem',
         52: '14rem',
         64: '16rem',
         128: '32rem',

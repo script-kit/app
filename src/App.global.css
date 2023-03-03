@@ -545,8 +545,9 @@ code::after {
 }
 
 .kit-chat-input,
-.kit-chat-input > input {
+.kit-chat-input > textarea {
   @apply bg-bg-base text-text-base outline-none px-2 bg-opacity-0 border-t-1 border-secondary border-opacity-75 placeholder:text-text-base placeholder:text-opacity-25;
+  @apply min-h-11;
 }
 
 .rce-input,
