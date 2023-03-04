@@ -15,12 +15,11 @@ import {
   previewEnabledAtom,
   hasPreviewAtom,
   previewHTMLAtom,
-  heightChangedAtom,
   itemHeightAtom,
   appDbAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
-import { BUTTON_HEIGHT, DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from '../defaults';
+import { DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from '../defaults';
 
 const createItemData = memoize(
   (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>
@@ -48,7 +47,6 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [hasPreview] = useAtom(hasPreviewAtom);
   const [previewHTML] = useAtom(previewHTMLAtom);
   const [appDb] = useAtom(appDbAtom);
-  const [, setHeightChanged] = useAtom(heightChangedAtom);
   const itemHeight = useAtomValue(itemHeightAtom);
   // const listWidth = useMotionValue('100%');
 
@@ -118,9 +116,6 @@ export default function ChoiceList({ width, height }: ListProps) {
       }
     >
       <List
-        onItemsRendered={(props) => {
-          setHeightChanged(Math.random());
-        }}
         style={{
           minWidth:
             previewEnabled && hasPreview ? DEFAULT_LIST_WIDTH : DEFAULT_WIDTH,

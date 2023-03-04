@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 
 import { ChoiceButtonProps } from '../types';
 import {
+  DISABLE_SUBMIT,
   flagsAtom,
   flagValueAtom,
   isMouseDownAtom,
@@ -167,7 +168,7 @@ export default function ChoiceButton({
       className={`
       text-text-base
       ${
-        index === currentIndex
+        index === currentIndex && choice?.name !== DISABLE_SUBMIT
           ? `bg-secondary bg-opacity-50
             ${mouseEnabled ? `active:bg-opacity-10 ` : ``}
             `
@@ -205,15 +206,15 @@ export default function ChoiceButton({
             {/* Img */}
             {choice?.img && !imageFail && (
               <motion.img
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
                 transition={{ duration: 0.1 }}
                 src={choice.img}
                 alt={choice.description || ''}
                 onError={() => setImageFail(true)}
                 className={`
-                h-12
-                w-12
+                h-10
+
                 rounded
                 mr-2
                 ${index === currentIndex ? `opacity-100` : `opacity-80`}

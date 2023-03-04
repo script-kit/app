@@ -961,13 +961,8 @@ export const setPromptData = async (promptData: PromptData) => {
   }
 
   if (promptData?.scriptPath !== kitState.scriptPath) return;
-  setTimeout(
-    () => {
-      kitState.resize = kitState.resize || promptData.resize;
-    },
-    // instant if first prompt, otherwise wait for prompt to load
-    kitState.promptCount > 0 ? 100 : 0
-  );
+
+  kitState.resize = kitState.resize || promptData.resize;
 
   kitState.promptCount += 1;
 
@@ -1185,7 +1180,9 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
   // if (isKitScript(kitState.scriptPath)) return;
   promptWindow?.setBounds(
     bounds,
-    promptWindow?.isVisible() && kitState.promptCount > 1
+    promptWindow?.isVisible() &&
+      kitState.promptCount > 1 &&
+      !kitState.promptBounds.height
   );
 });
 
@@ -1219,13 +1216,18 @@ const subScriptPath = subscribeKey(
     if (kitState.scriptPath && !promptWindow?.isVisible()) {
       log.info(`📄 scriptPath changed: ${kitState.scriptPath}`);
       if (promptWindow?.isDestroyed()) return;
-      const bounds = await getCurrentScreenPromptCache(kitState.scriptPath);
+      const bounds = {
+        ...kitState.promptBounds,
+        ...(await getCurrentScreenPromptCache(kitState.scriptPath)),
+      };
 
       log.verbose(`↖ Bounds: Script ${kitState.promptUI} ui`, bounds);
 
       promptWindow.setBounds(
         bounds,
-        promptWindow?.isVisible() && kitState.promptCount > 1
+        promptWindow?.isVisible() &&
+          kitState.promptCount > 1 &&
+          !kitState.promptBounds.height
       );
     }
 

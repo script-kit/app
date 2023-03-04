@@ -318,12 +318,18 @@ const _previewVisible = atom<boolean>(false);
 const _previewHTML = atom('');
 const closedDiv = `<div></div>`;
 export const previewHTMLAtom = atom(
-  (g) =>
-    DOMPurify.sanitize(g(_previewHTML) || g(promptData)?.preview, {
-      // allow iframe
-      ADD_TAGS: ['iframe'],
-      ALLOW_UNKNOWN_PROTOCOLS: true,
-    }),
+  (g) => {
+    const html = DOMPurify.sanitize(
+      g(_previewHTML) || g(promptData)?.preview || '',
+      {
+        // allow iframe
+        ADD_TAGS: ['iframe'],
+        ALLOW_UNKNOWN_PROTOCOLS: true,
+      }
+    );
+
+    return html;
+  },
   (g, s, a: string) => {
     const visible = Boolean(a !== '' && a !== closedDiv);
     s(_previewVisible, visible);
@@ -515,7 +521,7 @@ export const _index = atom(
 
     const selected = g(selectedAtom);
     const id = choice?.id;
-    const prevId = g(prevChoiceId);
+    // const prevId = g(prevChoiceId);
 
     const defaultValue: any = g(defaultValueAtom);
 
@@ -537,7 +543,9 @@ export const _index = atom(
       return;
     }
 
-    if (!selected && id && id !== prevId) {
+    // Not sure why I was preventing setting the focusedChoice when the id didn't match the prevId...
+    // if (!selected && id && id !== prevId) {
+    if (!selected && id) {
       s(focusedChoiceAtom, choice);
       // console.log(
       //   `!selected && id && id !== prevId: Setting prevChoiceId to ${id}`
@@ -936,7 +944,11 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     nullChoices,
   };
 
-  // console.log(data);
+  console.log(
+    `topHeight`,
+    document.getElementsByTagName('header')[0].clientHeight
+  );
+  console.log(data);
 
   s(resizeData, data);
 
@@ -945,9 +957,9 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
 export const topHeightAtom = atom(
   (g) => g(topHeight),
-  (g, _s) => {
+  (g, s) => {
     if (!g(isMainScriptAtom) && g(uiAtom) === UI.arg) {
-      // resize(g, s, 'TOP_HEIGHT');
+      resize(g, s, 'TOP_HEIGHT');
     }
   }
 );
@@ -1104,7 +1116,6 @@ export const promptDataAtom = atom(
       }
 
       if (a.defaultChoiceId) {
-        console.log(`defaultChoiceId: ${a.defaultChoiceId}`);
         s(prevChoiceId, a.defaultChoiceId);
       }
 
@@ -1144,7 +1155,7 @@ export const promptDataAtom = atom(
         s(previewHTMLAtom, closedDiv);
       }
 
-      if (a?.enter) {
+      if (typeof a?.enter === 'string') {
         s(enterAtom, a.enter);
       }
 
@@ -1276,6 +1287,7 @@ export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
     if (g(submittedAtom)) return;
+    if (g(enterButtonDisabledAtom)) return;
     const focusedChoice = g(scoredChoices)?.[g(_index)]?.item;
     if (focusedChoice?.id) {
       // console.log(`focusedChoice.id: ${focusedChoice.id}`);
@@ -1291,8 +1303,11 @@ export const submitValueAtom = atom(
     const value = checkIfSubmitIsDrop(fValue || a);
     // const fC = g(focusedChoiceAtom);
 
+    // skip if UI.chat
     const channel = g(channelAtom);
-    channel(Channel.ON_SUBMIT);
+    if (g(uiAtom) !== UI.chat) {
+      channel(Channel.ON_SUBMIT);
+    }
 
     channel(Channel.VALUE_SUBMITTED, {
       value,
@@ -1674,8 +1689,6 @@ export const socketURLAtom = atom(
   }
 );
 
-export const heightChangedAtom = atom<number>(0);
-
 export const enterButtonNameAtom = atom<string>((g) => {
   const ui = g(uiAtom);
   if (ui === UI.splash) return '';
@@ -1688,9 +1701,14 @@ export const enterButtonNameAtom = atom<string>((g) => {
   return g(enterAtom);
 });
 
+export const DISABLE_SUBMIT = '__DISABLE_SUBMIT__';
+
 export const enterButtonDisabledAtom = atom<boolean>((g) => {
   const ui = g(uiAtom);
   if ([UI.fields, UI.form, UI.div].includes(ui)) return false;
+
+  const focusedChoice = g(focusedChoiceAtom);
+  if (focusedChoice?.name === DISABLE_SUBMIT) return true;
 
   const p = g(panelHTMLAtom);
   if (p?.length > 0) return false;
@@ -1698,7 +1716,6 @@ export const enterButtonDisabledAtom = atom<boolean>((g) => {
   const pd = g(promptDataAtom);
   if (!pd?.strict) return false;
 
-  const focusedChoice = g(focusedChoiceAtom);
   if (focusedChoice?.name === noChoice.name) return true;
 
   return false;
