@@ -49,7 +49,7 @@ import {
 } from 'child_process';
 import os, { homedir } from 'os';
 import semver from 'semver';
-import { ensureDir, writeFile, lstat } from 'fs-extra';
+import { ensureDir, writeFile, lstat, pathExistsSync } from 'fs-extra';
 import { existsSync, readFileSync } from 'fs';
 import { readdir, readFile, copyFile, rm } from 'fs/promises';
 
@@ -66,6 +66,7 @@ import {
   execPath,
   createPathResolver,
   isDir,
+  appDbPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import {
@@ -75,6 +76,7 @@ import {
 } from '@johnlindquist/kit/cjs/db';
 import { subscribeKey } from 'valtio/utils';
 import { assign, debounce } from 'lodash';
+import { snapshot } from 'valtio';
 import { setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
 import {
@@ -186,11 +188,11 @@ if (!app.requestSingleInstanceLock()) {
 
 app.commandLine.appendSwitch('ignore-certificate-errors');
 
-const isLinux = process.platform === 'linux';
-
-if (isLinux) {
-  app.commandLine.appendSwitch('enable-transparent-visuals');
-  app.disableHardwareAcceleration();
+if (pathExistsSync(appDbPath) && appDb) {
+  log.info(`Prefs:`, { appDb: snapshot(appDb) });
+  if (appDb.disableGpu) {
+    app.disableHardwareAcceleration();
+  }
 }
 
 app.setName(APP_NAME);
@@ -294,10 +296,10 @@ const extractNode = async (file: string) => {
       const zip = new StreamZip.async({ file });
 
       sendSplashBody(`Unzipping ${file} to ${knodePath()}`);
-      // node-16.17.1-win-x64
+      // node-18.12.1-win-x64
       const fileName = path.parse(file).name;
       console.log(`Extacting ${fileName} to ${knodePath('bin')}`);
-      // node-16.17.1-win-x64
+      // node-18.12.1-win-x64
       await zip.extract(fileName, knodePath('bin'));
       await zip.close();
     } catch (error) {
@@ -333,11 +335,11 @@ const downloadNode = async () => {
 
   const extension = process.platform === 'win32' ? 'zip' : 'tar.gz';
 
-  // download node v16.7.1 based on the current platform and architecture
+  // download node v18.12.1 based on the current platform and architecture
   // Examples:
-  // Mac arm64: https://nodejs.org/dist/v16.17.1/node-v16.17.1-darwin-arm64.tar.gz
-  // Linux x64: https://nodejs.org/dist/v16.17.1/node-v16.17.1-linux-x64.tar.gz
-  // Windows x64: https://nodejs.org/dist/v16.17.1/node-v16.17.1-win-x64.zip
+  // Mac arm64: https://nodejs.org/dist/v18.12.1/node-v18.12.1-darwin-arm64.tar.gz
+  // Linux x64: https://nodejs.org/dist/v18.12.1/node-v18.12.1-linux-x64.tar.gz
+  // Windows x64: https://nodejs.org/dist/v18.12.1/node-v18.12.1-win-x64.zip
 
   // Node dist url uses "win", not "win32"
   const nodePlatform = process.platform === 'win32' ? 'win' : process.platform;

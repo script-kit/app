@@ -16,7 +16,6 @@ import { motion } from 'framer-motion';
 
 import { ChoiceButtonProps } from '../types';
 import {
-  DISABLE_SUBMIT,
   flagsAtom,
   flagValueAtom,
   isMouseDownAtom,
@@ -168,7 +167,7 @@ export default function ChoiceButton({
       className={`
       text-text-base
       ${
-        index === currentIndex && choice?.name !== DISABLE_SUBMIT
+        index === currentIndex && !choice?.disableSubmit
           ? `bg-secondary bg-opacity-50
             ${mouseEnabled ? `active:bg-opacity-10 ` : ``}
             `
@@ -213,7 +212,7 @@ export default function ChoiceButton({
                 alt={choice.description || ''}
                 onError={() => setImageFail(true)}
                 className={`
-                h-10
+                h-12
 
                 rounded
                 mr-2

@@ -22,6 +22,7 @@ import {
   UserDb,
   AppDb,
   getAppDb,
+  appDefaults,
 } from '@johnlindquist/kit/cjs/db';
 
 import {
@@ -329,19 +330,6 @@ const initState = {
     isMac || (isWin && arch === 'x64') || (isLinux && arch === 'x64'),
 };
 
-const initAppDb: AppDb = {
-  version: '0.0.0',
-  openAtLogin: true,
-  previewScripts: true,
-  autoUpdate: true,
-  tray: true,
-  authorized: false,
-  searchDebounce: true,
-  termFont: 'monospace',
-  convertKeymap: true,
-  cachePrompt: true,
-};
-
 nativeTheme.addListener('updated', () => {
   kitState.isDark = nativeTheme.shouldUseDarkColors;
   // kitState.transparencyEnabled = checkTransparencyEnabled();
@@ -360,7 +348,7 @@ const initWindows = {
   windows: [] as WindowOptions[],
 };
 
-export const appDb: AppDb = proxy(initAppDb);
+export const appDb: AppDb = proxy(appDefaults);
 export const kitConfig: Config = proxy(initConfig);
 export const kitState: typeof initState = proxy(initState);
 export type kitStateType = typeof initState;

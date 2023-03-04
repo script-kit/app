@@ -944,12 +944,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     nullChoices,
   };
 
-  console.log(
-    `topHeight`,
-    document.getElementsByTagName('header')[0].clientHeight
-  );
-  console.log(data);
-
   s(resizeData, data);
 
   ipcRenderer.send(AppChannel.RESIZE, data);
@@ -1009,31 +1003,7 @@ export const itemHeightAtom = atom(BUTTON_HEIGHT);
 
 const promptData = atom<null | PromptData>(null);
 
-const getPromptValueByName = (_name: string) => {
-  return (
-    document.getElementById('root')?.style.getPropertyValue('name') ||
-    '255, 0, 0'
-  );
-};
-
-const themeProperties = [
-  '--color-text',
-  '--color-primary',
-  '--color-secondary',
-  '--color-contrast',
-  '--color-background',
-  '--opacity',
-];
-
-const _themeAtom = atom(
-  Object.keys(themeProperties).reduce(
-    (acc: { [key: string]: string }, key: string) => {
-      acc[key] = getPromptValueByName(key);
-      return acc;
-    },
-    {}
-  )
-);
+const _themeAtom = atom({});
 
 export const themeAtom = atom(
   (g) => g(_themeAtom),
@@ -1701,14 +1671,17 @@ export const enterButtonNameAtom = atom<string>((g) => {
   return g(enterAtom);
 });
 
-export const DISABLE_SUBMIT = '__DISABLE_SUBMIT__';
-
 export const enterButtonDisabledAtom = atom<boolean>((g) => {
   const ui = g(uiAtom);
   if ([UI.fields, UI.form, UI.div].includes(ui)) return false;
 
   const focusedChoice = g(focusedChoiceAtom);
-  if (focusedChoice?.name === DISABLE_SUBMIT) return true;
+  if (
+    typeof focusedChoice?.disableSubmit === 'boolean' &&
+    focusedChoice.disableSubmit
+  ) {
+    return true;
+  }
 
   const p = g(panelHTMLAtom);
   if (p?.length > 0) return false;

@@ -119,9 +119,9 @@ export default function KitTabs() {
         } as any
       }
       layout="position"
-      initial={{ opacity: 0, y: `1rem`, height: 0 }}
-      animate={{ opacity: 1, y: `0px`, position: 'relative', height: 'auto' }}
-      exit={{ opacity: 0, y: `1rem`, height: '100px' }}
+      // Pay attention to the transtion to "Selected" so the bottom border line stays stable
+      initial={{ opacity: 0, y: `1rem` }}
+      animate={{ opacity: 1, y: `0px`, position: 'relative' }}
       transition={{ duration: 0.15 }}
     >
       <motion.div className="flex flex-row px-1 whitespace-nowrap">

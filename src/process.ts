@@ -48,10 +48,11 @@ import {
   kenvPath,
   kitDotEnvPath,
   mainScriptPath,
+  themeDbPath
 } from '@johnlindquist/kit/cjs/utils';
 
 import { subscribeKey } from 'valtio/utils';
-import { pathExistsSync } from 'fs-extra';
+import { pathExists, writeJson, readJson } from 'fs-extra';
 import { getLog, mainLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -129,8 +130,32 @@ import { getAssetPath } from './assets';
 //   return pExec(`${bin} ${args.join(' ')}`);
 // };
 
-export const maybeConvertColors = (value: any = {}) => {
-  log.info(`Convert Colors: ${value}`);
+export const maybeConvertColors = async (newTheme: any = {}) => {
+  let prevTheme = {}
+  const prevThemeExists = await pathExists(themeDbPath);
+  if(prevThemeExists){
+    prevTheme = await readJson(themeDbPath);
+  }
+
+  log.info(`👀 prevTheme:`, prevTheme)
+  log.info(`👀 newTheme:`, newTheme)
+  let value:any = {}
+
+  if(kitState.ready){
+    value = {
+      ...prevTheme,
+      ...newTheme,
+    }
+  }else{
+    value = {
+      ...newTheme,
+      ...prevTheme,
+    }
+  }
+
+
+
+  log.info(`🎨 Convert Colors:`, value);
 
   // eslint-disable-next-line prettier/prettier
   value.foreground ||= value?.['--color-text'];
@@ -181,22 +206,31 @@ export const maybeConvertColors = (value: any = {}) => {
     value['--opacity'] = value.opacity;
   }
 
-  log.info(value);
-
   if (value.ui) delete value.ui;
   if (value.background) delete value.background;
   if (value.foreground) delete value.foreground;
   if (value.accent) delete value.accent;
   if (value.opacity) delete value.opacity;
+  if(value.contrast) delete value.contrast;
+
+  // if(value?.['--color-text']) delete value['--color-text']
+  // if(value?.['--color-background']) delete value['--color-background']
+  // if(value?.['--color-primary']) delete value['--color-primary']
+  // if(value?.['--color-secondary']) delete value['--color-secondary']
+  // if(value?.['--color-contrast']) delete value['--color-contrast']
+  // if(value?.['--opacity']) delete value['--opacity']
+
 
 
   // if kitPath exists
-  if(pathExistsSync(kitPath('db'))){
+  const dbPathExists = await pathExists(kitPath('db'))
+  if(dbPathExists){
     // Save theme as JSON to disk
-    const themePath = kitPath('db', 'theme.json');
-    writeFile(themePath, JSON.stringify(value, null, 2));
+    log.info(`Saving theme to ${themeDbPath}`, value);
+    writeJson(themeDbPath, value);
   }
 
+  return value
 };
 
 export const formatScriptChoices = (data: Choice[]) => {
@@ -261,13 +295,13 @@ export const setTheme = async (value: any = {}, check = true) => {
 
   log.info(`Before`, value);
 
-  maybeConvertColors(value);
+  const newValue = await maybeConvertColors(value);
 
-  log.info(`After`, value);
+  log.info(`After`, newValue);
 
-  assign(kitState.theme, value);
+  assign(kitState.theme, newValue);
 
-  sendToPrompt(Channel.SET_THEME, value);
+  sendToPrompt(Channel.SET_THEME, newValue);
 };
 
 export type ChannelHandler = {
@@ -1091,8 +1125,8 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_TEMP_THEME: toProcess(async ({ child }, { channel, value }) => {
-    maybeConvertColors(value);
-    sendToPrompt(Channel.SET_TEMP_THEME, value);
+    const newValue = await maybeConvertColors(value);
+    sendToPrompt(Channel.SET_TEMP_THEME, newValue);
     if (child) {
       childSend(child, {
         channel,
@@ -2345,8 +2379,8 @@ emitter.on(
 //   setChoices(formatScriptChoices(scripts));
 // });
 
-emitter.on(KitEvent.DID_FINISH_LOAD, () => {
-  setTheme({ ...kitState.theme });
+emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
+  setTheme(snapshot(kitState.theme));
 });
 
 subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
