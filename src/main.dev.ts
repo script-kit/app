@@ -1030,14 +1030,11 @@ const checkKit = async () => {
     sendSplashHeader(`Installing Kit SDK and Kit Environment...`);
 
     log.info(`🌊 Showing Splash Install Screen`);
-    await setPromptData(
-      {
-        ignoreBlur: true,
-        ui: UI.splash,
-        scriptPath: SPLASH_PATH,
-      } as PromptData,
-      kitState.pid
-    );
+    await setPromptData({
+      ignoreBlur: true,
+      ui: UI.splash,
+      scriptPath: SPLASH_PATH,
+    } as PromptData);
     sendSplashBody(`Starting up...`);
 
     setTimeout(() => {
