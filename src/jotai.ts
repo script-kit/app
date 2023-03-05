@@ -1314,7 +1314,7 @@ export const submitValueAtom = atom(
 
     s(_submitValue, value);
     s(flagsAtom, {});
-    s(chatMessagesAtom, []);
+    s(_chatMessagesAtom, []);
 
     if (g(webSocketAtom)) {
       g(webSocketAtom)?.close();
@@ -1354,6 +1354,7 @@ export const openAtom = atom(
       s(editorConfigAtom, {});
       s(promptData, null);
       s(pidAtom, 0);
+      s(_chatMessagesAtom, []);
     }
     s(_open, a);
   }

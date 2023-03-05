@@ -847,16 +847,19 @@ const kitMessageMap: ChannelHandler = {
         processInfo.child.stdout.removeAllListeners();
         processInfo.child.stderr.removeAllListeners();
 
-        const routeToScriptLog = (d: any) => {
-          if (processInfo?.child?.killed) return;
-          scriptLog.info(`\n${stripAnsi(d.toString())}`);
-        };
 
-        processInfo.child.stdout?.on('data', routeToScriptLog);
-        processInfo.child.stdout?.on('error', routeToScriptLog);
+          const routeToScriptLog = (d: any) => {
+            if (processInfo?.child?.killed) return;
+            if(data?.value?.silent)  return;
+            const result = d.toString();
+            scriptLog.info(`\n${stripAnsi(result)}`);
+          };
 
-        processInfo.child.stderr?.on('data', routeToScriptLog);
-        processInfo.child.stderr?.on('error', routeToScriptLog);
+          processInfo.child.stdout?.on('data', routeToScriptLog);
+          processInfo.child.stdout?.on('error', routeToScriptLog);
+
+          processInfo.child.stderr?.on('data', routeToScriptLog);
+          processInfo.child.stderr?.on('error', routeToScriptLog);
       }
 
       const foundP = kitState.ps.find((p) => p.pid === processInfo.pid);
