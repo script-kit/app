@@ -51,7 +51,6 @@ const css = `
   --color-text: 255, 255, 255;
   --color-primary: 251, 191, 36;
   --color-secondary: 52, 52, 52;
-  --color-contrast: 251, 191, 36;
   --color-background: 0, 0, 0;
   --opacity: 0.9;
 }

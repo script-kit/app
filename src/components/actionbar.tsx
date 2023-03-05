@@ -44,7 +44,7 @@ hover:bg-opacity-10
 focus:bg-opacity-20
 `;
 
-const textContrast = `text-contrast text-opacity-90`;
+const textContrast = `text-primary text-opacity-90`;
 
 const transition = { duration: 0.0, ease: 'easeInOut' };
 
@@ -115,7 +115,7 @@ export function ActionSeparator() {
       font-mono
       leading-none
       text-sm font-medium
-      text-contrast  text-opacity-10
+      text-primary  text-opacity-10
       bg-opacity-0
       p-0.5
       text-center
@@ -189,9 +189,7 @@ export function ActionButton(action: Action) {
 
   h-full
   transition-all duration-200 ease-in-out
-  ${
-    action?.disabled ? `text-contrast text-opacity-25` : `${bg} ${textContrast}`
-  }
+  ${action?.disabled ? `text-primary text-opacity-25` : `${bg} ${textContrast}`}
   `}
       onClick={onClick}
     >

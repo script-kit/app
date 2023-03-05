@@ -162,7 +162,6 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   value.background ||= value?.['--color-background'];
   value.accent ||= value?.['--color-primary'];
   value.ui ||= value?.['--color-secondary'];
-  value.contrast ||= value?.['--color-contrast'];
   value.opacity ||= value?.['--opacity'] || '0.85';
 
 
@@ -173,7 +172,6 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   if (value.accent) {
     const accent = toRgb(value.accent);
     value['--color-primary'] = accent;
-    value['--color-contrast'] = accent;
   }
 
   if (value.ui) {
@@ -181,10 +179,6 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
     value['--color-secondary'] = toRgb(ui);
   }
 
-  if (value.contrast) {
-    const contrast = toRgb(value.contrast);
-    value['--color-contrast'] = toRgb(contrast);
-  }
 
   if (value.background) {
     const background = toRgb(value.background);
@@ -211,13 +205,11 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   if (value.foreground) delete value.foreground;
   if (value.accent) delete value.accent;
   if (value.opacity) delete value.opacity;
-  if(value.contrast) delete value.contrast;
 
   // if(value?.['--color-text']) delete value['--color-text']
   // if(value?.['--color-background']) delete value['--color-background']
   // if(value?.['--color-primary']) delete value['--color-primary']
   // if(value?.['--color-secondary']) delete value['--color-secondary']
-  // if(value?.['--color-contrast']) delete value['--color-contrast']
   // if(value?.['--opacity']) delete value['--opacity']
 
 

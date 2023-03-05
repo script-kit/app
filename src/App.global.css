@@ -24,7 +24,6 @@ Favicon gradient
   --color-text: 255, 255, 255;
   --color-primary: 251, 191, 36;
   --color-secondary: 52, 52, 52;
-  --color-contrast: 251, 191, 36;
   --color-background: 0, 0, 0;
   /* Check useThemeDetector... */
   --opacity: 0.9;
@@ -552,11 +551,11 @@ code::after {
 
 .rce-input,
 .rce-input:focus {
-  @apply bg-bg-base bg-opacity-0 text-text-base outline-none focus:outline-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-25 focus:ring-contrast rounded-sm;
+  @apply bg-bg-base bg-opacity-0 text-text-base outline-none focus:outline-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-25 focus:ring-primary rounded-sm;
 }
 
 .kit-chat-submit {
-  @apply bg-secondary bg-opacity-75 text-contrast text-base px-2 py-0.5;
+  @apply bg-secondary bg-opacity-75 text-primary text-base px-2 py-0.5;
 }
 
 .rce-container-mbox {
@@ -607,7 +606,7 @@ code::after {
   @apply focus:border-none;
 }
 .rce-mbox:has([tabIndex]:focus) {
-  @apply border border-contrast border-opacity-75;
+  @apply border border-primary border-opacity-75;
 }
 
 .kit-form input,
@@ -615,8 +614,8 @@ code::after {
 .kit-form select,
 .kit-form button {
   @apply ring-1 ring-text-base ring-opacity-25 !important;
-  @apply focus:ring-contrast focus:ring-opacity-75 !important;
-  @apply outline-0 outline-contrast !important;
+  @apply focus:ring-primary focus:ring-opacity-75 !important;
+  @apply outline-0 outline-primary !important;
   @apply border-none !important;
   /* make !important */
 }
@@ -644,7 +643,7 @@ code::after {
 }
 
 .Toastify__close-button--light {
-  @apply text-contrast font-bold;
+  @apply text-primary font-bold;
 }
 
 .Toastify__toast-body {
@@ -653,7 +652,7 @@ code::after {
 
 .Toastify__progress-bar-theme--light {
   /* background gradient from bg-base to contrast. Contrast at 75 opacity */
-  @apply bg-gradient-to-r from-contrast/30 to-contrast/90;
+  @apply bg-gradient-to-r from-primary/30 to-primary/90;
   @apply h-0.75;
 }
 
