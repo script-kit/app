@@ -125,6 +125,7 @@ import { SPLASH_PATH } from './defaults';
 import { registerKillLatestShortcut } from './shortcuts';
 import { mainLog, mainLogPath } from './logs';
 import { emitter } from './events';
+import { readyPty } from './pty';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -806,6 +807,7 @@ const ready = async () => {
     });
 
     systemEvents();
+    readyPty();
 
     if (!isMac) {
       configureInterval();

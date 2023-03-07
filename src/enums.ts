@@ -27,6 +27,10 @@ export enum AppChannel {
   LOGIN = 'LOGIN',
   USER_CHANGED = 'USER_CHANGED',
   TERM_RESIZE = 'TERM_RESIZE',
+  TERM_READY = 'TERM_READY',
+  TERM_INPUT = 'TERM_INPUT',
+  TERM_OUTPUT = 'TERM_OUTPUT',
+  TERM_EXIT = 'TERM_EXIT',
 }
 
 export enum WindowChannel {

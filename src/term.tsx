@@ -6,23 +6,16 @@ import { Unicode11Addon } from 'xterm-addon-unicode11';
 import { SearchAddon } from 'xterm-addon-search';
 import { LigaturesAddon } from 'xterm-addon-ligatures';
 import { SerializeAddon } from 'xterm-addon-serialize';
-import { AttachAddon } from 'xterm-addon-attach';
 import useResizeObserver from '@react-hook/resize-observer';
 import { motion } from 'framer-motion';
 import { throttle } from 'lodash';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
-import {
-  appDbAtom,
-  darkAtom,
-  openAtom,
-  submitValueAtom,
-  webSocketAtom,
-  webSocketOpenAtom,
-} from './jotai';
+import { appDbAtom, darkAtom, openAtom, submitValueAtom } from './jotai';
 
 import XTerm from './components/xterm';
 import { AppChannel } from './enums';
+import { AttachIPCAddon } from './term-attach-ipc-addon';
 
 const defaultTheme = {
   foreground: '#2c3e50',
@@ -64,9 +57,6 @@ function isCtrlKeyOn(e: MouseEvent) {
 export default function Terminal() {
   const xtermRef = useRef<XTerm>(null);
   const fitRef = useRef(new FitAddon());
-
-  const [ws] = useAtom(webSocketAtom);
-  const [wsOpen] = useAtom(webSocketOpenAtom);
   const [, submit] = useAtom(submitValueAtom);
   const [open] = useAtom(openAtom);
   const [isDark] = useAtom(darkAtom);
@@ -81,71 +71,69 @@ export default function Terminal() {
   // useEscape();
 
   useEffect(() => {
-    if (wsOpen) {
-      if (!xtermRef?.current?.terminal) return;
-      const t = xtermRef.current.terminal;
+    if (!xtermRef?.current?.terminal) return;
+    const t = xtermRef.current.terminal;
 
-      // console.log(`onopen`, { ws });
-      const attachAddon = new AttachAddon(ws as WebSocket);
+    // console.log(`onopen`, { ws });
+    const attachAddon = new AttachIPCAddon();
 
-      // console.log(`loadAddon`, xtermRef?.current?.terminal.loadAddon);
+    // console.log(`loadAddon`, xtermRef?.current?.terminal.loadAddon);
 
-      t.loadAddon(fitRef.current);
-      t.loadAddon(
-        new WebLinksAddon((e, uri) => {
-          shell.openExternal(uri);
-        })
-      );
+    t.loadAddon(fitRef.current);
+    t.loadAddon(
+      new WebLinksAddon((e, uri) => {
+        shell.openExternal(uri);
+      })
+    );
 
-      // t.loadAddon(new WebglAddon());
-      t.loadAddon(new Unicode11Addon());
-      t.loadAddon(new SearchAddon());
-      t.loadAddon(new LigaturesAddon());
-      t.loadAddon(new SerializeAddon());
+    // t.loadAddon(new WebglAddon());
+    t.loadAddon(new Unicode11Addon());
+    t.loadAddon(new SearchAddon());
+    t.loadAddon(new LigaturesAddon());
+    t.loadAddon(new SerializeAddon());
 
-      t.onKey((x: any) => {
-        // console.log({ key: x });
-        if (
-          (x?.domEvent.key === 'Enter' && x?.domEvent.metaKey) ||
-          (x.domEvent.ctrlKey && x?.domEvent.key === 'c')
-        ) {
-          // console.log(`SUBMITTING TERMINAL`);
-          submit(Channel.TERMINAL);
-          if (attachAddon) {
-            attachAddon.dispose();
-          } else {
-            console.log(`attachAddon is null`);
-          }
+    t.onKey((x: any) => {
+      // console.log({ key: x });
+      if (
+        (x?.domEvent.key === 'Enter' && x?.domEvent.metaKey) ||
+        (x.domEvent.ctrlKey && x?.domEvent.key === 'c')
+      ) {
+        // console.log(`SUBMITTING TERMINAL`);
+        submit(Channel.TERMINAL);
+        if (attachAddon) {
+          attachAddon.dispose();
+        } else {
+          console.log(`attachAddon is null`);
         }
-      });
+      }
+    });
 
-      t.loadAddon(attachAddon);
+    t.loadAddon(attachAddon);
 
+    if (fitRef?.current) {
+      fitRef.current.fit();
+    }
+    t.focus();
+
+    setTimeout(() => {
+      t.focus();
       if (fitRef?.current) {
         fitRef.current.fit();
       }
-      t.focus();
-
-      setTimeout(() => {
-        t.focus();
-        if (fitRef?.current) {
-          fitRef.current.fit();
-        }
-      }, 250);
-    }
-  }, [submit, ws, wsOpen]);
+    }, 250);
+  }, [submit]);
 
   const [appDb] = useAtom(appDbAtom);
 
   const onResize = useCallback(
     ({ rows, cols }: { cols: number; rows: number }) => {
       // debounce(({ rows, cols }) => {
-      if (!wsOpen || !ws || !rows || !cols) return;
+      if (!rows || !cols) return;
 
       ipcRenderer.send(AppChannel.TERM_RESIZE, { rows, cols });
     },
     // }, 250),
-    [ws, wsOpen]
+    []
   );
 
   // Detect when container is resized

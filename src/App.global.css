@@ -638,7 +638,6 @@ code::after {
   /* blur */
   @apply text-text-base/100;
   @apply border-2 border-secondary;
-  @apply h-12 min-h-8;
   @apply text-sm;
 }
 

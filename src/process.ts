@@ -105,7 +105,6 @@ import {
   removeFromClipboardHistory,
 } from './tick';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
-import { startPty } from './pty';
 import { createWidget } from './widget';
 import { AppChannel, Trigger } from './enums';
 import { isKitScript, toRgb, pathsAreEqual, convertShortcut } from './helpers';
@@ -115,6 +114,8 @@ import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';
 import { darkTheme, lightTheme } from './components/themes';
 import { getAssetPath } from './assets';
+
+
 
 // const trash = async (...args: string[]) => {
 //   const parent = app.isPackaged
@@ -850,16 +851,19 @@ const kitMessageMap: ChannelHandler = {
 
           const routeToScriptLog = (d: any) => {
             if (processInfo?.child?.killed) return;
-            if(data?.value?.silent)  return;
-            const result = d.toString();
-            scriptLog.info(`\n${stripAnsi(result)}`);
+            if(data?.value?.verbose){
+              const result = d.toString();
+              scriptLog.info(`\n${stripAnsi(result)}`);
+            }
           };
 
-          processInfo.child.stdout?.on('data', routeToScriptLog);
-          processInfo.child.stdout?.on('error', routeToScriptLog);
 
-          processInfo.child.stderr?.on('data', routeToScriptLog);
-          processInfo.child.stderr?.on('error', routeToScriptLog);
+            processInfo.child.stdout?.on('data', routeToScriptLog);
+            processInfo.child.stdout?.on('error', routeToScriptLog);
+
+            processInfo.child.stderr?.on('data', routeToScriptLog);
+            processInfo.child.stderr?.on('error', routeToScriptLog);
+
       }
 
       const foundP = kitState.ps.find((p) => p.pid === processInfo.pid);
@@ -983,9 +987,9 @@ const kitMessageMap: ChannelHandler = {
     kitState.isScripts = Boolean(value?.scripts);
 
     if (value?.ui === UI.term) {
-      const { socketURL } = await startPty(value);
-
-      sendToPrompt(Channel.TERMINAL, socketURL);
+      kitState.termCommand = value?.input || ''
+      kitState.termCwd = value?.cwd || ''
+      kitState.termEnv = value?.env || {}
     }
 
     childSend(child, { channel });

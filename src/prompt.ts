@@ -682,6 +682,7 @@ export const resize = async ({
   }
 };
 
+// TODO: AppChannelMap?
 export const sendToPrompt = <K extends keyof ChannelMap>(
   channel: K,
   data?: ChannelMap[K]

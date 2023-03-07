@@ -1315,12 +1315,6 @@ export const submitValueAtom = atom(
     s(_submitValue, value);
     s(flagsAtom, {});
     s(_chatMessagesAtom, []);
-
-    if (g(webSocketAtom)) {
-      g(webSocketAtom)?.close();
-      s(webSocketOpenAtom, false);
-      s(webSocketAtom, null);
-    }
   }
 );
 
@@ -1640,25 +1634,6 @@ export const setFocusedChoiceAtom = atom(null, (g, s, a: string) => {
     s(_index, i);
   }
 });
-
-export const webSocketAtom = atom<WebSocket | null>(null);
-export const webSocketOpenAtom = atom(false);
-
-export const _socketURLAtom = atom<string>('');
-export const socketURLAtom = atom(
-  (g) => g(_socketURLAtom),
-  (_g, s, a: string) => {
-    s(_socketURLAtom, a);
-
-    if (a) {
-      const ws = new WebSocket(`${a}/terminals/1`);
-      ws.onopen = () => {
-        s(webSocketOpenAtom, true);
-      };
-      s(webSocketAtom, ws);
-    }
-  }
-);
 
 export const enterButtonNameAtom = atom<string>((g) => {
   const ui = g(uiAtom);

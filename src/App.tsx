@@ -99,7 +99,6 @@ import {
   nullChoicesAtom,
   processesAtom,
   setFocusedChoiceAtom,
-  socketURLAtom,
   footerAtom,
   onPasteAtom,
   onDropAtom,
@@ -248,7 +247,6 @@ export default function App() {
   const setProcesses = useSetAtom(processesAtom);
   const setUser = useSetAtom(userAtom);
   const setFocused = useSetAtom(setFocusedChoiceAtom);
-  const setSocketURL = useSetAtom(socketURLAtom);
   const setIsMouseDown = useSetAtom(isMouseDownAtom);
   const setAppearance = useSetAtom(appearanceAtom);
   const [bounds, setBounds] = useAtom(boundsAtom);
@@ -334,7 +332,6 @@ export default function App() {
     [Channel.START]: start,
     [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
     [Channel.GET_COLOR]: () => getColor(),
-    [Channel.TERMINAL]: setSocketURL,
     [Channel.CLEAR_TABS]: setTabs,
     [Channel.ADD_CHOICE]: addChoice,
     [Channel.SET_APPEARANCE]: setAppearance,

@@ -1,0 +1,42 @@
+/* eslint-disable no-plusplus */
+
+import { ipcRenderer } from 'electron';
+import { Terminal, ITerminalAddon } from 'xterm';
+import { AppChannel } from './enums';
+
+export class AttachIPCAddon implements ITerminalAddon {
+  private terminal: Terminal | undefined;
+
+  private termOutputHandler = (_event: any, data: string | Buffer) => {
+    if (this.terminal)
+      this.terminal.write(
+        typeof data === 'string' ? data : new Uint8Array(data)
+      );
+  };
+
+  public activate(terminal: Terminal): void {
+    this.terminal = terminal;
+
+    ipcRenderer.on(AppChannel.TERM_OUTPUT, this.termOutputHandler);
+
+    terminal.onData((data) => {
+      ipcRenderer.send(AppChannel.TERM_INPUT, data);
+    });
+
+    terminal.onBinary((data) => {
+      const buffer = new Uint8Array(data.length);
+      for (let i = 0; i < data.length; ++i) {
+        buffer[i] = data.charCodeAt(i) & 255;
+      }
+      ipcRenderer.send(AppChannel.TERM_INPUT, buffer);
+    });
+
+    ipcRenderer.send(AppChannel.TERM_READY, this.config);
+  }
+
+  public dispose(): void {
+    ipcRenderer.off(AppChannel.TERM_OUTPUT, this.termOutputHandler);
+    this.terminal = undefined;
+    ipcRenderer.send(AppChannel.TERM_EXIT);
+  }
+}
