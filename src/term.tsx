@@ -1,5 +1,5 @@
-import React, { RefObject, useEffect, useRef } from 'react';
-import { shell } from 'electron';
+import React, { RefObject, useCallback, useEffect, useRef } from 'react';
+import { ipcRenderer, shell } from 'electron';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 import { Unicode11Addon } from 'xterm-addon-unicode11';
@@ -9,7 +9,7 @@ import { SerializeAddon } from 'xterm-addon-serialize';
 import { AttachAddon } from 'xterm-addon-attach';
 import useResizeObserver from '@react-hook/resize-observer';
 import { motion } from 'framer-motion';
-import { debounce } from 'lodash';
+import { throttle } from 'lodash';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 import {
@@ -17,12 +17,12 @@ import {
   darkAtom,
   openAtom,
   submitValueAtom,
-  termFontAtom,
   webSocketAtom,
   webSocketOpenAtom,
 } from './jotai';
 
 import XTerm from './components/xterm';
+import { AppChannel } from './enums';
 
 const defaultTheme = {
   foreground: '#2c3e50',
@@ -71,15 +71,6 @@ export default function Terminal() {
   const [open] = useAtom(openAtom);
   const [isDark] = useAtom(darkAtom);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useResizeObserver(
-    containerRef,
-    debounce((entry) => {
-      if (entry?.contentRect?.height) {
-        fitRef.current.fit();
-      }
-    }, 5)
-  );
 
   useEffect(() => {
     if (xtermRef?.current?.terminal && !open) {
@@ -130,16 +121,41 @@ export default function Terminal() {
 
       t.loadAddon(attachAddon);
 
-      // fitRef.current.fit();
+      if (fitRef?.current) {
+        fitRef.current.fit();
+      }
       t.focus();
 
       setTimeout(() => {
         t.focus();
+        if (fitRef?.current) {
+          fitRef.current.fit();
+        }
       }, 250);
     }
-  }, [xtermRef?.current?.terminal, wsOpen]);
+  }, [submit, ws, wsOpen]);
 
   const [appDb] = useAtom(appDbAtom);
+
+  const onResize = useCallback(
+    ({ rows, cols }: { cols: number; rows: number }) => {
+      // debounce(({ rows, cols }) => {
+      if (!wsOpen || !ws || !rows || !cols) return;
+
+      ipcRenderer.send(AppChannel.TERM_RESIZE, { rows, cols });
+    },
+    // }, 250),
+    [ws, wsOpen]
+  );
+
+  // Detect when container is resized
+  useResizeObserver(
+    containerRef,
+    throttle((entry) => {
+      if (!fitRef?.current) return;
+      fitRef.current.fit();
+    }, 250)
+  );
 
   return (
     <motion.div
@@ -154,13 +170,13 @@ export default function Terminal() {
         className="w-full h-full"
       >
         <XTerm
-          className="w-full h-full max-h-fit
-
-          "
+          onResize={onResize}
+          className="w-full h-full max-h-fit"
           options={{
             fontFamily: appDb?.termFont || 'monospace',
             allowTransparency: true,
             theme: isDark ? darkTheme : defaultTheme,
+            allowProposedApi: true,
           }}
           ref={xtermRef}
           addons={[]}

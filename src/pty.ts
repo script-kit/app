@@ -1,11 +1,14 @@
+/* eslint-disable no-nested-ternary */
 import os from 'os';
 import { WebSocket } from 'ws';
 import untildify from 'untildify';
 import { KIT_FIRST_PATH } from '@johnlindquist/kit/cjs/utils';
 import log from 'electron-log';
 import { Server } from 'net';
+import { ipcMain } from 'electron';
 import getPort from './get-port';
 import { kitState } from './state';
+import { AppChannel } from './enums';
 
 let t: any = null;
 let server: Server | null = null;
@@ -51,17 +54,43 @@ export const startPty = async (config: any = {}) => {
 
   const shell =
     config?.env?.KIT_SHELL ||
-    (process.platform === 'win32' ? 'cmd.exe' : 'zsh');
+    (process.platform === 'win32'
+      ? 'cmd.exe'
+      : // if linux, use bash
+      process.platform === 'linux'
+      ? 'bash'
+      : // if mac, use zsh
+        'zsh');
 
-  t = pty.spawn(shell, [], {
-    useConpty: false,
-    name: 'xterm-256color',
-    cols: 80,
-    rows: 24,
-    cwd: untildify(config?.cwd || os.homedir()),
-    encoding: USE_BINARY ? null : 'utf8',
-    env,
-  });
+  t = pty.spawn(
+    shell,
+    [
+      // Start in login mode if not windows
+      ...(process.platform === 'win32' ? [] : ['-l']),
+    ],
+    {
+      useConpty: false,
+      name: 'xterm-256color',
+      cols: 80,
+      rows: 24,
+      cwd: untildify(config?.cwd || os.homedir()),
+      encoding: USE_BINARY ? null : 'utf8',
+      env,
+    }
+  );
+
+  const resizeHandler = (
+    _event: any,
+    {
+      cols,
+      rows,
+    }: {
+      cols: number;
+      rows: number;
+    }
+  ) => {
+    if (t) t?.resize(cols, rows);
+  };
 
   app.ws('/terminals/:pid', (ws, req) => {
     log.info('Connected to terminal ', t.pid);
@@ -123,7 +152,7 @@ export const startPty = async (config: any = {}) => {
     }
     const sendData = USE_BINARY ? bufferUtf8(ws, 5) : bufferString(ws, 5);
 
-    t.onData((data: any) => {
+    t.onData(async (data: any) => {
       try {
         sendData(data);
       } catch (ex) {
@@ -132,11 +161,14 @@ export const startPty = async (config: any = {}) => {
       }
     });
 
+    ipcMain.addListener(AppChannel.TERM_RESIZE, resizeHandler);
+
     t.onExit(() => {
       try {
         ws.close();
         if (t) t.kill();
         if (server) server.close();
+        ipcMain.removeListener(AppChannel.TERM_RESIZE, resizeHandler);
         // t = null;
       } catch (error) {
         log.error(`Error closing pty`, error);

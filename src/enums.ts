@@ -26,6 +26,7 @@ export enum AppChannel {
   APPLY_UPDATE = 'APPLY_UPDATE',
   LOGIN = 'LOGIN',
   USER_CHANGED = 'USER_CHANGED',
+  TERM_RESIZE = 'TERM_RESIZE',
 }
 
 export enum WindowChannel {
