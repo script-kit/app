@@ -584,12 +584,6 @@ export const isFocused = () => {
   return promptWindow?.isFocused();
 };
 
-let resizeAnimate = true;
-let resizeTimeout = setTimeout(() => {
-  log.silly(`function: resizeTimeout`);
-  if (promptWindow?.isDestroyed()) return;
-  resizeAnimate = true;
-}, 1000);
 export const resize = async ({
   id,
   reason,
@@ -665,18 +659,18 @@ export const resize = async ({
     // );
 
     promptWindow?.setBounds(
-      { x, y, width: currentWidth, height },
-      resizeAnimate && !hasInput
+      { x, y, width: currentWidth, height }
+      // resizeAnimate && !hasInput
     );
 
-    if (resizeTimeout) {
-      clearTimeout(resizeTimeout);
-      resizeAnimate = false;
-      resizeTimeout = setTimeout(() => {
-        if (promptWindow?.isDestroyed()) return;
-        resizeAnimate = true;
-      }, 1000);
-    }
+    // if (resizeTimeout) {
+    //   clearTimeout(resizeTimeout);
+    //   resizeAnimate = false;
+    //   resizeTimeout = setTimeout(() => {
+    //     if (promptWindow?.isDestroyed()) return;
+    //     resizeAnimate = true;
+    //   }, 1000);
+    // }
 
     kitState.resizedByChoices = true && ui === UI.arg;
   }
@@ -1180,10 +1174,10 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
   log.info(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
   // if (isKitScript(kitState.scriptPath)) return;
   promptWindow?.setBounds(
-    bounds,
-    promptWindow?.isVisible() &&
-      kitState.promptCount > 1 &&
-      !kitState.promptBounds.height
+    bounds
+    // promptWindow?.isVisible() &&
+    //   kitState.promptCount > 1 &&
+    //   !kitState.promptBounds.height
   );
 });
 
@@ -1225,10 +1219,10 @@ const subScriptPath = subscribeKey(
       log.verbose(`↖ Bounds: Script ${kitState.promptUI} ui`, bounds);
 
       promptWindow.setBounds(
-        bounds,
-        promptWindow?.isVisible() &&
-          kitState.promptCount > 1 &&
-          !kitState.promptBounds.height
+        bounds
+        // promptWindow?.isVisible() &&
+        //   kitState.promptCount > 1 &&
+        //   !kitState.promptBounds.height
       );
     }
 

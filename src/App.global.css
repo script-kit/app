@@ -628,11 +628,6 @@ code::after {
   @apply flex;
 }
 
-.rce-mbox ul li,
-.rce-mbox ol li {
-  @apply -mt-1;
-}
-
 .Toastify__toast-theme--light {
   @apply bg-secondary/50;
   /* blur */
@@ -663,19 +658,39 @@ code::after {
   @apply bg-text-base/5;
 }
 
-/* Add the text "copy" in the bottom right */
 .kit-mbox-copyable:hover::after {
+  content: '';
+}
+
+.rce-mbox ul li,
+.rce-mbox ol li {
+  @apply list-inside;
+}
+
+.rce-mbox ol,
+.rce-mbox ul {
+  @apply relative;
+  @apply px-2 py-3;
+  @apply -mt-2 mb-4;
+  @apply border-1 border-text-base/10 rounded;
+}
+
+.kit-mbox-copied:hover::before,
+.kit-mbox-copyable:hover::before {
   @apply absolute;
   @apply text-text-base/50;
-  @apply bottom-2 right-3;
+  @apply bottom-1.5 right-3;
   @apply text-xs;
+}
+
+.kit-mbox-copied:hover::before {
+  content: 'Copied';
+}
+
+.kit-mbox-copyable:hover::before {
   content: 'Copy';
 }
 
 .kit-mbox-copied:hover::after {
-  @apply absolute;
-  @apply text-text-base/50;
-  @apply bottom-2 right-3;
-  @apply text-xs;
-  content: 'Copied';
+  content: '';
 }

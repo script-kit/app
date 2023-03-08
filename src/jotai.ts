@@ -165,6 +165,16 @@ export const nullChoicesAtom = atom(
   }
 );
 
+export const infoHeightAtom = atom(0);
+const infoChoices = atom<Choice[]>([]);
+export const infoChoicesAtom = atom(
+  (g) => g(infoChoices),
+  (g, s, a: Choice[]) => {
+    s(infoChoices, a);
+    s(infoHeightAtom, a.length * BUTTON_HEIGHT);
+  }
+);
+
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[] | null) => {
@@ -187,7 +197,14 @@ export const unfilteredChoicesAtom = atom(
 
     s(choicesIdAtom, Math.random());
 
-    s(unfilteredChoices, cs);
+    s(
+      unfilteredChoices,
+      cs.filter((c) => !(c?.disableSubmit || c?.info))
+    );
+    s(
+      infoChoicesAtom,
+      cs.filter((c) => c?.info || c?.disableSubmit)
+    );
 
     if (cs?.length === 0) {
       s(scoredChoices, []);
@@ -233,7 +250,12 @@ export const unfilteredChoicesAtom = atom(
 
       // if (!flaggedValue) {
       if (mode === Mode.GENERATE && !flaggedValue) {
-        s(scoredChoices, cs.map(createScoredChoice));
+        s(
+          scoredChoices,
+          cs
+            .map(createScoredChoice)
+            .filter((c) => !(c?.item?.info || c?.item?.disableSubmit))
+        );
       }
       if (mode === Mode.FILTER || mode === Mode.CUSTOM || flaggedValue) {
         const input = g(inputAtom);
@@ -258,6 +280,11 @@ export const unfilteredChoicesAtom = atom(
     }
   }
 );
+
+export const appendChoicesAtom = atom(null, (g, s, a: Choice[]) => {
+  const cs = g(unfilteredChoicesAtom);
+  s(unfilteredChoicesAtom, [...cs, ...a]);
+});
 
 export const prevChoicesAtom = atom<Choice[]>([]);
 
@@ -609,6 +636,13 @@ const prevChoiceId = atom(
   }
 );
 
+export const combinedChoicesAtom = atom((g) => {
+  const cs = g(scoredChoices);
+  const currentInfoChoices = g(infoChoicesAtom);
+
+  return currentInfoChoices.concat(cs);
+});
+
 export const scoredChoices = atom(
   (g) => g(choices),
   // Setting to `null` should only happen when using setPanel
@@ -875,10 +909,12 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   // console.log({ ui });
   if ([UI.term, UI.editor, UI.drop, UI.textarea, UI.emoji].includes(ui)) return;
 
+  const infoChoicesLength = g(infoChoicesAtom).length;
   const hasPanel = g(_panelHTML) !== '';
   const nullChoices = g(nullChoicesAtom);
+  const noInfo = infoChoicesLength === 0;
 
-  let mh = nullChoices && !hasPanel ? 0 : g(mainHeight);
+  let mh = nullChoices && !hasPanel && noInfo ? 0 : g(mainHeight);
 
   // UI's where user can set the HTML
   if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
@@ -890,6 +926,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const placeholderOnly =
     promptData?.mode === Mode.FILTER &&
     g(unfilteredChoices).length === 0 &&
+    noInfo &&
     ui === UI.arg;
 
   let th = g(topRefAtom)?.clientHeight || 88;
@@ -918,7 +955,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   if (
     ui === UI.arg &&
-    g(scoredChoices)?.length * BUTTON_HEIGHT > DEFAULT_HEIGHT
+    (g(scoredChoices)?.length + infoChoicesLength) * BUTTON_HEIGHT >
+      DEFAULT_HEIGHT
   ) {
     mh = DEFAULT_HEIGHT;
   }
@@ -944,6 +982,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     nullChoices,
   };
 
+  console.log(data);
+
   s(resizeData, data);
 
   ipcRenderer.send(AppChannel.RESIZE, data);
@@ -962,9 +1002,9 @@ export const mainHeightAtom = atom(
   (g) => g(mainHeight),
   (g, s, a: number) => {
     const prevHeight = g(mainHeight);
-    if (a === prevHeight) return;
+    // if (a === prevHeight) return;
 
-    const nextMainHeight = a < 0 ? 0 : a;
+    const nextMainHeight = (a < 0 ? 0 : a) + g(infoHeightAtom);
 
     if (nextMainHeight === 0) {
       if (g(panelHTMLAtom) !== '') return;
@@ -1543,6 +1583,9 @@ export const valueInvalidAtom = atom(null, (g, s, a: string) => {
     const getConvert = g(convertAtom);
     s(hintAtom, getConvert(true).toHtml(a));
   }
+
+  const channel = g(channelAtom);
+  channel(Channel.ON_VALIDATION_FAILED);
 });
 
 export const isHiddenAtom = atom(false);

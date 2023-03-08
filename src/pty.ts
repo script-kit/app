@@ -74,13 +74,24 @@ const inputHandler = (_event: any, data: string) => {
   }
 };
 
-export const readyPty = async () => {
-  ipcMain.on(AppChannel.TERM_READY, async (event, config) => {
-    if (t) t?.kill();
-    ipcMain.once(AppChannel.TERM_EXIT, () => {
-      if (t) t?.kill();
+const teardown = () => {
+  try {
+    if (t) {
+      t?.kill();
+      t = null;
       ipcMain.off(AppChannel.TERM_RESIZE, resizeHandler);
       ipcMain.off(AppChannel.TERM_INPUT, inputHandler);
+    }
+  } catch (error) {
+    log.error(`Error killing pty`, error);
+  }
+};
+
+export const readyPty = async () => {
+  ipcMain.on(AppChannel.TERM_READY, async (event, config) => {
+    teardown();
+    ipcMain.once(AppChannel.TERM_EXIT, () => {
+      teardown();
     });
 
     ipcMain.on(AppChannel.TERM_RESIZE, resizeHandler);
@@ -158,8 +169,7 @@ export const readyPty = async () => {
 
     t.onExit(() => {
       try {
-        if (t) t.kill();
-        ipcMain.off(AppChannel.TERM_RESIZE, resizeHandler);
+        teardown();
         // t = null;
       } catch (error) {
         log.error(`Error closing pty`, error);

@@ -286,11 +286,7 @@ export const setTheme = async (value: any = {}, check = true) => {
   //   if (!kitState.isSponsor) return;
   // }
 
-  log.info(`Before`, value);
-
   const newValue = await maybeConvertColors(value);
-
-  log.info(`After`, newValue);
 
   assign(kitState.theme, newValue);
 
@@ -1033,6 +1029,16 @@ const kitMessageMap: ChannelHandler = {
     } else {
       setChoices(value);
     }
+
+    if (child) {
+      childSend(child, {
+        channel,
+      });
+    }
+  }),
+
+  APPEND_CHOICES: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.APPEND_CHOICES, value);
 
     if (child) {
       childSend(child, {

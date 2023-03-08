@@ -123,6 +123,8 @@ import {
   addChatMessageAtom,
   chatPushTokenAtom,
   setChatMessageAtom,
+  infoChoicesAtom,
+  appendChoicesAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -132,6 +134,7 @@ import { AppChannel, WindowChannel } from './enums';
 import Terminal from './term';
 import Inspector from './components/inspector';
 import { Chat } from './components/chat';
+import InfoList from './components/info';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -202,6 +205,7 @@ export default function App() {
   const showSelected = useAtomValue(showSelectedAtom);
   const showTabs = useAtomValue(showTabsAtom);
   const nullChoices = useAtomValue(nullChoicesAtom);
+  const infoChoices = useAtomValue(infoChoicesAtom);
   const getEditorHistory = useAtomValue(getEditorHistoryAtom);
   const getColor = useAtomValue(colorAtom);
   const onPaste = useAtomValue(onPasteAtom);
@@ -218,6 +222,7 @@ export default function App() {
   const setSplashHeader = useSetAtom(splashHeaderAtom);
   const setSplashProgress = useSetAtom(splashProgressAtom);
   const setUnfilteredChoices = useSetAtom(unfilteredChoicesAtom);
+  const appendChoices = useSetAtom(appendChoicesAtom);
   const setFooter = useSetAtom(footerAtom);
   const setEnter = useSetAtom(enterAtom);
   const setReady = useSetAtom(isReadyAtom);
@@ -297,6 +302,7 @@ export default function App() {
     [Channel.SET_SCRIPT]: setScript,
     [Channel.SET_SCRIPT_HISTORY]: setScriptHistory,
     [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
+    [Channel.APPEND_CHOICES]: appendChoices,
     [Channel.SET_DESCRIPTION]: setDescription,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfig,
     [Channel.SET_EDITOR_SUGGESTIONS]: setEditorSuggestions,
@@ -573,6 +579,9 @@ export default function App() {
               <AutoSizer>
                 {({ width, height }) => (
                   <>
+                    {infoChoices?.length > 0 && (
+                      <InfoList width={width} height={height} />
+                    )}
                     {(ui === UI.arg && !nullChoices && choices.length > 0 && (
                       <>
                         <List height={height} width={width} />

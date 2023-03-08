@@ -1,75 +1,47 @@
 /* eslint-disable react/require-default-props */
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FixedSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
 import Preview from './preview';
-import ChoiceButton from './button';
 import {
-  flagValueAtom,
   _index,
-  mouseEnabledAtom,
-  scoredChoices,
-  submitValueAtom,
   previewEnabledAtom,
   hasPreviewAtom,
   previewHTMLAtom,
   itemHeightAtom,
   appDbAtom,
-  infoHeightAtom,
+  infoChoicesAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 import { DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from '../defaults';
+import InfoButton from './infobutton';
 
 const createItemData = memoize(
-  (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>
+  (choices) =>
     ({
       choices,
-      currentIndex,
-      mouseEnabled,
-      onIndexChange,
-      onIndexSubmit,
     } as ChoiceButtonProps['data'])
 );
 
-export default function ChoiceList({ width, height }: ListProps) {
+export default function InfoList({ width, height }: ListProps) {
+  const containerRef = useRef(null);
   const listRef = useRef(null);
   const innerRef = useRef(null);
-  const [mouseEnabled] = useAtom(mouseEnabledAtom);
   // TODO: In case items ever have dynamic height
-  const [choices] = useAtom(scoredChoices);
-  const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
-  const [index, onIndexChange] = useAtom(_index);
+  const [choices] = useAtom(infoChoicesAtom);
   // const [inputValue] = useAtom(inputAtom);
   // const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
-  const [flagValue] = useAtom(flagValueAtom);
   const [previewEnabled] = useAtom(previewEnabledAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
   const [previewHTML] = useAtom(previewHTMLAtom);
   const [appDb] = useAtom(appDbAtom);
   const itemHeight = useAtomValue(itemHeightAtom);
-  const infoHeight = useAtomValue(infoHeightAtom);
+
   // const listWidth = useMotionValue('100%');
 
-  const onIndexSubmit = useCallback(
-    (i) => {
-      if (choices.length) {
-        const choice = choices[i];
-
-        setSubmitValue(choice?.item?.value);
-      }
-    },
-    [choices, setSubmitValue]
-  );
-
-  const itemData = createItemData(
-    choices,
-    index,
-    mouseEnabled,
-    onIndexChange,
-    onIndexSubmit
-  );
+  const itemData = createItemData(choices);
 
   // useResizeObserver(innerRef, (entry) => {
   //   if (entry?.contentRect?.height) {
@@ -89,14 +61,16 @@ export default function ChoiceList({ width, height }: ListProps) {
   //   setMainHeight(newListHeight);
   // }, []);
 
-  useEffect(() => {
-    if (choices.length && height) {
-      (listRef as any).current.scrollToItem(index);
-    }
-  }, [index, choices, height, flagValue]);
+  // useResizeObserver(containerRef, (entry) => {
+  //   if (entry?.contentRect?.height) {
+  //     // setMainHeight(entry.contentRect.height);
+  //     setInfoHeight(entry.contentRect.height);
+  //   }
+  // });
 
   return (
     <motion.div
+      ref={containerRef}
       initial={{ opacity: 0 }}
       animate={{
         opacity: choices?.length ? 1 : 0,
@@ -113,7 +87,7 @@ export default function ChoiceList({ width, height }: ListProps) {
       style={
         {
           width,
-          height: height - infoHeight,
+          height: choices.length * itemHeight,
         } as any
       }
     >
@@ -124,7 +98,7 @@ export default function ChoiceList({ width, height }: ListProps) {
         }}
         ref={listRef}
         innerRef={innerRef}
-        height={height - infoHeight}
+        height={choices.length * itemHeight}
         itemCount={choices?.length || 0}
         itemSize={itemHeight}
         width="100%"
@@ -143,7 +117,7 @@ export default function ChoiceList({ width, height }: ListProps) {
         `}
         // onItemsRendered={onItemsRendered}
       >
-        {ChoiceButton}
+        {InfoButton}
       </List>
 
       {/* {previewEnabled && <Preview />} */}
