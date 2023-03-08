@@ -238,7 +238,7 @@ export const setupWatchers = async () => {
   log.info('--- 👀 Watching Scripts ---');
 
   watchers = startWatching(async (eventName: WatchEvent, filePath: string) => {
-    if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
+    // if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
     const { base } = path.parse(filePath);
 
     if (base === 'run.txt') {

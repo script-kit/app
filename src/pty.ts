@@ -89,7 +89,6 @@ const teardown = () => {
 
 export const readyPty = async () => {
   ipcMain.on(AppChannel.TERM_READY, async (event, config) => {
-    teardown();
     ipcMain.once(AppChannel.TERM_EXIT, () => {
       teardown();
     });

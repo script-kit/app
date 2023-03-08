@@ -48,7 +48,8 @@ import {
   kenvPath,
   kitDotEnvPath,
   mainScriptPath,
-  themeDbPath
+  themeDbPath,
+  isBin
 } from '@johnlindquist/kit/cjs/utils';
 
 import { subscribeKey } from 'valtio/utils';

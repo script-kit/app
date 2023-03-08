@@ -4,6 +4,7 @@ import path from 'path';
 import { readFile } from 'fs/promises';
 import { subscribeKey } from 'valtio/utils';
 import { debounce } from 'lodash';
+import { spawn } from 'child_process';
 
 import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 
@@ -13,6 +14,8 @@ import { focusPrompt, isFocused, isVisible, reload } from './prompt';
 import { convertKey, kitState, subs } from './state';
 import { Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
+import { stripAnsi } from './ansi';
+import { getLog } from './logs';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -33,10 +36,46 @@ const mainFail = (shortcut: string, filePath: string) =>
 
 <code>${shortcut}</code> failed to register. May already be registered to another app.`;
 
-const registerShortcut = (shortcut: string, filePath: string) => {
+const registerShortcut = (
+  shortcut: string,
+  filePath: string,
+  interpreter = ''
+) => {
   try {
     const success = globalShortcut.register(shortcut, async () => {
       kitState.shortcutPressed = shortcut;
+
+      if (interpreter) {
+        const child = spawn(interpreter, [filePath], {
+          detached: true,
+        });
+
+        if (child.stdout && child.stderr) {
+          const scriptLog = getLog(filePath);
+          child.stdout.removeAllListeners();
+          child.stderr.removeAllListeners();
+
+          const routeToScriptLog = (d: any) => {
+            if (child?.killed) return;
+            const result = d.toString();
+            scriptLog.info(`\n${stripAnsi(result)}`);
+          };
+
+          child.stdout?.on('data', routeToScriptLog);
+          child.stdout?.on('error', routeToScriptLog);
+
+          child.stderr?.on('data', routeToScriptLog);
+          child.stderr?.on('error', routeToScriptLog);
+
+          // Log out when the process exits
+          child.on('exit', (code) => {
+            scriptLog.info(`\nProcess exited with code ${code}`);
+          });
+        }
+
+        return;
+      }
+
       runPromptProcess(filePath, [], {
         force: true,
         trigger: Trigger.Shortcut,
@@ -91,13 +130,19 @@ export const registerKillLatestShortcut = () => {
 
 // return success;
 
-export const shortcutMap = new Map<string, string>();
+export const shortcutMap = new Map<
+  string,
+  {
+    shortcut: string;
+    interpreter: string;
+  }
+>();
 
 export const unlinkShortcuts = (filePath: string) => {
-  const oldShortcut = shortcutMap.get(filePath);
+  const old = shortcutMap.get(filePath);
 
-  if (oldShortcut) {
-    globalShortcut.unregister(oldShortcut);
+  if (old?.shortcut) {
+    globalShortcut.unregister(old.shortcut);
     shortcutMap.delete(filePath);
   }
 };
@@ -105,18 +150,20 @@ export const unlinkShortcuts = (filePath: string) => {
 export const shortcutScriptChanged = ({
   filePath,
   shortcut,
+  interpreter,
 }: {
   filePath: string;
   shortcut?: string;
+  interpreter?: string;
 }) => {
   const convertedShortcut = convertShortcut(shortcut || '', filePath);
-  const oldShortcut = shortcutMap.get(filePath);
-  const sameScript = oldShortcut === convertedShortcut;
+  const old = shortcutMap.get(filePath);
+  const sameScript = old?.shortcut === convertedShortcut;
 
   // Handle existing shortcuts
 
   const exists = [...shortcutMap.entries()].find(
-    ([, s]) => s === convertedShortcut
+    ([, s]) => s?.shortcut === convertedShortcut
   );
   if (exists && !sameScript) {
     log.info(
@@ -127,7 +174,7 @@ export const shortcutScriptChanged = ({
     return;
   }
 
-  if (oldShortcut) {
+  if (old?.shortcut) {
     // No change
     if (sameScript) {
       const message = `${convertedShortcut} is already registered to ${filePath}`;
@@ -137,9 +184,9 @@ export const shortcutScriptChanged = ({
     }
 
     // User removed an existing shortcut
-    globalShortcut.unregister(oldShortcut);
+    globalShortcut.unregister(old.shortcut);
     shortcutMap.delete(filePath);
-    log.info(`Unregistered ${oldShortcut} from ${filePath}`);
+    log.info(`Unregistered ${old.shortcut} from ${filePath}`);
   }
 
   if (!convertedShortcut) {
@@ -150,11 +197,18 @@ export const shortcutScriptChanged = ({
   log.info(`Found shortcut: ${convertedShortcut} for ${filePath}`);
   // At this point, we know it's a new shortcut, so register it
 
-  const registerSuccess = registerShortcut(convertedShortcut, filePath);
+  const registerSuccess = registerShortcut(
+    convertedShortcut,
+    filePath,
+    interpreter
+  );
 
   if (registerSuccess && globalShortcut.isRegistered(convertedShortcut)) {
     log.info(`Registered ${convertedShortcut} to ${filePath}`);
-    shortcutMap.set(filePath, convertedShortcut);
+    shortcutMap.set(filePath, {
+      shortcut: convertedShortcut,
+      interpreter: interpreter || '',
+    });
   }
 };
 
@@ -170,12 +224,12 @@ export const updateMainShortcut = async (filePath: string) => {
 
     log.verbose(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
 
-    const oldShortcut = shortcutMap.get(mainScriptPath);
+    const old = shortcutMap.get(mainScriptPath);
 
-    if (finalShortcut === oldShortcut) return;
+    if (finalShortcut === old?.shortcut) return;
 
-    if (oldShortcut) {
-      globalShortcut.unregister(oldShortcut);
+    if (old?.shortcut) {
+      globalShortcut.unregister(old?.shortcut);
       shortcutMap.delete(mainScriptPath);
     }
 
@@ -203,7 +257,10 @@ export const updateMainShortcut = async (filePath: string) => {
     if (ret && globalShortcut.isRegistered(finalShortcut)) {
       kitState.mainShortcut = finalShortcut;
       log.info(`Registered ${finalShortcut} to ${mainScriptPath}`);
-      shortcutMap.set(mainScriptPath, finalShortcut);
+      shortcutMap.set(mainScriptPath, {
+        shortcut: finalShortcut,
+        interpreter: '',
+      });
     }
   }
 };
