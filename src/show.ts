@@ -470,8 +470,8 @@ export const showWidget = async (
     },
     ...position,
     show: false,
-    minHeight: 36,
-    minWidth: 36,
+    minHeight: 120,
+    minWidth: 160,
     ...options,
   };
 

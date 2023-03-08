@@ -36,19 +36,19 @@ const mainFail = (shortcut: string, filePath: string) =>
 
 <code>${shortcut}</code> failed to register. May already be registered to another app.`;
 
-const registerShortcut = (
-  shortcut: string,
-  filePath: string,
-  interpreter = ''
-) => {
+const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
   try {
     const success = globalShortcut.register(shortcut, async () => {
       kitState.shortcutPressed = shortcut;
 
-      if (interpreter) {
-        const child = spawn(interpreter, [filePath], {
+      if (shebang) {
+        // split shebang into command and args
+        const [command, ...args] = shebang.split(' ');
+        const child = spawn(command, [...args, filePath], {
           detached: true,
         });
+
+        child.unref();
 
         if (child.stdout && child.stderr) {
           const scriptLog = getLog(filePath);
@@ -134,7 +134,7 @@ export const shortcutMap = new Map<
   string,
   {
     shortcut: string;
-    interpreter: string;
+    shebang: string;
   }
 >();
 
@@ -150,11 +150,11 @@ export const unlinkShortcuts = (filePath: string) => {
 export const shortcutScriptChanged = ({
   filePath,
   shortcut,
-  interpreter,
+  shebang,
 }: {
   filePath: string;
   shortcut?: string;
-  interpreter?: string;
+  shebang?: string;
 }) => {
   const convertedShortcut = convertShortcut(shortcut || '', filePath);
   const old = shortcutMap.get(filePath);
@@ -200,14 +200,14 @@ export const shortcutScriptChanged = ({
   const registerSuccess = registerShortcut(
     convertedShortcut,
     filePath,
-    interpreter
+    shebang
   );
 
   if (registerSuccess && globalShortcut.isRegistered(convertedShortcut)) {
     log.info(`Registered ${convertedShortcut} to ${filePath}`);
     shortcutMap.set(filePath, {
       shortcut: convertedShortcut,
-      interpreter: interpreter || '',
+      shebang: shebang || '',
     });
   }
 };
@@ -259,7 +259,7 @@ export const updateMainShortcut = async (filePath: string) => {
       log.info(`Registered ${finalShortcut} to ${mainScriptPath}`);
       shortcutMap.set(mainScriptPath, {
         shortcut: finalShortcut,
-        interpreter: '',
+        shebang: '',
       });
     }
   }
