@@ -125,6 +125,7 @@ import {
   setChatMessageAtom,
   infoChoicesAtom,
   appendChoicesAtom,
+  termConfigAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -263,6 +264,7 @@ export default function App() {
   const setLogValue = useSetAtom(logValueAtom);
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
+  const setTermConfig = useSetAtom(termConfigAtom);
 
   useShortcuts();
   useEnter();
@@ -414,12 +416,36 @@ export default function App() {
 
     ipcRenderer.on(AppChannel.KIT_STATE, kitStateCallback);
 
+    const handleTermConfig: (
+      event: Electron.IpcRendererEvent,
+      ...args: any[]
+    ) => void = (_, data) => {
+      setTermConfig(data);
+    };
+    ipcRenderer.on(AppChannel.SET_TERM_CONFIG, handleTermConfig);
+
+    type HandleCSSVariableHandler = (
+      event: Electron.IpcRendererEvent,
+      data: {
+        name: string;
+        value: string;
+      }
+    ) => void;
+
+    const handleCSSVariable: HandleCSSVariableHandler = (_, data) => {
+      console.log(`Setting:`, data?.name, data?.value);
+      document.documentElement.style.setProperty(data?.name, data?.value);
+    };
+    ipcRenderer.on(AppChannel.CSS_VARIABLE, handleCSSVariable);
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
       });
 
       ipcRenderer.off(AppChannel.KIT_STATE, kitStateCallback);
+      ipcRenderer.off(AppChannel.CSS_VARIABLE, handleCSSVariable);
+      ipcRenderer.off(AppChannel.SET_TERM_CONFIG, handleTermConfig);
     };
   }, [messageMap]);
 

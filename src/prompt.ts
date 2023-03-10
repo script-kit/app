@@ -873,10 +873,10 @@ export const setScript = async (
   kitState.pid = pid;
   sendToPrompt(Channel.SET_PID, pid);
 
-  if (promptWindow?.isAlwaysOnTop() && !script?.debug) {
-    // promptWindow?.setAlwaysOnTop(false);
-    log.warn(`Prompt is always on top, but not a debug script`);
-  }
+  // if (promptWindow?.isAlwaysOnTop() && !script?.debug) {
+  //   // promptWindow?.setAlwaysOnTop(false);
+  //   // log.warn(`Prompt is always on top, but not a debug script`);
+  // }
   kitState.scriptPath = script.filePath;
   kitState.hasSnippet = Boolean(script?.snippet);
   log.verbose(`setScript ${script.filePath}`);
@@ -1149,6 +1149,7 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
   //   return;
 
   if (promptWindow?.isDestroyed()) return;
+
   const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
     ui: kitState.promptUI,
     resize: kitState.resize,
@@ -1296,7 +1297,6 @@ export const clearPromptCacheFor = async (scriptPath: string) => {
 export const clearPromptTimers = async () => {
   try {
     if (boundsCheck) clearTimeout(boundsCheck);
-    if (resizeTimeout) clearTimeout(resizeTimeout);
     if (topTimeout) clearTimeout(topTimeout);
   } catch (e) {
     log.error(e);

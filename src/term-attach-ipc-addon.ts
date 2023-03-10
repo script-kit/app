@@ -3,9 +3,16 @@
 import { ipcRenderer } from 'electron';
 import { Terminal, ITerminalAddon } from 'xterm';
 import { AppChannel } from './enums';
+import { TermConfig } from './types';
 
 export class AttachIPCAddon implements ITerminalAddon {
   private terminal: Terminal | undefined;
+
+  private config: TermConfig;
+
+  constructor(config: TermConfig) {
+    this.config = config;
+  }
 
   private termOutputHandler = (_event: any, data: string | Buffer) => {
     if (this.terminal)

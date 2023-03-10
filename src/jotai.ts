@@ -34,7 +34,13 @@ import { debounce, drop as _drop, isEqual } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
 import { MessageType } from 'react-chat-elements';
 import { AppChannel } from './enums';
-import { ProcessInfo, ResizeData, ScoredChoice, Survey } from './types';
+import {
+  ProcessInfo,
+  ResizeData,
+  ScoredChoice,
+  Survey,
+  TermConfig,
+} from './types';
 import {
   BUTTON_HEIGHT,
   DEFAULT_HEIGHT,
@@ -211,6 +217,8 @@ export const unfilteredChoicesAtom = atom(
       s(quickScoreAtom, null);
     }
 
+    s(loadingAtom, false);
+
     // const maybePreview = Boolean(
     //   cs.find((c) => c?.hasPreview) ||
     //     g(promptData)?.hasPreview ||
@@ -272,6 +280,7 @@ export const unfilteredChoicesAtom = atom(
 
       // TODO: Figure out scenarios where
       // scoredChoices shouldn't check for the prevCId...
+
       const nextIndex = g(scoredChoices).findIndex(
         (sc) => sc.item.id === prevCId
       );
@@ -649,7 +658,6 @@ export const scoredChoices = atom(
   // This helps skip sending `onNoChoices`
   (g, s, a: ScoredChoice[] | null) => {
     s(submittedAtom, false);
-    // s(loadingAtom, false);
     if (g(isMainScriptAtom)) {
       // Check if the input matches the shortcode of one of the scripts
       const input = g(inputAtom);
@@ -872,7 +880,6 @@ export const scriptAtom = atom(
     s(nameAtom, a?.name || '');
     s(enterAtom, '');
     s(loadingAtom, false);
-    s(loading, false);
     s(logoAtom, a?.logo || '');
     s(tempThemeAtom, g(themeAtom));
 
@@ -1333,7 +1340,6 @@ export const submitValueAtom = atom(
     // });
 
     // s(rawInputAtom, '');
-    s(loading, false);
     s(loadingAtom, false);
 
     if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
@@ -1389,6 +1395,7 @@ export const openAtom = atom(
       s(promptData, null);
       s(pidAtom, 0);
       s(_chatMessagesAtom, []);
+      s(prevChoiceId, '');
     }
     s(_open, a);
   }
@@ -1945,5 +1952,22 @@ export const setChatMessageAtom = atom(
     } catch (error) {
       console.log(error);
     }
+  }
+);
+export const termConfigDefaults: TermConfig = {
+  command: '',
+  cwd: '',
+  env: {},
+  shell: '',
+};
+
+const termConfig = atom<TermConfig>(termConfigDefaults);
+export const termConfigAtom = atom(
+  (g) => g(termConfig),
+  (g, s, a: Partial<TermConfig> | null) => {
+    s(termConfig, {
+      ...termConfigDefaults,
+      ...(a || {}),
+    });
   }
 );

@@ -115,6 +115,7 @@ import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';
 import { darkTheme, lightTheme } from './components/themes';
 import { getAssetPath } from './assets';
+import { TermConfig } from './types';
 
 
 
@@ -979,15 +980,26 @@ const kitMessageMap: ChannelHandler = {
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
   SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
+    if (value?.ui === UI.term) {
+      appToPrompt(AppChannel.SET_TERM_CONFIG, {
+        command: value?.input || '',
+        cwd: value?.cwd || '',
+        env: value?.env || {},
+        shell: value?.shell || '',
+      } as TermConfig)
+    }
     log.silly(`SET_PROMPT_DATA`);
+
+
+    // if (value?.ui === UI.term) {
+    //   kitState.termCommand = value?.input || ''
+    //   kitState.termCwd = value?.cwd || ''
+    //   kitState.termEnv = value?.env || {}
+    // }
+
     setPromptData(value);
     kitState.isScripts = Boolean(value?.scripts);
 
-    if (value?.ui === UI.term) {
-      kitState.termCommand = value?.input || ''
-      kitState.termCwd = value?.cwd || ''
-      kitState.termEnv = value?.env || {}
-    }
 
     childSend(child, { channel });
   }),

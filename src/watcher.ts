@@ -35,7 +35,7 @@ import {
   sponsorCheck,
 } from './state';
 import { addSnippet, removeSnippet } from './tick';
-import { appToPrompt, clearPromptCacheFor } from './prompt';
+import { appToPrompt, clearPromptCacheFor, sendToPrompt } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel, Trigger } from './enums';
@@ -266,7 +266,27 @@ export const setupWatchers = async () => {
       log.info(`🌎 .env ${eventName}`);
 
       if (existsSync(filePath)) {
-        kitState.kenvEnv = dotenv.parse(readFileSync(filePath));
+        const envData = dotenv.parse(readFileSync(filePath));
+        kitState.kenvEnv = envData;
+
+        const setCSSVariable = (name: string, value: undefined | string) => {
+          if (value) {
+            log.info(`Setting CSS`, name, value);
+            appToPrompt(AppChannel.CSS_VARIABLE, { name, value });
+          }
+        };
+
+        setCSSVariable('--mono-font', envData?.KIT_MONO_FONT);
+        setCSSVariable('--sans-font', envData?.KIT_SANS_FONT);
+        setCSSVariable('--serif-font', envData?.KIT_SERIF_FONT);
+
+        // if (envData?.KIT_SHELL) kitState.envShell = envData?.KIT_SHELL;
+        // TODO: Would need to update the dark/light contrast
+        // setCSSVariable('--color-text', envData?.KIT_COLOR_TEXT);
+        // setCSSVariable('--color-background', envData?.KIT_COLOR_BACKGROUND);
+        // setCSSVariable('--color-primary', envData?.KIT_COLOR_PRIMARY);
+        // setCSSVariable('--color-secondary', envData?.KIT_COLOR_SECONDARY);
+        // setCSSVariable('--opacity', envData?.KIT_OPACITY);
       }
 
       return;

@@ -1,6 +1,5 @@
 import { Choice } from '@johnlindquist/kit/types/core';
-import { ProcessType, Mode, UI } from '@johnlindquist/kit/cjs/enum';
-import { ChildProcess } from 'child_process';
+import { Mode, UI } from '@johnlindquist/kit/cjs/enum';
 
 export interface ScoredChoice {
   item: Choice<{ id: string; name: string; value: any }>;
@@ -57,3 +56,10 @@ export interface Survey {
   subscribe: boolean;
   contact: boolean;
 }
+
+export type TermConfig = {
+  command: string;
+  cwd: string;
+  env: { [key: string]: string };
+  shell: string;
+};

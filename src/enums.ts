@@ -31,6 +31,9 @@ export enum AppChannel {
   TERM_INPUT = 'TERM_INPUT',
   TERM_OUTPUT = 'TERM_OUTPUT',
   TERM_EXIT = 'TERM_EXIT',
+  CSS_VARIABLE = 'CSS_VARIABLE',
+  TERM_ATTACHED = 'TERM_ATTACHED',
+  SET_TERM_CONFIG = 'SET_TERM_CONFIG',
 }
 
 export enum WindowChannel {

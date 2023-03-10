@@ -11,7 +11,13 @@ import { motion } from 'framer-motion';
 import { throttle } from 'lodash';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
-import { appDbAtom, darkAtom, openAtom, submitValueAtom } from './jotai';
+import {
+  appDbAtom,
+  darkAtom,
+  openAtom,
+  submitValueAtom,
+  termConfigAtom,
+} from './jotai';
 
 import XTerm from './components/xterm';
 import { AppChannel } from './enums';
@@ -61,6 +67,7 @@ export default function Terminal() {
   const [open] = useAtom(openAtom);
   const [isDark] = useAtom(darkAtom);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [termConfig, setTermConfig] = useAtom(termConfigAtom);
 
   useEffect(() => {
     if (xtermRef?.current?.terminal && !open) {
@@ -75,7 +82,7 @@ export default function Terminal() {
     const t = xtermRef.current.terminal;
 
     // console.log(`onopen`, { ws });
-    const attachAddon = new AttachIPCAddon();
+    const attachAddon = new AttachIPCAddon(termConfig);
 
     // console.log(`loadAddon`, xtermRef?.current?.terminal.loadAddon);
 
@@ -102,6 +109,7 @@ export default function Terminal() {
         submit(Channel.TERMINAL);
         if (attachAddon) {
           attachAddon.dispose();
+          setTermConfig(null);
         } else {
           console.log(`attachAddon is null`);
         }
@@ -121,7 +129,7 @@ export default function Terminal() {
         fitRef.current.fit();
       }
     }, 250);
-  }, [submit]);
+  }, [setTermConfig, submit, termConfig]);
 
   const [appDb] = useAtom(appDbAtom);
 

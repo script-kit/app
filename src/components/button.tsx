@@ -205,7 +205,6 @@ export default function ChoiceButton({
             {/* Img */}
             {choice?.img && !imageFail && (
               <motion.img
-                initial={{ opacity: 0, width: 0 }}
                 animate={{ opacity: 1, width: 'auto' }}
                 transition={{ duration: 0.1 }}
                 src={choice.img}
@@ -213,7 +212,8 @@ export default function ChoiceButton({
                 onError={() => setImageFail(true)}
                 className={`
                 h-12
-
+                w-12
+                object-contain
                 rounded
                 mr-2
                 ${index === currentIndex ? `opacity-100` : `opacity-80`}

@@ -8,6 +8,7 @@ import { debounce } from 'lodash';
 import { kitState } from './state';
 import { AppChannel } from './enums';
 import { sendToPrompt } from './prompt';
+import { TermConfig } from './types';
 
 let t: any = null;
 
@@ -88,7 +89,7 @@ const teardown = () => {
 };
 
 export const readyPty = async () => {
-  ipcMain.on(AppChannel.TERM_READY, async (event, config) => {
+  ipcMain.on(AppChannel.TERM_READY, async (event, config: TermConfig) => {
     ipcMain.once(AppChannel.TERM_EXIT, () => {
       teardown();
     });
@@ -100,18 +101,20 @@ export const readyPty = async () => {
 
     log.info(`🐲 >_ Starting pty server`);
 
-    let env: any = { PATH: KIT_FIRST_PATH };
+    let env: any = {};
 
+    env = {
+      ...process.env,
+      ...config?.env,
+    };
+
+    env.PATH = config?.env?.PATH || KIT_FIRST_PATH;
     if (kitState.isWindows) {
-      env = {
-        ...process.env,
-        ...kitState?.termEnv,
-      };
-      env.PATH = KIT_FIRST_PATH;
-      env.Path = KIT_FIRST_PATH;
+      env.Path = config?.env?.PATH || KIT_FIRST_PATH;
     }
 
     const shell =
+      config?.shell ||
       config?.env?.KIT_SHELL ||
       (process.platform === 'win32'
         ? 'cmd.exe'
@@ -132,7 +135,7 @@ export const readyPty = async () => {
         name: 'xterm-256color',
         cols: 80,
         rows: 24,
-        cwd: untildify(kitState?.termCwd || os.homedir()),
+        cwd: untildify(config?.cwd || os.homedir()),
         encoding: USE_BINARY ? null : 'utf8',
         env,
       }
@@ -141,17 +144,17 @@ export const readyPty = async () => {
     const sendData = USE_BINARY ? bufferUtf8(5) : bufferString(5);
 
     const invokeCommandWhenSettled = debounce(() => {
-      log.silly(`Invoking command: ${kitState.termCommand}`);
-      if (kitState.termCommand) {
+      log.silly(`Invoking command: ${config.command}`);
+      if (config.command) {
         if (USE_BINARY) {
-          t.write(`${kitState.termCommand}\n`);
+          t.write(`${config.command}\n`);
         } else {
           // Todo: on Windows this was also submitted the first prompt argument on
-          t.write(`${kitState.termCommand}\r`);
+          t.write(`${config.command}\r`);
         }
       }
 
-      kitState.termCommand = '';
+      config.command = '';
     }, 100);
 
     t.onData(async (data: any) => {
@@ -161,7 +164,7 @@ export const readyPty = async () => {
         log.error(`Error sending data to pty`, ex);
       }
 
-      if (kitState.termCommand) {
+      if (config.command) {
         invokeCommandWhenSettled();
       }
     });
