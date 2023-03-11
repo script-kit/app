@@ -16,12 +16,12 @@ import { Channel } from '@johnlindquist/kit/cjs/enum';
 import classNames from 'classnames';
 import { FaChevronDown } from 'react-icons/fa';
 import {
-  Input,
   Button,
   MessageType,
   MessageBox,
   IMessageListProps,
   MessageListEvent,
+  IInputProps,
 } from 'react-chat-elements';
 
 import {
@@ -31,6 +31,142 @@ import {
   inputAtom,
   channelAtom,
 } from '../jotai';
+
+const ChatInput: React.FC<
+  IInputProps & {
+    setInput: (fn: (text: string) => void) => void;
+  }
+> = ({
+  type = 'text',
+  multiline = false,
+  minHeight = 25,
+  maxHeight = 200,
+  autoHeight = true,
+  autofocus = false,
+  ...props
+}) => {
+  useEffect(() => {
+    if (autofocus === true) props.referance?.current?.focus();
+
+    if (props.clear instanceof Function) {
+      props.clear(clear);
+    }
+
+    if (props.setInput instanceof Function) {
+      props.setInput(setInput);
+    }
+  }, []);
+
+  const onChangeEvent = (e: any) => {
+    if (props.maxlength && (e.target.value || '').length > props.maxlength) {
+      if (props.onMaxLengthExceed instanceof Function)
+        props.onMaxLengthExceed();
+
+      if (
+        props.referance?.current?.value ===
+        (e.target.value || '').substring(0, props.maxlength)
+      )
+        return;
+    }
+
+    if (props.onChange instanceof Function) props.onChange(e);
+
+    if (multiline === true) {
+      if (autoHeight === true) {
+        if (e.target.style.height !== `${minHeight}px`) {
+          e.target.style.height = `${minHeight}px`;
+        }
+
+        let height;
+        if (e.target.scrollHeight <= maxHeight)
+          height = `${e.target.scrollHeight}px`;
+        else height = `${maxHeight}px`;
+
+        if (e.target.style.height !== height) {
+          e.target.style.height = height;
+        }
+      }
+    }
+  };
+
+  const clear = () => {
+    const _event = {
+      FAKE_EVENT: true,
+      target: props.referance?.current,
+    };
+
+    if (props.referance?.current?.value) {
+      props.referance.current.value = '';
+    }
+
+    onChangeEvent(_event);
+  };
+
+  const setInput = (value: string) => {
+    const _event = {
+      FAKE_EVENT: true,
+      target: props.referance?.current,
+    };
+
+    if (props.referance.current.value === value) return;
+    props.referance.current.value = value;
+
+    onChangeEvent(_event);
+  };
+
+  return (
+    <div className={classNames('rce-container-input', props.className)}>
+      {props.leftButtons && (
+        <div className="rce-input-buttons">{props.leftButtons}</div>
+      )}
+      {multiline === false ? (
+        <input
+          ref={props.referance}
+          type={type}
+          className={classNames('rce-input')}
+          placeholder={props.placeholder}
+          defaultValue={props.defaultValue}
+          style={props.inputStyle}
+          onChange={onChangeEvent}
+          onCopy={props.onCopy}
+          onCut={props.onCut}
+          onPaste={props.onPaste}
+          onBlur={props.onBlur}
+          onFocus={props.onFocus}
+          onSelect={props.onSelect}
+          onSubmit={props.onSubmit}
+          onReset={props.onReset}
+          onKeyDown={props.onKeyDown}
+          onKeyPress={props.onKeyPress}
+          onKeyUp={props.onKeyUp}
+        />
+      ) : (
+        <textarea
+          ref={props.referance}
+          className={classNames('rce-input', 'rce-input-textarea')}
+          placeholder={props.placeholder}
+          defaultValue={props.defaultValue}
+          style={props.inputStyle}
+          onChange={onChangeEvent}
+          onCopy={props.onCopy}
+          onCut={props.onCut}
+          onPaste={props.onPaste}
+          onBlur={props.onBlur}
+          onFocus={props.onFocus}
+          onSelect={props.onSelect}
+          onSubmit={props.onSubmit}
+          onReset={props.onReset}
+          onKeyDown={props.onKeyDown}
+          onKeyPress={props.onKeyPress}
+          onKeyUp={props.onKeyUp}
+        />
+      )}
+      {props.rightButtons && (
+        <div className="rce-input-buttons">{props.rightButtons}</div>
+      )}
+    </div>
+  );
+};
 
 const ChatList: FC<IMessageListProps> = ({
   referance = null,
@@ -389,6 +525,12 @@ export function Chat() {
 
   // Create onSubmit handler
   const clearRef = useRef<(() => void) | null>(null);
+  const setInputRef = useRef<((text: string) => void) | null>(null);
+  const [input] = useAtom(inputAtom);
+
+  useEffect(() => {
+    if (setInputRef.current && input.length > 0) setInputRef.current(input);
+  }, [input]);
 
   const onSubmit = useCallback(
     (e: any) => {
@@ -526,11 +668,14 @@ export function Chat() {
           navigator.clipboard.writeText(e.text);
         }}
       />
-      <Input
+      <ChatInput
         autoHeight
         multiline
         clear={(c) => {
           clearRef.current = c;
+        }}
+        setInput={(c) => {
+          setInputRef.current = c;
         }}
         referance={inputRef}
         className="kit-chat-input"

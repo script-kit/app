@@ -276,9 +276,22 @@ export const setupWatchers = async () => {
           }
         };
 
-        setCSSVariable('--mono-font', envData?.KIT_MONO_FONT);
-        setCSSVariable('--sans-font', envData?.KIT_SANS_FONT);
-        setCSSVariable('--serif-font', envData?.KIT_SERIF_FONT);
+        setCSSVariable(
+          '--mono-font',
+          envData?.KIT_MONO_FONT || `JetBrains Mono`
+        );
+        setCSSVariable(
+          '--sans-font',
+          envData?.KIT_SANS_FONT ||
+            `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+        Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`
+        );
+        setCSSVariable(
+          '--serif-font',
+          envData?.KIT_SERIF_FONT ||
+            `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
+        'serif'`
+        );
 
         // if (envData?.KIT_SHELL) kitState.envShell = envData?.KIT_SHELL;
         // TODO: Would need to update the dark/light contrast
