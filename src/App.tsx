@@ -126,6 +126,7 @@ import {
   infoChoicesAtom,
   appendChoicesAtom,
   termConfigAtom,
+  darkAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -266,6 +267,8 @@ export default function App() {
   const setShortcuts = useSetAtom(shortcutsAtom);
   const setTermConfig = useSetAtom(termConfigAtom);
 
+  const isDark = useAtomValue(darkAtom);
+
   useShortcuts();
   useEnter();
   useThemeDetector();
@@ -342,7 +345,6 @@ export default function App() {
     [Channel.GET_COLOR]: () => getColor(),
     [Channel.CLEAR_TABS]: setTabs,
     [Channel.ADD_CHOICE]: addChoice,
-    [Channel.SET_APPEARANCE]: setAppearance,
     [Channel.SET_BOUNDS]: setBounds,
     [Channel.SET_RESIZING]: setResizing,
     [Channel.PLAY_AUDIO]: setAudio,
@@ -503,11 +505,11 @@ export default function App() {
         w-screen h-screen
         min-w-screen min-h-screen
 
+
       bg-bg-base
       text-text-base
 
       transition-colors duration-200
-      border-secondary border-opacity-5
       bg-opacity-base
 
       `}

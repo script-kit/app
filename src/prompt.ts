@@ -439,7 +439,8 @@ export const forceFocus = () => {
 
 export const alwaysOnTop = (onTop: boolean) => {
   log.silly(`function: alwaysOnTop`);
-  if (promptWindow) promptWindow.setAlwaysOnTop(onTop);
+  if (promptWindow && !promptWindow.isDestroyed())
+    promptWindow.setAlwaysOnTop(onTop);
 };
 
 export const getCurrentScreenFromMouse = (): Display => {

@@ -61,5 +61,7 @@ export type TermConfig = {
   command: string;
   cwd: string;
   env: { [key: string]: string };
-  shell: string;
+  shell: string | boolean;
+  args?: string[];
+  closeOnExit?: boolean;
 };

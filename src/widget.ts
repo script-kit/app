@@ -91,6 +91,12 @@ export const createWidget = async (
     <script type="module">
     import { createApp } from '${petiteVuePath}?module'
 
+    ipcRenderer.on('WIDGET_THEME', (event, theme) => {
+      Object.entries(theme).forEach(([key, value]) => {
+        document.documentElement.style.setProperty(key, value)
+      })
+    })
+
     ipcRenderer.on('WIDGET_INIT', (event, state)=> {
       console.log({state})
       function Widget() {

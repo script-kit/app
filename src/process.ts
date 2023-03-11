@@ -137,7 +137,11 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   let prevTheme = {}
   const prevThemeExists = await pathExists(themeDbPath);
   if(prevThemeExists){
-    prevTheme = await readJson(themeDbPath);
+    try{
+      prevTheme = await readJson(themeDbPath);
+    }catch(error){
+      log.warn(`Error reading theme db:`, error)
+    }
   }
 
   log.info(`👀 prevTheme:`, prevTheme)
@@ -194,9 +198,7 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
 
     const appearance = result === '#FFFFFF' ? 'dark' : 'light';
     log.info(`💄 Setting appearance to ${appearance}`);
-
-    kitState.appearance = appearance;
-    sendToPrompt(Channel.SET_APPEARANCE, appearance);
+    value.appearance = appearance;
   }
 
   if (value.opacity) {
@@ -222,7 +224,11 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   if(dbPathExists){
     // Save theme as JSON to disk
     log.info(`Saving theme to ${themeDbPath}`, value);
-    writeJson(themeDbPath, value);
+    try{
+      writeJson(themeDbPath, value);
+    }catch(error){
+      log.warn(`Error writing theme db:`, error)
+    }
   }
 
   return value

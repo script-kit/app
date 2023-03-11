@@ -9,7 +9,6 @@ import { editor as monacoEditor, Range } from 'monaco-editor';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 import {
-  appearanceAtom,
   darkAtom,
   editorAppendAtom,
   editorConfigAtom,

@@ -1064,7 +1064,11 @@ export const themeAtom = atom(
     const prevTheme: any = g(_themeAtom);
 
     Object.entries(a).forEach(([key, value]) => {
-      document.documentElement.style.setProperty(key, value);
+      if (key === 'appearance') {
+        s(appearanceAtom, value as Appearance);
+      } else {
+        document.documentElement.style.setProperty(key, value);
+      }
     });
 
     const newTheme = { ...prevTheme, ...a };

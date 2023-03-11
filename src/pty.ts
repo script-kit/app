@@ -113,33 +113,42 @@ export const readyPty = async () => {
       env.Path = config?.env?.PATH || KIT_FIRST_PATH;
     }
 
-    const shell =
-      config?.shell ||
-      config?.env?.KIT_SHELL ||
-      (process.platform === 'win32'
+    const defaultShell =
+      process.platform === 'win32'
         ? 'cmd.exe'
         : // if linux, use bash
         process.platform === 'linux'
         ? 'bash'
         : // if mac, use zsh
-          'zsh');
+          'zsh';
 
-    t = pty.spawn(
-      shell,
-      [
-        // Start in login mode if not windows
-        ...(process.platform === 'win32' ? [] : ['-l']),
-      ],
-      {
-        useConpty: false,
-        name: 'xterm-256color',
-        cols: 80,
-        rows: 24,
-        cwd: untildify(config?.cwd || os.homedir()),
-        encoding: USE_BINARY ? null : 'utf8',
-        env,
+    if (typeof config?.shell === 'boolean') {
+      if (config.shell) {
+        config.shell = config?.env?.KIT_SHELL || defaultShell;
+      } else if (config?.command) {
+        config.shell = config?.command?.split(' ')?.[0];
+        config.command = config?.command?.split(' ')?.slice(1).join(' ');
+      } else {
+        config.command = 'echo "No shell or command provided"';
       }
-    );
+    }
+
+    const args = config?.args || [
+      // Start in login mode if not windows
+      ...(process.platform === 'win32' ? [] : ['-l']),
+    ];
+
+    const shell = config?.shell || config?.env?.KIT_SHELL || defaultShell;
+
+    t = pty.spawn(shell, args, {
+      useConpty: false,
+      name: 'xterm-256color',
+      cols: 80,
+      rows: 24,
+      cwd: untildify(config?.cwd || os.homedir()),
+      encoding: USE_BINARY ? null : 'utf8',
+      env,
+    });
 
     const sendData = USE_BINARY ? bufferUtf8(5) : bufferString(5);
 
@@ -171,7 +180,13 @@ export const readyPty = async () => {
 
     t.onExit(() => {
       try {
-        teardown();
+        if (typeof config?.closeOnExit === 'boolean' && !config.closeOnExit) {
+          log.info(
+            `Process closed, but not closing pty because closeOnExit is false`
+          );
+        } else {
+          teardown();
+        }
         // t = null;
       } catch (error) {
         log.error(`Error closing pty`, error);

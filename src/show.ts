@@ -18,6 +18,7 @@ import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
 import { ShowOptions } from '@johnlindquist/kit/types/kitapp';
 import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
+import { snapshot } from 'valtio';
 import { getAssetPath } from './assets';
 import { darkTheme, lightTheme } from './components/themes';
 import { forceQuit, kitState } from './state';
@@ -508,6 +509,10 @@ export const showWidget = async (
     widgetWindow.webContents.once('did-finish-load', () => {
       if (widgetWindow) {
         widgetWindow.webContents.send('WIDGET_INIT', options.state || {});
+
+        // Set the css variables from kitState.theme
+        widgetWindow.webContents.send('WIDGET_THEME', snapshot(kitState.theme));
+
         widgetWindow?.show();
         resolve(widgetWindow);
       } else {

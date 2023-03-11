@@ -26,7 +26,7 @@ Favicon gradient
   --color-secondary: 52, 52, 52;
   --color-background: 0, 0, 0;
   /* Check useThemeDetector... */
-  --opacity: 0.9;
+  --opacity: 0.75;
   --mono-font: JetBrains Mono;
   --sans-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
@@ -536,7 +536,7 @@ code::after {
 
 .prose .hljs {
   @apply text-text-base text-opacity-80;
-  @apply font-mono font-bold;
+  @apply font-mono font-normal;
 }
 
 .kit-chat-messages {
@@ -693,4 +693,13 @@ code::after {
 
 .kit-mbox-copied:hover::after {
   content: '';
+}
+
+/* if .prose h1 is not followed by anything, remove the bottom padding */
+.prose > h1:only-child {
+  @apply mb-0;
+}
+
+.prose-sm ~ pre {
+  @apply -mt-6;
 }
