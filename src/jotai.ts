@@ -989,7 +989,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     nullChoices,
   };
 
-  console.log(data);
+  // console.log(data);
 
   s(resizeData, data);
 

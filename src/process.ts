@@ -1659,10 +1659,15 @@ const kitMessageMap: ChannelHandler = {
     }
     const { keyboard, Key } = await import('@nut-tree/nut-js');
 
-    if (kitState.isMac && app?.dock && app?.dock?.isVisible())
+    const text = value?.text
+    const hide = value?.hide
+
+    if (hide && kitState.isMac && app?.dock && app?.dock?.isVisible()){
       app?.dock?.hide();
-    log.info(`SET SELECTED TEXT`, value);
-    clipboard.writeText(value);
+    }
+
+    log.info(`SET SELECTED TEXT`, text);
+    clipboard.writeText(text);
 
     const modifier = kitState.isMac ? Key.LeftSuper : Key.LeftControl;
     await keyboard.pressKey(modifier, Key.V);
@@ -1670,7 +1675,7 @@ const kitMessageMap: ChannelHandler = {
     setTimeout(() => {
       kitState.snippet = '';
       childSend(child, { channel, value });
-      log.info(`SET SELECTED TEXT DONE`, value);
+      log.info(`SET SELECTED TEXT DONE`, text);
     }, 10);
   }),
 

@@ -126,7 +126,7 @@ export function ActionSeparator() {
   );
 }
 
-export const formatShortcut = (shortcut: string) => {
+export const formatShortcut = (shortcut = '') => {
   return shortcut
     .replace('cmd', '⌘')
     .replace('ctrl', '⌃')
