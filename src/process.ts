@@ -992,6 +992,7 @@ const kitMessageMap: ChannelHandler = {
         cwd: value?.cwd || '',
         env: value?.env || {},
         shell: value?.shell || '',
+        args: value?.args || [],
       } as TermConfig)
     }
     log.silly(`SET_PROMPT_DATA`);

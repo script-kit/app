@@ -74,7 +74,7 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
       }}
       className={`
       text-primary/90
-      bg-bg-base bg-opacity-70
+      bg-bg-base/25
        ${overrideTailwindClasses(`
         w-full
         h-16

@@ -645,18 +645,12 @@ const prevChoiceId = atom(
   }
 );
 
-export const combinedChoicesAtom = atom((g) => {
-  const cs = g(scoredChoices);
-  const currentInfoChoices = g(infoChoicesAtom);
-
-  return currentInfoChoices.concat(cs);
-});
-
 export const scoredChoices = atom(
   (g) => g(choices),
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
   (g, s, a: ScoredChoice[] | null) => {
+    const cs = a?.filter((c) => !(c?.item?.info || c?.item.disabledSubmit));
     s(submittedAtom, false);
     if (g(isMainScriptAtom)) {
       // Check if the input matches the shortcode of one of the scripts
@@ -665,35 +659,35 @@ export const scoredChoices = atom(
         return (c as Script).alias === input;
       });
 
-      if (a && shortcodeMatch) {
+      if (cs && shortcodeMatch) {
         // Find the index of the matched script
-        const aliasMatch = a.find((c) => {
+        const aliasMatch = cs.find((c) => {
           return (c.item as Script).alias === input;
         });
 
         // If the alias matches, move to front of the list
         if (aliasMatch) {
-          const aliasIndex = a.indexOf(aliasMatch);
-          a.splice(aliasIndex, 1);
-          a.unshift(aliasMatch);
+          const aliasIndex = cs.indexOf(aliasMatch);
+          cs.splice(aliasIndex, 1);
+          cs.unshift(aliasMatch);
         }
       }
     }
-    s(choices, a || []);
+    s(choices, cs || []);
     const isFilter =
       g(uiAtom) === UI.arg && g(promptData)?.mode === Mode.FILTER;
 
     const channel = g(channelAtom);
 
-    if (a?.length) {
+    if (cs?.length) {
       const selected = g(selectedAtom);
 
-      if (!selected && a && !g(promptData)?.defaultChoiceId) {
+      if (!selected && cs && !g(promptData)?.defaultChoiceId) {
         // console.log(
         //   `!selected && a: Setting prevChoiceId to ${a[0].item?.id || ''}`
         // );
         // s(prevChoiceId, (a[0].item?.id as string) || '');
-        s(focusedChoiceAtom, a[0]?.item);
+        s(focusedChoiceAtom, cs[0]?.item);
       }
 
       // channel(Channel.CHOICES);
@@ -701,14 +695,15 @@ export const scoredChoices = atom(
       // resize(g, s, 'SCORED_CHOICES');
     } else {
       s(focusedChoiceAtom, null);
-      if (isFilter && Boolean(a) && !g(nullChoicesAtom)) {
+      if (isFilter && Boolean(cs) && !g(nullChoicesAtom)) {
         channel(Channel.NO_CHOICES);
       }
     }
 
-    if (a && g(uiAtom) === UI.arg) {
+    if (cs && g(uiAtom) === UI.arg) {
       // console.log(`Resize Button height`);
-      s(mainHeightAtom, a.length * g(itemHeightAtom));
+      const itemHeight = g(itemHeightAtom);
+      s(mainHeightAtom, cs.length * itemHeight);
     }
   }
 );
@@ -917,6 +912,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   if ([UI.term, UI.editor, UI.drop, UI.textarea, UI.emoji].includes(ui)) return;
 
   const infoChoicesLength = g(infoChoicesAtom).length;
+
   const hasPanel = g(_panelHTML) !== '';
   const nullChoices = g(nullChoicesAtom);
   const noInfo = infoChoicesLength === 0;
@@ -932,7 +928,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   const placeholderOnly =
     promptData?.mode === Mode.FILTER &&
-    g(unfilteredChoices).length === 0 &&
+    g(scoredChoices).length === 0 &&
     noInfo &&
     ui === UI.arg;
 
@@ -989,7 +985,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     nullChoices,
   };
 
-  // console.log(data);
+  console.log(data);
 
   s(resizeData, data);
 
@@ -1736,7 +1732,6 @@ export const logAtom = atom((_g) => {
 
 export const addChoiceAtom = atom(null, (g, s, a: Choice) => {
   const prev = g(unfilteredChoices);
-
   s(unfilteredChoicesAtom, Array.isArray(prev) ? [...prev, a] : [a]);
 });
 

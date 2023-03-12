@@ -1,13 +1,14 @@
 /* eslint-disable no-nested-ternary */
 import os from 'os';
 import untildify from 'untildify';
-import { KIT_FIRST_PATH } from '@johnlindquist/kit/cjs/utils';
+import { KIT_FIRST_PATH, kitPath } from '@johnlindquist/kit/cjs/utils';
 import log from 'electron-log';
 import { ipcMain } from 'electron';
 import { debounce } from 'lodash';
 import { kitState } from './state';
-import { AppChannel } from './enums';
+import { AppChannel, Trigger } from './enums';
 import { sendToPrompt } from './prompt';
+import { emitter, KitEvent } from './events';
 import { TermConfig } from './types';
 
 let t: any = null;
@@ -133,22 +134,44 @@ export const readyPty = async () => {
       }
     }
 
-    const args = config?.args || [
+    const args = config?.args?.length || [
       // Start in login mode if not windows
       ...(process.platform === 'win32' ? [] : ['-l']),
     ];
 
     const shell = config?.shell || config?.env?.KIT_SHELL || defaultShell;
 
-    t = pty.spawn(shell, args, {
-      useConpty: false,
-      name: 'xterm-256color',
-      cols: 80,
-      rows: 24,
-      cwd: untildify(config?.cwd || os.homedir()),
-      encoding: USE_BINARY ? null : 'utf8',
-      env,
-    });
+    try {
+      t = pty.spawn(shell, args, {
+        useConpty: false,
+        name: 'xterm-256color',
+        cols: 80,
+        rows: 24,
+        cwd: untildify(config?.cwd || os.homedir()),
+        encoding: USE_BINARY ? null : 'utf8',
+        env,
+      });
+    } catch (error) {
+      emitter.emit(KitEvent.RunPromptProcess, {
+        scriptPath: kitPath('cli', 'info.js'),
+        args: [
+          `# Error starting terminal with:
+~~~json
+${JSON.stringify(config)}
+~~~
+
+${error ? (error as any)?.message : 'Unknown error'}`,
+        ],
+        options: {
+          force: true,
+          trigger: Trigger.Info,
+        },
+      });
+
+      teardown();
+
+      return;
+    }
 
     const sendData = USE_BINARY ? bufferUtf8(5) : bufferString(5);
 

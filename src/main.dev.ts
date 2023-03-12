@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-continue */
 /* eslint-disable no-nested-ternary */
@@ -124,8 +125,9 @@ import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from './defaults';
 import { registerKillLatestShortcut } from './shortcuts';
 import { mainLog, mainLogPath } from './logs';
-import { emitter } from './events';
+import { emitter, KitEvent } from './events';
 import { readyPty } from './pty';
+import { Trigger } from './enums';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -158,28 +160,34 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 crashReporter.start({ submitURL: '', uploadToServer: false });
 
+const displayError = debounce((error: Error) => {
+  emitter.emit(KitEvent.RunPromptProcess, {
+    scriptPath: kitPath('cli', 'info.js'),
+    args: [
+      `# ${error.name} 🤷‍♂️:
+${error.message}
+<br/>
+${error.cause}
+<br/>
+${debugInfo()}
+<br/>
+${error.stack}`,
+    ],
+    options: {
+      force: true,
+      trigger: Trigger.Info,
+    },
+  });
+
+  shell.openExternal(
+    `https://github.com/johnlindquist/kit/discussions/categories/errors`
+  );
+}, 500);
+
 unhandled({
-  showDialog: true,
   logger: (error) => {
-    ohNo(error);
-  },
-  reportButton: (error) => {
-    let mainLogContents = '';
-
-    try {
-      mainLogContents = readFileSync(mainLogPath, 'utf8');
-    } catch (readLogError) {
-      log.error({ readLogError });
-    }
-
-    // get last 10 lines of main log
-    const lastLines = mainLogContents.split('\n').slice(-10).join('\n');
-
-    openNewGitHubIssue({
-      user: 'johnlindquist',
-      repo: 'kit',
-      body: `\`\`\`\n${error.stack}\n\`\`\`\n\n${lastLines}\n\n${debugInfo()}`,
-    });
+    log.warn({ error });
+    displayError(error);
   },
 });
 
