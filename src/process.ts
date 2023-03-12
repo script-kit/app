@@ -144,8 +144,6 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
     }
   }
 
-  log.info(`👀 prevTheme:`, prevTheme)
-  log.info(`👀 newTheme:`, newTheme)
   let value:any = {}
 
   if(kitState.ready){
@@ -187,18 +185,20 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   }
 
 
+  let result = ``
   if (value.background) {
     const background = toRgb(value.background);
     value['--color-background'] = background;
+    const bgColor = toHex(value.background);
 
     const cc = new ContrastColor({
-      bgColor: toHex(value.background),
+      bgColor,
     });
-    const result = cc.contrastColor();
+    result = cc.contrastColor();
 
     const appearance = result === '#FFFFFF' ? 'dark' : 'light';
     log.info(`💄 Setting appearance to ${appearance}`);
-    value.appearance = appearance;
+    value.appearance =  appearance;
   }
 
   if (value.opacity) {
@@ -224,6 +224,7 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   if(dbPathExists){
     // Save theme as JSON to disk
     log.info(`Saving theme to ${themeDbPath}`, value);
+    log.info(`Result`, {result})
     try{
       writeJson(themeDbPath, value);
     }catch(error){
@@ -295,7 +296,6 @@ export const setTheme = async (value: any = {}, check = true) => {
   // }
 
   const newValue = await maybeConvertColors(value);
-
   assign(kitState.theme, newValue);
 
   sendToPrompt(Channel.SET_THEME, newValue);

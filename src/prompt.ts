@@ -18,7 +18,6 @@ import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 
 import {
-  app,
   BrowserWindow,
   screen,
   Rectangle,
@@ -27,22 +26,20 @@ import {
   BrowserWindowConstructorOptions,
   Point,
   TouchBar,
-  ipcRenderer,
   ipcMain,
 } from 'electron';
 import os from 'os';
 import path from 'path';
 import log from 'electron-log';
 import { debounce } from 'lodash';
-import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
+import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
-import { AppDb } from '@johnlindquist/kit/cjs/db';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
 import { ChildProcess } from 'child_process';
 import { getAssetPath } from './assets';
-import { appDb, kitState, getPromptDb, userDb, subs } from './state';
+import { appDb, kitState, getPromptDb, subs } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
@@ -659,8 +656,11 @@ export const resize = async ({
     //   resizeAnimate && !hasInput
     // );
 
+    const bounds = { x, y, width: currentWidth, height };
+    log.info({ bounds });
     promptWindow?.setBounds(
-      { x, y, width: currentWidth, height }
+      bounds
+
       // resizeAnimate && !hasInput
     );
 

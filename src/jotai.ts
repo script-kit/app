@@ -976,7 +976,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     topHeight: th,
     ui,
     mainHeight: mh,
-    footerHeight: 28,
+    footerHeight: 30, // TODO: 2px more to account for border 🤔
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
@@ -1975,3 +1975,8 @@ export const termConfigAtom = atom(
     });
   }
 );
+
+export const zoomAtom = atom(0);
+export const hasBorderAtom = atom((g) => {
+  return g(zoomAtom) === 0;
+});

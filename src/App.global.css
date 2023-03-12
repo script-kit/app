@@ -24,7 +24,7 @@ Favicon gradient
   --color-text: 255, 255, 255;
   --color-primary: 251, 191, 36;
   --color-secondary: 52, 52, 52;
-  --color-background: 0, 0, 0;
+  --color-background: 15, 15, 15;
   /* Check useThemeDetector... */
   --opacity: 0.75;
   --mono-font: JetBrains Mono;
@@ -73,6 +73,8 @@ body {
 #root {
   @apply h-screen min-h-screen;
   @apply overflow-y-hidden;
+
+  /* inset | offset-x | offset-y | blur-radius | spread-radius | color */
 }
 
 .choice {
@@ -702,4 +704,14 @@ code::after {
 
 .prose-sm ~ pre {
   @apply -mt-6;
+}
+
+.main-container {
+  @apply border-secondary border-1;
+  /* TODO: I don't think this is needed... */
+  box-sizing: border-box !important;
+}
+
+.main-rounded {
+  border-radius: 0.6rem;
 }

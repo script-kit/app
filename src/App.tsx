@@ -28,9 +28,8 @@ import DOMPurify from 'dompurify';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
-import { ipcRenderer } from 'electron';
+import { ipcRenderer, webFrame } from 'electron';
 import { AnimatePresence, motion, useAnimation } from 'framer-motion';
-import { debounce } from 'lodash';
 
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
@@ -126,7 +125,8 @@ import {
   infoChoicesAtom,
   appendChoicesAtom,
   termConfigAtom,
-  darkAtom,
+  zoomAtom,
+  hasBorderAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -267,7 +267,23 @@ export default function App() {
   const setShortcuts = useSetAtom(shortcutsAtom);
   const setTermConfig = useSetAtom(termConfigAtom);
 
-  const isDark = useAtomValue(darkAtom);
+  const [zoomLevel, setZoom] = useAtom(zoomAtom);
+  const hasBorder = useAtomValue(hasBorderAtom);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const zl = webFrame.getZoomLevel();
+      setZoom(zl);
+
+      // set a --zoom-level css variable for use in css
+      document.documentElement.style.setProperty('--zoom-level', `${zl}`);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [setZoom]);
 
   useShortcuts();
   useEnter();
@@ -278,12 +294,9 @@ export default function App() {
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const headerRef: RefObject<HTMLDivElement> = useRef(null);
 
-  useResizeObserver(
-    headerRef,
-    debounce((entry) => {
-      setTopHeight(entry.contentRect.height);
-    }, 100)
-  );
+  useResizeObserver(headerRef, (entry) => {
+    setTopHeight(entry.contentRect.height);
+  });
 
   type ChannelAtomMap = {
     [key in keyof ChannelMap]: (data: ChannelMap[key]) => void;
@@ -440,6 +453,12 @@ export default function App() {
     };
     ipcRenderer.on(AppChannel.CSS_VARIABLE, handleCSSVariable);
 
+    const handleZoom = (_, data) => {
+      setZoom(data);
+    };
+
+    ipcRenderer.on(AppChannel.ZOOM, handleZoom);
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
@@ -448,6 +467,7 @@ export default function App() {
       ipcRenderer.off(AppChannel.KIT_STATE, kitStateCallback);
       ipcRenderer.off(AppChannel.CSS_VARIABLE, handleCSSVariable);
       ipcRenderer.off(AppChannel.SET_TERM_CONFIG, handleTermConfig);
+      ipcRenderer.off(AppChannel.ZOOM, handleZoom);
     };
   }, [messageMap]);
 
@@ -511,6 +531,9 @@ export default function App() {
 
       transition-colors duration-200
       bg-opacity-base
+
+      ${hasBorder ? `main-container` : ``}
+      ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
 
       `}
       >

@@ -34,6 +34,7 @@ export enum AppChannel {
   CSS_VARIABLE = 'CSS_VARIABLE',
   TERM_ATTACHED = 'TERM_ATTACHED',
   SET_TERM_CONFIG = 'SET_TERM_CONFIG',
+  ZOOM = 'ZOOM',
 }
 
 export enum WindowChannel {
