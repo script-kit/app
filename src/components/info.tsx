@@ -82,7 +82,7 @@ export default function InfoList({ width, height }: ListProps) {
       list-component
       flex flex-row
       w-full
-      overflow-y-hidden border-t border-secondary
+      overflow-y-hidden border-t border-secondary border-opacity-75
       `}
       style={
         {

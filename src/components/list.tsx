@@ -1,5 +1,5 @@
 /* eslint-disable react/require-default-props */
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FixedSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
@@ -53,7 +53,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   // const listWidth = useMotionValue('100%');
 
   const onIndexSubmit = useCallback(
-    (i) => {
+    (i: number) => {
       if (choices.length) {
         const choice = choices[i];
 
@@ -71,24 +71,6 @@ export default function ChoiceList({ width, height }: ListProps) {
     onIndexSubmit
   );
 
-  // useResizeObserver(innerRef, (entry) => {
-  //   if (entry?.contentRect?.height) {
-  //     setMainHeight(entry.contentRect.height);
-  //   }
-  // });
-
-  // useEffect(() => {
-  //   const newListHeight = choices.length * BUTTON_HEIGHT;
-  //   console.log('newListHeight', newListHeight);
-  //   setMainHeight(newListHeight);
-  // }, [choices, setMainHeight]);
-
-  // useEffect(() => {
-  //   const newListHeight = choices.length * BUTTON_HEIGHT;
-  //   console.log('newListHeight', newListHeight);
-  //   setMainHeight(newListHeight);
-  // }, []);
-
   useEffect(() => {
     if (choices.length && height) {
       (listRef as any).current.scrollToItem(index);
@@ -96,35 +78,31 @@ export default function ChoiceList({ width, height }: ListProps) {
   }, [index, choices, height, flagValue]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{
-        opacity: choices?.length ? 1 : 0,
-      }}
-      transition={{ duration: 0.15, ease: 'circOut' }}
+    <div
       id="list"
       className={`
 
       list-component
       flex flex-row
       w-full
-      overflow-y-hidden border-t border-secondary
+      overflow-y-hidden border-t border-secondary border-opacity-75
       `}
       style={
         {
           width,
-          height: height - infoHeight,
+          // height: Math.min(height, choices?.length * itemHeight + infoHeight),
         } as any
       }
     >
       <List
         style={{
+          // minHeight: Math.min(choices?.length * itemHeight, height),
           minWidth:
             previewEnabled && hasPreview ? DEFAULT_LIST_WIDTH : DEFAULT_WIDTH,
         }}
         ref={listRef}
         innerRef={innerRef}
-        height={height - infoHeight}
+        height={Math.min(height, choices.length * itemHeight + infoHeight)}
         itemCount={choices?.length || 0}
         itemSize={itemHeight}
         width="100%"
@@ -137,7 +115,7 @@ export default function ChoiceList({ width, height }: ListProps) {
 
         ${
           !appDb.mini && previewEnabled && hasPreview
-            ? 'border-r  border-secondary'
+            ? 'border-r  border-secondary border-opacity-75'
             : ''
         }
         `}
@@ -150,6 +128,6 @@ export default function ChoiceList({ width, height }: ListProps) {
       <AnimatePresence key="previewComponents">
         {!appDb.mini && previewHTML && <Preview key="AppPreview" />}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

@@ -168,7 +168,7 @@ export default function ChoiceButton({
       text-text-base
       ${
         index === currentIndex && !choice?.disableSubmit
-          ? `bg-secondary bg-opacity-50
+          ? `bg-secondary bg-opacity-40
             ${mouseEnabled ? `active:bg-opacity-10 ` : ``}
             `
           : ``

@@ -707,7 +707,7 @@ code::after {
 }
 
 .main-container {
-  @apply border-secondary border-1;
+  @apply border-secondary border-opacity-75 border-1;
   /* TODO: I don't think this is needed... */
   box-sizing: border-box !important;
 }

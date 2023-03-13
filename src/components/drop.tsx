@@ -18,7 +18,8 @@ export default function Drop() {
   const [, submit] = useAtom(submitValueAtom);
 
   const onDragEnter = useCallback((event) => {
-    event.preventDefault();
+    // TODO: Check this on windows
+    // event.preventDefault();
     setDropReady(true);
     setDropMessage('Drop to submit');
   }, []);

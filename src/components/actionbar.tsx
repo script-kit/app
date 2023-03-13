@@ -341,7 +341,7 @@ export default function ActionBar() {
         ui === UI.splash
           ? ``
           : `border-t
-          border-secondary`
+          border-secondary border-opacity-75`
       }
       bg-secondary
     ${
@@ -350,7 +350,7 @@ export default function ActionBar() {
     bg-opacity-0
     `
         : `
-        bg-opacity-50
+        bg-opacity-40
     `
     }
 
