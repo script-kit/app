@@ -127,6 +127,7 @@ import {
   termConfigAtom,
   zoomAtom,
   hasBorderAtom,
+  channelAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -269,6 +270,8 @@ export default function App() {
 
   const [zoomLevel, setZoom] = useAtom(zoomAtom);
   const hasBorder = useAtomValue(hasBorderAtom);
+
+  const channel = useAtomValue(channelAtom);
 
   useEffect(() => {
     const handleResize = () => {
@@ -541,6 +544,26 @@ export default function App() {
         {/* {JSON.stringify(state)} */}
         <AnimatePresence key="appComponents">
           <motion.div
+            onDrop={(event) => {
+              if (ui !== UI.drop) {
+                channel(Channel.ON_DROP);
+              }
+              // console.log(`🎉 drop`)n;
+              onDrop(event);
+            }}
+            onDragEnter={() => {
+              channel(Channel.ON_DRAG_ENTER);
+              // console.log(`drag enter`);
+            }}
+            onDragOver={(event) => {
+              channel(Channel.ON_DRAG_OVER);
+              event.stopPropagation();
+              event.preventDefault();
+            }}
+            onDragLeave={() => {
+              channel(Channel.ON_DRAG_LEAVE);
+              // console.log(`drag leave`);
+            }}
             animate={controls}
             // TODO: Maybe remove animation when not main menu?
             transition={{ duration: 0.12 }}
@@ -594,17 +617,6 @@ export default function App() {
               ref={mainRef}
               className="flex-1 min-h-1 overflow-y-hidden w-full"
               onPaste={onPaste}
-              onDrop={(event) => {
-                console.log(`🎉 drop`);
-                onDrop(event);
-              }}
-              onDragEnter={() => {
-                console.log(`drag enter`);
-              }}
-              onDragOver={(event) => {
-                event.stopPropagation();
-                event.preventDefault();
-              }}
             >
               <ToastContainer
                 pauseOnFocusLoss={false}

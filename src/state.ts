@@ -50,8 +50,8 @@ const css = `
 :root {
   --color-text: 255, 255, 255;
   --color-primary: 251, 191, 36;
-  --color-secondary: 52, 52, 52;
-  --color-background: 15, 15, 15;
+  --color-secondary: 64, 64, 64;
+  --color-background: 6, 6, 6;
   --opacity: 0.75;
 }
 `;

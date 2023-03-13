@@ -1246,6 +1246,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     value: g(_submitValue),
     submitted: g(submittedAtom),
     cursor: g(editorCursorPosAtom),
+    ui: g(uiAtom),
   };
 
   return state;
