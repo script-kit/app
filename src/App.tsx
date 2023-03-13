@@ -499,12 +499,13 @@ export default function App() {
     if (headerRef?.current) setTopRef(headerRef?.current);
   }, [headerRef, setTopRef]);
 
+  // TODO: Can I remove this?
   useEffect(() => {
     if (open) {
-      controls.start({ opacity: [0, 1] });
+      controls.start({ opacity: [1, 1] });
     } else {
       controls.stop();
-      controls.set({ opacity: 0 });
+      controls.set({ opacity: 1 });
     }
   }, [open, controls]);
 

@@ -167,7 +167,7 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   value.background ||= value?.['--color-background'];
   value.accent ||= value?.['--color-primary'];
   value.ui ||= value?.['--color-secondary'];
-  value.opacity ||= value?.['--opacity'] || '0.85';
+  value.opacity ||= value?.['--opacity'] || '0.75';
 
 
   if (value.foreground) {

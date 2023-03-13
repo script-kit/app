@@ -164,24 +164,23 @@ const displayError = debounce((error: Error) => {
   emitter.emit(KitEvent.RunPromptProcess, {
     scriptPath: kitPath('cli', 'info.js'),
     args: [
-      `# ${error.name} 🤷‍♂️:
-${error.message}
-<br/>
-${error.cause}
-<br/>
-${debugInfo()}
-<br/>
-${error.stack}`,
+      `${error?.name} has occurred...`,
+      `Caught Error`,
+      `# ${error?.message || 'Unknown error message'} 😅
+Please report to our [GitHub Discussions](https://github.com/johnlindquist/kit/discussions/categories/errors)
+
+## ${debugInfo()?.replaceAll('\n', '')}
+
+~~~
+${error?.stack || 'Unknown error stack'}
+~~~
+`,
     ],
     options: {
       force: true,
       trigger: Trigger.Info,
     },
   });
-
-  shell.openExternal(
-    `https://github.com/johnlindquist/kit/discussions/categories/errors`
-  );
 }, 500);
 
 unhandled({

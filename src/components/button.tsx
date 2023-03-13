@@ -205,7 +205,7 @@ export default function ChoiceButton({
             {/* Img */}
             {choice?.img && !imageFail && (
               <motion.img
-                animate={{ opacity: 1, width: 'auto' }}
+                animate={{ opacity: 1 }}
                 transition={{ duration: 0.1 }}
                 src={choice.img}
                 alt={choice.description || ''}
@@ -213,6 +213,7 @@ export default function ChoiceButton({
                 className={`
                 h-12
                 w-12
+                min-w-12
                 object-contain
                 rounded
                 mr-2

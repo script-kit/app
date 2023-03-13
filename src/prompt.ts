@@ -131,7 +131,7 @@ export const createPromptWindow = async () => {
       ...options,
       transparent: true,
     });
-    promptWindow.setVibrancy('sidebar');
+    promptWindow.setVibrancy('hud');
   } else {
     promptWindow = new glasstron.BrowserWindow({
       ...options,
