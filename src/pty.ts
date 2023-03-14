@@ -10,7 +10,9 @@ import { AppChannel, Trigger } from './enums';
 import { sendToPrompt } from './prompt';
 import { emitter, KitEvent } from './events';
 import { TermConfig } from './types';
+import { displayError } from './error';
 
+let exited = false;
 let t: any = null;
 
 type TermSize = {
@@ -92,6 +94,8 @@ const teardown = () => {
 export const readyPty = async () => {
   ipcMain.on(AppChannel.TERM_READY, async (event, config: TermConfig) => {
     ipcMain.once(AppChannel.TERM_EXIT, () => {
+      if (exited) return;
+      exited = true;
       teardown();
     });
 
@@ -123,9 +127,11 @@ export const readyPty = async () => {
         : // if mac, use zsh
           'zsh';
 
+    let login = false;
     if (typeof config?.shell === 'boolean') {
       if (config.shell) {
         config.shell = config?.env?.KIT_SHELL || defaultShell;
+        login = true;
       } else if (config?.command) {
         config.shell = config?.command?.split(' ')?.[0];
         config.command = config?.command?.split(' ')?.slice(1).join(' ');
@@ -134,13 +140,16 @@ export const readyPty = async () => {
       }
     }
 
-    const args = config?.args?.length || [
-      // Start in login mode if not windows
-      ...(process.platform === 'win32' ? [] : ['-l']),
-    ];
+    const args = config?.args?.length
+      ? config.args
+      : [
+          // Start in login mode if not windows
+          ...(process.platform === 'win32' || !login ? [] : ['-l']),
+        ];
 
     const shell = config?.shell || config?.env?.KIT_SHELL || defaultShell;
 
+    exited = false;
     try {
       t = pty.spawn(shell, args, {
         useConpty: false,
@@ -152,21 +161,7 @@ export const readyPty = async () => {
         env,
       });
     } catch (error) {
-      emitter.emit(KitEvent.RunPromptProcess, {
-        scriptPath: kitPath('cli', 'info.js'),
-        args: [
-          `# Error starting terminal with:
-~~~json
-${JSON.stringify(config)}
-~~~
-
-${error ? (error as any)?.message : 'Unknown error'}`,
-        ],
-        options: {
-          force: true,
-          trigger: Trigger.Info,
-        },
-      });
+      displayError(error as any);
 
       teardown();
 
@@ -202,6 +197,12 @@ ${error ? (error as any)?.message : 'Unknown error'}`,
     });
 
     t.onExit(() => {
+      if (exited) return;
+      exited = true;
+      log.info(
+        `🐲 Pty process exited`,
+        JSON.stringify({ closeOnExit: config?.closeOnExit })
+      );
       try {
         if (typeof config?.closeOnExit === 'boolean' && !config.closeOnExit) {
           log.info(
@@ -209,6 +210,8 @@ ${error ? (error as any)?.message : 'Unknown error'}`,
           );
         } else {
           teardown();
+
+          emitter.emit(KitEvent.SetSubmitValue, '');
         }
         // t = null;
       } catch (error) {

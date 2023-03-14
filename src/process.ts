@@ -991,8 +991,9 @@ const kitMessageMap: ChannelHandler = {
         command: value?.input || '',
         cwd: value?.cwd || '',
         env: value?.env || {},
-        shell: value?.shell || '',
+        shell: value?.shell,
         args: value?.args || [],
+        closeOnExit: typeof value?.closeOnExit !== "undefined" ? value?.closeOnExit : true,
       } as TermConfig)
     }
     log.silly(`SET_PROMPT_DATA`);
@@ -1818,6 +1819,11 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, value });
   }),
   TOAST: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(channel, value);
+
+    childSend(child, { channel, value });
+  }),
+  TERM_EXIT: toProcess(async ({ child }, { channel, value }) => {
     sendToPrompt(channel, value);
 
     childSend(child, { channel, value });

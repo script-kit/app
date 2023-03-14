@@ -10,11 +10,14 @@ import useResizeObserver from '@react-hook/resize-observer';
 import { motion } from 'framer-motion';
 import { throttle } from 'lodash';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   appDbAtom,
   darkAtom,
   openAtom,
+  sendShortcutAtom,
+  shortcutsAtom,
+  submittedAtom,
   submitValueAtom,
   termConfigAtom,
 } from './jotai';
@@ -56,18 +59,19 @@ const darkTheme = {
   brightMagenta: '#e83030',
 };
 
-function isCtrlKeyOn(e: MouseEvent) {
-  return e.ctrlKey;
-}
-
 export default function Terminal() {
   const xtermRef = useRef<XTerm>(null);
   const fitRef = useRef(new FitAddon());
   const [, submit] = useAtom(submitValueAtom);
+  const submitted = useAtomValue(submittedAtom);
   const [open] = useAtom(openAtom);
   const [isDark] = useAtom(darkAtom);
   const containerRef = useRef<HTMLDivElement>(null);
   const [termConfig, setTermConfig] = useAtom(termConfigAtom);
+  const shortcuts = useAtomValue(shortcutsAtom);
+  const sendShortcut = useSetAtom(sendShortcutAtom);
+
+  const attachAddonRef = useRef<AttachIPCAddon | null>(null);
 
   useEffect(() => {
     if (xtermRef?.current?.terminal && !open) {
@@ -82,7 +86,6 @@ export default function Terminal() {
     const t = xtermRef.current.terminal;
 
     // console.log(`onopen`, { ws });
-    const attachAddon = new AttachIPCAddon(termConfig);
 
     // console.log(`loadAddon`, xtermRef?.current?.terminal.loadAddon);
 
@@ -99,25 +102,6 @@ export default function Terminal() {
     t.loadAddon(new LigaturesAddon());
     t.loadAddon(new SerializeAddon());
 
-    t.onKey((x: any) => {
-      // console.log({ key: x });
-      if (
-        (x?.domEvent.key === 'Enter' && x?.domEvent.metaKey) ||
-        (x.domEvent.ctrlKey && x?.domEvent.key === 'c')
-      ) {
-        // console.log(`SUBMITTING TERMINAL`);
-        submit(Channel.TERMINAL);
-        if (attachAddon) {
-          attachAddon.dispose();
-          setTermConfig(null);
-        } else {
-          console.log(`attachAddon is null`);
-        }
-      }
-    });
-
-    t.loadAddon(attachAddon);
-
     if (fitRef?.current) {
       fitRef.current.fit();
     }
@@ -129,7 +113,44 @@ export default function Terminal() {
         fitRef.current.fit();
       }
     }, 250);
-  }, [setTermConfig, submit, termConfig]);
+  }, []);
+
+  useEffect(() => {
+    if (!xtermRef?.current?.terminal) return;
+    const t = xtermRef.current.terminal;
+    t.onKey((x: any) => {
+      if (x.domEvent.metaKey) {
+        const shortcut = `cmd+${x.domEvent.key.toLowerCase}`;
+        sendShortcut(shortcut);
+      }
+      if (x.domEvent.ctrlKey) {
+        const shortcut = `ctrl+${x.domEvent.key.toLowerCase}`;
+        sendShortcut(shortcut);
+      }
+      if (x.domEvent.altKey) {
+        const shortcut = `alt+${x.domEvent.key.toLowerCase}`;
+        sendShortcut(shortcut);
+      }
+    });
+  }, [sendShortcut, shortcuts]);
+
+  useEffect(() => {
+    if (!xtermRef?.current?.terminal) return;
+    const t = xtermRef.current.terminal;
+    if (attachAddonRef.current) return;
+    const attachAddon = new AttachIPCAddon(termConfig);
+    attachAddonRef.current = attachAddon;
+    t.loadAddon(attachAddon);
+  }, [termConfig]);
+
+  useEffect(() => {
+    if (submitted) {
+      if (attachAddonRef.current) {
+        attachAddonRef.current.dispose();
+        setTermConfig(null);
+      }
+    }
+  }, [setTermConfig, submitted]);
 
   const [appDb] = useAtom(appDbAtom);
 

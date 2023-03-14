@@ -27,6 +27,7 @@ export enum KitEvent {
   RemoveMostRecent = 'RemoveMostRecent',
   PROMPT_RELOAD = 'PROMPT_RELOAD',
   DID_FINISH_LOAD = 'DID_FINISH_LOAD',
+  SetSubmitValue = 'SetSubmitValue',
 }
 
 interface KitEmitter {

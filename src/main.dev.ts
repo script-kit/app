@@ -31,7 +31,6 @@ import installExtension, {
 
 import clipboardy from 'clipboardy';
 import unhandled from 'electron-unhandled';
-import { openNewGitHubIssue, debugInfo } from 'electron-util';
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import { autoUpdater } from 'electron-updater';
@@ -128,6 +127,7 @@ import { mainLog, mainLogPath } from './logs';
 import { emitter, KitEvent } from './events';
 import { readyPty } from './pty';
 import { Trigger } from './enums';
+import { displayError } from './error';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -160,32 +160,9 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 crashReporter.start({ submitURL: '', uploadToServer: false });
 
-const displayError = debounce((error: Error) => {
-  emitter.emit(KitEvent.RunPromptProcess, {
-    scriptPath: kitPath('cli', 'info.js'),
-    args: [
-      `${error?.name} has occurred...`,
-      `Caught Error`,
-      `# ${error?.message || 'Unknown error message'} 😅
-Please report to our [GitHub Discussions](https://github.com/johnlindquist/kit/discussions/categories/errors)
-
-## ${debugInfo()?.replaceAll('\n', '')}
-
-~~~
-${error?.stack || 'Unknown error stack'}
-~~~
-`,
-    ],
-    options: {
-      force: true,
-      trigger: Trigger.Info,
-    },
-  });
-}, 500);
-
 unhandled({
   logger: (error) => {
-    log.warn({ error });
+    log.warn(error);
     displayError(error);
   },
 });

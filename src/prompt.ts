@@ -270,6 +270,10 @@ export const createPromptWindow = async () => {
     });
   });
 
+  emitter.on(KitEvent.SetSubmitValue, (value: string) => {
+    sendToPrompt(Channel.SET_SUBMIT_VALUE, value);
+  });
+
   promptWindow?.setMaxListeners(2);
 
   // promptWindow?.webContents.on('before-input-event', (event: any, input) => {
