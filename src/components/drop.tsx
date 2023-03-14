@@ -70,7 +70,6 @@ export default function Drop() {
         aria-label="droppable area"
         style={
           {
-            WebkitAppRegion: 'drag',
             WebkitUserSelect: 'none',
           } as any
         }
