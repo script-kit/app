@@ -21,7 +21,7 @@ import {
 } from '../jotai';
 import TopBar from './TopBar';
 
-const TopLeftButton = () => {
+const TopRightButton = () => {
   const name = useAtomValue(nameAtom);
 
   const isMainScript = useAtomValue(isMainScriptAtom);
@@ -73,7 +73,17 @@ const TopLeftButton = () => {
     );
   }
 
-  return <span className="truncate">{name}</span>;
+  return (
+    <span
+      style={{
+        WebkitAppRegion: 'drag',
+        WebkitUserSelect: 'none',
+      }}
+      className="truncate"
+    >
+      {name}
+    </span>
+  );
 };
 
 export default function Header() {
@@ -107,29 +117,36 @@ export default function Header() {
         {open && loading && <TopBar />}
       </AnimatePresence>
       <div
-        style={
-          {
-            WebkitAppRegion: 'drag',
-            WebkitUserSelect: 'none',
-          } as any
-        }
         className={`
         w-full
-      text-xxs uppercase font-mono font-bold justify-between pt-3 px-4 flex flex-row
+      text-xxs uppercase font-mono font-bold pt-3 px-4 flex flex-row
       text-primary items-center ${
         isMainScript && processes?.length > 1 ? `-my-1` : ``
       }
       `}
       >
-        <div className="flex flex-row">
+        <div
+          style={{
+            WebkitAppRegion: 'drag',
+            WebkitUserSelect: 'none',
+          }}
+          className="flex flex-row"
+        >
           {logo ? (
             <img src={logo} alt={name} className="h-4 pr-2" />
           ) : (
             <span className="pr-1 truncate">{description}</span>
           )}
         </div>
+        <div
+          style={{
+            WebkitAppRegion: 'drag',
+            WebkitUserSelect: 'none',
+          }}
+          className="flex-1 h-full"
+        />
         <span className="flex flex-row items-end pl-1 text-right">
-          <TopLeftButton />
+          <TopRightButton />
 
           {script?.twitter && (
             <span>

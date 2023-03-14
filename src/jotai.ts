@@ -1976,3 +1976,13 @@ export const zoomAtom = atom(0);
 export const hasBorderAtom = atom((g) => {
   return g(zoomAtom) === 0;
 });
+
+export const termExitAtom = atom(null, (g, s, a: string) => {
+  const ui = g(uiAtom);
+  const submitted = g(submittedAtom);
+  const open = g(openAtom);
+
+  if (ui === UI.term && open && !submitted) {
+    s(submitValueAtom, a);
+  }
+});

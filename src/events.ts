@@ -28,6 +28,7 @@ export enum KitEvent {
   PROMPT_RELOAD = 'PROMPT_RELOAD',
   DID_FINISH_LOAD = 'DID_FINISH_LOAD',
   SetSubmitValue = 'SetSubmitValue',
+  TermExited = 'TermExited',
 }
 
 interface KitEmitter {

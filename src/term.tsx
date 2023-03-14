@@ -9,7 +9,7 @@ import { SerializeAddon } from 'xterm-addon-serialize';
 import useResizeObserver from '@react-hook/resize-observer';
 import { motion } from 'framer-motion';
 import { throttle } from 'lodash';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   appDbAtom,
@@ -20,6 +20,8 @@ import {
   submittedAtom,
   submitValueAtom,
   termConfigAtom,
+  termExitAtom,
+  uiAtom,
 } from './jotai';
 
 import XTerm from './components/xterm';
@@ -65,19 +67,15 @@ export default function Terminal() {
   const [, submit] = useAtom(submitValueAtom);
   const submitted = useAtomValue(submittedAtom);
   const [open] = useAtom(openAtom);
+  const ui = useAtomValue(uiAtom);
   const [isDark] = useAtom(darkAtom);
   const containerRef = useRef<HTMLDivElement>(null);
   const [termConfig, setTermConfig] = useAtom(termConfigAtom);
   const shortcuts = useAtomValue(shortcutsAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
+  const setTermExit = useSetAtom(termExitAtom);
 
   const attachAddonRef = useRef<AttachIPCAddon | null>(null);
-
-  useEffect(() => {
-    if (xtermRef?.current?.terminal && !open) {
-      xtermRef.current?.terminal?.clear();
-    }
-  }, [open]);
 
   // useEscape();
 
@@ -144,13 +142,33 @@ export default function Terminal() {
   }, [termConfig]);
 
   useEffect(() => {
-    if (submitted) {
+    console.log({
+      submitted,
+      open,
+      ui,
+    });
+    if (submitted || !open || ui !== UI.term) {
       if (attachAddonRef.current) {
+        console.log(`Disposing of pty due to state change`, {
+          addon: attachAddonRef.current,
+        });
         attachAddonRef.current.dispose();
-        setTermConfig(null);
+        attachAddonRef.current = null;
+        setTermExit('');
       }
     }
-  }, [setTermConfig, submitted]);
+
+    return () => {
+      if (attachAddonRef.current) {
+        console.log(`Disposing of pty due to teardown`, {
+          addon: attachAddonRef.current,
+        });
+        attachAddonRef.current.dispose();
+        attachAddonRef.current = null;
+        setTermExit('');
+      }
+    };
+  }, [setTermConfig, submitted, open, ui, setTermExit]);
 
   const [appDb] = useAtom(appDbAtom);
 

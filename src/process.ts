@@ -2232,10 +2232,10 @@ class Processes extends Array<ProcessInfo> {
     }
   }
 
-  public removeMostRecentPrompt() {
+  public removeCurrentProcess() {
     const info = this.find(
       (processInfo) =>
-        processInfo.scriptPath && processInfo.type === ProcessType.Prompt
+        processInfo.scriptPath === kitState.scriptPath && processInfo.type === ProcessType.Prompt
     );
     if (info) {
       this.removeByPid(info.pid);
@@ -2251,8 +2251,10 @@ export const removeAbandonnedKit = () => {
   );
 
   if (kitProcess) {
-    log.info(`🛑 Cancel main menu process: ${kitProcess.scriptPath}`);
-    processes.removeByPid(kitProcess.pid);
+    setTimeout(() => {
+      log.info(`🛑 Cancel main menu process: ${kitProcess.scriptPath}`);
+      processes.removeByPid(kitProcess.pid);
+    }, 250);
   }
 };
 
@@ -2406,7 +2408,7 @@ export const destroyAllProcesses = () => {
 
 emitter.on(
   KitEvent.RemoveMostRecent,
-  processes.removeMostRecentPrompt.bind(processes)
+  processes.removeCurrentProcess.bind(processes)
 );
 // emitter.on(KitEvent.MainScript, () => {
 //   sendToPrompt(Channel.SET_DESCRIPTION, 'Run Script');

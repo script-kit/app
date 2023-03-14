@@ -12,7 +12,6 @@ import { emitter, KitEvent } from './events';
 import { TermConfig } from './types';
 import { displayError } from './error';
 
-let exited = false;
 let t: any = null;
 
 type TermSize = {
@@ -94,8 +93,6 @@ const teardown = () => {
 export const readyPty = async () => {
   ipcMain.on(AppChannel.TERM_READY, async (event, config: TermConfig) => {
     ipcMain.once(AppChannel.TERM_EXIT, () => {
-      if (exited) return;
-      exited = true;
       teardown();
     });
 
@@ -149,7 +146,6 @@ export const readyPty = async () => {
 
     const shell = config?.shell || config?.env?.KIT_SHELL || defaultShell;
 
-    exited = false;
     try {
       t = pty.spawn(shell, args, {
         useConpty: false,
@@ -197,8 +193,6 @@ export const readyPty = async () => {
     });
 
     t.onExit(() => {
-      if (exited) return;
-      exited = true;
       log.info(
         `🐲 Pty process exited`,
         JSON.stringify({ closeOnExit: config?.closeOnExit })
@@ -211,7 +205,7 @@ export const readyPty = async () => {
         } else {
           teardown();
 
-          emitter.emit(KitEvent.SetSubmitValue, '');
+          emitter.emit(KitEvent.TermExited, '');
         }
         // t = null;
       } catch (error) {

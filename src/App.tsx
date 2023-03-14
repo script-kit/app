@@ -128,6 +128,7 @@ import {
   zoomAtom,
   hasBorderAtom,
   channelAtom,
+  termExitAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -267,6 +268,7 @@ export default function App() {
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
   const setTermConfig = useSetAtom(termConfigAtom);
+  const setTermExit = useSetAtom(termExitAtom);
 
   const [zoomLevel, setZoom] = useAtom(zoomAtom);
   const hasBorder = useAtomValue(hasBorderAtom);
@@ -386,6 +388,7 @@ export default function App() {
 
       document?.activeElement?.dispatchEvent(keyboardEvent);
     },
+    [Channel.TERM_EXIT]: setTermExit,
 
     [WindowChannel.SET_LAST_LOG_LINE]: setLastLogLine,
     [WindowChannel.SET_LOG_VALUE]: setLogValue,
@@ -456,6 +459,12 @@ export default function App() {
     };
     ipcRenderer.on(AppChannel.CSS_VARIABLE, handleCSSVariable);
 
+    const handleTermExit = (_: any, data: string) => {
+      setTermExit(data);
+    };
+
+    ipcRenderer.on(AppChannel.TERM_EXIT, handleTermExit);
+
     const handleZoom = (_, data) => {
       setZoom(data);
     };
@@ -471,6 +480,7 @@ export default function App() {
       ipcRenderer.off(AppChannel.CSS_VARIABLE, handleCSSVariable);
       ipcRenderer.off(AppChannel.SET_TERM_CONFIG, handleTermConfig);
       ipcRenderer.off(AppChannel.ZOOM, handleZoom);
+      ipcRenderer.off(AppChannel.TERM_EXIT, handleTermExit);
     };
   }, [messageMap]);
 
