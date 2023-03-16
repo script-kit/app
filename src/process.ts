@@ -1902,6 +1902,7 @@ const createChild = ({
     silent: true,
     stdio: 'pipe',
     // ...(isWin ? {} : { execPath }),
+    // Could I possibly use shebang here?
     execPath,
     cwd: os.homedir(),
     env: {
