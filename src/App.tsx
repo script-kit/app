@@ -129,6 +129,7 @@ import {
   hasBorderAtom,
   channelAtom,
   termExitAtom,
+  appendInputAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -218,6 +219,7 @@ export default function App() {
   const setExit = useSetAtom(exitAtom);
   const setScriptHistory = useSetAtom(_history);
   const setInput = useSetAtom(inputAtom);
+  const appendInput = useSetAtom(appendInputAtom);
   const setPlaceholder = useSetAtom(placeholderAtom);
   const setPromptData = useSetAtom(promptDataAtom);
   const setTheme = useSetAtom(themeAtom);
@@ -339,6 +341,7 @@ export default function App() {
     [Channel.SET_FOOTER]: (html) => setFooter(DOMPurify.sanitize(html)),
     [Channel.SET_FILTER_INPUT]: setFilterInput,
     [Channel.SET_INPUT]: setInput,
+    [Channel.APPEND_INPUT]: appendInput,
     [Channel.SET_LOADING]: setLoading,
     [Channel.SET_NAME]: setName,
     [Channel.SET_TEXTAREA_VALUE]: setTextareaValue,

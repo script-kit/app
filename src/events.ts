@@ -13,7 +13,7 @@ export enum KitEvent {
   RunPromptProcess = 'RunPromptProcess',
   CheckForUpdates = 'CheckForUpdates',
   RunBackgroundProcess = 'RunBackgroundProcess',
-  RemoveBackground = 'REMOVE_BACKGROUND',
+  RemoveProcess = 'RemoveProcess',
   KillProcess = 'KillProcess',
   OpenLog = 'OpenLog',
   OpenScript = 'OpenScript',

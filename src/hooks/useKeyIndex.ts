@@ -1,5 +1,6 @@
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
+import { useEffect, useRef } from 'react';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
@@ -8,6 +9,7 @@ import {
   mouseEnabledAtom,
   inputFocusAtom,
   shortcutsAtom,
+  listAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -18,6 +20,13 @@ export default () => {
   const [channel] = useAtom(channelAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
+
+  // useEffect(() => {
+  //   const list = document.getElementById('list');
+  //   if (!list) return;
+
+  //   listRef.current = list;
+  // }, []);
 
   useHotkeys(
     'up',

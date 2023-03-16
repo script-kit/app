@@ -17,6 +17,7 @@ import {
   editorSuggestionsAtom,
   inputAtom,
   openAtom,
+  scrollToAtom,
   uiAtom,
 } from '../jotai';
 import { useMountMainHeight } from '../hooks';
@@ -102,6 +103,7 @@ export default function Editor() {
   const [editorSuggestions] = useAtom(editorSuggestionsAtom);
   const editorAppend = useAtomValue(editorAppendAtom);
   const disposeRef = useRef<any>(null);
+  const [scrollTo, setScrollTo] = useAtom(scrollToAtom);
 
   const m = useMonaco();
 
@@ -322,6 +324,33 @@ export default function Editor() {
       editor.revealPosition(position);
     }
   }, [config, editor]);
+
+  useEffect(() => {
+    if (editor && scrollTo) {
+      if (scrollTo === 'bottom') {
+        const lineNumber = editor.getModel()?.getLineCount() || 0;
+
+        const column =
+          (editor?.getModel()?.getLineContent(lineNumber).length || 0) + 1;
+
+        const position = { lineNumber, column };
+        editor.setPosition(position);
+
+        editor.revealPosition(position);
+      }
+
+      if (scrollTo === 'center') {
+        const lineNumber = editor.getModel()?.getLineCount() || 0;
+        editor.revealLineInCenter(Math.floor(lineNumber / 2));
+      }
+
+      if (scrollTo === 'top') {
+        editor.setScrollPosition({ scrollTop: 0 });
+      }
+
+      setScrollTo(null);
+    }
+  }, [editor, scrollTo, setScrollTo]);
 
   useEffect(() => {
     if (ui === UI.editor && open && editor) {

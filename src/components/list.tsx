@@ -19,6 +19,8 @@ import {
   appDbAtom,
   infoHeightAtom,
   promptDataAtom,
+  indexHookAtom,
+  listAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 import { DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from '../defaults';
@@ -52,7 +54,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const itemHeight = useAtomValue(itemHeightAtom);
   const infoHeight = useAtomValue(infoHeightAtom);
   const promptData = useAtomValue(promptDataAtom);
-
+  const [list, setList] = useAtom(listAtom);
   // const listWidth = useMotionValue('100%');
 
   const onIndexSubmit = useCallback(
@@ -75,10 +77,16 @@ export default function ChoiceList({ width, height }: ListProps) {
   );
 
   useEffect(() => {
-    if (choices.length && height) {
-      (listRef as any).current.scrollToItem(index);
+    if (listRef.current) {
+      setList(listRef.current);
     }
-  }, [index, choices, height, flagValue]);
+  }, [setList]);
+
+  // useEffect(() => {
+  //   if (choices.length && height) {
+  //     (listRef as any).current.scrollToItem(index);
+  //   }
+  // }, [index, choices, height, flagValue]);
 
   return (
     <div

@@ -6,8 +6,10 @@ import { kitPath } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess, runScript } from './kit';
 import { online, scheduleMap } from './state';
 import { Trigger } from './enums';
+import { emitter, KitEvent } from './events';
 
 export const cancelJob = (filePath: string) => {
+  if (!filePath) return false;
   let success = false;
   if (scheduleMap.has(filePath)) {
     log.info(`Unscheduling: ${filePath}`);
@@ -126,3 +128,5 @@ export const scheduleScriptChanged = ({
     log.warn((error as any)?.message);
   }
 };
+
+emitter.on(KitEvent.RemoveProcess, cancelJob);

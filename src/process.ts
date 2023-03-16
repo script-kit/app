@@ -921,6 +921,18 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, value });
   }),
 
+  APPEND_INPUT: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.APPEND_INPUT, input);
+
+    childSend(child, { channel, value });
+  }),
+
+  SCROLL_TO: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SCROLL_TO, value);
+
+    childSend(child, { channel, value });
+  }),
+
   SET_PLACEHOLDER: (data) => {
     setPlaceholder(data.value);
   },
@@ -2129,9 +2141,8 @@ class Processes extends Array<ProcessInfo> {
       }
 
       const processInfo = processes.getByPid(pid) as ProcessInfo;
-      if (processInfo?.type === ProcessType.Background) {
-        emitter.emit(KitEvent.RemoveBackground, processInfo.scriptPath);
-      }
+      emitter.emit(KitEvent.RemoveProcess, processInfo.scriptPath);
+
 
       if (!processInfo) return;
 
@@ -2201,7 +2212,7 @@ class Processes extends Array<ProcessInfo> {
     if (index === -1) return;
     const { child, type, scriptPath } = this[index];
     if (!child?.killed) {
-      emitter.emit(KitEvent.RemoveBackground, scriptPath);
+      emitter.emit(KitEvent.RemoveProcess, scriptPath);
       child?.removeAllListeners();
       child?.kill();
 

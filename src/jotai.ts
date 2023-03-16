@@ -543,6 +543,10 @@ export const defaultValueAtom = atom('');
 export const _index = atom(
   (g) => g(index),
   (g, s, a: number) => {
+    const list = g(listAtom);
+    if (list) {
+      (list as any).scrollToItem(a);
+    }
     const cs = g(choices);
     // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
     const clampedIndex = a < 0 ? cs.length - 1 : a > cs.length - 1 ? 0 : a;
@@ -715,6 +719,10 @@ export const _choices = atom((g) =>
 );
 
 export const _input = atom('');
+export const appendInputAtom = atom(null, (g, s, a: string) => {
+  const input = g(_input);
+  s(_input, input + a);
+});
 
 const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
   if (!a) return false;
@@ -773,9 +781,11 @@ export const changeAtom = atom((g) => (data: any) => {
   channel(Channel.CHANGE, { value: data });
 });
 
+export const inputCommandChars = atom();
+
 export const inputAtom = atom(
   (g) => g(_input),
-  (g, s, a: string) => {
+  async (g, s, a: string) => {
     const prevInput = g(_input);
 
     if (a !== g(_input)) s(_inputChangedAtom, true);
@@ -805,6 +815,15 @@ export const inputAtom = atom(
     if (g(_tabChangedAtom) && prevInput !== a) {
       s(_tabChangedAtom, false);
       return;
+    }
+
+    const commandChars = g(inputCommandChars);
+    for await (const ch of commandChars) {
+      if (a.length < prevInput.length && prevInput.endsWith(ch)) return;
+      if (a.endsWith(ch)) {
+        // eslint-disable-next-line promise/param-names
+        await new Promise((r) => setTimeout(r, 50));
+      }
     }
 
     // TODO: flaggedValue state? Or prevMode when flagged? Hmm...
@@ -1119,6 +1138,7 @@ export const promptDataAtom = atom(
       s(filterInputAtom, ``);
 
       s(processingAtom, false);
+      s(inputCommandChars, a?.inputCommandChars || []);
 
       if (Object.keys(a?.flags || []).length) {
         s(flagsAtom, a?.flags);
@@ -2001,3 +2021,7 @@ export const termExitAtom = atom(null, (g, s, a: string) => {
     s(submitValueAtom, a);
   }
 });
+
+export const scrollToAtom = atom<'top' | 'bottom' | 'center' | null>(null);
+
+export const listAtom = atom(null);

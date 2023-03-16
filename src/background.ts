@@ -10,6 +10,7 @@ import { runPromptProcess } from './kit';
 import { Trigger } from './enums';
 
 export const removeBackground = (filePath: string) => {
+  if (!filePath) return;
   if (backgroundMap.get(filePath)) {
     const { child } = backgroundMap.get(filePath) as Background;
     backgroundMap.delete(filePath);
@@ -88,4 +89,4 @@ emitter.on(
   }
 );
 
-emitter.on(KitEvent.RemoveBackground, removeBackground);
+emitter.on(KitEvent.RemoveProcess, removeBackground);
