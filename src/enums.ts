@@ -35,6 +35,7 @@ export enum AppChannel {
   TERM_ATTACHED = 'TERM_ATTACHED',
   SET_TERM_CONFIG = 'SET_TERM_CONFIG',
   ZOOM = 'ZOOM',
+  TERM_KILL = 'TERM_KILL',
 }
 
 export enum WindowChannel {

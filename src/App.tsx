@@ -624,6 +624,7 @@ export default function App() {
               </header>
             )}
             <main
+              id="main"
               ref={mainRef}
               className="flex-1 min-h-1 overflow-y-hidden w-full"
               onPaste={onPaste}

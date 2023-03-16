@@ -584,6 +584,9 @@ code::after {
   @apply focus:shadow-md;
   @apply py-1 px-3;
   @apply border border-text-base border-opacity-15;
+
+  /* Set the max width to full - 3rem */
+  max-width: calc(100% - 8rem);
 }
 
 .rce-mbox .left::after {
@@ -675,6 +678,14 @@ code::after {
   @apply px-2 py-3;
   @apply -mt-2 mb-4;
   @apply border-1 border-text-base/10 rounded;
+}
+
+.kit-mbox-wrapper pre {
+  @apply relative;
+  @apply p-3;
+  @apply border border-text-base/10 rounded;
+  @apply bg-text-base/5;
+  @apply hover:bg-text-base/10;
 }
 
 .kit-mbox-copied:hover::before,

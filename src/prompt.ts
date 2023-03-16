@@ -597,6 +597,7 @@ export const resize = async ({
   isSplash,
   hasPreview,
   hasInput,
+  forceResize,
 }: ResizeData) => {
   log.silly({
     id,
@@ -612,8 +613,8 @@ export const resize = async ({
     resize: kitState.resize,
     promptId: kitState.promptId,
   });
-  log.silly(`function: resize`);
-  if (!kitState.resize) return;
+  log.silly(`function: resize`, { forceResize });
+  if (!kitState.resize && !forceResize) return;
 
   if (kitState.promptId !== id) {
     log.verbose(`📱 Resize: ${id} !== ${kitState.promptId}`);
@@ -635,6 +636,11 @@ export const resize = async ({
 
   const targetHeight = topHeight + mainHeight + footerHeight;
   const maxHeight = Math.max(DEFAULT_HEIGHT, currentHeight);
+
+  log.silly({
+    targetHeight,
+    maxHeight,
+  });
 
   let width = currentWidth;
   let height = Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
@@ -1162,6 +1168,7 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
   });
   if (promptWindow?.isDestroyed()) return;
   log.verbose(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
+  if (kitState.promptUI === UI.div) return;
 
   // If widths or height don't match, send SET_RESIZING to prompt
 

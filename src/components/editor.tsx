@@ -306,6 +306,9 @@ export default function Editor() {
   );
 
   // When inputValue changes, respect scrollTo bottom
+  // Why did I want inputValue to always scrollTo bottom??? I don't remember... :/ Turning it off for now
+  // This was for appending text programmatically!
+  // TODO: Add "autoscroll" option?
   useEffect(() => {
     if (editor && (config as EditorOptions).scrollTo === 'bottom') {
       const lineNumber = editor.getModel()?.getLineCount() || 0;
@@ -318,7 +321,7 @@ export default function Editor() {
 
       editor.revealPosition(position);
     }
-  }, [inputValue, config, editor]);
+  }, [config, editor]);
 
   useEffect(() => {
     if (ui === UI.editor && open && editor) {

@@ -47,6 +47,7 @@ export interface ResizeData {
   inputChanged: boolean;
   placeholderOnly: boolean;
   nullChoices: boolean;
+  forceResize: boolean;
 }
 
 export interface Survey {
@@ -64,4 +65,5 @@ export type TermConfig = {
   shell: string | boolean;
   args?: string[];
   closeOnExit?: boolean;
+  pid?: number;
 };

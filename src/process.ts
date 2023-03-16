@@ -49,7 +49,7 @@ import {
   kitDotEnvPath,
   mainScriptPath,
   themeDbPath,
-  isBin
+  execPath
 } from '@johnlindquist/kit/cjs/utils';
 
 import { subscribeKey } from 'valtio/utils';
@@ -994,6 +994,7 @@ const kitMessageMap: ChannelHandler = {
         shell: value?.shell,
         args: value?.args || [],
         closeOnExit: typeof value?.closeOnExit !== "undefined" ? value?.closeOnExit : true,
+        pid,
       } as TermConfig)
     }
     log.silly(`SET_PROMPT_DATA`);
@@ -1896,11 +1897,12 @@ const createChild = ({
     ...kitState.kenvEnv,
   };
   // console.log({ env });
-  // const isWin = os.platform().startsWith('win');
+  const isWin = os.platform().startsWith('win');
   const child = fork(entry, args, {
     silent: true,
     stdio: 'pipe',
     // ...(isWin ? {} : { execPath }),
+    execPath,
     cwd: os.homedir(),
     env: {
       ...env,
@@ -2122,6 +2124,7 @@ class Processes extends Array<ProcessInfo> {
 
       if (child?.pid === kitState?.pid) {
         sendToPrompt(Channel.EXIT, pid);
+        emitter.emit(KitEvent.TERM_KILL, child?.pid)
       }
 
       const processInfo = processes.getByPid(pid) as ProcessInfo;

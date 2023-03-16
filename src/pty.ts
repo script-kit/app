@@ -96,6 +96,12 @@ export const readyPty = async () => {
       teardown();
     });
 
+    emitter.on(KitEvent.TERM_KILL, (pid) => {
+      if (pid === config?.pid) {
+        teardown();
+      }
+    });
+
     ipcMain.on(AppChannel.TERM_RESIZE, resizeHandler);
     ipcMain.on(AppChannel.TERM_INPUT, inputHandler);
 

@@ -29,6 +29,7 @@ export enum KitEvent {
   DID_FINISH_LOAD = 'DID_FINISH_LOAD',
   SetSubmitValue = 'SetSubmitValue',
   TermExited = 'TermExited',
+  TERM_KILL = 'TERM_KILL',
 }
 
 interface KitEmitter {

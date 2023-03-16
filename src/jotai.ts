@@ -701,8 +701,10 @@ export const scoredChoices = atom(
     }
 
     if (cs && g(uiAtom) === UI.arg) {
+      if (g(promptDataAtom)?.hasOnNoChoices) return;
       // console.log(`Resize Button height`);
       const itemHeight = g(itemHeightAtom);
+
       s(mainHeightAtom, cs.length * itemHeight);
     }
   }
@@ -964,6 +966,15 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     mh = DEFAULT_HEIGHT;
   }
 
+  let forceResize = false;
+  try {
+    forceResize =
+      (document as any)?.getElementById('main')?.clientHeight <
+        g(itemHeightAtom) && mh > 0;
+  } catch (error) {
+    g(logAtom)(`Force resize error`);
+  }
+
   const data: ResizeData = {
     id: promptData?.id || 'missing',
     reason,
@@ -983,8 +994,10 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     hasPreview,
     inputChanged: g(_inputChangedAtom),
     nullChoices,
+    forceResize,
   };
 
+  // console.log(`RESIZE DATA 👋`)
   // console.log(data);
 
   s(resizeData, data);
@@ -1157,11 +1170,13 @@ export const promptDataAtom = atom(
       s(prevChoicesAtom, []);
 
       if (
-        a?.choicesType === 'null' ||
-        a?.choicesType === 'function' ||
-        a?.choicesType === 'async'
+        a?.ui === UI.arg &&
+        (a?.choicesType === 'null' ||
+          a?.choicesType === 'function' ||
+          a?.choicesType === 'async')
       ) {
-        s(unfilteredChoicesAtom, []);
+        // s(unfilteredChoicesAtom, []);
+        g(logAtom)(`null | function | async - skip clearing choices`);
       }
 
       if (a?.choicesType === 'async') {
