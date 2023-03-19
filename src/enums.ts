@@ -36,6 +36,10 @@ export enum AppChannel {
   SET_TERM_CONFIG = 'SET_TERM_CONFIG',
   ZOOM = 'ZOOM',
   TERM_KILL = 'TERM_KILL',
+  AUDIO_DATA = 'AUDIO_DATA',
+  TAKE_SELFIE = 'TAKE_SELFIE',
+  SET_WEBCAM_ID = 'SET_WEBCAM_ID',
+  SET_MIC_ID = 'SET_MIC_ID',
 }
 
 export enum WindowChannel {

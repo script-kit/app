@@ -425,6 +425,7 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, bounds });
   }),
 
+
   GET_BACKGROUND: toProcess(({ child }, { channel }) => {
     childSend(child, { channel, tasks: getBackgroundTasks() });
   }),
@@ -922,7 +923,7 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   APPEND_INPUT: toProcess(async ({ child }, { channel, value }) => {
-    sendToPrompt(Channel.APPEND_INPUT, input);
+    sendToPrompt(Channel.APPEND_INPUT, value);
 
     childSend(child, { channel, value });
   }),
@@ -1009,7 +1010,7 @@ const kitMessageMap: ChannelHandler = {
         pid,
       } as TermConfig)
     }
-    log.silly(`SET_PROMPT_DATA`);
+    // log.silly(`SET_PROMPT_DATA`);
 
 
     // if (value?.ui === UI.term) {
@@ -1840,6 +1841,9 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(channel, value);
 
     childSend(child, { channel, value });
+  }),
+  GET_DEVICES: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(channel, value);
   }),
 };
 

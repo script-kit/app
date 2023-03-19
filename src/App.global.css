@@ -726,3 +726,18 @@ code::after {
 .main-rounded {
   border-radius: 0.6rem;
 }
+
+@keyframes pulse-green-glow {
+  0% {
+    text-shadow: 0 0 0px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary)), 0 0 0px rgb(var(--color-primary));
+  }
+  70% {
+    text-shadow: 0px 0 0px rgb(var(--color-primary)),
+      0 0 20px rgb(var(--color-primary)), 0 0 0px rgb(var(--color-primary));
+  }
+  100% {
+    text-shadow: 0 0 0px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary)), 0 0 0px rgb(var(--color-primary));
+  }
+}

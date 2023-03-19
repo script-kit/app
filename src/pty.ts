@@ -21,6 +21,66 @@ type TermSize = {
 
 const USE_BINARY = os.platform() !== 'win32';
 
+function getDefaultShell(): string {
+  switch (process.platform) {
+    case 'win32':
+      return 'cmd.exe';
+    case 'linux':
+      return 'bash';
+    default:
+      return 'zsh';
+  }
+}
+
+function getShellConfig(config: TermConfig, defaultShell: string) {
+  let login = false;
+  if (typeof config.shell === 'boolean') {
+    if (config.shell) {
+      config.shell = config.env.KIT_SHELL || defaultShell;
+      login = true;
+    } else if (config.command) {
+      // eslint-disable-next-line prefer-destructuring
+      config.shell = config?.command.split(' ')[0];
+      config.command = config?.command.split(' ').slice(1).join(' ');
+    } else {
+      config.command = '';
+    }
+  }
+
+  const args = config?.args?.length
+    ? config.args
+    : process.platform === 'win32' || !login
+    ? []
+    : ['-l'];
+
+  const shell = config.shell || config.env.KIT_SHELL || defaultShell;
+
+  return { shell, args };
+}
+
+function getPtyOptions(config: TermConfig) {
+  let env: any = {};
+
+  env = {
+    ...process.env,
+    ...config?.env,
+  };
+
+  env.PATH = config?.env?.PATH || KIT_FIRST_PATH;
+  if (kitState.isWindows) {
+    env.Path = config?.env?.PATH || KIT_FIRST_PATH;
+  }
+  return {
+    useConpty: false,
+    name: 'xterm-256color',
+    cols: 80,
+    rows: 24,
+    cwd: untildify(config?.cwd || os.homedir()),
+    encoding: USE_BINARY ? null : 'utf8',
+    env,
+  };
+}
+
 function bufferString(timeout: number) {
   let s = '';
   let sender: any = null;
@@ -109,59 +169,12 @@ export const readyPty = async () => {
 
     log.info(`🐲 >_ Starting pty server`);
 
-    let env: any = {};
-
-    env = {
-      ...process.env,
-      ...config?.env,
-    };
-
-    env.PATH = config?.env?.PATH || KIT_FIRST_PATH;
-    if (kitState.isWindows) {
-      env.Path = config?.env?.PATH || KIT_FIRST_PATH;
-    }
-
-    const defaultShell =
-      process.platform === 'win32'
-        ? 'cmd.exe'
-        : // if linux, use bash
-        process.platform === 'linux'
-        ? 'bash'
-        : // if mac, use zsh
-          'zsh';
-
-    let login = false;
-    if (typeof config?.shell === 'boolean') {
-      if (config.shell) {
-        config.shell = config?.env?.KIT_SHELL || defaultShell;
-        login = true;
-      } else if (config?.command) {
-        config.shell = config?.command?.split(' ')?.[0];
-        config.command = config?.command?.split(' ')?.slice(1).join(' ');
-      } else {
-        config.command = 'echo "No shell or command provided"';
-      }
-    }
-
-    const args = config?.args?.length
-      ? config.args
-      : [
-          // Start in login mode if not windows
-          ...(process.platform === 'win32' || !login ? [] : ['-l']),
-        ];
-
-    const shell = config?.shell || config?.env?.KIT_SHELL || defaultShell;
+    const defaultShell = getDefaultShell();
+    const { shell, args } = getShellConfig(config, defaultShell);
+    const ptyOptions = getPtyOptions(config);
 
     try {
-      t = pty.spawn(shell, args, {
-        useConpty: false,
-        name: 'xterm-256color',
-        cols: 80,
-        rows: 24,
-        cwd: untildify(config?.cwd || os.homedir()),
-        encoding: USE_BINARY ? null : 'utf8',
-        env,
-      });
+      t = pty.spawn(shell, args, ptyOptions);
     } catch (error) {
       displayError(error as any);
 

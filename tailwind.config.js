@@ -98,6 +98,11 @@ module.exports = {
       },
     },
     extend: {
+      animation: {
+        'spin-slow': 'spin 3s linear infinite',
+
+        'pulse-green-glow': 'pulse-green-glow 1.5s infinite ease-in-out',
+      },
       backgroundImage: (theme) => ({
         'random-shapes': "url('/src/svg/ui/random-shapes.svg')",
       }),

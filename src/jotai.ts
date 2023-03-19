@@ -177,7 +177,7 @@ export const infoChoicesAtom = atom(
   (g) => g(infoChoices),
   (g, s, a: Choice[]) => {
     s(infoChoices, a);
-    s(infoHeightAtom, a.length * BUTTON_HEIGHT);
+    s(infoHeightAtom, a.length * g(itemHeightAtom));
   }
 );
 
@@ -502,6 +502,8 @@ export const editorConfigAtom = atom(
 
     const channel = g(channelAtom);
     channel(Channel.INPUT, { input: a.value });
+
+    s(loadingAtom, false);
   }
 );
 
@@ -543,13 +545,13 @@ export const defaultValueAtom = atom('');
 export const _index = atom(
   (g) => g(index),
   (g, s, a: number) => {
-    const list = g(listAtom);
-    if (list) {
-      (list as any).scrollToItem(a);
-    }
     const cs = g(choices);
     // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
     const clampedIndex = a < 0 ? cs.length - 1 : a > cs.length - 1 ? 0 : a;
+    const list = g(listAtom);
+    if (list) {
+      (list as any).scrollToItem(clampedIndex);
+    }
 
     // const clampedIndex = clamp(a, 0, cs.length - 1);
 
@@ -704,13 +706,9 @@ export const scoredChoices = atom(
       }
     }
 
-    if (cs && g(uiAtom) === UI.arg) {
-      if (g(promptDataAtom)?.hasOnNoChoices) return;
-      // console.log(`Resize Button height`);
-      const itemHeight = g(itemHeightAtom);
-
-      s(mainHeightAtom, cs.length * itemHeight);
-    }
+    const itemHeight = g(itemHeightAtom);
+    const height = (cs?.length || 0) * itemHeight + g(infoHeightAtom);
+    s(mainHeightAtom, height);
   }
 );
 
@@ -720,8 +718,13 @@ export const _choices = atom((g) =>
 
 export const _input = atom('');
 export const appendInputAtom = atom(null, (g, s, a: string) => {
-  const input = g(_input);
-  s(_input, input + a);
+  const ui = g(uiAtom);
+  if (ui === UI.editor) {
+    s(editorAppendAtom, a);
+  } else {
+    const input = g(_input);
+    s(_input, input + a);
+  }
 });
 
 const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
@@ -923,30 +926,22 @@ const mainHeight = atom(0);
 const resizeData = atom({});
 
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
-  // const log = g(logAtom);
-  // log(`resize: ${reason}`);
   if (g(submittedAtom)) return;
 
   const ui = g(uiAtom);
 
-  // console.log({ ui });
   if ([UI.term, UI.editor, UI.drop, UI.textarea, UI.emoji].includes(ui)) return;
 
+  const scoredChoicesLength = g(scoredChoices)?.length;
   const infoChoicesLength = g(infoChoicesAtom).length;
-
   const hasPanel = g(_panelHTML) !== '';
   const nullChoices = g(nullChoicesAtom);
   const noInfo = infoChoicesLength === 0;
-
   let mh = nullChoices && !hasPanel && noInfo ? 0 : g(mainHeight);
 
-  // UI's where user can set the HTML
   if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
 
-  // if (!r) return;
-
   const promptData = g(promptDataAtom);
-
   const placeholderOnly =
     promptData?.mode === Mode.FILTER &&
     g(scoredChoices).length === 0 &&
@@ -954,20 +949,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     ui === UI.arg;
 
   let th = g(topRefAtom)?.clientHeight || 88;
-
   const hasPreview = Boolean(g(hasPreviewAtom));
-
-  // console.log({
-  //   mainHeight: g(mainHeight),
-  //   panel: g(_panelHTML),
-  //   mh,
-  //   th,
-  //   hasPreview,
-  //   currentPromptHasPreviews,
-  //   placeholderOnly,
-  //   hasPanel,
-  //   nullChoices,
-  // });
 
   if (hasPreview && mh < DEFAULT_HEIGHT) {
     mh = DEFAULT_HEIGHT;
@@ -977,19 +959,29 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     th = TOP_HEIGHT;
   }
 
-  if (
-    ui === UI.arg &&
-    (g(scoredChoices)?.length + infoChoicesLength) * BUTTON_HEIGHT >
-      DEFAULT_HEIGHT
-  ) {
+  const itemHeight = g(itemHeightAtom);
+
+  const choicesHeight = (scoredChoicesLength + infoChoicesLength) * itemHeight;
+  if (ui === UI.arg && choicesHeight > DEFAULT_HEIGHT) {
     mh = DEFAULT_HEIGHT;
+  } else {
+    mh = choicesHeight;
   }
 
   let forceResize = false;
   try {
-    forceResize =
-      (document as any)?.getElementById('main')?.clientHeight <
-        g(itemHeightAtom) && mh > 0;
+    const ch = (document as any)?.getElementById('main')?.clientHeight;
+
+    // g(logAtom)({
+    //   ch,
+    //   itemHeight,
+    //   scoredChoicesLength,
+    //   infoChoicesLength,
+    // });
+
+    forceResize = Boolean(
+      ch < (scoredChoicesLength + infoChoicesLength) * itemHeight
+    );
   } catch (error) {
     g(logAtom)(`Force resize error`);
   }
@@ -1002,7 +994,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     topHeight: th,
     ui,
     mainHeight: mh,
-    footerHeight: 30, // TODO: 2px more to account for border 🤔
+    footerHeight: 30,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
@@ -1015,9 +1007,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     nullChoices,
     forceResize,
   };
-
-  // console.log(`RESIZE DATA 👋`)
-  // console.log(data);
 
   s(resizeData, data);
 
@@ -1037,7 +1026,6 @@ export const mainHeightAtom = atom(
   (g) => g(mainHeight),
   (g, s, a: number) => {
     const prevHeight = g(mainHeight);
-    // if (a === prevHeight) return;
 
     const nextMainHeight = (a < 0 ? 0 : a) + g(infoHeightAtom);
 
@@ -1047,11 +1035,16 @@ export const mainHeightAtom = atom(
     }
 
     s(mainHeight, nextMainHeight);
+    if (a === prevHeight) return;
     resize(g, s, 'MAIN_HEIGHT');
   }
 );
 
-const checkIfSubmitIsDrop = (checkValue: any) => {
+const checkSubmitFormat = (checkValue: any) => {
+  // check for array buffer
+  if (checkValue instanceof ArrayBuffer) {
+    return checkValue;
+  }
   if (Array.isArray(checkValue)) {
     const files = checkValue.map((file) => {
       const fileObject: any = {};
@@ -1299,6 +1292,7 @@ export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
     },
   };
 
+  console.log({ appMessage });
   ipcRenderer.send(channel, appMessage);
 });
 
@@ -1353,7 +1347,7 @@ export const submitValueAtom = atom(
     const f = g(_flag);
     const flag = fValue ? a : f || '';
 
-    const value = checkIfSubmitIsDrop(fValue || a);
+    const value = checkSubmitFormat(fValue || a);
     // const fC = g(focusedChoiceAtom);
 
     // skip if UI.chat
@@ -1361,6 +1355,8 @@ export const submitValueAtom = atom(
     if (g(uiAtom) !== UI.chat) {
       channel(Channel.ON_SUBMIT);
     }
+
+    console.log(typeof value, value);
 
     channel(Channel.VALUE_SUBMITTED, {
       value,
@@ -1397,6 +1393,16 @@ export const submitValueAtom = atom(
     s(_submitValue, value);
     s(flagsAtom, {});
     s(_chatMessagesAtom, []);
+
+    const stream = g(webcamStreamAtom);
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      s(webcamStreamAtom, null);
+      if (document.getElementById('webcam'))
+        (document.getElementById(
+          'webcam'
+        ) as HTMLVideoElement).srcObject = null;
+    }
   }
 );
 
@@ -1432,6 +1438,24 @@ export const openAtom = atom(
       s(pidAtom, 0);
       s(_chatMessagesAtom, []);
       s(prevChoiceId, '');
+
+      const stream = g(webcamStreamAtom);
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+        s(webcamStreamAtom, null);
+        if (document.getElementById('webcam'))
+          (document.getElementById(
+            'webcam'
+          ) as HTMLVideoElement).srcObject = null;
+      }
+
+      const audioRecorder = g(audioRecorderAtom);
+      if (audioRecorder) {
+        if (audioRecorder.state !== 'inactive') {
+          audioRecorder.stop();
+        }
+        s(audioRecorderAtom, null);
+      }
     }
     s(_open, a);
   }
@@ -2025,3 +2049,21 @@ export const termExitAtom = atom(null, (g, s, a: string) => {
 export const scrollToAtom = atom<'top' | 'bottom' | 'center' | null>(null);
 
 export const listAtom = atom(null);
+
+export const webcamStreamAtom = atom<MediaStream | null>(null);
+export const deviceIdAtom = atom<string | null>(null);
+
+const enterPressed = atom(false);
+export const enterPressedAtom = atom(
+  (g) => g(enterPressed),
+  (g, s) => {
+    s(enterPressed, true);
+    setTimeout(() => {
+      s(enterPressed, false);
+    }, 100);
+  }
+);
+
+export const micIdAtom = atom<string | null>(null);
+export const webcamIdAtom = atom<string | null>(null);
+export const audioRecorderAtom = atom<MediaRecorder | null>(null);

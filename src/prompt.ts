@@ -6,7 +6,7 @@
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable consistent-return */
 import glasstron from 'glasstron-clarity';
-import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
+import { PROMPT, Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
   Script,
@@ -480,8 +480,8 @@ export const getCurrentScreenPromptCache = async (
 
   // log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
 
-  if (savedPromptBounds) {
-    log.verbose(`Bounds: found saved bounds for ${scriptPath}`);
+  if (savedPromptBounds && kitState.promptCount === 1) {
+    log.info(`Bounds: found saved bounds for ${scriptPath}`);
     return savedPromptBounds;
   }
 
@@ -566,8 +566,8 @@ export const getCurrentScreenPromptCache = async (
   // }
 };
 
-export const setBounds = (bounds: Partial<Rectangle>) => {
-  log.silly(`function: setBounds`);
+export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
+  log.info(`📐 setBounds, reason ${reason}`);
   promptWindow.setBounds(bounds);
 };
 
@@ -587,44 +587,18 @@ export const isFocused = () => {
 };
 
 export const resize = async ({
-  id,
   reason,
-  scriptPath,
+  id,
   topHeight,
   mainHeight,
   footerHeight,
   ui,
   isSplash,
   hasPreview,
-  hasInput,
   forceResize,
 }: ResizeData) => {
-  log.silly({
-    id,
-    reason,
-    scriptPath,
-    topHeight,
-    mainHeight,
-    footerHeight,
-    ui,
-    isSplash,
-    hasPreview,
-    hasInput,
-    resize: kitState.resize,
-    promptId: kitState.promptId,
-  });
-  log.silly(`function: resize`, { forceResize });
   if (!kitState.resize && !forceResize) return;
-
-  if (kitState.promptId !== id) {
-    log.verbose(`📱 Resize: ${id} !== ${kitState.promptId}`);
-    return;
-  }
-  if (kitState.modifiedByUser) {
-    log.verbose(`📱 Resize: ${id} modified by user`);
-    return;
-  }
-  log.verbose(`📱 Resize ${ui} from ${scriptPath}`);
+  if (kitState.promptId !== id || kitState.modifiedByUser) return;
   if (promptWindow?.isDestroyed()) return;
 
   const {
@@ -633,15 +607,8 @@ export const resize = async ({
     x,
     y,
   } = promptWindow.getBounds();
-
   const targetHeight = topHeight + mainHeight + footerHeight;
   const maxHeight = Math.max(DEFAULT_HEIGHT, currentHeight);
-
-  log.silly({
-    targetHeight,
-    maxHeight,
-  });
-
   let width = currentWidth;
   let height = Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
 
@@ -654,36 +621,19 @@ export const resize = async ({
   width = Math.round(width);
   if (currentHeight === height && currentWidth === width) return;
 
-  log.verbose({ reason, ui, width, height, mainHeight });
-
   if (hasPreview) {
     width = Math.max(getDefaultWidth(), width);
   }
 
   if (isVisible()) {
-    // promptWindow?.setBounds(
-    //   { x, y, width, height },
-    //   resizeAnimate && !hasInput
-    // );
-
     const bounds = { x, y, width: currentWidth, height };
-    log.info({ bounds });
-    promptWindow?.setBounds(
-      bounds
-
-      // resizeAnimate && !hasInput
+    setBounds(
+      bounds,
+      `resize: ${reason} -> target: ${targetHeight} max: ${maxHeight} height: ${height}, force: ${
+        forceResize ? 'true' : 'false'
+      }`
     );
-
-    // if (resizeTimeout) {
-    //   clearTimeout(resizeTimeout);
-    //   resizeAnimate = false;
-    //   resizeTimeout = setTimeout(() => {
-    //     if (promptWindow?.isDestroyed()) return;
-    //     resizeAnimate = true;
-    //   }, 1000);
-    // }
-
-    kitState.resizedByChoices = true && ui === UI.arg;
+    kitState.resizedByChoices = ui === UI.arg;
   }
 };
 
@@ -968,7 +918,7 @@ export const setPromptData = async (promptData: PromptData) => {
 
   if (promptData?.scriptPath !== kitState.scriptPath) return;
 
-  kitState.resize = kitState.resize || promptData.resize;
+  kitState.resize = promptData?.resize || false;
 
   kitState.promptCount += 1;
 
@@ -980,9 +930,16 @@ export const setPromptData = async (promptData: PromptData) => {
   kitState.promptBounds = {
     x: promptData.x || 0,
     y: promptData.y || 0,
-    width: promptData.width || 0,
+    width:
+      promptData.width ||
+      (appDb.mini ? PROMPT.WIDTH.MINI : PROMPT.WIDTH.DEFAULT),
     height: promptData.height || 0,
   };
+
+  log.info({
+    here: `😅`,
+    bounds: kitState.promptBounds,
+  });
 
   kitState.promptId = promptData.id;
   if (kitState.suspended || kitState.screenLocked) return;
@@ -1148,10 +1105,12 @@ export const onHideOnce = (fn: () => void) => {
 };
 
 const subPromptId = subscribeKey(kitState, 'promptId', async () => {
-  log.silly({
-    promptUI: kitState.promptUI,
-    promptId: kitState.promptId,
-  });
+  // log.info({
+  //   here: `👋`,
+  //   promptUI: kitState.promptUI,
+  //   promptId: kitState.promptId,
+  //   bounds: kitState.promptBounds,
+  // });
   // if (
   //   [UI.form, UI.div, UI.none].includes(kitState.promptUI) ||
   //   kitState.scriptPath === '' ||
@@ -1159,8 +1118,22 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
   // )
   //   return;
 
-  if (promptWindow?.isDestroyed()) return;
+  const changed =
+    kitState.promptBounds.width !== promptWindow?.getBounds().width;
 
+  const noCustom =
+    kitState.promptBounds.width ===
+      (appDb.mini ? PROMPT.WIDTH.MINI : PROMPT.WIDTH.DEFAULT) &&
+    kitState.promptBounds.height === 0 &&
+    kitState.promptBounds.x === 0 &&
+    kitState.promptBounds.y === 0;
+
+  const firstPrompt = kitState.promptCount !== 1;
+
+  // Return if it's not the first prompt and there are no custom bounds
+  if (firstPrompt && noCustom && !changed) return;
+
+  if (promptWindow?.isDestroyed()) return;
   const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
     ui: kitState.promptUI,
     resize: kitState.resize,
@@ -1174,7 +1147,7 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
 
   const { width, height } = promptWindow?.getBounds();
   if (bounds.width !== width || bounds.height !== height) {
-    log.info(
+    log.verbose(
       `Started resizing: ${promptWindow?.getSize()}. Prompt count: ${
         kitState.promptCount
       }`
@@ -1186,8 +1159,11 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
 
   log.info(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
   // if (isKitScript(kitState.scriptPath)) return;
-  promptWindow?.setBounds(
-    bounds
+  setBounds(
+    bounds,
+    `promptId ${kitState.promptId} - promptCount ${
+      kitState.promptCount
+    } - kitState.promptBounds ${JSON.stringify(kitState.promptBounds)}`
     // promptWindow?.isVisible() &&
     //   kitState.promptCount > 1 &&
     //   !kitState.promptBounds.height
@@ -1200,7 +1176,6 @@ const subScriptPath = subscribeKey(
   async (scriptPath) => {
     if (promptWindow?.isDestroyed()) return;
     kitState.promptUI = UI.none;
-    kitState.resize = false;
     kitState.resizedByChoices = false;
 
     if (pathsAreEqual(scriptPath || '', kitState.scriptErrorPath)) {
@@ -1208,8 +1183,15 @@ const subScriptPath = subscribeKey(
     }
 
     if (kitState.scriptPath === '') {
-      if (kitState.prevScriptPath && !kitState.resizedByChoices) {
-        log.verbose(
+      log.info(
+        `📄 scriptPath changed: ${kitState.scriptPath}, prompt count: ${kitState.promptCount}`
+      );
+      if (
+        kitState.prevScriptPath &&
+        !kitState.resizedByChoices &&
+        kitState.promptCount === 1
+      ) {
+        log.info(
           `>>>> 🎸 Set script: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
         );
         savePromptBounds(kitState.prevScriptPath, promptWindow.getBounds());
@@ -1274,17 +1256,13 @@ const subEscapePressed = subscribeKey(
   }
 );
 
-const subAppDbMini = subscribeKey(appDb, 'mini', (mini) => {
+const subAppDbMini = subscribeKey(appDb, 'mini', () => {
   clearPromptCache();
 });
 
-const subAppDbCachePrompt = subscribeKey(
-  appDb,
-  'cachePrompt',
-  (cachePrompt) => {
-    clearPromptCache();
-  }
-);
+const subAppDbCachePrompt = subscribeKey(appDb, 'cachePrompt', () => {
+  clearPromptCache();
+});
 
 export const clearPromptCacheFor = async (scriptPath: string) => {
   try {

@@ -293,6 +293,14 @@ export const setupWatchers = async () => {
         'serif'`
         );
 
+        if (envData?.KIT_MIC) {
+          appToPrompt(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
+        }
+
+        if (envData?.KIT_WEBCAM) {
+          appToPrompt(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
+        }
+
         // if (envData?.KIT_SHELL) kitState.envShell = envData?.KIT_SHELL;
         // TODO: Would need to update the dark/light contrast
         // setCSSVariable('--color-text', envData?.KIT_COLOR_TEXT);

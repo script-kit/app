@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-restricted-syntax */
-import { clipboard, ipcMain } from 'electron';
+import { clipboard, ipcMain, nativeImage } from 'electron';
 import log from 'electron-log';
 import { format } from 'date-fns';
 import { ensureDir } from 'fs-extra';
@@ -51,7 +51,7 @@ const handleChannel = (
 
     // log.info(`${message.channel}`, message.pid);
   } else if (message.pid !== -1) {
-    log.warn(`${message.channel} failed on ${message?.pid}`, message);
+    log.warn(`${message.channel} failed on ${message?.pid}`);
   }
 };
 
@@ -210,6 +210,8 @@ export const startIpc = () => {
     Channel.CHAT_MESSAGES_CHANGE,
     Channel.ON_INIT,
     Channel.ON_SUBMIT,
+    Channel.ON_AUDIO_DATA,
+    Channel.GET_DEVICES,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
@@ -273,6 +275,21 @@ export const startIpc = () => {
             return;
           }
         }
+
+        // if (
+        //   typeof message?.state?.value === 'string' &&
+        //   message?.state?.value.startsWith('data:image/png;base64')
+        // ) {
+        //   // convert to image buffer
+        //   try {
+        //     const imgBuffer = nativeImage
+        //       .createFromDataURL(message.state.value)
+        //       .toPNG();
+        //     message.state.value = imgBuffer
+        //   } catch (error) {
+        //     log.error(error);
+        //   }
+        // }
 
         if (child) {
           try {

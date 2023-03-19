@@ -14,5 +14,8 @@
     <true/>
     <key>com.apple.security.device.camera</key>
     <true/>
+    <!-- Add mic access -->
+    <key>com.apple.security.device.microphone</key>
+    <true/>
   </dict>
 </plist>

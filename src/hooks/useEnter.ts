@@ -1,4 +1,4 @@
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import {
@@ -11,6 +11,7 @@ import {
   promptDataAtom,
   submitValueAtom,
   uiAtom,
+  enterPressedAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 
@@ -24,6 +25,7 @@ export default () => {
   const [, setFlag] = useAtom(_flag);
   const [cmd] = useAtom(cmdAtom);
   const [ui] = useAtom(uiAtom);
+  const emitEnter = useSetAtom(enterPressedAtom);
 
   useHotkeys(
     `enter`,
@@ -50,6 +52,11 @@ export default () => {
       if (event.shiftKey) setFlag(`shift`);
       if (event.altKey) setFlag(`opt`);
       if (event.ctrlKey) setFlag(`ctrl`);
+
+      if ([UI.webcam, UI.mic, UI.speech].includes(ui)) {
+        emitEnter();
+        return;
+      }
 
       if (promptData?.strict && panelHTML?.length === 0) {
         if (choices.length && typeof choices[index]?.value !== 'undefined') {

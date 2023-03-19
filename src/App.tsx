@@ -130,6 +130,8 @@ import {
   channelAtom,
   termExitAtom,
   appendInputAtom,
+  micIdAtom,
+  webcamIdAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -140,6 +142,9 @@ import Terminal from './term';
 import Inspector from './components/inspector';
 import { Chat } from './components/chat';
 import InfoList from './components/info';
+import SpeechToText from './speech-to-text';
+import AudioRecorder from './audio-recorder';
+import Webcam from './webcam';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -273,6 +278,9 @@ export default function App() {
   const setTermExit = useSetAtom(termExitAtom);
 
   const [zoomLevel, setZoom] = useAtom(zoomAtom);
+  const setMicId = useSetAtom(micIdAtom);
+  const setWebcamId = useSetAtom(webcamIdAtom);
+
   const hasBorder = useAtomValue(hasBorderAtom);
 
   const channel = useAtomValue(channelAtom);
@@ -379,6 +387,14 @@ export default function App() {
     [Channel.TOAST]: ({ text, options }: ToastData) => {
       toast(text, options);
     },
+    [Channel.GET_DEVICES]: async () => {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+
+      // convert to a plain object
+      const value = devices.map((d) => d.toJSON());
+
+      channel(Channel.GET_DEVICES, { value });
+    },
 
     [Channel.SEND_KEYSTROKE]: (keyData: Partial<KeyData>) => {
       const keyboardEvent = new KeyboardEvent('keydown', {
@@ -474,6 +490,18 @@ export default function App() {
 
     ipcRenderer.on(AppChannel.ZOOM, handleZoom);
 
+    const handleSetMicId = (_, data: string) => {
+      setMicId(data);
+    };
+
+    ipcRenderer.on(AppChannel.SET_MIC_ID, handleSetMicId);
+
+    const handleSetWebcamId = (_, data: string) => {
+      setWebcamId(data);
+    };
+
+    ipcRenderer.on(AppChannel.SET_WEBCAM_ID, handleSetWebcamId);
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
@@ -484,6 +512,8 @@ export default function App() {
       ipcRenderer.off(AppChannel.SET_TERM_CONFIG, handleTermConfig);
       ipcRenderer.off(AppChannel.ZOOM, handleZoom);
       ipcRenderer.off(AppChannel.TERM_EXIT, handleTermExit);
+      ipcRenderer.off(AppChannel.SET_MIC_ID, handleSetMicId);
+      ipcRenderer.off(AppChannel.SET_WEBCAM_ID, handleSetWebcamId);
     };
   }, [messageMap]);
 
@@ -653,6 +683,9 @@ export default function App() {
                 {ui === UI.emoji && <Emoji />}
                 {ui === UI.debugger && <Inspector />}
                 {ui === UI.chat && <Chat />}
+                {ui === UI.mic && <AudioRecorder />}
+                {ui === UI.webcam && <Webcam />}
+                {ui === UI.speech && <SpeechToText />}
               </AnimatePresence>
               <AutoSizer>
                 {({ width, height }) => (

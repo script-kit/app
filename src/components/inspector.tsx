@@ -4,14 +4,11 @@ import { motion } from 'framer-motion';
 
 const Inspector = () => {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1] }}
-      transition={{ duration: 0.25, ease: 'circOut' }}
-      className="w-full h-full min-w-full min-h-full p-5"
-    >
-      <div className="text-2xl text-text-base">Debugger Opening...</div>
-    </motion.div>
+    <div className="h-full w-full flex flex-col justify-center items-center text-text-base text-xl">
+      <h1 className="text-5xl animate-pulse-green-glow">
+        Connecting to Debugger...
+      </h1>
+    </div>
   );
 };
 
