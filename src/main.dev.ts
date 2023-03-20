@@ -708,8 +708,11 @@ const systemEvents = () => {
   });
 
   powerMonitor.addListener('resume', async () => {
+    // wait 5 seconds for the system to wake up
+    await new Promise((resolve) => setTimeout(resolve, 5000));
     log.info(`🌄 System waking. Starting watchers.`);
     await setupWatchers();
+    await destroyInterval();
 
     log.info(`Resume tasks`);
     if (!kitState.updateDownloaded) {
@@ -742,10 +745,14 @@ let macAccessibiltyInterval: any = null;
 
 const configureIntervalMac = (fn = configureInterval) => {
   macAccessibiltyInterval = setTimeout(() => {
-    if (kitState.isMac && kitState.authorized && appDb?.authorized) {
-      log.info(
-        `💻 Accessibility authorized ✅. Kicking uiohook in the pants 👖`
-      );
+    if (kitState.isMac) {
+      if (kitState.authorized && appDb?.authorized) {
+        log.info(
+          `💻 Accessibility authorized ✅. Kicking uiohook in the pants 👖`
+        );
+        fn();
+      }
+    } else {
       fn();
     }
   }, 5000);

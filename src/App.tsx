@@ -693,12 +693,13 @@ export default function App() {
                     {infoChoices?.length > 0 && (
                       <InfoList width={width} height={height} />
                     )}
-                    {(ui === UI.arg && !nullChoices && choices.length > 0 && (
+                    {(((ui === UI.arg && !nullChoices && choices.length > 0) ||
+                      ui === UI.hotkey) && (
                       <>
                         <List height={height} width={width} />
                       </>
                     )) ||
-                      (!!(ui === UI.arg || ui === UI.hotkey || ui === UI.div) &&
+                      (!!(ui === UI.arg || ui === UI.div) &&
                         panelHTML.length > 0 && (
                           <>
                             <Panel width={width} height={height} />

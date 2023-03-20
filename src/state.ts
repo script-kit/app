@@ -10,7 +10,7 @@ import { assign, debounce } from 'lodash';
 import path from 'path';
 import os from 'os';
 import { ChildProcess } from 'child_process';
-import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
+import { app, BrowserWindow, Menu, nativeTheme, Rectangle } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { Script, ProcessInfo } from '@johnlindquist/kit/types/core';

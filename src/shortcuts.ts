@@ -272,7 +272,7 @@ const pauseShortcuts = () => {
 
 const resumeShortcuts = () => {
   log.info(`RESUMING GLOBAL SHORTCUTS`);
-  shortcutMap.forEach((shortcut, filePath) => {
+  shortcutMap.forEach(({ shortcut }, filePath) => {
     const convertedShortcut = convertShortcut(shortcut, filePath);
     log.info({
       filePath,

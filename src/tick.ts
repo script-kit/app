@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import { clipboard, NativeImage } from 'electron';
+import clipboardEventListener from '@crosscopy/clipboard';
 import { Observable, Subscription } from 'rxjs';
 import {
   debounceTime,
@@ -114,16 +115,6 @@ type ClipboardApp = {
   app: FrontmostApp;
 };
 
-// const memory = (kDec = 2) => {
-//   const bytes = process.memoryUsage().rss;
-
-//   const MBytes = bytes / (1024 * 1024);
-//   const roundedMegabytes =
-//     Math.round(MBytes * Math.pow(10, kDec)) / Math.pow(10, kDec);
-
-//   return roundedMegabytes.toString() + ' MB';
-// };
-
 interface ClipboardItem extends Choice {
   type: string;
   timestamp: string;
@@ -145,11 +136,6 @@ export const getClipboardHistory = () => {
   log.info(choice);
 
   kitState.notifyAuthFail = true;
-
-  // emitter.emit(
-  //   KitEvent.RunPromptProcess,
-  //   kitPath('permissions', 'clipboard-history.js')
-  // );
 
   return [choice];
 };
@@ -244,14 +230,28 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
   } catch (error) {
     log.error(error);
   }
-
-  // log.info(kitState.snippet);
 };
 
 let io$Sub: Subscription | null = null;
 let clipboard$Sub: Subscription | null = null;
 
 export const pantsKick = async () => {
+  try {
+    if (io$Sub) {
+      io$Sub.unsubscribe();
+    }
+    if (clipboard$Sub) {
+      clipboard$Sub.unsubscribe();
+    }
+  } catch (error) {
+    log.error(error);
+  }
+
+  try {
+    uIOhook.stop();
+  } catch (error) {
+    log.error(error);
+  }
   log.info(`Kicking pants...`);
   uIOhook.start();
   log.info(`Pants kicked!`);
@@ -349,28 +349,29 @@ export const configureInterval = async () => {
     };
   }).pipe(share());
 
-  let previous = 0;
-  const clipboardText$: Observable<any> = io$.pipe(
-    // tap((event) => {
-    //   log.silly(`clipboardText$`);
-    //   log.silly(event);
-    // }),
-    filter((event: any) => {
-      if (event?.keycode && (event.ctrlKey || event.metaKey)) {
-        const key = toKey(event?.keycode || 0, event.shiftKey);
-        return key === 'c' || key === 'x';
-      }
+  const clipboardText$: Observable<any> = new Observable((observer) => {
+    log.info(`Creating new Observable for clipboard...`);
+    try {
+      log.info(`Attempting to start clipboard...`);
+      clipboardEventListener.on('text', (text) => {
+        try {
+          observer.next(text);
+        } catch (error) {
+          log.error(error);
+        }
+      });
+      clipboardEventListener.listen();
+    } catch (e) {
+      log.error(`🔴 Failed to start clipboard watcher`);
+      log.error(e);
+    }
 
-      if (event?.button === 1 && previous === 2) {
-        previous = 0;
-        return true;
-      }
-
-      previous = event?.button;
-
-      return false;
-    }),
-    debounceTime(200),
+    return () => {
+      log.info(`🛑 Attempting to stop clipboard watcher`);
+      clipboardEventListener.close();
+      log.info(`🛑 Successfully stopped clipboard watcher`);
+    };
+  }).pipe(
     switchMap(async () => {
       if (frontmost) {
         try {
@@ -424,38 +425,6 @@ export const configureInterval = async () => {
     distinctUntilChanged((a, b) => a.text === b.text)
   );
 
-  // const memoryLog = interval(5000).pipe(map(() => memory()));
-
-  // memoryLog.subscribe((s) => {
-  //   log.info(`🧠 Memory`, s);
-  // });
-
-  // let image: NativeImage | null = null;
-  // const clipboardImage$ = tick$.pipe(
-  //   tap(() => {
-  //     image = clipboard.readImage();
-  //   }),
-  //   filter(() => Boolean(image)),
-  //   skip(1),
-  //   map(() => image?.toDataURL()),
-  //   filter((dataUrl) => !dataUrl?.endsWith(',')),
-  //   distinctUntilChanged(),
-  //   map(() => image)
-  // );
-
-  // merge(clipboardText$, clipboardImage$)
-
-  /*
-  {
-  localizedName: '1Password 7',
-  bundleId: 'com.agilebits.onepassword7',
-  bundlePath: '/Applications/1Password 7.app',
-  executablePath: '/Applications/1Password 7.app/Contents/MacOS/1Password 7',
-  isLaunched: true,
-  pid: 812
-}
-*/
-
   if (!clipboard$Sub)
     clipboard$Sub = clipboardText$.subscribe(
       async ({ text, app }: ClipboardApp) => {
@@ -479,8 +448,6 @@ export const configureInterval = async () => {
         );
 
         const appName = isFocused() ? 'Script Kit' : app.localizedName;
-
-        // log.info({ appName, text });
 
         const clipboardItem = {
           id: nanoid(),
@@ -525,9 +492,6 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
           kitState.snippet = '';
 
           await deleteText(stringToDelete);
-
-          // debugging: wait 100ms for the text to be deleted
-          // await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
       emitter.emit(KitEvent.RunPromptProcess, {
@@ -569,14 +533,6 @@ const snippetMap = new Map<
     postfix: boolean;
   }
 >();
-
-// export const maybeStopKeyLogger = () => {
-//   if (snippetMap.size === 0 && kitState.keyloggerOn) {
-//     log.info('📕 Stopping snippets...');
-//     logger.stop();
-//     kitState.keyloggerOn = false;
-//   }
-// };
 
 export const addSnippet = (script: Script) => {
   for (const [key, value] of snippetMap.entries()) {

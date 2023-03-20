@@ -634,9 +634,10 @@ code::after {
 }
 
 .Toastify__toast-theme--light {
-  @apply bg-secondary/50;
-  /* blur */
-  @apply text-text-base/100;
+  @apply bg-bg-base bg-bg-base/75;
+  /* blur background */
+  @apply backdrop-blur-2xl;
+  @apply text-text-base/90;
   @apply border-2 border-secondary;
   @apply text-sm;
 }

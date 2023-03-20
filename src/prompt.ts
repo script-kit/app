@@ -933,7 +933,9 @@ export const setPromptData = async (promptData: PromptData) => {
     width:
       promptData.width ||
       (appDb.mini ? PROMPT.WIDTH.MINI : PROMPT.WIDTH.DEFAULT),
-    height: promptData.height || 0,
+    height: kitState.isMainScript()
+      ? PROMPT.HEIGHT.DEFAULT
+      : promptData.height || 0,
   };
 
   log.info({
@@ -1110,6 +1112,7 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
   //   promptUI: kitState.promptUI,
   //   promptId: kitState.promptId,
   //   bounds: kitState.promptBounds,
+  //   scriptPath: kitState.scriptPath,
   // });
   // if (
   //   [UI.form, UI.div, UI.none].includes(kitState.promptUI) ||
@@ -1141,7 +1144,6 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
   });
   if (promptWindow?.isDestroyed()) return;
   log.verbose(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
-  if (kitState.promptUI === UI.div) return;
 
   // If widths or height don't match, send SET_RESIZING to prompt
 

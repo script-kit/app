@@ -4,7 +4,12 @@ import React, { KeyboardEvent, useCallback, useEffect, useRef } from 'react';
 import { KeyData } from '@johnlindquist/kit/types/kitapp';
 
 import { useAtom } from 'jotai';
-import { placeholderAtom, panelHTMLAtom, hintAtom } from '../jotai';
+import {
+  placeholderAtom,
+  panelHTMLAtom,
+  hintAtom,
+  unfilteredChoicesAtom,
+} from '../jotai';
 import { useEscape, useFocus } from '../hooks';
 
 interface HotkeyProps {
@@ -108,26 +113,42 @@ const WAITING = `Waiting for keypress...`;
 
 export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
   const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
+  const [choices, setChoices] = useAtom(unfilteredChoicesAtom);
   const [, setHint] = useAtom(hintAtom);
 
   const hotkeyRef = useRef<HTMLInputElement>(null);
   useFocus(hotkeyRef);
 
+  const setChoice = useCallback(
+    (name: string) => {
+      setChoices([
+        {
+          name,
+          info: true,
+        },
+      ]);
+    },
+    [setChoices]
+  );
+
   useEffect(() => {
-    setHint(WAITING);
-  }, []);
+    setChoice(WAITING);
+  }, [setChoice]);
 
   const onKeyUp = useCallback(
     (event) => {
       event.preventDefault();
       const modifierString = getModifierString(event);
+      let choiceName = ``;
       if (modifierString) {
-        setHint(hotkeyProse(modifierString));
+        choiceName = hotkeyProse(modifierString);
       } else {
-        setHint(WAITING);
+        choiceName = WAITING;
       }
+
+      setChoice(choiceName);
     },
-    [setHint]
+    [setChoice]
   );
 
   const onKeyDown = useCallback(
@@ -136,7 +157,9 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
 
       const { keyData, modifierString } = getKeyData(event);
 
-      setHint(hotkeyProse(modifierString));
+      const choiceName = hotkeyProse(modifierString);
+
+      setChoice(choiceName);
 
       if (event.key === 'Escape') {
         return;
@@ -149,7 +172,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
         submit(keyData);
       }
     },
-    [setHint, submit]
+    [setChoice, submit]
   );
 
   return (

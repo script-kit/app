@@ -1356,8 +1356,6 @@ export const submitValueAtom = atom(
       channel(Channel.ON_SUBMIT);
     }
 
-    console.log(typeof value, value);
-
     channel(Channel.VALUE_SUBMITTED, {
       value,
       flag,

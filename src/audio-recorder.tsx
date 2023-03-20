@@ -63,9 +63,9 @@ export default function AudioRecorder() {
 
       const arrayBuffer = await event.data.arrayBuffer();
       const base64 = arrayBufferToBase64(arrayBuffer, 'audio/webm');
-      // channel(Channel.ON_AUDIO_DATA, {
-      //   value: base64,
-      // });
+      channel(Channel.ON_AUDIO_DATA, {
+        value: base64,
+      });
     };
 
     // Create an async function to handle the async logic
@@ -98,7 +98,7 @@ export default function AudioRecorder() {
 
         setVolume(avg);
 
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
+        if (mediaRecorder && mediaRecorder.state === 'recording' && recording) {
           requestAnimationFrame(analyzeVolume);
         }
       };
@@ -106,12 +106,10 @@ export default function AudioRecorder() {
       analyzeVolume();
     };
     startRecording();
-  }, [deviceId, recorder]);
+  }, [deviceId, recorder, setRecorder]);
 
   useEffect(() => {
     return () => {
-      console.log(`👋 UNMOUNT`);
-
       if (recorder) {
         if (recorder.state === 'recording') {
           recorder.stop();

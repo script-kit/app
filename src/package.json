@@ -19,6 +19,7 @@
     "@types/regenerator-runtime": "^0.13.0"
   },
   "dependencies": {
+    "@crosscopy/clipboard": "^0.1.10",
     "@nut-tree/nut-js": "^3.0.0",
     "chokidar": "3.5.3",
     "frontmost-app": "1.0.0",

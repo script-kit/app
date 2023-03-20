@@ -9,6 +9,11 @@
   dependencies:
     regenerator-runtime "^0.13.11"
 
+"@crosscopy/clipboard@^0.1.10":
+  version "0.1.10"
+  resolved "https://registry.yarnpkg.com/@crosscopy/clipboard/-/clipboard-0.1.10.tgz#f51bf83d42763c2d9c327997ca8e3e7674e09b97"
+  integrity sha512-Cb+iTSDLE1r/4grJktKQS/aOu/ol2nuWOmXCOxrE5M7YyKs0jlnQWkMVxsMLIMxPQirZPy26vRJW8j7ThuFOUQ==
+
 "@jimp/bmp@^0.16.2":
   version "0.16.2"
   resolved "https://registry.yarnpkg.com/@jimp/bmp/-/bmp-0.16.2.tgz#3982879b10626fc8cf1b4ab8627158bad142ec9d"
