@@ -1,6 +1,6 @@
 /* eslint-disable no-plusplus */
 import React, { useState, useCallback, useEffect } from 'react';
-
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom, useAtomValue } from 'jotai';
 import {
   channelAtom,
@@ -98,7 +98,7 @@ export default function AudioRecorder() {
 
         setVolume(avg);
 
-        if (mediaRecorder && mediaRecorder.state === 'recording' && recording) {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
           requestAnimationFrame(analyzeVolume);
         }
       };

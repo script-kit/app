@@ -29,6 +29,7 @@ import { remove } from 'lodash';
 
 import { emitter, KitEvent } from './events';
 import {
+  appDb,
   checkAccessibility,
   kitConfig,
   kitState,
@@ -235,28 +236,6 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
 let io$Sub: Subscription | null = null;
 let clipboard$Sub: Subscription | null = null;
 
-export const pantsKick = async () => {
-  try {
-    if (io$Sub) {
-      io$Sub.unsubscribe();
-    }
-    if (clipboard$Sub) {
-      clipboard$Sub.unsubscribe();
-    }
-  } catch (error) {
-    log.error(error);
-  }
-
-  try {
-    uIOhook.stop();
-  } catch (error) {
-    log.error(error);
-  }
-  log.info(`Kicking pants...`);
-  uIOhook.start();
-  log.info(`Pants kicked!`);
-};
-
 let accessibilityInterval: any = null;
 
 export const preStartConfigureInterval = async () => {
@@ -283,6 +262,7 @@ export const preStartConfigureInterval = async () => {
 };
 
 export const configureInterval = async () => {
+  if (!(kitState.isMac && kitState.authorized && appDb?.authorized)) return;
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
 
   if (kitState.isMac) {
@@ -473,6 +453,14 @@ export const configureInterval = async () => {
   if (!io$Sub) io$Sub = io$.subscribe(ioEvent as any);
 };
 
+export const toggleTickOn = async () => {
+  if (!(kitState.isMac && kitState.authorized && appDb?.authorized)) return;
+
+  destroyInterval();
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  configureInterval();
+};
+
 const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
   // Use `;;` as "end"?
   if (snippet.length < 2) return;
@@ -521,6 +509,11 @@ export const destroyInterval = () => {
     if (clipboard$Sub) clipboard$Sub.unsubscribe();
     clipboard$Sub = null;
     log.info(`🔥 Destroyed interval`);
+    try {
+      uIOhook.stop();
+    } catch (e) {
+      log.error(e);
+    }
   } catch (e) {
     log.error(e);
   }
@@ -569,7 +562,13 @@ const watcherEnabledSub = subscribeKey(
   kitState,
   'watcherEnabled',
   async (watcherEnabled) => {
+    log.info(
+      `📕 watcherEnabled: ${watcherEnabled ? 'true' : 'false'} ${
+        prevWatcherEnabled ? 'true' : 'false'
+      }}`
+    );
     if (watcherEnabled === prevWatcherEnabled) return;
+    prevWatcherEnabled = watcherEnabled;
 
     if (watcherEnabled) {
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -588,9 +587,17 @@ const watcherEnabledSub = subscribeKey(
 );
 
 // sub to wakeWatcher
-const subWakeWatcher = subscribeKey(kitState, 'wakeWatcher', (wakeWatcher) => {
-  pantsKick();
-});
+const subWakeWatcher = subscribeKey(
+  kitState,
+  'wakeWatcher',
+  async (wakeWatcher) => {
+    if (wakeWatcher) {
+      toggleTickOn();
+    } else {
+      destroyInterval();
+    }
+  }
+);
 
 subs.push(subSnippet, subIsTyping, watcherEnabledSub, subWakeWatcher);
 

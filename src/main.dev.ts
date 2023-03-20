@@ -84,12 +84,7 @@ import {
   getReleaseChannel,
   getPlatformExtension,
 } from './assets';
-import {
-  clearTickTimers,
-  configureInterval,
-  destroyInterval,
-  pantsKick,
-} from './tick';
+import { clearTickTimers, configureInterval, toggleTickOn } from './tick';
 import {
   clearPromptCache,
   createPromptWindow,
@@ -671,8 +666,6 @@ const ensureKenvDirs = async () => {
   await ensureDir(kenvPath('assets'));
 };
 
-let resumeTimeout: any = null;
-
 const systemEvents = () => {
   screen.addListener(
     'display-added',
@@ -712,22 +705,20 @@ const systemEvents = () => {
     await new Promise((resolve) => setTimeout(resolve, 5000));
     log.info(`🌄 System waking. Starting watchers.`);
     await setupWatchers();
-    await destroyInterval();
-
-    log.info(`Resume tasks`);
-    if (!kitState.updateDownloaded) {
-      resumeTimeout = setTimeout(() => {
-        try {
-          checkForUpdates();
-        } catch (error) {
-          log.error(`Error checking for updates`, error);
-        }
-      }, 10000);
-    }
 
     kitState.suspended = false;
 
-    configureIntervalMac(pantsKick);
+    toggleTickOn();
+
+    if (!kitState.updateDownloaded) {
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+
+      try {
+        checkForUpdates();
+      } catch (error) {
+        log.error(`Error checking for updates`, error);
+      }
+    }
   });
 
   powerMonitor.addListener('lock-screen', async () => {
@@ -739,23 +730,6 @@ const systemEvents = () => {
     kitState.screenLocked = false;
     kitState.isSponsor = false;
   });
-};
-
-let macAccessibiltyInterval: any = null;
-
-const configureIntervalMac = (fn = configureInterval) => {
-  macAccessibiltyInterval = setTimeout(() => {
-    if (kitState.isMac) {
-      if (kitState.authorized && appDb?.authorized) {
-        log.info(
-          `💻 Accessibility authorized ✅. Kicking uiohook in the pants 👖`
-        );
-        fn();
-      }
-    } else {
-      fn();
-    }
-  }, 5000);
 };
 
 const ready = async () => {
@@ -800,11 +774,7 @@ const ready = async () => {
     systemEvents();
     readyPty();
 
-    if (!isMac) {
-      configureInterval();
-    } else {
-      configureIntervalMac();
-    }
+    configureInterval();
 
     log.info(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {
@@ -1267,7 +1237,6 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   try {
     teardownWatchers();
     sleepSchedule();
-    destroyInterval();
     subs.forEach((sub) => {
       try {
         sub();
@@ -1279,8 +1248,6 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     clearPromptTimers();
     clearTickTimers();
     clearStateTimers();
-    if (macAccessibiltyInterval) clearInterval(macAccessibiltyInterval);
-    if (resumeTimeout) clearTimeout(resumeTimeout);
     // destory event emitter named "emitter"
     if (emitter) emitter.removeAllListeners();
 
