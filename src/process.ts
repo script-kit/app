@@ -2136,6 +2136,7 @@ class Processes extends Array<ProcessInfo> {
     });
 
     child.on('exit', (code) => {
+
       log.info(`EXIT`, { pid, code });
       if (id) clearTimeout(id);
 
@@ -2173,6 +2174,7 @@ class Processes extends Array<ProcessInfo> {
     });
 
     child.on('error', (error) => {
+      if (error?.message?.includes('EPIPE')) return;
       log.error(`ERROR`, { pid, error });
       log.error(
         `👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors`

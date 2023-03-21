@@ -264,6 +264,7 @@ export const startIpc = () => {
           channel === Channel.ESCAPE ||
           (channel === Channel.SHORTCUT && message.state.shortcut === 'escape')
         ) {
+          kitState.shortcutsPaused = false;
           log.verbose({
             submitted: message.state.submitted,
             debugging: kitState.debugging,
@@ -295,6 +296,7 @@ export const startIpc = () => {
           try {
             if (child?.channel && child.connected) child?.send(message);
           } catch (e) {
+            // ignore logging EPIPE errors
             log.error(`📤 ${channel} ERROR`, message);
             log.error(e);
           }

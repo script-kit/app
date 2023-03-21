@@ -283,10 +283,13 @@ const resumeShortcuts = () => {
   });
 };
 
+let paused = false;
 const subShortcutsPaused = subscribeKey(
   kitState,
   'shortcutsPaused',
   (shortcutsPaused) => {
+    if (paused === shortcutsPaused) return;
+    paused = shortcutsPaused;
     if (shortcutsPaused) {
       pauseShortcuts();
     } else {

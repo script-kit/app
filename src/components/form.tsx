@@ -16,13 +16,7 @@ import {
 } from '../jotai';
 import { useObserveMainHeight } from '../hooks';
 
-export default function Form({
-  widght,
-  height,
-}: {
-  widght: number;
-  height: number;
-}) {
+export default function Form() {
   // useEscape();
 
   const formRef = useObserveMainHeight<HTMLFormElement>('.wrapper > div');
@@ -155,13 +149,11 @@ export default function Form({
 
   return (
     <SimpleBar
-      className="w-screen"
+      className="w-full h-full"
       style={
         {
           WebkitAppRegion: 'no-drag',
           WebkitUserSelect: 'text',
-          height,
-          maxHeight: height,
         } as any
       }
     >

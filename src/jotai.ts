@@ -343,9 +343,6 @@ export const panelHTMLAtom = atom(
     if (a) s(scoredChoices, null);
     s(_panelHTML, a);
     if (a) s(loadingAtom, false);
-    // s(loadingAtom, false);
-
-    // debouncedResize(g, s, 'PANEL_HTML');
   }
 );
 
@@ -968,6 +965,10 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     mh = choicesHeight;
   }
 
+  if (mh === 0 && hasPanel) {
+    mh = Math.max(g(itemHeightAtom), g(mainHeightAtom));
+  }
+
   let forceResize = false;
   try {
     const ch = (document as any)?.getElementById('main')?.clientHeight;
@@ -1007,6 +1008,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     nullChoices,
     forceResize,
   };
+
+  console.log(`👋`, data);
 
   s(resizeData, data);
 
@@ -1292,7 +1295,7 @@ export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
     },
   };
 
-  console.log({ appMessage });
+  // console.log({ appMessage });
   ipcRenderer.send(channel, appMessage);
 });
 

@@ -22,7 +22,7 @@ interface PanelProps {
   height: number;
 }
 
-export default function Panel({ width, height }: PanelProps) {
+export default function Panel() {
   // useEscape();
   // useEnter(); // Is this needed?
   // useOpen();
@@ -69,12 +69,10 @@ export default function Panel({ width, height }: PanelProps) {
     <SimpleBar
       scrollableNodeProps={{ ref: scrollRef }}
       autoHide={false}
+      className="w-full h-full"
       style={
         {
           cursor: mouseEnabled ? 'auto' : 'none',
-          width,
-          height,
-          maxHeight: height,
           WebkitAppRegion: 'no-drag',
           WebkitUserSelect: 'text',
         } as any
@@ -94,7 +92,6 @@ export default function Panel({ width, height }: PanelProps) {
         animate={{ opacity: [0, 1] }}
         transition={{ duration: 0.25, ease: 'circOut' }}
         className={`
-        ${ui === UI.hotkey ? 'h-10' : ''}
         ${containerClasses}
         wrapper
        `}
