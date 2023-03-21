@@ -520,7 +520,7 @@ const newFromProtocol = async (u: string) => {
 app.on('web-contents-created', (_, contents) => {
   contents.on('will-navigate', async (event, navigationUrl) => {
     const url = new URL(navigationUrl);
-    console.log({ url });
+    log.info(`👉 NAVIGATING`, { url });
     event.preventDefault();
 
     if (url.host === 'scriptkit.com' && url.pathname === '/api/new') {
