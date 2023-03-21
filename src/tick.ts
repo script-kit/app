@@ -1,16 +1,7 @@
 /* eslint-disable import/prefer-default-export */
-import { clipboard, NativeImage } from 'electron';
 import clipboardEventListener from '@crosscopy/clipboard';
 import { Observable, Subscription } from 'rxjs';
-import {
-  debounceTime,
-  delay,
-  distinctUntilChanged,
-  filter,
-  map,
-  share,
-  switchMap,
-} from 'rxjs/operators';
+import { delay, filter, share, switchMap } from 'rxjs/operators';
 import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
 import { format } from 'date-fns';
@@ -111,8 +102,8 @@ type FrontmostApp = {
   pid: number;
 };
 
-type ClipboardApp = {
-  text: string;
+type ClipboardInfo = {
+  type: 'image' | 'text' | 'ignore';
   app: FrontmostApp;
 };
 
@@ -332,13 +323,23 @@ export const configureInterval = async () => {
     };
   }).pipe(share());
 
-  const clipboardText$: Observable<any> = new Observable((observer) => {
+  const clipboardText$: Observable<any> = new Observable<string>((observer) => {
     log.info(`Creating new Observable for clipboard...`);
     try {
       log.info(`Attempting to start clipboard...`);
       clipboardEventListener.on('text', (text) => {
         try {
-          observer.next(text);
+          log.info(`Clipboard text changed...`);
+          observer.next('text');
+        } catch (error) {
+          log.error(error);
+        }
+      });
+
+      clipboardEventListener.on('image', (image) => {
+        try {
+          log.info(`Clipboard image changed...`);
+          observer.next('image');
         } catch (error) {
           log.error(error);
         }
@@ -355,8 +356,8 @@ export const configureInterval = async () => {
       log.info(`🛑 Successfully stopped clipboard watcher`);
     };
   }).pipe(
-    switchMap(async () => {
-      if (frontmost) {
+    switchMap(async (type: string) => {
+      if (kitState.isMac && frontmost) {
         try {
           const frontmostApp = await frontmost();
           const ignoreList = [
@@ -369,72 +370,76 @@ export const configureInterval = async () => {
 
           if (ignoreList.find((app) => frontmostApp.bundleId.includes(app))) {
             log.info(`Ignoring clipboard for ${frontmostApp.bundleId}`);
-            return false;
+            return {
+              type: 'ignore',
+              app: frontmostApp,
+            };
           }
 
-          return frontmostApp;
+          return {
+            type,
+            app: frontmostApp,
+          };
         } catch (error) {
           log.warn(error);
-          return false;
         }
       }
 
-      return false;
+      return {
+        type,
+        app: {
+          localizedName: 'Unknown',
+        },
+      };
     }),
-    filter((value) => value !== false),
-    delay(100),
-    map((app: ClipboardApp) => {
-      try {
-        const text = clipboard.readText();
-        if (text && text.length < 1000) {
-          return {
-            app,
-            text,
-          };
-        }
-        return {
-          app,
-          text: '',
-        };
-      } catch (e) {
-        log.error(e);
-        return {
-          app: '',
-          text: '',
-        };
-      }
-    }),
-    filter((value) => (value as any)?.text),
-    distinctUntilChanged((a, b) => a.text === b.text)
+    filter((value) => value.type !== 'ignore'),
+    delay(100)
   );
 
   if (!clipboard$Sub)
     clipboard$Sub = clipboardText$.subscribe(
-      async ({ text, app }: ClipboardApp) => {
-        let value = '';
-        let type = '';
+      async ({ type, app }: ClipboardInfo) => {
         const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
 
-        if (typeof text === 'string') {
-          type = 'text';
-          value = text;
-        } else {
-          type = 'image';
+        let maybeSecret = false;
+        let itemName = ``;
+        let value = ``;
+
+        if (type === 'image') {
           value = path.join(tmpClipboardDir, `${timestamp}.png`);
-          await writeFile(value, (text as NativeImage).toPNG());
+          itemName = `${timestamp}.png`;
+          try {
+            const imageBuffer = await clipboardEventListener.readImage();
+            // if imageBuffer is too large, skip saving it
+            if (imageBuffer.length > 5000000) {
+              return;
+            }
+            await writeFile(value, imageBuffer);
+          } catch (error) {
+            log.error(error);
+          }
+        } else {
+          value = await clipboardEventListener.readText();
+          itemName = value.trim().slice(0, 40);
+
+          // TODO: Consider filtering consecutive characters without a space
+          maybeSecret = Boolean(
+            value.match(
+              /^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*()-_=+{}[\]<>;:,.|~]{5,}$/i
+            )
+          );
         }
 
-        // TODO: Consider filtering consecutive characters without a space
-        const maybeSecret = Boolean(
-          type === 'text' &&
-            value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-z0-9-]{5,})$/gi)
-        );
-
-        const appName = isFocused() ? 'Script Kit' : app.localizedName;
+        // eslint-disable-next-line no-nested-ternary
+        const appName = isFocused()
+          ? 'Script Kit'
+          : app?.localizedName
+          ? app.localizedName
+          : 'Unknown';
 
         const clipboardItem = {
           id: nanoid(),
-          name: type === 'image' ? value : value.trim().slice(0, 40),
+          name: itemName,
           description: `${appName} - ${timestamp}`,
           value,
           type,
@@ -473,7 +478,10 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
   for await (const snippetKey of snippetMap.keys()) {
     if (snippet.endsWith(snippetKey)) {
       log.info(`Running snippet: ${snippetKey}`);
-      const script = snippetMap.get(snippetKey) as Script;
+      const script = snippetMap.get(snippetKey) as {
+        filePath: string;
+        postfix: boolean;
+      };
       if (kitConfig.deleteSnippet) {
         // get postfix from snippetMap
         if (snippetMap.has(snippetKey)) {
