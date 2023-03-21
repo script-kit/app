@@ -50,7 +50,7 @@ import {
 import os, { homedir } from 'os';
 import semver from 'semver';
 import { ensureDir, writeFile, lstat, pathExistsSync } from 'fs-extra';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 import { readdir, readFile, copyFile, rm } from 'fs/promises';
 
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
@@ -84,7 +84,12 @@ import {
   getReleaseChannel,
   getPlatformExtension,
 } from './assets';
-import { clearTickTimers, configureInterval, toggleTickOn } from './tick';
+import {
+  clearTickTimers,
+  configureInterval,
+  destroyInterval,
+  toggleTickOn,
+} from './tick';
 import {
   clearPromptCache,
   createPromptWindow,
@@ -119,9 +124,8 @@ import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from './defaults';
 import { registerKillLatestShortcut } from './shortcuts';
 import { mainLog, mainLogPath } from './logs';
-import { emitter, KitEvent } from './events';
+import { emitter } from './events';
 import { readyPty } from './pty';
-import { Trigger } from './enums';
 import { displayError } from './error';
 
 // Disables CSP warnings in browser windows.
@@ -156,6 +160,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 crashReporter.start({ submitURL: '', uploadToServer: false });
 
 unhandled({
+  showDialog: false,
   logger: (error) => {
     log.warn(error);
     displayError(error);
@@ -519,18 +524,22 @@ const newFromProtocol = async (u: string) => {
 
 app.on('web-contents-created', (_, contents) => {
   contents.on('will-navigate', async (event, navigationUrl) => {
-    const url = new URL(navigationUrl);
-    log.info(`👉 NAVIGATING`, { url });
-    event.preventDefault();
+    try {
+      const url = new URL(navigationUrl);
+      log.info(`👉 NAVIGATING`, { url });
+      event.preventDefault();
 
-    if (url.host === 'scriptkit.com' && url.pathname === '/api/new') {
-      await cliFromParams('new', url.searchParams);
-    } else if (url.protocol === 'kit:') {
-      await cliFromParams(url.pathname, url.searchParams);
-    } else if (url.protocol === 'submit:') {
-      sendToPrompt(Channel.SET_SUBMIT_VALUE, url.pathname);
-    } else if (url.protocol.startsWith('http')) {
-      shell.openExternal(url.href);
+      if (url.host === 'scriptkit.com' && url.pathname === '/api/new') {
+        await cliFromParams('new', url.searchParams);
+      } else if (url.protocol === 'kit:') {
+        await cliFromParams(url.pathname, url.searchParams);
+      } else if (url.protocol === 'submit:') {
+        sendToPrompt(Channel.SET_SUBMIT_VALUE, url.pathname);
+      } else if (url.protocol.startsWith('http')) {
+        shell.openExternal(url.href);
+      }
+    } catch (e) {
+      log.warn(e);
     }
   });
 });
@@ -1237,6 +1246,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   try {
     teardownWatchers();
     sleepSchedule();
+    destroyInterval();
     subs.forEach((sub) => {
       try {
         sub();

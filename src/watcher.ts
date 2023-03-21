@@ -266,39 +266,45 @@ export const setupWatchers = async () => {
       log.info(`🌎 .env ${eventName}`);
 
       if (existsSync(filePath)) {
-        const envData = dotenv.parse(readFileSync(filePath));
-        kitState.kenvEnv = envData;
+        try {
+          const envData = dotenv.parse(readFileSync(filePath));
+          kitState.kenvEnv = envData;
 
-        const setCSSVariable = (name: string, value: undefined | string) => {
-          if (value) {
-            log.info(`Setting CSS`, name, value);
-            appToPrompt(AppChannel.CSS_VARIABLE, { name, value });
-          }
-        };
+          const setCSSVariable = (name: string, value: undefined | string) => {
+            if (value) {
+              log.info(`Setting CSS`, name, value);
+              appToPrompt(AppChannel.CSS_VARIABLE, { name, value });
+            }
+          };
 
-        setCSSVariable(
-          '--mono-font',
-          envData?.KIT_MONO_FONT || `JetBrains Mono`
-        );
-        setCSSVariable(
-          '--sans-font',
-          envData?.KIT_SANS_FONT ||
-            `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+          setCSSVariable(
+            '--mono-font',
+            envData?.KIT_MONO_FONT || `JetBrains Mono`
+          );
+          setCSSVariable(
+            '--sans-font',
+            envData?.KIT_SANS_FONT ||
+              `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
         Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`
-        );
-        setCSSVariable(
-          '--serif-font',
-          envData?.KIT_SERIF_FONT ||
-            `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
+          );
+          setCSSVariable(
+            '--serif-font',
+            envData?.KIT_SERIF_FONT ||
+              `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
         'serif'`
-        );
+          );
 
-        if (envData?.KIT_MIC) {
-          appToPrompt(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
-        }
+          if (envData?.KIT_MIC) {
+            log.info(`Setting mic`, envData?.KIT_MIC);
+            appToPrompt(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
+          }
 
-        if (envData?.KIT_WEBCAM) {
-          appToPrompt(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
+          if (envData?.KIT_WEBCAM) {
+            log.info(`Setting webcam`, envData?.KIT_WEBCAM);
+            appToPrompt(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
+          }
+        } catch (error) {
+          log.warn(error);
         }
 
         // if (envData?.KIT_SHELL) kitState.envShell = envData?.KIT_SHELL;

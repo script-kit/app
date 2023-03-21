@@ -64,6 +64,7 @@ export const scheduleDownloads = async () => {
   if (!isOnline) return;
 
   try {
+    log.info(`Running downloads script: ${kitPath('setup', 'downloads.js')}`);
     runScript(
       kitPath('setup', 'downloads.js'),
       process.env.NODE_ENV === 'development' ? '--dev' : ''
