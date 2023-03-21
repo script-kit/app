@@ -163,6 +163,8 @@ unhandled({
   showDialog: false,
   logger: (error) => {
     log.warn(error);
+    // if error contains "ECONN", then ignore it
+    if (error.message.includes('ECONN')) return;
     displayError(error);
   },
 });
