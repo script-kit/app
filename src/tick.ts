@@ -262,7 +262,10 @@ export const preStartConfigureInterval = async () => {
 };
 
 export const configureInterval = async () => {
-  if (!(kitState.isMac && kitState.authorized && appDb?.authorized)) return;
+  if (kitState.isMac) {
+    const fullyAuthenticated = kitState.authorized && appDb?.authorized;
+    if (!fullyAuthenticated) return;
+  }
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
 
   if (kitState.isMac) {
@@ -454,7 +457,10 @@ export const configureInterval = async () => {
 };
 
 export const toggleTickOn = async () => {
-  if (!(kitState.isMac && kitState.authorized && appDb?.authorized)) return;
+  if (kitState.isMac) {
+    const fullyAuthenticated = kitState.authorized && appDb?.authorized;
+    if (!fullyAuthenticated) return;
+  }
 
   destroyInterval();
   await new Promise((resolve) => setTimeout(resolve, 500));
