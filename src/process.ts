@@ -83,6 +83,7 @@ import {
   setPromptProp,
   setScript,
   setTabIndex,
+  setVibrancy,
 } from './prompt';
 import {
   getBackgroundTasks,
@@ -231,6 +232,18 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
       log.warn(`Error writing theme db:`, error)
     }
   }
+
+  const validVibrancies = [
+    'appearance-based', 'light', 'dark', 'titlebar', 'selection', 'menu', 'popover', 'sidebar', 'medium-light', 'ultra-dark', 'header', 'sheet', 'window', 'hud', 'fullscreen-ui', 'tooltip', 'content', 'under-window', 'under-page',
+  ];
+
+  const defaultVibrancy = 'hud';
+
+  const vibrancy = newTheme?.vibrancy && validVibrancies.includes(newTheme.vibrancy)
+    ? newTheme.vibrancy
+    : defaultVibrancy;
+
+  setVibrancy(vibrancy);
 
   return value
 };

@@ -920,8 +920,6 @@ export const isMainScriptInitialAtom = atom<boolean>((g) => {
 const topHeight = atom(88);
 const mainHeight = atom(0);
 
-const resizeData = atom({});
-
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   if (g(submittedAtom)) return;
 
@@ -992,9 +990,9 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     reason,
     scriptPath: g(_script)?.filePath,
     placeholderOnly,
-    topHeight: th,
+    topHeight: Math.floor(th),
     ui,
-    mainHeight: mh,
+    mainHeight: Math.floor(mh),
     footerHeight: 30,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
@@ -1009,9 +1007,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     forceResize,
   };
 
-  console.log(`👋`, data);
-
-  s(resizeData, data);
+  // console.log(`👋`, data);
 
   ipcRenderer.send(AppChannel.RESIZE, data);
 };
@@ -1433,7 +1429,6 @@ export const openAtom = atom(
       s(_flagged, '');
       s(loading, false);
       s(loadingAtom, false);
-      s(resizeData, {});
       s(editorConfigAtom, {});
       s(promptData, null);
       s(pidAtom, 0);

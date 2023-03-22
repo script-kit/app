@@ -98,6 +98,21 @@ export const forceHide = () => {
   }
 };
 
+export const setVibrancy = (
+  vibrancy: Parameters<typeof BrowserWindow.prototype.setVibrancy>[0]
+) => {
+  if (promptWindow?.isDestroyed()) return;
+  if (kitState.isMac) {
+    try {
+      promptWindow?.setVibrancy(vibrancy);
+    } catch (error) {
+      log.error(error);
+    }
+  } else {
+    log.info(`Custom vibrancy not supported on this platform`);
+  }
+};
+
 export const createPromptWindow = async () => {
   log.silly(`function: createPromptWindow`);
 
@@ -567,7 +582,7 @@ export const getCurrentScreenPromptCache = async (
 };
 
 export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
-  log.info(`📐 setBounds, reason ${reason}`);
+  // log.info(`📐 setBounds, reason ${reason}`);
   promptWindow.setBounds(bounds);
 };
 
