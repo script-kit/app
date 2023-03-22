@@ -9,19 +9,13 @@ import { SerializeAddon } from 'xterm-addon-serialize';
 import useResizeObserver from '@react-hook/resize-observer';
 import { motion } from 'framer-motion';
 import { throttle } from 'lodash';
-import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   appDbAtom,
   darkAtom,
-  openAtom,
   sendShortcutAtom,
   shortcutsAtom,
-  submittedAtom,
-  submitValueAtom,
   termConfigAtom,
-  termExitAtom,
-  uiAtom,
 } from './jotai';
 
 import XTerm from './components/xterm';
@@ -64,16 +58,11 @@ const darkTheme = {
 export default function Terminal() {
   const xtermRef = useRef<XTerm>(null);
   const fitRef = useRef(new FitAddon());
-  const [, submit] = useAtom(submitValueAtom);
-  const submitted = useAtomValue(submittedAtom);
-  const [open] = useAtom(openAtom);
-  const ui = useAtomValue(uiAtom);
   const [isDark] = useAtom(darkAtom);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [termConfig, setTermConfig] = useAtom(termConfigAtom);
+  const [termConfig] = useAtom(termConfigAtom);
   const shortcuts = useAtomValue(shortcutsAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
-  const setTermExit = useSetAtom(termExitAtom);
 
   const attachAddonRef = useRef<AttachIPCAddon | null>(null);
 
@@ -142,22 +131,6 @@ export default function Terminal() {
   }, [termConfig]);
 
   useEffect(() => {
-    console.log({
-      submitted,
-      open,
-      ui,
-    });
-    if (submitted || !open || ui !== UI.term) {
-      if (attachAddonRef.current) {
-        console.log(`Disposing of pty due to state change`, {
-          addon: attachAddonRef.current,
-        });
-        attachAddonRef.current.dispose();
-        attachAddonRef.current = null;
-        setTermExit('');
-      }
-    }
-
     return () => {
       if (attachAddonRef.current) {
         console.log(`Disposing of pty due to teardown`, {
@@ -165,10 +138,9 @@ export default function Terminal() {
         });
         attachAddonRef.current.dispose();
         attachAddonRef.current = null;
-        setTermExit('');
       }
     };
-  }, [setTermConfig, submitted, open, ui, setTermExit]);
+  }, []);
 
   const [appDb] = useAtom(appDbAtom);
 
@@ -186,7 +158,7 @@ export default function Terminal() {
   // Detect when container is resized
   useResizeObserver(
     containerRef,
-    throttle((entry) => {
+    throttle(() => {
       if (!fitRef?.current) return;
       fitRef.current.fit();
     }, 250)

@@ -33,15 +33,17 @@ function getDefaultShell(): string {
 }
 
 function getShellConfig(config: TermConfig, defaultShell: string) {
-  let login = false;
+  let login = true;
   if (typeof config.shell === 'boolean') {
     if (config.shell) {
       config.shell = config.env.KIT_SHELL || defaultShell;
-      login = true;
     } else if (config.command) {
       // eslint-disable-next-line prefer-destructuring
+      login = false;
       config.shell = config?.command.split(' ')[0];
-      config.command = config?.command.split(' ').slice(1).join(' ');
+      if (config?.args?.length === 0)
+        config.args = config?.command.split(' ').slice(1);
+      config.command = '';
     } else {
       config.command = '';
     }
@@ -138,12 +140,13 @@ const inputHandler = (_event: any, data: string) => {
 };
 
 const teardown = () => {
+  log.info(`🐲 >_ Invoking teardown`);
+  ipcMain.off(AppChannel.TERM_RESIZE, resizeHandler);
+  ipcMain.off(AppChannel.TERM_INPUT, inputHandler);
   try {
     if (t) {
       t?.kill();
       t = null;
-      ipcMain.off(AppChannel.TERM_RESIZE, resizeHandler);
-      ipcMain.off(AppChannel.TERM_INPUT, inputHandler);
     }
   } catch (error) {
     log.error(`Error killing pty`, error);
@@ -152,26 +155,44 @@ const teardown = () => {
 
 export const readyPty = async () => {
   ipcMain.on(AppChannel.TERM_READY, async (event, config: TermConfig) => {
-    ipcMain.once(AppChannel.TERM_EXIT, () => {
-      teardown();
-    });
-
-    emitter.on(KitEvent.TERM_KILL, (pid) => {
+    const termKill = (pid: number) => {
+      log.info(`TERM_KILL`, {
+        pid,
+        configPid: config?.pid,
+      });
       if (pid === config?.pid) {
+        ipcMain.off(AppChannel.TERM_EXIT, termExit);
         teardown();
       }
-    });
+    };
+
+    const termExit = () => {
+      emitter.off(KitEvent.TERM_KILL, termKill);
+      log.info(`TERM_EXIT`);
+      teardown();
+    };
+
+    ipcMain.once(AppChannel.TERM_EXIT, termExit);
+
+    emitter.once(KitEvent.TERM_KILL, termKill);
 
     ipcMain.on(AppChannel.TERM_RESIZE, resizeHandler);
     ipcMain.on(AppChannel.TERM_INPUT, inputHandler);
 
     const pty = await import('node-pty');
 
-    log.info(`🐲 >_ Starting pty server`);
-
     const defaultShell = getDefaultShell();
     const { shell, args } = getShellConfig(config, defaultShell);
     const ptyOptions = getPtyOptions(config);
+
+    log.info(
+      `🐲 >_ Starting pty server with config: ${JSON.stringify({
+        shell: config.shell,
+        command: config.command,
+        args: config.args,
+        cwd: config.cwd,
+      })}`
+    );
 
     try {
       t = pty.spawn(shell, args, ptyOptions);

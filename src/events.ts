@@ -35,6 +35,8 @@ export enum KitEvent {
 interface KitEmitter {
   emit(event: KitEvent | Channel, data?: any): void;
   on(event: KitEvent | Channel, listener: (data: any) => void): void;
+  once(event: KitEvent | Channel, listener: (data: any) => void): void;
+  off(event: KitEvent | Channel, listener: (data: any) => void): void;
   removeAllListeners(): ReturnType<EventEmitter['removeAllListeners']>;
 }
 

@@ -679,13 +679,14 @@ export default function App() {
                 {ui === UI.textarea && <TextArea />}
                 {ui === UI.editor && <Editor />}
                 {ui === UI.log && <Log />}
-                {ui === UI.term && <Terminal />}
                 {ui === UI.emoji && <Emoji />}
                 {ui === UI.debugger && <Inspector />}
                 {ui === UI.chat && <Chat />}
-                {ui === UI.mic && <AudioRecorder />}
-                {ui === UI.webcam && <Webcam />}
-                {ui === UI.speech && <SpeechToText />}
+                {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
+                {ui === UI.term && open && <Terminal />}
+                {ui === UI.mic && open && <AudioRecorder />}
+                {ui === UI.webcam && open && <Webcam />}
+                {/* {ui === UI.speech && <SpeechToText />} */}
               </AnimatePresence>
               <AutoSizer>
                 {({ width, height }) => (

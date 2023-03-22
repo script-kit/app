@@ -781,7 +781,7 @@ export const changeAtom = atom((g) => (data: any) => {
   channel(Channel.CHANGE, { value: data });
 });
 
-export const inputCommandChars = atom();
+export const inputCommandChars = atom([]);
 
 export const inputAtom = atom(
   (g) => g(_input),
@@ -817,7 +817,7 @@ export const inputAtom = atom(
       return;
     }
 
-    const commandChars = g(inputCommandChars);
+    const commandChars = g(inputCommandChars) || [];
     for await (const ch of commandChars) {
       if (a.length < prevInput.length && prevInput.endsWith(ch)) return;
       if (a.endsWith(ch)) {
