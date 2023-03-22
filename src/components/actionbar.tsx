@@ -94,7 +94,7 @@ export function OptionsButton() {
           py-.5 px-1 mx-0.5
 
           rounded
-          bg-secondary bg-opacity-10
+          bg-secondary/60
           hover:border-opacity-10
           "
         >
@@ -444,7 +444,7 @@ export default function ActionBar() {
     bg-opacity-0
     `
         : `
-        bg-opacity-40
+        bg-opacity-60
     `
     }
 
