@@ -143,7 +143,7 @@ export default function Header() {
             WebkitAppRegion: 'drag',
             WebkitUserSelect: 'none',
           }}
-          className="flex-1 h-full"
+          className="flex-1 h-full -mt-4"
         />
         <span className="flex flex-row items-end pl-1 text-right">
           <TopRightButton />

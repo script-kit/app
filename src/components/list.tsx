@@ -140,7 +140,9 @@ export default function ChoiceList({ width, height }: ListProps) {
 
       {/* {previewEnabled && <Preview />} */}
       <AnimatePresence key="previewComponents">
-        {!appDb.mini && previewHTML && <Preview key="AppPreview" />}
+        {!appDb.mini && previewHTML && (
+          <Preview key="AppPreview" height={height} />
+        )}
       </AnimatePresence>
     </div>
   );

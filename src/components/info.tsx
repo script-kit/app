@@ -122,7 +122,9 @@ export default function InfoList({ width, height }: ListProps) {
 
       {/* {previewEnabled && <Preview />} */}
       <AnimatePresence key="previewComponents">
-        {!appDb.mini && previewHTML && <Preview key="AppPreview" />}
+        {!appDb.mini && previewHTML && (
+          <Preview key="AppPreview" height={height} />
+        )}
       </AnimatePresence>
     </motion.div>
   );
