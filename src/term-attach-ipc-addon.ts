@@ -42,10 +42,8 @@ export class AttachIPCAddon implements ITerminalAddon {
   }
 
   public dispose(): void {
-    console.log(`🗑 DISPOSE <<<<<<<<<<<<<<<<<<`);
     ipcRenderer.off(AppChannel.TERM_OUTPUT, this.termOutputHandler);
     this.terminal = undefined;
     ipcRenderer.send(AppChannel.TERM_EXIT, this.config.pid);
-    console.log(`🔚 TERM_EXIT`);
   }
 }

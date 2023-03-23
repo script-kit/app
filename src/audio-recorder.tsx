@@ -32,9 +32,9 @@ export default function AudioRecorder() {
   const [channel] = useAtom(channelAtom);
 
   const stopRecording = useCallback(async () => {
-    console.log(`🛑 STOP RECORDING`, {
-      recorder,
-    });
+    // console.log(`🛑 STOP RECORDING`, {
+    //   recorder,
+    // });
     if (recorder) {
       recorder.stop();
       // destroy the recorder
@@ -52,7 +52,7 @@ export default function AudioRecorder() {
 
   useEffect(() => {
     if (recorder) return;
-    console.log(`Starting recording...`);
+    // console.log(`Starting recording...`);
 
     const constraints = {
       audio: deviceId ? { deviceId } : true,
@@ -76,7 +76,7 @@ export default function AudioRecorder() {
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorder.addEventListener('dataavailable', handleDataAvailable);
       mediaRecorder.addEventListener('stop', () => {
-        console.log('Stopped recording');
+        // console.log('Stopped recording');
         mediaRecorder.removeEventListener('dataavailable', handleDataAvailable);
         mediaRecorder.removeEventListener('stop', () => {});
         setRecorder(null);
