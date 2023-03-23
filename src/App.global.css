@@ -668,6 +668,10 @@ code::after {
   content: '';
 }
 
+.kit-mbox-wrapper code {
+  @apply text-sm;
+}
+
 .rce-mbox ul li,
 .rce-mbox ol li {
   @apply list-inside;

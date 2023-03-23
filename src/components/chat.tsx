@@ -557,11 +557,12 @@ export function Chat() {
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       // return if any modifier keys are pressed
-      if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) {
-        return;
-      }
+
       // Check if the user pressed the Enter key
       if (e.key === 'Enter') {
+        if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) {
+          return;
+        }
         onSubmit(e as any);
       }
     },

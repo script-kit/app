@@ -126,7 +126,7 @@ export const createPromptWindow = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       devTools: true,
-      backgroundThrottling: false,
+      backgroundThrottling: true,
       experimentalFeatures: true,
     },
     closable: false,
@@ -356,13 +356,13 @@ export const createPromptWindow = async () => {
 
   promptWindow?.on('hide', () => {
     log.silly(`event: hide`);
-    promptWindow.webContents.setBackgroundThrottling(true);
+    // promptWindow.webContents.setBackgroundThrottling(true);
   });
 
   promptWindow?.on('show', () => {
     // kitState.allowBlur = false;
     log.silly(`event: show`);
-    promptWindow.webContents.setBackgroundThrottling(false);
+    // promptWindow.webContents.setBackgroundThrottling(false);
   });
 
   promptWindow?.webContents?.on('dom-ready', () => {
@@ -981,7 +981,7 @@ export const setPromptData = async (promptData: PromptData) => {
     kitState.hasSnippet = false;
   }
 
-  promptWindow.webContents.setBackgroundThrottling(false);
+  // promptWindow.webContents.setBackgroundThrottling(false);
   if (kitState.isMac) {
     promptWindow?.showInactive();
     // 0 second setTimeout

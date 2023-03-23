@@ -4,13 +4,8 @@ import React, { KeyboardEvent, useCallback, useEffect, useRef } from 'react';
 import { KeyData } from '@johnlindquist/kit/types/kitapp';
 
 import { useAtom } from 'jotai';
-import {
-  placeholderAtom,
-  panelHTMLAtom,
-  hintAtom,
-  unfilteredChoicesAtom,
-} from '../jotai';
-import { useEscape, useFocus } from '../hooks';
+import { placeholderAtom, hintAtom, unfilteredChoicesAtom } from '../jotai';
+import { useFocus } from '../hooks';
 
 interface HotkeyProps {
   submit(data: any): void;
