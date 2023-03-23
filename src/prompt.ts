@@ -113,6 +113,12 @@ export const setVibrancy = (
   }
 };
 
+export const setBackgroundThrottling = (enabled: boolean) => {
+  if (promptWindow?.isDestroyed()) return;
+  log.info(`setBackgroundThrottling: ${enabled ? 'enabled' : 'disabled'}`);
+  promptWindow?.webContents?.setBackgroundThrottling(enabled);
+};
+
 export const createPromptWindow = async () => {
   log.silly(`function: createPromptWindow`);
 
@@ -348,6 +354,7 @@ export const createPromptWindow = async () => {
     log.info(`WebContents Focus`);
     kitState.allowBlur = false;
   });
+
   promptWindow?.on('focus', () => {
     log.info(`Focus`);
   });
@@ -356,13 +363,12 @@ export const createPromptWindow = async () => {
 
   promptWindow?.on('hide', () => {
     log.silly(`event: hide`);
-    // promptWindow.webContents.setBackgroundThrottling(true);
+    // setBackgroundThrottling(false);
   });
 
   promptWindow?.on('show', () => {
     // kitState.allowBlur = false;
     log.silly(`event: show`);
-    // promptWindow.webContents.setBackgroundThrottling(false);
   });
 
   promptWindow?.webContents?.on('dom-ready', () => {
@@ -1192,6 +1198,8 @@ const subScriptPath = subscribeKey(
   'scriptPath',
   async (scriptPath) => {
     if (promptWindow?.isDestroyed()) return;
+    setBackgroundThrottling(kitState.scriptPath === '');
+
     kitState.promptUI = UI.none;
     kitState.resizedByChoices = false;
 

@@ -168,9 +168,7 @@ export default function ChoiceButton({
       text-text-base
       ${
         index === currentIndex && !choice?.disableSubmit
-          ? `bg-secondary/60
-            ${mouseEnabled ? `active:bg-opacity-70 ` : ``}
-            `
+          ? `bg-secondary/60`
           : ``
       } ${overrideTailwindClasses(`
         w-full
