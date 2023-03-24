@@ -1,6 +1,6 @@
 /* eslint-disable react/require-default-props */
-import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { useEffect, useRef, useCallback } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { FixedSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
@@ -19,7 +19,6 @@ import {
   appDbAtom,
   infoHeightAtom,
   promptDataAtom,
-  indexHookAtom,
   listAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';

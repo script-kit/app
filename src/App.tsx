@@ -20,7 +20,7 @@ import React, {
   useRef,
 } from 'react';
 import { ToastContainer, toast, cssTransition } from 'react-toastify';
-
+import { debounce } from 'lodash';
 import path from 'path';
 import { loader } from '@monaco-editor/react';
 import DOMPurify from 'dompurify';
@@ -142,7 +142,6 @@ import Terminal from './term';
 import Inspector from './components/inspector';
 import { Chat } from './components/chat';
 import InfoList from './components/info';
-import SpeechToText from './speech-to-text';
 import AudioRecorder from './audio-recorder';
 import Webcam from './webcam';
 
@@ -286,13 +285,10 @@ export default function App() {
   const channel = useAtomValue(channelAtom);
 
   useEffect(() => {
-    const handleResize = () => {
+    const handleResize = debounce(() => {
       const zl = webFrame.getZoomLevel();
       setZoom(zl);
-
-      // set a --zoom-level css variable for use in css
-      document.documentElement.style.setProperty('--zoom-level', `${zl}`);
-    };
+    }, 250);
 
     window.addEventListener('resize', handleResize);
     return () => {
