@@ -947,7 +947,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const hasPreview = Boolean(g(hasPreviewAtom));
 
   if (hasPreview && mh < DEFAULT_HEIGHT) {
-    mh = DEFAULT_HEIGHT;
+    mh = promptData?.height || DEFAULT_HEIGHT;
   }
 
   if (ui === UI.arg && th < TOP_HEIGHT) {
@@ -958,7 +958,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   const choicesHeight = (scoredChoicesLength + infoChoicesLength) * itemHeight;
   if (ui === UI.arg && choicesHeight > DEFAULT_HEIGHT) {
-    mh = DEFAULT_HEIGHT;
+    mh = promptData?.height || DEFAULT_HEIGHT;
   } else {
     mh = choicesHeight;
   }
