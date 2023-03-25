@@ -147,6 +147,8 @@ export const createPromptWindow = async () => {
     type: 'panel',
   };
 
+  // Disable Windows show animation
+
   if (kitState.isMac) {
     promptWindow = new BrowserWindow({
       ...options,
@@ -165,45 +167,6 @@ export const createPromptWindow = async () => {
     } catch (error) {
       log.error('Failed to set window blur', error);
     }
-
-    if (kitState.isWindows) {
-      const { default: ffi } = await import('ffi-napi');
-      const { default: ref } = await import('ref-napi');
-
-      const dwmapi = ffi.Library('dwmapi', {
-        DwmSetWindowAttribute: [
-          'int32',
-          ['int32', 'int32', 'pointer', 'uint32'],
-        ],
-      });
-
-      const DWMWA_TRANSITIONS_FORCEDISABLED = 3;
-      const disableAnimation = ref.alloc('int32', 1);
-
-      // eslint-disable-next-line no-inner-declarations
-      function disableShowAnimation(win) {
-        const hwnd = win.getNativeWindowHandle().readInt32LE();
-        const result = dwmapi.DwmSetWindowAttribute(
-          hwnd,
-          DWMWA_TRANSITIONS_FORCEDISABLED,
-          disableAnimation,
-          4
-        );
-        if (result !== 0) {
-          log.error(`DwmSetWindowAttribute failed with error: ${result}`);
-        }
-      }
-
-      disableShowAnimation(promptWindow);
-    }
-
-    // try {
-    //   const { DwmEnableBlurBehindWindow } = await import('windows-blurbehind');
-    //   DwmEnableBlurBehindWindow(promptWindow, true);
-    // } catch (error) {
-    //   log.error(`Failure to enable blurbehind`);
-    //   log.error(error);
-    // }
   }
 
   promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
