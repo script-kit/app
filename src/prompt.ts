@@ -1001,6 +1001,10 @@ export const setPromptData = async (promptData: PromptData) => {
         promptWindow?.setAlwaysOnTop(false);
       }
     }, 1000);
+  } else if (kitState.isWindows) {
+    promptWindow?.setSkipTaskbar(true);
+    promptWindow?.show();
+    promptWindow?.setSkipTaskbar(false);
   } else {
     promptWindow?.show();
   }
