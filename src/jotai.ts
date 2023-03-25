@@ -933,7 +933,16 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const ui = g(uiAtom);
 
   if (
-    [UI.term, UI.editor, UI.drop, UI.textarea, UI.emoji, UI.chat].includes(ui)
+    [
+      UI.term,
+      UI.editor,
+      UI.drop,
+      UI.textarea,
+      UI.emoji,
+      UI.chat,
+      UI.mic,
+      UI.webcam,
+    ].includes(ui)
   )
     return;
 

@@ -3,9 +3,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAtom } from 'jotai';
-import { useHotkeys } from 'react-hotkeys-hook';
 import {
-  deviceIdAtom,
   submitValueAtom,
   webcamIdAtom,
   webcamStreamAtom,
