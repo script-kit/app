@@ -932,7 +932,10 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   const ui = g(uiAtom);
 
-  if ([UI.term, UI.editor, UI.drop, UI.textarea, UI.emoji].includes(ui)) return;
+  if (
+    [UI.term, UI.editor, UI.drop, UI.textarea, UI.emoji, UI.chat].includes(ui)
+  )
+    return;
 
   const scoredChoicesLength = g(scoredChoices)?.length;
   const infoChoicesLength = g(infoChoicesAtom).length;
