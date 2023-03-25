@@ -174,7 +174,13 @@ export const nullChoicesAtom = atom(
 export const infoHeightAtom = atom(0);
 const infoChoices = atom<Choice[]>([]);
 export const infoChoicesAtom = atom(
-  (g) => g(infoChoices),
+  (g) => {
+    const hasChoices = g(scoredChoices)?.length > 0;
+
+    return g(infoChoices).filter(
+      (c) => c?.info === 'always' || (c?.info === 'onNoChoices' && !hasChoices)
+    );
+  },
   (g, s, a: Choice[]) => {
     s(infoChoices, a);
     s(infoHeightAtom, a.length * g(itemHeightAtom));
