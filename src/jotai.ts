@@ -919,6 +919,7 @@ export const isMainScriptInitialAtom = atom<boolean>((g) => {
 
 const topHeight = atom(88);
 const mainHeight = atom(0);
+const prevMh = atom(0);
 
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   if (g(submittedAtom)) return;
@@ -934,7 +935,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const noInfo = infoChoicesLength === 0;
   let mh = nullChoices && !hasPanel && noInfo ? 0 : g(mainHeight);
 
-  if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
+  // if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
 
   const promptData = g(promptDataAtom);
   const placeholderOnly =
@@ -968,22 +969,33 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   }
 
   let forceResize = false;
+  let ch = 0;
   try {
-    const ch = (document as any)?.getElementById('main')?.clientHeight;
+    if (ui === UI.form || ui === UI.fields) {
+      ch = (document as any)?.getElementById('kit-form-id')?.clientHeight;
+      mh = ch;
+    } else {
+      ch = (document as any)?.getElementById('main')?.clientHeight;
+    }
 
-    // g(logAtom)({
-    //   ch,
-    //   itemHeight,
-    //   scoredChoicesLength,
-    //   infoChoicesLength,
-    // });
-
-    forceResize = Boolean(
-      ch < (scoredChoicesLength + infoChoicesLength) * itemHeight
-    );
+    if (ui === UI.arg) {
+      forceResize = Boolean(
+        ch < (scoredChoicesLength + infoChoicesLength) * itemHeight
+      );
+    } else {
+      forceResize = Boolean(ch > g(prevMh));
+    }
   } catch (error) {
     g(logAtom)(`Force resize error`);
   }
+
+  // g(logAtom)({
+  //   ch,
+  //   itemHeight,
+  //   scoredChoicesLength,
+  //   infoChoicesLength,
+  //   forceResize,
+  // });
 
   const data: ResizeData = {
     id: promptData?.id || 'missing',
@@ -1006,6 +1018,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     nullChoices,
     forceResize,
   };
+
+  s(prevMh, mh);
 
   // console.log(`👋`, data);
 

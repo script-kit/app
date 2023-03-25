@@ -158,6 +158,7 @@ export default function Form() {
       }
     >
       <form
+        id="kit-form-id"
         name="kitForm"
         onChange={onFormChange}
         ref={formRef}
