@@ -84,6 +84,9 @@ export const maybeHide = async (reason: string) => {
       }
 
       promptWindow?.hide();
+      if (kitState.isWindows) {
+        promptWindow?.minimize();
+      }
 
       log.verbose(
         `🙈 maybeHide???: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
@@ -587,8 +590,10 @@ export const getCurrentScreenPromptCache = async (
   // }
 };
 
-export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
+export const setBounds = (bounds: Rectangle, reason = '') => {
   // log.info(`📐 setBounds, reason ${reason}`);
+  // TODO: Maybe use in the future with setting the html body bounds for faster resizing?
+  // promptWindow?.setContentSize(bounds.width, bounds.height);
   promptWindow.setBounds(bounds);
 };
 
@@ -1002,9 +1007,8 @@ export const setPromptData = async (promptData: PromptData) => {
       }
     }, 1000);
   } else if (kitState.isWindows) {
-    promptWindow?.setSkipTaskbar(true);
+    promptWindow?.restore();
     promptWindow?.show();
-    promptWindow?.setSkipTaskbar(false);
   } else {
     promptWindow?.show();
   }
