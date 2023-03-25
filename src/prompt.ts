@@ -84,9 +84,6 @@ export const maybeHide = async (reason: string) => {
       }
 
       promptWindow?.hide();
-      if (kitState.isWindows) {
-        promptWindow?.minimize();
-      }
 
       log.verbose(
         `🙈 maybeHide???: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
@@ -159,6 +156,7 @@ export const createPromptWindow = async () => {
   } else {
     promptWindow = new glasstron.BrowserWindow({
       ...options,
+
       blur: true,
     });
 
@@ -166,6 +164,37 @@ export const createPromptWindow = async () => {
       promptWindow.setBackgroundColor(`#00000000`);
     } catch (error) {
       log.error('Failed to set window blur', error);
+    }
+
+    if (kitState.isWindows) {
+      const { default: ffi } = await import('ffi-napi');
+      const { default: ref } = await import('ref-napi');
+
+      const dwmapi = ffi.Library('dwmapi', {
+        DwmSetWindowAttribute: [
+          'int32',
+          ['int32', 'int32', 'pointer', 'uint32'],
+        ],
+      });
+
+      const DWMWA_TRANSITIONS_FORCEDISABLED = 3;
+      const disableAnimation = ref.alloc('int32', 1);
+
+      // eslint-disable-next-line no-inner-declarations
+      function disableShowAnimation(win) {
+        const hwnd = win.getNativeWindowHandle().readInt32LE();
+        const result = dwmapi.DwmSetWindowAttribute(
+          hwnd,
+          DWMWA_TRANSITIONS_FORCEDISABLED,
+          disableAnimation,
+          4
+        );
+        if (result !== 0) {
+          log.error(`DwmSetWindowAttribute failed with error: ${result}`);
+        }
+      }
+
+      disableShowAnimation(promptWindow);
     }
 
     // try {
@@ -1007,7 +1036,6 @@ export const setPromptData = async (promptData: PromptData) => {
       }
     }, 1000);
   } else if (kitState.isWindows) {
-    promptWindow?.restore();
     promptWindow?.show();
   } else {
     promptWindow?.show();
