@@ -385,7 +385,7 @@
     "minimist": "1.2.5",
     "monaco-editor": "0.36.1",
     "monaco-editor-webpack-plugin": "7.0.1",
-    "nanoid": "3.1.30",
+    "nanoid": "3.1.31",
     "node-abi": "^3.33.0",
     "node-downloader-helper": "1.0.18",
     "node-schedule": "2.1.1",
