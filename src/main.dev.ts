@@ -18,6 +18,7 @@
 
 import {
   app,
+  clipboard,
   protocol,
   powerMonitor,
   shell,
@@ -29,7 +30,6 @@ import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
 
-import clipboardy from 'clipboardy';
 import unhandled from 'electron-unhandled';
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
@@ -905,7 +905,7 @@ const ohNo = async (error: Error) => {
   });
 
   try {
-    await clipboardy.write(
+    clipboard.writeText(
       `
   ${error.message}
   ${error.stack}

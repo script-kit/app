@@ -209,10 +209,21 @@ export const unfilteredChoicesAtom = atom(
 
     s(choicesIdAtom, Math.random());
 
-    s(
-      unfilteredChoices,
-      cs.filter((c) => !(c?.disableSubmit || c?.info))
-    );
+    let actualChoices = cs.filter((c) => !(c?.disableSubmit || c?.info));
+    const key = g(promptDataAtom)?.key as string;
+    if (key) {
+      // sort by the ids stored in the localstorage key
+      const ids = JSON.parse(localStorage.getItem(key) || '[]') || [];
+
+      actualChoices = actualChoices.sort((choiceA, choiceB) => {
+        const aIndex = ids.indexOf(choiceA.id);
+        const bIndex = ids.indexOf(choiceB.id);
+        if (aIndex === -1) return 1;
+        if (bIndex === -1) return -1;
+        return aIndex - bIndex;
+      });
+    }
+    s(unfilteredChoices, actualChoices);
     s(
       infoChoicesAtom,
       cs.filter((c) => c?.info || c?.disableSubmit)
@@ -1377,9 +1388,24 @@ export const submitValueAtom = atom(
     if (g(submittedAtom)) return;
     if (g(enterButtonDisabledAtom)) return;
     const focusedChoice = g(scoredChoices)?.[g(_index)]?.item;
-    if (focusedChoice?.id) {
+    const fid = focusedChoice?.id;
+    if (fid) {
       // console.log(`focusedChoice.id: ${focusedChoice.id}`);
-      s(prevChoiceId, focusedChoice.id);
+      s(prevChoiceId, fid);
+      const key = g(promptDataAtom)?.key;
+      if (key) {
+        // Store the choice in the front of an array based on the prompt key
+
+        const prevIds = localStorage.getItem(key) || '[]';
+        const prevStorageIds = JSON.parse(prevIds);
+        const prevIdAlready = prevStorageIds.find((id: string) => id === fid);
+        if (prevIdAlready) {
+          prevStorageIds.splice(prevStorageIds.indexOf(prevIdAlready), 1);
+        }
+        prevStorageIds.unshift(fid);
+
+        localStorage.setItem(key, JSON.stringify(prevStorageIds));
+      }
     }
     // let submitted = g(submittedAtom);
     // if (submitted) return;
