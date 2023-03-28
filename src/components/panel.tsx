@@ -17,6 +17,20 @@ import {
 import { useKeyDirection, useObserveMainHeight } from '../hooks';
 import { darkTheme, lightTheme } from './themes';
 
+function extractInnerHtmlAndClasses(panelHTML: string) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(panelHTML, 'text/html');
+  const outerElement = doc.body.firstChild as HTMLElement;
+
+  if (outerElement && outerElement.tagName.toLowerCase() === 'div') {
+    const containerClasses = outerElement.getAttribute('class') || '';
+    const { innerHTML } = outerElement;
+    return { __html: innerHTML, containerClasses };
+  }
+
+  return { __html: panelHTML, containerClasses: '' };
+}
+
 export default function Panel() {
   // useEscape();
   // useEnter(); // Is this needed?
@@ -50,15 +64,7 @@ export default function Panel() {
     [scrollRef?.current, inputFocus, shortcuts, flags]
   );
 
-  // remove the outermost tags from panelHTML
-  // /^<[^>]+>|<\/[^>]+>$/g
-  let __html = panelHTML.replace(/^<[^>]+>|<\/[^>]+>$/g, '');
-  let containerClasses = '';
-  const [, container] = panelHTML?.match(/class="([^"]*)"/) || ['', ''];
-  if (container) {
-    containerClasses = container;
-    __html = panelHTML.replace(/^<[^>]+>|<\/[^>]+>$/g, '');
-  }
+  const { __html, containerClasses } = extractInnerHtmlAndClasses(panelHTML);
 
   return (
     <SimpleBar
