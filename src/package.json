@@ -19,7 +19,7 @@
     "@types/regenerator-runtime": "^0.13.0"
   },
   "dependencies": {
-    "@crosscopy/clipboard": "0.1.10",
+    "@johnlindquist/clipboard": "https://github.com/johnlindquist/clipboard/releases/download/v0.1.25/johnlindquist-clipboard-0.1.25.tgz",
     "@nut-tree/nut-js": "3.1.1",
     "chokidar": "3.5.3",
     "frontmost-app": "1.0.0",

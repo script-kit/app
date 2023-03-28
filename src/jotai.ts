@@ -992,6 +992,13 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     if (ui === UI.form || ui === UI.fields) {
       ch = (document as any)?.getElementById('kit-form-id')?.clientHeight;
       mh = ch;
+    } else if (ui === UI.div) {
+      ch = (document as any)?.getElementById('panel')?.clientHeight;
+      if (ch) {
+        mh = ch;
+      } else {
+        return;
+      }
     } else {
       ch = (document as any)?.getElementById('main')?.clientHeight;
     }
@@ -1000,6 +1007,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
       forceResize = Boolean(
         ch < (scoredChoicesLength + infoChoicesLength) * itemHeight
       );
+    } else if (ui === UI.div) {
+      forceResize = true;
     } else {
       forceResize = Boolean(ch > g(prevMh));
     }
@@ -1008,6 +1017,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   }
 
   // g(logAtom)({
+  //   ui,
   //   ch,
   //   itemHeight,
   //   scoredChoicesLength,

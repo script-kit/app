@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import clipboardEventListener from '@crosscopy/clipboard';
+import clipboardEventListener from '@johnlindquist/clipboard';
 import { Observable, Subscription } from 'rxjs';
 import { delay, filter, share, switchMap } from 'rxjs/operators';
 import log from 'electron-log';
