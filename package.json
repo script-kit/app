@@ -382,7 +382,7 @@
     "jotai": "2.0.3",
     "lodash": "4.17.20",
     "memoize-one": "5.2.1",
-    "minimist": "1.2.5",
+    "minimist": "1.2.6",
     "monaco-editor": "0.36.1",
     "monaco-editor-webpack-plugin": "7.0.1",
     "nanoid": "3.1.30",
