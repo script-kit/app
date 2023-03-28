@@ -17,11 +17,6 @@ import {
 import { useKeyDirection, useObserveMainHeight } from '../hooks';
 import { darkTheme, lightTheme } from './themes';
 
-interface PanelProps {
-  width: number;
-  height: number;
-}
-
 export default function Panel() {
   // useEscape();
   // useEnter(); // Is this needed?

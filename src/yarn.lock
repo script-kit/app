@@ -299,11 +299,11 @@
     "@babel/runtime" "^7.7.2"
     regenerator-runtime "^0.13.3"
 
-"@johnlindquist/clipboard@https://github.com/johnlindquist/clipboard/releases/download/v0.1.25/johnlindquist-clipboard-0.1.25.tgz":
-  version "0.1.25"
-  resolved "https://github.com/johnlindquist/clipboard/releases/download/v0.1.25/johnlindquist-clipboard-0.1.25.tgz#54b26b6404b367ba9ed37e48509c78cc573a8260"
+"@johnlindquist/clipboard@^0.1.30":
+  version "0.1.30"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/clipboard/-/clipboard-0.1.30.tgz#b30541ba347f3b812af9fd9093b482ac0f3fca11"
+  integrity sha512-H062TpP1zYVqfp3cQmlNtEjPo+OxScmOWoB3K4cVtK6r2/b6Yc3o7UN4ZPJG6K6PI7vr89ztyhq7LA5LKlU7LQ==
   dependencies:
-    "@types/detect-port" "^1.3.2"
     detect-port "^1.5.1"
 
 "@nut-tree/libnut-darwin@2.5.1":
@@ -364,11 +364,6 @@
   version "2.5.5"
   resolved "https://registry.yarnpkg.com/@types/core-js/-/core-js-2.5.5.tgz#dc5a013ee0b23bd5ac126403854fadabb4f24f75"
   integrity sha512-C4vwOHrhsvxn7UFyk4NDQNUpgNKdWsT/bL39UWyD75KSEOObZSKa9mYDOCM5FGeJG2qtbG0XiEbUKND2+j0WOg==
-
-"@types/detect-port@^1.3.2":
-  version "1.3.2"
-  resolved "https://registry.yarnpkg.com/@types/detect-port/-/detect-port-1.3.2.tgz#8c06a975e472803b931ee73740aeebd0a2eb27ae"
-  integrity sha512-xxgAGA2SAU4111QefXPSp5eGbDm/hW6zhvYl9IeEPZEry9F4d66QAHm5qpUXjb6IsevZV/7emAEx5MhP6O192g==
 
 "@types/node@16.9.1":
   version "16.9.1"
