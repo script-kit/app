@@ -4,7 +4,6 @@ import path from 'path';
 import { readFile } from 'fs/promises';
 import { subscribeKey } from 'valtio/utils';
 import { debounce } from 'lodash';
-import { spawn } from 'child_process';
 
 import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 
@@ -14,8 +13,7 @@ import { focusPrompt, isFocused, isVisible, reload } from './prompt';
 import { convertKey, kitState, subs } from './state';
 import { Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
-import { stripAnsi } from './ansi';
-import { getLog } from './logs';
+import { spawnShebang } from './process';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -43,35 +41,7 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
 
       if (shebang) {
         // split shebang into command and args
-        const [command, ...args] = shebang.split(' ');
-        const child = spawn(command, [...args, filePath], {
-          detached: true,
-        });
-
-        child.unref();
-
-        if (child.stdout && child.stderr) {
-          const scriptLog = getLog(filePath);
-          child.stdout.removeAllListeners();
-          child.stderr.removeAllListeners();
-
-          const routeToScriptLog = (d: any) => {
-            if (child?.killed) return;
-            const result = d.toString();
-            scriptLog.info(`\n${stripAnsi(result)}`);
-          };
-
-          child.stdout?.on('data', routeToScriptLog);
-          child.stdout?.on('error', routeToScriptLog);
-
-          child.stderr?.on('data', routeToScriptLog);
-          child.stderr?.on('error', routeToScriptLog);
-
-          // Log out when the process exits
-          child.on('exit', (code) => {
-            scriptLog.info(`\nProcess exited with code ${code}`);
-          });
-        }
+        spawnShebang({ shebang, filePath });
 
         return;
       }

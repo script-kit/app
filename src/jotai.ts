@@ -1006,7 +1006,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     } else if (ui === UI.div) {
       ch = (document as any)?.getElementById('panel')?.clientHeight;
       if (ch) {
-        mh = ch;
+        mh = promptData?.height || ch;
       } else {
         return;
       }

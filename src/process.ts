@@ -29,7 +29,7 @@ import url from 'url';
 import sizeOf from 'image-size';
 import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { ChildProcess, fork } from 'child_process';
+import { ChildProcess, fork, spawn } from 'child_process';
 import { Channel, ProcessType, Value, UI } from '@johnlindquist/kit/cjs/enum';
 import { Choice, Script, ProcessInfo } from '@johnlindquist/kit/types/core';
 
@@ -1858,6 +1858,11 @@ const kitMessageMap: ChannelHandler = {
   GET_DEVICES: toProcess(async ({ child }, { channel, value }) => {
     sendToPrompt(channel, value);
   }),
+  SHEBANG: toProcess(async ({ child }, { channel, value }) => {
+    spawnShebang(value);
+
+    childSend(child, { channel, value });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (
@@ -2090,6 +2095,21 @@ class Processes extends Array<ProcessInfo> {
       scriptPath,
       pid,
     }));
+  }
+
+  public addExistingProcess(child: ChildProcess, scriptPath:string) {
+    const info = {
+      pid: child.pid,
+      child,
+      type: ProcessType.Prompt,
+      scriptPath,
+      values: [],
+      date: Date.now(),
+    };
+
+    this.push(info);
+    kitState.addP(info);
+    processesChanged();
   }
 
   public add(
@@ -2439,6 +2459,43 @@ export const destroyAllProcesses = () => {
   });
   processes.length = 0;
 };
+
+
+export const spawnShebang = async ({shebang, filePath}:{
+  shebang: string;
+  filePath: string;
+}) => {
+  const [command, ...args] = shebang.split(' ');
+        const child = spawn(command, [...args, filePath]);
+        processes.addExistingProcess(child, filePath);
+
+        log.info(`🚀 Spawned process ${child.pid} for ${filePath} with command ${command}`);
+
+        child.unref();
+
+        if (child.stdout && child.stderr) {
+          const scriptLog = getLog(filePath);
+          child.stdout.removeAllListeners();
+          child.stderr.removeAllListeners();
+
+          const routeToScriptLog = (d: any) => {
+            if (child?.killed) return;
+            const result = d.toString();
+            scriptLog.info(`\n${stripAnsi(result)}`);
+          };
+
+          child.stdout?.on('data', routeToScriptLog);
+          child.stdout?.on('error', routeToScriptLog);
+
+          child.stderr?.on('data', routeToScriptLog);
+          child.stderr?.on('error', routeToScriptLog);
+
+          // Log out when the process exits
+          child.on('exit', (code) => {
+            scriptLog.info(`\nProcess exited with code ${code}`);
+          });
+        }
+}
 
 emitter.on(
   KitEvent.RemoveMostRecent,
