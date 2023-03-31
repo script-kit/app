@@ -32,9 +32,6 @@ export default function AudioRecorder() {
   const [channel] = useAtom(channelAtom);
 
   const stopRecording = useCallback(async () => {
-    // console.log(`🛑 STOP RECORDING`, {
-    //   recorder,
-    // });
     if (recorder) {
       recorder.stop();
       // destroy the recorder
