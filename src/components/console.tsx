@@ -49,6 +49,7 @@ export default function Console() {
       onMouseOut={() => setMouseOver(false)}
     >
       <SimpleBar
+        id="log"
         forceVisible="y"
         className="log
         w-full h-16

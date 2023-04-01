@@ -132,6 +132,8 @@ import {
   appendInputAtom,
   micIdAtom,
   webcamIdAtom,
+  logAtom,
+  logVisibleAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -219,6 +221,7 @@ export default function App() {
   const getColor = useAtomValue(colorAtom);
   const onPaste = useAtomValue(onPasteAtom);
   const onDrop = useAtomValue(onDropAtom);
+  const logVisible = useAtomValue(logVisibleAtom);
 
   const setExit = useSetAtom(exitAtom);
   const setScriptHistory = useSetAtom(_history);
@@ -275,6 +278,8 @@ export default function App() {
   const setShortcuts = useSetAtom(shortcutsAtom);
   const setTermConfig = useSetAtom(termConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
+
+  const log = useAtomValue(logAtom);
 
   const [zoomLevel, setZoom] = useAtom(zoomAtom);
   const setMicId = useSetAtom(micIdAtom);
@@ -498,6 +503,20 @@ export default function App() {
 
     ipcRenderer.on(AppChannel.SET_WEBCAM_ID, handleSetWebcamId);
 
+    const handleSetBounds = (_, data: any) => {
+      requestAnimationFrame(() => {
+        window?.resizeTo(data?.width, data?.height);
+        document.documentElement.style.width = `${data?.width}px`;
+        document.documentElement.style.height = `${data?.height}px`;
+        document.body.style.width = `${data?.width}px`;
+        document.body.style.height = `${data?.height}px`;
+        document.getElementById('root')!.style.width = `${data?.width}px`;
+        document.getElementById('root')!.style.height = `${data?.height}px`;
+      });
+    };
+
+    ipcRenderer.on(AppChannel.SET_BOUNDS, handleSetBounds);
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
@@ -510,6 +529,7 @@ export default function App() {
       ipcRenderer.off(AppChannel.TERM_EXIT, handleTermExit);
       ipcRenderer.off(AppChannel.SET_MIC_ID, handleSetMicId);
       ipcRenderer.off(AppChannel.SET_WEBCAM_ID, handleSetWebcamId);
+      ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
     };
   }, [messageMap]);
 
@@ -564,6 +584,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div
+        id="main-container"
         className={`
         w-screen h-screen
         min-w-screen min-h-screen
@@ -710,9 +731,7 @@ export default function App() {
                   </>
                 ))}
             </main>
-            {logHtml?.length > 0 && script?.log !== 'false' && (
-              <Console key="AppLog" />
-            )}
+            {logVisible && <Console key="AppLog" />}
             <ActionBar />
           </motion.div>
         </AnimatePresence>

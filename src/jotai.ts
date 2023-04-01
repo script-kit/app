@@ -451,6 +451,9 @@ export const logHTMLAtom = atom(
 );
 
 export const logHeightAtom = atom(0);
+export const logVisibleAtom = atom((g) => {
+  return g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== 'false';
+});
 
 const editorConfig = atom<EditorConfig | null>({
   value: '',
@@ -1027,6 +1030,10 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     g(logAtom)(`Force resize error`);
   }
 
+  if (g(logVisibleAtom)) {
+    mh += document.getElementById('log')?.clientHeight || 0;
+  }
+
   // g(logAtom)({
   //   ui,
   //   ch,
@@ -1171,7 +1178,7 @@ export const promptDataAtom = atom(
       // s(_index, 0);
       // s(_tabIndex, 0);
       s(submittedAtom, false);
-      s(logHTMLAtom, '');
+      // s(logHTMLAtom, '');
       s(uiAtom, a.ui);
       s(ultraShortCodesAtom, []);
       s(hintAtom, a.hint);
