@@ -13,7 +13,7 @@ import {
   UiohookKey,
   UiohookMouseEvent,
   uIOhook,
-} from 'uiohook-napi';
+} from 'uiohook-dapi';
 import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
 import { Choice, Script } from '@johnlindquist/kit/types/core';
 import { remove } from 'lodash';

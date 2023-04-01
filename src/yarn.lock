@@ -765,9 +765,9 @@ node-addon-api@^3.0.2:
   integrity sha512-mmcei9JghVNDYydghQmeDX8KoAm0FAiYyIcUt/N4nhyAipB17pllZQDOJD2fotxABnt4Mdz+dKTO7eftLg4d0A==
 
 node-gyp-build@4.x.x:
-  version "4.5.0"
-  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.5.0.tgz#7a64eefa0b21112f89f58379da128ac177f20e40"
-  integrity sha512-2iGbaQBV+ITgCz76ZEjmhUKAKVf7xfY1sRl4UiKQspfZMH2h06SyhNsnSVy50cwkFQDGLyif6m/6uFXHkOZ6rg==
+  version "4.6.0"
+  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.6.0.tgz#0c52e4cbf54bbd28b709820ef7b6a3c2d6209055"
+  integrity sha512-NTZVKn9IylLwUzaKjkas1e4u2DLNcV4rdYagA4PWdPwW87Bi7z+BznyKSRwS/761tV/lzCGXplWsiaMjLqP2zQ==
 
 node-mac-permissions@2.3.0:
   version "2.3.0"
@@ -956,12 +956,19 @@ to-regex-range@^5.0.1:
   dependencies:
     is-number "^7.0.0"
 
-uiohook-napi@1.5.0:
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/uiohook-napi/-/uiohook-napi-1.5.0.tgz#6b84724dff5a95e9b636f29f9c9d2c1babe6485c"
-  integrity sha512-/bqSKDCfPxgUyFPPOqf6yTBCF4g8KjRihdpJLnQgFF0RTYVVG3w1KVCVpdDJSN5is8jqKUjjYKEiPZaYiuca9g==
+tsc@^2.0.4:
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/tsc/-/tsc-2.0.4.tgz#5f6499146abea5dca4420b451fa4f2f9345238f5"
+  integrity sha512-fzoSieZI5KKJVBYGvwbVZs/J5za84f2lSTLPYf6AGiIf43tZ3GNrI1QzTLcjtyDDP4aLxd46RTZq1nQxe7+k5Q==
+
+uiohook-dapi@^1.5.2:
+  version "1.5.2"
+  resolved "https://registry.yarnpkg.com/uiohook-dapi/-/uiohook-dapi-1.5.2.tgz#49eb5a461ea81c02fdaac5f5967f47349eaad842"
+  integrity sha512-akHrKQNFUHZFP7VsqfmXkpJwjavxfWpXLDikaBS/jyywodfI490tr2tCyWLYJAentd9BM6MevQtNbML0xcD8qw==
   dependencies:
     node-gyp-build "4.x.x"
+    tsc "^2.0.4"
+    yarn "^1.22.19"
 
 utif@^2.0.1:
   version "2.0.1"
@@ -1019,3 +1026,8 @@ yallist@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/yallist/-/yallist-4.0.0.tgz#9bb92790d9c0effec63be73519e11a35019a3a72"
   integrity sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==
+
+yarn@^1.22.19:
+  version "1.22.19"
+  resolved "https://registry.yarnpkg.com/yarn/-/yarn-1.22.19.tgz#4ba7fc5c6e704fce2066ecbfb0b0d8976fe62447"
+  integrity sha512-/0V5q0WbslqnwP91tirOvldvYISzaqhClxzyUKXYxs07yUILIs5jx/k6CFe8bvKSkds5w+eiOqta39Wk3WxdcQ==
