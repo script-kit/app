@@ -224,12 +224,14 @@ export const checkUserDb = async (eventName: string) => {
 
   if (eventName === 'unlink') return;
   if (kitState?.user?.login) {
-    sponsorCheck('Login', false);
+    const isSponsor = await sponsorCheck('Login', false);
+    kitState.isSponsor = isSponsor;
   }
 
-  log.info(`Send user.json to prompt`, snapshot(kitState.user));
+  const user = snapshot(kitState.user);
+  log.info(`Send user.json to prompt`, user);
 
-  appToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
+  appToPrompt(AppChannel.USER_CHANGED, user);
 };
 
 export const setupWatchers = async () => {
