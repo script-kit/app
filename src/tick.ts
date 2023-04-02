@@ -302,10 +302,14 @@ export const configureInterval = async () => {
         }
       });
 
-      log.info(`The line right before uIOhook.start()...`);
-      uIOhook.start();
-      kitState.watcherEnabled = true;
-      log.info(`The line right after uIOhook.start()...`);
+      uIOhook.stop();
+
+      setTimeout(() => {
+        log.info(`The line right before uIOhook.start()...`);
+        uIOhook.start();
+        kitState.watcherEnabled = true;
+        log.info(`The line right after uIOhook.start()...`);
+      }, 1000);
 
       log.info(`🟢 Started keyboard and mouse watcher`);
     } catch (e) {
