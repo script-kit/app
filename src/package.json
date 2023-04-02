@@ -28,6 +28,6 @@
     "node-abi": "^3.33.0",
     "node-mac-permissions": "2.3.0",
     "node-pty": "0.11.0-beta30",
-    "uiohook-dapi": "^1.5.2"
+    "uiohook-napi": "^1.5.0"
   }
 }
