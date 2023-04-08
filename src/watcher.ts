@@ -323,8 +323,12 @@ export const setupWatchers = async () => {
 
     if (base === 'app.json') {
       log.info(`app.json changed`);
-      const currentAppDb = (await getAppDb()).data;
-      assign(appDb, currentAppDb);
+      try {
+        const currentAppDb = (await getAppDb()).data;
+        assign(appDb, currentAppDb);
+      } catch (error) {
+        log.warn(error);
+      }
 
       return;
     }

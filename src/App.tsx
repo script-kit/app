@@ -184,6 +184,17 @@ class ErrorBoundary extends React.Component {
     if (hasError) {
       return (
         <div className="p-2 font-mono">
+          {/* Add a button to reload the window */}
+          <button
+            type="button"
+            className="bg-red-500 text-white p-2 rounded"
+            onClick={() => {
+              ipcRenderer.send(AppChannel.RELOAD);
+            }}
+          >
+            Reload Prompt
+          </button>
+
           <div className="text-base text-red-500">
             Rendering Error. Opening logs.
           </div>
@@ -228,7 +239,7 @@ export default function App() {
   const setInput = useSetAtom(inputAtom);
   const appendInput = useSetAtom(appendInputAtom);
   const setPlaceholder = useSetAtom(placeholderAtom);
-  const setPromptData = useSetAtom(promptDataAtom);
+  const [promptData, setPromptData] = useAtom(promptDataAtom);
   const setTheme = useSetAtom(themeAtom);
   const setTempTheme = useSetAtom(tempThemeAtom);
   const setSplashBody = useSetAtom(splashBodyAtom);
@@ -646,7 +657,7 @@ export default function App() {
             onMouseMove={onMouseMove}
           >
             {ui !== UI.log && (
-              <header ref={headerRef} className="relative z-10">
+              <header id="header" ref={headerRef} className="relative z-10">
                 <Header />
 
                 {ui === UI.hotkey && (
@@ -732,7 +743,9 @@ export default function App() {
                 ))}
             </main>
             {logVisible && <Console key="AppLog" />}
-            <ActionBar />
+            <footer id="footer" className={promptData?.footerClassName || ''}>
+              <ActionBar />
+            </footer>
           </motion.div>
         </AnimatePresence>
       </div>

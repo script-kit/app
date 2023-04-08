@@ -10,7 +10,7 @@ import { atom, Getter, Setter } from 'jotai';
 import DOMPurify from 'dompurify';
 import { QuickScore, createConfig, quickScore } from 'quick-score';
 import { AppDb, UserDb } from '@johnlindquist/kit/cjs/db';
-import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
+import { Channel, Mode, UI, PROMPT } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
 import {
   Choice,
@@ -44,6 +44,7 @@ import {
 import {
   BUTTON_HEIGHT,
   DEFAULT_HEIGHT,
+  INPUT_HEIGHT,
   noChoice,
   noScript,
   SPLASH_PATH,
@@ -301,6 +302,11 @@ export const unfilteredChoicesAtom = atom(
       const nextIndex = g(scoredChoices).findIndex(
         (sc) => sc.item.id === prevCId
       );
+
+      // g(logAtom)({
+      //   nextIndex,
+      //   prevCId,
+      // });
 
       s(_index, nextIndex > 0 ? nextIndex : 0);
     }
@@ -580,6 +586,7 @@ export const _index = atom(
 
     const selected = g(selectedAtom);
     const id = choice?.id;
+    s(prevChoiceId, id || '');
     // const prevId = g(prevChoiceId);
 
     const defaultValue: any = g(defaultValueAtom);
@@ -937,9 +944,10 @@ export const isMainScriptInitialAtom = atom<boolean>((g) => {
   return g(isMainScriptAtom) && g(inputAtom) === '';
 });
 
-const topHeight = atom(88);
+const _topHeight = atom(88);
 const mainHeight = atom(0);
 const prevMh = atom(0);
+let prevTopHeight = 0;
 
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   if (g(submittedAtom)) return;
@@ -976,22 +984,26 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     noInfo &&
     ui === UI.arg;
 
-  let th = g(topRefAtom)?.clientHeight || 88;
+  const topHeight = Math.floor(
+    document.getElementById('header')?.offsetHeight || 0
+  );
+  const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
   const hasPreview = Boolean(g(hasPreviewAtom));
 
   if (hasPreview && mh < DEFAULT_HEIGHT) {
     mh = promptData?.height || DEFAULT_HEIGHT;
   }
 
-  if (ui === UI.arg && th < TOP_HEIGHT) {
-    th = TOP_HEIGHT;
-  }
-
   const itemHeight = g(itemHeightAtom);
 
   const choicesHeight = (scoredChoicesLength + infoChoicesLength) * itemHeight;
   if (ui === UI.arg && choicesHeight > DEFAULT_HEIGHT) {
-    mh = promptData?.height || DEFAULT_HEIGHT;
+    mh =
+      (promptData?.height && promptData?.height > DEFAULT_HEIGHT
+        ? promptData?.height
+        : DEFAULT_HEIGHT) -
+      topHeight -
+      footerHeight;
   } else {
     mh = choicesHeight;
   }
@@ -1004,17 +1016,17 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   let ch = 0;
   try {
     if (ui === UI.form || ui === UI.fields) {
-      ch = (document as any)?.getElementById('kit-form-id')?.clientHeight;
+      ch = (document as any)?.getElementById('kit-form-id')?.offsetHeight;
       mh = ch;
     } else if (ui === UI.div) {
-      ch = (document as any)?.getElementById('panel')?.clientHeight;
+      ch = (document as any)?.getElementById('panel')?.offsetHeight;
       if (ch) {
         mh = promptData?.height || ch;
       } else {
         return;
       }
     } else {
-      ch = (document as any)?.getElementById('main')?.clientHeight;
+      ch = (document as any)?.getElementById('main')?.offsetHeight;
     }
 
     if (ui === UI.arg) {
@@ -1030,17 +1042,26 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     g(logAtom)(`Force resize error`);
   }
 
+  if (topHeight !== prevTopHeight) {
+    forceResize = true;
+    prevTopHeight = topHeight;
+  }
+
   if (g(logVisibleAtom)) {
-    mh += document.getElementById('log')?.clientHeight || 0;
+    mh += document.getElementById('log')?.offsetHeight || 0;
   }
 
   // g(logAtom)({
   //   ui,
   //   ch,
+  //   mh,
+  //   footerHeight,
+  //   topHeight,
   //   itemHeight,
   //   scoredChoicesLength,
   //   infoChoicesLength,
   //   forceResize,
+  //   promptHeight: promptData?.height || 'UNSET',
   // });
 
   const data: ResizeData = {
@@ -1048,10 +1069,10 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     reason,
     scriptPath: g(_script)?.filePath,
     placeholderOnly,
-    topHeight: Math.floor(th),
+    topHeight,
     ui,
-    mainHeight: Math.floor(mh),
-    footerHeight: 30,
+    mainHeight: Math.floor(mh) + 2,
+    footerHeight,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
     hasInput: Boolean(g(inputAtom)?.length),
@@ -1073,7 +1094,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 };
 
 export const topHeightAtom = atom(
-  (g) => g(topHeight),
+  (g) => g(_topHeight),
   (g, s) => {
     if (!g(isMainScriptAtom) && g(uiAtom) === UI.arg) {
       resize(g, s, 'TOP_HEIGHT');
@@ -2138,3 +2159,67 @@ export const enterPressedAtom = atom(
 export const micIdAtom = atom<string | null>(null);
 export const webcamIdAtom = atom<string | null>(null);
 export const audioRecorderAtom = atom<MediaRecorder | null>(null);
+
+export const buttonNameFontSizeAtom = atom((g) => {
+  let fontSize = `text-base`;
+  const itemHeight = g(itemHeightAtom);
+  switch (itemHeight) {
+    case PROMPT.ITEM.HEIGHT.XS:
+      fontSize = `text-xs`;
+      break;
+
+    case PROMPT.ITEM.HEIGHT.SM:
+      fontSize = `text-sm`;
+      break;
+
+    case PROMPT.ITEM.HEIGHT.BASE:
+      fontSize = `text-base`;
+      break;
+
+    case PROMPT.ITEM.HEIGHT.LG:
+      fontSize = `text-lg`;
+      break;
+
+    case PROMPT.ITEM.HEIGHT.XL:
+      fontSize = `text-xl`;
+      break;
+
+    default:
+      fontSize = `text-base`;
+      break;
+  }
+
+  return fontSize;
+});
+
+export const inputFontSizeAtom = atom((g) => {
+  let fontSize = `text-2xl`;
+  const inputHeight = g(promptDataAtom)?.inputHeight;
+  switch (inputHeight) {
+    case PROMPT.INPUT.HEIGHT.XS:
+      fontSize = `text-sm`;
+      break;
+
+    case PROMPT.INPUT.HEIGHT.SM:
+      fontSize = `text-base`;
+      break;
+
+    case PROMPT.INPUT.HEIGHT.BASE:
+      fontSize = `text-lg`;
+      break;
+
+    case PROMPT.INPUT.HEIGHT.LG:
+      fontSize = `text-xl`;
+      break;
+
+    case PROMPT.INPUT.HEIGHT.XL:
+      fontSize = `text-2xl`;
+      break;
+
+    default:
+      fontSize = `text-2xl`;
+      break;
+  }
+
+  return fontSize;
+});

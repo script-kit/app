@@ -18,6 +18,7 @@ import {
   loadingAtom,
   kitStateAtom,
   applyUpdateAtom,
+  promptDataAtom,
 } from '../jotai';
 import TopBar from './TopBar';
 
@@ -97,6 +98,7 @@ export default function Header() {
   const [isMainScript] = useAtom(isMainScriptAtom);
   const [loading] = useAtom(loadingAtom);
   const [open] = useAtom(openAtom);
+  const [promptData] = useAtom(promptDataAtom);
 
   const onXClick = useCallback(() => {
     setOpen(false);
@@ -123,6 +125,7 @@ export default function Header() {
       text-primary items-center ${
         isMainScript && processes?.length > 1 ? `-my-1` : ``
       }
+      ${promptData?.headerClassName || ''}
       `}
       >
         <div

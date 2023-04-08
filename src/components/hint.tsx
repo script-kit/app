@@ -10,6 +10,7 @@ export default function Hint() {
 
   return (
     <motion.div
+      id="hint"
       key="hint"
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}

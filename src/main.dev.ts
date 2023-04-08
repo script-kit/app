@@ -75,7 +75,7 @@ import {
   getAppDb,
 } from '@johnlindquist/kit/cjs/db';
 import { subscribeKey } from 'valtio/utils';
-import { assign, debounce } from 'lodash';
+import { assign, debounce, throttle } from 'lodash';
 import { snapshot } from 'valtio';
 import { setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
@@ -159,14 +159,24 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 crashReporter.start({ submitURL: '', uploadToServer: false });
 
+let prevError = ``;
 unhandled({
   showDialog: false,
-  logger: (error) => {
-    log.warn(error);
-    // if error contains "ECONN", then ignore it
-    if (error.message.includes('ECONN')) return;
-    displayError(error);
-  },
+  logger: throttle(
+    (error) => {
+      log.warn(error);
+      // if error contains "ECONN", then ignore it
+      if (error.message.includes('ECONN')) return;
+      // if error is the same as prevError, then ignore it
+      if (error.message === prevError) return;
+      prevError = error.message;
+      displayError(error);
+    },
+    2500,
+    {
+      leading: true,
+    }
+  ),
 });
 
 if (!app.requestSingleInstanceLock()) {

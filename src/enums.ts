@@ -40,6 +40,7 @@ export enum AppChannel {
   TAKE_SELFIE = 'TAKE_SELFIE',
   SET_WEBCAM_ID = 'SET_WEBCAM_ID',
   SET_MIC_ID = 'SET_MIC_ID',
+  RELOAD = 'RELOAD',
 }
 
 export enum WindowChannel {

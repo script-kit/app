@@ -81,6 +81,16 @@ export const startIpc = () => {
     resize(resizeData);
   });
 
+  ipcMain.on(AppChannel.RELOAD, async () => {
+    reload();
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await runPromptProcess(mainScriptPath, [], {
+      force: true,
+      trigger: Trigger.Menu,
+    });
+  });
+
   ipcMain.on(AppChannel.OPEN_SCRIPT_LOG, async (event, script: Script) => {
     const logPath = getLogFromScriptPath((script as Script).filePath);
     await runPromptProcess(kitPath('cli/edit-file.js'), [logPath], {

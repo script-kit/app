@@ -20,6 +20,7 @@ import {
   flagValueAtom,
   isMouseDownAtom,
   _modifiers,
+  buttonNameFontSizeAtom,
 } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -77,6 +78,7 @@ export default function ChoiceButton({
   const [flaggedValue, setFlagValue] = useAtom(flagValueAtom);
   const [modifiers] = useAtom(_modifiers);
   const [modifierDescription, setModifierDescription] = useState('');
+  const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
 
   // const dataTransfer = useRef<any>('Data Transfer');
 
@@ -221,11 +223,15 @@ export default function ChoiceButton({
             )}
             <div className="flex flex-col max-w-full overflow-x-hidden">
               {/* Name */}
-              <div className="truncate">
+              <div
+                className={`${
+                  choice?.className ? '' : buttonNameFontSize
+                } truncate`}
+              >
                 {highlight(
                   choice.name,
                   scoredChoice?.matches?.name,
-                  'bg-primary bg-opacity-5 text-primary'
+                  `bg-primary bg-opacity-5 text-primary`
                 )}
               </div>
               {/* Description */}

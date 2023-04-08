@@ -3,11 +3,10 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtomValue, useAtom, useSetAtom } from 'jotai';
-import { loadable } from 'jotai/utils';
 import { motion } from 'framer-motion';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback } from 'react';
-import { ipcRenderer } from 'electron';
+import { IconButton } from './icon';
 import {
   flagsAtom,
   _flag,
@@ -22,11 +21,9 @@ import {
   sendShortcutAtom,
   enterButtonNameAtom,
   enterButtonDisabledAtom,
-  createAssetAtom,
   appDbAtom,
   enterPressedAtom,
 } from '../jotai';
-import { AppChannel } from '../enums';
 
 type Action = {
   name: string;
@@ -318,64 +315,6 @@ export function ActionButton(action: Action) {
     </motion.button>
   );
 }
-
-const loadableIconAtom = loadable(createAssetAtom('svg', 'logo.svg'));
-
-const IconButton = () => {
-  const [lazyIcon] = useAtom(loadableIconAtom);
-  if (lazyIcon.state === 'hasError') return <span>{lazyIcon.error}</span>;
-  if (lazyIcon.state === 'loading') {
-    return <span>Loading...</span>;
-  }
-
-  return (
-    <motion.button
-      key="icon-button"
-      tabIndex={-1}
-      type="button"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1] }}
-      transition={transition}
-      className="min-w-fit min-h-fit"
-    >
-      <a
-        onClick={(e) => {
-          e.preventDefault();
-          ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
-        }}
-        tabIndex={-1}
-      >
-        <svg
-          className={`
-        flex
-      h-6 w-7
-
-      items-center justify-center
-      p-1
-      -ml-1 mb-0.5
-      rounded
-      min-w-fit
-      ${textContrast}
-
-      ${bg}
-
-      transition-all duration-200 ease-in-out
-      `}
-          xmlns="http://www.w3.org/2000/svg"
-          width="32"
-          height="32"
-          fill="currentColor"
-          viewBox="0 0 32 32"
-        >
-          <path
-            fill="currentColor"
-            d="M14 25a2 2 0 0 1 2-2h14a2 2 0 1 1 0 4H16a2 2 0 0 1-2-2ZM0 7.381c0-1.796 1.983-2.884 3.498-1.92l13.728 8.736c1.406.895 1.406 2.946 0 3.84L3.498 26.775C1.983 27.738 0 26.649 0 24.854V7.38Z"
-          />
-        </svg>
-      </a>
-    </motion.button>
-  );
-};
 
 export default function ActionBar() {
   const [flags] = useAtom(flagsAtom);

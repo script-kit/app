@@ -8,7 +8,7 @@ import React, {
   useEffect,
 } from 'react';
 import { motion } from 'framer-motion';
-import { UI } from '@johnlindquist/kit/cjs/enum';
+import { UI, PROMPT } from '@johnlindquist/kit/cjs/enum';
 import { Choice } from '@johnlindquist/kit/types/core';
 import { useAtom } from 'jotai';
 
@@ -27,8 +27,10 @@ import {
   onInputSubmitAtom,
   inputFocusAtom,
   uiAtom,
+  inputFontSizeAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
+import { IconButton } from './icon';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];
@@ -54,6 +56,7 @@ export default function Input() {
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
   const [, setInputFocus] = useAtom(inputFocusAtom);
   const [ui] = useAtom(uiAtom);
+  const [fontSize] = useAtom(inputFontSizeAtom);
 
   useEffect(() => {
     setInputFocus(true);
@@ -154,6 +157,9 @@ export default function Input() {
     <motion.div
       key="input"
       className="flex flex-row"
+      style={{
+        height: promptData?.inputHeight || PROMPT.INPUT.HEIGHT.BASE,
+      }}
       // initial={{ opacity: 0 }}
       // animate={{ opacity: processing ? 0 : 1 }}
       // transition={{ duration: 0.2 }}
@@ -172,13 +178,15 @@ export default function Input() {
         autoFocus
         className={`
       bg-transparent w-full text-text-base focus:outline-none outline-none
-      text-2xl
       placeholder-text-base placeholder-opacity-25
       tracking-normal
       placeholder:tracking-normal
-      h-14
+      ${fontSize}
+      h-full
       ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 px-4 py-0
-      focus:border-none border-none`}
+      focus:border-none border-none
+      ${promptData?.inputClassName || ''}
+      `}
         onChange={onChange}
         onKeyDown={onKeyDown}
         onKeyUp={onKeyUp}
@@ -187,6 +195,11 @@ export default function Input() {
         type={promptData?.secret ? 'password' : promptData?.type || 'text'}
         value={inputValue}
       />
+      {promptData?.footerClassName?.includes('hidden') && (
+        <div className="h-full w-12 flex justify-center items-center">
+          <IconButton />
+        </div>
+      )}
     </motion.div>
   );
 }

@@ -143,7 +143,7 @@ export const createPromptWindow = async () => {
     width: getDefaultWidth(),
     height: DEFAULT_HEIGHT,
     minWidth: MIN_WIDTH,
-    minHeight: INPUT_HEIGHT,
+    minHeight: PROMPT.INPUT.HEIGHT.XS,
     type: 'panel',
   };
 
@@ -583,7 +583,7 @@ export const getCurrentScreenPromptCache = async (
 };
 
 export const setBounds = (bounds: Rectangle, reason = '') => {
-  // log.info(`📐 setBounds, reason ${reason}`);
+  // log.info(`📐 setBounds, reason ${reason}`, bounds);
   // TODO: Maybe use in the future with setting the html body bounds for faster resizing?
   // promptWindow?.setContentSize(bounds.width, bounds.height);
   promptWindow.setBounds(bounds);
@@ -786,7 +786,13 @@ const writePromptDb = async (
   if (!promptDb?.screens) promptDb.screens = {};
   if (!promptDb?.screens[screenId]) promptDb.screens[screenId] = {};
 
+  if (!bounds.height) return;
+  if (!bounds.width) return;
+  if (!bounds.x) return;
+  if (!bounds.y) return;
   promptDb.screens[screenId][scriptPath] = bounds;
+  if (!promptDb.screens[screenId][scriptPath]) return;
+
   try {
     await promptDb.write();
   } catch (error) {
@@ -949,10 +955,9 @@ export const setPromptData = async (promptData: PromptData) => {
     x: promptData.x || 0,
     y: promptData.y || 0,
     width:
-      promptData.width ||
-      (appDb.mini ? PROMPT.WIDTH.MINI : PROMPT.WIDTH.DEFAULT),
+      promptData.width || (appDb.mini ? PROMPT.WIDTH.XS : PROMPT.WIDTH.BASE),
     height: kitState.isMainScript()
-      ? PROMPT.HEIGHT.DEFAULT
+      ? PROMPT.HEIGHT.BASE
       : promptData.height || 0,
   };
 
@@ -1146,7 +1151,7 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
 
   const noCustom =
     kitState.promptBounds.width ===
-      (appDb.mini ? PROMPT.WIDTH.MINI : PROMPT.WIDTH.DEFAULT) &&
+      (appDb.mini ? PROMPT.WIDTH.MINI : PROMPT.WIDTH.BASE) &&
     kitState.promptBounds.height === 0 &&
     kitState.promptBounds.x === 0 &&
     kitState.promptBounds.y === 0;
