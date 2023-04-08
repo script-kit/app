@@ -668,20 +668,25 @@ code::after {
   content: '';
 }
 
+.kit-mbox-wrapper > .prose > p {
+  @apply mb-3;
+}
+
 .kit-mbox-wrapper code {
   @apply text-sm;
 }
 
 .rce-mbox ul li,
 .rce-mbox ol li {
-  @apply list-inside;
+  @apply list-outside;
+  @apply ml-5;
 }
 
 .rce-mbox ol,
 .rce-mbox ul {
   @apply relative;
-  @apply px-2 py-3;
-  @apply -mt-2 mb-4;
+  @apply px-2 py-2;
+  @apply my-2;
   @apply border-1 border-text-base/10 rounded;
 }
 

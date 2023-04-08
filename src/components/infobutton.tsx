@@ -14,7 +14,7 @@ import { useAtom } from 'jotai';
 import { motion } from 'framer-motion';
 
 import { ChoiceButtonProps } from '../types';
-import { isMouseDownAtom, _modifiers } from '../jotai';
+import { isMouseDownAtom, _modifiers, buttonNameFontSizeAtom } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
 
@@ -56,6 +56,7 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
   const choice: Choice | Script = scoredChoice?.item || scoredChoice;
 
   const [isMouseDown] = useAtom(isMouseDownAtom);
+  const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
 
   const [modifierDescription, setModifierDescription] = useState('');
 
@@ -122,7 +123,11 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
             )}
             <div className="flex flex-col max-w-full overflow-x-hidden">
               {/* Name */}
-              <div className="truncate">
+              <div
+                className={`${
+                  choice?.className ? '' : buttonNameFontSize
+                } truncate`}
+              >
                 {highlight(
                   choice.name,
                   scoredChoice?.matches?.name,
