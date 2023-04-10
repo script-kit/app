@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
 import React, {
@@ -10,7 +11,7 @@ import React, {
 import { motion } from 'framer-motion';
 import { UI, PROMPT } from '@johnlindquist/kit/cjs/enum';
 import { Choice } from '@johnlindquist/kit/types/core';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 
 import {
   inputAtom,
@@ -28,9 +29,20 @@ import {
   inputFocusAtom,
   uiAtom,
   inputFontSizeAtom,
+  actionsAtom,
+  appDbAtom,
+  enterButtonNameAtom,
+  flagsAtom,
+  enterButtonDisabledAtom,
+  miniShortcutsVisibleAtom,
+  miniShortcutsHoveredAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
+import { ActionButton } from './actionbutton';
+import { ActionSeparator } from './actionseparator';
+import { EnterButton } from './actionenterbutton';
+import { OptionsButton } from './actionoptionsbutton';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];
@@ -51,20 +63,32 @@ export default function Input() {
   const [promptData] = useAtom(promptDataAtom);
   const [submitted] = useAtom(submittedAtom);
   const [, setSelectionStart] = useAtom(selectionStartAtom);
-  const [, setModifiers] = useAtom(_modifiers);
+  const [currentModifiers, setModifiers] = useAtom(_modifiers);
   const [ultraShortCodes] = useAtom(ultraShortCodesAtom);
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
   const [, setInputFocus] = useAtom(inputFocusAtom);
   const [ui] = useAtom(uiAtom);
   const [fontSize] = useAtom(inputFontSizeAtom);
+  const actions = useAtomValue(actionsAtom);
+  const appDb = useAtomValue(appDbAtom);
+  const enterButtonName = useAtomValue(enterButtonNameAtom);
+  const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
+  const flags = useAtomValue(flagsAtom);
+  const hasFlags = Object.keys(flags)?.length > 0;
+  const miniShortcutsVisible = useAtomValue(miniShortcutsVisibleAtom);
+  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
+    miniShortcutsHoveredAtom
+  );
 
   useEffect(() => {
     setInputFocus(true);
+    setMiniShortcutsHovered(false);
+    setModifiers([]);
 
     return () => {
       setInputFocus(false);
     };
-  }, []);
+  }, [setInputFocus, setMiniShortcutsHovered, setModifiers]);
 
   useTab();
   useKeyIndex();
@@ -177,7 +201,7 @@ export default function Input() {
         disabled={submitted}
         autoFocus
         className={`
-      bg-transparent w-full text-text-base focus:outline-none outline-none
+      bg-transparent flex-1 text-text-base focus:outline-none outline-none
       placeholder-text-base placeholder-opacity-25
       tracking-normal
       placeholder:tracking-normal
@@ -196,8 +220,57 @@ export default function Input() {
         value={inputValue}
       />
       {promptData?.footerClassName?.includes('hidden') && (
-        <div className="h-full w-12 flex justify-center items-center">
-          <IconButton />
+        // eslint-disable-next-line jsx-a11y/mouse-events-have-key-events
+        <div
+          onMouseOver={() => setMiniShortcutsHovered(true)}
+          onMouseLeave={() => setMiniShortcutsHovered(false)}
+          className={`justify-center
+      right-container flex flex-row items-center pb-px overflow-hidden`}
+        >
+          {miniShortcutsVisible && (
+            <>
+              <div className="enter-container flex flex-row min-w-fit items-center">
+                {enterButtonName ? (
+                  <EnterButton
+                    key="enter-button"
+                    name={enterButtonName}
+                    position="right"
+                    shortcut="⏎"
+                    value="enter"
+                    flag=""
+                    disabled={enterButtonDisabled}
+                  />
+                ) : null}
+              </div>
+              <ActionSeparator />
+              <div className="options-container flex flex-row">
+                {hasFlags && [
+                  <OptionsButton key="options-button" />,
+                  <ActionSeparator key="options-separator" />,
+                ]}
+              </div>
+              <div className="flex flex-row flex-grow-0 items-center overflow-hidden">
+                {actions
+                  .filter(
+                    (action) => action.position === 'right' && !appDb?.mini
+                  )
+                  .flatMap((action, i, array) => [
+                    // eslint-disable-next-line react/jsx-key
+                    <ActionButton {...action} />,
+                    // eslint-disable-next-line no-nested-ternary
+                    i < array.length - 1 ? (
+                      <ActionSeparator key={`${action?.key}-separator`} />
+                    ) : enterButtonName ? (
+                      <ActionSeparator key={`${action?.key}-separator`} />
+                    ) : null,
+                  ])}
+              </div>
+            </>
+          )}
+
+          <div className="flex px-2 items-center justify-center pt-px">
+            <IconButton />
+          </div>
         </div>
       )}
     </motion.div>

@@ -44,12 +44,12 @@ export default function Console() {
   return (
     <motion.div
       key="log"
+      id="log"
       className="relative"
       onMouseOver={() => setMouseOver(true)}
       onMouseOut={() => setMouseOver(false)}
     >
       <SimpleBar
-        id="log"
         forceVisible="y"
         className="log
         w-full h-16

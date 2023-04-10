@@ -44,13 +44,13 @@ import {
 import {
   BUTTON_HEIGHT,
   DEFAULT_HEIGHT,
-  INPUT_HEIGHT,
   noChoice,
   noScript,
   SPLASH_PATH,
-  TOP_HEIGHT,
 } from './defaults';
 import { toHex } from './color-utils';
+import { formatShortcut } from './components/formatters';
+import { Action } from './components/actions';
 
 let placeholderTimeoutId: NodeJS.Timeout;
 
@@ -78,6 +78,7 @@ export const tabsAtom = atom(
 );
 // const cachedMainPreview = atom('');
 const loading = atom<boolean>(false);
+export const runningAtom = atom(false);
 
 const placeholder = atom('');
 export const placeholderAtom = atom(
@@ -410,7 +411,18 @@ export const previewHTMLAtom = atom(
   }
 );
 
-const log = atom<string[]>([]);
+const _logLinesAtom = atom<string[]>([]);
+export const logLinesAtom = atom(
+  (g) => g(_logLinesAtom),
+  (g, s, a: string[]) => {
+    // if (a.length === 0 || a.length === 1) {
+    //   setTimeout(() => {
+    //     resize(g, s, 'console.log');
+    //   }, 100);
+    // }
+    return s(_logLinesAtom, a);
+  }
+);
 
 const convertAtom = atom<(inverse?: boolean) => Convert>((g) => {
   return (inverse = false) => {
@@ -441,22 +453,23 @@ export const darkAtom = atom((g) => {
 export const logHTMLAtom = atom(
   (g) => {
     const getConvert = g(convertAtom);
-    return g(log)
+    return g(logLinesAtom)
       .map((line) => `<br/>${getConvert().toHtml(line)}`)
       .join(``);
   },
 
   (g, s, a: string) => {
     if (a === Channel.CONSOLE_CLEAR || a === '') {
-      s(log, []);
+      s(logLinesAtom, []);
     } else {
-      const oldLog = g(log);
-      s(log, _drop(oldLog, oldLog.length > 256 ? 256 : 0).concat([a]));
+      const oldLog = g(logLinesAtom);
+      s(logLinesAtom, _drop(oldLog, oldLog.length > 256 ? 256 : 0).concat([a]));
     }
   }
 );
 
-export const logHeightAtom = atom(0);
+export const logHeightAtom = atom<number>(0);
+
 export const logVisibleAtom = atom((g) => {
   return g(logHTMLAtom)?.length > 0 && g(scriptAtom)?.log !== 'false';
 });
@@ -949,7 +962,15 @@ const mainHeight = atom(0);
 const prevMh = atom(0);
 let prevTopHeight = 0;
 
+export const domUpdatedAtom = atom(null, (g, s) => {
+  return (reason = '') => {
+    g(logAtom)(`domUpdated: ${reason}`);
+    resize(g, s, reason);
+  };
+});
+
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
+  g(logAtom)(`resize: ${reason}`);
   if (g(submittedAtom)) return;
 
   const ui = g(uiAtom);
@@ -1014,6 +1035,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   let forceResize = false;
   let ch = 0;
+
   try {
     if (ui === UI.form || ui === UI.fields) {
       ch = (document as any)?.getElementById('kit-form-id')?.offsetHeight;
@@ -1048,7 +1070,9 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   }
 
   if (g(logVisibleAtom)) {
-    mh += document.getElementById('log')?.offsetHeight || 0;
+    const logHeight = document.getElementById('log')?.offsetHeight;
+    // g(logAtom)(`logHeight: ${logHeight}`);
+    mh += logHeight || 0;
   }
 
   // g(logAtom)({
@@ -1530,6 +1554,7 @@ export const openAtom = atom(
       s(pidAtom, 0);
       s(_chatMessagesAtom, []);
       s(prevChoiceId, '');
+      s(runningAtom, false);
 
       const stream = g(webcamStreamAtom);
       if (stream) {
@@ -1655,7 +1680,7 @@ export const enterAtom = atom(
   }, 100)
 );
 export const loadingAtom = atom(
-  (g) => g(loading),
+  (g) => g(loading) || g(runningAtom),
   (_g, s, a: boolean) => {
     s(loading, a);
   }
@@ -2222,4 +2247,51 @@ export const inputFontSizeAtom = atom((g) => {
   }
 
   return fontSize;
+});
+
+export const actionsAtom = atom((g) => {
+  const flags = g(flagsAtom);
+  const shortcuts = g(shortcutsAtom);
+  const disabled = g(flagValueAtom);
+  return Object.entries(flags)
+    .filter(([_, flag]) => {
+      return flag?.bar && flag?.shortcut;
+    })
+    .map(([key, flag]) => {
+      const action = {
+        key,
+        value: key,
+        name: flag?.name,
+        shortcut: formatShortcut(flag?.shortcut),
+        position: flag.bar,
+        arrow: (flag as Action)?.arrow,
+        flag: key,
+        disabled: Boolean(disabled),
+      } as Action;
+
+      return action;
+    })
+    .concat(
+      shortcuts
+        .filter((s) => s?.bar)
+        .map(({ key, name, bar, flag }) => {
+          return {
+            key,
+            name,
+            value: key,
+            shortcut: formatShortcut(key),
+            position: bar,
+            flag,
+            disabled: Boolean(disabled),
+          } as Action;
+        })
+    );
+});
+
+export const miniShortcutsHoveredAtom = atom(false);
+
+export const miniShortcutsVisibleAtom = atom((g) => {
+  const ms = g(_modifiers).filter((m) => !m.toLowerCase().includes('shift'));
+
+  return ms.length > 0 || g(miniShortcutsHoveredAtom);
 });

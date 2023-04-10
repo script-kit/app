@@ -1,0 +1,74 @@
+/* eslint-disable jsx-a11y/anchor-is-valid */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable react/jsx-props-no-spreading */
+import { useAtom } from 'jotai';
+import { motion } from 'framer-motion';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
+import React, { useCallback } from 'react';
+import {
+  _flag,
+  _choices,
+  inputAtom,
+  _index,
+  channelAtom,
+  flagValueAtom,
+} from '../jotai';
+
+import { bg, textContrast, transition } from './actions';
+
+export function OptionsButton() {
+  const [choices] = useAtom(_choices);
+  const [input] = useAtom(inputAtom);
+  const [index] = useAtom(_index);
+  const [channel] = useAtom(channelAtom);
+  const [flagValue, setFlagValue] = useAtom(flagValueAtom);
+
+  const onClick = useCallback(() => {
+    if (flagValue) {
+      setFlagValue('');
+      channel(Channel.FORWARD);
+    } else {
+      setFlagValue(choices.length ? choices[index].value : input);
+      channel(Channel.BACK);
+    }
+  }, [choices, input, index, channel, flagValue, setFlagValue]);
+
+  return (
+    <motion.button
+      type="button"
+      tabIndex={-1}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 1] }}
+      transition={transition}
+      className={`
+  flex flex-row items-center justify-center
+  outline-none py-0.5 px-1
+  font-medium
+  text-sm
+  ${textContrast}
+
+  ${bg}
+
+  rounded
+  transition-all duration-200 ease-in-out
+  `}
+      onClick={onClick}
+    >
+      <div className="px-0.5 mr-0.5">{flagValue ? 'Back' : 'Actions'}</div>
+      <div className=" flex flex-row">
+        <div
+          className="
+          py-.5 px-1 mx-0.5
+
+          rounded
+          bg-secondary/60
+          hover:border-opacity-10
+          "
+        >
+          {flagValue ? '←' : '→'}
+        </div>
+      </div>
+    </motion.button>
+  );
+}

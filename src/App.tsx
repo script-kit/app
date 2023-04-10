@@ -134,6 +134,8 @@ import {
   webcamIdAtom,
   logAtom,
   logVisibleAtom,
+  runningAtom,
+  domUpdatedAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -268,6 +270,7 @@ export default function App() {
   const setName = useSetAtom(nameAtom);
   const setTextareaValue = useSetAtom(textareaValueAtom);
   const setLoading = useSetAtom(loadingAtom);
+  const setRunning = useSetAtom(runningAtom);
   const setValueInvalid = useSetAtom(valueInvalidAtom);
   const setFilterInput = useSetAtom(filterInputAtom);
   const setBlur = useSetAtom(blurAtom);
@@ -299,6 +302,55 @@ export default function App() {
   const hasBorder = useAtomValue(hasBorderAtom);
 
   const channel = useAtomValue(channelAtom);
+
+  const domUpdated = useSetAtom(domUpdatedAtom);
+
+  useEffect(() => {
+    const idsToWatch = ['log'];
+    const mutationCallback = (mutationsList: MutationRecord[]) => {
+      for (const mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+          console.log({
+            addedNodes: Array.from(mutation.addedNodes),
+            removedNodes: Array.from(mutation.removedNodes),
+          });
+          for (const addedNode of Array.from(mutation.addedNodes)) {
+            const addedElement = addedNode as Element;
+            if (idsToWatch.includes(addedElement.id)) {
+              console.log(
+                `Element with ID "${addedElement.id}" added to the DOM`
+              );
+              domUpdated()(`${addedElement.id} added to DOM`);
+            }
+          }
+
+          for (const removedNode of Array.from(mutation.removedNodes)) {
+            const removedElement = removedNode as Element;
+            if (idsToWatch.includes(removedElement.id)) {
+              console.log(
+                `Element with ID "${removedElement.id}" removed from the DOM`
+              );
+              domUpdated()(`${removedElement.id} removed from DOM`);
+            }
+          }
+        }
+      }
+    };
+
+    const observer = new MutationObserver(mutationCallback);
+    console.log('connecting observer');
+    const targetNode: HTMLElement | null = document.querySelector('body');
+    if (targetNode) {
+      const config = { childList: true, subtree: true };
+      observer.observe(targetNode, config);
+    }
+
+    // Clean up when the component is unmounted or the effect dependencies change
+    return () => {
+      console.log('disconnecting observer');
+      observer.disconnect();
+    };
+  }, []); // Add the dependency array to ensure the effect runs when the idsToWatch array changes
 
   useEffect(() => {
     const handleResize = debounce(() => {
@@ -363,6 +415,7 @@ export default function App() {
     [Channel.SET_INPUT]: setInput,
     [Channel.APPEND_INPUT]: appendInput,
     [Channel.SET_LOADING]: setLoading,
+    [Channel.SET_RUNNING]: setRunning,
     [Channel.SET_NAME]: setName,
     [Channel.SET_TEXTAREA_VALUE]: setTextareaValue,
     [Channel.SET_OPEN]: setOpen,

@@ -129,5 +129,3 @@ export const scheduleScriptChanged = ({
     log.warn((error as any)?.message);
   }
 };
-
-emitter.on(KitEvent.RemoveProcess, cancelJob);
