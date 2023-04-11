@@ -310,16 +310,9 @@ export default function App() {
     const mutationCallback = (mutationsList: MutationRecord[]) => {
       for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {
-          console.log({
-            addedNodes: Array.from(mutation.addedNodes),
-            removedNodes: Array.from(mutation.removedNodes),
-          });
           for (const addedNode of Array.from(mutation.addedNodes)) {
             const addedElement = addedNode as Element;
             if (idsToWatch.includes(addedElement.id)) {
-              console.log(
-                `Element with ID "${addedElement.id}" added to the DOM`
-              );
               domUpdated()(`${addedElement.id} added to DOM`);
             }
           }
@@ -327,9 +320,6 @@ export default function App() {
           for (const removedNode of Array.from(mutation.removedNodes)) {
             const removedElement = removedNode as Element;
             if (idsToWatch.includes(removedElement.id)) {
-              console.log(
-                `Element with ID "${removedElement.id}" removed from the DOM`
-              );
               domUpdated()(`${removedElement.id} removed from DOM`);
             }
           }
@@ -338,7 +328,6 @@ export default function App() {
     };
 
     const observer = new MutationObserver(mutationCallback);
-    console.log('connecting observer');
     const targetNode: HTMLElement | null = document.querySelector('body');
     if (targetNode) {
       const config = { childList: true, subtree: true };
@@ -347,7 +336,6 @@ export default function App() {
 
     // Clean up when the component is unmounted or the effect dependencies change
     return () => {
-      console.log('disconnecting observer');
       observer.disconnect();
     };
   }, []); // Add the dependency array to ensure the effect runs when the idsToWatch array changes
@@ -643,6 +631,14 @@ export default function App() {
     if (!open) setHidden(true);
   }, [open, setHidden]);
 
+  useEffect(() => {
+    document.addEventListener('paste', onPaste);
+
+    return () => {
+      document.removeEventListener('paste', onPaste);
+    };
+  }, [onPaste]);
+
   useEscape();
 
   return (
@@ -741,7 +737,6 @@ export default function App() {
               id="main"
               ref={mainRef}
               className="flex-1 min-h-1 overflow-y-hidden w-full"
-              onPaste={onPaste}
             >
               <ToastContainer
                 pauseOnFocusLoss={false}

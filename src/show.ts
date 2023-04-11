@@ -476,7 +476,7 @@ export const showWidget = async (
     ...options,
   };
 
-  let widgetWindow: any = null;
+  let widgetWindow: BrowserWindow;
   if (kitState.isMac) {
     widgetWindow = new BrowserWindow(bwOptions);
     if (!options.transparent) {
@@ -500,8 +500,7 @@ export const showWidget = async (
       log.info(
         `Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`
       );
-      widgetWindow.removeAllListeners();
-      widgetWindow.destroy();
+      widgetWindow.close();
     }, options?.ttl);
   }
 

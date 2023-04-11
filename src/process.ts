@@ -407,7 +407,7 @@ const childSend = (child: ChildProcess, data: any) => {
 };
 
 const kitMessageMap: ChannelHandler = {
-  [Channel.CONSOLE_LOG]: (data) => {
+  CONSOLE_LOG: (data) => {
     getLog(data.kitScript).info(data?.value || Value.Undefined);
     setLog(data.value || Value.Undefined);
   },
