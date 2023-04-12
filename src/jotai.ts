@@ -1076,18 +1076,18 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     mh += logHeight || 0;
   }
 
-  g(logAtom)({
-    ui,
-    ch,
-    mh,
-    footerHeight,
-    topHeight,
-    itemHeight,
-    scoredChoicesLength,
-    infoChoicesLength,
-    forceResize,
-    promptHeight: promptData?.height || 'UNSET',
-  });
+  // g(logAtom)({
+  //   ui,
+  //   ch,
+  //   mh,
+  //   footerHeight,
+  //   topHeight,
+  //   itemHeight,
+  //   scoredChoicesLength,
+  //   infoChoicesLength,
+  //   forceResize,
+  //   promptHeight: promptData?.height || 'UNSET',
+  // });
 
   const data: ResizeData = {
     id: promptData?.id || 'missing',

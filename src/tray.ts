@@ -8,6 +8,7 @@ import {
   MenuItemConstructorOptions,
   globalShortcut,
   shell,
+  ipcMain,
 } from 'electron';
 import { formatDistanceToNow } from 'date-fns';
 import path from 'path';
@@ -30,7 +31,7 @@ import { getAssetPath } from './assets';
 import { appDb, forceQuit, kitState, subs } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
-import { Trigger } from './enums';
+import { AppChannel, Trigger } from './enums';
 import { mainLogPath, updateLogPath } from './logs';
 
 let tray: Tray | null = null;
@@ -303,6 +304,13 @@ export const openMenu = async (event?: KeyboardEvent) => {
       label: `Open Dev Tools`,
       click: async () => {
         emitter.emit(KitEvent.OpenDevTools);
+      },
+    });
+
+    toolsSubmenu.push({
+      label: `Force Reload`,
+      click: async () => {
+        ipcMain.emit(AppChannel.RELOAD);
       },
     });
 
