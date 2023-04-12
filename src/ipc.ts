@@ -1,10 +1,8 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-restricted-syntax */
-import { clipboard, ipcMain, nativeImage } from 'electron';
+import { ipcMain } from 'electron';
 import log from 'electron-log';
-import { format } from 'date-fns';
-import { ensureDir } from 'fs-extra';
 import path from 'path';
 import { debounce } from 'lodash';
 import axios from 'axios';
@@ -28,12 +26,12 @@ import detect from 'detect-file-type';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 
-import { focusPrompt, isFocused, reload, resize } from './prompt';
+import { focusPrompt, reload, resize } from './prompt';
 import { runPromptProcess } from './kit';
 import { AppChannel, Trigger } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
-import { kitConfig, kitState } from './state';
+import { kitState } from './state';
 
 const handleChannel = (
   fn: (processInfo: ProcessInfo, message: AppMessage) => void
