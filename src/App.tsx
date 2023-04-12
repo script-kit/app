@@ -306,7 +306,7 @@ export default function App() {
   const domUpdated = useSetAtom(domUpdatedAtom);
 
   useEffect(() => {
-    const idsToWatch = ['log'];
+    const idsToWatch = ['log', 'preview'];
     const mutationCallback = (mutationsList: MutationRecord[]) => {
       for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {

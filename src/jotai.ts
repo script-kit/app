@@ -1011,18 +1011,14 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
   const hasPreview = Boolean(g(hasPreviewAtom));
 
-  if (hasPreview && mh < DEFAULT_HEIGHT) {
-    mh = promptData?.height || DEFAULT_HEIGHT;
-  }
-
   const itemHeight = g(itemHeightAtom);
 
   const choicesHeight = (scoredChoicesLength + infoChoicesLength) * itemHeight;
-  if (ui === UI.arg && choicesHeight > DEFAULT_HEIGHT) {
+  if (ui === UI.arg && choicesHeight > PROMPT.HEIGHT.BASE) {
     mh =
-      (promptData?.height && promptData?.height > DEFAULT_HEIGHT
+      (promptData?.height && promptData?.height > PROMPT.HEIGHT.BASE
         ? promptData?.height
-        : DEFAULT_HEIGHT) -
+        : PROMPT.HEIGHT.BASE) -
       topHeight -
       footerHeight;
   } else {
@@ -1069,24 +1065,29 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     prevTopHeight = topHeight;
   }
 
+  if (hasPreview && mh < PROMPT.HEIGHT.BASE) {
+    const previewHeight = document.getElementById('preview')?.offsetHeight || 0;
+    mh = Math.max(previewHeight, promptData?.height || PROMPT.HEIGHT.BASE);
+  }
+
   if (g(logVisibleAtom)) {
     const logHeight = document.getElementById('log')?.offsetHeight;
     // g(logAtom)(`logHeight: ${logHeight}`);
     mh += logHeight || 0;
   }
 
-  // g(logAtom)({
-  //   ui,
-  //   ch,
-  //   mh,
-  //   footerHeight,
-  //   topHeight,
-  //   itemHeight,
-  //   scoredChoicesLength,
-  //   infoChoicesLength,
-  //   forceResize,
-  //   promptHeight: promptData?.height || 'UNSET',
-  // });
+  g(logAtom)({
+    ui,
+    ch,
+    mh,
+    footerHeight,
+    topHeight,
+    itemHeight,
+    scoredChoicesLength,
+    infoChoicesLength,
+    forceResize,
+    promptHeight: promptData?.height || 'UNSET',
+  });
 
   const data: ResizeData = {
     id: promptData?.id || 'missing',
@@ -2289,9 +2290,13 @@ export const actionsAtom = atom((g) => {
 });
 
 export const miniShortcutsHoveredAtom = atom(false);
+export const lastKeyDownWasModifierAtom = atom(false);
 
 export const miniShortcutsVisibleAtom = atom((g) => {
   const ms = g(_modifiers).filter((m) => !m.toLowerCase().includes('shift'));
 
-  return ms.length > 0 || g(miniShortcutsHoveredAtom);
+  return (
+    (ms.length > 0 && g(lastKeyDownWasModifierAtom)) ||
+    g(miniShortcutsHoveredAtom)
+  );
 });

@@ -11,7 +11,7 @@ import React, {
 import { motion } from 'framer-motion';
 import { UI, PROMPT } from '@johnlindquist/kit/cjs/enum';
 import { Choice } from '@johnlindquist/kit/types/core';
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
 import {
   inputAtom,
@@ -36,6 +36,7 @@ import {
   enterButtonDisabledAtom,
   miniShortcutsVisibleAtom,
   miniShortcutsHoveredAtom,
+  lastKeyDownWasModifierAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -80,6 +81,8 @@ export default function Input() {
     miniShortcutsHoveredAtom
   );
 
+  const setLastKeyDownWasModifier = useSetAtom(lastKeyDownWasModifierAtom);
+
   useEffect(() => {
     setInputFocus(true);
     setMiniShortcutsHovered(false);
@@ -104,10 +107,11 @@ export default function Input() {
           .flatMap(remapModifiers)
       );
 
-      // if ((Object.values(Modifier) as string[]).includes(event.key)) {
-      //   setModifier(event.key as Modifier);
-      //   return;
-      // }
+      // if the key is a modifier that isn't shift, return
+
+      setLastKeyDownWasModifier(
+        modifiers.includes(event.key) && event.key !== 'Shift'
+      );
 
       if (target?.value.length === 0) {
         const findCode = ultraShortCodes.find(

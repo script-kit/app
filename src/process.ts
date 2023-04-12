@@ -1210,11 +1210,11 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.SET_TEXTAREA_VALUE, data.value);
   },
   SET_LOADING: (data) => {
-    log.info(`🏃 setLoading`, { data });
+    // log.info(`🏃 setLoading`, { data });
     sendToPrompt(Channel.SET_LOADING, data.value);
   },
   SET_RUNNING: (data) => {
-    log.info(`🏃‍♂️ setRunning`, { data });
+    // log.info(`🏃‍♂️ setRunning`, { data });
     sendToPrompt(Channel.SET_RUNNING, data.value);
   },
   SEND_KEYSTROKE: (data) => {

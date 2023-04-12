@@ -1186,6 +1186,7 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
 
   log.info(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
   // if (isKitScript(kitState.scriptPath)) return;
+  if (isVisible() && kitState.resize) return;
   setBounds(
     bounds,
     `promptId ${kitState.promptId} - promptCount ${
