@@ -1156,18 +1156,20 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
     kitState.promptBounds.x === 0 &&
     kitState.promptBounds.y === 0;
 
-  const firstPrompt = kitState.promptCount !== 1;
+  const notFirstPrompt = kitState.promptCount !== 1;
 
   // Return if it's not the first prompt and there are no custom bounds
-  if (firstPrompt && noCustom && !changed) return;
+  if (notFirstPrompt && noCustom && !changed) return;
 
   if (promptWindow?.isDestroyed()) return;
+  if (notFirstPrompt && kitState.resize) return;
   const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
     ui: kitState.promptUI,
     resize: kitState.resize,
     bounds: kitState.promptBounds,
   });
   if (promptWindow?.isDestroyed()) return;
+
   log.verbose(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
 
   // If widths or height don't match, send SET_RESIZING to prompt
@@ -1184,9 +1186,13 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
     kitState.isResizing = true;
   }
 
-  log.info(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
+  log.info(
+    `↖ Bounds: Prompt ${kitState.promptUI}`,
+    bounds,
+    ` Count - ${kitState.promptCount}`
+  );
   // if (isKitScript(kitState.scriptPath)) return;
-  if (isVisible() && kitState.resize) return;
+
   setBounds(
     bounds,
     `promptId ${kitState.promptId} - promptCount ${

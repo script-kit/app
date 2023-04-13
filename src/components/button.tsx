@@ -221,16 +221,16 @@ export default function ChoiceButton({
                 `}
               />
             )}
-            <div className="flex flex-col max-w-full overflow-x-hidden">
+            <div className="flex flex-col max-w-full overflow-x-hidden max-h-full">
               {/* Name */}
               <div
-                className={`${
-                  choice?.className ? '' : buttonNameFontSize
-                } truncate`}
+                className={
+                  choice?.nameClassName ? choice?.nameClassName : 'truncate'
+                }
               >
                 {highlight(
                   choice.name,
-                  scoredChoice?.matches?.name,
+                  scoredChoice?.matches?.slicedName,
                   `bg-primary bg-opacity-5 text-primary`
                 )}
               </div>
@@ -239,11 +239,18 @@ export default function ChoiceButton({
                 choice?.description ||
                 modifierDescription) && (
                 <div
-                  className={`text-xs truncate pb-1 ${
-                    index === currentIndex
-                      ? `opacity-100 text-primary`
-                      : `opacity-60`
+                  className={`
+                  text-xs pb-1
+                  ${
+                    choice?.descriptionClassName
+                      ? choice?.descriptionClassName
+                      : 'truncate '
                   }
+                   ${
+                     index === currentIndex
+                       ? `opacity-100 text-primary`
+                       : `opacity-60`
+                   }
 
                 `}
                 >
@@ -252,7 +259,7 @@ export default function ChoiceButton({
                     ? choice?.focused
                     : highlight(
                         choice?.description || '',
-                        scoredChoice?.matches?.description,
+                        scoredChoice?.matches?.slicedDescription,
                         'bg-primary bg-opacity-15 text-primary'
                       )}
                 </div>

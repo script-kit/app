@@ -151,8 +151,8 @@ function scorer(string: string, query: string, matches: number[][]) {
 }
 
 const keys = [
-  'name',
-  'description',
+  'slicedName',
+  'slicedDescription',
   'kenv',
   'command',
   'friendlyShortcut',
@@ -266,10 +266,17 @@ export const unfilteredChoicesAtom = atom(
     }
 
     if (cs?.length) {
-      const qs = new QuickScore(cs, {
-        keys,
-        minimumScore: 0.3,
-      } as any);
+      const qs = new QuickScore(
+        cs.map((c) => {
+          c.slicedName = c?.name?.slice(0, 63);
+          if (c.description) c.slicedDescription = c?.description?.slice(0, 63);
+          return c;
+        }),
+        {
+          keys,
+          minimumScore: 0.3,
+        } as any
+      );
       s(quickScoreAtom, qs as any);
 
       const mode = g(promptDataAtom)?.mode;
@@ -1525,12 +1532,24 @@ export const submitValueAtom = atom(
 );
 
 export const closedInput = atom('');
+
+const lastScriptClosed = atom('');
+
 export const openAtom = atom(
   (g) => g(_open),
   (g, s, a: boolean) => {
     s(mouseEnabledAtom, 0);
 
+    if (
+      g(_script).filePath !== g(lastScriptClosed) &&
+      a &&
+      !g(isMainScriptAtom)
+    ) {
+      s(scoredChoices, []);
+    }
+
     if (g(_open) && a === false) {
+      s(lastScriptClosed, g(_script).filePath);
       s(_open, a);
 
       // const cachedPreview = g(cachedMainPreview);

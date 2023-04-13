@@ -130,7 +130,7 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
               >
                 {highlight(
                   choice.name,
-                  scoredChoice?.matches?.name,
+                  scoredChoice?.matches?.slicedName,
                   'bg-primary bg-opacity-5 text-text-base transition-colors'
                 )}
               </div>
@@ -144,7 +144,7 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
                     ? choice?.focused
                     : highlight(
                         choice?.description || '',
-                        scoredChoice?.matches?.description,
+                        scoredChoice?.matches?.slicedDescription,
                         'bg-primary bg-opacity-15 text-text-base transition-colors'
                       )}
                 </div>
