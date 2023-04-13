@@ -30,6 +30,7 @@ export enum KitEvent {
   SetSubmitValue = 'SetSubmitValue',
   TermExited = 'TermExited',
   TERM_KILL = 'TERM_KILL',
+  Sync = 'Sync',
 }
 
 interface KitEmitter {

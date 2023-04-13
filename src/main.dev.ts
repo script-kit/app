@@ -749,7 +749,6 @@ const systemEvents = () => {
 
   powerMonitor.addListener('unlock-screen', async () => {
     kitState.screenLocked = false;
-    kitState.isSponsor = false;
   });
 };
 

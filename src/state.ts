@@ -547,6 +547,7 @@ const subScriptErrorPath = subscribeKey(
   }
 );
 
+// TODO: I don't need to return booleans AND set kitState.isSponsor. Pick one.
 export const sponsorCheck = async (feature: string, block = true) => {
   log.info(
     `Checking sponsor status... login: ${kitState?.user?.login} ${

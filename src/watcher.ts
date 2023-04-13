@@ -216,8 +216,7 @@ export const teardownWatchers = async () => {
 };
 
 export const checkUserDb = async (eventName: string) => {
-  kitState.isSponsor = false;
-  log.info(`user.json ${eventName}`);
+  log.info(`checkUserDb ${eventName}`);
 
   const currentUserDb = (await getUserDb()).data;
   kitState.user = currentUserDb;
@@ -226,6 +225,8 @@ export const checkUserDb = async (eventName: string) => {
   if (kitState?.user?.login) {
     const isSponsor = await sponsorCheck('Login', false);
     kitState.isSponsor = isSponsor;
+  } else {
+    kitState.isSponsor = false;
   }
 
   const user = snapshot(kitState.user);
@@ -354,4 +355,8 @@ emitter.on(KitEvent.RestartWatcher, async () => {
   } catch (error) {
     log.error(error);
   }
+});
+
+emitter.on(KitEvent.Sync, async () => {
+  checkUserDb('sync');
 });

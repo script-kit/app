@@ -150,6 +150,9 @@ module.exports = {
         5.5: '1.375rem',
         0.75: '0.1875rem',
         11: '2.75rem',
+        '2px': '2px',
+        '3px': '3px',
+        '4px': '4px',
       },
       minHeight: {
         4: '1rem',

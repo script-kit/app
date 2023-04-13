@@ -18,6 +18,12 @@ import { useKeyDirection, useObserveMainHeight } from '../hooks';
 import { darkTheme, lightTheme } from './themes';
 
 function extractInnerHtmlAndClasses(panelHTML: string) {
+  // if panelHTML isn't wrapped in a tag, wrap it in a div
+  if (!panelHTML.startsWith('<')) {
+    // eslint-disable-next-line no-param-reassign
+    panelHTML = `<div>${panelHTML}</div>`;
+  }
+
   const parser = new DOMParser();
   const doc = parser.parseFromString(panelHTML, 'text/html');
   const outerElement = doc.body.firstChild as HTMLElement;
