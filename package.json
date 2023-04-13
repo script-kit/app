@@ -318,7 +318,7 @@
     "react-test-renderer": "17.0.1",
     "rimraf": "3.0.0",
     "style-loader": "3.3.1",
-    "tailwindcss": "3.3.1",
+    "tailwindcss": "3.2.4",
     "terser-webpack-plugin": "5.0.3",
     "typescript": "5.0.3",
     "url-loader": "4.1.1",
