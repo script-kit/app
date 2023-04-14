@@ -74,7 +74,7 @@ import {
   uiAtom,
   unfilteredChoicesAtom,
   topRefAtom,
-  _description,
+  descriptionAtom,
   nameAtom,
   textareaValueAtom,
   loadingAtom,
@@ -136,6 +136,7 @@ import {
   logVisibleAtom,
   runningAtom,
   domUpdatedAtom,
+  headerHiddenAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -266,7 +267,7 @@ export default function App() {
   const setSubmitValue = useSetAtom(submitValueAtom);
   const setMouseEnabled = useSetAtom(mouseEnabledAtom);
   const setTopRef = useSetAtom(topRefAtom);
-  const setDescription = useSetAtom(_description);
+  const setDescription = useSetAtom(descriptionAtom);
   const setName = useSetAtom(nameAtom);
   const setTextareaValue = useSetAtom(textareaValueAtom);
   const setLoading = useSetAtom(loadingAtom);
@@ -292,6 +293,7 @@ export default function App() {
   const setShortcuts = useSetAtom(shortcutsAtom);
   const setTermConfig = useSetAtom(termConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
+  const headerHidden = useAtomValue(headerHiddenAtom);
 
   const log = useAtomValue(logAtom);
 
@@ -707,7 +709,7 @@ export default function App() {
           >
             {ui !== UI.log && (
               <header id="header" ref={headerRef} className="relative z-10">
-                <Header />
+                {headerHidden === false && <Header />}
 
                 {ui === UI.hotkey && (
                   <Hotkey

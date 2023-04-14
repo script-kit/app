@@ -939,7 +939,7 @@ export const scriptAtom = atom(
 
     // s(choices, []);
     s(processingAtom, false);
-    s(_description, a?.description || '');
+
     s(nameAtom, a?.name || '');
     s(enterAtom, '');
     s(loadingAtom, false);
@@ -1212,6 +1212,8 @@ export const themeAtom = atom(
   }
 );
 
+export const headerHiddenAtom = atom(false);
+
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
@@ -1249,12 +1251,19 @@ export const promptDataAtom = atom(
         s(flagsAtom, a?.flags);
       }
 
+      s(headerHiddenAtom, !!a?.headerClassName?.includes('hidden'));
+
+      const headerHidden = g(headerHiddenAtom);
+
       if (a.name) {
-        s(nameAtom, a.name);
+        s(nameAtom, headerHidden ? '' : a.name);
       }
 
       if (a.description) {
-        s(_description, a.description || g(scriptAtom)?.description || '');
+        s(
+          descriptionAtom,
+          headerHidden ? '' : a.description || g(scriptAtom)?.description || ''
+        );
       }
 
       if (a.preview) {
@@ -1381,7 +1390,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     modifiers: g(_modifiers),
     count: g(_choices).length || 0,
     name: g(nameAtom),
-    description: g(_description),
+    description: g(descriptionAtom),
     script: g(_script),
     value: g(_submitValue),
     submitted: g(submittedAtom),
@@ -1546,6 +1555,8 @@ export const openAtom = atom(
       !g(isMainScriptAtom)
     ) {
       s(scoredChoices, []);
+      s(nameAtom, '');
+      s(descriptionAtom, '');
     }
 
     if (g(_open) && a === false) {
@@ -1688,7 +1699,7 @@ export const previewEnabledAtom = atom(
 );
 
 export const topRefAtom = atom<null | HTMLDivElement>(null);
-export const _description = atom<string>('');
+export const descriptionAtom = atom<string>('');
 export const logoAtom = atom<string>('');
 export const nameAtom = atom<string>('');
 
