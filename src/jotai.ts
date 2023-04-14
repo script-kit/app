@@ -1583,6 +1583,7 @@ export const openAtom = atom(
       s(_chatMessagesAtom, []);
       s(prevChoiceId, '');
       s(runningAtom, false);
+      s(miniShortcutsHoveredAtom, false);
 
       const stream = g(webcamStreamAtom);
       if (stream) {

@@ -654,11 +654,11 @@ export default function App() {
         min-w-screen min-h-screen
 
 
-      bg-bg-base
+
       text-text-base
 
-      transition-colors duration-200
-      bg-opacity-base
+
+
 
       ${hasBorder ? `main-container` : ``}
       ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
