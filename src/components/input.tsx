@@ -37,6 +37,7 @@ import {
   miniShortcutsVisibleAtom,
   miniShortcutsHoveredAtom,
   lastKeyDownWasModifierAtom,
+  footerHiddenAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -80,6 +81,7 @@ export default function Input() {
   const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
     miniShortcutsHoveredAtom
   );
+  const footerHidden = useAtomValue(footerHiddenAtom);
 
   const setLastKeyDownWasModifier = useSetAtom(lastKeyDownWasModifierAtom);
 
@@ -223,7 +225,7 @@ export default function Input() {
         type={promptData?.secret ? 'password' : promptData?.type || 'text'}
         value={inputValue}
       />
-      {promptData?.footerClassName?.includes('hidden') && (
+      {footerHidden && (
         // eslint-disable-next-line jsx-a11y/mouse-events-have-key-events
         <div
           onMouseOver={() => setMiniShortcutsHovered(true)}

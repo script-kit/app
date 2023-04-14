@@ -945,6 +945,7 @@ export const scriptAtom = atom(
     s(loadingAtom, false);
     s(logoAtom, a?.logo || '');
     s(tempThemeAtom, g(themeAtom));
+    s(flagsAtom, {});
 
     // s(panelHTMLAtom, `<div/>`);
 
@@ -1213,6 +1214,7 @@ export const themeAtom = atom(
 );
 
 export const headerHiddenAtom = atom(false);
+export const footerHiddenAtom = atom(false);
 
 export const promptDataAtom = atom(
   (g) => g(promptData),
@@ -1251,7 +1253,8 @@ export const promptDataAtom = atom(
         s(flagsAtom, a?.flags);
       }
 
-      s(headerHiddenAtom, !!a?.headerClassName?.includes('hidden'));
+      s(headerHiddenAtom, false);
+      s(footerHiddenAtom, !!a?.footerClassName?.includes('hidden'));
 
       const headerHidden = g(headerHiddenAtom);
 
@@ -1289,10 +1292,6 @@ export const promptDataAtom = atom(
 
       if (a?.formData) {
         s(formDataAtom, a.formData);
-      }
-
-      if (a?.flags) {
-        s(flagsAtom, a.flags);
       }
 
       s(itemHeightAtom, a?.itemHeight || BUTTON_HEIGHT);
@@ -1555,8 +1554,6 @@ export const openAtom = atom(
       !g(isMainScriptAtom)
     ) {
       s(scoredChoices, []);
-      s(nameAtom, '');
-      s(descriptionAtom, '');
     }
 
     if (g(_open) && a === false) {
@@ -2329,4 +2326,34 @@ export const miniShortcutsVisibleAtom = atom((g) => {
     (ms.length > 0 && g(lastKeyDownWasModifierAtom)) ||
     g(miniShortcutsHoveredAtom)
   );
+});
+
+export const socialAtom = atom((g) => {
+  if (g(scriptAtom)?.twitter) {
+    const twitter = g(scriptAtom)?.twitter;
+    const username = twitter.startsWith('@') ? twitter.slice(1) : twitter;
+
+    return {
+      username: twitter,
+      url: `https://twitter.com/${username}`,
+    };
+  }
+
+  if (g(scriptAtom)?.github) {
+    const github = g(scriptAtom)?.github;
+
+    return {
+      username: github,
+      url: `https://github.com/${github}`,
+    };
+  }
+
+  if (g(scriptAtom)?.social) {
+    return {
+      username: g(scriptAtom)?.social || '',
+      url: g(scriptAtom)?.social_url || '',
+    };
+  }
+
+  return undefined;
 });

@@ -983,7 +983,7 @@ export const setPromptData = async (promptData: PromptData) => {
   // });
 
   if (kitState.hasSnippet) {
-    const timeout = +kitState?.script?.snippetDelay || 120;
+    const timeout = +kitState?.script?.snippetdelay || 120;
     // eslint-disable-next-line promise/param-names
     await new Promise((r) => setTimeout(r, timeout));
     kitState.hasSnippet = false;

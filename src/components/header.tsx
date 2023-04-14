@@ -19,6 +19,7 @@ import {
   kitStateAtom,
   applyUpdateAtom,
   promptDataAtom,
+  socialAtom,
 } from '../jotai';
 import TopBar from './TopBar';
 
@@ -99,6 +100,7 @@ export default function Header() {
   const [loading] = useAtom(loadingAtom);
   const [open] = useAtom(openAtom);
   const [promptData] = useAtom(promptDataAtom);
+  const social = useAtomValue(socialAtom);
 
   const onXClick = useCallback(() => {
     setOpen(false);
@@ -151,12 +153,10 @@ export default function Header() {
         <span className="flex flex-row items-end pl-1 text-right">
           <TopRightButton />
 
-          {script?.twitter && (
+          {social && (
             <span>
               <span>&nbsp;-&nbsp;</span>
-              <a href={`https://twitter.com/${script?.twitter.slice(1)}`}>
-                {script?.twitter}
-              </a>
+              <a href={social.url}>{social.username}</a>
             </span>
           )}
         </span>

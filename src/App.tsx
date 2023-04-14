@@ -137,6 +137,7 @@ import {
   runningAtom,
   domUpdatedAtom,
   headerHiddenAtom,
+  footerHiddenAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -294,6 +295,7 @@ export default function App() {
   const setTermConfig = useSetAtom(termConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
   const headerHidden = useAtomValue(headerHiddenAtom);
+  const footerHidden = useAtomValue(footerHiddenAtom);
 
   const log = useAtomValue(logAtom);
 
@@ -793,9 +795,11 @@ export default function App() {
                 ))}
             </main>
             {logVisible && <Console key="AppLog" />}
-            <footer id="footer" className={promptData?.footerClassName || ''}>
-              <ActionBar />
-            </footer>
+            {!footerHidden && (
+              <footer id="footer" className={promptData?.footerClassName || ''}>
+                <ActionBar />
+              </footer>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
