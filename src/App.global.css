@@ -754,3 +754,7 @@ code::after {
       0 0 0px rgb(var(--color-primary)), 0 0 0px rgb(var(--color-primary));
   }
 }
+
+#app {
+  @apply bg-bg-base bg-opacity-base !important;
+}
