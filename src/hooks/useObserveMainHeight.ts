@@ -21,7 +21,7 @@ export default <T extends HTMLElement = HTMLElement>(selector = '') => {
         // console.log(`${selector} style height: ${styleHeight}`);
         setMainHeight(styleHeight);
       } else {
-        const elHeight = wrapper?.height || wrapper?.clientHeight;
+        const elHeight = wrapper?.offsetHeight;
 
         // console.log(`${selector} el height: ${elHeight}`);
         setMainHeight(elHeight);

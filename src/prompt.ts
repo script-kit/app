@@ -586,7 +586,11 @@ export const setBounds = (bounds: Rectangle, reason = '') => {
   // log.info(`📐 setBounds, reason ${reason}`, bounds);
   // TODO: Maybe use in the future with setting the html body bounds for faster resizing?
   // promptWindow?.setContentSize(bounds.width, bounds.height);
-  promptWindow.setBounds(bounds);
+  try {
+    promptWindow.setBounds(bounds);
+  } catch (error) {
+    log.info(`setBounds error ${reason}`, error);
+  }
 };
 
 export const isVisible = () => {
@@ -1093,12 +1097,17 @@ export const clearPromptCache = async () => {
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
 };
 
-export const reload = () => {
+export const reload = (callback: () => void = () => {}) => {
   log.info(`Reloading prompt window...`);
   if (promptWindow?.isDestroyed()) {
     log.warn(`Prompt window is destroyed. Not reloading.`);
     return;
   }
+
+  if (callback) {
+    promptWindow?.once('ready-to-show', callback);
+  }
+
   promptWindow?.reload();
   emitter.emit(KitEvent.PROMPT_RELOAD);
 };
@@ -1162,7 +1171,18 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
   if (notFirstPrompt && noCustom && !changed) return;
 
   if (promptWindow?.isDestroyed()) return;
-  if (notFirstPrompt && kitState.resize) return;
+  const resizeOnInitUI = [
+    UI.term,
+    UI.editor,
+    UI.drop,
+    UI.textarea,
+    UI.emoji,
+    UI.chat,
+    UI.mic,
+    UI.webcam,
+  ].includes(kitState.ui);
+
+  if (notFirstPrompt && kitState.resize && !resizeOnInitUI) return;
   const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
     ui: kitState.promptUI,
     resize: kitState.resize,

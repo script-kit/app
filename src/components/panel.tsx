@@ -50,7 +50,7 @@ export default function Panel() {
   const [shortcuts] = useAtom(shortcutsAtom);
   const [flags] = useAtom(flagsAtom);
 
-  const divRef = useObserveMainHeight<HTMLDivElement>('.wrapper');
+  const divRef = useObserveMainHeight<HTMLDivElement>('#panel');
 
   useEffect(() => {
     if (scrollRef.current && ui === UI.div) {
@@ -74,6 +74,7 @@ export default function Panel() {
 
   return (
     <SimpleBar
+      id="panel-simplebar"
       scrollableNodeProps={{ ref: scrollRef }}
       autoHide={false}
       className="w-full h-full"

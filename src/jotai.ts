@@ -373,6 +373,13 @@ export const panelHTMLAtom = atom(
     if (g(_panelHTML) === a || g(_flagged)) return;
     if (a) s(scoredChoices, null);
     s(_panelHTML, a);
+
+    if (
+      a === '' &&
+      document.getElementById('#panel') &&
+      !document.getElementById('list')
+    )
+      s(mainHeightAtom, 0);
     if (a) s(loadingAtom, false);
   }
 );
@@ -746,6 +753,7 @@ export const scoredChoices = atom(
     } else {
       s(focusedChoiceAtom, null);
       if (isFilter && Boolean(cs) && !g(nullChoicesAtom)) {
+        if (!g(promptReadyAtom)) return;
         channel(Channel.NO_CHOICES);
       }
     }
@@ -925,6 +933,11 @@ const _script = atom<Script>(noScript);
 export const scriptAtom = atom(
   (g) => g(_script),
   (g, s, a: Script) => {
+    s(promptReadyAtom, false);
+    if (a.filePath !== mainScriptPath) {
+      s(unfilteredChoicesAtom, []);
+    }
+
     const history = g(_history);
     s(_history, [...history, a]);
     // console.clear();
@@ -1013,9 +1026,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     noInfo &&
     ui === UI.arg;
 
-  const topHeight = Math.floor(
-    document.getElementById('header')?.offsetHeight || 0
-  );
+  const topHeight = document.getElementById('header')?.offsetHeight || 0;
   const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
   const hasPreview = Boolean(g(hasPreviewAtom));
 
@@ -1051,14 +1062,30 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
       } else {
         return;
       }
+    } else if (ui === UI.arg && hasPanel) {
+      g(logAtom)(`Force resize: has panel`);
+      ch = (document as any)?.getElementById('panel')?.offsetHeight;
+      mh = ch;
+      forceResize = true;
+    } else if (
+      ui === UI.arg &&
+      !hasPanel &&
+      scoredChoicesLength + infoChoicesLength === 0 &&
+      !document.getElementById('list')
+    ) {
+      g(logAtom)(`List and panel gone`);
+      ch = 0;
+      mh = 0;
+      forceResize = true;
     } else {
       ch = (document as any)?.getElementById('main')?.offsetHeight;
     }
 
     if (ui === UI.arg) {
-      forceResize = Boolean(
-        ch < (scoredChoicesLength + infoChoicesLength) * itemHeight
-      );
+      forceResize =
+        ch === 0 ||
+        Boolean(ch < (scoredChoicesLength + infoChoicesLength) * itemHeight) ||
+        hasPanel;
     } else if (ui === UI.div) {
       forceResize = true;
     } else {
@@ -1076,6 +1103,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   if (hasPreview && mh < PROMPT.HEIGHT.BASE) {
     const previewHeight = document.getElementById('preview')?.offsetHeight || 0;
     mh = Math.max(previewHeight, promptData?.height || PROMPT.HEIGHT.BASE);
+    forceResize = true;
   }
 
   if (g(logVisibleAtom)) {
@@ -1088,6 +1116,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   //   ui,
   //   ch,
   //   mh,
+  //   prevMh: g(prevMh),
+  //   hasPreview,
   //   footerHeight,
   //   topHeight,
   //   itemHeight,
@@ -1104,7 +1134,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     placeholderOnly,
     topHeight,
     ui,
-    mainHeight: Math.floor(mh) + 2,
+    mainHeight: Math.floor(mh || -2) + 2,
     footerHeight,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
@@ -1216,6 +1246,7 @@ export const themeAtom = atom(
 export const headerHiddenAtom = atom(false);
 export const footerHiddenAtom = atom(false);
 
+const promptReadyAtom = atom(false);
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
@@ -1329,6 +1360,8 @@ export const promptDataAtom = atom(
 
     const channel = g(channelAtom);
     channel(Channel.ON_INIT);
+
+    s(promptReadyAtom, true);
   }
 );
 
@@ -1547,14 +1580,6 @@ export const openAtom = atom(
   (g) => g(_open),
   (g, s, a: boolean) => {
     s(mouseEnabledAtom, 0);
-
-    if (
-      g(_script).filePath !== g(lastScriptClosed) &&
-      a &&
-      !g(isMainScriptAtom)
-    ) {
-      s(scoredChoices, []);
-    }
 
     if (g(_open) && a === false) {
       s(lastScriptClosed, g(_script).filePath);

@@ -220,6 +220,7 @@ export default function Input() {
         onChange={onChange}
         onKeyDown={onKeyDown}
         onKeyUp={onKeyUp}
+        onKeyUpCapture={onKeyUp}
         placeholder={placeholder}
         ref={inputRef as LegacyRef<HTMLInputElement>}
         type={promptData?.secret ? 'password' : promptData?.type || 'text'}

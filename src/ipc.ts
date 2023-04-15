@@ -54,6 +54,28 @@ const handleChannel = (
 };
 
 export const startIpc = () => {
+  ipcMain.on(AppChannel.ERROR_RELOAD, async (event, data: any) => {
+    const { scriptPath } = kitState;
+    const onReload = async () => {
+      const markdown = `# Error
+
+${data.message}
+
+${data.error}
+          `;
+      emitter.emit(KitEvent.RunPromptProcess, {
+        scriptPath: kitPath('cli', 'info.js'),
+        args: [path.basename(scriptPath), `Error... `, markdown],
+        options: {
+          force: true,
+          trigger: Trigger.Info,
+        },
+      });
+    };
+
+    reload(onReload);
+  });
+
   ipcMain.on(
     Channel.PROMPT_ERROR,
     debounce((_event, { error }) => {

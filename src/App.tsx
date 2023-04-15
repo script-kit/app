@@ -20,7 +20,7 @@ import React, {
   useRef,
 } from 'react';
 import { ToastContainer, toast, cssTransition } from 'react-toastify';
-import { debounce } from 'lodash';
+import { debounce, throttle } from 'lodash';
 import path from 'path';
 import { loader } from '@monaco-editor/react';
 import DOMPurify from 'dompurify';
@@ -310,7 +310,34 @@ export default function App() {
   const domUpdated = useSetAtom(domUpdatedAtom);
 
   useEffect(() => {
-    const idsToWatch = ['log', 'preview'];
+    // catch all window errors
+    const errorHandler = throttle(
+      async (event: ErrorEvent) => {
+        const { message, filename, lineno, colno, error } = event;
+
+        ipcRenderer.send(AppChannel.ERROR_RELOAD, {
+          message,
+          filename,
+          lineno,
+          colno,
+          error,
+        });
+      },
+      5000,
+      {
+        leading: true,
+      }
+    );
+
+    window.addEventListener('error', errorHandler);
+
+    return () => {
+      window.removeEventListener('error', errorHandler);
+    };
+  }, []);
+
+  useEffect(() => {
+    const idsToWatch = ['log', 'preview', 'panel-simplebar'];
     const mutationCallback = (mutationsList: MutationRecord[]) => {
       for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {
@@ -784,9 +811,7 @@ export default function App() {
                 )}
               </AutoSizer>
               {(!!(ui === UI.arg || ui === UI.div) && panelHTML.length > 0 && (
-                <>
-                  <Panel />
-                </>
+                <Panel />
               )) ||
                 (ui === UI.form && (
                   <>

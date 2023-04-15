@@ -10,11 +10,16 @@ import parse from 'html-react-parser';
 
 import { overrideTailwindClasses } from 'tailwind-override';
 import { Choice, Script } from '@johnlindquist/kit/types/core';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { motion } from 'framer-motion';
 
 import { ChoiceButtonProps } from '../types';
-import { isMouseDownAtom, _modifiers, buttonNameFontSizeAtom } from '../jotai';
+import {
+  isMouseDownAtom,
+  _modifiers,
+  buttonNameFontSizeAtom,
+  inputAtom,
+} from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
 
@@ -61,6 +66,8 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
   const [modifierDescription, setModifierDescription] = useState('');
 
   const [imageFail, setImageFail] = useState(false);
+
+  const input = useAtomValue(inputAtom);
 
   useEffect(() => {
     setImageFail(false);
@@ -129,7 +136,7 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
                 } truncate`}
               >
                 {highlight(
-                  choice.name,
+                  choice.name?.replace(/{\s*input\s*}/g, input),
                   scoredChoice?.matches?.slicedName,
                   'bg-primary bg-opacity-5 text-text-base transition-colors'
                 )}
@@ -143,7 +150,8 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
                   (index === currentIndex && choice?.focused)
                     ? choice?.focused
                     : highlight(
-                        choice?.description || '',
+                        choice?.description?.replace(/{\s*input\s*}/g, input) ||
+                          '',
                         scoredChoice?.matches?.slicedDescription,
                         'bg-primary bg-opacity-15 text-text-base transition-colors'
                       )}
