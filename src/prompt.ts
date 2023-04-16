@@ -963,9 +963,6 @@ export const setPromptData = async (promptData: PromptData) => {
   if (promptData?.scriptPath !== kitState.scriptPath) return;
 
   kitState.resize = promptData?.resize || false;
-
-  kitState.promptCount += 1;
-
   kitState.shortcutsPaused = promptData.ui === UI.hotkey;
   kitState.promptUI = promptData.ui;
 
@@ -1028,6 +1025,11 @@ export const setPromptData = async (promptData: PromptData) => {
     promptWindow?.show();
   } else {
     promptWindow?.show();
+  }
+
+  kitState.promptCount += 1;
+  if (kitState.promptCount === 1) {
+    await initBounds();
   }
 
   // app.focus({
@@ -1160,36 +1162,7 @@ export const onHideOnce = (fn: () => void) => {
   }
 };
 
-const subPromptId = subscribeKey(kitState, 'promptId', async () => {
-  // log.info({
-  //   here: `👋`,
-  //   promptUI: kitState.promptUI,
-  //   promptId: kitState.promptId,
-  //   bounds: kitState.promptBounds,
-  //   scriptPath: kitState.scriptPath,
-  // });
-  // if (
-  //   [UI.form, UI.div, UI.none].includes(kitState.promptUI) ||
-  //   kitState.scriptPath === '' ||
-  //   !promptWindow?.isVisible()
-  // )
-  //   return;
-
-  const changed =
-    kitState.promptBounds.width !== promptWindow?.getBounds().width;
-
-  const noCustom =
-    kitState.promptBounds.width ===
-      (appDb.mini ? PROMPT.WIDTH.MINI : PROMPT.WIDTH.BASE) &&
-    kitState.promptBounds.height === 0 &&
-    kitState.promptBounds.x === 0 &&
-    kitState.promptBounds.y === 0;
-
-  const notFirstPrompt = kitState.promptCount !== 1;
-
-  // Return if it's not the first prompt and there are no custom bounds
-  if (notFirstPrompt) return;
-
+const initBounds = async () => {
   if (promptWindow?.isDestroyed()) return;
 
   const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
@@ -1231,7 +1204,7 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
     //   kitState.promptCount > 1 &&
     //   !kitState.promptBounds.height
   );
-});
+};
 
 const subScriptPath = subscribeKey(
   kitState,
@@ -1264,26 +1237,6 @@ const subScriptPath = subscribeKey(
       hideAppIfNoWindows(`remove ${kitState.scriptPath}`);
       sendToPrompt(Channel.SET_OPEN, false);
       return;
-    }
-
-    // if (isKitScript(kitState.scriptPath)) return;
-
-    if (kitState.scriptPath && !promptWindow?.isVisible()) {
-      log.info(`📄 scriptPath changed: ${kitState.scriptPath}`);
-      if (promptWindow?.isDestroyed()) return;
-      const bounds = {
-        ...kitState.promptBounds,
-        ...(await getCurrentScreenPromptCache(kitState.scriptPath)),
-      };
-
-      log.verbose(`↖ Bounds: Script ${kitState.promptUI} ui`, bounds);
-
-      promptWindow.setBounds(
-        bounds
-        // promptWindow?.isVisible() &&
-        //   kitState.promptCount > 1 &&
-        //   !kitState.promptBounds.height
-      );
     }
 
     kitState.prevScriptPath = kitState.scriptPath;
@@ -1359,7 +1312,6 @@ export const clearPromptTimers = async () => {
 };
 
 subs.push(
-  subPromptId,
   subScriptPath,
   subIsSponsor,
   subUpdateDownloaded,
