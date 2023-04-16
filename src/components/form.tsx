@@ -5,6 +5,7 @@
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
 import React, { useCallback, KeyboardEvent, useEffect } from 'react';
+import { UI } from '@johnlindquist/kit/cjs/enum';
 import parse, { domToReact } from 'html-react-parser';
 import SimpleBar from 'simplebar-react';
 import { useAtom, useAtomValue } from 'jotai';
@@ -149,6 +150,7 @@ export default function Form() {
 
   return (
     <SimpleBar
+      id={UI.form}
       className="w-full h-full"
       style={
         {

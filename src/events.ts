@@ -25,7 +25,6 @@ export enum KitEvent {
   RestartKeyWatcher = 'RestartKeyWatcher',
   KeymapChanged = 'KeymapChanged',
   RemoveMostRecent = 'RemoveMostRecent',
-  PROMPT_RELOAD = 'PROMPT_RELOAD',
   DID_FINISH_LOAD = 'DID_FINISH_LOAD',
   SetSubmitValue = 'SetSubmitValue',
   TermExited = 'TermExited',

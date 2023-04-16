@@ -211,6 +211,9 @@ export const createPromptWindow = async () => {
     });
 
     sendToPrompt(Channel.APP_DB, { ...appDb });
+    setKitStateAtom({
+      isSponsor: kitState.isSponsor,
+    });
     emitter.emit(KitEvent.DID_FINISH_LOAD);
 
     // TODO: Consider how db/*.json files should sync with renderer process
@@ -227,8 +230,7 @@ export const createPromptWindow = async () => {
       log.error(`Prompt window is destroyed. Not reloading`);
       return;
     }
-    promptWindow?.reload();
-    emitter.emit(KitEvent.PROMPT_RELOAD);
+    reload();
   });
 
   //   promptWindow?.webContents?.on('new-window', function (event, url) {
@@ -1128,7 +1130,6 @@ export const reload = (callback: () => void = () => {}) => {
   }
 
   promptWindow?.reload();
-  emitter.emit(KitEvent.PROMPT_RELOAD);
 };
 
 export const getPromptBounds = () => promptWindow.getBounds();

@@ -347,6 +347,7 @@ export default function App() {
       UI.textarea,
       UI.mic,
       UI.webcam,
+      UI.form,
     ];
     const mutationCallback = (mutationsList: MutationRecord[]) => {
       for (const mutation of mutationsList) {

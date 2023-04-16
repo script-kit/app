@@ -1066,7 +1066,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
       scoredChoicesLength + infoChoicesLength === 0 &&
       !document.getElementById('list')
     ) {
-      g(logAtom)(`List and panel gone`);
+      // g(logAtom)(`List and panel gone`);
       ch = 0;
       mh = 0;
       forceResize = true;
@@ -1634,6 +1634,7 @@ export const openAtom = atom(
       s(prevChoiceId, '');
       s(runningAtom, false);
       s(miniShortcutsHoveredAtom, false);
+      s(tabsAtom, []);
 
       const stream = g(webcamStreamAtom);
       if (stream) {
