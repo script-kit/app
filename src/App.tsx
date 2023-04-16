@@ -337,7 +337,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const idsToWatch = ['log', 'preview', 'panel-simplebar'];
+    const idsToWatch = ['log', 'preview'];
     const mutationCallback = (mutationsList: MutationRecord[]) => {
       for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {

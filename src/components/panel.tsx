@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
-import React, { RefObject, useEffect, useRef } from 'react';
+import React, { RefObject, useEffect, useLayoutEffect, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion } from 'framer-motion';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 
@@ -13,6 +13,7 @@ import {
   uiAtom,
   shortcutsAtom,
   flagsAtom,
+  domUpdatedAtom,
 } from '../jotai';
 import { useKeyDirection, useObserveMainHeight } from '../hooks';
 import { darkTheme, lightTheme } from './themes';
@@ -50,7 +51,15 @@ export default function Panel() {
   const [shortcuts] = useAtom(shortcutsAtom);
   const [flags] = useAtom(flagsAtom);
 
-  const divRef = useObserveMainHeight<HTMLDivElement>('#panel');
+  const domUpdated = useSetAtom(domUpdatedAtom);
+
+  useLayoutEffect(() => {
+    domUpdated()(`Panel useLayoutEffect`);
+
+    return () => {
+      domUpdated()(`Panel useLayoutEffect cleanup`);
+    };
+  }, [panelHTML, domUpdated]);
 
   useEffect(() => {
     if (scrollRef.current && ui === UI.div) {
@@ -103,7 +112,6 @@ export default function Panel() {
         ${containerClasses}
         wrapper
        `}
-        ref={divRef as any}
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{
           __html,

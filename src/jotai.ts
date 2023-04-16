@@ -984,14 +984,14 @@ const prevMh = atom(0);
 let prevTopHeight = 0;
 
 export const domUpdatedAtom = atom(null, (g, s) => {
-  return (reason = '') => {
-    g(logAtom)(`domUpdated: ${reason}`);
+  return debounce((reason = '') => {
+    // g(logAtom)(`domUpdated: ${reason}`);
     resize(g, s, reason);
-  };
+  }, 25);
 });
 
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
-  g(logAtom)(`resize: ${reason}`);
+  // g(logAtom)(`resize: ${reason}`);
   if (g(submittedAtom)) return;
 
   const ui = g(uiAtom);
