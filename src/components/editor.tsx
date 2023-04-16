@@ -406,6 +406,7 @@ export default function Editor() {
 
   return (
     <motion.div
+      id={UI.editor}
       key="editor"
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}

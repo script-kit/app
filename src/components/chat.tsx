@@ -1,6 +1,8 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/no-danger */
 import { useAtom, useSetAtom } from 'jotai';
+import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
+
 import parse from 'html-react-parser';
 import React, {
   useEffect,
@@ -10,8 +12,6 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-
-import { Channel } from '@johnlindquist/kit/cjs/enum';
 
 import classNames from 'classnames';
 import { FaChevronDown } from 'react-icons/fa';
@@ -657,6 +657,7 @@ export function Chat() {
     <div
       className="chat-container flex flex-col h-full w-full"
       onKeyDown={onChatKeyDown}
+      id={UI.chat}
     >
       <ChatList
         referance={messagesRef}

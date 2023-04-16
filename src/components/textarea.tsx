@@ -1,6 +1,8 @@
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/require-default-props */
 import React, { LegacyRef, useRef } from 'react';
+import { UI } from '@johnlindquist/kit/cjs/enum';
+
 import { motion } from 'framer-motion';
 import { useAtom } from 'jotai';
 
@@ -25,6 +27,7 @@ export default function TextArea() {
 
   return (
     <motion.div
+      id={UI.textarea}
       key="textarea"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}

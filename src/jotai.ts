@@ -930,9 +930,16 @@ export const _history = atom<Script[]>([]);
 // );
 
 const _script = atom<Script>(noScript);
+const backToMainAtom = atom(false);
 export const scriptAtom = atom(
   (g) => g(_script),
   (g, s, a: Script) => {
+    const prevScript = g(_script);
+    s(
+      backToMainAtom,
+      prevScript?.filePath !== mainScriptPath && a?.filePath === mainScriptPath
+    );
+
     s(promptReadyAtom, false);
     if (a.filePath !== mainScriptPath) {
       s(unfilteredChoicesAtom, []);
@@ -996,20 +1003,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   const ui = g(uiAtom);
 
-  if (
-    [
-      UI.term,
-      UI.editor,
-      UI.drop,
-      UI.textarea,
-      UI.emoji,
-      UI.chat,
-      UI.mic,
-      UI.webcam,
-    ].includes(ui)
-  )
-    return;
-
   const scoredChoicesLength = g(scoredChoices)?.length;
   const infoChoicesLength = g(infoChoicesAtom).length;
   const hasPanel = g(_panelHTML) !== '';
@@ -1063,7 +1056,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
         return;
       }
     } else if (ui === UI.arg && hasPanel) {
-      g(logAtom)(`Force resize: has panel`);
+      // g(logAtom)(`Force resize: has panel`);
       ch = (document as any)?.getElementById('panel')?.offsetHeight;
       mh = ch;
       forceResize = true;
@@ -1112,6 +1105,36 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     mh += logHeight || 0;
   }
 
+  let forceHeight;
+  let forceWidth = promptData?.width;
+  if (
+    [
+      UI.term,
+      UI.editor,
+      UI.drop,
+      UI.textarea,
+      UI.emoji,
+      UI.chat,
+      UI.mic,
+      UI.webcam,
+    ].includes(ui)
+  ) {
+    forceHeight = promptData?.height || PROMPT.HEIGHT.BASE;
+    forceResize = true;
+  }
+
+  if (g(backToMainAtom)) {
+    forceHeight = PROMPT.HEIGHT.BASE;
+    forceWidth = PROMPT.WIDTH.BASE;
+    forceResize = true;
+    s(backToMainAtom, false);
+  }
+
+  // g(logAtom)({
+  //   forceHeight: forceHeight || 'no forced height',
+  //   forceWidth: forceWidth || 'no forced width',
+  // });
+
   // g(logAtom)({
   //   ui,
   //   ch,
@@ -1147,6 +1170,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     inputChanged: g(_inputChangedAtom),
     nullChoices,
     forceResize,
+    forceHeight,
+    forceWidth,
   };
 
   s(prevMh, mh);

@@ -4,6 +4,7 @@
 /* eslint-disable react/prop-types */
 
 import { useAtom } from 'jotai';
+import { UI } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback, useState } from 'react';
 import { placeholderAtom, submitValueAtom } from '../jotai';
 import { useEscape, useMountMainHeight } from '../hooks';
@@ -63,7 +64,7 @@ export default function Drop() {
   const containerRef = useMountMainHeight();
 
   return (
-    <div ref={containerRef} className="h-full w-full">
+    <div id={UI.drop} ref={containerRef} className="h-full w-full">
       <div
         tabIndex={0}
         role="region"

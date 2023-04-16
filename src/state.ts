@@ -327,6 +327,7 @@ const initState = {
   shortcutPressed: '',
   supportsNut:
     isMac || (isWin && arch === 'x64') || (isLinux && arch === 'x64'),
+  isPromptReady: false,
 };
 
 nativeTheme.addListener('updated', () => {

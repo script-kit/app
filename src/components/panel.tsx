@@ -57,7 +57,7 @@ export default function Panel() {
     domUpdated()(`Panel useLayoutEffect`);
 
     return () => {
-      domUpdated()(`Panel useLayoutEffect cleanup`);
+      // domUpdated()(`Panel useLayoutEffect cleanup`);
     };
   }, [panelHTML, domUpdated]);
 

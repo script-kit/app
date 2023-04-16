@@ -1,4 +1,5 @@
 import React, { RefObject, useCallback, useEffect, useRef } from 'react';
+import { UI } from '@johnlindquist/kit/cjs/enum';
 import { ipcRenderer, shell } from 'electron';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
@@ -166,6 +167,7 @@ export default function Terminal() {
 
   return (
     <motion.div
+      id={UI.term}
       key="terminal"
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}

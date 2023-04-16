@@ -1,6 +1,6 @@
 /* eslint-disable no-plusplus */
 import React, { useState, useCallback, useEffect } from 'react';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { useAtom, useAtomValue } from 'jotai';
 import {
   channelAtom,
@@ -121,7 +121,10 @@ export default function AudioRecorder() {
   useOnEnter(stopRecording);
 
   return (
-    <div className="h-full w-full flex flex-col justify-center items-center text-text-base text-xl">
+    <div
+      id={UI.mic}
+      className="h-full w-full flex flex-col justify-center items-center text-text-base text-xl"
+    >
       <h1 className="text-5xl">Recording</h1>
       {/* A circle that represents the recording state */}
       <div

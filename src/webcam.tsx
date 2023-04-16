@@ -2,6 +2,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { UI } from '@johnlindquist/kit/cjs/enum';
 import { useAtom } from 'jotai';
 import {
   submitValueAtom,
@@ -87,7 +88,10 @@ export default function Webcam() {
   useOnEnter(takeSelfie);
 
   return (
-    <div className="h-full w-full flex flex-col justify-center items-center text-text-base text-xl">
+    <div
+      id={UI.webcam}
+      className="h-full w-full flex flex-col justify-center items-center text-text-base text-xl"
+    >
       {stream && (
         <video
           id="webcam"

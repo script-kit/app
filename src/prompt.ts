@@ -27,6 +27,7 @@ import {
   Point,
   TouchBar,
   ipcMain,
+  app,
 } from 'electron';
 import os from 'os';
 import path from 'path';
@@ -39,7 +40,7 @@ import { differenceInHours } from 'date-fns';
 
 import { ChildProcess } from 'child_process';
 import { getAssetPath } from './assets';
-import { appDb, kitState, getPromptDb, subs } from './state';
+import { appDb, kitState, getPromptDb, subs, widgetState } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
@@ -311,6 +312,9 @@ export const createPromptWindow = async () => {
 
   const onBlur = () => {
     log.silly(`event: onBlur`);
+
+    if (!kitState.isPromptReady) return;
+
     if (promptWindow?.isDestroyed()) return;
     if (kitState.isActivated) {
       kitState.isActivated = false;
@@ -359,11 +363,12 @@ export const createPromptWindow = async () => {
   promptWindow?.on('hide', () => {
     log.silly(`event: hide`);
     // setBackgroundThrottling(false);
+    kitState.isPromptReady = false;
   });
 
-  promptWindow?.on('show', () => {
+  promptWindow?.on('show', async () => {
     // kitState.allowBlur = false;
-    log.silly(`event: show`);
+    log.info(`event: show`);
   });
 
   promptWindow?.webContents?.on('dom-ready', () => {
@@ -618,8 +623,10 @@ export const resize = async ({
   isSplash,
   hasPreview,
   forceResize,
+  forceHeight,
+  forceWidth,
 }: ResizeData) => {
-  if (!kitState.resize && !forceResize) return;
+  if (!forceHeight && !kitState.resize && !forceResize) return;
   if (kitState.promptId !== id || kitState.modifiedByUser) return;
   if (promptWindow?.isDestroyed()) return;
 
@@ -631,8 +638,10 @@ export const resize = async ({
   } = promptWindow.getBounds();
   const targetHeight = topHeight + mainHeight + footerHeight;
   const maxHeight = Math.max(DEFAULT_HEIGHT, currentHeight);
-  let width = currentWidth;
-  let height = Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
+  let width = forceWidth || currentWidth;
+  let height =
+    forceHeight ||
+    Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
 
   if (isSplash) {
     width = DEFAULT_EXPANDED_WIDTH;
@@ -648,7 +657,11 @@ export const resize = async ({
   }
 
   if (isVisible()) {
-    const bounds = { x, y, width: currentWidth, height };
+    // center x based on new width
+    const { width: screenWidth } = getCurrentScreenFromPrompt().workAreaSize;
+    const { x: workX } = getCurrentScreenFromPrompt().workArea;
+    const newX = Math.round(screenWidth / 2 - width / 2 + workX);
+    const bounds = { x: newX, y, width, height };
     setBounds(
       bounds,
       `resize: ${reason} -> target: ${targetHeight} max: ${maxHeight} height: ${height}, force: ${
@@ -939,6 +952,7 @@ const pidMatch = (pid: number, message: string) => {
 };
 
 export const setPromptData = async (promptData: PromptData) => {
+  kitState.isPromptReady = false;
   // if (!pidMatch(pid, `setPromptData`)) return;
   if (typeof promptData?.alwaysOnTop === 'boolean') {
     alwaysOnTop(promptData.alwaysOnTop);
@@ -965,10 +979,10 @@ export const setPromptData = async (promptData: PromptData) => {
       : promptData.height || 0,
   };
 
-  log.info({
-    here: `😅`,
-    bounds: kitState.promptBounds,
-  });
+  // log.info({
+  //   here: `😅`,
+  //   bounds: kitState.promptBounds,
+  // });
 
   kitState.promptId = promptData.id;
   if (kitState.suspended || kitState.screenLocked) return;
@@ -994,6 +1008,7 @@ export const setPromptData = async (promptData: PromptData) => {
   }
 
   // promptWindow.webContents.setBackgroundThrottling(false);
+
   if (kitState.isMac) {
     promptWindow?.showInactive();
     // 0 second setTimeout
@@ -1021,6 +1036,10 @@ export const setPromptData = async (promptData: PromptData) => {
 
   focusPrompt();
   sendToPrompt(Channel.SET_OPEN, true);
+
+  setTimeout(() => {
+    kitState.isPromptReady = true;
+  }, 100);
 
   if (boundsCheck) clearTimeout(boundsCheck);
   boundsCheck = setTimeout(async () => {
@@ -1168,21 +1187,10 @@ const subPromptId = subscribeKey(kitState, 'promptId', async () => {
   const notFirstPrompt = kitState.promptCount !== 1;
 
   // Return if it's not the first prompt and there are no custom bounds
-  if (notFirstPrompt && noCustom && !changed) return;
+  if (notFirstPrompt) return;
 
   if (promptWindow?.isDestroyed()) return;
-  const resizeOnInitUI = [
-    UI.term,
-    UI.editor,
-    UI.drop,
-    UI.textarea,
-    UI.emoji,
-    UI.chat,
-    UI.mic,
-    UI.webcam,
-  ].includes(kitState.ui);
 
-  if (notFirstPrompt && kitState.resize && !resizeOnInitUI) return;
   const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
     ui: kitState.promptUI,
     resize: kitState.resize,

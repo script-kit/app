@@ -337,7 +337,17 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const idsToWatch = ['log', 'preview'];
+    const idsToWatch = [
+      'log',
+      'preview',
+      UI.term,
+      UI.chat,
+      UI.editor,
+      UI.drop,
+      UI.textarea,
+      UI.mic,
+      UI.webcam,
+    ];
     const mutationCallback = (mutationsList: MutationRecord[]) => {
       for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {
@@ -351,7 +361,7 @@ export default function App() {
           for (const removedNode of Array.from(mutation.removedNodes)) {
             const removedElement = removedNode as Element;
             if (idsToWatch.includes(removedElement.id)) {
-              domUpdated()(`${removedElement.id} removed from DOM`);
+              // domUpdated()(`${removedElement.id} removed from DOM`);
             }
           }
         }

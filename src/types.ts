@@ -48,6 +48,8 @@ export interface ResizeData {
   placeholderOnly: boolean;
   nullChoices: boolean;
   forceResize: boolean;
+  forceHeight?: number;
+  forceWidth?: number;
 }
 
 export interface Survey {
