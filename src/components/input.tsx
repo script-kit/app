@@ -55,18 +55,6 @@ const remapModifiers = (m: string) => {
   return m.toLowerCase();
 };
 
-const useSize = (target) => {
-  const [size, setSize] = React.useState();
-
-  React.useLayoutEffect(() => {
-    setSize(target.current.getBoundingClientRect());
-  }, [target]);
-
-  // Where the magic happens
-  useResizeObserver(target, (entry) => setSize(entry.contentRect));
-  return size;
-};
-
 export default function Input() {
   const inputRef = useRef<HTMLInputElement>(null);
   useFocus(inputRef);
