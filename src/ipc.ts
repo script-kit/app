@@ -80,7 +80,7 @@ ${data.error}
     Channel.PROMPT_ERROR,
     debounce((_event, { error }) => {
       log.warn(error);
-      if (!kitState.hidden) {
+      if (!kitState.hiddenByUser) {
         setTimeout(() => {
           reload();
           // processes.add(ProcessType.App, kitPath('cli/kit-log.js'), []);

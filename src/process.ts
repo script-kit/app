@@ -788,7 +788,7 @@ const kitMessageMap: ChannelHandler = {
   HIDE_APP: toProcess(async ({ child, scriptPath }, { channel }) => {
     if (kitState.isMac && app?.dock) app?.dock?.hide();
 
-    kitState.hidden = true;
+    kitState.hiddenByUser = true;
     log.info(`😳 Hiding app`);
 
     const handler = () => {
@@ -2021,19 +2021,6 @@ const processesChanged = debounce(() => {
   if (kitState.allowQuit) return;
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
   appToPrompt(AppChannel.PROCESSES, pinfos);
-
-  const mains = processes.filter((p) =>
-    pathsAreEqual(p.scriptPath, mainScriptPath)
-  );
-
-  // kill all but the newest
-  if (mains.length > 1) {
-    const [, ...others] = mains.sort((a, b) => b.pid - a.pid);
-    others.forEach((p) => {
-      log.info(`Killing stray main process ${p.pid}`);
-      p.child.kill();
-    });
-  }
 }, 10);
 
 export const clearIdleProcesses = () => {
@@ -2527,3 +2514,22 @@ subscribe(appDb, (db) => {
   log.info(`db changed`, { ...appDb });
   sendToPrompt(Channel.APP_DB, { ...appDb });
 });
+
+subscribeKey(kitState, 'promptHidden', debounce((promptHidden) => {
+  if(promptHidden && !kitState.hiddenByUser) {
+    if (kitState.allowQuit) return;
+    const mains = processes.filter((p) =>
+      pathsAreEqual(p.scriptPath, mainScriptPath)
+    );
+
+    // kill all but the newest
+    if (mains.length > 1) {
+      const [, ...others] = mains.sort((a, b) => b.pid - a.pid);
+      others.forEach((p) => {
+        log.info(`Killing stray main process ${p.pid}`);
+        p.child.kill();
+      });
+    }
+  }
+}, 250))
+

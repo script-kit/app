@@ -18,7 +18,6 @@ import {
   getScripts,
   setScriptTimestamp,
   getTimestamps,
-  getPromptDb as getKitPromptDb,
   UserDb,
   AppDb,
   getAppDb,
@@ -230,7 +229,7 @@ export const checkAccessibility = () =>
 const initState = {
   debugging: false,
   isPanel: false,
-  hidden: false,
+  hiddenByUser: false,
   ps: [] as Partial<ProcessInfo>[],
   addP,
   removeP,
@@ -328,6 +327,7 @@ const initState = {
   supportsNut:
     isMac || (isWin && arch === 'x64') || (isLinux && arch === 'x64'),
   isPromptReady: false,
+  promptHidden: true,
 };
 
 nativeTheme.addListener('updated', () => {
@@ -355,6 +355,9 @@ export type kitStateType = typeof initState;
 
 export const widgetState: typeof initWidgets = proxy(initWidgets);
 export const windowsState: typeof initWindows = proxy(initWindows);
+export const promptState = proxy({
+  screens: {} as any,
+});
 export const findWidget = (id: string, reason = '') => {
   const options = widgetState.widgets.find((opts) => opts.id === id);
   if (!options) {
@@ -509,20 +512,6 @@ export const online = async () => {
 export const forceQuit = () => {
   log.info(`Begin force quit...`);
   kitState.allowQuit = true;
-};
-
-let _promptDb: any = null;
-
-export const getPromptDb: typeof getKitPromptDb = async () => {
-  if (!_promptDb) {
-    const promptDb = await getKitPromptDb();
-    _promptDb = promptDb;
-    _promptDb.write = debounce(async () => {
-      await promptDb.write();
-    }, 100);
-  }
-
-  return _promptDb;
 };
 
 const subRequiresAuthorizedRestart = subscribeKey(

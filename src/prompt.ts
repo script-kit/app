@@ -40,14 +40,13 @@ import { differenceInHours } from 'date-fns';
 
 import { ChildProcess } from 'child_process';
 import { getAssetPath } from './assets';
-import { appDb, kitState, getPromptDb, subs, widgetState } from './state';
+import { appDb, kitState, subs, promptState } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
   DEFAULT_HEIGHT,
   DEFAULT_WIDTH,
   EMOJI_HEIGHT,
   EMOJI_WIDTH,
-  INPUT_HEIGHT,
   MIN_HEIGHT,
   MIN_WIDTH,
   ZOOM_LEVEL,
@@ -85,10 +84,6 @@ export const maybeHide = async (reason: string) => {
       }
 
       promptWindow?.hide();
-
-      log.verbose(
-        `🙈 maybeHide???: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
-      );
     }
   }
 };
@@ -250,36 +245,11 @@ export const createPromptWindow = async () => {
     `file://${__dirname}/index.html?vs=${getAssetPath('vs')}`
   );
 
-  // promptWindow.on('ready-to-show', function () {
-  //   promptWindow.showInactive();
-  // });
-
-  // promptWindow.webContents.once('did-finish-load', () => {
-  //   promptWindow?.webContents.closeDevTools();
-  // });
-
   promptWindow.webContents.on('devtools-closed', () => {
     log.silly(`event: devtools-closed`);
     promptWindow?.setAlwaysOnTop(false);
     maybeHide('Devtools closed');
   });
-
-  // capture open devtools shortcut on promptWindow
-  // promptWindow.webContents.on('before-input-event', (event, input) => {
-  //   log.info(input);
-  //   if (input.type === 'keyDown' && input.key === 'F12') {
-  //     event.preventDefault();
-  //   }
-
-  //   const modifiers = kitState.isWindows
-  //     ? input.control && input.shift
-  //     : input.meta && input.alt;
-
-  //   if (input.type === 'keyDown' && input.code === 'KeyI' && modifiers) {
-  //     log.info(`🫴 Opening devtools`);
-  //     event.preventDefault();
-  //   }
-  // });
 
   emitter.on(KitEvent.OpenDevTools, () => {
     log.silly(`event: OpenDevTools`);
@@ -294,23 +264,6 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.setMaxListeners(2);
-
-  // promptWindow?.webContents.on('before-input-event', (event: any, input) => {
-  //   if (devToolsVisible()) {
-  //     log.info({ input });
-  //     if (input.key === 'r' && (input.meta || input.control)) {
-  //       reload();
-  //     }
-  //   }
-  // });
-
-  // promptWindow?.on('focus', () => {
-  //   triggerKeyWindow(true, 'focus');
-  // });
-
-  // promptWindow?.webContents?.on('focus', () => {
-  //   triggerKeyWindow(true, 'webContents focus');
-  // });
 
   const onBlur = () => {
     log.silly(`event: onBlur`);
@@ -366,9 +319,11 @@ export const createPromptWindow = async () => {
     log.silly(`event: hide`);
     // setBackgroundThrottling(false);
     kitState.isPromptReady = false;
+    kitState.promptHidden = true;
   });
 
   promptWindow?.on('show', async () => {
+    kitState.promptHidden = false;
     // kitState.allowBlur = false;
     log.info(`event: show`);
   });
@@ -410,7 +365,7 @@ export const createPromptWindow = async () => {
     kitState.modifiedByUser = true;
   });
   promptWindow?.on('resized', onResized);
-  promptWindow?.on('moved', debounce(onMove, 500));
+  promptWindow?.on('moved', debounce(onMove, 250));
 
   // powerMonitor.addListener('user-did-resign-active', () => {
   //   log.info(`🔓 System unlocked. Reloading prompt window.`);
@@ -468,8 +423,7 @@ export const alwaysOnTop = (onTop: boolean) => {
 };
 
 export const getCurrentScreenFromMouse = (): Display => {
-  log.silly(`function: getCurrentScreenFromMouse`);
-  if (promptWindow?.isVisible()) {
+  if (promptWindow?.isVisible() && kitState.promptCount > 1) {
     const [x, y] = promptWindow?.getPosition();
     return screen.getDisplayNearestPoint({ x, y });
   }
@@ -477,7 +431,7 @@ export const getCurrentScreenFromMouse = (): Display => {
 };
 
 export const getCurrentScreenFromPrompt = (): Display => {
-  log.silly(`function: getCurrentScreenFromPrompt`);
+  log.info(`function: getCurrentScreenFromPrompt`);
   return screen.getDisplayNearestPoint(promptWindow.getBounds());
 };
 
@@ -496,15 +450,14 @@ export const getCurrentScreenPromptCache = async (
   log.silly(`function: getCurrentScreenPromptCache`);
   const currentScreen = getCurrentScreenFromMouse();
   const screenId = String(currentScreen.id);
-  const promptDb = await getPromptDb();
-  // log.info(`screens:`, promptDb.screens);
+  // log.info(`screens:`, promptState.screens);
 
-  const savedPromptBounds = promptDb?.screens?.[screenId]?.[scriptPath];
+  const savedPromptBounds = promptState?.screens?.[screenId]?.[scriptPath];
 
   // log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
 
   if (savedPromptBounds && kitState.promptCount === 1) {
-    log.info(`Bounds: found saved bounds for ${scriptPath}`);
+    // log.info(`Bounds: found saved bounds for ${scriptPath}`);
     return savedPromptBounds;
   }
 
@@ -569,13 +522,13 @@ export const getCurrentScreenPromptCache = async (
 
   return promptBounds;
 
-  // if (!promptDb?.screens) {
-  //   promptDb.screens = {};
+  // if (!promptState?.screens) {
+  //   promptState.screens = {};
   // }
-  // if (!promptDb?.screens[screenId]) {
-  //   promptDb.screens[screenId] = {};
+  // if (!promptState?.screens[screenId]) {
+  //   promptState.screens[screenId] = {};
   // }
-  // const boundsFilePath = promptDb.screens?.[screenId]?.[scriptPath];
+  // const boundsFilePath = promptState.screens?.[screenId]?.[scriptPath];
   // const maybeBounds = boundsFilePath || {};
 
   // if (!boundsFilePath) {
@@ -585,7 +538,7 @@ export const getCurrentScreenPromptCache = async (
   //     y: maybeBounds?.y || bounds.y,
   //   };
 
-  //   // writePromptDb(screenId, scriptPath, promptBounds);
+  //   // writePromptState(screenId, scriptPath, promptBounds);
   // }
 };
 
@@ -766,11 +719,10 @@ export const savePromptBounds = async (
   if (!pointOnMouseScreen(bounds)) return;
 
   const currentScreen = getCurrentScreenFromPrompt();
-  const promptDb = await getPromptDb();
 
   try {
     const prevBounds =
-      promptDb?.screens?.[String(currentScreen.id)]?.[scriptPath];
+      promptState?.screens?.[String(currentScreen.id)]?.[scriptPath];
 
     // Ignore if flag
     const size = b & Bounds.Size;
@@ -787,35 +739,27 @@ export const savePromptBounds = async (
 
     // if promptBounds is on the current screen
 
-    writePromptDb(String(currentScreen.id), scriptPath, promptBounds);
+    writePromptState(String(currentScreen.id), scriptPath, promptBounds);
   } catch (error) {
     log.error(error);
   }
 };
 
-const writePromptDb = async (
+const writePromptState = async (
   screenId: string,
   scriptPath: string,
   bounds: PromptBounds
 ) => {
-  log.silly(`writePromptDb`, { screenId, scriptPath, bounds });
-  const promptDb = await getPromptDb();
+  log.silly(`writePromptState`, { screenId, scriptPath, bounds });
 
-  if (!promptDb?.screens) promptDb.screens = {};
-  if (!promptDb?.screens[screenId]) promptDb.screens[screenId] = {};
+  if (!promptState?.screens) promptState.screens = {};
+  if (!promptState?.screens[screenId]) promptState.screens[screenId] = {};
 
   if (!bounds.height) return;
   if (!bounds.width) return;
   if (!bounds.x) return;
   if (!bounds.y) return;
-  promptDb.screens[screenId][scriptPath] = bounds;
-  if (!promptDb.screens[screenId][scriptPath]) return;
-
-  try {
-    await promptDb.write();
-  } catch (error) {
-    log.info(error);
-  }
+  promptState.screens[screenId][scriptPath] = bounds;
 };
 
 export const hideAppIfNoWindows = (reason: string) => {
@@ -953,6 +897,7 @@ const pidMatch = (pid: number, message: string) => {
 };
 
 export const setPromptData = async (promptData: PromptData) => {
+  kitState.hiddenByUser = false;
   kitState.isPromptReady = false;
   // if (!pidMatch(pid, `setPromptData`)) return;
   if (typeof promptData?.alwaysOnTop === 'boolean') {
@@ -1106,12 +1051,7 @@ export const setChoices = (choices: Choice[]) => {
 
 export const clearPromptCache = async () => {
   try {
-    const promptDb = await getPromptDb();
-    promptDb.screens = {};
-
-    log.info(`⛑ Clear prompt cache:`, promptDb);
-
-    await promptDb.write();
+    promptState.screens = {};
   } catch (error) {
     log.info(error);
   }
@@ -1285,17 +1225,11 @@ const subAppDbCachePrompt = subscribeKey(appDb, 'cachePrompt', () => {
 export const clearPromptCacheFor = async (scriptPath: string) => {
   try {
     const displays = screen.getAllDisplays();
-    const promptDb = await getPromptDb();
     for await (const display of displays) {
-      if (promptDb?.screens?.[display.id]?.[scriptPath]) {
-        delete promptDb.screens[display.id][scriptPath];
+      if (promptState?.screens?.[display.id]?.[scriptPath]) {
+        delete promptState.screens[display.id][scriptPath];
         log.verbose(`🗑 Clear prompt cache for ${scriptPath} on ${display.id}`);
       }
-    }
-    try {
-      await promptDb.write();
-    } catch (error) {
-      log.info(error);
     }
   } catch (e) {
     log.error(e);
