@@ -1637,7 +1637,6 @@ export const openAtom = atom(
       s(runningAtom, false);
       s(miniShortcutsHoveredAtom, false);
       s(tabsAtom, []);
-      s(headerHiddenAtom, true);
 
       const stream = g(webcamStreamAtom);
       if (stream) {
