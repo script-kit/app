@@ -343,6 +343,12 @@ export const createPromptWindow = async () => {
     kitState.modifiedByUser = false;
   };
 
+  const saveCurrentPromptBounds = async () => {
+    if (kitState.promptCount === 1) {
+      savePromptBounds(kitState.scriptPath, promptWindow?.getBounds());
+    }
+  };
+
   const onResized = async () => {
     log.silly(`event: onResized`);
     kitState.modifiedByUser = false;
@@ -352,6 +358,8 @@ export const createPromptWindow = async () => {
       // sendToPrompt(Channel.SET_RESIZING, false);
       kitState.isResizing = false;
     }
+
+    saveCurrentPromptBounds();
   };
 
   promptWindow?.on('will-resize', (event, rect) => {
@@ -361,6 +369,10 @@ export const createPromptWindow = async () => {
     if (rect.width < MIN_WIDTH) event.preventDefault();
 
     kitState.modifiedByUser = true;
+  });
+
+  promptWindow?.on('moved', () => {
+    saveCurrentPromptBounds();
   });
 
   promptWindow?.on('will-move', () => {
@@ -434,7 +446,7 @@ export const getCurrentScreenFromMouse = (): Display => {
 };
 
 export const getCurrentScreenFromPrompt = (): Display => {
-  log.info(`function: getCurrentScreenFromPrompt`);
+  // log.info(`function: getCurrentScreenFromPrompt`);
   return screen.getDisplayNearestPoint(promptWindow.getBounds());
 };
 
@@ -457,7 +469,7 @@ export const getCurrentScreenPromptCache = async (
 
   const savedPromptBounds = promptState?.screens?.[screenId]?.[scriptPath];
 
-  // log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
+  log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
 
   if (savedPromptBounds && kitState.promptCount === 1) {
     // log.info(`Bounds: found saved bounds for ${scriptPath}`);
@@ -546,7 +558,7 @@ export const getCurrentScreenPromptCache = async (
 };
 
 export const setBounds = (bounds: Rectangle, reason = '') => {
-  // log.info(`📐 setBounds, reason ${reason}`, bounds);
+  log.info(`📐 setBounds, reason ${reason}`, bounds);
   // TODO: Maybe use in the future with setting the html body bounds for faster resizing?
   // promptWindow?.setContentSize(bounds.width, bounds.height);
   try {
@@ -583,6 +595,7 @@ export const resize = async ({
   forceResize,
   forceHeight,
   forceWidth,
+  inputChanged,
 }: ResizeData) => {
   if (!forceHeight && !kitState.resize && !forceResize) return;
   if (kitState.promptId !== id || kitState.modifiedByUser) return;
@@ -625,6 +638,10 @@ export const resize = async ({
         forceResize ? 'true' : 'false'
       }`
     );
+
+    if (kitState.promptCount === 1 && !inputChanged) {
+      savePromptBounds(kitState.scriptPath, bounds);
+    }
     kitState.resizedByChoices = ui === UI.arg;
   }
 };
@@ -715,7 +732,7 @@ export const savePromptBounds = async (
     log.info(`Cache prompt disabled. Ignore saving bounds`);
     return;
   }
-  log.silly(`function: savePromptBounds`);
+  log.info(`function: savePromptBounds for ${scriptPath}`, bounds);
   // const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
   // if (isMain) return;
 
@@ -736,8 +753,8 @@ export const savePromptBounds = async (
     const promptBounds: PromptBounds = {
       x,
       y,
-      width: width < MIN_WIDTH ? MIN_WIDTH : width,
-      height: height < MIN_HEIGHT ? MIN_HEIGHT : height,
+      width,
+      height,
     };
 
     // if promptBounds is on the current screen
@@ -1115,7 +1132,7 @@ const initBounds = async () => {
   });
   if (promptWindow?.isDestroyed()) return;
 
-  log.verbose(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
+  log.info(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
 
   // If widths or height don't match, send SET_RESIZING to prompt
 
@@ -1167,16 +1184,7 @@ const subScriptPath = subscribeKey(
       log.info(
         `📄 scriptPath changed: ${kitState.scriptPath}, prompt count: ${kitState.promptCount}`
       );
-      if (
-        kitState.prevScriptPath &&
-        !kitState.resizedByChoices &&
-        kitState.promptCount === 0
-      ) {
-        log.info(
-          `>>>> 🎸 Set script: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
-        );
-        savePromptBounds(kitState.prevScriptPath, promptWindow.getBounds());
-      }
+
       hideAppIfNoWindows(`remove ${kitState.scriptPath}`);
       sendToPrompt(Channel.SET_OPEN, false);
       return;

@@ -1106,7 +1106,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   }
 
   let forceHeight;
-  let forceWidth = promptData?.width;
+  let forceWidth = g(isMainScriptAtom) ? undefined : promptData?.width;
   if (
     [
       UI.term,
@@ -1605,7 +1605,7 @@ export const openAtom = atom(
   (g) => g(_open),
   (g, s, a: boolean) => {
     s(justOpenedAtom, a);
-    setTimeout(() => s(justOpenedAtom, false), 300);
+    setTimeout(() => s(justOpenedAtom, false), 500);
     s(mouseEnabledAtom, 0);
 
     if (g(_open) && a === false) {
@@ -1637,6 +1637,7 @@ export const openAtom = atom(
       s(runningAtom, false);
       s(miniShortcutsHoveredAtom, false);
       s(tabsAtom, []);
+      s(headerHiddenAtom, true);
 
       const stream = g(webcamStreamAtom);
       if (stream) {
