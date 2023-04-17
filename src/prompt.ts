@@ -659,10 +659,9 @@ export const resize = async ({
   }
 
   if (isVisible()) {
-    // center x based on new width
-    const { width: screenWidth } = getCurrentScreenFromPrompt().workAreaSize;
-    const { x: workX } = getCurrentScreenFromPrompt().workArea;
-    const newX = Math.round(screenWidth / 2 - width / 2 + workX);
+    // center x based on current prompt x position
+    const newX = Math.round(x + currentWidth / 2 - width / 2);
+
     const bounds = { x: newX, y, width, height };
     setBounds(
       bounds,
@@ -1118,6 +1117,7 @@ export const clearPromptCache = async () => {
   }
 
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
+  await initBounds();
 };
 
 export const reload = (callback: () => void = () => {}) => {
@@ -1227,7 +1227,7 @@ const subScriptPath = subscribeKey(
       if (
         kitState.prevScriptPath &&
         !kitState.resizedByChoices &&
-        kitState.promptCount === 1
+        kitState.promptCount === 0
       ) {
         log.info(
           `>>>> 🎸 Set script: 💾 Saving prompt bounds for ${kitState.prevScriptPath} `
