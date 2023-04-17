@@ -2516,20 +2516,22 @@ subscribe(appDb, (db) => {
 });
 
 subscribeKey(kitState, 'promptHidden', debounce((promptHidden) => {
+  // log.info(`Checking for stray processes...`, {
+  //   promptHidden: promptHidden ? 'true' : 'false',
+  //   hiddenByUser: kitState.hiddenByUser ? 'true' : 'false',
+  // })
   if(promptHidden && !kitState.hiddenByUser) {
+
     if (kitState.allowQuit) return;
     const mains = processes.filter((p) =>
       pathsAreEqual(p.scriptPath, mainScriptPath)
     );
 
-    // kill all but the newest
-    if (mains.length > 1) {
-      const [, ...others] = mains.sort((a, b) => b.pid - a.pid);
-      others.forEach((p) => {
-        log.info(`Killing stray main process ${p.pid}`);
-        p.child.kill();
-      });
-    }
+    mains.forEach((p) => {
+      log.info(`Killing stray main process ${p.pid}`);
+      p.child.kill();
+    });
+
   }
 }, 250))
 

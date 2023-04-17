@@ -1604,6 +1604,8 @@ const lastScriptClosed = atom('');
 export const openAtom = atom(
   (g) => g(_open),
   (g, s, a: boolean) => {
+    s(justOpenedAtom, a);
+    setTimeout(() => s(justOpenedAtom, false), 300);
     s(mouseEnabledAtom, 0);
 
     if (g(_open) && a === false) {
@@ -2373,9 +2375,10 @@ export const lastKeyDownWasModifierAtom = atom(false);
 
 export const miniShortcutsVisibleAtom = atom((g) => {
   const ms = g(_modifiers).filter((m) => !m.toLowerCase().includes('shift'));
+  const justOpened = g(justOpenedAtom);
 
   return (
-    (ms.length > 0 && g(lastKeyDownWasModifierAtom)) ||
+    (!justOpened && ms.length > 0 && g(lastKeyDownWasModifierAtom)) ||
     g(miniShortcutsHoveredAtom)
   );
 });
@@ -2409,3 +2412,5 @@ export const socialAtom = atom((g) => {
 
   return undefined;
 });
+
+export const justOpenedAtom = atom(false);

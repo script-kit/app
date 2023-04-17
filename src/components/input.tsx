@@ -7,12 +7,14 @@ import React, {
   LegacyRef,
   useRef,
   useEffect,
+  useState,
 } from 'react';
 import { motion } from 'framer-motion';
 import { UI, PROMPT } from '@johnlindquist/kit/cjs/enum';
 import { Choice } from '@johnlindquist/kit/types/core';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
+import useResizeObserver from '@react-hook/resize-observer';
 import {
   inputAtom,
   modifiers,
@@ -51,6 +53,18 @@ const remapModifiers = (m: string) => {
   if (m === 'Control') return ['control', 'ctrl'];
   if (m === 'Alt') return ['alt', 'option'];
   return m.toLowerCase();
+};
+
+const useSize = (target) => {
+  const [size, setSize] = React.useState();
+
+  React.useLayoutEffect(() => {
+    setSize(target.current.getBoundingClientRect());
+  }, [target]);
+
+  // Where the magic happens
+  useResizeObserver(target, (entry) => setSize(entry.contentRect));
+  return size;
 };
 
 export default function Input() {
@@ -172,6 +186,15 @@ export default function Input() {
     [setModifiers]
   );
 
+  const minWidth = 128; // Set a minimum width for the input
+  const [hiddenInputMeasurerWidth, setHiddenInputMeasurerWidth] = useState(0);
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
+
+  useResizeObserver(hiddenInputRef, (entry) => {
+    const newWidth = Math.ceil(hiddenInputRef?.current?.offsetWidth + 1); // Adding 1px for better accuracy
+    setHiddenInputMeasurerWidth(Math.max(newWidth, minWidth));
+  });
+
   const onChange = useCallback(
     (event) => {
       if (onInputSubmit[event.target.value]) {
@@ -180,7 +203,7 @@ export default function Input() {
         setInput(event.target.value);
       }
     },
-    [setInput, onInputSubmit]
+    [onInputSubmit, setSubmitValue, setInput]
   );
 
   return (
@@ -194,19 +217,27 @@ export default function Input() {
       // animate={{ opacity: processing ? 0 : 1 }}
       // transition={{ duration: 0.2 }}
     >
-      <input
-        id="input"
-        spellCheck="false"
-        style={
-          {
-            WebkitAppRegion: 'no-drag',
-            WebkitUserSelect: 'none',
-            ...(submitted && { caretColor: 'transparent' }),
-          } as any
-        }
-        disabled={submitted}
-        autoFocus
-        className={`
+      <div
+        className="flex-1 max-w-full"
+        style={{
+          WebkitAppRegion: 'drag',
+          WebkitUserSelect: 'none',
+        }}
+      >
+        <input
+          id="input"
+          spellCheck="false"
+          style={
+            {
+              width: `${hiddenInputMeasurerWidth}px`,
+              WebkitAppRegion: 'no-drag',
+              WebkitUserSelect: 'none',
+              ...(submitted && { caretColor: 'transparent' }),
+            } as any
+          }
+          disabled={submitted}
+          autoFocus
+          className={`
       bg-transparent flex-1 text-text-base focus:outline-none outline-none
       placeholder-text-base placeholder-opacity-25
       tracking-normal
@@ -215,17 +246,32 @@ export default function Input() {
       h-full
       ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 px-4 py-0
       focus:border-none border-none
+      max-w-full
       ${promptData?.inputClassName || ''}
       `}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        onKeyUp={onKeyUp}
-        onKeyUpCapture={onKeyUp}
-        placeholder={placeholder}
-        ref={inputRef as LegacyRef<HTMLInputElement>}
-        type={promptData?.secret ? 'password' : promptData?.type || 'text'}
-        value={inputValue}
-      />
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          onKeyUp={onKeyUp}
+          onKeyUpCapture={onKeyUp}
+          placeholder={placeholder}
+          ref={inputRef as LegacyRef<HTMLInputElement>}
+          type={promptData?.secret ? 'password' : promptData?.type || 'text'}
+          value={inputValue}
+        />
+        <span
+          ref={hiddenInputRef}
+          id="hidden-input-measurer"
+          className={`${fontSize} tracking-normal px-4`}
+          style={{
+            position: 'absolute',
+            visibility: 'hidden',
+            // don't break on any lines
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {`${inputValue || placeholder}-pr`}
+        </span>
+      </div>
       {footerHidden && (
         // eslint-disable-next-line jsx-a11y/mouse-events-have-key-events
         <div

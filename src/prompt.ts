@@ -191,6 +191,9 @@ export const createPromptWindow = async () => {
   // promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   promptWindow?.webContents?.on('did-finish-load', () => {
+    kitState.hiddenByUser = false;
+    kitState.promptHidden = true;
+
     log.silly(`event: did-finish-load`);
     sendToPrompt(Channel.APP_CONFIG, {
       delimiter: path.delimiter,

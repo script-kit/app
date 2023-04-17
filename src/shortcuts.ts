@@ -3,7 +3,7 @@ import log from 'electron-log';
 import path from 'path';
 import { readFile } from 'fs/promises';
 import { subscribeKey } from 'valtio/utils';
-import { debounce } from 'lodash';
+import { debounce, throttle } from 'lodash';
 
 import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 
@@ -36,22 +36,29 @@ const mainFail = (shortcut: string, filePath: string) =>
 
 const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
   try {
-    const success = globalShortcut.register(shortcut, async () => {
-      kitState.shortcutPressed = shortcut;
+    const shortcutAction = throttle(
+      async () => {
+        kitState.shortcutPressed = shortcut;
 
-      if (shebang) {
-        // split shebang into command and args
-        spawnShebang({ shebang, filePath });
+        if (shebang) {
+          // split shebang into command and args
+          spawnShebang({ shebang, filePath });
 
-        return;
+          return;
+        }
+
+        runPromptProcess(filePath, [], {
+          force: true,
+          trigger: Trigger.Shortcut,
+        });
+        focusPrompt();
+      },
+      250,
+      {
+        leading: true,
       }
-
-      runPromptProcess(filePath, [], {
-        force: true,
-        trigger: Trigger.Shortcut,
-      });
-      focusPrompt();
-    });
+    );
+    const success = globalShortcut.register(shortcut, shortcutAction);
 
     if (!success) {
       log.info(`Failed to register: ${shortcut} to ${filePath}`);
@@ -203,21 +210,28 @@ export const updateMainShortcut = async (filePath: string) => {
       shortcutMap.delete(mainScriptPath);
     }
 
-    const ret = globalShortcut.register(finalShortcut, async () => {
-      kitState.shortcutPressed = finalShortcut;
-      log.info(`🏚  main shortcut`);
-      if (isVisible() && !isFocused()) {
-        focusPrompt();
-        app.focus({
-          steal: true,
-        });
-      } else {
-        await runPromptProcess(mainScriptPath, [], {
-          force: true,
-          trigger: Trigger.Menu,
-        });
+    const mainShortcutAction = throttle(
+      async () => {
+        kitState.shortcutPressed = finalShortcut;
+        log.info(`🏚  main shortcut`);
+        if (isVisible() && !isFocused()) {
+          focusPrompt();
+          app.focus({
+            steal: true,
+          });
+        } else {
+          await runPromptProcess(mainScriptPath, [], {
+            force: true,
+            trigger: Trigger.Menu,
+          });
+        }
+      },
+      250,
+      {
+        leading: true,
       }
-    });
+    );
+    const ret = globalShortcut.register(finalShortcut, mainShortcutAction);
 
     if (!ret) {
       log.warn(`Failed to register: ${finalShortcut} to ${mainScriptPath}`);
