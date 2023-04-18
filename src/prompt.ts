@@ -365,9 +365,6 @@ export const createPromptWindow = async () => {
   promptWindow?.on('will-resize', (event, rect) => {
     log.silly(`Will Resize ${rect.width} ${rect.height}`);
 
-    if (rect.height < MIN_HEIGHT) event.preventDefault();
-    if (rect.width < MIN_WIDTH) event.preventDefault();
-
     kitState.modifiedByUser = true;
   });
 
