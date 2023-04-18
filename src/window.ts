@@ -41,6 +41,7 @@ export const createWindow = async ({
   windowsState.windows.push({
     scriptPath,
     id: win.id,
+    ui,
   });
 
   win.on('close', () => {
@@ -80,6 +81,7 @@ export const showLogWindow = async ({
   );
 
   if (alreadyOpen) {
+    BrowserWindow.fromId(alreadyOpen.id)?.showInactive();
     return;
   }
 
@@ -90,7 +92,7 @@ export const showLogWindow = async ({
   const { x, y, width, height } = currentScreen.workArea;
   win.setSize(480, 800);
   win.setPosition(x + width - win.getSize()[0], y + height - win.getSize()[1]);
-  win.show();
+  win.showInactive();
 
   // check if logPath exists using fs.stat promise
   try {
