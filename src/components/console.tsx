@@ -54,7 +54,7 @@ export default function Console() {
         className="log
         w-full h-16
         bg-bg-base text-text-base
-        bg-opacity-80
+        bg-opacity-50
         font-mono text-xs
         hover:cursor-auto
         "

@@ -1252,7 +1252,7 @@ const checkSubmitFormat = (checkValue: any) => {
 export const footerAtom = atom('');
 
 // Create an itemHeightAtom
-export const itemHeightAtom = atom(BUTTON_HEIGHT);
+export const itemHeightAtom = atom(PROMPT.ITEM.HEIGHT.BASE);
 
 const promptData = atom<null | PromptData>(null);
 
@@ -1299,7 +1299,7 @@ export const promptDataAtom = atom(
       s(justOpenedAtom, true);
       setTimeout(() => {
         s(justOpenedAtom, false);
-      }, 250);
+      }, 50);
     } else {
       s(justOpenedAtom, false);
     }
@@ -1377,7 +1377,7 @@ export const promptDataAtom = atom(
         s(formDataAtom, a.formData);
       }
 
-      s(itemHeightAtom, a?.itemHeight || BUTTON_HEIGHT);
+      s(itemHeightAtom, a?.itemHeight || PROMPT.ITEM.HEIGHT.BASE);
 
       s(defaultValueAtom, a?.defaultValue || '');
 
@@ -2297,6 +2297,10 @@ export const buttonNameFontSizeAtom = atom((g) => {
   let fontSize = `text-base`;
   const itemHeight = g(itemHeightAtom);
   switch (itemHeight) {
+    case PROMPT.ITEM.HEIGHT.XXS:
+      fontSize = `text-xxs`;
+      break;
+
     case PROMPT.ITEM.HEIGHT.XS:
       fontSize = `text-xs`;
       break;
@@ -2319,6 +2323,42 @@ export const buttonNameFontSizeAtom = atom((g) => {
 
     default:
       fontSize = `text-base`;
+      break;
+  }
+
+  return fontSize;
+});
+
+export const buttonDescriptionFontSizeAtom = atom((g) => {
+  const itemHeight = g(itemHeightAtom);
+  let fontSize = `text-xs`;
+  switch (itemHeight) {
+    case PROMPT.ITEM.HEIGHT.XXS:
+      fontSize = `text-xxs`;
+      break;
+
+    case PROMPT.ITEM.HEIGHT.XS:
+      fontSize = `text-xxs`;
+      break;
+
+    case PROMPT.ITEM.HEIGHT.SM:
+      fontSize = `text-xxs`;
+      break;
+
+    case PROMPT.ITEM.HEIGHT.BASE:
+      fontSize = `text-xs`;
+      break;
+
+    case PROMPT.ITEM.HEIGHT.LG:
+      fontSize = `text-sm`;
+      break;
+
+    case PROMPT.ITEM.HEIGHT.XL:
+      fontSize = `text-base`;
+      break;
+
+    default:
+      fontSize = `text-xs`;
       break;
   }
 

@@ -69,13 +69,8 @@ export default function InfoList({ width, height }: ListProps) {
   // });
 
   return (
-    <motion.div
+    <div
       ref={containerRef}
-      initial={{ opacity: 0 }}
-      animate={{
-        opacity: choices?.length ? 1 : 0,
-      }}
-      transition={{ duration: 0.15, ease: 'circOut' }}
       id="list"
       className={`
 
@@ -126,6 +121,6 @@ export default function InfoList({ width, height }: ListProps) {
           <Preview key="AppPreview" height={height} />
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

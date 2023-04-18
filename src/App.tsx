@@ -775,6 +775,7 @@ export default function App() {
                 )}
               </header>
             )}
+            {logVisible && <Console key="AppLog" />}
             <main
               id="main"
               ref={mainRef}
@@ -830,7 +831,6 @@ export default function App() {
                   </>
                 ))}
             </main>
-            {logVisible && <Console key="AppLog" />}
             {!footerHidden && (
               <footer id="footer" className={promptData?.footerClassName || ''}>
                 <ActionBar />

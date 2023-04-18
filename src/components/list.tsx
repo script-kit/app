@@ -87,6 +87,13 @@ export default function ChoiceList({ width, height }: ListProps) {
   //   }
   // }, [index, choices, height, flagValue]);
 
+  // reset scroll position to 0 on mount
+  useEffect(() => {
+    if (listRef.current) {
+      (listRef as any).current.scrollTo(0);
+    }
+  }, [choices]);
+
   return (
     <div
       id="list"

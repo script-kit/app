@@ -2515,12 +2515,8 @@ subscribe(appDb, (db) => {
   sendToPrompt(Channel.APP_DB, { ...appDb });
 });
 
-subscribeKey(kitState, 'promptHidden', debounce((promptHidden) => {
-  // log.info(`Checking for stray processes...`, {
-  //   promptHidden: promptHidden ? 'true' : 'false',
-  //   hiddenByUser: kitState.hiddenByUser ? 'true' : 'false',
-  // })
-  if(promptHidden && !kitState.hiddenByUser) {
+subscribeKey(kitState, 'scriptPath', debounce(() => {
+  if(kitState.scriptPath === '') {
 
     if (kitState.allowQuit) return;
     const mains = processes.filter((p) =>

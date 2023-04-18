@@ -19,6 +19,7 @@ import {
   _modifiers,
   buttonNameFontSizeAtom,
   inputAtom,
+  buttonDescriptionFontSizeAtom,
 } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -62,6 +63,7 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
 
   const [isMouseDown] = useAtom(isMouseDownAtom);
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
+  const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
 
   const [modifierDescription, setModifierDescription] = useState('');
 
@@ -131,21 +133,31 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
             <div className="flex flex-col max-w-full overflow-x-hidden">
               {/* Name */}
               <div
-                className={`${
-                  choice?.className ? '' : buttonNameFontSize
-                } truncate`}
+                className={
+                  choice?.nameClassName
+                    ? choice?.nameClassName
+                    : `${buttonNameFontSize} truncate`
+                }
               >
                 {highlight(
                   choice.name?.replace(/{\s*input\s*}/g, input),
                   scoredChoice?.matches?.slicedName,
-                  'bg-primary bg-opacity-5 text-text-base transition-colors'
+                  'bg-primary bg-opacity-5 text-text-base'
                 )}
               </div>
               {/* Description */}
               {(choice?.focused ||
                 choice?.description ||
                 modifierDescription) && (
-                <div className="text-xs truncate transition-opacity ease-in-out duration-200 pb-1 text-text-base/80">
+                <div
+                  className={`
+                  ${
+                    choice?.descriptionClassName
+                      ? choice?.descriptionClassName
+                      : `truncate `
+                  }
+                  ${buttonDescriptionFontSize} pb-1 text-text-base/80`}
+                >
                   {modifierDescription ||
                   (index === currentIndex && choice?.focused)
                     ? choice?.focused
@@ -153,7 +165,7 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
                         choice?.description?.replace(/{\s*input\s*}/g, input) ||
                           '',
                         scoredChoice?.matches?.slicedDescription,
-                        'bg-primary bg-opacity-15 text-text-base transition-colors'
+                        'bg-primary bg-opacity-15 text-text-base'
                       )}
                 </div>
               )}

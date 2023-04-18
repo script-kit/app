@@ -21,6 +21,7 @@ import {
   isMouseDownAtom,
   _modifiers,
   buttonNameFontSizeAtom,
+  buttonDescriptionFontSizeAtom,
 } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -79,6 +80,7 @@ export default function ChoiceButton({
   const [modifiers] = useAtom(_modifiers);
   const [modifierDescription, setModifierDescription] = useState('');
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
+  const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
 
   // const dataTransfer = useRef<any>('Data Transfer');
 
@@ -225,7 +227,9 @@ export default function ChoiceButton({
               {/* Name */}
               <div
                 className={
-                  choice?.nameClassName ? choice?.nameClassName : 'truncate'
+                  choice?.nameClassName
+                    ? choice?.nameClassName
+                    : `${buttonNameFontSize} truncate`
                 }
               >
                 {highlight(
@@ -240,17 +244,16 @@ export default function ChoiceButton({
                 modifierDescription) && (
                 <div
                   className={`
-                  text-xs pb-1
+                pb-1
                   ${
                     choice?.descriptionClassName
                       ? choice?.descriptionClassName
-                      : 'truncate '
+                      : `truncate `
+                  } ${buttonDescriptionFontSize} ${
+                    index === currentIndex
+                      ? ` opacity-100 text-primary `
+                      : ` opacity-60 `
                   }
-                   ${
-                     index === currentIndex
-                       ? `opacity-100 text-primary`
-                       : `opacity-60`
-                   }
 
                 `}
                 >

@@ -30,7 +30,6 @@ export default (ref: RefObject<HTMLElement>) => {
     flagValue,
     submitted,
     open,
-    mouseDown,
     inputFocus,
     processing,
     script,

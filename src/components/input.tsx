@@ -265,8 +265,17 @@ export default function Input() {
         <div
           onMouseOver={() => setMiniShortcutsHovered(true)}
           onMouseLeave={() => setMiniShortcutsHovered(false)}
-          className={`justify-center
-      right-container flex flex-row items-center pb-px overflow-hidden`}
+          style={{
+            height: promptData?.inputHeight || PROMPT.INPUT.HEIGHT.BASE,
+          }}
+          className={`justify-end
+      right-container flex flex-row items-center overflow-hidden ${
+        promptData?.inputHeight === PROMPT.INPUT.HEIGHT.XS &&
+        `scale-95 mt-px
+        ${miniShortcutsVisible ? '-mr-1.5' : 'mr-0'}
+
+        `
+      }`}
         >
           {miniShortcutsVisible && (
             <>
@@ -309,7 +318,7 @@ export default function Input() {
             </>
           )}
 
-          <div className="flex px-2 items-center justify-center pt-px">
+          <div className="flex mx-2 pt-px min-w-0">
             <IconButton />
           </div>
         </div>
