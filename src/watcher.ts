@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'fs';
 import { snapshot } from 'valtio';
 import dotenv from 'dotenv';
 import { rm, readFile } from 'fs/promises';
-import { getAppDb, getUserDb } from '@johnlindquist/kit/cjs/db';
+import { getAppDb, getUserDb, getScripts } from '@johnlindquist/kit/cjs/db';
 
 import {
   parseScript,
@@ -132,6 +132,54 @@ const buildScriptChanged = debounce((filePath: string) => {
   }
 }, 150);
 
+export const rebuildScripts = debounce(
+  (scriptPaths: string[], KENV) => {
+    const child = fork(
+      kitPath('run', 'terminal.js'),
+      [kitPath('setup', 'rebuild-ts-scripts.js')],
+      {
+        env: assign({}, process.env, {
+          KIT: kitPath(),
+          KENV,
+        }),
+        stdio: 'pipe',
+      }
+    );
+
+    if (child?.stdout) {
+      child.stdout.on('data', (data) => {
+        log.info(data.toString());
+      });
+    }
+
+    if (child?.stderr) {
+      child.stderr.on('data', (data) => {
+        log.error(data.toString());
+      });
+    }
+
+    // log error
+    child.on('error', (error: any) => {
+      log.error(error);
+    });
+
+    // log exit
+    child.on('exit', (code) => {
+      log.info(`🏗️ Rebuild exited with code ${code}`);
+    });
+
+    log.info(`Rebuilding: `, {
+      scriptPaths,
+    });
+
+    child.send({ scriptPaths });
+  },
+  500,
+  {
+    leading: true,
+  }
+);
+
 const unlinkBin = (filePath: string) => {
   const binPath = path.resolve(
     path.dirname(path.dirname(filePath)),
@@ -242,7 +290,7 @@ export const setupWatchers = async () => {
 
   watchers = startWatching(async (eventName: WatchEvent, filePath: string) => {
     // if (!filePath.match(/\.(ts|js|json|txt|env)$/)) return;
-    const { base } = path.parse(filePath);
+    const { base, dir } = path.parse(filePath);
 
     if (base === 'run.txt') {
       log.info(`run.txt ${eventName}`);
@@ -343,6 +391,36 @@ export const setupWatchers = async () => {
       onDbChanged(eventName, filePath);
       return;
     }
+
+    if (dir.endsWith('lib')) {
+      if (eventName === 'change') {
+        const { name: libName } = path.parse(filePath);
+        log.info(`lib changed ${eventName} ${filePath}`);
+
+        try {
+          const scripts = await getScripts();
+          // find scripts that use this lib by search their contents for "libName"
+          const scriptsUsingLib = (
+            await Promise.all(
+              scripts.map(async (script: { filePath: string }) => {
+                const contents = await readFile(script.filePath, 'utf8');
+                if (contents.includes(libName)) {
+                  return script.filePath;
+                }
+                return false;
+              })
+            )
+          ).filter(Boolean);
+
+          rebuildScripts(scriptsUsingLib, path.dirname(dir));
+        } catch (error) {
+          log.error(error);
+        }
+      }
+
+      return;
+    }
+
     onScriptsChanged(eventName, filePath);
   });
 };

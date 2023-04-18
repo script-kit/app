@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable react/prop-types */
@@ -261,65 +262,63 @@ export default function Input() {
         </span>
       </div>
       {footerHidden && (
-        // eslint-disable-next-line jsx-a11y/mouse-events-have-key-events
-        <div
-          onMouseOver={() => setMiniShortcutsHovered(true)}
-          onMouseLeave={() => setMiniShortcutsHovered(false)}
-          style={{
-            height: promptData?.inputHeight || PROMPT.INPUT.HEIGHT.BASE,
-          }}
-          className={`justify-end
-      right-container flex flex-row items-center overflow-hidden ${
+        <div className="flex flex-row items-center justify-end">
+          <div
+            onMouseOver={() => setMiniShortcutsHovered(true)}
+            onMouseLeave={() => setMiniShortcutsHovered(false)}
+            style={{
+              height: promptData?.inputHeight || PROMPT.INPUT.HEIGHT.BASE,
+            }}
+            className={`justify-end
+      right-container flex flex-row flex-grow items-center overflow-hidden min-w-fit ${
         promptData?.inputHeight === PROMPT.INPUT.HEIGHT.XS &&
-        `scale-95 mt-px
-        ${miniShortcutsVisible ? '-mr-1.5' : 'mr-0'}
-
-        `
+        `scale-95 origin-right mt-px`
       }`}
-        >
-          {miniShortcutsVisible && (
-            <>
-              <div className="enter-container flex flex-row min-w-fit items-center">
-                {enterButtonName ? (
-                  <EnterButton
-                    key="enter-button"
-                    name={enterButtonName}
-                    position="right"
-                    shortcut="⏎"
-                    value="enter"
-                    flag=""
-                    disabled={enterButtonDisabled}
-                  />
-                ) : null}
-              </div>
-              <ActionSeparator />
-              <div className="options-container flex flex-row">
-                {hasFlags && [
-                  <OptionsButton key="options-button" />,
-                  <ActionSeparator key="options-separator" />,
-                ]}
-              </div>
-              <div className="flex flex-row flex-grow-0 items-center overflow-hidden">
-                {actions
-                  .filter(
-                    (action) => action.position === 'right' && !appDb?.mini
-                  )
-                  .flatMap((action, i, array) => [
-                    // eslint-disable-next-line react/jsx-key
-                    <ActionButton {...action} />,
-                    // eslint-disable-next-line no-nested-ternary
-                    i < array.length - 1 ? (
-                      <ActionSeparator key={`${action?.key}-separator`} />
-                    ) : enterButtonName ? (
-                      <ActionSeparator key={`${action?.key}-separator`} />
-                    ) : null,
-                  ])}
-              </div>
-            </>
-          )}
+          >
+            {miniShortcutsVisible && (
+              <>
+                <div className="enter-container flex flex-row min-w-fit items-center">
+                  {enterButtonName ? (
+                    <EnterButton
+                      key="enter-button"
+                      name={enterButtonName}
+                      position="right"
+                      shortcut="⏎"
+                      value="enter"
+                      flag=""
+                      disabled={enterButtonDisabled}
+                    />
+                  ) : null}
+                </div>
+                <ActionSeparator />
+                <div className="options-container flex flex-row">
+                  {hasFlags && [
+                    <OptionsButton key="options-button" />,
+                    <ActionSeparator key="options-separator" />,
+                  ]}
+                </div>
+                <div className="flex flex-row flex-grow-0 items-center overflow-hidden">
+                  {actions
+                    .filter(
+                      (action) => action.position === 'right' && !appDb?.mini
+                    )
+                    .flatMap((action, i, array) => [
+                      // eslint-disable-next-line react/jsx-key
+                      <ActionButton {...action} />,
+                      // eslint-disable-next-line no-nested-ternary
+                      i < array.length - 1 ? (
+                        <ActionSeparator key={`${action?.key}-separator`} />
+                      ) : enterButtonName ? (
+                        <ActionSeparator key={`${action?.key}-separator`} />
+                      ) : null,
+                    ])}
+                </div>
+              </>
+            )}
 
-          <div className="flex mx-2 pt-px min-w-0">
-            <IconButton />
+            <div className="flex mx-2 pt-px min-w-0">
+              <IconButton />
+            </div>
           </div>
         </div>
       )}

@@ -3,14 +3,14 @@
 /* eslint-disable no-nested-ternary */
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import { proxy, subscribe } from 'valtio/vanilla';
+import { proxy } from 'valtio/vanilla';
 import { subscribeKey } from 'valtio/utils';
 import log, { LogLevel } from 'electron-log';
 import { assign, debounce } from 'lodash';
 import path from 'path';
 import os from 'os';
 import { ChildProcess } from 'child_process';
-import { app, BrowserWindow, Menu, nativeTheme, Rectangle } from 'electron';
+import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import { Script, ProcessInfo } from '@johnlindquist/kit/types/core';

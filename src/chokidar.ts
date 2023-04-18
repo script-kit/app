@@ -15,7 +15,10 @@ type WatcherCallback = (
 ) => Promise<void>;
 export const startWatching = (callback: WatcherCallback) => {
   const kenvScriptsWatcher = chokidar.watch(
-    path.resolve(kenvPath('scripts', '*')),
+    [
+      path.resolve(kenvPath('scripts', '*')),
+      path.resolve(kenvPath('lib', '*')),
+    ],
     {
       depth: 0,
     }
@@ -31,7 +34,10 @@ export const startWatching = (callback: WatcherCallback) => {
     depth: 0,
   });
   kenvsWatcher.on('addDir', (filePath) => {
-    kenvScriptsWatcher.add(path.resolve(filePath, 'scripts', '*'));
+    kenvScriptsWatcher.add([
+      path.resolve(filePath, 'scripts', '*'),
+      path.resolve(filePath, 'lib', '*'),
+    ]);
   });
   kenvsWatcher.on('unlink', (filePath) => {
     kenvScriptsWatcher.unwatch(path.resolve(filePath, 'scripts', '*'));
