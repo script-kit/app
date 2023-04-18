@@ -111,7 +111,7 @@ export const setVibrancy = (
 
 export const setBackgroundThrottling = (enabled: boolean) => {
   if (promptWindow?.isDestroyed()) return;
-  log.info(`setBackgroundThrottling: ${enabled ? 'enabled' : 'disabled'}`);
+  // log.info(`setBackgroundThrottling: ${enabled ? 'enabled' : 'disabled'}`);
   promptWindow?.webContents?.setBackgroundThrottling(enabled);
 };
 
@@ -558,7 +558,7 @@ export const getCurrentScreenPromptCache = async (
 };
 
 export const setBounds = (bounds: Rectangle, reason = '') => {
-  log.info(`📐 setBounds, reason ${reason}`, bounds);
+  // log.info(`📐 setBounds, reason ${reason}`, bounds);
   // TODO: Maybe use in the future with setting the html body bounds for faster resizing?
   // promptWindow?.setContentSize(bounds.width, bounds.height);
   try {
@@ -596,6 +596,7 @@ export const resize = async ({
   forceHeight,
   forceWidth,
   inputChanged,
+  justOpened,
 }: ResizeData) => {
   if (!forceHeight && !kitState.resize && !forceResize) return;
   if (kitState.promptId !== id || kitState.modifiedByUser) return;
@@ -639,7 +640,7 @@ export const resize = async ({
       }`
     );
 
-    if (kitState.promptCount === 1 && !inputChanged) {
+    if (kitState.promptCount === 1 && !inputChanged && justOpened) {
       savePromptBounds(kitState.scriptPath, bounds);
     }
     kitState.resizedByChoices = ui === UI.arg;
@@ -732,7 +733,7 @@ export const savePromptBounds = async (
     log.info(`Cache prompt disabled. Ignore saving bounds`);
     return;
   }
-  log.info(`function: savePromptBounds for ${scriptPath}`, bounds);
+  // log.info(`function: savePromptBounds for ${scriptPath}`, bounds);
   // const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
   // if (isMain) return;
 
@@ -1020,36 +1021,6 @@ export const setPromptData = async (promptData: PromptData) => {
     const maxX = currentDisplayBounds.x + currentDisplayBounds.width;
     const maxY = currentDisplayBounds.y + currentDisplayBounds.height;
 
-    // const displays = screen.getAllDisplays();
-
-    // const minX = displays.reduce((min: number, display) => {
-    //   const m = min === 0 ? display.bounds.x : min;
-    //   return Math.min(m, display.bounds.x);
-    // }, 0);
-
-    // const maxX = displays.reduce((max: number, display) => {
-    //   const m = max === 0 ? display.bounds.x + display.bounds.width : max;
-    //   return Math.max(m, display.bounds.x + display.bounds.width);
-    // }, 0);
-
-    // const minY = displays.reduce((min: number, display) => {
-    //   const m = min === 0 ? display.bounds.y : min;
-    //   return Math.min(m, display.bounds.y);
-    // }, 0);
-
-    // const maxY = displays.reduce((max: number, display) => {
-    //   const m = max === 0 ? display.bounds.y + display.bounds.height : max;
-    //   return Math.max(m, display.bounds.y + display.bounds.height);
-    // }, 0);
-
-    // log.info(`↖ BOUNDS:`, {
-    //   bounds: currentBounds,
-    //   minX,
-    //   maxX,
-    //   minY,
-    //   maxY,
-    // });
-
     if (
       currentBounds?.x < minX ||
       currentBounds?.x + currentBounds?.width > maxX ||
@@ -1132,7 +1103,7 @@ const initBounds = async () => {
   });
   if (promptWindow?.isDestroyed()) return;
 
-  log.info(`↖ Bounds: Prompt ${kitState.promptUI} ui`, bounds);
+  log.info(`↖ Init bounds: Prompt ${kitState.promptUI} ui`, bounds);
 
   // If widths or height don't match, send SET_RESIZING to prompt
 
@@ -1148,11 +1119,6 @@ const initBounds = async () => {
     kitState.isResizing = true;
   }
 
-  log.info(
-    `↖ Bounds: Prompt ${kitState.promptUI}`,
-    bounds,
-    ` Count - ${kitState.promptCount}`
-  );
   // if (isKitScript(kitState.scriptPath)) return;
 
   setBounds(

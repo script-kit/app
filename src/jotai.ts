@@ -997,6 +997,10 @@ export const domUpdatedAtom = atom(null, (g, s) => {
   }, 25);
 });
 
+const sendResize = (data: ResizeData) =>
+  ipcRenderer.send(AppChannel.RESIZE, data);
+const debounceSendResize = debounce(sendResize, 100);
+
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   // g(logAtom)(`resize: ${reason}`);
   if (g(submittedAtom)) return;
@@ -1150,6 +1154,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   //   promptHeight: promptData?.height || 'UNSET',
   // });
 
+  const justOpened = g(justOpenedAtom);
+
   const data: ResizeData = {
     id: promptData?.id || 'missing',
     reason,
@@ -1168,6 +1174,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     isSplash: g(isSplashAtom),
     hasPreview,
     inputChanged: g(_inputChangedAtom),
+    justOpened,
     nullChoices,
     forceResize,
     forceHeight,
@@ -1178,7 +1185,17 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   // console.log(`👋`, data);
 
-  ipcRenderer.send(AppChannel.RESIZE, data);
+  // g(logAtom)({
+  //   justOpened: justOpened ? 'JUST OPENED' : 'NOT JUST OPENED',
+  // });
+
+  debounceSendResize.cancel();
+
+  if (justOpened) {
+    debounceSendResize(data);
+  } else {
+    sendResize(data);
+  }
 };
 
 export const topHeightAtom = atom(
@@ -1277,6 +1294,16 @@ export const promptDataAtom = atom(
   (g, s, a: null | PromptData) => {
     const prevPromptData = g(promptData);
 
+    // was closed, now open
+    if (!prevPromptData && a) {
+      s(justOpenedAtom, true);
+      setTimeout(() => {
+        s(justOpenedAtom, false);
+      }, 250);
+    } else {
+      s(justOpenedAtom, false);
+    }
+
     if (prevPromptData?.ui === UI.editor && g(_inputChangedAtom)) {
       s(editorHistoryPush, g(closedInput));
     }
@@ -1309,7 +1336,7 @@ export const promptDataAtom = atom(
         s(flagsAtom, a?.flags);
       }
 
-      s(headerHiddenAtom, false);
+      s(headerHiddenAtom, !!a?.headerClassName?.includes('hidden'));
       s(footerHiddenAtom, !!a?.footerClassName?.includes('hidden'));
 
       const headerHidden = g(headerHiddenAtom);
@@ -1601,11 +1628,10 @@ export const closedInput = atom('');
 
 const lastScriptClosed = atom('');
 
+export const initialResizeAtom = atom<ResizeData | null>(null);
 export const openAtom = atom(
   (g) => g(_open),
   (g, s, a: boolean) => {
-    s(justOpenedAtom, a);
-    setTimeout(() => s(justOpenedAtom, false), 500);
     s(mouseEnabledAtom, 0);
 
     if (g(_open) && a === false) {
