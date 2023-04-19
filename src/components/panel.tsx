@@ -5,6 +5,7 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion } from 'framer-motion';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 
+import useResizeObserver from '@react-hook/resize-observer';
 import {
   mouseEnabledAtom,
   panelHTMLAtom,
@@ -52,6 +53,11 @@ export default function Panel() {
   const [flags] = useAtom(flagsAtom);
 
   const domUpdated = useSetAtom(domUpdatedAtom);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useResizeObserver(panelRef, (entry) => {
+    domUpdated()(`Panel useResizeObserver`);
+  });
 
   useLayoutEffect(() => {
     domUpdated()(`Panel useLayoutEffect`);
@@ -85,7 +91,6 @@ export default function Panel() {
     <SimpleBar
       id="panel-simplebar"
       scrollableNodeProps={{ ref: scrollRef }}
-      autoHide={false}
       className="w-full h-full"
       style={
         {
@@ -105,6 +110,7 @@ export default function Panel() {
 
       <motion.div
         id="panel"
+        ref={panelRef}
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 1] }}
         transition={{ duration: 0.25, ease: 'circOut' }}

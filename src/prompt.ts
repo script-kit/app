@@ -554,7 +554,14 @@ export const getCurrentScreenPromptCache = async (
   // }
 };
 
+let prevHeight = 0;
 export const setBounds = (bounds: Rectangle, reason = '') => {
+  if (Math.abs(bounds.height - prevHeight) < 4) {
+    prevHeight = bounds.height;
+    return;
+  }
+
+  prevHeight = bounds.height;
   // log.info(`📐 setBounds, reason ${reason}`, bounds);
   // TODO: Maybe use in the future with setting the html body bounds for faster resizing?
   // promptWindow?.setContentSize(bounds.width, bounds.height);

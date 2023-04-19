@@ -7,6 +7,7 @@ import {
   isMouseDownAtom,
   openAtom,
   processingAtom,
+  promptDataAtom,
   scriptAtom,
   submittedAtom,
 } from '../jotai';
@@ -19,6 +20,7 @@ export default (ref: RefObject<HTMLElement>) => {
   const [inputFocus] = useAtom(inputFocusAtom);
   const [processing] = useAtom(processingAtom);
   const [script] = useAtom(scriptAtom);
+  const [promptData] = useAtom(promptDataAtom);
   const [isHidden] = useAtom(isHiddenAtom);
 
   useEffect(() => {
@@ -34,6 +36,7 @@ export default (ref: RefObject<HTMLElement>) => {
     processing,
     script,
     isHidden,
+    promptData,
     ref,
     ref?.current,
   ]);

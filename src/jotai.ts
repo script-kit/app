@@ -1163,7 +1163,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     placeholderOnly,
     topHeight,
     ui,
-    mainHeight: Math.floor(mh || -2) + 2,
+    mainHeight: Math.ceil(mh || -2) + 2,
     footerHeight,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
