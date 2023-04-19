@@ -262,7 +262,12 @@ export default function Input() {
         </span>
       </div>
       {footerHidden && (
-        <div className="flex flex-row items-center justify-end">
+        <div
+          className="flex flex-row items-center justify-end overflow-x-clip"
+          style={{
+            maxWidth: '80%',
+          }}
+        >
           <div
             onMouseOver={() => setMiniShortcutsHovered(true)}
             onMouseLeave={() => setMiniShortcutsHovered(false)}

@@ -994,7 +994,7 @@ export const domUpdatedAtom = atom(null, (g, s) => {
   return debounce((reason = '') => {
     // g(logAtom)(`domUpdated: ${reason}`);
     resize(g, s, reason);
-  }, 25);
+  }, 25); // TODO: think about panel resizing debouncing
 });
 
 const sendResize = (data: ResizeData) =>
@@ -1299,7 +1299,7 @@ export const promptDataAtom = atom(
       s(justOpenedAtom, true);
       setTimeout(() => {
         s(justOpenedAtom, false);
-      }, 50);
+      }, 250);
     } else {
       s(justOpenedAtom, false);
     }

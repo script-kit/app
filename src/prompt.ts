@@ -554,15 +554,32 @@ export const getCurrentScreenPromptCache = async (
   // }
 };
 
-let prevHeight = 0;
+let prevSetBounds = {
+  x: 0,
+  y: 0,
+  width: 0,
+  height: 0,
+};
 export const setBounds = (bounds: Rectangle, reason = '') => {
-  if (Math.abs(bounds.height - prevHeight) < 4) {
-    prevHeight = bounds.height;
+  const widthNotChanged = Math.abs(bounds.width - prevSetBounds.width) < 4;
+  const heightNotChanged = Math.abs(bounds.height - prevSetBounds.height) < 4;
+  const xNotChanged = Math.abs(bounds.x - prevSetBounds.x) < 4;
+  const yNotChanged = Math.abs(bounds.y - prevSetBounds.y) < 4;
+
+  const noChange =
+    heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
+
+  prevSetBounds = bounds;
+
+  // log.info(`📐 setBounds, reason ${reason}`, {
+  //   ...bounds,
+  //   noChange: noChange ? 'true' : 'false',
+  // });
+
+  if (noChange) {
     return;
   }
 
-  prevHeight = bounds.height;
-  // log.info(`📐 setBounds, reason ${reason}`, bounds);
   // TODO: Maybe use in the future with setting the html body bounds for faster resizing?
   // promptWindow?.setContentSize(bounds.width, bounds.height);
   try {
@@ -602,8 +619,17 @@ export const resize = async ({
   inputChanged,
   justOpened,
 }: ResizeData) => {
+  // log.info({
+  //   forceHeight: forceHeight ? 'true' : 'false',
+  //   forceResize: forceResize ? 'true' : 'false',
+  //   resize: kitState.resize ? 'true' : 'false',
+  //   promptId: kitState.promptId,
+  //   id,
+  //   modifiedByUser: kitState.modifiedByUser ? 'true' : 'false',
+  // });
   if (!forceHeight && !kitState.resize && !forceResize) return;
-  if (kitState.promptId !== id || kitState.modifiedByUser) return;
+  // if (kitState.promptId !== id || kitState.modifiedByUser) return;
+  if (kitState.modifiedByUser) return;
   if (promptWindow?.isDestroyed()) return;
 
   const {

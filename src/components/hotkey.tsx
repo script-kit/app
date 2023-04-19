@@ -142,8 +142,9 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
       }
 
       setChoice(choiceName);
+      setPlaceholder(choiceName);
     },
-    [setChoice]
+    [setChoice, setPlaceholder]
   );
 
   const onKeyDown = useCallback(
@@ -155,6 +156,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
       const choiceName = hotkeyProse(modifierString);
 
       setChoice(choiceName);
+      setPlaceholder(choiceName);
 
       if (event.key === 'Escape') {
         return;
@@ -167,7 +169,7 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
         submit(keyData);
       }
     },
-    [setChoice, submit]
+    [setChoice, submit, setPlaceholder]
   );
 
   return (
