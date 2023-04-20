@@ -1867,6 +1867,9 @@ const kitMessageMap: ChannelHandler = {
 
     childSend(child, { channel, value });
   }),
+  GET_TYPED_TEXT: toProcess(async ({ child }, { channel, value }) => {
+    childSend(child, { channel, value: kitState.typedText });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (

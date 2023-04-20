@@ -354,6 +354,10 @@ export const setupWatchers = async () => {
             log.info(`Setting webcam`, envData?.KIT_WEBCAM);
             appToPrompt(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
           }
+
+          if (envData?.KIT_TYPED_LIMIT) {
+            kitState.typedLimit = parseInt(envData?.KIT_TYPED_LIMIT, 10);
+          }
         } catch (error) {
           log.warn(error);
         }

@@ -245,6 +245,8 @@ const initState = {
   promptCount: 0,
   isTyping: false,
   snippet: ``,
+  typedText: ``,
+  typedLimit: 256,
   socketURL: '',
   isShiftDown: false,
   isMac,

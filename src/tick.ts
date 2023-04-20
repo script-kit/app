@@ -67,6 +67,32 @@ const ShiftMap = {
   ',': '<',
   '.': '>',
   '/': '?',
+  a: 'A',
+  b: 'B',
+  c: 'C',
+  d: 'D',
+  e: 'E',
+  f: 'F',
+  g: 'G',
+  h: 'H',
+  i: 'I',
+  j: 'J',
+  k: 'K',
+  l: 'L',
+  m: 'M',
+  n: 'N',
+  o: 'O',
+  p: 'P',
+  q: 'Q',
+  r: 'R',
+  s: 'S',
+  t: 'T',
+  u: 'U',
+  v: 'V',
+  w: 'W',
+  x: 'X',
+  y: 'Y',
+  z: 'Z',
 };
 type KeyCodes = keyof typeof ShiftMap;
 
@@ -184,6 +210,19 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
       return;
     }
 
+    // Clear on arrow keys
+    if (
+      e.keycode === UiohookKey.ArrowLeft ||
+      e.keycode === UiohookKey.ArrowRight ||
+      e.keycode === UiohookKey.ArrowUp ||
+      e.keycode === UiohookKey.ArrowDown
+    ) {
+      log.silly(`Ignoring arrow key and clearing snippet`);
+      kitState.snippet = '';
+      kitState.typedText = '';
+      return;
+    }
+
     // 42 is shift
     if (e.keycode === UiohookKey.Shift || e.keycode === UiohookKey.ShiftRight) {
       log.silly(`Ignoring shift key`);
@@ -194,12 +233,16 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.altKey) {
       log.silly(`Ignoring modifier key and clearing snippet`);
       kitState.snippet = '';
+      if (key === backspace) {
+        kitState.typedText = '';
+      }
       return;
     }
 
     if (key === backspace) {
       log.silly(`Backspace: Removing last character from snippet`);
       kitState.snippet = kitState.snippet.slice(0, -1);
+      kitState.typedText = kitState.typedText.slice(0, -1);
       // 57 is the space key
     } else if (e?.keycode === UiohookKey.Space) {
       log.silly(`Space: Adding space to snippet`);
@@ -207,6 +250,7 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
         kitState.snippet = '';
       } else {
         kitState.snippet += SPACE;
+        kitState.typedText = `${kitState.typedText} `;
       }
     } else if (
       e?.keycode === UiohookKey.Quote ||
@@ -214,8 +258,12 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
       key === ''
     ) {
       kitState.snippet = ``;
+      kitState.typedText = `${kitState.typedText}${key}`;
     } else {
       kitState.snippet = `${kitState.snippet}${key}`;
+      kitState.typedText = `${kitState.typedText}${key}`.slice(
+        -kitState.typedLimit
+      );
       log.silly(`kitState.snippet = `, kitState.snippet);
     }
     prevKey = key;
@@ -476,6 +524,12 @@ export const toggleTickOn = async () => {
   configureInterval();
 };
 
+const subTyped = subscribeKey(kitState, 'typed', async (typed = ``) => {
+  log.info({
+    typed,
+  });
+});
+
 const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
   // Use `;;` as "end"?
   if (snippet.length < 2) return;
@@ -617,7 +671,7 @@ const subWakeWatcher = subscribeKey(
   }
 );
 
-subs.push(subSnippet, subIsTyping, watcherEnabledSub, subWakeWatcher);
+subs.push(subSnippet, subIsTyping, watcherEnabledSub, subWakeWatcher, subTyped);
 
 export const clearTickTimers = () => {
   if (accessibilityInterval) clearInterval(accessibilityInterval);
