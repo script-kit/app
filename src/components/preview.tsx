@@ -94,9 +94,21 @@ export default function Preview({ height }: { height: number }) {
       className="overflow-scroll w-full"
       style={{ userSelect: 'text', height }}
       initial={{ opacity: 0, width: 0 }}
-      animate={{ opacity: 1, width: '100%' }}
-      transition={{ duration: 0.15 }}
-      exit={{ opacity: 0, width: 0 }}
+      animate={{
+        opacity: 1,
+        width: '100%',
+        transition: {
+          duration: 0.25,
+          ease: 'easeInOut',
+        },
+      }}
+      exit={{
+        opacity: 0,
+        width: 0,
+        transition: {
+          duration: 0,
+        },
+      }}
       // onMouseUp={onMouseUp}
       ref={highlightRef}
       onMouseDown={onMouseEnter}

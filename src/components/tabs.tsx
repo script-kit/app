@@ -145,7 +145,6 @@ export default function KitTabs() {
               select-none
               ${tabs.length > 5 ? `px-2` : `px-3`}
               pb-1.5
-              transition-colors
           `}
                 key={tab}
                 onMouseDown={() => setTabIndex(i)}
