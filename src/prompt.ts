@@ -845,7 +845,7 @@ export const setFooter = (footer: string) => {
 };
 
 export const pidIsActive = (pid: number) => {
-  log.info(`pidIsActive`, { pid });
+  // log.info(`pidIsActive`, { pid });
   return kitState.ps.find((p) => p.pid === pid);
 };
 
