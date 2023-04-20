@@ -128,7 +128,7 @@ export const shortcutInfo = async (
   otherScriptPath = ''
 ) => {
   const markdown = md(shortcut, targetScriptPath, otherScriptPath);
-  log.info(markdown);
+  // log.info(markdown);
 
   emitter.emit(KitEvent.RunPromptProcess, {
     scriptPath: infoScript,
