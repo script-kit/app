@@ -98,8 +98,8 @@ export default function Preview({ height }: { height: number }) {
         opacity: 1,
         width: '100%',
         transition: {
-          duration: 0.25,
-          ease: 'easeInOut',
+          duration: 0.1,
+          ease: 'easeIn',
         },
       }}
       exit={{
