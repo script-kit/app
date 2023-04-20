@@ -91,7 +91,7 @@ ${data.error}
   );
 
   ipcMain.on(AppChannel.GET_ASSET, (event, { parts }) => {
-    log.info(`📁 GET_ASSET ${parts.join('/')}`);
+    // log.info(`📁 GET_ASSET ${parts.join('/')}`);
     const assetPath = getAssetPath(...parts);
     log.info(`📁 Asset path: ${assetPath}`);
     event.sender.send(AppChannel.GET_ASSET, { assetPath });
