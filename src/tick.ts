@@ -582,6 +582,7 @@ export const destroyInterval = () => {
     clipboard$Sub = null;
     log.info(`🔥 Destroyed interval`);
     try {
+      uIOhook.removeAllListeners();
       uIOhook.stop();
     } catch (e) {
       log.error(e);
