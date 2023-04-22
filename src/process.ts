@@ -1928,7 +1928,7 @@ const createChild = ({
     KIT_CONTEXT: 'app',
     KIT_MAIN: scriptPath,
     KENV: kenvPath(),
-    KIT: kitPath(),
+    KIT: kitPath(), // Note: KIT is overwritten by the kenv env in the "app-prompt.js" to load from ~/.kenv/node_modules
     KIT_DOTENV_PATH: kitDotEnvPath(),
     KIT_APP_VERSION: getVersion(),
     PROCESS_TYPE: type,
