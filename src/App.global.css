@@ -618,10 +618,10 @@ code::after {
 .kit-form textarea,
 .kit-form select,
 .kit-form button {
-  @apply ring-1 ring-text-base ring-opacity-25 !important;
-  @apply focus:ring-primary focus:ring-opacity-75 !important;
+  @apply ring-0 focus:ring-0;
   @apply outline-0 outline-primary !important;
-  @apply border-none !important;
+  @apply border-text-base/15 !important;
+  @apply focus:border-primary/75 !important;
   /* make !important */
 }
 
