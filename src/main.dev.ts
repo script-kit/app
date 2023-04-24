@@ -1212,7 +1212,7 @@ const checkKit = async () => {
 
   await setupLog(`Update .kenv`);
 
-  // patch now creates an kenvPath(".npmrc")
+  // patch now creates an kenvPath(".npmrc") file
   await setupScript(kitPath('setup', 'patch.js'));
 
   await setupLog(`Creating bins`);
