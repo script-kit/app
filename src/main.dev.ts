@@ -1211,6 +1211,8 @@ const checkKit = async () => {
   }
 
   await setupLog(`Update .kenv`);
+
+  // patch now creates an kenvPath(".npmrc")
   await setupScript(kitPath('setup', 'patch.js'));
 
   await setupLog(`Creating bins`);
