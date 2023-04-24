@@ -2038,8 +2038,8 @@ export const clearIdleProcesses = () => {
   });
 };
 
-export const ensureTwoIdleProcesses = () => {
-  log.info(`Ensure two idle processes`);
+export const ensureIdleProcess = () => {
+  log.info(`Ensure idle process`);
   setTimeout(() => {
     const idles = processes
       .getAllProcessInfo()
@@ -2050,17 +2050,11 @@ export const ensureTwoIdleProcesses = () => {
       );
 
     if (idles.length === 0) {
-      log.info(`Add two idle processes`);
-      processes.add(ProcessType.Prompt);
-      processes.add(ProcessType.Prompt);
-    }
-
-    if (idles.length === 1) {
       log.info(`Add one idle process`);
       processes.add(ProcessType.Prompt);
     }
 
-    if (idles.length === 2) {
+    if (idles.length === 1) {
       log.info(`No need to add idle processes`);
     }
   }, 100);
@@ -2225,7 +2219,7 @@ class Processes extends Array<ProcessInfo> {
         processInfo?.scriptPath === ''
     );
 
-    ensureTwoIdleProcesses();
+    ensureIdleProcess();
 
     if (idles.length) {
       return idles[0];
@@ -2510,7 +2504,7 @@ subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
   if (Object.keys(kenvEnv).length === 0) return;
   if (processes.getAllProcessInfo().length === 0) return;
   clearIdleProcesses();
-  ensureTwoIdleProcesses();
+  ensureIdleProcess();
 });
 
 subscribe(appDb, (db) => {

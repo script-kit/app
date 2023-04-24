@@ -1,4 +1,4 @@
-import { app } from 'electron';
+import { app, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import os from 'os';
@@ -7,7 +7,7 @@ import { existsSync } from 'fs';
 import { readFile } from 'fs/promises';
 import { readdir, remove } from 'fs-extra';
 import { once } from 'lodash';
-import { kitPath, appDbPath } from '@johnlindquist/kit/cjs/utils';
+import { kitPath } from '@johnlindquist/kit/cjs/utils';
 import { subscribeKey } from 'valtio/utils';
 import { getVersion, storeVersion } from './version';
 import { emitter, KitEvent } from './events';
@@ -264,6 +264,12 @@ export const configureAutoUpdate = async () => {
   });
 
   emitter.on(KitEvent.CheckForUpdates, async () => {
+    // if not mac, just open scriptkit.com
+    if (!kitState.isMac) {
+      shell.openExternal('https://scriptkit.com');
+      return;
+    }
+
     kitState.status = {
       status: 'busy',
       message: `Checking for update...`,
