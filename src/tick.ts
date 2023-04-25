@@ -462,8 +462,8 @@ export const configureInterval = async () => {
           itemName = `${timestamp}.png`;
           try {
             const imageBuffer = await clipboardEventListener.readImage();
-            // if imageBuffer is too large, skip saving it
-            if (imageBuffer.length > 5000000) {
+            // if imageBuffer is larger than 5mb, don't save it
+            if (imageBuffer.length > 1024 * 1024 * 5) {
               return;
             }
             await writeFile(value, imageBuffer);
