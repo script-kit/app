@@ -2065,6 +2065,7 @@ export const audioAtom = atom(
       audio.playbackRate = options?.playbackRate || 1;
       // allow all from cross origin
       audio.crossOrigin = 'anonymous';
+      // allow all file types
       audio.setAttribute('src', filePath);
       audio.play();
 

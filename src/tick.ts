@@ -641,9 +641,9 @@ const watcherEnabledSub = subscribeKey(
   'watcherEnabled',
   async (watcherEnabled) => {
     log.info(
-      `📕 watcherEnabled: ${watcherEnabled ? 'true' : 'false'} ${
-        prevWatcherEnabled ? 'true' : 'false'
-      }}`
+      `📕 watcherEnabled: ${
+        watcherEnabled ? 'true' : 'false'
+      } - prevWatcherEnabled: ${prevWatcherEnabled ? 'true' : 'false'}`
     );
     if (watcherEnabled === prevWatcherEnabled) return;
     prevWatcherEnabled = watcherEnabled;

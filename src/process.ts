@@ -1761,9 +1761,9 @@ const kitMessageMap: ChannelHandler = {
     shell.beep();
     childSend(child, { channel, value });
   }),
-  PLAY_AUDIO: toProcess(async ({ child }, { channel, value }) => {
+  PLAY_AUDIO: toProcess(async ({ child }, { channel, value }:any) => {
     try {
-      log.info(`🔊 Playing ${value}`);
+      log.info(`🔊 Playing ${value?.filePath || value}`);
     } catch (error) {
       log.error(`🔊 Error playing ${value}`, error);
     }
