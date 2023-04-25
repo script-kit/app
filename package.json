@@ -332,6 +332,7 @@
     "@fontsource/fira-mono": "^4.5.10",
     "@fontsource/jetbrains-mono": "^4.5.12",
     "@heroicons/react": "1.0.4",
+    "@johnlindquist/clipboard": "^0.1.35",
     "@johnlindquist/kit": "latest",
     "@monaco-editor/react": "4.4.6",
     "@react-hook/resize-observer": "1.2.6",

@@ -471,8 +471,13 @@ export const configureInterval = async () => {
             log.error(error);
           }
         } else {
-          value = await clipboardEventListener.readText();
-          itemName = value.trim().slice(0, 40);
+          try {
+            value = await clipboardEventListener.readText();
+            itemName = value.trim().slice(0, 40);
+          } catch (error) {
+            log.warn(error);
+            return;
+          }
 
           // TODO: Consider filtering consecutive characters without a space
           maybeSecret = Boolean(

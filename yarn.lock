@@ -1859,6 +1859,13 @@
     "@types/yargs" "^17.0.8"
     chalk "^4.0.0"
 
+"@johnlindquist/clipboard@^0.1.35":
+  version "0.1.35"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/clipboard/-/clipboard-0.1.35.tgz#4110d2f5cfb26095714789b34bef1628ec53ccc2"
+  integrity sha512-UiZSK2sRrgvODitvcHSNwUtdP/JlvD7D9GHXB8c4rOuPcULhU+br4ksDxd+4eAwcvRsk6C+PDGR1kUXYTkwTrw==
+  dependencies:
+    detect-port "^1.5.1"
+
 "@johnlindquist/globals@1.14.9":
   version "1.14.9"
   resolved "https://registry.yarnpkg.com/@johnlindquist/globals/-/globals-1.14.9.tgz#28ca6b58681c094e9910587a212a2356184265a2"
