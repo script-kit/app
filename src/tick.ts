@@ -643,7 +643,7 @@ const watcherEnabledSub = subscribeKey(
     log.info(
       `📕 watcherEnabled: ${
         watcherEnabled ? 'true' : 'false'
-      } - prevWatcherEnabled: ${prevWatcherEnabled ? 'true' : 'false'}`
+      } - wasWatcherEnabled: ${prevWatcherEnabled ? 'true' : 'false'}`
     );
     if (watcherEnabled === prevWatcherEnabled) return;
     prevWatcherEnabled = watcherEnabled;
