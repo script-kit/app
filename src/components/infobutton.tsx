@@ -150,13 +150,12 @@ export default function InfoButton({ data, index, style }: ChoiceButtonProps) {
                 choice?.description ||
                 modifierDescription) && (
                 <div
-                  className={`
+                  className={`pb-1
                   ${
                     choice?.descriptionClassName
                       ? choice?.descriptionClassName
-                      : `truncate `
-                  }
-                  ${buttonDescriptionFontSize} pb-1 text-text-base/80`}
+                      : `${buttonDescriptionFontSize} truncate text-text-base/80`
+                  }`}
                 >
                   {modifierDescription ||
                   (index === currentIndex && choice?.focused)

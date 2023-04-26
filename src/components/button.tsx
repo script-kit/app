@@ -243,19 +243,15 @@ export default function ChoiceButton({
                 choice?.description ||
                 modifierDescription) && (
                 <div
-                  className={`
-                pb-1
-                  ${
+                  className={`pb-1 ${
                     choice?.descriptionClassName
                       ? choice?.descriptionClassName
-                      : `truncate `
-                  } ${buttonDescriptionFontSize} ${
+                      : `truncate ${buttonDescriptionFontSize} `
+                  }${
                     index === currentIndex
                       ? ` opacity-100 text-primary `
                       : ` opacity-60 `
-                  }
-
-                `}
+                  }`}
                 >
                   {modifierDescription ||
                   (index === currentIndex && choice?.focused)
