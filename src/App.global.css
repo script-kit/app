@@ -20,6 +20,7 @@ Favicon gradient
   background: rgba(0, 0, 0, 0.2);
 } */ /* FBBF24 */ /* 4F46E5 */
 /* --color-primary: 79, 70, 229; indigo*/
+/* This will get written to ~/.kit/db/theme.json on first pass */
 :root {
   --color-text: 255, 255, 255;
   --color-primary: 251, 191, 36;
