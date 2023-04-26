@@ -139,10 +139,13 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   const prevThemeExists = await pathExists(themeDbPath);
   if(prevThemeExists){
     try{
+      log.info(`Found saved theme: ${themeDbPath}`)
       prevTheme = await readJson(themeDbPath);
     }catch(error){
       log.warn(`Error reading theme db:`, error)
     }
+  }else{
+    log.info(`No saved theme found: ${themeDbPath}`)
   }
 
   let value:any = {}
@@ -168,7 +171,7 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   value.background ||= value?.['--color-background'];
   value.accent ||= value?.['--color-primary'];
   value.ui ||= value?.['--color-secondary'];
-  value.opacity ||= value?.['--opacity'] || '0.75';
+  value.opacity ||= value?.['--opacity'] || '0.5';
 
 
   if (value.foreground) {

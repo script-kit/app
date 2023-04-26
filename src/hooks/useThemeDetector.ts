@@ -10,9 +10,9 @@ export default () => {
     if (isLinux) {
       document.documentElement.style.setProperty('--opacity', '1');
     } else if (e.matches) {
-      document.documentElement.style.setProperty('--opacity', '0.75');
+      document.documentElement.style.setProperty('--opacity', '0.5');
     } else {
-      document.documentElement.style.setProperty('--opacity', '0.85');
+      document.documentElement.style.setProperty('--opacity', '0.5');
     }
   }, []);
 

@@ -172,7 +172,7 @@ export default function ChoiceButton({
       text-text-base
       ${
         index === currentIndex && !choice?.disableSubmit
-          ? `bg-secondary/60`
+          ? `bg-secondary/30`
           : ``
       } ${overrideTailwindClasses(`
         w-full

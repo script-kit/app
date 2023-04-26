@@ -51,7 +51,7 @@ const css = `
   --color-primary: 251, 191, 36;
   --color-secondary: 64, 64, 64;
   --color-background: 6, 6, 6;
-  --opacity: 0.75;
+  --opacity: 0.50;
 }
 `;
 
