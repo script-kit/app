@@ -101,6 +101,12 @@ export default function KitTabs() {
     itemsRef.current = itemsRef.current.slice(0, tabs.length);
   }, [tabs]);
 
+  useEffect(() => {
+    return () => {
+      setHover(-1);
+    };
+  }, []);
+
   // useEffect(() => {
   //   const el = itemsRef?.current?.[tabIndex];
   //   if (el) {
@@ -135,8 +141,12 @@ export default function KitTabs() {
                 ref={(el) => {
                   itemsRef.current[i] = el;
                 }}
-                onHoverStart={() => setHover(i)}
-                onHoverEnd={() => setHover(-1)}
+                onMouseEnter={() => {
+                  if (mouseEnabled) {
+                    setHover(i);
+                  }
+                }}
+                onMouseLeave={() => setHover(-1)}
                 className={`
               text-sm
               font-medium
@@ -150,7 +160,11 @@ export default function KitTabs() {
                 onMouseDown={() => setTabIndex(i)}
                 style={{ cursor: mouseEnabled ? 'pointer' : 'none' }}
                 whileHover={
-                  { '--tw-text-opacity': i === tabIndex ? '1' : '0.75' } as any
+                  {
+                    '--tw-text-opacity':
+                      // eslint-disable-next-line no-nested-ternary
+                      i === tabIndex ? '1' : mouseEnabled ? '0.75' : '0.5',
+                  } as any
                 }
                 animate={
                   {
