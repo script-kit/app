@@ -83,7 +83,7 @@ export default function AudioRecorder() {
       recorderRef.current.removeEventListener('stop', () => {});
       recorderRef.current = null;
     });
-    recorderRef.current.start(500);
+    recorderRef.current.start(200);
 
     const audioContext = new AudioContext();
     const analyser = audioContext.createAnalyser();
