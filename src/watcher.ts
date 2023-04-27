@@ -97,40 +97,44 @@ const logQueue = (event: WatchEvent, filePath: string) => {
   debouncedLogAllEvents();
 };
 
-const buildScriptChanged = debounce((filePath: string) => {
-  if (filePath.endsWith('.ts')) {
-    log.info(`🏗️ Build ${filePath}`);
-    const child = fork(kitPath('build', 'ts.js'), [filePath], {
-      env: assign({}, process.env, {
-        KIT: kitPath(),
-        KENV: kenvPath(),
-      }),
-      stdio: 'pipe',
-    });
+const buildScriptChanged = debounce(
+  (filePath: string) => {
+    if (filePath.endsWith('.ts')) {
+      log.info(`🏗️ Build ${filePath}`);
+      const child = fork(kitPath('build', 'ts.js'), [filePath], {
+        env: assign({}, process.env, {
+          KIT: kitPath(),
+          KENV: kenvPath(),
+        }),
+        stdio: 'pipe',
+      });
 
-    if (child?.stdout) {
-      child.stdout.on('data', (data) => {
-        log.info(data.toString());
+      if (child?.stdout) {
+        child.stdout.on('data', (data) => {
+          log.info(`Build stdout:`, data.toString());
+        });
+      }
+
+      if (child?.stderr) {
+        child.stderr.on('data', (data) => {
+          log.error(`Build stderr`, data.toString());
+        });
+      }
+
+      // log error
+      child.on('error', (error: any) => {
+        log.error(`Build error:`, error);
+      });
+
+      // log exit
+      child.on('exit', (code) => {
+        log.info(`🏗️ Build ${filePath} exited with code ${code}`);
       });
     }
-
-    if (child?.stderr) {
-      child.stderr.on('data', (data) => {
-        log.error(data.toString());
-      });
-    }
-
-    // log error
-    child.on('error', (error: any) => {
-      log.error(error);
-    });
-
-    // log exit
-    child.on('exit', (code) => {
-      log.info(`🏗️ Build ${filePath} exited with code ${code}`);
-    });
-  }
-}, 150);
+  },
+  1000,
+  { leading: true }
+);
 
 export const rebuildScripts = debounce(
   (scriptPaths: string[], KENV) => {
@@ -283,6 +287,31 @@ export const checkUserDb = async (eventName: string) => {
   appToPrompt(AppChannel.USER_CHANGED, user);
 };
 
+const triggerRunText = debounce(
+  async (eventName: WatchEvent) => {
+    const runPath = kitPath('run.txt');
+    if (eventName === 'add' || eventName === 'change') {
+      const runText = await readFile(runPath, 'utf8');
+      const [scriptPath, ...args] = runText.trim().split(' ');
+      log.info(`run.txt ${eventName}`, scriptPath, args);
+      emitter.emit(KitEvent.RunPromptProcess, {
+        scriptPath: resolveToScriptPath(scriptPath, kenvPath()),
+        args: args || [],
+        options: {
+          force: true,
+          trigger: Trigger.RunTxt,
+        },
+      });
+    } else {
+      log.info(`run.txt removed`);
+    }
+  },
+  1000,
+  {
+    leading: true,
+  }
+);
+
 export const setupWatchers = async () => {
   await teardownWatchers();
 
@@ -294,22 +323,7 @@ export const setupWatchers = async () => {
 
     if (base === 'run.txt') {
       log.info(`run.txt ${eventName}`);
-      const runPath = kitPath('run.txt');
-      if (eventName === 'add' || eventName === 'change') {
-        const runText = await readFile(runPath, 'utf8');
-        const [scriptPath, ...args] = runText.trim().split(' ');
-        log.info(`run.txt ${eventName}`, scriptPath, args);
-        emitter.emit(KitEvent.RunPromptProcess, {
-          scriptPath: resolveToScriptPath(scriptPath, kenvPath()),
-          args: args || [],
-          options: {
-            force: true,
-            trigger: Trigger.RunTxt,
-          },
-        });
-      } else {
-        log.info(`run.txt removed`);
-      }
+      triggerRunText(eventName);
       return;
     }
 
