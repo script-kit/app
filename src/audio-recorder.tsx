@@ -10,6 +10,7 @@ import {
   logAtom,
   uiAtom,
   openAtom,
+  micConfigAtom,
 } from './jotai';
 import useOnEnter from './hooks/useOnEnter';
 
@@ -32,6 +33,7 @@ export default function AudioRecorder() {
   const log = useAtomValue(logAtom);
   const ui = useAtomValue(uiAtom);
   const open = useAtomValue(openAtom);
+  const micConfig = useAtomValue(micConfigAtom);
 
   const [channel] = useAtom(channelAtom);
 
@@ -46,9 +48,12 @@ export default function AudioRecorder() {
       recorderRef.current = null;
 
       if (audioChunks.length === 0) return;
-      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      const type = `audio/${micConfig.format}`;
+      const audioBlob = new Blob(audioChunks, {
+        type,
+      });
       const arrayBuffer = Buffer.from(await audioBlob.arrayBuffer());
-      const base64 = arrayBufferToBase64(arrayBuffer, 'audio/webm');
+      const base64 = arrayBufferToBase64(arrayBuffer, type);
 
       log(`Submitting audio...`);
       submit(base64);
@@ -64,7 +69,9 @@ export default function AudioRecorder() {
       setAudioChunks((prevAudioChunks) => [...prevAudioChunks, event.data]);
 
       const arrayBuffer = await event.data.arrayBuffer();
-      const base64 = arrayBufferToBase64(arrayBuffer, 'audio/webm');
+      const type = `audio/${micConfig.format}`;
+
+      const base64 = arrayBufferToBase64(arrayBuffer, type);
       channel(Channel.ON_AUDIO_DATA, {
         value: base64,
       });
@@ -83,7 +90,7 @@ export default function AudioRecorder() {
       recorderRef.current.removeEventListener('stop', () => {});
       recorderRef.current = null;
     });
-    recorderRef.current.start(200);
+    recorderRef.current.start(micConfig.timeSlice);
 
     const audioContext = new AudioContext();
     const analyser = audioContext.createAnalyser();

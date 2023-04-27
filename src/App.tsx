@@ -138,6 +138,7 @@ import {
   domUpdatedAtom,
   headerHiddenAtom,
   footerHiddenAtom,
+  micConfigAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -293,6 +294,7 @@ export default function App() {
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
   const setTermConfig = useSetAtom(termConfigAtom);
+  const setMicConfig = useSetAtom(micConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
   const headerHidden = useAtomValue(headerHiddenAtom);
   const footerHidden = useAtomValue(footerHiddenAtom);
@@ -558,6 +560,14 @@ export default function App() {
       setTermConfig(data);
     };
     ipcRenderer.on(AppChannel.SET_TERM_CONFIG, handleTermConfig);
+
+    const handleMicConfig: (
+      event: Electron.IpcRendererEvent,
+      ...args: any[]
+    ) => void = (_, data) => {
+      setMicConfig(data);
+    };
+    ipcRenderer.on(AppChannel.SET_MIC_CONFIG, handleMicConfig);
 
     type HandleCSSVariableHandler = (
       event: Electron.IpcRendererEvent,

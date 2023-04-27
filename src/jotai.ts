@@ -2481,3 +2481,7 @@ export const socialAtom = atom((g) => {
 });
 
 export const justOpenedAtom = atom(false);
+export const micConfigAtom = atom({
+  timeSlice: 200,
+  format: 'webm',
+});

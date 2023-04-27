@@ -1026,6 +1026,13 @@ const kitMessageMap: ChannelHandler = {
         pid,
       } as TermConfig)
     }
+
+    if(value?.ui === UI.mic){
+      appToPrompt(AppChannel.SET_MIC_CONFIG, {
+        timeSlice: value?.timeSlice || 200,
+        format: value?.format || 'webm',
+      })
+    }
     // log.silly(`SET_PROMPT_DATA`);
 
 
