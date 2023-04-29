@@ -1,5 +1,10 @@
-@import 'jetbrains-mono';
-@import 'jetbrains-mono/css/jetbrains-mono.css';
+@import '@fontsource/jetbrains-mono/300.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/600.css';
+@import '@fontsource/jetbrains-mono/700.css';
+@import '@fontsource/jetbrains-mono/800.css';
+
 @import 'simplebar/dist/simplebar.min.css';
 @import '@vscode/codicons/dist/codicon.css';
 @import 'xterm/css/xterm.css';

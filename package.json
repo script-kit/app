@@ -377,7 +377,6 @@
     "inclusion": "^1.0.1",
     "internet-available": "^1.0.0",
     "is-image": "3.0.0",
-    "jetbrains-mono": "1.0.6",
     "jotai": "2.0.3",
     "lodash": "4.17.21",
     "memoize-one": "5.2.1",

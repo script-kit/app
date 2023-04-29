@@ -10574,11 +10574,6 @@ jest@27.0.6:
     import-local "^3.0.2"
     jest-cli "^27.0.6"
 
-jetbrains-mono@1.0.6:
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/jetbrains-mono/-/jetbrains-mono-1.0.6.tgz#f716b35b9b750e4ad3ec82b6148e35d09373bf27"
-  integrity sha512-nVHwukZwQHKEQ3ZP1qlXFyFoUyBnonwrqLQf/ZlsoDPgTHm7T0EL0m1KJQ9U4ghu4emYuSR21uqmZalzNvvoUA==
-
 jotai@2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/jotai/-/jotai-2.0.3.tgz#3b67cda9f6d5feb70a14db0b842a9873aacda8b5"
