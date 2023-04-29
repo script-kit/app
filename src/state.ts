@@ -735,7 +735,14 @@ export const convertKey = (sourceKey: string) => {
 
     if (targetKey) {
       const target = defaultKeyMap?.[targetKey]?.toUpperCase() || '';
-      log.info(`🔑 Converted key: ${targetKey} -> ${target}`);
+      try {
+        if (targetKey.at(-1) !== target.at(-1)) {
+          log.info(`🔑 Converted key: ${targetKey} -> ${target}`);
+        }
+      } catch (error) {
+        log.info(`🔑 Converted key error: ${targetKey} -> ${target}`);
+      }
+
       return target || sourceKey;
     }
   }
@@ -754,7 +761,7 @@ export const initKeymap = async () => {
       let value = keymap?.KeyA.value;
       const alpha = /[A-Za-z]/;
 
-      log.info(`🔑 Keymap`, { a: value });
+      // log.info(`🔑 Keymap`, { a: value });
 
       if (value && value.match(alpha)) {
         kitState.keymap = keymap;

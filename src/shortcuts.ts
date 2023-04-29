@@ -64,7 +64,7 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
       log.info(`Failed to register: ${shortcut} to ${filePath}`);
       shortcutInfo(shortcut, filePath, registerFail);
     } else {
-      log.info(`Registered: ${shortcut} to ${filePath}`);
+      // log.info(`Registered: ${shortcut} to ${filePath}`);
     }
 
     return success;

@@ -143,7 +143,7 @@ export const shortcutInfo = async (
 export const convertShortcut = (shortcut: string, filePath: string): string => {
   if (!shortcut?.length) return '';
   const normalizedShortcut = shortcutNormalizer(shortcut);
-  log.info({ shortcut, normalizedShortcut });
+  // log.info({ shortcut, normalizedShortcut });
   const [sourceKey, ...mods] = normalizedShortcut
     .trim()
     ?.split(/\+| /)
