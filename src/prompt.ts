@@ -1167,7 +1167,6 @@ const subScriptPath = subscribeKey(
   'scriptPath',
   async (scriptPath) => {
     if (promptWindow?.isDestroyed()) return;
-    setBackgroundThrottling(kitState.scriptPath === '');
 
     kitState.promptUI = UI.none;
     kitState.resizedByChoices = false;

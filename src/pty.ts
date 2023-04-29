@@ -1,12 +1,13 @@
 /* eslint-disable no-nested-ternary */
 import os from 'os';
 import untildify from 'untildify';
-import { KIT_FIRST_PATH, kitPath } from '@johnlindquist/kit/cjs/utils';
+import { KIT_FIRST_PATH } from '@johnlindquist/kit/cjs/utils';
 import log from 'electron-log';
 import { ipcMain } from 'electron';
+import * as pty from 'node-pty';
 import { debounce } from 'lodash';
 import { kitState } from './state';
-import { AppChannel, Trigger } from './enums';
+import { AppChannel } from './enums';
 import { sendToPrompt } from './prompt';
 import { emitter, KitEvent } from './events';
 import { TermConfig } from './types';
@@ -178,8 +179,6 @@ export const readyPty = async () => {
 
     ipcMain.on(AppChannel.TERM_RESIZE, resizeHandler);
     ipcMain.on(AppChannel.TERM_INPUT, inputHandler);
-
-    const pty = await import('node-pty');
 
     const defaultShell = getDefaultShell();
     const { shell, args } = getShellConfig(config, defaultShell);
