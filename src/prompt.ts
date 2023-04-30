@@ -331,7 +331,7 @@ export const createPromptWindow = async () => {
   promptWindow?.on('show', async () => {
     kitState.promptHidden = false;
     // kitState.allowBlur = false;
-    log.info(`event: show`);
+    log.silly(`event: show`);
   });
 
   promptWindow?.webContents?.on('dom-ready', () => {
@@ -846,12 +846,23 @@ export type ScriptTrigger =
   | 'schedule'
   | 'snippet';
 
+let prevScriptPath = '';
+let prevPid = 0;
 export const setScript = async (
   script: Script,
   pid: number,
   force = false
 ): Promise<'denied' | 'allowed'> => {
   // log.info(`setScript`, { script, pid });
+
+  if (script.filePath === prevScriptPath && pid === prevPid) {
+    // Using a keyboard shortcut to launch a script will hit this scenario
+    // Because the app will call `setScript` immediately, then the process will call it too
+    return 'denied';
+  }
+
+  prevScriptPath = script.filePath;
+  prevPid = pid;
 
   if (!force && (!script?.filePath || !pidMatch(pid, `setScript`))) {
     return 'denied';
