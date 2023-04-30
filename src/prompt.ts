@@ -973,6 +973,11 @@ export const setPromptData = async (promptData: PromptData) => {
   kitState.ui = promptData.ui;
   if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
 
+  kitState.promptCount += 1;
+  if (kitState.promptCount === 1) {
+    await initBounds();
+  }
+
   sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
   // TODO: Combine types for sendToPrompt and appToPrompt?
   appToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
@@ -1007,11 +1012,6 @@ export const setPromptData = async (promptData: PromptData) => {
     promptWindow?.show();
   } else {
     promptWindow?.show();
-  }
-
-  kitState.promptCount += 1;
-  if (kitState.promptCount === 1) {
-    await initBounds();
   }
 
   // app.focus({

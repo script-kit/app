@@ -1201,6 +1201,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 export const topHeightAtom = atom(
   (g) => g(_topHeight),
   (g, s) => {
+    if (!g(promptReadyAtom)) return;
     if (!g(isMainScriptAtom) && g(uiAtom) === UI.arg) {
       resize(g, s, 'TOP_HEIGHT');
     }
