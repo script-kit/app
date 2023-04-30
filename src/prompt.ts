@@ -83,6 +83,7 @@ export const maybeHide = async (reason: string) => {
         promptWindow?.minimize();
       }
 
+      setBackgroundThrottling(true);
       promptWindow?.hide();
     }
   }
@@ -114,9 +115,7 @@ export const setBackgroundThrottling = (enabled: boolean) => {
   if (enabled === isThrottling) return;
   isThrottling = enabled;
   if (promptWindow?.isDestroyed()) return;
-  log.verbose(
-    `🚕 setBackgroundThrottling: ${enabled ? 'enabled' : 'disabled'}`
-  );
+  log.info(`🚕 setBackgroundThrottling: ${enabled ? 'enabled' : 'disabled'}`);
   promptWindow?.webContents?.setBackgroundThrottling(enabled);
 };
 
@@ -325,7 +324,6 @@ export const createPromptWindow = async () => {
 
   promptWindow?.on('hide', () => {
     log.silly(`event: hide`);
-    // setBackgroundThrottling(false);
     kitState.isPromptReady = false;
     kitState.promptHidden = true;
   });
@@ -334,12 +332,10 @@ export const createPromptWindow = async () => {
     kitState.promptHidden = false;
     // kitState.allowBlur = false;
     log.info(`event: show`);
-    setBackgroundThrottling(true);
   });
 
   promptWindow?.webContents?.on('dom-ready', () => {
     log.info(`🍀 dom-ready on ${kitState?.scriptPath}`);
-    setBackgroundThrottling(true);
 
     hideAppIfNoWindows('dom-ready');
     sendToPrompt(Channel.SET_READY, true);
@@ -823,23 +819,9 @@ const writePromptState = async (
 export const hideAppIfNoWindows = (reason: string) => {
   log.silly(`function: hideAppIfNoWindows: ${reason}`);
   if (promptWindow) {
-    // const allWindows = BrowserWindow.getAllWindows();
-    // Check if all other windows are hidden
-
     kitState.modifiedByUser = false;
     kitState.ignoreBlur = false;
     maybeHide(reason);
-
-    // setTimeout(() => {
-    //   if (!promptWindow?.isVisible()) {
-    //     promptWindow.webContents.setBackgroundThrottling(true);
-    //   }
-    // }, 1000);
-    // setPromptBounds();
-
-    // if (allWindows.every((window) => !window.isVisible())) {
-    // if (app?.hide) app?.hide();
-    // }
   }
 };
 
@@ -1008,8 +990,6 @@ export const setPromptData = async (promptData: PromptData) => {
     kitState.hasSnippet = false;
   }
 
-  // promptWindow.webContents.setBackgroundThrottling(false);
-
   if (kitState.isMac) {
     promptWindow?.showInactive();
     // 0 second setTimeout
@@ -1169,32 +1149,12 @@ const initBounds = async () => {
   );
 };
 
-let prevWasNoScript = true;
 const subScriptPath = subscribeKey(
   kitState,
   'scriptPath',
   async (scriptPath) => {
     if (promptWindow?.isDestroyed()) return;
     const noScript = kitState.scriptPath === '';
-    if (prevWasNoScript && !noScript) {
-      /*
-Scenario:
-- The prompt is displaying the previous UI when closed
-- The user opens the prompt and briefly sees the previous UI
-
-Solution:
-- Disable background throttling _before_ the prompt is opened
-- But _only_ if there was no current script
-
-Why:
-Disable background throttling while the prompt is closed
-causes the app to eat CPU while idling
-*/
-      prevWasNoScript = false;
-      setBackgroundThrottling(false);
-    } else {
-      prevWasNoScript = noScript;
-    }
 
     kitState.promptUI = UI.none;
     kitState.resizedByChoices = false;

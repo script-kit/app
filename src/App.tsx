@@ -693,6 +693,20 @@ export default function App() {
 
   useEscape();
 
+  useEffect(() => {
+    const visibilitychangeHandler = () => {
+      if (document.visibilityState === 'hidden') {
+        // This _should_ be handled by the call before "hide()", but just in case...
+        ipcRenderer.send(AppChannel.ENABLE_BACKGROUND_THROTTLING);
+      }
+    };
+    document.addEventListener('visibilitychange', visibilitychangeHandler);
+
+    return () => {
+      document.removeEventListener('visibilitychange', visibilitychangeHandler);
+    };
+  }, []);
+
   return (
     <ErrorBoundary>
       <div

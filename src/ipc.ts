@@ -26,7 +26,7 @@ import detect from 'detect-file-type';
 import { emitter, KitEvent } from './events';
 import { processes } from './process';
 
-import { focusPrompt, reload, resize } from './prompt';
+import { focusPrompt, reload, resize, setBackgroundThrottling } from './prompt';
 import { runPromptProcess } from './kit';
 import { AppChannel, Trigger } from './enums';
 import { ResizeData, Survey } from './types';
@@ -117,6 +117,10 @@ ${data.error}
       force: true,
       trigger: Trigger.Kit,
     });
+  });
+
+  ipcMain.on(AppChannel.ENABLE_BACKGROUND_THROTTLING, () => {
+    setBackgroundThrottling(true);
   });
 
   ipcMain.on(

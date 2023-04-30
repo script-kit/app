@@ -43,6 +43,7 @@ export enum AppChannel {
   SET_MIC_ID = 'SET_MIC_ID',
   RELOAD = 'RELOAD',
   ERROR_RELOAD = 'ERROR_RELOAD',
+  ENABLE_BACKGROUND_THROTTLING = 'ENABLE_BACKGROUND_THROTTLING',
 }
 
 export enum WindowChannel {

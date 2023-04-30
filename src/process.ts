@@ -69,6 +69,7 @@ import {
   isVisible,
   onHideOnce,
   sendToPrompt,
+  setBackgroundThrottling,
   setBounds,
   setChoices,
   setFooter,
@@ -1880,6 +1881,10 @@ const kitMessageMap: ChannelHandler = {
   GET_TYPED_TEXT: toProcess(async ({ child }, { channel, value }) => {
     childSend(child, { channel, value: kitState.typedText });
   }),
+  DISABLE_BACKGROUND_THROTTLING: toProcess(
+    async () => {
+      setBackgroundThrottling(false)
+    }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (
