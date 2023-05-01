@@ -1201,9 +1201,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 export const topHeightAtom = atom(
   (g) => g(_topHeight),
   (g, s) => {
-    if (document.visibilityState !== 'visible' && g(appConfigAtom)?.isMac) {
-      return;
-    }
     if (!g(isMainScriptAtom) && g(uiAtom) === UI.arg) {
       resize(g, s, 'TOP_HEIGHT');
     }
@@ -1256,6 +1253,7 @@ export const footerAtom = atom('');
 
 // Create an itemHeightAtom
 export const itemHeightAtom = atom(PROMPT.ITEM.HEIGHT.BASE);
+export const inputHeightAtom = atom(PROMPT.INPUT.HEIGHT.BASE);
 
 const promptData = atom<null | PromptData>(null);
 
@@ -1381,6 +1379,7 @@ export const promptDataAtom = atom(
       }
 
       s(itemHeightAtom, a?.itemHeight || PROMPT.ITEM.HEIGHT.BASE);
+      s(inputHeightAtom, a?.inputHeight || PROMPT.INPUT.HEIGHT.BASE);
 
       s(defaultValueAtom, a?.defaultValue || '');
 
@@ -2371,7 +2370,7 @@ export const buttonDescriptionFontSizeAtom = atom((g) => {
 
 export const inputFontSizeAtom = atom((g) => {
   let fontSize = `text-2xl`;
-  const inputHeight = g(promptDataAtom)?.inputHeight;
+  const inputHeight = g(inputHeightAtom);
   switch (inputHeight) {
     case PROMPT.INPUT.HEIGHT.XS:
       fontSize = `text-sm`;
@@ -2382,15 +2381,15 @@ export const inputFontSizeAtom = atom((g) => {
       break;
 
     case PROMPT.INPUT.HEIGHT.BASE:
-      fontSize = `text-lg`;
+      fontSize = `text-2xl`;
       break;
 
     case PROMPT.INPUT.HEIGHT.LG:
-      fontSize = `text-xl`;
+      fontSize = `text-3xl`;
       break;
 
     case PROMPT.INPUT.HEIGHT.XL:
-      fontSize = `text-2xl`;
+      fontSize = `text-4xl`;
       break;
 
     default:

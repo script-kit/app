@@ -1882,8 +1882,9 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, value: kitState.typedText });
   }),
   DISABLE_BACKGROUND_THROTTLING: toProcess(
-    async () => {
+    async (_, {channel, value}) => {
       setBackgroundThrottling(false)
+      sendToPrompt(channel, value);
     }),
 };
 

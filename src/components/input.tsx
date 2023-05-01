@@ -41,6 +41,7 @@ import {
   miniShortcutsHoveredAtom,
   lastKeyDownWasModifierAtom,
   footerHiddenAtom,
+  inputHeightAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -85,6 +86,7 @@ export default function Input() {
     miniShortcutsHoveredAtom
   );
   const footerHidden = useAtomValue(footerHiddenAtom);
+  const inputHeight = useAtomValue(inputHeightAtom);
 
   const setLastKeyDownWasModifier = useSetAtom(lastKeyDownWasModifierAtom);
 
@@ -200,7 +202,7 @@ export default function Input() {
       key="input"
       className="flex flex-row"
       style={{
-        height: promptData?.inputHeight || PROMPT.INPUT.HEIGHT.BASE,
+        height: inputHeight || PROMPT.INPUT.HEIGHT.BASE,
       }}
       // initial={{ opacity: 0 }}
       // animate={{ opacity: processing ? 0 : 1 }}
@@ -272,12 +274,11 @@ export default function Input() {
             onMouseOver={() => setMiniShortcutsHovered(true)}
             onMouseLeave={() => setMiniShortcutsHovered(false)}
             style={{
-              height: promptData?.inputHeight || PROMPT.INPUT.HEIGHT.BASE,
+              height: inputHeight || PROMPT.INPUT.HEIGHT.BASE,
             }}
             className={`justify-end
       right-container flex flex-row flex-grow items-center overflow-hidden min-w-fit ${
-        promptData?.inputHeight === PROMPT.INPUT.HEIGHT.XS &&
-        `scale-95 origin-right mt-px`
+        inputHeight === PROMPT.INPUT.HEIGHT.XS && `scale-95 origin-right mt-px`
       }`}
           >
             {miniShortcutsVisible && (

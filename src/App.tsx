@@ -139,6 +139,8 @@ import {
   headerHiddenAtom,
   footerHiddenAtom,
   micConfigAtom,
+  itemHeightAtom,
+  inputHeightAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -227,7 +229,7 @@ export default function App() {
   const chatPushToken = useSetAtom(chatPushTokenAtom);
   const setChatMessage = useSetAtom(setChatMessageAtom);
 
-  const ui = useAtomValue(uiAtom);
+  const [ui, setUi] = useAtom(uiAtom);
   const choices = useAtomValue(scoredChoices);
   const showSelected = useAtomValue(showSelectedAtom);
   const showTabs = useAtomValue(showTabsAtom);
@@ -296,8 +298,10 @@ export default function App() {
   const setTermConfig = useSetAtom(termConfigAtom);
   const setMicConfig = useSetAtom(micConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
-  const headerHidden = useAtomValue(headerHiddenAtom);
-  const footerHidden = useAtomValue(footerHiddenAtom);
+  const [headerHidden, setHeaderHidden] = useAtom(headerHiddenAtom);
+  const [footerHidden, setFooterHidden] = useAtom(footerHiddenAtom);
+  const [inputHeight, setInputHeight] = useAtom(inputHeightAtom);
+  const [itemHeight, setItemHeight] = useAtom(itemHeightAtom);
 
   const log = useAtomValue(logAtom);
 
@@ -481,6 +485,18 @@ export default function App() {
     [Channel.CHAT_ADD_MESSAGE]: addChatMessage,
     [Channel.CHAT_PUSH_TOKEN]: chatPushToken,
     [Channel.CHAT_SET_MESSAGE]: setChatMessage,
+    [Channel.DISABLE_BACKGROUND_THROTTLING]: (value) => {
+      if (value?.ui) setUi(value.ui);
+      if (value?.headerClassName?.includes('hidden')) setHeaderHidden(true);
+      if (value?.footerClassName?.includes('hidden')) setFooterHidden(true);
+      if (value?.inputHeight) setInputHeight(value.inputHeight);
+      if (value?.itemHeight) setItemHeight(value.itemHeight);
+
+      // log({
+      //   type: '🤩disable-background-throttling',
+      //   ...value,
+      // });
+    },
     [Channel.TOAST]: ({ text, options }: ToastData) => {
       toast(text, options);
     },
