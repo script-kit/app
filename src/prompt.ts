@@ -43,11 +43,9 @@ import { getAssetPath } from './assets';
 import { appDb, kitState, subs, promptState } from './state';
 import {
   DEFAULT_EXPANDED_WIDTH,
-  DEFAULT_HEIGHT,
   DEFAULT_WIDTH,
   EMOJI_HEIGHT,
   EMOJI_WIDTH,
-  MIN_HEIGHT,
   MIN_WIDTH,
   ZOOM_LEVEL,
 } from './defaults';
@@ -140,8 +138,8 @@ export const createPromptWindow = async () => {
     maximizable: false,
     movable: true,
     skipTaskbar: true,
-    width: getDefaultWidth(),
-    height: DEFAULT_HEIGHT,
+    width: PROMPT.WIDTH.BASE,
+    height: PROMPT.HEIGHT.BASE,
     minWidth: MIN_WIDTH,
     minHeight: PROMPT.INPUT.HEIGHT.XS,
     type: 'panel',
@@ -483,7 +481,7 @@ export const getCurrentScreenPromptCache = async (
   } = currentScreen.workAreaSize;
 
   let width = getDefaultWidth();
-  let height = DEFAULT_HEIGHT;
+  let height = PROMPT.HEIGHT.BASE;
 
   log.verbose({
     ui,
@@ -514,7 +512,7 @@ export const getCurrentScreenPromptCache = async (
 
     if (ui === UI.editor || ui === UI.textarea) {
       width = Math.max(width, getDefaultWidth());
-      height = Math.max(height, DEFAULT_HEIGHT);
+      height = Math.max(height, PROMPT.HEIGHT.BASE);
     }
   }
 
@@ -558,6 +556,7 @@ export const getCurrentScreenPromptCache = async (
 };
 
 export const setBounds = (bounds: Rectangle, reason = '') => {
+  if (!kitState.ready) return;
   const prevSetBounds = promptWindow?.getBounds();
   const widthNotChanged = Math.abs(bounds.width - prevSetBounds.width) < 4;
   const heightNotChanged = Math.abs(bounds.height - prevSetBounds.height) < 4;
@@ -567,7 +566,7 @@ export const setBounds = (bounds: Rectangle, reason = '') => {
   const noChange =
     heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
 
-  log.verbose(`📐 setBounds, reason ${reason}`, {
+  log.info(`📐 setBounds, reason ${reason}`, {
     ...bounds,
     isVisible: isVisible() ? 'true' : 'false',
     noChange: noChange ? 'true' : 'false',
@@ -634,17 +633,15 @@ export const resize = async ({
     y,
   } = promptWindow.getBounds();
   const targetHeight = topHeight + mainHeight + footerHeight;
-  const maxHeight = Math.max(DEFAULT_HEIGHT, currentHeight);
+  const maxHeight = Math.max(PROMPT.HEIGHT.BASE, currentHeight);
   let width = forceWidth || currentWidth;
   let height =
     forceHeight ||
     Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
 
   if (isSplash) {
-    width = DEFAULT_EXPANDED_WIDTH;
-    height = DEFAULT_HEIGHT;
-    setBounds({ x, y, width, height }, `SPLASH`);
-    return;
+    width = PROMPT.WIDTH.BASE;
+    height = PROMPT.HEIGHT.BASE;
   }
 
   height = Math.round(height);
@@ -1152,6 +1149,13 @@ const initBounds = async () => {
     //   kitState.promptCount > 1 &&
     //   !kitState.promptBounds.height
   );
+
+  sendToPrompt(Channel.SET_BOUNDS, {
+    x: bounds.x,
+    y: bounds.y,
+    width: bounds.width,
+    height: bounds.height,
+  });
 };
 
 const subScriptPath = subscribeKey(

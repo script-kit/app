@@ -1201,6 +1201,11 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 export const topHeightAtom = atom(
   (g) => g(_topHeight),
   (g, s) => {
+    const resizeComplete = g(resizeCompleteAtom);
+    if (!resizeComplete) {
+      return;
+    }
+
     if (!g(isMainScriptAtom) && g(uiAtom) === UI.arg) {
       resize(g, s, 'TOP_HEIGHT');
     }
@@ -1637,6 +1642,7 @@ export const openAtom = atom(
     s(mouseEnabledAtom, 0);
 
     if (g(_open) && a === false) {
+      s(resizeCompleteAtom, false);
       s(lastScriptClosed, g(_script).filePath);
       s(_open, a);
 
@@ -2029,7 +2035,7 @@ const _boundsAtom = atom<Rectangle>({ x: 0, y: 0, width: 0, height: 0 });
 export const boundsAtom = atom(
   (g) => g(_boundsAtom),
   (_g, s, a: Rectangle) => {
-    s(resizeCompleteAtom, false);
+    s(resizeCompleteAtom, true);
     s(_boundsAtom, a);
   }
 );
