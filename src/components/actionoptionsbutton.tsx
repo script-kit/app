@@ -51,7 +51,6 @@ export function OptionsButton() {
   ${bg}
 
   rounded
-  transition-all duration-200 ease-in-out
   `}
       onClick={onClick}
     >

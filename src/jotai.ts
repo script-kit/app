@@ -41,13 +41,7 @@ import {
   Survey,
   TermConfig,
 } from './types';
-import {
-  BUTTON_HEIGHT,
-  DEFAULT_HEIGHT,
-  noChoice,
-  noScript,
-  SPLASH_PATH,
-} from './defaults';
+import { noChoice, noScript, SPLASH_PATH } from './defaults';
 import { toHex } from './color-utils';
 import { formatShortcut } from './components/formatters';
 import { Action } from './components/actions';
@@ -55,7 +49,15 @@ import { Action } from './components/actions';
 let placeholderTimeoutId: NodeJS.Timeout;
 
 export const pidAtom = atom(0);
-export const shortcutsAtom = atom<Shortcut[]>([]);
+const _shortcuts = atom<Shortcut[]>([]);
+export const shortcutsAtom = atom(
+  (g) => {
+    return g(_shortcuts);
+  },
+  debounce((g, s, a: Shortcut[]) => {
+    s(_shortcuts, a);
+  }, 50)
+);
 
 export const processingAtom = atom(false);
 const _open = atom(false);
@@ -1936,7 +1938,10 @@ export const submitSurveyAtom = atom(null, (_g, _s, a: Survey) => {
 
 export const showTabsAtom = atom((g) => {
   return (
-    [UI.arg].includes(g(uiAtom)) && g(tabsAtom)?.length > 0 && !g(flagValueAtom)
+    g(isMainScriptAtom) ||
+    ([UI.arg].includes(g(uiAtom)) &&
+      g(tabsAtom)?.length > 0 &&
+      !g(flagValueAtom))
   );
 });
 

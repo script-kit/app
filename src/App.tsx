@@ -494,6 +494,8 @@ export default function App() {
       if (value?.inputHeight) setInputHeight(value.inputHeight);
       if (value?.itemHeight) setItemHeight(value.itemHeight);
       if (value?.placeholder) setPlaceholder(value.placeholder);
+      if (value?.shortcuts) setShortcuts(value.shortcuts);
+      if (value?.flags) setFlags(value.flags);
     },
     [Channel.TOAST]: ({ text, options }: ToastData) => {
       toast(text, options);

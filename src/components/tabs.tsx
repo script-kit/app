@@ -126,9 +126,9 @@ export default function KitTabs() {
       }
       layout="position"
       // Pay attention to the transtion to "Selected" so the bottom border line stays stable
-      initial={{ opacity: 0, y: `1rem` }}
-      animate={{ opacity: 1, y: `0px`, position: 'relative' }}
-      transition={{ duration: 0 }}
+      // initial={{ opacity: 0, y: `1rem` }}
+      // animate={{ opacity: 1, y: `0px`, position: 'relative' }}
+      // transition={{ duration: 0 }}
     >
       <motion.div className="flex flex-row px-1 whitespace-nowrap">
         {/* <span className="bg-white">{modeIndex}</span> */}

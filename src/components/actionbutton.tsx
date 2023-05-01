@@ -52,7 +52,7 @@ export function ActionButton(action: Action) {
   rounded
 
   h-full
-  transition-all duration-200 ease-in-out
+  transition-opacity duration-200 ease-out
   ${action?.disabled ? `text-primary text-opacity-25` : `${bg} ${textContrast}`}
   `}
       onClick={onClick}

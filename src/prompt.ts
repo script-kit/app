@@ -1047,7 +1047,8 @@ export const setPromptData = async (promptData: PromptData) => {
       currentBounds?.y + currentBounds?.height > maxY
     ) {
       log.info(`Prompt window out of bounds. Clearing cache and resetting.`);
-      await clearPromptCache();
+      await clearPromptCacheFor(kitState.scriptPath);
+      await initBounds();
     } else {
       log.info(`Prompt window in bounds.`);
     }
