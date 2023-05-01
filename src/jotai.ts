@@ -2034,9 +2034,12 @@ export const appearanceAtom = atom<Appearance>('dark');
 const _boundsAtom = atom<Rectangle>({ x: 0, y: 0, width: 0, height: 0 });
 export const boundsAtom = atom(
   (g) => g(_boundsAtom),
-  (_g, s, a: Rectangle) => {
+  (g, s, a: Rectangle) => {
     s(resizeCompleteAtom, true);
     s(_boundsAtom, a);
+    setTimeout(() => {
+      resize(g, s, 'SETTLED');
+    }, 100);
   }
 );
 

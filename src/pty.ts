@@ -25,10 +25,21 @@ const USE_BINARY = os.platform() !== 'win32';
 function getDefaultShell(): string {
   switch (process.platform) {
     case 'win32':
+      // check if cmd.exe exists
+      if (process.env.ComSpec) {
+        return process.env.ComSpec;
+      }
       return 'cmd.exe';
     case 'linux':
+      // check if bash exists
+      if (process.env.SHELL) {
+        return process.env.SHELL;
+      }
       return 'bash';
     default:
+      if (process.env.SHELL) {
+        return process.env.SHELL;
+      }
       return 'zsh';
   }
 }
