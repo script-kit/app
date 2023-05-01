@@ -1,3 +1,4 @@
+/* eslint-disable import/no-cycle */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-console */
@@ -25,16 +26,18 @@ consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
 export const updateLogPath = path.resolve(app.getPath('logs'), 'update.log');
 export const updateLog = log.create('updateLog');
 updateLog.transports.file.resolvePath = () => updateLogPath;
-log.info({ updateLogPath });
 
 export const mainLogPath = path.resolve(app.getPath('logs'), 'main.log');
 export const mainLog = log.create('mainLog');
 mainLog.transports.file.resolvePath = () => mainLogPath;
-log.info({ mainLogPath });
+
+log.info(`⭐️ Other notable Kit logs:`, {
+  mainLogPath,
+  updateLogPath,
+  keymapLogPath: updateLogPath.replace('update', 'keymap'),
+});
 
 log.info(`
-
-
 
 
 🟢🟢 🟢  !!!SCRIPT KIT TIME!!! 🟢 🟢 🟢 `);

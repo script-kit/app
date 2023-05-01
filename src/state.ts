@@ -4,6 +4,7 @@
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
+import * as nativeKeymap from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
 import log, { LogLevel } from 'electron-log';
 import { assign, debounce } from 'lodash';
@@ -651,8 +652,6 @@ export const updateAppDb = async (settings: Partial<AppDb>) => {
   }
 };
 
-let nativeKeymap: any = null;
-
 const defaultKeyMap: {
   [key: string]: string;
 } = {
@@ -720,9 +719,13 @@ const defaultKeyMap: {
   Backquote: '`',
 };
 
+const keymapLogPath = path.resolve(app.getPath('logs'), 'keymap.log');
+const keymapLog = log.create('keymapLog');
+keymapLog.transports.file.resolvePath = () => keymapLogPath;
+
 export const convertKey = (sourceKey: string) => {
   if (typeof appDb?.convertKey === 'boolean' && !appDb.convertKey) {
-    log.info(`🔑 Skipping key conversion: ${sourceKey}`);
+    keymapLog.info(`🔑 Skipping key conversion: ${sourceKey}`);
     return sourceKey;
   }
   if (kitState.keymap) {
@@ -737,10 +740,10 @@ export const convertKey = (sourceKey: string) => {
       const target = defaultKeyMap?.[targetKey]?.toUpperCase() || '';
       try {
         if (targetKey.at(-1) !== target.at(-1)) {
-          log.info(`🔑 Converted key: ${targetKey} -> ${target}`);
+          keymapLog.info(`🔑 Converted key: ${targetKey} -> ${target}`);
         }
       } catch (error) {
-        log.info(`🔑 Converted key error: ${targetKey} -> ${target}`);
+        keymapLog.info(`🔑 Converted key error: ${targetKey} -> ${target}`);
       }
 
       return target || sourceKey;
@@ -752,21 +755,21 @@ export const convertKey = (sourceKey: string) => {
 
 let prevKeyMap = {};
 export const initKeymap = async () => {
-  log.info(`🔑 Initializing keymap...`);
+  keymapLog.info(`🔑 Initializing keymap...`);
   if (!kitState.keymap) {
     try {
-      ({ default: nativeKeymap } = await import('native-keymap' as any));
       let keymap = nativeKeymap.getKeyMap();
+      keymapLog.info(`🔑 Detected Keymap:`, { keymap });
+      let value = keymap?.KeyA?.value;
 
-      let value = keymap?.KeyA.value;
       const alpha = /[A-Za-z]/;
 
-      // log.info(`🔑 Keymap`, { a: value });
+      keymapLog.info(`🔑 Keymap`, { a: value });
 
       if (value && value.match(alpha)) {
         kitState.keymap = keymap;
       } else {
-        log.info(
+        keymapLog.info(
           `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`
         );
       }
@@ -774,6 +777,7 @@ export const initKeymap = async () => {
       nativeKeymap.onDidChangeKeyboardLayout(
         debounce(() => {
           keymap = nativeKeymap.getKeyMap();
+          keymapLog.info(`🔑 Keymap changed:`, { keymap });
           value = keymap?.KeyA.value;
 
           if (value && value.match(alpha)) {
@@ -785,7 +789,7 @@ export const initKeymap = async () => {
               log.info('Keymap not changed');
             }
           } else {
-            log.info(
+            keymapLog.info(
               `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`
             );
           }
@@ -793,7 +797,7 @@ export const initKeymap = async () => {
       );
 
       if (kitState.keymap)
-        log.info(
+        keymapLog.info(
           `🔑 Keymap: ${JSON.stringify(
             Object.entries(kitState.keymap).map(([k, v]: any) => {
               if (v?.value) return `${k} -> ${v.value}`;
@@ -802,7 +806,8 @@ export const initKeymap = async () => {
           )}`
         );
     } catch (e) {
-      log.error(e);
+      keymapLog.error(`🔑 Keymap error... 🤔`);
+      keymapLog.error(e);
     }
   }
 };
