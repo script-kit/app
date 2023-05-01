@@ -27,17 +27,20 @@ function getDefaultShell(): string {
     case 'win32':
       // check if cmd.exe exists
       if (process.env.ComSpec) {
+        log.info(`Using ComSpec: ${process.env.ComSpec}`);
         return process.env.ComSpec;
       }
       return 'cmd.exe';
     case 'linux':
       // check if bash exists
       if (process.env.SHELL) {
+        log.info(`Using SHELL: ${process.env.SHELL}`);
         return process.env.SHELL;
       }
       return 'bash';
     default:
       if (process.env.SHELL) {
+        log.info(`Using SHELL: ${process.env.SHELL}`);
         return process.env.SHELL;
       }
       return 'zsh';
