@@ -574,10 +574,11 @@ export const setBounds = (bounds: Rectangle, reason = '') => {
 
   prevSetBounds = bounds;
 
-  // log.info(`📐 setBounds, reason ${reason}`, {
-  //   ...bounds,
-  //   noChange: noChange ? 'true' : 'false',
-  // });
+  log.verbose(`📐 setBounds, reason ${reason}`, {
+    ...bounds,
+    isVisible: isVisible() ? 'true' : 'false',
+    noChange: noChange ? 'true' : 'false',
+  });
 
   if (noChange) {
     return;
@@ -622,14 +623,12 @@ export const resize = async ({
   inputChanged,
   justOpened,
 }: ResizeData) => {
-  // log.info({
-  //   forceHeight: forceHeight ? 'true' : 'false',
-  //   forceResize: forceResize ? 'true' : 'false',
-  //   resize: kitState.resize ? 'true' : 'false',
-  //   promptId: kitState.promptId,
-  //   id,
-  //   modifiedByUser: kitState.modifiedByUser ? 'true' : 'false',
-  // });
+  log.silly({
+    topHeight,
+    mainHeight,
+    resize: kitState.resize,
+    forceResize,
+  });
   if (!forceHeight && !kitState.resize && !forceResize) return;
   // if (kitState.promptId !== id || kitState.modifiedByUser) return;
   if (kitState.modifiedByUser) return;
@@ -651,6 +650,8 @@ export const resize = async ({
   if (isSplash) {
     width = DEFAULT_EXPANDED_WIDTH;
     height = DEFAULT_HEIGHT;
+    setBounds({ x, y, width, height }, `SPLASH`);
+    return;
   }
 
   height = Math.round(height);
