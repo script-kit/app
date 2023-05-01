@@ -557,13 +557,8 @@ export const getCurrentScreenPromptCache = async (
   // }
 };
 
-let prevSetBounds = {
-  x: 0,
-  y: 0,
-  width: 0,
-  height: 0,
-};
 export const setBounds = (bounds: Rectangle, reason = '') => {
+  const prevSetBounds = promptWindow?.getBounds();
   const widthNotChanged = Math.abs(bounds.width - prevSetBounds.width) < 4;
   const heightNotChanged = Math.abs(bounds.height - prevSetBounds.height) < 4;
   const xNotChanged = Math.abs(bounds.x - prevSetBounds.x) < 4;
@@ -571,8 +566,6 @@ export const setBounds = (bounds: Rectangle, reason = '') => {
 
   const noChange =
     heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
-
-  prevSetBounds = bounds;
 
   log.verbose(`📐 setBounds, reason ${reason}`, {
     ...bounds,

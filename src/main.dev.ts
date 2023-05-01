@@ -53,7 +53,7 @@ import { ensureDir, writeFile, lstat, pathExistsSync } from 'fs-extra';
 import { existsSync } from 'fs';
 import { readdir, readFile, copyFile, rm } from 'fs/promises';
 
-import { Channel, ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
+import { Channel, ProcessType, UI, PROMPT } from '@johnlindquist/kit/cjs/enum';
 import { PromptData } from '@johnlindquist/kit/types/core';
 
 import {
@@ -996,6 +996,7 @@ const checkKit = async () => {
   };
 
   const showSplash = async () => {
+    kitState.ui = UI.splash;
     await setScript(
       {
         name: 'Kit Setup',
@@ -1017,6 +1018,8 @@ const checkKit = async () => {
       ignoreBlur: true,
       ui: UI.splash,
       scriptPath: SPLASH_PATH,
+      width: PROMPT.WIDTH.BASE,
+      height: PROMPT.HEIGHT.BASE,
     } as PromptData);
     sendSplashBody(`Starting up...`);
 
