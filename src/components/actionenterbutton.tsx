@@ -16,6 +16,7 @@ import {
 } from '../jotai';
 
 import { Action, bg, textContrast, transition } from './actions';
+import { IconSwapper } from './iconswapper';
 
 export function EnterButton(action: Action) {
   const ui = useAtomValue(uiAtom);
@@ -74,7 +75,7 @@ export function EnterButton(action: Action) {
   rounded
 
   h-full
-  transition-all duration-200 ease-in-out
+  transition-all duration-200 ease-out
   ${action?.disabled ? `text-primary text-opacity-25` : `${bg} ${textContrast}`}
   `}
       onClick={onClick}
@@ -96,13 +97,13 @@ export function EnterButton(action: Action) {
           w-5 h-5 ml-0.5
           leading-none
           rounded
-          bg-secondary bg-opacity-10
+          bg-secondary/15
           hover:border-opacity-10
           hover:cursor-pointer
 
           `}
             >
-              {k}
+              <IconSwapper text={k} />
             </div>
           );
         })}

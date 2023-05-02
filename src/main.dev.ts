@@ -99,6 +99,7 @@ import {
   setScript,
   focusPrompt,
   clearPromptTimers,
+  maybeHide,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -714,6 +715,7 @@ const systemEvents = () => {
 
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);
+    if (kitState.isMainScript()) maybeHide('SUSPEND');
     teardownWatchers();
     sleepSchedule();
 

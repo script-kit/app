@@ -3,6 +3,7 @@ export const formatShortcut = (shortcut = '') => {
     .replace('cmd', '⌘')
     .replace('ctrl', '⌃')
     .replace('shift', '⇧')
+    .replace('opt', '⌥')
     .replace('alt', '⌥')
     .replace('enter', '⏎')
     .replace('return', '⏎')

@@ -764,3 +764,7 @@ code::after {
 #app {
   @apply bg-bg-base bg-opacity-base !important;
 }
+
+.hide-outline path:first-of-type {
+  @apply hidden;
+}

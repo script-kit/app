@@ -26,6 +26,7 @@ import {
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
 import { AppChannel } from '../enums';
+import { IconSwapper } from './iconswapper';
 
 function highlight(
   string: string,
@@ -393,7 +394,7 @@ export default function ChoiceButton({
 
         `}
                   >
-                    →
+                    <IconSwapper text="→" />
                   </div>
                 </div>
               )}

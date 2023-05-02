@@ -387,7 +387,7 @@ export const createPromptWindow = async () => {
 
   powerMonitor.on('lock-screen', () => {
     log.info(`🔒 System locked. Reloading prompt window.`);
-    reload();
+    if (kitState.isMainScript()) maybeHide('LOCK-SCREEN');
   });
 
   return promptWindow;

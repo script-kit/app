@@ -8,6 +8,7 @@ import { UI } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback } from 'react';
 import { _flag, _choices, _index, uiAtom, sendShortcutAtom } from '../jotai';
 import { Action, bg, textContrast, transition } from './actions';
+import { IconSwapper } from './iconswapper';
 
 export function ActionButton(action: Action) {
   const ui = useAtomValue(uiAtom);
@@ -37,9 +38,6 @@ export function ActionButton(action: Action) {
   return (
     <motion.button
       type="button"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1] }}
-      transition={transition}
       disabled={action?.disabled}
       tabIndex={action?.value === 'enter' ? 0 : -1}
       className={`
@@ -75,12 +73,12 @@ export function ActionButton(action: Action) {
           leading-none
 
           rounded
-          bg-secondary bg-opacity-10
+          bg-secondary/15
           hover:border-opacity-10
 
           `}
             >
-              {k}
+              <IconSwapper text={k} />
             </div>
           );
         })}

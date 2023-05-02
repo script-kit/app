@@ -20,7 +20,7 @@ import React, {
   useRef,
 } from 'react';
 import { ToastContainer, toast, cssTransition } from 'react-toastify';
-import { debounce, throttle } from 'lodash';
+import { debounce } from 'lodash';
 import path from 'path';
 import { loader } from '@monaco-editor/react';
 import DOMPurify from 'dompurify';
@@ -318,23 +318,17 @@ export default function App() {
 
   useEffect(() => {
     // catch all window errors
-    const errorHandler = throttle(
-      async (event: ErrorEvent) => {
-        const { message, filename, lineno, colno, error } = event;
+    const errorHandler = async (event: ErrorEvent) => {
+      const { message, filename, lineno, colno, error } = event;
 
-        ipcRenderer.send(AppChannel.ERROR_RELOAD, {
-          message,
-          filename,
-          lineno,
-          colno,
-          error,
-        });
-      },
-      5000,
-      {
-        leading: true,
-      }
-    );
+      ipcRenderer.send(AppChannel.ERROR_RELOAD, {
+        message,
+        filename,
+        lineno,
+        colno,
+        error,
+      });
+    };
 
     window.addEventListener('error', errorHandler);
 
@@ -809,7 +803,7 @@ export default function App() {
 
                 {(showTabs || showSelected) && (
                   <div className="max-h-5.5">
-                    {showTabs && <Tabs key="AppTabs" />}
+                    {showTabs && !showSelected && <Tabs key="AppTabs" />}
                     {showSelected && <Selected key="AppSelected" />}
                   </div>
                 )}

@@ -124,7 +124,7 @@ export const scriptChanged = debounce(async (filePath: string) => {
 }, 25);
 
 export const scriptRemoved = debounce(async () => {
-  kitState.scripts = await getScripts(false);
+  await getScripts(false);
 }, 25);
 
 export const cacheKitScripts = async () => {
@@ -331,6 +331,7 @@ const initState = {
     isMac || (isWin && arch === 'x64') || (isLinux && arch === 'x64'),
   isPromptReady: false,
   promptHidden: true,
+  trustedKenvs: [] as string[],
 };
 
 nativeTheme.addListener('updated', () => {

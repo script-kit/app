@@ -56,7 +56,7 @@ export const shortcutsAtom = atom(
   },
   debounce((g, s, a: Shortcut[]) => {
     s(_shortcuts, a);
-  }, 50)
+  }, 100)
 );
 
 export const processingAtom = atom(false);
@@ -963,7 +963,6 @@ export const scriptAtom = atom(
     s(processingAtom, false);
 
     s(nameAtom, a?.name || '');
-    s(enterAtom, '');
     s(loadingAtom, false);
     s(logoAtom, a?.logo || '');
     s(tempThemeAtom, g(themeAtom));

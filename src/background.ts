@@ -4,7 +4,7 @@ import { parseScript } from '@johnlindquist/kit/cjs/utils';
 import { SendData } from '@johnlindquist/kit/types/kitapp';
 import { Script } from '@johnlindquist/kit/types/core';
 import { emitter, KitEvent } from './events';
-import { backgroundMap, Background } from './state';
+import { backgroundMap, Background, kitState } from './state';
 import { processes } from './process';
 import { runPromptProcess } from './kit';
 import { Trigger } from './enums';
@@ -43,8 +43,19 @@ export const backgroundScriptChanged = ({
   kenv,
   background: backgroundString,
 }: Script) => {
-  if (kenv !== '') return;
   removeBackground(filePath);
+  if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
+    if (backgroundString) {
+      log.info(
+        `Ignoring ${filePath} // Background metadata because it's not trusted in a trusted kenv.`
+      );
+      log.info(
+        `Add "KIT_TRUSTED_KENVS=${kenv}" to your .env file to trust it.`
+      );
+    }
+
+    return;
+  }
 
   if (backgroundString === 'auto') {
     startTask(filePath);

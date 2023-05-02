@@ -1,5 +1,6 @@
 import path from 'path';
 import chokidar from 'chokidar';
+import log from 'electron-log';
 import {
   shortcutsPath,
   kenvPath,
@@ -21,6 +22,8 @@ export const startWatching = (callback: WatcherCallback) => {
     ],
     {
       depth: 0,
+      // ignore dotfiles
+      ignored: (filePath) => path.basename(filePath).startsWith('.'),
     }
   );
 
@@ -32,13 +35,33 @@ export const startWatching = (callback: WatcherCallback) => {
   const kenvsWatcher = chokidar.watch(kenvPath('kenvs'), {
     ignoreInitial: false,
     depth: 0,
+    awaitWriteFinish: {
+      stabilityThreshold: 1000,
+      pollInterval: 100,
+    },
+    ignored: (filePath) => {
+      const relativePath = filePath.slice(kenvPath('kenvs').length);
+      const depth = relativePath.split(path.sep).filter((p) => p.length > 0)
+        .length;
+      return depth > 1;
+    },
   });
   kenvsWatcher.on('addDir', (filePath) => {
+    log.info(`🕵️‍♀️ Detected new dir in "kenvs": ${filePath}`);
     kenvScriptsWatcher.add([
       path.resolve(filePath, 'scripts', '*'),
       path.resolve(filePath, 'lib', '*'),
     ]);
   });
+
+  kenvsWatcher.on('unlinkDir', (filePath) => {
+    log.info(`🕵️‍♂️ Detected removed dir in "kenvs": ${filePath}`);
+    kenvScriptsWatcher.unwatch([
+      path.resolve(filePath, 'scripts', '*'),
+      path.resolve(filePath, 'lib', '*'),
+    ]);
+  });
+
   kenvsWatcher.on('unlink', (filePath) => {
     kenvScriptsWatcher.unwatch(path.resolve(filePath, 'scripts', '*'));
   });

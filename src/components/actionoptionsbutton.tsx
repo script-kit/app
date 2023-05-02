@@ -15,7 +15,8 @@ import {
   flagValueAtom,
 } from '../jotai';
 
-import { bg, textContrast, transition } from './actions';
+import { bg, textContrast } from './actions';
+import { IconSwapper } from './iconswapper';
 
 export function OptionsButton() {
   const [choices] = useAtom(_choices);
@@ -38,9 +39,6 @@ export function OptionsButton() {
     <motion.button
       type="button"
       tabIndex={-1}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1] }}
-      transition={transition}
       className={`
   flex flex-row items-center justify-center
   outline-none py-0.5 px-1
@@ -61,11 +59,11 @@ export function OptionsButton() {
           py-.5 px-1 mx-0.5
 
           rounded
-          bg-secondary/60
+          bg-secondary/15
           hover:border-opacity-10
           "
         >
-          {flagValue ? '←' : '→'}
+          <IconSwapper text={flagValue ? '←' : '→'} />
         </div>
       </div>
     </motion.button>

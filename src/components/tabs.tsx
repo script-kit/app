@@ -124,7 +124,6 @@ export default function KitTabs() {
           WebkitUserSelect: 'text',
         } as any
       }
-      layout="position"
       // Pay attention to the transtion to "Selected" so the bottom border line stays stable
       // initial={{ opacity: 0, y: `1rem` }}
       // animate={{ opacity: 1, y: `0px`, position: 'relative' }}

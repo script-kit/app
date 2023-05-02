@@ -3,6 +3,7 @@ import log from 'electron-log';
 import { Script } from '@johnlindquist/kit/types/core';
 import { runPromptProcess } from './kit';
 import { Trigger } from './enums';
+import { kitState } from './state';
 
 const validSystemEvents = [
   'suspend',
@@ -48,10 +49,22 @@ export const systemScriptChanged = ({
   kenv,
   system: systemEventsString,
 }: Script) => {
-  if (kenv !== '') return;
   if (systemEventMap.get(filePath)) {
     log.info(`Clearing ${systemEventMap.get(filePath)} from ${filePath}`);
     systemEventMap.delete(filePath);
+  }
+
+  if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
+    if (systemEventsString) {
+      log.info(
+        `Ignoring ${filePath} // System metadata because it's not in a trusted kenv.`
+      );
+      log.info(
+        `Add "KIT_TRUSTED_KENVS=${kenv}" to your .env file to trust it.`
+      );
+    }
+
+    return;
   }
 
   if (systemEventsString) {

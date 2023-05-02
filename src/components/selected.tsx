@@ -21,9 +21,10 @@ export default function Selected() {
     <motion.div
       key="selected"
       layout="size"
-      initial={{ opacity: 0 }}
+      initial={{ opacity: 0, width: '0%' }}
       animate={{ opacity: 1, width: '100%' }}
-      transition={{ duration: 0.2 }}
+      exit={{ opacity: 0, width: '0%' }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       style={
         {
           WebkitAppRegion: 'no-drag',
@@ -38,7 +39,7 @@ flex flex-row items-center
 text-sm
 border-b-2
 text-primary text-opacity-90
-border-primary border-opacity-0
+border-primary
     hover:cursor-pointer
     `}
     >

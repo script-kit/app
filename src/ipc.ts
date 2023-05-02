@@ -54,40 +54,53 @@ const handleChannel = (
 };
 
 export const startIpc = () => {
-  ipcMain.on(AppChannel.ERROR_RELOAD, async (event, data: any) => {
-    const { scriptPath } = kitState;
-    const onReload = async () => {
-      const markdown = `# Error
+  ipcMain.on(
+    AppChannel.ERROR_RELOAD,
+    debounce(
+      async (event, data: any) => {
+        log.info(`AppChannel.ERROR_RELOAD`);
+        const { scriptPath } = kitState;
+        const onReload = async () => {
+          const markdown = `# Error
 
 ${data.message}
 
 ${data.error}
           `;
-      emitter.emit(KitEvent.RunPromptProcess, {
-        scriptPath: kitPath('cli', 'info.js'),
-        args: [path.basename(scriptPath), `Error... `, markdown],
-        options: {
-          force: true,
-          trigger: Trigger.Info,
-        },
-      });
-    };
+          emitter.emit(KitEvent.RunPromptProcess, {
+            scriptPath: kitPath('cli', 'info.js'),
+            args: [path.basename(scriptPath), `Error... `, markdown],
+            options: {
+              force: true,
+              trigger: Trigger.Info,
+            },
+          });
+        };
 
-    reload(onReload);
-  });
+        reload(onReload);
+      },
+      5000,
+      { leading: true }
+    )
+  );
 
   ipcMain.on(
     Channel.PROMPT_ERROR,
-    debounce((_event, { error }) => {
-      log.warn(error);
-      if (!kitState.hiddenByUser) {
-        setTimeout(() => {
-          reload();
-          // processes.add(ProcessType.App, kitPath('cli/kit-log.js'), []);
-          // escapePromptWindow();
-        }, 3000);
-      }
-    }, 1000)
+    debounce(
+      (_event, { error }) => {
+        log.info(`AppChannel.PROMPT_ERROR`);
+        log.warn(error);
+        if (!kitState.hiddenByUser) {
+          setTimeout(() => {
+            reload();
+            // processes.add(ProcessType.App, kitPath('cli/kit-log.js'), []);
+            // escapePromptWindow();
+          }, 4000);
+        }
+      },
+      10000,
+      { leading: true }
+    )
   );
 
   ipcMain.on(AppChannel.GET_ASSET, (event, { parts }) => {
@@ -102,6 +115,7 @@ ${data.error}
   });
 
   ipcMain.on(AppChannel.RELOAD, async () => {
+    log.info(`AppChannel.RELOAD`);
     reload();
 
     await new Promise((resolve) => setTimeout(resolve, 1000));

@@ -33,6 +33,7 @@ import {
   scriptChanged,
   scriptRemoved,
   sponsorCheck,
+  updateScripts,
 } from './state';
 import { addSnippet, removeSnippet } from './tick';
 import { appToPrompt, clearPromptCacheFor, sendToPrompt } from './prompt';
@@ -226,7 +227,6 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
 
   if (event === 'add') {
     if (kitState.ready) {
-      log.info();
       setTimeout(async () => {
         try {
           const binDirPath = path.resolve(
@@ -312,6 +312,18 @@ const triggerRunText = debounce(
   }
 );
 
+const refreshScripts = debounce(
+  async () => {
+    log.info(`🌈 Refreshing Scripts...`);
+    const scripts = await getScripts(false);
+    for (const script of scripts) {
+      onScriptsChanged('change', script.filePath);
+    }
+  },
+  500,
+  { leading: true }
+);
+
 export const setupWatchers = async () => {
   await teardownWatchers();
 
@@ -371,6 +383,19 @@ export const setupWatchers = async () => {
 
           if (envData?.KIT_TYPED_LIMIT) {
             kitState.typedLimit = parseInt(envData?.KIT_TYPED_LIMIT, 10);
+          }
+
+          if (envData?.KIT_TRUSTED_KENVS) {
+            const trustedKenvs = envData?.KIT_TRUSTED_KENVS.split(
+              ','
+            ).map((kenv) => kenv.trim());
+            log.info(`👩‍⚖️ Trusted Kenvs`, trustedKenvs);
+            kitState.trustedKenvs = trustedKenvs;
+            if (eventName === 'change') await refreshScripts();
+          } else if (kitState.trustedKenvs.length) {
+            kitState.trustedKenvs = [];
+            log.info(`👩‍⚖️ Trusted Kenvs Removed`);
+            if (eventName === 'change') await refreshScripts();
           }
         } catch (error) {
           log.warn(error);

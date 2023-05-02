@@ -4,9 +4,8 @@ import log from 'electron-log';
 import { Script } from '@johnlindquist/kit/types/core';
 import { kitPath } from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess, runScript } from './kit';
-import { online, scheduleMap } from './state';
+import { kitState, online, scheduleMap } from './state';
 import { Trigger } from './enums';
-import { emitter, KitEvent } from './events';
 
 export const cancelJob = (filePath: string) => {
   if (!filePath) return false;
@@ -83,13 +82,24 @@ export const scheduleScriptChanged = ({
   kenv,
   schedule: scheduleString,
 }: Script) => {
-  if (kenv !== '') return;
-
   if (scheduleMap.has(filePath)) {
     log.info(
       `Schedule script exists. Reschedule: ${filePath} ${scheduleString}`
     );
     cancelJob(filePath);
+  }
+
+  if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
+    if (scheduleString) {
+      log.info(
+        `Ignoring ${filePath} // Schedule metadata because it's not trusted.`
+      );
+      log.info(
+        `Add "KIT_TRUSTED_KENVS=${kenv}" to your .env file to trust it.`
+      );
+    }
+
+    return;
   }
 
   try {
