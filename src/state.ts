@@ -332,6 +332,7 @@ const initState = {
   isPromptReady: false,
   promptHidden: true,
   trustedKenvs: [] as string[],
+  suspendWatchers: false,
 };
 
 nativeTheme.addListener('updated', () => {

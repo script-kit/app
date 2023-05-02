@@ -35,10 +35,6 @@ export const startWatching = (callback: WatcherCallback) => {
   const kenvsWatcher = chokidar.watch(kenvPath('kenvs'), {
     ignoreInitial: false,
     depth: 0,
-    awaitWriteFinish: {
-      stabilityThreshold: 1000,
-      pollInterval: 100,
-    },
     ignored: (filePath) => {
       const relativePath = filePath.slice(kenvPath('kenvs').length);
       const depth = relativePath.split(path.sep).filter((p) => p.length > 0)
@@ -48,18 +44,30 @@ export const startWatching = (callback: WatcherCallback) => {
   });
   kenvsWatcher.on('addDir', (filePath) => {
     log.info(`🕵️‍♀️ Detected new dir in "kenvs": ${filePath}`);
-    kenvScriptsWatcher.add([
+
+    const globs = [
       path.resolve(filePath, 'scripts', '*'),
       path.resolve(filePath, 'lib', '*'),
-    ]);
+    ];
+
+    setTimeout(() => {
+      log.info(`Adding globs: ${globs}`);
+      kenvScriptsWatcher.add(globs);
+    }, 1000);
   });
 
   kenvsWatcher.on('unlinkDir', (filePath) => {
     log.info(`🕵️‍♂️ Detected removed dir in "kenvs": ${filePath}`);
-    kenvScriptsWatcher.unwatch([
+
+    const globs = [
       path.resolve(filePath, 'scripts', '*'),
       path.resolve(filePath, 'lib', '*'),
-    ]);
+    ];
+
+    setTimeout(() => {
+      log.info(`Removing globs: ${globs}`);
+      kenvScriptsWatcher.unwatch(globs);
+    }, 1000);
   });
 
   kenvsWatcher.on('unlink', (filePath) => {

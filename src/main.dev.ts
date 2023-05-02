@@ -522,7 +522,7 @@ const newFromProtocol = async (u: string) => {
   if (url.protocol === 'kit:') {
     const pathname = url.pathname.replace('//', '');
     if (pathname === 'new') {
-      await cliFromParams('new', url.searchParams);
+      await cliFromParams('new-from-protocol', url.searchParams);
     }
     if (pathname === 'snippet' || url.host === 'snippet') {
       await cliFromParams('snippet', url.searchParams);

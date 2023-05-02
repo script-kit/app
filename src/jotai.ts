@@ -378,7 +378,7 @@ export const panelHTMLAtom = atom(
 
     if (
       a === '' &&
-      document.getElementById('#panel') &&
+      document.getElementById('panel') &&
       !document.getElementById('list')
     )
       s(mainHeightAtom, 0);
@@ -936,6 +936,7 @@ const backToMainAtom = atom(false);
 export const scriptAtom = atom(
   (g) => g(_script),
   (g, s, a: Script) => {
+    s(submittedAtom, false);
     const prevScript = g(_script);
     s(
       backToMainAtom,
@@ -1075,7 +1076,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
       ch = 0;
       mh = 0;
       forceResize = true;
-    } else {
+    } else if (ui !== UI.arg) {
       ch = (document as any)?.getElementById('main')?.offsetHeight;
     }
 
@@ -1133,6 +1134,14 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     forceWidth = PROMPT.WIDTH.BASE;
     forceResize = true;
     s(backToMainAtom, false);
+  }
+
+  if (
+    ui === UI.arg &&
+    !document.getElementById('list') &&
+    !document.getElementById('panel')
+  ) {
+    mh = 0;
   }
 
   // g(logAtom)({
@@ -1671,7 +1680,7 @@ export const openAtom = atom(
       s(prevChoiceId, '');
       s(runningAtom, false);
       s(miniShortcutsHoveredAtom, false);
-      s(tabsAtom, []);
+      // s(tabsAtom, []);
 
       const stream = g(webcamStreamAtom);
       if (stream) {
@@ -1696,24 +1705,12 @@ export const openAtom = atom(
 );
 
 export const escapeAtom = atom<any>((g) => {
-  if (g(shortcutsAtom)?.find((s) => s.key === 'escape')) return () => {};
   const channel = g(channelAtom);
-
   return () => {
     const synth = window.speechSynthesis;
     if (synth.speaking) {
       synth.cancel();
     }
-    // const history = g(scriptHistoryAtom).slice();
-    // s(scriptHistoryAtom, []);
-
-    // if (
-    //   history.find((prevScript) => prevScript.filePath === mainScriptPath) &&
-    //   !g(inputChangedAtom) &&
-    //   !g(isMainScriptAtom)
-    // ) {
-    //   ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
-    // } else {
 
     channel(Channel.ESCAPE);
   };

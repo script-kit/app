@@ -566,12 +566,12 @@ export const setBounds = (bounds: Rectangle, reason = '') => {
   const noChange =
     heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
 
-  log.info(`📐 setBounds, reason ${reason}`, {
+  log.info(`📐 setBounds: reason ${reason}`);
+  log.verbose({
     ...bounds,
     isVisible: isVisible() ? 'true' : 'false',
     noChange: noChange ? 'true' : 'false',
   });
-
   if (noChange) {
     return;
   }
@@ -615,12 +615,12 @@ export const resize = async ({
   inputChanged,
   justOpened,
 }: ResizeData) => {
-  log.silly({
-    topHeight,
-    mainHeight,
-    resize: kitState.resize,
-    forceResize,
-  });
+  // log.info({
+  //   topHeight,
+  //   mainHeight,
+  //   resize: kitState.resize,
+  //   forceResize,
+  // });
   if (!forceHeight && !kitState.resize && !forceResize) return;
   // if (kitState.promptId !== id || kitState.modifiedByUser) return;
   if (kitState.modifiedByUser) return;

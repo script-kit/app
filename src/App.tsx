@@ -67,6 +67,7 @@ import {
   promptDataAtom,
   scriptAtom,
   submitValueAtom,
+  submittedAtom,
   tabIndexAtom,
   tabsAtom,
   textareaConfigAtom,
@@ -241,6 +242,7 @@ export default function App() {
   const onPaste = useAtomValue(onPasteAtom);
   const onDrop = useAtomValue(onDropAtom);
   const logVisible = useAtomValue(logVisibleAtom);
+  const submitted = useAtomValue(submittedAtom);
 
   const setExit = useSetAtom(exitAtom);
   const setScriptHistory = useSetAtom(_history);

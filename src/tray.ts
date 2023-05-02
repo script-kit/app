@@ -292,9 +292,18 @@ export const openMenu = async (event?: KeyboardEvent) => {
     });
 
     watcherSubmenu.push({
-      label: `Wake Watcher (use when snippets aren't firing)`,
+      label: `Force Wake Snippet Watcher (use when snippets aren't firing)`,
       click: () => {
         kitState.wakeWatcher = new Date().getTime();
+      },
+    });
+
+    watcherSubmenu.push({
+      label: `${
+        kitState.suspendWatchers ? `Resume` : `Suspend`
+      } Script and File Watchers`,
+      click: () => {
+        kitState.suspendWatchers = !kitState.suspendWatchers;
       },
     });
 

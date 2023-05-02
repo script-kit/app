@@ -36,7 +36,7 @@ export const formatShortcut = (shortcut = '') => {
 };
 
 const styles = {
-  className: 'h-5 w-3',
+  className: 'h-5 w-3 icon-top-padding',
   strokeWidth: 1.25,
 };
 
@@ -47,9 +47,19 @@ export function IconSwapper({ text }: { text: string }) {
   if (m) return <>{text}</>;
 
   if (text === '⌘')
-    return <MdOutlineKeyboardControlKey {...styles} className="hide-outline" />;
+    return (
+      <MdOutlineKeyboardControlKey
+        {...styles}
+        className="hide-outline icon-top-padding"
+      />
+    );
   if (text === '⌃')
-    return <MdOutlineKeyboardControlKey {...styles} className="hide-outline" />;
+    return (
+      <MdOutlineKeyboardControlKey
+        {...styles}
+        className="hide-outline icon-top-padding "
+      />
+    );
   if (text === '⌥') return <BsOption {...styles} />;
   if (text === '⏎') return <BsArrowReturnLeft {...styles} />;
   if (text === '⎋') return <BsEscape {...styles} />;

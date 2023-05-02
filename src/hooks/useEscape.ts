@@ -16,8 +16,14 @@ import {
   shortcutsAtom,
   promptDataAtom,
   runningAtom,
+  logAtom,
+  submittedAtom,
+  scriptAtom,
+  channelAtom,
+  isMainScriptAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
+import { AppChannel } from '../enums';
 
 export default () => {
   const [open] = useAtom(openAtom);
@@ -32,13 +38,28 @@ export default () => {
   const [ui] = useAtom(uiAtom);
   const [runMainScript] = useAtom(runMainScriptAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
+  const [script] = useAtom(scriptAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [, setRunning] = useAtom(runningAtom);
+  const [log] = useAtom(logAtom);
+  const [submitted, setSubmitted] = useAtom(submittedAtom);
+  const [channel] = useAtom(channelAtom);
+  const [isMainScript] = useAtom(isMainScriptAtom);
 
   useHotkeys(
     'escape',
     (event) => {
       event.preventDefault();
+      if (
+        script?.filePath !== promptData?.scriptPath ||
+        (isMainScript && !input && !flagValue)
+      ) {
+        channel(AppChannel.END_PROCESS);
+        return;
+      }
+
+      if (shortcuts?.find((s) => s.key === 'escape')) return;
+
       if (flagValue) {
         setFlagValue('');
       } else if (isReady && ui === UI.splash) {
@@ -52,8 +73,6 @@ export default () => {
     [
       open,
       flagValue,
-      prevInput,
-      prevIndex,
       index,
       input,
       isReady,
@@ -61,6 +80,10 @@ export default () => {
       runMainScript,
       shortcuts,
       promptData,
+      script,
+      submitted,
+      channel,
+      isMainScript,
     ]
   );
 };

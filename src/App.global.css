@@ -768,3 +768,7 @@ code::after {
 .hide-outline path:first-of-type {
   @apply hidden;
 }
+
+.icon-top-padding {
+  margin-top: 0.1rem;
+}

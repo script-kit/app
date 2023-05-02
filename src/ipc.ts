@@ -133,6 +133,14 @@ ${data.error}
     });
   });
 
+  ipcMain.on(AppChannel.END_PROCESS, (event, { pid }) => {
+    log.info(`AppChannel.END_PROCESS ${pid}`);
+    const processInfo = processes.getByPid(pid);
+    if (processInfo) {
+      processes.removeByPid(pid);
+    }
+  });
+
   ipcMain.on(AppChannel.ENABLE_BACKGROUND_THROTTLING, () => {
     setBackgroundThrottling(true);
   });

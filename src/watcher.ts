@@ -4,6 +4,7 @@ import { add, assign, debounce } from 'lodash';
 import path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { snapshot } from 'valtio';
+import { subscribeKey } from 'valtio/utils';
 import dotenv from 'dotenv';
 import { rm, readFile } from 'fs/promises';
 import { getAppDb, getUserDb, getScripts } from '@johnlindquist/kit/cjs/db';
@@ -397,6 +398,23 @@ export const setupWatchers = async () => {
             log.info(`👩‍⚖️ Trusted Kenvs Removed`);
             if (eventName === 'change') await refreshScripts();
           }
+
+          // if (envData?.KIT_SUSPEND_WATCHERS) {
+          //   const suspendWatchers = envData?.KIT_SUSPEND_WATCHERS === 'true';
+          //   kitState.suspendWatchers = suspendWatchers;
+
+          //   if (suspendWatchers) {
+          //     log.info(`⌚️ Suspending Watchers`);
+          //     teardownWatchers();
+          //   } else {
+          //     log.info(`⌚️ Resuming Watchers`);
+          //     setupWatchers();
+          //   }
+          // } else if (kitState.suspendWatchers) {
+          //   kitState.suspendWatchers = false;
+          //   log.info(`⌚️ Resuming Watchers`);
+          //   setupWatchers();
+          // }
         } catch (error) {
           log.warn(error);
         }
@@ -467,6 +485,16 @@ export const setupWatchers = async () => {
     onScriptsChanged(eventName, filePath);
   });
 };
+
+subscribeKey(kitState, 'suspendWatchers', async (suspendWatchers) => {
+  if (suspendWatchers) {
+    log.info(`⌚️ Suspending Watchers`);
+    teardownWatchers();
+  } else {
+    log.info(`⌚️ Resuming Watchers`);
+    setupWatchers();
+  }
+});
 
 emitter.on(KitEvent.TeardownWatchers, teardownWatchers);
 
