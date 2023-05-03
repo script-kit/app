@@ -14,6 +14,7 @@ import {
   kitPath,
   kenvPath,
   resolveToScriptPath,
+  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { FSWatcher } from 'chokidar';
@@ -436,6 +437,7 @@ export const setupWatchers = async () => {
       try {
         const currentAppDb = (await getAppDb()).data;
         assign(appDb, currentAppDb);
+        clearPromptCacheFor(mainScriptPath);
       } catch (error) {
         log.warn(error);
       }

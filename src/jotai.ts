@@ -1110,7 +1110,9 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   }
 
   let forceHeight;
-  const forceWidth = g(isMainScriptAtom) ? undefined : promptData?.width;
+  const forceWidth = g(isMainScriptAtom)
+    ? PROMPT.WIDTH.BASE
+    : promptData?.width;
   if (
     [
       UI.term,
@@ -1197,11 +1199,6 @@ export const topHeightAtom = atom(
   (g) => g(_topHeight),
   (g, s) => {
     const resizeComplete = g(resizeCompleteAtom);
-    g(logAtom)({
-      resizeComplete: resizeComplete
-        ? 'RESIZE COMPLETE'
-        : 'RESIZE NOT COMPLETE',
-    });
     if (!resizeComplete) {
       return;
     }

@@ -58,7 +58,7 @@ import { pathsAreEqual } from './helpers';
 let promptWindow: BrowserWindow;
 
 const getDefaultWidth = () => {
-  return appDb.mini ? DEFAULT_WIDTH : DEFAULT_EXPANDED_WIDTH;
+  return appDb.mini ? PROMPT.WIDTH.XXXS : PROMPT.WIDTH.BASE;
 };
 
 export const blurPrompt = () => {
@@ -467,9 +467,8 @@ export const getCurrentScreenPromptCache = async (
 
   const savedPromptBounds = promptState?.screens?.[screenId]?.[scriptPath];
 
-  log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
-
-  if (savedPromptBounds && kitState.promptCount === 1) {
+  if (savedPromptBounds) {
+    // log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
     // log.info(`Bounds: found saved bounds for ${scriptPath}`);
     return savedPromptBounds;
   }
@@ -649,9 +648,24 @@ export const resize = async ({
   ) {
     targetHeight = PROMPT.HEIGHT.BASE;
   }
+
+  let cachedWidth;
+  let cachedHeight;
+  let cachedX;
+  let cachedY;
+
+  if (kitState.isMainScript()) {
+    const cachedBounds = await getCurrentScreenPromptCache(mainScriptPath);
+    cachedWidth = cachedBounds?.width || getDefaultWidth();
+    cachedHeight = cachedBounds?.height || PROMPT.HEIGHT.BASE;
+    if (typeof cachedBounds?.x === 'number') cachedX = cachedBounds?.x;
+    if (typeof cachedBounds?.y === 'number') cachedY = cachedBounds?.y;
+  }
+
   const maxHeight = Math.max(PROMPT.HEIGHT.BASE, currentHeight);
-  let width = forceWidth || currentWidth;
+  let width = cachedWidth || forceWidth || currentWidth;
   let height =
+    cachedHeight ||
     forceHeight ||
     Math.round(targetHeight > maxHeight ? maxHeight : targetHeight);
 
@@ -670,9 +684,10 @@ export const resize = async ({
 
   if (isVisible()) {
     // center x based on current prompt x position
-    const newX = Math.round(x + currentWidth / 2 - width / 2);
+    const newX = cachedX || Math.round(x + currentWidth / 2 - width / 2);
+    const newY = cachedY || y;
 
-    const bounds = { x: newX, y, width, height };
+    const bounds = { x: newX, y: newY, width, height };
     setBounds(
       bounds,
       `resize: ${reason} -> target: ${targetHeight} max: ${maxHeight} height: ${height}, force: ${
@@ -811,7 +826,7 @@ const writePromptState = async (
   scriptPath: string,
   bounds: PromptBounds
 ) => {
-  log.silly(`writePromptState`, { screenId, scriptPath, bounds });
+  log.verbose(`writePromptState`, { screenId, scriptPath, bounds });
 
   if (!promptState?.screens) promptState.screens = {};
   if (!promptState?.screens[screenId]) promptState.screens[screenId] = {};
@@ -969,21 +984,16 @@ export const setPromptData = async (promptData: PromptData) => {
   kitState.promptUI = promptData.ui;
 
   log.verbose(`setPromptData ${promptData.scriptPath}`);
+  const isMainScript = kitState.isMainScript();
 
   kitState.promptBounds = {
     x: promptData.x || 0,
     y: promptData.y || 0,
-    width:
-      promptData.width || (appDb.mini ? PROMPT.WIDTH.XS : PROMPT.WIDTH.BASE),
-    height: kitState.isMainScript()
-      ? PROMPT.HEIGHT.BASE
-      : promptData.height || 0,
+    width: isMainScript
+      ? getDefaultWidth()
+      : promptData.width || getDefaultWidth(),
+    height: isMainScript ? PROMPT.HEIGHT.BASE : promptData.height || 0,
   };
-
-  // log.info({
-  //   here: `😅`,
-  //   bounds: kitState.promptBounds,
-  // });
 
   kitState.promptId = promptData.id;
   if (kitState.suspended || kitState.screenLocked) return;
