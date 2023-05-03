@@ -20,6 +20,7 @@ import {
   enterButtonDisabledAtom,
   appDbAtom,
   actionsAtom,
+  appConfigAtom,
 } from '../jotai';
 
 import { Action, textContrast, transition } from './actions';
@@ -34,6 +35,8 @@ export default function ActionBar() {
   const [enterButtonDisabled] = useAtom(enterButtonDisabledAtom);
   const [ui] = useAtom(uiAtom);
   const [appDb] = useAtom(appDbAtom);
+  const [app] = useAtom(appConfigAtom);
+  const m = app?.isMac;
 
   const actions: Action[] = useAtomValue(actionsAtom);
 
@@ -70,7 +73,11 @@ export default function ActionBar() {
     >
       <IconButton />
 
-      <div className="left-container flex flex-row justify-center items-center pb-px">
+      <div
+        className={`left-container flex flex-row justify-center items-center ${
+          !m ? `pb-2px` : `pb-px`
+        }`}
+      >
         {actions
           .filter((action) => action.position === 'left' && !appDb?.mini)
           .flatMap((action, i, array) => [
@@ -110,7 +117,9 @@ truncate
       <div
         className={`
       ${appDb?.mini ? `w-full justify-between` : `justify-center`}
-      right-container flex flex-row items-center pb-px overflow-hidden`}
+      right-container flex flex-row items-center ${
+        !m ? `pb-2px` : `pb-px`
+      } overflow-hidden`}
       >
         <div className="options-container flex flex-row">
           {hasFlags && [

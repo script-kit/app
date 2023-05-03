@@ -9,6 +9,7 @@ import {
   globalShortcut,
   shell,
   ipcMain,
+  app,
 } from 'electron';
 import { formatDistanceToNow } from 'date-fns';
 import path from 'path';
@@ -629,6 +630,7 @@ export const setupTray = async (checkDb = false, state: Status) => {
   }
   if (kitState.starting) {
     const startingMenu = () => {
+      shell.beep();
       log.verbose(`🎨 Starting menu...`);
       const message = kitState.installing
         ? 'Installing Kit SDK...'
@@ -723,7 +725,15 @@ const subTray = subscribeKey(appDb, 'tray', () => {
   }
 });
 
-subs.push(subTray);
+const subReady = subscribeKey(kitState, 'ready', () => {
+  if (kitState.trayOpen) {
+    app?.focus({
+      steal: true,
+    });
+  }
+});
+
+subs.push(subTray, subReady);
 
 let leftClickOverride: null | ((event: any) => void) = null;
 export const setTrayMenu = async (scripts: string[]) => {
