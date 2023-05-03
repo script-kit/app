@@ -1129,6 +1129,10 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     forceResize = true;
   }
 
+  if (ui === UI.div) {
+    forceHeight = promptData?.height;
+  }
+
   const hasInput = Boolean(g(inputAtom)?.length);
 
   // g(logAtom)({
