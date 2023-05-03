@@ -27,7 +27,6 @@ import {
   Point,
   TouchBar,
   ipcMain,
-  app,
 } from 'electron';
 import os from 'os';
 import path from 'path';
@@ -41,14 +40,7 @@ import { differenceInHours } from 'date-fns';
 import { ChildProcess } from 'child_process';
 import { getAssetPath } from './assets';
 import { appDb, kitState, subs, promptState } from './state';
-import {
-  DEFAULT_EXPANDED_WIDTH,
-  DEFAULT_WIDTH,
-  EMOJI_HEIGHT,
-  EMOJI_WIDTH,
-  MIN_WIDTH,
-  ZOOM_LEVEL,
-} from './defaults';
+import { EMOJI_HEIGHT, EMOJI_WIDTH, MIN_WIDTH, ZOOM_LEVEL } from './defaults';
 import { ResizeData } from './types';
 import { getVersion } from './version';
 import { AppChannel } from './enums';
@@ -565,8 +557,8 @@ export const setBounds = (bounds: Rectangle, reason = '') => {
   const noChange =
     heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
 
-  log.info(`📐 setBounds: reason ${reason}`);
-  log.verbose({
+  log.verbose(`📐 setBounds: reason ${reason}`);
+  log.silly({
     ...bounds,
     isVisible: isVisible() ? 'true' : 'false',
     noChange: noChange ? 'true' : 'false',
@@ -640,24 +632,21 @@ export const resize = async ({
     x,
     y,
   } = promptWindow.getBounds();
-  let targetHeight = topHeight + mainHeight + footerHeight;
-  if (
-    kitState.isMainScript() &&
-    !hasInput &&
-    targetHeight < PROMPT.HEIGHT.BASE
-  ) {
-    targetHeight = PROMPT.HEIGHT.BASE;
-  }
+  const targetHeight = topHeight + mainHeight + footerHeight;
 
   let cachedWidth;
   let cachedHeight;
   let cachedX;
   let cachedY;
 
-  if (kitState.isMainScript()) {
+  const isMainScript = kitState.isMainScript();
+  if (isMainScript) {
     const cachedBounds = await getCurrentScreenPromptCache(mainScriptPath);
+    if (!hasInput) {
+      cachedHeight = cachedBounds?.height || PROMPT.HEIGHT.BASE;
+    }
     cachedWidth = cachedBounds?.width || getDefaultWidth();
-    cachedHeight = cachedBounds?.height || PROMPT.HEIGHT.BASE;
+
     if (typeof cachedBounds?.x === 'number') cachedX = cachedBounds?.x;
     if (typeof cachedBounds?.y === 'number') cachedY = cachedBounds?.y;
   }
@@ -678,7 +667,7 @@ export const resize = async ({
   width = Math.round(width);
   if (currentHeight === height && currentWidth === width) return;
 
-  if (hasPreview) {
+  if (hasPreview && !isMainScript) {
     width = Math.max(getDefaultWidth(), width);
   }
 
