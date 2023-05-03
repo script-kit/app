@@ -770,5 +770,5 @@ code::after {
 }
 
 .icon-top-padding {
-  margin-top: 0.1rem;
+  @apply mt-2px;
 }

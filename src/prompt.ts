@@ -117,6 +117,12 @@ export const setBackgroundThrottling = (enabled: boolean) => {
   promptWindow?.webContents?.setBackgroundThrottling(enabled);
 };
 
+const saveCurrentPromptBounds = async () => {
+  if (kitState.promptCount === 1) {
+    savePromptBounds(kitState.scriptPath, promptWindow?.getBounds());
+  }
+};
+
 export const createPromptWindow = async () => {
   log.silly(`function: createPromptWindow`);
 
@@ -342,12 +348,6 @@ export const createPromptWindow = async () => {
   const onMove = async () => {
     log.silly(`event: onMove`);
     kitState.modifiedByUser = false;
-  };
-
-  const saveCurrentPromptBounds = async () => {
-    if (kitState.promptCount === 1) {
-      savePromptBounds(kitState.scriptPath, promptWindow?.getBounds());
-    }
   };
 
   const onResized = async () => {
@@ -621,6 +621,11 @@ export const resize = async ({
   //   resize: kitState.resize,
   //   forceResize,
   // });
+  if (reason === 'SETTLED') {
+    setTimeout(() => {
+      saveCurrentPromptBounds();
+    }, 50);
+  }
   if (!forceHeight && !kitState.resize && !forceResize) return;
   // if (kitState.promptId !== id || kitState.modifiedByUser) return;
   if (kitState.modifiedByUser) return;
@@ -632,7 +637,10 @@ export const resize = async ({
     x,
     y,
   } = promptWindow.getBounds();
-  const targetHeight = topHeight + mainHeight + footerHeight;
+  let targetHeight = topHeight + mainHeight + footerHeight;
+  if (kitState.isMainScript() && targetHeight < PROMPT.HEIGHT.BASE) {
+    targetHeight = PROMPT.HEIGHT.BASE;
+  }
   const maxHeight = Math.max(PROMPT.HEIGHT.BASE, currentHeight);
   let width = forceWidth || currentWidth;
   let height =
@@ -757,7 +765,7 @@ export const savePromptBounds = async (
     log.info(`Cache prompt disabled. Ignore saving bounds`);
     return;
   }
-  // log.info(`function: savePromptBounds for ${scriptPath}`, bounds);
+  log.info(`💾 Save Initial Bounds for ${scriptPath}`, bounds);
   // const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
   // if (isMain) return;
 

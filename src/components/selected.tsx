@@ -4,6 +4,7 @@ import React, { useCallback } from 'react';
 import { useAtom } from 'jotai';
 import { motion } from 'framer-motion';
 import { flagValueAtom, selectedAtom } from '../jotai';
+import { IconSwapper } from './iconswapper';
 
 export default function Selected() {
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
@@ -45,7 +46,14 @@ border-primary
     >
       {flagValue ? (
         <div className="flex flex-row items-center justify-content hover:text-text-base font-semibold pl-3.5">
-          <div className="mr-8 truncate">← {selected}</div>
+          <div className="mr-8 truncate flex flex-row h-[21px] max-h-[21px]">
+            <div className="">
+              <IconSwapper text="←" />
+            </div>
+            <span className="ml-1.5" />
+            {/* {'←'} */}
+            <span className="">{selected}</span>
+          </div>
         </div>
       ) : (
         <div className="mx-4 py-1 font-mono truncate">{selected}</div>

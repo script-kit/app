@@ -804,7 +804,7 @@ export default function App() {
                 {hint && <Hint key="AppHint" />}
 
                 {(showTabs || showSelected) && (
-                  <div className="max-h-5.5">
+                  <div className="h-[25px] max-h-[25px]">
                     {showTabs && !showSelected && <Tabs key="AppTabs" />}
                     {showSelected && <Selected key="AppSelected" />}
                   </div>
