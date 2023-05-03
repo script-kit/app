@@ -950,7 +950,6 @@ export const scriptAtom = atom(
 
     const history = g(_history);
     s(_history, [...history, a]);
-    // console.clear();
     if (a?.tabs) {
       s(tabsAtom, a?.tabs || []);
     }
@@ -1131,6 +1130,10 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   if (ui === UI.div) {
     forceHeight = promptData?.height;
+  }
+
+  if (ui === UI.debugger) {
+    forceHeight = 128;
   }
 
   const hasInput = Boolean(g(inputAtom)?.length);
@@ -1669,6 +1672,7 @@ export const openAtom = atom(
       s(prevChoiceId, '');
       s(runningAtom, false);
       s(miniShortcutsHoveredAtom, false);
+      s(logLinesAtom, []);
       // s(tabsAtom, []);
 
       const stream = g(webcamStreamAtom);

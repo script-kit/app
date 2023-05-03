@@ -1,6 +1,5 @@
 /* eslint-disable react/jsx-no-duplicate-props */
 import React from 'react';
-import { motion } from 'framer-motion';
 
 const Inspector = () => {
   return (
