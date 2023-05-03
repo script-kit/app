@@ -2,11 +2,18 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion } from 'framer-motion';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback } from 'react';
-import { _flag, _choices, _index, uiAtom, sendShortcutAtom } from '../jotai';
+import {
+  _flag,
+  _choices,
+  _index,
+  uiAtom,
+  sendShortcutAtom,
+  appConfigAtom,
+} from '../jotai';
 import { Action, bg, textContrast, transition } from './actions';
 import { IconSwapper } from './iconswapper';
 
@@ -14,6 +21,8 @@ export function ActionButton(action: Action) {
   const ui = useAtomValue(uiAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const setFlag = useSetAtom(_flag);
+  const [app] = useAtom(appConfigAtom);
+  const m = app?.isMac;
 
   const onClick = useCallback(
     (event) => {
@@ -62,7 +71,7 @@ export function ActionButton(action: Action) {
         {action.name}
       </div>
 
-      <div className=" flex flex-row">
+      <div className={`${!m && `mt-px`} flex flex-row`}>
         {action.shortcut.split('+').map((k) => {
           return (
             <div

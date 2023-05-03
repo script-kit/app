@@ -4,16 +4,20 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { motion } from 'framer-motion';
 import React from 'react';
-import { _flag, _choices, _index } from '../jotai';
+import { useAtom } from 'jotai';
+import { _flag, _choices, _index, appConfigAtom } from '../jotai';
 import { transition } from './actions';
 
 export function ActionSeparator() {
+  const [app] = useAtom(appConfigAtom);
+  const m = app?.isMac;
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={transition}
-      className="
+      className={`
+      ${!m && `mt-px`}
       flex items-center justify-center
       font-mono
       leading-none
@@ -22,7 +26,7 @@ export function ActionSeparator() {
       bg-opacity-0
       p-0.5
       text-center
-"
+`}
     >
       |
     </motion.div>

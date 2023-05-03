@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion } from 'framer-motion';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback } from 'react';
@@ -13,6 +13,7 @@ import {
   uiAtom,
   sendShortcutAtom,
   enterPressedAtom,
+  appConfigAtom,
 } from '../jotai';
 
 import { Action, bg, textContrast, transition } from './actions';
@@ -23,6 +24,8 @@ export function EnterButton(action: Action) {
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const pressEnter = useSetAtom(enterPressedAtom);
   const setFlag = useSetAtom(_flag);
+  const [app] = useAtom(appConfigAtom);
+  const m = app?.isMac;
 
   const onClick = useCallback(
     (event) => {
@@ -87,7 +90,7 @@ export function EnterButton(action: Action) {
         {action.name}
       </div>
 
-      <div className=" flex flex-row">
+      <div className={`${!m && `mt-px`} flex flex-row`}>
         {action.shortcut.split('+').map((k) => {
           return (
             <div

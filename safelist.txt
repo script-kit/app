@@ -1046,3 +1046,7 @@ scale-110
 scale-125
 scale-150
 scale-200
+mt-px
+mt-2px
+mt-3px
+caret-transparent

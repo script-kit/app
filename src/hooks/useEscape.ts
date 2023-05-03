@@ -69,7 +69,6 @@ export default () => {
       } else if (isReady || ui !== UI.splash) {
         sendEscape();
         setRunning(false);
-        setTopHeight();
       }
     },
     hotkeysOptions,

@@ -768,7 +768,3 @@ code::after {
 .hide-outline path:first-of-type {
   @apply hidden;
 }
-
-.icon-top-padding {
-  @apply mt-2px;
-}

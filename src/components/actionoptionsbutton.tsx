@@ -13,6 +13,7 @@ import {
   _index,
   channelAtom,
   flagValueAtom,
+  appConfigAtom,
 } from '../jotai';
 
 import { bg, textContrast } from './actions';
@@ -24,6 +25,8 @@ export function OptionsButton() {
   const [index] = useAtom(_index);
   const [channel] = useAtom(channelAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
+  const [app] = useAtom(appConfigAtom);
+  const m = app?.isMac;
 
   const onClick = useCallback(() => {
     if (flagValue) {
@@ -53,7 +56,7 @@ export function OptionsButton() {
       onClick={onClick}
     >
       <div className="px-0.5 mr-0.5">{flagValue ? 'Back' : 'Actions'}</div>
-      <div className=" flex flex-row">
+      <div className={`${!m && `mt-px`} flex flex-row`}>
         <div
           className="
           py-.5 px-1 mx-0.5

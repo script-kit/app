@@ -36,13 +36,23 @@ export const formatShortcut = (shortcut = '') => {
 };
 
 const styles = {
-  className: 'h-5 w-3 icon-top-padding',
+  className: 'h-5 w-3 mt-px',
   strokeWidth: 1.25,
 };
 
-export function IconSwapper({ text }: { text: string }) {
+type IconSwapperProps = {
+  text: string;
+  className?: string;
+};
+IconSwapper.defaultProps = {
+  className: '',
+};
+
+export function IconSwapper({ text, className }: IconSwapperProps) {
   const [app] = useAtom(appConfigAtom);
   const m = app?.isMac;
+
+  if (className) styles.className = className;
 
   if (m) return <>{text}</>;
 
