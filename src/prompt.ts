@@ -765,7 +765,7 @@ export const savePromptBounds = async (
     log.info(`Cache prompt disabled. Ignore saving bounds`);
     return;
   }
-  log.info(`💾 Save Initial Bounds for ${scriptPath}`, bounds);
+  log.info(`💾 Save Initial Bounds: ${scriptPath}`, bounds);
   // const isMain = scriptPath.includes('.kit') && scriptPath.includes('cli');
   // if (isMain) return;
 
