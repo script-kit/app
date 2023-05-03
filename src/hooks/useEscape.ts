@@ -21,6 +21,7 @@ import {
   scriptAtom,
   channelAtom,
   isMainScriptAtom,
+  topHeightAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 import { AppChannel } from '../enums';
@@ -45,6 +46,7 @@ export default () => {
   const [submitted, setSubmitted] = useAtom(submittedAtom);
   const [channel] = useAtom(channelAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
+  const [setTopHeight] = useAtom(topHeightAtom);
 
   useHotkeys(
     'escape',
@@ -67,6 +69,7 @@ export default () => {
       } else if (isReady || ui !== UI.splash) {
         sendEscape();
         setRunning(false);
+        setTopHeight();
       }
     },
     hotkeysOptions,

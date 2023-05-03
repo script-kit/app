@@ -45,7 +45,7 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
   if (tab === 'Account__') {
     if (user.login) {
       return (
-        <div className="flex flex-row justify-center items-center -mb-1">
+        <div className="flex flex-row justify-center items-center -mb-1 -mt-2px">
           <span>{user?.name?.split(' ')?.[0] || user.login}</span>
           {kitState.isSponsor && (
             <svg

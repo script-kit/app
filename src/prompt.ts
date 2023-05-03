@@ -614,6 +614,7 @@ export const resize = async ({
   forceWidth,
   inputChanged,
   justOpened,
+  hasInput,
 }: ResizeData) => {
   // log.info({
   //   topHeight,
@@ -621,6 +622,9 @@ export const resize = async ({
   //   resize: kitState.resize,
   //   forceResize,
   // });
+  if (kitState.isMainScript() && hasInput && mainHeight === 0) {
+    return;
+  }
   if (reason === 'SETTLED') {
     setTimeout(() => {
       saveCurrentPromptBounds();
@@ -638,7 +642,11 @@ export const resize = async ({
     y,
   } = promptWindow.getBounds();
   let targetHeight = topHeight + mainHeight + footerHeight;
-  if (kitState.isMainScript() && targetHeight < PROMPT.HEIGHT.BASE) {
+  if (
+    kitState.isMainScript() &&
+    !hasInput &&
+    targetHeight < PROMPT.HEIGHT.BASE
+  ) {
     targetHeight = PROMPT.HEIGHT.BASE;
   }
   const maxHeight = Math.max(PROMPT.HEIGHT.BASE, currentHeight);

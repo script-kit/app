@@ -1004,10 +1004,8 @@ const sendResize = (data: ResizeData) =>
 const debounceSendResize = debounce(sendResize, 100);
 
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
-  // g(logAtom)(`resize: ${reason}`);
-  if (g(submittedAtom)) return;
-
   const ui = g(uiAtom);
+  // g(logAtom)(`resize: ${reason} - ${ui}`);
 
   const scoredChoicesLength = g(scoredChoices)?.length;
   const infoChoicesLength = g(infoChoicesAtom).length;
@@ -1112,7 +1110,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   }
 
   let forceHeight;
-  let forceWidth = g(isMainScriptAtom) ? undefined : promptData?.width;
+  const forceWidth = g(isMainScriptAtom) ? undefined : promptData?.width;
   if (
     [
       UI.term,
@@ -1129,20 +1127,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     forceResize = true;
   }
 
-  if (g(backToMainAtom)) {
-    forceHeight = PROMPT.HEIGHT.BASE;
-    forceWidth = PROMPT.WIDTH.BASE;
-    forceResize = true;
-    s(backToMainAtom, false);
-  }
-
-  if (
-    ui === UI.arg &&
-    !document.getElementById('list') &&
-    !document.getElementById('panel')
-  ) {
-    mh = 0;
-  }
+  const hasInput = Boolean(g(inputAtom)?.length);
 
   // g(logAtom)({
   //   forceHeight: forceHeight || 'no forced height',
@@ -1177,7 +1162,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     footerHeight,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
-    hasInput: Boolean(g(inputAtom)?.length),
+    hasInput,
     previewEnabled: g(previewEnabled),
     open: g(_open),
     tabIndex: g(_tabIndex),
@@ -1212,13 +1197,16 @@ export const topHeightAtom = atom(
   (g) => g(_topHeight),
   (g, s) => {
     const resizeComplete = g(resizeCompleteAtom);
+    g(logAtom)({
+      resizeComplete: resizeComplete
+        ? 'RESIZE COMPLETE'
+        : 'RESIZE NOT COMPLETE',
+    });
     if (!resizeComplete) {
       return;
     }
 
-    if (!g(isMainScriptAtom) && g(uiAtom) === UI.arg) {
-      resize(g, s, 'TOP_HEIGHT');
-    }
+    resize(g, s, 'TOP_HEIGHT');
   }
 );
 
