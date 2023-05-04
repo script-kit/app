@@ -677,24 +677,6 @@ export default function App() {
     if (headerRef?.current) setTopRef(headerRef?.current);
   }, [headerRef, setTopRef]);
 
-  // TODO: Can I remove this?
-  useEffect(() => {
-    if (open) {
-      controls.start({ opacity: [1, 1] });
-    } else {
-      controls.stop();
-      controls.set({ opacity: 1 });
-    }
-  }, [open, controls]);
-
-  const showIfOpen = useCallback(() => {
-    if (open) setHidden(false);
-  }, [open, setHidden]);
-
-  const hideIfClosed = useCallback(() => {
-    if (!open) setHidden(true);
-  }, [open, setHidden]);
-
   useEffect(() => {
     document.addEventListener('paste', onPaste);
 
@@ -739,141 +721,133 @@ export default function App() {
 
       `}
       >
-        {/* {JSON.stringify(state)} */}
-        <AnimatePresence key="appComponents">
-          <motion.div
-            onDrop={(event) => {
-              if (ui !== UI.drop) {
-                channel(Channel.ON_DROP);
-              }
-              // console.log(`🎉 drop`)n;
-              onDrop(event);
-            }}
-            onDragEnter={() => {
-              channel(Channel.ON_DRAG_ENTER);
-              // console.log(`drag enter`);
-            }}
-            onDragOver={(event) => {
-              channel(Channel.ON_DRAG_OVER);
-              event.stopPropagation();
-              event.preventDefault();
-            }}
-            onDragLeave={() => {
-              channel(Channel.ON_DRAG_LEAVE);
-              // console.log(`drag leave`);
-            }}
-            animate={controls}
-            // TODO: Maybe remove animation when not main menu?
-            transition={{ duration: 0.12 }}
-            onAnimationStart={showIfOpen}
-            onAnimationComplete={hideIfClosed}
-            ref={windowContainerRef}
-            style={
-              {
-                WebkitUserSelect: 'none',
-              } as any
+        <div
+          onDrop={(event) => {
+            if (ui !== UI.drop) {
+              channel(Channel.ON_DROP);
             }
-            className={`
+            // console.log(`🎉 drop`)n;
+            onDrop(event);
+          }}
+          onDragEnter={() => {
+            channel(Channel.ON_DRAG_ENTER);
+            // console.log(`drag enter`);
+          }}
+          onDragOver={(event) => {
+            channel(Channel.ON_DRAG_OVER);
+            event.stopPropagation();
+            event.preventDefault();
+          }}
+          onDragLeave={() => {
+            channel(Channel.ON_DRAG_LEAVE);
+            // console.log(`drag leave`);
+          }}
+          ref={windowContainerRef}
+          style={
+            {
+              WebkitUserSelect: 'none',
+            } as any
+          }
+          className={`
         ${hidden && appConfig.isMac ? 'hidden' : ''}
         flex flex-col
         w-full h-full
         `}
-            onMouseDown={onMouseDown}
-            onMouseUp={onMouseUp}
-            onMouseLeave={onMouseLeave}
-            onMouseMove={onMouseMove}
+          onMouseDown={onMouseDown}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseLeave}
+          onMouseMove={onMouseMove}
+        >
+          {ui !== UI.log && (
+            <header id="header" ref={headerRef} className="relative z-10">
+              {headerHidden === false && <Header />}
+
+              {ui === UI.hotkey && (
+                <Hotkey
+                  key="AppHotkey"
+                  submit={setSubmitValue}
+                  onHotkeyHeightChanged={setMainHeight}
+                />
+              )}
+
+              {ui === UI.arg && (
+                <ErrorBoundary>
+                  <Input key="AppInput" />
+                </ErrorBoundary>
+              )}
+
+              {hint && <Hint key="AppHint" />}
+
+              {(showTabs || showSelected) && (
+                <div className="h-[25px] max-h-[25px]">
+                  {showTabs && !showSelected && <Tabs key="AppTabs" />}
+                  {showSelected && <Selected key="AppSelected" />}
+                </div>
+              )}
+            </header>
+          )}
+          {logVisible && <Console key="AppLog" />}
+          <main
+            id="main"
+            ref={mainRef}
+            className="flex-1 min-h-1 overflow-y-hidden w-full"
           >
-            {ui !== UI.log && (
-              <header id="header" ref={headerRef} className="relative z-10">
-                {headerHidden === false && <Header />}
-
-                {ui === UI.hotkey && (
-                  <Hotkey
-                    key="AppHotkey"
-                    submit={setSubmitValue}
-                    onHotkeyHeightChanged={setMainHeight}
-                  />
-                )}
-
-                {ui === UI.arg && (
-                  <ErrorBoundary>
-                    <Input key="AppInput" />
-                  </ErrorBoundary>
-                )}
-
-                {hint && <Hint key="AppHint" />}
-
-                {(showTabs || showSelected) && (
-                  <div className="h-[25px] max-h-[25px]">
-                    {showTabs && !showSelected && <Tabs key="AppTabs" />}
-                    {showSelected && <Selected key="AppSelected" />}
-                  </div>
-                )}
-              </header>
-            )}
-            {logVisible && <Console key="AppLog" />}
-            <main
-              id="main"
-              ref={mainRef}
-              className="flex-1 min-h-1 overflow-y-hidden w-full"
-            >
-              <ToastContainer
-                pauseOnFocusLoss={false}
-                position="bottom-center"
-                transition={cssTransition({
-                  // don't fade in/out
-                  enter: 'animate__animated animate__slideInUp',
-                  exit: 'animate__animated animate__slideOutDown',
-                  collapseDuration: 0,
-                  collapse: true,
-                })}
-              />
-              <AnimatePresence key="mainComponents">
-                {ui === UI.splash && <Splash />}
-                {ui === UI.drop && <Drop />}
-                {ui === UI.textarea && <TextArea />}
-                {ui === UI.editor && <Editor />}
-                {ui === UI.log && <Log />}
-                {ui === UI.emoji && <Emoji />}
-                {ui === UI.debugger && <Inspector />}
-                {ui === UI.chat && <Chat />}
-                {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
-                {ui === UI.term && open && <Terminal />}
-                {ui === UI.mic && open && <AudioRecorder />}
-                {ui === UI.webcam && open && <Webcam />}
-                {/* {ui === UI.speech && <SpeechToText />} */}
-              </AnimatePresence>
-              <AutoSizer>
-                {({ width, height }) => (
-                  <>
-                    {infoChoices?.length > 0 && (
-                      <InfoList width={width} height={height} />
-                    )}
-                    {((ui === UI.arg && !nullChoices && choices.length > 0) ||
-                      ui === UI.hotkey) && (
-                      <>
-                        <List height={height} width={width} />
-                      </>
-                    )}
-                  </>
-                )}
-              </AutoSizer>
-              {(!!(ui === UI.arg || ui === UI.div) && panelHTML.length > 0 && (
-                <Panel />
-              )) ||
-                (ui === UI.form && (
-                  <>
-                    <Form />
-                  </>
-                ))}
-            </main>
-            {!footerHidden && (
-              <footer id="footer" className={promptData?.footerClassName || ''}>
-                <ActionBar />
-              </footer>
-            )}
-          </motion.div>
-        </AnimatePresence>
+            <ToastContainer
+              pauseOnFocusLoss={false}
+              position="bottom-center"
+              transition={cssTransition({
+                // don't fade in/out
+                enter: 'animate__animated animate__slideInUp',
+                exit: 'animate__animated animate__slideOutDown',
+                collapseDuration: 0,
+                collapse: true,
+              })}
+            />
+            <AnimatePresence key="mainComponents">
+              {ui === UI.splash && <Splash />}
+              {ui === UI.drop && <Drop />}
+              {ui === UI.textarea && <TextArea />}
+              {ui === UI.editor && <Editor />}
+              {ui === UI.log && <Log />}
+              {ui === UI.emoji && <Emoji />}
+              {ui === UI.debugger && <Inspector />}
+              {ui === UI.chat && <Chat />}
+              {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
+              {ui === UI.term && open && <Terminal />}
+              {ui === UI.mic && open && <AudioRecorder />}
+              {ui === UI.webcam && open && <Webcam />}
+              {/* {ui === UI.speech && <SpeechToText />} */}
+            </AnimatePresence>
+            <AutoSizer>
+              {({ width, height }) => (
+                <>
+                  {infoChoices?.length > 0 && (
+                    <InfoList width={width} height={height} />
+                  )}
+                  {((ui === UI.arg && !nullChoices && choices.length > 0) ||
+                    ui === UI.hotkey) && (
+                    <>
+                      <List height={height} width={width} />
+                    </>
+                  )}
+                </>
+              )}
+            </AutoSizer>
+            {(!!(ui === UI.arg || ui === UI.div) && panelHTML.length > 0 && (
+              <Panel />
+            )) ||
+              (ui === UI.form && (
+                <>
+                  <Form />
+                </>
+              ))}
+          </main>
+          {!footerHidden && (
+            <footer id="footer" className={promptData?.footerClassName || ''}>
+              <ActionBar />
+            </footer>
+          )}
+        </div>
       </div>
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio id="audio" />

@@ -118,6 +118,15 @@ const saveCurrentPromptBounds = async () => {
 export const createPromptWindow = async () => {
   log.silly(`function: createPromptWindow`);
 
+  const width = PROMPT.WIDTH.BASE;
+  const height = PROMPT.HEIGHT.BASE;
+  const currentScreen = getCurrentScreenFromMouse();
+  const {
+    width: screenWidth,
+    height: screenHeight,
+  } = currentScreen.workAreaSize;
+  const { x: workX, y: workY } = currentScreen.workArea;
+
   const options: BrowserWindowConstructorOptions = {
     useContentSize: true,
     frame: false,
@@ -136,10 +145,12 @@ export const createPromptWindow = async () => {
     maximizable: false,
     movable: true,
     skipTaskbar: true,
-    width: PROMPT.WIDTH.BASE,
-    height: PROMPT.HEIGHT.BASE,
+    width,
+    height,
     minWidth: MIN_WIDTH,
     minHeight: PROMPT.INPUT.HEIGHT.XS,
+    x: Math.round(screenWidth / 2 - width / 2 + workX),
+    y: Math.round(workY + screenHeight / 8),
     type: 'panel',
   };
 

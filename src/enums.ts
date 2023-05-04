@@ -44,6 +44,7 @@ export enum AppChannel {
   RELOAD = 'RELOAD',
   ERROR_RELOAD = 'ERROR_RELOAD',
   ENABLE_BACKGROUND_THROTTLING = 'ENABLE_BACKGROUND_THROTTLING',
+  SET_BOUNDS = 'SET_BOUNDS',
 }
 
 export enum WindowChannel {
