@@ -155,7 +155,7 @@ const inputHandler = (_event: any, data: string) => {
 };
 
 const teardown = () => {
-  log.info(`🐲 >_ Invoking teardown`);
+  log.info(`🐲 >_ Teardown terminal pty`);
   ipcMain.off(AppChannel.TERM_RESIZE, resizeHandler);
   ipcMain.off(AppChannel.TERM_INPUT, inputHandler);
   try {
@@ -171,7 +171,7 @@ const teardown = () => {
 export const readyPty = async () => {
   ipcMain.on(AppChannel.TERM_READY, async (event, config: TermConfig) => {
     const termKill = (pid: number) => {
-      log.info(`TERM_KILL`, {
+      log.verbose(`TERM_KILL`, {
         pid,
         configPid: config?.pid,
       });
@@ -183,7 +183,7 @@ export const readyPty = async () => {
 
     const termExit = () => {
       emitter.off(KitEvent.TERM_KILL, termKill);
-      log.info(`TERM_EXIT`);
+      log.verbose(`TERM_EXIT`);
       teardown();
     };
 
@@ -217,11 +217,13 @@ export const readyPty = async () => {
       return;
     }
 
+    sendToPrompt(AppChannel.PTY_READY, {});
+
     const sendData = USE_BINARY ? bufferUtf8(5) : bufferString(5);
 
     const invokeCommandWhenSettled = debounce(() => {
       log.silly(`Invoking command: ${config.command}`);
-      if (config.command) {
+      if (config.command && t) {
         if (USE_BINARY) {
           t.write(`${config.command}\n`);
         } else {

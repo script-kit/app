@@ -1205,10 +1205,10 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 export const topHeightAtom = atom(
   (g) => g(_topHeight),
   (g, s) => {
-    const resizeComplete = g(resizeCompleteAtom);
-    if (!resizeComplete) {
-      return;
-    }
+    // const resizeComplete = g(resizeCompleteAtom);
+    // if (!resizeComplete) {
+    //   return;
+    // }
 
     resize(g, s, 'TOP_HEIGHT');
   }
@@ -1327,7 +1327,24 @@ export const promptDataAtom = atom(
       // s(_tabIndex, 0);
       s(submittedAtom, false);
       // s(logHTMLAtom, '');
+      if (a.ui === UI.term) {
+        const b: any = a;
+        const config = {
+          promptId: a.id,
+          command: b?.input || '',
+          cwd: b?.cwd || '',
+          env: b?.env || {},
+          shell: b?.shell,
+          args: b?.args || [],
+          closeOnExit:
+            typeof b?.closeOnExit !== 'undefined' ? b?.closeOnExit : true,
+          pid: g(pidAtom),
+        } as TermConfig;
+
+        s(termConfigAtom, config);
+      }
       s(uiAtom, a.ui);
+
       s(ultraShortCodesAtom, []);
       s(hintAtom, a.hint);
       s(placeholderAtom, a.placeholder);
@@ -1423,6 +1440,7 @@ export const promptDataAtom = atom(
     channel(Channel.ON_INIT);
 
     s(promptReadyAtom, true);
+    ipcRenderer.send(Channel.SET_PROMPT_DATA);
   }
 );
 
@@ -2249,6 +2267,7 @@ export const termConfigDefaults: TermConfig = {
   cwd: '',
   env: {},
   shell: '',
+  promptId: '',
 };
 
 const termConfig = atom<TermConfig>(termConfigDefaults);
@@ -2267,15 +2286,24 @@ export const hasBorderAtom = atom((g) => {
   return g(zoomAtom) === 0;
 });
 
-export const termExitAtom = atom(null, (g, s, a: string) => {
-  const ui = g(uiAtom);
-  const submitted = g(submittedAtom);
-  const open = g(openAtom);
+export const termExitAtom = atom(
+  null,
+  debounce(
+    (g, s, a: string) => {
+      const ui = g(uiAtom);
+      const submitted = g(submittedAtom);
+      const open = g(openAtom);
 
-  if (ui === UI.term && open && !submitted) {
-    s(submitValueAtom, a);
-  }
-});
+      if (ui === UI.term && open && !submitted) {
+        s(submitValueAtom, a);
+      }
+    },
+    100,
+    {
+      leading: true,
+    }
+  )
+);
 
 export const scrollToAtom = atom<'top' | 'bottom' | 'center' | null>(null);
 

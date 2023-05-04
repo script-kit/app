@@ -14,6 +14,7 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   appDbAtom,
   darkAtom,
+  promptDataAtom,
   sendShortcutAtom,
   shortcutsAtom,
   termConfigAtom,
@@ -62,6 +63,7 @@ export default function Terminal() {
   const [isDark] = useAtom(darkAtom);
   const containerRef = useRef<HTMLDivElement>(null);
   const [termConfig] = useAtom(termConfigAtom);
+  const [promptData] = useAtom(promptDataAtom);
   const shortcuts = useAtomValue(shortcutsAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
 
@@ -70,56 +72,65 @@ export default function Terminal() {
   // useEscape();
 
   useEffect(() => {
-    if (!xtermRef?.current?.terminal) return;
-    const t = xtermRef.current.terminal;
+    ipcRenderer.once(AppChannel.PTY_READY, () => {
+      if (!xtermRef?.current?.terminal) return;
+      const t = xtermRef.current.terminal;
 
-    // console.log(`onopen`, { ws });
+      // console.log(`onopen`, { ws });
 
-    // console.log(`loadAddon`, xtermRef?.current?.terminal.loadAddon);
+      // console.log(`loadAddon`, xtermRef?.current?.terminal.loadAddon);
 
-    t.loadAddon(fitRef.current);
-    t.loadAddon(
-      new WebLinksAddon((e, uri) => {
-        shell.openExternal(uri);
-      })
-    );
+      t.loadAddon(fitRef.current);
+      t.loadAddon(
+        new WebLinksAddon((e, uri) => {
+          shell.openExternal(uri);
+        })
+      );
 
-    // t.loadAddon(new WebglAddon());
-    t.loadAddon(new Unicode11Addon());
-    t.loadAddon(new SearchAddon());
-    t.loadAddon(new LigaturesAddon());
-    t.loadAddon(new SerializeAddon());
+      // t.loadAddon(new WebglAddon());
+      t.loadAddon(new Unicode11Addon());
+      t.loadAddon(new SearchAddon());
+      t.loadAddon(new LigaturesAddon());
+      t.loadAddon(new SerializeAddon());
 
-    if (fitRef?.current) {
-      fitRef.current.fit();
-    }
-    t.focus();
-
-    setTimeout(() => {
-      t.focus();
       if (fitRef?.current) {
         fitRef.current.fit();
       }
-    }, 250);
+      t.focus();
+
+      setTimeout(() => {
+        t.focus();
+        if (fitRef?.current) {
+          fitRef.current.fit();
+        }
+      }, 250);
+    });
+  }, []);
+
+  const terminalKeyReadyRef = useRef(false);
+  useEffect(() => {
+    terminalKeyReadyRef.current = false;
   }, []);
 
   useEffect(() => {
     if (!xtermRef?.current?.terminal) return;
     const t = xtermRef.current.terminal;
+    if (terminalKeyReadyRef.current) return;
     t.onKey((x: any) => {
       if (x.domEvent.metaKey) {
-        const shortcut = `cmd+${x.domEvent.key.toLowerCase}`;
+        const shortcut = `cmd+${x.domEvent.key.toLowerCase()}`;
         sendShortcut(shortcut);
       }
       if (x.domEvent.ctrlKey) {
-        const shortcut = `ctrl+${x.domEvent.key.toLowerCase}`;
+        const shortcut = `ctrl+${x.domEvent.key.toLowerCase()}`;
         sendShortcut(shortcut);
       }
       if (x.domEvent.altKey) {
-        const shortcut = `alt+${x.domEvent.key.toLowerCase}`;
+        const shortcut = `alt+${x.domEvent.key.toLowerCase()}`;
         sendShortcut(shortcut);
       }
     });
+    terminalKeyReadyRef.current = true;
   }, [sendShortcut, shortcuts]);
 
   useEffect(() => {
@@ -130,6 +141,13 @@ export default function Terminal() {
     attachAddonRef.current = attachAddon;
     t.loadAddon(attachAddon);
   }, [termConfig]);
+
+  useEffect(() => {
+    if (termConfig.promptId !== promptData?.id && attachAddonRef.current) {
+      attachAddonRef.current.dispose();
+      attachAddonRef.current = null;
+    }
+  }, [termConfig, promptData]);
 
   useEffect(() => {
     return () => {

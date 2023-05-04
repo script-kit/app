@@ -62,6 +62,7 @@ export interface Survey {
 }
 
 export type TermConfig = {
+  promptId: string;
   command: string;
   cwd: string;
   env: { [key: string]: string };

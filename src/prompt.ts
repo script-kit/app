@@ -74,6 +74,8 @@ export const maybeHide = async (reason: string) => {
       }
 
       setBackgroundThrottling(true);
+      // wait one tick
+      await new Promise((resolve) => setTimeout(resolve, 0));
       promptWindow?.hide();
     }
   }
@@ -156,7 +158,7 @@ export const createPromptWindow = async () => {
 
   // Disable Windows show animation
 
-  if (kitState.isMac) {
+  if (kitState.isMac || (appDb && appDb?.disableBlurEffect)) {
     promptWindow = new BrowserWindow({
       ...options,
       transparent: true,
@@ -273,9 +275,9 @@ export const createPromptWindow = async () => {
     });
   });
 
-  emitter.on(KitEvent.TermExited, (value: string) => {
-    appToPrompt(AppChannel.TERM_EXIT, value);
-  });
+  // emitter.on(KitEvent.TermExited, (value: string) => {
+  //   appToPrompt(AppChannel.TERM_EXIT, value);
+  // });
 
   promptWindow?.setMaxListeners(2);
 
@@ -325,6 +327,7 @@ export const createPromptWindow = async () => {
 
   promptWindow?.on('focus', () => {
     log.info(`Focus`);
+    log.info(`focus bounds:`, promptWindow?.getBounds());
   });
   // promptWindow?.webContents?.on('blur', onBlur);
   promptWindow?.on('blur', onBlur);
@@ -605,6 +608,8 @@ export const resize = async ({
   //   resize: kitState.resize,
   //   forceResize,
   // });
+  if (kitState.resizePaused) return;
+
   if (kitState.isMainScript() && hasInput && mainHeight === 0) {
     return;
   }
@@ -700,6 +705,29 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
   }
 };
 
+export const setAndAwaitPromptData = async <K extends keyof ChannelMap>(
+  channel: K,
+  data?: ChannelMap[K]
+) => {
+  return new Promise((resolve) => {
+    ipcMain.once(channel, () => {
+      // log.info(`🎤 ${channel} !!! <<<<`);
+
+      resolve('done');
+    });
+    if (process.env.KIT_SILLY)
+      log.silly(`sendToPrompt: ${String(channel)}`, data);
+    // log.info(`>_ ${channel}`);
+    if (
+      promptWindow &&
+      !promptWindow.isDestroyed() &&
+      promptWindow?.webContents
+    ) {
+      promptWindow?.webContents.send(String(channel), data);
+    }
+  });
+};
+
 export const getFromPrompt = <K extends keyof ChannelMap>(
   child: ChildProcess,
   channel: K,
@@ -738,6 +766,23 @@ export const appToPrompt = (channel: AppChannel, data?: any) => {
   ) {
     promptWindow?.webContents.send(channel, data);
   }
+};
+
+export const pingPrompt = async (channel: AppChannel, data?: any) => {
+  log.silly(`appToPrompt: ${String(channel)} ${data?.kitScript}`);
+  return new Promise((resolve, reject) => {
+    if (
+      promptWindow &&
+      !promptWindow.isDestroyed() &&
+      promptWindow?.webContents
+    ) {
+      ipcMain.once(channel, () => {
+        log.info(`🎤 ${channel} !!! <<<<`);
+        resolve(true);
+      });
+      promptWindow?.webContents.send(channel, data);
+    }
+  });
 };
 
 enum Bounds {
@@ -856,6 +901,7 @@ export const setScript = async (
   pid: number,
   force = false
 ): Promise<'denied' | 'allowed'> => {
+  kitState.resizePaused = false;
   // log.info(`setScript`, { script, pid });
 
   if (script.filePath === prevScriptPath && pid === prevPid) {
@@ -978,16 +1024,15 @@ export const setPromptData = async (promptData: PromptData) => {
 
   kitState.promptId = promptData.id;
   if (kitState.suspended || kitState.screenLocked) return;
-
   kitState.ui = promptData.ui;
   if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
+
+  await setAndAwaitPromptData(Channel.SET_PROMPT_DATA, promptData);
 
   kitState.promptCount += 1;
   if (kitState.promptCount === 1) {
     await initBounds();
   }
-
-  sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
   // TODO: Combine types for sendToPrompt and appToPrompt?
   appToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
 

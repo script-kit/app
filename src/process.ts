@@ -914,7 +914,7 @@ const kitMessageMap: ChannelHandler = {
 
   SET_BOUNDS: (data) => {
     setBounds(data.value);
-    sendToPrompt(Channel.SET_BOUNDS, data.value);
+    // sendToPrompt(Channel.SET_BOUNDS, data.value);
   },
 
   SET_IGNORE_BLUR: toProcess(async ({ child }, { channel, value }) => {
@@ -932,6 +932,12 @@ const kitMessageMap: ChannelHandler = {
   SET_RESIZE: (data) => {
     kitState.resize = data?.value;
   },
+
+  SET_PAUSE_RESIZE: (data) => {
+    log.info(`⏸ Resize`, `${data?.value ? 'paused' : 'resumed'}`)
+    kitState.resizePaused = data?.value;
+  },
+
 
   SET_INPUT: toProcess(async ({ child }, { channel, value }) => {
     setInput(value);
@@ -1016,18 +1022,6 @@ const kitMessageMap: ChannelHandler = {
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
   SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
-    if (value?.ui === UI.term) {
-      appToPrompt(AppChannel.SET_TERM_CONFIG, {
-        command: value?.input || '',
-        cwd: value?.cwd || '',
-        env: value?.env || {},
-        shell: value?.shell,
-        args: value?.args || [],
-        closeOnExit: typeof value?.closeOnExit !== "undefined" ? value?.closeOnExit : true,
-        pid,
-      } as TermConfig)
-    }
-
     if(value?.ui === UI.mic){
       appToPrompt(AppChannel.SET_MIC_CONFIG, {
         timeSlice: value?.timeSlice || 200,
@@ -1866,7 +1860,8 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, value });
   }),
   TERM_EXIT: toProcess(async ({ child }, { channel, value }) => {
-    sendToPrompt(channel, value);
+    log.info(`TERM EXIT FROM SCRIPT`, value);
+    sendToPrompt(channel, kitState.promptId);
 
     childSend(child, { channel, value });
   }),
@@ -2179,7 +2174,7 @@ class Processes extends Array<ProcessInfo> {
 
       if (child?.pid === kitState?.pid) {
         sendToPrompt(Channel.EXIT, pid);
-        emitter.emit(KitEvent.TERM_KILL, child?.pid)
+        emitter.emit(KitEvent.TERM_KILL, kitState.promptId)
       }
 
       const processInfo = processes.getByPid(pid) as ProcessInfo;
@@ -2362,6 +2357,26 @@ export const handleWidgetEvents = () => {
     });
   };
 
+  const customHandler: WidgetHandler = (event, data) => {
+    const { widgetId } = data;
+
+    const w = widgetState.widgets.find(({ id }) => id === widgetId);
+    if (!w) return;
+    const { wid, moved, pid } = w;
+    const widget = BrowserWindow.fromId(wid);
+    const { child } = processes.getByPid(pid) as ProcessInfo;
+    if (!child) return;
+
+    log.info(`💧 custom ${widgetId}`);
+
+    childSend(child, {
+      ...data,
+      ...widget.getBounds(),
+      pid: child.pid,
+      channel: Channel.WIDGET_CUSTOM,
+    });
+  };
+
   const mouseDownHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
     log.info(`🔽 mouseDown ${widgetId}`);
@@ -2445,6 +2460,7 @@ export const handleWidgetEvents = () => {
   ipcMain.on(Channel.WIDGET_MOUSE_DOWN, mouseDownHandler);
   ipcMain.on(Channel.WIDGET_INPUT, inputHandler);
   ipcMain.on(Channel.WIDGET_DRAG_START, dragHandler);
+  ipcMain.on(Channel.WIDGET_CUSTOM, customHandler);
   ipcMain.on('WIDGET_MEASURE', measureHandler);
 };
 

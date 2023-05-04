@@ -298,7 +298,7 @@ export default function App() {
   const setLogValue = useSetAtom(logValueAtom);
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
-  const setTermConfig = useSetAtom(termConfigAtom);
+  const [termConfig, setTermConfig] = useAtom(termConfigAtom);
   const setMicConfig = useSetAtom(micConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
   const [headerHidden, setHeaderHidden] = useAtom(headerHiddenAtom);
@@ -322,6 +322,14 @@ export default function App() {
     // catch all window errors
     const errorHandler = async (event: ErrorEvent) => {
       const { message, filename, lineno, colno, error } = event;
+      log({
+        type: 'error',
+        message,
+        filename,
+        lineno,
+        colno,
+        error,
+      });
 
       ipcRenderer.send(AppChannel.ERROR_RELOAD, {
         message,
@@ -619,19 +627,19 @@ export default function App() {
 
     ipcRenderer.on(AppChannel.SET_WEBCAM_ID, handleSetWebcamId);
 
-    const handleSetBounds = (_, data: any) => {
-      requestAnimationFrame(() => {
-        window?.resizeTo(data?.width, data?.height);
-        document.documentElement.style.width = `${data?.width}px`;
-        document.documentElement.style.height = `${data?.height}px`;
-        document.body.style.width = `${data?.width}px`;
-        document.body.style.height = `${data?.height}px`;
-        document.getElementById('root')!.style.width = `${data?.width}px`;
-        document.getElementById('root')!.style.height = `${data?.height}px`;
-      });
-    };
+    // const handleSetBounds = (_, data: any) => {
+    //   requestAnimationFrame(() => {
+    //     window?.resizeTo(data?.width, data?.height);
+    //     document.documentElement.style.width = `${data?.width}px`;
+    //     document.documentElement.style.height = `${data?.height}px`;
+    //     document.body.style.width = `${data?.width}px`;
+    //     document.body.style.height = `${data?.height}px`;
+    //     document.getElementById('root')!.style.width = `${data?.width}px`;
+    //     document.getElementById('root')!.style.height = `${data?.height}px`;
+    //   });
+    // };
 
-    ipcRenderer.on(AppChannel.SET_BOUNDS, handleSetBounds);
+    // ipcRenderer.on(AppChannel.SET_BOUNDS, handleSetBounds);
 
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
@@ -645,7 +653,7 @@ export default function App() {
       ipcRenderer.off(AppChannel.TERM_EXIT, handleTermExit);
       ipcRenderer.off(AppChannel.SET_MIC_ID, handleSetMicId);
       ipcRenderer.off(AppChannel.SET_WEBCAM_ID, handleSetWebcamId);
-      ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
+      // ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
     };
   }, [messageMap]);
 
@@ -813,7 +821,10 @@ export default function App() {
               {ui === UI.debugger && <Inspector />}
               {ui === UI.chat && <Chat />}
               {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
-              {ui === UI.term && open && <Terminal />}
+
+              {ui === UI.term &&
+                open &&
+                termConfig?.promptId === promptData?.id && <Terminal />}
               {ui === UI.mic && open && <AudioRecorder />}
               {ui === UI.webcam && open && <Webcam />}
               {/* {ui === UI.speech && <SpeechToText />} */}

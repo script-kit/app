@@ -331,8 +331,10 @@ const initState = {
     isMac || (isWin && arch === 'x64') || (isLinux && arch === 'x64'),
   isPromptReady: false,
   promptHidden: true,
-  trustedKenvs: [] as string[],
+  // DISABLING: Using the "accept" prompt as confirmation that people trust
+  // trustedKenvs: [] as string[],
   suspendWatchers: false,
+  resizePaused: false,
 };
 
 nativeTheme.addListener('updated', () => {

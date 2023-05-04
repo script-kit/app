@@ -45,6 +45,10 @@ export enum AppChannel {
   ERROR_RELOAD = 'ERROR_RELOAD',
   ENABLE_BACKGROUND_THROTTLING = 'ENABLE_BACKGROUND_THROTTLING',
   SET_BOUNDS = 'SET_BOUNDS',
+  HIDE = 'HIDE',
+  SHOW = 'SHOW',
+  PRE_SHOW = 'PRE_SHOW',
+  PTY_READY = 'PTY_READY',
 }
 
 export enum WindowChannel {

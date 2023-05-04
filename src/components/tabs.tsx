@@ -180,7 +180,7 @@ export default function KitTabs() {
               >
                 <TabName tab={tab} selected={i === tabIndex} />
 
-                {i === tabIndex && open && (
+                {i === tabIndex && (
                   <motion.div
                     className="bg-primary bg-opacity-90 h-0.5 left-0 right-0 -bottom-px absolute transition-colors"
                     layoutDependency
