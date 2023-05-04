@@ -536,25 +536,6 @@ export const getCurrentScreenPromptCache = async (
   }
 
   return promptBounds;
-
-  // if (!promptState?.screens) {
-  //   promptState.screens = {};
-  // }
-  // if (!promptState?.screens[screenId]) {
-  //   promptState.screens[screenId] = {};
-  // }
-  // const boundsFilePath = promptState.screens?.[screenId]?.[scriptPath];
-  // const maybeBounds = boundsFilePath || {};
-
-  // if (!boundsFilePath) {
-  //   const promptBounds = {
-  //     ...bounds,
-  //     x: maybeBounds?.x || bounds.x,
-  //     y: maybeBounds?.y || bounds.y,
-  //   };
-
-  //   // writePromptState(screenId, scriptPath, promptBounds);
-  // }
 };
 
 export const setBounds = (bounds: Rectangle, reason = '') => {
