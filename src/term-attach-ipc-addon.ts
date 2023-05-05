@@ -27,7 +27,7 @@ export class AttachIPCAddon implements ITerminalAddon {
     ipcRenderer.on(AppChannel.TERM_OUTPUT, this.termOutputHandler);
 
     terminal.onData((data) => {
-      ipcRenderer.send(AppChannel.TERM_INPUT, data);
+      if (this.terminal) ipcRenderer.send(AppChannel.TERM_INPUT, data);
     });
 
     terminal.onBinary((data) => {
@@ -35,14 +35,15 @@ export class AttachIPCAddon implements ITerminalAddon {
       for (let i = 0; i < data.length; ++i) {
         buffer[i] = data.charCodeAt(i) & 255;
       }
-      ipcRenderer.send(AppChannel.TERM_INPUT, buffer);
+      if (this.terminal) ipcRenderer.send(AppChannel.TERM_INPUT, buffer);
     });
 
-    ipcRenderer.send(AppChannel.TERM_READY, this.config);
+    if (this.terminal) ipcRenderer.send(AppChannel.TERM_READY, this.config);
   }
 
   public dispose(): void {
     ipcRenderer.off(AppChannel.TERM_OUTPUT, this.termOutputHandler);
+    this.terminal?.dispose();
     this.terminal = undefined;
     ipcRenderer.send(AppChannel.TERM_EXIT, this.config.pid);
   }

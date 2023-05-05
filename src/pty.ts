@@ -155,7 +155,7 @@ const inputHandler = (_event: any, data: string) => {
 };
 
 const teardown = () => {
-  log.info(`🐲 >_ Teardown terminal pty`);
+  log.verbose(`🐲 >_ Shell teardown`);
   ipcMain.off(AppChannel.TERM_RESIZE, resizeHandler);
   ipcMain.off(AppChannel.TERM_INPUT, inputHandler);
   try {
@@ -213,7 +213,7 @@ export const readyPty = async () => {
     const ptyOptions = getPtyOptions(config);
 
     log.info(
-      `🐲 >_ Starting pty server with config: ${JSON.stringify({
+      `🐲 >_ Starting term with config: ${JSON.stringify({
         shell: config.shell,
         command: config.command,
         args: config.args,
@@ -259,10 +259,7 @@ export const readyPty = async () => {
     });
 
     t.onExit(() => {
-      log.info(
-        `🐲 Pty process exited`,
-        JSON.stringify({ closeOnExit: config?.closeOnExit })
-      );
+      log.info(`🐲 Term process exited`);
       try {
         if (typeof config?.closeOnExit === 'boolean' && !config.closeOnExit) {
           log.info(

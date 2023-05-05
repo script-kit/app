@@ -17615,10 +17615,10 @@ xterm-addon-unicode11@0.5.0:
   resolved "https://registry.yarnpkg.com/xterm-addon-unicode11/-/xterm-addon-unicode11-0.5.0.tgz#41c0d96acc1e3bb6c6596eee64e163b6bca74be7"
   integrity sha512-Jm4/g4QiTxiKiTbYICQgC791ubhIZyoIwxAIgOW8z8HWFNY+lwk+dwaKEaEeGBfM48Vk8fklsUW9u/PlenYEBg==
 
-xterm-addon-web-links@0.8.0:
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/xterm-addon-web-links/-/xterm-addon-web-links-0.8.0.tgz#2cb1d57129271022569208578b0bf4774e7e6ea9"
-  integrity sha512-J4tKngmIu20ytX9SEJjAP3UGksah7iALqBtfTwT9ZnmFHVplCumYQsUJfKuS+JwMhjsjH61YXfndenLNvjRrEw==
+xterm-addon-web-links@0.9.0-beta.1:
+  version "0.9.0-beta.1"
+  resolved "https://registry.yarnpkg.com/xterm-addon-web-links/-/xterm-addon-web-links-0.9.0-beta.1.tgz#0aa84c4bdb4cce5c4098fd1e9fdd6b4eba2605a5"
+  integrity sha512-h9hr4KZI2XYUuuxgRtR8Cd9Pj3nzR+kts55bsuiY7eW5Wsm4Bo/YUmnaYR0XiCaw3I2gl9E6oZ70vJle0ZBnrQ==
 
 xterm-addon-webgl@0.14.0:
   version "0.14.0"
@@ -17640,10 +17640,10 @@ xterm-webfont@^2.0.0:
   dependencies:
     fontfaceobserver "2.*"
 
-xterm@5.1.0:
-  version "5.1.0"
-  resolved "https://registry.yarnpkg.com/xterm/-/xterm-5.1.0.tgz#3e160d60e6801c864b55adf19171c49d2ff2b4fc"
-  integrity sha512-LovENH4WDzpwynj+OTkLyZgJPeDom9Gra4DMlGAgz6pZhIDCQ+YuO7yfwanY+gVbn/mmZIStNOnVRU/ikQuAEQ==
+xterm@5.2.0-beta.38:
+  version "5.2.0-beta.38"
+  resolved "https://registry.yarnpkg.com/xterm/-/xterm-5.2.0-beta.38.tgz#b9e0d761f55d8cd5c60c7215c89accfed972d045"
+  integrity sha512-XkRoZCJKubTmJG4oOjZ+nNBfKQanCTev/sS3JRW8pBa2fbrRGYXZA4lCteAGhAZaUmCEktWSZlWSMZa9TLhs6g==
 
 xterm@^4.5.0:
   version "4.19.0"

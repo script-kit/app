@@ -58,7 +58,7 @@ const darkTheme = {
 };
 
 export default function Terminal() {
-  const xtermRef = useRef<XTerm>(null);
+  const xtermRef = useRef<XTerm | null>(null);
   const fitRef = useRef(new FitAddon());
   const [isDark] = useAtom(darkAtom);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -99,10 +99,8 @@ export default function Terminal() {
       t.focus();
 
       setTimeout(() => {
-        t.focus();
-        if (fitRef?.current) {
-          fitRef.current.fit();
-        }
+        if (t) t.focus();
+        if (fitRef.current) fitRef.current.fit();
       }, 250);
     });
   }, []);
@@ -117,6 +115,7 @@ export default function Terminal() {
     const t = xtermRef.current.terminal;
     if (terminalKeyReadyRef.current) return;
     t.onKey((x: any) => {
+      if (!x || !x.domEvent) return;
       if (x.domEvent.metaKey) {
         const shortcut = `cmd+${x.domEvent.key.toLowerCase()}`;
         sendShortcut(shortcut);
@@ -146,17 +145,16 @@ export default function Terminal() {
     if (termConfig.promptId !== promptData?.id && attachAddonRef.current) {
       attachAddonRef.current.dispose();
       attachAddonRef.current = null;
+      xtermRef.current = null;
     }
   }, [termConfig, promptData]);
 
   useEffect(() => {
     return () => {
       if (attachAddonRef.current) {
-        console.log(`Disposing of pty due to teardown`, {
-          addon: attachAddonRef.current,
-        });
         attachAddonRef.current.dispose();
         attachAddonRef.current = null;
+        xtermRef.current = null;
       }
     };
   }, []);
