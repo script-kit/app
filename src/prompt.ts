@@ -31,8 +31,9 @@ import {
 import os from 'os';
 import path from 'path';
 import log from 'electron-log';
-import { debounce } from 'lodash';
+import { assign, debounce } from 'lodash';
 import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
+import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
@@ -158,7 +159,13 @@ export const createPromptWindow = async () => {
 
   // Disable Windows show animation
 
-  if (kitState.isMac || (appDb && appDb?.disableBlurEffect)) {
+  assign(appDb, (await getAppDb()).data);
+
+  if (appDb && appDb?.disableBlurEffect) {
+    promptWindow = new BrowserWindow({
+      ...options,
+    });
+  } else if (kitState.isMac) {
     promptWindow = new BrowserWindow({
       ...options,
       transparent: true,
@@ -608,6 +615,7 @@ export const resize = async ({
   //   resize: kitState.resize,
   //   forceResize,
   // });
+
   if (kitState.resizePaused) return;
 
   if (kitState.isMainScript() && hasInput && mainHeight === 0) {

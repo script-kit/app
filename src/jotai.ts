@@ -1003,6 +1003,11 @@ const sendResize = (data: ResizeData) =>
 const debounceSendResize = debounce(sendResize, 100);
 
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
+  const active = g(promptActiveAtom);
+  // g(logAtom)(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
+
+  if (!active) return;
+
   const ui = g(uiAtom);
   // g(logAtom)(`resize: ${reason} - ${ui}`);
 
@@ -1441,6 +1446,8 @@ export const promptDataAtom = atom(
 
     s(promptReadyAtom, true);
     ipcRenderer.send(Channel.SET_PROMPT_DATA);
+
+    s(promptActiveAtom, true);
   }
 );
 
@@ -1562,9 +1569,11 @@ export const onDropAtom = atom((g) => (event: any) => {
 //   channel(Channel.ON_COPY);
 // });
 
+export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
+    s(promptActiveAtom, false);
     if (g(submittedAtom)) return;
     if (g(enterButtonDisabledAtom)) return;
     const focusedChoice = g(scoredChoices)?.[g(_index)]?.item;
@@ -1945,10 +1954,8 @@ export const submitSurveyAtom = atom(null, (_g, _s, a: Survey) => {
 
 export const showTabsAtom = atom((g) => {
   return (
-    g(isMainScriptAtom) ||
-    ([UI.arg].includes(g(uiAtom)) &&
-      g(tabsAtom)?.length > 0 &&
-      !g(flagValueAtom))
+    // g(isMainScriptAtom) ||
+    [UI.arg].includes(g(uiAtom)) && g(tabsAtom)?.length > 0 && !g(flagValueAtom)
   );
 });
 

@@ -117,7 +117,6 @@ import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';
 import { darkTheme, lightTheme } from './components/themes';
 import { getAssetPath } from './assets';
-import { TermConfig } from './types';
 
 
 
@@ -173,6 +172,8 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   value.accent ||= value?.['--color-primary'];
   value.ui ||= value?.['--color-secondary'];
   value.opacity ||= value?.['--opacity'] || '0.5';
+
+  if(appDb?.disableBlurEffect) value.opacity = '1';
 
 
   if (value.foreground) {
@@ -2545,7 +2546,7 @@ subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
 });
 
 subscribe(appDb, (db) => {
-  log.info(`db changed`, { ...appDb });
+  log.info(`👩‍💻 Reading app.json`, { ...appDb });
   sendToPrompt(Channel.APP_DB, { ...appDb });
 });
 
