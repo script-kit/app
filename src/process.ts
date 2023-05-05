@@ -2475,6 +2475,13 @@ emitter.on(KitEvent.KillProcess, (pid) => {
   processes.removeByPid(pid);
 });
 
+emitter.on(KitEvent.TermExited, (pid) => {
+  log.info(`🛑 Term Exited: SUMBMITTING`);
+  if(kitState.ui === UI.term){
+    sendToPrompt(AppChannel.TERM_EXIT, '');
+  }
+})
+
 export const destroyAllProcesses = () => {
   mainLog.info(`Destroy all processes`);
   processes.forEach((pinfo) => {

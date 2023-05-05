@@ -6,7 +6,7 @@ import log from 'electron-log';
 import { ipcMain } from 'electron';
 import * as pty from 'node-pty';
 import { debounce } from 'lodash';
-import { kitState } from './state';
+import { appDb, kitState } from './state';
 import { AppChannel } from './enums';
 import { sendToPrompt } from './prompt';
 import { emitter, KitEvent } from './events';
@@ -76,17 +76,26 @@ function getShellConfig(config: TermConfig, defaultShell: string) {
 }
 
 function getPtyOptions(config: TermConfig) {
-  let env: any = {};
-
-  env = {
+  let env: any = {
     ...process.env,
     ...config?.env,
+    ...{
+      TERM: 'xterm-256color',
+      COLORTERM: 'truecolor',
+      TERM_PROGRAM: `Kit`,
+      TERM_PROGRAM_VERSION: appDb?.version || '0.0.0',
+    },
   };
 
   env.PATH = config?.env?.PATH || KIT_FIRST_PATH;
   if (kitState.isWindows) {
     env.Path = config?.env?.PATH || KIT_FIRST_PATH;
   }
+
+  if (appDb?.noEnv) {
+    env = process.env;
+  }
+
   return {
     useConpty: false,
     name: 'xterm-256color',
@@ -258,22 +267,32 @@ export const readyPty = async () => {
       }
     });
 
-    t.onExit(() => {
-      log.info(`🐲 Term process exited`);
-      try {
-        if (typeof config?.closeOnExit === 'boolean' && !config.closeOnExit) {
-          log.info(
-            `Process closed, but not closing pty because closeOnExit is false`
-          );
-        } else {
-          teardown();
+    t.onExit(
+      debounce(
+        () => {
+          log.info(`🐲 Term process exited`);
+          try {
+            if (
+              typeof config?.closeOnExit === 'boolean' &&
+              !config.closeOnExit
+            ) {
+              log.info(
+                `Process closed, but not closing pty because closeOnExit is false`
+              );
+            } else {
+              teardown();
 
-          emitter.emit(KitEvent.TermExited, '');
-        }
-        // t = null;
-      } catch (error) {
-        log.error(`Error closing pty`, error);
-      }
-    });
+              log.info(`🐲 >_ Emit term process exited`);
+              emitter.emit(KitEvent.TermExited, '');
+            }
+            // t = null;
+          } catch (error) {
+            log.error(`Error closing pty`, error);
+          }
+        },
+        500,
+        { leading: true }
+      )
+    );
   });
 };

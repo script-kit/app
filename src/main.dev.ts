@@ -251,7 +251,7 @@ const installEsbuild = async () => {
       npmPath,
       [
         `i`,
-        `esbuild@0.17.4`,
+        `esbuild@0.17.15`,
         `-–save-exact`,
         `--production`,
         `--prefer-dedupe`,

@@ -284,6 +284,7 @@ ${data.error}
         }
 
         if (channel === Channel.VALUE_SUBMITTED) {
+          log.verbose(`📝 Submitting...`);
           kitState.ignoreBlur = false;
 
           if (message?.state?.value === Channel.TERMINAL) {

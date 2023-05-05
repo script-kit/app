@@ -1572,92 +1572,96 @@ export const onDropAtom = atom((g) => (event: any) => {
 export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
-  (g, s, a: any) => {
-    s(promptActiveAtom, false);
-    if (g(submittedAtom)) return;
-    if (g(enterButtonDisabledAtom)) return;
-    const focusedChoice = g(scoredChoices)?.[g(_index)]?.item;
-    const fid = focusedChoice?.id;
-    if (fid) {
-      // console.log(`focusedChoice.id: ${focusedChoice.id}`);
-      s(prevChoiceId, fid);
-      const key = g(promptDataAtom)?.key;
-      if (key) {
-        // Store the choice in the front of an array based on the prompt key
+  debounce(
+    (g, s, a: any) => {
+      s(promptActiveAtom, false);
+      if (g(submittedAtom)) return;
+      if (g(enterButtonDisabledAtom)) return;
+      const focusedChoice = g(scoredChoices)?.[g(_index)]?.item;
+      const fid = focusedChoice?.id;
+      if (fid) {
+        // console.log(`focusedChoice.id: ${focusedChoice.id}`);
+        s(prevChoiceId, fid);
+        const key = g(promptDataAtom)?.key;
+        if (key) {
+          // Store the choice in the front of an array based on the prompt key
 
-        const prevIds = localStorage.getItem(key) || '[]';
-        const prevStorageIds = JSON.parse(prevIds);
-        const prevIdAlready = prevStorageIds.find((id: string) => id === fid);
-        if (prevIdAlready) {
-          prevStorageIds.splice(prevStorageIds.indexOf(prevIdAlready), 1);
+          const prevIds = localStorage.getItem(key) || '[]';
+          const prevStorageIds = JSON.parse(prevIds);
+          const prevIdAlready = prevStorageIds.find((id: string) => id === fid);
+          if (prevIdAlready) {
+            prevStorageIds.splice(prevStorageIds.indexOf(prevIdAlready), 1);
+          }
+          prevStorageIds.unshift(fid);
+
+          localStorage.setItem(key, JSON.stringify(prevStorageIds));
         }
-        prevStorageIds.unshift(fid);
-
-        localStorage.setItem(key, JSON.stringify(prevStorageIds));
       }
-    }
-    // let submitted = g(submittedAtom);
-    // if (submitted) return;
+      // let submitted = g(submittedAtom);
+      // if (submitted) return;
 
-    const fValue = g(_flagged);
-    const f = g(_flag);
-    const flag = fValue ? a : f || '';
+      const fValue = g(_flagged);
+      const f = g(_flag);
+      const flag = fValue ? a : f || '';
 
-    const value = checkSubmitFormat(fValue || a);
-    // const fC = g(focusedChoiceAtom);
+      const value = checkSubmitFormat(fValue || a);
+      // const fC = g(focusedChoiceAtom);
 
-    // skip if UI.chat
-    const channel = g(channelAtom);
-    if (g(uiAtom) !== UI.chat) {
-      channel(Channel.ON_SUBMIT);
-    }
+      // skip if UI.chat
+      const channel = g(channelAtom);
+      if (g(uiAtom) !== UI.chat) {
+        channel(Channel.ON_SUBMIT);
+      }
 
-    channel(Channel.VALUE_SUBMITTED, {
-      value,
-      flag,
-    });
+      channel(Channel.VALUE_SUBMITTED, {
+        value,
+        flag,
+      });
 
-    // ipcRenderer.send(Channel.VALUE_SUBMITTED, {
-    //   input: g(inputAtom),
-    //   value,
-    //   flag,
-    //   pid: g(pidAtom),
-    //   id: fC?.id || -1,
-    // });
+      // ipcRenderer.send(Channel.VALUE_SUBMITTED, {
+      //   input: g(inputAtom),
+      //   value,
+      //   flag,
+      //   pid: g(pidAtom),
+      //   id: fC?.id || -1,
+      // });
 
-    // s(rawInputAtom, '');
-    s(loadingAtom, false);
+      // s(rawInputAtom, '');
+      s(loadingAtom, false);
 
-    if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
-    placeholderTimeoutId = setTimeout(() => {
-      s(loadingAtom, true);
-      s(processingAtom, true);
-    }, 500);
+      if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
+      placeholderTimeoutId = setTimeout(() => {
+        s(loadingAtom, true);
+        s(processingAtom, true);
+      }, 500);
 
-    s(submittedAtom, true);
-    // s(indexAtom, 0);
+      s(submittedAtom, true);
+      // s(indexAtom, 0);
 
-    s(closedInput, g(inputAtom));
-    if (fValue) s(inputAtom, '');
-    s(_flagged, ''); // clear after getting
-    s(_flag, '');
-    s(_previewHTML, ``);
-    s(panelHTMLAtom, ``);
+      s(closedInput, g(inputAtom));
+      if (fValue) s(inputAtom, '');
+      s(_flagged, ''); // clear after getting
+      s(_flag, '');
+      s(_previewHTML, ``);
+      s(panelHTMLAtom, ``);
 
-    s(_submitValue, value);
-    s(flagsAtom, {});
-    s(_chatMessagesAtom, []);
+      s(_submitValue, value);
+      s(flagsAtom, {});
+      s(_chatMessagesAtom, []);
 
-    const stream = g(webcamStreamAtom);
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      s(webcamStreamAtom, null);
-      if (document.getElementById('webcam'))
-        (document.getElementById(
-          'webcam'
-        ) as HTMLVideoElement).srcObject = null;
-    }
-  }
+      const stream = g(webcamStreamAtom);
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+        s(webcamStreamAtom, null);
+        if (document.getElementById('webcam'))
+          (document.getElementById(
+            'webcam'
+          ) as HTMLVideoElement).srcObject = null;
+      }
+    },
+    250,
+    { leading: true }
+  )
 );
 
 export const closedInput = atom('');
@@ -2302,8 +2306,15 @@ export const termExitAtom = atom(
       const ui = g(uiAtom);
       const submitted = g(submittedAtom);
       const open = g(openAtom);
+      const currentTermConfig = g(termConfigAtom);
+      const currentPromptData = g(promptDataAtom);
 
-      if (ui === UI.term && open && !submitted) {
+      if (
+        ui === UI.term &&
+        open &&
+        !submitted &&
+        currentTermConfig.promptId === currentPromptData.id
+      ) {
         s(submitValueAtom, a);
       }
     },
