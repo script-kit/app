@@ -168,8 +168,21 @@ const teardown = () => {
   }
 };
 
+const write = (text: string) => {
+  if (USE_BINARY) {
+    t.write(`${text}\n`);
+  } else {
+    // Todo: on Windows this was also submitted the first prompt argument on
+    t.write(`${text}\r`);
+  }
+};
+
 export const readyPty = async () => {
   ipcMain.on(AppChannel.TERM_READY, async (event, config: TermConfig) => {
+    const termWrite = (text: string) => {
+      write(text);
+    };
+
     const termKill = (pid: number) => {
       log.verbose(`TERM_KILL`, {
         pid,
@@ -183,6 +196,7 @@ export const readyPty = async () => {
 
     const termExit = () => {
       emitter.off(KitEvent.TERM_KILL, termKill);
+      emitter.off(KitEvent.TermWrite, termWrite);
       log.verbose(`TERM_EXIT`);
       teardown();
     };
@@ -219,17 +233,14 @@ export const readyPty = async () => {
 
     sendToPrompt(AppChannel.PTY_READY, {});
 
+    emitter.on(KitEvent.TermWrite, termWrite);
+
     const sendData = USE_BINARY ? bufferUtf8(5) : bufferString(5);
 
     const invokeCommandWhenSettled = debounce(() => {
       log.silly(`Invoking command: ${config.command}`);
       if (config.command && t) {
-        if (USE_BINARY) {
-          t.write(`${config.command}\n`);
-        } else {
-          // Todo: on Windows this was also submitted the first prompt argument on
-          t.write(`${config.command}\r`);
-        }
+        write(config.command);
       }
 
       config.command = '';

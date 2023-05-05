@@ -1881,6 +1881,11 @@ const kitMessageMap: ChannelHandler = {
       setBackgroundThrottling(false)
       sendToPrompt(channel, value);
     }),
+
+  TERM_WRITE: toProcess(async ({ child }, { channel, value }) => {
+    emitter.emit(KitEvent.TermWrite, value);
+    childSend(child, { channel, value });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (
