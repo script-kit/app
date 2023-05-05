@@ -99,8 +99,8 @@ export default function Preview({ height }: { height: number }) {
 
         width: '100%',
         transition: {
-          // delay: 0.1,
-          duration: 0.1,
+          delay: 0.1,
+          duration: 0.15,
           ease: 'easeIn',
         },
       }}

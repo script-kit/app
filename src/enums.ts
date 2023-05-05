@@ -49,6 +49,7 @@ export enum AppChannel {
   SHOW = 'SHOW',
   PRE_SHOW = 'PRE_SHOW',
   PTY_READY = 'PTY_READY',
+  PROMPT_UNLOAD = 'PROMPT_UNLOAD',
 }
 
 export enum WindowChannel {

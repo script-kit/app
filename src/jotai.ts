@@ -1719,6 +1719,8 @@ export const openAtom = atom(
         }
         s(audioRecorderAtom, null);
       }
+
+      ipcRenderer.send(AppChannel.PROMPT_UNLOAD);
     }
     s(_open, a);
   }

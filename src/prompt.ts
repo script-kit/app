@@ -76,7 +76,7 @@ export const maybeHide = async (reason: string) => {
 
       setBackgroundThrottling(true);
       // wait one tick
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await pingPromptWithTimeout(AppChannel.PROMPT_UNLOAD, {});
       promptWindow?.hide();
     }
   }
@@ -713,16 +713,25 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
   }
 };
 
-export const setAndAwaitPromptData = async <K extends keyof ChannelMap>(
+export const pingPromptWithTimeout = async <K extends keyof ChannelMap>(
   channel: K,
   data?: ChannelMap[K]
 ) => {
   return new Promise((resolve) => {
-    ipcMain.once(channel, () => {
-      // log.info(`🎤 ${channel} !!! <<<<`);
+    let id: any = null;
+    const handler = () => {
+      if (id) clearTimeout(id);
+      log.verbose(`🎤 ${channel} pinged...`);
 
       resolve('done');
-    });
+    };
+    id = setTimeout(() => {
+      // just in case
+      log.verbose(`🎤 ${channel} timeout...`);
+      ipcMain.off(channel, handler);
+      resolve('done');
+    }, 250);
+    ipcMain.once(channel, handler);
     if (process.env.KIT_SILLY)
       log.silly(`sendToPrompt: ${String(channel)}`, data);
     // log.info(`>_ ${channel}`);
@@ -1035,7 +1044,7 @@ export const setPromptData = async (promptData: PromptData) => {
   kitState.ui = promptData.ui;
   if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
 
-  await setAndAwaitPromptData(Channel.SET_PROMPT_DATA, promptData);
+  await pingPromptWithTimeout(Channel.SET_PROMPT_DATA, promptData);
 
   kitState.promptCount += 1;
   if (kitState.promptCount === 1) {

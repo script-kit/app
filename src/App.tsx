@@ -29,7 +29,7 @@ import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer, webFrame } from 'electron';
-import { AnimatePresence, motion, useAnimation } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
@@ -408,7 +408,6 @@ export default function App() {
   useShortcuts();
   useEnter();
   useThemeDetector();
-  const controls = useAnimation();
 
   const mainRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
@@ -571,7 +570,8 @@ export default function App() {
       setKitState(data);
     };
 
-    ipcRenderer.on(AppChannel.KIT_STATE, kitStateCallback);
+    if (ipcRenderer.listenerCount(AppChannel.KIT_STATE) === 0)
+      ipcRenderer.on(AppChannel.KIT_STATE, kitStateCallback);
 
     const handleTermConfig: (
       event: Electron.IpcRendererEvent,
@@ -579,7 +579,9 @@ export default function App() {
     ) => void = (_, data) => {
       setTermConfig(data);
     };
-    ipcRenderer.on(AppChannel.SET_TERM_CONFIG, handleTermConfig);
+
+    if (ipcRenderer.listenerCount(AppChannel.SET_TERM_CONFIG) === 0)
+      ipcRenderer.on(AppChannel.SET_TERM_CONFIG, handleTermConfig);
 
     const handleMicConfig: (
       event: Electron.IpcRendererEvent,
@@ -587,7 +589,9 @@ export default function App() {
     ) => void = (_, data) => {
       setMicConfig(data);
     };
-    ipcRenderer.on(AppChannel.SET_MIC_CONFIG, handleMicConfig);
+
+    if (ipcRenderer.listenerCount(AppChannel.SET_MIC_CONFIG) === 0)
+      ipcRenderer.on(AppChannel.SET_MIC_CONFIG, handleMicConfig);
 
     type HandleCSSVariableHandler = (
       event: Electron.IpcRendererEvent,
@@ -601,31 +605,37 @@ export default function App() {
       console.log(`Setting:`, data?.name, data?.value);
       document.documentElement.style.setProperty(data?.name, data?.value);
     };
-    ipcRenderer.on(AppChannel.CSS_VARIABLE, handleCSSVariable);
+
+    if (ipcRenderer.listenerCount(AppChannel.CSS_VARIABLE) === 0)
+      ipcRenderer.on(AppChannel.CSS_VARIABLE, handleCSSVariable);
 
     const handleTermExit = (_: any, data: string) => {
       setTermExit(data);
     };
 
-    ipcRenderer.on(AppChannel.TERM_EXIT, handleTermExit);
+    if (ipcRenderer.listenerCount(AppChannel.TERM_EXIT) === 0)
+      ipcRenderer.on(AppChannel.TERM_EXIT, handleTermExit);
 
     const handleZoom = (_, data) => {
       setZoom(data);
     };
 
-    ipcRenderer.on(AppChannel.ZOOM, handleZoom);
+    if (ipcRenderer.listenerCount(AppChannel.ZOOM) === 0)
+      ipcRenderer.on(AppChannel.ZOOM, handleZoom);
 
     const handleSetMicId = (_, data: string) => {
       setMicId(data);
     };
 
-    ipcRenderer.on(AppChannel.SET_MIC_ID, handleSetMicId);
+    if (ipcRenderer.listenerCount(AppChannel.SET_MIC_ID) === 0)
+      ipcRenderer.on(AppChannel.SET_MIC_ID, handleSetMicId);
 
     const handleSetWebcamId = (_, data: string) => {
       setWebcamId(data);
     };
 
-    ipcRenderer.on(AppChannel.SET_WEBCAM_ID, handleSetWebcamId);
+    if (ipcRenderer.listenerCount(AppChannel.SET_WEBCAM_ID) === 0)
+      ipcRenderer.on(AppChannel.SET_WEBCAM_ID, handleSetWebcamId);
 
     // const handleSetBounds = (_, data: any) => {
     //   requestAnimationFrame(() => {
