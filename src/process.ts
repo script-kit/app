@@ -1887,6 +1887,11 @@ const kitMessageMap: ChannelHandler = {
     emitter.emit(KitEvent.TermWrite, value);
     childSend(child, { channel, value });
   }),
+  SET_FORM_DATA: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`SET FORM DATA`, value);
+    sendToPrompt(channel, value);
+    childSend(child, { channel, value });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (

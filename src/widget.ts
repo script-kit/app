@@ -73,7 +73,7 @@ export const createWidget = async (
       }
     }
 
-    *:not(.draggable) {
+    *:not(.draggable):not(body):not(html) {
       -webkit-app-region: no-drag;
     }
 

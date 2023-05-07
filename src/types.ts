@@ -70,4 +70,5 @@ export type TermConfig = {
   args?: string[];
   closeOnExit?: boolean;
   pid?: number;
+  cleanPath?: boolean;
 };

@@ -389,7 +389,7 @@ export const panelHTMLAtom = atom(
 const _previewVisible = atom<boolean>(false);
 
 const _previewHTML = atom('');
-const closedDiv = `<div></div>`;
+export const closedDiv = `<div></div>`;
 export const previewHTMLAtom = atom(
   (g) => {
     const html = DOMPurify.sanitize(

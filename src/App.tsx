@@ -524,6 +524,21 @@ export default function App() {
       document?.activeElement?.dispatchEvent(keyboardEvent);
     },
     [Channel.TERM_EXIT]: setTermExit,
+    [Channel.SET_FORM_DATA]: (data) => {
+      Object.entries(data).forEach(([key, value]) => {
+        const inputElement = document.querySelector(
+          `.kit-form input[data-name="${key}"]`
+        );
+
+        if (inputElement) {
+          (inputElement as HTMLInputElement).value = value as string;
+          log({
+            key,
+            value,
+          });
+        }
+      });
+    },
 
     [WindowChannel.SET_LAST_LOG_LINE]: setLastLogLine,
     [WindowChannel.SET_LOG_VALUE]: setLogValue,

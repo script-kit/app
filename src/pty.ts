@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import os from 'os';
 import untildify from 'untildify';
-import { KIT_FIRST_PATH } from '@johnlindquist/kit/cjs/utils';
+import { KIT_FIRST_PATH, KIT_LAST_PATH } from '@johnlindquist/kit/cjs/utils';
 import log from 'electron-log';
 import { ipcMain } from 'electron';
 import * as pty from 'node-pty';
@@ -76,7 +76,7 @@ function getShellConfig(config: TermConfig, defaultShell: string) {
 }
 
 function getPtyOptions(config: TermConfig) {
-  let env: any = {
+  const env: any = {
     ...process.env,
     ...config?.env,
     ...{
@@ -92,10 +92,6 @@ function getPtyOptions(config: TermConfig) {
     env.Path = config?.env?.PATH || KIT_FIRST_PATH;
   }
 
-  if (appDb?.noEnv) {
-    env = process.env;
-  }
-
   return {
     useConpty: false,
     name: 'xterm-256color',
@@ -103,7 +99,7 @@ function getPtyOptions(config: TermConfig) {
     rows: 24,
     cwd: untildify(config?.cwd || os.homedir()),
     encoding: USE_BINARY ? null : 'utf8',
-    env,
+    env: config?.cleanPath ? process.env : env,
   };
 }
 

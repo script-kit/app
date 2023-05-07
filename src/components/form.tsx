@@ -9,10 +9,13 @@ import { UI } from '@johnlindquist/kit/cjs/enum';
 import parse, { domToReact } from 'html-react-parser';
 import SimpleBar from 'simplebar-react';
 import { useAtom, useAtomValue } from 'jotai';
+
 import {
   changeAtom,
+  closedDiv,
   formDataAtom,
   formHTMLAtom,
+  previewHTMLAtom,
   submitValueAtom,
 } from '../jotai';
 import { useObserveMainHeight } from '../hooks';
@@ -24,6 +27,10 @@ export default function Form() {
   const [formHTML] = useAtom(formHTMLAtom);
   const [formData] = useAtom(formDataAtom);
   const [, submit] = useAtom(submitValueAtom);
+  const [previewHTML] = useAtom(previewHTMLAtom);
+
+  const hasPreview = Boolean(previewHTML && previewHTML !== closedDiv);
+
   const onChange = useAtomValue(changeAtom);
 
   useEffect(() => {
@@ -96,17 +103,41 @@ export default function Form() {
       return acc;
     }, []);
 
-    const formJSON = {};
-    for (const el of els) {
+    const formJSON: any = {};
+    // sort by parseInt of id
+    const sortedEls = els
+      .filter((el) => {
+        // ed.id is a string
+        // eslint-disable-next-line no-restricted-globals
+        if (el.id && !isNaN(parseInt(el.id, 10))) {
+          return true;
+        }
+        return false;
+      })
+      .sort((a, b) => {
+        const aId = parseInt(a.id, 10);
+        const bId = parseInt(b.id, 10);
+
+        return aId > bId ? 1 : -1;
+      });
+
+    const orderedValues: any[] = [];
+
+    sortedEls.forEach((el) => {
       if (el.name) {
         if (multis.includes(el.name)) {
-          formJSON[el.name] = data.getAll(el.name);
+          const value = data.getAll(el.name);
+          formJSON[el.name] = value;
+          orderedValues.push(value);
         } else {
           const value = data.get(el.name);
           formJSON[el.name] = value?.path || value;
+          orderedValues.push(value?.path || value);
         }
       }
-    }
+    });
+
+    formJSON.orderedValues = orderedValues;
 
     return formJSON;
   }, [formRef]);
@@ -142,52 +173,67 @@ export default function Form() {
     (event?: any) => {
       // if (event) event.preventDefault();
 
-      const values = Object.values(getFormJSON());
-      onChange(values);
+      const { orderedValues } = getFormJSON();
+
+      onChange(orderedValues);
     },
     [getFormJSON, onChange]
   );
 
   return (
-    <SimpleBar
-      id={UI.form}
-      className="w-full h-full"
-      style={
-        {
-          WebkitAppRegion: 'no-drag',
-          WebkitUserSelect: 'text',
-        } as any
-      }
-    >
-      <form
-        id="kit-form-id"
-        name="kitForm"
-        onChange={onFormChange}
-        ref={formRef}
-        onKeyDown={onFormKeyDown}
-        onSubmit={onLocalSubmit}
-        className={`
+    <div className="flex flex-row min-w-full min-h-full">
+      <SimpleBar
+        className={`${hasPreview ? `w-[300px]` : `w-full`}`}
+        id={UI.form}
+        style={
+          {
+            WebkitAppRegion: 'no-drag',
+            WebkitUserSelect: 'text',
+          } as any
+        }
+      >
+        <form
+          id="kit-form-id"
+          name="kitForm"
+          onChange={onFormChange}
+          ref={formRef}
+          onKeyDown={onFormKeyDown}
+          onSubmit={onLocalSubmit}
+          className={`
         wrapper
         form-component
         kit-form
         border-none
         outline-none
       `}
-      >
-        {parse(formHTML, {
-          replace: (domNode: any) => {
-            if (
-              domNode.attribs &&
-              ['input', 'textarea', 'select'].includes(domNode.name)
-            ) {
-              domNode.attribs.onChange = () => {};
-              return domToReact(domNode);
-            }
+        >
+          {parse(formHTML, {
+            replace: (domNode: any) => {
+              if (
+                domNode.attribs &&
+                ['input', 'textarea', 'select'].includes(domNode.name)
+              ) {
+                domNode.attribs.onChange = () => {};
+                return domToReact(domNode);
+              }
 
-            return domNode;
-          },
-        })}
-      </form>
-    </SimpleBar>
+              return domNode;
+            },
+          })}
+        </form>
+      </SimpleBar>
+
+      {hasPreview && (
+        <SimpleBar
+          className="overflow-scroll flex-1 h-screen"
+          style={{ userSelect: 'text' }}
+        >
+          <div
+            className="w-full preview pb-12"
+            dangerouslySetInnerHTML={{ __html: previewHTML }}
+          />
+        </SimpleBar>
+      )}
+    </div>
   );
 }

@@ -482,14 +482,14 @@ export const showWidget = async (
     if (!options.transparent) {
       widgetWindow.setVibrancy('menu');
     }
-  } else {
+  } else if (!options?.transparent) {
     widgetWindow = new glasstron.BrowserWindow({
       ...bwOptions,
       blur: true,
     });
-    if (!options.transparent) {
-      widgetWindow.setBackgroundColor(`#00000000`);
-    }
+  } else {
+    widgetWindow = new BrowserWindow(bwOptions);
+    widgetWindow.setBackgroundColor(`#00000000`);
   }
 
   if (options?.ignoreMouse)

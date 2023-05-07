@@ -540,6 +540,7 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
   if (snippet.length < 2) return;
   for await (const snippetKey of snippetMap.keys()) {
     if (snippet.endsWith(snippetKey)) {
+      let postfix = false;
       log.info(`Running snippet: ${snippetKey}`);
       const script = snippetMap.get(snippetKey) as {
         filePath: string;
@@ -548,9 +549,7 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
       if (kitConfig.deleteSnippet) {
         // get postfix from snippetMap
         if (snippetMap.has(snippetKey)) {
-          const { postfix } = snippetMap.get(snippetKey) || {
-            postfix: false,
-          };
+          postfix = snippetMap.get(snippetKey)?.postfix || false;
 
           const stringToDelete = postfix ? snippet : snippetKey;
           log.silly({ stringToDelete, postfix });
@@ -561,7 +560,7 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
       }
       emitter.emit(KitEvent.RunPromptProcess, {
         scriptPath: script.filePath,
-        args: [snippet.slice(0, -snippetKey?.length)],
+        args: postfix ? [snippet.slice(0, -snippetKey?.length)] : [],
         options: {
           force: false,
           trigger: Trigger.Snippet,
