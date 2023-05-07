@@ -562,7 +562,7 @@ const kitMessageMap: ChannelHandler = {
       const filePath = await createWidget(command, html, options, theme);
       kitState.blurredByKit = true;
       const widgetId = Date.now().toString();
-      const widget = await showWidget(widgetId, filePath, options);
+      const widget = await showWidget(widgetId, html, filePath, options);
       log.info(`${child?.pid}: ⚙️ Creating widget ${widgetId}`);
 
       // widget.on('move', () => {

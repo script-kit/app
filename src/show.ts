@@ -452,6 +452,7 @@ export const show = async (
 
 export const showWidget = async (
   widgetId: string,
+  html: string,
   filePath: string,
   options: WidgetOptions = {}
 ): Promise<BrowserWindow> => {
@@ -556,6 +557,7 @@ export const showWidget = async (
           label: 'Close',
           click: () => {
             log.info(`Close widget: ${widgetWindow.id}`);
+            widgetWindow?.close();
             widgetWindow.destroy();
           },
         },
@@ -566,6 +568,11 @@ export const showWidget = async (
 
     log.info(`Load ${filePath} in ${widgetWindow.id}`);
 
-    widgetWindow?.loadURL(`file://${filePath}?widgetId=${widgetId}`);
+    let url =
+      html.startsWith('http') || html.startsWith('file')
+        ? html
+        : `file://${filePath}`;
+    url = `${url}?widgetId=${widgetId}`;
+    widgetWindow?.loadURL(url);
   });
 };

@@ -187,12 +187,21 @@ export const runPromptProcess = async (
   if (!pathsAreEqual(promptScriptPath || '', mainScriptPath)) {
     kitState.ignoreBlur = true;
   }
+
+  const argsWithTrigger = [
+    ...args,
+    `--trigger`,
+    options?.trigger ? options.trigger : 'unknown',
+    '--force',
+    options?.force ? 'true' : 'false',
+  ];
+
   child?.send({
     channel: Channel.VALUE_SUBMITTED,
     input: '',
     value: {
       script: promptScriptPath,
-      args,
+      args: argsWithTrigger,
       trigger: options?.trigger,
     },
   });
