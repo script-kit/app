@@ -916,12 +916,7 @@ const kitMessageMap: ChannelHandler = {
   SET_BOUNDS: toProcess(async ({ child }, { channel, value }) => {
     setBounds(value);
 
-    if (child) {
-      childSend(child, {
-        channel,
-        value,
-      });
-    }
+    childSend(child, { channel });
   }),
 
   SET_IGNORE_BLUR: toProcess(async ({ child }, { channel, value }) => {
@@ -940,11 +935,12 @@ const kitMessageMap: ChannelHandler = {
     kitState.resize = data?.value;
   },
 
-  SET_PAUSE_RESIZE: (data) => {
-    log.info(`⏸ Resize`, `${data?.value ? 'paused' : 'resumed'}`)
-    kitState.resizePaused = data?.value;
-  },
+  SET_PAUSE_RESIZE: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`⏸ Resize`, `${value ? 'paused' : 'resumed'}`)
+    kitState.resizePaused = value;
 
+    childSend(child, { channel });
+  }),
 
   SET_INPUT: toProcess(async ({ child }, { channel, value }) => {
     setInput(value);
@@ -968,17 +964,19 @@ const kitMessageMap: ChannelHandler = {
     setPlaceholder(data.value);
   },
 
-  SET_ENTER: (data) => {
-    sendToPrompt(Channel.SET_ENTER, data.value);
-  },
+  SET_ENTER: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SET_ENTER, value);
+    childSend(child, { channel });
+  }),
 
   SET_FOOTER: (data) => {
     setFooter(data.value);
   },
 
-  SET_PANEL: (data) => {
-    setPanel(data.value);
-  },
+  SET_PANEL: toProcess(async ({ child }, { channel, value }) => {
+    setPanel(value);
+    childSend(child, { channel, value });
+  }),
 
   SET_PREVIEW: (data) => {
     setPreview(data.value);
@@ -1209,12 +1207,14 @@ const kitMessageMap: ChannelHandler = {
   SET_FLAGS: (data) => {
     sendToPrompt(Channel.SET_FLAGS, data.value);
   },
-  SET_NAME: (data) => {
-    sendToPrompt(Channel.SET_NAME, data.value);
-  },
-  SET_DESCRIPTION: (data) => {
-    sendToPrompt(Channel.SET_DESCRIPTION, data.value);
-  },
+  SET_NAME: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SET_NAME, value);
+    childSend(child, { channel, value });
+  }),
+  SET_DESCRIPTION: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SET_DESCRIPTION, value);
+    childSend(child, { channel, value });
+  }),
   SET_FOCUSED: (data) => {
     sendToPrompt(Channel.SET_FOCUSED, data.value);
   },

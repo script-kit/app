@@ -37,7 +37,7 @@ export function EnterButton(action: Action) {
         event.preventDefault();
 
         const el = document.querySelector(
-          `[name="${action.name.toLowerCase()}"]`
+          `[type="submit"]`
         ) as HTMLInputElement;
 
         if (el) {

@@ -299,10 +299,10 @@
     "@babel/runtime" "^7.7.2"
     regenerator-runtime "^0.13.3"
 
-"@johnlindquist/clipboard@^0.1.32":
-  version "0.1.32"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/clipboard/-/clipboard-0.1.32.tgz#991ad89ae1592627ef186a5db85fefe0e03dd670"
-  integrity sha512-HzWgRtjn9MuQWQ3EXIA8OFe351/E8Gn257E02PFVamqlAxa0ntlselpDO2dSyIQxtWivz1jOrJ+E7PyMx5kPaA==
+"@johnlindquist/clipboard@^0.1.35":
+  version "0.1.35"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/clipboard/-/clipboard-0.1.35.tgz#4110d2f5cfb26095714789b34bef1628ec53ccc2"
+  integrity sha512-UiZSK2sRrgvODitvcHSNwUtdP/JlvD7D9GHXB8c4rOuPcULhU+br4ksDxd+4eAwcvRsk6C+PDGR1kUXYTkwTrw==
   dependencies:
     detect-port "^1.5.1"
 
