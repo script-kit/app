@@ -90,9 +90,6 @@ export default function ChoiceList({ width, height }: ListProps) {
   }, [setList]);
 
   useEffect(() => {
-    log({
-      requiresScroll,
-    });
     if (!listRef.current) return;
 
     const scroll = () => {
@@ -107,8 +104,8 @@ export default function ChoiceList({ width, height }: ListProps) {
       if (listRef.current) {
         scroll();
       }
-    }, 10);
-  }, [log, requiresScroll, setRequiresScroll]);
+    }, 100);
+  }, [requiresScroll]);
 
   return (
     <div

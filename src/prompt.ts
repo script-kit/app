@@ -609,13 +609,13 @@ export const resize = async ({
   justOpened,
   hasInput,
 }: ResizeData) => {
-  log.info({
-    topHeight,
-    mainHeight,
-    resize: kitState.resize,
-    forceResize,
-    resizePaused: kitState.resizePaused,
-  });
+  // log.info({
+  //   topHeight,
+  //   mainHeight,
+  //   resize: kitState.resize,
+  //   forceResize,
+  //   resizePaused: kitState.resizePaused,
+  // });
 
   if (kitState.resizePaused) return;
 
