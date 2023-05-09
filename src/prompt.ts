@@ -970,8 +970,6 @@ export const setScript = async (
   }
 
   return 'allowed';
-
-  // log.verbose(`Saving previous script path: ${kitState.prevScriptPath}`);
 };
 
 export const setMode = (mode: Mode) => {
