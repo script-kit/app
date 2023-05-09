@@ -73,15 +73,4 @@ export default () => {
     hotkeysOptions,
     [input, choices, index, promptDataAtom, panelHTML, ui, enterButtonDisabled]
   );
-
-  // useHotkeys(
-  //   'f12',
-  //   () => {
-  //     console.log(`🔥f20`);
-  //     setFlag('end');
-  //     submit(Value.NoValue);
-  //   },
-  //   hotkeysOptions,
-  //   []
-  // );
 };
