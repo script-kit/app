@@ -609,12 +609,13 @@ export const resize = async ({
   justOpened,
   hasInput,
 }: ResizeData) => {
-  // log.info({
-  //   topHeight,
-  //   mainHeight,
-  //   resize: kitState.resize,
-  //   forceResize,
-  // });
+  log.info({
+    topHeight,
+    mainHeight,
+    resize: kitState.resize,
+    forceResize,
+    resizePaused: kitState.resizePaused,
+  });
 
   if (kitState.resizePaused) return;
 
@@ -1148,7 +1149,9 @@ export const reload = (callback: () => void = () => {}) => {
   }
 
   if (callback) {
-    promptWindow?.once('ready-to-show', callback);
+    promptWindow?.webContents?.once('dom-ready', () => {
+      setTimeout(callback, 1000);
+    });
   }
 
   promptWindow?.reload();

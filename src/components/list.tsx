@@ -1,5 +1,5 @@
 /* eslint-disable react/require-default-props */
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { FixedSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
@@ -20,6 +20,10 @@ import {
   infoHeightAtom,
   promptDataAtom,
   listAtom,
+  focusedChoiceAtom,
+  defaultValueAtom,
+  requiresScollAtom,
+  logAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 import { DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from '../defaults';
@@ -53,7 +57,11 @@ export default function ChoiceList({ width, height }: ListProps) {
   const itemHeight = useAtomValue(itemHeightAtom);
   const infoHeight = useAtomValue(infoHeightAtom);
   const promptData = useAtomValue(promptDataAtom);
+  const focusedChoice = useAtomValue(focusedChoiceAtom);
+  const defaultValue = useAtomValue(defaultValueAtom);
   const [list, setList] = useAtom(listAtom);
+  const [requiresScroll, setRequiresScroll] = useAtom(requiresScollAtom);
+  const log = useAtomValue(logAtom);
   // const listWidth = useMotionValue('100%');
 
   const onIndexSubmit = useCallback(
@@ -81,18 +89,26 @@ export default function ChoiceList({ width, height }: ListProps) {
     }
   }, [setList]);
 
-  // useEffect(() => {
-  //   if (choices.length && height) {
-  //     (listRef as any).current.scrollToItem(index);
-  //   }
-  // }, [index, choices, height, flagValue]);
-
-  // reset scroll position to 0 on mount
   useEffect(() => {
-    if (listRef.current) {
-      (listRef as any).current.scrollTo(0);
-    }
-  }, [choices]);
+    log({
+      requiresScroll,
+    });
+    if (!listRef.current) return;
+
+    const scroll = () => {
+      (listRef as any).current.scrollToItem(
+        requiresScroll,
+        requiresScroll > 0 ? 'center' : 'start'
+      );
+    };
+
+    scroll();
+    setTimeout(() => {
+      if (listRef.current) {
+        scroll();
+      }
+    }, 10);
+  }, [log, requiresScroll, setRequiresScroll]);
 
   return (
     <div

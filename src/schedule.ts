@@ -89,18 +89,18 @@ export const scheduleScriptChanged = ({
     cancelJob(filePath);
   }
 
-  // if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
-  //   if (scheduleString) {
-  //     log.info(
-  //       `Ignoring ${filePath} // Schedule metadata because it's not trusted.`
-  //     );
-  //     log.info(
-  //       `Add "KIT_TRUSTED_KENVS=${kenv}" to your .env file to trust it.`
-  //     );
-  //   }
+  if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
+    if (scheduleString) {
+      log.info(
+        `Ignoring ${filePath} // Schedule metadata because it's not trusted.`
+      );
+      log.info(
+        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`
+      );
+    }
 
-  //   return;
-  // }
+    return;
+  }
 
   try {
     if (scheduleString) {

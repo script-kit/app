@@ -54,18 +54,18 @@ export const systemScriptChanged = ({
     systemEventMap.delete(filePath);
   }
 
-  // if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
-  //   if (systemEventsString) {
-  //     log.info(
-  //       `Ignoring ${filePath} // System metadata because it's not in a trusted kenv.`
-  //     );
-  //     log.info(
-  //       `Add "KIT_TRUSTED_KENVS=${kenv}" to your .env file to trust it.`
-  //     );
-  //   }
+  if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
+    if (systemEventsString) {
+      log.info(
+        `Ignoring ${filePath} // System metadata because it's not in a trusted kenv.`
+      );
+      log.info(
+        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`
+      );
+    }
 
-  //   return;
-  // }
+    return;
+  }
 
   if (systemEventsString) {
     const systemEvents = systemEventsString.split(' ');

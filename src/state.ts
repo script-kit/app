@@ -335,6 +335,10 @@ const initState = {
   // trustedKenvs: [] as string[],
   suspendWatchers: false,
   resizePaused: false,
+  trustedKenvs: [] as string[],
+  trustedKenvsKey: `KIT_${
+    process.env?.USER || process.env?.USERNAME || 'NO_USER_ENV_FOUND'
+  }_DANGEROUSLY_TRUST_KENVS`,
 };
 
 nativeTheme.addListener('updated', () => {

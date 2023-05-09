@@ -611,6 +611,19 @@ export const addSnippet = (script: Script) => {
     }
   }
 
+  if (script?.kenv !== '' && !kitState.trustedKenvs.includes(script?.kenv)) {
+    if (script?.snippet) {
+      log.info(
+        `Ignoring ${script?.filePath} // Snippet metadata because it's not trusted in a trusted kenv.`
+      );
+      log.info(
+        `Add "${kitState.trustedKenvsKey}=${script?.kenv}" to your .env file to trust it.`
+      );
+    }
+
+    return;
+  }
+
   if (script?.snippet) {
     if (kitState.authorized) {
       log.info(`Set snippet: ${script.snippet}`);

@@ -138,22 +138,22 @@ export const shortcutScriptChanged = ({
   const convertedShortcut = convertShortcut(shortcut || '', filePath);
   const old = shortcutMap.get(filePath);
   // TODO: Bring back trusted kenvs
-  // if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
-  //   if (shortcut) {
-  //     log.info(
-  //       `Ignoring ${filePath} // Shortcut metadata because it's not trusted.`
-  //     );
-  //     log.info(
-  //       `Add "KIT_TRUSTED_KENVS=${kenv}" to your .env file to trust it.`
-  //     );
-  //   }
+  if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
+    if (shortcut) {
+      log.info(
+        `Ignoring ${filePath} // Shortcut metadata because it's not trusted.`
+      );
+      log.info(
+        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`
+      );
+    }
 
-  //   if (old) {
-  //     globalShortcut.unregister(old.shortcut);
-  //     shortcutMap.delete(filePath);
-  //   }
-  //   return;
-  // }
+    if (old) {
+      globalShortcut.unregister(old.shortcut);
+      shortcutMap.delete(filePath);
+    }
+    return;
+  }
   const sameScript = old?.shortcut === convertedShortcut;
 
   // Handle existing shortcuts

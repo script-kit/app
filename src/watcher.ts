@@ -387,18 +387,19 @@ export const setupWatchers = async () => {
             kitState.typedLimit = parseInt(envData?.KIT_TYPED_LIMIT, 10);
           }
 
-          // if (envData?.KIT_TRUSTED_KENVS) {
-          //   const trustedKenvs = envData?.KIT_TRUSTED_KENVS.split(
-          //     ','
-          //   ).map((kenv) => kenv.trim());
-          //   log.info(`👩‍⚖️ Trusted Kenvs`, trustedKenvs);
-          //   kitState.trustedKenvs = trustedKenvs;
-          //   if (eventName === 'change') await refreshScripts();
-          // } else if (kitState.trustedKenvs.length) {
-          //   kitState.trustedKenvs = [];
-          //   log.info(`👩‍⚖️ Trusted Kenvs Removed`);
-          //   if (eventName === 'change') await refreshScripts();
-          // }
+          if (envData?.[kitState.trustedKenvsKey]) {
+            const trustedKenvs = envData?.[kitState.trustedKenvsKey]
+              .split(',')
+              .filter(Boolean)
+              .map((kenv) => kenv.trim());
+            log.info(`👩‍⚖️ Trusted Kenvs`, trustedKenvs);
+            kitState.trustedKenvs = trustedKenvs;
+            if (eventName === 'change') await refreshScripts();
+          } else if (kitState.trustedKenvs.length) {
+            kitState.trustedKenvs = [];
+            log.info(`👩‍⚖️ Trusted Kenvs Removed`);
+            if (eventName === 'change') await refreshScripts();
+          }
 
           // if (envData?.KIT_SUSPEND_WATCHERS) {
           //   const suspendWatchers = envData?.KIT_SUSPEND_WATCHERS === 'true';

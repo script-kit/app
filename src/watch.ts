@@ -7,6 +7,7 @@ import { app } from 'electron';
 import { Script } from '@johnlindquist/kit/types/core';
 import { runPromptProcess } from './kit';
 import { Trigger } from './enums';
+import { kitState } from './state';
 
 export const watchMap = new Map();
 
@@ -77,6 +78,19 @@ export const watchScriptChanged = ({
 }: Script) => {
   if (!watchString && watchMap.get(filePath)) {
     removeWatch(filePath);
+    return;
+  }
+
+  if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
+    if (watchString) {
+      log.info(
+        `Ignoring ${filePath} // Background metadata because it's not trusted in a trusted kenv.`
+      );
+      log.info(
+        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`
+      );
+    }
+
     return;
   }
 

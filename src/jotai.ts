@@ -209,7 +209,14 @@ export const unfilteredChoicesAtom = atom(
       s(mainHeightAtom, 0);
     }
 
-    const cs = a === null ? [] : a;
+    const cs = (a === null ? [] : a).map((c) =>
+      typeof c?.name === 'string'
+        ? c
+        : {
+            ...c,
+            name: `⚠️ Warning: Choice name must be a string. Received ${typeof c?.name}`,
+          }
+    );
 
     s(choicesIdAtom, Math.random());
 
@@ -271,7 +278,10 @@ export const unfilteredChoicesAtom = atom(
       const qs = new QuickScore(
         cs.map((c) => {
           c.slicedName = c?.name?.slice(0, 63);
-          if (c.description) c.slicedDescription = c?.description?.slice(0, 63);
+
+          if (typeof c?.description === 'string') {
+            c.slicedDescription = c?.description?.slice(0, 63);
+          }
           return c;
         }),
         {
@@ -594,6 +604,8 @@ export const prevInputAtom = atom('');
 
 export const defaultValueAtom = atom('');
 
+export const requiresScollAtom = atom(-1);
+
 export const _index = atom(
   (g) => g(index),
   (g, s, a: number) => {
@@ -630,6 +642,7 @@ export const _index = atom(
         if (foundChoice?.id) {
           s(index, i);
           s(focusedChoiceAtom, foundChoice);
+          s(requiresScollAtom, i);
           // console.log(`i!== -1: Setting prevChoiceId to ${foundChoice?.id}`);
           // s(prevChoiceId, foundChoice?.id);
         }
@@ -1575,8 +1588,8 @@ export const submitValueAtom = atom(
   debounce(
     (g, s, a: any) => {
       s(promptActiveAtom, false);
+      s(disableSubmitAtom, false);
       if (g(submittedAtom)) return;
-      if (g(enterButtonDisabledAtom)) return;
       const focusedChoice = g(scoredChoices)?.[g(_index)]?.item;
       const fid = focusedChoice?.id;
       if (fid) {
@@ -1698,6 +1711,7 @@ export const openAtom = atom(
       s(loadingAtom, false);
       s(editorConfigAtom, {});
       s(promptData, null);
+      s(requiresScollAtom, -1);
       s(pidAtom, 0);
       s(_chatMessagesAtom, []);
       s(prevChoiceId, '');
@@ -2016,6 +2030,12 @@ export const enterButtonNameAtom = atom<string>((g) => {
 });
 
 export const enterButtonDisabledAtom = atom<boolean>((g) => {
+  const disableSubmit = g(disableSubmitAtom);
+  if (disableSubmit) return true;
+
+  const enterButtonName = g(enterButtonNameAtom);
+  if (enterButtonName === '') return true;
+
   const ui = g(uiAtom);
   if ([UI.fields, UI.form, UI.div].includes(ui)) return false;
 
@@ -2538,3 +2558,5 @@ export const micConfigAtom = atom({
   timeSlice: 200,
   format: 'webm',
 });
+
+export const disableSubmitAtom = atom(false);

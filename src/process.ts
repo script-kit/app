@@ -913,10 +913,16 @@ const kitMessageMap: ChannelHandler = {
     setHint(data.value);
   },
 
-  SET_BOUNDS: (data) => {
-    setBounds(data.value);
-    // sendToPrompt(Channel.SET_BOUNDS, data.value);
-  },
+  SET_BOUNDS: toProcess(async ({ child }, { channel, value }) => {
+    setBounds(value);
+
+    if (child) {
+      childSend(child, {
+        channel,
+        value,
+      });
+    }
+  }),
 
   SET_IGNORE_BLUR: toProcess(async ({ child }, { channel, value }) => {
     log.info(`SET_IGNORE_BLUR`, { value });
@@ -1889,6 +1895,11 @@ const kitMessageMap: ChannelHandler = {
   }),
   SET_FORM_DATA: toProcess(async ({ child }, { channel, value }) => {
     log.info(`SET FORM DATA`, value);
+    sendToPrompt(channel, value);
+    childSend(child, { channel, value });
+  }),
+  SET_DISABLE_SUBMID: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`SET DISABLE SUBMIT`, value);
     sendToPrompt(channel, value);
     childSend(child, { channel, value });
   }),

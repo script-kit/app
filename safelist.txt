@@ -1052,3 +1052,6 @@ mt-3px
 caret-transparent
 pb-px
 px-2px
+animate-bounce
+animate-ping
+animate-pulse

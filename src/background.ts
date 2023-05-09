@@ -44,18 +44,18 @@ export const backgroundScriptChanged = ({
   background: backgroundString,
 }: Script) => {
   removeBackground(filePath);
-  // if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
-  //   if (backgroundString) {
-  //     log.info(
-  //       `Ignoring ${filePath} // Background metadata because it's not trusted in a trusted kenv.`
-  //     );
-  //     log.info(
-  //       `Add "KIT_TRUSTED_KENVS=${kenv}" to your .env file to trust it.`
-  //     );
-  //   }
+  if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
+    if (backgroundString) {
+      log.info(
+        `Ignoring ${filePath} // Background metadata because it's not trusted in a trusted kenv.`
+      );
+      log.info(
+        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`
+      );
+    }
 
-  //   return;
-  // }
+    return;
+  }
 
   if (backgroundString === 'auto') {
     startTask(filePath);
