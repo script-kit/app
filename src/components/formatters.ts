@@ -14,6 +14,13 @@ export const formatShortcut = (shortcut = '') => {
     .replace('right', '→')
     .replace('delete', '⌫')
     .replace('backspace', '⌫')
+    .replace('tab', '⇥')
+    .replace('space', '␣')
+    .replace('pageup', '⇞')
+    .replace('pagedown', '⇟')
+    .replace('home', '↖')
+    .replace('end', '↘')
+    .replace('capslock', '⇪')
 
     .toUpperCase();
 };

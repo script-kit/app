@@ -12,28 +12,13 @@ import {
   BsArrowRight,
   BsOption,
 } from 'react-icons/bs';
-import { MdOutlineKeyboardControlKey } from 'react-icons/md';
+import {
+  MdOutlineKeyboardControlKey,
+  MdSpaceBar,
+  MdKeyboardTab,
+} from 'react-icons/md';
 
 import { appConfigAtom } from '../jotai';
-
-export const formatShortcut = (shortcut = '') => {
-  return shortcut
-    .replace('cmd', '⌘')
-    .replace('ctrl', '⌃')
-    .replace('shift', '⇧')
-    .replace('alt', '⌥')
-    .replace('enter', '⏎')
-    .replace('return', '⏎')
-    .replace('escape', '⎋')
-    .replace('up', '↑')
-    .replace('down', '↓')
-    .replace('left', '←')
-    .replace('right', '→')
-    .replace('delete', '⌫')
-    .replace('backspace', '⌫')
-
-    .toUpperCase();
-};
 
 const styles = {
   className: 'h-5 w-3 mt-px',
@@ -79,6 +64,8 @@ export function IconSwapper({ text, className }: IconSwapperProps) {
   if (text === '↓') return <BsArrowDown {...styles} />;
   if (text === '←') return <BsArrowLeft {...styles} />;
   if (text === '→') return <BsArrowRight {...styles} />;
+  if (text === '␣') return <MdSpaceBar {...styles} />;
+  if (text === '⇥') return <MdKeyboardTab {...styles} />;
 
   return <>{text}</>;
 }
