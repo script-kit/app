@@ -31,6 +31,7 @@ import {
   isParentOfDir,
   mainScriptPath,
   tmpClipboardDir,
+  getTrustedKenvsKey,
 } from '@johnlindquist/kit/cjs/utils';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import axios from 'axios';
@@ -336,9 +337,7 @@ const initState = {
   suspendWatchers: false,
   resizePaused: false,
   trustedKenvs: [] as string[],
-  trustedKenvsKey: `KIT_${
-    process.env?.USER || process.env?.USERNAME || 'NO_USER_ENV_FOUND'
-  }_DANGEROUSLY_TRUST_KENVS`,
+  trustedKenvsKey: getTrustedKenvsKey(),
 };
 
 nativeTheme.addListener('updated', () => {
