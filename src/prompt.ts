@@ -483,7 +483,6 @@ export const getCurrentScreenPromptCache = async (
     bounds: {},
   }
 ) => {
-  log.silly(`function: getCurrentScreenPromptCache`);
   const currentScreen = getCurrentScreenFromMouse();
   const screenId = String(currentScreen.id);
   // log.info(`screens:`, promptState.screens);
@@ -538,15 +537,15 @@ export const getCurrentScreenPromptCache = async (
     }
   }
 
-  if (bounds?.width) width = bounds.width;
-  if (bounds?.height) height = bounds.height;
+  if (typeof bounds?.width === 'number') width = bounds.width;
+  if (typeof bounds?.height === 'number') height = bounds.height;
 
   const { x: workX, y: workY } = currentScreen.workArea;
   let x = Math.round(screenWidth / 2 - width / 2 + workX);
   let y = Math.round(workY + screenHeight / 8);
 
-  if (bounds?.x) x = bounds.x;
-  if (bounds?.y) y = bounds.y;
+  if (typeof bounds?.x === 'number') x = bounds.x;
+  if (typeof bounds?.y === 'number') y = bounds.y;
 
   const promptBounds = { x, y, width, height };
 
@@ -558,19 +557,21 @@ export const getCurrentScreenPromptCache = async (
   return promptBounds;
 };
 
-export const setBounds = (bounds: Rectangle, reason = '') => {
+export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
   if (!kitState.ready) return;
   const prevSetBounds = promptWindow?.getBounds();
-  const widthNotChanged = Math.abs(bounds.width - prevSetBounds.width) < 4;
-  const heightNotChanged = Math.abs(bounds.height - prevSetBounds.height) < 4;
-  const xNotChanged = Math.abs(bounds.x - prevSetBounds.x) < 4;
-  const yNotChanged = Math.abs(bounds.y - prevSetBounds.y) < 4;
+  const widthNotChanged =
+    bounds?.width && Math.abs(bounds.width - prevSetBounds.width) < 4;
+  const heightNotChanged =
+    bounds?.height && Math.abs(bounds.height - prevSetBounds.height) < 4;
+  const xNotChanged = bounds?.x && Math.abs(bounds.x - prevSetBounds.x) < 4;
+  const yNotChanged = bounds?.y && Math.abs(bounds.y - prevSetBounds.y) < 4;
 
   const noChange =
     heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
 
-  log.verbose(`📐 setBounds: reason ${reason}`);
-  log.silly({
+  log.verbose(`📐 setBounds: reason ${reason}`, bounds);
+  log.verbose({
     ...bounds,
     isVisible: isVisible() ? 'true' : 'false',
     noChange: noChange ? 'true' : 'false',
@@ -581,6 +582,28 @@ export const setBounds = (bounds: Rectangle, reason = '') => {
 
   // TODO: Maybe use in the future with setting the html body bounds for faster resizing?
   // promptWindow?.setContentSize(bounds.width, bounds.height);
+
+  // Keep in bounds on the current screen
+  const currentScreen = getCurrentScreenFromMouse();
+  const { x, y, width, height } = bounds;
+  const { x: workX, y: workY } = currentScreen.workArea;
+  const {
+    width: screenWidth,
+    height: screenHeight,
+  } = currentScreen.workAreaSize;
+
+  if (typeof bounds?.height !== 'number') bounds.height = prevSetBounds.height;
+  if (typeof bounds?.width !== 'number') bounds.width = prevSetBounds.width;
+  if (typeof bounds?.x !== 'number') bounds.x = prevSetBounds.x;
+  if (typeof bounds?.y !== 'number') bounds.y = prevSetBounds.y;
+
+  if (x && x < workX) bounds.x = workX;
+  if (y && y < workY) bounds.y = workY;
+  if (width && (x || prevSetBounds.x) + width > workX + screenWidth)
+    bounds.x = workX + screenWidth - width;
+  if (height && (y || prevSetBounds.y) + height > workY + screenHeight)
+    bounds.y = workY + screenHeight - height;
+
   try {
     promptWindow.setBounds(bounds);
   } catch (error) {
@@ -1040,12 +1063,12 @@ export const setPromptData = async (promptData: PromptData) => {
   const isMainScript = kitState.isMainScript();
 
   kitState.promptBounds = {
-    x: promptData.x || 0,
-    y: promptData.y || 0,
+    x: promptData.x,
+    y: promptData.y,
     width: isMainScript
       ? getDefaultWidth()
       : promptData.width || getDefaultWidth(),
-    height: isMainScript ? PROMPT.HEIGHT.BASE : promptData.height || 0,
+    height: isMainScript ? PROMPT.HEIGHT.BASE : promptData.height,
   };
 
   kitState.promptId = promptData.id;
@@ -1054,6 +1077,18 @@ export const setPromptData = async (promptData: PromptData) => {
   if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
 
   await pingPromptWithTimeout(Channel.SET_PROMPT_DATA, promptData);
+
+  if (typeof promptData?.x === 'number' || typeof promptData?.y === 'number') {
+    setBounds(
+      {
+        x: promptData.x,
+        y: promptData.y,
+        width: promptData.width,
+        height: promptData.height,
+      },
+      'PROMPT DATA HAS BOUNDS'
+    );
+  }
 
   kitState.promptCount += 1;
   if (kitState.promptCount === 1) {

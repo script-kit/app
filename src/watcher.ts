@@ -200,7 +200,11 @@ const unlinkBin = (filePath: string) => {
   }
 };
 
-export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
+export const onScriptsChanged = async (
+  event: WatchEvent,
+  filePath: string,
+  rebuilt = false
+) => {
   if (event === 'unlink') {
     unlink(filePath);
     unlinkBin(filePath);
@@ -222,7 +226,7 @@ export const onScriptsChanged = async (event: WatchEvent, filePath: string) => {
     addSnippet(script);
   }
 
-  if (event === 'change') {
+  if (event === 'change' && !rebuilt) {
     scriptChanged(filePath);
     clearPromptCacheFor(filePath);
   }
@@ -319,7 +323,7 @@ const refreshScripts = debounce(
     log.info(`🌈 Refreshing Scripts...`);
     const scripts = await getScripts(false);
     for (const script of scripts) {
-      onScriptsChanged('change', script.filePath);
+      onScriptsChanged('change', script.filePath, true);
     }
   },
   500,

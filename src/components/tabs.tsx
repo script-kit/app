@@ -99,6 +99,10 @@ export default function KitTabs() {
 
   useEffect(() => {
     itemsRef.current = itemsRef.current.slice(0, tabs.length);
+
+    return () => {
+      itemsRef.current = [];
+    };
   }, [tabs]);
 
   useEffect(() => {
@@ -107,17 +111,18 @@ export default function KitTabs() {
     };
   }, []);
 
-  // useEffect(() => {
-  //   const el = itemsRef?.current?.[tabIndex];
-  //   if (el) {
-  //     el.scrollIntoView({ block: 'end', inline: 'nearest' });
-  //   }
-  // }, [tabIndex, itemsRef]);
+  useEffect(() => {
+    if (!itemsRef?.current?.[tabIndex]) return;
+    const el = itemsRef?.current?.[tabIndex];
+    if (el) {
+      el.scrollIntoView({ block: 'end', inline: 'nearest' });
+    }
+  }, [tabIndex, itemsRef]);
 
   return (
     <motion.div
       key="tabs"
-      className="w-full"
+      className="w-full overflow-x-scroll"
       style={
         {
           WebkitAppRegion: 'no-drag',

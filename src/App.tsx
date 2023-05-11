@@ -683,13 +683,20 @@ export default function App() {
   }, [messageMap]);
 
   useEffect(() => {
-    ipcRenderer.on(AppChannel.PROCESSES, (_, data) => {
+    const processesHandler = (_, data) => {
       setProcesses(data);
-    });
+    };
+    ipcRenderer.on(AppChannel.PROCESSES, processesHandler);
 
-    ipcRenderer.on(AppChannel.USER_CHANGED, (_, data) => {
+    const userChangedHandler = (_, data) => {
       setUser(data);
-    });
+    };
+    ipcRenderer.on(AppChannel.USER_CHANGED, userChangedHandler);
+
+    return () => {
+      ipcRenderer.removeListener(AppChannel.PROCESSES, processesHandler);
+      ipcRenderer.removeListener(AppChannel.USER_CHANGED, userChangedHandler);
+    };
   }, [setProcesses, setUser]);
 
   const onMouseDown = useCallback(() => {
