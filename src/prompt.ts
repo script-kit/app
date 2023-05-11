@@ -286,7 +286,7 @@ export const createPromptWindow = async () => {
   //   appToPrompt(AppChannel.TERM_EXIT, value);
   // });
 
-  promptWindow?.setMaxListeners(2);
+  promptWindow?.setMaxListeners(1);
 
   const onBlur = () => {
     log.silly(`event: onBlur`);
@@ -349,6 +349,16 @@ export const createPromptWindow = async () => {
     kitState.promptHidden = false;
     // kitState.allowBlur = false;
     log.silly(`event: show`);
+  });
+
+  promptWindow?.webContents?.setMaxListeners(1);
+
+  promptWindow?.webContents?.on('did-fail-load', (event, errorCode) => {
+    log.error(`event: did-fail-load: ${errorCode}`);
+  });
+
+  promptWindow?.webContents?.on('did-stop-loading', (event, errorCode) => {
+    log.error(`event: did-stop-loading: ${errorCode}`);
   });
 
   promptWindow?.webContents?.on('dom-ready', () => {

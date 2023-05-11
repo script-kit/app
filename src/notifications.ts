@@ -23,7 +23,7 @@ export const createNotification = async () => {
   //   promptWindow?.webContents.closeDevTools();
   // });
 
-  notificationWindow?.setMaxListeners(2);
+  notificationWindow?.setMaxListeners(1);
   if (notificationWindow && !notificationWindow.isDestroyed()) {
     notificationWindow?.webContents.on(
       'before-input-event',

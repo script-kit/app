@@ -736,6 +736,13 @@ code::after {
   @apply -mt-6;
 }
 
+.prose > pre:not(:has(> code.hljs)) {
+  @apply flex flex-row items-center;
+  @apply text-base;
+  @apply p-2 -mt-2;
+  @apply bg-text-base/5;
+}
+
 .main-container {
   @apply border-secondary border-opacity-75 border-1;
   /* TODO: I don't think this is needed... */

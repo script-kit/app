@@ -399,7 +399,7 @@ export const show = async (
     ...options,
   });
 
-  showWindow?.setMaxListeners(2);
+  showWindow?.setMaxListeners(1);
 
   showWindow?.webContents.on('before-input-event', (event: any, input) => {
     if (input.key === 'Escape') {

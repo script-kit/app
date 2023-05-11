@@ -467,6 +467,31 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
 
+  WIDGET_EXECUTE_JAVASCRIPT: toProcess(async ({ child }, { channel, value }) => {
+    log.info(value)
+    const { widgetId, value: js } = value as any;
+    const widget = findWidget(widgetId, channel);
+    if (!widget) return;
+
+    log.info(`WIDGET_EXECUTE_JAVASCRIPT`, {
+      widgetId,
+      js: js.trim()
+    });
+
+    if (widget) {
+      const result = await widget?.webContents.executeJavaScript(js);
+
+      childSend(child, {
+        channel,
+        value: result,
+      });
+    } else {
+      warn(`${widgetId}: widget not found. Killing process.`);
+      child?.kill();
+    }
+  }),
+
+
   WIDGET_SET_STATE: toProcess(({ child }, { channel, value }) => {
     const { widgetId, state } = value as any;
 
@@ -637,7 +662,7 @@ const kitMessageMap: ChannelHandler = {
       };
 
       widget?.webContents.on('before-input-event', (event, input) => {
-        if (input.key === 'Escape') {
+        if (input.key === 'Escape' && !options?.preventEscape) {
           closeHandler();
         }
 
