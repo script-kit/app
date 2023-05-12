@@ -54,6 +54,7 @@ export function OptionsButton() {
   rounded
   `}
       onClick={onClick}
+      onMouseOut={(e) => e.currentTarget.blur()}
     >
       <div className="px-0.5 mr-0.5">{flagValue ? 'Back' : 'Actions'}</div>
       <div className={`${!m && `mt-px`} flex flex-row`}>

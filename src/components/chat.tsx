@@ -30,6 +30,7 @@ import {
   placeholderAtom,
   inputAtom,
   channelAtom,
+  uiAtom,
 } from '../jotai';
 
 const ChatInput: React.FC<
@@ -512,6 +513,7 @@ export function Chat() {
   const submitMessage = useSetAtom(chatMessageSubmitAtom);
   const [placeholder] = useAtom(placeholderAtom);
   const [channel] = useAtom(channelAtom);
+  const [ui] = useAtom(uiAtom);
 
   useEffect(() => {
     // Focus the input when the component mounts
@@ -530,7 +532,7 @@ export function Chat() {
 
   useEffect(() => {
     if (setInputRef.current && input.length > 0) setInputRef.current(input);
-  }, [input]);
+  }, [input, ui]);
 
   const onSubmit = useCallback(
     (e: any) => {

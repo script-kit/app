@@ -1,10 +1,8 @@
 /* eslint-disable react/require-default-props */
-import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
-import Preview from './preview';
 import ChoiceButton from './button';
 import {
   flagValueAtom,
@@ -24,9 +22,9 @@ import {
   defaultValueAtom,
   requiresScollAtom,
   logAtom,
+  showTabsAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
-import { DEFAULT_LIST_WIDTH, DEFAULT_WIDTH } from '../defaults';
 
 const createItemData = memoize(
   (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>
@@ -62,6 +60,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [list, setList] = useAtom(listAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(requiresScollAtom);
   const log = useAtomValue(logAtom);
+
   // const listWidth = useMotionValue('100%');
 
   const onIndexSubmit = useCallback(
@@ -110,12 +109,10 @@ export default function ChoiceList({ width, height }: ListProps) {
   return (
     <div
       id="list"
-      className={`
-
-      list-component
-      flex flex-row
-      w-full
-      overflow-y-hidden border-t border-secondary border-opacity-75
+      className={`list-component
+flex flex-row
+w-full overflow-y-hidden
+border-r border-secondary/75
       `}
       style={
         {
@@ -124,11 +121,6 @@ export default function ChoiceList({ width, height }: ListProps) {
       }
     >
       <List
-        style={{
-          // minHeight: Math.min(choices?.length * itemHeight, height),
-          minWidth:
-            previewEnabled && hasPreview ? DEFAULT_LIST_WIDTH : DEFAULT_WIDTH,
-        }}
         ref={listRef}
         innerRef={innerRef}
         height={
@@ -145,24 +137,11 @@ export default function ChoiceList({ width, height }: ListProps) {
         px-0 flex flex-col
         text-text-base
         overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20
-
-        ${
-          !appDb.mini && previewEnabled && hasPreview
-            ? 'border-r  border-secondary border-opacity-75'
-            : ''
-        }
         `}
         // onItemsRendered={onItemsRendered}
       >
         {ChoiceButton}
       </List>
-
-      {/* {previewEnabled && <Preview />} */}
-      <AnimatePresence key="previewComponents">
-        {!appDb.mini && previewHTML && (
-          <Preview key="AppPreview" height={height} />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

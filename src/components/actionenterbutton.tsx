@@ -82,6 +82,7 @@ export function EnterButton(action: Action) {
   ${action?.disabled ? `text-primary text-opacity-25` : `${bg} ${textContrast}`}
   `}
       onClick={onClick}
+      onMouseOut={(e) => e.currentTarget.blur()}
     >
       <div
         className={`px-2px truncate min-w-0 mr-0.5 hover:cursor-pointer

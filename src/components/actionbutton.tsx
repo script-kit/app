@@ -63,6 +63,8 @@ export function ActionButton(action: Action) {
   ${action?.disabled ? `text-primary text-opacity-25` : `${bg} ${textContrast}`}
   `}
       onClick={onClick}
+      // blur on mouse down
+      onMouseOut={(e) => e.currentTarget.blur()}
     >
       <div
         className={`px-2px truncate min-w-0 mr-0.5

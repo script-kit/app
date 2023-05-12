@@ -976,6 +976,7 @@ export const scriptAtom = atom(
     s(processingAtom, false);
 
     s(nameAtom, a?.name || '');
+    s(descriptionAtom, a?.description || '');
     s(loadingAtom, false);
     s(logoAtom, a?.logo || '');
     s(tempThemeAtom, g(themeAtom));
@@ -1185,7 +1186,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     placeholderOnly,
     topHeight,
     ui,
-    mainHeight: Math.ceil(mh || -2) + 2,
+    mainHeight: Math.ceil(mh || -4) + 4,
     footerHeight,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
@@ -1337,6 +1338,7 @@ export const promptDataAtom = atom(
     s(_inputChangedAtom, false);
 
     if (a) {
+      s(uiAtom, a.ui);
       if (a?.theme) s(tempThemeAtom, { ...g(themeAtom), ...(a?.theme || {}) });
 
       s(_open, true);
@@ -1361,7 +1363,6 @@ export const promptDataAtom = atom(
 
         s(termConfigAtom, config);
       }
-      s(uiAtom, a.ui);
 
       s(ultraShortCodesAtom, []);
       s(hintAtom, a.hint);
@@ -1388,7 +1389,7 @@ export const promptDataAtom = atom(
         s(nameAtom, headerHidden ? '' : a.name);
       }
 
-      if (a.description) {
+      if (a?.description) {
         s(
           descriptionAtom,
           headerHidden ? '' : a.description || g(scriptAtom)?.description || ''
@@ -1626,6 +1627,7 @@ export const submitValueAtom = atom(
         channel(Channel.ON_SUBMIT);
       }
 
+      s(_input, '');
       channel(Channel.VALUE_SUBMITTED, {
         value,
         flag,
@@ -2560,3 +2562,8 @@ export const micConfigAtom = atom({
 });
 
 export const disableSubmitAtom = atom(false);
+
+export const appBoundsAtom = atom({
+  width: PROMPT.WIDTH.BASE,
+  height: PROMPT.HEIGHT.BASE,
+});

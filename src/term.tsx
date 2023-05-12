@@ -1,4 +1,4 @@
-import React, { RefObject, useCallback, useEffect, useRef } from 'react';
+import React, { RefObject, useEffect, useRef } from 'react';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import { ipcRenderer, shell } from 'electron';
 import { FitAddon } from 'xterm-addon-fit';
@@ -7,13 +7,14 @@ import { Unicode11Addon } from 'xterm-addon-unicode11';
 import { SearchAddon } from 'xterm-addon-search';
 import { LigaturesAddon } from 'xterm-addon-ligatures';
 import { SerializeAddon } from 'xterm-addon-serialize';
-import useResizeObserver from '@react-hook/resize-observer';
 import { motion } from 'framer-motion';
-import { throttle } from 'lodash';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
+  appBoundsAtom,
   appDbAtom,
   darkAtom,
+  hasPreviewAtom,
+  logAtom,
   promptDataAtom,
   sendShortcutAtom,
   shortcutsAtom,
@@ -66,6 +67,7 @@ export default function Terminal() {
   const [promptData] = useAtom(promptDataAtom);
   const shortcuts = useAtomValue(shortcutsAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
+  const [hasPreview] = useAtom(hasPreviewAtom);
 
   const attachAddonRef = useRef<AttachIPCAddon | null>(null);
 
@@ -160,26 +162,16 @@ export default function Terminal() {
   }, []);
 
   const [appDb] = useAtom(appDbAtom);
+  const appBounds = useAtomValue(appBoundsAtom);
+  const log = useAtomValue(logAtom);
 
-  const onResize = useCallback(
-    ({ rows, cols }: { cols: number; rows: number }) => {
-      // debounce(({ rows, cols }) => {
-      if (!rows || !cols) return;
-
-      ipcRenderer.send(AppChannel.TERM_RESIZE, { rows, cols });
-    },
-    // }, 250),
-    []
-  );
-
-  // Detect when container is resized
-  useResizeObserver(
-    containerRef,
-    throttle(() => {
-      if (!fitRef?.current) return;
-      fitRef.current.fit();
-    }, 250)
-  );
+  useEffect(() => {
+    if (!fitRef?.current) return;
+    fitRef.current.fit();
+    const dimensions = fitRef.current.proposeDimensions();
+    if (!dimensions) return;
+    ipcRenderer.send(AppChannel.TERM_RESIZE, dimensions);
+  }, [appBounds]);
 
   return (
     <motion.div
@@ -188,15 +180,16 @@ export default function Terminal() {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={{ duration: 0.5, ease: 'circOut' }}
-      className="w-full h-full pt-3 -mb-6 px-3 max-h-full"
+      className={`w-full h-full pt-3 -mb-6 px-3 max-h-full flex-1 overflow-hidden ${
+        hasPreview ? 'border-r border-secondary/75' : ''
+      }`}
     >
       <div
         ref={containerRef as RefObject<HTMLDivElement>}
         className="w-full h-full"
       >
         <XTerm
-          onResize={onResize}
-          className="w-full h-full max-h-fit"
+          className="w-full h-full max-h-fit max-w-screen-md"
           options={{
             fontFamily: appDb?.termFont || 'monospace',
             allowTransparency: true,

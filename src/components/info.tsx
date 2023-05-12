@@ -77,7 +77,7 @@ export default function InfoList({ width, height }: ListProps) {
       list-component
       flex flex-row
       w-full
-      overflow-y-hidden border-t border-secondary border-opacity-75
+      overflow-y-hidden
       `}
       style={
         {
@@ -114,13 +114,6 @@ export default function InfoList({ width, height }: ListProps) {
       >
         {InfoButton}
       </List>
-
-      {/* {previewEnabled && <Preview />} */}
-      <AnimatePresence key="previewComponents">
-        {!appDb.mini && previewHTML && (
-          <Preview key="AppPreview" height={height} />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

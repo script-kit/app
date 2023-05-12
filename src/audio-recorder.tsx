@@ -1,16 +1,19 @@
 /* eslint-disable no-plusplus */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
+
 import { useAtom, useAtomValue } from 'jotai';
 import {
   channelAtom,
   submitValueAtom,
   micIdAtom,
-  audioRecorderAtom,
   logAtom,
   uiAtom,
   openAtom,
   micConfigAtom,
+  placeholderAtom,
+  previewHTMLAtom,
+  closedDiv,
 } from './jotai';
 import useOnEnter from './hooks/useOnEnter';
 
@@ -34,6 +37,10 @@ export default function AudioRecorder() {
   const ui = useAtomValue(uiAtom);
   const open = useAtomValue(openAtom);
   const micConfig = useAtomValue(micConfigAtom);
+  const placeholder = useAtomValue(placeholderAtom);
+  const [previewHTML] = useAtom(previewHTMLAtom);
+
+  const hasPreview = Boolean(previewHTML && previewHTML !== closedDiv);
 
   const [channel] = useAtom(channelAtom);
 
@@ -158,18 +165,21 @@ export default function AudioRecorder() {
   useOnEnter(stopRecording);
 
   return (
-    <div
-      id={UI.mic}
-      className="h-full w-full flex flex-col justify-center items-center text-text-base text-xl"
-    >
-      <h1 className="text-5xl">Recording</h1>
-      {/* A circle that represents the recording state */}
+    <div id={UI.mic} className="flex flex-row min-w-full min-h-full">
       <div
-        className="h-4 w-4 rounded-full mt-4"
-        style={{
-          backgroundColor: `hsl(${volume * 2}, 100%, 50%, 1)`,
-        }}
-      />
+        className={`w-full ${
+          hasPreview ? `mt-16` : `justify-center`
+        } flex flex-col items-center text-text-base`}
+      >
+        <h1 className="text-5xl text-center">{placeholder || 'Recording'}</h1>
+        {/* A circle that represents the recording state */}
+        <div
+          className="h-4 w-4 rounded-full mt-4"
+          style={{
+            backgroundColor: `hsl(${volume * 2}, 100%, 50%, 1)`,
+          }}
+        />
+      </div>
     </div>
   );
 }

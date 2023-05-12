@@ -5,8 +5,14 @@
 
 import { useAtom } from 'jotai';
 import { UI } from '@johnlindquist/kit/cjs/enum';
+import SimpleBar from 'simplebar-react';
 import React, { useCallback, useState } from 'react';
-import { placeholderAtom, submitValueAtom } from '../jotai';
+import {
+  closedDiv,
+  placeholderAtom,
+  previewHTMLAtom,
+  submitValueAtom,
+} from '../jotai';
 import { useEscape, useMountMainHeight } from '../hooks';
 
 export default function Drop() {
@@ -17,12 +23,15 @@ export default function Drop() {
 
   const [placeholder] = useAtom(placeholderAtom);
   const [, submit] = useAtom(submitValueAtom);
+  const [previewHTML] = useAtom(previewHTMLAtom);
+
+  const hasPreview = Boolean(previewHTML && previewHTML !== closedDiv);
 
   const onDragEnter = useCallback((event) => {
     // TODO: Check this on windows
     // event.preventDefault();
     setDropReady(true);
-    setDropMessage('Drop to submit');
+    setDropMessage('Drop to Submit');
   }, []);
   const onDragLeave = useCallback(
     (event) => {
@@ -64,7 +73,11 @@ export default function Drop() {
   const containerRef = useMountMainHeight();
 
   return (
-    <div id={UI.drop} ref={containerRef} className="h-full w-full">
+    <div
+      id={UI.drop}
+      ref={containerRef}
+      className="flex flex-row min-w-full min-h-full h-full"
+    >
       <div
         tabIndex={0}
         role="region"
@@ -75,9 +88,10 @@ export default function Drop() {
           } as any
         }
         className={`
-        w-full h-full
+          ${hasPreview ? `w-[300px] mt-16` : `w-full justify-center`}
+        h-full
         drop-component
-        flex flex-col justify-center items-center
+        flex flex-col  items-center
         text-text-base  text-xl
         focus:outline-none outline-none
         ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0
@@ -94,7 +108,7 @@ export default function Drop() {
         }}
         onDrop={onDrop}
       >
-        <h2 className="pointer-events-none mb-0">
+        <h2 className="pointer-events-none mb-0 text-4xl">
           {dropMessage || placeholder}
         </h2>
       </div>

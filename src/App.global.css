@@ -39,8 +39,8 @@ Favicon gradient
   --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
     'serif';
 
-  --animate-duration: 0.1s;
-  --animate-delay: 0.1s;
+  --animate-duration: 0.25s;
+  --animate-delay: 0s;
   --animate-repeat: 1;
 }
 
@@ -343,7 +343,7 @@ body {
   }
 
   .prose > blockquote {
-    @apply bg-text-base bg-opacity-5;
+    @apply bg-text-base/5;
   }
   .prose > blockquote > p {
     margin: 0;
@@ -640,26 +640,30 @@ code::after {
 }
 
 .Toastify__toast-theme--light {
-  @apply bg-bg-base bg-bg-base/75;
+  @apply bg-text-base/5;
   /* blur background */
   @apply backdrop-blur-2xl;
   @apply text-text-base/90;
-  @apply border-2 border-secondary;
+  @apply border border-text-base/15;
   @apply text-sm;
 }
 
 .Toastify__close-button--light {
-  @apply text-primary font-bold;
+  @apply text-text-base font-bold;
+}
+
+.Toastify__close-button--light:hover {
+  @apply text-primary/75 font-bold;
 }
 
 .Toastify__toast-body {
-  @apply pt-1;
+  @apply pt-1 -z-50;
 }
 
 .Toastify__progress-bar-theme--light {
   /* background gradient from bg-base to contrast. Contrast at 75 opacity */
   @apply bg-gradient-to-r from-primary/30 to-primary/90;
-  @apply h-0.75;
+  @apply h-0.5 -z-50;
 }
 
 .Toastify__toast-container {
@@ -707,6 +711,11 @@ code::after {
   @apply my-0 py-1;
 }
 
+pre[class^='kit-mbox-cop'] {
+  @apply p-2;
+  @apply my-1;
+}
+
 .kit-mbox-copied:hover::before,
 .kit-mbox-copyable:hover::before {
   @apply absolute;
@@ -736,7 +745,8 @@ code::after {
   @apply -mt-6;
 }
 
-.prose > pre:not(:has(> code.hljs)) {
+/* And not .kit */
+.prose > pre:not(:has(> code.hljs)):not([class^='kit-mbox']) {
   @apply flex flex-row items-center;
   @apply text-base;
   @apply p-2 -mt-2;

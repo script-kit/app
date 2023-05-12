@@ -143,6 +143,9 @@ import {
   micConfigAtom,
   itemHeightAtom,
   inputHeightAtom,
+  previewEnabledAtom,
+  hasPreviewAtom,
+  appBoundsAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -155,6 +158,8 @@ import { Chat } from './components/chat';
 import InfoList from './components/info';
 import AudioRecorder from './audio-recorder';
 import Webcam from './webcam';
+import Preview from './components/preview';
+import AnimatePreview from './components/animate-preview';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -263,7 +268,7 @@ export default function App() {
   const setTabIndex = useSetAtom(tabIndexAtom);
   const setTabs = useSetAtom(tabsAtom);
   const addChoice = useSetAtom(addChoiceAtom);
-  const setPreviewHTML = useSetAtom(previewHTMLAtom);
+  const [previewHTML, setPreviewHTML] = useAtom(previewHTMLAtom);
   const setEditorConfig = useSetAtom(editorConfigAtom);
   const setEditorSuggestions = useSetAtom(editorSuggestionsAtom);
   const setEditorAppendValue = useSetAtom(editorAppendAtom);
@@ -305,6 +310,10 @@ export default function App() {
   const [footerHidden, setFooterHidden] = useAtom(footerHiddenAtom);
   const [inputHeight, setInputHeight] = useAtom(inputHeightAtom);
   const [itemHeight, setItemHeight] = useAtom(itemHeightAtom);
+  const [previewEnabled] = useAtom(previewEnabledAtom);
+  const [hasPreview] = useAtom(hasPreviewAtom);
+
+  const previewCheck = !appDb.mini && previewHTML && !panelHTML;
 
   const log = useAtomValue(logAtom);
 
@@ -317,6 +326,7 @@ export default function App() {
   const channel = useAtomValue(channelAtom);
 
   const domUpdated = useSetAtom(domUpdatedAtom);
+  const setAppBounds = useSetAtom(appBoundsAtom);
 
   useEffect(() => {
     // catch all window errors
@@ -409,12 +419,19 @@ export default function App() {
   useEnter();
   useThemeDetector();
 
-  const mainRef: RefObject<HTMLDivElement> = useRef(null);
+  const appRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);
   const headerRef: RefObject<HTMLDivElement> = useRef(null);
 
   useResizeObserver(headerRef, (entry) => {
     setTopHeight(entry.contentRect.height);
+  });
+
+  useResizeObserver(appRef, (entry) => {
+    setAppBounds({
+      width: entry.contentRect.width,
+      height: entry.contentRect.height,
+    });
   });
 
   type ChannelAtomMap = {
@@ -745,20 +762,13 @@ export default function App() {
     <ErrorBoundary>
       <div
         id="main-container"
+        ref={appRef}
         className={`
-        w-screen h-screen
-        min-w-screen min-h-screen
-
-
-
-      text-text-base
-
-
-
-
-      ${hasBorder ? `main-container` : ``}
-      ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
-
+w-screen h-screen
+min-w-screen min-h-screen
+text-text-base
+${hasBorder ? `main-container` : ``}
+${appConfig.isMac && hasBorder ? `main-rounded` : ``}
       `}
       >
         <div
@@ -827,66 +837,97 @@ export default function App() {
             </header>
           )}
           {logVisible && <Console key="AppLog" />}
-          <main
-            id="main"
-            ref={mainRef}
-            className="flex-1 min-h-1 overflow-y-hidden w-full"
-          >
-            <ToastContainer
-              pauseOnFocusLoss={false}
-              position="bottom-center"
-              transition={cssTransition({
-                // don't fade in/out
-                enter: 'animate__animated animate__slideInUp',
-                exit: 'animate__animated animate__slideOutDown',
-                collapseDuration: 0,
-                collapse: true,
-              })}
-            />
-            <AnimatePresence key="mainComponents">
-              {ui === UI.splash && <Splash />}
-              {ui === UI.drop && <Drop />}
-              {ui === UI.textarea && <TextArea />}
-              {ui === UI.editor && <Editor />}
-              {ui === UI.log && <Log />}
-              {ui === UI.emoji && <Emoji />}
-              {ui === UI.debugger && <Inspector />}
-              {ui === UI.chat && <Chat />}
-              {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
+          <main id="main" className="flex-1 min-h-1 overflow-y-hidden w-full">
+            <div
+              className={`h-full flex flex-row w-full
+${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
 
-              {ui === UI.term &&
-                open &&
-                termConfig?.promptId === promptData?.id && <Terminal />}
-              {ui === UI.mic && open && <AudioRecorder />}
-              {ui === UI.webcam && open && <Webcam />}
-              {/* {ui === UI.speech && <SpeechToText />} */}
-            </AnimatePresence>
-            <AutoSizer>
-              {({ width, height }) => (
-                <>
-                  {infoChoices?.length > 0 && (
-                    <InfoList width={width} height={height} />
-                  )}
-                  {((ui === UI.arg && !nullChoices && choices.length > 0) ||
+            `}
+            >
+              <div
+                className={`h-full ${
+                  (previewCheck && ui !== UI.arg
+                    ? ui === UI.term
+                      ? 'w-3/5'
+                      : 'w-2/5'
+                    : 'flex-1') || 'flex-1'
+                }`}
+              >
+                <ToastContainer
+                  pauseOnFocusLoss={false}
+                  position="bottom-center"
+                  transition={cssTransition({
+                    // don't fade in/out
+                    enter: 'animate__animated animate__slideInUp',
+                    exit: 'animate__animated animate__slideOutDown',
+                    collapseDuration: 0,
+                    collapse: true,
+                  })}
+                />
+
+                {ui === UI.splash && <Splash />}
+                {ui === UI.drop && <Drop />}
+                {ui === UI.textarea && <TextArea />}
+                {ui === UI.editor && <Editor />}
+                {ui === UI.log && <Log />}
+                {ui === UI.emoji && <Emoji />}
+                {ui === UI.debugger && <Inspector />}
+                {ui === UI.chat && <Chat />}
+                {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
+
+                {ui === UI.term &&
+                  open &&
+                  termConfig?.promptId === promptData?.id && <Terminal />}
+                {ui === UI.mic && open && <AudioRecorder />}
+                {ui === UI.webcam && open && <Webcam />}
+                {/* {ui === UI.speech && <SpeechToText />} */}
+
+                {infoChoices?.length > 0 ||
+                  (((ui === UI.arg && !nullChoices && choices.length > 0) ||
                     ui === UI.hotkey) && (
+                    <AutoSizer>
+                      {({ width, height }) => (
+                        <>
+                          {infoChoices?.length > 0 && (
+                            <InfoList width={width} height={height} />
+                          )}
+                          {((ui === UI.arg &&
+                            !nullChoices &&
+                            choices.length > 0) ||
+                            ui === UI.hotkey) && (
+                            <>
+                              <List height={height} width={width} />
+                            </>
+                          )}
+                        </>
+                      )}
+                    </AutoSizer>
+                  ))}
+                {(!!(ui === UI.arg || ui === UI.div) &&
+                  panelHTML.length > 0 && <Panel />) ||
+                  (ui === UI.form && (
                     <>
-                      <List height={height} width={width} />
+                      <Form />
                     </>
-                  )}
-                </>
-              )}
-            </AutoSizer>
-            {(!!(ui === UI.arg || ui === UI.div) && panelHTML.length > 0 && (
-              <Panel />
-            )) ||
-              (ui === UI.form && (
-                <>
-                  <Form />
-                </>
-              ))}
+                  ))}
+              </div>
+              {/* {previewEnabled && <Preview />} */}
+
+              {previewCheck &&
+                (ui === UI.arg ? (
+                  <AnimatePresence key="previewComponents">
+                    <AnimatePreview key="AnimatePreview" />
+                  </AnimatePresence>
+                ) : (
+                  <Preview />
+                ))}
+            </div>
           </main>
           {!footerHidden && (
-            <footer id="footer" className={promptData?.footerClassName || ''}>
+            <footer
+              id="footer"
+              className={`${promptData?.footerClassName || ''} z-50`}
+            >
               <ActionBar />
             </footer>
           )}

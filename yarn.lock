@@ -6851,10 +6851,10 @@ electron-util@^0.17.2:
     electron-is-dev "^1.1.0"
     new-github-issue-url "^0.2.1"
 
-electron@25.0.0-beta.2:
-  version "25.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-25.0.0-beta.2.tgz#4d9d94fd90b5cb1f205711831709669348b62f69"
-  integrity sha512-fjlNM5gEvFCAhzznJ15ReY3lY4REBZ2Ba9YLJNLYUsuZVAuwrqfen30pJ3EKmAnf5VkqIFHVkXEEQO9VdbbVxQ==
+electron@25.0.0-beta.5:
+  version "25.0.0-beta.5"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-25.0.0-beta.5.tgz#d8887a299d8c4c33f8f81534d5ef6193c2a9437f"
+  integrity sha512-48EC6IuddKcvxDZLYEqlw3uSCzTwTwM85UhaNsEDScygVByWTWQjQgbl1ivdvvwIm+0wzDZjTK/0fTcL2QEPAg==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^18.11.18"
@@ -17694,10 +17694,10 @@ xterm-webfont@^2.0.0:
   dependencies:
     fontfaceobserver "2.*"
 
-xterm@5.2.0-beta.38:
-  version "5.2.0-beta.38"
-  resolved "https://registry.yarnpkg.com/xterm/-/xterm-5.2.0-beta.38.tgz#b9e0d761f55d8cd5c60c7215c89accfed972d045"
-  integrity sha512-XkRoZCJKubTmJG4oOjZ+nNBfKQanCTev/sS3JRW8pBa2fbrRGYXZA4lCteAGhAZaUmCEktWSZlWSMZa9TLhs6g==
+xterm@5.2.0-beta.41:
+  version "5.2.0-beta.41"
+  resolved "https://registry.yarnpkg.com/xterm/-/xterm-5.2.0-beta.41.tgz#ff9f5ed8890a751db2263ebdd362f5443699026d"
+  integrity sha512-yvDMaeELF8YuqTv220/+i5MKvy9GB4Vu7tH1T3OIqPvHwgnC8SY1vOSjskxHsHsRE5qLluiQJo6/wvt3kZH8+A==
 
 xterm@^4.5.0:
   version "4.19.0"
