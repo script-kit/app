@@ -67,6 +67,7 @@ import {
   createPathResolver,
   isDir,
   appDbPath,
+  getKenvs,
 } from '@johnlindquist/kit/cjs/utils';
 
 import {
@@ -625,6 +626,9 @@ const forkOptions: ForkOptions = {
     KENV: kenvPath(),
     KNODE: knodePath(),
     PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+    USER: process?.env?.USER,
+    USERNAME: process?.env?.USERNAME,
+    HOME: process?.env?.HOME,
   },
   stdio: 'pipe',
 };
@@ -1222,6 +1226,19 @@ const checkKit = async () => {
 
   await setupLog(`Creating bins`);
   optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
+
+  if (
+    requiresInstall &&
+    (await kenvExists()) &&
+    semver.gt(storedVersion, '0.0.0') &&
+    semver.lt(storedVersion, '1.58.0')
+  ) {
+    await setupLog(`Trusting old kenvs...`);
+    const kenvs = (await getKenvs()).map((kenv) => path.basename(kenv));
+    for await (const kenv of kenvs) {
+      await optionalSetupScript(kitPath('cli', 'kenv-trust.js'), kenv, kenv);
+    }
+  }
 
   try {
     await verifyInstall();
