@@ -58,11 +58,11 @@ export default function Preview() {
   }, [previewHTML]);
 
   const onMouseEnter = useCallback(() => {
-    if (mouseEnabled) setInputFocus(false);
+    if (mouseEnabled) setInputFocus(0);
   }, [setInputFocus, mouseEnabled]);
 
   const onMouseLeave = useCallback(() => {
-    setInputFocus(true);
+    setInputFocus(Math.random());
   }, [setInputFocus]);
 
   useEffect(() => {

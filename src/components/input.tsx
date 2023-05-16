@@ -91,12 +91,12 @@ export default function Input() {
   const setLastKeyDownWasModifier = useSetAtom(lastKeyDownWasModifierAtom);
 
   useEffect(() => {
-    setInputFocus(true);
+    setInputFocus(Math.random());
     setMiniShortcutsHovered(false);
     setModifiers([]);
 
     return () => {
-      setInputFocus(false);
+      setInputFocus(0);
     };
   }, [setInputFocus, setMiniShortcutsHovered, setModifiers]);
 

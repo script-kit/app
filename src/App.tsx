@@ -843,6 +843,7 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
           <main id="main" className="flex-1 min-h-1 overflow-y-hidden w-full">
             <PanelGroup
               direction="horizontal"
+              autoSaveId={script.filePath}
               className={`h-full flex flex-row w-full
 ${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
 
@@ -914,10 +915,11 @@ ${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
 
               {previewCheck && (
                 <>
-                  <PanelResizeHandle className="w-0.5 hover:-ml-2 hover:w-4 hover:bg-secondary/75" />
+                  <PanelResizeHandle className="w-0.5 hover:-ml-1 hover:w-3 hover:bg-secondary/75" />
                   <PanelChild
                     minSize={25}
-                    defaultSize={ui === UI.term ? 40 : 60}
+                    defaultSize={promptData?.previewWidthPercent}
+                    collapsible
                   >
                     <Preview />
                   </PanelChild>

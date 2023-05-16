@@ -1804,10 +1804,10 @@ export const modifiers = [
   'SymbolLock',
 ];
 export const _modifiers = atom<string[]>([]);
-const inputFocus = atom<boolean>(true);
+const inputFocus = atom<number>(Math.random());
 export const inputFocusAtom = atom(
   (g) => g(inputFocus),
-  (g, s, a: boolean) => {
+  (g, s, a: number) => {
     if (g(inputFocus) === a) return;
     ipcRenderer.send(AppChannel.FOCUS_PROMPT);
     s(inputFocus, a);
