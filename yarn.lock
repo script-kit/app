@@ -6851,10 +6851,10 @@ electron-util@^0.17.2:
     electron-is-dev "^1.1.0"
     new-github-issue-url "^0.2.1"
 
-electron@25.0.0-beta.5:
-  version "25.0.0-beta.5"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-25.0.0-beta.5.tgz#d8887a299d8c4c33f8f81534d5ef6193c2a9437f"
-  integrity sha512-48EC6IuddKcvxDZLYEqlw3uSCzTwTwM85UhaNsEDScygVByWTWQjQgbl1ivdvvwIm+0wzDZjTK/0fTcL2QEPAg==
+electron@25.0.0-beta.6:
+  version "25.0.0-beta.6"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-25.0.0-beta.6.tgz#9783245f0dd25c3d1d01860744c9bb98480367fc"
+  integrity sha512-DQgNycBFAXRpyG2SqkShZcFoslRgJazQl4xvwW/zxMlYgLjOXvbs3RsmcxoLjJ2HzarwDcQKr9rqe1nCYnGJ3Q==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^18.11.18"
