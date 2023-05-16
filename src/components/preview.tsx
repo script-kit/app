@@ -96,7 +96,7 @@ export default function Preview() {
     <div
       key="preview"
       id="preview"
-      className={`overflow-scroll h-full ${ui === UI.term ? 'w-2/5' : 'w-3/5'}`}
+      className="overflow-scroll h-full w-full"
       style={{ userSelect: 'text' }}
       // onMouseUp={onMouseUp}
       ref={highlightRef}
@@ -106,7 +106,7 @@ export default function Preview() {
       <style type="text/css">{isDark ? darkTheme : lightTheme}</style>
       {previewHTML && (
         <div
-          className="w-full preview"
+          className="w-full h-full preview"
           dangerouslySetInnerHTML={{ __html: previewHTML }}
         />
       )}

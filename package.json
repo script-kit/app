@@ -397,6 +397,7 @@
     "react-hotkeys-hook": "3.3.2",
     "react-icons": "^4.8.0",
     "react-is-mounted-hook": "1.1.1",
+    "react-resizable-panels": "^0.0.45",
     "react-toastify": "^9.1.2",
     "react-virtualized-auto-sizer": "1.0.15",
     "react-window": "1.8.9",

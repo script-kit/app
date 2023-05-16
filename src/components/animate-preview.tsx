@@ -99,7 +99,7 @@ export default function AnimatePreview() {
       initial={{ opacity: 0, width: '0%' }}
       animate={{
         opacity: 1,
-        width: '60%',
+        width: '100%',
         transition: {
           delay: 0.1,
           duration: 0.15,

@@ -27,6 +27,7 @@ import {
   Point,
   TouchBar,
   ipcMain,
+  app,
 } from 'electron';
 import os from 'os';
 import path from 'path';
@@ -373,9 +374,23 @@ export const createPromptWindow = async () => {
     log.error({ event, details });
   });
 
-  promptWindow?.webContents?.on('child-process-gone', (event, details) => {
+  app?.on('child-process-gone', (event, details) => {
     log.error(`🫣 Child process gone...`);
     log.error({ event, details });
+  });
+
+  // gpu-info-update
+  app?.on('gpu-info-update', () => {
+    log.info(`🫣 gpu-info-update...`);
+    log.info({
+      gpuInfo: app?.getGPUInfo('complete'),
+    });
+  });
+
+  // accessibility-support-changed
+  app?.on('accessibility-support-changed', (event, details) => {
+    log.info(`🫣 accessibility-support-changed...`);
+    log.info({ event, details });
   });
 
   const onMove = async () => {

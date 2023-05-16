@@ -168,18 +168,14 @@ export default function KitTabs() {
                   {
                     '--tw-text-opacity':
                       // eslint-disable-next-line no-nested-ternary
-                      i === tabIndex ? '1' : mouseEnabled ? '0.75' : '0.5',
+                      i === tabIndex ? 1.0 : mouseEnabled ? 0.75 : 0.5,
                   } as any
                 }
                 animate={
                   {
                     '--tw-text-opacity':
                       // eslint-disable-next-line no-nested-ternary
-                      i === tabIndex
-                        ? '0.9'
-                        : tab === 'Account__'
-                        ? '0.9'
-                        : '0.5',
+                      i === tabIndex ? 0.9 : tab === 'Account__' ? 0.9 : 0.5,
                   } as any
                 }
               >
@@ -195,7 +191,9 @@ export default function KitTabs() {
                 <motion.div
                   className="bg-primary/50 h-2px left-0 right-0 bottom-0   absolute transition-colors"
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: i === hover && i !== tabIndex ? 1 : 0 }}
+                  animate={{
+                    opacity: i === hover && i !== tabIndex ? 1 : 0,
+                  }}
                   transition={{ duration: 0.15 }}
                 />
                 <TabName tab={tab} selected={i === tabIndex} />

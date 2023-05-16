@@ -27,9 +27,13 @@ import DOMPurify from 'dompurify';
 
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import AutoSizer from 'react-virtualized-auto-sizer';
+import {
+  PanelGroup,
+  Panel as PanelChild,
+  PanelResizeHandle,
+} from 'react-resizable-panels';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer, webFrame } from 'electron';
-import { AnimatePresence } from 'framer-motion';
 
 import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
@@ -159,7 +163,6 @@ import InfoList from './components/info';
 import AudioRecorder from './audio-recorder';
 import Webcam from './webcam';
 import Preview from './components/preview';
-import AnimatePreview from './components/animate-preview';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -838,90 +841,89 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
           )}
           {logVisible && <Console key="AppLog" />}
           <main id="main" className="flex-1 min-h-1 overflow-y-hidden w-full">
-            <div
+            <PanelGroup
+              direction="horizontal"
               className={`h-full flex flex-row w-full
 ${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
 
             `}
             >
-              <div
-                className={`h-full ${
-                  (previewCheck && ui !== UI.arg
-                    ? ui === UI.term
-                      ? 'w-3/5'
-                      : 'w-2/5'
-                    : 'flex-1') || 'flex-1'
-                }`}
-              >
-                <ToastContainer
-                  pauseOnFocusLoss={false}
-                  position="bottom-center"
-                  transition={cssTransition({
-                    // don't fade in/out
-                    enter: 'animate__animated animate__slideInUp',
-                    exit: 'animate__animated animate__slideOutDown',
-                    collapseDuration: 0,
-                    collapse: true,
-                  })}
-                />
+              <PanelChild minSize={25}>
+                <div className="h-full flex-1">
+                  <ToastContainer
+                    pauseOnFocusLoss={false}
+                    position="bottom-center"
+                    transition={cssTransition({
+                      // don't fade in/out
+                      enter: 'animate__animated animate__slideInUp',
+                      exit: 'animate__animated animate__slideOutDown',
+                      collapseDuration: 0,
+                      collapse: true,
+                    })}
+                  />
 
-                {ui === UI.splash && <Splash />}
-                {ui === UI.drop && <Drop />}
-                {ui === UI.textarea && <TextArea />}
-                {ui === UI.editor && <Editor />}
-                {ui === UI.log && <Log />}
-                {ui === UI.emoji && <Emoji />}
-                {ui === UI.debugger && <Inspector />}
-                {ui === UI.chat && <Chat />}
-                {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
+                  {ui === UI.splash && <Splash />}
+                  {ui === UI.drop && <Drop />}
+                  {ui === UI.textarea && <TextArea />}
+                  {ui === UI.editor && <Editor />}
+                  {ui === UI.log && <Log />}
+                  {ui === UI.emoji && <Emoji />}
+                  {ui === UI.debugger && <Inspector />}
+                  {ui === UI.chat && <Chat />}
+                  {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
 
-                {ui === UI.term &&
-                  open &&
-                  termConfig?.promptId === promptData?.id && <Terminal />}
-                {ui === UI.mic && open && <AudioRecorder />}
-                {ui === UI.webcam && open && <Webcam />}
-                {/* {ui === UI.speech && <SpeechToText />} */}
+                  {ui === UI.term &&
+                    open &&
+                    termConfig?.promptId === promptData?.id && <Terminal />}
+                  {ui === UI.mic && open && <AudioRecorder />}
+                  {ui === UI.webcam && open && <Webcam />}
+                  {/* {ui === UI.speech && <SpeechToText />} */}
 
-                {infoChoices?.length > 0 ||
-                  (((ui === UI.arg && !nullChoices && choices.length > 0) ||
-                    ui === UI.hotkey) && (
-                    <AutoSizer>
-                      {({ width, height }) => (
-                        <>
-                          {infoChoices?.length > 0 && (
-                            <InfoList width={width} height={height} />
-                          )}
-                          {((ui === UI.arg &&
-                            !nullChoices &&
-                            choices.length > 0) ||
-                            ui === UI.hotkey) && (
-                            <>
-                              <List height={height} width={width} />
-                            </>
-                          )}
-                        </>
-                      )}
-                    </AutoSizer>
-                  ))}
-                {(!!(ui === UI.arg || ui === UI.div) &&
-                  panelHTML.length > 0 && <Panel />) ||
-                  (ui === UI.form && (
-                    <>
-                      <Form />
-                    </>
-                  ))}
-              </div>
+                  {infoChoices?.length > 0 ||
+                    (((ui === UI.arg && !nullChoices && choices.length > 0) ||
+                      ui === UI.hotkey) && (
+                      <AutoSizer>
+                        {({ width, height }) => (
+                          <>
+                            {infoChoices?.length > 0 && (
+                              <InfoList width={width} height={height} />
+                            )}
+                            {((ui === UI.arg &&
+                              !nullChoices &&
+                              choices.length > 0) ||
+                              ui === UI.hotkey) && (
+                              <>
+                                <List height={height} width={width} />
+                              </>
+                            )}
+                          </>
+                        )}
+                      </AutoSizer>
+                    ))}
+                  {(!!(ui === UI.arg || ui === UI.div) &&
+                    panelHTML.length > 0 && <Panel />) ||
+                    (ui === UI.form && (
+                      <>
+                        <Form />
+                      </>
+                    ))}
+                </div>
+              </PanelChild>
+
               {/* {previewEnabled && <Preview />} */}
 
-              {previewCheck &&
-                (ui === UI.arg ? (
-                  <AnimatePresence key="previewComponents">
-                    <AnimatePreview key="AnimatePreview" />
-                  </AnimatePresence>
-                ) : (
-                  <Preview />
-                ))}
-            </div>
+              {previewCheck && (
+                <>
+                  <PanelResizeHandle className="w-0.5 hover:-ml-2 hover:w-4 hover:bg-secondary/75" />
+                  <PanelChild
+                    minSize={25}
+                    defaultSize={ui === UI.term ? 40 : 60}
+                  >
+                    <Preview />
+                  </PanelChild>
+                </>
+              )}
+            </PanelGroup>
           </main>
           {!footerHidden && (
             <footer

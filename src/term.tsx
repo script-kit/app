@@ -9,6 +9,8 @@ import { LigaturesAddon } from 'xterm-addon-ligatures';
 import { SerializeAddon } from 'xterm-addon-serialize';
 import { motion } from 'framer-motion';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { throttle } from 'lodash';
+import useResizeObserver from '@react-hook/resize-observer';
 import {
   appBoundsAtom,
   appDbAtom,
@@ -165,13 +167,24 @@ export default function Terminal() {
   const appBounds = useAtomValue(appBoundsAtom);
   const log = useAtomValue(logAtom);
 
-  useEffect(() => {
-    if (!fitRef?.current) return;
-    fitRef.current.fit();
-    const dimensions = fitRef.current.proposeDimensions();
-    if (!dimensions) return;
-    ipcRenderer.send(AppChannel.TERM_RESIZE, dimensions);
-  }, [appBounds]);
+  // useEffect(() => {
+  //   if (!fitRef?.current) return;
+  //   fitRef.current.fit();
+  //   const dimensions = fitRef.current.proposeDimensions();
+  //   if (!dimensions) return;
+  //   ipcRenderer.send(AppChannel.TERM_RESIZE, dimensions);
+  // }, [appBounds]);
+
+  useResizeObserver(
+    containerRef,
+    throttle((entry) => {
+      if (!fitRef?.current) return;
+      fitRef.current.fit();
+      const dimensions = fitRef.current.proposeDimensions();
+      if (!dimensions) return;
+      ipcRenderer.send(AppChannel.TERM_RESIZE, dimensions);
+    }, 150)
+  );
 
   return (
     <motion.div
