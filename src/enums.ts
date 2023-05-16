@@ -74,4 +74,5 @@ export enum Trigger {
   Menu = 'menu',
   Tray = 'tray',
   RunTxt = 'runTxt',
+  Protocol = 'Protocol',
 }

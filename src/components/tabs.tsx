@@ -120,7 +120,7 @@ export default function KitTabs() {
   }, [tabIndex, itemsRef]);
 
   return (
-    <motion.div
+    <div
       key="tabs"
       className="w-full overflow-x-scroll"
       style={
@@ -135,7 +135,7 @@ export default function KitTabs() {
       // animate={{ opacity: 1, y: `0px`, position: 'relative' }}
       // transition={{ duration: 0 }}
     >
-      <motion.div className="flex flex-row px-1 whitespace-nowrap">
+      <div className="flex flex-row px-1 whitespace-nowrap">
         {/* <span className="bg-white">{modeIndex}</span> */}
         {tabs.map((tab: string, i: number) => {
           return (
@@ -203,7 +203,7 @@ export default function KitTabs() {
             </Fragment>
           );
         })}
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

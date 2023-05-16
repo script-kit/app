@@ -74,14 +74,15 @@ export default function AudioRecorder() {
 
     const handleDataAvailable = async (event) => {
       setAudioChunks((prevAudioChunks) => [...prevAudioChunks, event.data]);
+      if (micConfig.stream) {
+        const arrayBuffer = await event.data.arrayBuffer();
+        const type = `audio/${micConfig.format}`;
 
-      const arrayBuffer = await event.data.arrayBuffer();
-      const type = `audio/${micConfig.format}`;
-
-      const base64 = arrayBufferToBase64(arrayBuffer, type);
-      channel(Channel.ON_AUDIO_DATA, {
-        value: base64,
-      });
+        const base64 = arrayBufferToBase64(arrayBuffer, type);
+        channel(Channel.ON_AUDIO_DATA, {
+          value: base64,
+        });
+      }
     };
 
     log(`Got recorder... ${recorderRef.current}`);

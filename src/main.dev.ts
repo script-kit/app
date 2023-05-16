@@ -129,6 +129,7 @@ import { mainLog, mainLogPath } from './logs';
 import { emitter } from './events';
 import { readyPty } from './pty';
 import { displayError } from './error';
+import { Trigger } from './enums';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -500,18 +501,24 @@ const cliFromParams = async (cli: string, params: URLSearchParams) => {
   const name = params.get('name');
   const newUrl = params.get('url');
   if (name && newUrl) {
-    await runPromptProcess(kitPath(`cli/${cli}.js`), [name, '--url', newUrl]);
+    await runPromptProcess(kitPath(`cli/${cli}.js`), [name, '--url', newUrl], {
+      force: true,
+      trigger: Trigger.Protocol,
+    });
     return true;
   }
 
   const content = params.get('content');
 
   if (content) {
-    await runPromptProcess(kitPath(`cli/${cli}.js`), [
-      name || '',
-      '--content',
-      content,
-    ]);
+    await runPromptProcess(
+      kitPath(`cli/${cli}.js`),
+      [name || '', '--content', content],
+      {
+        force: true,
+        trigger: Trigger.Protocol,
+      }
+    );
     return true;
   }
   return false;
@@ -540,13 +547,19 @@ app.on('web-contents-created', (_, contents) => {
   contents.on('will-navigate', async (event, navigationUrl) => {
     try {
       const url = new URL(navigationUrl);
-      log.info(`👉 NAVIGATING`, { url });
+      log.info(`👉 Prevent navigating to ${navigationUrl}`);
       event.preventDefault();
 
+      const pathname = url.pathname.replace('//', '');
+
       if (url.host === 'scriptkit.com' && url.pathname === '/api/new') {
-        await cliFromParams('new', url.searchParams);
+        await cliFromParams('new-from-protocol', url.searchParams);
+      } else if (url.host === 'scriptkit.com' && pathname === 'kenv') {
+        const repo = url.searchParams.get('repo');
+        await runPromptProcess(kitPath('cli', 'kenv-clone.js'), [repo || '']);
       } else if (url.protocol === 'kit:') {
-        await cliFromParams(url.pathname, url.searchParams);
+        log.info(`Attempting to run kit protocol:`, JSON.stringify(url));
+        // await cliFromParams(url.pathname, url.searchParams);
       } else if (url.protocol === 'submit:') {
         sendToPrompt(Channel.SET_SUBMIT_VALUE, url.pathname);
       } else if (url.protocol.startsWith('http')) {
@@ -716,6 +729,18 @@ const systemEvents = () => {
       clearPromptCache();
     }, 1000)
   );
+
+  powerMonitor.addListener('speed-limit-change', (limit) => {
+    log.info(`⚡ Speed limit changed: ${limit}`);
+  });
+
+  powerMonitor.addListener('on-battery', () => {
+    log.info(`🔋 on battery`);
+  });
+
+  powerMonitor.addListener('on-ac', () => {
+    log.info(`🔌  on ac`);
+  });
 
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);

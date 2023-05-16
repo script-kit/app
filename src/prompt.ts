@@ -368,6 +368,16 @@ export const createPromptWindow = async () => {
     sendToPrompt(Channel.SET_READY, true);
   });
 
+  promptWindow?.webContents?.on('render-process-gone', (event, details) => {
+    log.error(`🫣 Render process gone...`);
+    log.error({ event, details });
+  });
+
+  promptWindow?.webContents?.on('child-process-gone', (event, details) => {
+    log.error(`🫣 Child process gone...`);
+    log.error({ event, details });
+  });
+
   const onMove = async () => {
     log.silly(`event: onMove`);
     kitState.modifiedByUser = false;
@@ -597,12 +607,30 @@ export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
   if (typeof bounds?.x !== 'number') bounds.x = prevSetBounds.x;
   if (typeof bounds?.y !== 'number') bounds.y = prevSetBounds.y;
 
-  if (x && x < workX) bounds.x = workX;
-  if (y && y < workY) bounds.y = workY;
-  if (width && (x || prevSetBounds.x) + width > workX + screenWidth)
+  const xIsNumber = typeof x === 'number';
+
+  if (xIsNumber && x < workX) {
+    bounds.x = workX;
+  } else if (
+    width &&
+    (xIsNumber ? x : prevSetBounds.x) + width > workX + screenWidth
+  ) {
     bounds.x = workX + screenWidth - width;
-  if (height && (y || prevSetBounds.y) + height > workY + screenHeight)
+  } else if (xIsNumber) {
+    bounds.x = x;
+  } else {
+    bounds.x = screenWidth / 2 - bounds?.width / 2 + workX;
+  }
+
+  if (typeof y === 'number' && y < workY) {
+    bounds.y = workY;
+  } else if (height && (y || prevSetBounds.y) + height > workY + screenHeight) {
     bounds.y = workY + screenHeight - height;
+  }
+
+  // if width and height are larger than the screen, resize to fit
+  if (width && width > screenWidth) bounds.width = screenWidth;
+  if (height && height > screenHeight) bounds.height = screenHeight;
 
   try {
     promptWindow.setBounds(bounds);
@@ -1078,7 +1106,11 @@ export const setPromptData = async (promptData: PromptData) => {
 
   await pingPromptWithTimeout(Channel.SET_PROMPT_DATA, promptData);
 
-  if (typeof promptData?.x === 'number' || typeof promptData?.y === 'number') {
+  if (
+    typeof promptData?.x === 'number' ||
+    typeof promptData?.y === 'number' ||
+    typeof promptData?.width === 'number'
+  ) {
     setBounds(
       {
         x: promptData.x,
