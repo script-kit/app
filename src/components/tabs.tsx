@@ -183,11 +183,9 @@ export default function KitTabs() {
                   } as any
                 }
               >
-                <TabName tab={tab} selected={i === tabIndex} />
-
                 {i === tabIndex && (
                   <motion.div
-                    className="bg-primary bg-opacity-90 h-0.5 left-0 right-0 -bottom-px absolute transition-colors"
+                    className="bg-primary/90 h-2px left-0 right-0 bottom-0  absolute transition-colors"
                     layoutDependency
                     layoutId="selectedTab"
                     transition={{ duration: 0.15 }}
@@ -195,11 +193,12 @@ export default function KitTabs() {
                 )}
 
                 <motion.div
-                  className="bg-primary bg-opacity-50 h-0.5 left-0 right-0 -bottom-px absolute transition-colors"
+                  className="bg-primary/50 h-2px left-0 right-0 bottom-0   absolute transition-colors"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: i === hover && i !== tabIndex ? 1 : 0 }}
                   transition={{ duration: 0.15 }}
                 />
+                <TabName tab={tab} selected={i === tabIndex} />
               </motion.div>
             </Fragment>
           );

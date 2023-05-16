@@ -22,9 +22,9 @@ export default function Selected() {
     <motion.div
       key="selected"
       layout="size"
-      initial={{ opacity: 1, width: '0%' }}
+      initial={{ opacity: 1, width: '10%' }}
       animate={{ opacity: 1, width: '100%' }}
-      exit={{ opacity: 0, width: '0%' }}
+      exit={{ opacity: 0, width: '10t%' }}
       transition={{ duration: 0.15, ease: 'easeIn' }}
       style={
         {
@@ -46,7 +46,7 @@ border-primary
     >
       {flagValue ? (
         <div className="flex flex-row items-center justify-content hover:text-text-base font-semibold pl-3.5">
-          <div className="mr-8 truncate flex flex-row h-[21px] max-h-[21px]">
+          <div className="mr-8 truncate flex flex-row h-[20px] max-h-[20px]">
             <div className="">
               <IconSwapper text="←" />
             </div>
