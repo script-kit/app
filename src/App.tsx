@@ -31,6 +31,7 @@ import {
   PanelGroup,
   Panel as PanelChild,
   PanelResizeHandle,
+  ImperativePanelHandle,
 } from 'react-resizable-panels';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer, webFrame } from 'electron';
@@ -813,6 +814,16 @@ export default function App() {
     };
   }, []);
 
+  const panelChildRef = useRef<ImperativePanelHandle>(null);
+
+  useEffect(() => {
+    if (panelChildRef?.current) {
+      setInterval(() => {
+        panelChildRef.current?.expand();
+      }, 1000);
+    }
+  }, [panelChildRef]);
+
   return (
     <ErrorBoundary>
       <div
@@ -901,7 +912,7 @@ ${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
 
             `}
             >
-              <PanelChild minSize={25}>
+              <PanelChild minSize={25} ref={panelChildRef}>
                 <div className="h-full flex-1">
                   <ToastContainer
                     pauseOnFocusLoss={false}

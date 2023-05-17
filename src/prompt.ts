@@ -28,7 +28,6 @@ import {
   TouchBar,
   ipcMain,
   app,
-  powerSaveBlocker,
 } from 'electron';
 import os from 'os';
 import path from 'path';
@@ -79,9 +78,6 @@ export const maybeHide = async (reason: string) => {
       setBackgroundThrottling(true);
       // wait one tick
       await pingPromptWithTimeout(AppChannel.PROMPT_UNLOAD, {});
-      if (kitState.isWindows) {
-        powerSaveBlocker.stop(kitState.powerSaveBlockerId);
-      }
       promptWindow?.hide();
     }
   }
@@ -433,13 +429,16 @@ export const createPromptWindow = async () => {
   promptWindow?.on('moved', debounce(onMove, 250));
 
   setInterval(() => {
-    const state = powerMonitor.getSystemIdleState(60);
-    const time = powerMonitor.getSystemIdleTime();
+    const backgroundThrottling = promptWindow?.webContents?.getBackgroundThrottling();
+    const frameRate = promptWindow?.webContents?.getFrameRate();
+
     log.info({
-      state,
-      time,
-      id: kitState.powerSaveBlockerId,
+      backgroundThrottling,
+      frameRate,
     });
+    if (isVisible()) {
+      promptWindow?.webContents?.startPainting();
+    }
   }, 60000);
 
   // powerMonitor.addListener('user-did-resign-active', () => {
@@ -1185,9 +1184,6 @@ export const setPromptData = async (promptData: PromptData) => {
       }
     }, 1000);
   } else if (kitState.isWindows) {
-    kitState.powerSaveBlockerId = powerSaveBlocker.start(
-      'prevent-display-sleep'
-    );
     promptWindow?.show();
   } else {
     promptWindow?.show();

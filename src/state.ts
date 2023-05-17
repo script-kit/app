@@ -339,7 +339,6 @@ const initState = {
   resizePaused: false,
   trustedKenvs: [] as string[],
   trustedKenvsKey: getTrustedKenvsKey(),
-  powerSaveBlockerId: -1,
 };
 
 nativeTheme.addListener('updated', () => {
