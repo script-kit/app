@@ -375,7 +375,7 @@ body {
   }
 
   .kit-form * {
-    @apply text-text-base bg-white bg-opacity-0 dark:bg-black dark:text-white dark:bg-opacity-0;
+    @apply text-text-base;
   }
 
   .loading::placeholder {

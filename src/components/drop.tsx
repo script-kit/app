@@ -3,13 +3,14 @@
 /* eslint-disable jsx-a11y/no-noninteractive-tabindex */
 /* eslint-disable react/prop-types */
 
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import SimpleBar from 'simplebar-react';
 import React, { useCallback, useState } from 'react';
 import {
   closedDiv,
   placeholderAtom,
+  previewEnabledAtom,
   previewHTMLAtom,
   submitValueAtom,
 } from '../jotai';
@@ -24,8 +25,11 @@ export default function Drop() {
   const [placeholder] = useAtom(placeholderAtom);
   const [, submit] = useAtom(submitValueAtom);
   const [previewHTML] = useAtom(previewHTMLAtom);
+  const previewEnabled = useAtomValue(previewEnabledAtom);
 
-  const hasPreview = Boolean(previewHTML && previewHTML !== closedDiv);
+  const hasPreview = Boolean(
+    previewHTML && previewHTML !== closedDiv && previewEnabled
+  );
 
   const onDragEnter = useCallback((event) => {
     // TODO: Check this on windows

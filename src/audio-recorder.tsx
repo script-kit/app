@@ -14,6 +14,7 @@ import {
   placeholderAtom,
   previewHTMLAtom,
   closedDiv,
+  previewEnabledAtom,
 } from './jotai';
 import useOnEnter from './hooks/useOnEnter';
 
@@ -39,8 +40,11 @@ export default function AudioRecorder() {
   const micConfig = useAtomValue(micConfigAtom);
   const placeholder = useAtomValue(placeholderAtom);
   const [previewHTML] = useAtom(previewHTMLAtom);
+  const previewEnabled = useAtomValue(previewEnabledAtom);
 
-  const hasPreview = Boolean(previewHTML && previewHTML !== closedDiv);
+  const hasPreview = Boolean(
+    previewHTML && previewHTML !== closedDiv && previewEnabled
+  );
 
   const [channel] = useAtom(channelAtom);
 

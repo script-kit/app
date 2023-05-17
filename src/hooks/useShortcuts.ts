@@ -17,6 +17,7 @@ import {
   sendShortcutAtom,
   shortcutsAtom,
   promptDataAtom,
+  previewEnabledAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -36,15 +37,16 @@ export default () => {
   const [promptData] = useAtom(promptDataAtom);
   const [promptShortcuts] = useAtom(shortcutsAtom);
   const [, sendShortcut] = useAtom(sendShortcutAtom);
+  const [previewEnabled, setPreviewEnabled] = useAtom(previewEnabledAtom);
 
-  // useHotkeys(
-  //   `${cmd}+p`,
-  //   (event) => {
-  //     setPreviewEnabled(!previewEnabled);
-  //   },
-  //   hotkeysOptions,
-  //   [setPreviewEnabled, previewEnabled, cmd]
-  // );
+  useHotkeys(
+    `${cmd}+shift+w`,
+    (event) => {
+      setPreviewEnabled(!previewEnabled);
+    },
+    hotkeysOptions,
+    [setPreviewEnabled, previewEnabled, cmd]
+  );
 
   const flagsArray = Object.entries(flags);
 

@@ -1068,7 +1068,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   try {
     if (ui === UI.form || ui === UI.fields) {
-      ch = (document as any)?.getElementById('kit-form-id')?.offsetHeight;
+      ch = (document as any)?.getElementById(UI.form)?.offsetHeight;
       mh = ch;
     } else if (ui === UI.div) {
       ch = (document as any)?.getElementById('panel')?.offsetHeight;

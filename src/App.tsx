@@ -19,6 +19,7 @@ import React, {
   useEffect,
   useRef,
 } from 'react';
+import { gsap } from 'gsap';
 import { ToastContainer, toast, cssTransition } from 'react-toastify';
 import { debounce } from 'lodash';
 import path from 'path';
@@ -153,7 +154,13 @@ import {
   appBoundsAtom,
 } from './jotai';
 
-import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
+import {
+  useEnter,
+  useEscape,
+  useKeepAlive,
+  useShortcuts,
+  useThemeDetector,
+} from './hooks';
 import Splash from './components/splash';
 import Emoji from './components/emoji';
 import { AppChannel, WindowChannel } from './enums';
@@ -317,7 +324,8 @@ export default function App() {
   const [previewEnabled] = useAtom(previewEnabledAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
 
-  const previewCheck = !appDb.mini && previewHTML && !panelHTML;
+  const previewCheck =
+    !appDb.mini && previewHTML && !panelHTML && previewEnabled;
 
   const log = useAtomValue(logAtom);
 
@@ -331,6 +339,8 @@ export default function App() {
 
   const domUpdated = useSetAtom(domUpdatedAtom);
   const setAppBounds = useSetAtom(appBoundsAtom);
+
+  useKeepAlive();
 
   // useEffect(() => {
   //   // catch every possible dom error/crash/update possible
@@ -817,12 +827,32 @@ export default function App() {
   const panelChildRef = useRef<ImperativePanelHandle>(null);
 
   useEffect(() => {
-    if (panelChildRef?.current) {
-      setInterval(() => {
-        panelChildRef.current?.expand();
-      }, 1000);
+    if (promptData?.previewWidthPercent && panelChildRef.current) {
+      gsap.fromTo(
+        '#data-panel-id-panelChild',
+        {
+          alpha: 0.5,
+        },
+        {
+          // 'flex-grow': 0,
+          alpha: 1,
+          // ease: Power0.easeOut,
+          duration: 0.15,
+          'flex-grow': promptData?.previewWidthPercent,
+          onComplete: () => {
+            // set data-panel-size to promptData?.previewWidthPercent
+            panelChildRef.current?.resize(panelChildRef.current?.getSize());
+            const panelResizeElement = document.querySelector(
+              '[data-panel-resize-handle-id="panelResizeHandle"]'
+            );
+            if (panelResizeElement) {
+              panelResizeElement!.tabIndex = -1;
+            }
+          },
+        }
+      );
     }
-  }, [panelChildRef]);
+  }, [panelChildRef.current, promptData]);
 
   return (
     <ErrorBoundary>
@@ -912,8 +942,8 @@ ${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
 
             `}
             >
-              <PanelChild minSize={25} ref={panelChildRef}>
-                <div className="h-full flex-1">
+              <PanelChild minSize={25}>
+                <div className="h-full">
                   <ToastContainer
                     pauseOnFocusLoss={false}
                     position="bottom-center"
@@ -978,11 +1008,17 @@ ${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
 
               {previewCheck && (
                 <>
-                  <PanelResizeHandle className="w-0.5 hover:-ml-1 hover:w-3 hover:bg-secondary/75" />
+                  <PanelResizeHandle
+                    id="panelResizeHandle"
+                    className="w-0.5 hover:-ml-0.5 hover:w-3 hover:bg-secondary/75"
+                  />
                   <PanelChild
-                    minSize={25}
-                    defaultSize={promptData?.previewWidthPercent}
+                    id="panelChild"
                     collapsible
+                    ref={panelChildRef}
+                    style={{
+                      flexGrow: 0,
+                    }}
                   >
                     <Preview />
                   </PanelChild>

@@ -181,9 +181,9 @@ export default function Form() {
   );
 
   return (
-    <div className="flex flex-row min-w-full min-h-full">
-      <SimpleBar
-        className={`${hasPreview ? `w-[300px]` : `w-full`}`}
+    <div className="flex flex-row h-full min-w-full min-h-full overflow-x-scroll">
+      {/* <SimpleBar
+        className="w-full h-full"
         id={UI.form}
         style={
           {
@@ -191,49 +191,37 @@ export default function Form() {
             WebkitUserSelect: 'text',
           } as any
         }
-      >
-        <form
-          id="kit-form-id"
-          name="kitForm"
-          onChange={onFormChange}
-          ref={formRef}
-          onKeyDown={onFormKeyDown}
-          onSubmit={onLocalSubmit}
-          className={`
+      > */}
+      <form
+        id={UI.form}
+        name="kitForm"
+        onChange={onFormChange}
+        ref={formRef}
+        onKeyDown={onFormKeyDown}
+        onSubmit={onLocalSubmit}
+        className={`
         wrapper
         form-component
         kit-form
         border-none
         outline-none
       `}
-        >
-          {parse(formHTML, {
-            replace: (domNode: any) => {
-              if (
-                domNode.attribs &&
-                ['input', 'textarea', 'select'].includes(domNode.name)
-              ) {
-                domNode.attribs.onChange = () => {};
-                return domToReact(domNode);
-              }
+      >
+        {parse(formHTML, {
+          replace: (domNode: any) => {
+            if (
+              domNode.attribs &&
+              ['input', 'textarea', 'select'].includes(domNode.name)
+            ) {
+              domNode.attribs.onChange = () => {};
+              return domToReact(domNode);
+            }
 
-              return domNode;
-            },
-          })}
-        </form>
-      </SimpleBar>
-
-      {hasPreview && (
-        <SimpleBar
-          className="overflow-scroll flex-1 h-screen"
-          style={{ userSelect: 'text' }}
-        >
-          <div
-            className="w-full preview pb-12"
-            dangerouslySetInnerHTML={{ __html: previewHTML }}
-          />
-        </SimpleBar>
-      )}
+            return domNode;
+          },
+        })}
+      </form>
+      {/* </SimpleBar> */}
     </div>
   );
 }

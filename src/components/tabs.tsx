@@ -155,7 +155,17 @@ export default function KitTabs() {
                 className={`
               text-sm
               font-medium
-              text-text-base
+              ${
+                // eslint-disable-next-line no-nested-ternary
+                i === tabIndex
+                  ? `text-text-base/90`
+                  : tab === 'Account__'
+                  ? `text-text-base/90 hover:text-text-base/75`
+                  : `text-text-base/50 hover:text-text-base/75`
+              }
+
+              transition-opacity
+              duration-100
               relative
               select-none
               ${tabs.length > 5 ? `px-2` : `px-3`}
@@ -164,20 +174,6 @@ export default function KitTabs() {
                 key={tab}
                 onMouseDown={() => setTabIndex(i)}
                 style={{ cursor: mouseEnabled ? 'pointer' : 'none' }}
-                whileHover={
-                  {
-                    '--tw-text-opacity':
-                      // eslint-disable-next-line no-nested-ternary
-                      i === tabIndex ? 1.0 : mouseEnabled ? 0.75 : 0.5,
-                  } as any
-                }
-                animate={
-                  {
-                    '--tw-text-opacity':
-                      // eslint-disable-next-line no-nested-ternary
-                      i === tabIndex ? 0.9 : tab === 'Account__' ? 0.9 : 0.5,
-                  } as any
-                }
               >
                 {i === tabIndex && (
                   <motion.div

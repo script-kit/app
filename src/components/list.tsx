@@ -92,10 +92,17 @@ export default function ChoiceList({ width, height }: ListProps) {
     if (!listRef.current) return;
 
     const scroll = () => {
-      (listRef as any).current.scrollToItem(
-        requiresScroll,
-        requiresScroll > 0 ? 'center' : 'start'
-      );
+      if (requiresScroll) {
+        (listRef as any).current.scrollToItem(
+          requiresScroll,
+          requiresScroll > 0 ? 'center' : 'start'
+        );
+      } else {
+        (listRef as any).current.scrollToItem(
+          index,
+          index > 0 ? 'center' : 'start'
+        );
+      }
     };
 
     scroll();
