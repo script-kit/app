@@ -432,6 +432,16 @@ export const createPromptWindow = async () => {
   promptWindow?.on('resized', onResized);
   promptWindow?.on('moved', debounce(onMove, 250));
 
+  setInterval(() => {
+    const state = powerMonitor.getSystemIdleState(60);
+    const time = powerMonitor.getSystemIdleTime();
+    log.info({
+      state,
+      time,
+      id: kitState.powerSaveBlockerId,
+    });
+  }, 60000);
+
   // powerMonitor.addListener('user-did-resign-active', () => {
   //   log.info(`🔓 System unlocked. Reloading prompt window.`);
   //   reload();
@@ -1176,7 +1186,7 @@ export const setPromptData = async (promptData: PromptData) => {
     }, 1000);
   } else if (kitState.isWindows) {
     kitState.powerSaveBlockerId = powerSaveBlocker.start(
-      'prevent-app-suspension'
+      'prevent-display-sleep'
     );
     promptWindow?.show();
   } else {
