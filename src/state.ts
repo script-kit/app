@@ -3,7 +3,8 @@
 /* eslint-disable no-nested-ternary */
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import { proxy } from 'valtio/vanilla';
+import { proxy, snapshot, subscribe } from 'valtio/vanilla';
+import rdiff from 'recursive-diff';
 import * as nativeKeymap from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
 import log, { LogLevel } from 'electron-log';
@@ -822,3 +823,53 @@ export const initKeymap = async () => {
 export const clearStateTimers = () => {
   if (hideIntervalId) clearInterval(hideIntervalId);
 };
+
+// TODO: Removing logging
+
+let prevState: null | any = null;
+subscribe(kitState, () => {
+  const newState = snapshot(kitState);
+  if (prevState) {
+    const diff = rdiff.getDiff(prevState, newState);
+    if (diff.length > 0) {
+      log.info(`\n\n👀 State changed: ${JSON.stringify(diff)}`);
+    }
+  }
+  prevState = newState;
+});
+
+let prevAppDbState: null | any = null;
+subscribe(appDb, () => {
+  const newState = snapshot(appDb);
+  if (prevAppDbState) {
+    const diff = rdiff.getDiff(prevAppDbState, newState);
+    if (diff.length > 0) {
+      log.info(`\n\n👀 AppDb changed: ${JSON.stringify(diff)}`);
+    }
+  }
+  prevAppDbState = newState;
+});
+
+let prevConfigState: null | any = null;
+subscribe(kitConfig, () => {
+  const newState = snapshot(kitConfig);
+  if (prevConfigState) {
+    const diff = rdiff.getDiff(prevConfigState, newState);
+    if (diff.length > 0) {
+      log.info(`\n\n👀 Config changed: ${JSON.stringify(diff)}`);
+    }
+  }
+  prevConfigState = newState;
+});
+
+let prevWidgetState: null | any = null;
+subscribe(widgetState, () => {
+  const newState = snapshot(widgetState);
+  if (prevWidgetState) {
+    const diff = rdiff.getDiff(prevWidgetState, newState);
+    if (diff.length > 0) {
+      log.info(`\n\n👀 WidgetState changed: ${JSON.stringify(diff)}`);
+    }
+  }
+  prevWidgetState = newState;
+});

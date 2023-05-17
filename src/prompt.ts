@@ -380,12 +380,12 @@ export const createPromptWindow = async () => {
   });
 
   // gpu-info-update
-  app?.on('gpu-info-update', () => {
-    log.info(`🫣 gpu-info-update...`);
-    log.info({
-      gpuInfo: app?.getGPUInfo('complete'),
-    });
-  });
+  // app?.on('gpu-info-update', () => {
+  //   log.info(`🫣 gpu-info-update...`);
+  //   log.info({
+  //     gpuInfo: app?.getGPUInfo('complete'),
+  //   });
+  // });
 
   // accessibility-support-changed
   app?.on('accessibility-support-changed', (event, details) => {

@@ -88,7 +88,7 @@ export default function Drop() {
           } as any
         }
         className={`
-          ${hasPreview ? `w-[300px] mt-16` : `w-full justify-center`}
+          w-full ${hasPreview ? `mt-16 p-2` : `justify-center p-8`}
         h-full
         drop-component
         flex flex-col  items-center

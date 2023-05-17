@@ -169,7 +169,7 @@ export default function AudioRecorder() {
     <div id={UI.mic} className="flex flex-row min-w-full min-h-full">
       <div
         className={`w-full ${
-          hasPreview ? `mt-16` : `justify-center`
+          hasPreview ? `mt-16 p-2` : `justify-center p-8`
         } flex flex-col items-center text-text-base`}
       >
         <h1 className="text-5xl text-center">{placeholder || 'Recording'}</h1>

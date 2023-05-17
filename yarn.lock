@@ -14516,6 +14516,11 @@ rechoir@^0.7.0:
   dependencies:
     resolve "^1.9.0"
 
+recursive-diff@^1.0.9:
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/recursive-diff/-/recursive-diff-1.0.9.tgz#e617cbfcf125d4d73954c06997289c2d3321d5f7"
+  integrity sha512-5mqpskzvXDo5Vy29Vj8tH30a0+XBmY11aqWGoN/uB94UHRwndX2EuPvH+WtbqOYkrwAF718/lDo6U4CB1qSSqQ==
+
 redent@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/redent/-/redent-3.0.0.tgz#e557b7998316bb53c9f1f56fa626352c6963059f"

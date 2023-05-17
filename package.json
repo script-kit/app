@@ -401,6 +401,7 @@
     "react-toastify": "^9.1.2",
     "react-virtualized-auto-sizer": "1.0.15",
     "react-window": "1.8.9",
+    "recursive-diff": "^1.0.9",
     "regenerator-runtime": "0.13.11",
     "rxjs": "6.6.7",
     "sane": "^5.0.1",
