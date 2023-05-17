@@ -332,6 +332,58 @@ export default function App() {
   const setAppBounds = useSetAtom(appBoundsAtom);
 
   useEffect(() => {
+    // catch every possible dom error/crash/update possible
+    document.addEventListener('DOMSubtreeModified', (event) => {
+      log({
+        type: 'dom',
+        event: event.type,
+      });
+    });
+
+    document.addEventListener('animationiteration', (event) => {
+      log({
+        type: 'animation',
+        event: event.type,
+      });
+    });
+
+    document.addEventListener('blur', (event) => {
+      log({
+        type: 'blur',
+        event: event.type,
+      });
+    });
+
+    document.addEventListener('emptied', (event) => {
+      log({
+        type: 'emptied',
+        event: event.type,
+      });
+    });
+
+    document.addEventListener('ended', (event) => {
+      log({
+        type: 'ended',
+        event: event.type,
+      });
+    });
+
+    document.addEventListener('error', (event) => {
+      log({
+        type: 'error',
+        event: event.type,
+      });
+    });
+
+    document.addEventListener('waiting', (event) => {
+      log({
+        type: 'waiting',
+        event: event.type,
+      });
+    });
+  }, []);
+
+  useEffect(() => {
     // catch all window errors
     const errorHandler = async (event: ErrorEvent) => {
       const { message, filename, lineno, colno, error } = event;

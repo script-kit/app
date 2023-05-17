@@ -37,9 +37,9 @@ const handleChannel = (
   fn: (processInfo: ProcessInfo, message: AppMessage) => void
 ) => (_event: any, message: AppMessage) => {
   // TODO: Remove logging
-  log.info({
-    message,
-  });
+  // log.info({
+  //   message,
+  // });
   if (message?.pid === 0) return;
   const processInfo = processes.getByPid(message?.pid);
 
