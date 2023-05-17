@@ -682,6 +682,10 @@ code::after {
   @apply mb-0;
 }
 
+.kit-mbox-wrapper > .prose > h1:first-of-type {
+  @apply pt-4;
+}
+
 .kit-mbox-wrapper code {
   @apply text-sm;
 }

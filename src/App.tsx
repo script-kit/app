@@ -847,6 +847,21 @@ export default function App() {
     }
   }, [panelChildRef.current, promptData]);
 
+  const onResizeHandleDragging = useCallback(
+    debounce((event: MouseEvent) => {
+      const size = panelChildRef.current?.getSize();
+      // if size is within 10 of promptData?.previewWidthPercent, then set it to promptData?.previewWidthPercent
+      if (
+        size &&
+        promptData?.previewWidthPercent &&
+        Math.abs(size - promptData?.previewWidthPercent) < 10
+      ) {
+        panelChildRef.current?.resize(promptData?.previewWidthPercent);
+      }
+    }, 250),
+    [promptData?.previewWidthPercent, panelChildRef?.current]
+  );
+
   return (
     <ErrorBoundary>
       <div
@@ -1004,6 +1019,7 @@ ${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
                   <PanelResizeHandle
                     id="panelResizeHandle"
                     className="w-0.5 hover:-ml-0.5 hover:w-3 hover:bg-secondary/75"
+                    onDragging={onResizeHandleDragging}
                   />
                   <PanelChild
                     id="panelChild"
