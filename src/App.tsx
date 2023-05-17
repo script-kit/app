@@ -335,18 +335,6 @@ export default function App() {
   const domUpdated = useSetAtom(domUpdatedAtom);
   const setAppBounds = useSetAtom(appBoundsAtom);
 
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setTick(Math.random());
-    }, 1000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, []);
-
   // useEffect(() => {
   //   // catch every possible dom error/crash/update possible
   //   document.addEventListener('DOMSubtreeModified', (event) => {
@@ -1041,11 +1029,6 @@ ${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
           )}
         </div>
       </div>
-
-      {/* Render a pixel off screen - attempting a "keep alive" hack for windows */}
-      {open && tick > 0.5 && (
-        <div className="absolute -top-1 -left-1 bg-primary/0 w-px h-px" />
-      )}
 
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio id="audio" />

@@ -1742,7 +1742,7 @@ const kitMessageMap: ChannelHandler = {
       app?.dock?.hide();
     }
 
-    log.info(`SET SELECTED TEXT`, text);
+    // log.info(`SET SELECTED TEXT`, text);
     clipboard.writeText(text);
 
     const modifier = kitState.isMac ? Key.LeftSuper : Key.LeftControl;
@@ -1751,7 +1751,7 @@ const kitMessageMap: ChannelHandler = {
     setTimeout(() => {
       kitState.snippet = '';
       childSend(child, { channel, value });
-      log.info(`SET SELECTED TEXT DONE`, text);
+      // log.info(`SET SELECTED TEXT DONE`, text);
     }, 10);
   }),
 

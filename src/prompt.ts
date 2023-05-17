@@ -1172,22 +1172,20 @@ export const setPromptData = async (promptData: PromptData) => {
 
   if (kitState.isMac) {
     promptWindow?.showInactive();
-    // 0 second setTimeout
-    setTimeout(() => {
-      promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
-    }, 0);
-
-    if (topTimeout) clearTimeout(topTimeout);
-    topTimeout = setTimeout(() => {
-      if (kitState.ignoreBlur) {
-        promptWindow?.setAlwaysOnTop(false);
-      }
-    }, 1000);
-  } else if (kitState.isWindows) {
-    promptWindow?.show();
   } else {
     promptWindow?.show();
   }
+
+  setTimeout(() => {
+    promptWindow?.setAlwaysOnTop(true, 'screen-saver');
+  }, 0);
+
+  if (topTimeout) clearTimeout(topTimeout);
+  topTimeout = setTimeout(() => {
+    if (kitState.ignoreBlur) {
+      promptWindow?.setAlwaysOnTop(false);
+    }
+  }, 1000);
 
   // app.focus({
   //   steal: true,
