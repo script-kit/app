@@ -28,6 +28,7 @@ import {
   TouchBar,
   ipcMain,
   app,
+  powerSaveBlocker,
 } from 'electron';
 import os from 'os';
 import path from 'path';
@@ -78,6 +79,9 @@ export const maybeHide = async (reason: string) => {
       setBackgroundThrottling(true);
       // wait one tick
       await pingPromptWithTimeout(AppChannel.PROMPT_UNLOAD, {});
+      if (kitState.isWindows) {
+        powerSaveBlocker.stop(kitState.powerSaveBlockerId);
+      }
       promptWindow?.hide();
     }
   }
@@ -1171,6 +1175,9 @@ export const setPromptData = async (promptData: PromptData) => {
       }
     }, 1000);
   } else if (kitState.isWindows) {
+    kitState.powerSaveBlockerId = powerSaveBlocker.start(
+      'prevent-app-suspension'
+    );
     promptWindow?.show();
   } else {
     promptWindow?.show();

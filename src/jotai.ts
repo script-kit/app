@@ -1007,7 +1007,7 @@ let prevTopHeight = 0;
 
 export const domUpdatedAtom = atom(null, (g, s) => {
   return debounce((reason = '') => {
-    g(logAtom)(`domUpdated: ${reason}`);
+    // g(logAtom)(`domUpdated: ${reason}`);
     resize(g, s, reason);
   }, 25); // TODO: think about panel resizing debouncing
 });
@@ -1018,7 +1018,7 @@ const debounceSendResize = debounce(sendResize, 100);
 
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const active = g(promptActiveAtom);
-  g(logAtom)(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
+  // g(logAtom)(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
 
   if (!active) return;
 
@@ -1437,7 +1437,7 @@ export const promptDataAtom = atom(
           a?.choicesType === 'async')
       ) {
         // s(unfilteredChoicesAtom, []);
-        g(logAtom)(`null | function | async - skip clearing choices`);
+        // g(logAtom)(`null | function | async - skip clearing choices`);
       }
 
       if (a?.choicesType === 'async') {
