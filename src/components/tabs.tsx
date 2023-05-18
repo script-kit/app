@@ -40,37 +40,12 @@ const GithubIcon = ({ className }) => (
 
 const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
   const user = useAtomValue(userAtom);
-  const kitState = useAtomValue(kitStateAtom);
 
   if (tab === 'Account__') {
     if (user.login) {
       return (
-        <div className="flex flex-row justify-center items-center -mb-1 -mt-2px">
+        <div className="flex flex-row justify-center items-center pr-8">
           <span>{user?.name?.split(' ')?.[0] || user.login}</span>
-          {kitState.isSponsor && (
-            <svg
-              height="24"
-              width="24"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-              className={`absolute z-20 h-4 -right-0.5 -top-1 text-primary
-              opacity-90
-              `}
-            >
-              <g fill="currentColor">
-                <path
-                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"
-                  fill="currentColor"
-                />
-              </g>
-            </svg>
-          )}
-          <img
-            alt="avatar"
-            src={user.avatar_url}
-            className={`w-6 rounded-full
-            ml-2 relative z-0`}
-          />
         </div>
       );
     }
@@ -96,6 +71,8 @@ export default function KitTabs() {
   const [open] = useAtom(openAtom);
   const [hover, setHover] = useState(-1);
   const itemsRef: any = useRef([]);
+  const kitState = useAtomValue(kitStateAtom);
+  const user = useAtomValue(userAtom);
 
   useEffect(() => {
     itemsRef.current = itemsRef.current.slice(0, tabs.length);
@@ -120,39 +97,63 @@ export default function KitTabs() {
   }, [tabIndex, itemsRef]);
 
   return (
-    <div
-      key="tabs"
-      className="w-full overflow-x-scroll"
-      style={
-        {
-          WebkitAppRegion: 'no-drag',
-          WebkitUserSelect: 'text',
-        } as any
-      }
+    <>
+      {kitState.isSponsor && tabs.includes('Account__') && (
+        <>
+          <img
+            alt="avatar"
+            src={user.avatar_url}
+            className="absolute w-6 rounded-full z-0 right-[14px] bottom-[4px]"
+          />
+          <svg
+            height="24"
+            width="24"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+            className="absolute z-10 h-[15px] right-[5px] bottom-[17px] text-primary opacity-90"
+          >
+            <g fill="currentColor">
+              <path
+                d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"
+                fill="currentColor"
+              />
+            </g>
+          </svg>
+        </>
+      )}
+      <div
+        key="tabs"
+        className="w-full overflow-x-scroll"
+        style={
+          {
+            WebkitAppRegion: 'no-drag',
+            WebkitUserSelect: 'text',
+          } as any
+        }
 
-      // Pay attention to the transtion to "Selected" so the bottom border line stays stable
-      // initial={{ opacity: 0, y: `1rem` }}
-      // animate={{ opacity: 1, y: `0px`, position: 'relative' }}
-      // transition={{ duration: 0 }}
-    >
-      <div className="flex flex-row px-1 whitespace-nowrap">
-        {/* <span className="bg-white">{modeIndex}</span> */}
-        {tabs.map((tab: string, i: number) => {
-          return (
-            // I need to research a11y for apps vs. "sites"
-            <Fragment key={tab}>
-              {tab === 'Account__' && <div className="flex-grow" />}
-              <motion.div
-                ref={(el) => {
-                  itemsRef.current[i] = el;
-                }}
-                onMouseEnter={() => {
-                  if (mouseEnabled) {
-                    setHover(i);
-                  }
-                }}
-                onMouseLeave={() => setHover(-1)}
-                className={`
+        // Pay attention to the transtion to "Selected" so the bottom border line stays stable
+        // initial={{ opacity: 0, y: `1rem` }}
+        // animate={{ opacity: 1, y: `0px`, position: 'relative' }}
+        // transition={{ duration: 0 }}
+      >
+        <div className="flex flex-row px-1 whitespace-nowrap">
+          {/* <span className="bg-white">{modeIndex}</span> */}
+          {tabs.map((tab: string, i: number) => {
+            return (
+              // I need to research a11y for apps vs. "sites"
+              <Fragment key={tab}>
+                {tab === 'Account__' && <div className="flex-grow" />}
+                <motion.div
+                  ref={(el) => {
+                    itemsRef.current[i] = el;
+                  }}
+                  onMouseEnter={() => {
+                    if (mouseEnabled) {
+                      setHover(i);
+                    }
+                  }}
+                  onMouseLeave={() => setHover(-1)}
+                  className={`
               text-sm
               font-medium
               ${
@@ -171,33 +172,34 @@ export default function KitTabs() {
               ${tabs.length > 5 ? `px-2` : `px-3`}
               pb-1.5
           `}
-                key={tab}
-                onMouseDown={() => setTabIndex(i)}
-                style={{ cursor: mouseEnabled ? 'pointer' : 'none' }}
-              >
-                {i === tabIndex && (
+                  key={tab}
+                  onMouseDown={() => setTabIndex(i)}
+                  style={{ cursor: mouseEnabled ? 'pointer' : 'none' }}
+                >
+                  {i === tabIndex && (
+                    <motion.div
+                      className="bg-primary/90 h-2px left-0 right-0 bottom-0  absolute transition-colors"
+                      layoutDependency
+                      layoutId="selectedTab"
+                      transition={{ duration: 0.15 }}
+                    />
+                  )}
+
                   <motion.div
-                    className="bg-primary/90 h-2px left-0 right-0 bottom-0  absolute transition-colors"
-                    layoutDependency
-                    layoutId="selectedTab"
+                    className="bg-primary/50 h-2px left-0 right-0 bottom-0   absolute transition-colors"
+                    initial={{ opacity: 0 }}
+                    animate={{
+                      opacity: i === hover && i !== tabIndex ? 1 : 0,
+                    }}
                     transition={{ duration: 0.15 }}
                   />
-                )}
-
-                <motion.div
-                  className="bg-primary/50 h-2px left-0 right-0 bottom-0   absolute transition-colors"
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    opacity: i === hover && i !== tabIndex ? 1 : 0,
-                  }}
-                  transition={{ duration: 0.15 }}
-                />
-                <TabName tab={tab} selected={i === tabIndex} />
-              </motion.div>
-            </Fragment>
-          );
-        })}
+                  <TabName tab={tab} selected={i === tabIndex} />
+                </motion.div>
+              </Fragment>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
