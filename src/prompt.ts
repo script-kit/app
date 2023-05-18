@@ -374,6 +374,66 @@ export const createPromptWindow = async () => {
     log.error({ event, details });
   });
 
+  // TODO: Remove logging
+
+  promptWindow?.webContents?.on('destroyed', () => {
+    log.error(`🫣 Prompt destroyed...`);
+  });
+
+  promptWindow?.webContents?.on('crashed', () => {
+    log.error(`🫣 Prompt crashed...`);
+  });
+
+  promptWindow?.webContents?.on('certificate-error', () => {
+    log.error(`🫣 Prompt certificate-error...`);
+  });
+
+  promptWindow?.webContents?.on('devtools-reload-page', () => {
+    log.info(`🫣 Devtools reloaded...`);
+  });
+
+  promptWindow?.webContents?.on('did-navigate', () => {
+    log.info(`🫣 Did navigate...`);
+  });
+
+  promptWindow?.webContents?.on('did-navigate-in-page', () => {
+    log.info(`🫣 Did navigate in page...`);
+  });
+
+  promptWindow?.webContents?.on('did-attach-webview', () => {
+    log.info(`🫣 Did attach webview...`);
+  });
+
+  promptWindow?.webContents?.on('responsive', () => {
+    log.info(`🫣 Responsive...`);
+  });
+
+  promptWindow?.webContents?.on('unresponsive', () => {
+    log.info(`🫣 Unresponsive...`);
+  });
+
+  promptWindow?.webContents?.on('update-target-url', () => {
+    log.info(`🫣 Update target url...`);
+  });
+
+  promptWindow?.webContents?.on('will-navigate', () => {
+    log.info(`🫣 Will navigate...`);
+  });
+
+  promptWindow?.webContents?.on('will-attach-webview', () => {
+    log.info(`🫣 Will attach webview...`);
+  });
+
+  promptWindow?.webContents?.on('will-redirect', () => {
+    log.info(`🫣 Will redirect...`);
+  });
+
+  promptWindow?.webContents?.on('did-fail-provisional-load', () => {
+    log.error(`🫣 Did fail provisional load...`);
+  });
+
+  // TODO: End remove logging
+
   app?.on('child-process-gone', (event, details) => {
     log.error(`🫣 Child process gone...`);
     log.error({ event, details });
