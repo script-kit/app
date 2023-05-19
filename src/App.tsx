@@ -153,6 +153,9 @@ import {
   previewEnabledAtom,
   hasPreviewAtom,
   appBoundsAtom,
+  _index,
+  lightenUIAtom,
+  promptBoundsAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -241,6 +244,7 @@ export default function App() {
   const addChatMessage = useSetAtom(addChatMessageAtom);
   const chatPushToken = useSetAtom(chatPushTokenAtom);
   const setChatMessage = useSetAtom(setChatMessageAtom);
+  const setPromptBounds = useSetAtom(promptBoundsAtom);
 
   const [ui, setUi] = useAtom(uiAtom);
   const choices = useAtomValue(scoredChoices);
@@ -261,8 +265,8 @@ export default function App() {
   const appendInput = useSetAtom(appendInputAtom);
   const setPlaceholder = useSetAtom(placeholderAtom);
   const [promptData, setPromptData] = useAtom(promptDataAtom);
-  const setTheme = useSetAtom(themeAtom);
-  const setTempTheme = useSetAtom(tempThemeAtom);
+  const [theme, setTheme] = useAtom(themeAtom);
+  const [tempTheme, setTempTheme] = useAtom(tempThemeAtom);
   const setSplashBody = useSetAtom(splashBodyAtom);
   const setSplashHeader = useSetAtom(splashHeaderAtom);
   const setSplashProgress = useSetAtom(splashProgressAtom);
@@ -319,6 +323,9 @@ export default function App() {
   const [previewEnabled] = useAtom(previewEnabledAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
 
+  const index = useAtomValue(_index);
+  const input = useAtomValue(inputAtom);
+
   const previewCheck =
     !appDb.mini && previewHTML && !panelHTML && previewEnabled;
 
@@ -334,87 +341,7 @@ export default function App() {
 
   const domUpdated = useSetAtom(domUpdatedAtom);
   const setAppBounds = useSetAtom(appBoundsAtom);
-
-  useEffect(() => {
-    // catch every possible dom error/crash/update possible
-    // document.addEventListener('DOMSubtreeModified', (event) => {
-    //   log({
-    //     type: 'dom',
-    //     event: event.type,
-    //   });
-    // });
-
-    // TODO: Remove logging
-    document.addEventListener('visibilitychange', (event) => {
-      log({
-        type: 'visibilitychange',
-        event: event.type,
-      });
-    });
-
-    document.addEventListener('animationstart', (event) => {
-      log({
-        type: 'animation',
-        event: event.type,
-      });
-    });
-
-    document.addEventListener('animationiteration', (event) => {
-      log({
-        type: 'animation',
-        event: event.type,
-      });
-    });
-
-    document.addEventListener('blur', (event) => {
-      log({
-        type: 'blur',
-        event: event.type,
-      });
-    });
-
-    document.addEventListener('emptied', (event) => {
-      log({
-        type: 'emptied',
-        event: event.type,
-      });
-    });
-
-    document.addEventListener('ended', (event) => {
-      log({
-        type: 'ended',
-        event: event.type,
-      });
-    });
-
-    document.addEventListener('error', (event) => {
-      log({
-        type: 'error',
-        event: event.type,
-      });
-    });
-
-    document.addEventListener('waiting', (event) => {
-      log({
-        type: 'waiting',
-        event: event.type,
-      });
-    });
-
-    document.addEventListener('stalled', (event) => {
-      log({
-        type: 'stalled',
-        event: event.type,
-      });
-    });
-
-    document.addEventListener('suspend', (event) => {
-      log({
-        type: 'suspend',
-        event: event.type,
-      });
-    });
-  }, []);
+  const lighten = useAtomValue(lightenUIAtom);
 
   useEffect(() => {
     // catch all window errors
@@ -541,6 +468,7 @@ export default function App() {
       toast.dismiss();
       setPid(pid);
     },
+    [Channel.SET_PROMPT_BOUNDS]: setPromptBounds,
     [Channel.SET_SCRIPT]: setScript,
     [Channel.SET_SCRIPT_HISTORY]: setScriptHistory,
     [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
@@ -900,10 +828,29 @@ export default function App() {
 w-screen h-screen
 min-w-screen min-h-screen
 text-text-base
-${hasBorder ? `main-container` : ``}
+${hasBorder ? `border-ui-border border-1` : ``}
 ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
       `}
       >
+        {/* {lighten && (
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `
+*[class*='bg-secondary'] {
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+*[class*='border-secondary'] {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.prose thead, tr, h1:first-of-type {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+  `,
+            }}
+          />
+        )} */}
         <div
           onDrop={(event) => {
             if (ui !== UI.drop) {
@@ -975,7 +922,7 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
               direction="horizontal"
               autoSaveId={script.filePath}
               className={`h-full flex flex-row w-full
-${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
+${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
             `}
             >
@@ -1010,27 +957,27 @@ ${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
                   {ui === UI.webcam && open && <Webcam />}
                   {/* {ui === UI.speech && <SpeechToText />} */}
 
-                  {infoChoices?.length > 0 ||
-                    (((ui === UI.arg && !nullChoices && choices.length > 0) ||
-                      ui === UI.hotkey) && (
-                      <AutoSizer>
-                        {({ width, height }) => (
-                          <>
-                            {infoChoices?.length > 0 && (
-                              <InfoList width={width} height={height} />
-                            )}
-                            {((ui === UI.arg &&
-                              !nullChoices &&
-                              choices.length > 0) ||
-                              ui === UI.hotkey) && (
-                              <>
-                                <List height={height} width={width} />
-                              </>
-                            )}
-                          </>
-                        )}
-                      </AutoSizer>
-                    ))}
+                  {(infoChoices?.length ||
+                    (ui === UI.arg && !nullChoices && choices.length > 0) ||
+                    ui === UI.hotkey) && (
+                    <AutoSizer>
+                      {({ width, height }) => (
+                        <>
+                          {infoChoices?.length > 0 && (
+                            <InfoList width={width} height={height} />
+                          )}
+                          {((ui === UI.arg &&
+                            !nullChoices &&
+                            choices.length > 0) ||
+                            ui === UI.hotkey) && (
+                            <>
+                              <List height={height} width={width} />
+                            </>
+                          )}
+                        </>
+                      )}
+                    </AutoSizer>
+                  )}
                   {(!!(ui === UI.arg || ui === UI.div) &&
                     panelHTML.length > 0 && <Panel />) ||
                     (ui === UI.form && (
@@ -1047,7 +994,7 @@ ${showTabs || showSelected ? 'border-t border-secondary/75' : ''}
                 <>
                   <PanelResizeHandle
                     id="panelResizeHandle"
-                    className="w-0.5 hover:-ml-0.5 hover:w-3 hover:bg-secondary/75"
+                    className="w-0.5 hover:-ml-0.5 hover:w-3 hover:bg-white/5 hover:border-r-1 hover:border-white/10"
                     onDragging={onResizeHandleDragging}
                   />
                   <PanelChild

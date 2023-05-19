@@ -47,7 +47,7 @@ export const startWatching = (callback: WatcherCallback) => {
 
     const globs = [
       path.resolve(filePath, 'scripts', '*'),
-      path.resolve(filePath, 'lib', '*'),
+      path.resolve(filePath, 'lib', '**', '*'),
     ];
 
     setTimeout(() => {
@@ -61,7 +61,7 @@ export const startWatching = (callback: WatcherCallback) => {
 
     const globs = [
       path.resolve(filePath, 'scripts', '*'),
-      path.resolve(filePath, 'lib', '*'),
+      path.resolve(filePath, 'lib', '**', '*'),
     ];
 
     setTimeout(() => {

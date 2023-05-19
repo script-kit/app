@@ -101,7 +101,7 @@ export function EnterButton(action: Action) {
           w-5 h-5 ml-0.5
           leading-none
           rounded
-          bg-secondary/15
+          bg-ui-bg
           hover:border-opacity-10
           hover:cursor-pointer
 

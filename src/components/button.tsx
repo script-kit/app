@@ -10,7 +10,7 @@ import parse from 'html-react-parser';
 
 import { overrideTailwindClasses } from 'tailwind-override';
 import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types/core';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { motion } from 'framer-motion';
 
@@ -22,6 +22,7 @@ import {
   _modifiers,
   buttonNameFontSizeAtom,
   buttonDescriptionFontSizeAtom,
+  lightenUIAtom,
 } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -82,6 +83,7 @@ export default function ChoiceButton({
   const [modifierDescription, setModifierDescription] = useState('');
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
   const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
+  const lightenUI = useAtomValue(lightenUIAtom);
 
   // const dataTransfer = useRef<any>('Data Transfer');
 
@@ -172,9 +174,7 @@ export default function ChoiceButton({
       className={`
       text-text-base
       ${
-        index === currentIndex && !choice?.disableSubmit
-          ? `bg-secondary/30`
-          : ``
+        index === currentIndex && !choice?.disableSubmit ? `bg-ui-bg` : ``
       } ${overrideTailwindClasses(`
         w-full
         h-16

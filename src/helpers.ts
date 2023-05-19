@@ -68,6 +68,8 @@ export const isKitScript = (scriptPath: string) => {
 };
 
 export const toRgb = (hexOrRgbOrName: string) => {
+  if (hexOrRgbOrName === 'lighten' || hexOrRgbOrName === 'darken')
+    return hexOrRgbOrName;
   if (hexOrRgbOrName.includes(',')) return hexOrRgbOrName;
   if (colors[hexOrRgbOrName]) return colors[hexOrRgbOrName].join(',');
 

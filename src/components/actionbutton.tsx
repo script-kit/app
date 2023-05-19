@@ -84,7 +84,7 @@ export function ActionButton(action: Action) {
           leading-none
 
           rounded
-          bg-secondary/15
+          bg-ui-bg
           hover:border-opacity-10
 
           `}

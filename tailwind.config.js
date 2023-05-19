@@ -9,11 +9,15 @@ delete colors.blueGray;
 delete colors.trueGray;
 delete colors.warmGray;
 
-const colorVar = (name) => (v) => {
+const colorVar = (name, opacityName) => (v) => {
   const { opacityVariable, opacityValue } = v;
+  if (opacityName !== undefined) {
+    return `rgba(var(--color-${name}), var(--${opacityName}))`;
+  }
   if (opacityValue !== undefined) {
     return `rgba(var(--color-${name}), ${opacityValue})`;
   }
+
   if (opacityVariable !== undefined) {
     return `rgba(var(--color-${name}), var(${opacityVariable}, 1))`;
   }
@@ -85,6 +89,8 @@ module.exports = {
       gray: colors.coolGray,
       primary: colorVar('primary'),
       secondary: colorVar('secondary'),
+      'ui-bg': colorVar('secondary', 'ui-bg-opacity'),
+      'ui-border': colorVar('secondary', 'ui-border-opacity'),
       contrast: colorVar('contrast'),
       gradient: {
         white: '#ffffffcc',
@@ -179,10 +185,10 @@ module.exports = {
             '--tw-prose-bold': theme('colors.text.base'),
             '--tw-prose-italic': theme('colors.text.base'),
             thead: {
-              borderBottomColor: theme('colors.secondary'),
+              borderBottomColor: theme('colors.ui-border'),
             },
             tr: {
-              borderBottomColor: theme('colors.secondary'),
+              borderBottomColor: theme('colors.ui-border'),
             },
             maxWidth: '100%',
             color: theme('colors.text.base'),

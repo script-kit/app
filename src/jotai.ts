@@ -905,6 +905,10 @@ export const inputAtom = atom(
       s(loadingAtom, true);
       // generateChoices(a, pid);
     }
+
+    if (g(_inputChangedAtom) && a === '') {
+      resize(g, s, 'INPUT_CLEARED');
+    }
   }
 );
 
@@ -921,6 +925,7 @@ const _tabIndex = atom(0);
 export const tabIndexAtom = atom(
   (g) => g(_tabIndex),
   (g, s, a: number) => {
+    s(_inputChangedAtom, false);
     s(submittedAtom, false);
     if (g(_tabIndex) !== a) {
       s(_tabIndex, a);
@@ -1021,6 +1026,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   // g(logAtom)(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
 
   if (!active) return;
+  const promptBounds = g(promptBoundsAtom);
 
   const ui = g(uiAtom);
   // g(logAtom)(`resize: ${reason} - ${ui}`);
@@ -1127,10 +1133,11 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     mh += logHeight || 0;
   }
 
+  const justOpened = g(justOpenedAtom);
+
   let forceHeight;
-  const forceWidth = g(isMainScriptAtom)
-    ? PROMPT.WIDTH.BASE
-    : promptData?.width;
+
+  const forceWidth = justOpened ? promptBounds?.width : promptData?.width;
   if (
     [
       UI.term,
@@ -1143,7 +1150,9 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
       UI.webcam,
     ].includes(ui)
   ) {
-    forceHeight = promptData?.height || PROMPT.HEIGHT.BASE;
+    forceHeight = justOpened
+      ? promptBounds?.height
+      : promptData?.height || PROMPT.HEIGHT.BASE;
     forceResize = true;
   }
 
@@ -1176,8 +1185,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   //   forceResize,
   //   promptHeight: promptData?.height || 'UNSET',
   // });
-
-  const justOpened = g(justOpenedAtom);
 
   const data: ResizeData = {
     id: promptData?.id || 'missing',
@@ -1528,6 +1535,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     submitted: g(submittedAtom),
     cursor: g(editorCursorPosAtom),
     ui: g(uiAtom),
+    tabIndex: g(tabIndexAtom),
   };
 
   return state;
@@ -2172,6 +2180,7 @@ export const updateAvailableAtom = atom(false);
 export const _kitStateAtom = atom({
   isSponsor: false,
   updateDownloaded: false,
+  promptCount: 0,
 });
 
 export const kitStateAtom = atom(
@@ -2566,4 +2575,30 @@ export const disableSubmitAtom = atom(false);
 export const appBoundsAtom = atom({
   width: PROMPT.WIDTH.BASE,
   height: PROMPT.HEIGHT.BASE,
+});
+
+/*
+  --color-text: 255, 255, 255;
+  --color-primary: 251, 191, 36;
+  --color-secondary: lighten;
+  --color-background: 6, 6, 6;
+  --opacity: 0.50;
+*/
+
+export const lightenUIAtom = atom((g) => {
+  const theme: any = g(themeAtom);
+  const temporaryTheme: any = g(tempThemeAtom);
+
+  const isLightened =
+    theme['--color-secondary'] === 'lighten' ||
+    temporaryTheme['--color-secondary'] === 'lighten';
+
+  return isLightened;
+});
+
+export const promptBoundsAtom = atom({
+  width: PROMPT.WIDTH.BASE,
+  height: PROMPT.HEIGHT.BASE,
+  x: 0,
+  y: 0,
 });

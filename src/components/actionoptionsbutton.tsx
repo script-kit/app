@@ -63,7 +63,7 @@ export function OptionsButton() {
           py-.5 px-1 mx-0.5
 
           rounded
-          bg-secondary/15
+          bg-ui-bg
           hover:border-opacity-10
           "
         >

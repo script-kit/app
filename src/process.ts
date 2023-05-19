@@ -135,12 +135,15 @@ import { getAssetPath } from './assets';
 // };
 
 export const maybeConvertColors = async (newTheme: any = {}) => {
-  let prevTheme = {}
+  let prevTheme:any = {}
   const prevThemeExists = await pathExists(themeDbPath);
   if(prevThemeExists){
     try{
       log.info(`Found saved theme: ${themeDbPath}`)
       prevTheme = await readJson(themeDbPath);
+      if(prevTheme?.['--ui-bg-opacity']) delete prevTheme['--ui-bg-opacity']
+      if(prevTheme?.['--ui-border-opacity']) delete prevTheme['--ui-border-opacity']
+
     }catch(error){
       log.warn(`Error reading theme db:`, error)
     }
@@ -172,6 +175,9 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   value.accent ||= value?.['--color-primary'];
   value.ui ||= value?.['--color-secondary'];
   value.opacity ||= value?.['--opacity'] || '0.5';
+
+  value['--ui-bg-opacity'] ||= newTheme?.['ui-bg-opacity'] || value?.['ui-bg-opacity'] || '0.4';
+  value['--ui-border-opacity'] ||= newTheme?.['ui-border-opacity'] || value?.['ui-border-opacity'] || '0.7';
 
   if(appDb?.disableBlurEffect) value.opacity = '1';
 
@@ -216,6 +222,8 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   if (value.foreground) delete value.foreground;
   if (value.accent) delete value.accent;
   if (value.opacity) delete value.opacity;
+  if(value?.['ui-bg-opacity']) delete value['ui-bg-opacity']
+  if(value?.['ui-border-opacity']) delete value['ui-border-opacity']
 
   // if(value?.['--color-text']) delete value['--color-text']
   // if(value?.['--color-background']) delete value['--color-background']

@@ -1,9 +1,10 @@
+/* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/no-danger */
 import { useAtom, useSetAtom } from 'jotai';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 
-import parse from 'html-react-parser';
+import parse, { domToReact } from 'html-react-parser';
 import React, {
   useEffect,
   FC,
@@ -373,6 +374,38 @@ const ChatList: FC<IMessageListProps> = ({
       {!!props.children && props.isShowChild && props.children}
       <div ref={referance} onScroll={onScroll} className="rce-mlist">
         {props.dataSource.map((x, i: number, array) => {
+          const options = {
+            replace: (domNode: any) => {
+              // If the node is a table, list, or codeblock, click to copy
+              if (
+                domNode.name === 'table' ||
+                domNode.name === 'ul' ||
+                domNode.name === 'ol' ||
+                domNode.name === 'pre'
+              ) {
+                domNode.attribs = {
+                  ...domNode.attribs,
+                  onClick: onCopy,
+                  onMouseDown,
+                  onMouseLeave,
+                  onMouseEnter,
+                };
+              }
+
+              // wrap table in a div to make with padding
+              if (domNode.name === 'table') {
+                return (
+                  <div className="m-2">
+                    <table {...domNode.attribs}>
+                      {domToReact(domNode.children, options)}
+                    </table>
+                  </div>
+                );
+              }
+
+              return domNode;
+            },
+          };
           const text = (
             <div
               onCopy={onCopy}
@@ -380,27 +413,7 @@ const ChatList: FC<IMessageListProps> = ({
               className="kit-mbox-wrapper"
               tabIndex={array.length - i}
             >
-              {parse(x.text || '', {
-                replace: (domNode: any) => {
-                  // If the node is a table, list, or codeblock, click to copy
-                  if (
-                    domNode.name === 'table' ||
-                    domNode.name === 'ul' ||
-                    domNode.name === 'ol' ||
-                    domNode.name === 'pre'
-                  ) {
-                    domNode.attribs = {
-                      ...domNode.attribs,
-                      onClick: onCopy,
-                      onMouseDown,
-                      onMouseLeave,
-                      onMouseEnter,
-                    };
-                  }
-
-                  return domNode;
-                },
-              })}
+              {parse(x.text || '', options)}
             </div>
           );
 
@@ -682,13 +695,13 @@ export function Chat() {
           setInputRef.current = c;
         }}
         referance={inputRef}
-        className="kit-chat-input"
+        className="kit-chat-input border-ui-border"
         inputStyle={{ fontSize: '1rem' }}
         placeholder={placeholder}
         rightButtons={
           <Button
             buttonRef={buttonRef}
-            className="kit-chat-submit"
+            className="kit-chat-submit bg-ui-bg"
             backgroundColor=""
             color=""
             text="⏎"

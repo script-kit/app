@@ -334,7 +334,6 @@ body {
   }
 
   .prose table {
-    @apply -mt-2;
     table-layout: fixed;
   }
 
@@ -553,7 +552,7 @@ code::after {
 
 .kit-chat-input,
 .kit-chat-input > textarea {
-  @apply bg-bg-base text-text-base outline-none px-2 bg-opacity-0 border-t-1 border-secondary border-opacity-75 placeholder:text-text-base placeholder:text-opacity-25;
+  @apply bg-bg-base text-text-base outline-none px-2 bg-opacity-0 border-t-1 placeholder:text-text-base placeholder:text-opacity-25;
   @apply min-h-11;
 }
 
@@ -563,7 +562,7 @@ code::after {
 }
 
 .kit-chat-submit {
-  @apply bg-secondary bg-opacity-75 text-primary text-base px-2 py-0.5;
+  @apply text-primary text-base px-2 py-0.5;
 }
 
 .rce-container-mbox {
@@ -683,7 +682,7 @@ code::after {
 }
 
 .kit-mbox-wrapper > .prose > h1:first-of-type {
-  @apply pt-4;
+  @apply mt-4;
 }
 
 .kit-mbox-wrapper code {
@@ -715,9 +714,9 @@ code::after {
   @apply my-0 py-1;
 }
 
-pre[class^='kit-mbox-cop'] {
-  @apply p-2;
-  @apply my-1;
+.kit-mbox-copyable,
+.kit-mbox-copied {
+  @apply py-2 px-2 my-2 !important;
 }
 
 .kit-mbox-copied:hover::before,
@@ -758,7 +757,6 @@ pre[class^='kit-mbox-cop'] {
 }
 
 .main-container {
-  @apply border-secondary border-opacity-75 border-1;
   /* TODO: I don't think this is needed... */
   box-sizing: border-box !important;
 }
@@ -789,3 +787,11 @@ pre[class^='kit-mbox-cop'] {
 .hide-outline path:first-of-type {
   @apply hidden;
 }
+/*
+*[class*='bg-secondary'] {
+  @apply bg-white/5;
+}
+
+*[class*='border-secondary'] {
+  @apply border-white/10;
+} */

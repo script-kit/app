@@ -119,7 +119,7 @@ export default function ChoiceList({ width, height }: ListProps) {
       className={`list-component
 flex flex-row
 w-full overflow-y-hidden
-border-r border-secondary/75
+border-r border-ui-border
       `}
       style={
         {

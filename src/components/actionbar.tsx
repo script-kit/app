@@ -21,6 +21,7 @@ import {
   appDbAtom,
   actionsAtom,
   appConfigAtom,
+  lightenUIAtom,
 } from '../jotai';
 
 import { Action, textContrast, transition } from './actions';
@@ -37,6 +38,7 @@ export default function ActionBar() {
   const [appDb] = useAtom(appDbAtom);
   const [app] = useAtom(appConfigAtom);
   const m = app?.isMac;
+  const lightenUI = useAtomValue(lightenUIAtom);
 
   const actions: Action[] = useAtomValue(actionsAtom);
 
@@ -49,27 +51,16 @@ export default function ActionBar() {
       transition={transition}
       className={`
       flex flex-row
-      ${
-        ui === UI.splash
-          ? ``
-          : `border-t
-          border-secondary border-opacity-75`
-      }
-      bg-secondary
-    ${
-      ui === UI.splash
-        ? `
-    bg-opacity-0
-    `
-        : `
-        bg-opacity-30
-    `
-    }
+      ${ui === UI.splash ? `` : `border-t border-ui-border`}
+      bg-ui-bg
+    ${ui === UI.splash && `bg-secondary/0`}
 
     px-4
     justify-center items-center
     overflow-hidden
-    h-7 max-h-7`}
+    h-7 max-h-7
+    ${lightenUI && `lighten`}
+    `}
     >
       <IconButton />
 

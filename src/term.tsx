@@ -194,7 +194,7 @@ export default function Terminal() {
       animate={{ opacity: [0, 1] }}
       transition={{ duration: 0.5, ease: 'circOut' }}
       className={`w-full h-full pt-3 -mb-6 px-3 max-h-full flex-1 overflow-hidden ${
-        hasPreview ? 'border-r border-secondary/75' : ''
+        hasPreview ? 'border-r border-ui-border' : ''
       }`}
     >
       <div

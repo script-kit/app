@@ -77,7 +77,7 @@ export const maybeHide = async (reason: string) => {
 
       setBackgroundThrottling(true);
       // wait one tick
-      await pingPromptWithTimeout(AppChannel.PROMPT_UNLOAD, {});
+      // await pingPromptWithTimeout(AppChannel.PROMPT_UNLOAD, {});
       promptWindow?.hide();
     }
   }
@@ -114,9 +114,11 @@ export const setBackgroundThrottling = (enabled: boolean) => {
 };
 
 const saveCurrentPromptBounds = async () => {
-  if (kitState.promptCount === 1) {
-    savePromptBounds(kitState.scriptPath, promptWindow?.getBounds());
-  }
+  // if (kitState.promptCount === 1) {
+  const currentBounds = promptWindow?.getBounds();
+  savePromptBounds(kitState.scriptPath, currentBounds);
+  sendToPrompt(Channel.SET_PROMPT_BOUNDS, currentBounds);
+  // }
 };
 
 export const createPromptWindow = async () => {
@@ -374,66 +376,6 @@ export const createPromptWindow = async () => {
     log.error({ event, details });
   });
 
-  // TODO: Remove logging
-
-  promptWindow?.webContents?.on('destroyed', () => {
-    log.error(`🫣 Prompt destroyed...`);
-  });
-
-  promptWindow?.webContents?.on('crashed', () => {
-    log.error(`🫣 Prompt crashed...`);
-  });
-
-  promptWindow?.webContents?.on('certificate-error', () => {
-    log.error(`🫣 Prompt certificate-error...`);
-  });
-
-  promptWindow?.webContents?.on('devtools-reload-page', () => {
-    log.info(`🫣 Devtools reloaded...`);
-  });
-
-  promptWindow?.webContents?.on('did-navigate', () => {
-    log.info(`🫣 Did navigate...`);
-  });
-
-  promptWindow?.webContents?.on('did-navigate-in-page', () => {
-    log.info(`🫣 Did navigate in page...`);
-  });
-
-  promptWindow?.webContents?.on('did-attach-webview', () => {
-    log.info(`🫣 Did attach webview...`);
-  });
-
-  promptWindow?.webContents?.on('responsive', () => {
-    log.info(`🫣 Responsive...`);
-  });
-
-  promptWindow?.webContents?.on('unresponsive', () => {
-    log.info(`🫣 Unresponsive...`);
-  });
-
-  promptWindow?.webContents?.on('update-target-url', () => {
-    log.info(`🫣 Update target url...`);
-  });
-
-  promptWindow?.webContents?.on('will-navigate', () => {
-    log.info(`🫣 Will navigate...`);
-  });
-
-  promptWindow?.webContents?.on('will-attach-webview', () => {
-    log.info(`🫣 Will attach webview...`);
-  });
-
-  promptWindow?.webContents?.on('will-redirect', () => {
-    log.info(`🫣 Will redirect...`);
-  });
-
-  promptWindow?.webContents?.on('did-fail-provisional-load', () => {
-    log.error(`🫣 Did fail provisional load...`);
-  });
-
-  // TODO: End remove logging
-
   app?.on('child-process-gone', (event, details) => {
     log.error(`🫣 Child process gone...`);
     log.error({ event, details });
@@ -488,18 +430,18 @@ export const createPromptWindow = async () => {
   promptWindow?.on('resized', onResized);
   promptWindow?.on('moved', debounce(onMove, 250));
 
-  setInterval(() => {
-    const backgroundThrottling = promptWindow?.webContents?.getBackgroundThrottling();
-    const frameRate = promptWindow?.webContents?.getFrameRate();
+  // setInterval(() => {
+  //   const backgroundThrottling = promptWindow?.webContents?.getBackgroundThrottling();
+  //   const frameRate = promptWindow?.webContents?.getFrameRate();
 
-    log.info({
-      backgroundThrottling,
-      frameRate,
-    });
-    if (isVisible()) {
-      promptWindow?.webContents?.startPainting();
-    }
-  }, 60000);
+  //   log.info({
+  //     backgroundThrottling,
+  //     frameRate,
+  //   });
+  //   if (isVisible()) {
+  //     promptWindow?.webContents?.startPainting();
+  //   }
+  // }, 60000);
 
   // powerMonitor.addListener('user-did-resign-active', () => {
   //   log.info(`🔓 System unlocked. Reloading prompt window.`);
@@ -668,7 +610,7 @@ export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
   const noChange =
     heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
 
-  log.verbose(`📐 setBounds: reason ${reason}`, bounds);
+  log.info(`📐 setBounds: reason ${reason}`, bounds);
   log.verbose({
     ...bounds,
     isVisible: isVisible() ? 'true' : 'false',
@@ -706,6 +648,7 @@ export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
     bounds.x = workX + screenWidth - width;
   } else if (xIsNumber) {
     bounds.x = x;
+    // } else if (!kitState.tabChanged && kitState.promptCount !== 1) {
   } else {
     bounds.x = screenWidth / 2 - bounds?.width / 2 + workX;
   }
@@ -722,6 +665,7 @@ export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
 
   try {
     promptWindow.setBounds(bounds);
+    sendToPrompt(Channel.SET_PROMPT_BOUNDS, promptWindow?.getBounds());
   } catch (error) {
     log.info(`setBounds error ${reason}`, error);
   }
@@ -764,6 +708,8 @@ export const resize = async ({
   //   resize: kitState.resize,
   //   forceResize,
   //   resizePaused: kitState.resizePaused,
+  //   hasInput,
+  //   inputChanged,
   // });
 
   if (kitState.resizePaused) return;
@@ -1194,11 +1140,7 @@ export const setPromptData = async (promptData: PromptData) => {
 
   await pingPromptWithTimeout(Channel.SET_PROMPT_DATA, promptData);
 
-  if (
-    typeof promptData?.x === 'number' ||
-    typeof promptData?.y === 'number' ||
-    typeof promptData?.width === 'number'
-  ) {
+  if (typeof promptData?.x === 'number' || typeof promptData?.y === 'number') {
     setBounds(
       {
         x: promptData.x,
@@ -1230,6 +1172,9 @@ export const setPromptData = async (promptData: PromptData) => {
     kitState.hasSnippet = false;
   }
 
+  if (kitState.promptHidden) {
+    kitState.tabChanged = false;
+  }
   if (kitState.isMac) {
     promptWindow?.showInactive();
   } else {

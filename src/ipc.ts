@@ -284,6 +284,8 @@ ${data.error}
         // log.info({ channel, message });
         if ([Channel.VALUE_SUBMITTED, Channel.TAB_CHANGED].includes(channel)) {
           emitter.emit(KitEvent.ResumeShortcuts);
+          kitState.tabIndex = message.state.tabIndex as number;
+          kitState.tabChanged = true;
         }
 
         if (channel === Channel.VALUE_SUBMITTED) {

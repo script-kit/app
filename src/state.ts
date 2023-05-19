@@ -3,8 +3,7 @@
 /* eslint-disable no-nested-ternary */
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import { proxy, snapshot, subscribe } from 'valtio/vanilla';
-import rdiff from 'recursive-diff';
+import { proxy } from 'valtio/vanilla';
 import * as nativeKeymap from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
 import log, { LogLevel } from 'electron-log';
@@ -52,9 +51,11 @@ const css = `
 :root {
   --color-text: 255, 255, 255;
   --color-primary: 251, 191, 36;
-  --color-secondary: 64, 64, 64;
+  --color-secondary: 255, 255, 255;
   --color-background: 6, 6, 6;
   --opacity: 0.50;
+  --ui-bg-opacity: 0.07;
+  --ui-border-opacity: 0.15;
 }
 `;
 
@@ -339,6 +340,8 @@ const initState = {
   resizePaused: false,
   trustedKenvs: [] as string[],
   trustedKenvsKey: getTrustedKenvsKey(),
+  tabIndex: 0,
+  tabChanged: false,
 };
 
 nativeTheme.addListener('updated', () => {
