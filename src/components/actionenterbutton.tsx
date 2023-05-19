@@ -78,7 +78,7 @@ export function EnterButton(action: Action) {
   rounded
 
   h-full
-  transition-all duration-200 ease-out
+  transition-all duration-100 ease-out
   ${action?.disabled ? `text-primary text-opacity-25` : `${bg} ${textContrast}`}
   `}
       onClick={onClick}

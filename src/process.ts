@@ -151,15 +151,15 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
     log.info(`No saved theme found: ${themeDbPath}`)
   }
 
-  let value:any = {}
+  let theme:any = {}
 
   if(kitState.ready){
-    value = {
+    theme = {
       ...prevTheme,
       ...newTheme,
     }
   }else{
-    value = {
+    theme = {
       ...newTheme,
       ...prevTheme,
     }
@@ -167,41 +167,41 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
 
 
 
-  log.info(`🎨 Convert Colors:`, value);
+  log.info(`🎨 Convert Colors:`, theme);
 
   // eslint-disable-next-line prettier/prettier
-  value.foreground ||= value?.['--color-text'];
-  value.background ||= value?.['--color-background'];
-  value.accent ||= value?.['--color-primary'];
-  value.ui ||= value?.['--color-secondary'];
-  value.opacity ||= value?.['--opacity'] || '0.5';
+  theme.foreground ||= theme?.['--color-text'];
+  theme.background ||= theme?.['--color-background'];
+  theme.accent ||= theme?.['--color-primary'];
+  theme.ui ||= theme?.['--color-secondary'];
+  theme.opacity ||= theme?.['--opacity'] || '0.5';
 
-  value['--ui-bg-opacity'] ||= newTheme?.['ui-bg-opacity'] || value?.['ui-bg-opacity'] || '0.4';
-  value['--ui-border-opacity'] ||= newTheme?.['ui-border-opacity'] || value?.['ui-border-opacity'] || '0.7';
+  theme['--ui-bg-opacity'] ||= newTheme?.['ui-bg-opacity'] || theme?.['ui-bg-opacity'] || '0.4';
+  theme['--ui-border-opacity'] ||= newTheme?.['ui-border-opacity'] || theme?.['ui-border-opacity'] || '0.7';
 
-  if(appDb?.disableBlurEffect) value.opacity = '1';
+  if(appDb?.disableBlurEffect) theme.opacity = '1';
 
 
-  if (value.foreground) {
-    const foreground = toRgb(value.foreground);
-    value['--color-text'] = foreground;
+  if (theme.foreground) {
+    const foreground = toRgb(theme.foreground);
+    theme['--color-text'] = foreground;
   }
-  if (value.accent) {
-    const accent = toRgb(value.accent);
-    value['--color-primary'] = accent;
+  if (theme.accent) {
+    const accent = toRgb(theme.accent);
+    theme['--color-primary'] = accent;
   }
 
-  if (value.ui) {
-    const ui = toRgb(value.ui);
-    value['--color-secondary'] = toRgb(ui);
+  if (theme.ui) {
+    const ui = toRgb(theme.ui);
+    theme['--color-secondary'] = toRgb(ui);
   }
 
 
   let result = ``
-  if (value.background) {
-    const background = toRgb(value.background);
-    value['--color-background'] = background;
-    const bgColor = toHex(value.background);
+  if (theme.background) {
+    const background = toRgb(theme.background);
+    theme['--color-background'] = background;
+    const bgColor = toHex(theme.background);
 
     const cc = new ContrastColor({
       bgColor,
@@ -210,20 +210,20 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
 
     const appearance = result === '#FFFFFF' ? 'dark' : 'light';
     log.info(`💄 Setting appearance to ${appearance}`);
-    value.appearance =  appearance;
+    theme.appearance =  appearance;
   }
 
-  if (value.opacity) {
-    value['--opacity'] = value.opacity;
+  if (theme.opacity) {
+    theme['--opacity'] = theme.opacity;
   }
 
-  if (value.ui) delete value.ui;
-  if (value.background) delete value.background;
-  if (value.foreground) delete value.foreground;
-  if (value.accent) delete value.accent;
-  if (value.opacity) delete value.opacity;
-  if(value?.['ui-bg-opacity']) delete value['ui-bg-opacity']
-  if(value?.['ui-border-opacity']) delete value['ui-border-opacity']
+  if (theme.ui) delete theme.ui;
+  if (theme.background) delete theme.background;
+  if (theme.foreground) delete theme.foreground;
+  if (theme.accent) delete theme.accent;
+  if (theme.opacity) delete theme.opacity;
+  if(theme?.['ui-bg-opacity']) delete theme['ui-bg-opacity']
+  if(theme?.['ui-border-opacity']) delete theme['ui-border-opacity']
 
   // if(value?.['--color-text']) delete value['--color-text']
   // if(value?.['--color-background']) delete value['--color-background']
@@ -231,16 +231,26 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   // if(value?.['--color-secondary']) delete value['--color-secondary']
   // if(value?.['--opacity']) delete value['--opacity']
 
+  const defaultTheme = {"--color-text":"255, 255, 255","--color-primary":"251, 191, 36","--color-secondary":"255, 255, 255","--color-background":"6, 6, 6","--opacity":"0.4","--ui-bg-opacity":"0.07","--ui-border-opacity":"0.15","appearance":"dark"}
+  if(
+    theme?.['--color-primary'] === defaultTheme?.['--color-primary'] &&
+    theme?.['--color-background'] === defaultTheme?.['--color-background']
+    ){
+    log.info(`🎨 Detected default theme. Forcing theme update.`)
 
+    Object.entries(defaultTheme).forEach(([k, v]) => {
+      theme[k] = v
+    })
+  }
 
   // if kitPath exists
   const dbPathExists = await pathExists(kitPath('db'))
   if(dbPathExists){
     // Save theme as JSON to disk
-    log.info(`Saving theme to ${themeDbPath}`, value);
+    log.info(`Saving theme to ${themeDbPath}`, theme);
     log.info(`Result`, {result})
     try{
-      writeJson(themeDbPath, value);
+      writeJson(themeDbPath, theme);
     }catch(error){
       log.warn(`Error writing theme db:`, error)
     }
@@ -258,7 +268,7 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
 
   setVibrancy(vibrancy);
 
-  return value
+  return theme
 };
 
 export const formatScriptChoices = (data: Choice[]) => {
