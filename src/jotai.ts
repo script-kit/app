@@ -1137,7 +1137,10 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   let forceHeight;
 
-  const forceWidth = justOpened ? promptBounds?.width : promptData?.width;
+  const useCurrentBounds = justOpened;
+
+  const forceWidth = useCurrentBounds ? promptBounds?.width : promptData?.width;
+
   if (
     [
       UI.term,
@@ -1150,7 +1153,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
       UI.webcam,
     ].includes(ui)
   ) {
-    forceHeight = justOpened
+    forceHeight = useCurrentBounds
       ? promptBounds?.height
       : promptData?.height || PROMPT.HEIGHT.BASE;
     forceResize = true;
@@ -1254,6 +1257,21 @@ export const mainHeightAtom = atom(
 
     s(mainHeight, nextMainHeight);
     if (a === prevHeight) return;
+
+    if (
+      [
+        UI.term,
+        UI.editor,
+        UI.drop,
+        UI.textarea,
+        UI.emoji,
+        UI.chat,
+        UI.mic,
+        UI.webcam,
+      ].includes(g(uiAtom))
+    ) {
+      return;
+    }
     resize(g, s, 'MAIN_HEIGHT');
   }
 );

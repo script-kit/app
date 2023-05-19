@@ -1328,13 +1328,6 @@ const initBounds = async () => {
     //   kitState.promptCount > 1 &&
     //   !kitState.promptBounds.height
   );
-
-  sendToPrompt(Channel.SET_BOUNDS, {
-    x: bounds.x,
-    y: bounds.y,
-    width: bounds.width,
-    height: bounds.height,
-  });
 };
 
 const subScriptPath = subscribeKey(

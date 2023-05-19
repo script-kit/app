@@ -697,13 +697,10 @@ code::after {
 
 .rce-mbox ol,
 .rce-mbox ul {
-  @apply relative;
-  @apply px-2 py-2;
-  @apply my-2;
-  @apply border-1 border-text-base/10 rounded;
+  /* @apply relative; */
 }
 
-.kit-mbox-wrapper pre {
+/* .kit-mbox-wrapper pre {
   @apply relative;
   @apply p-0;
   @apply border border-text-base/10 rounded;
@@ -712,11 +709,32 @@ code::after {
 
 .kit-mbox-wrapper pre > code {
   @apply my-0 py-1;
+} */
+
+.kit-mbox {
+  @apply py-2 px-3 my-2;
+  @apply border-1 border-text-base/10 rounded;
 }
 
-.kit-mbox-copyable,
-.kit-mbox-copied {
-  @apply py-2 px-2 my-2 !important;
+.kit-mbox > ol,
+.kit-mbox > ul {
+  @apply -ml-6 mb-0;
+}
+
+.kit-mbox > pre {
+  @apply p-2 m-0 border-none bg-bg-base/0;
+}
+
+.kit-mbox > pre:hover {
+  @apply bg-bg-base/0;
+}
+
+.kit-mbox > table {
+  @apply m-0;
+}
+
+.kit-mbox > .rce-mbox {
+  @apply border-none !important;
 }
 
 .kit-mbox-copied:hover::before,

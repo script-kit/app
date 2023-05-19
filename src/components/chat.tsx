@@ -390,15 +390,20 @@ const ChatList: FC<IMessageListProps> = ({
                   onMouseLeave,
                   onMouseEnter,
                 };
-              }
 
-              // wrap table in a div to make with padding
-              if (domNode.name === 'table') {
+                domNode.attribs.class = `kit-mbox ${
+                  domNode.attribs?.class || ''
+                }`;
+
                 return (
-                  <div className="m-2">
-                    <table {...domNode.attribs}>
-                      {domToReact(domNode.children, options)}
-                    </table>
+                  <div className="relative">
+                    <div {...domNode.attribs}>
+                      {React.createElement(
+                        domNode.name,
+                        {},
+                        domToReact(domNode.children, options)
+                      )}
+                    </div>
                   </div>
                 );
               }

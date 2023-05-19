@@ -53,7 +53,7 @@ const css = `
   --color-primary: 251, 191, 36;
   --color-secondary: 255, 255, 255;
   --color-background: 6, 6, 6;
-  --opacity: 0.50;
+  --opacity: 0.4;
   --ui-bg-opacity: 0.07;
   --ui-border-opacity: 0.15;
 }
@@ -122,9 +122,16 @@ export const updateScripts = async () => {
   await getTimestamps(false);
 };
 
-export const scriptChanged = debounce(async (filePath: string) => {
-  await setScriptTimestamp(filePath);
-}, 25);
+export const scriptChanged = debounce(
+  async (filePath: string) => {
+    await setScriptTimestamp(filePath);
+  },
+  250,
+  {
+    leading: true,
+    trailing: true,
+  }
+);
 
 export const scriptRemoved = debounce(async () => {
   await getScripts(false);
