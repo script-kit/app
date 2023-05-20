@@ -231,16 +231,11 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   // if(value?.['--color-secondary']) delete value['--color-secondary']
   // if(value?.['--opacity']) delete value['--opacity']
 
-  const defaultTheme = {"--color-text":"255, 255, 255","--color-primary":"251, 191, 36","--color-secondary":"255, 255, 255","--color-background":"6, 6, 6","--opacity":"0.4","--ui-bg-opacity":"0.07","--ui-border-opacity":"0.15","appearance":"dark"}
-  if(
-    theme?.['--color-primary'] === defaultTheme?.['--color-primary'] &&
-    theme?.['--color-background'] === defaultTheme?.['--color-background']
-    ){
-    log.info(`🎨 Detected default theme. Forcing theme update.`)
+  const defaultTheme = {"--color-text":"255, 255, 255","--color-primary":"251, 191, 36","--color-secondary":"255, 255, 255","--color-background":"6, 6, 6","--opacity":"0.4","appearance":"dark","--ui-bg-opacity":"0.07","--ui-border-opacity":"0.15"}
 
-    Object.entries(defaultTheme).forEach(([k, v]) => {
-      theme[k] = v
-    })
+  if(theme?.['--color-primary'] === defaultTheme?.['--color-primary']){
+    log.info(`🎨 --color-primary detected as ${defaultTheme?.['--color-primary']}. Forcing default theme`)
+    theme = defaultTheme
   }
 
   // if kitPath exists
