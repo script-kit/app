@@ -1208,11 +1208,6 @@ const kitMessageMap: ChannelHandler = {
 
   APPEND_EDITOR_VALUE: toProcess(async ({ child }, { channel, value }) => {
     sendToPrompt(Channel.APPEND_EDITOR_VALUE, value);
-
-    childSend(child, {
-      channel,
-      value,
-    });
   }),
 
   SET_TEXTAREA_CONFIG: (data) => {
@@ -1943,6 +1938,16 @@ const kitMessageMap: ChannelHandler = {
   }),
   SET_DISABLE_SUBMID: toProcess(async ({ child }, { channel, value }) => {
     log.info(`SET DISABLE SUBMIT`, value);
+    sendToPrompt(channel, value);
+    childSend(child, { channel, value });
+  }),
+  START_MIC: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`START MIC`, value);
+    sendToPrompt(channel, value);
+    // childSend(child, { channel, value });
+  }),
+  STOP_MIC: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`STOP MIC`, value);
     sendToPrompt(channel, value);
     childSend(child, { channel, value });
   }),

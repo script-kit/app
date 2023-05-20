@@ -4,11 +4,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion } from 'framer-motion';
 import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
+import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
+import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 
 import { editor as monacoEditor, Range } from 'monaco-editor';
-import { UI } from '@johnlindquist/kit/cjs/enum';
-import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
+
 import {
+  channelAtom,
   darkAtom,
   editorAppendAtom,
   editorConfigAtom,
@@ -104,6 +106,7 @@ export default function Editor() {
   const editorAppend = useAtomValue(editorAppendAtom);
   const disposeRef = useRef<any>(null);
   const [scrollTo, setScrollTo] = useAtom(scrollToAtom);
+  const [channel] = useAtom(channelAtom);
 
   const m = useMonaco();
 
@@ -399,6 +402,8 @@ export default function Editor() {
       editor.executeEdits('my-source', [op]);
       // scroll to bottom
       editor.revealLine(lineNumber + 1);
+
+      channel(Channel.APPEND_EDITOR_VALUE);
     }
   }, [editor, editorAppend]);
 

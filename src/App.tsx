@@ -156,6 +156,7 @@ import {
   _index,
   lightenUIAtom,
   promptBoundsAtom,
+  audioDotAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -341,7 +342,8 @@ export default function App() {
 
   const domUpdated = useSetAtom(domUpdatedAtom);
   const setAppBounds = useSetAtom(appBoundsAtom);
-  const lighten = useAtomValue(lightenUIAtom);
+
+  const setAudioDot = useSetAtom(audioDotAtom);
 
   useEffect(() => {
     // catch all window errors
@@ -522,6 +524,9 @@ export default function App() {
     [Channel.CHAT_ADD_MESSAGE]: addChatMessage,
     [Channel.CHAT_PUSH_TOKEN]: chatPushToken,
     [Channel.CHAT_SET_MESSAGE]: setChatMessage,
+    [Channel.START_MIC]: () => {
+      setAudioDot(true);
+    },
     [Channel.DISABLE_BACKGROUND_THROTTLING]: (value) => {
       if (value?.scriptPath === mainScriptPath) return;
       if (value?.ui) setUi(value.ui);

@@ -1454,6 +1454,7 @@ export const promptDataAtom = atom(
       s(onInputSubmitAtom, a?.onInputSubmit || {});
       s(shortcutsAtom, a?.shortcuts || []);
       s(prevChoicesAtom, []);
+      s(audioDotAtom, false);
 
       if (
         a?.ui === UI.arg &&
@@ -1746,6 +1747,7 @@ export const openAtom = atom(
       s(runningAtom, false);
       s(miniShortcutsHoveredAtom, false);
       s(logLinesAtom, []);
+      s(audioDotAtom, false);
       // s(tabsAtom, []);
 
       const stream = g(webcamStreamAtom);
@@ -2620,3 +2622,5 @@ export const promptBoundsAtom = atom({
   x: 0,
   y: 0,
 });
+
+export const audioDotAtom = atom(false);
