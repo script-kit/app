@@ -1,7 +1,7 @@
 /* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import memoize from 'memoize-one';
 import ChoiceButton from './button';
 import {
@@ -20,9 +20,10 @@ import {
   listAtom,
   focusedChoiceAtom,
   defaultValueAtom,
-  requiresScollAtom,
+  requiresScrollAtom,
   logAtom,
   showTabsAtom,
+  promptBoundsAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 
@@ -58,8 +59,9 @@ export default function ChoiceList({ width, height }: ListProps) {
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const defaultValue = useAtomValue(defaultValueAtom);
   const [list, setList] = useAtom(listAtom);
-  const [requiresScroll, setRequiresScroll] = useAtom(requiresScollAtom);
+  const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
   const log = useAtomValue(logAtom);
+  const promptBounds = useAtomValue(promptBoundsAtom);
 
   // const listWidth = useMotionValue('100%');
 
@@ -92,26 +94,22 @@ export default function ChoiceList({ width, height }: ListProps) {
     if (!listRef.current) return;
 
     const scroll = () => {
-      if (requiresScroll) {
-        (listRef as any).current.scrollToItem(
-          requiresScroll,
-          requiresScroll > 0 ? 'center' : 'start'
-        );
-      } else {
-        (listRef as any).current.scrollToItem(
-          index,
-          index > 0 ? 'center' : 'start'
-        );
-      }
+      if (requiresScroll === -1) return;
+      onIndexChange(requiresScroll);
+      (listRef as any).current.scrollToItem(
+        requiresScroll,
+        requiresScroll > 0 ? 'center' : 'start'
+      );
     };
 
     scroll();
     setTimeout(() => {
       if (listRef.current) {
         scroll();
+        setRequiresScroll(-1);
       }
     }, 100);
-  }, [requiresScroll]);
+  }, [requiresScroll, choices]);
 
   return (
     <div

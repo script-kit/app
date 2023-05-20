@@ -604,7 +604,7 @@ export const prevInputAtom = atom('');
 
 export const defaultValueAtom = atom('');
 
-export const requiresScollAtom = atom(-1);
+export const requiresScrollAtom = atom(-1);
 
 export const _index = atom(
   (g) => g(index),
@@ -613,7 +613,8 @@ export const _index = atom(
     // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
     const clampedIndex = a < 0 ? cs.length - 1 : a > cs.length - 1 ? 0 : a;
     const list = g(listAtom);
-    if (list) {
+    const requiresScroll = g(requiresScrollAtom);
+    if (list && requiresScroll === -1) {
       (list as any).scrollToItem(clampedIndex);
     }
 
@@ -629,27 +630,6 @@ export const _index = atom(
     const id = choice?.id;
     s(prevChoiceId, id || '');
     // const prevId = g(prevChoiceId);
-
-    const defaultValue: any = g(defaultValueAtom);
-
-    if (defaultValue) {
-      const i = cs.findIndex(
-        (c) => c.item?.name === defaultValue || c.item?.value === defaultValue
-      );
-
-      if (i !== -1) {
-        const foundChoice = cs[i].item;
-        if (foundChoice?.id) {
-          s(index, i);
-          s(focusedChoiceAtom, foundChoice);
-          s(requiresScollAtom, i);
-          // console.log(`i!== -1: Setting prevChoiceId to ${foundChoice?.id}`);
-          // s(prevChoiceId, foundChoice?.id);
-        }
-      }
-      s(defaultValueAtom, '');
-      return;
-    }
 
     // Not sure why I was preventing setting the focusedChoice when the id didn't match the prevId...
     // if (!selected && id && id !== prevId) {
@@ -746,6 +726,7 @@ export const scoredChoices = atom(
       }
     }
     s(choices, cs || []);
+
     const isFilter =
       g(uiAtom) === UI.arg && g(promptData)?.mode === Mode.FILTER;
 
@@ -765,6 +746,33 @@ export const scoredChoices = atom(
       // channel(Channel.CHOICES);
       s(panelHTMLAtom, ``);
       // resize(g, s, 'SCORED_CHOICES');
+
+      const defaultValue: any = g(defaultValueAtom);
+      const prevIndex = g(prevIndexAtom);
+      const input = g(inputAtom);
+      if (cs?.length && defaultValue) {
+        const i = cs.findIndex(
+          (c) => c.item?.name === defaultValue || c.item?.value === defaultValue
+        );
+
+        if (i !== -1) {
+          const foundChoice = cs[i].item;
+          if (foundChoice?.id) {
+            s(_index, i);
+            s(focusedChoiceAtom, foundChoice);
+            s(requiresScrollAtom, i);
+            // console.log(`i!== -1: Setting prevChoiceId to ${foundChoice?.id}`);
+            // s(prevChoiceId, foundChoice?.id);
+          }
+        }
+        s(defaultValueAtom, '');
+      } else if (input.length > 0) {
+        s(requiresScrollAtom, g(requiresScrollAtom) > 0 ? 0 : -1);
+      } else if (prevIndex && !g(selectedAtom)) {
+        s(requiresScrollAtom, prevIndex);
+      } else {
+        s(requiresScrollAtom, 0);
+      }
     } else {
       s(focusedChoiceAtom, null);
       if (isFilter && Boolean(cs) && !g(nullChoicesAtom)) {
@@ -860,7 +868,7 @@ export const inputAtom = atom(
 
     if (a !== g(_input)) s(_inputChangedAtom, true);
     if (a === g(_input)) {
-      s(_tabChangedAtom, false);
+      s(tabChangedAtom, false);
       return;
     }
 
@@ -882,8 +890,8 @@ export const inputAtom = atom(
 
     // TODO: Investigate eliminating modes and bringing/generating over to kit + setChoices(). Probably would be too slow.
 
-    if (g(_tabChangedAtom) && prevInput !== a) {
-      s(_tabChangedAtom, false);
+    if (g(tabChangedAtom) && prevInput !== a) {
+      s(tabChangedAtom, false);
       return;
     }
 
@@ -920,13 +928,14 @@ export const flagsAtom = atom(
   }
 );
 
-export const _tabChangedAtom = atom(false);
+export const tabChangedAtom = atom(false);
 const _tabIndex = atom(0);
 export const tabIndexAtom = atom(
   (g) => g(_tabIndex),
   (g, s, a: number) => {
     s(_inputChangedAtom, false);
     s(submittedAtom, false);
+    s(prevIndexAtom, 0);
     if (g(_tabIndex) !== a) {
       s(_tabIndex, a);
       s(flagsAtom, {});
@@ -934,7 +943,7 @@ export const tabIndexAtom = atom(
 
       const channel = g(channelAtom);
       channel(Channel.TAB_CHANGED);
-      s(_tabChangedAtom, true);
+      s(tabChangedAtom, true);
     }
   }
 );
@@ -1134,12 +1143,21 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   }
 
   const justOpened = g(justOpenedAtom);
+  const samePrompt = promptBounds?.id === promptData?.id;
 
+  // g(logAtom)({
+  //   justOpened,
+  //   samePrompt,
+  //   promptBounds,
+  //   promptData: {
+  //     id: promptData?.id,
+  //     width: promptData?.width,
+  //     height: promptData?.height,
+  //   },
+  // });
+
+  const forceWidth = samePrompt ? promptBounds?.width : promptData?.width;
   let forceHeight;
-
-  const useCurrentBounds = justOpened;
-
-  const forceWidth = useCurrentBounds ? promptBounds?.width : promptData?.width;
 
   if (
     [
@@ -1153,7 +1171,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
       UI.webcam,
     ].includes(ui)
   ) {
-    forceHeight = useCurrentBounds
+    forceHeight = samePrompt
       ? promptBounds?.height
       : promptData?.height || PROMPT.HEIGHT.BASE;
     forceResize = true;
@@ -1740,7 +1758,7 @@ export const openAtom = atom(
       s(loadingAtom, false);
       s(editorConfigAtom, {});
       s(promptData, null);
-      s(requiresScollAtom, -1);
+      s(requiresScrollAtom, -1);
       s(pidAtom, 0);
       s(_chatMessagesAtom, []);
       s(prevChoiceId, '');
@@ -2617,6 +2635,7 @@ export const lightenUIAtom = atom((g) => {
 });
 
 export const promptBoundsAtom = atom({
+  id: '',
   width: PROMPT.WIDTH.BASE,
   height: PROMPT.HEIGHT.BASE,
   x: 0,

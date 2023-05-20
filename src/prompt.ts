@@ -117,7 +117,10 @@ const saveCurrentPromptBounds = async () => {
   // if (kitState.promptCount === 1) {
   const currentBounds = promptWindow?.getBounds();
   savePromptBounds(kitState.scriptPath, currentBounds);
-  sendToPrompt(Channel.SET_PROMPT_BOUNDS, currentBounds);
+  sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
+    id: kitState.promptId,
+    ...currentBounds,
+  });
   // }
 };
 
@@ -616,6 +619,11 @@ export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
     isVisible: isVisible() ? 'true' : 'false',
     noChange: noChange ? 'true' : 'false',
   });
+  sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
+    id: kitState.promptId,
+    ...bounds,
+  });
+
   if (noChange) {
     return;
   }
@@ -665,7 +673,12 @@ export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
 
   try {
     promptWindow.setBounds(bounds);
-    sendToPrompt(Channel.SET_PROMPT_BOUNDS, promptWindow?.getBounds());
+    const promptBounds = {
+      id: kitState.promptId,
+      ...promptWindow?.getBounds(),
+    };
+
+    sendToPrompt(Channel.SET_PROMPT_BOUNDS, promptBounds);
   } catch (error) {
     log.info(`setBounds error ${reason}`, error);
   }

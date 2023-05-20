@@ -53,8 +53,7 @@ export default function Console() {
         forceVisible="y"
         className="log
         w-full h-16
-        bg-bg-base text-text-base
-        bg-opacity-50
+        bg-bg-base/20 text-text-base
         font-mono text-xs
         hover:cursor-auto
         "
