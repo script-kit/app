@@ -76,7 +76,7 @@ export const maybeHide = async (reason: string) => {
 
       setBackgroundThrottling(true);
       // wait one tick
-      // await pingPromptWithTimeout(AppChannel.PROMPT_UNLOAD, {});
+      await pingPromptWithTimeout(AppChannel.PROMPT_UNLOAD, {});
       promptWindow?.hide();
     }
   }
@@ -170,22 +170,17 @@ export const createPromptWindow = async () => {
     promptWindow = new BrowserWindow({
       ...options,
     });
-  } else if (kitState.isMac) {
+  } else if (!kitState.isLinux) {
     promptWindow = new BrowserWindow({
       ...options,
       transparent: true,
     });
     promptWindow.setVibrancy('hud');
+    promptWindow.setBackgroundMaterial('mica');
   } else {
     promptWindow = new BrowserWindow({
       ...options,
     });
-
-    try {
-      promptWindow.setBackgroundColor(`#00000000`);
-    } catch (error) {
-      log.error('Failed to set window blur', error);
-    }
   }
 
   promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });

@@ -480,7 +480,7 @@ export const showWidget = async (
   if (kitState.isMac) {
     widgetWindow = new BrowserWindow(bwOptions);
     if (!options.transparent) {
-      widgetWindow.setVibrancy('menu');
+      widgetWindow.setVibrancy('hud');
     }
   } else if (!options?.transparent) {
     widgetWindow = new BrowserWindow({

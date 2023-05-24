@@ -1777,16 +1777,6 @@ export const openAtom = atom(
             'webcam'
           ) as HTMLVideoElement).srcObject = null;
       }
-
-      const audioRecorder = g(audioRecorderAtom);
-      if (audioRecorder) {
-        if (audioRecorder.state !== 'inactive') {
-          audioRecorder.stop();
-        }
-        s(audioRecorderAtom, null);
-      }
-
-      ipcRenderer.send(AppChannel.PROMPT_UNLOAD);
     }
     s(_open, a);
   }
@@ -2414,7 +2404,6 @@ export const enterPressedAtom = atom(
 
 export const micIdAtom = atom<string | null>(null);
 export const webcamIdAtom = atom<string | null>(null);
-export const audioRecorderAtom = atom<MediaRecorder | null>(null);
 
 export const buttonNameFontSizeAtom = atom((g) => {
   let fontSize = `text-base`;

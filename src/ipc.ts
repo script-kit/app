@@ -281,7 +281,7 @@ ${data.error}
     ipcMain.on(
       channel,
       handleChannel(async ({ child }, message) => {
-        log.info(`⬅ ${channel}`);
+        // log.info(`⬅ ${channel}`);
 
         if (channel === Channel.ABANDON) {
           log.info(`⚠️ ABANDON`, message.pid);

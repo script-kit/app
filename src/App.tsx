@@ -811,6 +811,19 @@ export default function App() {
     }
   }, [panelChildRef.current, promptData]);
 
+  useEffect(() => {
+    const handlePromptUnload = () => {
+      setTimeout(() => {
+        ipcRenderer.send(AppChannel.PROMPT_UNLOAD);
+      }, 0);
+    };
+    ipcRenderer.on(AppChannel.PROMPT_UNLOAD, handlePromptUnload);
+
+    return () => {
+      ipcRenderer.removeListener(AppChannel.PROMPT_UNLOAD, handlePromptUnload);
+    };
+  }, []);
+
   const onResizeHandleDragging = useCallback(
     debounce((event: MouseEvent) => {
       const size = panelChildRef.current?.getSize();
@@ -960,7 +973,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                   {ui === UI.term &&
                     open &&
                     termConfig?.promptId === promptData?.id && <Terminal />}
-                  {/* {ui === UI.mic && open && <AudioRecorder />} */}
+                  {ui === UI.mic && open && <AudioRecorder />}
                   {ui === UI.webcam && open && <Webcam />}
                   {/* {ui === UI.speech && <SpeechToText />} */}
 
