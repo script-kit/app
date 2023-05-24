@@ -11,7 +11,7 @@ import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import { focusPrompt, isFocused, isVisible, maybeHide, reload } from './prompt';
 import { convertKey, kitState, subs } from './state';
-import { Trigger } from './enums';
+import { HideReason, Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
 import { processes, spawnShebang } from './process';
 
@@ -263,8 +263,7 @@ export const updateMainShortcut = async (filePath: string) => {
         ) {
           log.info(`Killing ${kitState.pid}`);
           processes.removeByPid(kitState.pid);
-          maybeHide('MAIN_SHORTCUT');
-          reload();
+          maybeHide(HideReason.MainShortcut);
           return;
         }
 

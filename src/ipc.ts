@@ -144,10 +144,6 @@ ${data.error}
     }
   });
 
-  ipcMain.on(AppChannel.ENABLE_BACKGROUND_THROTTLING, () => {
-    setBackgroundThrottling(true);
-  });
-
   ipcMain.on(
     AppChannel.OPEN_SCRIPT_DB,
     async (event, { focused, script }: AppState) => {

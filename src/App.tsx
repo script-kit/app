@@ -767,20 +767,6 @@ export default function App() {
 
   useEscape();
 
-  useEffect(() => {
-    const visibilitychangeHandler = () => {
-      if (document.visibilityState === 'hidden') {
-        // This _should_ be handled by the call before "hide()", but just in case...
-        ipcRenderer.send(AppChannel.ENABLE_BACKGROUND_THROTTLING);
-      }
-    };
-    document.addEventListener('visibilitychange', visibilitychangeHandler);
-
-    return () => {
-      document.removeEventListener('visibilitychange', visibilitychangeHandler);
-    };
-  }, []);
-
   const panelChildRef = useRef<ImperativePanelHandle>(null);
 
   useEffect(() => {
@@ -810,19 +796,6 @@ export default function App() {
       );
     }
   }, [panelChildRef.current, promptData]);
-
-  useEffect(() => {
-    const handlePromptUnload = () => {
-      setTimeout(() => {
-        ipcRenderer.send(AppChannel.PROMPT_UNLOAD);
-      }, 0);
-    };
-    ipcRenderer.on(AppChannel.PROMPT_UNLOAD, handlePromptUnload);
-
-    return () => {
-      ipcRenderer.removeListener(AppChannel.PROMPT_UNLOAD, handlePromptUnload);
-    };
-  }, []);
 
   const onResizeHandleDragging = useCallback(
     debounce((event: MouseEvent) => {

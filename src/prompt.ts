@@ -45,7 +45,7 @@ import { appDb, kitState, subs, promptState } from './state';
 import { EMOJI_HEIGHT, EMOJI_WIDTH, MIN_WIDTH, ZOOM_LEVEL } from './defaults';
 import { ResizeData } from './types';
 import { getVersion } from './version';
-import { AppChannel } from './enums';
+import { AppChannel, HideReason } from './enums';
 import { emitter, KitEvent } from './events';
 import { pathsAreEqual } from './helpers';
 
@@ -75,10 +75,23 @@ export const maybeHide = async (reason: string) => {
         promptWindow?.minimize();
       }
 
-      setBackgroundThrottling(true);
-      // wait one tick
-      await pingPromptWithTimeout(AppChannel.PROMPT_UNLOAD, {});
-      promptWindow?.hide();
+      // Wait for preview to disappear
+      const check = async () => {
+        const state = await promptWindow?.webContents?.mainFrame.executeJavaScript(
+          `document.getElementById('data-panel-id-panelChild')`
+        );
+        if (!state) {
+          promptWindow?.hide();
+          return;
+        }
+        setTimeout(check, 20);
+      };
+
+      await check();
+
+      if (reason === HideReason.MainShortcut) {
+        reload();
+      }
     }
   }
 };
@@ -106,6 +119,7 @@ export const setVibrancy = (
 
 let isThrottling = true;
 export const setBackgroundThrottling = (enabled: boolean) => {
+  return;
   if (enabled === isThrottling) return;
   isThrottling = enabled;
   if (promptWindow?.isDestroyed()) return;

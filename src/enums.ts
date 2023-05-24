@@ -76,3 +76,7 @@ export enum Trigger {
   RunTxt = 'runTxt',
   Protocol = 'Protocol',
 }
+
+export enum HideReason {
+  MainShortcut = 'MainShortcut',
+}
