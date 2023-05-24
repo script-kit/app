@@ -627,7 +627,7 @@ code::after {
   @apply outline-0 outline-primary !important;
   @apply border-text-base/15 !important;
   @apply focus:border-primary/75 !important;
-  @apply bg-bg-base;
+  @apply bg-bg-base/0;
   /* make !important */
 }
 

@@ -170,13 +170,19 @@ export const createPromptWindow = async () => {
     promptWindow = new BrowserWindow({
       ...options,
     });
-  } else if (!kitState.isLinux) {
+  } else if (kitState.isMac) {
     promptWindow = new BrowserWindow({
       ...options,
       transparent: true,
+      vibrancy: 'hud',
     });
-    promptWindow.setVibrancy('hud');
-    promptWindow.setBackgroundMaterial('mica');
+  } else if (kitState.isWindows) {
+    promptWindow = new BrowserWindow({
+      ...options,
+      transparent: true,
+      backgroundMaterial: 'auto',
+      backgroundColor: '#00000000',
+    });
   } else {
     promptWindow = new BrowserWindow({
       ...options,
