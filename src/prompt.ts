@@ -71,10 +71,6 @@ export const maybeHide = async (reason: string) => {
       !promptWindow?.webContents?.isDevToolsOpened() &&
       !kitState.preventClose
     ) {
-      if (!kitState.isMac) {
-        promptWindow?.minimize();
-      }
-
       // Wait for preview to disappear
       const check = async () => {
         const state = await promptWindow?.webContents?.mainFrame.executeJavaScript(
@@ -82,6 +78,10 @@ export const maybeHide = async (reason: string) => {
         );
         if (!state) {
           promptWindow?.hide();
+
+          if (!kitState.isMac) {
+            promptWindow?.minimize();
+          }
           return;
         }
         setTimeout(check, 20);
