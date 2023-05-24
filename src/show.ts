@@ -4,13 +4,13 @@ import {
   BrowserWindow,
   BrowserWindowConstructorOptions,
   screen,
-  nativeTheme,
   MenuItemConstructorOptions,
   PopupOptions,
   Menu,
 } from 'electron';
 import log from 'electron-log';
 import { ensureDir } from 'fs-extra';
+import glasstron from 'glasstron-clarity';
 import path from 'path';
 import { writeFile } from 'fs/promises';
 import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
@@ -19,7 +19,7 @@ import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
 import { snapshot } from 'valtio';
 import { getAssetPath } from './assets';
-import { darkTheme, lightTheme } from './components/themes';
+import { darkTheme } from './components/themes';
 import { forceQuit, kitState } from './state';
 import { getCurrentScreenFromMouse } from './prompt';
 
@@ -386,7 +386,7 @@ export const show = async (
     ...(options?.transparent
       ? {}
       : {
-          vibrancy: 'menu',
+          vibrancy: 'hud',
         }),
     icon: getAssetPath('icon.png'),
     webPreferences: {
@@ -483,8 +483,9 @@ export const showWidget = async (
       widgetWindow.setVibrancy('hud');
     }
   } else if (!options?.transparent) {
-    widgetWindow = new BrowserWindow({
+    widgetWindow = new glasstron.BrowserWindow({
       ...bwOptions,
+      blur: true,
     });
   } else {
     widgetWindow = new BrowserWindow(bwOptions);

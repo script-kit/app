@@ -9,11 +9,11 @@ import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
-import { focusPrompt, isFocused, isVisible, reload } from './prompt';
+import { focusPrompt, isFocused, isVisible, maybeHide, reload } from './prompt';
 import { convertKey, kitState, subs } from './state';
 import { Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
-import { spawnShebang } from './process';
+import { processes, spawnShebang } from './process';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -233,17 +233,45 @@ export const updateMainShortcut = async (filePath: string) => {
       async () => {
         kitState.shortcutPressed = finalShortcut;
         log.info(`🏚  main shortcut`);
-        if (isVisible() && !isFocused()) {
-          focusPrompt();
-          app.focus({
-            steal: true,
-          });
-        } else {
+
+        if (!isVisible()) {
           await runPromptProcess(mainScriptPath, [], {
             force: true,
             trigger: Trigger.Menu,
           });
+          return;
         }
+
+        if (!isFocused()) {
+          focusPrompt();
+          app.focus({
+            steal: true,
+          });
+          return;
+        }
+
+        log.info({
+          pid: kitState.pid,
+          isMainScript: kitState.isMainScript(),
+          promptCount: kitState.promptCount,
+        });
+
+        if (
+          kitState.pid &&
+          kitState.isMainScript() &&
+          kitState.promptCount === 1
+        ) {
+          log.info(`Killing ${kitState.pid}`);
+          processes.removeByPid(kitState.pid);
+          maybeHide('MAIN_SHORTCUT');
+          reload();
+          return;
+        }
+
+        await runPromptProcess(mainScriptPath, [], {
+          force: true,
+          trigger: Trigger.Menu,
+        });
       },
       250,
       {

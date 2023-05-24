@@ -37,6 +37,7 @@ import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
+import glasstron from 'glasstron-clarity';
 
 import { ChildProcess } from 'child_process';
 import { getAssetPath } from './assets';
@@ -176,16 +177,10 @@ export const createPromptWindow = async () => {
       transparent: true,
       vibrancy: 'hud',
     });
-  } else if (kitState.isWindows) {
-    promptWindow = new BrowserWindow({
-      ...options,
-      transparent: true,
-      backgroundMaterial: 'auto',
-      backgroundColor: '#00000000',
-    });
   } else {
-    promptWindow = new BrowserWindow({
+    promptWindow = new glasstron.BrowserWindow({
       ...options,
+      blur: true,
     });
   }
 
