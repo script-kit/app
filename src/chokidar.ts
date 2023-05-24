@@ -18,7 +18,7 @@ export const startWatching = (callback: WatcherCallback) => {
   const kenvScriptsWatcher = chokidar.watch(
     [
       path.resolve(kenvPath('scripts', '*')),
-      path.resolve(kenvPath('lib', '*')),
+      path.resolve(kenvPath('lib', '**', '*')),
     ],
     {
       depth: 0,

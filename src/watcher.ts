@@ -243,7 +243,7 @@ export const onScriptsChanged = async (
           const binFilePath = path.resolve(binDirPath, command);
           if (!existsSync(binFilePath)) {
             log.info(`🔗 Creating bin for ${command}`);
-            await runScript(kitPath('cli', 'create-bin'), 'scripts', filePath);
+            runScript(kitPath('cli', 'create-bin'), 'scripts', filePath);
           }
         } catch (error) {
           log.error(error);
@@ -478,9 +478,13 @@ export const setupWatchers = async () => {
                 return false;
               })
             )
-          ).filter(Boolean);
+          ).filter(Boolean) as string[];
 
-          rebuildScripts(scriptsUsingLib, path.dirname(dir));
+          try {
+            rebuildScripts(scriptsUsingLib, path.dirname(dir));
+          } catch (error) {
+            log.error(error);
+          }
         } catch (error) {
           log.error(error);
         }
