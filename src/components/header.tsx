@@ -35,6 +35,7 @@ const TopRightButton = () => {
   const applyUpdate = useAtomValue(applyUpdateAtom);
   const kitState = useAtomValue(kitStateAtom);
   const audioDot = useAtomValue(audioDotAtom);
+  const social = useAtomValue(socialAtom);
 
   const onProcessButtonClick = useCallback(() => {
     runProcesses();
@@ -83,15 +84,24 @@ const TopRightButton = () => {
   }
 
   return (
-    <span
-      style={{
-        WebkitAppRegion: 'drag',
-        WebkitUserSelect: 'none',
-      }}
-      className="truncate"
-    >
-      {name}
-    </span>
+    <>
+      <span
+        style={{
+          WebkitAppRegion: 'drag',
+          WebkitUserSelect: 'none',
+        }}
+        className="truncate"
+      >
+        {name}
+      </span>
+
+      {social && (
+        <span>
+          <span>&nbsp;-&nbsp;</span>
+          <a href={social.url}>{social.username}</a>
+        </span>
+      )}
+    </>
   );
 };
 
@@ -107,7 +117,6 @@ export default function Header() {
   const [loading] = useAtom(loadingAtom);
   const [open] = useAtom(openAtom);
   const [promptData] = useAtom(promptDataAtom);
-  const social = useAtomValue(socialAtom);
 
   const onXClick = useCallback(() => {
     setOpen(false);
@@ -159,13 +168,6 @@ export default function Header() {
         />
         <span className="flex flex-row items-end pl-1 text-right">
           <TopRightButton />
-
-          {social && (
-            <span>
-              <span>&nbsp;-&nbsp;</span>
-              <a href={social.url}>{social.username}</a>
-            </span>
-          )}
         </span>
       </div>
       {false && mouseEnabled && (

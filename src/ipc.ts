@@ -273,12 +273,15 @@ ${data.error}
     Channel.GET_DEVICES,
     Channel.START_MIC,
     Channel.APPEND_EDITOR_VALUE,
+    Channel.GET_INPUT,
+    Channel.EDITOR_GET_SELECTED_TEXT,
+    Channel.EDITOR_SET_CODE_HINT,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
       channel,
       handleChannel(async ({ child }, message) => {
-        // log.info(`⬅ ${channel}`);
+        log.info(`⬅ ${channel}`);
 
         if (channel === Channel.ABANDON) {
           log.info(`⚠️ ABANDON`, message.pid);

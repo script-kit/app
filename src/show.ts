@@ -1,5 +1,4 @@
 /* eslint-disable import/prefer-default-export */
-import glasstron from 'glasstron-clarity';
 import {
   app,
   BrowserWindow,
@@ -484,9 +483,8 @@ export const showWidget = async (
       widgetWindow.setVibrancy('menu');
     }
   } else if (!options?.transparent) {
-    widgetWindow = new glasstron.BrowserWindow({
+    widgetWindow = new BrowserWindow({
       ...bwOptions,
-      blur: true,
     });
   } else {
     widgetWindow = new BrowserWindow(bwOptions);

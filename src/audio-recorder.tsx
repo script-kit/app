@@ -1,8 +1,11 @@
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable no-plusplus */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
+import { UI, Channel } from '@johnlindquist/kit/cjs/enum';
 
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { ipcRenderer } from 'electron';
 import {
   channelAtom,
   submitValueAtom,
@@ -45,19 +48,67 @@ export default function AudioRecorder() {
   const hasPreview = Boolean(
     previewHTML && previewHTML !== closedDiv && previewEnabled
   );
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const [channel] = useAtom(channelAtom);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
+
+  const handleDataAvailable = useCallback(
+    async (event) => {
+      setAudioChunks((prevAudioChunks) => [...prevAudioChunks, event.data]);
+      if (micConfig.stream) {
+        const arrayBuffer = await event.data.arrayBuffer();
+        const type = `audio/${micConfig.format}`;
+
+        const base64 = arrayBufferToBase64(arrayBuffer, type);
+        channel(Channel.ON_AUDIO_DATA, {
+          value: base64,
+        });
+      }
+    },
+    [channel, micConfig.format, micConfig.stream]
+  );
+
+  const handleStop = useCallback(() => {
+    // console.log('Stopped recording');
+
+    if (recorderRef.current === null) return;
+    recorderRef.current.removeEventListener(
+      'dataavailable',
+      handleDataAvailable
+    );
+    recorderRef.current.removeEventListener('stop', handleStop);
+    recorderRef.current = null;
+  }, [handleDataAvailable]);
+
+  const destroyRecorder = useCallback(() => {
+    log(typeof recorderRef?.current);
+    if (recorderRef?.current) {
+      log(`Destroying recorder...`);
+      recorderRef.current.stream.getTracks().forEach((track) => track.stop());
+      recorderRef.current.removeEventListener('stop', handleStop);
+      recorderRef.current.removeEventListener(
+        'dataavailable',
+        handleDataAvailable
+      );
+      recorderRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+  }, [handleDataAvailable, handleStop, log]);
 
   const stopRecording = useCallback(async () => {
     if (recorderRef.current !== null) {
       log(`🎙 Stopping recording...`);
       if (recorderRef.current.state === 'recording') recorderRef.current.stop();
       // destroy the recorder
-      recorderRef.current.stream.getTracks().forEach((track) => track.stop());
-      recorderRef.current = null;
-
+      log(`Destroying recorder because stop...`);
+      destroyRecorder();
+      log(`Audio chunks: ${audioChunks.length}`);
       if (audioChunks.length === 0) return;
       const type = `audio/${micConfig.format}`;
       const audioBlob = new Blob(audioChunks, {
@@ -76,38 +127,15 @@ export default function AudioRecorder() {
     if (recorderRef.current === null) return;
     log(`🎤 Starting recording...`);
 
-    const handleDataAvailable = async (event) => {
-      setAudioChunks((prevAudioChunks) => [...prevAudioChunks, event.data]);
-      if (micConfig.stream) {
-        const arrayBuffer = await event.data.arrayBuffer();
-        const type = `audio/${micConfig.format}`;
-
-        const base64 = arrayBufferToBase64(arrayBuffer, type);
-        channel(Channel.ON_AUDIO_DATA, {
-          value: base64,
-        });
-      }
-    };
-
     log(`Got recorder... ${recorderRef.current}`);
     recorderRef.current.addEventListener('dataavailable', handleDataAvailable);
-    recorderRef.current.addEventListener('stop', () => {
-      // console.log('Stopped recording');
-
-      if (recorderRef.current === null) return;
-      recorderRef.current.removeEventListener(
-        'dataavailable',
-        handleDataAvailable
-      );
-      recorderRef.current.removeEventListener('stop', () => {});
-      recorderRef.current = null;
-    });
+    recorderRef.current.addEventListener('stop', handleStop);
     recorderRef.current.start(micConfig.timeSlice);
 
-    const audioContext = new AudioContext();
-    const analyser = audioContext.createAnalyser();
+    audioContextRef.current = new AudioContext();
+    const analyser = audioContextRef.current.createAnalyser();
     analyser.fftSize = 2048;
-    const source = audioContext.createMediaStreamSource(
+    const source = audioContextRef.current.createMediaStreamSource(
       recorderRef.current.stream
     );
     source.connect(analyser);
@@ -129,7 +157,7 @@ export default function AudioRecorder() {
   }, [channel, log]);
 
   useEffect(() => {
-    if (ui === UI.mic && open && recorderRef.current === null) {
+    if (open && recorderRef.current === null) {
       const constraints = {
         audio: deviceId ? { deviceId } : true,
       };
@@ -147,7 +175,7 @@ export default function AudioRecorder() {
           log(`Error connecting to mic... ${err}`);
         });
     }
-  }, [ui, open, deviceId, startRecording, log]);
+  }, [open, deviceId, startRecording, log]);
 
   useEffect(() => {
     recorderRef.current = null;
@@ -161,11 +189,24 @@ export default function AudioRecorder() {
       ) {
         recorderRef.current.stop();
         log(`Mic unmounted. Stopping tracks and clearing audio chunks...`);
-        recorderRef.current.stream.getTracks().forEach((track) => track.stop());
+        destroyRecorder();
         setAudioChunks([]);
       }
     };
   }, [log]);
+
+  useEffect(() => {
+    const handleStopMic = () => {
+      log(`>>> Handling stop mic...`);
+      stopRecording();
+    };
+
+    ipcRenderer.on(Channel.STOP_MIC, handleStopMic);
+
+    return () => {
+      ipcRenderer.removeListener(Channel.STOP_MIC, handleStopMic);
+    };
+  }, [log, stopRecording]);
 
   useOnEnter(stopRecording);
 

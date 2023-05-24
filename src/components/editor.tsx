@@ -9,6 +9,7 @@ import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
 
 import { editor as monacoEditor, Range } from 'monaco-editor';
 
+import { ipcRenderer } from 'electron';
 import {
   channelAtom,
   darkAtom,
@@ -18,6 +19,7 @@ import {
   editorOptions,
   editorSuggestionsAtom,
   inputAtom,
+  logAtom,
   openAtom,
   scrollToAtom,
   uiAtom,
@@ -107,6 +109,7 @@ export default function Editor() {
   const disposeRef = useRef<any>(null);
   const [scrollTo, setScrollTo] = useAtom(scrollToAtom);
   const [channel] = useAtom(channelAtom);
+  const log = useAtomValue(logAtom);
 
   const m = useMonaco();
 
@@ -406,6 +409,49 @@ export default function Editor() {
       channel(Channel.APPEND_EDITOR_VALUE);
     }
   }, [editor, editorAppend]);
+
+  useEffect(() => {
+    const getSelectedText = () => {
+      if (!editor) return;
+      const selection = editor.getSelection();
+
+      if (!selection) return;
+      const selectedText = editor.getModel()?.getValueInRange(selection);
+
+      channel(Channel.EDITOR_GET_SELECTED_TEXT, { value: selectedText });
+    };
+
+    ipcRenderer.on(Channel.EDITOR_GET_SELECTED_TEXT, getSelectedText);
+
+    const setCodeHint = () => {
+      if (!editor) return;
+      const selection = editor.getSelection();
+
+      if (!selection) return;
+      const selectedText = editor.getModel()?.getValueInRange(selection);
+
+      const suggestions = editorSuggestions?.map((str: string) => ({
+        label: str,
+        insertText: str,
+      }));
+
+      if (suggestions?.length) {
+        editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
+      }
+
+      channel(Channel.EDITOR_SET_CODE_HINT, { value: selectedText });
+    };
+
+    ipcRenderer.on(Channel.EDITOR_SET_CODE_HINT, setCodeHint);
+
+    return () => {
+      ipcRenderer.removeListener(
+        Channel.EDITOR_GET_SELECTED_TEXT,
+        getSelectedText
+      );
+      ipcRenderer.removeListener(Channel.EDITOR_SET_CODE_HINT, setCodeHint);
+    };
+  }, [editor, channel, log]);
 
   const theme = kitIsDark ? 'kit-dark' : 'kit-light';
 

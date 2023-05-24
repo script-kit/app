@@ -101,6 +101,8 @@ import {
   focusPrompt,
   clearPromptTimers,
   maybeHide,
+  reload,
+  isVisible,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -749,7 +751,11 @@ const systemEvents = () => {
     sleepSchedule();
 
     kitState.suspended = true;
-    // app?.hide();
+
+    if (!isVisible()) {
+      reload();
+      app?.hide();
+    }
   });
 
   powerMonitor.addListener('resume', async () => {
@@ -775,7 +781,11 @@ const systemEvents = () => {
 
   powerMonitor.addListener('lock-screen', async () => {
     kitState.screenLocked = true;
-    // app?.hide();
+
+    if (!isVisible()) {
+      reload();
+      app?.hide();
+    }
   });
 
   powerMonitor.addListener('unlock-screen', async () => {

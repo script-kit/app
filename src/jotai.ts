@@ -1590,7 +1590,7 @@ export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
     },
   };
 
-  // console.log({ appMessage });
+  // g(logAtom)({ channel, appMessage });
   ipcRenderer.send(channel, appMessage);
 });
 
@@ -2606,6 +2606,7 @@ export const justOpenedAtom = atom(false);
 export const micConfigAtom = atom({
   timeSlice: 200,
   format: 'webm',
+  stream: false,
 });
 
 export const disableSubmitAtom = atom(false);

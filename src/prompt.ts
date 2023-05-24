@@ -5,7 +5,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable consistent-return */
-import glasstron from 'glasstron-clarity';
 import { PROMPT, Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -178,10 +177,8 @@ export const createPromptWindow = async () => {
     });
     promptWindow.setVibrancy('hud');
   } else {
-    promptWindow = new glasstron.BrowserWindow({
+    promptWindow = new BrowserWindow({
       ...options,
-
-      blur: true,
     });
 
     try {

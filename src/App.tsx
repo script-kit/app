@@ -262,7 +262,7 @@ export default function App() {
 
   const setExit = useSetAtom(exitAtom);
   const setScriptHistory = useSetAtom(_history);
-  const setInput = useSetAtom(inputAtom);
+  const [input, setInput] = useAtom(inputAtom);
   const appendInput = useSetAtom(appendInputAtom);
   const setPlaceholder = useSetAtom(placeholderAtom);
   const [promptData, setPromptData] = useAtom(promptDataAtom);
@@ -325,7 +325,6 @@ export default function App() {
   const [hasPreview] = useAtom(hasPreviewAtom);
 
   const index = useAtomValue(_index);
-  const input = useAtomValue(inputAtom);
 
   const previewCheck =
     !appDb.mini && previewHTML && !panelHTML && previewEnabled;
@@ -488,6 +487,9 @@ export default function App() {
     [Channel.SET_FOOTER]: (html) => setFooter(DOMPurify.sanitize(html)),
     [Channel.SET_FILTER_INPUT]: setFilterInput,
     [Channel.SET_INPUT]: setInput,
+    [Channel.GET_INPUT]: () => {
+      channel(Channel.GET_INPUT, { value: input });
+    },
     [Channel.APPEND_INPUT]: appendInput,
     [Channel.SET_LOADING]: setLoading,
     [Channel.SET_RUNNING]: setRunning,
@@ -958,7 +960,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                   {ui === UI.term &&
                     open &&
                     termConfig?.promptId === promptData?.id && <Terminal />}
-                  {ui === UI.mic && open && <AudioRecorder />}
+                  {/* {ui === UI.mic && open && <AudioRecorder />} */}
                   {ui === UI.webcam && open && <Webcam />}
                   {/* {ui === UI.speech && <SpeechToText />} */}
 

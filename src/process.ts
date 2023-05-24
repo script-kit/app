@@ -231,7 +231,7 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   // if(value?.['--color-secondary']) delete value['--color-secondary']
   // if(value?.['--opacity']) delete value['--opacity']
 
-  const defaultTheme = {"--color-text":"255, 255, 255","--color-primary":"251, 191, 36","--color-secondary":"255, 255, 255","--color-background":"6, 6, 6","--opacity":"0.4","appearance":"dark","--ui-bg-opacity":"0.07","--ui-border-opacity":"0.15"}
+  const defaultTheme = {"--color-text":"255, 255, 255","--color-primary":"251, 191, 36","--color-secondary":"255, 255, 255","--color-background":"7, 7, 7","--opacity":"0.45","appearance":"dark","--ui-bg-opacity":"0.07","--ui-border-opacity":"0.15"}
 
   if(theme?.['--color-primary'] === defaultTheme?.['--color-primary']){
     log.info(`🎨 --color-primary detected as ${defaultTheme?.['--color-primary']}. Forcing default theme`)
@@ -984,6 +984,18 @@ const kitMessageMap: ChannelHandler = {
     setInput(value);
 
     childSend(child, { channel, value });
+  }),
+
+  GET_INPUT: toProcess(async ({ child }, { channel }) => {
+    sendToPrompt(Channel.GET_INPUT);
+  }),
+
+  EDITOR_GET_SELECTED_TEXT: toProcess(async ({ child }, { channel }) => {
+    sendToPrompt(Channel.EDITOR_GET_SELECTED_TEXT);
+  }),
+
+  EDITOR_SET_CODE_HINT: toProcess(async ({ child }, { channel }) => {
+    sendToPrompt(Channel.EDITOR_SET_CODE_HINT);
   }),
 
   APPEND_INPUT: toProcess(async ({ child }, { channel, value }) => {
