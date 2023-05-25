@@ -7,9 +7,17 @@ import { debounce, throttle } from 'lodash';
 
 import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
-import { focusPrompt, isFocused, isVisible, maybeHide, reload } from './prompt';
+import {
+  focusPrompt,
+  isFocused,
+  isVisible,
+  maybeHide,
+  reload,
+  setPreview,
+} from './prompt';
 import { convertKey, kitState, subs } from './state';
 import { HideReason, Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
@@ -250,16 +258,45 @@ export const updateMainShortcut = async (filePath: string) => {
           return;
         }
 
-        const p = processes.getByPid(kitState.pid);
-        const forceReload =
-          kitState.promptCount === 1 &&
-          (p?.child?.connected === false || p?.child?.killed);
-        if (forceReload) {
+        const pInfo = processes.getByPid(kitState.pid);
+
+        const scriptPingSuccess = await new Promise((resolve, reject) => {
+          try {
+            let pingId: NodeJS.Timeout;
+            const pongHandler = (message: { channel: Channel }) => {
+              if (message?.channel === Channel.PONG) {
+                log.info(`Successfully pinged script`);
+                if (pingId) clearTimeout(pingId);
+                pInfo?.child?.off('message', pongHandler);
+                resolve(true);
+              }
+            };
+            pInfo?.child?.on('message', pongHandler);
+
+            pingId = setTimeout(() => {
+              pInfo?.child?.off('message', pongHandler);
+              log.error(`Failed to ping script`);
+              resolve(false);
+            }, 500);
+
+            pInfo?.child?.send({
+              channel: Channel.PING,
+              pid: kitState.pid,
+              state: {},
+            });
+          } catch (error) {
+            resolve(false);
+          }
+        });
+
+        if (!scriptPingSuccess) {
           log.info(`Killing ${kitState.pid}`);
           processes.removeByPid(kitState.pid);
           maybeHide(HideReason.MainShortcut);
           return;
         }
+
+        setPreview(`<div></div>`);
 
         await runPromptProcess(mainScriptPath, [], {
           force: true,

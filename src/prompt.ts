@@ -63,6 +63,11 @@ export const blurPrompt = () => {
   }
 };
 
+const actualHide = () => {
+  if (!kitState.isMac) promptWindow?.minimize();
+  promptWindow?.hide();
+};
+
 export const maybeHide = async (reason: string) => {
   if (kitState.debugging) return;
   if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
@@ -78,8 +83,7 @@ export const maybeHide = async (reason: string) => {
         );
         if (!state) {
           if (reason === HideReason.MainShortcut) reload();
-          if (!kitState.isMac) promptWindow?.minimize();
-          promptWindow?.hide();
+          actualHide();
           return;
         }
         setTimeout(check, 20);
@@ -1320,7 +1324,7 @@ const subScriptPath = subscribeKey(
   kitState,
   'scriptPath',
   async (scriptPath) => {
-    log.info(`📄 scriptPath changed: ${scriptPath}`);
+    log.verbose(`📄 scriptPath changed: ${scriptPath}`);
     if (promptWindow?.isDestroyed()) return;
     const noScript = kitState.scriptPath === '';
 
@@ -1332,8 +1336,8 @@ const subScriptPath = subscribeKey(
     }
 
     if (noScript) {
-      log.info(
-        `📄 scriptPath changed: ${kitState.scriptPath}, prompt count: ${kitState.promptCount}`
+      log.verbose(
+        `noScript: scriptPath changed: ${kitState.scriptPath}, prompt count: ${kitState.promptCount}`
       );
 
       hideAppIfNoWindows(`remove ${kitState.scriptPath}`);

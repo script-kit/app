@@ -13,7 +13,7 @@ import { emitter, KitEvent } from './events';
 import { TermConfig } from './types';
 import { displayError } from './error';
 
-let t: any = null;
+let t: pty.IPty | null = null;
 
 type TermSize = {
   cols: number;
@@ -249,7 +249,7 @@ export const readyPty = async () => {
       }
 
       config.command = '';
-    }, 100);
+    }, 200);
 
     t.onData(async (data: any) => {
       try {

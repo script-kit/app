@@ -79,4 +79,5 @@ export enum Trigger {
 
 export enum HideReason {
   MainShortcut = 'MainShortcut',
+  User = 'User',
 }

@@ -109,7 +109,7 @@ import {
 } from './tick';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { createWidget } from './widget';
-import { AppChannel, Trigger } from './enums';
+import { AppChannel, HideReason, Trigger } from './enums';
 import { isKitScript, toRgb, pathsAreEqual, convertShortcut } from './helpers';
 import { toHex } from './color-utils';
 import { deleteText } from './keyboard';
@@ -425,6 +425,7 @@ const childSend = (child: ChildProcess, data: any) => {
 };
 
 const kitMessageMap: ChannelHandler = {
+  PONG: (data) => {},
   CONSOLE_LOG: (data) => {
     getLog(data.kitScript).info(data?.value || Value.Undefined);
     setLog(data.value || Value.Undefined);
@@ -831,13 +832,15 @@ const kitMessageMap: ChannelHandler = {
   HIDE_APP: toProcess(async ({ child, scriptPath }, { channel }) => {
     if (kitState.isMac && app?.dock) app?.dock?.hide();
 
+    setPreview(`<div></div>`)
+
     kitState.hiddenByUser = true;
     log.info(`😳 Hiding app`);
 
     const handler = () => {
       log.info(`🫣 App hidden`);
-      
-     
+
+
       if (!child?.killed) {
         childSend(child, {
           channel,
@@ -851,7 +854,7 @@ const kitMessageMap: ChannelHandler = {
       handler();
     }
 
-    hideAppIfNoWindows('HIDE_APP event');
+    hideAppIfNoWindows(HideReason.User);
   }),
 
   QUIT_APP: toProcess(async ({ child }, { channel, value }) => {
