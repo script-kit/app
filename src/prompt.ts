@@ -78,10 +78,6 @@ export const maybeHide = async (reason: string) => {
         );
         if (!state) {
           promptWindow?.hide();
-
-          if (!kitState.isMac) {
-            promptWindow?.minimize();
-          }
           return;
         }
         setTimeout(check, 20);

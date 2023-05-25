@@ -229,7 +229,7 @@ export const updateMainShortcut = async (filePath: string) => {
       shortcutMap.delete(mainScriptPath);
     }
 
-    const mainShortcutAction = throttle(
+    const mainShortcutAction = debounce(
       async () => {
         kitState.shortcutPressed = finalShortcut;
         log.info(`🏚  main shortcut`);
@@ -250,22 +250,22 @@ export const updateMainShortcut = async (filePath: string) => {
           return;
         }
 
-        log.info({
-          pid: kitState.pid,
-          isMainScript: kitState.isMainScript(),
-          promptCount: kitState.promptCount,
-        });
+        // log.info({
+        //   pid: kitState.pid,
+        //   isMainScript: kitState.isMainScript(),
+        //   promptCount: kitState.promptCount,
+        // });
 
-        if (
-          kitState.pid &&
-          kitState.isMainScript() &&
-          kitState.promptCount === 1
-        ) {
-          log.info(`Killing ${kitState.pid}`);
-          processes.removeByPid(kitState.pid);
-          maybeHide(HideReason.MainShortcut);
-          return;
-        }
+        // if (
+        //   kitState.pid &&
+        //   kitState.isMainScript() &&
+        //   kitState.promptCount === 1
+        // ) {
+        //   log.info(`Killing ${kitState.pid}`);
+        //   processes.removeByPid(kitState.pid);
+        //   maybeHide(HideReason.MainShortcut);
+        //   return;
+        // }
 
         await runPromptProcess(mainScriptPath, [], {
           force: true,

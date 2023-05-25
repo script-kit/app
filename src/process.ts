@@ -830,12 +830,16 @@ const kitMessageMap: ChannelHandler = {
 
   HIDE_APP: toProcess(async ({ child, scriptPath }, { channel }) => {
     if (kitState.isMac && app?.dock) app?.dock?.hide();
+    if (!kitState.isMac) getMainPrompt()?.minimize();
+    
 
     kitState.hiddenByUser = true;
     log.info(`😳 Hiding app`);
 
     const handler = () => {
       log.info(`🫣 App hidden`);
+      
+     
       if (!child?.killed) {
         childSend(child, {
           channel,

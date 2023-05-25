@@ -32,8 +32,9 @@ import { getAssetPath } from './assets';
 import { appDb, forceQuit, kitState, subs } from './state';
 import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
-import { AppChannel, Trigger } from './enums';
+import { AppChannel, HideReason, Trigger } from './enums';
 import { mainLogPath, updateLogPath } from './logs';
+import { maybeHide } from './prompt';
 
 let tray: Tray | null = null;
 
@@ -462,7 +463,21 @@ export const openMenu = async (event?: KeyboardEvent) => {
     //   checked: kitState.preventClose,
     // });
 
+    const fixItems: MenuItemConstructorOptions[] = [];
+
+    if (kitState.pid && kitState.isMainScript() && kitState.promptCount === 1) {
+      fixItems.push({
+        label: `Fix Stuck Process`,
+        click: () => {
+          log.info(`Killing ${kitState.pid}`);
+          emitter.emit(KitEvent.KillProcess, kitState.pid);
+          maybeHide(HideReason.MainShortcut);
+        },
+      });
+    }
+
     const contextMenu = Menu.buildFromTemplate([
+      ...fixItems,
       ...updateItems,
       ...notifyItems,
       ...authItems,
