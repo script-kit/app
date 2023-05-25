@@ -485,6 +485,7 @@ export const showWidget = async (
   } else if (!options?.transparent) {
     widgetWindow = new glasstron.BrowserWindow({
       ...bwOptions,
+      backgroundColor: '#00000000',
       blur: true,
     });
   } else {

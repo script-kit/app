@@ -194,6 +194,7 @@ export const createPromptWindow = async () => {
   } else {
     promptWindow = new glasstron.BrowserWindow({
       ...options,
+      backgroundColor: '#00000000',
       blur: true,
     });
   }
