@@ -77,6 +77,8 @@ export const maybeHide = async (reason: string) => {
           `document.getElementById('data-panel-id-panelChild')`
         );
         if (!state) {
+          if (reason === HideReason.MainShortcut) reload();
+          if (!kitState.isMac) promptWindow?.minimize();
           promptWindow?.hide();
           return;
         }
@@ -84,10 +86,6 @@ export const maybeHide = async (reason: string) => {
       };
 
       await check();
-
-      if (reason === HideReason.MainShortcut) {
-        reload();
-      }
     }
   }
 };
@@ -1322,6 +1320,7 @@ const subScriptPath = subscribeKey(
   kitState,
   'scriptPath',
   async (scriptPath) => {
+    log.info(`📄 scriptPath changed: ${scriptPath}`);
     if (promptWindow?.isDestroyed()) return;
     const noScript = kitState.scriptPath === '';
 

@@ -250,22 +250,16 @@ export const updateMainShortcut = async (filePath: string) => {
           return;
         }
 
-        // log.info({
-        //   pid: kitState.pid,
-        //   isMainScript: kitState.isMainScript(),
-        //   promptCount: kitState.promptCount,
-        // });
-
-        // if (
-        //   kitState.pid &&
-        //   kitState.isMainScript() &&
-        //   kitState.promptCount === 1
-        // ) {
-        //   log.info(`Killing ${kitState.pid}`);
-        //   processes.removeByPid(kitState.pid);
-        //   maybeHide(HideReason.MainShortcut);
-        //   return;
-        // }
+        const p = processes.getByPid(kitState.pid);
+        const forceReload =
+          kitState.promptCount === 1 &&
+          (p?.child?.connected === false || p?.child?.killed);
+        if (forceReload) {
+          log.info(`Killing ${kitState.pid}`);
+          processes.removeByPid(kitState.pid);
+          maybeHide(HideReason.MainShortcut);
+          return;
+        }
 
         await runPromptProcess(mainScriptPath, [], {
           force: true,
