@@ -215,11 +215,6 @@ export const createPromptWindow = async () => {
     }
   }
 
-  // if (!kitState.isMac) {
-  //   promptWindow.setAlwaysOnTop(true, 'modal-panel');
-  // }
-  // promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-
   promptWindow?.webContents?.on('did-finish-load', () => {
     kitState.hiddenByUser = false;
     kitState.promptHidden = true;
@@ -329,12 +324,6 @@ export const createPromptWindow = async () => {
       log.verbose(`Blurred by kit: off`);
       kitState.blurredByKit = false;
     }
-
-    // if (!kitState.isMac)
-    //   sendToPrompt(Channel.SET_THEME, {
-    //     '--opacity-themedark': '100%',
-    //     '--opacity-themelight': '100%',
-    //   });
   };
 
   promptWindow?.webContents?.on('focus', () => {
@@ -436,24 +425,6 @@ export const createPromptWindow = async () => {
   });
   promptWindow?.on('resized', onResized);
   promptWindow?.on('moved', debounce(onMove, 250));
-
-  // setInterval(() => {
-  //   const backgroundThrottling = promptWindow?.webContents?.getBackgroundThrottling();
-  //   const frameRate = promptWindow?.webContents?.getFrameRate();
-
-  //   log.info({
-  //     backgroundThrottling,
-  //     frameRate,
-  //   });
-  //   if (isVisible()) {
-  //     promptWindow?.webContents?.startPainting();
-  //   }
-  // }, 60000);
-
-  // powerMonitor.addListener('user-did-resign-active', () => {
-  //   log.info(`🔓 System unlocked. Reloading prompt window.`);
-  //   reload();
-  // });
 
   powerMonitor.on('lock-screen', () => {
     log.info(`🔒 System locked. Reloading prompt window.`);
