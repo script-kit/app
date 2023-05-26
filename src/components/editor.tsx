@@ -403,8 +403,12 @@ export default function Editor() {
       };
 
       editor.executeEdits('my-source', [op]);
-      // scroll to bottom
-      editor.revealLine(lineNumber + 1);
+
+      // if cursor is at the end of the file, scroll to bottom
+      const cursorPosition = editor.getPosition();
+      if (cursorPosition?.lineNumber === lineNumber) {
+        editor.revealLine(lineNumber + 1);
+      }
 
       channel(Channel.APPEND_EDITOR_VALUE);
     }
@@ -434,27 +438,6 @@ export default function Editor() {
 
     ipcRenderer.on(Channel.EDITOR_GET_SELECTION, getSelectedText);
 
-    const setCodeHint = () => {
-      if (!editor) return;
-      const selection = editor.getSelection();
-
-      if (!selection) return;
-      const selectedText = editor.getModel()?.getValueInRange(selection);
-
-      const suggestions = editorSuggestions?.map((str: string) => ({
-        label: str,
-        insertText: str,
-      }));
-
-      if (suggestions?.length) {
-        editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
-      }
-
-      channel(Channel.EDITOR_SET_CODE_HINT, { value: selectedText });
-    };
-
-    ipcRenderer.on(Channel.EDITOR_SET_CODE_HINT, setCodeHint);
-
     const getCursorPosition = () => {
       if (!editor) return;
       if (!editor?.getModel()) return;
@@ -472,13 +455,75 @@ export default function Editor() {
 
     ipcRenderer.on(Channel.EDITOR_GET_CURSOR_OFFSET, getCursorPosition);
 
+    const insertTextAtCursor = (event: any, text: string) => {
+      if (!editor) return;
+      if (!editor?.getModel()) return;
+      if (!editor?.getPosition()) return;
+
+      const cursorOffset =
+        editor
+          ?.getModel()
+          ?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) ||
+        0;
+
+      const position = editor.getModel()?.getPositionAt(cursorOffset);
+      editor.setPosition(position || { lineNumber: 1, column: 1 });
+
+      const id = { major: 1, minor: 1 };
+      const op = {
+        identifier: id,
+        range: new Range(
+          position?.lineNumber || 1,
+          position?.column || 1,
+          position?.lineNumber || 1,
+          position?.column || 1
+        ),
+        text,
+        forceMoveMarkers: true,
+      };
+
+      editor.executeEdits('my-source', [op]);
+
+      const newCursorOffset =
+        editor
+          ?.getModel()
+          ?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) ||
+        0;
+
+      channel(Channel.EDITOR_INSERT_TEXT, { value: newCursorOffset });
+    };
+
+    ipcRenderer.on(Channel.EDITOR_INSERT_TEXT, insertTextAtCursor);
+
+    const moveCursor = (event: any, offset: number) => {
+      if (!editor) return;
+      if (!editor?.getModel()) return;
+
+      const position = editor.getModel()?.getPositionAt(offset);
+      editor.setPosition(position || { lineNumber: 1, column: 1 });
+
+      const newCursorOffset =
+        editor
+          ?.getModel()
+          ?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) ||
+        0;
+
+      channel(Channel.EDITOR_MOVE_CURSOR, { value: newCursorOffset });
+    };
+
+    ipcRenderer.on(Channel.EDITOR_MOVE_CURSOR, moveCursor);
+
     return () => {
       ipcRenderer.removeListener(Channel.EDITOR_GET_SELECTION, getSelectedText);
-      ipcRenderer.removeListener(Channel.EDITOR_SET_CODE_HINT, setCodeHint);
       ipcRenderer.removeListener(
         Channel.EDITOR_GET_CURSOR_OFFSET,
         getCursorPosition
       );
+      ipcRenderer.removeListener(
+        Channel.EDITOR_INSERT_TEXT,
+        insertTextAtCursor
+      );
+      ipcRenderer.removeListener(Channel.EDITOR_MOVE_CURSOR, moveCursor);
     };
   }, [editor, channel, log]);
 

@@ -1008,6 +1008,14 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.EDITOR_SET_CODE_HINT);
   }),
 
+  EDITOR_MOVE_CURSOR: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.EDITOR_MOVE_CURSOR, value);
+  }),
+
+  EDITOR_INSERT_TEXT: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.EDITOR_INSERT_TEXT, value);
+  }),
+
   APPEND_INPUT: toProcess(async ({ child }, { channel, value }) => {
     sendToPrompt(Channel.APPEND_INPUT, value);
 

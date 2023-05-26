@@ -273,6 +273,8 @@ ${data.error}
     Channel.EDITOR_GET_SELECTION,
     Channel.EDITOR_SET_CODE_HINT,
     Channel.EDITOR_GET_CURSOR_OFFSET,
+    Channel.EDITOR_INSERT_TEXT,
+    Channel.EDITOR_MOVE_CURSOR,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(

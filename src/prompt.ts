@@ -1058,12 +1058,6 @@ export const setScript = async (
   }
   sendToPrompt(Channel.SET_SCRIPT, script);
 
-  trackEvent(TrackEvent.SetScript, {
-    script: script.command,
-    name: script.name,
-    description: script.description,
-  });
-
   if (script.filePath === mainScriptPath) {
     emitter.emit(KitEvent.MainScript, script);
   }
@@ -1236,7 +1230,9 @@ export const setPromptData = async (promptData: PromptData) => {
 
   trackEvent(TrackEvent.SetPrompt, {
     ui: promptData.ui,
-    scriptPath: path.basename(promptData.scriptPath),
+    script: path.basename(promptData.scriptPath),
+    name: promptData?.name || kitState?.script?.name || '',
+    description: promptData?.description || kitState?.script?.description || '',
   });
 };
 

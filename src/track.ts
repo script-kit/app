@@ -4,7 +4,6 @@ import { kitState } from './state';
 export enum TrackEvent {
   Ready = 'Ready',
   MainShortcut = 'MainShortcut',
-  SetScript = 'SetScript',
   SetPrompt = 'SetPrompt',
   ScriptTrigger = 'ScriptTrigger',
   Error = 'Error',
