@@ -416,12 +416,23 @@ export default function Editor() {
       const selection = editor.getSelection();
 
       if (!selection) return;
-      const selectedText = editor.getModel()?.getValueInRange(selection);
+      const text = editor.getModel()?.getValueInRange(selection);
+      // get the start and end of the selection
+      const start = editor
+        .getModel()
+        ?.getOffsetAt(selection.getStartPosition());
+      const end = editor.getModel()?.getOffsetAt(selection.getEndPosition());
 
-      channel(Channel.EDITOR_GET_SELECTED_TEXT, { value: selectedText });
+      channel(Channel.EDITOR_GET_SELECTION, {
+        value: {
+          text,
+          start,
+          end,
+        },
+      });
     };
 
-    ipcRenderer.on(Channel.EDITOR_GET_SELECTED_TEXT, getSelectedText);
+    ipcRenderer.on(Channel.EDITOR_GET_SELECTION, getSelectedText);
 
     const setCodeHint = () => {
       if (!editor) return;
@@ -444,12 +455,30 @@ export default function Editor() {
 
     ipcRenderer.on(Channel.EDITOR_SET_CODE_HINT, setCodeHint);
 
+    const getCursorPosition = () => {
+      if (!editor) return;
+      if (!editor?.getModel()) return;
+      if (!editor?.getPosition()) return;
+
+      // get the index of the cursor relative to the content
+      const cursorOffset =
+        editor
+          ?.getModel()
+          ?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) ||
+        0;
+
+      channel(Channel.EDITOR_GET_CURSOR_OFFSET, { value: cursorOffset });
+    };
+
+    ipcRenderer.on(Channel.EDITOR_GET_CURSOR_OFFSET, getCursorPosition);
+
     return () => {
-      ipcRenderer.removeListener(
-        Channel.EDITOR_GET_SELECTED_TEXT,
-        getSelectedText
-      );
+      ipcRenderer.removeListener(Channel.EDITOR_GET_SELECTION, getSelectedText);
       ipcRenderer.removeListener(Channel.EDITOR_SET_CODE_HINT, setCodeHint);
+      ipcRenderer.removeListener(
+        Channel.EDITOR_GET_CURSOR_OFFSET,
+        getCursorPosition
+      );
     };
   }, [editor, channel, log]);
 

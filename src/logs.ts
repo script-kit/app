@@ -13,6 +13,7 @@ import { app } from 'electron';
 import { sendToPrompt } from './prompt';
 import { stripAnsi } from './ansi';
 import { kitState, subs } from './state';
+import { TrackEvent, trackEvent } from './track';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -114,6 +115,16 @@ if (process.env.LOG_LEVEL) {
   if (log.transports.ipc) log.transports.ipc.level = 'error';
   log.transports.file.level = 'verbose';
 }
+
+const _error = log.error.bind(log);
+log.error = (message: string, ...args: any[]) => {
+  try {
+    trackEvent(TrackEvent.Error, { message, args });
+  } catch (error) {
+    //
+  }
+  _error(message, ...args);
+};
 
 const subLogLevel = subscribeKey(kitState, 'logLevel', (level) => {
   log.info(`📋 Log level set to: ${level}`);

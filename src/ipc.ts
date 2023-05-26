@@ -270,8 +270,9 @@ ${data.error}
     Channel.START_MIC,
     Channel.APPEND_EDITOR_VALUE,
     Channel.GET_INPUT,
-    Channel.EDITOR_GET_SELECTED_TEXT,
+    Channel.EDITOR_GET_SELECTION,
     Channel.EDITOR_SET_CODE_HINT,
+    Channel.EDITOR_GET_CURSOR_OFFSET,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(

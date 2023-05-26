@@ -647,8 +647,14 @@ export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
   }
 
   // if width and height are larger than the screen, resize to fit
-  if (width && width > screenWidth) bounds.width = screenWidth;
-  if (height && height > screenHeight) bounds.height = screenHeight;
+  if (width && width > screenWidth) {
+    bounds.x = workX;
+    bounds.width = screenWidth;
+  }
+  if (height && height > screenHeight) {
+    bounds.y = workY;
+    bounds.height = screenHeight;
+  }
 
   try {
     promptWindow.setBounds(bounds);
