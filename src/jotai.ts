@@ -1895,7 +1895,7 @@ export const splashBodyAtom = atom('');
 export const splashHeaderAtom = atom('');
 export const splashProgressAtom = atom(0);
 
-export const appConfigAtom = atom<AppConfig>({
+export const appConfigAtom = atom<AppConfig & { url: string }>({
   isWin: false,
   isMac: false,
   os: '',
@@ -1903,6 +1903,7 @@ export const appConfigAtom = atom<AppConfig>({
   assetPath: '',
   version: '',
   delimiter: '',
+  url: '',
 });
 
 const _appDbAtom = atom<Partial<AppDb>>({});

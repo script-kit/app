@@ -47,21 +47,6 @@ const Spinner = () => (
   </svg>
 );
 
-const links = [
-  {
-    label: 'Community Scripts',
-    href: 'https://www.scriptkit.com/scripts',
-  },
-  // {
-  //   label: 'Documentation',
-  //   href: 'https://github.com/johnlindquist/kit/discussions/categories/docs',
-  // },
-  {
-    label: 'Questions?',
-    href: 'https://github.com/johnlindquist/kit/discussions/categories/q-a',
-  },
-];
-
 const questions = [
   `What problem do you want a script to solve?`,
   `How are you currently dealing with this problem?`,
@@ -84,6 +69,21 @@ function Aside() {
   const [runMainScript] = useAtom(runMainScriptAtom);
 
   const [lazyIcon] = useAtom(loadableIconAtom);
+
+  const links = [
+    {
+      label: 'Community Scripts',
+      href: `${appConfig.url}/scripts`,
+    },
+    // {
+    //   label: 'Documentation',
+    //   href: 'https://github.com/johnlindquist/kit/discussions/categories/docs',
+    // },
+    {
+      label: 'Questions?',
+      href: 'https://github.com/johnlindquist/kit/discussions/categories/q-a',
+    },
+  ];
 
   return (
     <aside className="bg-bg-base/40 col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner">

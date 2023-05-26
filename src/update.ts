@@ -266,7 +266,7 @@ export const configureAutoUpdate = async () => {
   emitter.on(KitEvent.CheckForUpdates, async () => {
     // if not mac, just open scriptkit.com
     if (!kitState.isMac) {
-      shell.openExternal('https://scriptkit.com');
+      shell.openExternal(kitState.url);
       return;
     }
 

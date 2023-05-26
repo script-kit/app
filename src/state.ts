@@ -349,6 +349,11 @@ const initState = {
   trustedKenvsKey: getTrustedKenvsKey(),
   tabIndex: 0,
   tabChanged: false,
+  user_id: '',
+  app_version: '',
+  platform: `${os.platform()}-${arch}`,
+  os_version: os.release(),
+  url: `https://scriptkit.com`,
 };
 
 nativeTheme.addListener('updated', () => {
@@ -578,7 +583,7 @@ export const sponsorCheck = async (feature: string, block = true) => {
   if (!kitState.isSponsor) {
     let response = null;
     try {
-      response = await axios.post(`https://scriptkit.com/api/check-sponsor`, {
+      response = await axios.post(`${kitState.url}/api/check-sponsor`, {
         ...kitState.user,
         feature,
       });

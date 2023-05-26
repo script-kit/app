@@ -34,6 +34,7 @@ import {
 import { getKitScript, kitState } from './state';
 import { pathsAreEqual } from './helpers';
 import { Trigger } from './enums';
+import { TrackEvent, trackEvent } from './track';
 
 app.on('second-instance', async (_event, argv) => {
   log.info('second-instance', argv);
@@ -170,6 +171,12 @@ export const runPromptProcess = async (
   log.info(`${pid}: 🏎 ${promptScriptPath} `);
   processInfo.scriptPath = promptScriptPath;
   processInfo.date = Date.now();
+
+  trackEvent(TrackEvent.ScriptTrigger, {
+    script: path.basename(promptScriptPath),
+    trigger: options.trigger,
+    force: options.force,
+  });
 
   const script = await findScript(promptScriptPath);
 

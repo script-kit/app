@@ -117,6 +117,7 @@ import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';
 import { darkTheme, lightTheme } from './components/themes';
 import { getAssetPath } from './assets';
+import { TrackEvent, trackEvent } from './track';
 
 
 
@@ -2299,6 +2300,10 @@ class Processes extends Array<ProcessInfo> {
       };
 
       setTrayScriptError(pid);
+
+      trackEvent(TrackEvent.Error, {
+        error: error?.message,
+      })
       if (reject) reject(error);
     });
 

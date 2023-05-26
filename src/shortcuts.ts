@@ -22,6 +22,7 @@ import { convertKey, kitState, subs } from './state';
 import { HideReason, Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
 import { processes, spawnShebang } from './process';
+import { TrackEvent, trackEvent } from './track';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -241,6 +242,11 @@ export const updateMainShortcut = async (filePath: string) => {
       async () => {
         kitState.shortcutPressed = finalShortcut;
         log.info(`🏚  main shortcut`);
+
+        trackEvent(TrackEvent.MainShortcut, {
+          login: kitState.user?.login || 'unknown',
+          sponsor: kitState.isSponsor,
+        });
 
         if (!isVisible()) {
           await runPromptProcess(mainScriptPath, [], {

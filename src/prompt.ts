@@ -48,6 +48,7 @@ import { getVersion } from './version';
 import { AppChannel, HideReason } from './enums';
 import { emitter, KitEvent } from './events';
 import { pathsAreEqual } from './helpers';
+import { TrackEvent, trackEvent } from './track';
 
 let promptWindow: BrowserWindow;
 
@@ -233,6 +234,7 @@ export const createPromptWindow = async () => {
       isDark: kitState.isDark,
       searchDebounce: appDb.searchDebounce || true,
       termFont: appDb.termFont || 'monospace',
+      url: kitState.url,
     });
 
     sendToPrompt(Channel.APP_DB, { ...appDb });
@@ -1050,6 +1052,12 @@ export const setScript = async (
   }
   sendToPrompt(Channel.SET_SCRIPT, script);
 
+  trackEvent(TrackEvent.SetScript, {
+    script: script.command,
+    name: script.name,
+    description: script.description,
+  });
+
   if (script.filePath === mainScriptPath) {
     emitter.emit(KitEvent.MainScript, script);
   }
@@ -1219,6 +1227,11 @@ export const setPromptData = async (promptData: PromptData) => {
       log.info(`Prompt window in bounds.`);
     }
   }, 1000);
+
+  trackEvent(TrackEvent.SetPrompt, {
+    ui: promptData.ui,
+    scriptPath: path.basename(promptData.scriptPath),
+  });
 };
 
 export const setChoices = (choices: Choice[]) => {

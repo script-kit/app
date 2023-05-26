@@ -423,18 +423,15 @@ ${data.error}
 
     try {
       const feedbackResponse = await axios.post(
-        `https://scriptkit.com/api/feedback`,
+        `${kitState.url}/api/feedback`,
         data
       );
       log.info(feedbackResponse.data);
 
       if (data?.email && data?.subscribe) {
-        const subResponse = await axios.post(
-          `https://scriptkit.com/api/subscribe`,
-          {
-            email: data?.email,
-          }
-        );
+        const subResponse = await axios.post(`${kitState.url}/api/subscribe`, {
+          email: data?.email,
+        });
 
         log.info(subResponse.data);
       }

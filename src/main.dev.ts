@@ -132,6 +132,7 @@ import { emitter } from './events';
 import { readyPty } from './pty';
 import { displayError } from './error';
 import { Trigger } from './enums';
+import { TrackEvent, trackEvent } from './track';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -1290,6 +1291,13 @@ const checkKit = async () => {
 
     await ready();
     kitState.ready = true;
+    kitState.user_id = `${Date.now()}`;
+    kitState.app_version = getVersion();
+
+    trackEvent(TrackEvent.Ready, {
+      os: process.platform,
+      version: getVersion(),
+    });
 
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
 
