@@ -41,9 +41,11 @@ import { getAssetPath } from './assets';
 import { emitter, KitEvent } from './events';
 import { Trigger } from './enums';
 
+const release = os.release();
 const isMac = os.platform() === 'darwin';
 const isWin = os.platform() === 'win32';
-const isWin11 = isWin && os.release().startsWith('10.0.22');
+const isWin11 =
+  isWin && (release.startsWith('10.0.22') || release.startsWith('11.'));
 const isWin10 = isWin && !isWin11;
 const isLinux = os.platform() === 'linux';
 const arch = os.arch();
@@ -358,6 +360,7 @@ const initState = {
   platform: `${os.platform()}-${arch}`,
   os_version: os.release(),
   url: `https://scriptkit.com`,
+  alwaysOnTop: false,
 };
 
 nativeTheme.addListener('updated', () => {

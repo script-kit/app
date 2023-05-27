@@ -478,9 +478,13 @@ export const forceFocus = () => {
 };
 
 export const alwaysOnTop = (onTop: boolean) => {
-  log.silly(`function: alwaysOnTop`);
-  if (promptWindow && !promptWindow.isDestroyed())
+  if (promptWindow && !promptWindow.isDestroyed()) {
+    if (onTop) log.info(`🔝 Keep "alwaysOnTop"`);
+    kitState.alwaysOnTop = onTop;
     promptWindow.setAlwaysOnTop(onTop);
+  } else {
+    kitState.alwaysOnTop = false;
+  }
 };
 
 export const getCurrentScreenFromMouse = (): Display => {
@@ -1112,9 +1116,12 @@ export const setPromptData = async (promptData: PromptData) => {
   kitState.hiddenByUser = false;
   kitState.isPromptReady = false;
   // if (!pidMatch(pid, `setPromptData`)) return;
-  if (typeof promptData?.alwaysOnTop === 'boolean') {
-    alwaysOnTop(promptData.alwaysOnTop);
-  }
+
+  alwaysOnTop(
+    typeof promptData?.alwaysOnTop === 'boolean'
+      ? promptData.alwaysOnTop
+      : false
+  );
 
   if (promptData?.scriptPath !== kitState.scriptPath) return;
 
@@ -1189,7 +1196,7 @@ export const setPromptData = async (promptData: PromptData) => {
   if (topTimeout) clearTimeout(topTimeout);
   topTimeout = setTimeout(() => {
     if (kitState.ignoreBlur) {
-      promptWindow?.setAlwaysOnTop(false);
+      promptWindow?.setAlwaysOnTop(kitState.alwaysOnTop);
     }
   }, 1000);
 
@@ -1361,6 +1368,7 @@ const subScriptPath = subscribeKey(
 
       hideAppIfNoWindows(`remove ${kitState.scriptPath}`);
       sendToPrompt(Channel.SET_OPEN, false);
+      kitState.alwaysOnTop = false;
       return;
     }
 
