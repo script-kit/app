@@ -190,10 +190,11 @@ export const runPromptProcess = async (
   }
 
   // processes.assignScriptToProcess(promptScriptPath, pid);
-  alwaysOnTop(true);
-  if (!pathsAreEqual(promptScriptPath || '', mainScriptPath)) {
-    kitState.ignoreBlur = true;
-  }
+  // alwaysOnTop(true);
+  // if (!pathsAreEqual(promptScriptPath || '', mainScriptPath)) {
+  //   log.info(`Enabling ignore blur: ${promptScriptPath}`);
+  //   kitState.ignoreBlur = true;
+  // }
 
   const argsWithTrigger = [
     ...args,

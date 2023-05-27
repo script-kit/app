@@ -3,7 +3,6 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtomValue, useAtom } from 'jotai';
-import { motion } from 'framer-motion';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import React from 'react';
 import { IconButton } from './icon';
@@ -24,7 +23,7 @@ import {
   lightenUIAtom,
 } from '../jotai';
 
-import { Action, textContrast, transition } from './actions';
+import { Action, textContrast } from './actions';
 import { ActionSeparator } from './actionseparator';
 import { OptionsButton } from './actionoptionsbutton';
 
@@ -45,10 +44,7 @@ export default function ActionBar() {
   const hasFlags = Object.keys(flags)?.length > 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1] }}
-      transition={transition}
+    <div
       className={`
       flex flex-row
       ${ui === UI.splash ? `` : `border-t border-ui-border`}
@@ -83,10 +79,7 @@ export default function ActionBar() {
           ])}
       </div>
       {footer?.length ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 1] }}
-          transition={transition}
+        <div
           className={`flex flex-1 max-h-full h-full
         px-2
         items-center justify-left
@@ -100,7 +93,7 @@ truncate
             className="truncate min-w-0 pb-px"
             dangerouslySetInnerHTML={{ __html: footer }}
           />
-        </motion.div>
+        </div>
       ) : (
         <div className="flex-1 max-h-full" />
       )}
@@ -146,6 +139,6 @@ truncate
           ) : null}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

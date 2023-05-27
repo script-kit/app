@@ -313,10 +313,10 @@ export const createPromptWindow = async () => {
 
     log.verbose(`Blur: ${kitState.ignoreBlur ? 'ignored' : 'accepted'}`);
 
-    if (promptWindow?.isVisible() && !kitState.ignoreBlur) {
+    if (promptWindow?.isVisible()) {
       sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
     }
-    maybeHide('blur');
+    maybeHide(HideReason.Blur);
 
     if (os.platform().startsWith('win')) {
       return;

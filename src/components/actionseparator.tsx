@@ -2,20 +2,15 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
-import { motion } from 'framer-motion';
 import React from 'react';
 import { useAtom } from 'jotai';
 import { _flag, _choices, _index, appConfigAtom } from '../jotai';
-import { transition } from './actions';
 
 export function ActionSeparator() {
   const [app] = useAtom(appConfigAtom);
   const m = app?.isMac;
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1] }}
-      transition={transition}
+    <div
       className={`
       ${!m && `mt-px`}
       flex items-center justify-center
@@ -29,6 +24,6 @@ export function ActionSeparator() {
 `}
     >
       |
-    </motion.div>
+    </div>
   );
 }

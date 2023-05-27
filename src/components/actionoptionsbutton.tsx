@@ -39,7 +39,8 @@ export function OptionsButton() {
   }, [choices, input, index, channel, flagValue, setFlagValue]);
 
   return (
-    <motion.button
+    // eslint-disable-next-line jsx-a11y/mouse-events-have-key-events
+    <button
       type="button"
       tabIndex={-1}
       className={`
@@ -70,6 +71,6 @@ export function OptionsButton() {
           <IconSwapper text={flagValue ? '←' : '→'} />
         </div>
       </div>
-    </motion.button>
+    </button>
   );
 }

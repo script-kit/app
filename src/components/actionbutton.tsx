@@ -3,7 +3,6 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { motion } from 'framer-motion';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback } from 'react';
 import {
@@ -14,7 +13,7 @@ import {
   sendShortcutAtom,
   appConfigAtom,
 } from '../jotai';
-import { Action, bg, textContrast, transition } from './actions';
+import { Action, bg, textContrast } from './actions';
 import { IconSwapper } from './iconswapper';
 
 export function ActionButton(action: Action) {
@@ -45,7 +44,8 @@ export function ActionButton(action: Action) {
   );
 
   return (
-    <motion.button
+    // eslint-disable-next-line jsx-a11y/mouse-events-have-key-events
+    <button
       type="button"
       disabled={action?.disabled}
       tabIndex={action?.value === 'enter' ? 0 : -1}
@@ -94,6 +94,6 @@ export function ActionButton(action: Action) {
           );
         })}
       </div>
-    </motion.button>
+    </button>
   );
 }

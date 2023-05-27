@@ -54,9 +54,9 @@ export const shortcutsAtom = atom(
   (g) => {
     return g(_shortcuts);
   },
-  debounce((g, s, a: Shortcut[]) => {
+  (g, s, a: Shortcut[]) => {
     s(_shortcuts, a);
-  }, 100)
+  }
 );
 
 export const processingAtom = atom(false);
@@ -1214,7 +1214,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     placeholderOnly,
     topHeight,
     ui,
-    mainHeight: Math.ceil(mh || -4) + 4,
+    mainHeight: Math.ceil(mh || -2) + 2,
     footerHeight,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
@@ -1867,9 +1867,9 @@ export const nameAtom = atom<string>('');
 const _enterAtom = atom<string>('');
 export const enterAtom = atom(
   (g) => g(_enterAtom),
-  debounce((_g, s, a: string) => {
+  (_g, s, a: string) => {
     s(_enterAtom, a);
-  }, 100)
+  }
 );
 export const loadingAtom = atom(
   (g) => g(loading) || g(runningAtom),

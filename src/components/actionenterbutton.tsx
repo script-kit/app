@@ -3,7 +3,6 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { motion } from 'framer-motion';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback } from 'react';
 import {
@@ -16,7 +15,7 @@ import {
   appConfigAtom,
 } from '../jotai';
 
-import { Action, bg, textContrast, transition } from './actions';
+import { Action, bg, textContrast } from './actions';
 import { IconSwapper } from './iconswapper';
 
 export function EnterButton(action: Action) {
@@ -60,11 +59,9 @@ export function EnterButton(action: Action) {
   );
 
   return (
-    <motion.button
+    // eslint-disable-next-line jsx-a11y/mouse-events-have-key-events
+    <button
       type="button"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1] }}
-      transition={transition}
       disabled={action?.disabled}
       tabIndex={action?.value === 'enter' ? 0 : -1}
       className={`
@@ -78,7 +75,6 @@ export function EnterButton(action: Action) {
   rounded
 
   h-full
-  transition-all duration-100 ease-out
   ${action?.disabled ? `text-primary text-opacity-25` : `${bg} ${textContrast}`}
   `}
       onClick={onClick}
@@ -112,6 +108,6 @@ export function EnterButton(action: Action) {
           );
         })}
       </div>
-    </motion.button>
+    </button>
   );
 }
