@@ -733,10 +733,6 @@ const systemEvents = () => {
     }, 1000)
   );
 
-  powerMonitor.addListener('speed-limit-change', (limit) => {
-    log.info(`⚡ Speed limit changed: ${limit}`);
-  });
-
   powerMonitor.addListener('on-battery', () => {
     log.info(`🔋 on battery`);
   });

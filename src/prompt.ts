@@ -395,11 +395,6 @@ export const createPromptWindow = async () => {
     log.info({ event, details });
   });
 
-  const onMove = async () => {
-    log.silly(`event: onMove`);
-    kitState.modifiedByUser = false;
-  };
-
   const onResized = async () => {
     log.silly(`event: onResized`);
     kitState.modifiedByUser = false;
@@ -419,16 +414,24 @@ export const createPromptWindow = async () => {
     kitState.modifiedByUser = true;
   });
 
-  promptWindow?.on('moved', () => {
-    saveCurrentPromptBounds();
-  });
+  const willMoveHandler = debounce(
+    () => {
+      log.silly(`event: will-move`);
+      kitState.modifiedByUser = true;
+    },
+    250,
+    { leading: true }
+  );
 
-  promptWindow?.on('will-move', () => {
-    log.silly(`event: will-move`);
-    kitState.modifiedByUser = true;
-  });
+  const onMoved = debounce(async () => {
+    log.silly(`event: onMove`);
+    kitState.modifiedByUser = false;
+    saveCurrentPromptBounds();
+  }, 250);
+
+  promptWindow?.on('will-move', willMoveHandler);
   promptWindow?.on('resized', onResized);
-  promptWindow?.on('moved', debounce(onMove, 250));
+  promptWindow?.on('moved', onMoved);
 
   powerMonitor.on('lock-screen', () => {
     log.info(`🔒 System locked. Reloading prompt window.`);
@@ -1249,6 +1252,7 @@ export const clearPromptCache = async () => {
   }
 
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
+  kitState.resizePaused = true;
   await initBounds();
 };
 

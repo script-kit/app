@@ -43,6 +43,8 @@ import { Trigger } from './enums';
 
 const isMac = os.platform() === 'darwin';
 const isWin = os.platform() === 'win32';
+const isWin11 = isWin && os.release().startsWith('10.0.22');
+const isWin10 = isWin && !isWin11;
 const isLinux = os.platform() === 'linux';
 const arch = os.arch();
 
@@ -53,7 +55,7 @@ const css = `
   --color-primary: 251, 191, 36;
   --color-secondary: 255, 255, 255;
   --color-background: 6, 6, 6;
-  --opacity: 0.4;
+  --opacity: 0.45;
   --ui-bg-opacity: 0.07;
   --ui-border-opacity: 0.15;
 }
@@ -261,6 +263,8 @@ const initState = {
   socketURL: '',
   isShiftDown: false,
   isMac,
+  isWin11,
+  isWin10,
   isWindows: os.platform() === 'win32',
   isLinux: os.platform() === 'linux',
   // transparencyEnabled: checkTransparencyEnabled(),
