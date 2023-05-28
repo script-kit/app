@@ -2314,7 +2314,7 @@ class Processes extends Array<ProcessInfo> {
 
       setTrayScriptError(pid);
 
-      trackEvent(TrackEvent.Error, {
+      trackEvent(TrackEvent.ChildError, {
         error: error?.message,
       })
       if (reject) reject(error);

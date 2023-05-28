@@ -7,6 +7,9 @@ export enum TrackEvent {
   SetPrompt = 'SetPrompt',
   ScriptTrigger = 'ScriptTrigger',
   Error = 'Error',
+  Quit = 'Quit',
+  LogError = 'LogError',
+  ChildError = 'ChildError',
 }
 
 export const trackEvent = (event: TrackEvent, properties: any) => {

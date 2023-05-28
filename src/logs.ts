@@ -119,7 +119,7 @@ if (process.env.LOG_LEVEL) {
 const _error = log.error.bind(log);
 log.error = (message: string, ...args: any[]) => {
   try {
-    trackEvent(TrackEvent.Error, { message, args });
+    trackEvent(TrackEvent.LogError, { message, args });
   } catch (error) {
     //
   }

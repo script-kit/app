@@ -360,8 +360,8 @@ export const createPromptWindow = async () => {
     log.error(`event: did-fail-load: ${errorCode}`);
   });
 
-  promptWindow?.webContents?.on('did-stop-loading', (event, errorCode) => {
-    log.error(`event: did-stop-loading: ${errorCode}`);
+  promptWindow?.webContents?.on('did-stop-loading', () => {
+    log.verbose(`event: did-stop-loading`);
   });
 
   promptWindow?.webContents?.on('dom-ready', () => {

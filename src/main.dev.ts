@@ -751,7 +751,7 @@ const systemEvents = () => {
 
     if (!isVisible()) {
       reload();
-      app?.hide();
+      if (app?.hide) app?.hide();
     }
   });
 
@@ -1150,6 +1150,10 @@ const checkKit = async () => {
       kitState.updateInstalling = true;
       await setupLog(`Cleaning previous .kit`);
       await cleanKit();
+      trackEvent(TrackEvent.ApplyUpdate, {
+        previousVersion: storedVersion,
+        newVersion: getVersion(),
+      });
     }
 
     await setupLog(`.kit doesn't exist or isn't on a contributor branch`);
@@ -1290,10 +1294,7 @@ const checkKit = async () => {
     kitState.user_id = `${Date.now()}`;
     kitState.app_version = getVersion();
 
-    trackEvent(TrackEvent.Ready, {
-      os: process.platform,
-      version: getVersion(),
-    });
+    trackEvent(TrackEvent.Ready, {});
 
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
 
@@ -1308,6 +1309,9 @@ const checkKit = async () => {
 app.whenReady().then(checkKit).catch(ohNo);
 
 subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
+  trackEvent(TrackEvent.Quit, {
+    allowQuit,
+  });
   mainLog.info('allowQuit begin...');
 
   // app?.removeAllListeners('window-all-closed');
