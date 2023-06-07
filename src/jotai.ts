@@ -187,7 +187,7 @@ export const infoChoicesAtom = atom(
   },
   (g, s, a: Choice[]) => {
     s(infoChoices, a);
-    s(infoHeightAtom, a.length * g(itemHeightAtom));
+    s(infoHeightAtom, a?.length * g(itemHeightAtom));
   }
 );
 
@@ -812,6 +812,7 @@ const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
 const prevFilteredInputAtom = atom('');
 
 const filterByInput = (g: Getter, s: Setter, a: string) => {
+  if (g(uiAtom) !== UI.arg) return;
   let input = a;
   const qs = g(quickScoreAtom);
   const filterInput = g(filterInputAtom);
@@ -1214,7 +1215,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     placeholderOnly,
     topHeight,
     ui,
-    mainHeight: Math.ceil(mh || -2) + 2,
+    mainHeight: Math.ceil(mh || -3) + 3,
     footerHeight,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,

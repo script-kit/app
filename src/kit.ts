@@ -25,7 +25,6 @@ import { ProcessInfo } from '@johnlindquist/kit';
 import { emitter, KitEvent } from './events';
 import { processes, removeAbandonnedKit } from './process';
 import {
-  alwaysOnTop,
   hideAppIfNoWindows,
   isVisible,
   sendToPrompt,

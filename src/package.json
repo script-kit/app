@@ -15,17 +15,16 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/core-js": "^2.5.4",
-    "@types/regenerator-runtime": "^0.13.0"
+    "@types/core-js": "^2.5.5",
+    "@types/regenerator-runtime": "^0.13.1"
   },
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.35",
-    "@nut-tree/nut-js": "3.1.1",
+    "@nut-tree/nut-js": "3.1.2",
     "chokidar": "3.5.3",
     "frontmost-app": "1.0.0",
-    "glasstron-clarity": "^0.1.26",
     "native-keymap": "3.3.4",
-    "node-abi": "^3.40.0",
+    "node-abi": "^3.43.0",
     "node-mac-permissions": "2.3.0",
     "node-pty": "0.11.0-beta32",
     "uiohook-napi": "^1.5.0"

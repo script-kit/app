@@ -10,7 +10,6 @@ import {
 } from 'electron';
 import log from 'electron-log';
 import { ensureDir } from 'fs-extra';
-import glasstron from 'glasstron-clarity';
 import path from 'path';
 import { writeFile } from 'fs/promises';
 import { kenvPath, isDir } from '@johnlindquist/kit/cjs/utils';
@@ -483,10 +482,11 @@ export const showWidget = async (
       widgetWindow.setVibrancy('hud');
     }
   } else if (!options?.transparent) {
-    widgetWindow = new glasstron.BrowserWindow({
+    widgetWindow = new BrowserWindow({
       ...bwOptions,
       backgroundColor: '#00000000',
-      blur: true,
+      backgroundMaterial:
+        appDb?.backgroundMaterial || kitState.isWin10 ? 'acrylic' : 'mica',
     });
   } else {
     widgetWindow = new BrowserWindow(bwOptions);

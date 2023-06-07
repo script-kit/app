@@ -131,7 +131,7 @@ import { mainLog, mainLogPath } from './logs';
 import { emitter } from './events';
 import { readyPty } from './pty';
 import { displayError } from './error';
-import { Trigger } from './enums';
+import { HideReason, Trigger } from './enums';
 import { TrackEvent, trackEvent } from './track';
 
 // Disables CSP warnings in browser windows.
@@ -748,11 +748,6 @@ const systemEvents = () => {
     sleepSchedule();
 
     kitState.suspended = true;
-
-    if (!isVisible()) {
-      reload();
-      if (app?.hide) app?.hide();
-    }
   });
 
   powerMonitor.addListener('resume', async () => {
@@ -781,7 +776,7 @@ const systemEvents = () => {
 
     if (!isVisible()) {
       reload();
-      app?.hide();
+      maybeHide(HideReason.LockScreen);
     }
   });
 

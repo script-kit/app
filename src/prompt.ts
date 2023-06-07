@@ -37,7 +37,6 @@ import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
-import glasstron from 'glasstron-clarity';
 
 import { ChildProcess } from 'child_process';
 import { getAssetPath } from './assets';
@@ -70,6 +69,14 @@ const actualHide = () => {
 };
 
 export const maybeHide = async (reason: string) => {
+  if (reason === HideReason.PingTimeout) {
+    kitState.debugging = false;
+    kitState.ignoreBlur = false;
+    ipcMain.emit(AppChannel.RELOAD);
+
+    return;
+  }
+
   if (kitState.debugging) return;
   if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
     log.verbose(`Hiding because ${reason}`);
@@ -184,17 +191,13 @@ export const createPromptWindow = async () => {
     promptWindow = new BrowserWindow({
       ...options,
     });
-  } else if (kitState.isMac) {
+  } else {
     promptWindow = new BrowserWindow({
       ...options,
       transparent: true,
       vibrancy: 'hud',
-    });
-  } else {
-    promptWindow = new glasstron.BrowserWindow({
-      ...options,
-      backgroundColor: '#00000000',
-      blur: true,
+      backgroundMaterial:
+        appDb?.backgroundMaterial || kitState.isWin10 ? 'acrylic' : 'mica',
     });
   }
 
@@ -356,12 +359,19 @@ export const createPromptWindow = async () => {
 
   promptWindow?.webContents?.setMaxListeners(1);
 
-  promptWindow?.webContents?.on('did-fail-load', (event, errorCode) => {
-    log.error(`event: did-fail-load: ${errorCode}`);
-  });
+  promptWindow?.webContents?.on(
+    'did-fail-load',
+    (errorCode, errorDescription, validatedURL, isMainFrame) => {
+      log.info(`event: did-fail-load:`, {
+        errorCode,
+        errorDescription,
+        isMainFrame,
+      });
+    }
+  );
 
   promptWindow?.webContents?.on('did-stop-loading', () => {
-    log.verbose(`event: did-stop-loading`);
+    log.info(`event: did-stop-loading`);
   });
 
   promptWindow?.webContents?.on('dom-ready', () => {
@@ -1117,11 +1127,10 @@ export const setPromptData = async (promptData: PromptData) => {
   kitState.isPromptReady = false;
   // if (!pidMatch(pid, `setPromptData`)) return;
 
-  alwaysOnTop(
+  kitState.alwaysOnTop =
     typeof promptData?.alwaysOnTop === 'boolean'
       ? promptData.alwaysOnTop
-      : false
-  );
+      : false;
 
   if (promptData?.scriptPath !== kitState.scriptPath) return;
 

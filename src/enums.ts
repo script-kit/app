@@ -81,4 +81,6 @@ export enum HideReason {
   MainShortcut = 'MainShortcut',
   User = 'User',
   Blur = 'Blur',
+  PingTimeout = 'PingTimeout',
+  LockScreen = 'LockScreen',
 }

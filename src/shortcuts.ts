@@ -285,6 +285,7 @@ export const updateMainShortcut = async (filePath: string) => {
               pingId = setTimeout(() => {
                 pInfo?.child?.off('message', pongHandler);
                 log.error(`Failed to ping script`);
+                maybeHide(HideReason.PingTimeout);
                 resolve(false);
               }, 500);
 
