@@ -194,10 +194,10 @@ export const createPromptWindow = async () => {
   } else {
     promptWindow = new BrowserWindow({
       ...options,
-      transparent: true,
+      transparent: kitState.isMac || kitState.isWin11,
       vibrancy: 'hud',
-      backgroundMaterial:
-        appDb?.backgroundMaterial || kitState.isWin10 ? 'acrylic' : 'mica',
+      backgroundColor: '#00000000',
+      backgroundMaterial: kitState.isWin10 ? 'acrylic' : 'mica',
     });
   }
 
@@ -609,7 +609,7 @@ export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
   const noChange =
     heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
 
-  log.info(`📐 setBounds: reason ${reason}`, bounds);
+  log.verbose(`📐 setBounds: reason ${reason}`, bounds);
   log.verbose({
     ...bounds,
     isVisible: isVisible() ? 'true' : 'false',
