@@ -7,7 +7,6 @@
 import React, { useCallback, KeyboardEvent, useEffect } from 'react';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import parse, { domToReact } from 'html-react-parser';
-import SimpleBar from 'simplebar-react';
 import { useAtom, useAtomValue } from 'jotai';
 
 import {
@@ -15,6 +14,7 @@ import {
   closedDiv,
   formDataAtom,
   formHTMLAtom,
+  logAtom,
   previewHTMLAtom,
   submitValueAtom,
 } from '../jotai';
@@ -28,6 +28,7 @@ export default function Form() {
   const [formData] = useAtom(formDataAtom);
   const [, submit] = useAtom(submitValueAtom);
   const [previewHTML] = useAtom(previewHTMLAtom);
+  const log = useAtomValue(logAtom);
 
   const hasPreview = Boolean(previewHTML && previewHTML !== closedDiv);
 
@@ -105,39 +106,60 @@ export default function Form() {
 
     const formJSON: any = {};
     // sort by parseInt of id
-    const sortedEls = els
-      .filter((el) => {
-        // ed.id is a string
-        // eslint-disable-next-line no-restricted-globals
-        if (el.id && !isNaN(parseInt(el.id, 10))) {
-          return true;
-        }
-        return false;
-      })
-      .sort((a, b) => {
-        const aId = parseInt(a.id, 10);
-        const bId = parseInt(b.id, 10);
+    // split the elements into two arrays: with ID and without ID
+    const elsNoId = els.filter(
+      (el) => !el.id || Number.isNaN(parseInt(el.id, 10))
+    );
+    const elsId = els.filter(
+      (el) => el.id && !Number.isNaN(parseInt(el.id, 10))
+    );
 
-        return aId > bId ? 1 : -1;
-      });
+    // sort the elements with ID
+    const sortedElsWithId = elsId.sort((a, b) => {
+      const aId = parseInt(a.id, 10);
+      const bId = parseInt(b.id, 10);
+
+      return aId > bId ? 1 : -1;
+    });
+
+    // concatenate the elements without ID to the end
+    const sortedEls = sortedElsWithId.concat(elsNoId);
 
     const orderedValues: any[] = [];
 
     sortedEls.forEach((el) => {
       if (el.name) {
-        if (multis.includes(el.name)) {
+        if (
+          multis.includes(el.name) ||
+          (el.tagName === 'SELECT' && el.multiple)
+        ) {
           const value = data.getAll(el.name);
-          formJSON[el.name] = value;
           orderedValues.push(value);
         } else {
           const value = data.get(el.name);
-          formJSON[el.name] = value?.path || value;
           orderedValues.push(value?.path || value);
         }
       }
     });
 
+    els.forEach((el) => {
+      if (el.name) {
+        if (
+          multis.includes(el.name) ||
+          (el.tagName === 'SELECT' && el.multiple)
+        ) {
+          const value = data.getAll(el.name);
+          formJSON[el.name] = value;
+        } else {
+          const value = data.get(el.name);
+          formJSON[el.name] = value?.path || value;
+        }
+      }
+    });
+
     formJSON.orderedValues = orderedValues;
+
+    // TODO: add namedValues based on the name of the element
 
     return formJSON;
   }, [formRef]);

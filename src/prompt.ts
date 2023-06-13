@@ -69,6 +69,7 @@ const actualHide = () => {
 };
 
 export const maybeHide = async (reason: string) => {
+  log.info(`Attempt Hide: ${reason}`);
   if (reason === HideReason.PingTimeout) {
     kitState.debugging = false;
     kitState.ignoreBlur = false;
@@ -781,6 +782,17 @@ export const resize = async ({
 
   height = Math.round(height);
   width = Math.round(width);
+
+  const heightLessThanBase = height < PROMPT.HEIGHT.BASE;
+
+  if (isMainScript && !hasInput && heightLessThanBase) {
+    height = PROMPT.HEIGHT.BASE;
+  }
+
+  if ([UI.term, UI.editor].includes(ui) && heightLessThanBase) {
+    height = PROMPT.HEIGHT.BASE;
+  }
+
   if (currentHeight === height && currentWidth === width) return;
 
   if (hasPreview && !isMainScript) {
@@ -1270,6 +1282,10 @@ export const clearPromptCache = async () => {
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
   kitState.resizePaused = true;
   await initBounds();
+
+  setTimeout(() => {
+    kitState.resizePaused = false;
+  }, 1000);
 };
 
 export const reload = (callback: () => void = () => {}) => {

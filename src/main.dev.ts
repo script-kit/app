@@ -252,19 +252,7 @@ const installEsbuild = async () => {
     const npmPath = isWin
       ? knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js')
       : knodePath('bin', 'npm');
-    const child = fork(
-      npmPath,
-      [
-        `i`,
-        `esbuild@0.17.15`,
-        `-–save-exact`,
-        `--production`,
-        `--prefer-dedupe`,
-        `--loglevel`,
-        `verbose`,
-      ],
-      options
-    );
+    const child = fork(npmPath, [`run`, `lazy-install`], options);
 
     if (child.stdout) {
       child.stdout.on('data', (data) => {
@@ -725,13 +713,13 @@ const systemEvents = () => {
     }, 1000)
   );
 
-  screen.addListener(
-    'display-metrics-changed',
-    debounce(() => {
-      log.info(`🖥️ Display metrics changed`);
-      clearPromptCache();
-    }, 1000)
-  );
+  // screen.addListener(
+  //   'display-metrics-changed',
+  //   debounce((_, metrics) => {
+  //     log.info(`🖥️ Display metrics changed`);
+  //     log.info(metrics);
+  //   }, 1000)
+  // );
 
   powerMonitor.addListener('on-battery', () => {
     log.info(`🔋 on battery`);
@@ -1240,7 +1228,16 @@ const checkKit = async () => {
     optionalSetupScript(kitPath('setup', 'clone-examples.js'));
     optionalSetupScript(kitPath('setup', 'clone-sponsors.js'));
   } else {
-    optionalSetupScript(kitPath('setup', 'build-ts-scripts.js'));
+    // eslint-disable-next-line promise/catch-or-return
+    optionalSetupScript(kitPath('setup', 'build-ts-scripts.js')).then(
+      (result) => {
+        setTimeout(() => {
+          kitState.scriptsAdded = true;
+        }, 1000);
+        log.info(`👍 TS Scripts Built`);
+        return result;
+      }
+    );
   }
 
   if (!(await kenvConfigured())) {

@@ -101,7 +101,7 @@ import {
   startAtom,
   logoAtom,
   getEditorHistoryAtom,
-  scoredChoices,
+  scoredChoicesAtom,
   showTabsAtom,
   showSelectedAtom,
   nullChoicesAtom,
@@ -248,7 +248,7 @@ export default function App() {
   const setPromptBounds = useSetAtom(promptBoundsAtom);
 
   const [ui, setUi] = useAtom(uiAtom);
-  const choices = useAtomValue(scoredChoices);
+  const choices = useAtomValue(scoredChoicesAtom);
   const showSelected = useAtomValue(showSelectedAtom);
   const showTabs = useAtomValue(showTabsAtom);
   const nullChoices = useAtomValue(nullChoicesAtom);
@@ -327,7 +327,7 @@ export default function App() {
   const index = useAtomValue(_index);
 
   const previewCheck =
-    !appDb.mini && previewHTML && !panelHTML && previewEnabled;
+    !appDb.mini && previewHTML && !panelHTML && previewEnabled && !hidden;
 
   const log = useAtomValue(logAtom);
 
@@ -528,6 +528,9 @@ export default function App() {
     [Channel.CHAT_SET_MESSAGE]: setChatMessage,
     [Channel.START_MIC]: () => {
       setAudioDot(true);
+    },
+    [Channel.HIDE_APP]: () => {
+      setHidden(true);
     },
     [Channel.DISABLE_BACKGROUND_THROTTLING]: (value) => {
       if (value?.scriptPath === mainScriptPath) return;
@@ -771,11 +774,9 @@ export default function App() {
 
   useEffect(() => {
     if (promptData?.previewWidthPercent && panelChildRef.current) {
-      gsap.fromTo(
+      gsap.to(
         '#data-panel-id-panelChild',
-        {
-          alpha: 0.5,
-        },
+
         {
           // 'flex-grow': 0,
           alpha: 1,
@@ -795,7 +796,7 @@ export default function App() {
         }
       );
     }
-  }, [panelChildRef.current, promptData]);
+  }, [panelChildRef.current, previewHTML]);
 
   const onResizeHandleDragging = useCallback(
     debounce((event: MouseEvent) => {

@@ -1,5 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 import log from 'electron-log';
+import { Notification } from 'electron';
 import { add, assign, debounce } from 'lodash';
 import path from 'path';
 import { existsSync, readFileSync } from 'fs';
@@ -7,7 +8,12 @@ import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 import dotenv from 'dotenv';
 import { rm, readFile } from 'fs/promises';
-import { getAppDb, getUserDb, getScripts } from '@johnlindquist/kit/cjs/db';
+import {
+  getAppDb,
+  getUserDb,
+  getScripts,
+  setScriptTimestamp,
+} from '@johnlindquist/kit/cjs/db';
 
 import {
   parseScript,
@@ -82,7 +88,7 @@ const logAllEvents = () => {
     if (event === 'unlink') removes.push(filePath);
   });
 
-  if (add.length) log.info('adds', adds);
+  if (adds.length) log.info('adds', adds);
   if (changes.length) log.info('changes', changes);
   if (removes.length) log.info('removes', removes);
 
@@ -95,9 +101,13 @@ const logAllEvents = () => {
 
 const debouncedLogAllEvents = debounce(logAllEvents, 1000);
 
+let prevFilePath = '';
 const logQueue = (event: WatchEvent, filePath: string) => {
-  logEvents.push({ event, filePath });
-  debouncedLogAllEvents();
+  if (prevFilePath !== filePath) {
+    logEvents.push({ event, filePath });
+    debouncedLogAllEvents();
+  }
+  prevFilePath = filePath;
 };
 
 const buildScriptChanged = debounce(
@@ -120,18 +130,68 @@ const buildScriptChanged = debounce(
 
       if (child?.stderr) {
         child.stderr.on('data', (data) => {
-          log.error(`Build stderr`, data.toString());
+          // Set the exit code to 1 so the script doesn't run
+          child?.kill();
+
+          let compileMessage = data.toString();
+
+          // Find the file path line
+          const filePathMatch = compileMessage.match(/^.+\.ts:\d+:\d+:$/m);
+          if (filePathMatch) {
+            const fullFilePath = filePathMatch[0];
+            const filename = path.basename(fullFilePath);
+            // Replace the full file path with the filename
+            compileMessage = compileMessage.replace(fullFilePath, filename);
+          }
+
+          log.error(`Build stderr`, compileMessage);
+          setScriptTimestamp({
+            filePath,
+            compileMessage,
+            compileStamp: Date.now(),
+          });
+
+          const n = new Notification({
+            title: `Build Fail: ${path.basename(filePath)}`,
+            body: compileMessage,
+            silent: true,
+          });
+
+          n.show();
+
+          setTimeout(() => {
+            n.close();
+          }, 5000);
         });
       }
 
       // log error
       child.on('error', (error: any) => {
         log.error(`Build error:`, error);
+        setScriptTimestamp({
+          filePath,
+          compileMessage: error.toString(),
+          compileStamp: Date.now(),
+        });
       });
 
       // log exit
       child.on('exit', (code) => {
-        log.info(`🏗️ Build ${filePath} exited with code ${code}`);
+        if (code === 0) {
+          setScriptTimestamp({
+            filePath,
+            compileMessage: '',
+            compileStamp: Date.now(),
+          });
+          log.info(`🏗️ Build ${filePath} exited with code ${code}`);
+          setScriptTimestamp({
+            filePath,
+            compileMessage: '',
+            compileStamp: Date.now(),
+          });
+        } else if (typeof code === 'number') {
+          log.error(`👷‍♀️ Build error: ${filePath} exited with code ${code}`);
+        }
       });
     }
   },
@@ -222,8 +282,11 @@ export const onScriptsChanged = async (
     systemScriptChanged(script);
     watchScriptChanged(script);
     backgroundScriptChanged(script);
-    buildScriptChanged(script?.filePath);
     addSnippet(script);
+
+    if (kitState.scriptsAdded) {
+      buildScriptChanged(script?.filePath);
+    }
   }
 
   if (event === 'change' && !rebuilt) {

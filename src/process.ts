@@ -54,6 +54,9 @@ import {
 
 import { subscribeKey } from 'valtio/utils';
 import { pathExists, writeJson, readJson } from 'fs-extra';
+import {
+  setScriptTimestamp,
+} from '@johnlindquist/kit/cjs/db';
 import { getLog, mainLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -834,7 +837,7 @@ const kitMessageMap: ChannelHandler = {
   HIDE_APP: toProcess(async ({ child, scriptPath }, { channel }) => {
     if (kitState.isMac && app?.dock) app?.dock?.hide();
 
-    setPreview(`<div></div>`)
+    sendToPrompt(Channel.HIDE_APP)
 
     kitState.hiddenByUser = true;
     log.info(`😳 Hiding app`);
@@ -1977,6 +1980,14 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(channel, value);
     childSend(child, { channel, value });
   }),
+  TRASH: toProcess(async ({ child }, { channel, value }) => {
+    for await (const item of value) {
+      log.info(`🗑 Trashing`, item);
+      await shell.trashItem(item);
+    }
+
+    childSend(child, { channel, value });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (
@@ -2284,9 +2295,17 @@ class Processes extends Array<ProcessInfo> {
       }
 
       if (code === 0) {
-        log.info(
-          `${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
-        );
+
+        log.info(`${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
+        const stamp = {
+          filePath: processInfo?.scriptPath,
+          runCount: 1,
+          executionTime: Date.now() - processInfo.date,
+        }
+
+        log.info(`💮 Stamping:`, stamp);
+        setScriptTimestamp(stamp)
+
       } else if (typeof code === 'number') {
         log.error(
           `${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`

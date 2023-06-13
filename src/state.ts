@@ -128,7 +128,7 @@ export const updateScripts = async () => {
 
 export const scriptChanged = debounce(
   async (filePath: string) => {
-    await setScriptTimestamp(filePath);
+    await setScriptTimestamp({ filePath });
   },
   250,
   {
@@ -361,6 +361,7 @@ const initState = {
   os_version: os.release(),
   url: `https://scriptkit.com`,
   alwaysOnTop: false,
+  scriptsAdded: false,
 };
 
 nativeTheme.addListener('updated', () => {

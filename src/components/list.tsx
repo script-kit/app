@@ -1,29 +1,20 @@
 /* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useCallback } from 'react';
-import { FixedSizeList as List } from 'react-window';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { VariableSizeList as List } from 'react-window';
+import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
 import ChoiceButton from './button';
 import {
-  flagValueAtom,
   _index,
   mouseEnabledAtom,
-  scoredChoices,
+  scoredChoicesAtom,
   submitValueAtom,
-  previewEnabledAtom,
-  hasPreviewAtom,
-  previewHTMLAtom,
   itemHeightAtom,
-  appDbAtom,
   infoHeightAtom,
   promptDataAtom,
   listAtom,
-  focusedChoiceAtom,
-  defaultValueAtom,
   requiresScrollAtom,
   logAtom,
-  showTabsAtom,
-  promptBoundsAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 
@@ -43,25 +34,17 @@ export default function ChoiceList({ width, height }: ListProps) {
   const innerRef = useRef(null);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   // TODO: In case items ever have dynamic height
-  const [choices] = useAtom(scoredChoices);
+  const [choices] = useAtom(scoredChoicesAtom);
   const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
   const [index, onIndexChange] = useAtom(_index);
   // const [inputValue] = useAtom(inputAtom);
   // const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
-  const [flagValue] = useAtom(flagValueAtom);
-  const [previewEnabled] = useAtom(previewEnabledAtom);
-  const [hasPreview] = useAtom(hasPreviewAtom);
-  const [previewHTML] = useAtom(previewHTMLAtom);
-  const [appDb] = useAtom(appDbAtom);
   const itemHeight = useAtomValue(itemHeightAtom);
   const infoHeight = useAtomValue(infoHeightAtom);
   const promptData = useAtomValue(promptDataAtom);
-  const focusedChoice = useAtomValue(focusedChoiceAtom);
-  const defaultValue = useAtomValue(defaultValueAtom);
   const [list, setList] = useAtom(listAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
   const log = useAtomValue(logAtom);
-  const promptBounds = useAtomValue(promptBoundsAtom);
 
   // const listWidth = useMotionValue('100%');
 
@@ -111,6 +94,15 @@ export default function ChoiceList({ width, height }: ListProps) {
     }, 100);
   }, [requiresScroll, choices]);
 
+  useEffect(() => {
+    if (!listRef.current) return;
+    listRef?.current?.resetAfterIndex(0);
+  }, [choices]);
+
+  const choicesHeight = choices.reduce((acc, choice) => {
+    return acc + (choice?.item?.height || itemHeight);
+  }, 0);
+
   return (
     <div
       id="list"
@@ -130,11 +122,18 @@ border-r border-ui-border
         innerRef={innerRef}
         height={
           promptData?.resize
-            ? Math.min(height, choices.length * itemHeight + infoHeight)
+            ? // TODO: add itemHeight to choices in Kit SDK
+              Math.min(height, choicesHeight + infoHeight)
             : height
         }
         itemCount={choices?.length || 0}
-        itemSize={itemHeight}
+        itemSize={(i) => {
+          return choices?.[i]?.item?.height || itemHeight;
+        }}
+        itemKey={(i, data) => {
+          const id = data?.choices?.[i]?.item?.id;
+          return id || i;
+        }}
         width="100%"
         itemData={itemData}
         className={`

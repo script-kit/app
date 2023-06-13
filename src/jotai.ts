@@ -179,7 +179,7 @@ export const infoHeightAtom = atom(0);
 const infoChoices = atom<Choice[]>([]);
 export const infoChoicesAtom = atom(
   (g) => {
-    const hasChoices = g(scoredChoices)?.length > 0;
+    const hasChoices = g(scoredChoicesAtom)?.length > 0;
 
     return g(infoChoices).filter(
       (c) => c?.info === 'always' || (c?.info === 'onNoChoices' && !hasChoices)
@@ -241,7 +241,7 @@ export const unfilteredChoicesAtom = atom(
     );
 
     if (cs?.length === 0) {
-      s(scoredChoices, []);
+      s(scoredChoicesAtom, []);
       s(quickScoreAtom, null);
     }
 
@@ -297,7 +297,7 @@ export const unfilteredChoicesAtom = atom(
       // if (!flaggedValue) {
       if (mode === Mode.GENERATE && !flaggedValue) {
         s(
-          scoredChoices,
+          scoredChoicesAtom,
           cs
             .map(createScoredChoice)
             .filter((c) => !(c?.item?.info || c?.item?.disableSubmit))
@@ -319,7 +319,7 @@ export const unfilteredChoicesAtom = atom(
       // TODO: Figure out scenarios where
       // scoredChoices shouldn't check for the prevCId...
 
-      const nextIndex = g(scoredChoices).findIndex(
+      const nextIndex = g(scoredChoicesAtom).findIndex(
         (sc) => sc.item.id === prevCId
       );
 
@@ -383,7 +383,7 @@ export const panelHTMLAtom = atom(
     }),
   (g, s, a: string) => {
     if (g(_panelHTML) === a || g(_flagged)) return;
-    if (a) s(scoredChoices, null);
+    if (a) s(scoredChoicesAtom, null);
     s(_panelHTML, a);
 
     if (
@@ -633,7 +633,9 @@ export const _index = atom(
 
     // Not sure why I was preventing setting the focusedChoice when the id didn't match the prevId...
     // if (!selected && id && id !== prevId) {
-    if (!selected && id) {
+    // g(logAtom)(`Focusing index: ${choice?.id}`);
+
+    if (id) {
       s(focusedChoiceAtom, choice);
       // console.log(
       //   `!selected && id && id !== prevId: Setting prevChoiceId to ${id}`
@@ -660,7 +662,8 @@ export const focusedChoiceAtom = atom(
 
     s(_focused, choice || noChoice);
 
-    if (choice?.id && g(selectedAtom) === '') {
+    // g(logAtom)(`Focusing ${choice?.id}`);
+    if (choice?.id || choice?.name) {
       if (typeof choice?.preview === 'string') {
         s(previewHTMLAtom, choice?.preview);
       } else if (!choice?.hasPreview) {
@@ -669,6 +672,7 @@ export const focusedChoiceAtom = atom(
 
       const channel = g(channelAtom);
       channel(Channel.CHOICE_FOCUSED);
+      // g(logAtom)(`Focusing ${choice?.name}`);
       // resize(g, s);
     }
   }
@@ -697,7 +701,7 @@ const prevChoiceId = atom(
   }
 );
 
-export const scoredChoices = atom(
+export const scoredChoicesAtom = atom(
   (g) => g(choices),
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
@@ -735,7 +739,7 @@ export const scoredChoices = atom(
     if (cs?.length) {
       const selected = g(selectedAtom);
 
-      if (!selected && cs && !g(promptData)?.defaultChoiceId) {
+      if (cs && !g(promptData)?.defaultChoiceId) {
         // console.log(
         //   `!selected && a: Setting prevChoiceId to ${a[0].item?.id || ''}`
         // );
@@ -788,7 +792,7 @@ export const scoredChoices = atom(
 );
 
 export const _choices = atom((g) =>
-  g(scoredChoices).map((result) => result.item)
+  g(scoredChoicesAtom).map((result) => result.item)
 );
 
 export const _input = atom('');
@@ -805,7 +809,7 @@ export const appendInputAtom = atom(null, (g, s, a: string) => {
 const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
   if (!a) return false;
   const result = search(qs, a);
-  s(scoredChoices, result);
+  s(scoredChoicesAtom, result);
   return true;
 }, 250); // TODO: too slow for emojis
 
@@ -842,14 +846,14 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
       debounceSearch(qs, s, input);
     } else {
       const result = search(qs, input);
-      s(scoredChoices, result);
+      s(scoredChoicesAtom, result);
     }
   } else if (un.length) {
     debounceSearch.cancel();
-    s(scoredChoices, un.map(createScoredChoice));
+    s(scoredChoicesAtom, un.map(createScoredChoice));
   } else {
     debounceSearch.cancel();
-    s(scoredChoices, []);
+    s(scoredChoicesAtom, []);
   }
 };
 
@@ -1041,7 +1045,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const ui = g(uiAtom);
   // g(logAtom)(`resize: ${reason} - ${ui}`);
 
-  const scoredChoicesLength = g(scoredChoices)?.length;
+  const scoredChoices = g(scoredChoicesAtom);
+  const scoredChoicesLength = g(scoredChoicesAtom)?.length;
   const infoChoicesLength = g(infoChoicesAtom).length;
   const hasPanel = g(_panelHTML) !== '';
   const nullChoices = g(nullChoicesAtom);
@@ -1053,7 +1058,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const promptData = g(promptDataAtom);
   const placeholderOnly =
     promptData?.mode === Mode.FILTER &&
-    g(scoredChoices).length === 0 &&
+    scoredChoicesLength === 0 &&
     noInfo &&
     ui === UI.arg;
 
@@ -1063,7 +1068,12 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   const itemHeight = g(itemHeightAtom);
 
-  const choicesHeight = (scoredChoicesLength + infoChoicesLength) * itemHeight;
+  const choicesHeight =
+    scoredChoices.reduce((acc, choice) => {
+      return acc + (choice?.item?.height || itemHeight);
+    }, 0) +
+    infoChoicesLength * itemHeight;
+
   if (ui === UI.arg && choicesHeight > PROMPT.HEIGHT.BASE) {
     mh =
       (promptData?.height && promptData?.height > PROMPT.HEIGHT.BASE
@@ -1271,7 +1281,7 @@ export const mainHeightAtom = atom(
 
     if (nextMainHeight === 0) {
       if (g(panelHTMLAtom) !== '') return;
-      if (g(scoredChoices).length > 0) return;
+      if (g(scoredChoicesAtom).length > 0) return;
     }
 
     s(mainHeight, nextMainHeight);
@@ -1363,6 +1373,7 @@ const promptReadyAtom = atom(false);
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
+    s(isHiddenAtom, false);
     const prevPromptData = g(promptData);
 
     // was closed, now open
@@ -1532,6 +1543,7 @@ export const flagValueAtom = atom(
       const flagChoices: Choice[] = Object.entries(g(flagsAtom)).map(
         ([key, value]) => {
           return {
+            id: key,
             command: value?.name,
             filePath: value?.name,
             name: value?.name || key,
@@ -1539,6 +1551,7 @@ export const flagValueAtom = atom(
             friendlyShortcut: value?.shortcut || '',
             description: value?.description || '',
             value: key,
+            preview: value?.preview || '',
           };
         }
       );
@@ -1637,7 +1650,7 @@ export const submitValueAtom = atom(
       s(promptActiveAtom, false);
       s(disableSubmitAtom, false);
       if (g(submittedAtom)) return;
-      const focusedChoice = g(scoredChoices)?.[g(_index)]?.item;
+      const focusedChoice = g(scoredChoicesAtom)?.[g(_index)]?.item;
       const fid = focusedChoice?.id;
       if (fid) {
         // console.log(`focusedChoice.id: ${focusedChoice.id}`);
@@ -1767,6 +1780,7 @@ export const openAtom = atom(
       s(miniShortcutsHoveredAtom, false);
       s(logLinesAtom, []);
       s(audioDotAtom, false);
+      s(disableSubmitAtom, false);
       // s(tabsAtom, []);
 
       const stream = g(webcamStreamAtom);
