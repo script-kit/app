@@ -91,6 +91,7 @@ module.exports = {
       secondary: colorVar('secondary'),
       'ui-bg': colorVar('secondary', 'ui-bg-opacity'),
       'ui-border': colorVar('secondary', 'ui-border-opacity'),
+      'ui-text': colorVar('secondary', 'ui-border-opacity'),
       contrast: colorVar('contrast'),
       gradient: {
         white: '#ffffffcc',

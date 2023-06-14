@@ -14,7 +14,6 @@ import {
   promptDataAtom,
   listAtom,
   requiresScrollAtom,
-  logAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 
@@ -44,9 +43,6 @@ export default function ChoiceList({ width, height }: ListProps) {
   const promptData = useAtomValue(promptDataAtom);
   const [list, setList] = useAtom(listAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
-  const log = useAtomValue(logAtom);
-
-  // const listWidth = useMotionValue('100%');
 
   const onIndexSubmit = useCallback(
     (i: number) => {
@@ -96,8 +92,11 @@ export default function ChoiceList({ width, height }: ListProps) {
 
   useEffect(() => {
     if (!listRef.current) return;
-    listRef?.current?.resetAfterIndex(0);
-  }, [choices]);
+    const needsReset = choices.find((c) => c?.item?.height !== itemHeight);
+    if (needsReset) {
+      (listRef?.current as any)?.resetAfterIndex(0);
+    }
+  }, [choices, itemHeight]);
 
   const choicesHeight = choices.reduce((acc, choice) => {
     return acc + (choice?.item?.height || itemHeight);
@@ -109,7 +108,6 @@ export default function ChoiceList({ width, height }: ListProps) {
       className={`list-component
 flex flex-row
 w-full overflow-y-hidden
-border-r border-ui-border
       `}
       style={
         {

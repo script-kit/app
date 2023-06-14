@@ -10,6 +10,7 @@ import {
   inputFocusAtom,
   shortcutsAtom,
   listAtom,
+  directionAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -20,6 +21,7 @@ export default () => {
   const [channel] = useAtom(channelAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
+  const [, setDirection] = useAtom(directionAtom);
 
   // useEffect(() => {
   //   const list = document.getElementById('list');
@@ -34,6 +36,7 @@ export default () => {
       if (!inputFocus) return;
       event.preventDefault();
       setMouseEnabled(0);
+      setDirection(-1);
       setIndex(index - 1);
       channel(Channel.UP);
     },
@@ -47,6 +50,7 @@ export default () => {
       if (!inputFocus) return;
       event.preventDefault();
       setMouseEnabled(0);
+      setDirection(1);
       setIndex(index + 1);
       channel(Channel.DOWN);
     },

@@ -988,7 +988,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                 <>
                   <PanelResizeHandle
                     id="panelResizeHandle"
-                    className="w-0.5 hover:-ml-0.5 hover:w-3 hover:bg-white/5 hover:border-r-1 hover:border-white/10"
+                    className="w-0.5 hover:-ml-0.5 hover:w-3 hover:bg-white/5 hover:border-r-1 hover:border-white/10 border-l-1 border-ui-border"
                     onDragging={onResizeHandleDragging}
                   />
                   <PanelChild

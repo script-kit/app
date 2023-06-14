@@ -18,6 +18,8 @@ import {
   PromptData,
   FlagsOptions,
   Shortcut,
+  AppState,
+  ProcessInfo,
 } from '@johnlindquist/kit/types/core';
 import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import {
@@ -26,7 +28,6 @@ import {
   EditorOptions,
   AppConfig,
   AppMessage,
-  AppState,
 } from '@johnlindquist/kit/types/kitapp';
 import { editor } from 'monaco-editor';
 
@@ -34,13 +35,7 @@ import { debounce, drop as _drop, isEqual } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
 import { MessageType } from 'react-chat-elements';
 import { AppChannel } from './enums';
-import {
-  ProcessInfo,
-  ResizeData,
-  ScoredChoice,
-  Survey,
-  TermConfig,
-} from './types';
+import { ResizeData, ScoredChoice, Survey, TermConfig } from './types';
 import { noChoice, noScript, SPLASH_PATH } from './defaults';
 import { toHex } from './color-utils';
 import { formatShortcut } from './components/formatters';
@@ -159,6 +154,7 @@ const keys = [
   'command',
   'friendlyShortcut',
   'tag',
+  'group',
 ].map((name) => ({ name, scorer }));
 
 export const ultraShortCodesAtom = atom<{ code: string; id: string }[]>([]);
@@ -606,25 +602,60 @@ export const defaultValueAtom = atom('');
 
 export const requiresScrollAtom = atom(-1);
 
+export const directionAtom = atom<1 | -1>(1);
+
 export const _index = atom(
   (g) => g(index),
   (g, s, a: number) => {
+    const prevIndex = g(index);
     const cs = g(choices);
     // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
-    const clampedIndex = a < 0 ? cs.length - 1 : a > cs.length - 1 ? 0 : a;
+    const clampedIndex = a < 0 ? cs.length - 1 : a >= cs.length ? 0 : a; // Corrected clamping logic
     const list = g(listAtom);
     const requiresScroll = g(requiresScrollAtom);
+
+    // Check if going up/down by comparing the prevIndex to the clampedIndex
+    let choice = cs?.[clampedIndex]?.item;
+    let calcIndex = clampedIndex;
+    const direction = g(directionAtom);
+
+    if (choice?.skip) {
+      // Find next choice that doesn't have "skip" set or 0 or length - 1
+      while (choice.skip) {
+        calcIndex += direction;
+        if (calcIndex <= 0) {
+          calcIndex = cs.length - 1;
+          while (cs[calcIndex]?.item?.skip) {
+            calcIndex += direction;
+            if (calcIndex === a) break;
+          }
+        }
+        if (calcIndex >= cs.length) {
+          calcIndex = 0;
+
+          while (cs[calcIndex]?.item?.skip) {
+            calcIndex += direction;
+            if (calcIndex === a) break;
+          }
+        }
+        choice = cs?.[calcIndex]?.item;
+        if (calcIndex === a) break;
+      }
+    }
+
+    if (prevIndex !== calcIndex) {
+      s(index, calcIndex);
+    }
+
     if (list && requiresScroll === -1) {
-      (list as any).scrollToItem(clampedIndex);
+      (list as any).scrollToItem(calcIndex);
+    }
+
+    if (cs[0]?.item?.skip && calcIndex === 1) {
+      (list as any).scrollToItem(0);
     }
 
     // const clampedIndex = clamp(a, 0, cs.length - 1);
-
-    if (g(index) !== clampedIndex) {
-      s(index, clampedIndex);
-    }
-
-    const choice = cs?.[clampedIndex]?.item;
 
     const selected = g(selectedAtom);
     const id = choice?.id;
@@ -706,7 +737,12 @@ export const scoredChoicesAtom = atom(
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
   (g, s, a: ScoredChoice[] | null) => {
-    const cs = a?.filter((c) => !(c?.item?.info || c?.item.disabledSubmit));
+    const hasInput = g(inputAtom).length > 0;
+    const cs = a?.filter(
+      (c) =>
+        !(c?.item?.info || c?.item.disableSubmit || (hasInput && c?.item?.skip))
+    );
+
     s(submittedAtom, false);
     if (g(isMainScriptAtom)) {
       // Check if the input matches the shortcode of one of the scripts

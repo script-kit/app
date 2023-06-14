@@ -1,17 +1,12 @@
 /* eslint-disable react/require-default-props */
 import React, { useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { FixedSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
-import Preview from './preview';
 import {
-  _index,
   previewEnabledAtom,
   hasPreviewAtom,
-  previewHTMLAtom,
   itemHeightAtom,
-  appDbAtom,
   infoChoicesAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
@@ -35,8 +30,6 @@ export default function InfoList({ width, height }: ListProps) {
   // const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
   const [previewEnabled] = useAtom(previewEnabledAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
-  const [previewHTML] = useAtom(previewHTMLAtom);
-  const [appDb] = useAtom(appDbAtom);
   const itemHeight = useAtomValue(itemHeightAtom);
 
   // const listWidth = useMotionValue('100%');
@@ -103,12 +96,6 @@ export default function InfoList({ width, height }: ListProps) {
         px-0 flex flex-col
         text-text-base
         overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20
-
-        ${
-          !appDb.mini && previewEnabled && hasPreview
-            ? 'border-r  border-secondary'
-            : ''
-        }
         `}
         // onItemsRendered={onItemsRendered}
       >
