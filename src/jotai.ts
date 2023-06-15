@@ -142,7 +142,7 @@ function scorer(string: string, query: string, matches: number[][]) {
     undefined,
     undefined,
     createConfig({
-      maxIterations: 2 ** 4,
+      maxIterations: 3,
     })
   );
 }
@@ -187,9 +187,13 @@ export const infoChoicesAtom = atom(
   }
 );
 
+export const hasGroup = atom(false);
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[] | null) => {
+    s(directionAtom, 1);
+    s(hasGroup, Boolean(a && a?.find((c) => c?.group)));
+
     if (!g(promptDataAtom)?.preview && !a?.[0]?.hasPreview) {
       s(previewHTMLAtom, closedDiv);
     }
@@ -604,6 +608,7 @@ export const requiresScrollAtom = atom(-1);
 
 export const directionAtom = atom<1 | -1>(1);
 
+let prevChoiceIndexId = 'prevChoiceIndexId';
 export const _index = atom(
   (g) => g(index),
   (g, s, a: number) => {
@@ -616,21 +621,21 @@ export const _index = atom(
 
     // Check if going up/down by comparing the prevIndex to the clampedIndex
     let choice = cs?.[clampedIndex]?.item;
+    if (choice?.id === prevChoiceIndexId) return;
     let calcIndex = clampedIndex;
     const direction = g(directionAtom);
-
     if (choice?.skip) {
       // Find next choice that doesn't have "skip" set or 0 or length - 1
-      while (choice.skip) {
+      while (choice?.skip) {
         calcIndex += direction;
+
         if (calcIndex <= 0) {
           calcIndex = cs.length - 1;
           while (cs[calcIndex]?.item?.skip) {
             calcIndex += direction;
             if (calcIndex === a) break;
           }
-        }
-        if (calcIndex >= cs.length) {
+        } else if (calcIndex >= cs.length) {
           calcIndex = 0;
 
           while (cs[calcIndex]?.item?.skip) {
@@ -643,16 +648,18 @@ export const _index = atom(
       }
     }
 
+    prevChoiceIndexId = choice?.id || 'prevChoiceIndexId';
+
     if (prevIndex !== calcIndex) {
       s(index, calcIndex);
     }
 
     if (list && requiresScroll === -1) {
-      (list as any).scrollToItem(calcIndex);
+      (list as any)?.scrollToItem(calcIndex);
     }
 
-    if (cs[0]?.item?.skip && calcIndex === 1) {
-      (list as any).scrollToItem(0);
+    if (list && cs[0]?.item?.skip && calcIndex === 1) {
+      (list as any)?.scrollToItem(0);
     }
 
     // const clampedIndex = clamp(a, 0, cs.length - 1);
@@ -682,9 +689,13 @@ function isScript(choice: Choice | Script): choice is Script {
 
 const _flagged = atom<Choice | string>('');
 const _focused = atom(noChoice as Choice);
+
 export const focusedChoiceAtom = atom(
   (g) => g(_focused),
   (g, s, choice: Choice) => {
+    if (choice?.id === prevFocusedChoiceId) return;
+    prevFocusedChoiceId = choice?.id || 'prevFocusedChoiceId';
+    // g(logAtom)(`Focusing ${choice?.name}`);
     if (g(submittedAtom)) return;
     // if (g(_focused)?.id === choice?.id) return;
     if (isScript(choice as Choice)) {
@@ -703,7 +714,7 @@ export const focusedChoiceAtom = atom(
 
       const channel = g(channelAtom);
       channel(Channel.CHOICE_FOCUSED);
-      // g(logAtom)(`Focusing ${choice?.name}`);
+      // g(logAtom)(`CHOICE_FOCUSED ${choice?.name}`);
       // resize(g, s);
     }
   }
@@ -719,7 +730,6 @@ export const hasPreviewAtom = atom<boolean>((g) => {
   const isFocused = g(focusedChoiceAtom) === null;
   const previewVisible = g(_previewVisible);
 
-  // log({ focusedHasPreview, promptHasPreview, isFocused, previewVisible });
   return focusedHasPreview || promptHasPreview || (isFocused && previewVisible);
 });
 
@@ -732,16 +742,14 @@ const prevChoiceId = atom(
   }
 );
 
+let prevFocusedChoiceId = 'prevFocusedChoiceId';
 export const scoredChoicesAtom = atom(
   (g) => g(choices),
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
   (g, s, a: ScoredChoice[] | null) => {
-    const hasInput = g(inputAtom).length > 0;
-    const cs = a?.filter(
-      (c) =>
-        !(c?.item?.info || c?.item.disableSubmit || (hasInput && c?.item?.skip))
-    );
+    prevFocusedChoiceId = 'prevFocusedChoiceId';
+    const cs = a?.filter((c) => !(c?.item?.info || c?.item.disableSubmit));
 
     s(submittedAtom, false);
     if (g(isMainScriptAtom)) {
@@ -842,12 +850,60 @@ export const appendInputAtom = atom(null, (g, s, a: string) => {
   }
 });
 
-const debounceSearch = debounce((qs: QuickScore, s: Setter, a: string) => {
-  if (!a) return false;
-  const result = search(qs, a);
-  s(scoredChoicesAtom, result);
-  return true;
-}, 250); // TODO: too slow for emojis
+const invokeSearch = (
+  qs: QuickScoreInterface,
+  g: Getter,
+  s: Setter,
+  input: string
+) => {
+  const result = search(qs, input);
+  if (g(hasGroup)) {
+    const unfiltered = g(unfilteredChoices);
+    const groups: Set<string> = new Set();
+    const keepGroups: Set<string> = new Set();
+    const filteredBySearch: ScoredChoice[] = [];
+
+    // Build a map for constant time access
+    const resultMap = new Map(result.map((r) => [r.item.id, r]));
+
+    for (const choice of unfiltered) {
+      if (choice?.skip) {
+        const scoredSkip = createScoredChoice(choice);
+        filteredBySearch.push(scoredSkip);
+        if (choice?.group) groups.add(choice.group);
+      } else {
+        const scored = resultMap.get(choice?.id);
+        if (scored) {
+          filteredBySearch.push(scored);
+          if (choice?.group && groups.has(choice.group)) {
+            keepGroups.add(choice.group);
+          }
+        }
+      }
+    }
+
+    const dropMissingGroups = filteredBySearch.filter((sc) => {
+      if (sc?.item?.skip) {
+        if (!keepGroups.has(sc?.item?.group)) return false;
+      }
+
+      return true;
+    });
+
+    s(scoredChoicesAtom, dropMissingGroups);
+  } else {
+    s(scoredChoicesAtom, result);
+  }
+};
+
+const debounceSearch = debounce(
+  (qs: QuickScoreInterface, g: Getter, s: Setter, input: string) => {
+    if (!input) return false;
+    invokeSearch(qs, g, s, input);
+    return true;
+  },
+  200
+); // TODO: too slow for emojis
 
 const prevFilteredInputAtom = atom('');
 
@@ -879,10 +935,9 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
 
   if (qs && input) {
     if (un.length > 1000 && g(appDbAtom).searchDebounce) {
-      debounceSearch(qs, s, input);
+      debounceSearch(qs, g, s, input);
     } else {
-      const result = search(qs, input);
-      s(scoredChoicesAtom, result);
+      invokeSearch(qs, g, s, input);
     }
   } else if (un.length) {
     debounceSearch.cancel();
@@ -905,6 +960,7 @@ export const inputCommandChars = atom([]);
 export const inputAtom = atom(
   (g) => g(_input),
   async (g, s, a: string) => {
+    s(directionAtom, 1);
     const prevInput = g(_input);
 
     if (a !== g(_input)) s(_inputChangedAtom, true);
@@ -1578,6 +1634,8 @@ export const flagValueAtom = atom(
 
       const flagChoices: Choice[] = Object.entries(g(flagsAtom)).map(
         ([key, value]) => {
+          prevFocusedChoiceId = key;
+          prevChoiceIndexId = key;
           return {
             id: key,
             command: value?.name,

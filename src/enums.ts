@@ -75,6 +75,7 @@ export enum Trigger {
   Tray = 'tray',
   RunTxt = 'runTxt',
   Protocol = 'Protocol',
+  MissingPackage = 'MissingPackage',
 }
 
 export enum HideReason {

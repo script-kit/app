@@ -49,6 +49,7 @@ import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel, Trigger } from './enums';
 import { runScript } from './kit';
+import { TrackEvent, trackEvent } from './track';
 
 // export const cacheMenu = debounce(async () => {
 //   await updateScripts();
@@ -145,23 +146,59 @@ const buildScriptChanged = debounce(
           }
 
           log.error(`Build stderr`, compileMessage);
+
+          /* Example
+          Build stderr ✘ [ERROR] Could not resolve "@faker-js/faker"
+
+testing-huge-group-data.ts:4:22:
+      4 │ import { faker } from "@faker-js/faker"
+        ╵                       ~~~~~~~~~~~~~~~~~
+
+  You can mark the path "@faker-js/faker" as external to exclude it from the bundle, which will remove this error.
+  */
+
+          if (compileMessage.includes('Could not resolve')) {
+            // parse the package name from the error
+            const missingPackage = compileMessage
+              .split('\n')
+              .shift()
+              .split(' ')
+              .pop()
+              .replaceAll('"', '')
+              .replaceAll("'", '');
+
+            log.error(`Missing package ${missingPackage}`);
+
+            trackEvent(TrackEvent.MissingPackage, {
+              missingPackage,
+            });
+
+            emitter.emit(KitEvent.RunPromptProcess, {
+              scriptPath: kitPath('cli', 'npm.js'),
+              args: [missingPackage],
+              options: {
+                force: true,
+                trigger: Trigger.MissingPackage,
+              },
+            });
+          } else {
+            const n = new Notification({
+              title: `Build Fail: ${path.basename(filePath)}`,
+              body: compileMessage,
+              silent: true,
+            });
+
+            n.show();
+
+            setTimeout(() => {
+              n.close();
+            }, 5000);
+          }
           setScriptTimestamp({
             filePath,
             compileMessage,
             compileStamp: Date.now(),
           });
-
-          const n = new Notification({
-            title: `Build Fail: ${path.basename(filePath)}`,
-            body: compileMessage,
-            silent: true,
-          });
-
-          n.show();
-
-          setTimeout(() => {
-            n.close();
-          }, 5000);
         });
       }
 

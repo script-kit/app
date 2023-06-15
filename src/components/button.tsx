@@ -272,10 +272,14 @@ export default function ChoiceButton({
               <div className="flex flex-row items-center">
                 {choice?.tag && (
                   <div
-                    className={`
+                    className={
+                      choice?.tagClassName
+                        ? choice?.tagClassName
+                        : `
               text-xxs font-mono mx-1
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
-              `}
+              `
+                    }
                   >
                     {choice.tag}
                   </div>

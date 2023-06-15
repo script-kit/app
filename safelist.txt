@@ -1055,3 +1055,5 @@ px-2px
 animate-bounce
 animate-ping
 animate-pulse
+pt-1 border-t-1
+border-t-ui-border
