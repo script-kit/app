@@ -1,8 +1,8 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
+import { gsap, Power0 } from 'gsap';
 import { useAtom } from 'jotai';
-import { motion } from 'framer-motion';
 import { flagValueAtom, selectedAtom } from '../jotai';
 import { IconSwapper } from './iconswapper';
 
@@ -18,14 +18,23 @@ export default function Selected() {
     [setFlagValue]
   );
 
+  useEffect(() => {
+    gsap.fromTo(
+      '#selected',
+      {
+        width: '10%',
+      },
+      {
+        duration: 0.15,
+        width: '100%',
+      }
+    );
+  }, []);
+
   return (
-    <motion.div
+    <div
+      id="selected"
       key="selected"
-      layout="size"
-      initial={{ opacity: 1, width: '10%' }}
-      animate={{ opacity: 1, width: '100%' }}
-      exit={{ opacity: 0, width: '10t%' }}
-      transition={{ duration: 0.15, ease: 'easeIn' }}
       style={
         {
           WebkitAppRegion: 'no-drag',
@@ -44,20 +53,16 @@ border-primary
     hover:cursor-pointer
     `}
     >
-      {flagValue ? (
-        <div className="flex flex-row items-center justify-content hover:text-text-base font-semibold pl-3.5">
-          <div className="mr-8 truncate flex flex-row h-[20px] max-h-[20px]">
-            <div className="">
-              <IconSwapper text="←" />
-            </div>
-            <span className="ml-1.5" />
-            {/* {'←'} */}
-            <span className="">{selected}</span>
+      <div className="flex flex-row items-center justify-content hover:text-text-base font-semibold pl-3.5">
+        <div className="mr-8 truncate flex flex-row h-[20px] max-h-[20px]">
+          <div className="">
+            <IconSwapper text="←" />
           </div>
+          <span className="ml-1.5" />
+          {/* {'←'} */}
+          <span className="">{selected}</span>
         </div>
-      ) : (
-        <div className="mx-4 py-1 font-mono truncate">{selected}</div>
-      )}
-    </motion.div>
+      </div>
+    </div>
   );
 }

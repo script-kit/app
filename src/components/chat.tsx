@@ -533,14 +533,48 @@ export function Chat() {
   const [channel] = useAtom(channelAtom);
   const [ui] = useAtom(uiAtom);
 
+  // Track isComposing state
+  const [isComposing, setIsComposing] = useState(false);
+
   useEffect(() => {
     // Focus the input when the component mounts
+    const handleCompositionStart = () => {
+      setIsComposing(true);
+    };
+
+    const handleCompositionEnd = () => {
+      setIsComposing(false);
+    };
+
     if (inputRef.current) {
       inputRef.current.focus();
       // set the tabindex of the input to 0
       inputRef.current.setAttribute('tabindex', '0');
       buttonRef.current?.setAttribute('tabindex', '-1');
+
+      inputRef.current?.addEventListener(
+        'compositionstart',
+        handleCompositionStart
+      );
+
+      inputRef.current?.addEventListener(
+        'compositionend',
+        handleCompositionEnd
+      );
     }
+    return () => {
+      if (inputRef?.current) {
+        inputRef?.current.removeEventListener(
+          'compositionstart',
+          handleCompositionStart
+        );
+
+        inputRef?.current.removeEventListener(
+          'compositionend',
+          handleCompositionEnd
+        );
+      }
+    };
   }, []);
 
   // Create onSubmit handler
@@ -555,6 +589,7 @@ export function Chat() {
   const onSubmit = useCallback(
     (e: any) => {
       e.preventDefault();
+      if (isComposing) return;
       setMessages([
         ...messages,
         {
@@ -567,7 +602,14 @@ export function Chat() {
       setCurrentMessage('');
       if (clearRef.current) clearRef.current();
     },
-    [currentMessage, messages, setCurrentMessage, setMessages, submitMessage]
+    [
+      currentMessage,
+      messages,
+      setCurrentMessage,
+      setMessages,
+      submitMessage,
+      isComposing,
+    ]
   );
 
   // state for cursor position

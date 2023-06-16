@@ -282,7 +282,7 @@ const getTopRightCurrentScreen = (
   };
 };
 
-export const showInspector = (url: string) => {
+export const showInspector = (url: string): BrowserWindow => {
   const win = new BrowserWindow({
     title: 'Script Kit Inspector',
     width: 1024,

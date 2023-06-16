@@ -11,6 +11,7 @@ export enum TrackEvent {
   LogError = 'LogError',
   ChildError = 'ChildError',
   MissingPackage = 'MissingPackage',
+  DebugScript = 'DebugScript',
 }
 
 export const trackEvent = (event: TrackEvent, properties: any) => {

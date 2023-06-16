@@ -70,6 +70,7 @@ import {
   getPromptBounds,
   hideAppIfNoWindows,
   isVisible,
+  maybeHide,
   onHideOnce,
   sendToPrompt,
   setBackgroundThrottling,
@@ -875,7 +876,7 @@ const kitMessageMap: ChannelHandler = {
       }
     }
   }),
-  DEBUG_SCRIPT: toProcess(async (processInfo, data) => {
+  DEBUG_SCRIPT: toProcess(async (processInfo, data:any) => {
     await sponsorCheck('Debugging Scripts');
     if (!kitState.isSponsor) return;
 
@@ -883,6 +884,9 @@ const kitMessageMap: ChannelHandler = {
     processes.removeByPid(processInfo.child?.pid);
 
     log.info(`DEBUG_SCRIPT`, data?.value?.filePath);
+    trackEvent(TrackEvent.DebugScript, {
+      scriptName: path.basename(data?.value?.filePath || "")
+    })
 
     sendToPrompt(Channel.START, data?.value?.filePath);
     sendToPrompt(Channel.SET_PROMPT_DATA, {
@@ -1988,6 +1992,11 @@ const kitMessageMap: ChannelHandler = {
 
     childSend(child, { channel, value });
   }),
+  SET_SCORED_CHOICES: toProcess(async ({ child }, { channel, value }) => {
+    log.verbose(`SET SCORED CHOICES`)
+    sendToPrompt(channel, value);
+    childSend(child, { channel, value });
+  }),
 };
 
 export const createMessageHandler = (type: ProcessType) => async (
@@ -2115,6 +2124,11 @@ const createChild = ({
         setTimeout(() => {
           win?.setAlwaysOnTop(false);
         }, 500);
+
+        win.on("close", ()=> {
+          if(child && !child.killed) child?.kill()
+          maybeHide(HideReason.DebuggerClosed)
+        })
       }
     });
 

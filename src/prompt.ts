@@ -78,6 +78,11 @@ export const maybeHide = async (reason: string) => {
     return;
   }
 
+  if (reason === HideReason.DebuggerClosed) {
+    actualHide();
+    return;
+  }
+
   if (kitState.debugging) return;
   if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
     log.verbose(`Hiding because ${reason}`);
@@ -702,6 +707,7 @@ export const isFocused = () => {
   return promptWindow?.isFocused();
 };
 
+let hadPreview = true;
 export const resize = async ({
   reason,
   id,
@@ -726,6 +732,7 @@ export const resize = async ({
   //   resizePaused: kitState.resizePaused,
   //   hasInput,
   //   inputChanged,
+  //   hasPreview,
   // });
 
   if (kitState.resizePaused) return;
@@ -749,6 +756,7 @@ export const resize = async ({
     x,
     y,
   } = promptWindow.getBounds();
+
   const targetHeight = topHeight + mainHeight + footerHeight;
 
   let cachedWidth;
@@ -798,6 +806,12 @@ export const resize = async ({
   if (hasPreview && !isMainScript) {
     width = Math.max(getDefaultWidth(), width);
   }
+
+  if (hasPreview && hadPreview) {
+    height = currentHeight;
+  }
+
+  hadPreview = hasPreview;
 
   if (isVisible()) {
     // center x based on current prompt x position

@@ -187,12 +187,13 @@ export const infoChoicesAtom = atom(
   }
 );
 
-export const hasGroup = atom(false);
+export const hasGroupAtom = atom(false);
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[] | null) => {
+    if (a?.length === 0 && g(unfilteredChoices)?.length === 0) return;
     s(directionAtom, 1);
-    s(hasGroup, Boolean(a && a?.find((c) => c?.group)));
+    s(hasGroupAtom, Boolean(a && a?.find((c) => c?.group)));
 
     if (!g(promptDataAtom)?.preview && !a?.[0]?.hasPreview) {
       s(previewHTMLAtom, closedDiv);
@@ -275,20 +276,10 @@ export const unfilteredChoicesAtom = atom(
     }
 
     if (cs?.length) {
-      const qs = new QuickScore(
-        cs.map((c) => {
-          c.slicedName = c?.name?.slice(0, 63);
-
-          if (typeof c?.description === 'string') {
-            c.slicedDescription = c?.description?.slice(0, 63);
-          }
-          return c;
-        }),
-        {
-          keys,
-          minimumScore: 0.3,
-        } as any
-      );
+      const qs = new QuickScore(cs, {
+        keys,
+        minimumScore: 0.5,
+      } as any);
       s(quickScoreAtom, qs as any);
 
       const mode = g(promptDataAtom)?.mode;
@@ -693,6 +684,7 @@ const _focused = atom(noChoice as Choice);
 export const focusedChoiceAtom = atom(
   (g) => g(_focused),
   (g, s, choice: Choice) => {
+    if (choice?.skip) return;
     if (choice?.id === prevFocusedChoiceId) return;
     prevFocusedChoiceId = choice?.id || 'prevFocusedChoiceId';
     // g(logAtom)(`Focusing ${choice?.name}`);
@@ -722,8 +714,9 @@ export const focusedChoiceAtom = atom(
 
 export const hasPreviewAtom = atom<boolean>((g) => {
   // const log = g(logAtom);
+  const focused = g(_focused);
   const focusedHasPreview =
-    g(_focused)?.hasPreview && g(_focused)?.preview !== closedDiv;
+    focused?.hasPreview && focused?.preview !== closedDiv;
 
   const promptHasPreview = g(promptData)?.hasPreview;
 
@@ -748,6 +741,7 @@ export const scoredChoicesAtom = atom(
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
   (g, s, a: ScoredChoice[] | null) => {
+    s(loadingAtom, false);
     prevFocusedChoiceId = 'prevFocusedChoiceId';
     const cs = a?.filter((c) => !(c?.item?.info || c?.item.disableSubmit));
 
@@ -773,6 +767,12 @@ export const scoredChoicesAtom = atom(
         }
       }
     }
+
+    // if the first cs has a `border-t-1`, remove it
+    if (cs?.[0]?.item?.className) {
+      cs[0].item.className = cs?.[0]?.item?.className.replace(`border-t-1`, '');
+    }
+
     s(choices, cs || []);
 
     const isFilter =
@@ -817,7 +817,11 @@ export const scoredChoicesAtom = atom(
       } else if (input.length > 0) {
         s(requiresScrollAtom, g(requiresScrollAtom) > 0 ? 0 : -1);
       } else if (prevIndex && !g(selectedAtom)) {
-        s(requiresScrollAtom, prevIndex);
+        let adjustForGroup = prevIndex;
+        if (cs?.[prevIndex - 1]?.item?.skip) {
+          adjustForGroup -= 1;
+        }
+        s(requiresScrollAtom, adjustForGroup);
       } else {
         s(requiresScrollAtom, 0);
       }
@@ -856,8 +860,9 @@ const invokeSearch = (
   s: Setter,
   input: string
 ) => {
+  g(logAtom)(`Invoking search...`);
   const result = search(qs, input);
-  if (g(hasGroup)) {
+  if (g(hasGroupAtom)) {
     const unfiltered = g(unfilteredChoices);
     const groups: Set<string> = new Set();
     const keepGroups: Set<string> = new Set();
@@ -962,6 +967,13 @@ export const inputAtom = atom(
   async (g, s, a: string) => {
     s(directionAtom, 1);
     const prevInput = g(_input);
+    if (prevInput && a === '') {
+      const list = g(listAtom);
+
+      if (list) {
+        (list as any)?.scrollToItem(0);
+      }
+    }
 
     if (a !== g(_input)) s(_inputChangedAtom, true);
     if (a === g(_input)) {
@@ -1135,10 +1147,10 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const promptBounds = g(promptBoundsAtom);
 
   const ui = g(uiAtom);
-  // g(logAtom)(`resize: ${reason} - ${ui}`);
 
   const scoredChoices = g(scoredChoicesAtom);
   const scoredChoicesLength = g(scoredChoicesAtom)?.length;
+  // g(logAtom)(`resize: ${reason} - ${ui} length ${scoredChoicesLength}`);
   const infoChoicesLength = g(infoChoicesAtom).length;
   const hasPanel = g(_panelHTML) !== '';
   const nullChoices = g(nullChoicesAtom);

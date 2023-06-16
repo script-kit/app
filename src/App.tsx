@@ -272,6 +272,7 @@ export default function App() {
   const setSplashHeader = useSetAtom(splashHeaderAtom);
   const setSplashProgress = useSetAtom(splashProgressAtom);
   const setUnfilteredChoices = useSetAtom(unfilteredChoicesAtom);
+  const setScoredChoices = useSetAtom(scoredChoicesAtom);
   const appendChoices = useSetAtom(appendChoicesAtom);
   const setFooter = useSetAtom(footerAtom);
   const setEnter = useSetAtom(enterAtom);
@@ -331,6 +332,13 @@ export default function App() {
   );
 
   const log = useAtomValue(logAtom);
+
+  // log({
+  //   previewHTML: Boolean(previewHTML),
+  //   panelHTML: Boolean(panelHTML),
+  //   previewEnabled: Boolean(previewEnabled),
+  //   hidden: Boolean(hidden),
+  // });
 
   const [zoomLevel, setZoom] = useAtom(zoomAtom);
   const setMicId = useSetAtom(micIdAtom);
@@ -474,6 +482,10 @@ export default function App() {
     [Channel.SET_SCRIPT]: setScript,
     [Channel.SET_SCRIPT_HISTORY]: setScriptHistory,
     [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
+    [Channel.SET_SCORED_CHOICES]: (choices) => {
+      setUnfilteredChoices([]);
+      setScoredChoices(choices);
+    },
     [Channel.APPEND_CHOICES]: appendChoices,
     [Channel.SET_DESCRIPTION]: setDescription,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfig,

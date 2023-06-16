@@ -84,4 +84,5 @@ export enum HideReason {
   Blur = 'Blur',
   PingTimeout = 'PingTimeout',
   LockScreen = 'LockScreen',
+  DebuggerClosed = 'DebuggerClosed',
 }

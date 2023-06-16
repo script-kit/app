@@ -14,6 +14,7 @@ import {
   promptDataAtom,
   listAtom,
   requiresScrollAtom,
+  hasGroupAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 
@@ -41,6 +42,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const itemHeight = useAtomValue(itemHeightAtom);
   const infoHeight = useAtomValue(infoHeightAtom);
   const promptData = useAtomValue(promptDataAtom);
+  const hasGroup = useAtomValue(hasGroupAtom);
   const [list, setList] = useAtom(listAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
 
@@ -77,7 +79,8 @@ export default function ChoiceList({ width, height }: ListProps) {
       onIndexChange(requiresScroll);
       (listRef as any).current.scrollToItem(
         requiresScroll,
-        requiresScroll > 0 ? 'center' : 'start'
+        // eslint-disable-next-line no-nested-ternary
+        requiresScroll > 0 ? (hasGroup ? 'auto' : 'center') : 'start'
       );
     };
 
@@ -88,7 +91,7 @@ export default function ChoiceList({ width, height }: ListProps) {
         setRequiresScroll(-1);
       }
     }, 100);
-  }, [requiresScroll, choices]);
+  }, [requiresScroll, choices, hasGroup]);
 
   useEffect(() => {
     if (!listRef.current) return;
