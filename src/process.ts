@@ -84,6 +84,7 @@ import {
   setPanel,
   setPlaceholder,
   setPreview,
+  setShortcuts,
   setPromptData,
   setPromptProp,
   setScript,
@@ -1059,7 +1060,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_SHORTCUTS: toProcess(async ({ child }, { channel, value }) => {
-    sendToPrompt(Channel.SET_SHORTCUTS, value);
+    setShortcuts(value)
 
     childSend(child, { channel, value });
   }),
@@ -1159,7 +1160,10 @@ const kitMessageMap: ChannelHandler = {
   SET_CHOICES: toProcess(async ({ child }, { channel, value }) => {
     log.silly(`SET_CHOICES`, { isScripts: kitState.isScripts });
     if (kitState.isScripts) {
-      setChoices(formatScriptChoices(value));
+      const formattedScriptChoices = formatScriptChoices(value);
+      setChoices(formattedScriptChoices);
+
+      writeJson(kitPath("db", "mainScriptsChoices.json"), formattedScriptChoices)
     } else {
       setChoices(value);
     }

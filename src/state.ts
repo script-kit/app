@@ -123,7 +123,8 @@ export const getSchedule = () => {
 };
 
 export const updateScripts = async () => {
-  await getTimestamps(false);
+  log.info(`Update scripts...`);
+  // await getTimestamps(false);
 };
 
 export const scriptChanged = debounce(

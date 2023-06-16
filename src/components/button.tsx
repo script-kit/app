@@ -302,7 +302,7 @@ export default function ChoiceButton({
               </div>
             )}
 
-            {isScript(choice) && (choice?.friendlyShortcut || choice?.kenv) && (
+            {isScript(choice) && choice?.friendlyShortcut && (
               <div className="flex flex-col px-2">
                 {choice?.friendlyShortcut && (
                   <div
@@ -315,20 +315,6 @@ export default function ChoiceButton({
                       choice.friendlyShortcut,
                       scoredChoice?.matches?.friendlyShortcut,
                       'bg-text-base bg-opacity-0 text-primary text-opacity-100'
-                    )}
-                  </div>
-                )}
-                {choice?.kenv && (
-                  <div
-                    className={`
-              text-xxs font-mono
-              ${index === currentIndex ? `opacity-70` : `opacity-40`}
-              `}
-                  >
-                    {highlight(
-                      choice.kenv,
-                      scoredChoice?.matches?.kenv,
-                      'bg-text-base bg-opacity-0 text-primary'
                     )}
                   </div>
                 )}

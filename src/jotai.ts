@@ -195,7 +195,12 @@ export const unfilteredChoicesAtom = atom(
     s(directionAtom, 1);
     s(hasGroupAtom, Boolean(a && a?.find((c) => c?.group)));
 
-    if (!g(promptDataAtom)?.preview && !a?.[0]?.hasPreview) {
+    const promptData = g(promptDataAtom);
+    if (
+      !promptData?.keepPreview &&
+      !promptData?.preview &&
+      !a?.[0]?.hasPreview
+    ) {
       s(previewHTMLAtom, closedDiv);
     }
 
@@ -278,7 +283,7 @@ export const unfilteredChoicesAtom = atom(
     if (cs?.length) {
       const qs = new QuickScore(cs, {
         keys,
-        minimumScore: 0.5,
+        minimumScore: 0.6,
       } as any);
       s(quickScoreAtom, qs as any);
 
@@ -860,42 +865,30 @@ const invokeSearch = (
   s: Setter,
   input: string
 ) => {
-  g(logAtom)(`Invoking search...`);
   const result = search(qs, input);
   if (g(hasGroupAtom)) {
     const unfiltered = g(unfilteredChoices);
-    const groups: Set<string> = new Set();
-    const keepGroups: Set<string> = new Set();
-    const filteredBySearch: ScoredChoice[] = [];
 
     // Build a map for constant time access
-    const resultMap = new Map(result.map((r) => [r.item.id, r]));
+    const resultMap = new Map();
+    const keepGroups = new Set();
+    for (const r of result) {
+      resultMap.set(r.item.id, r);
+      keepGroups.add(r.item.group);
+    }
+
+    const results: ScoredChoice[] = [];
 
     for (const choice of unfiltered) {
-      if (choice?.skip) {
-        const scoredSkip = createScoredChoice(choice);
-        filteredBySearch.push(scoredSkip);
-        if (choice?.group) groups.add(choice.group);
-      } else {
-        const scored = resultMap.get(choice?.id);
-        if (scored) {
-          filteredBySearch.push(scored);
-          if (choice?.group && groups.has(choice.group)) {
-            keepGroups.add(choice.group);
-          }
-        }
+      const scoredChoice = resultMap.get(choice.id);
+      if (scoredChoice) {
+        results.push(scoredChoice);
+      } else if (choice?.skip && keepGroups?.has(choice?.group)) {
+        results.push(createScoredChoice(choice));
       }
     }
 
-    const dropMissingGroups = filteredBySearch.filter((sc) => {
-      if (sc?.item?.skip) {
-        if (!keepGroups.has(sc?.item?.group)) return false;
-      }
-
-      return true;
-    });
-
-    s(scoredChoicesAtom, dropMissingGroups);
+    s(scoredChoicesAtom, results);
   } else {
     s(scoredChoicesAtom, result);
   }
@@ -1555,7 +1548,7 @@ export const promptDataAtom = atom(
         );
       }
 
-      if (a.preview) {
+      if (!a?.keepPreview && a.preview) {
         s(previewHTMLAtom, a.preview);
         s(_previewVisible, Boolean(a?.preview));
       }
@@ -1586,7 +1579,9 @@ export const promptDataAtom = atom(
       s(defaultValueAtom, a?.defaultValue || '');
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
-      s(shortcutsAtom, a?.shortcuts || []);
+      if (!g(isMainScriptAtom)) {
+        s(shortcutsAtom, a?.shortcuts || []);
+      }
       s(prevChoicesAtom, []);
       s(audioDotAtom, false);
 

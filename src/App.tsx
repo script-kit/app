@@ -333,13 +333,6 @@ export default function App() {
 
   const log = useAtomValue(logAtom);
 
-  // log({
-  //   previewHTML: Boolean(previewHTML),
-  //   panelHTML: Boolean(panelHTML),
-  //   previewEnabled: Boolean(previewEnabled),
-  //   hidden: Boolean(hidden),
-  // });
-
   const [zoomLevel, setZoom] = useAtom(zoomAtom);
   const setMicId = useSetAtom(micIdAtom);
   const setWebcamId = useSetAtom(webcamIdAtom);

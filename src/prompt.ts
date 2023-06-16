@@ -32,13 +32,14 @@ import os from 'os';
 import path from 'path';
 import log from 'electron-log';
 import { assign, debounce } from 'lodash';
-import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
+import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
 import { ChildProcess } from 'child_process';
+import { writeJson } from 'fs-extra';
 import { getAssetPath } from './assets';
 import { appDb, kitState, subs, promptState } from './state';
 import { EMOJI_HEIGHT, EMOJI_WIDTH, MIN_WIDTH, ZOOM_LEVEL } from './defaults';
@@ -1124,6 +1125,12 @@ export const setPreview = (html: string) => {
   sendToPrompt(Channel.SET_PREVIEW, html);
 };
 
+export const setShortcuts = (shortcuts) => {
+  sendToPrompt(Channel.SET_SHORTCUTS, shortcuts);
+
+  // writeJson(kitPath('db', 'mainShortcuts.json'), shortcuts);
+};
+
 export const setLog = (_log: string) => {
   sendToPrompt(Channel.SET_LOG, _log);
 };
@@ -1149,6 +1156,9 @@ const pidMatch = (pid: number, message: string) => {
 };
 
 export const setPromptData = async (promptData: PromptData) => {
+  if (kitState.isMainScript()) {
+    writeJson(kitPath('db', 'mainPromptData.json'), promptData);
+  }
   kitState.hiddenByUser = false;
   kitState.isPromptReady = false;
   // if (!pidMatch(pid, `setPromptData`)) return;

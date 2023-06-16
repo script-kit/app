@@ -7,7 +7,7 @@ import { app } from 'electron';
 import minimist from 'minimist';
 import log from 'electron-log';
 import path from 'path';
-import { pathExistsSync } from 'fs-extra';
+import { pathExistsSync, readJson } from 'fs-extra';
 import { fork, ForkOptions } from 'child_process';
 import { homedir } from 'os';
 
@@ -25,10 +25,14 @@ import { ProcessInfo } from '@johnlindquist/kit';
 import { emitter, KitEvent } from './events';
 import { processes, removeAbandonnedKit } from './process';
 import {
+  getMainPrompt,
   hideAppIfNoWindows,
   isVisible,
   sendToPrompt,
+  setPromptData,
   setScript,
+  setChoices,
+  setShortcuts,
 } from './prompt';
 import { getKitScript, kitState } from './state';
 import { pathsAreEqual } from './helpers';
@@ -147,8 +151,22 @@ export const runPromptProcess = async (
     trigger: Trigger.App,
   }
 ): Promise<ProcessInfo | null> => {
-  if (pathsAreEqual(promptScriptPath || '', mainScriptPath)) {
+  const isMain = pathsAreEqual(promptScriptPath || '', mainScriptPath);
+  if (isMain) {
     removeAbandonnedKit();
+    if (!isVisible()) {
+      // readJson(kitPath('db', 'mainShortcuts.json'))
+      //   .then(setShortcuts)
+      //   .catch((error) => {});
+
+      readJson(kitPath('db', 'mainPromptData.json'))
+        .then(setPromptData)
+        .catch((error) => {});
+
+      readJson(kitPath('db', 'mainScriptsChoices.json'))
+        .then(setChoices)
+        .catch((error) => {});
+    }
   }
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
