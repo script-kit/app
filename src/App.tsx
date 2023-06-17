@@ -153,10 +153,11 @@ import {
   previewEnabledAtom,
   hasPreviewAtom,
   appBoundsAtom,
-  _index,
+  indexAtom,
   lightenUIAtom,
   promptBoundsAtom,
   audioDotAtom,
+  scrollToIndexAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -324,8 +325,9 @@ export default function App() {
   const [itemHeight, setItemHeight] = useAtom(itemHeightAtom);
   const [previewEnabled] = useAtom(previewEnabledAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
+  const scrollToIndex = useAtomValue(scrollToIndexAtom);
 
-  const index = useAtomValue(_index);
+  const index = useAtomValue(indexAtom);
 
   const previewCheck = Boolean(
     !appDb.mini && previewHTML && !panelHTML && previewEnabled && !hidden
@@ -715,6 +717,13 @@ export default function App() {
 
     // ipcRenderer.on(AppChannel.SET_BOUNDS, handleSetBounds);
 
+    const handleScrollToIndex = (_, index: number) => {
+      scrollToIndex(index);
+    };
+    if (ipcRenderer.listenerCount(AppChannel.SCROLL_TO_INDEX) === 0) {
+      ipcRenderer.on(AppChannel.SCROLL_TO_INDEX, handleScrollToIndex);
+    }
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
@@ -727,6 +736,7 @@ export default function App() {
       ipcRenderer.off(AppChannel.TERM_EXIT, handleTermExit);
       ipcRenderer.off(AppChannel.SET_MIC_ID, handleSetMicId);
       ipcRenderer.off(AppChannel.SET_WEBCAM_ID, handleSetWebcamId);
+      ipcRenderer.off(AppChannel.SCROLL_TO_INDEX, handleScrollToIndex);
       // ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
     };
   }, [messageMap]);

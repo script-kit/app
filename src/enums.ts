@@ -50,6 +50,8 @@ export enum AppChannel {
   PRE_SHOW = 'PRE_SHOW',
   PTY_READY = 'PTY_READY',
   PROMPT_UNLOAD = 'PROMPT_UNLOAD',
+  SCROLL_TO_TOP = 'SCROLL_TO_TOP',
+  SCROLL_TO_INDEX = 'SCROLL_TO_INDEX',
 }
 
 export enum WindowChannel {

@@ -8,7 +8,7 @@ import {
   _flag,
   flagsAtom,
   flagValueAtom,
-  _index,
+  indexAtom,
   inputAtom,
   inputFocusAtom,
   selectionStartAtom,
@@ -26,7 +26,7 @@ export default () => {
   const [cmd] = useAtom(cmdAtom);
   const [choices] = useAtom(_choices);
   const [input] = useAtom(inputAtom);
-  const [index] = useAtom(_index);
+  const [index] = useAtom(indexAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
   const [flags] = useAtom(flagsAtom);
   const [, setFlag] = useAtom(_flag);

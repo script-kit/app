@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
   channelAtom,
-  _index,
+  indexAtom,
   mouseEnabledAtom,
   inputFocusAtom,
   shortcutsAtom,
@@ -16,7 +16,7 @@ import {
 import { hotkeysOptions } from './shared';
 
 export default () => {
-  const [index, setIndex] = useAtom(_index);
+  const [index, setIndex] = useAtom(indexAtom);
   const [, setMouseEnabled] = useAtom(mouseEnabledAtom);
   const [channel] = useAtom(channelAtom);
   const [inputFocus] = useAtom(inputFocusAtom);

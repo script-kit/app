@@ -5,7 +5,7 @@ import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
 import ChoiceButton from './button';
 import {
-  _index,
+  indexAtom,
   mouseEnabledAtom,
   scoredChoicesAtom,
   submitValueAtom,
@@ -36,7 +36,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   // TODO: In case items ever have dynamic height
   const [choices] = useAtom(scoredChoicesAtom);
   const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
-  const [index, onIndexChange] = useAtom(_index);
+  const [index, onIndexChange] = useAtom(indexAtom);
   // const [inputValue] = useAtom(inputAtom);
   // const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
   const itemHeight = useAtomValue(itemHeightAtom);

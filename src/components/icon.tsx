@@ -6,7 +6,7 @@ import { loadable } from 'jotai/utils';
 import { motion } from 'framer-motion';
 import React from 'react';
 import { ipcRenderer } from 'electron';
-import { _flag, _choices, _index, createAssetAtom } from '../jotai';
+import { _flag, _choices, indexAtom, createAssetAtom } from '../jotai';
 import { AppChannel } from '../enums';
 
 const loadableIconAtom = loadable(createAssetAtom('svg', 'logo.svg'));

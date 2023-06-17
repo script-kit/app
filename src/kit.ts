@@ -25,18 +25,16 @@ import { ProcessInfo } from '@johnlindquist/kit';
 import { emitter, KitEvent } from './events';
 import { processes, removeAbandonnedKit } from './process';
 import {
-  getMainPrompt,
   hideAppIfNoWindows,
   isVisible,
   sendToPrompt,
   setPromptData,
   setScript,
   setChoices,
-  setShortcuts,
 } from './prompt';
 import { getKitScript, kitState } from './state';
 import { pathsAreEqual } from './helpers';
-import { Trigger } from './enums';
+import { AppChannel, Trigger } from './enums';
 import { TrackEvent, trackEvent } from './track';
 
 app.on('second-instance', async (_event, argv) => {
@@ -158,6 +156,8 @@ export const runPromptProcess = async (
       // readJson(kitPath('db', 'mainShortcuts.json'))
       //   .then(setShortcuts)
       //   .catch((error) => {});
+
+      sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
 
       readJson(kitPath('db', 'mainPromptData.json'))
         .then(setPromptData)

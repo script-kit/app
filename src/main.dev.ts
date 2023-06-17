@@ -1233,7 +1233,7 @@ const checkKit = async () => {
       (result) => {
         setTimeout(() => {
           kitState.scriptsAdded = true;
-        }, 1000);
+        }, 3000);
         log.info(`👍 TS Scripts Built`);
         return result;
       }

@@ -2,13 +2,13 @@ import { ipcRenderer } from 'electron';
 import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
-import { appStateAtom, _choices, cmdAtom, _index } from '../jotai';
+import { appStateAtom, _choices, cmdAtom, indexAtom } from '../jotai';
 import { hotkeysOptions } from './shared';
 import { AppChannel } from '../enums';
 
 export default () => {
   const [choices] = useAtom(_choices);
-  const [index] = useAtom(_index);
+  const [index] = useAtom(indexAtom);
   const [cmd] = useAtom(cmdAtom);
   const [state] = useAtom(appStateAtom);
   useHotkeys(

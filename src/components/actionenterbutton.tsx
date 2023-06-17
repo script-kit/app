@@ -8,7 +8,6 @@ import React, { useCallback } from 'react';
 import {
   _flag,
   _choices,
-  _index,
   uiAtom,
   sendShortcutAtom,
   enterPressedAtom,

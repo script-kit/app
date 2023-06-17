@@ -4,7 +4,7 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import React from 'react';
 import { useAtom } from 'jotai';
-import { _flag, _choices, _index, appConfigAtom } from '../jotai';
+import { _flag, _choices, indexAtom, appConfigAtom } from '../jotai';
 
 export function ActionSeparator() {
   const [app] = useAtom(appConfigAtom);

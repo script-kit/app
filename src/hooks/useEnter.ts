@@ -5,7 +5,7 @@ import {
   _choices,
   cmdAtom,
   _flag,
-  _index,
+  indexAtom,
   inputAtom,
   panelHTMLAtom,
   promptDataAtom,
@@ -19,7 +19,7 @@ import { hotkeysOptions } from './shared';
 export default () => {
   const [choices] = useAtom(_choices);
   const [input] = useAtom(inputAtom);
-  const [index] = useAtom(_index);
+  const [index] = useAtom(indexAtom);
   const [, submit] = useAtom(submitValueAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [panelHTML] = useAtom(panelHTMLAtom);

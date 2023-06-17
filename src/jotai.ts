@@ -324,7 +324,7 @@ export const unfilteredChoicesAtom = atom(
       //   prevCId,
       // });
 
-      s(_index, nextIndex > 0 ? nextIndex : 0);
+      s(indexAtom, nextIndex > 0 ? nextIndex : 0);
     }
   }
 );
@@ -417,7 +417,7 @@ export const previewHTMLAtom = atom(
     if (!a || !g(openAtom)) return; // never unset preview to avoid flash of white/black
     const tI = g(_tabIndex);
     const iA = g(inputAtom);
-    const index = g(_index);
+    const index = g(indexAtom);
 
     // if (g(isMainScriptAtom) && tI === 0 && iA === '' && index === 0) {
     //   s(cachedMainPreview, a);
@@ -604,8 +604,15 @@ export const requiresScrollAtom = atom(-1);
 
 export const directionAtom = atom<1 | -1>(1);
 
+export const scrollToIndexAtom = atom((g) => {
+  return (i: number) => {
+    const list = g(listAtom);
+    (list as any)?.scrollToItem(i);
+  };
+});
+
 let prevChoiceIndexId = 'prevChoiceIndexId';
-export const _index = atom(
+export const indexAtom = atom(
   (g) => g(index),
   (g, s, a: number) => {
     const prevIndex = g(index);
@@ -811,7 +818,7 @@ export const scoredChoicesAtom = atom(
         if (i !== -1) {
           const foundChoice = cs[i].item;
           if (foundChoice?.id) {
-            s(_index, i);
+            s(indexAtom, i);
             s(focusedChoiceAtom, foundChoice);
             s(requiresScrollAtom, i);
             // console.log(`i!== -1: Setting prevChoiceId to ${foundChoice?.id}`);
@@ -821,6 +828,7 @@ export const scoredChoicesAtom = atom(
         s(defaultValueAtom, '');
       } else if (input.length > 0) {
         s(requiresScrollAtom, g(requiresScrollAtom) > 0 ? 0 : -1);
+        s(indexAtom, 0);
       } else if (prevIndex && !g(selectedAtom)) {
         let adjustForGroup = prevIndex;
         if (cs?.[prevIndex - 1]?.item?.skip) {
@@ -985,7 +993,7 @@ export const inputAtom = atom(
 
     s(mouseEnabledAtom, 0);
 
-    s(_index, 0);
+    s(indexAtom, 0);
 
     // If the promptData isn't set, default to FILTER
     const mode = g(promptData)?.mode || Mode.FILTER;
@@ -1632,10 +1640,10 @@ export const flagValueAtom = atom(
 
       s(selectedAtom, '');
       s(unfilteredChoicesAtom, g(prevChoicesAtom));
-      s(_index, g(prevIndexAtom));
+      s(indexAtom, g(prevIndexAtom));
     } else {
       s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
-      s(prevIndexAtom, g(_index));
+      s(prevIndexAtom, g(indexAtom));
       s(prevInputAtom, g(inputAtom));
       s(inputAtom, '');
 
@@ -1673,7 +1681,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     input: g(_input),
     inputChanged: g(_inputChangedAtom),
     flag: g(_flag),
-    index: g(_index),
+    index: g(indexAtom),
     flaggedValue: g(_flagged),
     focused: g(_focused),
     tab: g(tabsAtom)?.[g(_tabIndex)] || '',
@@ -1751,7 +1759,7 @@ export const submitValueAtom = atom(
       s(promptActiveAtom, false);
       s(disableSubmitAtom, false);
       if (g(submittedAtom)) return;
-      const focusedChoice = g(scoredChoicesAtom)?.[g(_index)]?.item;
+      const focusedChoice = g(scoredChoicesAtom)?.[g(indexAtom)]?.item;
       const fid = focusedChoice?.id;
       if (fid) {
         // console.log(`focusedChoice.id: ${focusedChoice.id}`);
@@ -1882,6 +1890,7 @@ export const openAtom = atom(
       s(logLinesAtom, []);
       s(audioDotAtom, false);
       s(disableSubmitAtom, false);
+      g(scrollToIndexAtom)(0);
       // s(tabsAtom, []);
 
       const stream = g(webcamStreamAtom);
@@ -2168,7 +2177,7 @@ export const setFocusedChoiceAtom = atom(null, (g, s, a: string) => {
 
   // console.log({ i });
   if (i > -1) {
-    s(_index, i);
+    s(indexAtom, i);
   }
 });
 

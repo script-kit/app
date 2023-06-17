@@ -1163,7 +1163,7 @@ const kitMessageMap: ChannelHandler = {
       const formattedScriptChoices = formatScriptChoices(value);
       setChoices(formattedScriptChoices);
 
-      writeJson(kitPath("db", "mainScriptsChoices.json"), formattedScriptChoices)
+      writeJson(kitPath("db", "mainScriptsChoices.json"), formattedScriptChoices).catch(error => {})
     } else {
       setChoices(value);
     }

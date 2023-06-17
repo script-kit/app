@@ -12,7 +12,7 @@ import {
   flagsAtom,
   _flag,
   _choices,
-  _index,
+  indexAtom,
   footerAtom,
   uiAtom,
   enterButtonNameAtom,

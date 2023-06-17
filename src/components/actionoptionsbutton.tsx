@@ -10,7 +10,7 @@ import {
   _flag,
   _choices,
   inputAtom,
-  _index,
+  indexAtom,
   channelAtom,
   flagValueAtom,
   appConfigAtom,
@@ -22,7 +22,7 @@ import { IconSwapper } from './iconswapper';
 export function OptionsButton() {
   const [choices] = useAtom(_choices);
   const [input] = useAtom(inputAtom);
-  const [index] = useAtom(_index);
+  const [index] = useAtom(indexAtom);
   const [channel] = useAtom(channelAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
   const [app] = useAtom(appConfigAtom);
