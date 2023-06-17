@@ -1,5 +1,5 @@
 /* eslint-disable react/require-default-props */
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
@@ -15,6 +15,7 @@ import {
   listAtom,
   requiresScrollAtom,
   hasGroupAtom,
+  isScrollingAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 
@@ -45,6 +46,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const hasGroup = useAtomValue(hasGroupAtom);
   const [list, setList] = useAtom(listAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
+  const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
 
   const onIndexSubmit = useCallback(
     (i: number) => {
@@ -101,10 +103,11 @@ export default function ChoiceList({ width, height }: ListProps) {
     }
   }, [choices, itemHeight]);
 
+  const [scrollTimeout, setScrollTimeout] = useState<any>(null);
+
   const choicesHeight = choices.reduce((acc, choice) => {
     return acc + (choice?.item?.height || itemHeight);
   }, 0);
-
   return (
     <div
       id="list"
@@ -121,6 +124,19 @@ w-full overflow-y-hidden
       <List
         ref={listRef}
         innerRef={innerRef}
+        onScroll={(props) => {
+          setIsScrolling(true);
+          // TODO: Disable scrolling if onScroll hasn't trigger for 250ms
+          // clear the previous timeout
+          if (scrollTimeout) clearTimeout(scrollTimeout);
+
+          // set a new timeout
+          setScrollTimeout(
+            setTimeout(() => {
+              setIsScrolling(false);
+            }, 250)
+          );
+        }}
         height={
           promptData?.resize
             ? // TODO: add itemHeight to choices in Kit SDK
@@ -138,10 +154,11 @@ w-full overflow-y-hidden
         width="100%"
         itemData={itemData}
         className={`
+        ${isScrolling ? `scrollbar` : ''}
         wrapper
-        px-0 flex flex-col
+        px-0
         text-text-base
-        overflow-y-scroll focus:border-none focus:outline-none outline-none flex-1 bg-opacity-20
+        focus:border-none focus:outline-none outline-none bg-opacity-20
         `}
         // onItemsRendered={onItemsRendered}
       >

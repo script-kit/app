@@ -2790,3 +2790,5 @@ export const promptBoundsAtom = atom({
 });
 
 export const audioDotAtom = atom(false);
+
+export const isScrollingAtom = atom(false);

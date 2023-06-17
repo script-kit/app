@@ -110,6 +110,18 @@ body {
   display: none;
 }
 
+.scrollbar::-webkit-scrollbar {
+  display: initial;
+  width: 2px;
+  @apply bg-ui-bg;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-primary;
+  height: 24px;
+  max-height: 24px;
+}
+
 *::-webkit-resizer {
   display: none;
 }

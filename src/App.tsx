@@ -18,7 +18,6 @@ import React, {
   useCallback,
   useEffect,
   useRef,
-  useState,
 } from 'react';
 import { gsap } from 'gsap';
 import { ToastContainer, toast, cssTransition } from 'react-toastify';
@@ -154,7 +153,6 @@ import {
   hasPreviewAtom,
   appBoundsAtom,
   indexAtom,
-  lightenUIAtom,
   promptBoundsAtom,
   audioDotAtom,
   scrollToIndexAtom,

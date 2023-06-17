@@ -23,6 +23,7 @@ import {
   buttonNameFontSizeAtom,
   buttonDescriptionFontSizeAtom,
   lightenUIAtom,
+  isScrollingAtom,
 } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -149,6 +150,8 @@ export default function ChoiceButton({
 
     setModifierDescription(((choice as unknown) as ScriptMetadata)?.[modifier]);
   }, [modifiers]);
+
+  const [isScrolling] = useAtom(isScrollingAtom);
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
@@ -364,6 +367,8 @@ export default function ChoiceButton({
                 <div onClick={onRightClick}>
                   <div
                     className={`
+
+                    ${isScrolling ? `-mr-2px` : ``}
                 flex items-center justify-center
                     text-xs
                     font-bold
