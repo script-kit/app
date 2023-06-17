@@ -21,7 +21,13 @@ import {
   AppState,
   ProcessInfo,
 } from '@johnlindquist/kit/types/core';
-import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
+
+import {
+  mainScriptPath,
+  kitPath,
+  groupChoices,
+  formatChoices,
+} from '@johnlindquist/kit/cjs/utils';
 import {
   EditorConfig,
   TextareaConfig,
@@ -1655,26 +1661,43 @@ export const flagValueAtom = atom(
       s(prevInputAtom, g(inputAtom));
       s(inputAtom, '');
 
-      const flagChoices: Choice[] = Object.entries(g(flagsAtom)).map(
-        ([key, value]) => {
-          prevFocusedChoiceId = key;
-          prevChoiceIndexId = key;
-          return {
-            id: key,
-            command: value?.name,
-            filePath: value?.name,
-            name: value?.name || key,
-            shortcut: value?.shortcut || '',
-            friendlyShortcut: value?.shortcut || '',
-            description: value?.description || '',
-            value: key,
-            preview: value?.preview || '',
-          };
+      const f = g(flagsAtom);
+      const order = f?.order || [];
+      const sortChoicesKey = f?.sortChoicesKey || [];
+
+      const groupedFlags = groupChoices(
+        Object.entries(f)
+          .filter(([key]) => {
+            if (key === 'order') return false;
+            if (key === 'sortChoicesKey') return false;
+            return true;
+          })
+          .map(([key, value]) => {
+            prevFocusedChoiceId = key;
+            prevChoiceIndexId = key;
+            return {
+              id: key,
+              group: value?.group,
+              command: value?.name,
+              filePath: value?.name,
+              name: value?.name || key,
+              shortcut: value?.shortcut || '',
+              friendlyShortcut: value?.shortcut || '',
+              description: value?.description || '',
+              value: key,
+              preview: value?.preview || '',
+            };
+          }),
+        {
+          order,
+          sortChoicesKey,
         }
       );
 
+      const formattedFlags = formatChoices(groupedFlags);
+
       s(prevChoicesAtom, g(unfilteredChoicesAtom));
-      s(unfilteredChoicesAtom, flagChoices);
+      s(unfilteredChoicesAtom, formattedFlags);
     }
   }
 );
