@@ -188,9 +188,14 @@ export const infoChoicesAtom = atom(
 );
 
 export const hasGroupAtom = atom(false);
+
+let choicesPreloaded = false;
+let wereChoicesPreloaded = false;
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[] | null) => {
+    wereChoicesPreloaded = !a?.preload && choicesPreloaded;
+    choicesPreloaded = a?.preload;
     if (a?.length === 0 && g(unfilteredChoices)?.length === 0) return;
     s(directionAtom, 1);
     s(hasGroupAtom, Boolean(a && a?.find((c) => c?.group)));
@@ -834,9 +839,9 @@ export const scoredChoicesAtom = atom(
         if (cs?.[prevIndex - 1]?.item?.skip) {
           adjustForGroup -= 1;
         }
-        s(requiresScrollAtom, adjustForGroup);
+        s(requiresScrollAtom, wereChoicesPreloaded ? -1 : adjustForGroup);
       } else {
-        s(requiresScrollAtom, 0);
+        s(requiresScrollAtom, wereChoicesPreloaded ? -1 : 0);
       }
     } else {
       s(focusedChoiceAtom, null);
@@ -856,14 +861,14 @@ export const _choices = atom((g) =>
   g(scoredChoicesAtom).map((result) => result.item)
 );
 
-export const _input = atom('');
+export const _inputAtom = atom('');
 export const appendInputAtom = atom(null, (g, s, a: string) => {
   const ui = g(uiAtom);
   if (ui === UI.editor) {
     s(editorAppendAtom, a);
   } else {
-    const input = g(_input);
-    s(_input, input + a);
+    const input = g(_inputAtom);
+    s(_inputAtom, input + a);
   }
 });
 
@@ -964,10 +969,10 @@ export const changeAtom = atom((g) => (data: any) => {
 export const inputCommandChars = atom([]);
 
 export const inputAtom = atom(
-  (g) => g(_input),
+  (g) => g(_inputAtom),
   async (g, s, a: string) => {
     s(directionAtom, 1);
-    const prevInput = g(_input);
+    const prevInput = g(_inputAtom);
     if (prevInput && a === '') {
       const list = g(listAtom);
 
@@ -976,13 +981,13 @@ export const inputAtom = atom(
       }
     }
 
-    if (a !== g(_input)) s(_inputChangedAtom, true);
-    if (a === g(_input)) {
+    if (a !== g(_inputAtom)) s(_inputChangedAtom, true);
+    if (a === g(_inputAtom)) {
       s(tabChangedAtom, false);
       return;
     }
 
-    s(_input, a);
+    s(_inputAtom, a);
 
     const flaggedValue = g(flagValueAtom);
 
@@ -1108,7 +1113,7 @@ export const scriptAtom = atom(
 
     // s(panelHTMLAtom, `<div/>`);
 
-    if (g(isMainScriptAtom)) s(_input, ``);
+    if (g(isMainScriptAtom) && !wereChoicesPreloaded) s(_inputAtom, ``);
   }
 );
 
@@ -1475,11 +1480,15 @@ export const headerHiddenAtom = atom(false);
 export const footerHiddenAtom = atom(false);
 
 const promptReadyAtom = atom(false);
+
+let wasPromptDataPreloaded = false;
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     s(isHiddenAtom, false);
     const prevPromptData = g(promptData);
+
+    wasPromptDataPreloaded = prevPromptData?.preload && !a?.preload;
 
     // was closed, now open
     if (!prevPromptData && a) {
@@ -1502,7 +1511,7 @@ export const promptDataAtom = atom(
       if (a?.theme) s(tempThemeAtom, { ...g(themeAtom), ...(a?.theme || {}) });
 
       s(_open, true);
-      s(_input, '');
+      if (!wasPromptDataPreloaded) s(_inputAtom, a?.input || '');
       // s(_index, 0);
       // s(_tabIndex, 0);
       s(submittedAtom, false);
@@ -1530,7 +1539,6 @@ export const promptDataAtom = atom(
       s(selectedAtom, a.selected);
       s(tabsAtom, a.tabs);
 
-      s(inputAtom, a.input);
       s(filterInputAtom, ``);
 
       s(processingAtom, false);
@@ -1636,7 +1644,7 @@ export const flagValueAtom = atom(
     s(_flagged, a);
 
     if (a === '') {
-      s(_input, g(prevInputAtom));
+      s(_inputAtom, g(prevInputAtom));
 
       s(selectedAtom, '');
       s(unfilteredChoicesAtom, g(prevChoicesAtom));
@@ -1678,7 +1686,7 @@ export const termFontAtom = atom('monospace');
 
 export const appStateAtom = atom<AppState>((g: Getter) => {
   const state = {
-    input: g(_input),
+    input: g(_inputAtom),
     inputChanged: g(_inputChangedAtom),
     flag: g(_flag),
     index: g(indexAtom),
@@ -1795,7 +1803,7 @@ export const submitValueAtom = atom(
         channel(Channel.ON_SUBMIT);
       }
 
-      s(_input, '');
+      s(_inputAtom, '');
       channel(Channel.VALUE_SUBMITTED, {
         value,
         flag,
@@ -1867,8 +1875,8 @@ export const openAtom = atom(
 
       // s(choices, []);
       // s(tabIndex, 0);
-      s(closedInput, g(_input));
-      s(_input, '');
+      s(closedInput, g(_inputAtom));
+      s(_inputAtom, '');
       s(_panelHTML, '');
 
       s(formHTMLAtom, '');

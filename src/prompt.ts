@@ -1155,6 +1155,11 @@ const pidMatch = (pid: number, message: string) => {
   return true;
 };
 
+export const preloadPromptData = async (promptData: PromptData) => {
+  promptData.preload = true;
+  setPromptData(promptData);
+};
+
 export const setPromptData = async (promptData: PromptData) => {
   if (kitState.isMainScript()) {
     writeJson(kitPath('db', 'mainPromptData.json'), promptData);
@@ -1289,6 +1294,11 @@ export const setPromptData = async (promptData: PromptData) => {
     name: promptData?.name || kitState?.script?.name || '',
     description: promptData?.description || kitState?.script?.description || '',
   });
+};
+
+export const preloadChoices = (choices: Choice[]) => {
+  choices.preload = true;
+  setChoices(choices);
 };
 
 export const setChoices = (choices: Choice[]) => {

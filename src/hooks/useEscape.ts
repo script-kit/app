@@ -8,7 +8,7 @@ import {
   openAtom,
   prevIndexAtom,
   prevInputAtom,
-  _input,
+  _inputAtom,
   isReadyAtom,
   escapeAtom,
   uiAtom,
@@ -31,7 +31,7 @@ export default () => {
   const [sendEscape] = useAtom(escapeAtom);
   const [isReady] = useAtom(isReadyAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
-  const [input] = useAtom(_input);
+  const [input] = useAtom(_inputAtom);
   const [prevInput] = useAtom(prevInputAtom);
 
   const [index] = useAtom(indexAtom);

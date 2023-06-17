@@ -28,9 +28,9 @@ import {
   hideAppIfNoWindows,
   isVisible,
   sendToPrompt,
-  setPromptData,
   setScript,
-  setChoices,
+  preloadChoices,
+  preloadPromptData,
 } from './prompt';
 import { getKitScript, kitState } from './state';
 import { pathsAreEqual } from './helpers';
@@ -160,11 +160,11 @@ export const runPromptProcess = async (
       sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
 
       readJson(kitPath('db', 'mainPromptData.json'))
-        .then(setPromptData)
+        .then(preloadPromptData)
         .catch((error) => {});
 
       readJson(kitPath('db', 'mainScriptsChoices.json'))
-        .then(setChoices)
+        .then(preloadChoices)
         .catch((error) => {});
     }
   }
