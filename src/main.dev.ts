@@ -46,6 +46,7 @@ import {
   SpawnSyncReturns,
   ForkOptions,
   execFileSync,
+  spawn,
 } from 'child_process';
 import os, { homedir } from 'os';
 import semver from 'semver';
@@ -250,9 +251,11 @@ const installEsbuild = async () => {
   const npmResult = await new Promise((resolve, reject) => {
     const isWin = os.platform().startsWith('win');
     const npmPath = isWin
-      ? knodePath('bin', 'node_modules', 'npm', 'bin', 'npm-cli.js')
+      ? knodePath('bin', 'npm.cmd')
       : knodePath('bin', 'npm');
-    const child = fork(npmPath, [`run`, `lazy-install`], options);
+
+    log.info({ npmPath });
+    const child = spawn(npmPath, [`run`, `lazy-install`], options);
 
     if (child.stdout) {
       child.stdout.on('data', (data) => {
@@ -270,10 +273,11 @@ const installEsbuild = async () => {
       sendSplashBody(data.toString());
     });
     child.on('exit', () => {
+      log.info(`Success: npm run lazy-install success`);
       resolve('npm install success');
     });
     child.on('error', (error) => {
-      log.warn({ error });
+      log.warn(`Error: ${error?.message}`);
       resolve(`Deps install error ${error}`);
     });
   });
