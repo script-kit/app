@@ -112,7 +112,7 @@ body {
 
 .scrollbar::-webkit-scrollbar {
   display: initial;
-  width: 3px;
+  width: 2px;
   @apply bg-ui-bg;
 }
 

@@ -797,6 +797,7 @@ export const scoredChoicesAtom = atom(
     }
 
     s(choices, cs || []);
+    s(indexAtom, 0);
 
     const isFilter =
       g(uiAtom) === UI.arg && g(promptData)?.mode === Mode.FILTER;
@@ -980,11 +981,7 @@ export const inputAtom = atom(
     s(directionAtom, 1);
     const prevInput = g(_inputAtom);
     if (prevInput && a === '') {
-      const list = g(listAtom);
-
-      if (list) {
-        (list as any)?.scrollToItem(0);
-      }
+      s(indexAtom, 0);
     }
 
     if (a !== g(_inputAtom)) s(_inputChangedAtom, true);

@@ -270,7 +270,11 @@ export default function ChoiceButton({
             </div>
           </div>
 
-          <div className="flex flex-row items-center flex-shrink-0 h-full">
+          <div
+            className={`flex flex-row items-center flex-shrink-0 h-full ${
+              isScrolling ? `-mr-2px` : `0`
+            }`}
+          >
             {isNotScript(choice) && (choice?.tag || choice?.icon) && (
               <div className="flex flex-row items-center">
                 {choice?.tag && (
@@ -367,8 +371,6 @@ export default function ChoiceButton({
                 <div onClick={onRightClick}>
                   <div
                     className={`
-
-                    ${isScrolling ? `-mr-3px` : ``}
                 flex items-center justify-center
                     text-xs
                     font-bold

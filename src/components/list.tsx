@@ -125,7 +125,12 @@ w-full overflow-y-hidden
         ref={listRef}
         innerRef={innerRef}
         onScroll={(props) => {
-          setIsScrolling(true);
+          if (index === 0 || index === 1) {
+            setIsScrolling(false);
+          } else {
+            setIsScrolling(true);
+          }
+
           // TODO: Disable scrolling if onScroll hasn't trigger for 250ms
           // clear the previous timeout
           if (scrollTimeout) clearTimeout(scrollTimeout);

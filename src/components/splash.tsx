@@ -127,9 +127,6 @@ function Aside() {
                 <kbd className="bg-primary rounded-md bg-opacity-25 p-1">;</kbd>
               </span>
             </button>
-            <span className="text-xxs px-5 py-4 leading-tight text-center">
-              Snippets and Clipboard History require "Accessibility Permissions"
-            </span>
           </div>
         )}
       </div>

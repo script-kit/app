@@ -257,16 +257,30 @@ const installEsbuild = async () => {
     log.info({ npmPath });
     const child = spawn(npmPath, [`run`, `lazy-install`], options);
 
+    let dots = 1;
+    const installMessage = `Installing Kit Packages`;
+    const id = setInterval(() => {
+      if (dots >= 3) dots = 0;
+      dots += 1;
+      sendSplashBody(installMessage.padEnd(installMessage.length + dots, '.'));
+    }, 250);
+
+    const clearId = () => {
+      try {
+        if (id) clearInterval(id);
+      } catch (error) {
+        log.info(`Failed to clear id`);
+      }
+    };
     if (child.stdout) {
-      child.stdout.on('data', (data) => {
-        sendSplashBody(data.toString());
-      });
+      child.stdout.on('data', (data) => {});
     }
 
     if (child.stderr) {
       child.stderr.on('data', (data) => {
         sendSplashBody(data.toString());
       });
+      clearId();
     }
 
     child.on('message', (data) => {
@@ -275,10 +289,12 @@ const installEsbuild = async () => {
     child.on('exit', () => {
       log.info(`Success: npm run lazy-install success`);
       resolve('npm install success');
+      clearId();
     });
     child.on('error', (error) => {
       log.warn(`Error: ${error?.message}`);
       resolve(`Deps install error ${error}`);
+      clearId();
     });
   });
 };
