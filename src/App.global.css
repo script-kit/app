@@ -112,12 +112,12 @@ body {
 
 .scrollbar::-webkit-scrollbar {
   display: initial;
-  width: 2px;
+  width: 3px;
   @apply bg-ui-bg;
 }
 
 .scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-primary;
+  @apply bg-primary/90;
   height: 24px;
   max-height: 24px;
 }

@@ -368,17 +368,17 @@ export default function ChoiceButton({
                   <div
                     className={`
 
-                    ${isScrolling ? `-mr-2px` : ``}
+                    ${isScrolling ? `-mr-3px` : ``}
                 flex items-center justify-center
                     text-xs
                     font-bold
                     rounded
 
-                    text-primary
-                    opacity-75
+                    text-primary/90
                     bg-text-base
                     bg-opacity-10
                     hover:bg-opacity-20
+                    hover:text-primary/90
 
  ml-2
         w-6 h-6

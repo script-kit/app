@@ -72,9 +72,13 @@ const actualHide = () => {
 export const maybeHide = async (reason: string) => {
   log.info(`Attempt Hide: ${reason}`);
   if (reason === HideReason.PingTimeout) {
+    log.info(`⛑ Attempting recover...`);
     kitState.debugging = false;
     kitState.ignoreBlur = false;
-    ipcMain.emit(AppChannel.RELOAD);
+
+    emitter.emit(KitEvent.KillProcess, kitState.pid);
+    actualHide();
+    reload();
 
     return;
   }
