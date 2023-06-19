@@ -754,7 +754,6 @@ const prevChoiceId = atom(
   (g) => g(_prevChoiceId),
   (_g, s, a: string) => {
     s(_prevChoiceId, a);
-    // console.log(`Setting prevChoiceId to ${a}`);
   }
 );
 
