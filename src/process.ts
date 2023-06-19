@@ -2174,16 +2174,20 @@ export const clearIdleProcesses = () => {
   });
 };
 
+export const getIdles = ()=> {
+  return processes
+  .getAllProcessInfo()
+  .filter(
+    (processInfo) =>
+      processInfo.type === ProcessType.Prompt &&
+      processInfo?.scriptPath === ''
+  );
+}
+
 export const ensureIdleProcess = () => {
   log.info(`Ensure idle process`);
   setTimeout(() => {
-    const idles = processes
-      .getAllProcessInfo()
-      .filter(
-        (processInfo) =>
-          processInfo.type === ProcessType.Prompt &&
-          processInfo?.scriptPath === ''
-      );
+    const idles = getIdles()
 
     if (idles.length === 0) {
       log.info(`Add one idle process`);

@@ -363,6 +363,7 @@ const initState = {
   url: `https://scriptkit.com`,
   alwaysOnTop: false,
   scriptsAdded: false,
+  idleProcessReady: false,
 };
 
 nativeTheme.addListener('updated', () => {

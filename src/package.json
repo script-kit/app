@@ -20,13 +20,13 @@
   },
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.35",
-    "@nut-tree/nut-js": "3.1.2",
+    "@nut-tree/nut-js": "3.1.1",
     "chokidar": "3.5.3",
     "frontmost-app": "1.0.0",
     "native-keymap": "3.3.4",
     "node-abi": "^3.43.0",
     "node-mac-permissions": "2.3.0",
-    "node-pty": "0.11.0-beta32",
+    "node-pty": "0.11.0-beta33",
     "uiohook-napi": "^1.5.0"
   }
 }

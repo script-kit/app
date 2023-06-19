@@ -897,19 +897,35 @@ const invokeSearch = (
 
     keepGroups.add('Pass');
 
-    const results: ScoredChoice[] = [];
+    let results: ScoredChoice[] = [];
 
-    console.log({ unfiltered });
+    const matchGroup = [];
 
     for (const choice of unfiltered) {
       const scoredChoice = resultMap.get(choice.id);
       if (choice?.pass) {
         results.push(createScoredChoice(choice));
-      } else if (scoredChoice) {
-        results.push(scoredChoice);
+      }
+
+      if (scoredChoice) {
+        if (choice?.pass) {
+          scoredChoice.item = {
+            ...choice,
+            group: 'Match',
+            pass: false,
+            id: Math.random(),
+          };
+          matchGroup.push(scoredChoice);
+        } else {
+          results.push(scoredChoice);
+        }
       } else if (choice?.skip && keepGroups?.has(choice?.group)) {
         results.push(createScoredChoice(choice));
       }
+    }
+
+    if (matchGroup.length > 0) {
+      results = matchGroup.concat(results);
     }
 
     s(scoredChoicesAtom, results);

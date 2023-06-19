@@ -23,7 +23,12 @@ import {
 import { ProcessInfo } from '@johnlindquist/kit';
 
 import { emitter, KitEvent } from './events';
-import { processes, removeAbandonnedKit } from './process';
+import {
+  ensureIdleProcess,
+  getIdles,
+  processes,
+  removeAbandonnedKit,
+} from './process';
 import {
   hideAppIfNoWindows,
   isVisible,
@@ -157,15 +162,19 @@ export const runPromptProcess = async (
       //   .then(setShortcuts)
       //   .catch((error) => {});
 
-      sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
+      if (getIdles().length > 0) {
+        sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
 
-      readJson(kitPath('db', 'mainPromptData.json'))
-        .then(preloadPromptData)
-        .catch((error) => {});
+        readJson(kitPath('db', 'mainPromptData.json'))
+          .then(preloadPromptData)
+          .catch((error) => {});
 
-      readJson(kitPath('db', 'mainScriptsChoices.json'))
-        .then(preloadChoices)
-        .catch((error) => {});
+        readJson(kitPath('db', 'mainScriptsChoices.json'))
+          .then(preloadChoices)
+          .catch((error) => {});
+      } else {
+        ensureIdleProcess();
+      }
     }
   }
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
