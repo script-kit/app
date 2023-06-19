@@ -1442,7 +1442,7 @@
   optionalDependencies:
     global-agent "^3.0.0"
 
-"@electron/notarize@^1.2.3":
+"@electron/notarize@^1.2.3", "@electron/notarize@^1.2.4":
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/@electron/notarize/-/notarize-1.2.4.tgz#a7d38773f4cad40df111a5edc64037e5d768ea1e"
   integrity sha512-W5GQhJEosFNafewnS28d3bpQ37/s91CDWqxVchHfmv2dQSTWpOzNlUVQwYzC1ay5bChRV/A9BTL68yj0Pa+TSg==

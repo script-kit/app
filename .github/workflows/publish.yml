@@ -170,6 +170,7 @@ jobs:
           yarn build
           cd ./src
           yarn remove node-mac-permissions
+          find .elease/win-unpacked/resources/app.asar.unpacked/node_modules/uiohook-napi/prebuilds -type d ! -name 'win*' -exec rm -rf {} +
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
