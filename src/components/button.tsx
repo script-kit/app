@@ -24,6 +24,7 @@ import {
   buttonDescriptionFontSizeAtom,
   lightenUIAtom,
   isScrollingAtom,
+  inputAtom,
 } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -85,6 +86,7 @@ export default function ChoiceButton({
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
   const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
   const lightenUI = useAtomValue(lightenUIAtom);
+  const input = useAtomValue(inputAtom);
 
   // const dataTransfer = useRef<any>('Data Transfer');
 
@@ -237,7 +239,7 @@ export default function ChoiceButton({
                 }
               >
                 {highlight(
-                  choice.name,
+                  choice.name?.replace(/{\s*input\s*}/g, input),
                   scoredChoice?.matches?.slicedName,
                   `bg-primary bg-opacity-5 text-primary`
                 )}

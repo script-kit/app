@@ -895,11 +895,17 @@ const invokeSearch = (
       keepGroups.add(r.item.group);
     }
 
+    keepGroups.add('Pass');
+
     const results: ScoredChoice[] = [];
+
+    console.log({ unfiltered });
 
     for (const choice of unfiltered) {
       const scoredChoice = resultMap.get(choice.id);
-      if (scoredChoice) {
+      if (choice?.pass) {
+        results.push(createScoredChoice(choice));
+      } else if (scoredChoice) {
         results.push(scoredChoice);
       } else if (choice?.skip && keepGroups?.has(choice?.group)) {
         results.push(createScoredChoice(choice));
