@@ -736,7 +736,6 @@ export const focusedChoiceAtom = atom(
 );
 
 export const hasPreviewAtom = atom<boolean>((g) => {
-  // const log = g(logAtom);
   const focused = g(_focused);
   const focusedHasPreview =
     focused?.hasPreview && focused?.preview !== closedDiv;
