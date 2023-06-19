@@ -35,7 +35,7 @@
     pixelmatch "^4.0.2"
     tinycolor2 "^1.4.1"
 
-"@jimp/custom@^0.16.2":
+"@jimp/custom@^0.16.13":
   version "0.16.13"
   resolved "https://registry.yarnpkg.com/@jimp/custom/-/custom-0.16.13.tgz#2e4ed447b7410b81fe9103682b4166af904daf84"
   integrity sha512-LTATglVUPGkPf15zX1wTMlZ0+AU7cGEGF6ekVF1crA8eHUWsGjrYTB+Ht4E3HTrCok8weQG+K01rJndCp/l4XA==
@@ -232,7 +232,7 @@
     "@babel/runtime" "^7.7.2"
     "@jimp/utils" "^0.16.13"
 
-"@jimp/plugins@^0.16.2":
+"@jimp/plugins@^0.16.13":
   version "0.16.13"
   resolved "https://registry.yarnpkg.com/@jimp/plugins/-/plugins-0.16.13.tgz#cf441ee13204dd9474bc0e67e41c50afc910de4f"
   integrity sha512-CJLdqODEhEVs4MgWCxpWL5l95sCBlkuSLz65cxEm56X5akIsn4LOlwnKoSEZioYcZUBvHhCheH67AyPTudfnQQ==
@@ -278,7 +278,7 @@
     "@babel/runtime" "^7.7.2"
     utif "^2.0.1"
 
-"@jimp/types@^0.16.2":
+"@jimp/types@^0.16.13":
   version "0.16.13"
   resolved "https://registry.yarnpkg.com/@jimp/types/-/types-0.16.13.tgz#39be1886cbfa4fb5e77e17441a046a1f961d3046"
   integrity sha512-mC0yVNUobFDjoYLg4hoUwzMKgNlxynzwt3cDXzumGvRJ7Kb8qQGOWJQjQFo5OxmGExqzPphkirdbBF88RVLBCg==
@@ -306,41 +306,41 @@
   dependencies:
     detect-port "^1.5.1"
 
-"@nut-tree/libnut-darwin@2.5.1":
-  version "2.5.1"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-darwin/-/libnut-darwin-2.5.1.tgz#933bcfdffa58f18064ad34e1b615b707fa426510"
-  integrity sha512-JIr5Plmm9n5aoOAmwjghCtbmOY4FzOTypRN/mlb5N+68aX+w5RpgOV2HXmcQPbtqYTTOoSEGRBdzK8M36KHRsw==
+"@nut-tree/libnut-darwin@2.5.2":
+  version "2.5.2"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-darwin/-/libnut-darwin-2.5.2.tgz#83f091969912bf0d808ecebbab40423f6d30a660"
+  integrity sha512-OKqCgpBbZj2oNQkLM+mM7TyiLBAQsRyN7Q5UXVKbyXnzcQTU1FZBJ1mLGvdfzzspajznL3Mkl08AQE+xYYbTMw==
   dependencies:
     bindings "1.5.0"
   optionalDependencies:
     "@nut-tree/node-mac-permissions" "2.2.1"
 
-"@nut-tree/libnut-linux@2.5.1":
-  version "2.5.1"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-linux/-/libnut-linux-2.5.1.tgz#da8c94d183cebad68a3dd3a6377f1161fdf85d7f"
-  integrity sha512-2rXZsOpx5U6cJE1zGfrDa6fGaAr1cQFJInsmpV55vg93/k0X5RY6iXLNbBXot/NBJKrTcQRIHeKpffLRk8fKPg==
+"@nut-tree/libnut-linux@2.5.2":
+  version "2.5.2"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-linux/-/libnut-linux-2.5.2.tgz#37bf6f875a82f68570c13fda6435c0722c1af532"
+  integrity sha512-uY6XDuNE8soYRUhV23g6KQN5BRR43MYNLyPnrrQa5Wtfgm6oW9kBRu6JtkWz6Fn6trAWrVAKnbPoTiEgHuGz9w==
   dependencies:
     bindings "1.5.0"
   optionalDependencies:
     "@nut-tree/node-mac-permissions" "2.2.1"
 
-"@nut-tree/libnut-win32@2.5.1":
-  version "2.5.1"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-win32/-/libnut-win32-2.5.1.tgz#7bd3c76da8f64fb33db426d40b025055bd88f55c"
-  integrity sha512-Y95nMNM6WeioPrfzsGjvzUxtIQGYXfooFjSEUaGOA3pxP6bQlmfhVPYZrxwYtFr7mDoxHE9/PrDg1qiYtYhZkw==
+"@nut-tree/libnut-win32@2.5.2":
+  version "2.5.2"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut-win32/-/libnut-win32-2.5.2.tgz#6ae816544d9aa7e795910ef37c5ea07078315dd0"
+  integrity sha512-cnNAQ0pzUMH7hrSjTWRiFfXid3sbSZ78jpv1rA154dlka3wqo6m1OtaX4PLVQK4irZl5REz74iPdHcjeTy9rtg==
   dependencies:
     bindings "1.5.0"
   optionalDependencies:
     "@nut-tree/node-mac-permissions" "2.2.1"
 
-"@nut-tree/libnut@2.5.1":
-  version "2.5.1"
-  resolved "https://registry.yarnpkg.com/@nut-tree/libnut/-/libnut-2.5.1.tgz#04144357dba7d06fc25b94d901c62ea146f6bc17"
-  integrity sha512-W41FRAuA2fT7Y44+9A59NWzYhNA6Qibuvxgx9Sf5bQ5QrLIAyKGWjRpW/doUXaTAwUOvcqg7TC2w7jrn9nwkAA==
+"@nut-tree/libnut@2.5.2":
+  version "2.5.2"
+  resolved "https://registry.yarnpkg.com/@nut-tree/libnut/-/libnut-2.5.2.tgz#0e410c108bee31c57ca5923e409762ff223d70de"
+  integrity sha512-IwlGgalGQjjCrbPq52HTLtsR6MRsGJ6c4GhgHmgwJPD/yBVCzsU5EA2rwDgjKSgK+jiLOpykySDZQ+owhyd1zw==
   dependencies:
-    "@nut-tree/libnut-darwin" "2.5.1"
-    "@nut-tree/libnut-linux" "2.5.1"
-    "@nut-tree/libnut-win32" "2.5.1"
+    "@nut-tree/libnut-darwin" "2.5.2"
+    "@nut-tree/libnut-linux" "2.5.2"
+    "@nut-tree/libnut-win32" "2.5.2"
 
 "@nut-tree/node-mac-permissions@2.2.1":
   version "2.2.1"
@@ -350,14 +350,14 @@
     bindings "1.5.0"
     node-addon-api "5.0.0"
 
-"@nut-tree/nut-js@3.1.1":
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/@nut-tree/nut-js/-/nut-js-3.1.1.tgz#b66348618120d6fc211652bd961bb080d0e834d9"
-  integrity sha512-0o+9docVUTgbJ4dA+lYT9LHIHf5rpV3IlTxHsx9hlwsFOiIbxOHB98+/+1IcQpHrAjRF/MhzQ8lVpFud+5hTGw==
+"@nut-tree/nut-js@3.1.2":
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/@nut-tree/nut-js/-/nut-js-3.1.2.tgz#33f3fafd89f48230264c569289d82c99b974b915"
+  integrity sha512-hi7DBZz9O/t4goeQu3hKeauQbb0PcBmurScl3/t5L3I1pub3ibV24sft8KNSS3INKnGCj7I3Ma5iNHQ24g+95g==
   dependencies:
-    "@nut-tree/libnut" "2.5.1"
+    "@nut-tree/libnut" "2.5.2"
     clipboardy "2.3.0"
-    jimp "0.16.2"
+    jimp "0.16.13"
     node-abort-controller "2.0.0"
 
 "@tokenizer/token@^0.3.0":
@@ -663,15 +663,15 @@ isexe@^2.0.0:
   resolved "https://registry.yarnpkg.com/isexe/-/isexe-2.0.0.tgz#e8fbf374dc556ff8947a10dcb0572d633f2cfa10"
   integrity sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==
 
-jimp@0.16.2:
-  version "0.16.2"
-  resolved "https://registry.yarnpkg.com/jimp/-/jimp-0.16.2.tgz#c03e296381ae37586e27f209d134d4596d112f7b"
-  integrity sha512-UpItBk81a92f8oEyoGYbO3YK4QcM0hoIyuGHmShoF9Ov63P5Qo7Q/X2xsAgnODmSuDJFOtrPtJd5GSWW4LKdOQ==
+jimp@0.16.13:
+  version "0.16.13"
+  resolved "https://registry.yarnpkg.com/jimp/-/jimp-0.16.13.tgz#944b6368183235afc5d077429e2a7f34834acb18"
+  integrity sha512-Bxz8q7V4rnCky9A0ktTNGA9SkNFVWRHodddI/DaAWZJzF7sVUlFYKQ60y9JGqrKpi48ECA/TnfMzzc5C70VByA==
   dependencies:
     "@babel/runtime" "^7.7.2"
-    "@jimp/custom" "^0.16.2"
-    "@jimp/plugins" "^0.16.2"
-    "@jimp/types" "^0.16.2"
+    "@jimp/custom" "^0.16.13"
+    "@jimp/plugins" "^0.16.13"
+    "@jimp/types" "^0.16.13"
     regenerator-runtime "^0.13.3"
 
 jpeg-js@^0.4.2:
