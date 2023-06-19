@@ -117,7 +117,7 @@ body {
 }
 
 .scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-primary/90;
+  @apply bg-text-base/50;
   height: 24px;
   max-height: 24px;
 }

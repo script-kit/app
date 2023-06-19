@@ -952,7 +952,7 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
   }
 
   if (qs && input) {
-    if (un.length > 1000 && g(appDbAtom).searchDebounce) {
+    if (un.length > 2560 && g(appDbAtom).searchDebounce) {
       debounceSearch(qs, g, s, input);
     } else {
       invokeSearch(qs, g, s, input);
