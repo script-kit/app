@@ -1006,8 +1006,6 @@ export const inputAtom = atom(
     // If the promptData isn't set, default to FILTER
     const mode = g(promptData)?.mode || Mode.FILTER;
 
-    // TODO: Investigate eliminating modes and bringing/generating over to kit + setChoices(). Probably would be too slow.
-
     if (g(tabChangedAtom) && prevInput !== a) {
       s(tabChangedAtom, false);
       return;
