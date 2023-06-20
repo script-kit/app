@@ -196,6 +196,7 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
+          npx kit remove-tick
           yarn electron-builder --publish always --win --arm64
 
       - name: Publish linux x64
@@ -215,7 +216,7 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --linux AppImage --x64
+          yarn electron-builder --publish always --linux AppImage deb rpm --x64
 
       - name: Publish linux arm64
         if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
@@ -236,7 +237,8 @@ jobs:
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --linux AppImage --x64
+          npx kit remove-tick
+          yarn electron-builder --publish always --linux AppImage deb rpm --arm64
 
       - name: Publish mac x64
         if: matrix.os == 'macos-12' && matrix.arch == 'x64'
