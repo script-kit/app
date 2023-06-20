@@ -238,7 +238,6 @@ jobs:
           echo "--- Done removing mac deps ---\n\n"
           yarn electron-builder --publish always --linux AppImage --x64
 
-      # Something with code-signing is failing...
       - name: Publish mac x64
         if: matrix.os == 'macos-12' && matrix.arch == 'x64'
         env:
