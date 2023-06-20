@@ -1066,6 +1066,22 @@ export const flagsAtom = atom(
 
 export const tabChangedAtom = atom(false);
 const _tabIndex = atom(0);
+
+let sendTabChanged: () => void;
+
+const getSendTabChanged = (g: Getter) =>
+  debounce(
+    () => {
+      const channel = g(channelAtom);
+      channel(Channel.TAB_CHANGED);
+    },
+    100,
+    {
+      leading: true,
+      trailing: true,
+    }
+  );
+
 export const tabIndexAtom = atom(
   (g) => g(_tabIndex),
   (g, s, a: number) => {
@@ -1077,8 +1093,9 @@ export const tabIndexAtom = atom(
       s(flagsAtom, {});
       s(_flagged, '');
 
-      const channel = g(channelAtom);
-      channel(Channel.TAB_CHANGED);
+      sendTabChanged = sendTabChanged || getSendTabChanged(g);
+      sendTabChanged();
+
       s(tabChangedAtom, true);
     }
   }

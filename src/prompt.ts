@@ -814,8 +814,9 @@ export const resize = async ({
     width = Math.max(getDefaultWidth(), width);
   }
 
-  if (hasPreview && hadPreview) {
-    height = currentHeight;
+  if (hasPreview) {
+    height =
+      currentHeight < PROMPT.HEIGHT.BASE ? PROMPT.HEIGHT.BASE : currentHeight;
   }
 
   hadPreview = hasPreview;

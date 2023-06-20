@@ -176,7 +176,7 @@ export const runPromptProcess = async (
           return result;
         })
         .catch((error) => {
-          log.warn({ error });
+          log.verbose(`No cache for ${promptScriptPath}`);
         });
 
       const cachedPromptPath = getCachePath(promptScriptPath, 'prompt');
@@ -189,7 +189,7 @@ export const runPromptProcess = async (
           return result;
         })
         .catch((error) => {
-          log.warn({ error });
+          log.verbose(`No cache for ${promptScriptPath}`);
         });
     } else {
       ensureIdleProcess();

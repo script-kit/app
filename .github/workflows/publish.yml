@@ -192,6 +192,7 @@ jobs:
           cd ./src
           yarn remove node-mac-permissions
           yarn remove @nut-tree/nut-js
+          yarn remove uiohook-napi
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
@@ -231,6 +232,7 @@ jobs:
           cd ./src
           yarn remove node-mac-permissions
           yarn remove @nut-tree/nut-js
+          yarn remove uiohook-napi
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"

@@ -301,6 +301,7 @@ export const preStartConfigureInterval = async () => {
 };
 
 export const configureInterval = async () => {
+  if (!kitState.supportsNut) return;
   if (kitState.isMac) {
     const fullyAuthenticated = kitState.authorized && appDb?.authorized;
     if (!fullyAuthenticated) return;
@@ -519,6 +520,7 @@ export const configureInterval = async () => {
 };
 
 export const toggleTickOn = async () => {
+  if (!kitState.supportsNut) return;
   if (kitState.isMac) {
     const fullyAuthenticated = kitState.authorized && appDb?.authorized;
     if (!fullyAuthenticated) return;
@@ -579,6 +581,7 @@ const subIsTyping = subscribeKey(kitState, 'isTyping', () => {
 });
 
 export const destroyInterval = () => {
+  if (!kitState.supportsNut) return;
   try {
     if (io$Sub) io$Sub.unsubscribe();
     io$Sub = null;
