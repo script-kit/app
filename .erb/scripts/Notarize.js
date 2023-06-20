@@ -21,7 +21,7 @@ exports.default = async function notarizeMacos(context) {
 
   const appName = context.packager.appInfo.productFilename;
 
-  const notary = await notarize({
+  await notarize({
     tool: 'notarytool',
     appBundleId: build.appId,
     appPath: `${appOutDir}/${appName}.app`,
@@ -29,6 +29,4 @@ exports.default = async function notarizeMacos(context) {
     appleIdPassword: process.env.APPLE_ID_PASS,
     teamId: '9822B7V7MD',
   });
-
-  console.log({ notary });
 };

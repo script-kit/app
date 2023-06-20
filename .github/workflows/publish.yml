@@ -171,7 +171,6 @@ jobs:
           yarn remove node-mac-permissions
           cat ./package.json
           cd ..
-          find ./release/win-unpacked/resources/app.asar.unpacked/node_modules/uiohook-napi/prebuilds -type d ! -name 'win*' -exec rm -rf {} +
           echo "--- Done removing mac deps ---\n\n"
           yarn electron-builder --publish always --win --x64
 
@@ -205,6 +204,6 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-
           yarn build
           yarn electron-builder --publish always --mac --x64 --arm64
+          codesign --verify --verbose --deep --strict release/Kit-*.dmg
