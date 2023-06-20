@@ -39,7 +39,7 @@ import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
 import { ChildProcess } from 'child_process';
-import { writeJson } from 'fs-extra';
+import { writeJson, ensureDir } from 'fs-extra';
 import { getAssetPath } from './assets';
 import { appDb, kitState, subs, promptState } from './state';
 import { EMOJI_HEIGHT, EMOJI_WIDTH, MIN_WIDTH, ZOOM_LEVEL } from './defaults';
@@ -47,7 +47,7 @@ import { ResizeData } from './types';
 import { getVersion } from './version';
 import { AppChannel, HideReason } from './enums';
 import { emitter, KitEvent } from './events';
-import { pathsAreEqual } from './helpers';
+import { getCachePath, pathsAreEqual } from './helpers';
 import { TrackEvent, trackEvent } from './track';
 
 let promptWindow: BrowserWindow;
@@ -95,6 +95,8 @@ export const maybeHide = async (reason: string) => {
       !promptWindow?.webContents?.isDevToolsOpened() &&
       !kitState.preventClose
     ) {
+      actualHide();
+      return;
       // Wait for preview to disappear
       const check = async () => {
         const state = await promptWindow?.webContents?.mainFrame.executeJavaScript(
@@ -1061,6 +1063,8 @@ export const setScript = async (
   force = false
 ): Promise<'denied' | 'allowed'> => {
   kitState.resizePaused = false;
+  kitState.cacheChoices = script?.cache;
+  kitState.cachePrompt = script?.cache;
   // log.info(`setScript`, { script, pid });
 
   if (script.filePath === prevScriptPath && pid === prevPid) {
@@ -1165,9 +1169,21 @@ export const preloadPromptData = async (promptData: PromptData) => {
 };
 
 export const setPromptData = async (promptData: PromptData) => {
-  if (kitState.isMainScript()) {
-    writeJson(kitPath('db', 'mainPromptData.json'), promptData);
+  if (kitState.cachePrompt && !promptData.preload) {
+    kitState.cachePrompt = false;
+    const cachePath = getCachePath(kitState.scriptPath, 'prompt');
+    ensureDir(path.dirname(cachePath))
+      .then((success) => {
+        log.info(`🎁 Caching ${kitState.scriptPath} prompt -> ${cachePath}`);
+        writeJson(cachePath, promptData).catch((error) => {
+          log.warn({ error });
+        });
+
+        return success;
+      })
+      .catch(() => {});
   }
+
   kitState.hiddenByUser = false;
   kitState.isPromptReady = false;
   // if (!pidMatch(pid, `setPromptData`)) return;

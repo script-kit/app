@@ -156,8 +156,6 @@ function scorer(string: string, query: string, matches: number[][]) {
 const keys = [
   'slicedName',
   'slicedDescription',
-  'kenv',
-  'command',
   'friendlyShortcut',
   'tag',
   'group',
@@ -897,38 +895,40 @@ const invokeSearch = (
 
     keepGroups.add('Pass');
 
-    let results: ScoredChoice[] = [];
+    let groupedResults: ScoredChoice[] = [];
 
     const matchGroup = [];
 
     for (const choice of unfiltered) {
       const scoredChoice = resultMap.get(choice.id);
       if (choice?.pass) {
-        results.push(createScoredChoice(choice));
+        groupedResults.push(createScoredChoice(choice));
       }
 
       if (scoredChoice) {
         if (choice?.pass) {
-          scoredChoice.item = {
-            ...choice,
-            group: 'Match',
-            pass: false,
-            id: Math.random(),
-          };
-          matchGroup.push(scoredChoice);
+          if (input) {
+            scoredChoice.item = {
+              ...choice,
+              group: 'Match',
+              pass: false,
+              id: Math.random(),
+            };
+            matchGroup.push(scoredChoice);
+          }
         } else {
-          results.push(scoredChoice);
+          groupedResults.push(scoredChoice);
         }
       } else if (choice?.skip && keepGroups?.has(choice?.group)) {
-        results.push(createScoredChoice(choice));
+        groupedResults.push(createScoredChoice(choice));
       }
     }
 
     if (matchGroup.length > 0) {
-      results = matchGroup.concat(results);
+      groupedResults = matchGroup.concat(groupedResults);
     }
 
-    s(scoredChoicesAtom, results);
+    s(scoredChoicesAtom, groupedResults);
   } else {
     s(scoredChoicesAtom, result);
   }
@@ -972,14 +972,14 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
   }
 
   if (qs && input) {
-    if (un.length > 2560 && g(appDbAtom).searchDebounce) {
+    if (un.length > 5000 && g(appDbAtom).searchDebounce) {
       debounceSearch(qs, g, s, input);
     } else {
       invokeSearch(qs, g, s, input);
     }
   } else if (un.length) {
     debounceSearch.cancel();
-    s(scoredChoicesAtom, un.map(createScoredChoice));
+    s(scoredChoicesAtom, un.filter((c) => !c?.pass).map(createScoredChoice));
   } else {
     debounceSearch.cancel();
     s(scoredChoicesAtom, []);

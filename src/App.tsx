@@ -788,27 +788,32 @@ export default function App() {
 
   useEffect(() => {
     if (promptData?.previewWidthPercent && panelChildRef.current) {
-      gsap.to(
-        '#data-panel-id-panelChild',
+      const needsAnimation =
+        document.getElementById('#data-panel-id-panelChild')?.style.flexGrow ===
+        0;
+      if (needsAnimation) {
+        gsap.to(
+          '#data-panel-id-panelChild',
 
-        {
-          // 'flex-grow': 0,
-          alpha: 1,
-          // ease: Power0.easeOut,
-          duration: 0.15,
-          'flex-grow': promptData?.previewWidthPercent,
-          onComplete: () => {
-            // set data-panel-size to promptData?.previewWidthPercent
-            panelChildRef.current?.resize(panelChildRef.current?.getSize());
-            const panelResizeElement = document.querySelector(
-              '[data-panel-resize-handle-id="panelResizeHandle"]'
-            );
-            if (panelResizeElement) {
-              panelResizeElement!.tabIndex = -1;
-            }
-          },
-        }
-      );
+          {
+            // 'flex-grow': 0,
+            alpha: 1,
+            // ease: Power0.easeOut,
+            duration: 0.15,
+            'flex-grow': promptData?.previewWidthPercent,
+            onComplete: () => {
+              // set data-panel-size to promptData?.previewWidthPercent
+              panelChildRef.current?.resize(panelChildRef.current?.getSize());
+              const panelResizeElement = document.querySelector(
+                '[data-panel-resize-handle-id="panelResizeHandle"]'
+              );
+              if (panelResizeElement) {
+                panelResizeElement!.tabIndex = -1;
+              }
+            },
+          }
+        );
+      }
     }
   }, [panelChildRef.current, previewHTML]);
 
@@ -1009,9 +1014,9 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                     id="panelChild"
                     collapsible
                     ref={panelChildRef}
-                    style={{
-                      flexGrow: 0,
-                    }}
+                    // style={{
+                    //   flexGrow: 0,
+                    // }}
                   >
                     <Preview />
                   </PanelChild>

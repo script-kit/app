@@ -364,6 +364,8 @@ const initState = {
   alwaysOnTop: false,
   scriptsAdded: false,
   idleProcessReady: false,
+  cacheChoices: false,
+  cachePrompt: false,
 };
 
 nativeTheme.addListener('updated', () => {

@@ -38,7 +38,7 @@ import {
   preloadPromptData,
 } from './prompt';
 import { getKitScript, kitState } from './state';
-import { pathsAreEqual } from './helpers';
+import { getCachePath, pathsAreEqual } from './helpers';
 import { AppChannel, Trigger } from './enums';
 import { TrackEvent, trackEvent } from './track';
 
@@ -157,26 +157,45 @@ export const runPromptProcess = async (
   const isMain = pathsAreEqual(promptScriptPath || '', mainScriptPath);
   if (isMain) {
     removeAbandonnedKit();
-    if (!isVisible()) {
-      // readJson(kitPath('db', 'mainShortcuts.json'))
-      //   .then(setShortcuts)
-      //   .catch((error) => {});
+  }
+  if (!isVisible()) {
+    // readJson(kitPath('db', 'mainShortcuts.json'))
+    //   .then(setShortcuts)
+    //   .catch((error) => {});
 
-      if (getIdles().length > 0) {
-        sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
+    if (getIdles().length > 0) {
+      sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
 
-        readJson(kitPath('db', 'mainPromptData.json'))
-          .then(preloadPromptData)
-          .catch((error) => {});
+      const cachedChoicesPath = getCachePath(promptScriptPath, 'choices');
+      readJson(cachedChoicesPath)
+        .then((result) => {
+          return preloadChoices(result);
+        })
+        .then((result) => {
+          log.info(`Preloaded ${promptScriptPath} choices 👍`);
+          return result;
+        })
+        .catch((error) => {
+          log.warn({ error });
+        });
 
-        readJson(kitPath('db', 'mainScriptsChoices.json'))
-          .then(preloadChoices)
-          .catch((error) => {});
-      } else {
-        ensureIdleProcess();
-      }
+      const cachedPromptPath = getCachePath(promptScriptPath, 'prompt');
+      readJson(cachedPromptPath)
+        .then((result) => {
+          return preloadPromptData(result);
+        })
+        .then((result) => {
+          log.info(`Preloaded ${promptScriptPath} prompt 👍`);
+          return result;
+        })
+        .catch((error) => {
+          log.warn({ error });
+        });
+    } else {
+      ensureIdleProcess();
     }
   }
+
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
   // If the window is already open, interrupt the process with the new script

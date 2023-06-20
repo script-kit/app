@@ -53,7 +53,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 
 import { subscribeKey } from 'valtio/utils';
-import { pathExists, writeJson, readJson } from 'fs-extra';
+import { pathExists, writeJson, readJson, ensureDir } from 'fs-extra';
 import {
   setScriptTimestamp,
 } from '@johnlindquist/kit/cjs/db';
@@ -115,7 +115,7 @@ import {
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { createWidget } from './widget';
 import { AppChannel, HideReason, Trigger } from './enums';
-import { isKitScript, toRgb, pathsAreEqual, convertShortcut } from './helpers';
+import { isKitScript, toRgb, pathsAreEqual, convertShortcut, getCachePath } from './helpers';
 import { toHex } from './color-utils';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
@@ -1159,19 +1159,36 @@ const kitMessageMap: ChannelHandler = {
 
   SET_CHOICES: toProcess(async ({ child }, { channel, value }) => {
     log.silly(`SET_CHOICES`, { isScripts: kitState.isScripts });
+    let formattedChoices = value
     if (kitState.isScripts) {
-      const formattedScriptChoices = formatScriptChoices(value);
-      setChoices(formattedScriptChoices);
-
-      writeJson(kitPath("db", "mainScriptsChoices.json"), formattedScriptChoices).catch(error => {})
-    } else {
-      setChoices(value);
+      formattedChoices = formatScriptChoices(value);
+      setChoices(formattedChoices);
     }
+
+
+    setChoices(formattedChoices);
 
     if (child) {
       childSend(child, {
         channel,
       });
+    }
+
+    if(kitState.cacheChoices){
+      kitState.cacheChoices = false
+
+      const cachePath = getCachePath(kitState.scriptPath, 'choices')
+
+      log.info(`🎁 Caching ${kitState.scriptPath} choices -> ${cachePath}`)
+      ensureDir(path.dirname(cachePath)).then((success)=> {
+        // eslint-disable-next-line promise/no-nesting
+        return writeJson(cachePath, formattedChoices).catch(error => {
+          log.warn({error})
+          return error
+        })
+      }).catch((error)=> {
+        log.warn({error})
+      })
     }
   }),
 
