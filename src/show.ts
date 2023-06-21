@@ -488,8 +488,7 @@ export const showWidget = async (
     widgetWindow = new BrowserWindow({
       ...bwOptions,
       backgroundColor: '#00000000',
-      backgroundMaterial:
-        appDb?.backgroundMaterial || kitState.isWin10 ? 'acrylic' : 'mica',
+      backgroundMaterial: kitState.isWin10 ? 'acrylic' : 'mica',
     });
   } else {
     widgetWindow = new BrowserWindow(bwOptions);

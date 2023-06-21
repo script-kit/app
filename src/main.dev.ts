@@ -26,6 +26,7 @@ import {
   crashReporter,
   screen,
   systemPreferences,
+  nativeTheme,
 } from 'electron';
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
@@ -80,7 +81,6 @@ import {
 import { subscribeKey } from 'valtio/utils';
 import { assign, debounce, throttle } from 'lodash';
 import { snapshot } from 'valtio';
-import { nativeTheme } from 'electron/main';
 import { setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
 import {
@@ -1116,6 +1116,23 @@ const checkKit = async () => {
 
   if (!(await kitExists()) || storedVersion === '0.0.0') {
     if (!process.env.KIT_SPLASH) {
+      const lightTheme = {
+        foreground: '2C2C2C',
+        accent: '2F86D3',
+        background: 'white',
+        opacity: '0.71',
+        ui: '204, 204, 204',
+      };
+
+      log.info(
+        `🌑 shouldUseDarkColors: ${
+          nativeTheme.shouldUseDarkColors ? 'true' : 'false'
+        }`
+      );
+
+      if (!nativeTheme.shouldUseDarkColors) {
+        setTheme(lightTheme);
+      }
       await showSplash();
     }
     kitState.installing = true;
@@ -1224,24 +1241,6 @@ const checkKit = async () => {
       );
     } catch (error) {
       log.error(error);
-    }
-
-    const lightTheme = {
-      foreground: '2C2C2C',
-      accent: '2F86D3',
-      background: 'white',
-      opacity: '0.71',
-      ui: '204, 204, 204',
-    };
-
-    log.info(
-      `🌑 shouldUseDarkColors: ${
-        nativeTheme.shouldUseDarkColors ? 'true' : 'false'
-      }`
-    );
-
-    if (!nativeTheme.shouldUseDarkColors) {
-      setTheme(lightTheme);
     }
 
     log.info(`Accent Color: ${systemPreferences.getAccentColor()}`);
