@@ -381,7 +381,7 @@ export const show = async (
   const showWindow = new BrowserWindow({
     title: name,
     frame: false,
-    transparent: kitState.isMac || kitState.isWin11,
+    transparent: kitState.isMac,
     vibrancy: 'hud',
     backgroundColor: '#00000000',
     backgroundMaterial: kitState.isWin10 ? 'acrylic' : 'mica',
@@ -464,7 +464,7 @@ export const showWidget = async (
   const bwOptions: BrowserWindowConstructorOptions = {
     title: 'Script Kit Widget',
     frame: false,
-    transparent: true,
+    transparent: kitState.isMac,
     titleBarStyle: 'customButtonsOnHover',
     icon: getAssetPath('icon.png'),
     webPreferences: {

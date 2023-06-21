@@ -207,7 +207,7 @@ export const createPromptWindow = async () => {
   } else {
     promptWindow = new BrowserWindow({
       ...options,
-      transparent: kitState.isMac || kitState.isWin11,
+      transparent: kitState.isMac,
       vibrancy: 'hud',
       backgroundColor: '#00000000',
       backgroundMaterial: kitState.isWin10 ? 'acrylic' : 'mica',

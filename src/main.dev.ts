@@ -1114,14 +1114,26 @@ const checkKit = async () => {
   const storedVersion = await getStoredVersion();
   log.info(`Stored version: ${storedVersion}`);
 
+  const isMac = os.platform() === 'darwin';
   if (!(await kitExists()) || storedVersion === '0.0.0') {
     if (!process.env.KIT_SPLASH) {
+      const darkTheme = {
+        foreground: 'white',
+        background: '0, 0, 0',
+        accent: '251, 191, 36',
+        opacity: isMac ? '0.5' : '0.95',
+        ui: '255, 255, 255',
+        'ui-bg-opacity': '0.07',
+        'ui-border-opacity': '0.15',
+      };
       const lightTheme = {
         foreground: '2C2C2C',
         accent: '2F86D3',
         background: 'white',
-        opacity: '0.71',
+        opacity: isMac ? '0.5' : '0.95',
         ui: '204, 204, 204',
+        'ui-bg-opacity': '0.07',
+        'ui-border-opacity': '0.15',
       };
 
       log.info(
@@ -1130,9 +1142,8 @@ const checkKit = async () => {
         }`
       );
 
-      if (!nativeTheme.shouldUseDarkColors) {
-        setTheme(lightTheme);
-      }
+      setTheme(nativeTheme.shouldUseDarkColors ? darkTheme : lightTheme);
+
       await showSplash();
     }
     kitState.installing = true;
