@@ -744,9 +744,6 @@ export const resize = async ({
 
   if (kitState.resizePaused) return;
 
-  if (kitState.isMainScript() && hasInput && mainHeight === 0) {
-    return;
-  }
   if (reason === 'SETTLED') {
     setTimeout(() => {
       saveCurrentPromptBounds();
