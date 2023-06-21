@@ -4,7 +4,7 @@ import '@johnlindquist/kit';
 
 console.log(`Removing import ⛳️`);
 
-let srcFilePath = path.resolve(process.env.PWD, 'src', '*');
+let srcFilePath = path.resolve(process.env.PWD, 'src', '*').replace(/\\/g, '/');
 console.log({
   mainFilePath: srcFilePath,
 });
