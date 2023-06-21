@@ -4,8 +4,6 @@ import '@johnlindquist/kit';
 
 console.log(`Removing tick 🐞`);
 
-chdir(process.env.PWD);
-
 let mainFilePath = path.resolve(process.env.PWD, 'src', 'main.dev.ts');
 console.log({
   mainFilePath,
