@@ -1779,6 +1779,7 @@ const kitMessageMap: ChannelHandler = {
     if (process.env.NODE_ENV === 'development' || !kitState.isMac) {
       value = true;
     } else {
+      // KIT-REMOVE
       const { getAuthStatus, askForFullDiskAccess } = await import(
         'node-mac-permissions'
       );
@@ -1788,6 +1789,7 @@ const kitMessageMap: ChannelHandler = {
       } else {
         askForFullDiskAccess();
       }
+      // END-KIT-REMOVE
     }
 
     childSend(child, { channel, value });

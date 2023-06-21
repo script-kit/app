@@ -189,6 +189,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npx kit remove-tick
+          npx kit remove-imports
           cd ./src
           yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi
           cat ./package.json
@@ -228,6 +229,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npx kit remove-tick
+          npx kit remove-imports
           cd ./src
           yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi
           cat ./package.json

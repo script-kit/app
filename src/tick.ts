@@ -284,6 +284,7 @@ export const preStartConfigureInterval = async () => {
     await configureInterval();
   } else {
     await updateAppDb({ authorized: false });
+    // KIT-REMOVE
     const { askForAccessibilityAccess } = await import('node-mac-permissions');
 
     askForAccessibilityAccess();
@@ -297,6 +298,8 @@ export const preStartConfigureInterval = async () => {
         kitState.requiresAuthorizedRestart = true;
       }
     }, 5000);
+
+    // END-KIT-REMOVE
   }
 };
 
