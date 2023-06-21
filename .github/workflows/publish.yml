@@ -188,7 +188,6 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx kit remove-tick
           npx kit remove-imports
           cd ./src
           yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi
@@ -228,7 +227,6 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx kit remove-tick
           npx kit remove-imports
           cd ./src
           yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi

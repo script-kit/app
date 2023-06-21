@@ -1591,6 +1591,7 @@ const kitMessageMap: ChannelHandler = {
       return;
     }
 
+    // KIT-REMOVE
     const { keyboard, Key } = await import('@nut-tree/nut-js');
     if (kitState.shortcutPressed) {
       // Get the modifiers from the accelerator
@@ -1650,6 +1651,8 @@ const kitMessageMap: ChannelHandler = {
         channel,
       });
     }, value.length);
+
+    // END-KIT-REMOVE
   }),
 
   KEYBOARD_PRESS_KEY: toProcess(async ({ child }, { channel, value }) => {
