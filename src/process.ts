@@ -1662,6 +1662,7 @@ const kitMessageMap: ChannelHandler = {
       );
       return;
     }
+    // REMOVE-NUT
     const { keyboard } = await import('@nut-tree/nut-js');
 
     if (!kitState.authorized) kitState.notifyAuthFail = true;
@@ -1672,6 +1673,8 @@ const kitMessageMap: ChannelHandler = {
       channel,
       value,
     });
+
+    // END-REMOVE-NUT
   }),
 
   KEYBOARD_RELEASE_KEY: toProcess(async ({ child }, { channel, value }) => {
@@ -1681,6 +1684,8 @@ const kitMessageMap: ChannelHandler = {
       );
       return;
     }
+
+    // REMOVE-NUT
     const { keyboard, Key } = await import('@nut-tree/nut-js');
 
     await new Promise((resolve) => {
@@ -1693,6 +1698,8 @@ const kitMessageMap: ChannelHandler = {
       channel,
       value,
     });
+
+    // END-REMOVE-NUT
   }),
 
   MOUSE_LEFT_CLICK: toProcess(async ({ child }, { channel, value }) => {
@@ -1805,6 +1812,8 @@ const kitMessageMap: ChannelHandler = {
       );
       return;
     }
+
+    // REMOVE-NUT
     const { keyboard, Key } = await import('@nut-tree/nut-js');
 
     const text = value?.text
@@ -1825,6 +1834,8 @@ const kitMessageMap: ChannelHandler = {
       childSend(child, { channel, value });
       // log.info(`SET SELECTED TEXT DONE`, text);
     }, 10);
+
+    // END-REMOVE-NUT
   }),
 
   SHOW_EMOJI_PANEL: toProcess(async ({ child }, { channel, value }) => {
