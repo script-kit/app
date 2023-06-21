@@ -1591,7 +1591,7 @@ const kitMessageMap: ChannelHandler = {
       return;
     }
 
-    // KIT-REMOVE
+    // REMOVE-NUT
     const { keyboard, Key } = await import('@nut-tree/nut-js');
     if (kitState.shortcutPressed) {
       // Get the modifiers from the accelerator
@@ -1652,7 +1652,7 @@ const kitMessageMap: ChannelHandler = {
       });
     }, value.length);
 
-    // END-KIT-REMOVE
+    // END-REMOVE-NUT
   }),
 
   KEYBOARD_PRESS_KEY: toProcess(async ({ child }, { channel, value }) => {
@@ -1782,7 +1782,7 @@ const kitMessageMap: ChannelHandler = {
     if (process.env.NODE_ENV === 'development' || !kitState.isMac) {
       value = true;
     } else {
-      // KIT-REMOVE
+      // REMOVE-MAC
       const { getAuthStatus, askForFullDiskAccess } = await import(
         'node-mac-permissions'
       );
@@ -1792,7 +1792,7 @@ const kitMessageMap: ChannelHandler = {
       } else {
         askForFullDiskAccess();
       }
-      // END-KIT-REMOVE
+      // END-REMOVE-MAC
     }
 
     childSend(child, { channel, value });

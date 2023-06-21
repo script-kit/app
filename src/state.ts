@@ -220,7 +220,7 @@ export const checkAccessibility = () =>
   new Promise((resolve, reject) => {
     log.verbose(`🔑 Checking accessibility permissions...`);
     if (kitState.isMac) {
-      // KIT-REMOVE
+      // REMOVE-MAC
       log.verbose(`💻 Mac detected.`);
       import('node-mac-permissions')
         .then(({ getAuthStatus }) => {
@@ -236,7 +236,7 @@ export const checkAccessibility = () =>
           reject(error);
           return false;
         });
-      // END-KIT-REMOVE
+      // END-REMOVE-MAC
     } else {
       log.info(`💻 Not Mac. Skipping accessibility check.`);
       kitState.authorized = true;

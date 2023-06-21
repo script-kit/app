@@ -123,7 +123,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
     const updateItems: MenuItemConstructorOptions[] = [];
 
     if (!kitState.authorized && kitState.isMac) {
-      // KIT-REMOVE
+      // REMOVE-MAC
       authItems.push({
         label: `Click to Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
         click: async () => {
@@ -136,7 +136,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         icon: menuIcon(kitState.notifyAuthFail ? 'warn' : 'cogwheel'),
       });
 
-      // END-KIT-REMOVE
+      // END-REMOVE-MAC
 
       authItems.push({
         label: `Select to Learn More About Permissions`,

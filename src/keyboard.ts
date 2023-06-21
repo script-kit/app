@@ -9,7 +9,7 @@ export const deleteText = async (stringToDelete = '') => {
     return;
   }
 
-  // KIT-REMOVE
+  // REMOVE-NUT
   const { keyboard, Key } = await import('@nut-tree/nut-js');
   const prevDelay = keyboard.config.autoDelayMs;
   keyboard.config.autoDelayMs = 0;
@@ -23,5 +23,5 @@ export const deleteText = async (stringToDelete = '') => {
   keyboard.config.autoDelayMs = prevDelay;
 
   kitState.isTyping = false;
-  // END-KIT-REMOVE
+  // END-REMOVE-NUT
 };
