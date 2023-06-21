@@ -4,6 +4,11 @@ import '@johnlindquist/kit';
 
 console.log(`Removing import ⛳️`);
 
+let srcFilePath = path.resolve(process.env.PWD, 'src', '*');
+console.log({
+  mainFilePath: srcFilePath,
+});
+
 let result = await replace({
   files: [srcFilePath],
   from: /REMOVE-NUT.*END-REMOVE-NUT/gs,
