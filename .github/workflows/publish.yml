@@ -169,12 +169,12 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn build
           cd ./src
           yarn remove node-mac-permissions
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
+          yarn build
           yarn electron-builder --publish always --win --x64
 
       - name: Publish windows arm64
@@ -188,15 +188,13 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn build
+          npx kit remove-tick
           cd ./src
-          yarn remove node-mac-permissions
-          yarn remove @nut-tree/nut-js
-          yarn remove uiohook-napi
+          yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi
           cat ./package.json
           cd ..
+          yarn build
           echo "--- Done removing mac deps ---\n\n"
-          npx kit remove-tick
           yarn electron-builder --publish always --win --arm64
 
       - name: Publish linux x64
@@ -210,12 +208,12 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn build
           cd ./src
           yarn remove node-mac-permissions
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
+          yarn build
           yarn electron-builder --publish always --linux AppImage deb rpm --x64
 
       - name: Publish linux arm64
@@ -229,15 +227,13 @@ jobs:
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          yarn build
+          npx kit remove-tick
           cd ./src
-          yarn remove node-mac-permissions
-          yarn remove @nut-tree/nut-js
-          yarn remove uiohook-napi
+          yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
-          npx kit remove-tick
+          yarn build
           yarn electron-builder --publish always --linux AppImage deb rpm --arm64
 
       - name: Publish mac x64
