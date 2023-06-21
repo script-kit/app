@@ -381,7 +381,10 @@ export const show = async (
   const showWindow = new BrowserWindow({
     title: name,
     frame: false,
-    transparent: true,
+    transparent: kitState.isMac || kitState.isWin11,
+    vibrancy: 'hud',
+    backgroundColor: '#00000000',
+    backgroundMaterial: kitState.isWin10 ? 'acrylic' : 'mica',
     ...(options?.transparent
       ? {}
       : {

@@ -344,7 +344,8 @@ const downloadNode = async () => {
 
   const osTmpPath = createPathResolver(os.tmpdir());
 
-  const extension = process.platform === 'win32' ? 'zip' : 'tar.gz';
+  const isWin = process.platform === 'win32';
+  const extension = isWin ? 'zip' : 'tar.gz';
 
   // download node v18.15.0 based on the current platform and architecture
   // Examples:
@@ -353,8 +354,9 @@ const downloadNode = async () => {
   // Windows x64: https://nodejs.org/dist/v18.15.0/node-v18.15.0-win-x64.zip
 
   // Node dist url uses "win", not "win32"
-  const nodePlatform = process.platform === 'win32' ? 'win' : process.platform;
-  const node = `node-${nodeVersion}-${nodePlatform}-${process.arch}.${extension}`;
+  const nodePlatform = isWin ? 'win' : process.platform;
+  const nodeArch = isWin ? 'x64' : process.arch;
+  const node = `node-${nodeVersion}-${nodePlatform}-${nodeArch}.${extension}`;
   const file = osTmpPath(node);
   const url = `https://nodejs.org/dist/${nodeVersion}/${node}`;
 
