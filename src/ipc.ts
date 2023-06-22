@@ -7,7 +7,7 @@ import path from 'path';
 import { debounce } from 'lodash';
 import axios from 'axios';
 import { Script } from '@johnlindquist/kit';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   kitPath,
   getLogFromScriptPath,
@@ -280,7 +280,17 @@ ${data.error}
     ipcMain.on(
       channel,
       handleChannel(async ({ child }, message) => {
-        // log.info(`⬅ ${channel}`);
+        if (kitState.scriptPathChanged) {
+          if (channel === Channel.CHOICE_FOCUSED) {
+            if (channel === Channel.CHOICE_FOCUSED)
+              log.verbose(
+                `⛔️ Script path changed, but new prompt not set, but new prompt not set.. Skipping CHOICE_FOCUSED`
+              );
+            return;
+          }
+          log.verbose(`Allow choice focus: ${kitState.ui}`);
+        }
+        log.verbose(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
 
         if (channel === Channel.ABANDON) {
           log.info(`⚠️ ABANDON`, message.pid);

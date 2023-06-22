@@ -22,7 +22,6 @@ import {
   _modifiers,
   buttonNameFontSizeAtom,
   buttonDescriptionFontSizeAtom,
-  lightenUIAtom,
   isScrollingAtom,
   inputAtom,
 } from '../jotai';
@@ -85,7 +84,6 @@ export default function ChoiceButton({
   const [modifierDescription, setModifierDescription] = useState('');
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
   const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
-  const lightenUI = useAtomValue(lightenUIAtom);
   const input = useAtomValue(inputAtom);
 
   // const dataTransfer = useRef<any>('Data Transfer');
@@ -154,6 +152,8 @@ export default function ChoiceButton({
   }, [modifiers]);
 
   const [isScrolling] = useAtom(isScrollingAtom);
+
+  const isRecent = choice?.group === 'Recent';
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
@@ -277,9 +277,11 @@ export default function ChoiceButton({
               isScrolling ? `-mr-2px` : `0`
             }`}
           >
-            {isNotScript(choice) && (choice?.tag || choice?.icon) && (
+            {(choice?.tag || choice?.icon || choice?.pass || isRecent) && (
               <div className="flex flex-row items-center">
-                {choice?.tag && (
+                {((choice?.pass || isRecent) && choice?.kenv
+                  ? choice.kenv
+                  : choice.tag) && (
                   <div
                     className={
                       choice?.tagClassName
@@ -290,7 +292,11 @@ export default function ChoiceButton({
               `
                     }
                   >
-                    {choice.tag}
+                    {(choice?.pass || isRecent) &&
+                    choice?.kenv &&
+                    choice?.kenv !== '.kit'
+                      ? choice.kenv
+                      : choice.tag}
                   </div>
                 )}
 

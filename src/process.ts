@@ -90,6 +90,8 @@ import {
   setScript,
   setTabIndex,
   setVibrancy,
+  preloadChoices,
+  preloadPromptData,
 } from './prompt';
 import {
   getBackgroundTasks,
@@ -948,6 +950,11 @@ const kitMessageMap: ChannelHandler = {
       }
     }
     await setScript(data.value, processInfo.pid);
+
+    processInfo.child?.send({
+      channel: Channel.SET_SCRIPT,
+      value: data.value,
+    });
   }),
   SET_STATUS: toProcess(async (_, data) => {
     if (data?.value) kitState.status = data?.value;
@@ -1056,6 +1063,12 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_PREVIEW: (data) => {
+    if(kitState.scriptPathChanged || kitState.ui !== UI.arg) {
+      if(kitState.scriptPathChanged) log.verbose(`⛔️ Script path changed, but new prompt not set. Skipping SET_CHOICES`)
+      if(kitState.ui !== UI.arg) log.verbose(`⛔️ UI is ${kitState.ui}. Skipping SET_CHOICES`)
+      return
+    }
+
     setPreview(data.value);
   },
 
@@ -1104,6 +1117,11 @@ const kitMessageMap: ChannelHandler = {
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
   SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
+    log.info(`🛑 Script path changed`)
+    kitState.scriptPathChanged = false;
+    kitState.promptScriptPath = value?.scriptPath || ''
+
+
     if(value?.ui === UI.mic){
       appToPrompt(AppChannel.SET_MIC_CONFIG, {
         timeSlice: value?.timeSlice || 200,
@@ -1158,7 +1176,11 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_CHOICES: toProcess(async ({ child }, { channel, value }) => {
-    log.silly(`SET_CHOICES`, { isScripts: kitState.isScripts });
+    if(kitState.scriptPathChanged) {
+      log.info(`⛔️ Script path changed, but new prompt not set. Skipping SET_CHOICES`)
+      return
+    }
+
     let formattedChoices = value
     if (kitState.isScripts) {
       formattedChoices = formatScriptChoices(value);
@@ -1991,12 +2013,6 @@ const kitMessageMap: ChannelHandler = {
   GET_TYPED_TEXT: toProcess(async ({ child }, { channel, value }) => {
     childSend(child, { channel, value: kitState.typedText });
   }),
-  DISABLE_BACKGROUND_THROTTLING: toProcess(
-    async (_, {channel, value}) => {
-      setBackgroundThrottling(false)
-      sendToPrompt(channel, value);
-    }),
-
   TERM_WRITE: toProcess(async ({ child }, { channel, value }) => {
     emitter.emit(KitEvent.TermWrite, value);
     childSend(child, { channel, value });
@@ -2006,7 +2022,7 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(channel, value);
     childSend(child, { channel, value });
   }),
-  SET_DISABLE_SUBMID: toProcess(async ({ child }, { channel, value }) => {
+  SET_DISABLE_SUBMIT: toProcess(async ({ child }, { channel, value }) => {
     log.info(`SET DISABLE SUBMIT`, value);
     sendToPrompt(channel, value);
     childSend(child, { channel, value });
@@ -2032,6 +2048,38 @@ const kitMessageMap: ChannelHandler = {
   SET_SCORED_CHOICES: toProcess(async ({ child }, { channel, value }) => {
     log.verbose(`SET SCORED CHOICES`)
     sendToPrompt(channel, value);
+    childSend(child, { channel, value });
+  }),
+  PRELOAD_MAIN_SCRIPT: toProcess(async ({ child }, { channel, value }) => {
+    log.verbose(`PRELOAD MAIN SCRIPT`)
+
+    const promptScriptPath = mainScriptPath;
+    const cachedChoicesPath = getCachePath(promptScriptPath, 'choices');
+      readJson(cachedChoicesPath)
+        .then((result) => {
+          return preloadChoices(result);
+        })
+        .then((result) => {
+          log.info(`Preloaded ${promptScriptPath} choices 👍`);
+          return result;
+        })
+        .catch((error) => {
+          log.verbose(`No cache for ${promptScriptPath}`);
+        });
+
+      const cachedPromptPath = getCachePath(promptScriptPath, 'prompt');
+      readJson(cachedPromptPath)
+        .then((result) => {
+          return preloadPromptData(result);
+        })
+        .then((result) => {
+          log.info(`Preloaded ${promptScriptPath} prompt 👍`);
+          return result;
+        })
+        .catch((error) => {
+          log.verbose(`No cache for ${promptScriptPath}`);
+        });
+
     childSend(child, { channel, value });
   }),
 };
@@ -2221,7 +2269,6 @@ export const ensureIdleProcess = () => {
   log.info(`Ensure idle process`);
   setTimeout(() => {
     const idles = getIdles()
-
     if (idles.length === 0) {
       log.info(`Add one idle process`);
       processes.add(ProcessType.Prompt);
@@ -2735,7 +2782,10 @@ subscribeKey(kitState, 'scriptPath', debounce(() => {
 
     mains.forEach((p) => {
       log.info(`Killing stray main process ${p.pid}`);
-      p.child.kill();
+      if(kitState.pid !== p.pid){
+        p.child.kill();
+      }
+
     });
 
   }

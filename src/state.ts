@@ -368,6 +368,8 @@ const initState = {
   idleProcessReady: false,
   cacheChoices: false,
   cachePrompt: false,
+  scriptPathChanged: false,
+  promptScriptPath: '',
 };
 
 nativeTheme.addListener('updated', () => {

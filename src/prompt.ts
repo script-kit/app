@@ -1173,6 +1173,7 @@ export const setPromptData = async (promptData: PromptData) => {
     ensureDir(path.dirname(cachePath))
       .then((success) => {
         log.info(`🎁 Caching ${kitState.scriptPath} prompt -> ${cachePath}`);
+        // eslint-disable-next-line promise/no-nesting
         writeJson(cachePath, promptData).catch((error) => {
           log.warn({ error });
         });
@@ -1315,7 +1316,7 @@ export const setPromptData = async (promptData: PromptData) => {
 };
 
 export const preloadChoices = (choices: Choice[]) => {
-  choices.preload = true;
+  (choices as any).preload = true;
   setChoices(choices);
 };
 

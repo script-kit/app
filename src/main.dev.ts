@@ -1132,7 +1132,7 @@ const checkKit = async () => {
         background: 'white',
         opacity: isMac ? '0.5' : '0.95',
         ui: '204, 204, 204',
-        'ui-bg-opacity': '0.07',
+        'ui-bg-opacity': isMac ? '0.07' : '0.25',
         'ui-border-opacity': '0.15',
       };
 

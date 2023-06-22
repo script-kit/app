@@ -36,8 +36,6 @@ import {
 } from 'react-resizable-panels';
 import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer, webFrame } from 'electron';
-
-import { mainScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
 import Tabs from './components/tabs';
@@ -538,17 +536,7 @@ export default function App() {
     [Channel.HIDE_APP]: () => {
       setHidden(true);
     },
-    [Channel.DISABLE_BACKGROUND_THROTTLING]: (value) => {
-      if (value?.scriptPath === mainScriptPath) return;
-      if (value?.ui) setUi(value.ui);
-      if (value?.headerClassName?.includes('hidden')) setHeaderHidden(true);
-      if (value?.footerClassName?.includes('hidden')) setFooterHidden(true);
-      if (value?.inputHeight) setInputHeight(value.inputHeight);
-      if (value?.itemHeight) setItemHeight(value.itemHeight);
-      if (value?.placeholder) setPlaceholder(value.placeholder);
-      if (value?.shortcuts) setShortcuts(value.shortcuts);
-      if (value?.flags) setFlags(value.flags);
-    },
+
     [Channel.TOAST]: ({ text, options }: ToastData) => {
       toast(text, options);
     },

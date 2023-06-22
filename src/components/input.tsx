@@ -188,13 +188,14 @@ export default function Input() {
 
   const onChange = useCallback(
     (event) => {
-      if (onInputSubmit[event.target.value]) {
-        setSubmitValue(onInputSubmit[event.target.value]);
+      if (onInputSubmit[event.target.value] && !submitted) {
+        const submitValue = onInputSubmit[event.target.value];
+        setSubmitValue(submitValue);
       } else {
         setInput(event.target.value);
       }
     },
-    [onInputSubmit, setSubmitValue, setInput]
+    [onInputSubmit, submitted, setSubmitValue, setInput]
   );
 
   return (

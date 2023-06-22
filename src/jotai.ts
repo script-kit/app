@@ -301,12 +301,10 @@ export const unfilteredChoicesAtom = atom(
 
       // if (!flaggedValue) {
       if (mode === Mode.GENERATE && !flaggedValue) {
-        s(
-          scoredChoicesAtom,
-          cs
-            .map(createScoredChoice)
-            .filter((c) => !(c?.item?.info || c?.item?.disableSubmit))
-        );
+        const generatedChoices = cs
+          .map(createScoredChoice)
+          .filter((c) => !(c?.item?.info || c?.item?.disableSubmit));
+        s(scoredChoicesAtom, generatedChoices);
       }
       if (mode === Mode.FILTER || mode === Mode.CUSTOM || flaggedValue) {
         const input = g(inputAtom);
@@ -419,6 +417,8 @@ export const previewHTMLAtom = atom(
     return html;
   },
   (g, s, a: string) => {
+    const prevPreview = g(_previewHTML);
+    if (prevPreview === a) return;
     const visible = Boolean(a !== '' && a !== closedDiv);
     s(_previewVisible, visible);
     // if (visible) s(loadingAtom, false);
@@ -957,7 +957,8 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
   if (filterInput) {
     // if (input.length > prevFilteredInput.length) return;
     input = input.match(new RegExp(filterInput, 'gi'))?.[0] || '';
-    if (a.length > prevFilteredInput.length && !input) return;
+    // TOOD: Why did I have this here? It's something for the path(), but it prevented the initial filter...
+    // if (a.length > prevFilteredInput.length && !input) return;
 
     // if (input === a) input = '*';
     // if (a.endsWith('/')) return;
@@ -1526,7 +1527,7 @@ export const promptDataAtom = atom(
     s(isHiddenAtom, false);
     const prevPromptData = g(promptData);
 
-    wasPromptDataPreloaded = prevPromptData?.preload && !a?.preload;
+    wasPromptDataPreloaded = Boolean(prevPromptData?.preload && !a?.preload);
 
     // was closed, now open
     if (!prevPromptData && a) {
@@ -1817,97 +1818,94 @@ export const onDropAtom = atom((g) => (event: any) => {
 export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
-  debounce(
-    (g, s, a: any) => {
-      s(promptActiveAtom, false);
-      s(disableSubmitAtom, false);
-      if (g(submittedAtom)) return;
-      const focusedChoice = g(scoredChoicesAtom)?.[g(indexAtom)]?.item;
-      const fid = focusedChoice?.id;
-      if (fid) {
-        // console.log(`focusedChoice.id: ${focusedChoice.id}`);
-        s(prevChoiceId, fid);
-        const key = g(promptDataAtom)?.key;
-        if (key) {
-          // Store the choice in the front of an array based on the prompt key
+  debounce((g, s, a: any) => {
+    s(onInputSubmitAtom, {});
+    s(promptActiveAtom, false);
+    s(disableSubmitAtom, false);
+    if (g(submittedAtom)) return;
+    const focusedChoice = g(scoredChoicesAtom)?.[g(indexAtom)]?.item;
+    const fid = focusedChoice?.id;
+    if (fid) {
+      // console.log(`focusedChoice.id: ${focusedChoice.id}`);
+      s(prevChoiceId, fid);
+      const key = g(promptDataAtom)?.key;
+      if (key) {
+        // Store the choice in the front of an array based on the prompt key
 
-          const prevIds = localStorage.getItem(key) || '[]';
-          const prevStorageIds = JSON.parse(prevIds);
-          const prevIdAlready = prevStorageIds.find((id: string) => id === fid);
-          if (prevIdAlready) {
-            prevStorageIds.splice(prevStorageIds.indexOf(prevIdAlready), 1);
-          }
-          prevStorageIds.unshift(fid);
-
-          localStorage.setItem(key, JSON.stringify(prevStorageIds));
+        const prevIds = localStorage.getItem(key) || '[]';
+        const prevStorageIds = JSON.parse(prevIds);
+        const prevIdAlready = prevStorageIds.find((id: string) => id === fid);
+        if (prevIdAlready) {
+          prevStorageIds.splice(prevStorageIds.indexOf(prevIdAlready), 1);
         }
+        prevStorageIds.unshift(fid);
+
+        localStorage.setItem(key, JSON.stringify(prevStorageIds));
       }
-      // let submitted = g(submittedAtom);
-      // if (submitted) return;
+    }
+    // let submitted = g(submittedAtom);
+    // if (submitted) return;
 
-      const fValue = g(_flagged);
-      const f = g(_flag);
-      const flag = fValue ? a : f || '';
+    const fValue = g(_flagged);
+    const f = g(_flag);
+    const flag = fValue ? a : f || '';
 
-      const value = checkSubmitFormat(fValue || a);
-      // const fC = g(focusedChoiceAtom);
+    const value = checkSubmitFormat(fValue || a);
+    // const fC = g(focusedChoiceAtom);
 
-      // skip if UI.chat
-      const channel = g(channelAtom);
-      if (g(uiAtom) !== UI.chat) {
-        channel(Channel.ON_SUBMIT);
-      }
+    // skip if UI.chat
+    const channel = g(channelAtom);
+    if (g(uiAtom) !== UI.chat) {
+      channel(Channel.ON_SUBMIT);
+    }
 
-      s(_inputAtom, '');
-      channel(Channel.VALUE_SUBMITTED, {
-        value,
-        flag,
-      });
+    s(_inputAtom, '');
+    channel(Channel.VALUE_SUBMITTED, {
+      value,
+      flag,
+    });
 
-      // ipcRenderer.send(Channel.VALUE_SUBMITTED, {
-      //   input: g(inputAtom),
-      //   value,
-      //   flag,
-      //   pid: g(pidAtom),
-      //   id: fC?.id || -1,
-      // });
+    // ipcRenderer.send(Channel.VALUE_SUBMITTED, {
+    //   input: g(inputAtom),
+    //   value,
+    //   flag,
+    //   pid: g(pidAtom),
+    //   id: fC?.id || -1,
+    // });
 
-      // s(rawInputAtom, '');
-      s(loadingAtom, false);
+    // s(rawInputAtom, '');
+    s(loadingAtom, false);
 
-      if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
-      placeholderTimeoutId = setTimeout(() => {
-        s(loadingAtom, true);
-        s(processingAtom, true);
-      }, 500);
+    if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
+    placeholderTimeoutId = setTimeout(() => {
+      s(loadingAtom, true);
+      s(processingAtom, true);
+    }, 500);
 
-      s(submittedAtom, true);
-      // s(indexAtom, 0);
+    s(submittedAtom, true);
+    // s(indexAtom, 0);
 
-      s(closedInput, g(inputAtom));
-      if (fValue) s(inputAtom, '');
-      s(_flagged, ''); // clear after getting
-      s(_flag, '');
-      s(_previewHTML, ``);
-      s(panelHTMLAtom, ``);
+    s(closedInput, g(inputAtom));
+    if (fValue) s(inputAtom, '');
+    s(_flagged, ''); // clear after getting
+    s(_flag, '');
+    s(_previewHTML, ``);
+    s(panelHTMLAtom, ``);
 
-      s(_submitValue, value);
-      s(flagsAtom, {});
-      s(_chatMessagesAtom, []);
+    s(_submitValue, value);
+    s(flagsAtom, {});
+    s(_chatMessagesAtom, []);
 
-      const stream = g(webcamStreamAtom);
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-        s(webcamStreamAtom, null);
-        if (document.getElementById('webcam'))
-          (document.getElementById(
-            'webcam'
-          ) as HTMLVideoElement).srcObject = null;
-      }
-    },
-    250,
-    { leading: true }
-  )
+    const stream = g(webcamStreamAtom);
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      s(webcamStreamAtom, null);
+      if (document.getElementById('webcam'))
+        (document.getElementById(
+          'webcam'
+        ) as HTMLVideoElement).srcObject = null;
+    }
+  })
 );
 
 export const closedInput = atom('');
