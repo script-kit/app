@@ -81,6 +81,9 @@ export default function ChoiceButton({
   const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
   const input = useAtomValue(inputAtom);
 
+  // Get the text after the last file separator
+  const base = (input || '').split(/[\\/]/).pop() || '';
+
   // const dataTransfer = useRef<any>('Data Transfer');
 
   const onRightClick = useCallback(
@@ -232,7 +235,9 @@ export default function ChoiceButton({
                 }
               >
                 {highlight(
-                  choice.name?.replace(/{\s*input\s*}/g, input),
+                  choice.name
+                    ?.replace(/{\s*input\s*}/g, input)
+                    .replace(/{\s*base\s*}/g, base),
                   scoredChoice?.matches?.slicedName,
                   `bg-primary bg-opacity-5 text-primary`
                 )}
@@ -255,11 +260,7 @@ export default function ChoiceButton({
                   {modifierDescription ||
                   (index === currentIndex && choice?.focused)
                     ? choice?.focused
-                    : highlight(
-                        choice?.description || '',
-                        scoredChoice?.matches?.slicedDescription,
-                        'bg-primary bg-opacity-15 text-primary'
-                      )}
+                    : choice?.description}
                 </div>
               )}
             </div>

@@ -96,21 +96,6 @@ export const maybeHide = async (reason: string) => {
       !kitState.preventClose
     ) {
       actualHide();
-      return;
-      // Wait for preview to disappear
-      const check = async () => {
-        const state = await promptWindow?.webContents?.mainFrame.executeJavaScript(
-          `document.getElementById('data-panel-id-panelChild')`
-        );
-        if (!state) {
-          if (reason === HideReason.MainShortcut) reload();
-          actualHide();
-          return;
-        }
-        setTimeout(check, 20);
-      };
-
-      await check();
     }
   }
 };
@@ -163,10 +148,8 @@ export const createPromptWindow = async () => {
   const width = PROMPT.WIDTH.BASE;
   const height = PROMPT.HEIGHT.BASE;
   const currentScreen = getCurrentScreenFromMouse();
-  const {
-    width: screenWidth,
-    height: screenHeight,
-  } = currentScreen.workAreaSize;
+  const { width: screenWidth, height: screenHeight } =
+    currentScreen.workAreaSize;
   const { x: workX, y: workY } = currentScreen.workArea;
 
   const options: BrowserWindowConstructorOptions = {
@@ -548,10 +531,8 @@ export const getCurrentScreenPromptCache = async (
   }
 
   // log.info(`resetPromptBounds`, scriptPath);
-  const {
-    width: screenWidth,
-    height: screenHeight,
-  } = currentScreen.workAreaSize;
+  const { width: screenWidth, height: screenHeight } =
+    currentScreen.workAreaSize;
 
   let width = getDefaultWidth();
   let height = PROMPT.HEIGHT.BASE;
@@ -644,10 +625,8 @@ export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
   const currentScreen = getCurrentScreenFromMouse();
   const { x, y, width, height } = bounds;
   const { x: workX, y: workY } = currentScreen.workArea;
-  const {
-    width: screenWidth,
-    height: screenHeight,
-  } = currentScreen.workAreaSize;
+  const { width: screenWidth, height: screenHeight } =
+    currentScreen.workAreaSize;
 
   if (typeof bounds?.height !== 'number') bounds.height = prevSetBounds.height;
   if (typeof bounds?.width !== 'number') bounds.width = prevSetBounds.width;
@@ -1061,8 +1040,8 @@ export const setScript = async (
   force = false
 ): Promise<'denied' | 'allowed'> => {
   kitState.resizePaused = false;
-  kitState.cacheChoices = script?.cache;
-  kitState.cachePrompt = script?.cache;
+  kitState.cacheChoices = Boolean(script?.cache);
+  kitState.cachePrompt = Boolean(script?.cache);
   // log.info(`setScript`, { script, pid });
 
   if (script.filePath === prevScriptPath && pid === prevPid) {
@@ -1172,7 +1151,7 @@ export const setPromptData = async (promptData: PromptData) => {
     const cachePath = getCachePath(kitState.scriptPath, 'prompt');
     ensureDir(path.dirname(cachePath))
       .then((success) => {
-        log.info(`🎁 Caching ${kitState.scriptPath} prompt -> ${cachePath}`);
+        log.verbose(`🎁 Caching ${kitState.scriptPath} prompt -> ${cachePath}`);
         // eslint-disable-next-line promise/no-nesting
         writeJson(cachePath, promptData).catch((error) => {
           log.warn({ error });

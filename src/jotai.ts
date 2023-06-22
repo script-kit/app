@@ -153,13 +153,10 @@ function scorer(string: string, query: string, matches: number[][]) {
   );
 }
 
-const keys = [
-  'slicedName',
-  'slicedDescription',
-  'friendlyShortcut',
-  'tag',
-  'group',
-].map((name) => ({ name, scorer }));
+const keys = ['slicedName', 'friendlyShortcut', 'tag', 'group'].map((name) => ({
+  name,
+  scorer,
+}));
 
 export const ultraShortCodesAtom = atom<{ code: string; id: string }[]>([]);
 
@@ -176,17 +173,17 @@ export const nullChoicesAtom = atom(
 );
 
 export const infoHeightAtom = atom(0);
-const infoChoices = atom<Choice[]>([]);
+const _infoChoices = atom<Choice[]>([]);
 export const infoChoicesAtom = atom(
   (g) => {
     const hasChoices = g(scoredChoicesAtom)?.length > 0;
 
-    return g(infoChoices).filter(
+    return g(_infoChoices).filter(
       (c) => c?.info === 'always' || (c?.info === 'onNoChoices' && !hasChoices)
     );
   },
   (g, s, a: Choice[]) => {
-    s(infoChoices, a);
+    s(_infoChoices, a);
     s(infoHeightAtom, a?.length * g(itemHeightAtom));
   }
 );
@@ -198,7 +195,6 @@ let wereChoicesPreloaded = false;
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[] | null) => {
-    console.log({ a });
     wereChoicesPreloaded = !a?.preload && choicesPreloaded;
     choicesPreloaded = a?.preload;
     if (a?.length === 0 && g(unfilteredChoices)?.length === 0) return;
@@ -882,6 +878,7 @@ const invokeSearch = (
   input: string
 ) => {
   const result = search(qs, input);
+
   if (g(hasGroupAtom)) {
     const unfiltered = g(unfilteredChoices);
 
@@ -898,10 +895,14 @@ const invokeSearch = (
     let groupedResults: ScoredChoice[] = [];
 
     const matchGroup = [];
+    const missGroup = [];
 
     for (const choice of unfiltered) {
       const hide = choice?.hideWithoutInput && input === '';
-      if (!hide) {
+      const miss = choice?.miss && !hide;
+      if (miss) {
+        missGroup.push(createScoredChoice(choice));
+      } else if (!hide) {
         const scoredChoice = resultMap.get(choice.id);
         if (choice?.pass) {
           groupedResults.push(createScoredChoice(choice));
@@ -931,7 +932,16 @@ const invokeSearch = (
       groupedResults = matchGroup.concat(groupedResults);
     }
 
+    if (groupedResults.length === 0) {
+      groupedResults = missGroup;
+    }
+
     s(scoredChoicesAtom, groupedResults);
+  } else if (result?.length === 0) {
+    const missGroup = g(unfilteredChoices)
+      .filter((c) => c?.miss)
+      .map(createScoredChoice);
+    s(scoredChoicesAtom, missGroup);
   } else {
     s(scoredChoicesAtom, result);
   }
@@ -1202,7 +1212,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const scoredChoices = g(scoredChoicesAtom);
   const scoredChoicesLength = g(scoredChoicesAtom)?.length;
   // g(logAtom)(`resize: ${reason} - ${ui} length ${scoredChoicesLength}`);
-  const infoChoicesLength = g(infoChoicesAtom).length;
+  const infoChoices = g(infoChoicesAtom);
+  const infoChoicesLength = infoChoices.length;
   const hasPanel = g(_panelHTML) !== '';
   const nullChoices = g(nullChoicesAtom);
   const noInfo = infoChoicesLength === 0;
@@ -1220,14 +1231,22 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const topHeight = document.getElementById('header')?.offsetHeight || 0;
   const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
   const hasPreview = Boolean(g(hasPreviewAtom));
+  const hasChoices = Boolean(scoredChoicesLength + infoChoicesLength);
 
   const itemHeight = g(itemHeightAtom);
 
-  const choicesHeight =
-    scoredChoices.reduce((acc, choice) => {
-      return acc + (choice?.item?.height || itemHeight);
-    }, 0) +
-    infoChoicesLength * itemHeight;
+  let choicesHeight = 0;
+
+  for (const { height } of infoChoices) {
+    choicesHeight += height || itemHeight;
+  }
+
+  for (const {
+    item: { height },
+  } of scoredChoices) {
+    choicesHeight += height || itemHeight;
+    if (choicesHeight > 1920) break;
+  }
 
   if (ui === UI.arg && choicesHeight > PROMPT.HEIGHT.BASE) {
     mh =
@@ -1372,6 +1391,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   //   forceResize,
   //   promptHeight: promptData?.height || 'UNSET',
   // });
+
+  // forceResize ||= hasChoices;
 
   const data: ResizeData = {
     id: promptData?.id || 'missing',

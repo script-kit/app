@@ -1147,7 +1147,6 @@ const kitMessageMap: ChannelHandler = {
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
   SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
-    log.info(`🛑 Script path changed`);
     kitState.scriptPathChanged = false;
     kitState.promptScriptPath = value?.scriptPath || '';
 
@@ -1213,7 +1212,6 @@ const kitMessageMap: ChannelHandler = {
     let formattedChoices = value;
     if (kitState.isScripts) {
       formattedChoices = formatScriptChoices(value);
-      setChoices(formattedChoices);
     }
 
     setChoices(formattedChoices);
@@ -1229,14 +1227,16 @@ const kitMessageMap: ChannelHandler = {
 
       const cachePath = getCachePath(kitState.scriptPath, 'choices');
 
-      log.info(`🎁 Caching ${kitState.scriptPath} choices -> ${cachePath}`);
+      log.verbose(`🎁 Caching ${kitState.scriptPath} choices -> ${cachePath}`);
       ensureDir(path.dirname(cachePath))
         .then((success) => {
           // eslint-disable-next-line promise/no-nesting
-          return writeJson(cachePath, formattedChoices).catch((error) => {
-            log.warn({ error });
-            return error;
-          });
+          return writeJson(cachePath, formattedChoices.slice(0, 48)).catch(
+            (error) => {
+              log.warn({ error });
+              return error;
+            }
+          );
         })
         .catch((error) => {
           log.warn({ error });
@@ -2080,34 +2080,33 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(channel, value);
     childSend(child, { channel, value });
   }),
-  PRELOAD_MAIN_SCRIPT: toProcess(async ({ child }, { channel, value }) => {
-    log.verbose(`PRELOAD MAIN SCRIPT`);
+  PRELOAD: toProcess(async ({ child }, { channel, value }) => {
+    log.verbose(`👀 Preloading ${value}`);
 
-    const promptScriptPath = mainScriptPath;
-    const cachedChoicesPath = getCachePath(promptScriptPath, 'choices');
+    const cachedChoicesPath = getCachePath(value, 'choices');
     readJson(cachedChoicesPath)
       .then((result) => {
         return preloadChoices(result);
       })
       .then((result) => {
-        log.info(`Preloaded ${promptScriptPath} choices 👍`);
+        log.info(`💧 Preloaded ${value} choices`);
         return result;
       })
       .catch((error) => {
-        log.verbose(`No cache for ${promptScriptPath}`);
+        log.verbose(`No cache for ${value}`);
       });
 
-    const cachedPromptPath = getCachePath(promptScriptPath, 'prompt');
+    const cachedPromptPath = getCachePath(value, 'prompt');
     readJson(cachedPromptPath)
       .then((result) => {
         return preloadPromptData(result);
       })
       .then((result) => {
-        log.info(`Preloaded ${promptScriptPath} prompt 👍`);
+        log.info(`💧 Preloaded ${value} prompt`);
         return result;
       })
       .catch((error) => {
-        log.verbose(`No cache for ${promptScriptPath}`);
+        log.verbose(`No cache for ${value}`);
       });
 
     childSend(child, { channel, value });

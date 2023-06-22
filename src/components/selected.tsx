@@ -43,18 +43,18 @@ export default function Selected() {
       }
       onClick={onClick}
       className={`
-pb-1
+flex
 w-max
-flex flex-row items-center
-text-sm
-border-b-2
-text-primary text-opacity-90
+flex-row items-center border-b-2
 border-primary
+pb-[3px]
+text-sm text-primary
+text-opacity-90
     hover:cursor-pointer
     `}
     >
-      <div className="flex flex-row items-center justify-content hover:text-text-base font-semibold pl-3.5">
-        <div className="mr-8 truncate flex flex-row h-[20px] max-h-[20px]">
+      <div className="justify-content flex flex-row items-center pl-3.5 font-semibold hover:text-text-base">
+        <div className="mr-8 flex h-5 flex-row truncate">
           <div className="">
             <IconSwapper text="←" />
           </div>

@@ -172,7 +172,7 @@ export const runPromptProcess = async (
           return preloadChoices(result);
         })
         .then((result) => {
-          log.info(`Preloaded ${promptScriptPath} choices 👍`);
+          log.info(`💧 Preloaded ${promptScriptPath} choices`);
           return result;
         })
         .catch((error) => {

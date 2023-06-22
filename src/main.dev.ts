@@ -671,13 +671,23 @@ const optionalSetupScript = (...args: string[]) => {
     log.info(`Running optional setup script: ${args.join(' ')}`);
     const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
 
+    const id = setTimeout(() => {
+      if (child && !child.killed) {
+        child.kill();
+        resolve('timeout');
+        log.info(`⚠️ Setup script timed out: ${args.join(' ')}`);
+      }
+    }, 5000);
+
     if (child?.stdout) {
       child.stdout.on('data', (data) => {
+        if (kitState.ready) return;
         setupLog(data.toString());
       });
     }
 
     if (child?.stderr) {
+      if (kitState.ready) return;
       child.stderr.on('data', (data) => {
         setupLog(data.toString());
       });
@@ -694,6 +704,7 @@ const optionalSetupScript = (...args: string[]) => {
 
     child.on('exit', (code) => {
       if (code === 0) {
+        if (id) clearTimeout(id);
         log.info(`✅ Setup script completed: ${args.join(' ')}`);
         resolve('done');
       } else {
@@ -703,6 +714,7 @@ const optionalSetupScript = (...args: string[]) => {
     });
 
     child.on('error', (error: Error) => {
+      if (id) clearTimeout(id);
       log.error(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
       resolve('error');
       // reject(error);
@@ -1331,6 +1343,8 @@ const checkKit = async () => {
     await verifyInstall();
 
     await storeVersion(getVersion());
+
+    optionalSetupScript(kitPath('main', 'app-launcher.js'), '--prep');
 
     kitState.starting = false;
     kitState.updateInstalling = false;

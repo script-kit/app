@@ -4,6 +4,7 @@
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
+import { writeJson } from 'fs-extra';
 import * as nativeKeymap from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
 import log, { LogLevel } from 'electron-log';
@@ -798,7 +799,8 @@ export const initKeymap = async () => {
   if (!kitState.keymap) {
     try {
       let keymap = nativeKeymap.getKeyMap();
-      keymapLog.info(`🔑 Detected Keymap:`, { keymap });
+      keymapLog.verbose(`🔑 Detected Keymap:`, { keymap });
+      writeJson(kitPath('db', 'keymap.json'), keymap);
       let value = keymap?.KeyA?.value;
 
       const alpha = /[A-Za-z]/;

@@ -51,17 +51,17 @@ export default function ActionBar() {
       bg-ui-bg
     ${ui === UI.splash && `bg-secondary/0`}
 
-    px-4
-    justify-center items-center
-    overflow-hidden
     h-7 max-h-7
+    items-center
+    justify-center
+    overflow-hidden px-4
     ${lightenUI && `lighten`}
     `}
     >
       <IconButton />
 
       <div
-        className={`left-container flex flex-row justify-center items-center ${
+        className={`left-container flex flex-row items-center justify-center ${
           !m ? `pb-2px` : `pb-px`
         }`}
       >
@@ -80,22 +80,22 @@ export default function ActionBar() {
       </div>
       {footer?.length ? (
         <div
-          className={`flex flex-1 max-h-full h-full
-        px-2
-        items-center justify-left
+          className={`justify-left flex h-full max-h-full
+        flex-1
+        items-center px-2
 text-sm font-medium
 ${textContrast}
-text-opacity-75
 truncate
+text-opacity-75
       `}
         >
           <div
-            className="truncate min-w-0 pb-px"
+            className="min-w-0 truncate pb-px"
             dangerouslySetInnerHTML={{ __html: footer }}
           />
         </div>
       ) : (
-        <div className="flex-1 max-h-full" />
+        <div className="max-h-full flex-1" />
       )}
 
       <div
@@ -111,7 +111,7 @@ truncate
             <ActionSeparator key="options-separator" />,
           ]}
         </div>
-        <div className="flex flex-row flex-grow-0 items-center overflow-hidden">
+        <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
           {actions
             .filter((action) => action.position === 'right' && !appDb?.mini)
             .flatMap((action, i, array) => [
@@ -125,7 +125,7 @@ truncate
               ) : null,
             ])}
         </div>
-        <div className="enter-container flex flex-row min-w-fit items-center">
+        <div className="enter-container flex min-w-fit flex-row items-center">
           {enterButtonName ? (
             <EnterButton
               key="enter-button"

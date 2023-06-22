@@ -775,6 +775,14 @@ code::after {
   @apply mb-0;
 }
 
+.prose > h1 {
+  @apply mb-2.5;
+}
+
+.prose > blockquote {
+  @apply mt-0;
+}
+
 .prose-sm ~ pre {
   @apply -mt-6;
 }
