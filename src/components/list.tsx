@@ -111,10 +111,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   return (
     <div
       id="list"
-      className={`list-component
-flex flex-row
-w-full overflow-y-hidden
-      `}
+      className="list-component flex w-full flex-row overflow-y-hidden"
       style={
         {
           width,
@@ -161,9 +158,9 @@ w-full overflow-y-hidden
         className={`
         ${isScrolling ? `scrollbar` : ''}
         wrapper
+        bg-opacity-20
         px-0
-        text-text-base
-        focus:border-none focus:outline-none outline-none bg-opacity-20
+        text-text-base outline-none focus:border-none focus:outline-none
         `}
         // onItemsRendered={onItemsRendered}
       >

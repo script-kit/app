@@ -103,7 +103,7 @@ body {
 }
 
 .log .simplebar-scrollbar:before {
-  @apply bg-white opacity-100 dark:bg-black bg-opacity-60;
+  @apply bg-white bg-opacity-60 opacity-100 dark:bg-black;
 }
 
 *:not(textarea)::-webkit-scrollbar {
@@ -378,7 +378,7 @@ body {
 
   .prose kbd {
     @apply text-base;
-    @apply text-sm font-mono font-bold;
+    @apply font-mono text-sm font-bold;
   }
 
   p {
@@ -463,7 +463,7 @@ body {
 }
 
 .prose > pre {
-  @apply p-0 m-0;
+  @apply m-0 p-0;
   @apply bg-text-base bg-opacity-0;
   @apply min-h-8;
 }
@@ -490,13 +490,13 @@ code.hljs {
   transform: translateX(0);
 }
 .hljs-copy-button {
-  @apply text-text-base dark:text-white text-opacity-25 dark:text-opacity-25;
-  @apply w-5 h-5 mt-0.5 top-5 right-1;
+  @apply text-text-base text-opacity-25 dark:text-white dark:text-opacity-25;
+  @apply top-5 right-1 mt-0.5 h-5 w-5;
   position: absolute;
 }
 
 .hljs-copy-button:hover {
-  @apply text-text-base dark:text-white text-opacity-50 dark:text-opacity-50;
+  @apply text-text-base text-opacity-50 dark:text-white dark:text-opacity-50;
 }
 
 .dark .prose > pre,
@@ -519,7 +519,7 @@ code.hljs {
 .hljs-copy-checked::after {
   content: '✓';
   @apply absolute;
-  @apply text-text-base dark:text-white text-opacity-50 dark:text-opacity-50;
+  @apply text-text-base text-opacity-50 dark:text-white dark:text-opacity-50;
   @apply top-1 right-2;
   @apply text-xs;
 }
@@ -540,7 +540,7 @@ ul {
 .prose > kbd {
   /* Styles for keyboard shortcut */
   @apply text-text-base;
-  @apply text-sm font-mono font-bold;
+  @apply font-mono text-sm font-bold;
   @apply bg-bg-base bg-opacity-10;
   @apply rounded;
   @apply px-1;
@@ -564,31 +564,31 @@ code::after {
 
 .kit-chat-input,
 .kit-chat-input > textarea {
-  @apply bg-bg-base text-text-base outline-none px-2 bg-opacity-0 border-t-1 placeholder:text-text-base placeholder:text-opacity-25;
+  @apply border-t-1 bg-bg-base bg-opacity-0 px-2 text-text-base outline-none placeholder:text-text-base placeholder:text-opacity-25;
   @apply min-h-11;
 }
 
 .rce-input,
 .rce-input:focus {
-  @apply bg-bg-base bg-opacity-0 text-text-base outline-none focus:outline-none ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-25 focus:ring-primary rounded-sm;
+  @apply rounded-sm bg-bg-base bg-opacity-0 text-text-base outline-none ring-0 ring-opacity-0 focus:outline-none focus:ring-0 focus:ring-primary focus:ring-opacity-25;
 }
 
 .kit-chat-submit {
-  @apply text-primary text-base px-2 py-0.5;
+  @apply px-2 py-0.5 text-base text-primary;
 }
 
 .rce-container-mbox {
-  @apply w-full font-normal py-1 my-2;
+  @apply my-2 w-full py-1 font-normal;
 }
 
 .rce-mbox:has(.left) {
   /* inverted with half opacity */
-  @apply text-text-base bg-bg-base bg-opacity-0 ml-6 mr-24;
+  @apply ml-6 mr-24 bg-bg-base bg-opacity-0 text-text-base;
 }
 
 .rce-mbox:has(.right) {
   /* inverted with half opacity */
-  @apply bg-text-base bg-opacity-10 text-text-base mr-6 ml-24;
+  @apply mr-6 ml-24 bg-text-base bg-opacity-10 text-text-base;
 }
 
 .rce-mbox:has(.left),
@@ -619,7 +619,7 @@ code::after {
 }
 
 .rce-mbox-text .prose {
-  @apply p-0 whitespace-normal;
+  @apply whitespace-normal p-0;
 }
 
 .rce-mbox [tabIndex] {
@@ -661,21 +661,21 @@ code::after {
 }
 
 .Toastify__close-button--light {
-  @apply text-text-base font-bold;
+  @apply font-bold text-text-base;
 }
 
 .Toastify__close-button--light:hover {
-  @apply text-primary/75 font-bold;
+  @apply font-bold text-primary/75;
 }
 
 .Toastify__toast-body {
-  @apply pt-1 -z-50;
+  @apply -z-50 pt-1;
 }
 
 .Toastify__progress-bar-theme--light {
   /* background gradient from bg-base to contrast. Contrast at 75 opacity */
   @apply bg-gradient-to-r from-primary/30 to-primary/90;
-  @apply h-0.5 -z-50;
+  @apply -z-50 h-0.5;
 }
 
 .Toastify__toast-container {
@@ -725,8 +725,8 @@ code::after {
 } */
 
 .kit-mbox {
-  @apply py-2 px-3 my-2;
-  @apply border-1 border-text-base/10 rounded;
+  @apply my-2 py-2 px-3;
+  @apply rounded border-1 border-text-base/10;
 }
 
 .kit-mbox > ol,
@@ -735,7 +735,7 @@ code::after {
 }
 
 .kit-mbox > pre {
-  @apply p-2 m-0 border-none bg-bg-base/0;
+  @apply m-0 border-none bg-bg-base/0 p-2;
 }
 
 .kit-mbox > pre:hover {
@@ -783,7 +783,7 @@ code::after {
 .prose > pre:not(:has(> code.hljs)):not([class^='kit-mbox']) {
   @apply flex flex-row items-center;
   @apply text-base;
-  @apply p-2 -mt-2;
+  @apply -mt-2 p-2;
   @apply bg-text-base/5;
 }
 
@@ -826,3 +826,7 @@ code::after {
 *[class*='border-secondary'] {
   @apply border-white/10;
 } */
+
+pre > code {
+  @apply text-xs !important;
+}

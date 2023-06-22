@@ -281,7 +281,7 @@
     "css-loader": "6.7.1",
     "detect-port": "^1.5.1",
     "download": "8.0.0",
-    "electron": "25.1.1",
+    "electron": "25.2.0",
     "electron-builder": "23.6.0",
     "electron-devtools-installer": "3.2.0",
     "electron-notarize": "1.2.1",
@@ -314,7 +314,8 @@
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "postcss-cli": "8.3.1",
     "postcss-loader": "7.0.2",
-    "prettier": "2.0.5",
+    "prettier": "^2.8.8",
+    "prettier-plugin-tailwindcss": "^0.3.0",
     "purgecss": "4.0.2",
     "react-refresh": "^0.14.0",
     "react-test-renderer": "17.0.1",
@@ -438,6 +439,9 @@
   },
   "browserslist": [],
   "prettier": {
+    "plugins": [
+      "prettier-plugin-tailwindcss"
+    ],
     "overrides": [
       {
         "files": [

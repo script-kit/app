@@ -208,7 +208,7 @@ class ErrorBoundary extends React.Component {
           {/* Add a button to reload the window */}
           <button
             type="button"
-            className="bg-red-500 text-white p-2 rounded"
+            className="rounded bg-red-500 p-2 text-white"
             onClick={() => {
               ipcRenderer.send(AppChannel.RELOAD);
             }}
@@ -826,10 +826,10 @@ export default function App() {
         id="main-container"
         ref={appRef}
         className={`
-w-screen h-screen
-min-w-screen min-h-screen
+min-w-screen h-screen
+min-h-screen w-screen
 text-text-base
-${hasBorder ? `border-ui-border border-1` : ``}
+${hasBorder ? `border-1 border-ui-border` : ``}
 ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
       `}
       >
@@ -881,8 +881,8 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
           }
           className={`
         ${hidden && appConfig.isMac ? 'hidden' : ''}
-        flex flex-col
-        w-full h-full
+        flex h-full
+        w-full flex-col
         `}
           onMouseDown={onMouseDown}
           onMouseUp={onMouseUp}
@@ -910,7 +910,7 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
               {hint && <Hint key="AppHint" />}
 
               {(showTabs || showSelected) && (
-                <div className="h-[25px] max-h-[25px]">
+                <div>
                   {showTabs && !showSelected && <Tabs key="AppTabs" />}
                   {showSelected && <Selected key="AppSelected" />}
                 </div>
@@ -918,11 +918,11 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
             </header>
           )}
           {logVisible && <Console key="AppLog" />}
-          <main id="main" className="flex-1 min-h-1 overflow-y-hidden w-full">
+          <main id="main" className="min-h-1 w-full flex-1 overflow-y-hidden">
             <PanelGroup
               direction="horizontal"
               autoSaveId={script.filePath}
-              className={`h-full flex flex-row w-full
+              className={`flex h-full w-full flex-row
 ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
             `}
@@ -995,7 +995,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                 <>
                   <PanelResizeHandle
                     id="panelResizeHandle"
-                    className="w-0.5 hover:-ml-0.5 hover:w-3 hover:bg-white/5 hover:border-r-1 hover:border-white/10 border-l-1 border-ui-border"
+                    className="w-0.5 border-l-1 border-ui-border hover:-ml-0.5 hover:w-3 hover:border-r-1 hover:border-white/10 hover:bg-white/5"
                     onDragging={onResizeHandleDragging}
                   />
                   <PanelChild

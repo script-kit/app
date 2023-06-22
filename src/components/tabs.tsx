@@ -44,16 +44,16 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
   if (tab === 'Account__') {
     if (user.login) {
       return (
-        <div className="flex flex-row justify-center items-center pr-8">
+        <div className="flex flex-row items-center justify-center pr-8">
           <span>{user?.name?.split(' ')?.[0] || user.login}</span>
         </div>
       );
     }
     return (
-      <div className="flex flex-row justify-center items-center">
+      <div className="flex flex-row items-center justify-center">
         <span>Sign In</span>
         <GithubIcon
-          className={`ml-2 mb-0.5
+          className={`ml-2
         opacity-100`}
         />
       </div>
@@ -103,14 +103,14 @@ export default function KitTabs() {
           <img
             alt="avatar"
             src={user.avatar_url}
-            className="absolute w-6 rounded-full z-0 right-[14px] bottom-[4px]"
+            className="absolute right-[14px] bottom-[4px] z-0 w-6 rounded-full"
           />
           <svg
             height="24"
             width="24"
             viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"
-            className="absolute z-10 h-[15px] right-[5px] bottom-[17px] text-primary opacity-90"
+            className="absolute right-[5px] bottom-[17px] z-10 h-[15px] text-primary opacity-90"
           >
             <g fill="currentColor">
               <path
@@ -136,7 +136,7 @@ export default function KitTabs() {
         // animate={{ opacity: 1, y: `0px`, position: 'relative' }}
         // transition={{ duration: 0 }}
       >
-        <div className="flex flex-row px-1 whitespace-nowrap">
+        <div className="flex flex-row whitespace-nowrap px-1">
           {/* <span className="bg-white">{modeIndex}</span> */}
           {tabs.map((tab: string, i: number) => {
             return (
@@ -165,12 +165,12 @@ export default function KitTabs() {
                   : `text-text-base/50 hover:text-text-base/75`
               }
 
-              transition-opacity
-              duration-100
               relative
               select-none
+              pb-[5px]
+              transition-opacity
+              duration-100
               ${tabs.length > 5 ? `px-2` : `px-3`}
-              pb-1.5
           `}
                   key={tab}
                   onMouseDown={() => setTabIndex(i)}
@@ -178,7 +178,7 @@ export default function KitTabs() {
                 >
                   {i === tabIndex && (
                     <motion.div
-                      className="bg-primary/90 h-2px left-0 right-0 bottom-0  absolute transition-colors"
+                      className="absolute left-0 right-0 bottom-0 h-2px  bg-primary/90 transition-colors"
                       layoutDependency
                       layoutId="selectedTab"
                       transition={{ duration: 0.15 }}
@@ -186,7 +186,7 @@ export default function KitTabs() {
                   )}
 
                   <motion.div
-                    className="bg-primary/50 h-2px left-0 right-0 bottom-0   absolute transition-colors"
+                    className="absolute left-0 right-0 bottom-0 h-2px   bg-primary/50 transition-colors"
                     initial={{ opacity: 0 }}
                     animate={{
                       opacity: i === hover && i !== tabIndex ? 1 : 0,

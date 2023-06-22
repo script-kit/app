@@ -42,6 +42,7 @@ import {
   lastKeyDownWasModifierAtom,
   footerHiddenAtom,
   inputHeightAtom,
+  logAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -203,14 +204,14 @@ export default function Input() {
       key="input"
       className="flex flex-row"
       style={{
-        height: inputHeight || PROMPT.INPUT.HEIGHT.BASE,
+        height: inputHeight || PROMPT.INPUT.HEIGHT.SM,
       }}
       // initial={{ opacity: 0 }}
       // animate={{ opacity: processing ? 0 : 1 }}
       // transition={{ duration: 0.2 }}
     >
       <div
-        className="flex-1 max-w-full"
+        className="max-w-full flex-1"
         style={{
           WebkitAppRegion: 'drag',
           WebkitUserSelect: 'none',
@@ -230,15 +231,15 @@ export default function Input() {
           disabled={submitted}
           autoFocus
           className={`
-      bg-transparent flex-1 text-text-base focus:outline-none outline-none
-      placeholder-text-base placeholder-opacity-25
-      tracking-normal
+      flex-1 bg-transparent tracking-normal text-text-base placeholder-text-base
+      placeholder-opacity-25 outline-none
       placeholder:tracking-normal
+      focus:outline-none
       ${fontSize}
       h-full
-      ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 px-4 py-0
-      focus:border-none border-none
-      max-w-full
+      max-w-full border-none px-4 py-0 ring-0 ring-opacity-0
+      focus:border-none focus:ring-0
+      focus:ring-opacity-0
       ${promptData?.inputClassName || ''}
       `}
           onChange={onChange}
@@ -253,7 +254,7 @@ export default function Input() {
         <span
           ref={hiddenInputRef}
           id="hidden-input-measurer"
-          className={`${fontSize} tracking-normal px-4`}
+          className={`${fontSize} px-4 tracking-normal`}
           style={{
             position: 'absolute',
             visibility: 'hidden',
@@ -277,14 +278,14 @@ export default function Input() {
             style={{
               height: inputHeight || PROMPT.INPUT.HEIGHT.BASE,
             }}
-            className={`justify-end
-      right-container flex flex-row flex-grow items-center overflow-hidden min-w-fit ${
-        inputHeight === PROMPT.INPUT.HEIGHT.XS && `scale-95 origin-right mt-px`
+            className={`right-container
+      flex min-w-fit flex-grow flex-row items-center justify-end overflow-hidden ${
+        inputHeight === PROMPT.INPUT.HEIGHT.XS && `mt-px origin-right scale-95`
       }`}
           >
             {miniShortcutsVisible && (
               <>
-                <div className="enter-container flex flex-row min-w-fit items-center">
+                <div className="enter-container flex min-w-fit flex-row items-center">
                   {enterButtonName ? (
                     <EnterButton
                       key="enter-button"
@@ -304,7 +305,7 @@ export default function Input() {
                     <ActionSeparator key="options-separator" />,
                   ]}
                 </div>
-                <div className="flex flex-row flex-grow-0 items-center overflow-hidden">
+                <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
                   {actions
                     .filter(
                       (action) => action.position === 'right' && !appDb?.mini
@@ -323,7 +324,7 @@ export default function Input() {
               </>
             )}
 
-            <div className="flex mx-2 pt-px min-w-0">
+            <div className="mx-2 flex min-w-0 pt-px">
               <IconButton />
             </div>
           </div>

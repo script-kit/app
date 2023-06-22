@@ -67,13 +67,8 @@ export default function ChoiceButton({
   index,
   style,
 }: ChoiceButtonProps) {
-  const {
-    choices,
-    currentIndex,
-    mouseEnabled,
-    onIndexChange,
-    onIndexSubmit,
-  } = data;
+  const { choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit } =
+    data;
   const scoredChoice = choices[index];
   const choice: Choice | Script = scoredChoice?.item || scoredChoice;
 
@@ -148,7 +143,7 @@ export default function ChoiceButton({
       return Object.keys(choice).includes(m);
     }) as keyof ScriptMetadata;
 
-    setModifierDescription(((choice as unknown) as ScriptMetadata)?.[modifier]);
+    setModifierDescription((choice as unknown as ScriptMetadata)?.[modifier]);
   }, [modifiers]);
 
   const [isScrolling] = useAtom(isScrollingAtom);
@@ -181,16 +176,16 @@ export default function ChoiceButton({
       ${
         index === currentIndex && !choice?.disableSubmit ? `bg-ui-bg` : ``
       } ${overrideTailwindClasses(`
-        w-full
-        h-16
-        flex-shrink-0
-        whitespace-nowrap
-        text-left
         flex
+        h-16
+        w-full
+        flex-shrink-0
         flex-row
-        px-4
-        justify-between
         items-center
+        justify-between
+        whitespace-nowrap
+        px-4
+        text-left
         outline-none
         focus:outline-none
         ${choice?.className}
@@ -208,8 +203,8 @@ export default function ChoiceButton({
           },
         })
       ) : (
-        <div className="flex flex-row items-center justify-between w-full h-full">
-          <div className="flex flex-row overflow-x-hidden items-center h-full">
+        <div className="flex h-full w-full flex-row items-center justify-between">
+          <div className="flex h-full flex-row items-center overflow-x-hidden">
             {/* Img */}
             {choice?.img && !imageFail && (
               <motion.img
@@ -219,17 +214,15 @@ export default function ChoiceButton({
                 alt={choice.description || ''}
                 onError={() => setImageFail(true)}
                 className={`
-                h-12
-                w-12
-                min-w-12
-                object-contain
-                rounded
                 mr-2
+                h-4/5
+                rounded
+                object-contain
                 ${index === currentIndex ? `opacity-100` : `opacity-80`}
                 `}
               />
             )}
-            <div className="flex flex-col max-w-full overflow-x-hidden max-h-full">
+            <div className="flex max-h-full max-w-full flex-col overflow-x-hidden">
               {/* Name */}
               <div
                 className={
@@ -255,7 +248,7 @@ export default function ChoiceButton({
                       : `truncate ${buttonDescriptionFontSize} `
                   }${
                     index === currentIndex
-                      ? ` opacity-100 text-primary `
+                      ? ` text-primary opacity-100 `
                       : ` opacity-60 `
                   }`}
                 >
@@ -273,7 +266,7 @@ export default function ChoiceButton({
           </div>
 
           <div
-            className={`flex flex-row items-center flex-shrink-0 h-full ${
+            className={`flex h-full flex-shrink-0 flex-row items-center ${
               isScrolling ? `-mr-2px` : `0`
             }`}
           >
@@ -287,7 +280,7 @@ export default function ChoiceButton({
                       choice?.tagClassName
                         ? choice?.tagClassName
                         : `
-              text-xxs font-mono mx-1
+              mx-1 font-mono text-xxs
               ${index === currentIndex ? `opacity-70` : `opacity-40`}
               `
                     }
@@ -307,9 +300,9 @@ export default function ChoiceButton({
                     transition={{ duration: 0.1 }}
                     alt="icon"
                     className={`
-    border-2 border-bg-base border-opacity-50
-    rounded-full
-    h-6 mx-1
+    mx-1 h-6 rounded-full
+    border-2
+    border-bg-base border-opacity-50
     `}
                     src={choice?.icon}
                   />
@@ -322,7 +315,7 @@ export default function ChoiceButton({
                 {choice?.friendlyShortcut && (
                   <div
                     className={`
-              text-xxs font-mono
+              font-mono text-xxs
               ${index === currentIndex ? `opacity-100` : `opacity-40`}
               `}
                   >
@@ -338,15 +331,15 @@ export default function ChoiceButton({
             {imageFail && (
               <div
                 style={{ aspectRatio: '1/1' }}
-                className="h-8 flex flex-row items-center justify-center"
+                className="flex h-8 flex-row items-center justify-center"
               >
                 <NoImageIcon
                   className={`
         h-1/2
         fill-current
-        transition ease-in
-        opacity-50
-        text-text-base
+        text-text-base opacity-50
+        transition
+        ease-in
 
         `}
                   viewBox="0 0 32 32"
@@ -379,22 +372,22 @@ export default function ChoiceButton({
                 <div onClick={onRightClick}>
                   <div
                     className={`
-                flex items-center justify-center
-                    text-xs
-                    font-bold
-                    rounded
+                leading-1 ml-2 flex
+                    h-6
+                    w-6
+                    items-center
 
-                    text-primary/90
+                    justify-center
+                    rounded
                     bg-text-base
                     bg-opacity-10
-                    hover:bg-opacity-20
-                    hover:text-primary/90
+                    fill-current
 
- ml-2
-        w-6 h-6
-        leading-1
-        fill-current
-        transition ease-in
+ text-xs
+        font-bold text-primary/90
+        transition
+        ease-in
+        hover:bg-opacity-20 hover:text-primary/90
 
 
         `}

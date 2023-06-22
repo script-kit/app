@@ -49,14 +49,12 @@ import {
   kitDotEnvPath,
   mainScriptPath,
   themeDbPath,
-  execPath
+  execPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { subscribeKey } from 'valtio/utils';
 import { pathExists, writeJson, readJson, ensureDir } from 'fs-extra';
-import {
-  setScriptTimestamp,
-} from '@johnlindquist/kit/cjs/db';
+import { setScriptTimestamp } from '@johnlindquist/kit/cjs/db';
 import { getLog, mainLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -117,7 +115,13 @@ import {
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { createWidget } from './widget';
 import { AppChannel, HideReason, Trigger } from './enums';
-import { isKitScript, toRgb, pathsAreEqual, convertShortcut, getCachePath } from './helpers';
+import {
+  isKitScript,
+  toRgb,
+  pathsAreEqual,
+  convertShortcut,
+  getCachePath,
+} from './helpers';
 import { toHex } from './color-utils';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
@@ -125,8 +129,6 @@ import { stripAnsi } from './ansi';
 import { darkTheme, lightTheme } from './components/themes';
 import { getAssetPath } from './assets';
 import { TrackEvent, trackEvent } from './track';
-
-
 
 // const trash = async (...args: string[]) => {
 //   const parent = app.isPackaged
@@ -143,37 +145,35 @@ import { TrackEvent, trackEvent } from './track';
 // };
 
 export const maybeConvertColors = async (newTheme: any = {}) => {
-  let prevTheme:any = {}
+  let prevTheme: any = {};
   const prevThemeExists = await pathExists(themeDbPath);
-  if(prevThemeExists){
-    try{
-      log.info(`Found saved theme: ${themeDbPath}`)
+  if (prevThemeExists) {
+    try {
+      log.info(`Found saved theme: ${themeDbPath}`);
       prevTheme = await readJson(themeDbPath);
-      if(prevTheme?.['--ui-bg-opacity']) delete prevTheme['--ui-bg-opacity']
-      if(prevTheme?.['--ui-border-opacity']) delete prevTheme['--ui-border-opacity']
-
-    }catch(error){
-      log.warn(`Error reading theme db:`, error)
+      if (prevTheme?.['--ui-bg-opacity']) delete prevTheme['--ui-bg-opacity'];
+      if (prevTheme?.['--ui-border-opacity'])
+        delete prevTheme['--ui-border-opacity'];
+    } catch (error) {
+      log.warn(`Error reading theme db:`, error);
     }
-  }else{
-    log.info(`No saved theme found: ${themeDbPath}`)
+  } else {
+    log.info(`No saved theme found: ${themeDbPath}`);
   }
 
-  let theme:any = {}
+  let theme: any = {};
 
-  if(kitState.ready){
+  if (kitState.ready) {
     theme = {
       ...prevTheme,
       ...newTheme,
-    }
-  }else{
+    };
+  } else {
     theme = {
       ...newTheme,
       ...prevTheme,
-    }
+    };
   }
-
-
 
   log.info(`🎨 Convert Colors:`, theme);
 
@@ -184,11 +184,12 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   theme.ui ||= theme?.['--color-secondary'];
   theme.opacity ||= theme?.['--opacity'] || '0.5';
 
-  theme['--ui-bg-opacity'] ||= newTheme?.['ui-bg-opacity'] || theme?.['ui-bg-opacity'] || '0.4';
-  theme['--ui-border-opacity'] ||= newTheme?.['ui-border-opacity'] || theme?.['ui-border-opacity'] || '0.7';
+  theme['--ui-bg-opacity'] ||=
+    newTheme?.['ui-bg-opacity'] || theme?.['ui-bg-opacity'] || '0.4';
+  theme['--ui-border-opacity'] ||=
+    newTheme?.['ui-border-opacity'] || theme?.['ui-border-opacity'] || '0.7';
 
-  if(appDb?.disableBlurEffect) theme.opacity = '1';
-
+  if (appDb?.disableBlurEffect) theme.opacity = '1';
 
   if (theme.foreground) {
     const foreground = toRgb(theme.foreground);
@@ -204,8 +205,7 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
     theme['--color-secondary'] = toRgb(ui);
   }
 
-
-  let result = ``
+  let result = ``;
   if (theme.background) {
     const background = toRgb(theme.background);
     theme['--color-background'] = background;
@@ -218,7 +218,7 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
 
     const appearance = result === '#FFFFFF' ? 'dark' : 'light';
     log.info(`💄 Setting appearance to ${appearance}`);
-    theme.appearance =  appearance;
+    theme.appearance = appearance;
   }
 
   if (theme.opacity) {
@@ -230,8 +230,8 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   if (theme.foreground) delete theme.foreground;
   if (theme.accent) delete theme.accent;
   if (theme.opacity) delete theme.opacity;
-  if(theme?.['ui-bg-opacity']) delete theme['ui-bg-opacity']
-  if(theme?.['ui-border-opacity']) delete theme['ui-border-opacity']
+  if (theme?.['ui-bg-opacity']) delete theme['ui-bg-opacity'];
+  if (theme?.['ui-border-opacity']) delete theme['ui-border-opacity'];
 
   // if(value?.['--color-text']) delete value['--color-text']
   // if(value?.['--color-background']) delete value['--color-background']
@@ -240,48 +240,76 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   // if(value?.['--opacity']) delete value['--opacity']
 
   const defaultOpacity = kitState.isMac ? '0.5' : '0.95';
-  const defaultTheme = {"--color-text":"255, 255, 255","--color-primary":"251, 191, 36","--color-secondary":"255, 255, 255","--color-background":"6, 6, 6","--opacity":defaultOpacity,"appearance":"dark","--ui-bg-opacity":"0.07","--ui-border-opacity":"0.15"}
+  const defaultTheme = {
+    '--color-text': '255, 255, 255',
+    '--color-primary': '251, 191, 36',
+    '--color-secondary': '255, 255, 255',
+    '--color-background': '6, 6, 6',
+    '--opacity': defaultOpacity,
+    appearance: 'dark',
+    '--ui-bg-opacity': '0.07',
+    '--ui-border-opacity': '0.15',
+  };
 
-  if(theme?.['--color-primary'] === defaultTheme?.['--color-primary']){
-    log.info(`🎨 --color-primary detected as ${defaultTheme?.['--color-primary']}. Forcing default theme`)
-    theme = defaultTheme
+  if (theme?.['--color-primary'] === defaultTheme?.['--color-primary']) {
+    log.info(
+      `🎨 --color-primary detected as ${defaultTheme?.['--color-primary']}. Forcing default theme`
+    );
+    theme = defaultTheme;
   }
 
   // if kitPath exists
-  const dbPathExists = await pathExists(kitPath('db'))
-  if(dbPathExists){
+  const dbPathExists = await pathExists(kitPath('db'));
+  if (dbPathExists) {
     // Save theme as JSON to disk
     log.info(`Saving theme to ${themeDbPath}`, theme);
-    log.info(`Result`, {result})
-    try{
+    log.info(`Result`, { result });
+    try {
       writeJson(themeDbPath, theme);
-    }catch(error){
-      log.warn(`Error writing theme db:`, error)
+    } catch (error) {
+      log.warn(`Error writing theme db:`, error);
     }
   }
 
   const validVibrancies = [
-    'appearance-based', 'light', 'dark', 'titlebar', 'selection', 'menu', 'popover', 'sidebar', 'medium-light', 'ultra-dark', 'header', 'sheet', 'window', 'hud', 'fullscreen-ui', 'tooltip', 'content', 'under-window', 'under-page',
+    'appearance-based',
+    'light',
+    'dark',
+    'titlebar',
+    'selection',
+    'menu',
+    'popover',
+    'sidebar',
+    'medium-light',
+    'ultra-dark',
+    'header',
+    'sheet',
+    'window',
+    'hud',
+    'fullscreen-ui',
+    'tooltip',
+    'content',
+    'under-window',
+    'under-page',
   ];
 
   const defaultVibrancy = 'hud';
 
-  const vibrancy = newTheme?.vibrancy && validVibrancies.includes(newTheme.vibrancy)
-    ? newTheme.vibrancy
-    : defaultVibrancy;
+  const vibrancy =
+    newTheme?.vibrancy && validVibrancies.includes(newTheme.vibrancy)
+      ? newTheme.vibrancy
+      : defaultVibrancy;
 
   setVibrancy(vibrancy);
 
-  return theme
+  return theme;
 };
 
 export const formatScriptChoices = (data: Choice[]) => {
   const dataChoices: Script[] = (data || []) as Script[];
   log.verbose('formatScriptChoices', { length: dataChoices?.length || 0 });
   const choices = dataChoices.map((script) => {
-    if (!script.description && script.name !== script.command) {
-      script.description = script.command;
-    }
+    script.description = '';
     if (script.background) {
       const backgroundScript = getBackgroundTasks().find(
         (t) => t.filePath === script.filePath
@@ -389,39 +417,41 @@ type WidgetData = {
 };
 type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
-const toProcess = <K extends keyof ChannelMap>(
-  fn: (processInfo: ProcessInfo, data: SendData<K>) => void
-) => (data: SendData<K>) => {
-  if (kitState.allowQuit)
-    return warn(`⚠️  Tried to send data to ${data.channel} after quit`);
+const toProcess =
+  <K extends keyof ChannelMap>(
+    fn: (processInfo: ProcessInfo, data: SendData<K>) => void
+  ) =>
+  (data: SendData<K>) => {
+    if (kitState.allowQuit)
+      return warn(`⚠️  Tried to send data to ${data.channel} after quit`);
 
-  log.verbose(`toProcess: ${data.channel}`);
-  const processInfo = processes.getByPid(data?.pid);
-  const isWidgetMessage = data.channel.includes('WIDGET');
+    log.verbose(`toProcess: ${data.channel}`);
+    const processInfo = processes.getByPid(data?.pid);
+    const isWidgetMessage = data.channel.includes('WIDGET');
 
-  if (!processInfo) {
-    return warn(
-      `${data?.pid}: Can't find process associated with ${
-        isWidgetMessage ? `widget` : `script`
-      }`
-    );
-  }
+    if (!processInfo) {
+      return warn(
+        `${data?.pid}: Can't find process associated with ${
+          isWidgetMessage ? `widget` : `script`
+        }`
+      );
+    }
 
-  if (
-    data.channel !== Channel.HIDE_APP &&
-    isVisible() &&
-    !isWidgetMessage &&
-    processInfo?.pid !== kitState.pid
-  ) {
-    return warn(
-      `💁‍♂️ ${path.basename(processInfo.scriptPath)}: ${data?.pid}: ${
-        data.channel
-      } ignored on current UI. ${data.pid} doesn't match ${kitState.pid}`
-    );
-  }
+    if (
+      data.channel !== Channel.HIDE_APP &&
+      isVisible() &&
+      !isWidgetMessage &&
+      processInfo?.pid !== kitState.pid
+    ) {
+      return warn(
+        `💁‍♂️ ${path.basename(processInfo.scriptPath)}: ${data?.pid}: ${
+          data.channel
+        } ignored on current UI. ${data.pid} doesn't match ${kitState.pid}`
+      );
+    }
 
-  return fn(processInfo, data);
-};
+    return fn(processInfo, data);
+  };
 
 const childSend = (child: ChildProcess, data: any) => {
   try {
@@ -466,7 +496,6 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, bounds });
   }),
 
-
   GET_BACKGROUND: toProcess(({ child }, { channel }) => {
     childSend(child, { channel, tasks: getBackgroundTasks() });
   }),
@@ -490,30 +519,31 @@ const kitMessageMap: ChannelHandler = {
     }
   }),
 
-  WIDGET_EXECUTE_JAVASCRIPT: toProcess(async ({ child }, { channel, value }) => {
-    log.info(value)
-    const { widgetId, value: js } = value as any;
-    const widget = findWidget(widgetId, channel);
-    if (!widget) return;
+  WIDGET_EXECUTE_JAVASCRIPT: toProcess(
+    async ({ child }, { channel, value }) => {
+      log.info(value);
+      const { widgetId, value: js } = value as any;
+      const widget = findWidget(widgetId, channel);
+      if (!widget) return;
 
-    log.info(`WIDGET_EXECUTE_JAVASCRIPT`, {
-      widgetId,
-      js: js.trim()
-    });
-
-    if (widget) {
-      const result = await widget?.webContents.executeJavaScript(js);
-
-      childSend(child, {
-        channel,
-        value: result,
+      log.info(`WIDGET_EXECUTE_JAVASCRIPT`, {
+        widgetId,
+        js: js.trim(),
       });
-    } else {
-      warn(`${widgetId}: widget not found. Killing process.`);
-      child?.kill();
-    }
-  }),
 
+      if (widget) {
+        const result = await widget?.webContents.executeJavaScript(js);
+
+        childSend(child, {
+          channel,
+          value: result,
+        });
+      } else {
+        warn(`${widgetId}: widget not found. Killing process.`);
+        child?.kill();
+      }
+    }
+  ),
 
   WIDGET_SET_STATE: toProcess(({ child }, { channel, value }) => {
     const { widgetId, state } = value as any;
@@ -841,14 +871,13 @@ const kitMessageMap: ChannelHandler = {
   HIDE_APP: toProcess(async ({ child, scriptPath }, { channel }) => {
     if (kitState.isMac && app?.dock) app?.dock?.hide();
 
-    sendToPrompt(Channel.HIDE_APP)
+    sendToPrompt(Channel.HIDE_APP);
 
     kitState.hiddenByUser = true;
     log.info(`😳 Hiding app`);
 
     const handler = () => {
       log.info(`🫣 App hidden`);
-
 
       if (!child?.killed) {
         childSend(child, {
@@ -879,7 +908,7 @@ const kitMessageMap: ChannelHandler = {
       }
     }
   }),
-  DEBUG_SCRIPT: toProcess(async (processInfo, data:any) => {
+  DEBUG_SCRIPT: toProcess(async (processInfo, data: any) => {
     await sponsorCheck('Debugging Scripts');
     if (!kitState.isSponsor) return;
 
@@ -888,8 +917,8 @@ const kitMessageMap: ChannelHandler = {
 
     log.info(`DEBUG_SCRIPT`, data?.value?.filePath);
     trackEvent(TrackEvent.DebugScript, {
-      scriptName: path.basename(data?.value?.filePath || "")
-    })
+      scriptName: path.basename(data?.value?.filePath || ''),
+    });
 
     sendToPrompt(Channel.START, data?.value?.filePath);
     sendToPrompt(Channel.SET_PROMPT_DATA, {
@@ -926,22 +955,19 @@ const kitMessageMap: ChannelHandler = {
         processInfo.child.stdout.removeAllListeners();
         processInfo.child.stderr.removeAllListeners();
 
+        const routeToScriptLog = (d: any) => {
+          if (processInfo?.child?.killed) return;
+          if (data?.value?.verbose) {
+            const result = d.toString();
+            scriptLog.info(`\n${stripAnsi(result)}`);
+          }
+        };
 
-          const routeToScriptLog = (d: any) => {
-            if (processInfo?.child?.killed) return;
-            if(data?.value?.verbose){
-              const result = d.toString();
-              scriptLog.info(`\n${stripAnsi(result)}`);
-            }
-          };
+        processInfo.child.stdout?.on('data', routeToScriptLog);
+        processInfo.child.stdout?.on('error', routeToScriptLog);
 
-
-            processInfo.child.stdout?.on('data', routeToScriptLog);
-            processInfo.child.stdout?.on('error', routeToScriptLog);
-
-            processInfo.child.stderr?.on('data', routeToScriptLog);
-            processInfo.child.stderr?.on('error', routeToScriptLog);
-
+        processInfo.child.stderr?.on('data', routeToScriptLog);
+        processInfo.child.stderr?.on('error', routeToScriptLog);
       }
 
       const foundP = kitState.ps.find((p) => p.pid === processInfo.pid);
@@ -996,7 +1022,7 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_PAUSE_RESIZE: toProcess(async ({ child }, { channel, value }) => {
-    log.info(`⏸ Resize`, `${value ? 'paused' : 'resumed'}`)
+    log.info(`⏸ Resize`, `${value ? 'paused' : 'resumed'}`);
     kitState.resizePaused = value;
 
     childSend(child, { channel });
@@ -1063,17 +1089,21 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_PREVIEW: (data) => {
-    if(kitState.scriptPathChanged || kitState.ui !== UI.arg) {
-      if(kitState.scriptPathChanged) log.verbose(`⛔️ Script path changed, but new prompt not set. Skipping SET_CHOICES`)
-      if(kitState.ui !== UI.arg) log.verbose(`⛔️ UI is ${kitState.ui}. Skipping SET_CHOICES`)
-      return
+    if (kitState.scriptPathChanged || kitState.ui !== UI.arg) {
+      if (kitState.scriptPathChanged)
+        log.verbose(
+          `⛔️ Script path changed, but new prompt not set. Skipping SET_CHOICES`
+        );
+      if (kitState.ui !== UI.arg)
+        log.verbose(`⛔️ UI is ${kitState.ui}. Skipping SET_CHOICES`);
+      return;
     }
 
     setPreview(data.value);
   },
 
   SET_SHORTCUTS: toProcess(async ({ child }, { channel, value }) => {
-    setShortcuts(value)
+    setShortcuts(value);
 
     childSend(child, { channel, value });
   }),
@@ -1117,19 +1147,17 @@ const kitMessageMap: ChannelHandler = {
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
   SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
-    log.info(`🛑 Script path changed`)
+    log.info(`🛑 Script path changed`);
     kitState.scriptPathChanged = false;
-    kitState.promptScriptPath = value?.scriptPath || ''
+    kitState.promptScriptPath = value?.scriptPath || '';
 
-
-    if(value?.ui === UI.mic){
+    if (value?.ui === UI.mic) {
       appToPrompt(AppChannel.SET_MIC_CONFIG, {
         timeSlice: value?.timeSlice || 200,
         format: value?.format || 'webm',
-      })
+      });
     }
     // log.silly(`SET_PROMPT_DATA`);
-
 
     // if (value?.ui === UI.term) {
     //   kitState.termCommand = value?.input || ''
@@ -1139,7 +1167,6 @@ const kitMessageMap: ChannelHandler = {
 
     setPromptData(value);
     kitState.isScripts = Boolean(value?.scripts);
-
 
     childSend(child, { channel });
   }),
@@ -1176,17 +1203,18 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_CHOICES: toProcess(async ({ child }, { channel, value }) => {
-    if(kitState.scriptPathChanged) {
-      log.info(`⛔️ Script path changed, but new prompt not set. Skipping SET_CHOICES`)
-      return
+    if (kitState.scriptPathChanged) {
+      log.info(
+        `⛔️ Script path changed, but new prompt not set. Skipping SET_CHOICES`
+      );
+      return;
     }
 
-    let formattedChoices = value
+    let formattedChoices = value;
     if (kitState.isScripts) {
       formattedChoices = formatScriptChoices(value);
       setChoices(formattedChoices);
     }
-
 
     setChoices(formattedChoices);
 
@@ -1196,21 +1224,23 @@ const kitMessageMap: ChannelHandler = {
       });
     }
 
-    if(kitState.cacheChoices){
-      kitState.cacheChoices = false
+    if (kitState.cacheChoices) {
+      kitState.cacheChoices = false;
 
-      const cachePath = getCachePath(kitState.scriptPath, 'choices')
+      const cachePath = getCachePath(kitState.scriptPath, 'choices');
 
-      log.info(`🎁 Caching ${kitState.scriptPath} choices -> ${cachePath}`)
-      ensureDir(path.dirname(cachePath)).then((success)=> {
-        // eslint-disable-next-line promise/no-nesting
-        return writeJson(cachePath, formattedChoices).catch(error => {
-          log.warn({error})
-          return error
+      log.info(`🎁 Caching ${kitState.scriptPath} choices -> ${cachePath}`);
+      ensureDir(path.dirname(cachePath))
+        .then((success) => {
+          // eslint-disable-next-line promise/no-nesting
+          return writeJson(cachePath, formattedChoices).catch((error) => {
+            log.warn({ error });
+            return error;
+          });
         })
-      }).catch((error)=> {
-        log.warn({error})
-      })
+        .catch((error) => {
+          log.warn({ error });
+        });
     }
   }),
 
@@ -1838,10 +1868,10 @@ const kitMessageMap: ChannelHandler = {
     // REMOVE-NUT
     const { keyboard, Key } = await import('@nut-tree/nut-js');
 
-    const text = value?.text
-    const hide = value?.hide
+    const text = value?.text;
+    const hide = value?.hide;
 
-    if (hide && kitState.isMac && app?.dock && app?.dock?.isVisible()){
+    if (hide && kitState.isMac && app?.dock && app?.dock?.isVisible()) {
       app?.dock?.hide();
     }
 
@@ -1903,7 +1933,7 @@ const kitMessageMap: ChannelHandler = {
     shell.beep();
     childSend(child, { channel, value });
   }),
-  PLAY_AUDIO: toProcess(async ({ child }, { channel, value }:any) => {
+  PLAY_AUDIO: toProcess(async ({ child }, { channel, value }: any) => {
     try {
       log.info(`🔊 Playing ${value?.filePath || value}`);
     } catch (error) {
@@ -2046,64 +2076,63 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, value });
   }),
   SET_SCORED_CHOICES: toProcess(async ({ child }, { channel, value }) => {
-    log.verbose(`SET SCORED CHOICES`)
+    log.verbose(`SET SCORED CHOICES`);
     sendToPrompt(channel, value);
     childSend(child, { channel, value });
   }),
   PRELOAD_MAIN_SCRIPT: toProcess(async ({ child }, { channel, value }) => {
-    log.verbose(`PRELOAD MAIN SCRIPT`)
+    log.verbose(`PRELOAD MAIN SCRIPT`);
 
     const promptScriptPath = mainScriptPath;
     const cachedChoicesPath = getCachePath(promptScriptPath, 'choices');
-      readJson(cachedChoicesPath)
-        .then((result) => {
-          return preloadChoices(result);
-        })
-        .then((result) => {
-          log.info(`Preloaded ${promptScriptPath} choices 👍`);
-          return result;
-        })
-        .catch((error) => {
-          log.verbose(`No cache for ${promptScriptPath}`);
-        });
+    readJson(cachedChoicesPath)
+      .then((result) => {
+        return preloadChoices(result);
+      })
+      .then((result) => {
+        log.info(`Preloaded ${promptScriptPath} choices 👍`);
+        return result;
+      })
+      .catch((error) => {
+        log.verbose(`No cache for ${promptScriptPath}`);
+      });
 
-      const cachedPromptPath = getCachePath(promptScriptPath, 'prompt');
-      readJson(cachedPromptPath)
-        .then((result) => {
-          return preloadPromptData(result);
-        })
-        .then((result) => {
-          log.info(`Preloaded ${promptScriptPath} prompt 👍`);
-          return result;
-        })
-        .catch((error) => {
-          log.verbose(`No cache for ${promptScriptPath}`);
-        });
+    const cachedPromptPath = getCachePath(promptScriptPath, 'prompt');
+    readJson(cachedPromptPath)
+      .then((result) => {
+        return preloadPromptData(result);
+      })
+      .then((result) => {
+        log.info(`Preloaded ${promptScriptPath} prompt 👍`);
+        return result;
+      })
+      .catch((error) => {
+        log.verbose(`No cache for ${promptScriptPath}`);
+      });
 
     childSend(child, { channel, value });
   }),
 };
 
-export const createMessageHandler = (type: ProcessType) => async (
-  data: GenericSendData
-) => {
-  if (!data.kitScript) log.info(data);
+export const createMessageHandler =
+  (type: ProcessType) => async (data: GenericSendData) => {
+    if (!data.kitScript) log.info(data);
 
-  if (kitMessageMap[data.channel]) {
-    type C = keyof ChannelMap;
-    log.verbose(`➡ ${data.channel}`);
-    const channelFn = kitMessageMap[data.channel as C] as (
-      data: SendData<C>
-    ) => void;
-    try {
-      channelFn(data);
-    } catch (error) {
-      log.error(`Error in channel ${data.channel}`, error);
+    if (kitMessageMap[data.channel]) {
+      type C = keyof ChannelMap;
+      log.verbose(`➡ ${data.channel}`);
+      const channelFn = kitMessageMap[data.channel as C] as (
+        data: SendData<C>
+      ) => void;
+      try {
+        channelFn(data);
+      } catch (error) {
+        log.error(`Error in channel ${data.channel}`, error);
+      }
+    } else {
+      warn(`Channel ${data?.channel} not found on ${type}.`);
     }
-  } else {
-    warn(`Channel ${data?.channel} not found on ${type}.`);
-  }
-};
+  };
 
 interface CreateChildInfo {
   type: ProcessType;
@@ -2210,10 +2239,10 @@ const createChild = ({
           win?.setAlwaysOnTop(false);
         }, 500);
 
-        win.on("close", ()=> {
-          if(child && !child.killed) child?.kill()
-          maybeHide(HideReason.DebuggerClosed)
-        })
+        win.on('close', () => {
+          if (child && !child.killed) child?.kill();
+          maybeHide(HideReason.DebuggerClosed);
+        });
       }
     });
 
@@ -2255,20 +2284,20 @@ export const clearIdleProcesses = () => {
   });
 };
 
-export const getIdles = ()=> {
+export const getIdles = () => {
   return processes
-  .getAllProcessInfo()
-  .filter(
-    (processInfo) =>
-      processInfo.type === ProcessType.Prompt &&
-      processInfo?.scriptPath === ''
-  );
-}
+    .getAllProcessInfo()
+    .filter(
+      (processInfo) =>
+        processInfo.type === ProcessType.Prompt &&
+        processInfo?.scriptPath === ''
+    );
+};
 
 export const ensureIdleProcess = () => {
   log.info(`Ensure idle process`);
   setTimeout(() => {
-    const idles = getIdles()
+    const idles = getIdles();
     if (idles.length === 0) {
       log.info(`Add one idle process`);
       processes.add(ProcessType.Prompt);
@@ -2305,7 +2334,7 @@ class Processes extends Array<ProcessInfo> {
     }));
   }
 
-  public addExistingProcess(child: ChildProcess, scriptPath:string) {
+  public addExistingProcess(child: ChildProcess, scriptPath: string) {
     const info = {
       pid: child.pid,
       child,
@@ -2377,18 +2406,16 @@ class Processes extends Array<ProcessInfo> {
     });
 
     child.on('exit', (code) => {
-
       log.info(`EXIT`, { pid, code });
       if (id) clearTimeout(id);
 
       if (child?.pid === kitState?.pid) {
         sendToPrompt(Channel.EXIT, pid);
-        emitter.emit(KitEvent.TERM_KILL, kitState.promptId)
+        emitter.emit(KitEvent.TERM_KILL, kitState.promptId);
       }
 
       const processInfo = processes.getByPid(pid) as ProcessInfo;
       emitter.emit(KitEvent.RemoveProcess, processInfo.scriptPath);
-
 
       if (!processInfo) return;
 
@@ -2397,17 +2424,17 @@ class Processes extends Array<ProcessInfo> {
       }
 
       if (code === 0) {
-
-        log.info(`${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`);
+        log.info(
+          `${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
+        );
         const stamp = {
           filePath: processInfo?.scriptPath,
           runCount: 1,
           executionTime: Date.now() - processInfo.date,
-        }
+        };
 
         log.info(`💮 Stamping:`, stamp);
-        setScriptTimestamp(stamp)
-
+        setScriptTimestamp(stamp);
       } else if (typeof code === 'number') {
         log.error(
           `${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
@@ -2437,7 +2464,7 @@ class Processes extends Array<ProcessInfo> {
 
       trackEvent(TrackEvent.ChildError, {
         error: error?.message,
-      })
+      });
       if (reject) reject(error);
     });
 
@@ -2509,7 +2536,8 @@ class Processes extends Array<ProcessInfo> {
   public removeCurrentProcess() {
     const info = this.find(
       (processInfo) =>
-        processInfo.scriptPath === kitState.scriptPath && processInfo.type === ProcessType.Prompt
+        processInfo.scriptPath === kitState.scriptPath &&
+        processInfo.type === ProcessType.Prompt
     );
     if (info) {
       this.removeByPid(info.pid);
@@ -2692,10 +2720,10 @@ emitter.on(KitEvent.KillProcess, (pid) => {
 
 emitter.on(KitEvent.TermExited, (pid) => {
   log.info(`🛑 Term Exited: SUMBMITTING`);
-  if(kitState.ui === UI.term){
+  if (kitState.ui === UI.term) {
     sendToPrompt(AppChannel.TERM_EXIT, '');
   }
-})
+});
 
 export const destroyAllProcesses = () => {
   mainLog.info(`Destroy all processes`);
@@ -2708,42 +2736,46 @@ export const destroyAllProcesses = () => {
   processes.length = 0;
 };
 
-
-export const spawnShebang = async ({shebang, filePath}:{
+export const spawnShebang = async ({
+  shebang,
+  filePath,
+}: {
   shebang: string;
   filePath: string;
 }) => {
   const [command, ...args] = shebang.split(' ');
-        const child = spawn(command, [...args, filePath]);
-        processes.addExistingProcess(child, filePath);
+  const child = spawn(command, [...args, filePath]);
+  processes.addExistingProcess(child, filePath);
 
-        log.info(`🚀 Spawned process ${child.pid} for ${filePath} with command ${command}`);
+  log.info(
+    `🚀 Spawned process ${child.pid} for ${filePath} with command ${command}`
+  );
 
-        child.unref();
+  child.unref();
 
-        if (child.stdout && child.stderr) {
-          const scriptLog = getLog(filePath);
-          child.stdout.removeAllListeners();
-          child.stderr.removeAllListeners();
+  if (child.stdout && child.stderr) {
+    const scriptLog = getLog(filePath);
+    child.stdout.removeAllListeners();
+    child.stderr.removeAllListeners();
 
-          const routeToScriptLog = (d: any) => {
-            if (child?.killed) return;
-            const result = d.toString();
-            scriptLog.info(`\n${stripAnsi(result)}`);
-          };
+    const routeToScriptLog = (d: any) => {
+      if (child?.killed) return;
+      const result = d.toString();
+      scriptLog.info(`\n${stripAnsi(result)}`);
+    };
 
-          child.stdout?.on('data', routeToScriptLog);
-          child.stdout?.on('error', routeToScriptLog);
+    child.stdout?.on('data', routeToScriptLog);
+    child.stdout?.on('error', routeToScriptLog);
 
-          child.stderr?.on('data', routeToScriptLog);
-          child.stderr?.on('error', routeToScriptLog);
+    child.stderr?.on('data', routeToScriptLog);
+    child.stderr?.on('error', routeToScriptLog);
 
-          // Log out when the process exits
-          child.on('exit', (code) => {
-            scriptLog.info(`\nProcess exited with code ${code}`);
-          });
-        }
-}
+    // Log out when the process exits
+    child.on('exit', (code) => {
+      scriptLog.info(`\nProcess exited with code ${code}`);
+    });
+  }
+};
 
 emitter.on(
   KitEvent.RemoveMostRecent,
@@ -2772,22 +2804,22 @@ subscribe(appDb, (db) => {
   sendToPrompt(Channel.APP_DB, { ...appDb });
 });
 
-subscribeKey(kitState, 'scriptPath', debounce(() => {
-  if(kitState.scriptPath === '') {
+subscribeKey(
+  kitState,
+  'scriptPath',
+  debounce(() => {
+    if (kitState.scriptPath === '') {
+      if (kitState.allowQuit) return;
+      const mains = processes.filter((p) =>
+        pathsAreEqual(p.scriptPath, mainScriptPath)
+      );
 
-    if (kitState.allowQuit) return;
-    const mains = processes.filter((p) =>
-      pathsAreEqual(p.scriptPath, mainScriptPath)
-    );
-
-    mains.forEach((p) => {
-      log.info(`Killing stray main process ${p.pid}`);
-      if(kitState.pid !== p.pid){
-        p.child.kill();
-      }
-
-    });
-
-  }
-}, 250))
-
+      mains.forEach((p) => {
+        log.info(`Killing stray main process ${p.pid}`);
+        if (kitState.pid !== p.pid) {
+          p.child.kill();
+        }
+      });
+    }
+  }, 250)
+);

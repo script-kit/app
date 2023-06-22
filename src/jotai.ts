@@ -198,6 +198,7 @@ let wereChoicesPreloaded = false;
 export const unfilteredChoicesAtom = atom(
   (g) => g(unfilteredChoices),
   (g, s, a: Choice[] | null) => {
+    console.log({ a });
     wereChoicesPreloaded = !a?.preload && choicesPreloaded;
     choicesPreloaded = a?.preload;
     if (a?.length === 0 && g(unfilteredChoices)?.length === 0) return;
@@ -530,9 +531,8 @@ const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   trimAutoWhitespace: true,
 };
 
-export const editorOptions = atom<editor.IStandaloneEditorConstructionOptions>(
-  defaultEditorOptions
-);
+export const editorOptions =
+  atom<editor.IStandaloneEditorConstructionOptions>(defaultEditorOptions);
 
 export const editorConfigAtom = atom(
   (g) => g(editorConfig),
@@ -900,27 +900,30 @@ const invokeSearch = (
     const matchGroup = [];
 
     for (const choice of unfiltered) {
-      const scoredChoice = resultMap.get(choice.id);
-      if (choice?.pass) {
-        groupedResults.push(createScoredChoice(choice));
-      }
-
-      if (scoredChoice) {
+      const hide = choice?.hideWithoutInput && input === '';
+      if (!hide) {
+        const scoredChoice = resultMap.get(choice.id);
         if (choice?.pass) {
-          if (input) {
-            scoredChoice.item = {
-              ...choice,
-              group: 'Match',
-              pass: false,
-              id: Math.random(),
-            };
-            matchGroup.push(scoredChoice);
-          }
-        } else {
-          groupedResults.push(scoredChoice);
+          groupedResults.push(createScoredChoice(choice));
         }
-      } else if (choice?.skip && keepGroups?.has(choice?.group)) {
-        groupedResults.push(createScoredChoice(choice));
+
+        if (scoredChoice) {
+          if (choice?.pass) {
+            if (input) {
+              scoredChoice.item = {
+                ...choice,
+                group: 'Match',
+                pass: false,
+                id: Math.random(),
+              };
+              matchGroup.push(scoredChoice);
+            }
+          } else {
+            groupedResults.push(scoredChoice);
+          }
+        } else if (choice?.skip && keepGroups?.has(choice?.group)) {
+          groupedResults.push(createScoredChoice(choice));
+        }
       }
     }
 
@@ -980,7 +983,10 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
     }
   } else if (un.length) {
     debounceSearch.cancel();
-    s(scoredChoicesAtom, un.filter((c) => !c?.pass).map(createScoredChoice));
+    s(
+      scoredChoicesAtom,
+      un.filter((c) => !c?.pass && !c?.hideWithoutInput).map(createScoredChoice)
+    );
   } else {
     debounceSearch.cancel();
     s(scoredChoicesAtom, []);
@@ -1027,7 +1033,7 @@ export const inputAtom = atom(
     // If the promptData isn't set, default to FILTER
     const mode = g(promptData)?.mode || Mode.FILTER;
 
-    if (g(tabChangedAtom) && prevInput !== a) {
+    if (g(tabChangedAtom) && a && prevInput !== a) {
       s(tabChangedAtom, false);
       return;
     }
@@ -1672,6 +1678,7 @@ export const promptDataAtom = atom(
     ipcRenderer.send(Channel.SET_PROMPT_DATA);
 
     s(promptActiveAtom, true);
+    s(tabChangedAtom, false);
   }
 );
 
@@ -1901,9 +1908,8 @@ export const submitValueAtom = atom(
       stream.getTracks().forEach((track) => track.stop());
       s(webcamStreamAtom, null);
       if (document.getElementById('webcam'))
-        (document.getElementById(
-          'webcam'
-        ) as HTMLVideoElement).srcObject = null;
+        (document.getElementById('webcam') as HTMLVideoElement).srcObject =
+          null;
     }
   })
 );
@@ -1959,9 +1965,8 @@ export const openAtom = atom(
         stream.getTracks().forEach((track) => track.stop());
         s(webcamStreamAtom, null);
         if (document.getElementById('webcam'))
-          (document.getElementById(
-            'webcam'
-          ) as HTMLVideoElement).srcObject = null;
+          (document.getElementById('webcam') as HTMLVideoElement).srcObject =
+            null;
       }
     }
     s(_open, a);
@@ -2673,7 +2678,7 @@ export const inputFontSizeAtom = atom((g) => {
       break;
 
     case PROMPT.INPUT.HEIGHT.SM:
-      fontSize = `text-base`;
+      fontSize = `text-xl`;
       break;
 
     case PROMPT.INPUT.HEIGHT.BASE:
