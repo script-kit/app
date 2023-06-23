@@ -121,7 +121,7 @@ export default function ChoiceList({ width, height }: ListProps) {
       <List
         ref={listRef}
         innerRef={innerRef}
-        overscanCount={12}
+        overscanCount={2}
         onScroll={(props) => {
           if (index === 0 || index === 1) {
             setIsScrolling(false);

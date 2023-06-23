@@ -144,10 +144,8 @@ export default function Editor() {
     }
   }, [editorSuggestions, m, options]);
 
-  const [
-    editor,
-    setEditorRef,
-  ] = useState<monacoEditor.IStandaloneCodeEditor | null>(null);
+  const [editor, setEditorRef] =
+    useState<monacoEditor.IStandaloneCodeEditor | null>(null);
 
   useEffect(() => {
     if (editorSuggestions.length && options.language === 'markdown') {
@@ -274,8 +272,9 @@ export default function Editor() {
       mountEditor.focus();
 
       if (mountEditor?.getDomNode())
-        ((mountEditor.getDomNode() as HTMLElement)
-          .style as any).webkitAppRegion = 'no-drag';
+        (
+          (mountEditor.getDomNode() as HTMLElement).style as any
+        ).webkitAppRegion = 'no-drag';
 
       const lineNumber = mountEditor.getModel()?.getLineCount() || 0;
 
@@ -530,19 +529,16 @@ export default function Editor() {
   const theme = kitIsDark ? 'kit-dark' : 'kit-light';
 
   return (
-    <motion.div
+    <div
       id={UI.editor}
       key="editor"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1] }}
-      transition={{ duration: 0.5, ease: 'circOut' }}
       ref={containerRef}
       className={`
-      pt-3 -mb-3
-    w-full h-full`}
+      -mb-3 h-full
+    w-full pt-3`}
     >
       <MonacoEditor
-        className="w-full h-full"
+        className="h-full w-full"
         beforeMount={onBeforeMount}
         onMount={onMount}
         language={(config as EditorOptions)?.language || 'markdown'}
@@ -552,6 +548,6 @@ export default function Editor() {
         value={inputValue}
         onChange={onChange}
       />
-    </motion.div>
+    </div>
   );
 }

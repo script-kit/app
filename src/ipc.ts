@@ -33,28 +33,30 @@ import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
 import { kitState } from './state';
 
-const handleChannel = (
-  fn: (processInfo: ProcessInfo, message: AppMessage) => void
-) => (_event: any, message: AppMessage) => {
-  // TODO: Remove logging
-  // log.info({
-  //   message,
-  // });
-  if (message?.pid === 0) return;
-  const processInfo = processes.getByPid(message?.pid);
+const handleChannel =
+  (fn: (processInfo: ProcessInfo, message: AppMessage) => void) =>
+  (_event: any, message: AppMessage) => {
+    // TODO: Remove logging
+    // log.info({
+    //   message,
+    // });
+    if (message?.pid === 0) return;
+    const processInfo = processes.getByPid(message?.pid);
 
-  if (processInfo) {
-    try {
-      fn(processInfo, message);
-    } catch (error) {
-      log.error(`${message.channel} errored on ${message?.pid}`, message);
+    if (processInfo) {
+      try {
+        fn(processInfo, message);
+      } catch (error) {
+        log.error(`${message.channel} errored on ${message?.pid}`, message);
+      }
+
+      // log.info(`${message.channel}`, message.pid);
+    } else if (message.pid !== -1) {
+      log.warn(`${message.channel} failed on ${message?.pid}`);
+
+      processes.removeByPid(message?.pid);
     }
-
-    // log.info(`${message.channel}`, message.pid);
-  } else if (message.pid !== -1) {
-    log.warn(`${message.channel} failed on ${message?.pid}`);
-  }
-};
+  };
 
 export const startIpc = () => {
   ipcMain.on(
@@ -137,7 +139,6 @@ ${data.error}
   });
 
   ipcMain.on(AppChannel.END_PROCESS, (event, { pid }) => {
-    log.info(`AppChannel.END_PROCESS ${pid}`);
     const processInfo = processes.getByPid(pid);
     if (processInfo) {
       processes.removeByPid(pid);

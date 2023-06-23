@@ -709,8 +709,10 @@ export const resize = async ({
   inputChanged,
   justOpened,
   hasInput,
+  totalChoices,
 }: ResizeData) => {
-  // log.info({
+  // log.silly({
+  //   reason,
   //   topHeight,
   //   mainHeight,
   //   resize: kitState.resize,
@@ -719,6 +721,7 @@ export const resize = async ({
   //   hasInput,
   //   inputChanged,
   //   hasPreview,
+  //   totalChoices,
   // });
 
   if (kitState.resizePaused) return;
@@ -1142,11 +1145,13 @@ const pidMatch = (pid: number, message: string) => {
 
 export const preloadPromptData = async (promptData: PromptData) => {
   promptData.preload = true;
+  kitState.preloaded = true;
   setPromptData(promptData);
 };
 
 export const setPromptData = async (promptData: PromptData) => {
   if (kitState.cachePrompt && !promptData.preload) {
+    kitState.preloaded = false;
     kitState.cachePrompt = false;
     const cachePath = getCachePath(kitState.scriptPath, 'prompt');
     ensureDir(path.dirname(cachePath))

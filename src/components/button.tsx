@@ -368,6 +368,7 @@ export default function ChoiceButton({
             )} */}
 
             {index === currentIndex &&
+              !choice?.ignoreFlags &&
               Boolean(Object.keys(flags).length) &&
               !flaggedValue && (
                 <div onClick={onRightClick}>

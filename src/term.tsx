@@ -187,20 +187,17 @@ export default function Terminal() {
   );
 
   return (
-    <motion.div
+    <div
       id={UI.term}
       key="terminal"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1] }}
-      transition={{ duration: 0.5, ease: 'circOut' }}
-      className="w-full h-full pt-3 -mb-6 px-3 max-h-full flex-1 overflow-hidden"
+      className="-mb-6 h-full max-h-full w-full flex-1 overflow-hidden px-3 pt-3"
     >
       <div
         ref={containerRef as RefObject<HTMLDivElement>}
-        className="w-full h-full"
+        className="h-full w-full"
       >
         <XTerm
-          className="w-full h-full max-h-fit max-w-screen-md"
+          className="h-full max-h-fit w-full max-w-screen-md"
           options={{
             fontFamily: appDb?.termFont || 'monospace',
             allowTransparency: true,
@@ -211,6 +208,6 @@ export default function Terminal() {
           addons={[]}
         />
       </div>
-    </motion.div>
+    </div>
   );
 }

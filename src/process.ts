@@ -1231,12 +1231,10 @@ const kitMessageMap: ChannelHandler = {
       ensureDir(path.dirname(cachePath))
         .then((success) => {
           // eslint-disable-next-line promise/no-nesting
-          return writeJson(cachePath, formattedChoices.slice(0, 48)).catch(
-            (error) => {
-              log.warn({ error });
-              return error;
-            }
-          );
+          return writeJson(cachePath, formattedChoices).catch((error) => {
+            log.warn({ error });
+            return error;
+          });
         })
         .catch((error) => {
           log.warn({ error });

@@ -21,6 +21,7 @@ import {
   actionsAtom,
   appConfigAtom,
   lightenUIAtom,
+  focusedChoiceAtom,
 } from '../jotai';
 
 import { Action, textContrast } from './actions';
@@ -39,9 +40,13 @@ export default function ActionBar() {
   const m = app?.isMac;
   const lightenUI = useAtomValue(lightenUIAtom);
 
-  const actions: Action[] = useAtomValue(actionsAtom);
+  const _actions: Action[] = useAtomValue(actionsAtom);
+  const focusedChoice = useAtomValue(focusedChoiceAtom);
 
-  const hasFlags = Object.keys(flags)?.length > 0;
+  const hasFlags =
+    Object.keys(flags)?.length > 0 && !focusedChoice?.ignoreFlags;
+
+  const actions = focusedChoice?.ignoreFlags ? [] : _actions;
 
   return (
     <div

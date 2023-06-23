@@ -1200,7 +1200,13 @@ const sendResize = (data: ResizeData) =>
   ipcRenderer.send(AppChannel.RESIZE, data);
 const debounceSendResize = debounce(sendResize, 100);
 
+const resizeSettle = debounce((g: Getter, s: Setter) => {
+  resize(g, s, 'SETTLE');
+}, 250);
+
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
+  if (reason !== 'SETTLE') resizeSettle(g, s);
+
   const active = g(promptActiveAtom);
   // g(logAtom)(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
 
@@ -1231,7 +1237,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const topHeight = document.getElementById('header')?.offsetHeight || 0;
   const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
   const hasPreview = Boolean(g(hasPreviewAtom));
-  const hasChoices = Boolean(scoredChoicesLength + infoChoicesLength);
+  const totalChoices = scoredChoicesLength + infoChoicesLength;
 
   const itemHeight = g(itemHeightAtom);
 
@@ -1417,6 +1423,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     forceResize,
     forceHeight,
     forceWidth,
+    totalChoices,
   };
 
   s(prevMh, mh);

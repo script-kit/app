@@ -51,6 +51,7 @@ export interface ResizeData {
   forceHeight?: number;
   forceWidth?: number;
   justOpened: boolean;
+  totalChoices: boolean;
 }
 
 export interface Survey {

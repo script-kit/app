@@ -371,6 +371,7 @@ const initState = {
   cachePrompt: false,
   scriptPathChanged: false,
   promptScriptPath: '',
+  preloaded: false,
 };
 
 nativeTheme.addListener('updated', () => {
