@@ -163,7 +163,8 @@ export const runPromptProcess = async (
     //   .then(setShortcuts)
     //   .catch((error) => {});
 
-    if (getIdles().length > 0) {
+    const idlesLength = getIdles().length;
+    if (idlesLength > 0) {
       sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
 
       const cachedChoicesPath = getCachePath(promptScriptPath, 'choices');

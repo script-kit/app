@@ -382,13 +382,15 @@ export const show = async (
     title: name,
     frame: false,
     transparent: kitState.isMac,
-    vibrancy: 'hud',
+    vibrancy: 'popover',
+    visualEffectState: 'active',
     backgroundColor: '#00000000',
     backgroundMaterial: kitState.isWin10 ? 'acrylic' : 'mica',
     ...(options?.transparent
       ? {}
       : {
-          vibrancy: 'hud',
+          vibrancy: 'popover',
+          visualEffectState: 'active',
         }),
     icon: getAssetPath('icon.png'),
     webPreferences: {

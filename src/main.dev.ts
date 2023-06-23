@@ -116,6 +116,7 @@ import {
   cacheKitScripts,
   checkAccessibility,
   clearStateTimers,
+  getThemes,
   initKeymap,
   kitState,
   subs,
@@ -1129,32 +1130,17 @@ const checkKit = async () => {
   const isMac = os.platform() === 'darwin';
   if (!(await kitExists()) || storedVersion === '0.0.0') {
     if (!process.env.KIT_SPLASH) {
-      const darkTheme = {
-        foreground: 'white',
-        background: '17, 17, 17',
-        accent: '251, 191, 36',
-        opacity: isMac ? '0.4' : '0.95',
-        ui: '255, 255, 255',
-        'ui-bg-opacity': '0.05',
-        'ui-border-opacity': '0.15',
-      };
-      const lightTheme = {
-        foreground: '2C2C2C',
-        accent: '2F86D3',
-        background: 'white',
-        opacity: isMac ? '0.5' : '1',
-        ui: '204, 204, 204',
-        'ui-bg-opacity': isMac ? '0.07' : '0.5',
-        'ui-border-opacity': '0.15',
-      };
-
       log.info(
         `🌑 shouldUseDarkColors: ${
           nativeTheme.shouldUseDarkColors ? 'true' : 'false'
         }`
       );
 
-      setTheme(nativeTheme.shouldUseDarkColors ? darkTheme : lightTheme);
+      const { scriptKitTheme, scriptKitLightTheme } = getThemes();
+
+      setTheme(
+        nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme
+      );
 
       await showSplash();
     }

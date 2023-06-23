@@ -153,10 +153,12 @@ function scorer(string: string, query: string, matches: number[][]) {
   );
 }
 
-const keys = ['slicedName', 'friendlyShortcut', 'tag', 'group'].map((name) => ({
-  name,
-  scorer,
-}));
+const keys = ['slicedName', 'friendlyShortcut', 'tag', 'group', 'command'].map(
+  (name) => ({
+    name,
+    scorer,
+  })
+);
 
 export const ultraShortCodesAtom = atom<{ code: string; id: string }[]>([]);
 

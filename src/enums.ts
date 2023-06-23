@@ -87,4 +87,5 @@ export enum HideReason {
   PingTimeout = 'PingTimeout',
   LockScreen = 'LockScreen',
   DebuggerClosed = 'DebuggerClosed',
+  MessageFailed = 'MessageFailed',
 }

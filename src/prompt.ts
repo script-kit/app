@@ -27,6 +27,7 @@ import {
   TouchBar,
   ipcMain,
   app,
+  globalShortcut,
 } from 'electron';
 import os from 'os';
 import path from 'path';
@@ -41,7 +42,7 @@ import { differenceInHours } from 'date-fns';
 import { ChildProcess } from 'child_process';
 import { writeJson, ensureDir } from 'fs-extra';
 import { getAssetPath } from './assets';
-import { appDb, kitState, subs, promptState } from './state';
+import { appDb, kitState, subs, promptState, getEmojiShortcut } from './state';
 import { EMOJI_HEIGHT, EMOJI_WIDTH, MIN_WIDTH, ZOOM_LEVEL } from './defaults';
 import { ResizeData } from './types';
 import { getVersion } from './version';
@@ -191,7 +192,8 @@ export const createPromptWindow = async () => {
     promptWindow = new BrowserWindow({
       ...options,
       transparent: kitState.isMac,
-      vibrancy: 'hud',
+      vibrancy: 'popover',
+      visualEffectState: 'active',
       backgroundColor: '#00000000',
       backgroundMaterial: kitState.isWin10 ? 'acrylic' : 'mica',
     });
@@ -296,8 +298,18 @@ export const createPromptWindow = async () => {
 
   promptWindow?.setMaxListeners(1);
 
-  const onBlur = () => {
+  const showEmoji = () => {
+    kitState.emojiActive = true;
+    log.info(`Using built-in emoji`);
+    app.showEmojiPanel();
+  };
+
+  const onBlur = async () => {
     log.silly(`event: onBlur`);
+    if (!kitState.isLinux) {
+      globalShortcut.unregister(getEmojiShortcut());
+      if (kitState.emojiActive) return;
+    }
 
     if (!kitState.isPromptReady) return;
 
@@ -335,8 +347,14 @@ export const createPromptWindow = async () => {
   });
 
   promptWindow?.on('focus', () => {
-    log.info(`Focus`);
-    log.info(`focus bounds:`, promptWindow?.getBounds());
+    log.info(`👓 Focus bounds:`, promptWindow?.getBounds());
+
+    if (!kitState.isLinux) {
+      log.verbose(`Registering emoji shortcut`);
+      // Grab cmd+ctrl+space shortcut to use electron's emoji picker
+      kitState.emojiActive = false;
+      globalShortcut.register(getEmojiShortcut(), showEmoji);
+    }
   });
   // promptWindow?.webContents?.on('blur', onBlur);
   promptWindow?.on('blur', onBlur);
@@ -1243,7 +1261,7 @@ export const setPromptData = async (promptData: PromptData) => {
   }
 
   setTimeout(() => {
-    promptWindow?.setAlwaysOnTop(true, 'screen-saver');
+    promptWindow?.setAlwaysOnTop(true, 'modal-panel');
   }, 0);
 
   if (topTimeout) clearTimeout(topTimeout);

@@ -7,7 +7,7 @@ import path from 'path';
 import { debounce } from 'lodash';
 import axios from 'axios';
 import { Script } from '@johnlindquist/kit';
-import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 import {
   kitPath,
   getLogFromScriptPath,
@@ -24,11 +24,11 @@ import { writeFile } from 'fs/promises';
 import { DownloaderHelper } from 'node-downloader-helper';
 import detect from 'detect-file-type';
 import { emitter, KitEvent } from './events';
-import { processes } from './process';
+import { ensureIdleProcess, processes } from './process';
 
-import { focusPrompt, reload, resize, setBackgroundThrottling } from './prompt';
+import { focusPrompt, maybeHide, reload, resize } from './prompt';
 import { runPromptProcess } from './kit';
-import { AppChannel, Trigger } from './enums';
+import { AppChannel, HideReason, Trigger } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
 import { kitState } from './state';
@@ -55,6 +55,8 @@ const handleChannel =
       log.warn(`${message.channel} failed on ${message?.pid}`);
 
       processes.removeByPid(message?.pid);
+      maybeHide(HideReason.MessageFailed);
+      ensureIdleProcess();
     }
   };
 

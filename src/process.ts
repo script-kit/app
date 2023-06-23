@@ -17,6 +17,7 @@ import {
   dialog,
   shell,
   globalShortcut,
+  nativeTheme,
 } from 'electron';
 import os from 'os';
 import { assign, remove, debounce } from 'lodash';
@@ -101,6 +102,7 @@ import {
   forceQuit,
   sponsorCheck,
   appDb,
+  getThemes,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -182,7 +184,17 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   theme.background ||= theme?.['--color-background'];
   theme.accent ||= theme?.['--color-primary'];
   theme.ui ||= theme?.['--color-secondary'];
-  theme.opacity ||= theme?.['--opacity'] || kitState.isMac ? '1' : '0.5';
+
+  const { scriptKitTheme, scriptKitLightTheme } = getThemes();
+  theme.opacity ||=
+    theme?.['--opacity'] ||
+    (!kitState.isMac
+      ? '1'
+      : nativeTheme.shouldUseDarkColors
+      ? scriptKitTheme.opacity
+      : scriptKitLightTheme.opacity);
+
+  log.info(`🫥 Theme opacity: ${theme.opacity}`);
 
   theme['--ui-bg-opacity'] ||=
     newTheme?.['ui-bg-opacity'] || theme?.['ui-bg-opacity'] || '0.4';
@@ -216,9 +228,8 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
     });
     result = cc.contrastColor();
 
-    const appearance = result === '#FFFFFF' ? 'dark' : 'light';
-    log.info(`💄 Setting appearance to ${appearance}`);
-    theme.appearance = appearance;
+    theme.appearance ||= result === '#FFFFFF' ? 'dark' : 'light';
+    log.info(`💄 Setting appearance to ${theme.appearance}`);
   }
 
   if (theme.opacity) {
@@ -239,23 +250,11 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   // if(value?.['--color-secondary']) delete value['--color-secondary']
   // if(value?.['--opacity']) delete value['--opacity']
 
-  const defaultOpacity = kitState.isMac ? '0.4' : '0.95';
-  const defaultTheme = {
-    '--color-text': '255, 255, 255',
-    '--color-primary': '251, 191, 36',
-    '--color-secondary': '255, 255, 255',
-    '--color-background': '17, 17, 17',
-    '--opacity': defaultOpacity,
-    appearance: 'dark',
-    '--ui-bg-opacity': '0.05',
-    '--ui-border-opacity': '0.15',
-  };
-
-  if (theme?.['--color-primary'] === defaultTheme?.['--color-primary']) {
+  if (theme?.accent === scriptKitTheme?.accent) {
     log.info(
-      `🎨 --color-primary detected as ${defaultTheme?.['--color-primary']}. Forcing default theme`
+      `🎨 Accent detected as ${scriptKitTheme?.accent}. Forcing default theme`
     );
-    theme = defaultTheme;
+    theme = scriptKitTheme;
   }
 
   // if kitPath exists
@@ -1215,6 +1214,7 @@ const kitMessageMap: ChannelHandler = {
     }
 
     setChoices(formattedChoices);
+    kitState.unfilteredChoices = formattedChoices;
 
     if (child) {
       childSend(child, {
