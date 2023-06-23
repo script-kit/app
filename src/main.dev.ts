@@ -1131,11 +1131,11 @@ const checkKit = async () => {
     if (!process.env.KIT_SPLASH) {
       const darkTheme = {
         foreground: 'white',
-        background: '0, 0, 0',
+        background: '17, 17, 17',
         accent: '251, 191, 36',
         opacity: isMac ? '0.5' : '0.95',
         ui: '255, 255, 255',
-        'ui-bg-opacity': '0.07',
+        'ui-bg-opacity': '0.05',
         'ui-border-opacity': '0.15',
       };
       const lightTheme = {

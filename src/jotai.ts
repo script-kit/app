@@ -995,7 +995,9 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
     debounceSearch.cancel();
     s(
       scoredChoicesAtom,
-      un.filter((c) => !c?.pass && !c?.hideWithoutInput).map(createScoredChoice)
+      un
+        .filter((c) => !c?.pass && !c?.hideWithoutInput && !c?.miss)
+        .map(createScoredChoice)
     );
   } else {
     debounceSearch.cancel();
