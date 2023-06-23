@@ -345,7 +345,7 @@ export const formatScriptChoices = (data: Choice[]) => {
     }
 
     if (script.img) {
-      script.img = script.img.match(/(^http)|^\//)
+      script.img = script.img.includes(path.sep)
         ? script.img
         : kenvPath(script.kenv && `kenvs/${script.kenv}`, 'assets', script.img);
     }

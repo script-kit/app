@@ -667,6 +667,67 @@ const forkOptions: ForkOptions = {
   stdio: 'pipe',
 };
 
+const optionalSpawnSetup = (...args: string[]) => {
+  return new Promise((resolve, reject) => {
+    log.info(`Running optional setup script: ${args.join(' ')}`);
+    const child = spawn(
+      knodePath('bin', 'node'),
+      [kitPath('run', 'terminal.js'), ...args],
+      forkOptions
+    );
+
+    const id = setTimeout(() => {
+      if (child && !child.killed) {
+        child.kill();
+        resolve('timeout');
+        log.info(`⚠️ Setup script timed out: ${args.join(' ')}`);
+      }
+    }, 5000);
+
+    if (child?.stdout) {
+      child.stdout.on('data', (data) => {
+        if (kitState.ready) return;
+        setupLog(data.toString());
+      });
+    }
+
+    if (child?.stderr) {
+      if (kitState.ready) return;
+      child.stderr.on('data', (data) => {
+        setupLog(data.toString());
+      });
+    }
+
+    child.on('message', (data) => {
+      const dataString = typeof data === 'string' ? data : data.toString();
+
+      if (!dataString.includes(`[object`)) {
+        log.info(args[0], dataString);
+        // sendSplashBody(dataString.slice(0, 200));
+      }
+    });
+
+    child.on('exit', (code) => {
+      if (code === 0) {
+        if (id) clearTimeout(id);
+        log.info(`✅ Setup script completed: ${args.join(' ')}`);
+        resolve('done');
+      } else {
+        log.info(`⚠️ Setup script exited with code ${code}: ${args.join(' ')}`);
+        resolve('error');
+      }
+    });
+
+    child.on('error', (error: Error) => {
+      if (id) clearTimeout(id);
+      log.error(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
+      resolve('error');
+      // reject(error);
+      // throw new Error(error.message);
+    });
+  });
+};
+
 const optionalSetupScript = (...args: string[]) => {
   return new Promise((resolve, reject) => {
     log.info(`Running optional setup script: ${args.join(' ')}`);
@@ -1330,7 +1391,11 @@ const checkKit = async () => {
 
     await storeVersion(getVersion());
 
-    optionalSetupScript(kitPath('main', 'app-launcher.js'), '--prep');
+    await optionalSpawnSetup(
+      kitPath('main', 'app-launcher.js'),
+      '--prep',
+      '--trust'
+    );
 
     kitState.starting = false;
     kitState.updateInstalling = false;
