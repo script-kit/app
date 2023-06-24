@@ -78,7 +78,7 @@ import {
   tempThemeAtom,
   topHeightAtom,
   uiAtom,
-  unfilteredChoicesAtom,
+  choicesConfigAtom,
   topRefAtom,
   descriptionAtom,
   nameAtom,
@@ -101,7 +101,6 @@ import {
   scoredChoicesAtom,
   showTabsAtom,
   showSelectedAtom,
-  nullChoicesAtom,
   processesAtom,
   setFocusedChoiceAtom,
   footerAtom,
@@ -128,8 +127,6 @@ import {
   addChatMessageAtom,
   chatPushTokenAtom,
   setChatMessageAtom,
-  infoChoicesAtom,
-  appendChoicesAtom,
   termConfigAtom,
   zoomAtom,
   hasBorderAtom,
@@ -154,6 +151,8 @@ import {
   promptBoundsAtom,
   audioDotAtom,
   scrollToIndexAtom,
+  shortCodesAtom,
+  scoredFlagsAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -163,10 +162,10 @@ import { AppChannel, WindowChannel } from './enums';
 import Terminal from './term';
 import Inspector from './components/inspector';
 import { Chat } from './components/chat';
-import InfoList from './components/info';
 import AudioRecorder from './audio-recorder';
 import Webcam from './webcam';
 import Preview from './components/preview';
+import FlagsList from './components/flags';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -248,8 +247,6 @@ export default function App() {
   const choices = useAtomValue(scoredChoicesAtom);
   const showSelected = useAtomValue(showSelectedAtom);
   const showTabs = useAtomValue(showTabsAtom);
-  const nullChoices = useAtomValue(nullChoicesAtom);
-  const infoChoices = useAtomValue(infoChoicesAtom);
   const getEditorHistory = useAtomValue(getEditorHistoryAtom);
   const getColor = useAtomValue(colorAtom);
   const onPaste = useAtomValue(onPasteAtom);
@@ -268,9 +265,9 @@ export default function App() {
   const setSplashBody = useSetAtom(splashBodyAtom);
   const setSplashHeader = useSetAtom(splashHeaderAtom);
   const setSplashProgress = useSetAtom(splashProgressAtom);
-  const setUnfilteredChoices = useSetAtom(unfilteredChoicesAtom);
+  const setChoicesConfig = useSetAtom(choicesConfigAtom);
   const setScoredChoices = useSetAtom(scoredChoicesAtom);
-  const appendChoices = useSetAtom(appendChoicesAtom);
+  const setScoredFlags = useSetAtom(scoredFlagsAtom);
   const setFooter = useSetAtom(footerAtom);
   const setEnter = useSetAtom(enterAtom);
   const setReady = useSetAtom(isReadyAtom);
@@ -312,6 +309,7 @@ export default function App() {
   const setLogValue = useSetAtom(logValueAtom);
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
+  const setShortcodes = useSetAtom(shortCodesAtom);
   const [termConfig, setTermConfig] = useAtom(termConfigAtom);
   const setMicConfig = useSetAtom(micConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
@@ -472,12 +470,9 @@ export default function App() {
     [Channel.SET_PROMPT_BOUNDS]: setPromptBounds,
     [Channel.SET_SCRIPT]: setScript,
     [Channel.SET_SCRIPT_HISTORY]: setScriptHistory,
-    [Channel.SET_UNFILTERED_CHOICES]: setUnfilteredChoices,
-    [Channel.SET_SCORED_CHOICES]: (choices) => {
-      setUnfilteredChoices([]);
-      setScoredChoices(choices);
-    },
-    [Channel.APPEND_CHOICES]: appendChoices,
+    [Channel.SET_CHOICES_CONFIG]: setChoicesConfig,
+    [Channel.SET_SCORED_CHOICES]: setScoredChoices,
+    [Channel.SET_SCORED_FLAGS]: setScoredFlags,
     [Channel.SET_DESCRIPTION]: setDescription,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfig,
     [Channel.SET_EDITOR_SUGGESTIONS]: setEditorSuggestions,
@@ -526,6 +521,7 @@ export default function App() {
     [Channel.STOP_AUDIO]: () => setAudio(null),
     [Channel.SPEAK_TEXT]: setSpeak,
     [Channel.SET_SHORTCUTS]: setShortcuts,
+    [Channel.SET_SHORTCODES]: setShortcodes,
     [Channel.CHAT_SET_MESSAGES]: setChatMessages,
     [Channel.CHAT_ADD_MESSAGE]: addChatMessage,
     [Channel.CHAT_PUSH_TOKEN]: chatPushToken,
@@ -958,25 +954,15 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                   {ui === UI.webcam && open && <Webcam />}
                   {/* {ui === UI.speech && <SpeechToText />} */}
 
-                  {(infoChoices?.length ||
-                    (ui === UI.arg && !nullChoices && choices.length > 0) ||
+                  {((ui === UI.arg && !panelHTML && choices.length > 0) ||
                     ui === UI.hotkey) && (
                     <AutoSizer>
-                      {({ width, height }) => (
-                        <>
-                          {infoChoices?.length > 0 && (
-                            <InfoList width={width} height={height} />
-                          )}
-                          {((ui === UI.arg &&
-                            !nullChoices &&
-                            choices.length > 0) ||
-                            ui === UI.hotkey) && (
-                            <>
-                              <List height={height} width={width} />
-                            </>
-                          )}
-                        </>
-                      )}
+                      {({ width, height }) =>
+                        ((ui === UI.arg && !panelHTML && choices.length > 0) ||
+                          ui === UI.hotkey) && (
+                          <List height={height} width={width} />
+                        )
+                      }
                     </AutoSizer>
                   )}
                   {(!!(ui === UI.arg || ui === UI.div) &&
@@ -991,7 +977,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
               {/* {previewEnabled && <Preview />} */}
 
-              {previewCheck && (
+              {(previewCheck || showSelected) && (
                 <>
                   <PanelResizeHandle
                     id="panelResizeHandle"
@@ -1006,7 +992,15 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                     //   flexGrow: 0,
                     // }}
                   >
-                    <Preview />
+                    {showSelected ? (
+                      <AutoSizer>
+                        {({ width, height }) => (
+                          <FlagsList height={height} width={width} />
+                        )}
+                      </AutoSizer>
+                    ) : (
+                      <Preview />
+                    )}
                   </PanelChild>
                 </>
               )}

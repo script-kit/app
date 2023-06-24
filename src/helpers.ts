@@ -15,9 +15,11 @@ import {
   kitPath,
   shortcutNormalizer,
 } from '@johnlindquist/kit/cjs/utils';
+import { Choice } from '@johnlindquist/kit/types/core';
 import { emitter, KitEvent } from './events';
 import { Trigger } from './enums';
 import { convertKey } from './state';
+import { ScoredChoice } from './types';
 
 export const APP_NAME = 'Kit';
 export const KIT_PROTOCOL = 'kit';
@@ -32,9 +34,10 @@ const homeDirectory = os.homedir();
 export function tildify(absolutePath: string) {
   const normalizedPath = path.normalize(absolutePath) + path.sep;
 
-  return (normalizedPath.startsWith(homeDirectory)
-    ? normalizedPath.replace(homeDirectory + path.sep, `~${path.sep}`)
-    : normalizedPath
+  return (
+    normalizedPath.startsWith(homeDirectory)
+      ? normalizedPath.replace(homeDirectory + path.sep, `~${path.sep}`)
+      : normalizedPath
   ).slice(0, -1);
 }
 
@@ -103,8 +106,10 @@ const validateAccelerator = (shortcut: string) => {
   });
 };
 
-const modifiers = /^(Command|Cmd|Control|Ctrl|CommandOrControl|CmdOrCtrl|Alt|Option|AltGr|Shift|Super)$/;
-const keyCodes = /^([0-9A-Z)!@#$%^&*(:+<_>?~{|}";=,\-./`[\\\]']|F1*[1-9]|F10|F2[0-4]|Plus|Space|Tab|Backspace|Delete|Insert|Return|Enter|Up|Down|Left|Right|Home|End|PageUp|PageDown|Escape|Esc|VolumeUp|VolumeDown|VolumeMute|MediaNextTrack|MediaPreviousTrack|MediaStop|MediaPlayPause|PrintScreen)$/;
+const modifiers =
+  /^(Command|Cmd|Control|Ctrl|CommandOrControl|CmdOrCtrl|Alt|Option|AltGr|Shift|Super)$/;
+const keyCodes =
+  /^([0-9A-Z)!@#$%^&*(:+<_>?~{|}";=,\-./`[\\\]']|F1*[1-9]|F10|F2[0-4]|Plus|Space|Tab|Backspace|Delete|Insert|Return|Enter|Up|Down|Left|Right|Home|End|PageUp|PageDown|Escape|Esc|VolumeUp|VolumeDown|VolumeMute|MediaNextTrack|MediaPreviousTrack|MediaStop|MediaPlayPause|PrintScreen)$/;
 
 const infoScript = kitPath('cli', 'info.js');
 
@@ -199,4 +204,13 @@ export const getCachePath = (filePath: string, type: string) => {
 
   // Append .json extension
   return kitPath(`cache`, type, `${dashedName}.json`);
+};
+
+export const createScoredChoice = (item: Choice): ScoredChoice => {
+  return {
+    item,
+    score: 0,
+    matches: {},
+    _: '',
+  };
 };

@@ -8,7 +8,6 @@
 /* eslint-disable guard-for-in */
 import { atom, Getter, Setter } from 'jotai';
 import DOMPurify from 'dompurify';
-import { QuickScore, createConfig, quickScore } from 'quick-score';
 import { AppDb, UserDb } from '@johnlindquist/kit/cjs/db';
 import { Channel, Mode, UI, PROMPT } from '@johnlindquist/kit/cjs/enum';
 import Convert from 'ansi-to-html';
@@ -22,12 +21,7 @@ import {
   ProcessInfo,
 } from '@johnlindquist/kit/types/core';
 
-import {
-  mainScriptPath,
-  kitPath,
-  groupChoices,
-  formatChoices,
-} from '@johnlindquist/kit/cjs/utils';
+import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import {
   EditorConfig,
   TextareaConfig,
@@ -37,7 +31,7 @@ import {
 } from '@johnlindquist/kit/types/kitapp';
 import { editor } from 'monaco-editor';
 
-import { debounce, drop as _drop, isEqual } from 'lodash';
+import { debounce, drop as _drop, isEqual, clamp } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
 import { MessageType } from 'react-chat-elements';
 import { AppChannel } from './enums';
@@ -92,14 +86,6 @@ export const placeholderAtom = atom(
   }
 );
 
-interface QuickScoreInterface {
-  search: (query: string) => ScoredChoice[];
-}
-
-const search = (qs: QuickScoreInterface, term: string): ScoredChoice[] => {
-  return qs?.search(term);
-};
-
 const createScoredChoice = (item: Choice): ScoredChoice => {
   return {
     item,
@@ -109,154 +95,43 @@ const createScoredChoice = (item: Choice): ScoredChoice => {
   };
 };
 
-export const quickScoreAtom = atom<QuickScoreInterface | null>(null);
-const unfilteredChoices = atom<Choice[]>([]);
-
 function containsSpecialCharacters(str: string) {
   const regex = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/g;
   return regex.test(str);
 }
 
-// const precede = `(:?(^|\\W))`;
-function scorer(string: string, query: string, matches: number[][]) {
-  // avoid regex being passed in
-  // console.log(`scorer: ${string} ${query}`);
-  // if (!containsSpecialCharacters(query)) {
-  // try {
-  //   const r = new RegExp(query, 'i');
-  //   const match = string.match(r);
+export const shortCodesAtom = atom<{ code: string; id: string }[]>([]);
 
-  //   if (match) {
-  //     const index = match?.index || 0;
-  //     // const first = index === 0;
-  //     const start = index;
-  //     const length = match[0]?.length;
-  //     const ms = [start, start + length];
-  //     matches.push(ms);
-  //     return 1 - start / 100;
-  //   }
-  // } catch (error) {
-  //   return [];
-  // }
-
-  // if (containsSpecialCharacters(query)) return [];
-
-  return quickScore(
-    string,
-    query,
-    matches as any,
-    undefined,
-    undefined,
-    createConfig({
-      maxIterations: 3,
-    })
-  );
-}
-
-const keys = ['slicedName', 'friendlyShortcut', 'tag', 'group', 'command'].map(
-  (name) => ({
-    name,
-    scorer,
-  })
-);
-
-export const ultraShortCodesAtom = atom<{ code: string; id: string }[]>([]);
-
-export const choicesIdAtom = atom<number>(0);
 export const filteredChoicesIdAtom = atom<number>(0);
-
-const _nullChoices = atom(false);
-export const nullChoicesAtom = atom(
-  (g) => g(_nullChoices) && g(uiAtom) === UI.arg,
-  (g, s, a: boolean) => {
-    s(_nullChoices, a);
-    if (a && g(uiAtom) === UI.arg) resize(g, s, 'NULL_CHOICES');
-  }
-);
-
-export const infoHeightAtom = atom(0);
-const _infoChoices = atom<Choice[]>([]);
-export const infoChoicesAtom = atom(
-  (g) => {
-    const hasChoices = g(scoredChoicesAtom)?.length > 0;
-
-    return g(_infoChoices).filter(
-      (c) => c?.info === 'always' || (c?.info === 'onNoChoices' && !hasChoices)
-    );
-  },
-  (g, s, a: Choice[]) => {
-    s(_infoChoices, a);
-    s(infoHeightAtom, a?.length * g(itemHeightAtom));
-  }
-);
-
-export const hasGroupAtom = atom(false);
 
 let choicesPreloaded = false;
 let wereChoicesPreloaded = false;
-export const unfilteredChoicesAtom = atom(
-  (g) => g(unfilteredChoices),
-  (g, s, a: Choice[] | null) => {
+const choicesConfig = atom({ preload: false });
+export const choicesConfigAtom = atom(
+  (g) => g(choicesConfig),
+  (g, s, a: { preload: boolean }) => {
     wereChoicesPreloaded = !a?.preload && choicesPreloaded;
     choicesPreloaded = a?.preload;
-    if (a?.length === 0 && g(unfilteredChoices)?.length === 0) return;
     s(directionAtom, 1);
-    s(hasGroupAtom, Boolean(a && a?.find((c) => c?.group)));
 
     const promptData = g(promptDataAtom);
-    if (
-      !promptData?.keepPreview &&
-      !promptData?.preview &&
-      !a?.[0]?.hasPreview
-    ) {
+    if (!promptData?.keepPreview && !promptData?.preview) {
       s(previewHTMLAtom, closedDiv);
     }
 
-    s(nullChoicesAtom, a === null && g(uiAtom) === UI.arg);
-
-    if (a === null) {
-      s(quickScoreAtom, null);
-    }
-
-    if (a === null || a?.length === 0) {
-      // console.log(`Resize no choices`);
-      s(mainHeightAtom, 0);
-    }
-
-    const cs = (a === null ? [] : a).map((c) =>
-      typeof c?.name === 'string'
-        ? c
-        : {
-            ...c,
-            name: `⚠️ Warning: Choice name must be a string. Received ${typeof c?.name}`,
-          }
-    );
-
-    s(choicesIdAtom, Math.random());
-
-    let actualChoices = cs.filter((c) => !(c?.disableSubmit || c?.info));
     const key = g(promptDataAtom)?.key as string;
     if (key) {
       // sort by the ids stored in the localstorage key
       const ids = JSON.parse(localStorage.getItem(key) || '[]') || [];
 
-      actualChoices = actualChoices.sort((choiceA, choiceB) => {
-        const aIndex = ids.indexOf(choiceA.id);
-        const bIndex = ids.indexOf(choiceB.id);
-        if (aIndex === -1) return 1;
-        if (bIndex === -1) return -1;
-        return aIndex - bIndex;
-      });
-    }
-    s(unfilteredChoices, actualChoices);
-    s(
-      infoChoicesAtom,
-      cs.filter((c) => c?.info || c?.disableSubmit)
-    );
-
-    if (cs?.length === 0) {
-      s(scoredChoicesAtom, []);
-      s(quickScoreAtom, null);
+      // TODO: Reimplement recent
+      // actualChoices = actualChoices.sort((choiceA, choiceB) => {
+      //   const aIndex = ids.indexOf(choiceA.id);
+      //   const bIndex = ids.indexOf(choiceB.id);
+      //   if (aIndex === -1) return 1;
+      //   if (bIndex === -1) return -1;
+      //   return aIndex - bIndex;
+      // });
     }
 
     s(loadingAtom, false);
@@ -269,78 +144,17 @@ export const unfilteredChoicesAtom = atom(
     // );
 
     // if (a?.[0]?.name.match(/(?<=\[)\.(?=\])/i)) {
-    if (
-      cs.length > 0 &&
-      cs?.length < 256 &&
-      g(ultraShortCodesAtom).length === 0
-    ) {
-      const codes = [];
-      for (const choice of cs) {
-        const code = choice?.name?.match(/(?<=\[).(?=\])/i)?.[0] || '';
 
-        if (code) {
-          codes.push({
-            code: code?.toLowerCase(),
-            id: code ? (choice.id as string) : '',
-          });
-        }
-      }
-      s(ultraShortCodesAtom, codes);
-    }
+    const prevCId = g(prevChoiceId);
+    const nextIndex = g(scoredChoicesAtom).findIndex(
+      (sc) => sc.item.id === prevCId
+    );
 
-    if (cs?.length) {
-      const qs = new QuickScore(cs, {
-        keys,
-        minimumScore: 0.6,
-      } as any);
-      s(quickScoreAtom, qs as any);
-
-      const mode = g(promptDataAtom)?.mode;
-      const flaggedValue = g(_flagged);
-
-      // if (!flaggedValue) {
-      if (mode === Mode.GENERATE && !flaggedValue) {
-        const generatedChoices = cs
-          .map(createScoredChoice)
-          .filter((c) => !(c?.item?.info || c?.item?.disableSubmit));
-        s(scoredChoicesAtom, generatedChoices);
-      }
-      if (mode === Mode.FILTER || mode === Mode.CUSTOM || flaggedValue) {
-        const input = g(inputAtom);
-        filterByInput(g, s, input);
-      }
-      // }
-
-      const prevCId = g(prevChoiceId);
-      // console.log({ prevCId });
-
-      // const prevIndex = g(isMainScriptAtom)
-      //   ? 0
-      //   : cs.findIndex((c) => c?.id === prevCId);
-
-      // TODO: Figure out scenarios where
-      // scoredChoices shouldn't check for the prevCId...
-
-      const nextIndex = g(scoredChoicesAtom).findIndex(
-        (sc) => sc.item.id === prevCId
-      );
-
-      // g(logAtom)({
-      //   nextIndex,
-      //   prevCId,
-      // });
-
-      s(indexAtom, nextIndex > 0 ? nextIndex : 0);
-    }
+    s(indexAtom, nextIndex > 0 ? nextIndex : 0);
   }
 );
 
-export const appendChoicesAtom = atom(null, (g, s, a: Choice[]) => {
-  const cs = g(unfilteredChoicesAtom);
-  s(unfilteredChoicesAtom, [...cs, ...a]);
-});
-
-export const prevChoicesAtom = atom<Choice[]>([]);
+export const prevChoicesConfig = atom({ preload: false });
 
 const _ui = atom<UI>(UI.arg);
 export const uiAtom = atom(
@@ -369,7 +183,7 @@ export const hintAtom = atom(
           id: '',
         };
       });
-      s(ultraShortCodesAtom, codes);
+      s(shortCodesAtom, codes);
     }
   }
 );
@@ -385,7 +199,7 @@ export const panelHTMLAtom = atom(
     }),
   (g, s, a: string) => {
     if (g(_panelHTML) === a || g(_flagged)) return;
-    if (a) s(scoredChoicesAtom, null);
+    // if (a) s(scoredChoicesAtom, null);
     s(_panelHTML, a);
 
     if (
@@ -607,6 +421,7 @@ export const prevInputAtom = atom('');
 
 export const defaultValueAtom = atom('');
 
+export const flagsRequiresScrollAtom = atom(-1);
 export const requiresScrollAtom = atom(-1);
 
 export const directionAtom = atom<1 | -1>(1);
@@ -619,6 +434,78 @@ export const scrollToIndexAtom = atom((g) => {
 });
 
 let prevChoiceIndexId = 'prevChoiceIndexId';
+
+const flagsIndex = atom(0);
+export const focusedFlagAtom = atom('');
+export const allSkipAtom = atom((g) =>
+  Boolean(g(scoredChoicesAtom).every((c) => c.item.skip))
+);
+export const flagsIndexAtom = atom(
+  (g) => g(flagsIndex),
+  (g, s, a: number) => {
+    const prevIndex = g(flagsIndex);
+    const cs = g(scoredFlagsAtom);
+    // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
+    const clampedIndex = a < 0 ? cs.length - 1 : a >= cs.length ? 0 : a; // Corrected clamping logic
+    const list = g(flagsListAtom);
+    const requiresScroll = g(flagsRequiresScrollAtom);
+
+    // Check if going up/down by comparing the prevIndex to the clampedIndex
+    let choice = cs?.[clampedIndex]?.item;
+    let calcIndex = clampedIndex;
+    const direction = g(directionAtom);
+
+    if (choice?.skip) {
+      // Find next choice that doesn't have "skip" set or 0 or length - 1
+      while (choice?.skip) {
+        g(logAtom)(`Searching for index`);
+        calcIndex += direction;
+
+        if (calcIndex <= 0) {
+          calcIndex = cs.length - 1;
+          while (cs[calcIndex]?.item?.skip) {
+            calcIndex += direction;
+            if (calcIndex === a) break;
+          }
+        } else if (calcIndex >= cs.length) {
+          calcIndex = 0;
+
+          while (cs[calcIndex]?.item?.skip) {
+            calcIndex += direction;
+            if (calcIndex === a) break;
+          }
+        }
+        choice = cs?.[calcIndex]?.item;
+        if (calcIndex === a) break;
+      }
+    }
+
+    if (prevIndex !== calcIndex) {
+      g(logAtom)(`Setting to ${calcIndex}`);
+
+      s(flagsIndex, calcIndex);
+    }
+
+    if (list && requiresScroll === -1) {
+      (list as any)?.scrollToItem(calcIndex);
+    }
+
+    if (list && cs[0]?.item?.skip && calcIndex === 1) {
+      (list as any)?.scrollToItem(0);
+    }
+
+    if (choice?.id) {
+      const focusedFlag = (choice as Choice)?.value;
+      g(logAtom)(`Setting focusedFlag to ${focusedFlag}`);
+      s(focusedFlagValueAtom, focusedFlag);
+      // console.log(
+      //   `!selected && id && id !== prevId: Setting prevChoiceId to ${id}`
+      // );
+      // s(prevChoiceId, id);
+    }
+  }
+);
+
 export const indexAtom = atom(
   (g) => g(index),
   (g, s, a: number) => {
@@ -634,6 +521,7 @@ export const indexAtom = atom(
     if (choice?.id === prevChoiceIndexId) return;
     let calcIndex = clampedIndex;
     const direction = g(directionAtom);
+    if (g(allSkipAtom)) return;
     if (choice?.skip) {
       // Find next choice that doesn't have "skip" set or 0 or length - 1
       while (choice?.skip) {
@@ -674,7 +562,6 @@ export const indexAtom = atom(
 
     // const clampedIndex = clamp(a, 0, cs.length - 1);
 
-    const selected = g(selectedAtom);
     const id = choice?.id;
     s(prevChoiceId, id || '');
     // const prevId = g(prevChoiceId);
@@ -732,6 +619,7 @@ export const focusedChoiceAtom = atom(
 );
 
 export const hasPreviewAtom = atom<boolean>((g) => {
+  if (g(allSkipAtom)) return false;
   const focused = g(_focused);
   const focusedHasPreview =
     focused?.hasPreview && focused?.preview !== closedDiv;
@@ -757,33 +645,12 @@ export const scoredChoicesAtom = atom(
   (g) => g(choices),
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
-  (g, s, a: ScoredChoice[] | null) => {
+  (g, s, a: ScoredChoice[]) => {
     s(loadingAtom, false);
     prevFocusedChoiceId = 'prevFocusedChoiceId';
-    const cs = a?.filter((c) => !(c?.item?.info || c?.item.disableSubmit));
+    const cs = a;
 
     s(submittedAtom, false);
-    if (g(isMainScriptAtom)) {
-      // Check if the input matches the shortcode of one of the scripts
-      const input = g(inputAtom);
-      const shortcodeMatch = g(unfilteredChoices).find((c) => {
-        return (c as Script).alias === input;
-      });
-
-      if (cs && shortcodeMatch) {
-        // Find the index of the matched script
-        const aliasMatch = cs.find((c) => {
-          return (c.item as Script).alias === input;
-        });
-
-        // If the alias matches, move to front of the list
-        if (aliasMatch) {
-          const aliasIndex = cs.indexOf(aliasMatch);
-          cs.splice(aliasIndex, 1);
-          cs.unshift(aliasMatch);
-        }
-      }
-    }
 
     // if the first cs has a `border-t-1`, remove it
     if (cs?.[0]?.item?.className) {
@@ -846,19 +713,28 @@ export const scoredChoicesAtom = atom(
       }
     } else {
       s(focusedChoiceAtom, null);
-      if (isFilter && Boolean(cs) && !g(nullChoicesAtom)) {
+      if (isFilter && Boolean(cs)) {
         if (!g(promptReadyAtom)) return;
         channel(Channel.NO_CHOICES);
       }
     }
 
-    const itemHeight = g(itemHeightAtom);
-    const height = (cs?.length || 0) * itemHeight + g(infoHeightAtom);
-    s(mainHeightAtom, height);
+    let choicesHeight = 0;
+
+    for (const {
+      item: { height },
+    } of a) {
+      choicesHeight += height || g(itemHeightAtom);
+      if (choicesHeight > 1920) break;
+    }
+    s(choicesHeightAtom, choicesHeight);
+    s(mainHeightAtom, choicesHeight);
   }
 );
 
-export const _choices = atom((g) =>
+const choicesHeightAtom = atom(0);
+
+export const choicesAtom = atom((g) =>
   g(scoredChoicesAtom).map((result) => result.item)
 );
 
@@ -873,100 +749,25 @@ export const appendInputAtom = atom(null, (g, s, a: string) => {
   }
 });
 
-const invokeSearch = (
-  qs: QuickScoreInterface,
-  g: Getter,
-  s: Setter,
-  input: string
-) => {
-  const result = search(qs, input);
-
-  if (g(hasGroupAtom)) {
-    const unfiltered = g(unfilteredChoices);
-
-    // Build a map for constant time access
-    const resultMap = new Map();
-    const keepGroups = new Set();
-    for (const r of result) {
-      resultMap.set(r.item.id, r);
-      keepGroups.add(r.item.group);
-    }
-
-    keepGroups.add('Pass');
-
-    let groupedResults: ScoredChoice[] = [];
-
-    const matchGroup = [];
-    const missGroup = [];
-
-    for (const choice of unfiltered) {
-      const hide = choice?.hideWithoutInput && input === '';
-      const miss = choice?.miss && !hide;
-      if (miss) {
-        missGroup.push(createScoredChoice(choice));
-      } else if (!hide) {
-        const scoredChoice = resultMap.get(choice.id);
-        if (choice?.pass) {
-          groupedResults.push(createScoredChoice(choice));
-        }
-
-        if (scoredChoice) {
-          if (choice?.pass) {
-            if (input) {
-              scoredChoice.item = {
-                ...choice,
-                group: 'Match',
-                pass: false,
-                id: Math.random(),
-              };
-              matchGroup.push(scoredChoice);
-            }
-          } else {
-            groupedResults.push(scoredChoice);
-          }
-        } else if (choice?.skip && keepGroups?.has(choice?.group)) {
-          groupedResults.push(createScoredChoice(choice));
-        }
-      }
-    }
-
-    if (matchGroup.length > 0) {
-      groupedResults = matchGroup.concat(groupedResults);
-    }
-
-    if (groupedResults.length === 0) {
-      groupedResults = missGroup;
-    }
-
-    s(scoredChoicesAtom, groupedResults);
-  } else if (result?.length === 0) {
-    const missGroup = g(unfilteredChoices)
-      .filter((c) => c?.miss)
-      .map(createScoredChoice);
-    s(scoredChoicesAtom, missGroup);
-  } else {
-    s(scoredChoicesAtom, result);
-  }
+const invokeSearch = (input: string) => {
+  ipcRenderer.send(AppChannel.INVOKE_SEARCH, { input });
 };
 
-const debounceSearch = debounce(
-  (qs: QuickScoreInterface, g: Getter, s: Setter, input: string) => {
-    if (!input) return false;
-    invokeSearch(qs, g, s, input);
-    return true;
-  },
-  200
-); // TODO: too slow for emojis
+const invokeFlagSearch = (input: string) => {
+  ipcRenderer.send(AppChannel.INVOKE_FLAG_SEARCH, { input });
+};
+
+const debounceSearch = debounce((input: string) => {
+  invokeSearch(input);
+  return true;
+}, 200); // TODO: too slow for emojis
 
 const prevFilteredInputAtom = atom('');
 
 const filterByInput = (g: Getter, s: Setter, a: string) => {
   if (g(uiAtom) !== UI.arg) return;
   let input = a;
-  const qs = g(quickScoreAtom);
   const filterInput = g(filterInputAtom);
-  const un = g(unfilteredChoicesAtom);
-  const prevFilteredInput = g(prevFilteredInputAtom);
 
   s(prevFilteredInputAtom, a);
   if (filterInput) {
@@ -987,23 +788,10 @@ const filterByInput = (g: Getter, s: Setter, a: string) => {
     // }
   }
 
-  if (qs && input) {
-    if (un.length > 5000 && g(appDbAtom).searchDebounce) {
-      debounceSearch(qs, g, s, input);
-    } else {
-      invokeSearch(qs, g, s, input);
-    }
-  } else if (un.length) {
-    debounceSearch.cancel();
-    s(
-      scoredChoicesAtom,
-      un
-        .filter((c) => !c?.pass && !c?.hideWithoutInput && !c?.miss)
-        .map(createScoredChoice)
-    );
+  if (g(showSelectedAtom)) {
+    invokeFlagSearch(input);
   } else {
-    debounceSearch.cancel();
-    s(scoredChoicesAtom, []);
+    invokeSearch(input);
   }
 };
 
@@ -1146,7 +934,7 @@ export const scriptAtom = atom(
 
     s(promptReadyAtom, false);
     if (a.filePath !== mainScriptPath) {
-      s(unfilteredChoicesAtom, []);
+      s(choicesConfigAtom, []);
     }
 
     const history = g(_history);
@@ -1219,15 +1007,10 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   const ui = g(uiAtom);
 
-  const scoredChoices = g(scoredChoicesAtom);
   const scoredChoicesLength = g(scoredChoicesAtom)?.length;
   // g(logAtom)(`resize: ${reason} - ${ui} length ${scoredChoicesLength}`);
-  const infoChoices = g(infoChoicesAtom);
-  const infoChoicesLength = infoChoices.length;
   const hasPanel = g(_panelHTML) !== '';
-  const nullChoices = g(nullChoicesAtom);
-  const noInfo = infoChoicesLength === 0;
-  let mh = nullChoices && !hasPanel && noInfo ? 0 : g(mainHeight);
+  let mh = g(mainHeight);
 
   // if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
 
@@ -1235,28 +1018,14 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const placeholderOnly =
     promptData?.mode === Mode.FILTER &&
     scoredChoicesLength === 0 &&
-    noInfo &&
     ui === UI.arg;
 
   const topHeight = document.getElementById('header')?.offsetHeight || 0;
   const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
   const hasPreview = Boolean(g(hasPreviewAtom));
-  const totalChoices = scoredChoicesLength + infoChoicesLength;
+  const totalChoices = scoredChoicesLength;
 
-  const itemHeight = g(itemHeightAtom);
-
-  let choicesHeight = 0;
-
-  for (const { height } of infoChoices) {
-    choicesHeight += height || itemHeight;
-  }
-
-  for (const {
-    item: { height },
-  } of scoredChoices) {
-    choicesHeight += height || itemHeight;
-    if (choicesHeight > 1920) break;
-  }
+  const choicesHeight = g(choicesHeightAtom);
 
   if (ui === UI.arg && choicesHeight > PROMPT.HEIGHT.BASE) {
     mh =
@@ -1295,7 +1064,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     } else if (
       ui === UI.arg &&
       !hasPanel &&
-      scoredChoicesLength + infoChoicesLength === 0 &&
+      !scoredChoicesLength &&
       !document.getElementById('list')
     ) {
       // g(logAtom)(`List and panel gone`);
@@ -1307,10 +1076,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     }
 
     if (ui === UI.arg) {
-      forceResize =
-        ch === 0 ||
-        Boolean(ch < (scoredChoicesLength + infoChoicesLength) * itemHeight) ||
-        hasPanel;
+      forceResize = ch === 0 || Boolean(ch < choicesHeight) || hasPanel;
     } else if (ui === UI.div) {
       forceResize = true;
     } else {
@@ -1328,6 +1094,8 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   if (hasPreview && mh < PROMPT.HEIGHT.BASE) {
     const previewHeight = document.getElementById('preview')?.offsetHeight || 0;
     mh = Math.max(previewHeight, promptData?.height || PROMPT.HEIGHT.BASE);
+    g(logAtom)(`mh: ${mh}  ${choicesHeight}`);
+
     forceResize = true;
   }
 
@@ -1339,17 +1107,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   const justOpened = g(justOpenedAtom);
   const samePrompt = promptBounds?.id === promptData?.id;
-
-  // g(logAtom)({
-  //   justOpened,
-  //   samePrompt,
-  //   promptBounds,
-  //   promptData: {
-  //     id: promptData?.id,
-  //     width: promptData?.width,
-  //     height: promptData?.height,
-  //   },
-  // });
 
   const forceWidth = samePrompt ? promptBounds?.width : promptData?.width;
   let forceHeight;
@@ -1397,7 +1154,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   //   topHeight,
   //   itemHeight,
   //   scoredChoicesLength,
-  //   infoChoicesLength,
   //   forceResize,
   //   promptHeight: promptData?.height || 'UNSET',
   // });
@@ -1423,7 +1179,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     hasPreview,
     inputChanged: g(_inputChangedAtom),
     justOpened,
-    nullChoices,
     forceResize,
     forceHeight,
     forceWidth,
@@ -1464,7 +1219,7 @@ export const mainHeightAtom = atom(
   (g, s, a: number) => {
     const prevHeight = g(mainHeight);
 
-    const nextMainHeight = (a < 0 ? 0 : a) + g(infoHeightAtom);
+    const nextMainHeight = a < 0 ? 0 : a;
 
     if (nextMainHeight === 0) {
       if (g(panelHTMLAtom) !== '') return;
@@ -1610,7 +1365,7 @@ export const promptDataAtom = atom(
         s(termConfigAtom, config);
       }
 
-      s(ultraShortCodesAtom, []);
+      s(shortCodesAtom, []);
       s(hintAtom, a.hint);
       s(placeholderAtom, a.placeholder);
       s(selectedAtom, a.selected);
@@ -1675,7 +1430,7 @@ export const promptDataAtom = atom(
       if (!g(isMainScriptAtom)) {
         s(shortcutsAtom, a?.shortcuts || []);
       }
-      s(prevChoicesAtom, []);
+      s(prevChoicesConfig, []);
       s(audioDotAtom, false);
 
       if (
@@ -1724,57 +1479,24 @@ export const flagValueAtom = atom(
     if (a === '') {
       s(_inputAtom, g(prevInputAtom));
 
+      s(focusedFlagAtom, '');
       s(selectedAtom, '');
-      s(unfilteredChoicesAtom, g(prevChoicesAtom));
+      s(choicesConfigAtom, g(prevChoicesConfig));
       s(indexAtom, g(prevIndexAtom));
     } else {
       s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
+
       s(prevIndexAtom, g(indexAtom));
       s(prevInputAtom, g(inputAtom));
       s(inputAtom, '');
 
-      const f = g(flagsAtom);
-      const order = f?.order || [];
-      const sortChoicesKey = f?.sortChoicesKey || [];
-
-      const groupedFlags = groupChoices(
-        Object.entries(f)
-          .filter(([key]) => {
-            if (key === 'order') return false;
-            if (key === 'sortChoicesKey') return false;
-            return true;
-          })
-          .map(([key, value]) => {
-            prevFocusedChoiceId = key;
-            prevChoiceIndexId = key;
-            return {
-              id: key,
-              group: value?.group,
-              command: value?.name,
-              filePath: value?.name,
-              name: value?.name || key,
-              shortcut: value?.shortcut || '',
-              friendlyShortcut: value?.shortcut || '',
-              description: value?.description || '',
-              value: key,
-              preview: value?.preview || '',
-            };
-          }),
-        {
-          order,
-          sortChoicesKey,
-        }
-      );
-
-      const formattedFlags = formatChoices(groupedFlags);
-
-      s(prevChoicesAtom, g(unfilteredChoicesAtom));
-      s(unfilteredChoicesAtom, formattedFlags);
+      s(directionAtom, 1);
+      s(flagsIndexAtom, 0);
     }
   }
 );
 
-export const _flag = atom('');
+export const focusedFlagValueAtom = atom('');
 const _submitValue = atom('');
 export const searchDebounceAtom = atom(true);
 export const termFontAtom = atom('monospace');
@@ -1783,14 +1505,14 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
   const state = {
     input: g(_inputAtom),
     inputChanged: g(_inputChangedAtom),
-    flag: g(_flag),
+    flag: g(focusedFlagValueAtom),
     index: g(indexAtom),
     flaggedValue: g(_flagged),
     focused: g(_focused),
     tab: g(tabsAtom)?.[g(_tabIndex)] || '',
     history: g(_history) || [],
     modifiers: g(_modifiers),
-    count: g(_choices).length || 0,
+    count: g(choicesAtom).length || 0,
     name: g(nameAtom),
     description: g(descriptionAtom),
     script: g(_script),
@@ -1857,7 +1579,7 @@ export const onDropAtom = atom((g) => (event: any) => {
 export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
-  debounce((g, s, a: any) => {
+  debounce((g, s, value: any) => {
     s(onInputSubmitAtom, {});
     s(promptActiveAtom, false);
     s(disableSubmitAtom, false);
@@ -1885,11 +1607,8 @@ export const submitValueAtom = atom(
     // let submitted = g(submittedAtom);
     // if (submitted) return;
 
-    const fValue = g(_flagged);
-    const f = g(_flag);
-    const flag = fValue ? a : f || '';
+    const flag = g(focusedFlagValueAtom);
 
-    const value = checkSubmitFormat(fValue || a);
     // const fC = g(focusedChoiceAtom);
 
     // skip if UI.chat
@@ -1899,10 +1618,16 @@ export const submitValueAtom = atom(
     }
 
     s(_inputAtom, '');
+
+    g(logAtom)(value);
+    g(logAtom)(flag);
+
     channel(Channel.VALUE_SUBMITTED, {
       value,
       flag,
     });
+
+    invokeSearch('');
 
     // ipcRenderer.send(Channel.VALUE_SUBMITTED, {
     //   input: g(inputAtom),
@@ -1925,9 +1650,8 @@ export const submitValueAtom = atom(
     // s(indexAtom, 0);
 
     s(closedInput, g(inputAtom));
-    if (fValue) s(inputAtom, '');
     s(_flagged, ''); // clear after getting
-    s(_flag, '');
+    s(focusedFlagValueAtom, '');
     s(_previewHTML, ``);
     s(panelHTMLAtom, ``);
 
@@ -2014,6 +1738,8 @@ export const escapeAtom = atom<any>((g) => {
     }
 
     channel(Channel.ESCAPE);
+
+    invokeSearch('');
   };
 });
 
@@ -2262,7 +1988,7 @@ export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   g(logAtom)(`🎬 Send shortcut ${shortcut}`);
 
   channel(Channel.SHORTCUT, { shortcut });
-  s(_flag, '');
+  s(focusedFlagValueAtom, '');
 });
 
 export const processesAtom = atom<ProcessInfo[]>([]);
@@ -2332,7 +2058,7 @@ export const logAtom = atom((_g) => {
 
 export const addChoiceAtom = atom(null, (g, s, a: Choice) => {
   const prev = g(unfilteredChoices);
-  s(unfilteredChoicesAtom, Array.isArray(prev) ? [...prev, a] : [a]);
+  s(choicesConfigAtom, Array.isArray(prev) ? [...prev, a] : [a]);
 });
 
 type Appearance = 'light' | 'dark';
@@ -2611,6 +2337,7 @@ export const termExitAtom = atom(
 export const scrollToAtom = atom<'top' | 'bottom' | 'center' | null>(null);
 
 export const listAtom = atom(null);
+export const flagsListAtom = atom(null);
 
 export const webcamStreamAtom = atom<MediaStream | null>(null);
 export const deviceIdAtom = atom<string | null>(null);
@@ -2859,3 +2586,13 @@ export const promptBoundsAtom = atom({
 export const audioDotAtom = atom(false);
 
 export const isScrollingAtom = atom(false);
+
+const scoredFlags = atom([] as ScoredChoice[]);
+export const scoredFlagsAtom = atom(
+  (g) => {
+    return g(scoredFlags);
+  },
+  (g, s, a: ScoredChoice[]) => {
+    s(scoredFlags, a);
+  }
+);

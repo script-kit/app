@@ -6,8 +6,7 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback } from 'react';
 import {
-  _flag,
-  _choices,
+  focusedFlagValueAtom,
   uiAtom,
   sendShortcutAtom,
   enterPressedAtom,
@@ -21,7 +20,7 @@ export function EnterButton(action: Action) {
   const ui = useAtomValue(uiAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const pressEnter = useSetAtom(enterPressedAtom);
-  const setFlag = useSetAtom(_flag);
+  const setFlag = useSetAtom(focusedFlagValueAtom);
   const [app] = useAtom(appConfigAtom);
   const m = app?.isMac;
 
@@ -64,23 +63,23 @@ export function EnterButton(action: Action) {
       disabled={action?.disabled}
       tabIndex={action?.value === 'enter' ? 0 : -1}
       className={`
-  flex flex-row items-center justify-center
-  outline-none
-  py-0.5 px-1.5
-  font-medium
+  flex h-full flex-row items-center
+  justify-center
+  rounded py-0.5
+  px-1.5
   text-sm
 
 
-  rounded
+  font-medium
 
-  h-full
+  outline-none
   ${action?.disabled ? `text-primary text-opacity-25` : `${bg} ${textContrast}`}
   `}
       onClick={onClick}
       onMouseOut={(e) => e.currentTarget.blur()}
     >
       <div
-        className={`px-2px truncate min-w-0 mr-0.5 hover:cursor-pointer
+        className={`mr-0.5 min-w-0 truncate px-2px hover:cursor-pointer
       `}
       >
         {action.name}
@@ -92,13 +91,13 @@ export function EnterButton(action: Action) {
             <div
               key={k}
               className={`
-              flex items-center justify-center
-          w-5 h-5 ml-0.5
-          leading-none
+              ml-0.5 flex h-5
+          w-5 items-center justify-center
           rounded
           bg-ui-bg
-          hover:border-opacity-10
+          leading-none
           hover:cursor-pointer
+          hover:border-opacity-10
 
           `}
             >

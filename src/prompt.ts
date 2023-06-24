@@ -11,6 +11,8 @@ import {
   Script,
   PromptData,
   PromptBounds,
+  FlagsOptions,
+  FlagsWithKeys,
 } from '@johnlindquist/kit/types/core';
 
 import { snapshot } from 'valtio';
@@ -33,7 +35,13 @@ import os from 'os';
 import path from 'path';
 import log from 'electron-log';
 import { assign, debounce } from 'lodash';
-import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
+import {
+  mainScriptPath,
+  defaultGroupClassName,
+  defaultGroupNameClassName,
+  groupChoices,
+  formatChoices,
+} from '@johnlindquist/kit/cjs/utils';
 import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { Display } from 'electron/main';
@@ -41,14 +49,23 @@ import { differenceInHours } from 'date-fns';
 
 import { ChildProcess } from 'child_process';
 import { writeJson, ensureDir } from 'fs-extra';
+import { quickScore, createConfig, QuickScore } from 'quick-score';
 import { getAssetPath } from './assets';
-import { appDb, kitState, subs, promptState, getEmojiShortcut } from './state';
+import {
+  appDb,
+  kitState,
+  subs,
+  promptState,
+  getEmojiShortcut,
+  kitSearch,
+  flagSearch,
+} from './state';
 import { EMOJI_HEIGHT, EMOJI_WIDTH, MIN_WIDTH, ZOOM_LEVEL } from './defaults';
-import { ResizeData } from './types';
+import { ResizeData, ScoredChoice } from './types';
 import { getVersion } from './version';
 import { AppChannel, HideReason } from './enums';
 import { emitter, KitEvent } from './events';
-import { getCachePath, pathsAreEqual } from './helpers';
+import { createScoredChoice, getCachePath, pathsAreEqual } from './helpers';
 import { TrackEvent, trackEvent } from './track';
 
 let promptWindow: BrowserWindow;
@@ -124,7 +141,6 @@ export const setVibrancy = (
 
 let isThrottling = true;
 export const setBackgroundThrottling = (enabled: boolean) => {
-  return;
   if (enabled === isThrottling) return;
   isThrottling = enabled;
   if (promptWindow?.isDestroyed()) return;
@@ -729,18 +745,18 @@ export const resize = async ({
   hasInput,
   totalChoices,
 }: ResizeData) => {
-  // log.silly({
-  //   reason,
-  //   topHeight,
-  //   mainHeight,
-  //   resize: kitState.resize,
-  //   forceResize,
-  //   resizePaused: kitState.resizePaused,
-  //   hasInput,
-  //   inputChanged,
-  //   hasPreview,
-  //   totalChoices,
-  // });
+  log.silly({
+    reason,
+    topHeight,
+    mainHeight,
+    resize: kitState.resize,
+    forceResize,
+    resizePaused: kitState.resizePaused,
+    hasInput,
+    inputChanged,
+    hasPreview,
+    totalChoices,
+  });
 
   if (kitState.resizePaused) return;
 
@@ -1060,6 +1076,7 @@ export const setScript = async (
   pid: number,
   force = false
 ): Promise<'denied' | 'allowed'> => {
+  kitSearch.input = '';
   kitState.resizePaused = false;
   kitState.cacheChoices = Boolean(script?.cache);
   kitState.cachePrompt = Boolean(script?.cache);
@@ -1162,6 +1179,7 @@ const pidMatch = (pid: number, message: string) => {
 };
 
 export const preloadPromptData = async (promptData: PromptData) => {
+  setBackgroundThrottling(false);
   promptData.preload = true;
   kitState.preloaded = true;
   setPromptData(promptData);
@@ -1254,11 +1272,14 @@ export const setPromptData = async (promptData: PromptData) => {
   if (kitState.promptHidden) {
     kitState.tabChanged = false;
   }
+
   if (kitState.isMac) {
     promptWindow?.showInactive();
   } else {
     promptWindow?.show();
   }
+
+  setBackgroundThrottling(true);
 
   setTimeout(() => {
     promptWindow?.setAlwaysOnTop(true, 'modal-panel');
@@ -1318,13 +1339,360 @@ export const setPromptData = async (promptData: PromptData) => {
 };
 
 export const preloadChoices = (choices: Choice[]) => {
-  (choices as any).preload = true;
-  setChoices(choices);
+  setChoices(choices, { preload: true });
 };
 
-export const setChoices = (choices: Choice[]) => {
-  log.silly(`setChoices`, { length: choices?.length || 0 });
-  sendToPrompt(Channel.SET_UNFILTERED_CHOICES, choices);
+export const setScoredChoices = (choices: ScoredChoice[]) => {
+  log.info(`🎼 Scored choices count: ${choices.length}`);
+  sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
+};
+
+export const setScoredFlags = (choices: ScoredChoice[]) => {
+  log.info(`🎼 Scored choices count: ${choices.length}`);
+  sendToPrompt(Channel.SET_SCORED_FLAGS, choices);
+};
+
+export const invokeFlagSearch = (input: string) => {
+  flagSearch.input = input;
+  if (input === '') {
+    setScoredFlags(
+      flagSearch.choices
+        .filter((c) => !c?.pass && !c?.hideWithoutInput && !c?.miss)
+        .map(createScoredChoice)
+    );
+    return;
+  }
+
+  if (input.startsWith(' ') && input.length === 2) {
+    const result = flagSearch.shortcodes.find((s) => s?.code === input[1]);
+    if (result?.id) {
+      const choice = flagSearch.choices.find((c) => c.id === result.id);
+      if (choice) {
+        sendToPrompt(Channel.SET_SUBMIT_VALUE, choice.value);
+      }
+    }
+  }
+
+  const result = flagSearch?.qs?.search(input) as ScoredChoice[];
+
+  if (flagSearch.hasGroup) {
+    // Build a map for constant time access
+    const resultMap = new Map();
+    const keepGroups = new Set();
+    for (const r of result) {
+      resultMap.set(r.item.id, r);
+      keepGroups.add(r.item.group);
+    }
+
+    keepGroups.add('Pass');
+
+    let groupedResults: ScoredChoice[] = [];
+
+    const matchGroup = [
+      createScoredChoice({
+        name: 'Exact Match',
+        group: 'Match',
+        pass: true,
+        skip: true,
+        nameClassName: defaultGroupNameClassName,
+        className: defaultGroupClassName,
+        height: PROMPT.ITEM.HEIGHT.XXXS,
+      }),
+    ];
+    const missGroup = [];
+
+    for (const choice of flagSearch.choices) {
+      const hide = choice?.hideWithoutInput && input === '';
+      const miss = choice?.miss && !hide;
+      if (miss) {
+        missGroup.push(createScoredChoice(choice));
+      } else if (!hide) {
+        const scoredChoice = resultMap.get(choice.id);
+        if (choice?.pass) {
+          groupedResults.push(createScoredChoice(choice));
+        }
+
+        if (scoredChoice) {
+          if (
+            choice?.pass &&
+            scoredChoice?.score > 0.9 &&
+            !scoredChoice.item?.skip
+          ) {
+            if (input?.length > 2) {
+              scoredChoice.item = {
+                ...choice,
+                group: 'Match',
+                tag: choice?.group,
+                pass: false,
+                id: Math.random(),
+              };
+              matchGroup.push(scoredChoice);
+            }
+          } else {
+            groupedResults.push(scoredChoice);
+          }
+        } else if (choice?.skip && keepGroups?.has(choice?.group)) {
+          groupedResults.push(createScoredChoice(choice));
+        }
+      }
+    }
+
+    if (matchGroup.length > 1) {
+      groupedResults = matchGroup.concat(groupedResults);
+    }
+
+    if (groupedResults.length === 0) {
+      groupedResults = missGroup;
+    }
+
+    setScoredFlags(groupedResults);
+  } else if (result?.length === 0) {
+    const missGroup = flagSearch.choices
+      .filter((c) => c?.miss)
+      .map(createScoredChoice);
+    setScoredFlags(missGroup);
+  } else {
+    setScoredFlags(result);
+  }
+};
+
+export const invokeSearch = (input: string) => {
+  kitSearch.input = input;
+  flagSearch.input = '';
+  if (input === '') {
+    setScoredChoices(
+      kitSearch.choices
+        .filter((c) => !c?.pass && !c?.hideWithoutInput && !c?.miss)
+        .map(createScoredChoice)
+    );
+    return;
+  }
+
+  if (input.startsWith(' ') && input.length === 2) {
+    const result = kitSearch.shortcodes.find((s) => s?.code === input[1]);
+    if (result?.id) {
+      const choice = kitSearch.choices.find((c) => c.id === result.id);
+      if (choice) {
+        sendToPrompt(Channel.SET_SUBMIT_VALUE, choice.value);
+      }
+    }
+  }
+
+  const result = kitSearch?.qs?.search(input) as ScoredChoice[];
+
+  if (kitSearch.hasGroup) {
+    // Build a map for constant time access
+    const resultMap = new Map();
+    const keepGroups = new Set();
+    for (const r of result) {
+      resultMap.set(r.item.id, r);
+      keepGroups.add(r.item.group);
+    }
+
+    keepGroups.add('Pass');
+
+    let groupedResults: ScoredChoice[] = [];
+
+    const matchGroup = [
+      createScoredChoice({
+        name: 'Exact Match',
+        group: 'Match',
+        pass: true,
+        skip: true,
+        nameClassName: defaultGroupNameClassName,
+        className: defaultGroupClassName,
+        height: PROMPT.ITEM.HEIGHT.XXXS,
+      }),
+    ];
+    const missGroup = [];
+
+    for (const choice of kitSearch.choices) {
+      const hide = choice?.hideWithoutInput && input === '';
+      const miss = choice?.miss && !hide;
+      if (miss) {
+        missGroup.push(createScoredChoice(choice));
+      } else if (!hide) {
+        const scoredChoice = resultMap.get(choice.id);
+        if (choice?.pass) {
+          groupedResults.push(createScoredChoice(choice));
+        }
+
+        if (scoredChoice) {
+          if (
+            choice?.pass &&
+            scoredChoice?.score > 0.9 &&
+            !scoredChoice.item?.skip
+          ) {
+            if (input?.length > 2) {
+              scoredChoice.item = {
+                ...choice,
+                group: 'Match',
+                tag: choice?.group,
+                pass: false,
+                id: Math.random(),
+              };
+              matchGroup.push(scoredChoice);
+            }
+          } else {
+            groupedResults.push(scoredChoice);
+          }
+        } else if (choice?.skip && keepGroups?.has(choice?.group)) {
+          groupedResults.push(createScoredChoice(choice));
+        }
+      }
+    }
+
+    if (matchGroup.length > 1) {
+      groupedResults = matchGroup.concat(groupedResults);
+    }
+
+    if (groupedResults.length === 0) {
+      groupedResults = missGroup;
+    }
+
+    setScoredChoices(groupedResults);
+  } else if (result?.length === 0) {
+    const missGroup = kitSearch.choices
+      .filter((c) => c?.miss)
+      .map(createScoredChoice);
+    setScoredChoices(missGroup);
+  } else {
+    setScoredChoices(result);
+  }
+};
+
+export const setShortcodes = (choices: Choice[]) => {
+  if (choices.length > 0 && choices?.length < 256) {
+    const codes = [];
+    for (const choice of choices) {
+      const code = choice?.name?.match(/(?<=\[).(?=\])/i)?.[0] || '';
+
+      if (code) {
+        codes.push({
+          code: code?.toLowerCase(),
+          id: code ? (choice.id as string) : '',
+        });
+      }
+    }
+
+    kitSearch.shortcodes = codes;
+  }
+};
+
+export const appendChoices = (choices: Choice[]) => {
+  setChoices(kitSearch.choices.concat(choices), { preload: false });
+};
+
+export const setFlags = (f: FlagsWithKeys) => {
+  const order = f?.order || [];
+  const sortChoicesKey = f?.sortChoicesKey || [];
+
+  const groupedFlags = groupChoices(
+    Object.entries(f)
+      .filter(([key]) => {
+        if (key === 'order') return false;
+        if (key === 'sortChoicesKey') return false;
+        return true;
+      })
+      .map(([key, value]: [string, any]) => {
+        return {
+          id: key,
+          group: value?.group,
+          command: value?.name,
+          filePath: value?.name,
+          name: value?.name || key,
+          shortcut: value?.shortcut || '',
+          friendlyShortcut: value?.shortcut || '',
+          description: value?.description || '',
+          value: key,
+          preview: value?.preview || '',
+        };
+      }),
+    {
+      order,
+      sortChoicesKey,
+    }
+  );
+
+  const choices = formatChoices(groupedFlags);
+
+  flagSearch.choices = choices;
+  flagSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
+  function scorer(string: string, query: string, matches: number[][]) {
+    return quickScore(
+      string,
+      query,
+      matches as any,
+      undefined,
+      undefined,
+      createConfig({
+        maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
+          ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 10)
+          : 3,
+      })
+    );
+  }
+
+  const keys = kitState?.kenvEnv?.KIT_SEARCH_KEYS
+    ? kitState?.kenvEnv?.KIT_SEARCH_KEYS.split(',').map((k) => k.trim())
+    : ['slicedName', 'friendlyShortcut', 'tag', 'group', 'command'];
+
+  flagSearch.qs = new QuickScore(choices, {
+    keys: keys.map((name) => ({
+      name,
+      scorer,
+    })),
+    minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
+      ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
+      : 0.6,
+  } as any);
+
+  // setFlagShortcodes(choices);
+
+  log.info(`Choices count: ${choices.length}`);
+  invokeFlagSearch(flagSearch.input);
+};
+
+export const setChoices = (
+  choices: Choice[],
+  { preload }: { preload: boolean }
+) => {
+  kitSearch.choices = choices;
+  kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
+  function scorer(string: string, query: string, matches: number[][]) {
+    return quickScore(
+      string,
+      query,
+      matches as any,
+      undefined,
+      undefined,
+      createConfig({
+        maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
+          ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 10)
+          : 3,
+      })
+    );
+  }
+
+  const keys = kitState?.kenvEnv?.KIT_SEARCH_KEYS
+    ? kitState?.kenvEnv?.KIT_SEARCH_KEYS.split(',').map((k) => k.trim())
+    : ['slicedName', 'friendlyShortcut', 'tag', 'group', 'command'];
+
+  kitSearch.qs = new QuickScore(choices, {
+    keys: keys.map((name) => ({
+      name,
+      scorer,
+    })),
+    minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
+      ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
+      : 0.6,
+  } as any);
+  sendToPrompt(Channel.SET_CHOICES_CONFIG, { preload });
+
+  setShortcodes(choices);
+
+  log.info(`Choices count: ${choices.length}`);
+  invokeSearch(kitSearch.input);
 };
 
 export const clearPromptCache = async () => {

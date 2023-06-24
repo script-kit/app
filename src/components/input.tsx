@@ -26,8 +26,8 @@ import {
   submittedAtom,
   submitValueAtom,
   tabIndexAtom,
-  ultraShortCodesAtom,
-  unfilteredChoicesAtom,
+  shortCodesAtom,
+  choicesConfigAtom,
   onInputSubmitAtom,
   inputFocusAtom,
   uiAtom,
@@ -64,14 +64,14 @@ export default function Input() {
 
   const [inputValue, setInput] = useAtom(inputAtom);
   const [, setTabIndex] = useAtom(tabIndexAtom);
-  const [unfilteredChoices] = useAtom(unfilteredChoicesAtom);
+  const [unfilteredChoices] = useAtom(choicesConfigAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);
   const [placeholder] = useAtom(placeholderAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [submitted] = useAtom(submittedAtom);
   const [, setSelectionStart] = useAtom(selectionStartAtom);
   const [currentModifiers, setModifiers] = useAtom(_modifiers);
-  const [ultraShortCodes] = useAtom(ultraShortCodesAtom);
+  const [ultraShortCodes] = useAtom(shortCodesAtom);
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
   const [, setInputFocus] = useAtom(inputFocusAtom);
   const [ui] = useAtom(uiAtom);
@@ -122,6 +122,8 @@ export default function Input() {
       );
 
       if (target?.value.length === 0) {
+        // TODO: Send maybe shortcode?
+        return;
         const findCode = ultraShortCodes.find(
           (u) => u.code.toLowerCase() === event.key?.toLowerCase()
         );
@@ -143,6 +145,8 @@ export default function Input() {
       }
 
       if (event.key === ' ' && ui !== UI.hotkey) {
+        // TODO: Send maybe shortcode?
+        return;
         const shortcodeChoice = unfilteredChoices?.find((choice: Choice) => {
           const iv = inputValue.trim().toLowerCase();
           if (typeof choice?.shortcode === 'string') {

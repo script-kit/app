@@ -72,9 +72,9 @@ import {
   maybeHide,
   onHideOnce,
   sendToPrompt,
-  setBackgroundThrottling,
   setBounds,
   setChoices,
+  setFlags,
   setFooter,
   setHint,
   setInput,
@@ -1213,8 +1213,7 @@ const kitMessageMap: ChannelHandler = {
       formattedChoices = formatScriptChoices(value);
     }
 
-    setChoices(formattedChoices);
-    kitState.unfilteredChoices = formattedChoices;
+    setChoices(formattedChoices, { preload: false });
 
     if (child) {
       childSend(child, {
@@ -1348,6 +1347,7 @@ const kitMessageMap: ChannelHandler = {
   },
   SET_FLAGS: (data) => {
     sendToPrompt(Channel.SET_FLAGS, data.value);
+    setFlags(data.value);
   },
   SET_NAME: toProcess(async ({ child }, { channel, value }) => {
     sendToPrompt(Channel.SET_NAME, value);

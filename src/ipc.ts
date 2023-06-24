@@ -26,12 +26,19 @@ import detect from 'detect-file-type';
 import { emitter, KitEvent } from './events';
 import { ensureIdleProcess, processes } from './process';
 
-import { focusPrompt, maybeHide, reload, resize } from './prompt';
+import {
+  focusPrompt,
+  invokeFlagSearch,
+  invokeSearch,
+  maybeHide,
+  reload,
+  resize,
+} from './prompt';
 import { runPromptProcess } from './kit';
 import { AppChannel, HideReason, Trigger } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
-import { kitState } from './state';
+import { flagSearch, kitSearch, kitState } from './state';
 
 const handleChannel =
   (fn: (processInfo: ProcessInfo, message: AppMessage) => void) =>
@@ -119,6 +126,14 @@ ${data.error}
 
   ipcMain.on(AppChannel.RESIZE, (event, resizeData: ResizeData) => {
     resize(resizeData);
+  });
+
+  ipcMain.on(AppChannel.INVOKE_SEARCH, (event, { input }) => {
+    invokeSearch(input);
+  });
+
+  ipcMain.on(AppChannel.INVOKE_FLAG_SEARCH, (event, { input }) => {
+    invokeFlagSearch(input);
   });
 
   ipcMain.on(AppChannel.RELOAD, async () => {
@@ -294,6 +309,11 @@ ${data.error}
           log.verbose(`Allow choice focus: ${kitState.ui}`);
         }
         log.verbose(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
+
+        if (channel === Channel.ESCAPE || channel === Channel.VALUE_SUBMITTED) {
+          kitSearch.input = '';
+          flagSearch.input = '';
+        }
 
         if (channel === Channel.ABANDON) {
           log.info(`⚠️ ABANDON`, message.pid);

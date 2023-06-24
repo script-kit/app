@@ -5,16 +5,16 @@ import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
 import ChoiceButton from './button';
 import {
-  indexAtom,
   mouseEnabledAtom,
-  scoredChoicesAtom,
   submitValueAtom,
   itemHeightAtom,
   promptDataAtom,
-  listAtom,
-  requiresScrollAtom,
   isScrollingAtom,
-  showSelectedAtom,
+  flagsListAtom,
+  flagsIndexAtom,
+  flagsRequiresScrollAtom,
+  scoredFlagsAtom,
+  focusedChoiceAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 
@@ -29,29 +29,27 @@ const createItemData = memoize(
     } as ChoiceButtonProps['data'])
 );
 
-export default function ChoiceList({ width, height }: ListProps) {
-  const listRef = useRef(null);
+export default function FlagsList({ width, height }: ListProps) {
+  const flagsRef = useRef(null);
   const innerRef = useRef(null);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   // TODO: In case items ever have dynamic height
-  const [choices] = useAtom(scoredChoicesAtom);
+  const [choices] = useAtom(scoredFlagsAtom);
   const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
-  const [index, onIndexChange] = useAtom(indexAtom);
+  const [index, onIndexChange] = useAtom(flagsIndexAtom);
   // const [inputValue] = useAtom(inputAtom);
   // const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
   const itemHeight = useAtomValue(itemHeightAtom);
   const promptData = useAtomValue(promptDataAtom);
-  const [list, setList] = useAtom(listAtom);
-  const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
+  const [list, setList] = useAtom(flagsListAtom);
+  const [requiresScroll, setRequiresScroll] = useAtom(flagsRequiresScrollAtom);
   const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
-  const showSelected = useAtomValue(showSelectedAtom);
+  const [focusedChoice] = useAtom(focusedChoiceAtom);
 
   const onIndexSubmit = useCallback(
     (i: number) => {
       if (choices.length) {
-        const choice = choices[i];
-
-        setSubmitValue(choice?.item?.value);
+        setSubmitValue(focusedChoice);
       }
     },
     [choices, setSubmitValue]
@@ -66,18 +64,18 @@ export default function ChoiceList({ width, height }: ListProps) {
   );
 
   useEffect(() => {
-    if (listRef.current) {
-      setList(listRef.current);
+    if (flagsRef.current) {
+      setList(flagsRef.current);
     }
   }, [setList]);
 
   useEffect(() => {
-    if (!listRef.current) return;
+    if (!flagsRef.current) return;
 
     const scroll = () => {
       if (requiresScroll === -1) return;
       onIndexChange(requiresScroll);
-      (listRef as any).current.scrollToItem(
+      (flagsRef as any).current.scrollToItem(
         requiresScroll,
         // eslint-disable-next-line no-nested-ternary
         requiresScroll > 0 ? 'auto' : 'start'
@@ -86,7 +84,7 @@ export default function ChoiceList({ width, height }: ListProps) {
 
     scroll();
     setTimeout(() => {
-      if (listRef.current) {
+      if (flagsRef.current) {
         scroll();
         setRequiresScroll(-1);
       }
@@ -94,10 +92,10 @@ export default function ChoiceList({ width, height }: ListProps) {
   }, [requiresScroll, choices]);
 
   useEffect(() => {
-    if (!listRef.current) return;
+    if (!flagsRef.current) return;
     const needsReset = choices.find((c) => c?.item?.height !== itemHeight);
     if (needsReset) {
-      (listRef?.current as any)?.resetAfterIndex(0);
+      (flagsRef?.current as any)?.resetAfterIndex(0);
     }
   }, [choices, itemHeight]);
 
@@ -108,10 +106,8 @@ export default function ChoiceList({ width, height }: ListProps) {
   }, 0);
   return (
     <div
-      id="list"
-      className={`list-component flex w-full flex-row overflow-y-hidden ${
-        showSelected ? 'opacity-60' : ''
-      }`}
+      id="flags"
+      className="flags-component flex w-full flex-row overflow-y-hidden"
       style={
         {
           width,
@@ -119,7 +115,7 @@ export default function ChoiceList({ width, height }: ListProps) {
       }
     >
       <List
-        ref={listRef}
+        ref={flagsRef}
         innerRef={innerRef}
         overscanCount={2}
         onScroll={(props) => {

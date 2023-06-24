@@ -3,9 +3,9 @@ import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
-  _choices,
+  choicesAtom,
   cmdAtom,
-  _flag,
+  focusedFlagValueAtom,
   flagsAtom,
   flagValueAtom,
   indexAtom,
@@ -18,18 +18,20 @@ import {
   shortcutsAtom,
   promptDataAtom,
   previewEnabledAtom,
+  focusedChoiceAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
 
 export default () => {
   const [cmd] = useAtom(cmdAtom);
-  const [choices] = useAtom(_choices);
+  const [choices] = useAtom(choicesAtom);
+  const [focusedChoice] = useAtom(focusedChoiceAtom);
   const [input] = useAtom(inputAtom);
   const [index] = useAtom(indexAtom);
   const [flagValue, setFlagValue] = useAtom(flagValueAtom);
   const [flags] = useAtom(flagsAtom);
-  const [, setFlag] = useAtom(_flag);
+  const [, setFlag] = useAtom(focusedFlagValueAtom);
   const [, submit] = useAtom(submitValueAtom);
   const [selectionStart] = useAtom(selectionStartAtom);
   const [inputFocus] = useAtom(inputFocusAtom);
@@ -75,7 +77,7 @@ export default () => {
       if (flagValue) return;
 
       setFlag(flagKeyByShortcut(handler.key));
-      submit(choices.length ? choices[index].value : input);
+      submit(focusedChoice?.value || input);
     },
     hotkeysOptions,
     [flags, input, inputFocus, choices, index, flagValue, flagShortcuts]
@@ -154,7 +156,7 @@ export default () => {
       if (flagValue) {
         setFlagValue('');
       } else if (choices.length) {
-        setFlagValue(choices[index].value);
+        setFlagValue(focusedChoice?.value);
       } else {
         setFlagValue(input);
       }

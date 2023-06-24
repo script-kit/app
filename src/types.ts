@@ -46,12 +46,11 @@ export interface ResizeData {
   hasPreview: boolean;
   inputChanged: boolean;
   placeholderOnly: boolean;
-  nullChoices: boolean;
   forceResize: boolean;
   forceHeight?: number;
   forceWidth?: number;
   justOpened: boolean;
-  totalChoices: boolean;
+  totalChoices: number;
 }
 
 export interface Survey {

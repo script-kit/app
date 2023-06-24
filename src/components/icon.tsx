@@ -6,7 +6,12 @@ import { loadable } from 'jotai/utils';
 import { motion } from 'framer-motion';
 import React from 'react';
 import { ipcRenderer } from 'electron';
-import { _flag, _choices, indexAtom, createAssetAtom } from '../jotai';
+import {
+  focusedFlagValueAtom,
+  choicesAtom,
+  indexAtom,
+  createAssetAtom,
+} from '../jotai';
 import { AppChannel } from '../enums';
 
 const loadableIconAtom = loadable(createAssetAtom('svg', 'logo.svg'));
@@ -35,7 +40,7 @@ export const IconButton = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1] }}
       transition={transition}
-      className="min-w-fit min-h-fit"
+      className="min-h-fit min-w-fit"
     >
       <a
         onClick={(e) => {
@@ -46,16 +51,16 @@ export const IconButton = () => {
       >
         <svg
           className={`
-        flex
-      h-6 w-6
-      -ml-0.5
-      mr-0.5
+        -ml-0.5
+      mr-0.5 mb-0.5
+      flex
+      h-6
 
-      items-center justify-center
-      p-1
-      mb-0.5
+      w-6 min-w-fit
+      items-center
+      justify-center
       rounded
-      min-w-fit
+      p-1
       ${textContrast}
 
       ${bg}

@@ -4,7 +4,7 @@ import React, { KeyboardEvent, useCallback, useEffect, useRef } from 'react';
 import { KeyData } from '@johnlindquist/kit/types/kitapp';
 
 import { useAtom } from 'jotai';
-import { placeholderAtom, hintAtom, unfilteredChoicesAtom } from '../jotai';
+import { placeholderAtom, hintAtom, choicesConfigAtom } from '../jotai';
 import { useFocus } from '../hooks';
 
 interface HotkeyProps {
@@ -15,7 +15,6 @@ interface HotkeyProps {
 const DEFAULT_PLACEHOLDER = 'Press a combination of keys';
 
 const keyFromCode = (code: string) => {
-  console.log(`keyFromCode: ${code}`);
   const keyCode = code.replace(/Key|Digit/, '').toLowerCase();
   const replaceAlts = (k: string) => {
     const map: any = {
@@ -108,7 +107,7 @@ const WAITING = `Waiting for keypress...`;
 
 export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
   const [placeholder, setPlaceholder] = useAtom(placeholderAtom);
-  const [choices, setChoices] = useAtom(unfilteredChoicesAtom);
+  const [choices, setChoices] = useAtom(choicesConfigAtom);
   const [, setHint] = useAtom(hintAtom);
 
   const hotkeyRef = useRef<HTMLInputElement>(null);
@@ -187,9 +186,9 @@ export default function Hotkey({ submit, onHotkeyHeightChanged }: HotkeyProps) {
       autoFocus
       className={`
       hotkey-component
-      bg-transparent w-full text-text-base  focus:outline-none outline-none text-xl   placeholder-text-base placeholder-opacity-40 h-16
-  ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-0
-  focus:border-none border-none`}
+      h-16 w-full border-none  bg-transparent py-0 pl-4   text-xl text-text-base placeholder-text-base
+  placeholder-opacity-40 outline-none ring-0 ring-opacity-0 focus:border-none focus:outline-none
+  focus:ring-0 focus:ring-opacity-0`}
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
       placeholder={placeholder || DEFAULT_PLACEHOLDER}

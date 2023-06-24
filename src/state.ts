@@ -35,6 +35,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import axios from 'axios';
+import { QuickScore } from 'quick-score';
 import internetAvailable from './internet-available';
 import { noScript } from './defaults';
 import { getAssetPath } from './assets';
@@ -373,6 +374,8 @@ const initState = {
   preloaded: false,
   emojiActive: false,
   unfilteredChoices: [] as Choice[],
+  hasGroup: false,
+  qs: null as null | QuickScore<Choice>,
 };
 
 nativeTheme.addListener('updated', () => {
@@ -938,3 +941,19 @@ export const getThemes = () => ({
     appearance: 'light',
   },
 });
+
+export const kitSearch = {
+  input: '',
+  choices: [] as Choice[],
+  shortcodes: [] as { code: string; id: string }[],
+  hasGroup: false,
+  qs: new QuickScore<Choice>(),
+};
+
+export const flagSearch = {
+  input: '',
+  choices: [] as Choice[],
+  shortcodes: [] as { code: string; id: string }[],
+  hasGroup: false,
+  qs: new QuickScore<Choice>(),
+};

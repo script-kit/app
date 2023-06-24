@@ -8,7 +8,7 @@ import {
   submitValueAtom,
   webcamIdAtom,
   webcamStreamAtom,
-  _flag,
+  focusedFlagValueAtom,
 } from './jotai';
 import useOnEnter from './hooks/useOnEnter';
 
@@ -18,7 +18,7 @@ export default function Webcam() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [deviceId, setDeviceId] = useAtom(webcamIdAtom);
   const [, submit] = useAtom(submitValueAtom);
-  const [, setFlag] = useAtom(_flag);
+  const [, setFlag] = useAtom(focusedFlagValueAtom);
 
   useEffect(() => {
     const getDevices = async () => {
@@ -74,9 +74,8 @@ export default function Webcam() {
         stream.getTracks().forEach((track) => track.stop());
         setStream(null);
         if (document.getElementById('webcam'))
-          (document.getElementById(
-            'webcam'
-          ) as HTMLVideoElement).srcObject = null;
+          (document.getElementById('webcam') as HTMLVideoElement).srcObject =
+            null;
       }
       submit(data);
 
@@ -90,7 +89,7 @@ export default function Webcam() {
   return (
     <div
       id={UI.webcam}
-      className="h-full w-full flex flex-col justify-center items-center text-text-base text-xl"
+      className="flex h-full w-full flex-col items-center justify-center text-xl text-text-base"
     >
       {stream && (
         <video

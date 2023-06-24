@@ -3,12 +3,10 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtom } from 'jotai';
-import { motion } from 'framer-motion';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import React, { useCallback } from 'react';
 import {
-  _flag,
-  _choices,
+  choicesAtom,
   inputAtom,
   indexAtom,
   channelAtom,
@@ -20,7 +18,7 @@ import { bg, textContrast } from './actions';
 import { IconSwapper } from './iconswapper';
 
 export function OptionsButton() {
-  const [choices] = useAtom(_choices);
+  const [choices] = useAtom(choicesAtom);
   const [input] = useAtom(inputAtom);
   const [index] = useAtom(indexAtom);
   const [channel] = useAtom(channelAtom);
@@ -45,9 +43,9 @@ export function OptionsButton() {
       tabIndex={-1}
       className={`
   flex flex-row items-center justify-center
-  outline-none py-0.5 px-1
+  py-0.5 px-1 text-sm
   font-medium
-  text-sm
+  outline-none
   ${textContrast}
 
   ${bg}
@@ -57,14 +55,14 @@ export function OptionsButton() {
       onClick={onClick}
       onMouseOut={(e) => e.currentTarget.blur()}
     >
-      <div className="px-0.5 mr-0.5">{flagValue ? 'Back' : 'Actions'}</div>
+      <div className="mr-0.5 px-0.5">{flagValue ? 'Back' : 'Actions'}</div>
       <div className={`${!m && `mt-px`} flex flex-row`}>
         <div
           className="
-          py-.5 px-1 mx-0.5
+          py-.5 mx-0.5 rounded
 
-          rounded
           bg-ui-bg
+          px-1
           hover:border-opacity-10
           "
         >

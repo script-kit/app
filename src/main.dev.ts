@@ -687,14 +687,14 @@ const optionalSpawnSetup = (...args: string[]) => {
     if (child?.stdout) {
       child.stdout.on('data', (data) => {
         if (kitState.ready) return;
-        setupLog(data.toString());
+        log.info(data.toString());
       });
     }
 
     if (child?.stderr) {
       if (kitState.ready) return;
       child.stderr.on('data', (data) => {
-        setupLog(data.toString());
+        log.warn(data.toString());
       });
     }
 
@@ -1351,7 +1351,7 @@ const checkKit = async () => {
       (result) => {
         setTimeout(() => {
           kitState.scriptsAdded = true;
-        }, 3000);
+        }, 1000);
         log.info(`👍 TS Scripts Built`);
         return result;
       }
@@ -1391,11 +1391,7 @@ const checkKit = async () => {
 
     await storeVersion(getVersion());
 
-    await optionalSpawnSetup(
-      kitPath('main', 'app-launcher.js'),
-      '--prep',
-      '--trust'
-    );
+    optionalSpawnSetup(kitPath('main', 'app-launcher.js'), '--prep', '--trust');
 
     kitState.starting = false;
     kitState.updateInstalling = false;

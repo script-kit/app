@@ -10,9 +10,6 @@ import { ActionButton } from './actionbutton';
 import { EnterButton } from './actionenterbutton';
 import {
   flagsAtom,
-  _flag,
-  _choices,
-  indexAtom,
   footerAtom,
   uiAtom,
   enterButtonNameAtom,
