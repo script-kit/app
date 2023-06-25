@@ -945,15 +945,14 @@ export const getThemes = () => ({
 export const kitSearch = {
   input: '',
   choices: [] as Choice[],
-  shortcodes: [] as { code: string; id: string }[],
+  shortcodes: new Map<string, Choice>(),
   hasGroup: false,
-  qs: new QuickScore<Choice>(),
+  qs: null,
 };
 
 export const flagSearch = {
   input: '',
   choices: [] as Choice[],
-  shortcodes: [] as { code: string; id: string }[],
   hasGroup: false,
-  qs: new QuickScore<Choice>(),
+  qs: null,
 };

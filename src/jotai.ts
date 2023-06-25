@@ -521,7 +521,9 @@ export const indexAtom = atom(
     if (choice?.id === prevChoiceIndexId) return;
     let calcIndex = clampedIndex;
     const direction = g(directionAtom);
-    if (g(allSkipAtom)) return;
+    if (g(allSkipAtom)) {
+      s(focusedChoiceAtom, noChoice);
+    }
     if (choice?.skip) {
       // Find next choice that doesn't have "skip" set or 0 or length - 1
       while (choice?.skip) {
@@ -585,8 +587,11 @@ function isScript(choice: Choice | Script): choice is Script {
 }
 
 const _flagged = atom<Choice | string>('');
-const _focused = atom(noChoice as Choice);
+const _focused = atom<Choice | null>(noChoice as Choice);
 
+export const hasFocusedChoiceAtom = atom(
+  (g) => g(_focused) && g(_focused)?.name !== noChoice.name
+);
 export const focusedChoiceAtom = atom(
   (g) => g(_focused),
   (g, s, choice: Choice) => {
@@ -1094,8 +1099,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   if (hasPreview && mh < PROMPT.HEIGHT.BASE) {
     const previewHeight = document.getElementById('preview')?.offsetHeight || 0;
     mh = Math.max(previewHeight, promptData?.height || PROMPT.HEIGHT.BASE);
-    g(logAtom)(`mh: ${mh}  ${choicesHeight}`);
-
     forceResize = true;
   }
 
@@ -1584,7 +1587,9 @@ export const submitValueAtom = atom(
     s(promptActiveAtom, false);
     s(disableSubmitAtom, false);
     if (g(submittedAtom)) return;
-    const focusedChoice = g(scoredChoicesAtom)?.[g(indexAtom)]?.item;
+    const hasFocusedChoice = g(hasFocusedChoiceAtom);
+    const focusedChoice = g(focusedChoiceAtom);
+
     const fid = focusedChoice?.id;
     if (fid) {
       // console.log(`focusedChoice.id: ${focusedChoice.id}`);
@@ -1618,9 +1623,6 @@ export const submitValueAtom = atom(
     }
 
     s(_inputAtom, '');
-
-    g(logAtom)(value);
-    g(logAtom)(flag);
 
     channel(Channel.VALUE_SUBMITTED, {
       value,

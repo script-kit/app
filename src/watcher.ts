@@ -321,7 +321,7 @@ export const onScriptsChanged = async (
     backgroundScriptChanged(script);
     addSnippet(script);
 
-    if (kitState.scriptsAdded) {
+    if (kitState.ready && kitState.scriptsAdded) {
       buildScriptChanged(script?.filePath);
     }
   }

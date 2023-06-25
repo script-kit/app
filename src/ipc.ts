@@ -27,6 +27,7 @@ import { emitter, KitEvent } from './events';
 import { ensureIdleProcess, processes } from './process';
 
 import {
+  debounceInvokeSearch,
   focusPrompt,
   invokeFlagSearch,
   invokeSearch,
@@ -129,7 +130,12 @@ ${data.error}
   });
 
   ipcMain.on(AppChannel.INVOKE_SEARCH, (event, { input }) => {
-    invokeSearch(input);
+    debounceInvokeSearch.cancel();
+    if (kitSearch.choices.length > 5000) {
+      debounceInvokeSearch(input);
+    } else {
+      invokeSearch(input);
+    }
   });
 
   ipcMain.on(AppChannel.INVOKE_FLAG_SEARCH, (event, { input }) => {

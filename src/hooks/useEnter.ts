@@ -13,6 +13,8 @@ import {
   uiAtom,
   enterPressedAtom,
   enterButtonDisabledAtom,
+  focusedChoiceAtom,
+  hasFocusedChoiceAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 
@@ -28,6 +30,8 @@ export default () => {
   const [ui] = useAtom(uiAtom);
   const emitEnter = useSetAtom(enterPressedAtom);
   const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
+  const focusedChoice = useAtomValue(focusedChoiceAtom);
+  const hasFocusedChoice = useAtomValue(hasFocusedChoiceAtom);
 
   useHotkeys(
     `enter`,
@@ -63,14 +67,24 @@ export default () => {
       }
 
       if (promptData?.strict && panelHTML?.length === 0) {
-        if (choices.length && typeof choices[index]?.value !== 'undefined') {
-          submit(choices[index].value);
+        if (choices.length && hasFocusedChoice) {
+          submit(focusedChoice?.value);
         }
       } else {
-        submit(choices.length ? choices[index].value : input);
+        submit(hasFocusedChoice ? focusedChoice?.value : input);
       }
     },
     hotkeysOptions,
-    [input, choices, index, promptDataAtom, panelHTML, ui, enterButtonDisabled]
+    [
+      input,
+      choices,
+      index,
+      promptDataAtom,
+      panelHTML,
+      ui,
+      enterButtonDisabled,
+      focusedChoice,
+      hasFocusedChoice,
+    ]
   );
 };
