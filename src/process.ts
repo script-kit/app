@@ -416,6 +416,22 @@ type WidgetData = {
 };
 type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
+export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
+  const cachePath = getCachePath(scriptPath, 'choices');
+  log.verbose(`🎁 Caching ${kitState.scriptPath} choices -> ${cachePath}`);
+  ensureDir(path.dirname(cachePath))
+    .then((success) => {
+      // eslint-disable-next-line promise/no-nesting
+      return writeJson(cachePath, choices).catch((error) => {
+        log.warn({ error });
+        return error;
+      });
+    })
+    .catch((error) => {
+      log.warn({ error });
+    });
+};
+
 const toProcess =
   <K extends keyof ChannelMap>(
     fn: (processInfo: ProcessInfo, data: SendData<K>) => void
@@ -468,8 +484,17 @@ const kitMessageMap: ChannelHandler = {
     getLog(data.kitScript).info(data?.value || Value.Undefined);
     setLog(data.value || Value.Undefined);
   },
+  CONSOLE_INFO: (data) => {
+    getLog(data.kitScript).info(data?.value || Value.Undefined);
+    setLog(data.value || Value.Undefined);
+  },
 
   CONSOLE_WARN: (data) => {
+    getLog(data.kitScript).warn(data.value);
+    setLog(data.value);
+  },
+
+  CONSOLE_ERROR: (data) => {
     getLog(data.kitScript).warn(data.value);
     setLog(data.value);
   },
@@ -1088,21 +1113,26 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_PREVIEW: (data) => {
-    if (kitState.scriptPathChanged || kitState.ui !== UI.arg) {
-      if (kitState.scriptPathChanged)
-        log.verbose(
-          `⛔️ Script path changed, but new prompt not set. Skipping SET_CHOICES`
-        );
-      if (kitState.ui !== UI.arg)
-        log.verbose(`⛔️ UI is ${kitState.ui}. Skipping SET_CHOICES`);
-      return;
-    }
-
     setPreview(data.value);
   },
 
   SET_SHORTCUTS: toProcess(async ({ child }, { channel, value }) => {
     setShortcuts(value);
+
+    // TOOD: Consider caching shortcuts
+    // const cachePath = getCachePath(kitState.scriptPath, 'shortcuts');
+
+    // ensureDir(path.dirname(cachePath))
+    //   .then((success) => {
+    //     // eslint-disable-next-line promise/no-nesting
+    //     return writeJson(cachePath, value).catch((error) => {
+    //       log.warn({ error });
+    //       return error;
+    //     });
+    //   })
+    //   .catch((error) => {
+    //     log.warn({ error });
+    //   });
 
     childSend(child, { channel, value });
   }),
@@ -1201,6 +1231,10 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_CHOICES: toProcess(async ({ child }, { channel, value }) => {
+    if (![UI.arg, UI.hotkey].includes(kitState.ui)) {
+      log.info(`⛔️ UI changed before choices sent. Skipping SET_CHOICES`);
+      return;
+    }
     if (kitState.scriptPathChanged) {
       log.info(
         `⛔️ Script path changed, but new prompt not set. Skipping SET_CHOICES`
@@ -1224,20 +1258,7 @@ const kitMessageMap: ChannelHandler = {
     if (kitState.cacheChoices) {
       kitState.cacheChoices = false;
 
-      const cachePath = getCachePath(kitState.scriptPath, 'choices');
-
-      log.verbose(`🎁 Caching ${kitState.scriptPath} choices -> ${cachePath}`);
-      ensureDir(path.dirname(cachePath))
-        .then((success) => {
-          // eslint-disable-next-line promise/no-nesting
-          return writeJson(cachePath, formattedChoices).catch((error) => {
-            log.warn({ error });
-            return error;
-          });
-        })
-        .catch((error) => {
-          log.warn({ error });
-        });
+      cacheChoices(kitState.scriptPath, formattedChoices);
     }
   }),
 
@@ -1346,6 +1367,7 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.SET_FORM, data.value);
   },
   SET_FLAGS: (data) => {
+    log.info(`🇺🇸 Set flags ${Object.keys(data?.value).length}`);
     sendToPrompt(Channel.SET_FLAGS, data.value);
     setFlags(data.value);
   },
@@ -2082,19 +2104,8 @@ const kitMessageMap: ChannelHandler = {
     log.verbose(`👀 Preloading ${value}`);
 
     const cachedChoicesPath = getCachePath(value, 'choices');
-    readJson(cachedChoicesPath)
-      .then((result) => {
-        return preloadChoices(result);
-      })
-      .then((result) => {
-        log.info(`💧 Preloaded ${value} choices`);
-        return result;
-      })
-      .catch((error) => {
-        log.verbose(`No cache for ${value}`);
-      });
-
     const cachedPromptPath = getCachePath(value, 'prompt');
+
     readJson(cachedPromptPath)
       .then((result) => {
         return preloadPromptData(result);
@@ -2103,6 +2114,21 @@ const kitMessageMap: ChannelHandler = {
         log.info(`💧 Preloaded ${value} prompt`);
         return result;
       })
+      .then(() => {
+        // eslint-disable-next-line promise/no-nesting
+        return readJson(cachedChoicesPath)
+          .then((result) => {
+            return preloadChoices(result);
+          })
+          .then((result) => {
+            log.info(`💧 Preloaded ${value} choices`);
+            return result;
+          })
+          .catch((error) => {
+            log.verbose(`No cache for ${value}`);
+          });
+      })
+
       .catch((error) => {
         log.verbose(`No cache for ${value}`);
       });
@@ -2298,10 +2324,13 @@ export const ensureIdleProcess = () => {
     if (idles.length === 0) {
       log.info(`Add one idle process`);
       processes.add(ProcessType.Prompt);
-    }
-
-    if (idles.length === 1) {
+    } else if (idles.length === 1) {
       log.info(`No need to add idle processes`);
+    } else {
+      log.info(`Remove extra idle processes`);
+      idles.forEach((idle) => {
+        processes.removeByPid(idle.pid);
+      });
     }
   }, 100);
 };

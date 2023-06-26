@@ -71,12 +71,14 @@ import {
   isDir,
   appDbPath,
   getKenvs,
+  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import {
   getPrefsDb,
   getShortcutsDb,
   getAppDb,
+  getScriptsDb,
 } from '@johnlindquist/kit/cjs/db';
 import { subscribeKey } from 'valtio/utils';
 import { assign, debounce, throttle } from 'lodash';
@@ -106,6 +108,7 @@ import {
   maybeHide,
   reload,
   isVisible,
+  preloadChoices,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -124,7 +127,9 @@ import {
 } from './state';
 import { startSK } from './sk';
 import {
+  cacheChoices,
   destroyAllProcesses,
+  ensureIdleProcess,
   handleWidgetEvents,
   processes,
   setTheme,
@@ -876,6 +881,12 @@ const systemEvents = () => {
   });
 };
 
+export const cacheMainScripts = async () => {
+  const { scripts } = await getScriptsDb();
+  cacheChoices(mainScriptPath, scripts);
+  preloadChoices(scripts);
+};
+
 const ready = async () => {
   try {
     await ensureKitDirs();
@@ -904,8 +915,9 @@ const ready = async () => {
 
     if (isMac) startSK();
     await cacheKitScripts();
+    // await cacheMainScripts();
 
-    processes.findIdlePromptProcess();
+    ensureIdleProcess();
 
     handleWidgetEvents();
 
@@ -1391,7 +1403,13 @@ const checkKit = async () => {
 
     await storeVersion(getVersion());
 
-    optionalSpawnSetup(kitPath('main', 'app-launcher.js'), '--prep', '--trust');
+    if (kitState.isMac) {
+      optionalSpawnSetup(
+        kitPath('main', 'app-launcher.js'),
+        '--prep',
+        '--trust'
+      );
+    }
 
     kitState.starting = false;
     kitState.updateInstalling = false;

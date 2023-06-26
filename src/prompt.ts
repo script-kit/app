@@ -33,7 +33,7 @@ import {
 import os from 'os';
 import path from 'path';
 import log from 'electron-log';
-import { assign, debounce } from 'lodash';
+import { assign, debounce, isEqual } from 'lodash';
 import {
   mainScriptPath,
   defaultGroupClassName,
@@ -274,7 +274,9 @@ export const createPromptWindow = async () => {
       log.error(`Prompt window is destroyed. Not reloading`);
       return;
     }
-    reload();
+
+    promptWindow?.reload();
+    promptWindow?.hide();
   });
 
   //   promptWindow?.webContents?.on('new-window', function (event, url) {
@@ -745,18 +747,18 @@ export const resize = async ({
   hasInput,
   totalChoices,
 }: ResizeData) => {
-  log.silly({
-    reason,
-    topHeight,
-    mainHeight,
-    resize: kitState.resize,
-    forceResize,
-    resizePaused: kitState.resizePaused,
-    hasInput,
-    inputChanged,
-    hasPreview,
-    totalChoices,
-  });
+  // log.info({
+  //   reason,
+  //   topHeight,
+  //   mainHeight,
+  //   resize: kitState.resize,
+  //   forceResize,
+  //   resizePaused: kitState.resizePaused,
+  //   hasInput,
+  //   inputChanged,
+  //   hasPreview,
+  //   totalChoices,
+  // });
 
   if (kitState.resizePaused) return;
 
@@ -1185,6 +1187,7 @@ export const preloadPromptData = async (promptData: PromptData) => {
   setPromptData(promptData);
 };
 
+let prevPromptData = {};
 export const setPromptData = async (promptData: PromptData) => {
   if (kitState.cachePrompt && !promptData.preload) {
     kitState.preloaded = false;
@@ -1202,6 +1205,13 @@ export const setPromptData = async (promptData: PromptData) => {
       })
       .catch(() => {});
   }
+
+  if (promptData.flags) {
+    setFlags(promptData.flags);
+  }
+
+  if (isEqual(prevPromptData, promptData)) return;
+  prevPromptData = promptData;
 
   kitState.hiddenByUser = false;
   kitState.isPromptReady = false;
@@ -1278,6 +1288,7 @@ export const setPromptData = async (promptData: PromptData) => {
   } else {
     promptWindow?.show();
   }
+  log.info(`👋 Show Prompt ${kitState.pid} ${kitState.scriptPath}`);
 
   setBackgroundThrottling(true);
 
@@ -1345,8 +1356,6 @@ export const preloadChoices = (choices: Choice[]) => {
 export const setScoredChoices = (choices: ScoredChoice[]) => {
   log.info(`🎼 Scored choices count: ${choices.length}`);
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
-
-  writeJson(kitPath('cache', 'broken.json'), choices);
 };
 
 export const setScoredFlags = (choices: ScoredChoice[]) => {
@@ -1493,7 +1502,7 @@ export const invokeSearch = (input: string) => {
       createScoredChoice({
         name: 'Exact Match',
         group: 'Match',
-        pass: true,
+        pass: false,
         skip: true,
         nameClassName: defaultGroupNameClassName,
         className: defaultGroupClassName,
@@ -1506,8 +1515,10 @@ export const invokeSearch = (input: string) => {
 
     for (const choice of kitSearch.choices) {
       if ((choice as Script)?.alias === input) {
-        alias = choice;
+        alias = structuredClone(choice);
         alias.tag = (choice as Script)?.kenv || choice?.group || '';
+        alias.pass = false;
+        alias.group = 'Alias';
       } else if (
         !choice?.skip &&
         !choice?.miss &&
@@ -1516,8 +1527,11 @@ export const invokeSearch = (input: string) => {
         const scoredChoice = resultMap.get(choice.id);
         if (scoredChoice) {
           const c = structuredClone(scoredChoice);
-          c.item.tag = scoredChoice?.item?.group || '';
+          c.item.tag =
+            c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
           c.item.id = Math.random();
+          c.item.pass = false;
+          c.item.group = 'Match';
           matchGroup.push(c);
         }
       } else {
@@ -1582,7 +1596,7 @@ export const invokeSearch = (input: string) => {
         createScoredChoice({
           name: 'Alias',
           group: 'Alias',
-          pass: true,
+          pass: false,
           skip: true,
           nameClassName: defaultGroupNameClassName,
           className: defaultGroupClassName,
@@ -1702,7 +1716,6 @@ export const setChoices = (
   choices: Choice[],
   { preload }: { preload: boolean }
 ) => {
-  log.info(`setChoices`, choices?.length);
   if (!choices || choices?.length === 0) {
     kitSearch.choices = [];
     setScoredChoices([]);

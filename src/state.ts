@@ -947,12 +947,12 @@ export const kitSearch = {
   choices: [] as Choice[],
   shortcodes: new Map<string, Choice>(),
   hasGroup: false,
-  qs: null,
+  qs: null as null | QuickScore<Choice>,
 };
 
 export const flagSearch = {
   input: '',
   choices: [] as Choice[],
   hasGroup: false,
-  qs: null,
+  qs: null as null | QuickScore<Choice>,
 };

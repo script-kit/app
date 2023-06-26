@@ -334,6 +334,11 @@ ${data.error}
         if (channel === Channel.VALUE_SUBMITTED) {
           log.verbose(`📝 Submitting...`);
           kitState.ignoreBlur = false;
+          kitSearch.choices = [];
+          kitSearch.input = '';
+          kitSearch.qs = null;
+          kitSearch.shortcodes.clear();
+          kitSearch.hasGroup = false;
 
           if (message?.state?.value === Channel.TERMINAL) {
             message.state.value = ``;

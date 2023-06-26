@@ -813,9 +813,10 @@ export const inputAtom = atom(
   (g) => g(_inputAtom),
   async (g, s, a: string) => {
     s(directionAtom, 1);
+    const selected = g(showSelectedAtom);
     const prevInput = g(_inputAtom);
     if (prevInput && a === '') {
-      s(indexAtom, 0);
+      s(selected ? flagsIndexAtom : indexAtom, 0);
     }
 
     if (a !== g(_inputAtom)) s(_inputChangedAtom, true);
@@ -835,7 +836,9 @@ export const inputAtom = atom(
 
     s(mouseEnabledAtom, 0);
 
-    s(indexAtom, 0);
+    if (selected) {
+      s(selected ? flagsIndexAtom : indexAtom, 0);
+    }
 
     // If the promptData isn't set, default to FILTER
     const mode = g(promptData)?.mode || Mode.FILTER;
@@ -873,7 +876,8 @@ export const inputAtom = atom(
 const _flagsAtom = atom<FlagsOptions>({});
 export const flagsAtom = atom(
   (g) => g(_flagsAtom),
-  (_g, s, a: FlagsOptions) => {
+  (g, s, a: FlagsOptions) => {
+    // g(logAtom)({ flags: Object.keys(a).length });
     s(_flagsAtom, a);
   }
 );
@@ -915,7 +919,14 @@ export const tabIndexAtom = atom(
   }
 );
 
-export const selectedAtom = atom('');
+const selected = atom('');
+export const selectedAtom = atom(
+  (g) => g(selected),
+  (g, s, a: string) => {
+    s(selected, a);
+    if (a === '') s(focusedFlagValueAtom, '');
+  }
+);
 
 export const _history = atom<Script[]>([]);
 // export const scriptHistoryAtom = atom(
@@ -939,7 +950,10 @@ export const scriptAtom = atom(
 
     s(promptReadyAtom, false);
     if (a.filePath !== mainScriptPath) {
-      s(choicesConfigAtom, []);
+      s(choicesConfigAtom, { preload: false });
+      s(scoredChoicesAtom, []);
+      s(focusedChoiceAtom, noChoice);
+      s(_previewHTML, '');
     }
 
     const history = g(_history);
@@ -1400,6 +1414,7 @@ export const promptDataAtom = atom(
       }
 
       if (!a?.keepPreview && a.preview) {
+        g(logAtom)(`👍 Keeping preview`);
         s(previewHTMLAtom, a.preview);
         s(_previewVisible, Boolean(a?.preview));
       }
@@ -1629,7 +1644,7 @@ export const submitValueAtom = atom(
       flag,
     });
 
-    invokeSearch('');
+    // invokeSearch('');
 
     // ipcRenderer.send(Channel.VALUE_SUBMITTED, {
     //   input: g(inputAtom),
@@ -1654,7 +1669,7 @@ export const submitValueAtom = atom(
     s(closedInput, g(inputAtom));
     s(_flagged, ''); // clear after getting
     s(focusedFlagValueAtom, '');
-    s(_previewHTML, ``);
+    s(focusedChoiceAtom, noChoice);
     s(panelHTMLAtom, ``);
 
     s(_submitValue, value);

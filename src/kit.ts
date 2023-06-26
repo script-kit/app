@@ -186,7 +186,7 @@ export const runPromptProcess = async (
           return preloadPromptData(result);
         })
         .then((result) => {
-          log.info(`Preloaded ${promptScriptPath} prompt 👍`);
+          log.info(`🌊 Preloaded ${promptScriptPath} prompt`);
           return result;
         })
         .catch((error) => {

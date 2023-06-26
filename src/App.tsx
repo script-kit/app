@@ -328,6 +328,13 @@ export default function App() {
   );
 
   const log = useAtomValue(logAtom);
+  // log({
+  //   previewCheck: previewCheck ? '✅' : '🚫',
+  //   previewHTML: previewHTML?.length,
+  //   panelHTML: panelHTML?.length,
+  //   previewEnabled,
+  //   hidden,
+  // });
 
   const [zoomLevel, setZoom] = useAtom(zoomAtom);
   const setMicId = useSetAtom(micIdAtom);

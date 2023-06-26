@@ -25,7 +25,7 @@ export default function Selected() {
         width: '10%',
       },
       {
-        duration: 0.15,
+        duration: 0.2,
         width: '100%',
       }
     );

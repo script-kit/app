@@ -120,55 +120,8 @@ export default function Input() {
       setLastKeyDownWasModifier(
         modifiers.includes(event.key) && event.key !== 'Shift'
       );
-
-      if (target?.value.length === 0) {
-        // TODO: Send maybe shortcode?
-        return;
-        const findCode = ultraShortCodes.find(
-          (u) => u.code.toLowerCase() === event.key?.toLowerCase()
-        );
-        if (findCode) {
-          event.preventDefault();
-          const findChoice = unfilteredChoices?.find(
-            (c) => c.id === findCode?.id
-          );
-          if (findChoice) {
-            if (findChoice.name === findChoice.value) {
-              setSubmitValue(findCode.code);
-            } else {
-              setSubmitValue(findChoice.value);
-            }
-          } else {
-            setSubmitValue(findCode.code);
-          }
-        }
-      }
-
-      if (event.key === ' ' && ui !== UI.hotkey) {
-        // TODO: Send maybe shortcode?
-        return;
-        const shortcodeChoice = unfilteredChoices?.find((choice: Choice) => {
-          const iv = inputValue.trim().toLowerCase();
-          if (typeof choice?.shortcode === 'string') {
-            return choice.shortcode === iv;
-          }
-          return choice?.shortcode?.find((sc: string) => sc === iv);
-        });
-        if (shortcodeChoice) {
-          event.preventDefault();
-          setSubmitValue(shortcodeChoice.value);
-        }
-      }
     },
-    [
-      setSelectionStart,
-      setModifiers,
-      ui,
-      ultraShortCodes,
-      unfilteredChoices,
-      setSubmitValue,
-      inputValue,
-    ]
+    [setSelectionStart, setModifiers, setLastKeyDownWasModifier]
   );
 
   const onKeyUp = useCallback(

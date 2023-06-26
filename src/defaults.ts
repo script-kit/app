@@ -1,5 +1,5 @@
 import { ProcessType, UI } from '@johnlindquist/kit/cjs/enum';
-import { Script } from '@johnlindquist/kit/types/core';
+import { Script, Choice } from '@johnlindquist/kit/types/core';
 
 export const DEFAULT_LIST_WIDTH = 300; // 256;
 export const DEFAULT_WIDTH = 300; // 256;
@@ -42,4 +42,5 @@ export const noScript: Script = {
 export const noChoice: Choice = {
   id: '',
   name: '__app__/no-choice',
+  hasPreview: false,
 };
