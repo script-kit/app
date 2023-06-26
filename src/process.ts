@@ -453,7 +453,8 @@ const toProcess =
     }
 
     if (
-      data.channel !== Channel.HIDE_APP &&
+      // TODO: Why was I allowing HIDE_APP from a non-focused script?
+      // data.channel !== Channel.HIDE_APP &&
       isVisible() &&
       !isWidgetMessage &&
       processInfo?.pid !== kitState.pid

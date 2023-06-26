@@ -376,6 +376,7 @@ const initState = {
   unfilteredChoices: [] as Choice[],
   hasGroup: false,
   qs: null as null | QuickScore<Choice>,
+  isThrottling: true,
 };
 
 nativeTheme.addListener('updated', () => {

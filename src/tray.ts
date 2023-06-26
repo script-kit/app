@@ -34,7 +34,7 @@ import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 import { AppChannel, HideReason, Trigger } from './enums';
 import { mainLogPath, updateLogPath } from './logs';
-import { maybeHide } from './prompt';
+import { maybeHide, setBackgroundThrottling } from './prompt';
 
 let tray: Tray | null = null;
 
@@ -91,17 +91,19 @@ export const openMenu = async (event?: KeyboardEvent) => {
     //   };
     // }
 
-    const runScript = (
-      scriptPath: string,
-      args: string[] = [],
-      options = { force: false, trigger: Trigger.App }
-    ) => () => {
-      emitter.emit(KitEvent.RunPromptProcess, {
-        scriptPath,
-        args,
-        options,
-      });
-    };
+    const runScript =
+      (
+        scriptPath: string,
+        args: string[] = [],
+        options = { force: false, trigger: Trigger.App }
+      ) =>
+      () => {
+        emitter.emit(KitEvent.RunPromptProcess, {
+          scriptPath,
+          args,
+          options,
+        });
+      };
 
     const notifyItems: MenuItemConstructorOptions[] = [];
 
@@ -325,6 +327,15 @@ export const openMenu = async (event?: KeyboardEvent) => {
       label: `Force Reload`,
       click: async () => {
         ipcMain.emit(AppChannel.RELOAD);
+      },
+    });
+
+    toolsSubmenu.push({
+      label: `${
+        kitState.isThrottling ? `Unthrottle` : `Throttle`
+      } Background Rendering`,
+      click: async () => {
+        setBackgroundThrottling(!kitState.isThrottling, true);
       },
     });
 

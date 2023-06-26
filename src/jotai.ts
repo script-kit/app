@@ -598,12 +598,9 @@ export const focusedChoiceAtom = atom(
     if (choice?.skip) return;
     if (choice?.id === prevFocusedChoiceId) return;
     prevFocusedChoiceId = choice?.id || 'prevFocusedChoiceId';
-    // g(logAtom)(`Focusing ${choice?.name}`);
+    // g(logAtom)(`Focusing ${choice?.name} with ${choice?.id}`);
     if (g(submittedAtom)) return;
     // if (g(_focused)?.id === choice?.id) return;
-    if (isScript(choice as Choice)) {
-      // (choice as Script).hasPreview = true;
-    }
 
     s(_focused, choice || noChoice);
 
@@ -615,8 +612,11 @@ export const focusedChoiceAtom = atom(
         s(previewHTMLAtom, closedDiv);
       }
 
-      const channel = g(channelAtom);
-      channel(Channel.CHOICE_FOCUSED);
+      if (choice?.name !== noChoice.name) {
+        const channel = g(channelAtom);
+        channel(Channel.CHOICE_FOCUSED);
+      }
+
       // g(logAtom)(`CHOICE_FOCUSED ${choice?.name}`);
       // resize(g, s);
     }

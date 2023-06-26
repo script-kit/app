@@ -139,10 +139,10 @@ export const setVibrancy = (
   }
 };
 
-let isThrottling = true;
-export const setBackgroundThrottling = (enabled: boolean) => {
-  if (enabled === isThrottling) return;
-  isThrottling = enabled;
+export const setBackgroundThrottling = (enabled: boolean, override = false) => {
+  if (kitState.isWindows && !override) return;
+  if (enabled === kitState.isThrottling) return;
+  kitState.isThrottling = enabled;
   if (promptWindow?.isDestroyed()) return;
   log.info(`🚕 setBackgroundThrottling: ${enabled ? 'enabled' : 'disabled'}`);
   promptWindow?.webContents?.setBackgroundThrottling(enabled);
