@@ -307,7 +307,7 @@ export const updateMainShortcut = async (filePath: string) => {
           }
         }
 
-        setPreview(`<div></div>`);
+        // setPreview(`<div></div>`);
 
         await runPromptProcess(mainScriptPath, [], {
           force: true,

@@ -2383,7 +2383,6 @@ class Processes extends Array<ProcessInfo> {
     port = 0,
     { resolve, reject }: ProcessHandlers = {}
   ): ProcessInfo {
-    log.info(`👶 Create child ${type} process`, scriptPath, args);
     const child = createChild({
       type,
       scriptPath,
@@ -2391,6 +2390,7 @@ class Processes extends Array<ProcessInfo> {
       port,
     });
 
+    log.info(`👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
     const info = {
       pid: child.pid,
       child,
