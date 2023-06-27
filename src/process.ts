@@ -2455,14 +2455,19 @@ class Processes extends Array<ProcessInfo> {
         log.info(
           `${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
         );
-        const stamp = {
-          filePath: processInfo?.scriptPath,
-          runCount: 1,
-          executionTime: Date.now() - processInfo.date,
-        };
 
-        log.info(`💮 Stamping:`, stamp);
-        setScriptTimestamp(stamp);
+        if (
+          processInfo.type === ProcessType.Prompt &&
+          !processInfo.scriptPath.includes('.kit')
+        ) {
+          const stamp = {
+            filePath: processInfo?.scriptPath,
+            runCount: 1,
+            executionTime: Date.now() - processInfo.date,
+          };
+          log.info(`💮 Stamping:`, stamp);
+          setScriptTimestamp(stamp);
+        }
       } else if (typeof code === 'number') {
         log.error(
           `${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`

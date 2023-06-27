@@ -20,12 +20,15 @@ export const removeBackground = (filePath: string) => {
   }
 };
 
-const startTask = async (filePath: string) => {
+export const startBackgroundTask = async (
+  filePath: string,
+  args: string[] = []
+) => {
   removeBackground(filePath);
   if (filePath.endsWith('.ts')) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-  const processInfo = await runPromptProcess(filePath, [], {
+  const processInfo = await runPromptProcess(filePath, args, {
     force: false,
     trigger: Trigger.Background,
   });
@@ -58,7 +61,7 @@ export const backgroundScriptChanged = ({
   }
 
   if (backgroundString === 'auto') {
-    startTask(filePath);
+    startBackgroundTask(filePath);
   }
 };
 
@@ -74,14 +77,14 @@ export const updateBackground = async (
     (backgroundString === 'true' || backgroundString === 'auto') &&
     !fileChange
   ) {
-    startTask(filePath);
+    startBackgroundTask(filePath);
     return;
   }
 
   // Task running. File changed
   if (backgroundMap.get(filePath) && backgroundString === 'auto') {
     removeBackground(filePath);
-    startTask(filePath);
+    startBackgroundTask(filePath);
   }
 };
 

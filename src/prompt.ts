@@ -1449,12 +1449,12 @@ export const invokeSearch = (input: string) => {
   flagSearch.input = '';
   if (input === '') {
     const results = kitSearch.choices
-      .filter((c) => !c?.pass && !c?.hideWithoutInput && !c?.miss)
+      .filter((c) => c?.info || (!c?.pass && !c?.hideWithoutInput && !c?.miss))
       .map(createScoredChoice);
 
     if (results?.length === 0) {
       const misses = kitSearch.choices
-        .filter((c) => c?.miss)
+        .filter((c) => c?.miss || c?.info)
         .map(createScoredChoice);
       setScoredChoices(misses);
     } else {
@@ -1531,7 +1531,6 @@ export const invokeSearch = (input: string) => {
             c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
           c.item.id = Math.random();
           c.item.pass = false;
-          c.item.group = 'Match';
           matchGroup.push(c);
         }
       } else {
@@ -1609,16 +1608,23 @@ export const invokeSearch = (input: string) => {
     setScoredChoices(groupedResults);
   } else if (result?.length === 0) {
     const missGroup = kitSearch.choices
-      .filter((c) => c?.miss)
+      .filter((c) => c?.miss || c?.pass || c?.info)
       .map(createScoredChoice);
     setScoredChoices(missGroup);
   } else {
-    const allMisses = result.every((r) => r?.item?.miss);
+    const allMisses = result.every((r) => r?.item?.miss && r?.item?.info);
     if (allMisses) {
       setScoredChoices(result);
     } else {
-      const filterMisses = result.filter((r) => !r?.item?.miss);
-      setScoredChoices(filterMisses);
+      const filterConditions = result.filter((r) => {
+        if (r.item.miss) return false;
+        if (r.item.info) return true;
+        if (r.item.pass) return true;
+        if (input === '' && r.item.hideWithoutInput) return false;
+
+        return true;
+      });
+      setScoredChoices(filterConditions);
     }
   }
 };
@@ -1723,7 +1729,7 @@ export const setChoices = (
     kitSearch.qs = null;
     return;
   }
-  kitSearch.choices = choices;
+  kitSearch.choices = choices.filter((c) => !c?.exclude);
   kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
   function scorer(string: string, query: string, matches: number[][]) {
     return quickScore(

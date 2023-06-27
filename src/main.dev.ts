@@ -147,6 +147,7 @@ import { readyPty } from './pty';
 import { displayError } from './error';
 import { HideReason, Trigger } from './enums';
 import { TrackEvent, trackEvent } from './track';
+import { startBackgroundTask } from './background';
 
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
@@ -1392,7 +1393,7 @@ const checkKit = async () => {
     semver.lt(storedVersion, '1.58.0')
   ) {
     await setupLog(`Trusting old kenvs...`);
-    const kenvs = (await getKenvs()).map((kenv) => path.basename(kenv));
+    const kenvs = (await getKenvs()).map((kenv: string) => path.basename(kenv));
     for await (const kenv of kenvs) {
       await optionalSetupScript(kitPath('cli', 'kenv-trust.js'), kenv, kenv);
     }
@@ -1403,13 +1404,13 @@ const checkKit = async () => {
 
     await storeVersion(getVersion());
 
-    if (kitState.isMac) {
-      optionalSpawnSetup(
-        kitPath('main', 'app-launcher.js'),
-        '--prep',
-        '--trust'
-      );
-    }
+    // if (kitState.isMac) {
+    //   optionalSpawnSetup(
+    //     kitPath('main', 'app-launcher.js'),
+    //     '--prep',
+    //     '--trust'
+    //   );
+    // }
 
     kitState.starting = false;
     kitState.updateInstalling = false;
@@ -1429,6 +1430,11 @@ const checkKit = async () => {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
 
     sendToPrompt(Channel.SET_READY, true);
+
+    startBackgroundTask(kitPath('main', 'app-launcher.js'), [
+      '--prep',
+      '--trust',
+    ]);
 
     focusPrompt();
   } catch (error) {
