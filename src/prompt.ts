@@ -1354,12 +1354,12 @@ export const preloadChoices = (choices: Choice[]) => {
 };
 
 export const setScoredChoices = (choices: ScoredChoice[]) => {
-  log.info(`🎼 Scored choices count: ${choices.length}`);
+  // log.info(`🎼 Scored choices count: ${choices.length}`);
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 };
 
 export const setScoredFlags = (choices: ScoredChoice[]) => {
-  log.info(`🎼 Scored choices count: ${choices.length}`);
+  // log.info(`🎼 Scored flags count: ${choices.length}`);
   sendToPrompt(Channel.SET_SCORED_FLAGS, choices);
 };
 

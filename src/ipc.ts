@@ -304,6 +304,8 @@ ${data.error}
     ipcMain.on(
       channel,
       handleChannel(async ({ child }, message) => {
+        message.promptId = kitState.promptId;
+
         if (kitState.scriptPathChanged) {
           if (channel === Channel.CHOICE_FOCUSED) {
             if (channel === Channel.CHOICE_FOCUSED)

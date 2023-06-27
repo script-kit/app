@@ -10,14 +10,7 @@ import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
-import {
-  focusPrompt,
-  isFocused,
-  isVisible,
-  maybeHide,
-  reload,
-  setPreview,
-} from './prompt';
+import { focusPrompt, isFocused, isVisible, maybeHide, reload } from './prompt';
 import { convertKey, kitState, subs } from './state';
 import { HideReason, Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';

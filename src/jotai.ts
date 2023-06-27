@@ -574,6 +574,9 @@ export const indexAtom = atom(
 
     if (id) {
       s(focusedChoiceAtom, choice);
+      if (typeof choice?.preview === 'string') {
+        s(previewHTMLAtom, choice?.preview);
+      }
       // console.log(
       //   `!selected && id && id !== prevId: Setting prevChoiceId to ${id}`
       // );

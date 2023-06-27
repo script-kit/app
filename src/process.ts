@@ -472,6 +472,7 @@ const toProcess =
 const childSend = (child: ChildProcess, data: any) => {
   try {
     if (child && child?.connected) {
+      data.promptId = kitState.promptId;
       child.send(data);
     }
   } catch (error) {
