@@ -5,7 +5,6 @@
 
 import { useAtom, useAtomValue } from 'jotai';
 import { UI } from '@johnlindquist/kit/cjs/enum';
-import SimpleBar from 'simplebar-react';
 import React, { useCallback, useState } from 'react';
 import {
   closedDiv,
@@ -14,7 +13,7 @@ import {
   previewHTMLAtom,
   submitValueAtom,
 } from '../jotai';
-import { useEscape, useMountMainHeight } from '../hooks';
+import { useMountMainHeight } from '../hooks';
 
 export default function Drop() {
   // useEscape();
@@ -80,7 +79,7 @@ export default function Drop() {
     <div
       id={UI.drop}
       ref={containerRef}
-      className="flex flex-row min-w-full min-h-full h-full"
+      className="flex h-full min-h-full min-w-full flex-row"
     >
       <div
         tabIndex={0}
@@ -93,13 +92,13 @@ export default function Drop() {
         }
         className={`
           w-full ${hasPreview ? `mt-16 p-2` : `justify-center p-8`}
-        h-full
         drop-component
-        flex flex-col  items-center
-        text-text-base  text-xl
-        focus:outline-none outline-none
-        ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0
-        transition ease-in-out duration-500 ${
+        flex
+        h-full flex-col  items-center
+        text-xl  text-text-base
+        outline-none ring-0
+        ring-opacity-0 transition duration-500 ease-in-out
+        focus:outline-none focus:ring-0 focus:ring-opacity-0 ${
           dropReady ? `opacity-75 shadow-inner` : `opacity-25`
         }
       `}

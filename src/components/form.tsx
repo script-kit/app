@@ -89,7 +89,14 @@ export default function Form() {
 
   const getFormJSON = useCallback(() => {
     const data: any = new FormData(formRef?.current);
-    const els: any[] = Array.from((formRef?.current as any)?.elements);
+    const els: any[] = Array.from((formRef?.current as any)?.elements).filter(
+      (el: any) => {
+        if (el.type === 'submit') return false;
+        if (el.type === 'reset') return false;
+
+        return true;
+      }
+    );
 
     // create an array of names which have more than one element
     const multis = els.reduce((acc: string[], curr: any) => {
@@ -203,7 +210,7 @@ export default function Form() {
   );
 
   return (
-    <div className="flex flex-row h-full min-w-full min-h-full overflow-x-scroll">
+    <div className="flex h-full min-h-full min-w-full flex-row overflow-x-scroll">
       {/* <SimpleBar
         className="w-full h-full"
         id={UI.form}

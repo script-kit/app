@@ -13,6 +13,7 @@ import {
   getUserDb,
   getScripts,
   setScriptTimestamp,
+  getTimestamps,
 } from '@johnlindquist/kit/cjs/db';
 
 import {
@@ -212,9 +213,22 @@ testing-huge-group-data.ts:4:22:
       });
 
       // log exit
-      child.on('exit', (code) => {
+      child.on('exit', async (code) => {
         if (code === 0) {
           log.info(`🏗️ Build ${filePath} exited with code ${code}`);
+          try {
+            const tsDb = await getTimestamps();
+            if (tsDb.stamps) {
+              const stamp = tsDb.stamps.find((s) => s.filePath === filePath);
+              if (stamp) {
+                stamp.compileMessage = '';
+                stamp.compileStamp = Date.now();
+                tsDb.write();
+              }
+            }
+          } catch (error) {
+            log.error(error);
+          }
         } else if (typeof code === 'number') {
           log.error(`👷‍♀️ Build error: ${filePath} exited with code ${code}`);
         }

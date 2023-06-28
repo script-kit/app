@@ -1279,7 +1279,11 @@ const checkSubmitFormat = (checkValue: any) => {
       for (const key in file) {
         const value = file[key];
         const notFunction = typeof value !== 'function';
-        if (notFunction) fileObject[key] = value;
+        if (notFunction) {
+          fileObject[key] = value;
+        } else {
+          delete file[key];
+        }
       }
 
       return fileObject;
@@ -1600,7 +1604,7 @@ export const onDropAtom = atom((g) => (event: any) => {
 export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
-  debounce((g, s, value: any) => {
+  debounce((g, s, a: any) => {
     s(onInputSubmitAtom, {});
     s(promptActiveAtom, false);
     s(disableSubmitAtom, false);
@@ -1631,6 +1635,7 @@ export const submitValueAtom = atom(
     // if (submitted) return;
 
     const flag = g(focusedFlagValueAtom);
+    const value = checkSubmitFormat(a);
 
     // const fC = g(focusedChoiceAtom);
 

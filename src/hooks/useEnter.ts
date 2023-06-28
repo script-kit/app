@@ -61,7 +61,7 @@ export default () => {
       if (event.altKey) setFlag(`opt`);
       if (event.ctrlKey) setFlag(`ctrl`);
 
-      if ([UI.webcam, UI.mic, UI.speech].includes(ui)) {
+      if ([UI.webcam, UI.mic].includes(ui)) {
         emitEnter();
         return;
       }

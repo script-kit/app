@@ -962,7 +962,6 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                     termConfig?.promptId === promptData?.id && <Terminal />}
                   {ui === UI.mic && open && <AudioRecorder />}
                   {ui === UI.webcam && open && <Webcam />}
-                  {/* {ui === UI.speech && <SpeechToText />} */}
 
                   {((ui === UI.arg && !panelHTML && choices.length > 0) ||
                     ui === UI.hotkey) && (
