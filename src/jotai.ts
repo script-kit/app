@@ -2614,5 +2614,6 @@ export const scoredFlagsAtom = atom(
   },
   (g, s, a: ScoredChoice[]) => {
     s(scoredFlags, a);
+    s(flagsIndexAtom, 0);
   }
 );

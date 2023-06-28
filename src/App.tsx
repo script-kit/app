@@ -153,6 +153,7 @@ import {
   scrollToIndexAtom,
   shortCodesAtom,
   scoredFlagsAtom,
+  flagValueAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -310,6 +311,7 @@ export default function App() {
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
   const setShortcodes = useSetAtom(shortCodesAtom);
+  const setFlagValue = useSetAtom(flagValueAtom);
   const [termConfig, setTermConfig] = useAtom(termConfigAtom);
   const setMicConfig = useSetAtom(micConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
@@ -486,6 +488,7 @@ export default function App() {
     [Channel.APPEND_EDITOR_VALUE]: setEditorAppendValue,
     [Channel.SET_TEXTAREA_CONFIG]: setTextareaConfig,
     [Channel.SET_FLAGS]: setFlags,
+    [Channel.SET_FLAG_VALUE]: setFlagValue,
     [Channel.SET_FOCUSED]: setFocused,
     [Channel.SET_HINT]: (html) => setHint(DOMPurify.sanitize(html)),
     [Channel.SET_PANEL]: setPanelHTML,

@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-syntax */
 import log from 'electron-log';
 import { Notification } from 'electron';
-import { add, assign, debounce } from 'lodash';
+import { assign, debounce } from 'lodash';
 import path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { snapshot } from 'valtio';
@@ -41,10 +41,9 @@ import {
   scriptChanged,
   scriptRemoved,
   sponsorCheck,
-  updateScripts,
 } from './state';
 import { addSnippet, removeSnippet } from './tick';
-import { appToPrompt, clearPromptCacheFor, sendToPrompt } from './prompt';
+import { appToPrompt, clearPromptCacheFor } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel, Trigger } from './enums';
@@ -187,6 +186,11 @@ testing-huge-group-data.ts:4:22:
               body: compileMessage,
               silent: true,
             });
+            setScriptTimestamp({
+              filePath,
+              compileMessage,
+              compileStamp: Date.now(),
+            });
 
             n.show();
 
@@ -194,11 +198,6 @@ testing-huge-group-data.ts:4:22:
               n.close();
             }, 5000);
           }
-          setScriptTimestamp({
-            filePath,
-            compileMessage,
-            compileStamp: Date.now(),
-          });
         });
       }
 
@@ -215,17 +214,7 @@ testing-huge-group-data.ts:4:22:
       // log exit
       child.on('exit', (code) => {
         if (code === 0) {
-          setScriptTimestamp({
-            filePath,
-            compileMessage: '',
-            compileStamp: Date.now(),
-          });
           log.info(`🏗️ Build ${filePath} exited with code ${code}`);
-          setScriptTimestamp({
-            filePath,
-            compileMessage: '',
-            compileStamp: Date.now(),
-          });
         } else if (typeof code === 'number') {
           log.error(`👷‍♀️ Build error: ${filePath} exited with code ${code}`);
         }

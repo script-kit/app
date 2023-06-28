@@ -1373,6 +1373,10 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.SET_FLAGS, data.value);
     setFlags(data.value);
   },
+  SET_FLAG_VALUE: toProcess(async ({ child }, { channel, value }) => {
+    sendToPrompt(Channel.SET_FLAG_VALUE, value);
+    childSend(child, { channel, value });
+  }),
   SET_NAME: toProcess(async ({ child }, { channel, value }) => {
     sendToPrompt(Channel.SET_NAME, value);
     childSend(child, { channel, value });

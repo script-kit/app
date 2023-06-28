@@ -1449,7 +1449,11 @@ export const invokeSearch = (input: string) => {
   flagSearch.input = '';
   if (input === '') {
     const results = kitSearch.choices
-      .filter((c) => c?.info || (!c?.pass && !c?.hideWithoutInput && !c?.miss))
+      .filter((c) => {
+        if (c?.miss || c?.pass || c?.hideWithoutInput) return false;
+
+        return true;
+      })
       .map(createScoredChoice);
 
     if (results?.length === 0) {
