@@ -225,11 +225,7 @@ export default function ChoiceButton({
             <div className="flex max-h-full max-w-full flex-col overflow-x-hidden">
               {/* Name */}
               <div
-                className={
-                  choice?.nameClassName
-                    ? choice?.nameClassName
-                    : `${buttonNameFontSize} truncate`
-                }
+                className={`${buttonNameFontSize} truncate ${choice?.nameClassName}`}
               >
                 {highlight(
                   choice.name
@@ -244,10 +240,8 @@ export default function ChoiceButton({
                 choice?.description ||
                 modifierDescription) && (
                 <div
-                  className={`pb-1 ${
+                  className={`truncate pb-1 ${buttonDescriptionFontSize} ${
                     choice?.descriptionClassName
-                      ? choice?.descriptionClassName
-                      : `truncate ${buttonDescriptionFontSize} `
                   }${
                     index === currentIndex
                       ? ` text-primary opacity-100 `
@@ -274,14 +268,9 @@ export default function ChoiceButton({
                   ? choice.kenv
                   : choice.tag) && (
                   <div
-                    className={
+                    className={`mx-1 font-mono text-xxs ${
                       choice?.tagClassName
-                        ? choice?.tagClassName
-                        : `
-              mx-1 font-mono text-xxs
-              ${index === currentIndex ? `opacity-70` : `opacity-40`}
-              `
-                    }
+                    } ${index === currentIndex ? `opacity-70` : `opacity-40`}`}
                   >
                     {(choice?.pass || isRecent) &&
                     choice?.kenv &&

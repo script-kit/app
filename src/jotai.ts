@@ -145,9 +145,8 @@ export const choicesConfigAtom = atom(
 
     // if (a?.[0]?.name.match(/(?<=\[)\.(?=\])/i)) {
 
-    const prevCId = g(prevChoiceId);
     const nextIndex = g(scoredChoicesAtom).findIndex(
-      (sc) => sc.item.id === prevCId
+      (sc) => sc.item.id === g(defaultChoiceIdAtom)
     );
 
     s(indexAtom, nextIndex > 0 ? nextIndex : 0);
@@ -420,6 +419,7 @@ export const prevIndexAtom = atom(0);
 export const prevInputAtom = atom('');
 
 export const defaultValueAtom = atom('');
+export const defaultChoiceIdAtom = atom('');
 
 export const flagsRequiresScrollAtom = atom(-1);
 export const requiresScrollAtom = atom(-1);
@@ -565,7 +565,6 @@ export const indexAtom = atom(
     // const clampedIndex = clamp(a, 0, cs.length - 1);
 
     const id = choice?.id;
-    s(prevChoiceId, id || '');
     // const prevId = g(prevChoiceId);
 
     // Not sure why I was preventing setting the focusedChoice when the id didn't match the prevId...
@@ -640,14 +639,6 @@ export const hasPreviewAtom = atom<boolean>((g) => {
   return focusedHasPreview || promptHasPreview || (isFocused && previewVisible);
 });
 
-const _prevChoiceId = atom<string>('');
-const prevChoiceId = atom(
-  (g) => g(_prevChoiceId),
-  (_g, s, a: string) => {
-    s(_prevChoiceId, a);
-  }
-);
-
 let prevFocusedChoiceId = 'prevFocusedChoiceId';
 export const scoredChoicesAtom = atom(
   (g) => g(choices),
@@ -674,26 +665,18 @@ export const scoredChoicesAtom = atom(
     const channel = g(channelAtom);
 
     if (cs?.length) {
-      const selected = g(selectedAtom);
-
-      if (cs && !g(promptData)?.defaultChoiceId) {
-        // console.log(
-        //   `!selected && a: Setting prevChoiceId to ${a[0].item?.id || ''}`
-        // );
-        // s(prevChoiceId, (a[0].item?.id as string) || '');
-        s(focusedChoiceAtom, cs[0]?.item);
-      }
-
-      // channel(Channel.CHOICES);
       s(panelHTMLAtom, ``);
-      // resize(g, s, 'SCORED_CHOICES');
 
       const defaultValue: any = g(defaultValueAtom);
+      const defaultChoiceId: string = g(defaultChoiceIdAtom);
       const prevIndex = g(prevIndexAtom);
       const input = g(inputAtom);
-      if (cs?.length && defaultValue) {
+      if (cs?.length && (defaultValue || defaultChoiceId)) {
         const i = cs.findIndex(
-          (c) => c.item?.name === defaultValue || c.item?.value === defaultValue
+          (c) =>
+            c.item?.id === defaultChoiceId ||
+            c.item?.value === defaultValue ||
+            c.item?.name === defaultValue
         );
 
         if (i !== -1) {
@@ -702,11 +685,10 @@ export const scoredChoicesAtom = atom(
             s(indexAtom, i);
             s(focusedChoiceAtom, foundChoice);
             s(requiresScrollAtom, i);
-            // console.log(`i!== -1: Setting prevChoiceId to ${foundChoice?.id}`);
-            // s(prevChoiceId, foundChoice?.id);
           }
         }
         s(defaultValueAtom, '');
+        s(defaultChoiceIdAtom, '');
       } else if (input.length > 0) {
         s(requiresScrollAtom, g(requiresScrollAtom) > 0 ? 0 : -1);
         s(indexAtom, 0);
@@ -1298,8 +1280,8 @@ const checkSubmitFormat = (checkValue: any) => {
 export const footerAtom = atom('');
 
 // Create an itemHeightAtom
-export const itemHeightAtom = atom(PROMPT.ITEM.HEIGHT.BASE);
-export const inputHeightAtom = atom(PROMPT.INPUT.HEIGHT.BASE);
+export const itemHeightAtom = atom(PROMPT.ITEM.HEIGHT.SM);
+export const inputHeightAtom = atom(PROMPT.INPUT.HEIGHT.SM);
 
 const promptData = atom<null | PromptData>(null);
 
@@ -1435,7 +1417,7 @@ export const promptDataAtom = atom(
       }
 
       if (a.defaultChoiceId) {
-        s(prevChoiceId, a.defaultChoiceId);
+        s(defaultChoiceIdAtom, a.defaultChoiceId);
       }
 
       if (a?.html) {
@@ -1446,10 +1428,11 @@ export const promptDataAtom = atom(
         s(formDataAtom, a.formData);
       }
 
-      s(itemHeightAtom, a?.itemHeight || PROMPT.ITEM.HEIGHT.BASE);
-      s(inputHeightAtom, a?.inputHeight || PROMPT.INPUT.HEIGHT.BASE);
+      s(itemHeightAtom, a?.itemHeight || PROMPT.ITEM.HEIGHT.SM);
+      s(inputHeightAtom, a?.inputHeight || PROMPT.INPUT.HEIGHT.SM);
 
       s(defaultValueAtom, a?.defaultValue || '');
+      s(defaultChoiceIdAtom, a?.defaultChoiceId || '');
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
       if (!g(isMainScriptAtom)) {
@@ -1615,7 +1598,6 @@ export const submitValueAtom = atom(
     const fid = focusedChoice?.id;
     if (fid) {
       // console.log(`focusedChoice.id: ${focusedChoice.id}`);
-      s(prevChoiceId, fid);
       const key = g(promptDataAtom)?.key;
       if (key) {
         // Store the choice in the front of an array based on the prompt key
@@ -1732,7 +1714,6 @@ export const openAtom = atom(
       s(requiresScrollAtom, -1);
       s(pidAtom, 0);
       s(_chatMessagesAtom, []);
-      s(prevChoiceId, '');
       s(runningAtom, false);
       s(miniShortcutsHoveredAtom, false);
       s(logLinesAtom, []);

@@ -3,8 +3,11 @@
 import { useAtom, useAtomValue } from 'jotai';
 import React, { useRef, useState, useEffect, Fragment } from 'react';
 import { motion } from 'framer-motion';
+import { PROMPT } from '@johnlindquist/kit/cjs/enum';
+
 import {
   appDbAtom,
+  inputHeightAtom,
   kitStateAtom,
   mouseEnabledAtom,
   openAtom,
@@ -73,6 +76,15 @@ export default function KitTabs() {
   const itemsRef: any = useRef([]);
   const kitState = useAtomValue(kitStateAtom);
   const user = useAtomValue(userAtom);
+  const inputHeight = useAtomValue(inputHeightAtom);
+
+  const tabText =
+    // eslint-disable-next-line no-nested-ternary
+    inputHeight === PROMPT.INPUT.HEIGHT.XS
+      ? `text-xs`
+      : inputHeight === PROMPT.INPUT.HEIGHT.XXS
+      ? `text-xxs`
+      : `text-sm`;
 
   useEffect(() => {
     itemsRef.current = itemsRef.current.slice(0, tabs.length);
@@ -154,7 +166,7 @@ export default function KitTabs() {
                   }}
                   onMouseLeave={() => setHover(-1)}
                   className={`
-              text-sm
+              ${tabText}
               font-medium
               ${
                 // eslint-disable-next-line no-nested-ternary
