@@ -326,7 +326,7 @@ export default function App() {
   const index = useAtomValue(indexAtom);
 
   const previewCheck = Boolean(
-    !appDb.mini && previewHTML && !panelHTML && previewEnabled && !hidden
+    !appDb.mini && previewHTML && previewEnabled && !hidden
   );
 
   const log = useAtomValue(logAtom);

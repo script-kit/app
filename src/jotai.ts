@@ -197,7 +197,7 @@ export const panelHTMLAtom = atom(
       ALLOW_UNKNOWN_PROTOCOLS: true,
     }),
   (g, s, a: string) => {
-    if (g(_panelHTML) === a || g(_flagged)) return;
+    if (g(_panelHTML) === a) return;
     // if (a) s(scoredChoicesAtom, null);
     s(_panelHTML, a);
 
@@ -481,8 +481,7 @@ export const flagsIndexAtom = atom(
     }
 
     if (prevIndex !== calcIndex) {
-      g(logAtom)(`Setting to ${calcIndex}`);
-
+      // g(logAtom)(`Setting to ${calcIndex}`);
       s(flagsIndex, calcIndex);
     }
 
@@ -496,7 +495,7 @@ export const flagsIndexAtom = atom(
 
     if (choice?.id) {
       const focusedFlag = (choice as Choice)?.value;
-      g(logAtom)(`Setting focusedFlag to ${focusedFlag}`);
+      // g(logAtom)(`Setting focusedFlag to ${focusedFlag}`);
       s(focusedFlagValueAtom, focusedFlag);
       // console.log(
       //   `!selected && id && id !== prevId: Setting prevChoiceId to ${id}`

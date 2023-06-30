@@ -2,7 +2,6 @@
 /* eslint-disable no-useless-escape */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { motion } from 'framer-motion';
 import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { EditorOptions } from '@johnlindquist/kit/types/kitapp';
@@ -159,6 +158,9 @@ export default function Editor() {
     (monaco: Monaco) => {
       monaco.editor.defineTheme('kit-dark', nightOwl);
       monaco.editor.defineTheme('kit-light', kitLight);
+
+      monaco.languages.register({ id: 'vs.editor.nullLanguage' });
+      monaco.languages.setLanguageConfiguration('vs.editor.nullLanguage', {});
 
       if (options?.language === 'properties') {
         registerPropertiesLanguage(monaco);
