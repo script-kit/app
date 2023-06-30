@@ -152,7 +152,6 @@ import { startBackgroundTask } from './background';
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-// ignore lint rules for the following function
 /* eslint-disable */
 (function () {
   if (!process.env.NODE_EXTRA_CA_CERTS) return;
