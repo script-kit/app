@@ -25,9 +25,9 @@ import {
   BrowserWindow,
   crashReporter,
   screen,
-  systemPreferences,
   nativeTheme,
 } from 'electron';
+import { HttpsProxyAgent } from 'hpagent';
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
@@ -131,7 +131,6 @@ import {
   destroyAllProcesses,
   ensureIdleProcess,
   handleWidgetEvents,
-  processes,
   setTheme,
 } from './process';
 import { startIpc } from './ipc';
@@ -347,6 +346,28 @@ const extractNode = async (file: string) => {
   }
 };
 
+const getOptions = () => {
+  const options: any = { insecure: true, rejectUnauthorized: false };
+  const proxy =
+    process.env.HTTPS_PROXY ||
+    process.env.https_proxy ||
+    process.env.HTTP_PROXY ||
+    process.env.http_proxy;
+  if (proxy) {
+    log.info(`Using proxy ${proxy}`);
+    options.agent = new HttpsProxyAgent({
+      keepAlive: true,
+      keepAliveMsecs: 1000,
+      maxSockets: 256,
+      maxFreeSockets: 256,
+      scheduling: 'lifo',
+      proxy,
+    });
+  }
+
+  return options;
+};
+
 const downloadNode = async () => {
   // cleanup any existing knode directory
   if (await isDir(knodePath())) {
@@ -377,8 +398,8 @@ const downloadNode = async () => {
   const downloadingMessage = `Downloading node from ${url}`;
   log.info(downloadingMessage);
   sendSplashBody(downloadingMessage);
-  const options = { insecure: true, rejectUnauthorized: false };
-  const buffer = await download(url, undefined, options);
+
+  const buffer = await download(url, undefined, getOptions());
 
   const writingNodeMessage = `Writing node to ${file}`;
   log.info(writingNodeMessage);
@@ -417,8 +438,8 @@ const downloadKenv = async () => {
   const url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
 
   sendSplashBody(`Downloading Kit Environment from ${url}....`);
-  const options = { insecure: true, rejectUnauthorized: false };
-  const buffer = await download(url, undefined, options);
+
+  const buffer = await download(url, undefined, getOptions());
 
   sendSplashBody(`Writing Kit Environment to ${file}`);
   await writeFile(file, buffer);
@@ -488,8 +509,8 @@ const downloadKit = async () => {
   const url = `https://github.com/johnlindquist/kitapp/releases/download/v${version}/${kitSDK}`;
 
   sendSplashBody(`Download Kit SDK from ${url}`);
-  const options = { rejectUnauthorized: false };
-  const buffer = await download(url, undefined, options);
+
+  const buffer = await download(url, undefined, getOptions());
 
   sendSplashBody(`Writing Kit SDK to ${file}`);
   await writeFile(file, buffer);
@@ -1325,8 +1346,6 @@ const checkKit = async () => {
     } catch (error) {
       log.error(error);
     }
-
-    log.info(`Accent Color: ${systemPreferences.getAccentColor()}`);
   }
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);

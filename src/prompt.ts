@@ -1152,8 +1152,6 @@ export const setPreview = (html: string) => {
 
 export const setShortcuts = (shortcuts) => {
   sendToPrompt(Channel.SET_SHORTCUTS, shortcuts);
-
-  // writeJson(kitPath('db', 'mainShortcuts.json'), shortcuts);
 };
 
 export const setLog = (_log: string) => {

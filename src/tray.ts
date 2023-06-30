@@ -765,8 +765,8 @@ const subReady = subscribeKey(kitState, 'ready', () => {
 subs.push(subTray, subReady);
 
 let leftClickOverride: null | ((event: any) => void) = null;
-export const setTrayMenu = async (scripts: string[]) => {
-  if (!scripts?.length) {
+export const setTrayMenu = async (scriptPaths: string[]) => {
+  if (!scriptPaths?.length) {
     if (leftClickOverride) {
       tray?.off('mouse-down', leftClickOverride);
       tray?.on('mouse-down', openMenu);
@@ -778,8 +778,8 @@ export const setTrayMenu = async (scripts: string[]) => {
 
   const db = await getScriptsDb();
   const scriptMenuItems = [];
-  for (const command of scripts) {
-    const script = db.scripts.find((s) => s.command === command);
+  for (const scriptPath of scriptPaths) {
+    const script = db.scripts.find((s) => s.filePath === scriptPath);
     if (script) {
       scriptMenuItems.push({
         label: script.name,

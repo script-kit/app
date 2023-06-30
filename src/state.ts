@@ -373,9 +373,6 @@ const initState = {
   promptScriptPath: '',
   preloaded: false,
   emojiActive: false,
-  unfilteredChoices: [] as Choice[],
-  hasGroup: false,
-  qs: null as null | QuickScore<Choice>,
   isThrottling: true,
 };
 
