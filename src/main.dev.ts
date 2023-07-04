@@ -397,18 +397,25 @@ const downloadNode = async () => {
   log.info(downloadingMessage);
   sendSplashBody(downloadingMessage);
 
-  const buffer = await download(url, undefined, getOptions());
+  try {
+    const buffer = await download(url, undefined, getOptions());
 
-  const writingNodeMessage = `Writing node to ${file}`;
-  log.info(writingNodeMessage);
-  sendSplashBody(writingNodeMessage);
-  await writeFile(file, buffer);
+    const writingNodeMessage = `Writing node to ${file}`;
+    log.info(writingNodeMessage);
+    sendSplashBody(writingNodeMessage);
+    await writeFile(file, buffer);
 
-  sendSplashBody(`Ensuring ${knodePath()} exists`);
-  await ensureDir(knodePath());
-  sendSplashBody(`Extracting node to ${knodePath()}`);
+    sendSplashBody(`Ensuring ${knodePath()} exists`);
+    await ensureDir(knodePath());
+    sendSplashBody(`Extracting node to ${knodePath()}`);
 
-  return file;
+    return file;
+  } catch (error) {
+    log.error(error);
+    ohNo(error as Error);
+
+    return '';
+  }
 };
 
 const extractKenv = async (file: string) => {
@@ -436,13 +443,18 @@ const downloadKenv = async () => {
   const url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
 
   sendSplashBody(`Downloading Kit Environment from ${url}....`);
+  try {
+    const buffer = await download(url, undefined, getOptions());
 
-  const buffer = await download(url, undefined, getOptions());
+    sendSplashBody(`Writing Kit Environment to ${file}`);
+    await writeFile(file, buffer);
 
-  sendSplashBody(`Writing Kit Environment to ${file}`);
-  await writeFile(file, buffer);
-
-  return file;
+    return file;
+  } catch (error) {
+    log.error(error);
+    ohNo(error as Error);
+    return '';
+  }
 };
 
 const cleanKit = async () => {
@@ -508,17 +520,23 @@ const downloadKit = async () => {
 
   sendSplashBody(`Download Kit SDK from ${url}`);
 
-  const buffer = await download(url, undefined, getOptions());
+  try {
+    const buffer = await download(url, undefined, getOptions());
 
-  sendSplashBody(`Writing Kit SDK to ${file}`);
-  await writeFile(file, buffer);
+    sendSplashBody(`Writing Kit SDK to ${file}`);
+    await writeFile(file, buffer);
 
-  sendSplashBody(`Ensuring ${kitPath()} exists`);
-  await ensureDir(kitPath());
+    sendSplashBody(`Ensuring ${kitPath()} exists`);
+    await ensureDir(kitPath());
 
-  sendSplashBody(`Removing ${file}`);
+    sendSplashBody(`Removing ${file}`);
 
-  return file;
+    return file;
+  } catch (error) {
+    log.error(error);
+    ohNo(error as Error);
+    return '';
+  }
 };
 
 if (process.env.NODE_ENV === 'production') {
