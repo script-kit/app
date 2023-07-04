@@ -2470,7 +2470,9 @@ class Processes extends Array<ProcessInfo> {
             executionTime: Date.now() - processInfo.date,
           };
           log.info(`💮 Stamping:`, stamp);
-          setScriptTimestamp(stamp);
+          if (kitState.mainMenuHasRun) {
+            setScriptTimestamp(stamp);
+          }
         }
       } else if (typeof code === 'number') {
         log.error(

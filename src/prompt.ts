@@ -1090,7 +1090,9 @@ export const setScript = async (
     return 'denied';
   }
 
-  setScriptTimestamp({ filePath: script.filePath });
+  if (kitState.mainMenuHasRun) {
+    setScriptTimestamp({ filePath: script.filePath });
+  }
 
   prevScriptPath = script.filePath;
   prevPid = pid;
