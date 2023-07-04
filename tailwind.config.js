@@ -155,6 +155,7 @@ module.exports = {
       },
       height: {
         5.5: '1.375rem',
+        6.5: '1.625rem',
         0.75: '0.1875rem',
         11: '2.75rem',
         '2px': '2px',

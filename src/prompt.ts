@@ -42,7 +42,7 @@ import {
   formatChoices,
   kitPath,
 } from '@johnlindquist/kit/cjs/utils';
-import { getAppDb } from '@johnlindquist/kit/cjs/db';
+import { getAppDb, setScriptTimestamp } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
@@ -1090,6 +1090,8 @@ export const setScript = async (
     return 'denied';
   }
 
+  setScriptTimestamp({ filePath: script.filePath });
+
   prevScriptPath = script.filePath;
   prevPid = pid;
 
@@ -1466,7 +1468,7 @@ export const invokeSearch = (input: string) => {
     return;
   }
 
-  const shortcodeChoice = kitSearch.shortcodes.get(input);
+  const shortcodeChoice = kitSearch.shortcodes.get(input.toLowerCase());
   if (shortcodeChoice) {
     if (shortcodeChoice) {
       sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
@@ -1637,8 +1639,11 @@ export const setShortcodes = (choices: Choice[]) => {
   kitSearch.shortcodes = new Map();
 
   for (const choice of choices) {
-    const code =
-      choice?.shortcode || choice?.name?.match(/(?<=\[).(?=\])/i)?.[0] || '';
+    const code = (
+      choice?.shortcode ||
+      choice?.name?.match(/(?<=\[).(?=\])/i)?.[0] ||
+      ''
+    ).toLowerCase();
 
     if (code) {
       kitSearch.shortcodes.set(code, choice);

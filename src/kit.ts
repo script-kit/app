@@ -156,6 +156,7 @@ export const runPromptProcess = async (
 ): Promise<ProcessInfo | null> => {
   const isMain = pathsAreEqual(promptScriptPath || '', mainScriptPath);
   if (isMain) {
+    kitState.mainMenuHasRun = true;
     removeAbandonnedKit();
   }
   if (!isVisible()) {

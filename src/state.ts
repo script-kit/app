@@ -123,14 +123,10 @@ export const getSchedule = () => {
     });
 };
 
-export const updateScripts = async () => {
-  log.info(`Update scripts...`);
-  // await getTimestamps(false);
-};
-
 export const scriptChanged = debounce(
   async (filePath: string) => {
-    await setScriptTimestamp({ filePath });
+    if (!kitState.mainMenuHasRun) return;
+    await setScriptTimestamp({ filePath, compileMessage: '' });
   },
   250,
   {
@@ -365,7 +361,7 @@ const initState = {
   os_version: os.release(),
   url: `https://scriptkit.com`,
   alwaysOnTop: false,
-  scriptsAdded: false,
+  mainMenuHasRun: false,
   idleProcessReady: false,
   cacheChoices: false,
   cachePrompt: false,

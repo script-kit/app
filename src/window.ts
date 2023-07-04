@@ -29,13 +29,16 @@ export const createWindow = async ({
       nodeIntegration: true,
       contextIsolation: false,
       devTools: true,
-      backgroundThrottling: false,
     },
     frame: true,
     hasShadow: true,
-    roundedCorners: true,
+
     show: false,
     title,
+    roundedCorners: true,
+    vibrancy: 'menu',
+    backgroundColor: '#00000000',
+    backgroundMaterial: kitState.isWin10 ? 'acrylic' : 'mica',
   });
 
   windowsState.windows.push({

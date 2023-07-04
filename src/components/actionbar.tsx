@@ -52,11 +52,9 @@ export default function ActionBar() {
       ${ui === UI.splash ? `` : `border-t border-ui-border`}
       bg-ui-bg
     ${ui === UI.splash && `bg-secondary/0`}
-
-    h-7 max-h-7
-    items-center
-    justify-center
-    overflow-hidden px-4
+    max-h-6.5 min-h-6.5 h-6.5
+    items-center justify-center
+    overflow-hidden px-4 pt-px
     ${lightenUI && `lighten`}
     `}
     >

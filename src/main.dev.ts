@@ -123,7 +123,6 @@ import {
   initKeymap,
   kitState,
   subs,
-  updateScripts,
 } from './state';
 import { startSK } from './sk';
 import {
@@ -923,7 +922,6 @@ const ready = async () => {
 
     await setupLog(`Tray created`);
 
-    await updateScripts();
     await setupWatchers();
     await setupLog(`Shortcuts Assigned`);
 
@@ -1380,9 +1378,6 @@ const checkKit = async () => {
     // eslint-disable-next-line promise/catch-or-return
     optionalSetupScript(kitPath('setup', 'build-ts-scripts.js')).then(
       (result) => {
-        setTimeout(() => {
-          kitState.scriptsAdded = true;
-        }, 3000);
         log.info(`👍 TS Scripts Built`);
         return result;
       }
@@ -1449,10 +1444,10 @@ const checkKit = async () => {
 
     sendToPrompt(Channel.SET_READY, true);
 
-    startBackgroundTask(kitPath('main', 'app-launcher.js'), [
-      '--prep',
-      '--trust',
-    ]);
+    // startBackgroundTask(kitPath('main', 'app-launcher.js'), [
+    //   '--prep',
+    //   '--trust',
+    // ]);
 
     focusPrompt();
   } catch (error) {

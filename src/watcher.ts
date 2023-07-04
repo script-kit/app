@@ -3,18 +3,20 @@ import log from 'electron-log';
 import { Notification } from 'electron';
 import { assign, debounce } from 'lodash';
 import path from 'path';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, write } from 'fs';
+import { readJson, writeJson } from 'fs-extra';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 import dotenv from 'dotenv';
 import { rm, readFile } from 'fs/promises';
 import {
   getAppDb,
-  getUserDb,
   getScripts,
+  getUserJson,
   setScriptTimestamp,
-  getTimestamps,
 } from '@johnlindquist/kit/cjs/db';
+
+import { Channel } from '@johnlindquist/kit/cjs/enum';
 
 import {
   parseScript,
@@ -50,6 +52,8 @@ import { emitter, KitEvent } from './events';
 import { AppChannel, Trigger } from './enums';
 import { runScript } from './kit';
 import { TrackEvent, trackEvent } from './track';
+import { processes, spawnShebang } from './process';
+import { compareArrays } from './helpers';
 
 // export const cacheMenu = debounce(async () => {
 //   await updateScripts();
@@ -112,42 +116,41 @@ const logQueue = (event: WatchEvent, filePath: string) => {
 };
 
 const buildScriptChanged = debounce(
-  (filePath: string) => {
-    if (filePath.endsWith('.ts')) {
-      log.info(`🏗️ Build ${filePath}`);
-      const child = fork(kitPath('build', 'ts.js'), [filePath], {
-        env: assign({}, process.env, {
-          KIT: kitPath(),
-          KENV: kenvPath(),
-        }),
-        stdio: 'pipe',
+  (filePath: string, eventName: string) => {
+    log.info(`🏗️ Build ${filePath}`);
+    const child = fork(kitPath('build', 'ts.js'), [filePath], {
+      env: assign({}, process.env, {
+        KIT: kitPath(),
+        KENV: kenvPath(),
+      }),
+      stdio: 'pipe',
+    });
+
+    if (child?.stdout) {
+      child.stdout.on('data', (data) => {
+        log.info(`Build stdout:`, data.toString());
       });
+    }
 
-      if (child?.stdout) {
-        child.stdout.on('data', (data) => {
-          log.info(`Build stdout:`, data.toString());
-        });
-      }
+    if (child?.stderr) {
+      child.stderr.on('data', (data) => {
+        // Set the exit code to 1 so the script doesn't run
+        child?.kill();
 
-      if (child?.stderr) {
-        child.stderr.on('data', (data) => {
-          // Set the exit code to 1 so the script doesn't run
-          child?.kill();
+        let compileMessage = data.toString();
 
-          let compileMessage = data.toString();
+        // Find the file path line
+        const filePathMatch = compileMessage.match(/^.+\.ts:\d+:\d+:$/m);
+        if (filePathMatch) {
+          const fullFilePath = filePathMatch[0];
+          const filename = path.basename(fullFilePath);
+          // Replace the full file path with the filename
+          compileMessage = compileMessage.replace(fullFilePath, filename);
+        }
 
-          // Find the file path line
-          const filePathMatch = compileMessage.match(/^.+\.ts:\d+:\d+:$/m);
-          if (filePathMatch) {
-            const fullFilePath = filePathMatch[0];
-            const filename = path.basename(fullFilePath);
-            // Replace the full file path with the filename
-            compileMessage = compileMessage.replace(fullFilePath, filename);
-          }
+        log.error(`Build stderr`, compileMessage);
 
-          log.error(`Build stderr`, compileMessage);
-
-          /* Example
+        /* Example
           Build stderr ✘ [ERROR] Could not resolve "@faker-js/faker"
 
 testing-huge-group-data.ts:4:22:
@@ -157,83 +160,78 @@ testing-huge-group-data.ts:4:22:
   You can mark the path "@faker-js/faker" as external to exclude it from the bundle, which will remove this error.
   */
 
-          if (compileMessage.includes('Could not resolve')) {
-            // parse the package name from the error
-            const missingPackage = compileMessage
-              .split('\n')
-              .shift()
-              .split(' ')
-              .pop()
-              .replaceAll('"', '')
-              .replaceAll("'", '');
+        if (compileMessage.includes('Could not resolve')) {
+          // parse the package name from the error
+          const missingPackage = compileMessage
+            .split('\n')
+            .shift()
+            .split(' ')
+            .pop()
+            .replaceAll('"', '')
+            .replaceAll("'", '');
 
-            log.error(`Missing package ${missingPackage}`);
+          log.error(`Missing package ${missingPackage}`);
 
-            trackEvent(TrackEvent.MissingPackage, {
-              missingPackage,
-            });
+          trackEvent(TrackEvent.MissingPackage, {
+            missingPackage,
+          });
 
-            emitter.emit(KitEvent.RunPromptProcess, {
-              scriptPath: kitPath('cli', 'npm.js'),
-              args: [missingPackage],
-              options: {
-                force: true,
-                trigger: Trigger.MissingPackage,
-              },
-            });
-          } else {
-            const n = new Notification({
-              title: `Build Fail: ${path.basename(filePath)}`,
-              body: compileMessage,
-              silent: true,
-            });
-            setScriptTimestamp({
-              filePath,
-              compileMessage,
-              compileStamp: Date.now(),
-            });
+          emitter.emit(KitEvent.RunPromptProcess, {
+            scriptPath: kitPath('cli', 'npm.js'),
+            args: [missingPackage],
+            options: {
+              force: true,
+              trigger: Trigger.MissingPackage,
+            },
+          });
+        } else {
+          const n = new Notification({
+            title: `Build Fail: ${path.basename(filePath)}`,
+            body: compileMessage,
+            silent: true,
+          });
+          setScriptTimestamp({
+            filePath,
+            compileMessage,
+            compileStamp: Date.now(),
+          });
 
-            n.show();
+          n.show();
 
-            setTimeout(() => {
-              n.close();
-            }, 5000);
-          }
-        });
-      }
-
-      // log error
-      child.on('error', (error: any) => {
-        log.error(`Build error:`, error);
-        setScriptTimestamp({
-          filePath,
-          compileMessage: error.toString(),
-          compileStamp: Date.now(),
-        });
-      });
-
-      // log exit
-      child.on('exit', async (code) => {
-        if (code === 0) {
-          log.info(`🏗️ Build ${filePath} exited with code ${code}`);
-          try {
-            const tsDb = await getTimestamps();
-            if (tsDb.stamps) {
-              const stamp = tsDb.stamps.find((s) => s.filePath === filePath);
-              if (stamp) {
-                stamp.compileMessage = '';
-                stamp.compileStamp = Date.now();
-                tsDb.write();
-              }
-            }
-          } catch (error) {
-            log.error(error);
-          }
-        } else if (typeof code === 'number') {
-          log.error(`👷‍♀️ Build error: ${filePath} exited with code ${code}`);
+          setTimeout(() => {
+            n.close();
+          }, 5000);
         }
       });
     }
+
+    // log error
+    child.on('error', (error: any) => {
+      log.error(`Build error:`, error);
+      setScriptTimestamp({
+        filePath,
+        compileMessage: error.toString(),
+        compileStamp: Date.now(),
+      });
+    });
+
+    // log exit
+    child.on('exit', async (code) => {
+      if (code === 0) {
+        log.info(`🏗️ Build ${filePath} exited with code ${code}`);
+        try {
+          setScriptTimestamp({
+            filePath,
+            compileMessage: '',
+            compileStamp: Date.now(),
+          });
+        } catch (error) {
+          log.error(error);
+        }
+      } else if (typeof code === 'number') {
+        log.error(`👷‍♀️ Build error: ${filePath} exited with code ${code}`);
+      }
+    });
   },
   1000,
   { leading: true }
@@ -324,13 +322,21 @@ export const onScriptsChanged = async (
     backgroundScriptChanged(script);
     addSnippet(script);
 
-    if (kitState.ready && kitState.scriptsAdded) {
-      buildScriptChanged(script?.filePath);
+    if (kitState.ready && kitState.mainMenuHasRun) {
+      const isTS = filePath.endsWith('.ts');
+      if (isTS) {
+        buildScriptChanged(script?.filePath, event);
+      } else {
+        scriptChanged(filePath);
+      }
+    } else {
+      log.verbose(
+        `⌚️ ${filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`
+      );
     }
   }
 
   if (event === 'change' && !rebuilt) {
-    scriptChanged(filePath);
     clearPromptCacheFor(filePath);
   }
 
@@ -379,8 +385,9 @@ export const teardownWatchers = async () => {
 export const checkUserDb = async (eventName: string) => {
   log.info(`checkUserDb ${eventName}`);
 
-  const currentUserDb = (await getUserDb()).data;
-  kitState.user = currentUserDb;
+  const currentUser = await getUserJson();
+
+  kitState.user = currentUser;
 
   if (eventName === 'unlink') return;
   if (kitState?.user?.login) {
@@ -401,16 +408,30 @@ const triggerRunText = debounce(
     const runPath = kitPath('run.txt');
     if (eventName === 'add' || eventName === 'change') {
       const runText = await readFile(runPath, 'utf8');
-      const [scriptPath, ...args] = runText.trim().split(' ');
-      log.info(`run.txt ${eventName}`, scriptPath, args);
-      emitter.emit(KitEvent.RunPromptProcess, {
-        scriptPath: resolveToScriptPath(scriptPath, kenvPath()),
-        args: args || [],
-        options: {
-          force: true,
-          trigger: Trigger.RunTxt,
-        },
-      });
+      const [filePath, ...args] = runText.trim().split(' ');
+      log.info(`run.txt ${eventName}`, filePath, args);
+
+      try {
+        const { shebang } = await parseScript(filePath);
+
+        if (shebang) {
+          spawnShebang({
+            shebang,
+            filePath,
+          });
+        } else {
+          emitter.emit(KitEvent.RunPromptProcess, {
+            scriptPath: resolveToScriptPath(filePath, kenvPath()),
+            args: args || [],
+            options: {
+              force: true,
+              trigger: Trigger.RunTxt,
+            },
+          });
+        }
+      } catch (error) {
+        log.error(error);
+      }
     } else {
       log.info(`run.txt removed`);
     }
@@ -494,18 +515,20 @@ export const setupWatchers = async () => {
             kitState.typedLimit = parseInt(envData?.KIT_TYPED_LIMIT, 10);
           }
 
-          if (envData?.[kitState.trustedKenvsKey]) {
-            const trustedKenvs = envData?.[kitState.trustedKenvsKey]
-              .split(',')
-              .filter(Boolean)
-              .map((kenv) => kenv.trim());
-            log.info(`👩‍⚖️ Trusted Kenvs`, trustedKenvs);
-            kitState.trustedKenvs = trustedKenvs;
-            if (eventName === 'change') await refreshScripts();
-          } else if (kitState.trustedKenvs.length) {
-            kitState.trustedKenvs = [];
-            log.info(`👩‍⚖️ Trusted Kenvs Removed`);
-            if (eventName === 'change') await refreshScripts();
+          const trustedKenvs = envData?.[kitState.trustedKenvsKey]
+            .split(',')
+            .filter(Boolean)
+            .map((kenv) => kenv.trim());
+
+          log.info(`👩‍⚖️ Trusted Kenvs`, trustedKenvs);
+          const trustedKenvsChanged = !compareArrays(
+            trustedKenvs,
+            kitState.trustedKenvs
+          );
+
+          if (trustedKenvsChanged) {
+            kitState.mainMenuHasRun = false;
+            await refreshScripts();
           }
 
           // if (envData?.KIT_SUSPEND_WATCHERS) {
@@ -546,6 +569,19 @@ export const setupWatchers = async () => {
         const currentAppDb = (await getAppDb()).data;
         assign(appDb, currentAppDb);
         clearPromptCacheFor(mainScriptPath);
+      } catch (error) {
+        log.warn(error);
+      }
+
+      return;
+    }
+
+    if (base === 'scripts.json') {
+      log.info(`scripts.json changed`);
+      try {
+        processes.getByPid(kitState.pid)?.child?.send({
+          channel: Channel.SCRIPTS_CHANGED,
+        });
       } catch (error) {
         log.warn(error);
       }

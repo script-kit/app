@@ -214,3 +214,20 @@ export const createScoredChoice = (item: Choice): ScoredChoice => {
     _: '',
   };
 };
+
+export const compareArrays = (arr1: any[], arr2: any[]) => {
+  if (
+    !Array.isArray(arr1) ||
+    !Array.isArray(arr2) ||
+    arr1.length !== arr2.length
+  )
+    return false;
+
+  // .concat() to not mutate arguments
+  const arr1Sorted = arr1.concat().sort();
+  const arr2Sorted = arr2.concat().sort();
+
+  return arr1Sorted.every((value, index) => {
+    return value === arr2Sorted[index];
+  });
+};

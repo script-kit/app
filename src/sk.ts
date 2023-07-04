@@ -3,9 +3,14 @@
 import net from 'net';
 import fs from 'fs';
 import log from 'electron-log';
-import { kitPath, resolveToScriptPath } from '@johnlindquist/kit/cjs/utils';
+import {
+  kitPath,
+  resolveToScriptPath,
+  parseScript,
+} from '@johnlindquist/kit/cjs/utils';
 import { runPromptProcess } from './kit';
 import { Trigger } from './enums';
+import { spawnShebang } from './process';
 
 export const startSK = () => {
   const server = net.createServer((stream) => {
@@ -20,14 +25,22 @@ export const startSK = () => {
         const scriptPath = resolveToScriptPath(script, cwd);
         if (scriptPath) {
           log.info(`🇦🇷 ${scriptPath} ${args}`);
-          await runPromptProcess(
-            scriptPath,
-            args.map((s: string) => s.replaceAll('$newline$', '\n')),
-            {
-              force: true,
-              trigger: Trigger.Kar,
-            }
-          );
+          const { shebang } = await parseScript(scriptPath);
+          if (shebang) {
+            spawnShebang({
+              filePath: scriptPath,
+              shebang,
+            });
+          } else {
+            await runPromptProcess(
+              scriptPath,
+              args.map((s: string) => s.replaceAll('$newline$', '\n')),
+              {
+                force: true,
+                trigger: Trigger.Kar,
+              }
+            );
+          }
           const message = `🚗💨 ~/.kit/kar ${script} ${args}`;
           log.info(message);
           // stream.write(message);

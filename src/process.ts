@@ -726,7 +726,7 @@ const kitMessageMap: ChannelHandler = {
 
         log.info(`${widgetId}: Widget closed`);
         focusPrompt();
-        if (child?.channel) {
+        if (child?.channel && child?.connected) {
           childSend(child, {
             channel: Channel.WIDGET_END,
             widgetId,
@@ -2149,7 +2149,7 @@ export const createMessageHandler =
 
     if (kitMessageMap[data.channel]) {
       type C = keyof ChannelMap;
-      log.verbose(`➡ ${data.channel}`);
+      log.silly(`➡ ${data.channel}`);
       const channelFn = kitMessageMap[data.channel as C] as (
         data: SendData<C>
       ) => void;
