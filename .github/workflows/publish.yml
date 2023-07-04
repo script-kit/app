@@ -168,10 +168,12 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
           npx kit remove-mac
           cd ./src
           yarn remove node-mac-permissions
+          (cd node_modules/uiohook-napi/prebuilds && ls | grep -v "^win" | xargs rm -r)
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"

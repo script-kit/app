@@ -92,6 +92,7 @@
       "entitlements": "assets/entitlements.mac.plist",
       "entitlementsInherit": "assets/entitlements.mac.plist",
       "gatekeeperAssess": false,
+      "notarize": false,
       "extendInfo": {
         "CFBundleDocumentTypes": [
           {
