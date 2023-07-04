@@ -749,10 +749,10 @@ nice-try@^1.0.4:
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
-node-abi@^3.43.0:
-  version "3.43.0"
-  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.43.0.tgz#468dc09af3c262ef2fb3a0d2ff34cf8fba61952a"
-  integrity sha512-QB0MMv+tn9Ur2DtJrc8y09n0n6sw88CyDniWSX2cHW10goQXYPK9ZpFJOktDS4ron501edPX6h9i7Pg+RnH5nQ==
+node-abi@^3.45.0:
+  version "3.45.0"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.45.0.tgz#f568f163a3bfca5aacfce1fbeee1fa2cc98441f5"
+  integrity sha512-iwXuFrMAcFVi/ZoZiqq8BzAdsLw9kxDfTC0HMyjXfSL/6CSDAGD5UmR7azrAgWV1zKYq7dUUMj4owusBWKLsiQ==
   dependencies:
     semver "^7.3.5"
 
@@ -784,10 +784,10 @@ node-mac-permissions@2.3.0:
     bindings "^1.5.0"
     node-addon-api "^3.0.2"
 
-node-pty@0.11.0-beta33:
-  version "0.11.0-beta33"
-  resolved "https://registry.yarnpkg.com/node-pty/-/node-pty-0.11.0-beta33.tgz#722a729fb9449f591279bee1f8b431b71a9af4a1"
-  integrity sha512-SoP5BbSfvc8Um51rIriUEOPvMltc43iTaKXGJaJKLR3+NfQbjcCcNQGyOd9P9pvBccWYg+Rncv18qMtJKIAi1Q==
+node-pty@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/node-pty/-/node-pty-1.0.0.tgz#7daafc0aca1c4ca3de15c61330373af4af5861fd"
+  integrity sha512-wtBMWWS7dFZm/VgqElrTvtfMq4GzJ6+edFI0Y0zyzygUSZMgZdraDUMUhCIvkjhJjme15qWmbyJbtAx4ot4uZA==
   dependencies:
     nan "^2.17.0"
 
@@ -1012,10 +1012,10 @@ token-types@^4.1.1:
     "@tokenizer/token" "^0.3.0"
     ieee754 "^1.2.1"
 
-uiohook-napi@^1.5.0:
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/uiohook-napi/-/uiohook-napi-1.5.0.tgz#6b84724dff5a95e9b636f29f9c9d2c1babe6485c"
-  integrity sha512-/bqSKDCfPxgUyFPPOqf6yTBCF4g8KjRihdpJLnQgFF0RTYVVG3w1KVCVpdDJSN5is8jqKUjjYKEiPZaYiuca9g==
+uiohook-napi@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/uiohook-napi/-/uiohook-napi-1.5.1.tgz#dede782f23fbd07b148976fa774dd5f07c310734"
+  integrity sha512-wSBd0LRzomlCQcB09CLk70lobx+UyGmWgNiL5wfoEHkPdDR/5Byivp1uS0NyO61waNFc+KOtcV+As+I3DjS0TA==
   dependencies:
     node-gyp-build "4.x.x"
 

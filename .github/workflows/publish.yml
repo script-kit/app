@@ -63,7 +63,7 @@ jobs:
       matrix:
         os: [macos-12, windows-latest, ubuntu-latest]
         arch: [x64, arm64]
-        node: [18.15.0]
+        node: [18.16.0]
 
     steps:
       - name: Checkout git repo
@@ -168,12 +168,11 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
         run: |
           npx kit remove-mac
           cd ./src
           yarn remove node-mac-permissions
-          (cd node_modules/uiohook-napi/prebuilds && ls | grep -v "^win" | xargs rm -r)
+          Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"

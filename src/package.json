@@ -24,9 +24,9 @@
     "chokidar": "3.5.3",
     "frontmost-app": "1.0.0",
     "native-keymap": "3.3.4",
-    "node-abi": "^3.43.0",
+    "node-abi": "^3.45.0",
     "node-mac-permissions": "2.3.0",
-    "node-pty": "0.11.0-beta33",
-    "uiohook-napi": "^1.5.0"
+    "node-pty": "1.0.0",
+    "uiohook-napi": "^1.5.1"
   }
 }
