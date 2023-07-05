@@ -173,6 +173,7 @@ jobs:
           cd ./src
           yarn remove node-mac-permissions
           Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
+          Push-Location node_modules\@nut-tree; Get-ChildItem | Where-Object { $_.Name -notmatch '(darwin|linux)$' } | Remove-Item -Recurse -Force; Pop-Location
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
