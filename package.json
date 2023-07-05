@@ -335,7 +335,6 @@
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.0.1",
     "@heroicons/react": "1.0.4",
-    "@johnlindquist/clipboard": "^0.1.35",
     "@johnlindquist/kit": "latest",
     "@monaco-editor/react": "^4.5.1",
     "@react-hook/resize-observer": "1.2.6",
