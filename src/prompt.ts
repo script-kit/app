@@ -1191,6 +1191,16 @@ export const preloadPromptData = async (promptData: PromptData) => {
 
 let prevPromptData = {};
 export const setPromptData = async (promptData: PromptData) => {
+  if (promptData?.hint) {
+    const shortcodes = promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi);
+    if (shortcodes) {
+      kitSearch.shortcodes.clear();
+      for (const shortcode of shortcodes) {
+        kitSearch.shortcodes.set(shortcode, { value: shortcode });
+      }
+    }
+  }
+
   if (kitState.cachePrompt && !promptData.preload) {
     kitState.preloaded = false;
     kitState.cachePrompt = false;
@@ -1443,6 +1453,14 @@ export const invokeFlagSearch = (input: string) => {
 };
 
 export const invokeSearch = (input: string) => {
+  const shortcodeChoice = kitSearch.shortcodes.get(input.toLowerCase());
+  if (shortcodeChoice) {
+    if (shortcodeChoice) {
+      sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
+      return;
+    }
+  }
+
   if (kitSearch.choices.length === 0) {
     setScoredChoices([]);
     return;
@@ -1468,14 +1486,6 @@ export const invokeSearch = (input: string) => {
     }
 
     return;
-  }
-
-  const shortcodeChoice = kitSearch.shortcodes.get(input.toLowerCase());
-  if (shortcodeChoice) {
-    if (shortcodeChoice) {
-      sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
-      return;
-    }
   }
 
   if (!kitSearch.qs) {
@@ -1638,12 +1648,12 @@ export const invokeSearch = (input: string) => {
 export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
 export const setShortcodes = (choices: Choice[]) => {
-  kitSearch.shortcodes = new Map();
+  kitSearch.shortcodes.clear();
 
   for (const choice of choices) {
     const code = (
       choice?.shortcode ||
-      choice?.name?.match(/(?<=\[).(?=\])/i)?.[0] ||
+      choice?.name?.match(/(?<=\[)\w+(?=\])/i)?.[0] ||
       ''
     ).toLowerCase();
 

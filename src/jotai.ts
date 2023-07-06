@@ -100,8 +100,6 @@ function containsSpecialCharacters(str: string) {
   return regex.test(str);
 }
 
-export const shortCodesAtom = atom<{ code: string; id: string }[]>([]);
-
 export const filteredChoicesIdAtom = atom<number>(0);
 
 let choicesPreloaded = false;
@@ -174,16 +172,6 @@ export const hintAtom = atom(
     const aHint = typeof a !== 'string' ? '' : a;
     const getConvert = g(convertAtom);
     s(hint, getConvert(true).toHtml(aHint));
-    const hintCodes = aHint?.match(/(?<=\[)\w(?=\])/gi);
-    if (hintCodes) {
-      const codes = hintCodes.map((code) => {
-        return {
-          code,
-          id: '',
-        };
-      });
-      s(shortCodesAtom, codes);
-    }
   }
 );
 
@@ -1370,7 +1358,6 @@ export const promptDataAtom = atom(
         s(termConfigAtom, config);
       }
 
-      s(shortCodesAtom, []);
       s(hintAtom, a.hint);
       s(placeholderAtom, a.placeholder);
       s(selectedAtom, a.selected);

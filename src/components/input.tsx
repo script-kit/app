@@ -11,8 +11,7 @@ import React, {
   useState,
 } from 'react';
 import { motion } from 'framer-motion';
-import { UI, PROMPT } from '@johnlindquist/kit/cjs/enum';
-import { Choice } from '@johnlindquist/kit/types/core';
+import { PROMPT } from '@johnlindquist/kit/cjs/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
 import useResizeObserver from '@react-hook/resize-observer';
@@ -26,7 +25,6 @@ import {
   submittedAtom,
   submitValueAtom,
   tabIndexAtom,
-  shortCodesAtom,
   choicesConfigAtom,
   onInputSubmitAtom,
   inputFocusAtom,
@@ -42,7 +40,6 @@ import {
   lastKeyDownWasModifierAtom,
   footerHiddenAtom,
   inputHeightAtom,
-  logAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -71,7 +68,6 @@ export default function Input() {
   const [submitted] = useAtom(submittedAtom);
   const [, setSelectionStart] = useAtom(selectionStartAtom);
   const [currentModifiers, setModifiers] = useAtom(_modifiers);
-  const [ultraShortCodes] = useAtom(shortCodesAtom);
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
   const [, setInputFocus] = useAtom(inputFocusAtom);
   const [ui] = useAtom(uiAtom);

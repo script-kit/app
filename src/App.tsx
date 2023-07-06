@@ -151,7 +151,6 @@ import {
   promptBoundsAtom,
   audioDotAtom,
   scrollToIndexAtom,
-  shortCodesAtom,
   scoredFlagsAtom,
   flagValueAtom,
 } from './jotai';
@@ -310,7 +309,6 @@ export default function App() {
   const setLogValue = useSetAtom(logValueAtom);
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
-  const setShortcodes = useSetAtom(shortCodesAtom);
   const setFlagValue = useSetAtom(flagValueAtom);
   const [termConfig, setTermConfig] = useAtom(termConfigAtom);
   const setMicConfig = useSetAtom(micConfigAtom);
@@ -531,7 +529,6 @@ export default function App() {
     [Channel.STOP_AUDIO]: () => setAudio(null),
     [Channel.SPEAK_TEXT]: setSpeak,
     [Channel.SET_SHORTCUTS]: setShortcuts,
-    [Channel.SET_SHORTCODES]: setShortcodes,
     [Channel.CHAT_SET_MESSAGES]: setChatMessages,
     [Channel.CHAT_ADD_MESSAGE]: addChatMessage,
     [Channel.CHAT_PUSH_TOKEN]: chatPushToken,
