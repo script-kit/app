@@ -141,6 +141,11 @@ export const createWidget = async (
   <script>
 
     document.addEventListener("click", (event) => {
+      // Ignore the event if the target is the <html> root tag
+      if (event.target.tagName.toLowerCase() === 'html') {
+        return;
+      }
+
       let {id = ""} = event.target.closest("*[id]")
       ipcRenderer.send("WIDGET_CLICK", {
         dataset: {
@@ -153,6 +158,11 @@ export const createWidget = async (
 
     // add "mousedown" handler
     document.addEventListener("mousedown", (event) => {
+      // Ignore the event if the target is the <html> root tag
+      if (event.target.tagName.toLowerCase() === 'html') {
+        return;
+      }
+
       let {id = ""} = event.target.closest("*[id]")
       ipcRenderer.send("WIDGET_MOUSE_DOWN", {
         dataset: {
