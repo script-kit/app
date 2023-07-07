@@ -303,6 +303,7 @@ export const onScriptsChanged = async (
   filePath: string,
   rebuilt = false
 ) => {
+  log.info(`👀 ${event} ${filePath}`);
   if (event === 'unlink') {
     unlink(filePath);
     unlinkBin(filePath);
@@ -521,11 +522,13 @@ export const setupWatchers = async () => {
             .map((kenv) => kenv.trim());
 
           log.info(`👩‍⚖️ Trusted Kenvs`, trustedKenvs);
-          kitState.trustedKenvs = trustedKenvs;
+
           const trustedKenvsChanged = !compareArrays(
             trustedKenvs,
             kitState.trustedKenvs
           );
+
+          kitState.trustedKenvs = trustedKenvs;
 
           if (trustedKenvsChanged) {
             kitState.mainMenuHasRun = false;
