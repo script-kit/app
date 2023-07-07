@@ -1741,6 +1741,7 @@ export const setChoices = (
   choices: Choice[],
   { preload }: { preload: boolean }
 ) => {
+  log.info(`📦 Choices count: ${choices.length} preload: ${preload}`);
   if (!choices || choices?.length === 0) {
     kitSearch.choices = [];
     setScoredChoices([]);
