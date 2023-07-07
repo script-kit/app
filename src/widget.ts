@@ -124,12 +124,6 @@ export const createWidget = async (
     })
   </script>
 
-  ${
-    isWin
-      ? `<div class="absolute top-0 left-0 h-8 w-screen draggable"></div>`
-      : ``
-  }
-
   <template id="widget-template">
     ${html}
   </template>
@@ -137,6 +131,13 @@ export const createWidget = async (
   <div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="${
     options.containerClass
   } ${isWin ? `` : `draggable`}"></div>
+
+
+  ${
+    isWin
+      ? `<div class="absolute top-0 left-0 h-8 w-screen draggable"></div>`
+      : ``
+  }
 
   <script>
 
