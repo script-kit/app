@@ -521,6 +521,7 @@ export const setupWatchers = async () => {
             .map((kenv) => kenv.trim());
 
           log.info(`👩‍⚖️ Trusted Kenvs`, trustedKenvs);
+          kitState.trustedKenvs = trustedKenvs;
           const trustedKenvsChanged = !compareArrays(
             trustedKenvs,
             kitState.trustedKenvs

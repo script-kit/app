@@ -304,9 +304,14 @@ export const preStartConfigureInterval = async () => {
 };
 
 export const configureInterval = async () => {
-  if (!kitState.supportsNut) return;
+  log.info(`⌚️ Configuring interval...`);
+  if (!kitState.supportsNut) {
+    log.info(`🛑 Keyboard watcher not supported on this platform`);
+    return;
+  }
   if (kitState.isMac) {
     const fullyAuthenticated = kitState.authorized && appDb?.authorized;
+    log.info(`🔑 Authenticated: ${fullyAuthenticated ? '🔓' : '🔒'}`);
     if (!fullyAuthenticated) return;
   }
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
