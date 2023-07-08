@@ -3,15 +3,9 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import { useAtom } from 'jotai';
 import { loadable } from 'jotai/utils';
-import { motion } from 'framer-motion';
 import React from 'react';
 import { ipcRenderer } from 'electron';
-import {
-  focusedFlagValueAtom,
-  choicesAtom,
-  indexAtom,
-  createAssetAtom,
-} from '../jotai';
+import { createAssetAtom } from '../jotai';
 import { AppChannel } from '../enums';
 
 const loadableIconAtom = loadable(createAssetAtom('svg', 'logo.svg'));
@@ -33,13 +27,10 @@ export const IconButton = () => {
   }
 
   return (
-    <motion.button
+    <button
       key="icon-button"
       tabIndex={-1}
       type="button"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1] }}
-      transition={transition}
       className="min-h-fit min-w-fit"
     >
       <a
@@ -79,6 +70,6 @@ export const IconButton = () => {
           />
         </svg>
       </a>
-    </motion.button>
+    </button>
   );
 };

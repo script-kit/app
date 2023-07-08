@@ -4,7 +4,6 @@
 /* eslint-disable react/no-unescaped-entities */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AnimatePresence, AnimateSharedLayout, motion } from 'framer-motion';
 import { useAtom } from 'jotai';
 import { loadable } from 'jotai/utils';
 import {
@@ -26,7 +25,7 @@ import {
 
 const Spinner = () => (
   <svg
-    className="animate-spin h-6 w-6 text-text-base text-opacity-75"
+    className="h-6 w-6 animate-spin text-text-base text-opacity-75"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
@@ -86,33 +85,33 @@ function Aside() {
   ];
 
   return (
-    <aside className="bg-bg-base/40 col-span-3 flex flex-col justify-between h-full p-5 pt-12 shadow-inner">
-      <div className="flex flex-col items-center h-full">
+    <aside className="col-span-3 flex h-full flex-col justify-between bg-bg-base/40 p-5 pt-12 shadow-inner">
+      <div className="flex h-full flex-col items-center">
         <div className="relative">
           <img
             src={lazyIcon?.data}
-            className="w-24 mb-2"
+            className="mb-2 w-24"
             alt="Script Kit Icon"
           />
           {progress !== 100 && (
-            <div className="absolute right-0 top-0 bg-bg-base rounded-full p-2 bg-opacity-80 backdrop-blur-lg">
+            <div className="absolute right-0 top-0 rounded-full bg-bg-base bg-opacity-80 p-2 backdrop-blur-lg">
               <Spinner />
             </div>
           )}
         </div>
-        <h1 className="text-2xl font-semibold mb-1">
+        <h1 className="mb-1 text-2xl font-semibold">
           {progress === 100 ? 'Script Kit Ready' : 'Preparing Kit...'}
         </h1>
-        <h3 className="font-normal text-sm opacity-70 text-center leading-tight mx-6">
+        <h3 className="mx-6 text-center text-sm font-normal leading-tight opacity-70">
           {header}
         </h3>
-        <h3 className="font-normal text-xxs opacity-70 text-center leading-tight px-6 break-all max-h-10 overflow-hidden">
+        <h3 className="max-h-10 overflow-hidden break-all px-6 text-center text-xxs font-normal leading-tight opacity-70">
           {body}
         </h3>
         {progress === 100 && (
-          <div className="pt-3 flex flex-col px-4">
+          <div className="flex flex-col px-4 pt-3">
             <button
-              className="border border-text-base border-opacity-25 rounded-md shadow-md px-5 py-2 bg-primary text-bg-base bg-opacity-90 hover:bg-opacity-100 font-semibold shadow-primary/25 hover:shadow-primary/50 transition-all duration-200"
+              className="rounded-md border border-text-base border-opacity-25 bg-primary bg-opacity-90 px-5 py-2 font-semibold text-bg-base shadow-md shadow-primary/25 transition-all duration-200 hover:bg-opacity-100 hover:shadow-primary/50"
               type="button"
               onClick={() => {
                 runMainScript();
@@ -120,11 +119,11 @@ function Aside() {
             >
               Launch with{' '}
               <span className="text-sm">
-                <kbd className="bg-primary rounded-md bg-opacity-25 p-1">
+                <kbd className="rounded-md bg-primary bg-opacity-25 p-1">
                   {appConfig?.isMac ? 'CMD' : 'CTRL'}
                 </kbd>
                 <kbd>+</kbd>
-                <kbd className="bg-primary rounded-md bg-opacity-25 p-1">;</kbd>
+                <kbd className="rounded-md bg-primary bg-opacity-25 p-1">;</kbd>
               </span>
             </button>
           </div>
@@ -136,7 +135,7 @@ function Aside() {
             <a
               key={href}
               href={href}
-              className="no-underline flex items-center justify-center w-full text-text-base text-sm font-normal opacity-70 hover:opacity-100 p-1 transition"
+              className="flex w-full items-center justify-center p-1 text-sm font-normal text-text-base no-underline opacity-70 transition hover:opacity-100"
             >
               {label}
             </a>
@@ -215,44 +214,37 @@ export default function Splash() {
   const emailRequired = subscribe || contact;
 
   return (
-    <motion.div
+    <div
       key="splash"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="grid grid-cols-8 left-0 top-0 fixed w-screen h-screen"
+      className="fixed left-0 top-0 grid h-screen w-screen grid-cols-8"
     >
       <Aside />
-      <main className="bg-bg-base/10 col-span-5 w-full h-full p-6">
+      <main className="col-span-5 h-full w-full bg-bg-base/10 p-6">
         <form
           onSubmit={handleOnSubmit}
-          className="flex flex-col h-full justify-center"
+          className="flex h-full flex-col justify-center"
         >
           <fieldset className="space-y-2 p-2">
-            <legend className="text-lg opacity-90 w-full h-14">
-              <p className="text-base mb-2">
+            <legend className="h-14 w-full text-lg opacity-90">
+              <p className="mb-2 text-base">
                 👋 Your feedback guides Script Kit's future:
               </p>
-              <AnimateSharedLayout type="crossfade">
-                <AnimatePresence key="splashComponents">
-                  {question && (
-                    <motion.p
-                      layoutId="question"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="font-semibold"
-                    >
-                      {question}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </AnimateSharedLayout>
+
+              {question && (
+                <p
+                  layoutId="question"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="font-semibold"
+                >
+                  {question}
+                </p>
+              )}
             </legend>
-            <motion.div className="rounded-md border border-text-base  border-opacity-25 focus:border-opacity-100 flex flex-col">
-              <motion.textarea
+            <div className="flex flex-col rounded-md  border border-text-base border-opacity-25 focus:border-opacity-100">
+              <textarea
                 autoFocus
                 tabIndex={0}
                 ref={questionRef}
@@ -264,29 +256,29 @@ export default function Splash() {
                 id="answer"
                 required={contact && !subscribe}
                 placeholder="Type your answer here..."
-                className="placeholder-text-base placeholder-opacity-25 text-lg w-full rounded-md border-none bg-text-base bg-opacity-5 px-5 py-3 "
+                className="w-full rounded-md border-none bg-text-base bg-opacity-5 px-5 py-3 text-lg placeholder-text-base placeholder-opacity-25 "
                 rows={5}
               />
-            </motion.div>
+            </div>
 
-            <motion.div>
+            <div>
               {!contactSubmitted && (
-                <motion.div className="flex items-center">
+                <div className="flex items-center">
                   <input
                     type="checkbox"
                     checked={contact}
                     onChange={(e) => setContact(e?.target?.checked || false)}
                     id="contact"
-                    className="bg-text-base bg-opacity-5 rounded-sm  border border-text-base border-opacity-25 "
+                    className="rounded-sm border border-text-base  border-opacity-25 bg-text-base bg-opacity-5 "
                   />
                   <label htmlFor="contact" className="pl-2">
                     Contact me with an example of my script idea
                   </label>
-                </motion.div>
+                </div>
               )}
 
               {!subscribeSubmitted && (
-                <motion.div className="flex items-center">
+                <div className="flex items-center">
                   <div className="relative flex items-center">
                     <input
                       type="checkbox"
@@ -295,20 +287,20 @@ export default function Splash() {
                         setSubscribe(e?.target?.checked || false)
                       }
                       id="subscribe"
-                      className="bg-text-base bg-opacity-5 rounded-sm  border border-text-base border-opacity-25 "
+                      className="rounded-sm border border-text-base  border-opacity-25 bg-text-base bg-opacity-5 "
                     />
                     <label htmlFor="subscribe" className="pl-2">
                       Receive Script Kit Tips, Tricks, and News
                     </label>
                   </div>
-                </motion.div>
+                </div>
               )}
               {!hideEmail ? (
-                <motion.div className="rounded-md bg-text-base bg-opacity-5 border border-text-base border-opacity-25  my-3">
+                <div className="my-3 rounded-md border border-text-base border-opacity-25 bg-text-base  bg-opacity-5">
                   <label
-                    className={`px-5 py-3 absolute ${
+                    className={`absolute px-5 py-3 ${
                       emailRequired
-                        ? "after:content-['*'] after:absolute after:text-primary"
+                        ? "after:absolute after:text-primary after:content-['*']"
                         : ''
                     }`}
                     htmlFor="email"
@@ -322,25 +314,25 @@ export default function Splash() {
                     value={email}
                     type="email"
                     id="email"
-                    className="placeholder-text-base placeholder-opacity-25 px-5 pl-20 py-3 border-none bg-transparent w-full rounded-md"
+                    className="w-full rounded-md border-none bg-transparent px-5 py-3 pl-20 placeholder-text-base placeholder-opacity-25"
                     placeholder="you@company.com"
                   />
-                </motion.div>
+                </div>
               ) : null}
-            </motion.div>
+            </div>
 
-            <motion.div className="flex flex-row justify-between w-full pt-2">
+            <div className="flex w-full flex-row justify-between pt-2">
               <button
                 type="submit"
-                className="border border-text-base border-opacity-25 rounded-md bg-primary text-bg-base bg-opacity-90 hover:bg-opacity-100 hover:shadow-primary/25 transition-all px-5 py-2 font-medium h-10"
+                className="h-10 rounded-md border border-text-base border-opacity-25 bg-primary bg-opacity-90 px-5 py-2 font-medium text-bg-base transition-all hover:bg-opacity-100 hover:shadow-primary/25"
               >
                 {isSubmitting ? <Spinner /> : 'Send'}
               </button>
               {/* {isSubmitted && (
-                  <motion.h2 className="-mb-1">Thanks! 🙌</motion.h2>
+                  <h2 className="-mb-1">Thanks! 🙌</h2>
                 )} */}
               {isSubmitted && (subscribeSubmitted || contactSubmitted) && (
-                <motion.div className="opacity-80 pl-2 w-9/12">
+                <div className="w-9/12 pl-2 opacity-80">
                   <ul>
                     {subscribeSubmitted && (
                       <li className="pb-4">
@@ -351,12 +343,12 @@ export default function Splash() {
                       <li>We will e-mail you an example of your script idea</li>
                     )}
                   </ul>
-                </motion.div>
+                </div>
               )}
-            </motion.div>
+            </div>
           </fieldset>
         </form>
       </main>
-    </motion.div>
+    </div>
   );
 }

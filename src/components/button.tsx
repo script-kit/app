@@ -330,25 +330,6 @@ export default function ChoiceButton({
                 />
               </div>
             )}
-            {/* {choice?.img && !imageFail && (
-              <motion.img
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.1 }}
-                src={choice.img}
-                alt={choice.description || ''}
-                onError={() => setImageFail(true)}
-                className={`
-                h-8 rounded
-                ${index === currentIndex ? `opacity-100` : `opacity-80`}
-
-              }
-
-
-              transition ease-in
-                `}
-              />
-            )} */}
 
             {index === currentIndex &&
               !choice?.ignoreFlags &&

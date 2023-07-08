@@ -2,7 +2,6 @@
 /* eslint-disable no-useless-escape */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
-import { motion } from 'framer-motion';
 import MonacoEditor, { Monaco } from '@monaco-editor/react';
 
 import { editor as monacoEditor, Range } from 'monaco-editor';
@@ -98,10 +97,8 @@ export default function Log() {
   const [, setShortcuts] = useAtom(shortcutsAtom);
   const cmd = useAtomValue(cmdAtom);
 
-  const [
-    editor,
-    setEditorRef,
-  ] = useState<monacoEditor.IStandaloneCodeEditor | null>(null);
+  const [editor, setEditorRef] =
+    useState<monacoEditor.IStandaloneCodeEditor | null>(null);
 
   const containerRef = useMountMainHeight();
 
@@ -134,8 +131,9 @@ export default function Log() {
       // mountEditor.focus();
 
       if (mountEditor?.getDomNode())
-        ((mountEditor.getDomNode() as HTMLElement)
-          .style as any).webkitAppRegion = 'no-drag';
+        (
+          (mountEditor.getDomNode() as HTMLElement).style as any
+        ).webkitAppRegion = 'no-drag';
 
       const lineNumber = mountEditor.getModel()?.getLineCount() || 0;
 
@@ -209,19 +207,16 @@ export default function Log() {
   }, [cmd, setShortcuts]);
 
   return (
-    <motion.div
+    <div
       onMouseEnter={() => setMouseOver(true)}
       onMouseLeave={() => setMouseOver(false)}
       key="editor"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0, 1] }}
-      transition={{ duration: 0.5, ease: 'circOut' }}
       ref={containerRef}
       className={`
-    w-full h-full`}
+    h-full w-full`}
     >
       <MonacoEditor
-        className="w-full h-full"
+        className="h-full w-full"
         beforeMount={onBeforeMount}
         onMount={onMount}
         language="log"
@@ -236,6 +231,6 @@ export default function Log() {
         value={logValue}
         theme={isDark ? 'log-dark' : 'log-light'}
       />
-    </motion.div>
+    </div>
   );
 }

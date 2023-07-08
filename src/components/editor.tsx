@@ -389,7 +389,7 @@ export default function Editor() {
   }, [open, config, editor, ui]);
 
   useEffect(() => {
-    if (editor && editorAppend) {
+    if (editor && editorAppend?.text) {
       // set position to the end of the file
       const lineNumber = editor.getModel()?.getLineCount() || 0;
       const column = editor.getModel()?.getLineMaxColumn(lineNumber) || 0;
@@ -399,7 +399,7 @@ export default function Editor() {
       const op = {
         identifier: id,
         range,
-        text: editorAppend,
+        text: editorAppend?.text,
         forceMoveMarkers: true,
       };
 

@@ -838,3 +838,7 @@ code::after {
 pre > code {
   @apply text-xs !important;
 }
+
+.epr-emoji-category-label {
+  @apply bg-ui-bg !important;
+}

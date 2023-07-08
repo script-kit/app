@@ -2194,7 +2194,22 @@ export const isSponsorAtom = atom(false);
 export const isDefaultTheme = atom(true);
 export const editorSuggestionsAtom = atom<string[]>([]);
 export const editorCursorPosAtom = atom<number>(0);
-export const editorAppendAtom = atom<string>('');
+export const editorValueAtom = atom<{
+  text: string;
+  date: string;
+}>({
+  text: '',
+  date: '',
+});
+export const editorAppendAtom = atom(
+  (g) => g(editorValueAtom),
+  (g, s, a: string) => {
+    s(editorValueAtom, {
+      text: a,
+      date: new Date().toISOString(),
+    });
+  }
+);
 export const colorAtom = atom((g) => {
   return async () => {
     // Create new EyeDropper

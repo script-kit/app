@@ -1235,12 +1235,24 @@ const kitMessageMap: ChannelHandler = {
   SET_CHOICES: toProcess(async ({ child }, { channel, value }) => {
     if (![UI.arg, UI.hotkey].includes(kitState.ui)) {
       log.info(`⛔️ UI changed before choices sent. Skipping SET_CHOICES`);
+
+      if (child) {
+        childSend(child, {
+          channel,
+        });
+      }
       return;
     }
     if (kitState.scriptPathChanged) {
       log.info(
         `⛔️ Script path changed, but new prompt not set. Skipping SET_CHOICES`
       );
+
+      if (child) {
+        childSend(child, {
+          channel,
+        });
+      }
       return;
     }
 

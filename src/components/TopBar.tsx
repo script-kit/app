@@ -15,16 +15,13 @@ export default function TopBar() {
     };
   }, []);
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <div
       className={`
-      pointer-events-none absolute top-0 left-0 w-screen h-0.75 -mt-2px
+      pointer-events-none absolute top-0 left-0 -mt-2px h-0.75 w-screen
 
       `}
     >
-      <motion.div
+      <div
         animate={controls}
         transition={{
           ease: 'easeInOut',
@@ -33,11 +30,11 @@ export default function TopBar() {
 
           duration: window.innerWidth < 400 ? 1.5 : 2.5,
         }}
-        className="h-full w-1/4 absolute top-0 left-0
+        className="absolute top-0 left-0 h-full w-1/4
         bg-gradient-to-r
         from-transparent via-primary to-transparent
         "
       />
-    </motion.div>
+    </div>
   );
 }

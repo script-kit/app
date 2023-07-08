@@ -26,14 +26,7 @@ export default function TextArea() {
   const containerRef = useMountMainHeight();
 
   return (
-    <motion.div
-      id={UI.textarea}
-      key="textarea"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
-      ref={containerRef}
-    >
+    <div id={UI.textarea} key="textarea" ref={containerRef}>
       <textarea
         ref={textareaRef as LegacyRef<HTMLTextAreaElement>}
         style={
@@ -50,14 +43,14 @@ export default function TextArea() {
         placeholder={promptData?.placeholder || 'Enter a value'}
         className={`
         visible-scrollbar
-        min-h-64
-        w-full h-full
-        bg-transparent text-text-base  focus:outline-none outline-none text-md
-         placeholder-black placeholder-opacity-40
-        ring-0 ring-opacity-0 focus:ring-0 focus:ring-opacity-0 pl-4 py-4
-        focus:border-none border-none
+        text-md
+        h-full min-h-64
+        w-full border-none  bg-transparent py-4 pl-4
+         text-text-base placeholder-black
+        placeholder-opacity-40 outline-none ring-0 ring-opacity-0 focus:border-none focus:outline-none
+        focus:ring-0 focus:ring-opacity-0
         `}
       />
-    </motion.div>
+    </div>
   );
 }

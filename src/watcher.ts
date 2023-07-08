@@ -323,7 +323,7 @@ export const onScriptsChanged = async (
     backgroundScriptChanged(script);
     addSnippet(script);
 
-    if (kitState.ready && kitState.mainMenuHasRun) {
+    if (kitState.ready && kitState.mainMenuHasRun && !rebuilt) {
       const isTS = filePath.endsWith('.ts');
       if (isTS) {
         buildScriptChanged(script?.filePath, event);
@@ -335,9 +335,7 @@ export const onScriptsChanged = async (
         `⌚️ ${filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`
       );
     }
-  }
 
-  if (event === 'change' && !rebuilt) {
     clearPromptCacheFor(filePath);
   }
 
@@ -446,7 +444,7 @@ const triggerRunText = debounce(
 const refreshScripts = debounce(
   async () => {
     log.info(`🌈 Refreshing Scripts...`);
-    const scripts = await getScripts(false);
+    const scripts = await getScripts();
     for (const script of scripts) {
       onScriptsChanged('change', script.filePath, true);
     }
@@ -531,7 +529,6 @@ export const setupWatchers = async () => {
           kitState.trustedKenvs = trustedKenvs;
 
           if (trustedKenvsChanged) {
-            kitState.mainMenuHasRun = false;
             await refreshScripts();
           }
 

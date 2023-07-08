@@ -1,7 +1,6 @@
 /* eslint-disable react/jsx-no-duplicate-props */
 import React, { useEffect } from 'react';
 import Picker, { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react';
-import { motion } from 'framer-motion';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { darkAtom, resizingAtom, submitValueAtom } from '../jotai';
 import { useObserveMainHeight } from '../hooks';
@@ -43,7 +42,7 @@ const Emoji = () => {
   }, []);
 
   return (
-    <motion.div className="w-full h-full min-w-full min-h-full">
+    <div className="h-full min-h-full w-full min-w-full">
       <style>
         {`
         aside.EmojiPickerReact.epr-main {
@@ -79,7 +78,7 @@ const Emoji = () => {
         lazyLoadEmojis={false}
         emojiStyle={EmojiStyle.NATIVE}
       />
-    </motion.div>
+    </div>
   );
 };
 

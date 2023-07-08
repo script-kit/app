@@ -2,7 +2,6 @@
 import React, { RefObject, useEffect, useLayoutEffect, useRef } from 'react';
 import SimpleBar from 'simplebar-react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { motion } from 'framer-motion';
 import { UI } from '@johnlindquist/kit/cjs/enum';
 
 import useResizeObserver from '@react-hook/resize-observer';
@@ -16,7 +15,7 @@ import {
   flagsAtom,
   domUpdatedAtom,
 } from '../jotai';
-import { useKeyDirection, useObserveMainHeight } from '../hooks';
+import { useKeyDirection } from '../hooks';
 import { darkTheme, lightTheme } from './themes';
 
 function extractInnerHtmlAndClasses(panelHTML: string) {
@@ -91,7 +90,7 @@ export default function Panel() {
     <SimpleBar
       id="panel-simplebar"
       scrollableNodeProps={{ ref: scrollRef }}
-      className="w-full h-full"
+      className="h-full w-full"
       style={
         {
           cursor: mouseEnabled ? 'auto' : 'none',
@@ -108,7 +107,7 @@ export default function Panel() {
     outline: none;
 }`}</style>
 
-      <motion.div
+      <div
         id="panel"
         ref={panelRef}
         initial={{ opacity: 0 }}

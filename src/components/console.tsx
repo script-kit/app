@@ -1,7 +1,6 @@
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 import React, { RefObject, useCallback, useRef, useState } from 'react';
 import SimpleBar from 'simplebar-react';
-import { motion } from 'framer-motion';
 import useResizeObserver from '@react-hook/resize-observer';
 import { PencilAltIcon } from '@heroicons/react/outline';
 import parse from 'html-react-parser';
@@ -42,7 +41,7 @@ export default function Console() {
   // }, [onPanelHeightChanged, containerRef?.current?.firstElementChild]);
 
   return (
-    <motion.div
+    <div
       key="log"
       id="log"
       className="relative"
@@ -52,9 +51,9 @@ export default function Console() {
       <SimpleBar
         forceVisible="y"
         className="log
-        w-full h-16
-        bg-bg-base/20 text-text-base
-        font-mono text-xs
+        h-16 w-full
+        bg-bg-base/20 font-mono
+        text-xs text-text-base
         hover:cursor-auto
         "
         scrollableNodeProps={{ ref: containerRef }}
@@ -81,14 +80,14 @@ export default function Console() {
         top-1.5 right-1.5
         h-5 w-5
         ${mouseOver ? 'opacity-50' : 'opacity-20'}
-        transition ease-in
+        text-text-base transition
+        ease-in
         hover:cursor-pointer
         hover:opacity-100
-        text-text-base
         `}
           onClick={editLog}
         />
       )}
-    </motion.div>
+    </div>
   );
 }

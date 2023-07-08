@@ -10,7 +10,6 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import { motion } from 'framer-motion';
 import { PROMPT } from '@johnlindquist/kit/cjs/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
@@ -153,7 +152,7 @@ export default function Input() {
   );
 
   return (
-    <motion.div
+    <div
       key="input"
       className="flex flex-row"
       style={{
@@ -283,6 +282,6 @@ export default function Input() {
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
