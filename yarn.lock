@@ -7190,10 +7190,10 @@ electron-util@^0.17.2:
     electron-is-dev "^1.1.0"
     new-github-issue-url "^0.2.1"
 
-electron@26.0.0-beta.2:
-  version "26.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-26.0.0-beta.2.tgz#93d4b23f5e07700b465523a88fcef20bae3fa8f7"
-  integrity sha512-g43ZGUWcJEPhDySR86LCcjkNvjdZ2U5+n8fS6IHIhptJRvVBUiIb/O8XS7Fxpe/qprpySUbghUzz/LC1Tr1AcA==
+electron@26.0.0-beta.3:
+  version "26.0.0-beta.3"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-26.0.0-beta.3.tgz#e98372b2de7e2c4b3f0969558721809dbf06cdbf"
+  integrity sha512-/8DUQyOKZzmKq5JoKo28SooVoTDm9jqEMZUUj/IyA3FMSksJV+Hr45PLO68BK/jtDq+rNFefgwJAz19JkOz8wg==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^18.11.18"
