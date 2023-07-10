@@ -11,7 +11,7 @@ import { pathExistsSync, readJson } from 'fs-extra';
 import { fork, ForkOptions } from 'child_process';
 import { homedir } from 'os';
 
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   parseScript,
   kitPath,
@@ -37,7 +37,7 @@ import {
   preloadChoices,
   preloadPromptData,
 } from './prompt';
-import { getKitScript, kitState } from './state';
+import { getKitScript, initialPromptState, kitState } from './state';
 import { getCachePath, pathsAreEqual } from './helpers';
 import { AppChannel, Trigger } from './enums';
 import { TrackEvent, trackEvent } from './track';
@@ -155,17 +155,25 @@ export const runPromptProcess = async (
   }
 ): Promise<ProcessInfo | null> => {
   const isMain = pathsAreEqual(promptScriptPath || '', mainScriptPath);
+  const isSplash = kitState.ui === UI.splash;
+
+  if (isSplash && isMain) {
+    preloadPromptData(initialPromptState);
+  }
+
   if (isMain) {
     kitState.mainMenuHasRun = true;
     removeAbandonnedKit();
   }
-  if (!isVisible()) {
+
+  if (!isVisible() || isSplash) {
     // readJson(kitPath('db', 'mainShortcuts.json'))
     //   .then(setShortcuts)
     //   .catch((error) => {});
 
     const idlesLength = getIdles().length;
-    if (idlesLength > 0) {
+    log.info(`🗿 ${idlesLength} idles`);
+    if (idlesLength > 0 || isSplash) {
       sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
 
       const cachedChoicesPath = getCachePath(promptScriptPath, 'choices');
@@ -206,7 +214,7 @@ export const runPromptProcess = async (
       Channel.START,
       options?.force ? kitState.scriptPath : promptScriptPath
     );
-    if (kitState.scriptPath === promptScriptPath) {
+    if (kitState.scriptPath === promptScriptPath && !isSplash) {
       return null;
     }
   }

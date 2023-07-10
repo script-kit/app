@@ -57,8 +57,8 @@ const TopRightButton = () => {
         tabIndex={-1}
         // add the hand pointer cursor
         className="
-        cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold
-        primary text-primary bg-text-base rounded-md bg-opacity-10
+        primary -mr-2 -mt-0.5 flex cursor-pointer flex-row items-center
+        rounded-md bg-text-base bg-opacity-10 font-bold text-primary
         hover:bg-opacity-20
 
         "
@@ -75,7 +75,7 @@ const TopRightButton = () => {
         type="button"
         tabIndex={-1}
         onClick={onProcessButtonClick}
-        className="cursor-pointer -mr-2 -mt-0.5 flex flex-row items-center font-bold primary text-primary text-opacity-90 bg-text-base rounded-md bg-opacity-10 hover:bg-opacity-20"
+        className="primary -mr-2 -mt-0.5 flex cursor-pointer flex-row items-center rounded-md bg-text-base bg-opacity-10 font-bold text-primary text-opacity-90 hover:bg-opacity-20"
       >
         <span className="pl-2">{processes.length - 1}</span>
         <i className="gg-play-button -ml-1.5 scale-75" some-aria="" />
@@ -130,7 +130,7 @@ export default function Header() {
           WebkitUserSelect: 'none',
         } as any
       }
-      className="flex flex-row justify-between w-full
+      className="flex w-full flex-row justify-between
       "
     >
       <AnimatePresence key="topBar">
@@ -138,9 +138,9 @@ export default function Header() {
       </AnimatePresence>
       <div
         className={`
-        w-full
-      text-xxs uppercase font-mono font-bold pt-3 px-4 flex flex-row
-      text-primary items-center ${
+        flex
+      w-full flex-row items-center px-4 pt-3 font-mono text-xxs font-bold
+      uppercase text-primary ${
         isMainScript && processes?.length > 1 ? `-my-1` : ``
       }
       ${promptData?.headerClassName || ''}
@@ -156,7 +156,7 @@ export default function Header() {
           {logo ? (
             <img src={logo} alt={name} className="h-4 pr-2" />
           ) : (
-            <span className="pr-1 truncate">{description}</span>
+            <span className="truncate pr-1">{description}</span>
           )}
         </div>
         <div
@@ -164,20 +164,20 @@ export default function Header() {
             WebkitAppRegion: 'drag',
             WebkitUserSelect: 'none',
           }}
-          className="flex-1 h-full -mt-4"
+          className="-mt-4 h-full flex-1"
         />
         <span className="flex flex-row items-end pl-1 text-right">
           <TopRightButton />
         </span>
       </div>
       {false && mouseEnabled && (
-        <div onClick={onXClick} className="w-6 h-6 hover:cursor-pointer">
+        <div onClick={onXClick} className="h-6 w-6 hover:cursor-pointer">
           <XIcon
-            className="h-3 w-3
-          absolute top-0 right-0
-          m-1.5
+            className="hover:text-primary-black absolute
+          top-0 right-0 m-1.5
+          h-3
+          w-3
           text-primary
-          hover:text-primary-black
           "
           />
         </div>

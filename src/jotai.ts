@@ -2439,8 +2439,12 @@ export const inputFontSizeAtom = atom((g) => {
   let fontSize = `text-2xl`;
   const inputHeight = g(inputHeightAtom);
   switch (inputHeight) {
-    case PROMPT.INPUT.HEIGHT.XS:
+    case PROMPT.INPUT.HEIGHT.XXS:
       fontSize = `text-sm`;
+      break;
+
+    case PROMPT.INPUT.HEIGHT.XS:
+      fontSize = `text-base`;
       break;
 
     case PROMPT.INPUT.HEIGHT.SM:

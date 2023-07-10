@@ -8,6 +8,7 @@ import {
   appDbPath,
   userDbPath,
 } from '@johnlindquist/kit/cjs/utils';
+import { kitState } from './state';
 
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
 type WatcherCallback = (
@@ -24,21 +25,25 @@ export const startWatching = (callback: WatcherCallback) => {
       depth: 0,
       // ignore dotfiles
       ignored: (filePath) => path.basename(filePath).startsWith('.'),
+      ignoreInitial: kitState.ignoreInitial,
     }
   );
 
   const jsonWatcher = chokidar
-    .watch([appDbPath, shortcutsPath, userDbPath])
+    .watch([appDbPath, shortcutsPath, userDbPath], {
+      ignoreInitial: kitState.ignoreInitial,
+    })
     .on('all', callback);
 
   kenvScriptsWatcher.on('all', callback);
   const kenvsWatcher = chokidar.watch(kenvPath('kenvs'), {
-    ignoreInitial: false,
+    ignoreInitial: kitState.ignoreInitial,
     depth: 0,
     ignored: (filePath) => {
       const relativePath = filePath.slice(kenvPath('kenvs').length);
-      const depth = relativePath.split(path.sep).filter((p) => p.length > 0)
-        .length;
+      const depth = relativePath
+        .split(path.sep)
+        .filter((p) => p.length > 0).length;
       return depth > 1;
     },
   });
@@ -76,6 +81,7 @@ export const startWatching = (callback: WatcherCallback) => {
 
   const kenvEnvWatcher = chokidar.watch(kenvPath('.env'), {
     disableGlobbing: true,
+    ignoreInitial: kitState.ignoreInitial,
   });
 
   kenvEnvWatcher.on('all', callback);
@@ -87,6 +93,7 @@ export const startWatching = (callback: WatcherCallback) => {
 
   runWatcher.on('all', callback);
 
+  kitState.ignoreInitial = true;
   return [
     kenvScriptsWatcher,
     jsonWatcher,

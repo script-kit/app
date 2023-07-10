@@ -65,7 +65,7 @@ import {
   getPrefsDb,
   getShortcutsDb,
   getAppDb,
-  getScriptsDb,
+  getScripts,
 } from '@johnlindquist/kit/cjs/db';
 import { subscribeKey } from 'valtio/utils';
 import { assign, debounce, throttle } from 'lodash';
@@ -424,6 +424,7 @@ const systemEvents = () => {
     teardownWatchers();
     sleepSchedule();
 
+    kitState.waking = true;
     kitState.suspended = true;
   });
 
@@ -446,6 +447,10 @@ const systemEvents = () => {
         log.error(`Error checking for updates`, error);
       }
     }
+
+    setTimeout(() => {
+      kitState.waking = false;
+    }, 10000);
   });
 
   powerMonitor.addListener('lock-screen', async () => {
@@ -463,7 +468,7 @@ const systemEvents = () => {
 };
 
 export const cacheMainScripts = async () => {
-  const { scripts } = await getScriptsDb();
+  const scripts = await getScripts(false);
   cacheChoices(mainScriptPath, scripts);
   preloadChoices(scripts);
 };
@@ -495,9 +500,8 @@ const ready = async () => {
 
     if (isMac) startSK();
     await cacheKitScripts();
-    // await cacheMainScripts();
 
-    ensureIdleProcess();
+    // ensureIdleProcess();
 
     handleWidgetEvents();
 
@@ -561,18 +565,23 @@ const nodeModulesExists = async () => {
 };
 
 const verifyInstall = async () => {
+  const checkNode = await nodeExists();
+  await setupLog(checkNode ? `node found` : `node missing`);
+
   await setupLog(`Verifying ~/.kit exists:`);
   const checkKit = await kitExists();
   await setupLog(`Verifying ~/.kenv exists:`);
   const checkKenv = await kenvExists();
 
-  const checkNode = await nodeExists();
-  await setupLog(checkNode ? `node found` : `node missing`);
-
   const checkNodeModules = await nodeModulesExists();
   await setupLog(
     checkNodeModules ? `node_modules found` : `node_modules missing`
   );
+
+  await setupLog(`Parsing scripts...`);
+  await cacheMainScripts();
+
+  await ensureIdleProcess();
 
   const isKenvConfigured = await kenvConfigured();
   await setupLog(isKenvConfigured ? `kenv .env found` : `kenv .env missinag`);
@@ -885,6 +894,9 @@ const checkKit = async () => {
     optionalSetupScript(kitPath('setup', 'build-ts-scripts.js')).then(
       (result) => {
         log.info(`👍 TS Scripts Built`);
+        setTimeout(() => {
+          kitState.waking = false;
+        }, 10000);
         return result;
       }
     );

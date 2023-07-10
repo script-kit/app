@@ -208,6 +208,7 @@ testing-huge-group-data.ts:4:22:
     // log error
     child.on('error', (error: any) => {
       log.error(`Build error:`, error);
+      if (kitState.waking) return;
       setScriptTimestamp({
         filePath,
         compileMessage: error.toString(),
@@ -220,6 +221,7 @@ testing-huge-group-data.ts:4:22:
       if (code === 0) {
         log.info(`🏗️ Build ${filePath} exited with code ${code}`);
         try {
+          if (kitState.waking) return;
           setScriptTimestamp({
             filePath,
             compileMessage: '',
@@ -323,7 +325,7 @@ export const onScriptsChanged = async (
     backgroundScriptChanged(script);
     addSnippet(script);
 
-    if (kitState.ready && kitState.mainMenuHasRun && !rebuilt) {
+    if (kitState.ready && !rebuilt) {
       const isTS = filePath.endsWith('.ts');
       if (isTS) {
         buildScriptChanged(script?.filePath, event);
@@ -455,6 +457,9 @@ const refreshScripts = debounce(
 
 export const setupWatchers = async () => {
   await teardownWatchers();
+  if (kitState.ignoreInitial) {
+    refreshScripts();
+  }
 
   log.info('--- 👀 Watching Scripts ---');
 

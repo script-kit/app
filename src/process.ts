@@ -55,7 +55,7 @@ import {
 
 import { subscribeKey } from 'valtio/utils';
 import { pathExists, writeJson, readJson, ensureDir } from 'fs-extra';
-import { setScriptTimestamp } from '@johnlindquist/kit/cjs/db';
+import { setScriptTimestamp, getTimestamps } from '@johnlindquist/kit/cjs/db';
 import { getLog, mainLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -2150,6 +2150,26 @@ const kitMessageMap: ChannelHandler = {
       .catch((error) => {
         log.verbose(`No cache for ${value}`);
       });
+
+    childSend(child, { channel, value });
+  }),
+  CLEAR_TIMESTAMPS: toProcess(async ({ child }, { channel, value }) => {
+    const stampDb = await getTimestamps();
+    stampDb.stamps = [];
+    await stampDb.write();
+
+    log.verbose(`CLEAR TIMESTAMPS`);
+
+    childSend(child, { channel, value });
+  }),
+  REMOVE_TIMESTAMP: toProcess(async ({ child }, { channel, value }) => {
+    log.verbose(`REMOVE TIMESTAMP for ${value}`);
+
+    const stampDb = await getTimestamps();
+    const stamp = stampDb.stamps.findIndex((s) => s.filePath === value);
+
+    stampDb.stamps.splice(stamp, 1);
+    await stampDb.write();
 
     childSend(child, { channel, value });
   }),
