@@ -1793,7 +1793,7 @@ export const inputFocusAtom = atom(
 
 const previewEnabled = atom<boolean>(true);
 export const previewEnabledAtom = atom(
-  (g) => g(previewEnabled),
+  (g) => g(previewEnabled) && !(g(uiAtom) === UI.splash),
   (g, s, a: boolean) => {
     s(previewEnabled, a);
     resize(g, s, 'PREVIEW_ENABLED');

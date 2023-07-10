@@ -4,6 +4,7 @@ import { HttpsProxyAgent } from 'hpagent';
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import log from 'electron-log';
+import download from 'download';
 
 import path from 'path';
 import tar from 'tar';
@@ -16,8 +17,8 @@ import {
   SpawnSyncReturns,
 } from 'child_process';
 import os, { homedir } from 'os';
-import { ensureDir } from 'fs-extra';
-import { readFile } from 'fs/promises';
+import { ensureDir, writeFile, lstat, readdir } from 'fs-extra';
+import { readFile, rm } from 'fs/promises';
 
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 
@@ -26,6 +27,8 @@ import {
   kitPath,
   knodePath,
   KIT_FIRST_PATH,
+  isDir,
+  createPathResolver,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { destroyPromptWindow, sendToPrompt } from './prompt';

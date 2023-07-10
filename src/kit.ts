@@ -160,10 +160,15 @@ export const runPromptProcess = async (
 
   if (isSplash && isMain) {
     const choicesPath = getCachePath(mainScriptPath, 'choices');
-    const choices = await readJson(choicesPath);
-    log.info(`💧 Preloaded ${mainScriptPath} choices ${choices.length}`);
-    preloadPromptData(initialPromptState);
-    preloadChoices(choices);
+    log.info(`🏋️‍♀️ Preloading ${choicesPath}`);
+    try {
+      const choices = await readJson(choicesPath);
+      log.info(`💧 Preloaded ${mainScriptPath} choices ${choices.length}`);
+      preloadChoices(choices);
+      preloadPromptData(initialPromptState);
+    } catch (error) {
+      log.error(error);
+    }
   }
 
   if (isMain) {
