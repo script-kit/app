@@ -1211,4 +1211,6 @@ export const initialPromptState = {
   choicesType: 'array',
   hasOnNoChoices: true,
   inputCommandChars: [],
+  headerClassName: '',
+  footerClassName: '',
 };

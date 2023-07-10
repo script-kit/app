@@ -18,6 +18,7 @@ import { tmpClipboardDir } from '@johnlindquist/kit/cjs/utils';
 import { Choice, Script } from '@johnlindquist/kit/types/core';
 import { remove } from 'lodash';
 
+import { systemPreferences } from 'electron';
 import { emitter, KitEvent } from './events';
 import {
   appDb,
@@ -362,13 +363,18 @@ export const configureInterval = async () => {
       uIOhook.stop();
 
       setTimeout(() => {
-        log.info(`The line right before uIOhook.start()...`);
-        uIOhook.start();
-        kitState.watcherEnabled = true;
-        log.info(`The line right after uIOhook.start()...`);
+        if (systemPreferences.isTrustedAccessibilityClient(true)) {
+          log.info(`The line right before uIOhook.start()...`);
+          uIOhook.start();
+          kitState.watcherEnabled = true;
+          log.info(`The line right after uIOhook.start()...`);
+          log.info(`🟢 Started keyboard and mouse watcher`);
+        } else {
+          log.error(
+            `🔴 Failed to start keyboard and mouse watcher because Kit.app is not trusted`
+          );
+        }
       }, 1000);
-
-      log.info(`🟢 Started keyboard and mouse watcher`);
     } catch (e) {
       log.error(`🔴 Failed to start keyboard and mouse watcher`);
       log.error(e);

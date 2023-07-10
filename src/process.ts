@@ -51,6 +51,7 @@ import {
   mainScriptPath,
   themeDbPath,
   execPath,
+  getCachePath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { subscribeKey } from 'valtio/utils';
@@ -117,13 +118,7 @@ import {
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { createWidget } from './widget';
 import { AppChannel, HideReason, Trigger } from './enums';
-import {
-  isKitScript,
-  toRgb,
-  pathsAreEqual,
-  convertShortcut,
-  getCachePath,
-} from './helpers';
+import { isKitScript, toRgb, pathsAreEqual, convertShortcut } from './helpers';
 import { toHex } from './color-utils';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
@@ -418,7 +413,7 @@ type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
 export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
   const cachePath = getCachePath(scriptPath, 'choices');
-  log.verbose(`🎁 Caching ${kitState.scriptPath} choices -> ${cachePath}`);
+  log.verbose(`🎁 Caching choices ${kitState.scriptPath} -> ${cachePath}`);
   ensureDir(path.dirname(cachePath))
     .then((success) => {
       // eslint-disable-next-line promise/no-nesting

@@ -58,14 +58,12 @@ import {
   execPath,
   appDbPath,
   getKenvs,
-  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import {
   getPrefsDb,
   getShortcutsDb,
   getAppDb,
-  getScripts,
 } from '@johnlindquist/kit/cjs/db';
 import { subscribeKey } from 'valtio/utils';
 import { assign, debounce, throttle } from 'lodash';
@@ -94,7 +92,6 @@ import {
   maybeHide,
   reload,
   isVisible,
-  preloadChoices,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -111,7 +108,6 @@ import {
 } from './state';
 import { startSK } from './sk';
 import {
-  cacheChoices,
   destroyAllProcesses,
   ensureIdleProcess,
   handleWidgetEvents,
@@ -468,9 +464,11 @@ const systemEvents = () => {
 };
 
 export const cacheMainScripts = async () => {
-  const scripts = await getScripts(false);
-  cacheChoices(mainScriptPath, scripts);
-  preloadChoices(scripts);
+  try {
+    await optionalSetupScript(kitPath('setup', 'cache-grouped-scripts.js'));
+  } catch (error) {
+    log.warn(`Failed to cache main scripts at startup`, error);
+  }
 };
 
 const ready = async () => {

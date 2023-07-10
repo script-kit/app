@@ -19,6 +19,7 @@ import {
   mainScriptPath,
   KIT_FIRST_PATH,
   getLogFromScriptPath,
+  getCachePath,
 } from '@johnlindquist/kit/cjs/utils';
 import { ProcessInfo } from '@johnlindquist/kit';
 
@@ -38,7 +39,7 @@ import {
   preloadPromptData,
 } from './prompt';
 import { getKitScript, initialPromptState, kitState } from './state';
-import { getCachePath, pathsAreEqual } from './helpers';
+import { pathsAreEqual } from './helpers';
 import { AppChannel, Trigger } from './enums';
 import { TrackEvent, trackEvent } from './track';
 
@@ -158,7 +159,11 @@ export const runPromptProcess = async (
   const isSplash = kitState.ui === UI.splash;
 
   if (isSplash && isMain) {
+    const choicesPath = getCachePath(mainScriptPath, 'choices');
+    const choices = await readJson(choicesPath);
+    log.info(`💧 Preloaded ${mainScriptPath} choices ${choices.length}`);
     preloadPromptData(initialPromptState);
+    preloadChoices(choices);
   }
 
   if (isMain) {
@@ -166,47 +171,9 @@ export const runPromptProcess = async (
     removeAbandonnedKit();
   }
 
-  if (!isVisible() || isSplash) {
-    // readJson(kitPath('db', 'mainShortcuts.json'))
-    //   .then(setShortcuts)
-    //   .catch((error) => {});
-
-    const idlesLength = getIdles().length;
-    log.info(`🗿 ${idlesLength} idles`);
-    if (idlesLength > 0 || isSplash) {
-      sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
-
-      const cachedChoicesPath = getCachePath(promptScriptPath, 'choices');
-      readJson(cachedChoicesPath)
-        .then((result) => {
-          return preloadChoices(result);
-        })
-        .then((result) => {
-          log.info(`💧 Preloaded ${promptScriptPath} choices`);
-          return result;
-        })
-        .catch((error) => {
-          log.verbose(`No cache for ${promptScriptPath}`);
-        });
-
-      const cachedPromptPath = getCachePath(promptScriptPath, 'prompt');
-      readJson(cachedPromptPath)
-        .then((result) => {
-          return preloadPromptData(result);
-        })
-        .then((result) => {
-          log.info(`🌊 Preloaded ${promptScriptPath} prompt`);
-          return result;
-        })
-        .catch((error) => {
-          log.verbose(`No cache for ${promptScriptPath}`);
-        });
-    } else {
-      ensureIdleProcess();
-    }
-  }
-
-  log.info(`🏃‍♀️ Run ${promptScriptPath}`);
+  // readJson(kitPath('db', 'mainShortcuts.json'))
+  //   .then(setShortcuts)
+  //   .catch((error) => {});
 
   // If the window is already open, interrupt the process with the new script
   if (isVisible()) {
@@ -218,6 +185,42 @@ export const runPromptProcess = async (
       return null;
     }
   }
+
+  const idlesLength = getIdles().length;
+  log.info(`🗿 ${idlesLength} idles`);
+  if (idlesLength > 0 || isSplash) {
+    sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
+
+    const cachedChoicesPath = getCachePath(promptScriptPath, 'choices');
+    readJson(cachedChoicesPath)
+      .then((result) => {
+        return preloadChoices(result);
+      })
+      .then((result) => {
+        log.info(`💧 Preloaded ${promptScriptPath} choices`);
+        return result;
+      })
+      .catch((error) => {
+        log.verbose(`No cache for ${promptScriptPath}`);
+      });
+
+    const cachedPromptPath = getCachePath(promptScriptPath, 'prompt');
+    readJson(cachedPromptPath)
+      .then((result) => {
+        return preloadPromptData(result);
+      })
+      .then((result) => {
+        log.info(`🌊 Preloaded ${promptScriptPath} prompt`);
+        return result;
+      })
+      .catch((error) => {
+        log.verbose(`No cache for ${promptScriptPath}`);
+      });
+  } else {
+    ensureIdleProcess();
+  }
+
+  log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
   const processInfo = processes.findIdlePromptProcess();
   // Add another to the process pool when exhausted

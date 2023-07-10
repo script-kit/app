@@ -41,6 +41,7 @@ import {
   groupChoices,
   formatChoices,
   kitPath,
+  getCachePath,
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, setScriptTimestamp } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
@@ -65,7 +66,7 @@ import { ResizeData, ScoredChoice } from './types';
 import { getVersion } from './version';
 import { AppChannel, HideReason } from './enums';
 import { emitter, KitEvent } from './events';
-import { createScoredChoice, getCachePath, pathsAreEqual } from './helpers';
+import { createScoredChoice, pathsAreEqual } from './helpers';
 import { TrackEvent, trackEvent } from './track';
 
 let promptWindow: BrowserWindow;
@@ -523,7 +524,7 @@ export const alwaysOnTop = (onTop: boolean) => {
   if (promptWindow && !promptWindow.isDestroyed()) {
     if (onTop) log.info(`🔝 Keep "alwaysOnTop"`);
     kitState.alwaysOnTop = onTop;
-    promptWindow.setAlwaysOnTop(onTop);
+    promptWindow.setAlwaysOnTop(onTop, 'screen-saver', 1);
   } else {
     kitState.alwaysOnTop = false;
   }
@@ -1207,7 +1208,7 @@ export const setPromptData = async (promptData: PromptData) => {
     const cachePath = getCachePath(kitState.scriptPath, 'prompt');
     ensureDir(path.dirname(cachePath))
       .then((success) => {
-        log.verbose(`🎁 Caching ${kitState.scriptPath} prompt -> ${cachePath}`);
+        log.verbose(`🎁 Caching prompt ${kitState.scriptPath} -> ${cachePath}`);
         // eslint-disable-next-line promise/no-nesting
         writeJson(cachePath, promptData).catch((error) => {
           log.warn({ error });
@@ -1305,13 +1306,13 @@ export const setPromptData = async (promptData: PromptData) => {
   setBackgroundThrottling(true);
 
   setTimeout(() => {
-    promptWindow?.setAlwaysOnTop(true, 'modal-panel');
+    promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
   }, 0);
 
   if (topTimeout) clearTimeout(topTimeout);
   topTimeout = setTimeout(() => {
     if (kitState.ignoreBlur) {
-      promptWindow?.setAlwaysOnTop(kitState.alwaysOnTop);
+      promptWindow?.setAlwaysOnTop(kitState.alwaysOnTop, 'screen-saver', 1);
     }
   }, 1000);
 
