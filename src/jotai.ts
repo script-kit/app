@@ -1953,9 +1953,12 @@ export const submitSurveyAtom = atom(null, (_g, _s, a: Survey) => {
 });
 
 export const showTabsAtom = atom((g) => {
+  const isArg = [UI.arg].includes(g(uiAtom));
+  const hasTabs = g(tabsAtom)?.length > 0;
+  const noFlagValue = !g(flagValueAtom);
   return (
     // g(isMainScriptAtom) ||
-    [UI.arg].includes(g(uiAtom)) && g(tabsAtom)?.length > 0 && !g(flagValueAtom)
+    isArg && hasTabs && noFlagValue
   );
 });
 

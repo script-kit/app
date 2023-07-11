@@ -1184,9 +1184,15 @@ const pidMatch = (pid: number, message: string) => {
 };
 
 export const preloadPromptData = async (promptData: PromptData) => {
+  log.info(`🏋️‍♂️ Preload promptData for ${promptData?.scriptPath}`);
+
   setBackgroundThrottling(false);
   promptData.preload = true;
   kitState.preloaded = true;
+
+  if (promptData?.scriptPath === mainScriptPath) {
+    kitState.scriptPath = mainScriptPath;
+  }
   setPromptData(promptData);
 };
 
@@ -1235,7 +1241,12 @@ export const setPromptData = async (promptData: PromptData) => {
       ? promptData.alwaysOnTop
       : false;
 
-  if (promptData?.scriptPath !== kitState.scriptPath) return;
+  if (promptData?.scriptPath !== kitState.scriptPath) {
+    log.warn(`🚫 setPromptData: scriptPath doesn't match`);
+    log.warn(`${promptData?.scriptPath} !== ${kitState.scriptPath}`);
+
+    return;
+  }
 
   kitState.resize = promptData?.resize || false;
   kitState.shortcutsPaused = promptData.ui === UI.hotkey;
@@ -1301,7 +1312,7 @@ export const setPromptData = async (promptData: PromptData) => {
   } else {
     promptWindow?.show();
   }
-  log.info(`👋 Show Prompt ${kitState.pid} ${kitState.scriptPath}`);
+  log.verbose(`👋 Show Prompt ${kitState.pid} ${kitState.scriptPath}`);
 
   setBackgroundThrottling(true);
 
@@ -1363,6 +1374,7 @@ export const setPromptData = async (promptData: PromptData) => {
 };
 
 export const preloadChoices = (choices: Choice[]) => {
+  log.info(`🏋️‍♂️ Preload choices ${choices.length}`);
   setChoices(choices, { preload: true });
 };
 
@@ -1742,7 +1754,9 @@ export const setChoices = (
   choices: Choice[],
   { preload }: { preload: boolean }
 ) => {
-  log.info(`📦 Choices count: ${choices.length} preload: ${preload}`);
+  log.info(
+    `📦 ${kitState.pid} Choices count: ${choices.length} preload: ${preload}`
+  );
   if (!choices || choices?.length === 0) {
     kitSearch.choices = [];
     setScoredChoices([]);
@@ -1783,8 +1797,6 @@ export const setChoices = (
   sendToPrompt(Channel.SET_CHOICES_CONFIG, { preload });
 
   setShortcodes(choices);
-
-  log.info(`Choices count: ${choices.length}`);
   invokeSearch(kitSearch.input);
 };
 

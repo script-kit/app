@@ -247,6 +247,7 @@ export default function App() {
   const choices = useAtomValue(scoredChoicesAtom);
   const showSelected = useAtomValue(showSelectedAtom);
   const showTabs = useAtomValue(showTabsAtom);
+  const tabs = useAtomValue(tabsAtom);
   const getEditorHistory = useAtomValue(getEditorHistoryAtom);
   const getColor = useAtomValue(colorAtom);
   const onPaste = useAtomValue(onPasteAtom);

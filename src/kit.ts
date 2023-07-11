@@ -26,6 +26,7 @@ import { ProcessInfo } from '@johnlindquist/kit';
 import { emitter, KitEvent } from './events';
 import {
   ensureIdleProcess,
+  formatScriptChoices,
   getIdles,
   processes,
   removeAbandonnedKit,
@@ -158,20 +159,7 @@ export const runPromptProcess = async (
   const isMain = pathsAreEqual(promptScriptPath || '', mainScriptPath);
   const isSplash = kitState.ui === UI.splash;
 
-  if (isSplash && isMain) {
-    const choicesPath = getCachePath(mainScriptPath, 'choices');
-    log.info(`🏋️‍♀️ Preloading ${choicesPath}`);
-    try {
-      const choices = await readJson(choicesPath);
-      log.info(`💧 Preloaded ${mainScriptPath} choices ${choices.length}`);
-      preloadChoices(choices);
-      preloadPromptData(initialPromptState);
-    } catch (error) {
-      log.error(error);
-    }
-  }
-
-  if (isMain) {
+  if (isMain && !isSplash) {
     kitState.mainMenuHasRun = true;
     removeAbandonnedKit();
   }
@@ -193,7 +181,20 @@ export const runPromptProcess = async (
 
   const idlesLength = getIdles().length;
   log.info(`🗿 ${idlesLength} idles`);
-  if (idlesLength > 0 || isSplash) {
+
+  if (isSplash && isMain) {
+    log.info(`💦 Splash install screen visible. Preload Main Menu...`);
+    const choicesPath = getCachePath(mainScriptPath, 'choices');
+    try {
+      const choices = await readJson(choicesPath);
+      const scriptChoices = formatScriptChoices(choices);
+      preloadChoices(scriptChoices);
+      kitState.scriptPath = mainScriptPath;
+      preloadPromptData(initialPromptState);
+    } catch (error) {
+      log.error(error);
+    }
+  } else if (idlesLength > 0) {
     sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
 
     const cachedChoicesPath = getCachePath(promptScriptPath, 'choices');
