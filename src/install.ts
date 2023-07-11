@@ -333,11 +333,11 @@ export const downloadNode = async () => {
   const isWin = process.platform === 'win32';
   const extension = isWin ? 'zip' : 'tar.gz';
 
-  // download node v18.16.0 based on the current platform and architecture
+  // download node v18.15.0 based on the current platform and architecture
   // Examples:
-  // Mac arm64: https://nodejs.org/dist/v18.16.0/node-v18.16.0-darwin-arm64.tar.gz
-  // Linux x64: https://nodejs.org/dist/v18.16.0/node-v18.16.0-linux-x64.tar.gz
-  // Windows x64: https://nodejs.org/dist/v18.16.0/node-v18.16.0-win-x64.zip
+  // Mac arm64: https://nodejs.org/dist/v18.15.0/node-v18.15.0-darwin-arm64.tar.gz
+  // Linux x64: https://nodejs.org/dist/v18.15.0/node-v18.15.0-linux-x64.tar.gz
+  // Windows x64: https://nodejs.org/dist/v18.15.0/node-v18.15.0-win-x64.zip
 
   // Node dist url uses "win", not "win32"
   const nodeVersion = `v${process.versions.node}`;
@@ -380,10 +380,10 @@ export const extractNode = async (file: string) => {
       const zip = new StreamZip.async({ file });
 
       sendSplashBody(`Unzipping ${file} to ${knodePath()}`);
-      // node-18.16.0-win-x64
+      // node-18.15.0-win-x64
       const fileName = path.parse(file).name;
       console.log(`Extacting ${fileName} to ${knodePath('bin')}`);
-      // node-18.16.0-win-x64
+      // node-18.15.0-win-x64
       await zip.extract(fileName, knodePath('bin'));
       await zip.close();
     } catch (error) {
