@@ -446,7 +446,6 @@ export const flagsIndexAtom = atom(
     if (choice?.skip) {
       // Find next choice that doesn't have "skip" set or 0 or length - 1
       while (choice?.skip) {
-        g(logAtom)(`Searching for index`);
         calcIndex += direction;
 
         if (calcIndex <= 0) {
