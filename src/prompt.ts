@@ -1754,7 +1754,6 @@ export const setChoices = (
   choices: Choice[],
   { preload }: { preload: boolean }
 ) => {
-  log.info(`📦 ${kitState.pid} Choices: ${choices.length} preload: ${preload}`);
   if (!choices || choices?.length === 0) {
     kitSearch.choices = [];
     setScoredChoices([]);
@@ -1762,6 +1761,7 @@ export const setChoices = (
     kitSearch.qs = null;
     return;
   }
+  log.info(`📦 ${kitState.pid} Choices: ${choices.length} preload: ${preload}`);
   kitSearch.choices = choices.filter((c) => !c?.exclude);
   kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
   function scorer(string: string, query: string, matches: number[][]) {
