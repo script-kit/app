@@ -304,6 +304,19 @@ export const preStartConfigureInterval = async () => {
   }
 };
 
+const checkPreferencesAccessibility = () => {
+  if (kitState.isMac && systemPreferences?.isTrustedAccessibilityClient) {
+    try {
+      return systemPreferences.isTrustedAccessibilityClient(true);
+    } catch (error) {
+      log.error(error);
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export const configureInterval = async () => {
   log.info(`⌚️ Configuring interval...`);
   if (!kitState.supportsNut) {
@@ -363,7 +376,7 @@ export const configureInterval = async () => {
       uIOhook.stop();
 
       setTimeout(() => {
-        if (systemPreferences.isTrustedAccessibilityClient(true)) {
+        if (checkPreferencesAccessibility()) {
           log.info(`The line right before uIOhook.start()...`);
           uIOhook.start();
           kitState.watcherEnabled = true;
