@@ -1746,7 +1746,7 @@ export const setFlags = (f: FlagsWithKeys) => {
 
   // setFlagShortcodes(choices);
 
-  log.info(`Flag choices count: ${choices.length}`);
+  log.info(`Flag choices: ${choices.length}`);
   invokeFlagSearch(flagSearch.input);
 };
 
@@ -1754,9 +1754,7 @@ export const setChoices = (
   choices: Choice[],
   { preload }: { preload: boolean }
 ) => {
-  log.info(
-    `📦 ${kitState.pid} Choices count: ${choices.length} preload: ${preload}`
-  );
+  log.info(`📦 ${kitState.pid} Choices: ${choices.length} preload: ${preload}`);
   if (!choices || choices?.length === 0) {
     kitSearch.choices = [];
     setScoredChoices([]);

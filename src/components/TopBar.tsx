@@ -21,7 +21,7 @@ export default function TopBar() {
 
       `}
     >
-      <div
+      <motion.div
         animate={controls}
         transition={{
           ease: 'easeInOut',
