@@ -1612,7 +1612,9 @@ export const submitValueAtom = atom(
       channel(Channel.ON_SUBMIT);
     }
 
-    s(_inputAtom, '');
+    // There are "while(true)" cases where you want input/panels to persist
+    // s(_inputAtom, '');
+    // s(panelHTMLAtom, ``);
 
     channel(Channel.VALUE_SUBMITTED, {
       value,
@@ -1645,11 +1647,10 @@ export const submitValueAtom = atom(
     s(_flagged, ''); // clear after getting
     s(focusedFlagValueAtom, '');
     s(focusedChoiceAtom, noChoice);
-    s(panelHTMLAtom, ``);
 
     s(_submitValue, value);
     s(flagsAtom, {});
-    s(_chatMessagesAtom, []);
+    // s(_chatMessagesAtom, []);
 
     const stream = g(webcamStreamAtom);
     if (stream) {

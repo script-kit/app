@@ -110,9 +110,6 @@ export default function Panel() {
       <div
         id="panel"
         ref={panelRef}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 1] }}
-        transition={{ duration: 0.25, ease: 'circOut' }}
         className={`
         ${containerClasses}
         wrapper

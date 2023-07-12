@@ -39,6 +39,8 @@ import {
   lastKeyDownWasModifierAtom,
   footerHiddenAtom,
   inputHeightAtom,
+  headerHiddenAtom,
+  loadingAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -46,6 +48,7 @@ import { ActionButton } from './actionbutton';
 import { ActionSeparator } from './actionseparator';
 import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';
+import TopBar from './TopBar';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];
@@ -81,6 +84,8 @@ export default function Input() {
   const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
     miniShortcutsHoveredAtom
   );
+  const loading = useAtomValue(loadingAtom);
+  const headerHidden = useAtomValue(headerHiddenAtom);
   const footerHidden = useAtomValue(footerHiddenAtom);
   const inputHeight = useAtomValue(inputHeightAtom);
 
@@ -154,7 +159,7 @@ export default function Input() {
   return (
     <div
       key="input"
-      className="flex flex-row"
+      className={`flex flex-row ${footerHidden && '-mt-px'}`}
       style={{
         height: inputHeight || PROMPT.INPUT.HEIGHT.SM,
       }}
@@ -162,6 +167,7 @@ export default function Input() {
       // animate={{ opacity: processing ? 0 : 1 }}
       // transition={{ duration: 0.2 }}
     >
+      {headerHidden && loading && <TopBar />}
       <div
         className="max-w-full flex-1"
         style={{
@@ -232,7 +238,7 @@ export default function Input() {
             }}
             className={`right-container
       flex min-w-fit flex-grow flex-row items-center justify-end overflow-hidden ${
-        inputHeight === PROMPT.INPUT.HEIGHT.XS && `mt-px origin-right scale-95`
+        inputHeight === PROMPT.INPUT.HEIGHT.XS && `origin-right scale-95`
       }`}
           >
             {miniShortcutsVisible && (
