@@ -608,6 +608,7 @@ export const setupWatchers = async () => {
     }
 
     if (dir.endsWith('lib')) {
+      // When you clone a kenv, it would fire off a ton of ts builds with missing npm packages, so only on change
       if (eventName === 'change') {
         const { name: libName } = path.parse(filePath);
         log.info(`lib changed ${eventName} ${filePath}`);
