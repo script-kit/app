@@ -328,7 +328,9 @@ export const onScriptsChanged = async (
     if (kitState.ready && !rebuilt) {
       const isTS = filePath.endsWith('.ts');
       if (isTS) {
-        buildScriptChanged(script?.filePath, event);
+        if (event === 'change') {
+          buildScriptChanged(script?.filePath, event);
+        }
       } else {
         scriptChanged(filePath);
       }
@@ -519,7 +521,7 @@ export const setupWatchers = async () => {
             kitState.typedLimit = parseInt(envData?.KIT_TYPED_LIMIT, 10);
           }
 
-          const trustedKenvs = envData?.[kitState.trustedKenvsKey]
+          const trustedKenvs = (envData?.[kitState.trustedKenvsKey] || '')
             .split(',')
             .filter(Boolean)
             .map((kenv) => kenv.trim());
