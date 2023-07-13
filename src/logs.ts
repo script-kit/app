@@ -49,7 +49,7 @@ interface Logger {
   clear: () => void;
 }
 
-const logMap = new Map<string, Logger>();
+export const logMap = new Map<string, Logger>();
 
 export const getLog = (scriptPath: string): Logger => {
   try {
@@ -67,13 +67,15 @@ export const getLog = (scriptPath: string): Logger => {
     const _debug = scriptLog.debug.bind(scriptLog);
     const _silly = scriptLog.silly.bind(scriptLog);
 
-    const wrap = (fn: (...args: string[]) => void) => (...args: string[]) => {
-      try {
-        fn(...args);
-      } catch (error) {
-        console.log(error);
-      }
-    };
+    const wrap =
+      (fn: (...args: string[]) => void) =>
+      (...args: string[]) => {
+        try {
+          fn(...args);
+        } catch (error) {
+          console.log(error);
+        }
+      };
     const logger = {
       info: wrap(_info),
       warn: wrap(_warn),

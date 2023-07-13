@@ -159,26 +159,27 @@ testing-huge-group-data.ts:4:22:
 
   You can mark the path "@faker-js/faker" as external to exclude it from the bundle, which will remove this error.
   */
+        let missingPackages = [];
+        if (compileMessage.includes('Cannot find package')) {
+          missingPackages =
+            compileMessage.match(/(?<=Cannot find package ['"]).*(?=['"])/g) ||
+            [];
+        } else if (compileMessage.includes('Could not resolve')) {
+          missingPackages =
+            compileMessage.match(/(?<=Could not resolve ['"]).*(?=['"])/g) ||
+            [];
+        }
 
-        if (compileMessage.includes('Could not resolve')) {
-          // parse the package name from the error
-          const missingPackage = compileMessage
-            .split('\n')
-            .shift()
-            .split(' ')
-            .pop()
-            .replaceAll('"', '')
-            .replaceAll("'", '');
-
-          log.error(`Missing package ${missingPackage}`);
+        if (missingPackages.length) {
+          log.error(`Missing package ${missingPackages}`);
 
           trackEvent(TrackEvent.MissingPackage, {
-            missingPackage,
+            missingPackage: missingPackages,
           });
 
           emitter.emit(KitEvent.RunPromptProcess, {
             scriptPath: kitPath('cli', 'npm.js'),
-            args: [missingPackage],
+            args: missingPackages,
             options: {
               force: true,
               trigger: Trigger.MissingPackage,

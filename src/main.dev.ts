@@ -119,7 +119,7 @@ import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from './defaults';
 import { registerKillLatestShortcut } from './shortcuts';
-import { mainLog } from './logs';
+import { logMap, mainLog } from './logs';
 import { emitter } from './events';
 import { readyPty } from './pty';
 import { displayError } from './error';
@@ -419,6 +419,11 @@ const systemEvents = () => {
     if (kitState.isMainScript()) maybeHide('SUSPEND');
     teardownWatchers();
     sleepSchedule();
+    try {
+      logMap.clear();
+    } catch (error) {
+      log.error(error);
+    }
 
     kitState.waking = true;
     kitState.suspended = true;
