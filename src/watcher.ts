@@ -3,8 +3,7 @@ import log from 'electron-log';
 import { Notification } from 'electron';
 import { assign, debounce } from 'lodash';
 import path from 'path';
-import { existsSync, readFileSync, write } from 'fs';
-import { readJson, writeJson } from 'fs-extra';
+import { existsSync, readFileSync } from 'fs';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 import dotenv from 'dotenv';
@@ -38,13 +37,7 @@ import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
-import {
-  appDb,
-  kitState,
-  scriptChanged,
-  scriptRemoved,
-  sponsorCheck,
-} from './state';
+import { appDb, kitState, scriptChanged, sponsorCheck } from './state';
 import { addSnippet, removeSnippet } from './tick';
 import { appToPrompt, clearPromptCacheFor } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
@@ -76,8 +69,6 @@ const unlink = (filePath: string) => {
   );
 
   if (existsSync(binPath)) rm(binPath);
-
-  scriptRemoved();
 };
 
 const logEvents: { event: WatchEvent; filePath: string }[] = [];

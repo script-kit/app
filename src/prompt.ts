@@ -60,6 +60,8 @@ import {
   getEmojiShortcut,
   kitSearch,
   flagSearch,
+  preloadPromptDataMap,
+  preloadChoicesMap,
 } from './state';
 import { EMOJI_HEIGHT, EMOJI_WIDTH, MIN_WIDTH, ZOOM_LEVEL } from './defaults';
 import { ResizeData, ScoredChoice } from './types';
@@ -1183,20 +1185,54 @@ const pidMatch = (pid: number, message: string) => {
   return true;
 };
 
-export const preloadPromptData = async (promptData: PromptData) => {
-  log.info(`🏋️‍♂️ Preload promptData for ${promptData?.scriptPath}`);
-
-  setBackgroundThrottling(false);
-  promptData.preload = true;
-  kitState.preloaded = true;
-
-  if (promptData?.scriptPath === mainScriptPath) {
-    kitState.scriptPath = mainScriptPath;
-  }
+export const prepMain = async (promptData: PromptData) => {
+  sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
+  log.info(`🏋️‍♂️ Prep promptData for ${promptData?.scriptPath}`);
   setPromptData(promptData);
 };
 
+export const preloadPromptData = async (promptData: PromptData) => {
+  sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
+  log.info(`🏋️‍♂️ Preload promptData for ${promptData?.scriptPath}`);
+  promptData.preload = true;
+  kitState.preloaded = true;
+  kitState.scriptPath = promptData.scriptPath;
+
+  if (promptData?.hint) {
+    const shortcodes = promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi);
+    if (shortcodes) {
+      kitSearch.shortcodes.clear();
+      for (const shortcode of shortcodes) {
+        kitSearch.shortcodes.set(shortcode, { value: shortcode });
+      }
+    }
+  }
+
+  if (promptData.flags) {
+    setFlags(promptData.flags);
+  }
+
+  kitState.hiddenByUser = false;
+  kitState.isPromptReady = false;
+  kitState.alwaysOnTop =
+    typeof promptData?.alwaysOnTop === 'boolean'
+      ? promptData.alwaysOnTop
+      : false;
+
+  kitState.resize = promptData?.resize || false;
+  kitState.shortcutsPaused = promptData.ui === UI.hotkey;
+  kitState.promptUI = promptData.ui;
+
+  kitState.promptId = promptData.id;
+  if (kitState.suspended || kitState.screenLocked) return;
+  kitState.ui = promptData.ui;
+  if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
+
+  sendToPrompt(Channel.SET_OPEN, true);
+};
+
 let prevPromptData = {};
+
 export const setPromptData = async (promptData: PromptData) => {
   if (promptData?.hint) {
     const shortcodes = promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi);
@@ -1215,6 +1251,7 @@ export const setPromptData = async (promptData: PromptData) => {
     ensureDir(path.dirname(cachePath))
       .then((success) => {
         log.verbose(`🎁 Caching prompt ${kitState.scriptPath} -> ${cachePath}`);
+        preloadPromptDataMap.set(kitState.scriptPath, promptData);
         // eslint-disable-next-line promise/no-nesting
         writeJson(cachePath, promptData).catch((error) => {
           log.warn({ error });
@@ -1379,7 +1416,7 @@ export const preloadChoices = (choices: Choice[]) => {
 };
 
 export const setScoredChoices = (choices: ScoredChoice[]) => {
-  // log.info(`🎼 Scored choices count: ${choices.length}`);
+  log.info(`🎼 Scored choices count: ${choices.length}`);
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 };
 
@@ -1724,7 +1761,7 @@ export const setFlags = (f: FlagsWithKeys) => {
       undefined,
       createConfig({
         maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
-          ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 10)
+          ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
           : 3,
       })
     );
@@ -1773,7 +1810,7 @@ export const setChoices = (
       undefined,
       createConfig({
         maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
-          ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 10)
+          ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
           : 3,
       })
     );
@@ -1858,14 +1895,17 @@ export const onHideOnce = (fn: () => void) => {
   }
 };
 
-const initBounds = async () => {
+export const initBounds = async (forceScriptPath?: string, show = false) => {
   if (promptWindow?.isDestroyed()) return;
 
-  const bounds = await getCurrentScreenPromptCache(kitState.scriptPath, {
-    ui: kitState.promptUI,
-    resize: kitState.resize,
-    bounds: kitState.promptBounds,
-  });
+  const bounds = await getCurrentScreenPromptCache(
+    forceScriptPath || kitState.scriptPath,
+    {
+      ui: kitState.promptUI,
+      resize: kitState.resize,
+      bounds: kitState.promptBounds,
+    }
+  );
   if (promptWindow?.isDestroyed()) return;
 
   log.info(`↖ Init bounds: Prompt ${kitState.promptUI} ui`, bounds);
@@ -1895,6 +1935,16 @@ const initBounds = async () => {
     //   kitState.promptCount > 1 &&
     //   !kitState.promptBounds.height
   );
+
+  if (show) {
+    log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
+    if (kitState.isMac) {
+      promptWindow.showInactive();
+    } else {
+      promptWindow.show();
+    }
+    promptWindow.focus();
+  }
 };
 
 const subScriptPath = subscribeKey(

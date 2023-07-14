@@ -59,7 +59,7 @@ const handleChannel =
       }
 
       // log.info(`${message.channel}`, message.pid);
-    } else if (message.pid !== -1) {
+    } else if (message.pid !== -1 && !kitState.preloaded) {
       log.warn(`${message.channel} failed on ${message?.pid}`);
 
       processes.removeByPid(message?.pid);

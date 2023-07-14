@@ -139,6 +139,7 @@ import {
   installKitInKenv,
   ohNo,
   optionalSetupScript,
+  optionalSpawnSetup,
   sendSplashBody,
   sendSplashHeader,
   setupDone,

@@ -104,6 +104,7 @@ import {
   sponsorCheck,
   appDb,
   getThemes,
+  preloadChoicesMap,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -416,6 +417,8 @@ export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
   log.verbose(`🎁 Caching choices ${kitState.scriptPath} -> ${cachePath}`);
   ensureDir(path.dirname(cachePath))
     .then((success) => {
+      preloadChoicesMap.set(scriptPath, choices);
+
       // eslint-disable-next-line promise/no-nesting
       return writeJson(cachePath, choices).catch((error) => {
         log.warn({ error });

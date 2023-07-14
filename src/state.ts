@@ -15,9 +15,13 @@ import { ChildProcess } from 'child_process';
 import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
-import { Script, ProcessInfo, Choice } from '@johnlindquist/kit/types/core';
 import {
-  getScripts,
+  Script,
+  ProcessInfo,
+  Choice,
+  PromptData,
+} from '@johnlindquist/kit/types/core';
+import {
   setScriptTimestamp,
   UserDb,
   AppDb,
@@ -134,10 +138,6 @@ export const scriptChanged = debounce(
     trailing: true,
   }
 );
-
-export const scriptRemoved = debounce(async () => {
-  await getScripts(false);
-}, 25);
 
 export const cacheKitScripts = async () => {
   const kitMainPath = kitPath('main');
@@ -943,6 +943,9 @@ export const getThemes = () => ({
     appearance: 'light',
   },
 });
+
+export const preloadChoicesMap = new Map<string, Choice[]>();
+export const preloadPromptDataMap = new Map<string, PromptData>();
 
 export const kitSearch = {
   input: '',

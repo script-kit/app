@@ -221,16 +221,6 @@ export const previewHTMLAtom = atom(
     if (prevPreview === a) return;
     const visible = Boolean(a !== '' && a !== closedDiv);
     s(_previewVisible, visible);
-    // if (visible) s(loadingAtom, false);
-
-    if (!a || !g(openAtom)) return; // never unset preview to avoid flash of white/black
-    const tI = g(_tabIndex);
-    const iA = g(inputAtom);
-    const index = g(indexAtom);
-
-    // if (g(isMainScriptAtom) && tI === 0 && iA === '' && index === 0) {
-    //   s(cachedMainPreview, a);
-    // }
 
     if (g(_previewHTML) !== a) {
       if (a === closedDiv) {
@@ -425,9 +415,9 @@ let prevChoiceIndexId = 'prevChoiceIndexId';
 
 const flagsIndex = atom(0);
 export const focusedFlagAtom = atom('');
-export const allSkipAtom = atom((g) =>
-  Boolean(g(scoredChoicesAtom).every((c) => c.item.skip))
-);
+
+export const hasSkipAtom = atom(false);
+export const allSkipAtom = atom(false);
 export const flagsIndexAtom = atom(
   (g) => g(flagsIndex),
   (g, s, a: number) => {
@@ -643,6 +633,8 @@ export const scoredChoicesAtom = atom(
     }
 
     s(choices, cs || []);
+    s(hasSkipAtom, cs?.some((c) => c?.item?.skip) || false);
+    s(allSkipAtom, cs?.every((c) => c?.item?.skip) || false);
     s(indexAtom, 0);
 
     const isFilter =
@@ -922,7 +914,8 @@ export const scriptAtom = atom(
     s(promptReadyAtom, false);
     if (a.filePath !== mainScriptPath) {
       s(choicesConfigAtom, { preload: false });
-      s(scoredChoicesAtom, []);
+      // inteferred with preloading...
+      // s(scoredChoicesAtom, []);
       s(focusedChoiceAtom, noChoice);
       s(_previewHTML, '');
     }
@@ -935,10 +928,6 @@ export const scriptAtom = atom(
 
     s(mouseEnabledAtom, 0);
     s(_script, a);
-
-    // s(unfilteredChoicesAtom, []);
-
-    // s(choices, []);
     s(processingAtom, false);
 
     s(nameAtom, a?.name || '');
@@ -946,7 +935,7 @@ export const scriptAtom = atom(
     s(loadingAtom, false);
     s(logoAtom, a?.logo || '');
     s(tempThemeAtom, g(themeAtom));
-    s(flagsAtom, {});
+    // s(flagsAtom, {});
 
     // s(panelHTMLAtom, `<div/>`);
 
@@ -1140,7 +1129,6 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   //   hasPreview,
   //   footerHeight,
   //   topHeight,
-  //   itemHeight,
   //   scoredChoicesLength,
   //   forceResize,
   //   promptHeight: promptData?.height || 'UNSET',
