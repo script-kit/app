@@ -31,7 +31,7 @@ import {
 } from '@johnlindquist/kit/types/kitapp';
 import { editor } from 'monaco-editor';
 
-import { debounce, drop as _drop, isEqual, clamp } from 'lodash';
+import { debounce, drop as _drop, isEqual, throttle } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
 import { MessageType } from 'react-chat-elements';
 import { AppChannel } from './enums';
@@ -113,8 +113,8 @@ export const choicesConfigAtom = atom(
     s(directionAtom, 1);
 
     const promptData = g(promptDataAtom);
-    if (!promptData?.keepPreview && !promptData?.preview) {
-      // s(previewHTMLAtom, closedDiv);
+    if (!g(focusedChoiceAtom)?.hasPreview && !promptData?.preview) {
+      s(previewHTMLAtom, closedDiv);
     }
 
     const key = g(promptDataAtom)?.key as string;
@@ -188,6 +188,9 @@ export const panelHTMLAtom = atom(
     if (g(_panelHTML) === a) return;
     // if (a) s(scoredChoicesAtom, null);
     s(_panelHTML, a);
+    if (!g(promptDataAtom)?.preview) {
+      s(previewHTMLAtom, closedDiv);
+    }
 
     if (
       a === '' &&
@@ -203,6 +206,17 @@ const _previewVisible = atom<boolean>(false);
 
 const _previewHTML = atom('');
 export const closedDiv = `<div></div>`;
+
+const throttleSetPreview = throttle(
+  (g, s, a: string) => {
+    s(_previewHTML, a);
+  },
+  25,
+  {
+    leading: true,
+    trailing: true,
+  }
+);
 export const previewHTMLAtom = atom(
   (g) => {
     const html = DOMPurify.sanitize(
@@ -216,6 +230,7 @@ export const previewHTMLAtom = atom(
 
     return html;
   },
+
   (g, s, a: string) => {
     // g(logAtom)(`Setting previewHTML to ${a.slice(0, 24)}`);
     const prevPreview = g(_previewHTML);
@@ -227,7 +242,7 @@ export const previewHTMLAtom = atom(
       if (a === closedDiv) {
         s(_previewHTML, '');
       } else {
-        s(_previewHTML, a);
+        throttleSetPreview(g, s, a);
       }
     }
   }
@@ -561,18 +576,14 @@ export const indexAtom = atom(
   }
 );
 
-function isScript(choice: Choice | Script): choice is Script {
-  return (choice as Script)?.command !== undefined;
-}
-
 const _flagged = atom<Choice | string>('');
 const _focused = atom<Choice | null>(noChoice as Choice);
 
 export const hasFocusedChoiceAtom = atom(
   (g) => g(_focused) && g(_focused)?.name !== noChoice.name
 );
-export const focusedChoiceAtom = atom(
-  (g) => g(_focused),
+
+const throttleChoiceFocused = throttle(
   (g, s, choice: Choice) => {
     if (choice?.skip) return;
     if (choice?.id === prevFocusedChoiceId) return;
@@ -599,6 +610,15 @@ export const focusedChoiceAtom = atom(
       // g(logAtom)(`CHOICE_FOCUSED ${choice?.name}`);
       // resize(g, s);
     }
+  },
+  25,
+  { leading: true, trailing: true }
+);
+
+export const focusedChoiceAtom = atom(
+  (g) => g(_focused),
+  (g, s, choice: Choice) => {
+    throttleChoiceFocused(g, s, choice);
   }
 );
 

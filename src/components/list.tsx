@@ -1,14 +1,12 @@
 /* eslint-disable react/require-default-props */
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
 import ChoiceButton from './button';
 import {
   indexAtom,
-  mouseEnabledAtom,
   scoredChoicesAtom,
-  submitValueAtom,
   itemHeightAtom,
   promptDataAtom,
   listAtom,
@@ -19,23 +17,17 @@ import {
 import { ChoiceButtonProps, ListProps } from '../types';
 
 const createItemData = memoize(
-  (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>
+  (choices) =>
     ({
       choices,
-      currentIndex,
-      mouseEnabled,
-      onIndexChange,
-      onIndexSubmit,
     } as ChoiceButtonProps['data'])
 );
 
 export default function ChoiceList({ width, height }: ListProps) {
   const listRef = useRef(null);
   const innerRef = useRef(null);
-  const [mouseEnabled] = useAtom(mouseEnabledAtom);
   // TODO: In case items ever have dynamic height
   const [choices] = useAtom(scoredChoicesAtom);
-  const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
   const [index, onIndexChange] = useAtom(indexAtom);
   // const [inputValue] = useAtom(inputAtom);
   // const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
@@ -45,25 +37,6 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
   const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
   const showSelected = useAtomValue(showSelectedAtom);
-
-  const onIndexSubmit = useCallback(
-    (i: number) => {
-      if (choices.length) {
-        const choice = choices[i];
-
-        setSubmitValue(choice?.item?.value);
-      }
-    },
-    [choices, setSubmitValue]
-  );
-
-  const itemData = createItemData(
-    choices,
-    index,
-    mouseEnabled,
-    onIndexChange,
-    onIndexSubmit
-  );
 
   useEffect(() => {
     if (listRef.current) {
@@ -106,6 +79,9 @@ export default function ChoiceList({ width, height }: ListProps) {
   const choicesHeight = choices.reduce((acc, choice) => {
     return acc + (choice?.item?.height || itemHeight);
   }, 0);
+
+  const itemData = createItemData(choices);
+
   return (
     <div
       id="list"

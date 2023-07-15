@@ -1247,19 +1247,7 @@ export const setPromptData = async (promptData: PromptData) => {
   if (kitState.cachePrompt && !promptData.preload) {
     kitState.preloaded = false;
     kitState.cachePrompt = false;
-    const cachePath = getCachePath(kitState.scriptPath, 'prompt');
-    ensureDir(path.dirname(cachePath))
-      .then((success) => {
-        log.verbose(`🎁 Caching prompt ${kitState.scriptPath} -> ${cachePath}`);
-        preloadPromptDataMap.set(kitState.scriptPath, promptData);
-        // eslint-disable-next-line promise/no-nesting
-        writeJson(cachePath, promptData).catch((error) => {
-          log.warn({ error });
-        });
-
-        return success;
-      })
-      .catch(() => {});
+    preloadPromptDataMap.set(kitState.scriptPath, promptData);
   }
 
   if (promptData.flags) {
@@ -1419,6 +1407,7 @@ export const preload = (promptScriptPath: string) => {
   if (preloadPromptDataMap.has(promptScriptPath)) {
     setBackgroundThrottling(false);
     sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
+    sendToPrompt(Channel.SET_TAB_INDEX, 0);
     sendToPrompt(AppChannel.SET_PRELOADED, true);
 
     if (preloadChoicesMap.has(promptScriptPath)) {
@@ -1450,7 +1439,9 @@ export const preload = (promptScriptPath: string) => {
 };
 
 export const setScoredChoices = (choices: ScoredChoice[]) => {
-  log.info(`🎼 Scored choices count: ${choices.length}`);
+  if (kitSearch.choices?.length) {
+    log.info(`🎼 Scored choices count: ${choices.length}`);
+  }
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 };
 

@@ -412,21 +412,8 @@ type WidgetData = {
 type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
 export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
-  const cachePath = getCachePath(scriptPath, 'choices');
-  log.verbose(`🎁 Caching choices ${kitState.scriptPath} -> ${cachePath}`);
-  ensureDir(path.dirname(cachePath))
-    .then((success) => {
-      preloadChoicesMap.set(scriptPath, choices);
-
-      // eslint-disable-next-line promise/no-nesting
-      return writeJson(cachePath, choices).catch((error) => {
-        log.warn({ error });
-        return error;
-      });
-    })
-    .catch((error) => {
-      log.warn({ error });
-    });
+  log.verbose(`🎁 Caching choices for ${kitState.scriptPath}`);
+  preloadChoicesMap.set(scriptPath, choices);
 };
 
 const toProcess =

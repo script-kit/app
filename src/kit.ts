@@ -189,8 +189,8 @@ export const runPromptProcess = async (
     try {
       const choices = await readJson(choicesPath);
       const scriptChoices = formatScriptChoices(choices);
-      preloadChoices(scriptChoices);
       kitState.scriptPath = mainScriptPath;
+      preloadChoices(scriptChoices);
       preloadPromptData(initialPromptState);
     } catch (error) {
       log.error(error);

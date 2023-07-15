@@ -497,16 +497,24 @@ export const optionalSpawnSetup = (...args: string[]) => {
   });
 };
 
-export const optionalSetupScript = (...args: string[]) => {
+export const optionalSetupScript = (
+  scriptPath: string,
+  args: string[] = [],
+  callback?: (object: any) => void
+) => {
   return new Promise((resolve, reject) => {
-    log.info(`Running optional setup script: ${args.join(' ')}`);
-    const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
+    log.info(`Running optional setup script: ${scriptPath} with ${args}`);
+    const child = fork(
+      kitPath('run', 'terminal.js'),
+      [scriptPath, ...args],
+      forkOptions
+    );
 
     const id = setTimeout(() => {
       if (child && !child.killed) {
         child.kill();
         resolve('timeout');
-        log.info(`⚠️ Setup script timed out: ${args.join(' ')}`);
+        log.info(`⚠️ Setup script timed out: ${scriptPath}`);
       }
     }, 5000);
 
@@ -525,28 +533,29 @@ export const optionalSetupScript = (...args: string[]) => {
     }
 
     child.on('message', (data) => {
-      const dataString = typeof data === 'string' ? data : data.toString();
-
-      if (!dataString.includes(`[object`)) {
-        log.info(args[0], dataString);
-        // sendSplashBody(dataString.slice(0, 200));
+      if (callback) {
+        log.info(`📞 ${scriptPath}: callback firing...`);
+        callback(data);
       }
     });
 
     child.on('exit', (code) => {
       if (code === 0) {
         if (id) clearTimeout(id);
-        log.info(`✅ Setup script completed: ${args.join(' ')}`);
+        log.info(`✅ Setup script completed: ${scriptPath}`);
         resolve('done');
       } else {
-        log.info(`⚠️ Setup script exited with code ${code}: ${args.join(' ')}`);
+        log.info(`⚠️ Setup script exited with code ${code}: ${scriptPath}`);
         resolve('error');
       }
     });
 
     child.on('error', (error: Error) => {
       if (id) clearTimeout(id);
-      log.error(`⚠️ Errored on setup script: ${args.join(' ')}`, error.message);
+      log.error(
+        `⚠️ Errored on setup script: ${scriptPath.join(' ')}`,
+        error.message
+      );
       resolve('error');
       // reject(error);
       // throw new Error(error.message);

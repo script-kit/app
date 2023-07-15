@@ -46,7 +46,7 @@ import { existsSync } from 'fs';
 import { readdir, copyFile } from 'fs/promises';
 
 import { Channel, ProcessType, UI, PROMPT } from '@johnlindquist/kit/cjs/enum';
-import { PromptData } from '@johnlindquist/kit/types/core';
+import { PromptData, Script } from '@johnlindquist/kit/types/core';
 
 import {
   kenvPath,
@@ -58,6 +58,7 @@ import {
   execPath,
   appDbPath,
   getKenvs,
+  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import {
@@ -104,6 +105,7 @@ import {
   getThemes,
   initKeymap,
   kitState,
+  preloadChoicesMap,
   subs,
 } from './state';
 import { startSK } from './sk';
@@ -471,7 +473,15 @@ const systemEvents = () => {
 
 export const cacheMainScripts = async () => {
   try {
-    await optionalSetupScript(kitPath('setup', 'cache-grouped-scripts.js'));
+    const receiveScripts = (scripts: Script[]) => {
+      log.info(`Received scripts`, scripts);
+      preloadChoicesMap.set(mainScriptPath, scripts);
+    };
+    await optionalSetupScript(
+      kitPath('setup', 'cache-grouped-scripts.js'),
+      [],
+      receiveScripts
+    );
   } catch (error) {
     log.warn(`Failed to cache main scripts at startup`, error);
   }
@@ -934,7 +944,7 @@ const checkKit = async () => {
     await setupLog(`Trusting old kenvs...`);
     const kenvs = (await getKenvs()).map((kenv: string) => path.basename(kenv));
     for await (const kenv of kenvs) {
-      await optionalSetupScript(kitPath('cli', 'kenv-trust.js'), kenv, kenv);
+      await optionalSetupScript(kitPath('cli', 'kenv-trust.js'), [kenv, kenv]);
     }
   }
 

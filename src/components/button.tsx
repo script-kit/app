@@ -23,6 +23,9 @@ import {
   buttonDescriptionFontSizeAtom,
   isScrollingAtom,
   inputAtom,
+  mouseEnabledAtom,
+  indexAtom,
+  submitValueAtom,
 } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -61,15 +64,15 @@ function isNotScript(choice: Choice | Script): choice is Script {
   return (choice as Script)?.command === undefined;
 }
 
-export default function ChoiceButton({
-  data,
-  index,
+function ChoiceButton({
+  index: buttonIndex,
   style,
+  data: { choices },
 }: ChoiceButtonProps) {
-  const { choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit } =
-    data;
-  const scoredChoice = choices[index];
-  const choice: Choice | Script = scoredChoice?.item || scoredChoice;
+  const scoredChoice = choices[buttonIndex];
+  const choice = scoredChoice?.item;
+  const [index, setIndex] = useAtom(indexAtom);
+  const [mouseEnabled] = useAtom(mouseEnabledAtom);
 
   const [isMouseDown] = useAtom(isMouseDownAtom);
   const [flags] = useAtom(flagsAtom);
@@ -79,6 +82,7 @@ export default function ChoiceButton({
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
   const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
   const input = useAtomValue(inputAtom);
+  const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
 
   // Get the text after the last file separator
   const base = (input || '').split(/[\\/]/).pop() || '';
@@ -97,15 +101,15 @@ export default function ChoiceButton({
   const onClick = useCallback(
     (e) => {
       e.preventDefault();
-      onIndexSubmit(index);
+      setSubmitValue(choice?.value);
     },
-    [index, onIndexSubmit]
+    [choice.value, setSubmitValue]
   );
   const onMouseEnter = useCallback(() => {
     if (mouseEnabled) {
-      onIndexChange(index);
+      setIndex(buttonIndex);
     }
-  }, [index, mouseEnabled, onIndexChange]);
+  }, [buttonIndex, mouseEnabled, setIndex]);
 
   const [imageFail, setImageFail] = useState(false);
 
@@ -176,7 +180,7 @@ export default function ChoiceButton({
       className={`
       text-text-base
       ${
-        index === currentIndex && !choice?.disableSubmit ? `bg-ui-bg` : ``
+        index === buttonIndex && !choice?.disableSubmit ? `bg-ui-bg` : ``
       } ${overrideTailwindClasses(`
         flex
         h-16
@@ -191,7 +195,7 @@ export default function ChoiceButton({
         outline-none
         focus:outline-none
         ${choice?.className}
-        ${index === currentIndex ? `opacity-100` : `opacity-90`}
+        ${index === buttonIndex ? `opacity-100` : `opacity-90`}
       `)}`}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
@@ -199,7 +203,7 @@ export default function ChoiceButton({
       {choice?.html ? (
         parse(choice?.html, {
           replace: (domNode: any) => {
-            if (domNode?.attribs && index === currentIndex)
+            if (domNode?.attribs && index === buttonIndex)
               domNode.attribs.class += ' focused';
             return domNode;
           },
@@ -218,7 +222,7 @@ export default function ChoiceButton({
                 h-4/5
                 rounded
                 object-contain
-                ${index === currentIndex ? `opacity-100` : `opacity-80`}
+                ${index === buttonIndex ? `opacity-100` : `opacity-80`}
                 `}
               />
             )}
@@ -243,13 +247,13 @@ export default function ChoiceButton({
                   className={`truncate pb-1 ${buttonDescriptionFontSize} ${
                     choice?.descriptionClassName
                   }${
-                    index === currentIndex
+                    index === buttonIndex
                       ? ` text-primary opacity-100 `
                       : ` opacity-60 `
                   }`}
                 >
                   {modifierDescription ||
-                  (index === currentIndex && choice?.focused)
+                  (index === buttonIndex && choice?.focused)
                     ? choice?.focused
                     : choice?.description}
                 </div>
@@ -270,7 +274,7 @@ export default function ChoiceButton({
                   <div
                     className={`mx-1 font-mono text-xxs ${
                       choice?.tagClassName
-                    } ${index === currentIndex ? `opacity-70` : `opacity-40`}`}
+                    } ${index === buttonIndex ? `opacity-70` : `opacity-40`}`}
                   >
                     {(choice?.pass || isRecent) &&
                     choice?.kenv &&
@@ -300,7 +304,7 @@ export default function ChoiceButton({
                   <div
                     className={`
               font-mono text-xxs
-              ${index === currentIndex ? `opacity-100` : `opacity-40`}
+              ${index === buttonIndex ? `opacity-100` : `opacity-40`}
               `}
                   >
                     {highlight(
@@ -331,7 +335,7 @@ export default function ChoiceButton({
               </div>
             )}
 
-            {index === currentIndex &&
+            {index === buttonIndex &&
               !choice?.ignoreFlags &&
               Boolean(Object.keys(flags).length) &&
               !flaggedValue && (
@@ -368,3 +372,5 @@ export default function ChoiceButton({
     </button>
   );
 }
+
+export default React.memo(ChoiceButton);

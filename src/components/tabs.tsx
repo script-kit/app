@@ -11,6 +11,7 @@ import {
   kitStateAtom,
   mouseEnabledAtom,
   openAtom,
+  preloadedAtom,
   tabIndexAtom,
   tabsAtom,
   userAtom,
@@ -72,6 +73,7 @@ export default function KitTabs() {
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);
   const [open] = useAtom(openAtom);
+  const [preloaded] = useAtom(preloadedAtom);
   const [hover, setHover] = useState(-1);
   const itemsRef: any = useRef([]);
   const kitState = useAtomValue(kitStateAtom);
@@ -193,7 +195,7 @@ export default function KitTabs() {
                       className="absolute left-0 right-0 bottom-0 h-2px  bg-primary/90 transition-colors"
                       layoutDependency
                       layoutId="selectedTab"
-                      transition={{ duration: 0.15 }}
+                      transition={{ duration: preloaded ? 0 : 0.15 }}
                     />
                   )}
 
@@ -203,7 +205,7 @@ export default function KitTabs() {
                     animate={{
                       opacity: i === hover && i !== tabIndex ? 1 : 0,
                     }}
-                    transition={{ duration: 0.15 }}
+                    transition={{ duration: preloaded ? 0 : 0.15 }}
                   />
                   <TabName tab={tab} selected={i === tabIndex} />
                 </motion.div>

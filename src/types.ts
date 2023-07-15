@@ -12,11 +12,6 @@ export interface ScoredChoice {
 
 export interface ChoiceButtonData {
   choices: ScoredChoice[];
-  currentIndex: number;
-  inputValue: string;
-  mouseEnabled: number;
-  onIndexChange: (index: number) => void;
-  onIndexSubmit: (index: number) => void;
 }
 export interface ChoiceButtonProps {
   data: ChoiceButtonData;
