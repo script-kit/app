@@ -21,7 +21,7 @@ import {
   getLogFromScriptPath,
   getCachePath,
 } from '@johnlindquist/kit/cjs/utils';
-import { Choice, ProcessInfo, PromptData } from '@johnlindquist/kit';
+import { ProcessInfo } from '@johnlindquist/kit';
 
 import { emitter, KitEvent } from './events';
 import {
@@ -38,20 +38,11 @@ import {
   setScript,
   preloadChoices,
   preloadPromptData,
-  setBackgroundThrottling,
-  initBounds,
-  getMainPrompt,
-  pingPromptWithTimeout,
+  preload,
 } from './prompt';
-import {
-  getKitScript,
-  initialPromptState,
-  kitState,
-  preloadChoicesMap,
-  preloadPromptDataMap,
-} from './state';
+import { getKitScript, initialPromptState, kitState } from './state';
 import { pathsAreEqual } from './helpers';
-import { AppChannel, Trigger } from './enums';
+import { Trigger } from './enums';
 import { TrackEvent, trackEvent } from './track';
 
 app.on('second-instance', async (_event, argv) => {
@@ -205,53 +196,7 @@ export const runPromptProcess = async (
       log.error(error);
     }
   } else if (idlesLength > 0) {
-    if (preloadPromptDataMap.has(promptScriptPath)) {
-      setBackgroundThrottling(false);
-      sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
-
-      if (preloadChoicesMap.has(promptScriptPath)) {
-        const promptData = preloadPromptDataMap.get(
-          promptScriptPath
-        ) as PromptData;
-
-        preloadPromptData(promptData);
-
-        const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
-        preloadChoices(choices as Choice[]);
-        // if (typeof choices?.[0]?.preview === 'string') {
-        //   console.log(choices?.[0]?.preview);
-        //   sendToPrompt(Channel.SET_PREVIEW, choices?.[0]?.preview);
-        // }
-      }
-
-      initBounds(promptScriptPath, true);
-    }
-
-    // const cachedChoicesPath = getCachePath(promptScriptPath, 'choices');
-    // readJson(cachedChoicesPath)
-    //   .then((result) => {
-    //     return preloadChoices(result);
-    //   })
-    //   .then((result) => {
-    //     log.info(`💧 Preloaded ${promptScriptPath} choices`);
-    //     return result;
-    //   })
-    //   .catch((error) => {
-    //     log.verbose(`No cache for ${promptScriptPath}`);
-    //   });
-
-    // const cachedPromptPath = getCachePath(promptScriptPath, 'prompt');
-    // readJson(cachedPromptPath)
-    //   .then((result) => {
-    //     return preloadPromptData(result);
-    //   })
-    //   .then((result) => {
-    //     log.info(`🌊 Preloaded ${promptScriptPath} prompt`);
-    //     return result;
-    //   })
-    //   .catch((error) => {
-    //     log.verbose(`No cache for ${promptScriptPath}`);
-    //   });
+    preload(promptScriptPath);
   } else {
     ensureIdleProcess();
   }

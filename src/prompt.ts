@@ -151,7 +151,7 @@ export const setBackgroundThrottling = (enabled: boolean, override = false) => {
   promptWindow?.webContents?.setBackgroundThrottling(enabled);
 };
 
-const saveCurrentPromptBounds = async () => {
+export const saveCurrentPromptBounds = async () => {
   // if (kitState.promptCount === 1) {
   const currentBounds = promptWindow?.getBounds();
   savePromptBounds(kitState.scriptPath, currentBounds);
@@ -1415,6 +1415,40 @@ export const preloadChoices = (choices: Choice[]) => {
   setChoices(choices, { preload: true });
 };
 
+export const preload = (promptScriptPath: string) => {
+  if (preloadPromptDataMap.has(promptScriptPath)) {
+    setBackgroundThrottling(false);
+    sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
+    sendToPrompt(AppChannel.SET_PRELOADED, true);
+
+    if (preloadChoicesMap.has(promptScriptPath)) {
+      const promptData = preloadPromptDataMap.get(
+        promptScriptPath
+      ) as PromptData;
+
+      preloadPromptData(promptData);
+
+      const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
+      preloadChoices(choices as Choice[]);
+
+      kitState.promptBounds = {
+        x: promptData.x,
+        y: promptData.y,
+        width:
+          mainScriptPath === promptData.scriptPath
+            ? getDefaultWidth()
+            : promptData.width || getDefaultWidth(),
+        height:
+          mainScriptPath === promptData.scriptPath
+            ? PROMPT.HEIGHT.BASE
+            : promptData.height,
+      };
+
+      initBounds(promptScriptPath, true);
+    }
+  }
+};
+
 export const setScoredChoices = (choices: ScoredChoice[]) => {
   log.info(`🎼 Scored choices count: ${choices.length}`);
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
@@ -1789,9 +1823,10 @@ export const setFlags = (f: FlagsWithKeys) => {
 
 export const setChoices = (
   choices: Choice[],
+  // eslint-disable-next-line @typescript-eslint/no-shadow
   { preload }: { preload: boolean }
 ) => {
-  if (!choices || choices?.length === 0) {
+  if (!choices || !Array.isArray(choices) || choices?.length === 0) {
     kitSearch.choices = [];
     setScoredChoices([]);
     kitSearch.hasGroup = false;
@@ -1938,6 +1973,7 @@ export const initBounds = async (forceScriptPath?: string, show = false) => {
 
   if (show) {
     log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
+    promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
     if (kitState.isMac) {
       promptWindow.showInactive();
     } else {

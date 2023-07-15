@@ -54,6 +54,7 @@ export enum AppChannel {
   SCROLL_TO_INDEX = 'SCROLL_TO_INDEX',
   INVOKE_SEARCH = 'INVOKE_SEARCH',
   INVOKE_FLAG_SEARCH = 'INVOKE_FLAG_SEARCH',
+  SET_PRELOADED = 'SET_PRELOADED',
 }
 
 export enum WindowChannel {

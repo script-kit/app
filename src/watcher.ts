@@ -309,6 +309,10 @@ export const onScriptsChanged = async (
     event === 'add'
   ) {
     logQueue(event, filePath);
+    if (!existsSync(filePath)) {
+      log.info(`🤔 Attempting to parse ${filePath}, but it doesn't exist...`);
+      return;
+    }
     const script = await parseScript(filePath);
     shortcutScriptChanged(script);
     scheduleScriptChanged(script);

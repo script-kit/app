@@ -114,7 +114,7 @@ export const choicesConfigAtom = atom(
 
     const promptData = g(promptDataAtom);
     if (!promptData?.keepPreview && !promptData?.preview) {
-      s(previewHTMLAtom, closedDiv);
+      // s(previewHTMLAtom, closedDiv);
     }
 
     const key = g(promptDataAtom)?.key as string;
@@ -217,6 +217,7 @@ export const previewHTMLAtom = atom(
     return html;
   },
   (g, s, a: string) => {
+    // g(logAtom)(`Setting previewHTML to ${a.slice(0, 24)}`);
     const prevPreview = g(_previewHTML);
     if (prevPreview === a) return;
     const visible = Boolean(a !== '' && a !== closedDiv);
@@ -901,6 +902,9 @@ export const _history = atom<Script[]>([]);
 
 const _script = atom<Script>(noScript);
 const backToMainAtom = atom(false);
+
+export const preloadedAtom = atom(false);
+
 export const scriptAtom = atom(
   (g) => g(_script),
   (g, s, a: Script) => {
@@ -914,11 +918,17 @@ export const scriptAtom = atom(
     s(promptReadyAtom, false);
     if (a.filePath !== mainScriptPath) {
       s(choicesConfigAtom, { preload: false });
-      // inteferred with preloading...
-      // s(scoredChoicesAtom, []);
-      s(focusedChoiceAtom, noChoice);
-      s(_previewHTML, '');
+      const preloaded = g(preloadedAtom);
+
+      if (!preloaded) {
+        s(scoredChoicesAtom, []);
+        s(focusedChoiceAtom, noChoice);
+        s(_previewHTML, '');
+      }
+      //
     }
+
+    s(preloadedAtom, false);
 
     const history = g(_history);
     s(_history, [...history, a]);
@@ -930,8 +940,8 @@ export const scriptAtom = atom(
     s(_script, a);
     s(processingAtom, false);
 
-    s(nameAtom, a?.name || '');
-    s(descriptionAtom, a?.description || '');
+    // s(nameAtom, a?.name || '');
+    // s(descriptionAtom, a?.description || '');
     s(loadingAtom, false);
     s(logoAtom, a?.logo || '');
     s(tempThemeAtom, g(themeAtom));
@@ -1152,7 +1162,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     open: g(_open),
     tabIndex: g(_tabIndex),
     isSplash: g(isSplashAtom),
-    hasPreview,
+    hasPreview: g(previewCheckAtom),
     inputChanged: g(_inputChangedAtom),
     justOpened,
     forceResize,
@@ -1364,16 +1374,15 @@ export const promptDataAtom = atom(
 
       const headerHidden = g(headerHiddenAtom);
 
-      if (a.name) {
-        s(nameAtom, headerHidden ? '' : a.name);
-      }
+      const script = g(scriptAtom);
 
-      if (a?.description) {
-        s(
-          descriptionAtom,
-          headerHidden ? '' : a.description || g(scriptAtom)?.description || ''
-        );
-      }
+      const promptDescription = headerHidden
+        ? ''
+        : a.description || script?.description || '';
+      const promptName = headerHidden ? '' : a.name || script?.name || '';
+
+      s(descriptionAtom, promptDescription || promptName);
+      s(nameAtom, promptDescription ? promptName : promptDescription);
 
       if (!a?.keepPreview && a.preview) {
         g(logAtom)(`👍 Keeping preview`);
@@ -1428,9 +1437,9 @@ export const promptDataAtom = atom(
         s(loadingAtom, true);
       }
 
-      if (a?.ui !== UI.arg) {
-        s(previewHTMLAtom, closedDiv);
-      }
+      // if (a?.ui !== UI.arg) {
+      //   s(previewHTMLAtom, closedDiv);
+      // }
 
       if (typeof a?.enter === 'string') {
         s(enterAtom, a.enter);
@@ -1667,7 +1676,7 @@ export const openAtom = atom(
       s(_open, a);
 
       // const cachedPreview = g(cachedMainPreview);
-      s(_previewHTML, ``);
+      // s(_previewHTML, ``);
 
       // s(choices, []);
       // s(tabIndex, 0);
@@ -2599,3 +2608,11 @@ export const scoredFlagsAtom = atom(
     s(flagsIndexAtom, 0);
   }
 );
+
+export const previewCheckAtom = atom((g) => {
+  const appDb = g(appDbAtom);
+  const previewHTML = g(previewHTMLAtom);
+  const enabled = g(previewEnabledAtom);
+  const hidden = g(isHiddenAtom);
+  return Boolean(!appDb.mini && previewHTML && enabled && !hidden);
+});

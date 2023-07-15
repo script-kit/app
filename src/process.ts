@@ -90,8 +90,7 @@ import {
   setScript,
   setTabIndex,
   setVibrancy,
-  preloadChoices,
-  preloadPromptData,
+  preload,
 } from './prompt';
 import {
   getBackgroundTasks,
@@ -2117,38 +2116,7 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, value });
   }),
   PRELOAD: toProcess(async ({ child }, { channel, value }) => {
-    log.verbose(`👀 Preloading ${value}`);
-
-    const cachedChoicesPath = getCachePath(value, 'choices');
-    const cachedPromptPath = getCachePath(value, 'prompt');
-
-    readJson(cachedPromptPath)
-      .then((result) => {
-        return preloadPromptData(result);
-      })
-      .then((result) => {
-        log.info(`💧 Preloaded ${value} prompt`);
-        return result;
-      })
-      .then(() => {
-        // eslint-disable-next-line promise/no-nesting
-        return readJson(cachedChoicesPath)
-          .then((result) => {
-            return preloadChoices(result);
-          })
-          .then((result) => {
-            log.info(`💧 Preloaded ${value} choices`);
-            return result;
-          })
-          .catch((error) => {
-            log.verbose(`No cache for ${value}`);
-          });
-      })
-
-      .catch((error) => {
-        log.verbose(`No cache for ${value}`);
-      });
-
+    preload(value);
     childSend(child, { channel, value });
   }),
   CLEAR_TIMESTAMPS: toProcess(async ({ child }, { channel, value }) => {
