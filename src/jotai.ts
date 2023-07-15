@@ -617,9 +617,7 @@ const throttleChoiceFocused = throttle(
 
 export const focusedChoiceAtom = atom(
   (g) => g(_focused),
-  (g, s, choice: Choice) => {
-    throttleChoiceFocused(g, s, choice);
-  }
+  throttleChoiceFocused
 );
 
 export const hasPreviewAtom = atom<boolean>((g) => {

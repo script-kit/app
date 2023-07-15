@@ -7,8 +7,6 @@
 /* eslint-disable no-nested-ternary */
 import React, { useCallback, useEffect, useState, DragEvent } from 'react';
 import parse from 'html-react-parser';
-
-import { overrideTailwindClasses } from 'tailwind-override';
 import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types/core';
 import { useAtom, useAtomValue } from 'jotai';
 import { ipcRenderer } from 'electron';
@@ -179,9 +177,7 @@ function ChoiceButton({
       }}
       className={`
       text-text-base
-      ${
-        index === buttonIndex && !choice?.disableSubmit ? `bg-ui-bg` : ``
-      } ${overrideTailwindClasses(`
+      ${index === buttonIndex && !choice?.disableSubmit ? `bg-ui-bg` : ``}
         flex
         h-16
         w-full
@@ -196,7 +192,7 @@ function ChoiceButton({
         focus:outline-none
         ${choice?.className}
         ${index === buttonIndex ? `opacity-100` : `opacity-90`}
-      `)}`}
+      }`}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
     >

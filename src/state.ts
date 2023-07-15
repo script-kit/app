@@ -926,7 +926,7 @@ export const getThemes = () => ({
     accent: '251, 191, 36',
     opacity: kitState.isMac ? '0.5' : '0.95',
     ui: '255, 255, 255',
-    'ui-bg-opacity': '0.05',
+    'ui-bg-opacity': kitState.isMac ? '0.5' : '0.95',
     'ui-border-opacity': '0.15',
     vibrancy: 'popover',
     appearance: 'dark',
@@ -950,6 +950,7 @@ export const preloadPromptDataMap = new Map<string, PromptData>();
 export const kitSearch = {
   input: '',
   choices: [] as Choice[],
+  scripts: [] as Script[],
   shortcodes: new Map<string, Choice>(),
   hasGroup: false,
   qs: null as null | QuickScore<Choice>,
