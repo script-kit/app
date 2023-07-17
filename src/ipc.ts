@@ -351,29 +351,6 @@ ${data.error}
           }
         }
 
-        // if (channel === Channel.ON_PASTE) {
-        //   const image = clipboard.readImage();
-        //   const size = image.getSize();
-
-        //   if (size?.width && size?.height && isFocused()) {
-        //     const timestamp = format(new Date(), 'yyyy-MM-dd-hh-mm-ss');
-        //     const filePath = path.join(kitConfig.imagePath, `${timestamp}.png`);
-        //     await ensureDir(path.dirname(filePath));
-        //     await writeFile(filePath, image.toPNG());
-        //     clipboard.clear();
-        //     clipboard.writeText(filePath);
-        //     message.state.paste = filePath;
-        //     message.state.isPasteImage = true;
-
-        //     log.info(`📎 ${filePath}`);
-
-        //     child?.send(message);
-        //   }
-        //   return; // Only send once above
-        // }
-
-        // log.info(`>>>>>>>>>>>>>>>>> CHANNEL`, channel, message.state.shortcut);
-
         if (channel === Channel.BLUR && kitState.debugging) return;
 
         if (
@@ -392,21 +369,6 @@ ${data.error}
             return;
           }
         }
-
-        // if (
-        //   typeof message?.state?.value === 'string' &&
-        //   message?.state?.value.startsWith('data:image/png;base64')
-        // ) {
-        //   // convert to image buffer
-        //   try {
-        //     const imgBuffer = nativeImage
-        //       .createFromDataURL(message.state.value)
-        //       .toPNG();
-        //     message.state.value = imgBuffer
-        //   } catch (error) {
-        //     log.error(error);
-        //   }
-        // }
 
         if (child) {
           try {
