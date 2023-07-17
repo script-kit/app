@@ -104,6 +104,7 @@ import {
   appDb,
   getThemes,
   preloadChoicesMap,
+  preloadPreviewMap,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -414,6 +415,11 @@ type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
   log.verbose(`🎁 Caching choices for ${kitState.scriptPath}`);
   preloadChoicesMap.set(scriptPath, choices);
+};
+
+export const cachePreview = async (scriptPath: string, preview: string) => {
+  log.verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
+  preloadPreviewMap.set(scriptPath, preview);
 };
 
 const toProcess =
@@ -1099,6 +1105,10 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_PREVIEW: (data) => {
+    if (kitState.cachePreview) {
+      cachePreview(kitState.scriptPath, data.value);
+      kitState.cachePreview = false;
+    }
     setPreview(data.value);
   },
 

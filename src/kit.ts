@@ -185,13 +185,9 @@ export const runPromptProcess = async (
 
   if (isSplash && isMain) {
     log.info(`💦 Splash install screen visible. Preload Main Menu...`);
-    const choicesPath = getCachePath(mainScriptPath, 'choices');
     try {
-      const choices = await readJson(choicesPath);
-      const scriptChoices = formatScriptChoices(choices);
       kitState.scriptPath = mainScriptPath;
-      preloadChoices(scriptChoices);
-      preloadPromptData(initialPromptState);
+      preload(mainScriptPath);
     } catch (error) {
       log.error(error);
     }

@@ -7,6 +7,7 @@ import {
   kitPath,
   appDbPath,
   userDbPath,
+  timestampsPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { kitState } from './state';
 
@@ -30,7 +31,7 @@ export const startWatching = (callback: WatcherCallback) => {
   );
 
   const jsonWatcher = chokidar
-    .watch([appDbPath, shortcutsPath, userDbPath], {
+    .watch([appDbPath, shortcutsPath, userDbPath, timestampsPath], {
       ignoreInitial: kitState.ignoreInitial,
     })
     .on('all', callback);

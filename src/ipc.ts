@@ -24,7 +24,7 @@ import { writeFile } from 'fs/promises';
 import { DownloaderHelper } from 'node-downloader-helper';
 import detect from 'detect-file-type';
 import { emitter, KitEvent } from './events';
-import { ensureIdleProcess, processes } from './process';
+import { cachePreview, ensureIdleProcess, processes } from './process';
 
 import {
   debounceInvokeSearch,
@@ -344,6 +344,10 @@ ${data.error}
 
           if (message?.state?.value === Channel.TERMINAL) {
             message.state.value = ``;
+          }
+
+          if (kitState.isMainScript()) {
+            cachePreview(mainScriptPath, message?.state?.preview || '');
           }
         }
 

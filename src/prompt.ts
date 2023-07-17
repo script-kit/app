@@ -40,8 +40,6 @@ import {
   defaultGroupNameClassName,
   groupChoices,
   formatChoices,
-  kitPath,
-  getCachePath,
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, setScriptTimestamp } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
@@ -49,7 +47,6 @@ import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
 import { ChildProcess } from 'child_process';
-import { writeJson, ensureDir } from 'fs-extra';
 import { quickScore, createConfig, QuickScore } from 'quick-score';
 import { getAssetPath } from './assets';
 import {
@@ -62,6 +59,7 @@ import {
   flagSearch,
   preloadPromptDataMap,
   preloadChoicesMap,
+  preloadPreviewMap,
 } from './state';
 import { EMOJI_HEIGHT, EMOJI_WIDTH, MIN_WIDTH, ZOOM_LEVEL } from './defaults';
 import { ResizeData, ScoredChoice } from './types';
@@ -1081,10 +1079,10 @@ export const setScript = async (
   pid: number,
   force = false
 ): Promise<'denied' | 'allowed'> => {
-  kitSearch.input = '';
   kitState.resizePaused = false;
   kitState.cacheChoices = Boolean(script?.cache);
   kitState.cachePrompt = Boolean(script?.cache);
+  kitState.cachePreview = Boolean(script?.cache);
   // log.info(`setScript`, { script, pid });
 
   if (script.filePath === prevScriptPath && pid === prevPid) {
@@ -1398,6 +1396,11 @@ export const setPromptData = async (promptData: PromptData) => {
   });
 };
 
+export const preloadPreview = (html: string) => {
+  log.info(`🏋️‍♂️ Preload preview`);
+  setPreview(html);
+};
+
 export const preloadChoices = (choices: Choice[]) => {
   log.info(`🏋️‍♂️ Preload choices ${choices.length}`);
   setChoices(choices, { preload: true });
@@ -1419,6 +1422,9 @@ export const preload = (promptScriptPath: string) => {
 
       const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
       preloadChoices(choices as Choice[]);
+
+      const preview = preloadPreviewMap.get(promptScriptPath) as string;
+      preloadPreview(preview);
 
       kitState.promptBounds = {
         x: promptData.x,

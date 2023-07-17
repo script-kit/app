@@ -47,6 +47,7 @@ import { runScript } from './kit';
 import { TrackEvent, trackEvent } from './track';
 import { processes, spawnShebang } from './process';
 import { compareArrays } from './helpers';
+import { cacheMainScripts } from './install';
 
 // export const cacheMenu = debounce(async () => {
 //   await updateScripts();
@@ -590,6 +591,12 @@ export const setupWatchers = async () => {
         log.warn(error);
       }
 
+      return;
+    }
+
+    if (base === 'timestamps.json') {
+      log.info(`timestamps.json changed`);
+      cacheMainScripts();
       return;
     }
 

@@ -1529,6 +1529,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     cursor: g(editorCursorPosAtom),
     ui: g(uiAtom),
     tabIndex: g(tabIndexAtom),
+    preview: g(previewHTMLAtom),
   };
 
   return state;
@@ -1540,6 +1541,7 @@ export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
   const appMessage: AppMessage = {
     channel,
     pid: pid || 0,
+    promptId: g(promptDataAtom)?.id as string,
     state: {
       ...state,
       ...override,

@@ -365,6 +365,7 @@ const initState = {
   idleProcessReady: false,
   cacheChoices: false,
   cachePrompt: false,
+  cachePreview: false,
   scriptPathChanged: false,
   promptScriptPath: '',
   preloaded: false,
@@ -945,6 +946,7 @@ export const getThemes = () => ({
 });
 
 export const preloadChoicesMap = new Map<string, Choice[]>();
+export const preloadPreviewMap = new Map<string, string>();
 export const preloadPromptDataMap = new Map<string, PromptData>();
 
 export const kitSearch = {

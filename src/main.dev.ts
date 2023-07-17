@@ -128,6 +128,7 @@ import { displayError } from './error';
 import { HideReason, Trigger } from './enums';
 import { TrackEvent, trackEvent } from './track';
 import {
+  cacheMainScripts,
   cleanKit,
   createLogs,
   downloadKenv,
@@ -469,22 +470,6 @@ const systemEvents = () => {
   powerMonitor.addListener('unlock-screen', async () => {
     kitState.screenLocked = false;
   });
-};
-
-export const cacheMainScripts = async () => {
-  try {
-    const receiveScripts = (scripts: Script[]) => {
-      log.info(`Received scripts`, scripts);
-      preloadChoicesMap.set(mainScriptPath, scripts);
-    };
-    await optionalSetupScript(
-      kitPath('setup', 'cache-grouped-scripts.js'),
-      [],
-      receiveScripts
-    );
-  } catch (error) {
-    log.warn(`Failed to cache main scripts at startup`, error);
-  }
 };
 
 const ready = async () => {
@@ -953,13 +938,13 @@ const checkKit = async () => {
 
     await storeVersion(getVersion());
 
-    // if (kitState.isMac) {
-    //   optionalSpawnSetup(
-    //     kitPath('main', 'app-launcher.js'),
-    //     '--prep',
-    //     '--trust'
-    //   );
-    // }
+    if (kitState.isMac) {
+      optionalSpawnSetup(
+        kitPath('main', 'app-launcher.js'),
+        '--prep',
+        '--trust'
+      );
+    }
 
     kitState.starting = false;
     kitState.updateInstalling = false;

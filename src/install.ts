@@ -5,7 +5,7 @@ import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import log from 'electron-log';
 import download from 'download';
-
+import { debounce } from 'lodash';
 import path from 'path';
 import tar from 'tar';
 import StreamZip from 'node-stream-zip';
@@ -21,7 +21,7 @@ import { ensureDir, writeFile, lstat, readdir } from 'fs-extra';
 import { readFile, rm } from 'fs/promises';
 
 import { Channel } from '@johnlindquist/kit/cjs/enum';
-
+import { Script } from '@johnlindquist/kit/types';
 import {
   kenvPath,
   kitPath,
@@ -29,13 +29,14 @@ import {
   KIT_FIRST_PATH,
   isDir,
   createPathResolver,
+  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { destroyPromptWindow, sendToPrompt } from './prompt';
 import { INSTALL_ERROR, show } from './show';
 import { showError } from './main.dev.templates';
 import { mainLogPath } from './logs';
-import { kitState } from './state';
+import { kitState, preloadChoicesMap } from './state';
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {
@@ -628,3 +629,22 @@ export const installKitInKenv = async () => {
     });
   });
 };
+
+export const cacheMainScripts = debounce(async () => {
+  try {
+    const receiveScripts = (data: { value: Script[] }) => {
+      const { value: scripts } = data;
+      log.info(`Caching scripts...`, scripts.length);
+      preloadChoicesMap.set(mainScriptPath, scripts);
+    };
+    const child = fork(
+      kitPath('run', 'terminal.js'),
+      [kitPath('setup', 'cache-grouped-scripts.js')],
+      forkOptions
+    );
+
+    child.on('message', receiveScripts);
+  } catch (error) {
+    log.warn(`Failed to cache main scripts at startup`, error);
+  }
+}, 200);
