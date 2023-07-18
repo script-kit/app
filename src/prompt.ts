@@ -1406,7 +1406,7 @@ export const preloadChoices = (choices: Choice[]) => {
   setChoices(choices, { preload: true });
 };
 
-export const preload = (promptScriptPath: string) => {
+export const preload = (promptScriptPath: string, show = true) => {
   if (preloadPromptDataMap.has(promptScriptPath)) {
     setBackgroundThrottling(false);
     sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
@@ -1439,7 +1439,7 @@ export const preload = (promptScriptPath: string) => {
             : promptData.height,
       };
 
-      initBounds(promptScriptPath, true);
+      initBounds(promptScriptPath, show);
     }
   }
 };
@@ -2003,6 +2003,7 @@ const subScriptPath = subscribeKey(
       hideAppIfNoWindows(`remove ${kitState.scriptPath}`);
       sendToPrompt(Channel.SET_OPEN, false);
       kitState.alwaysOnTop = false;
+      preload(mainScriptPath, false);
       return;
     }
 
