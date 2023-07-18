@@ -202,8 +202,6 @@ export const panelHTMLAtom = atom(
   }
 );
 
-const _previewVisible = atom<boolean>(false);
-
 const _previewHTML = atom('');
 export const closedDiv = `<div></div>`;
 
@@ -235,9 +233,6 @@ export const previewHTMLAtom = atom(
     // g(logAtom)(`Setting previewHTML to ${a.slice(0, 24)}`);
     const prevPreview = g(_previewHTML);
     if (prevPreview === a) return;
-    const visible = Boolean(a !== '' && a !== closedDiv);
-    s(_previewVisible, visible);
-
     if (g(_previewHTML) !== a) {
       if (a === closedDiv) {
         s(_previewHTML, '');
@@ -437,6 +432,10 @@ export const allSkipAtom = atom(false);
 export const flagsIndexAtom = atom(
   (g) => g(flagsIndex),
   (g, s, a: number) => {
+    if (a === -1) {
+      s(focusedFlagValueAtom, '');
+      return;
+    }
     const prevIndex = g(flagsIndex);
     const cs = g(scoredFlagsAtom);
     // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
@@ -622,16 +621,8 @@ export const focusedChoiceAtom = atom(
 
 export const hasPreviewAtom = atom<boolean>((g) => {
   if (g(allSkipAtom)) return false;
-  const focused = g(_focused);
-  const focusedHasPreview =
-    focused?.hasPreview && focused?.preview !== closedDiv;
 
-  const promptHasPreview = g(promptData)?.hasPreview;
-
-  const isFocused = g(focusedChoiceAtom) === null;
-  const previewVisible = g(_previewVisible);
-
-  return focusedHasPreview || promptHasPreview || (isFocused && previewVisible);
+  return g(_previewHTML) !== '';
 });
 
 let prevFocusedChoiceId = 'prevFocusedChoiceId';
@@ -699,13 +690,12 @@ export const scoredChoicesAtom = atom(
         s(requiresScrollAtom, wereChoicesPreloaded ? -1 : 0);
       }
     } else {
-      s(focusedChoiceAtom, null);
+      s(focusedChoiceAtom, noChoice);
       if (isFilter && Boolean(cs)) {
         if (!g(promptReadyAtom)) return;
         channel(Channel.NO_CHOICES);
       }
     }
-
     let choicesHeight = 0;
 
     for (const {
@@ -1017,7 +1007,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const scoredChoicesLength = g(scoredChoicesAtom)?.length;
   // g(logAtom)(`resize: ${reason} - ${ui} length ${scoredChoicesLength}`);
   const hasPanel = g(_panelHTML) !== '';
-  let mh = g(mainHeight);
+  let mh = g(mainHeightAtom);
 
   // if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
 
@@ -1325,6 +1315,11 @@ let wasPromptDataPreloaded = false;
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
+    // g(logAtom)(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
+    if (a?.ui !== UI.arg && !a?.preview) {
+      s(previewHTMLAtom, closedDiv);
+    }
+
     s(isHiddenAtom, false);
     const prevPromptData = g(promptData);
 
@@ -1405,7 +1400,6 @@ export const promptDataAtom = atom(
       if (!a?.keepPreview && a.preview) {
         g(logAtom)(`👍 Keeping preview`);
         s(previewHTMLAtom, a.preview);
-        s(_previewVisible, Boolean(a?.preview));
       }
 
       if (a.panel) {
@@ -1441,23 +1435,9 @@ export const promptDataAtom = atom(
       s(prevChoicesConfig, []);
       s(audioDotAtom, false);
 
-      if (
-        a?.ui === UI.arg &&
-        (a?.choicesType === 'null' ||
-          a?.choicesType === 'function' ||
-          a?.choicesType === 'async')
-      ) {
-        // s(unfilteredChoicesAtom, []);
-        // g(logAtom)(`null | function | async - skip clearing choices`);
-      }
-
       if (a?.choicesType === 'async') {
         s(loadingAtom, true);
       }
-
-      // if (a?.ui !== UI.arg) {
-      //   s(previewHTMLAtom, closedDiv);
-      // }
 
       if (typeof a?.enter === 'string') {
         s(enterAtom, a.enter);
@@ -1589,12 +1569,11 @@ export const onDropAtom = atom((g) => (event: any) => {
 export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
-  debounce((g, s, a: any) => {
+  (g, s, a: any) => {
     s(onInputSubmitAtom, {});
     s(promptActiveAtom, false);
     s(disableSubmitAtom, false);
     if (g(submittedAtom)) return;
-    const hasFocusedChoice = g(hasFocusedChoiceAtom);
     const focusedChoice = g(focusedChoiceAtom);
 
     const fid = focusedChoice?.id;
@@ -1677,7 +1656,7 @@ export const submitValueAtom = atom(
         (document.getElementById('webcam') as HTMLVideoElement).srcObject =
           null;
     }
-  })
+  }
 );
 
 export const closedInput = atom('');
@@ -2625,7 +2604,7 @@ export const scoredFlagsAtom = atom(
   },
   (g, s, a: ScoredChoice[]) => {
     s(scoredFlags, a);
-    s(flagsIndexAtom, 0);
+    s(flagsIndexAtom, -1);
   }
 );
 

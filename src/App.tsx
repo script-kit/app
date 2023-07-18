@@ -847,6 +847,7 @@ ${hasBorder ? `border-1 border-ui-border` : ``}
 ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
       `}
       >
+        <style>{promptData?.css}</style>
         {/* {lighten && (
           <style
             dangerouslySetInnerHTML={{
