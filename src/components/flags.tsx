@@ -1,12 +1,10 @@
 /* eslint-disable react/require-default-props */
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
-import ChoiceButton from './button';
+import FlagButton from './flag-button';
 import {
-  mouseEnabledAtom,
-  submitValueAtom,
   itemHeightAtom,
   promptDataAtom,
   isScrollingAtom,
@@ -14,28 +12,21 @@ import {
   flagsIndexAtom,
   flagsRequiresScrollAtom,
   scoredFlagsAtom,
-  focusedChoiceAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 
 const createItemData = memoize(
-  (choices, currentIndex, mouseEnabled, onIndexChange, onIndexSubmit) =>
+  (choices) =>
     ({
       choices,
-      currentIndex,
-      mouseEnabled,
-      onIndexChange,
-      onIndexSubmit,
     } as ChoiceButtonProps['data'])
 );
 
 export default function FlagsList({ width, height }: ListProps) {
   const flagsRef = useRef(null);
   const innerRef = useRef(null);
-  const [mouseEnabled] = useAtom(mouseEnabledAtom);
   // TODO: In case items ever have dynamic height
   const [choices] = useAtom(scoredFlagsAtom);
-  const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
   const [index, onIndexChange] = useAtom(flagsIndexAtom);
   // const [inputValue] = useAtom(inputAtom);
   // const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
@@ -44,24 +35,8 @@ export default function FlagsList({ width, height }: ListProps) {
   const [list, setList] = useAtom(flagsListAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(flagsRequiresScrollAtom);
   const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
-  const [focusedChoice] = useAtom(focusedChoiceAtom);
 
-  const onIndexSubmit = useCallback(
-    (i: number) => {
-      if (choices.length) {
-        setSubmitValue(focusedChoice);
-      }
-    },
-    [choices, setSubmitValue]
-  );
-
-  const itemData = createItemData(
-    choices,
-    index,
-    mouseEnabled,
-    onIndexChange,
-    onIndexSubmit
-  );
+  const itemData = createItemData(choices);
 
   useEffect(() => {
     if (flagsRef.current) {
@@ -161,7 +136,7 @@ export default function FlagsList({ width, height }: ListProps) {
         `}
         // onItemsRendered={onItemsRendered}
       >
-        {ChoiceButton}
+        {FlagButton}
       </List>
     </div>
   );

@@ -432,10 +432,6 @@ export const allSkipAtom = atom(false);
 export const flagsIndexAtom = atom(
   (g) => g(flagsIndex),
   (g, s, a: number) => {
-    if (a === -1) {
-      s(focusedFlagValueAtom, '');
-      return;
-    }
     const prevIndex = g(flagsIndex);
     const cs = g(scoredFlagsAtom);
     // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
@@ -1378,6 +1374,7 @@ export const promptDataAtom = atom(
       s(processingAtom, false);
       s(inputCommandChars, a?.inputCommandChars || []);
 
+      s(focusedFlagValueAtom, '');
       if (Object.keys(a?.flags || []).length) {
         s(flagsAtom, a?.flags);
       }
@@ -1597,7 +1594,7 @@ export const submitValueAtom = atom(
     // let submitted = g(submittedAtom);
     // if (submitted) return;
 
-    const flag = g(focusedFlagValueAtom);
+    const flag = g(selectedAtom) ? g(focusedFlagValueAtom) : '';
     const value = checkSubmitFormat(a);
 
     // const fC = g(focusedChoiceAtom);
@@ -1702,6 +1699,7 @@ export const openAtom = atom(
       s(audioDotAtom, false);
       s(disableSubmitAtom, false);
       g(scrollToIndexAtom)(0);
+      s(filterInputAtom, '');
       // s(tabsAtom, []);
 
       const stream = g(webcamStreamAtom);
@@ -2604,7 +2602,7 @@ export const scoredFlagsAtom = atom(
   },
   (g, s, a: ScoredChoice[]) => {
     s(scoredFlags, a);
-    s(flagsIndexAtom, -1);
+    s(flagsIndexAtom, 0);
   }
 );
 

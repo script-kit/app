@@ -1250,12 +1250,14 @@ const kitMessageMap: ChannelHandler = {
       return;
     }
 
-    let formattedChoices = value;
+    const { choices, ignoreInput } = value;
+
+    let formattedChoices = choices;
     if (kitState.isScripts) {
-      formattedChoices = formatScriptChoices(value);
+      formattedChoices = formatScriptChoices(choices);
     }
 
-    setChoices(formattedChoices, { preload: false });
+    setChoices(formattedChoices, { preload: false, ignoreInput });
 
     if (child) {
       childSend(child, {

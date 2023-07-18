@@ -1821,7 +1821,7 @@ export const setFlags = (f: FlagsWithKeys) => {
 export const setChoices = (
   choices: Choice[],
   // eslint-disable-next-line @typescript-eslint/no-shadow
-  { preload }: { preload: boolean }
+  { preload, ignoreInput }: { preload: boolean; ignoreInput?: boolean }
 ) => {
   if (!choices || !Array.isArray(choices) || choices?.length === 0) {
     kitSearch.choices = [];
@@ -1864,7 +1864,7 @@ export const setChoices = (
   sendToPrompt(Channel.SET_CHOICES_CONFIG, { preload });
 
   setShortcodes(choices);
-  invokeSearch(kitSearch.input);
+  invokeSearch(ignoreInput ? '' : kitSearch.input);
 };
 
 export const clearPromptCache = async () => {
