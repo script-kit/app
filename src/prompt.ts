@@ -98,6 +98,15 @@ const actualHide = () => {
 
 export const maybeHide = async (reason: string) => {
   log.info(`Attempt Hide: ${reason}`);
+  if (!promptWindow?.isVisible()) return;
+  if (reason === HideReason.NoScript || reason === HideReason.Escape) {
+    actualHide();
+    preload(mainScriptPath, false);
+    // clearSearch();
+    // invokeSearch('');
+    return;
+  }
+
   if (reason === HideReason.PingTimeout) {
     log.info(`⛑ Attempting recover...`);
     kitState.debugging = false;
@@ -309,7 +318,7 @@ export const createPromptWindow = async () => {
   promptWindow.webContents.on('devtools-closed', () => {
     log.silly(`event: devtools-closed`);
     promptWindow?.setAlwaysOnTop(false);
-    maybeHide('Devtools closed');
+    maybeHide(HideReason.DevToolsClosed);
   });
 
   emitter.on(KitEvent.OpenDevTools, () => {
@@ -419,7 +428,7 @@ export const createPromptWindow = async () => {
   promptWindow?.webContents?.on('dom-ready', () => {
     log.info(`🍀 dom-ready on ${kitState?.scriptPath}`);
 
-    hideAppIfNoWindows('dom-ready');
+    hideAppIfNoWindows(HideReason.DomReady);
     sendToPrompt(Channel.SET_READY, true);
   });
 
@@ -487,7 +496,7 @@ export const createPromptWindow = async () => {
 
   powerMonitor.on('lock-screen', () => {
     log.info(`🔒 System locked. Reloading prompt window.`);
-    if (kitState.isMainScript()) maybeHide('LOCK-SCREEN');
+    if (kitState.isMainScript()) maybeHide(HideReason.LockScreen);
   });
 
   return promptWindow;
@@ -1054,7 +1063,7 @@ const writePromptState = async (
   promptState.screens[screenId][scriptPath] = bounds;
 };
 
-export const hideAppIfNoWindows = (reason: string) => {
+export const hideAppIfNoWindows = (reason: HideReason) => {
   log.silly(`function: hideAppIfNoWindows: ${reason}`);
   if (promptWindow) {
     kitState.modifiedByUser = false;
@@ -1384,7 +1393,7 @@ export const setPromptData = async (promptData: PromptData) => {
     if (promptWindow?.isDestroyed()) return;
     const currentBounds = promptWindow?.getBounds();
     // const currentDisplayBounds = getCurrentScreenFromMouse().bounds;
-    const currentDisplayBounds = await getCurrentActiveWindow();
+    const currentDisplayBounds = (await getCurrentScreen()).bounds;
 
     const minX = currentDisplayBounds.x;
     const minY = currentDisplayBounds.y;
@@ -1457,7 +1466,7 @@ export const preload = (promptScriptPath: string, show = true) => {
             : promptData.height,
       };
 
-      initBounds(promptScriptPath, show);
+      initBounds(promptScriptPath, promptScriptPath === mainScriptPath && show);
     }
   }
 };
@@ -1943,7 +1952,7 @@ export const getMainPrompt = () => promptWindow;
 
 export const destroyPromptWindow = () => {
   if (promptWindow && !promptWindow?.isDestroyed()) {
-    hideAppIfNoWindows(`__destroy__`);
+    hideAppIfNoWindows(HideReason.Destroy);
     promptWindow.destroy();
   }
 };
@@ -2039,11 +2048,10 @@ const subScriptPath = subscribeKey(
         `noScript: scriptPath changed: ${kitState.scriptPath}, prompt count: ${kitState.promptCount}`
       );
 
-      hideAppIfNoWindows(`remove ${kitState.scriptPath}`);
+      hideAppIfNoWindows(HideReason.NoScript);
       sendToPrompt(Channel.SET_OPEN, false);
       kitState.alwaysOnTop = false;
       clearSearch();
-      preload(mainScriptPath, false);
       return;
     }
 

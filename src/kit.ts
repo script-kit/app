@@ -7,7 +7,7 @@ import { app } from 'electron';
 import minimist from 'minimist';
 import log from 'electron-log';
 import path from 'path';
-import { pathExistsSync, readJson } from 'fs-extra';
+import { pathExistsSync } from 'fs-extra';
 import { fork, ForkOptions } from 'child_process';
 import { homedir } from 'os';
 
@@ -19,14 +19,12 @@ import {
   mainScriptPath,
   KIT_FIRST_PATH,
   getLogFromScriptPath,
-  getCachePath,
 } from '@johnlindquist/kit/cjs/utils';
 import { ProcessInfo } from '@johnlindquist/kit';
 
 import { emitter, KitEvent } from './events';
 import {
   ensureIdleProcess,
-  formatScriptChoices,
   getIdles,
   processes,
   removeAbandonnedKit,
@@ -36,13 +34,11 @@ import {
   isVisible,
   sendToPrompt,
   setScript,
-  preloadChoices,
-  preloadPromptData,
   preload,
 } from './prompt';
-import { getKitScript, initialPromptState, kitState } from './state';
+import { getKitScript, kitState } from './state';
 import { pathsAreEqual } from './helpers';
-import { Trigger } from './enums';
+import { HideReason, Trigger } from './enums';
 import { TrackEvent, trackEvent } from './track';
 
 app.on('second-instance', async (_event, argv) => {
@@ -114,7 +110,7 @@ emitter.on(
 
     if (isVisible()) {
       kitState.ignoreBlur = false;
-      hideAppIfNoWindows(`run ${scriptPath}`);
+      hideAppIfNoWindows(HideReason.RunPromptProcess);
     } else {
       log.info(`Show App: ${scriptPath}`);
     }

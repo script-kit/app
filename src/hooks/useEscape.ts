@@ -69,9 +69,6 @@ export default () => {
       } else if (isReady && ui === UI.splash) {
         runMainScript();
       } else if (isReady || ui !== UI.splash) {
-        if (ui === UI.arg) {
-          setInput('');
-        }
         sendEscape();
         setRunning(false);
       }

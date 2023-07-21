@@ -19,6 +19,8 @@ import {
   appConfigAtom,
   lightenUIAtom,
   focusedChoiceAtom,
+  shortcutsAtom,
+  hasRightShortcutAtom,
 } from '../jotai';
 
 import { Action, textContrast } from './actions';
@@ -39,9 +41,13 @@ export default function ActionBar() {
 
   const _actions: Action[] = useAtomValue(actionsAtom);
   const focusedChoice = useAtomValue(focusedChoiceAtom);
+  const shortcuts = useAtomValue(shortcutsAtom);
+  const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
 
   const hasFlags =
-    Object.keys(flags)?.length > 0 && !focusedChoice?.ignoreFlags;
+    Object.keys(flags)?.length > 0 &&
+    !focusedChoice?.ignoreFlags &&
+    !hasRightShortcut;
 
   const actions = focusedChoice?.ignoreFlags ? [] : _actions;
 

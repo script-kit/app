@@ -93,4 +93,10 @@ export enum HideReason {
   DebuggerClosed = 'DebuggerClosed',
   MessageFailed = 'MessageFailed',
   Escape = 'Escape',
+  Suspend = 'Suspend',
+  DevToolsClosed = 'DevToolsClosed',
+  DomReady = 'DomReady',
+  RunPromptProcess = 'RunPromptProcess',
+  Destroy = 'Destroy',
+  NoScript = 'NoScript',
 }

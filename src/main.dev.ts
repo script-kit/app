@@ -420,7 +420,7 @@ const systemEvents = () => {
 
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);
-    if (kitState.isMainScript()) maybeHide('SUSPEND');
+    if (kitState.isMainScript()) maybeHide(HideReason.Suspend);
     teardownWatchers();
     sleepSchedule();
     try {

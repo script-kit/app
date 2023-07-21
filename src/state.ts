@@ -474,6 +474,7 @@ export const hideDock = debounce(() => {
 }, 200);
 
 export const showDock = () => {
+  if (!kitState.ignoreBlur) return;
   if (!kitState.isMac) return;
   if (
     kitState.devToolsCount === 0 &&

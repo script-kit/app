@@ -961,10 +961,10 @@ const resizeSettle = debounce((g: Getter, s: Setter) => {
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   if (reason !== 'SETTLE') resizeSettle(g, s);
 
-  const active = g(promptActiveAtom);
+  // const active = g(promptActiveAtom);
   // g(logAtom)(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
 
-  if (!active) return;
+  // if (!active) return;
   const promptBounds = g(promptBoundsAtom);
 
   const ui = g(uiAtom);
@@ -984,7 +984,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   const topHeight = document.getElementById('header')?.offsetHeight || 0;
   const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
-  const hasPreview = Boolean(g(hasPreviewAtom));
+  const hasPreview = Boolean(g(hasPreviewAtom) || g(flagValueAtom));
   const totalChoices = scoredChoicesLength;
 
   const choicesHeight = g(choicesHeightAtom);
@@ -1447,6 +1447,11 @@ export const flagValueAtom = atom(
       s(directionAtom, 1);
       s(flagsIndexAtom, 0);
     }
+
+    const channel = g(channelAtom);
+    channel(Channel.ON_MENU_TOGGLE);
+
+    resize(g, s, 'FLAG_VALUE');
   }
 );
 
@@ -1538,7 +1543,8 @@ export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
     s(onInputSubmitAtom, {});
-    s(promptActiveAtom, false);
+    // TODO: This was helping with resize flickers before. Not sure if still needed.
+    // s(promptActiveAtom, false || Boolean(flag));
     s(disableSubmitAtom, false);
     if (g(submittedAtom)) return;
     const focusedChoice = g(focusedChoiceAtom);
@@ -2612,3 +2618,7 @@ export const triggerKeywordAtom = atom(
     });
   }
 );
+
+export const hasRightShortcutAtom = atom((g) => {
+  return g(shortcutsAtom).find((s) => s?.key === 'right');
+});

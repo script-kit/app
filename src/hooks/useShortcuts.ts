@@ -1,5 +1,5 @@
 import { Channel } from '@johnlindquist/kit/cjs/enum';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
@@ -19,6 +19,7 @@ import {
   promptDataAtom,
   previewEnabledAtom,
   focusedChoiceAtom,
+  hasRightShortcutAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -40,6 +41,7 @@ export default () => {
   const [promptShortcuts] = useAtom(shortcutsAtom);
   const [, sendShortcut] = useAtom(sendShortcutAtom);
   const [previewEnabled, setPreviewEnabled] = useAtom(previewEnabledAtom);
+  const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
 
   useHotkeys(
     `${cmd}+shift+w`,
@@ -119,6 +121,7 @@ export default () => {
     `right,left`,
     (event) => {
       if (!inputFocus) return;
+      if (hasRightShortcut) return;
       if (selectionStart === input.length && event.key !== 'ArrowLeft') {
         event.preventDefault();
         if (!flagValue && flagsArray.length) {
@@ -146,6 +149,7 @@ export default () => {
       channel,
       flagShortcuts,
       promptShortcuts,
+      hasRightShortcut,
     ]
   );
   useHotkeys(

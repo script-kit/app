@@ -24,6 +24,7 @@ import {
   mouseEnabledAtom,
   indexAtom,
   submitValueAtom,
+  hasRightShortcutAtom,
 } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -81,6 +82,7 @@ function ChoiceButton({
   const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
   const input = useAtomValue(inputAtom);
   const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
+  const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
 
   // Get the text after the last file separator
   const base = (input || '').split(/[\\/]/).pop() || '';
@@ -332,6 +334,7 @@ function ChoiceButton({
             )}
 
             {index === buttonIndex &&
+              !hasRightShortcut &&
               !choice?.ignoreFlags &&
               Boolean(Object.keys(flags).length) &&
               !flaggedValue && (

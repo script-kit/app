@@ -32,6 +32,7 @@ import {
   invokeFlagSearch,
   invokeSearch,
   maybeHide,
+  preload,
   reload,
   resize,
   sendToPrompt,
@@ -172,7 +173,7 @@ ${data.error}
   });
 
   ipcMain.on(AppChannel.INVOKE_SEARCH, (event, { input }) => {
-    log.info(`INVOKE_SEARCH ${input}`);
+    // log.info(`INVOKE_SEARCH ${input}`);
     debounceInvokeSearch.cancel();
     if (kitSearch.choices.length > 5000) {
       debounceInvokeSearch(input);
@@ -327,6 +328,7 @@ ${data.error}
     Channel.ON_DRAG_ENTER,
     Channel.ON_DRAG_LEAVE,
     Channel.ON_DRAG_OVER,
+    Channel.ON_MENU_TOGGLE,
     Channel.PLAY_AUDIO,
     Channel.GET_COLOR,
     Channel.CHAT_MESSAGES_CHANGE,
@@ -368,11 +370,13 @@ ${data.error}
         }
 
         if (channel === Channel.ESCAPE) {
+          log.info(
+            `␛ hideOnEscape ${kitState.hideOnEscape ? 'true' : 'false'}}`
+          );
           if (kitState.hideOnEscape) {
             maybeHide(HideReason.Escape);
           }
-          clearSearch();
-          invokeSearch('');
+          sendToPrompt(Channel.SET_INPUT, '');
         }
 
         if (channel === Channel.ABANDON) {
@@ -394,6 +398,10 @@ ${data.error}
 
           if (kitState.isMainScript()) {
             cachePreview(mainScriptPath, message?.state?.preview || '');
+          }
+
+          if (typeof message?.state?.value === 'string') {
+            preload(message?.state?.value);
           }
         }
 

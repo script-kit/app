@@ -415,7 +415,9 @@ type WidgetData = {
 type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
 export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
-  log.verbose(`🎁 Caching choices for ${kitState.scriptPath}`);
+  log.info(
+    `🎁 Caching choices for ${kitState.scriptPath}: Choices ${choices?.length}`
+  );
   preloadChoicesMap.set(scriptPath, choices);
 };
 
@@ -1198,6 +1200,8 @@ const kitMessageMap: ChannelHandler = {
 
     if (kitSearch.keyword) {
       value.input = `${kitSearch.keyword} `;
+    } else {
+      kitSearch.input = value.input || '';
     }
 
     setPromptData(value);
@@ -1405,9 +1409,6 @@ const kitMessageMap: ChannelHandler = {
     setFlags(data.value);
   },
   SET_FLAG_VALUE: toProcess(async ({ child }, { channel, value }) => {
-    log.info({
-      value,
-    });
     sendToPrompt(Channel.SET_FLAG_VALUE, value);
     childSend(child, { channel, value });
   }),
