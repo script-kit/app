@@ -34,12 +34,54 @@ import {
   maybeHide,
   reload,
   resize,
+  sendToPrompt,
 } from './prompt';
 import { runPromptProcess } from './kit';
 import { AppChannel, HideReason, Trigger } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
-import { flagSearch, kitSearch, kitState } from './state';
+import { flagSearch, kitSearch, kitState, clearSearch } from './state';
+import { noChoice } from './defaults';
+
+const checkShortcodesAndKeywords = (rawInput: string) => {
+  let transformedInput = rawInput;
+  if (kitSearch.inputRegex) {
+    // eslint-disable-next-line no-param-reassign
+    transformedInput =
+      rawInput.match(new RegExp(kitSearch.inputRegex, 'gi'))?.[0] || '';
+  }
+  const shortcodeChoice = kitSearch.shortcodes.get(
+    transformedInput.toLowerCase()
+  );
+  if (shortcodeChoice) {
+    sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
+    return;
+  }
+
+  if (kitSearch.keyword && !rawInput.startsWith(`${kitSearch.keyword} `)) {
+    const keyword = '';
+    kitSearch.keyword = keyword;
+    log.info(`🔑 ${keyword} cleared`);
+    sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
+      keyword,
+      choice: noChoice,
+    });
+    return;
+  }
+
+  if (rawInput.endsWith(' ') && !rawInput.endsWith('  ')) {
+    const keyword = rawInput.toLowerCase().trim();
+    const keywordChoice = kitSearch.keywords.get(keyword);
+    if (keywordChoice) {
+      kitSearch.keyword = keyword;
+      log.info(`🔑 ${keyword} triggered`);
+      sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
+        keyword,
+        choice: keywordChoice,
+      });
+    }
+  }
+};
 
 const handleChannel =
   (fn: (processInfo: ProcessInfo, message: AppMessage) => void) =>
@@ -130,6 +172,7 @@ ${data.error}
   });
 
   ipcMain.on(AppChannel.INVOKE_SEARCH, (event, { input }) => {
+    log.info(`INVOKE_SEARCH ${input}`);
     debounceInvokeSearch.cancel();
     if (kitSearch.choices.length > 5000) {
       debounceInvokeSearch(input);
@@ -299,6 +342,7 @@ ${data.error}
     Channel.EDITOR_GET_CURSOR_OFFSET,
     Channel.EDITOR_INSERT_TEXT,
     Channel.EDITOR_MOVE_CURSOR,
+    Channel.KEYWORD_TRIGGERED,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
@@ -318,9 +362,17 @@ ${data.error}
         }
         log.verbose(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
 
-        if (channel === Channel.ESCAPE || channel === Channel.VALUE_SUBMITTED) {
-          kitSearch.input = '';
-          flagSearch.input = '';
+        if (channel === Channel.INPUT) {
+          if (!message.state.input) kitSearch.input = '';
+          checkShortcodesAndKeywords(message.state.input);
+        }
+
+        if (channel === Channel.ESCAPE) {
+          if (kitState.hideOnEscape) {
+            maybeHide(HideReason.Escape);
+          }
+          clearSearch();
+          invokeSearch('');
         }
 
         if (channel === Channel.ABANDON) {
@@ -335,12 +387,6 @@ ${data.error}
 
         if (channel === Channel.VALUE_SUBMITTED) {
           log.verbose(`📝 Submitting...`);
-          kitState.ignoreBlur = false;
-          kitSearch.choices = [];
-          kitSearch.input = '';
-          kitSearch.qs = null;
-          kitSearch.shortcodes.clear();
-          kitSearch.hasGroup = false;
 
           if (message?.state?.value === Channel.TERMINAL) {
             message.state.value = ``;

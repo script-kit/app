@@ -105,6 +105,8 @@ import {
   getThemes,
   preloadChoicesMap,
   preloadPreviewMap,
+  kitSearch,
+  clearSearch,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -962,6 +964,10 @@ const kitMessageMap: ChannelHandler = {
       },
     });
   }),
+  VALUE_SUBMITTED: toProcess(async (processInfo, data: any) => {
+    log.info(`VALUE_SUBMITTED`, data?.value);
+    clearSearch();
+  }),
   SET_SCRIPT: toProcess(async (processInfo: ProcessInfo, data) => {
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
@@ -1045,6 +1051,7 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_INPUT: toProcess(async ({ child }, { channel, value }) => {
+    // log.info(`💌 SET_INPUT to ${value}`);
     setInput(value);
 
     childSend(child, { channel, value });
@@ -1189,6 +1196,10 @@ const kitMessageMap: ChannelHandler = {
     //   kitState.termEnv = value?.env || {}
     // }
 
+    if (kitSearch.keyword) {
+      value.input = `${kitSearch.keyword} `;
+    }
+
     setPromptData(value);
     kitState.isScripts = Boolean(value?.scripts);
 
@@ -1250,14 +1261,26 @@ const kitMessageMap: ChannelHandler = {
       return;
     }
 
-    const { choices, ignoreInput } = value;
+    const { choices, skipInitialSearch, inputRegex, generated } = value;
+
+    // log.info({
+    //   skipInitialSearch: Boolean(skipInitialSearch) ? 'true' : 'false',
+    //   inputRegex: Boolean(inputRegex) ? 'true' : 'false',
+    //   generated: Boolean(generated) ? 'true' : 'false',
+    // });
+
+    kitSearch.inputRegex = inputRegex;
 
     let formattedChoices = choices;
     if (kitState.isScripts) {
       formattedChoices = formatScriptChoices(choices);
     }
 
-    setChoices(formattedChoices, { preload: false, ignoreInput });
+    setChoices(formattedChoices, {
+      preload: false,
+      skipInitialSearch,
+      generated: Boolean(generated),
+    });
 
     if (child) {
       childSend(child, {
@@ -1382,6 +1405,9 @@ const kitMessageMap: ChannelHandler = {
     setFlags(data.value);
   },
   SET_FLAG_VALUE: toProcess(async ({ child }, { channel, value }) => {
+    log.info({
+      value,
+    });
     sendToPrompt(Channel.SET_FLAG_VALUE, value);
     childSend(child, { channel, value });
   }),
@@ -1433,6 +1459,9 @@ const kitMessageMap: ChannelHandler = {
   },
   VALUE_INVALID: (data) => {
     sendToPrompt(Channel.VALUE_INVALID, data.value);
+  },
+  PREVENT_SUBMIT: (data) => {
+    sendToPrompt(Channel.PREVENT_SUBMIT, data.value);
   },
   SET_SCRIPT_HISTORY: (data) => {
     sendToPrompt(Channel.SET_SCRIPT_HISTORY, data.value);

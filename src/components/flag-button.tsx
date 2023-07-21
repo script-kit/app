@@ -24,6 +24,7 @@ import {
   mouseEnabledAtom,
   submitValueAtom,
   flagsIndexAtom,
+  focusedChoiceAtom,
 } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -82,27 +83,19 @@ function FlagButton({
   const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
   const input = useAtomValue(inputAtom);
   const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
+  const [focusedChoice] = useAtom(focusedChoiceAtom);
 
   // Get the text after the last file separator
   const base = (input || '').split(/[\\/]/).pop() || '';
 
   // const dataTransfer = useRef<any>('Data Transfer');
 
-  const onRightClick = useCallback(
-    (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setFlagValue(choice);
-    },
-    [choice, setFlagValue]
-  );
-
   const onClick = useCallback(
     (e) => {
       e.preventDefault();
-      setSubmitValue(choice?.value);
+      setSubmitValue(focusedChoice?.value);
     },
-    [choice.value, setSubmitValue]
+    [focusedChoice, setSubmitValue]
   );
   const onMouseEnter = useCallback(() => {
     if (mouseEnabled) {
@@ -165,7 +158,6 @@ function FlagButton({
             onDragStart,
           }
         : {})}
-      onContextMenu={onRightClick}
       style={{
         cursor: mouseEnabled
           ? choice?.drag
@@ -331,38 +323,6 @@ function FlagButton({
                 />
               </div>
             )}
-
-            {index === buttonIndex &&
-              !choice?.ignoreFlags &&
-              Boolean(Object.keys(flags).length) &&
-              !flaggedValue && (
-                <div onClick={onRightClick}>
-                  <div
-                    className={`
-                leading-1 ml-2 flex
-                    h-6
-                    w-6
-                    items-center
-
-                    justify-center
-                    rounded
-                    bg-text-base
-                    bg-opacity-10
-                    fill-current
-
- text-xs
-        font-bold text-primary/90
-        transition
-        ease-in
-        hover:bg-opacity-20 hover:text-primary/90
-
-
-        `}
-                  >
-                    <IconSwapper text="→" />
-                  </div>
-                </div>
-              )}
           </div>
         </div>
       )}

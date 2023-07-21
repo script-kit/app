@@ -55,6 +55,7 @@ export enum AppChannel {
   INVOKE_SEARCH = 'INVOKE_SEARCH',
   INVOKE_FLAG_SEARCH = 'INVOKE_FLAG_SEARCH',
   SET_PRELOADED = 'SET_PRELOADED',
+  TRIGGER_KEYWORD = 'TRIGGER_KEYWORD',
 }
 
 export enum WindowChannel {
@@ -91,4 +92,5 @@ export enum HideReason {
   LockScreen = 'LockScreen',
   DebuggerClosed = 'DebuggerClosed',
   MessageFailed = 'MessageFailed',
+  Escape = 'Escape',
 }

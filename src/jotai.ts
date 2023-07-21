@@ -481,15 +481,8 @@ export const flagsIndexAtom = atom(
       (list as any)?.scrollToItem(0);
     }
 
-    if (choice?.id) {
-      const focusedFlag = (choice as Choice)?.value;
-      // g(logAtom)(`Setting focusedFlag to ${focusedFlag}`);
-      s(focusedFlagValueAtom, focusedFlag);
-      // console.log(
-      //   `!selected && id && id !== prevId: Setting prevChoiceId to ${id}`
-      // );
-      // s(prevChoiceId, id);
-    }
+    const focusedFlag = (choice as Choice)?.value;
+    s(focusedFlagValueAtom, focusedFlag);
   }
 );
 
@@ -735,32 +728,8 @@ const debounceSearch = debounce((input: string) => {
   return true;
 }, 200); // TODO: too slow for emojis
 
-const prevFilteredInputAtom = atom('');
-
-const filterByInput = (g: Getter, s: Setter, a: string) => {
+const filterByInput = (g: Getter, s: Setter, input: string) => {
   if (g(uiAtom) !== UI.arg) return;
-  let input = a;
-  const filterInput = g(filterInputAtom);
-
-  s(prevFilteredInputAtom, a);
-  if (filterInput) {
-    // if (input.length > prevFilteredInput.length) return;
-    input = input.match(new RegExp(filterInput, 'gi'))?.[0] || '';
-    // TOOD: Why did I have this here? It's something for the path(), but it prevented the initial filter...
-    // if (a.length > prevFilteredInput.length && !input) return;
-
-    // if (input === a) input = '*';
-    // if (a.endsWith('/')) return;
-
-    // const filteredChoicesId = g(filteredChoicesIdAtom);
-    // const choicesId = g(choicesIdAtom);
-    // if (filteredChoicesId != choicesId) {
-    //   s(filteredChoicesIdAtom, choicesId);
-    // } else if (!input) {
-    //   return;
-    // }
-  }
-
   if (g(showSelectedAtom)) {
     invokeFlagSearch(input);
   } else {
@@ -780,6 +749,7 @@ export const inputCommandChars = atom([]);
 export const inputAtom = atom(
   (g) => g(_inputAtom),
   async (g, s, a: string) => {
+    // g(logAtom)(`✉️ inputAtom: ${a}`);
     s(directionAtom, 1);
     const selected = g(showSelectedAtom);
     const prevInput = g(_inputAtom);
@@ -832,7 +802,6 @@ export const inputAtom = atom(
     if (mode === Mode.GENERATE && !flaggedValue) {
       s(loading, true);
       s(loadingAtom, true);
-      // generateChoices(a, pid);
     }
 
     if (g(_inputChangedAtom) && a === '') {
@@ -845,7 +814,7 @@ const _flagsAtom = atom<FlagsOptions>({});
 export const flagsAtom = atom(
   (g) => g(_flagsAtom),
   (g, s, a: FlagsOptions) => {
-    // g(logAtom)({ flags: Object.keys(a).length });
+    // g(logAtom)({ flags: Object.keys(a) });
     s(_flagsAtom, a);
   }
 );
@@ -953,7 +922,7 @@ export const scriptAtom = atom(
 
     // s(panelHTMLAtom, `<div/>`);
 
-    if (g(isMainScriptAtom) && !wereChoicesPreloaded) s(_inputAtom, ``);
+    // if (g(isMainScriptAtom) && !wereChoicesPreloaded) s(_inputAtom, ``);
   }
 );
 
@@ -1342,7 +1311,7 @@ export const promptDataAtom = atom(
       if (a?.theme) s(tempThemeAtom, { ...g(themeAtom), ...(a?.theme || {}) });
 
       s(_open, true);
-      if (!wasPromptDataPreloaded) s(_inputAtom, a?.input || '');
+      // if (!wasPromptDataPreloaded) s(_inputAtom, a?.input || '');
       // s(_index, 0);
       // s(_tabIndex, 0);
       s(submittedAtom, false);
@@ -1364,6 +1333,7 @@ export const promptDataAtom = atom(
         s(termConfigAtom, config);
       }
 
+      s(_inputAtom, a?.input || '');
       s(hintAtom, a.hint);
       s(placeholderAtom, a.placeholder);
       s(selectedAtom, a.selected);
@@ -1375,9 +1345,7 @@ export const promptDataAtom = atom(
       s(inputCommandChars, a?.inputCommandChars || []);
 
       s(focusedFlagValueAtom, '');
-      if (Object.keys(a?.flags || []).length) {
-        s(flagsAtom, a?.flags);
-      }
+      s(flagsAtom, a?.flags || {});
 
       s(headerHiddenAtom, !!a?.headerClassName?.includes('hidden'));
       s(footerHiddenAtom, !!a?.footerClassName?.includes('hidden'));
@@ -1458,6 +1426,7 @@ export const flagValueAtom = atom(
   (g) => g(_flagged),
   (g, s, a: any) => {
     const flags = g(_flagsAtom);
+    // g(logAtom)({ flagValue: a, flags });
     if (Object.entries(flags).length === 0) return;
     s(_flagged, a);
 
@@ -1507,6 +1476,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     ui: g(uiAtom),
     tabIndex: g(tabIndexAtom),
     preview: g(previewHTMLAtom),
+    keyword: '',
   };
 
   return state;
@@ -1594,21 +1564,22 @@ export const submitValueAtom = atom(
     // let submitted = g(submittedAtom);
     // if (submitted) return;
 
-    const flag = g(selectedAtom) ? g(focusedFlagValueAtom) : '';
+    const flag = g(focusedFlagValueAtom);
     const value = checkSubmitFormat(a);
 
     // const fC = g(focusedChoiceAtom);
 
     // skip if UI.chat
-    const channel = g(channelAtom);
-    if (g(uiAtom) !== UI.chat) {
-      channel(Channel.ON_SUBMIT);
-    }
+
+    // if (g(uiAtom) !== UI.chat) {
+    //   channel(Channel.ON_SUBMIT);
+    // }
 
     // There are "while(true)" cases where you want input/panels to persist
     // s(_inputAtom, '');
     // s(panelHTMLAtom, ``);
 
+    const channel = g(channelAtom);
     channel(Channel.VALUE_SUBMITTED, {
       value,
       flag,
@@ -1642,7 +1613,6 @@ export const submitValueAtom = atom(
     s(focusedChoiceAtom, noChoice);
 
     s(_submitValue, value);
-    s(flagsAtom, {});
     // s(_chatMessagesAtom, []);
 
     const stream = g(webcamStreamAtom);
@@ -1678,6 +1648,7 @@ export const openAtom = atom(
       // s(tabIndex, 0);
       s(closedInput, g(_inputAtom));
       s(_inputAtom, '');
+      s(scoredChoicesAtom, []);
       s(_panelHTML, '');
 
       s(formHTMLAtom, '');
@@ -1724,8 +1695,6 @@ export const escapeAtom = atom<any>((g) => {
     }
 
     channel(Channel.ESCAPE);
-
-    invokeSearch('');
   };
 });
 
@@ -1898,6 +1867,13 @@ export const valueInvalidAtom = atom(null, (g, s, a: string) => {
 
   const channel = g(channelAtom);
   channel(Channel.ON_VALIDATION_FAILED);
+});
+
+export const preventSubmitAtom = atom(null, (g, s, a: string) => {
+  if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
+  s(submittedAtom, false);
+  s(processingAtom, false);
+  s(_inputChangedAtom, false);
 });
 
 export const isHiddenAtom = atom(false);
@@ -2613,3 +2589,26 @@ export const previewCheckAtom = atom((g) => {
   const hidden = g(isHiddenAtom);
   return Boolean(!appDb.mini && previewHTML && enabled && !hidden);
 });
+
+export const triggerKeywordAtom = atom(
+  (g) => {},
+  (
+    g,
+    s,
+    {
+      keyword,
+      choice,
+    }: {
+      keyword: string;
+      choice: Choice;
+    }
+  ) => {
+    const channel = g(channelAtom);
+
+    channel(Channel.KEYWORD_TRIGGERED, {
+      keyword,
+      focused: choice,
+      value: choice?.value,
+    });
+  }
+);

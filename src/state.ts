@@ -374,6 +374,7 @@ const initState = {
   ignoreInitial: false,
   waking: true,
   cmd: isMac ? `cmd` : `ctrl`,
+  hideOnEscape: true,
 };
 
 nativeTheme.addListener('updated', () => {
@@ -951,9 +952,13 @@ export const preloadPromptDataMap = new Map<string, PromptData>();
 
 export const kitSearch = {
   input: '',
+  inputRegex: '',
+  keyword: '',
+  generated: false,
   choices: [] as Choice[],
   scripts: [] as Script[],
   shortcodes: new Map<string, Choice>(),
+  keywords: new Map<string, Choice>(),
   hasGroup: false,
   qs: null as null | QuickScore<Choice>,
 };
@@ -1219,4 +1224,16 @@ export const initialPromptState = {
   inputCommandChars: [],
   headerClassName: '',
   footerClassName: '',
+};
+
+export const clearSearch = () => {
+  log.info(`🧹 Clearing search...`);
+  kitState.ignoreBlur = false;
+  kitSearch.keyword = '';
+  kitSearch.choices = [];
+  kitSearch.input = '';
+  kitSearch.qs = null;
+  kitSearch.keywords.clear();
+  kitSearch.shortcodes.clear();
+  kitSearch.hasGroup = false;
 };

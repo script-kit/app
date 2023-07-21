@@ -917,7 +917,7 @@ const checkKit = async () => {
   optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
 
   if (!requiresInstall) {
-    await installKitInKenv();
+    await Promise.all([installKitInKenv(), installEsbuild()]);
   }
 
   if (

@@ -112,29 +112,44 @@ export const handleLogMessage = async (
   return result;
 };
 
-export const installEsbuild = async () => {
+/**
+ * This function installs a package using npm. The installCommand parameter specifies
+ * the command to execute for the package installation and the cwd parameter sets
+ * the current working directory for the process.
+ *
+ * @param installCommand The command to execute for the package installation.
+ * @param cwd The current working directory for the process.
+ * @returns A promise that resolves with a success message or rejects with an error message.
+ */
+export const installPackage = async (installCommand: string, cwd: string) => {
+  // Determine the kit and kenv paths
   const KIT = kitPath();
+  const KENV = kenvPath();
 
+  // Set up the options for the spawn command
   const options: SpawnSyncOptions = {
-    cwd: KIT,
+    cwd, // Set the current working directory based on the provided parameter
     encoding: 'utf-8',
     env: {
       KIT,
-      KENV: kenvPath(),
+      KENV,
       PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
     },
     stdio: 'pipe',
   };
 
   const npmResult = await new Promise((resolve, reject) => {
+    // Determine the platform and set the npm path accordingly
     const isWin = os.platform().startsWith('win');
     const npmPath = isWin
       ? knodePath('bin', 'npm.cmd')
       : knodePath('bin', 'npm');
+    log.info(`${cwd}: 👷 ${npmPath} ${installCommand}`);
 
-    log.info({ npmPath });
-    const child = spawn(npmPath, [`run`, `lazy-install`], options);
+    // Execute the spawn command with the appropriate npm path, install command and options
+    const child = spawn(npmPath, installCommand.split(' '), options);
 
+    // Display a loading message with a spinner
     let dots = 1;
     const installMessage = `Installing Kit Packages`;
     const id = setInterval(() => {
@@ -143,6 +158,7 @@ export const installEsbuild = async () => {
       sendSplashBody(installMessage.padEnd(installMessage.length + dots, '.'));
     }, 250);
 
+    // Function to clear the interval id
     const clearId = () => {
       try {
         if (id) clearInterval(id);
@@ -150,6 +166,8 @@ export const installEsbuild = async () => {
         log.info(`Failed to clear id`);
       }
     };
+
+    // Handling the different events for the child process
     if (child.stdout) {
       child.stdout.on('data', (data) => {});
     }
@@ -164,17 +182,25 @@ export const installEsbuild = async () => {
     child.on('message', (data) => {
       sendSplashBody(data.toString());
     });
+
     child.on('exit', () => {
-      log.info(`Success: npm run lazy-install success`);
       resolve('npm install success');
       clearId();
     });
+
     child.on('error', (error) => {
       log.warn(`Error: ${error?.message}`);
       resolve(`Deps install error ${error}`);
       clearId();
     });
   });
+};
+
+export const installEsbuild = async () => {
+  return installPackage(
+    `i esbuild@0.18.12 --save-exact --production --prefer-dedupe --loglevel=verbose`,
+    kitPath()
+  );
 };
 
 const getOptions = () => {
@@ -565,69 +591,7 @@ export const optionalSetupScript = (
 };
 
 export const installKitInKenv = async () => {
-  const KIT = kitPath();
-  const KENV = kenvPath();
-
-  const options: SpawnSyncOptions = {
-    cwd: KENV,
-    encoding: 'utf-8',
-    env: {
-      KIT,
-      KENV,
-      PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
-    },
-    stdio: 'pipe',
-  };
-
-  const npmResult = await new Promise((resolve, reject) => {
-    const isWin = os.platform().startsWith('win');
-    const npmPath = isWin
-      ? knodePath('bin', 'npm.cmd')
-      : knodePath('bin', 'npm');
-
-    log.info({ npmPath });
-    const child = spawn(npmPath, [`i`, KIT], options);
-
-    let dots = 1;
-    const installMessage = `Installing Kit Packages`;
-    const id = setInterval(() => {
-      if (dots >= 3) dots = 0;
-      dots += 1;
-      sendSplashBody(installMessage.padEnd(installMessage.length + dots, '.'));
-    }, 250);
-
-    const clearId = () => {
-      try {
-        if (id) clearInterval(id);
-      } catch (error) {
-        log.info(`Failed to clear id`);
-      }
-    };
-    if (child.stdout) {
-      child.stdout.on('data', (data) => {});
-    }
-
-    if (child.stderr) {
-      child.stderr.on('data', (data) => {
-        sendSplashBody(data.toString());
-      });
-      clearId();
-    }
-
-    child.on('message', (data) => {
-      sendSplashBody(data.toString());
-    });
-    child.on('exit', () => {
-      log.info(`Success: npm run lazy-install success`);
-      resolve('npm install success');
-      clearId();
-    });
-    child.on('error', (error) => {
-      log.warn(`Error: ${error?.message}`);
-      resolve(`Deps install error ${error}`);
-      clearId();
-    });
-  });
+  return installPackage(`i ${kitPath()}`, kenvPath());
 };
 
 export const cacheMainScripts = debounce(async () => {

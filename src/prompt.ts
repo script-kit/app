@@ -60,14 +60,22 @@ import {
   preloadPromptDataMap,
   preloadChoicesMap,
   preloadPreviewMap,
+  clearSearch,
 } from './state';
-import { EMOJI_HEIGHT, EMOJI_WIDTH, MIN_WIDTH, ZOOM_LEVEL } from './defaults';
+import {
+  EMOJI_HEIGHT,
+  EMOJI_WIDTH,
+  MIN_WIDTH,
+  ZOOM_LEVEL,
+  noChoice,
+} from './defaults';
 import { ResizeData, ScoredChoice } from './types';
 import { getVersion } from './version';
 import { AppChannel, HideReason } from './enums';
 import { emitter, KitEvent } from './events';
 import { createScoredChoice, pathsAreEqual } from './helpers';
 import { TrackEvent, trackEvent } from './track';
+import { getCurrentActiveWindow, getCurrentScreen } from './screen';
 
 let promptWindow: BrowserWindow;
 
@@ -165,7 +173,8 @@ export const createPromptWindow = async () => {
 
   const width = PROMPT.WIDTH.BASE;
   const height = PROMPT.HEIGHT.BASE;
-  const currentScreen = getCurrentScreenFromMouse();
+  // const currentScreen = getCurrentScreenFromMouse();
+  const currentScreen = await getCurrentScreen();
   const { width: screenWidth, height: screenHeight } =
     currentScreen.workAreaSize;
   const { x: workX, y: workY } = currentScreen.workArea;
@@ -525,6 +534,9 @@ export const alwaysOnTop = (onTop: boolean) => {
     if (onTop) log.info(`🔝 Keep "alwaysOnTop"`);
     kitState.alwaysOnTop = onTop;
     promptWindow.setAlwaysOnTop(onTop, 'screen-saver', 1);
+    if (onTop && kitState.isMac) {
+      promptWindow.moveTop();
+    }
   } else {
     kitState.alwaysOnTop = false;
   }
@@ -555,7 +567,7 @@ export const getCurrentScreenPromptCache = async (
     bounds: {},
   }
 ) => {
-  const currentScreen = getCurrentScreenFromMouse();
+  const currentScreen = await getCurrentScreen();
   const screenId = String(currentScreen.id);
   // log.info(`screens:`, promptState.screens);
 
@@ -627,7 +639,7 @@ export const getCurrentScreenPromptCache = async (
   return promptBounds;
 };
 
-export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
+export const setBounds = async (bounds: Partial<Rectangle>, reason = '') => {
   if (!kitState.ready) return;
   const prevSetBounds = promptWindow?.getBounds();
   const widthNotChanged =
@@ -659,7 +671,7 @@ export const setBounds = (bounds: Partial<Rectangle>, reason = '') => {
   // promptWindow?.setContentSize(bounds.width, bounds.height);
 
   // Keep in bounds on the current screen
-  const currentScreen = getCurrentScreenFromMouse();
+  const currentScreen = await getCurrentScreen();
   const { x, y, width, height } = bounds;
   const { x: workX, y: workY } = currentScreen.workArea;
   const { width: screenWidth, height: screenHeight } =
@@ -1144,6 +1156,9 @@ export const setMode = (mode: Mode) => {
 };
 
 export const setInput = (input: string) => {
+  kitSearch.keywords.clear();
+  kitSearch.keyword = '';
+  kitSearch.input = input;
   sendToPrompt(Channel.SET_INPUT, input);
 };
 
@@ -1195,6 +1210,7 @@ export const preloadPromptData = async (promptData: PromptData) => {
   promptData.preload = true;
   kitState.preloaded = true;
   kitState.scriptPath = promptData.scriptPath;
+  kitState.hideOnEscape = promptData.hideOnEscape;
 
   if (promptData?.hint) {
     const shortcodes = promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi);
@@ -1232,10 +1248,10 @@ export const preloadPromptData = async (promptData: PromptData) => {
 let prevPromptData = {};
 
 export const setPromptData = async (promptData: PromptData) => {
+  kitSearch.shortcodes.clear();
   if (promptData?.hint) {
     const shortcodes = promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi);
     if (shortcodes) {
-      kitSearch.shortcodes.clear();
       for (const shortcode of shortcodes) {
         kitSearch.shortcodes.set(shortcode, { value: shortcode });
       }
@@ -1367,7 +1383,8 @@ export const setPromptData = async (promptData: PromptData) => {
   boundsCheck = setTimeout(async () => {
     if (promptWindow?.isDestroyed()) return;
     const currentBounds = promptWindow?.getBounds();
-    const currentDisplayBounds = getCurrentScreenFromMouse().bounds;
+    // const currentDisplayBounds = getCurrentScreenFromMouse().bounds;
+    const currentDisplayBounds = await getCurrentActiveWindow();
 
     const minX = currentDisplayBounds.x;
     const minY = currentDisplayBounds.y;
@@ -1403,12 +1420,13 @@ export const preloadPreview = (html: string) => {
 
 export const preloadChoices = (choices: Choice[]) => {
   log.info(`🏋️‍♂️ Preload choices ${choices.length}`);
+  kitSearch.input = '';
   setChoices(choices, { preload: true });
 };
 
 export const preload = (promptScriptPath: string, show = true) => {
   if (preloadPromptDataMap.has(promptScriptPath)) {
-    setBackgroundThrottling(false);
+    if (show) setBackgroundThrottling(false);
     sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
     sendToPrompt(Channel.SET_TAB_INDEX, 0);
     sendToPrompt(AppChannel.SET_PRELOADED, true);
@@ -1533,22 +1551,25 @@ export const invokeFlagSearch = (input: string) => {
   }
 };
 
-export const invokeSearch = (input: string) => {
-  const shortcodeChoice = kitSearch.shortcodes.get(input.toLowerCase());
-  if (shortcodeChoice) {
-    if (shortcodeChoice) {
-      sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
-      return;
-    }
+export const invokeSearch = (rawInput: string) => {
+  log.info(`Invoke search: ${rawInput}`);
+  let transformedInput = rawInput;
+  if (kitSearch.inputRegex) {
+    // eslint-disable-next-line no-param-reassign
+    transformedInput =
+      rawInput.match(new RegExp(kitSearch.inputRegex, 'gi'))?.[0] || '';
   }
 
   if (kitSearch.choices.length === 0) {
     setScoredChoices([]);
     return;
   }
-  kitSearch.input = input;
+
+  // TODO: Add kitSearch.computedInput?
+  // Should probably separate rawInput from the input that comes after the regex...
+  kitSearch.input = transformedInput;
   flagSearch.input = '';
-  if (input === '') {
+  if (transformedInput === '') {
     const results = kitSearch.choices
       .filter((c) => {
         if (c?.miss || c?.pass || c?.hideWithoutInput) return false;
@@ -1574,7 +1595,7 @@ export const invokeSearch = (input: string) => {
     return;
   }
   const result = (kitSearch?.qs as QuickScore<Choice>)?.search(
-    input
+    transformedInput
   ) as ScoredChoice[];
 
   if (kitSearch.hasGroup) {
@@ -1611,7 +1632,7 @@ export const invokeSearch = (input: string) => {
     let alias: Choice;
 
     for (const choice of kitSearch.choices) {
-      if ((choice as Script)?.alias === input) {
+      if ((choice as Script)?.alias === transformedInput) {
         alias = structuredClone(choice);
         alias.tag = (choice as Script)?.kenv || choice?.group || '';
         alias.pass = false;
@@ -1619,7 +1640,7 @@ export const invokeSearch = (input: string) => {
       } else if (
         !choice?.skip &&
         !choice?.miss &&
-        choice.name?.toLowerCase()?.startsWith(input?.toLowerCase())
+        choice.name?.toLowerCase()?.startsWith(transformedInput?.toLowerCase())
       ) {
         const scoredChoice = resultMap.get(choice.id);
         if (scoredChoice) {
@@ -1631,7 +1652,7 @@ export const invokeSearch = (input: string) => {
           matchGroup.push(c);
         }
       } else {
-        const hide = choice?.hideWithoutInput && input === '';
+        const hide = choice?.hideWithoutInput && transformedInput === '';
         const miss = choice?.miss && !hide;
         if (miss) {
           missGroup.push(createScoredChoice(choice));
@@ -1717,7 +1738,7 @@ export const invokeSearch = (input: string) => {
         if (r.item.miss) return false;
         if (r.item.info) return true;
         if (r.item.pass) return true;
-        if (input === '' && r.item.hideWithoutInput) return false;
+        if (transformedInput === '' && r.item.hideWithoutInput) return false;
 
         return true;
       });
@@ -1741,6 +1762,11 @@ export const setShortcodes = (choices: Choice[]) => {
     if (code) {
       kitSearch.shortcodes.set(code, choice);
     }
+
+    if (choice?.keyword) {
+      // log.info(`🗝 Found keyword ${choice.keyword}`);
+      kitSearch.keywords.set(choice.keyword.toLowerCase(), choice);
+    }
   }
 };
 
@@ -1752,34 +1778,35 @@ export const setFlags = (f: FlagsWithKeys) => {
   const order = f?.order || [];
   const sortChoicesKey = f?.sortChoicesKey || [];
 
-  const groupedFlags = groupChoices(
-    Object.entries(f)
-      .filter(([key]) => {
-        if (key === 'order') return false;
-        if (key === 'sortChoicesKey') return false;
-        return true;
-      })
-      .map(([key, value]: [string, any]) => {
-        return {
-          id: key,
-          group: value?.group,
-          command: value?.name,
-          filePath: value?.name,
-          name: value?.name || key,
-          shortcut: value?.shortcut || '',
-          friendlyShortcut: value?.shortcut || '',
-          description: value?.description || '',
-          value: key,
-          preview: value?.preview || '',
-        };
-      }),
-    {
+  let flagChoices = Object.entries(f)
+    .filter(([key]) => {
+      if (key === 'order') return false;
+      if (key === 'sortChoicesKey') return false;
+      return true;
+    })
+    .map(([key, value]: [string, any]) => {
+      return {
+        id: key,
+        group: value?.group,
+        command: value?.name,
+        filePath: value?.name,
+        name: value?.name || key,
+        shortcut: value?.shortcut || '',
+        friendlyShortcut: value?.shortcut || '',
+        description: value?.description || '',
+        value: key,
+        preview: value?.preview || '',
+      };
+    });
+
+  if (flagChoices.find((c: Choice) => c?.group)) {
+    flagChoices = groupChoices(flagChoices, {
       order,
       sortChoicesKey,
-    }
-  );
+    });
+  }
 
-  const choices = formatChoices(groupedFlags);
+  const choices = formatChoices(flagChoices);
 
   flagSearch.choices = choices;
   flagSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
@@ -1820,8 +1847,12 @@ export const setFlags = (f: FlagsWithKeys) => {
 
 export const setChoices = (
   choices: Choice[],
-  // eslint-disable-next-line @typescript-eslint/no-shadow
-  { preload, ignoreInput }: { preload: boolean; ignoreInput?: boolean }
+  {
+    // eslint-disable-next-line @typescript-eslint/no-shadow
+    preload,
+    skipInitialSearch,
+    generated,
+  }: { preload: boolean; skipInitialSearch?: boolean; generated?: boolean }
 ) => {
   if (!choices || !Array.isArray(choices) || choices?.length === 0) {
     kitSearch.choices = [];
@@ -1830,6 +1861,13 @@ export const setChoices = (
     kitSearch.qs = null;
     return;
   }
+
+  if (generated) {
+    log.info(`📦 ${kitState.pid} Generated choices: ${choices.length}`);
+    setScoredChoices(choices.map(createScoredChoice));
+    return;
+  }
+
   log.info(`📦 ${kitState.pid} Choices: ${choices.length} preload: ${preload}`);
   kitSearch.choices = choices.filter((c) => !c?.exclude);
   kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
@@ -1864,7 +1902,8 @@ export const setChoices = (
   sendToPrompt(Channel.SET_CHOICES_CONFIG, { preload });
 
   setShortcodes(choices);
-  invokeSearch(ignoreInput ? '' : kitSearch.input);
+  log.info(`Searching because choices: ${kitSearch.input}`);
+  invokeSearch(skipInitialSearch ? '' : kitSearch.input);
 };
 
 export const clearPromptCache = async () => {
@@ -2003,6 +2042,7 @@ const subScriptPath = subscribeKey(
       hideAppIfNoWindows(`remove ${kitState.scriptPath}`);
       sendToPrompt(Channel.SET_OPEN, false);
       kitState.alwaysOnTop = false;
+      clearSearch();
       preload(mainScriptPath, false);
       return;
     }

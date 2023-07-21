@@ -67,6 +67,7 @@ export default function Console() {
         <div
           className={`
        px-4
+       pb-4
         `}
           ref={divRef}
         >

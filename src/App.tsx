@@ -38,6 +38,7 @@ import useResizeObserver from '@react-hook/resize-observer';
 import { ipcRenderer, webFrame } from 'electron';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { ChannelMap, KeyData } from '@johnlindquist/kit/types/kitapp';
+import { Choice } from '@johnlindquist/kit/types';
 import Tabs from './components/tabs';
 import List from './components/list';
 import Input from './components/input';
@@ -155,6 +156,8 @@ import {
   flagValueAtom,
   previewCheckAtom,
   preloadedAtom,
+  triggerKeywordAtom,
+  preventSubmitAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -294,6 +297,7 @@ export default function App() {
   const setLoading = useSetAtom(loadingAtom);
   const setRunning = useSetAtom(runningAtom);
   const setValueInvalid = useSetAtom(valueInvalidAtom);
+  const setPreventSubmit = useSetAtom(preventSubmitAtom);
   const setFilterInput = useSetAtom(filterInputAtom);
   const setBlur = useSetAtom(blurAtom);
   const start = useSetAtom(startAtom);
@@ -324,6 +328,7 @@ export default function App() {
   const [hasPreview] = useAtom(hasPreviewAtom);
   const scrollToIndex = useAtomValue(scrollToIndexAtom);
   const setPreloaded = useSetAtom(preloadedAtom);
+  const setTriggerKeyword = useSetAtom(triggerKeywordAtom);
 
   const index = useAtomValue(indexAtom);
 
@@ -520,6 +525,7 @@ export default function App() {
     [Channel.SET_THEME]: setTheme,
     [Channel.SET_TEMP_THEME]: setTempTheme,
     [Channel.VALUE_INVALID]: setValueInvalid,
+    [Channel.PREVENT_SUBMIT]: setPreventSubmit,
     [Channel.START]: start,
     [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
     [Channel.GET_COLOR]: () => getColor(),
@@ -723,6 +729,20 @@ export default function App() {
       ipcRenderer.on(AppChannel.SET_PRELOADED, handleSetPreloaded);
     }
 
+    const handleTriggerKeyword = (
+      _,
+      data: {
+        keyword: string;
+        choice: Choice;
+      }
+    ) => {
+      setTriggerKeyword(data);
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.TRIGGER_KEYWORD) === 0) {
+      ipcRenderer.on(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
+    }
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
@@ -737,6 +757,7 @@ export default function App() {
       ipcRenderer.off(AppChannel.SET_WEBCAM_ID, handleSetWebcamId);
       ipcRenderer.off(AppChannel.SCROLL_TO_INDEX, handleScrollToIndex);
       ipcRenderer.off(AppChannel.SET_PRELOADED, handleSetPreloaded);
+      ipcRenderer.off(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
       // ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
     };
   }, [messageMap]);
