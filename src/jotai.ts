@@ -913,8 +913,6 @@ export const scriptAtom = atom(
     s(_script, a);
     s(processingAtom, false);
 
-    // s(nameAtom, a?.name || '');
-    // s(descriptionAtom, a?.description || '');
     s(loadingAtom, false);
     s(logoAtom, a?.logo || '');
     s(tempThemeAtom, g(themeAtom));
