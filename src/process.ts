@@ -2239,10 +2239,9 @@ const createChild = ({
   const child = fork(entry, args, {
     silent: true,
     stdio: 'pipe',
-    // ...(isWin ? {} : { execPath }),
-    // Could I possibly use shebang here?
     execPath,
     cwd: os.homedir(),
+    execArgv: [`--experimental-loader`, kitPath('build', 'loader.js')],
     env: {
       ...env,
       KIT_DEBUG: port ? '1' : '0',
@@ -2250,7 +2249,11 @@ const createChild = ({
     ...(port
       ? {
           stdio: 'pipe',
-          execArgv: [`--inspect=${port}`],
+          execArgv: [
+            `--experimental-loader`,
+            kitPath('build', 'loader.js'),
+            `--inspect=${port}`,
+          ],
         }
       : {}),
   });

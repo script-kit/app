@@ -316,7 +316,7 @@ export default function App() {
   const setLogValue = useSetAtom(logValueAtom);
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
-  const setFlagValue = useSetAtom(flagValueAtom);
+  const [flagValue, setFlagValue] = useAtom(flagValueAtom);
   const [termConfig, setTermConfig] = useAtom(termConfigAtom);
   const setMicConfig = useSetAtom(micConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
@@ -1016,7 +1016,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
               {/* {previewEnabled && <Preview />} */}
 
-              {(previewCheck || showSelected) && (
+              {(previewCheck || flagValue) && (
                 <>
                   <PanelResizeHandle
                     id="panelResizeHandle"
@@ -1031,7 +1031,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                     //   flexGrow: 0,
                     // }}
                   >
-                    {showSelected ? (
+                    {flagValue ? (
                       <AutoSizer>
                         {({ width, height }) => (
                           <FlagsList height={height} width={width} />

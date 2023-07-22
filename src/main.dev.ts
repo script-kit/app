@@ -890,15 +890,15 @@ const checkKit = async () => {
     optionalSetupScript(kitPath('setup', 'clone-sponsors.js'));
   } else {
     // eslint-disable-next-line promise/catch-or-return
-    optionalSetupScript(kitPath('setup', 'build-ts-scripts.js')).then(
-      (result) => {
-        log.info(`👍 TS Scripts Built`);
-        setTimeout(() => {
-          kitState.waking = false;
-        }, 10000);
-        return result;
-      }
-    );
+    // optionalSetupScript(kitPath('setup', 'build-ts-scripts.js')).then(
+    //   (result) => {
+    //     log.info(`👍 TS Scripts Built`);
+    //     setTimeout(() => {
+    //       kitState.waking = false;
+    //     }, 10000);
+    //     return result;
+    //   }
+    // );
   }
 
   if (!(await kenvConfigured())) {

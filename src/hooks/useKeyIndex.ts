@@ -1,6 +1,5 @@
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { useAtom, useAtomValue } from 'jotai';
-import { useEffect, useRef } from 'react';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
@@ -9,10 +8,9 @@ import {
   mouseEnabledAtom,
   inputFocusAtom,
   shortcutsAtom,
-  listAtom,
   directionAtom,
-  showSelectedAtom,
   flagsIndexAtom,
+  flagValueAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -25,7 +23,7 @@ export default () => {
   const [inputFocus] = useAtom(inputFocusAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
   const [, setDirection] = useAtom(directionAtom);
-  const showSelected = useAtomValue(showSelectedAtom);
+  const flagValue = useAtomValue(flagValueAtom);
 
   // useEffect(() => {
   //   const list = document.getElementById('list');
@@ -42,7 +40,7 @@ export default () => {
       setMouseEnabled(0);
       setDirection(-1);
 
-      if (showSelected) {
+      if (flagValue) {
         setFlagsIndex(flagsIndex - 1);
       } else {
         setIndex(index - 1);
@@ -50,7 +48,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [index, flagsIndex, channel, inputFocus, shortcuts, showSelected]
+    [index, flagsIndex, channel, inputFocus, shortcuts, flagValue]
   );
 
   useHotkeys(
@@ -61,7 +59,7 @@ export default () => {
       setMouseEnabled(0);
       setDirection(1);
 
-      if (showSelected) {
+      if (flagValue) {
         setFlagsIndex(flagsIndex + 1);
       } else {
         setIndex(index + 1);
@@ -69,7 +67,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [index, flagsIndex, channel, inputFocus, shortcuts, showSelected]
+    [index, flagsIndex, channel, inputFocus, shortcuts, flagValue]
   );
 
   useHotkeys(

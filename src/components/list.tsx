@@ -12,7 +12,7 @@ import {
   listAtom,
   requiresScrollAtom,
   isScrollingAtom,
-  showSelectedAtom,
+  flagValueAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 
@@ -36,7 +36,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [list, setList] = useAtom(listAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
   const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
-  const showSelected = useAtomValue(showSelectedAtom);
+  const flagValue = useAtomValue(flagValueAtom);
 
   useEffect(() => {
     if (listRef.current) {
@@ -86,7 +86,7 @@ export default function ChoiceList({ width, height }: ListProps) {
     <div
       id="list"
       className={`list-component flex w-full flex-row overflow-y-hidden ${
-        showSelected ? 'opacity-60' : ''
+        flagValue ? 'opacity-60' : ''
       }`}
       style={
         {

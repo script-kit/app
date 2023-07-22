@@ -730,7 +730,7 @@ const debounceSearch = debounce((input: string) => {
 
 const filterByInput = (g: Getter, s: Setter, input: string) => {
   if (g(uiAtom) !== UI.arg) return;
-  if (g(showSelectedAtom)) {
+  if (g(flagValueAtom)) {
     invokeFlagSearch(input);
   } else {
     invokeSearch(input);
@@ -961,10 +961,10 @@ const resizeSettle = debounce((g: Getter, s: Setter) => {
 const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   if (reason !== 'SETTLE') resizeSettle(g, s);
 
-  // const active = g(promptActiveAtom);
+  const active = g(promptActiveAtom);
   // g(logAtom)(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
 
-  // if (!active) return;
+  if (!active) return;
   const promptBounds = g(promptBoundsAtom);
 
   const ui = g(uiAtom);
@@ -1425,6 +1425,7 @@ export const promptDataAtom = atom(
 export const flagValueAtom = atom(
   (g) => g(_flagged),
   (g, s, a: any) => {
+    s(promptActiveAtom, true);
     const flags = g(_flagsAtom);
     // g(logAtom)({ flagValue: a, flags });
     if (Object.entries(flags).length === 0) return;
@@ -1544,7 +1545,7 @@ export const submitValueAtom = atom(
   (g, s, a: any) => {
     s(onInputSubmitAtom, {});
     // TODO: This was helping with resize flickers before. Not sure if still needed.
-    // s(promptActiveAtom, false || Boolean(flag));
+    s(promptActiveAtom, false);
     s(disableSubmitAtom, false);
     if (g(submittedAtom)) return;
     const focusedChoice = g(focusedChoiceAtom);
@@ -1876,6 +1877,7 @@ export const valueInvalidAtom = atom(null, (g, s, a: string) => {
 });
 
 export const preventSubmitAtom = atom(null, (g, s, a: string) => {
+  s(promptActiveAtom, true);
   if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
   s(submittedAtom, false);
   s(processingAtom, false);
@@ -1939,7 +1941,11 @@ export const showTabsAtom = atom((g) => {
 });
 
 export const showSelectedAtom = atom((g) => {
-  return [UI.arg, UI.hotkey].includes(g(uiAtom)) && g(selectedAtom);
+  return (
+    [UI.arg, UI.hotkey].includes(g(uiAtom)) &&
+    g(selectedAtom) &&
+    g(tabsAtom)?.length > 0
+  );
 });
 
 type OnInputSubmit = {
