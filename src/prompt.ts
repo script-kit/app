@@ -2127,6 +2127,10 @@ export const clearPromptTimers = async () => {
 };
 
 export const debugPrompt = async () => {
+  const promptLog = log.create('promptLog');
+  const promptLogPath = kenvPath('logs', 'prompt.log');
+
+  promptLog.transports.file.resolvePath = () => promptLogPath;
   const getPromptInfo = async () => {
     const activeAppBounds: any = {};
     // REMOVE-NUT
@@ -2156,7 +2160,7 @@ export const debugPrompt = async () => {
     });
   };
 
-  shell.openPath(kenvPath('logs', 'prompt.log'));
+  shell.openPath(promptLogPath);
 
   const id = setInterval(getPromptInfo, 3000);
   // stop after 1 minute
