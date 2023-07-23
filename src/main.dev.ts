@@ -46,7 +46,7 @@ import { existsSync } from 'fs';
 import { readdir, copyFile } from 'fs/promises';
 
 import { Channel, ProcessType, UI, PROMPT } from '@johnlindquist/kit/cjs/enum';
-import { PromptData, Script } from '@johnlindquist/kit/types/core';
+import { PromptData } from '@johnlindquist/kit/types/core';
 
 import {
   kenvPath,
@@ -58,7 +58,6 @@ import {
   execPath,
   appDbPath,
   getKenvs,
-  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import {
@@ -105,7 +104,6 @@ import {
   getThemes,
   initKeymap,
   kitState,
-  preloadChoicesMap,
   subs,
 } from './state';
 import { startSK } from './sk';
