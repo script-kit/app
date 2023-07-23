@@ -27,12 +27,6 @@ export const startWatching = (callback: WatcherCallback) => {
     }
   );
 
-  const jsonWatcher = chokidar
-    .watch([appDbPath, shortcutsPath, userDbPath, timestampsPath], {
-      ignoreInitial: kitState.ignoreInitial,
-    })
-    .on('all', callback);
-
   kenvScriptsWatcher.on('all', callback);
   const kenvsWatcher = chokidar.watch(kenvPath('kenvs'), {
     ignoreInitial: kitState.ignoreInitial,
@@ -71,26 +65,24 @@ export const startWatching = (callback: WatcherCallback) => {
     kenvScriptsWatcher.unwatch(path.resolve(filePath, 'scripts', '*'));
   });
 
-  const kenvEnvWatcher = chokidar.watch(kenvPath('.env'), {
-    disableGlobbing: true,
-    ignoreInitial: kitState.ignoreInitial,
-  });
+  const fileWatcher = chokidar.watch(
+    [
+      appDbPath,
+      shortcutsPath,
+      userDbPath,
+      timestampsPath,
+      kenvPath('.env'),
+      kenvPath('package.json'),
+      kitPath('run.txt'),
+    ],
+    {
+      disableGlobbing: true,
+      ignoreInitial: kitState.ignoreInitial,
+    }
+  );
 
-  kenvEnvWatcher.on('all', callback);
-
-  const runWatcher = chokidar.watch(kitPath('run.txt'), {
-    disableGlobbing: true,
-    ignoreInitial: true,
-  });
-
-  runWatcher.on('all', callback);
+  fileWatcher.on('all', callback);
 
   kitState.ignoreInitial = true;
-  return [
-    kenvScriptsWatcher,
-    jsonWatcher,
-    kenvsWatcher,
-    kenvEnvWatcher,
-    runWatcher,
-  ];
+  return [kenvScriptsWatcher, kenvsWatcher, fileWatcher];
 };

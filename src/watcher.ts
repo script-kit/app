@@ -383,6 +383,12 @@ export const setupWatchers = async () => {
       return;
     }
 
+    if (base === 'package.json') {
+      log.info(`package.json changed`);
+
+      return;
+    }
+
     if (base === 'app.json') {
       log.info(`app.json changed`);
       try {
