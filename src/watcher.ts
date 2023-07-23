@@ -44,7 +44,6 @@ import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel, Trigger } from './enums';
 import { runScript } from './kit';
-import { TrackEvent, trackEvent } from './track';
 import { processes, spawnShebang } from './process';
 import { compareArrays } from './helpers';
 import { cacheMainScripts } from './install';

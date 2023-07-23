@@ -59,10 +59,7 @@ export const startWatching = (callback: WatcherCallback) => {
   kenvsWatcher.on('unlinkDir', (filePath) => {
     log.info(`🕵️‍♂️ Detected removed dir in "kenvs": ${filePath}`);
 
-    const globs = [
-      path.resolve(filePath, 'scripts', '*'),
-      path.resolve(filePath, 'lib', '**', '*'),
-    ];
+    const globs = [path.resolve(filePath, 'scripts', '*')];
 
     setTimeout(() => {
       log.info(`Removing globs: ${globs}`);
