@@ -217,7 +217,6 @@ if (app?.dock) {
 
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
 if (app?.dock) {
-  // app?.dock?.hide();
   app?.dock?.setIcon(getAssetPath('icon.png'));
 }
 const releaseChannel = getReleaseChannel();
