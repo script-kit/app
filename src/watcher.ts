@@ -47,6 +47,7 @@ import { runScript } from './kit';
 import { processes, spawnShebang } from './process';
 import { compareArrays } from './helpers';
 import { cacheMainScripts } from './install';
+import { getFileImports } from './npm';
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
@@ -146,6 +147,28 @@ export const onScriptsChanged = async (
 
     if (kitState.ready && !rebuilt) {
       scriptChanged(filePath);
+      if (event === 'change') {
+        const imports = await getFileImports(
+          filePath,
+          script?.contents,
+          kenvPath('package.json'),
+          script.kenv
+            ? kenvPath('kenvs', script.kenv, 'package.json')
+            : undefined
+        );
+
+        if (imports.length) {
+          log.info(`📦 ${filePath} missing imports`, imports);
+          emitter.emit(KitEvent.RunPromptProcess, {
+            scriptPath: kitPath('cli', 'npm.js'),
+            args: imports,
+            options: {
+              force: true,
+              trigger: Trigger.Info,
+            },
+          });
+        }
+      }
     } else {
       log.verbose(
         `⌚️ ${filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`

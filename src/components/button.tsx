@@ -236,6 +236,7 @@ function ChoiceButton({
                   scoredChoice?.matches?.slicedName,
                   `bg-primary bg-opacity-5 text-primary`
                 )}
+                {choice?.keyword && '...'}
               </div>
               {/* Description */}
               {(choice?.focused ||

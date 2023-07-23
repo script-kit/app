@@ -1,36 +1,110 @@
-import fs from 'fs';
-import parser from '@babel/parser';
-import traverse, { NodePath } from '@babel/traverse';
-import { ImportDeclaration, CallExpression, StringLiteral } from '@babel/types';
+/* eslint-disable default-case */
+import ts from 'typescript';
+import { existsSync, readFileSync } from 'fs';
+import log from 'electron-log';
+import builtins from 'builtin-modules';
 
-export const getFileImports = async (filePath: string): Promise<string[]> => {
-  const code = await fs.promises.readFile(filePath, 'utf-8');
-  // Parse the JavaScript/TypeScript code into an Abstract Syntax Tree (AST)
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    plugins: ['dynamicImport', 'typescript'],
-  });
+interface PackageJson {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+}
 
-  const imports: string[] = [];
+export async function getFileImports(
+  filePath: string,
+  contents: string,
+  rootPackagePath: string,
+  kenvPackagePath?: string
+): Promise<string[]> {
+  if (!existsSync(rootPackagePath)) {
+    log.error(`Could not find package.json at ${rootPackagePath}`);
 
-  traverse(ast, {
-    // This function is called when an import statement is encountered
-    ImportDeclaration: ({ node }: NodePath<ImportDeclaration>) => {
-      // node.source.value is the module path in import statement
-      imports.push(node.source.value.split('/')[0]);
-    },
-    // This function is called when a function call is encountered
-    CallExpression: ({ node }: NodePath<CallExpression>) => {
-      // Check if the function call is an import() statement
-      if (
-        node.callee.type === 'Import' &&
-        node.arguments[0].type === 'StringLiteral'
-      ) {
-        // node.arguments[0].value is the module path in dynamic import statement
-        imports.push((node.arguments[0] as StringLiteral).value.split('/')[0]);
+    return [];
+  }
+
+  const packageJson: PackageJson = JSON.parse(
+    readFileSync(rootPackagePath, 'utf8')
+  );
+  const projectPackages = {
+    ...packageJson.dependencies,
+    ...packageJson.devDependencies,
+  };
+
+  if (kenvPackagePath && existsSync(kenvPackagePath)) {
+    const kenvPackageJson: PackageJson = JSON.parse(
+      readFileSync(kenvPackagePath, 'utf8')
+    );
+    Object.assign(projectPackages, {
+      ...kenvPackageJson.dependencies,
+      ...kenvPackageJson.devDependencies,
+    });
+  }
+
+  // TODO: I already have the contents, so I don't need to read it again...
+  const sourceFile = ts.createSourceFile(
+    filePath,
+    contents,
+    ts.ScriptTarget.ES2022,
+    true
+  );
+
+  const missingImports: string[] = [];
+
+  const addImport = (importPath: string) => {
+    if (
+      !importPath.startsWith('@johnlindquist/kit') &&
+      !importPath.startsWith('.') &&
+      !importPath.startsWith('/') &&
+      !importPath.startsWith('\\') &&
+      !projectPackages[importPath] &&
+      !builtins.includes(importPath)
+    ) {
+      if (importPath.includes('/')) {
+        const [scope, packageName] = importPath.split('/');
+        if (scope.startsWith('@') && packageName) {
+          const scopedPackageName = `${scope}/${packageName}`;
+          if (
+            !projectPackages[scopedPackageName] &&
+            !builtins.includes(scope)
+          ) {
+            missingImports.push(scopedPackageName);
+          }
+        } else if (!projectPackages[scope] && !builtins.includes(scope)) {
+          missingImports.push(scope);
+        }
+      } else {
+        missingImports.push(importPath);
       }
-    },
-  });
+    }
+  };
 
-  return Array.from(new Set(imports)); // Remove duplicates
-};
+  const visit = (node: ts.Node): void => {
+    switch (node.kind) {
+      case ts.SyntaxKind.ImportDeclaration: {
+        // Static import.
+        const importPath = (node as ts.ImportDeclaration).moduleSpecifier
+          .getText()
+          .replace(/['"`]/g, '');
+        addImport(importPath);
+        break;
+      }
+      case ts.SyntaxKind.CallExpression: // Dynamic import.
+        if (
+          (node as ts.CallExpression).expression.kind ===
+          ts.SyntaxKind.ImportKeyword
+        ) {
+          const dynamicImportPath = (
+            (node as ts.CallExpression).arguments[0] as ts.StringLiteral
+          ).text;
+
+          addImport(dynamicImportPath);
+        }
+        break;
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return missingImports;
+}
