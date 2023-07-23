@@ -48,10 +48,6 @@ import { processes, spawnShebang } from './process';
 import { compareArrays } from './helpers';
 import { cacheMainScripts } from './install';
 
-// export const cacheMenu = debounce(async () => {
-//   await updateScripts();
-// }, 150);
-
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
   cancelSchedule(filePath);
