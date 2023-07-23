@@ -175,6 +175,7 @@ ${data.error}
   ipcMain.on(AppChannel.INVOKE_SEARCH, (event, { input }) => {
     // log.info(`INVOKE_SEARCH ${input}`);
     debounceInvokeSearch.cancel();
+    if (input.endsWith(' ')) return;
     if (kitSearch.choices.length > 5000) {
       debounceInvokeSearch(input);
     } else {

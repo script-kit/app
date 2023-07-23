@@ -1,6 +1,5 @@
 /* eslint-disable no-restricted-syntax */
 import log from 'electron-log';
-import { Notification } from 'electron';
 import { assign, debounce } from 'lodash';
 import path from 'path';
 import { existsSync, readFileSync } from 'fs';
@@ -8,13 +7,8 @@ import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 import dotenv from 'dotenv';
 import { rm, readFile } from 'fs/promises';
-import {
-  getAppDb,
-  getScripts,
-  getUserJson,
-  setScriptTimestamp,
-} from '@johnlindquist/kit/cjs/db';
-
+import { getAppDb, getScripts, getUserJson } from '@johnlindquist/kit/cjs/db';
+import { Script } from '@johnlindquist/kit/types';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 
 import {
@@ -26,7 +20,6 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 
 import { FSWatcher } from 'chokidar';
-import { fork } from 'child_process';
 import {
   unlinkShortcuts,
   updateMainShortcut,
@@ -39,7 +32,7 @@ import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
 import { appDb, kitState, scriptChanged, sponsorCheck } from './state';
 import { addSnippet, removeSnippet } from './tick';
-import { appToPrompt, clearPromptCacheFor } from './prompt';
+import { appToPrompt, clearPromptCacheFor, debugPrompt } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel, Trigger } from './enums';
@@ -116,6 +109,33 @@ const unlinkBin = (filePath: string) => {
   }
 };
 
+const checkFileImports = debounce(async (script: Script, contents: string) => {
+  let imports: string[] = [];
+  try {
+    imports = await getFileImports(
+      script.filePath,
+      contents,
+      kenvPath('package.json'),
+      script.kenv ? kenvPath('kenvs', script.kenv, 'package.json') : undefined
+    );
+  } catch (error) {
+    log.error(error);
+    imports = [];
+  }
+
+  if (imports.length) {
+    log.info(`📦 ${script.filePath} missing imports`, imports);
+    emitter.emit(KitEvent.RunPromptProcess, {
+      scriptPath: kitPath('cli', 'npm.js'),
+      args: imports,
+      options: {
+        force: true,
+        trigger: Trigger.Info,
+      },
+    });
+  }
+}, 25);
+
 export const onScriptsChanged = async (
   event: WatchEvent,
   filePath: string,
@@ -148,26 +168,7 @@ export const onScriptsChanged = async (
     if (kitState.ready && !rebuilt) {
       scriptChanged(filePath);
       if (event === 'change') {
-        const imports = await getFileImports(
-          filePath,
-          script?.contents,
-          kenvPath('package.json'),
-          script.kenv
-            ? kenvPath('kenvs', script.kenv, 'package.json')
-            : undefined
-        );
-
-        if (imports.length) {
-          log.info(`📦 ${filePath} missing imports`, imports);
-          emitter.emit(KitEvent.RunPromptProcess, {
-            scriptPath: kitPath('cli', 'npm.js'),
-            args: imports,
-            options: {
-              force: true,
-              trigger: Trigger.Info,
-            },
-          });
-        }
+        checkFileImports(script, script?.contents);
       }
     } else {
       log.verbose(
@@ -374,6 +375,10 @@ export const setupWatchers = async () => {
             await refreshScripts();
           }
 
+          if (envData?.KIT_DEBUG_PROMPT) {
+            debugPrompt();
+          }
+
           // if (envData?.KIT_SUSPEND_WATCHERS) {
           //   const suspendWatchers = envData?.KIT_SUSPEND_WATCHERS === 'true';
           //   kitState.suspendWatchers = suspendWatchers;
@@ -451,6 +456,22 @@ export const setupWatchers = async () => {
 
     if (base === 'shortcuts.json') {
       onDbChanged(eventName, filePath);
+      return;
+    }
+
+    if (dir.endsWith('lib') && eventName === 'change') {
+      try {
+        checkFileImports(
+          {
+            filePath,
+            kenv: '',
+          } as Script,
+          readFileSync(filePath, 'utf-8')
+        );
+      } catch (error) {
+        log.warn(error);
+      }
+
       return;
     }
 

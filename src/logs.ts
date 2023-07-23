@@ -32,6 +32,9 @@ export const mainLogPath = path.resolve(app.getPath('logs'), 'main.log');
 export const mainLog = log.create('mainLog');
 mainLog.transports.file.resolvePath = () => mainLogPath;
 
+export const promptLog = log.create('promptLog');
+promptLog.transports.file.resolvePath = () => kenvPath('logs', 'prompt.log');
+
 log.info(`⭐️ Other notable Kit logs:`, {
   mainLogPath,
   updateLogPath,

@@ -306,7 +306,7 @@ export const formatScriptChoices = (data: Choice[]) => {
   const dataChoices: Script[] = (data || []) as Script[];
   log.verbose('formatScriptChoices', { length: dataChoices?.length || 0 });
   const choices = dataChoices.map((script) => {
-    // script.description = '';
+    if (script.group !== 'Kit') script.description = '';
     if (script.background) {
       const backgroundScript = getBackgroundTasks().find(
         (t) => t.filePath === script.filePath

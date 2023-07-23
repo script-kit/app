@@ -18,7 +18,10 @@ type WatcherCallback = (
 ) => Promise<void>;
 export const startWatching = (callback: WatcherCallback) => {
   const kenvScriptsWatcher = chokidar.watch(
-    [path.resolve(kenvPath('scripts', '*'))],
+    [
+      path.resolve(kenvPath('scripts', '*')),
+      path.resolve(kenvPath('lib', '**', '*')),
+    ],
     {
       depth: 0,
       // ignore dotfiles
@@ -42,7 +45,10 @@ export const startWatching = (callback: WatcherCallback) => {
   kenvsWatcher.on('addDir', (filePath) => {
     log.info(`🕵️‍♀️ Detected new dir in "kenvs": ${filePath}`);
 
-    const globs = [path.resolve(filePath, 'scripts', '*')];
+    const globs = [
+      path.resolve(filePath, 'scripts', '*'),
+      path.resolve(filePath, 'lib', '**', '*'),
+    ];
 
     setTimeout(() => {
       log.info(`Adding globs: ${globs}`);

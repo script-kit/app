@@ -40,6 +40,7 @@ import {
   defaultGroupNameClassName,
   groupChoices,
   formatChoices,
+  kenvPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, setScriptTimestamp } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
@@ -62,20 +63,14 @@ import {
   preloadPreviewMap,
   clearSearch,
 } from './state';
-import {
-  EMOJI_HEIGHT,
-  EMOJI_WIDTH,
-  MIN_WIDTH,
-  ZOOM_LEVEL,
-  noChoice,
-} from './defaults';
+import { EMOJI_HEIGHT, EMOJI_WIDTH, MIN_WIDTH, ZOOM_LEVEL } from './defaults';
 import { ResizeData, ScoredChoice } from './types';
 import { getVersion } from './version';
 import { AppChannel, HideReason } from './enums';
 import { emitter, KitEvent } from './events';
 import { createScoredChoice, pathsAreEqual } from './helpers';
 import { TrackEvent, trackEvent } from './track';
-import { getCurrentActiveWindow, getCurrentScreen } from './screen';
+import { getCurrentScreen } from './screen';
 
 let promptWindow: BrowserWindow;
 
@@ -1567,6 +1562,9 @@ export const invokeSearch = (rawInput: string) => {
     // eslint-disable-next-line no-param-reassign
     transformedInput =
       rawInput.match(new RegExp(kitSearch.inputRegex, 'gi'))?.[0] || '';
+    log.info(
+      `Transformed input: ${transformedInput} using regex ${kitSearch.inputRegex}`
+    );
   }
 
   if (kitSearch.choices.length === 0) {
@@ -1625,18 +1623,7 @@ export const invokeSearch = (rawInput: string) => {
 
     let groupedResults: ScoredChoice[] = [];
 
-    const matchGroup = [
-      createScoredChoice({
-        name: 'Exact Match',
-        group: 'Match',
-        pass: false,
-        skip: true,
-        nameClassName: defaultGroupNameClassName,
-        className: defaultGroupClassName,
-        height: PROMPT.ITEM.HEIGHT.XXXS,
-        id: Math.random().toString(),
-      }),
-    ];
+    const matchGroup = [];
     const missGroup = [];
     let alias: Choice;
 
@@ -1709,7 +1696,25 @@ export const invokeSearch = (rawInput: string) => {
       }
     }
 
-    if (matchGroup.length > 1) {
+    if (matchGroup.length > 0) {
+      matchGroup.sort((a, b) => {
+        if (a?.item?.keyword && !b?.item?.keyword) return -1;
+        if (!a?.item?.keyword && b?.item?.keyword) return 1;
+
+        return 0;
+      });
+      matchGroup.unshift(
+        createScoredChoice({
+          name: 'Exact Match',
+          group: 'Match',
+          pass: false,
+          skip: true,
+          nameClassName: defaultGroupNameClassName,
+          className: defaultGroupClassName,
+          height: PROMPT.ITEM.HEIGHT.XXXS,
+          id: Math.random().toString(),
+        })
+      );
       groupedResults.unshift(...matchGroup);
     }
 
@@ -2119,6 +2124,45 @@ export const clearPromptTimers = async () => {
   } catch (e) {
     log.error(e);
   }
+};
+
+export const debugPrompt = async () => {
+  const getPromptInfo = async () => {
+    const activeAppBounds: any = {};
+    // REMOVE-NUT
+    const { getActiveWindow } = await import('@nut-tree/nut-js');
+    const activeWindow = await getActiveWindow();
+    if (activeWindow) {
+      const region = await activeWindow.region;
+      activeAppBounds.x = region.left;
+      activeAppBounds.y = region.top;
+      activeAppBounds.width = region.width;
+      activeAppBounds.height = region.height;
+      activeAppBounds.title = await activeWindow.title;
+    }
+    // END-REMOVE-NUT
+
+    const promptBounds = promptWindow?.getBounds();
+    const screenBounds = (await getCurrentScreen()).bounds;
+    const mouse = screen.getCursorScreenPoint();
+
+    promptLog.info({
+      scriptPath: kitState.scriptPath,
+      isVisible: promptWindow?.isVisible() ? 'true' : 'false',
+      promptBounds,
+      screenBounds,
+      mouse,
+      activeAppBounds,
+    });
+  };
+
+  shell.openPath(kenvPath('logs', 'prompt.log'));
+
+  const id = setInterval(getPromptInfo, 3000);
+  // stop after 1 minute
+  setTimeout(() => {
+    clearInterval(id);
+  }, 60000);
 };
 
 subs.push(
