@@ -175,7 +175,7 @@ ${data.error}
   let prevInput = '';
   ipcMain.on(AppChannel.INVOKE_SEARCH, (event, { input }) => {
     debounceInvokeSearch.cancel();
-    // This can prevent the search from being invoked when a keyword is triggered
+    // This can prevent the search from being invoked when a keyword is triggered.
     if (input.endsWith(' ') && input.length > prevInput.length) {
       prevInput = input;
       return;
