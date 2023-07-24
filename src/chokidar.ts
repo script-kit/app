@@ -79,7 +79,6 @@ export const startWatching = (callback: WatcherCallback) => {
       timestampsPath,
       kenvPath('.env'),
       kenvPath('package.json'),
-      kitPath('run.txt'),
     ],
     {
       disableGlobbing: true,
@@ -89,6 +88,13 @@ export const startWatching = (callback: WatcherCallback) => {
 
   fileWatcher.on('all', callback);
 
+  const runWatcher = chokidar.watch(kitPath('run.txt'), {
+    disableGlobbing: true,
+    ignoreInitial: true,
+  });
+
+  runWatcher.on('all', callback);
+
   kitState.ignoreInitial = true;
-  return [kenvScriptsWatcher, kenvsWatcher, fileWatcher];
+  return [kenvScriptsWatcher, kenvsWatcher, fileWatcher, runWatcher];
 };

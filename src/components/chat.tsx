@@ -717,7 +717,7 @@ export function Chat() {
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
-      className="chat-container flex flex-col h-full w-full"
+      className="chat-container flex h-full w-full flex-col"
       onKeyDown={onChatKeyDown}
       id={UI.chat}
     >

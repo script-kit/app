@@ -172,15 +172,20 @@ ${data.error}
     resize(resizeData);
   });
 
+  let prevInput = '';
   ipcMain.on(AppChannel.INVOKE_SEARCH, (event, { input }) => {
-    // log.info(`INVOKE_SEARCH ${input}`);
     debounceInvokeSearch.cancel();
-    if (input.endsWith(' ')) return;
+    // This can prevent the search from being invoked when a keyword is triggered
+    if (input.endsWith(' ') && input.length > prevInput.length) {
+      prevInput = input;
+      return;
+    }
     if (kitSearch.choices.length > 5000) {
       debounceInvokeSearch(input);
     } else {
       invokeSearch(input);
     }
+    prevInput = input;
   });
 
   ipcMain.on(AppChannel.INVOKE_FLAG_SEARCH, (event, { input }) => {
