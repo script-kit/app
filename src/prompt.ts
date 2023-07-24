@@ -1560,11 +1560,10 @@ export const invokeSearch = (rawInput: string) => {
   let transformedInput = rawInput;
   if (kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
-    transformedInput =
-      rawInput.match(new RegExp(kitSearch.inputRegex, 'gi'))?.[0] || '';
-    log.info(
-      `Transformed input: ${transformedInput} using regex ${kitSearch.inputRegex}`
-    );
+    transformedInput = rawInput.match(kitSearch.inputRegex)?.[0] || '';
+    // log.info(
+    //   `Transformed input: ${transformedInput} using regex ${kitSearch.inputRegex}`
+    // );
   }
 
   if (kitSearch.choices.length === 0) {

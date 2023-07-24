@@ -290,16 +290,26 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     watcherSubmenu.push({
       label: `${
-        kitState.watcherEnabled ? 'Stop' : 'Start'
-      } Snippet/Clipboard Watcher`,
-      checked: kitState.watcherEnabled,
+        kitState.clipboardWatcherEnabled ? 'Stop' : 'Start'
+      } Clipboard Watcher`,
+      checked: kitState.clipboardWatcherEnabled,
       click: () => {
-        kitState.watcherEnabled = !kitState.watcherEnabled;
+        kitState.clipboardWatcherEnabled = !kitState.clipboardWatcherEnabled;
       },
     });
 
     watcherSubmenu.push({
-      label: `Force Wake Snippet Watcher (use when snippets aren't firing)`,
+      label: `${
+        kitState.keyboardWatcherEnabled ? 'Stop' : 'Start'
+      } Keyboard Watcher`,
+      checked: kitState.keyboardWatcherEnabled,
+      click: () => {
+        kitState.keyboardWatcherEnabled = !kitState.keyboardWatcherEnabled;
+      },
+    });
+
+    watcherSubmenu.push({
+      label: `Force Wake Keyboard Watcher (use when snippets aren't firing)`,
       click: () => {
         kitState.wakeWatcher = new Date().getTime();
       },

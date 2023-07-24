@@ -332,7 +332,8 @@ const initState = {
   isSponsor: false,
   theme,
   appearance: 'auto' as 'auto' | 'light' | 'dark',
-  watcherEnabled: !isMac,
+  clipboardWatcherEnabled: !isMac,
+  keyboardWatcherEnabled: !isMac,
   wakeWatcher: new Date().getTime(),
   allowBlur: true,
   keymap: null as any,
@@ -953,7 +954,7 @@ export const preloadPromptDataMap = new Map<string, PromptData>();
 
 export const kitSearch = {
   input: '',
-  inputRegex: '',
+  inputRegex: undefined as undefined | RegExp,
   keyword: '',
   generated: false,
   choices: [] as Choice[],

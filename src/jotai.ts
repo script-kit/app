@@ -723,11 +723,6 @@ const invokeFlagSearch = (input: string) => {
   ipcRenderer.send(AppChannel.INVOKE_FLAG_SEARCH, { input });
 };
 
-const debounceSearch = debounce((input: string) => {
-  invokeSearch(input);
-  return true;
-}, 200); // TODO: too slow for emojis
-
 const filterByInput = (g: Getter, s: Setter, input: string) => {
   if (g(uiAtom) !== UI.arg) return;
   if (g(flagValueAtom)) {

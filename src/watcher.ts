@@ -31,7 +31,7 @@ import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
 import { appDb, kitState, scriptChanged, sponsorCheck } from './state';
-import { addSnippet, removeSnippet } from './tick';
+import { addSnippet, addTextSnippet, removeSnippet } from './tick';
 import { appToPrompt, clearPromptCacheFor, debugPrompt } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
@@ -357,6 +357,16 @@ export const setupWatchers = async () => {
             kitState.typedLimit = parseInt(envData?.KIT_TYPED_LIMIT, 10);
           }
 
+          if (envData?.KIT_CLIPBOARD_WATCHER) {
+            kitState.clipboardWatcherEnabled =
+              envData?.KIT_CLIPBOARD_WATCHER === 'true';
+          }
+
+          if (envData?.KIT_KEYBOARD_WATCHER) {
+            kitState.keyboardWatcherEnabled =
+              envData?.KIT_KEYBOARD_WATCHER === 'true';
+          }
+
           const trustedKenvs = (envData?.[kitState.trustedKenvsKey] || '')
             .split(',')
             .filter(Boolean)
@@ -472,6 +482,11 @@ export const setupWatchers = async () => {
         log.warn(error);
       }
 
+      return;
+    }
+
+    if (dir.endsWith('snippets')) {
+      addTextSnippet(filePath);
       return;
     }
 

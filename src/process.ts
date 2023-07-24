@@ -521,10 +521,10 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, tasks: getBackgroundTasks() });
   }),
 
-  GET_CLIPBOARD_HISTORY: toProcess(({ child }, { channel }) => {
+  GET_CLIPBOARD_HISTORY: toProcess(async ({ child }, { channel }) => {
     childSend(child, {
       channel,
-      history: getClipboardHistory(),
+      history: await getClipboardHistory(),
     });
   }),
 
@@ -836,13 +836,15 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel });
   }),
 
-  REMOVE_CLIPBOARD_HISTORY_ITEM: toProcess(({ child }, { channel, value }) => {
-    log.verbose(channel, value);
+  REMOVE_CLIPBOARD_HISTORY_ITEM: toProcess(
+    async ({ child }, { channel, value }) => {
+      log.verbose(channel, value);
 
-    removeFromClipboardHistory(value);
+      await removeFromClipboardHistory(value);
 
-    childSend(child, { channel });
-  }),
+      childSend(child, { channel });
+    }
+  ),
 
   TOGGLE_BACKGROUND: (data: any) => {
     emitter.emit(KitEvent.ToggleBackground, data);
@@ -1184,6 +1186,7 @@ const kitMessageMap: ChannelHandler = {
   SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
     kitState.scriptPathChanged = false;
     kitState.promptScriptPath = value?.scriptPath || '';
+    kitState.hideOnEscape = Boolean(value?.hideOnEscape);
 
     if (value?.ui === UI.mic) {
       appToPrompt(AppChannel.SET_MIC_CONFIG, {
@@ -1274,7 +1277,9 @@ const kitMessageMap: ChannelHandler = {
     //   generated: Boolean(generated) ? 'true' : 'false',
     // });
 
-    kitSearch.inputRegex = inputRegex;
+    kitSearch.inputRegex = inputRegex
+      ? new RegExp(inputRegex, 'gi')
+      : undefined;
 
     let formattedChoices = choices;
     if (kitState.isScripts) {
@@ -1351,6 +1356,10 @@ const kitMessageMap: ChannelHandler = {
   },
 
   SET_EDITOR_CONFIG: toProcess(async ({ child }, { channel, value }) => {
+    setChoices([], {
+      preload: false,
+      skipInitialSearch: true,
+    });
     sendToPrompt(Channel.SET_EDITOR_CONFIG, value);
 
     childSend(child, {
@@ -2167,6 +2176,15 @@ const kitMessageMap: ChannelHandler = {
     stampDb.stamps.splice(stamp, 1);
     await stampDb.write();
 
+    childSend(child, { channel, value });
+  }),
+  TOGGLE_WATCHER: toProcess(async ({ child }, { channel, value }) => {
+    kitState.clipboardWatcherEnabled = !kitState.clipboardWatcherEnabled;
+
+    log.verbose(
+      `👀 Toggling watcher`,
+      kitState.clipboardWatcherEnabled ? 'ON' : 'OFF'
+    );
     childSend(child, { channel, value });
   }),
 };

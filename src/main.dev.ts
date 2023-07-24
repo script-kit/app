@@ -78,8 +78,8 @@ import {
 import {
   clearTickTimers,
   configureInterval,
-  destroyInterval,
-  toggleTickOn,
+  stopClipboardMonitor,
+  startClipboardAndKeyboardWatchers,
 } from './tick';
 import {
   clearPromptCache,
@@ -438,7 +438,7 @@ const systemEvents = () => {
 
     kitState.suspended = false;
 
-    toggleTickOn();
+    startClipboardAndKeyboardWatchers();
 
     if (!kitState.updateDownloaded) {
       await new Promise((resolve) => setTimeout(resolve, 10000));
@@ -991,7 +991,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   try {
     teardownWatchers();
     sleepSchedule();
-    destroyInterval();
+    stopClipboardMonitor();
     subs.forEach((sub) => {
       try {
         sub();

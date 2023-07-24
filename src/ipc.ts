@@ -70,16 +70,18 @@ const checkShortcodesAndKeywords = (rawInput: string) => {
     return;
   }
 
-  if (rawInput.endsWith(' ') && !rawInput.endsWith('  ')) {
-    const keyword = rawInput.toLowerCase().trim();
-    const keywordChoice = kitSearch.keywords.get(keyword);
-    if (keywordChoice) {
-      kitSearch.keyword = keyword;
-      log.info(`🔑 ${keyword} triggered`);
-      sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
-        keyword,
-        choice: keywordChoice,
-      });
+  if (rawInput.includes(' ')) {
+    const keyword = rawInput.split(' ')?.[0].trim();
+    if (keyword !== kitSearch.keyword) {
+      const keywordChoice = kitSearch.keywords.get(keyword);
+      if (keywordChoice) {
+        kitSearch.keyword = keyword;
+        log.info(`🔑 ${keyword} triggered`);
+        sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
+          keyword,
+          choice: keywordChoice,
+        });
+      }
     }
   }
 };
@@ -381,8 +383,8 @@ ${data.error}
           );
           if (kitState.hideOnEscape) {
             maybeHide(HideReason.Escape);
+            sendToPrompt(Channel.SET_INPUT, '');
           }
-          sendToPrompt(Channel.SET_INPUT, '');
         }
 
         if (channel === Channel.ABANDON) {

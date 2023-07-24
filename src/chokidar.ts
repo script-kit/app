@@ -19,6 +19,7 @@ type WatcherCallback = (
 export const startWatching = (callback: WatcherCallback) => {
   const kenvScriptsWatcher = chokidar.watch(
     [
+      path.resolve(kenvPath('snippets', '*')),
       path.resolve(kenvPath('scripts', '*')),
       path.resolve(kenvPath('lib', '**', '*')),
     ],
@@ -46,6 +47,7 @@ export const startWatching = (callback: WatcherCallback) => {
     log.info(`🕵️‍♀️ Detected new dir in "kenvs": ${filePath}`);
 
     const globs = [
+      path.resolve(filePath, 'snippets', '*'),
       path.resolve(filePath, 'scripts', '*'),
       path.resolve(filePath, 'lib', '**', '*'),
     ];
