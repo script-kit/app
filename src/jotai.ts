@@ -1282,6 +1282,11 @@ export const promptDataAtom = atom(
     const prevPromptData = g(promptData);
 
     wasPromptDataPreloaded = Boolean(prevPromptData?.preload && !a?.preload);
+    // g(logAtom)(
+    //   `👀 Preloaded: ${a?.scriptPath} ${
+    //     wasPromptDataPreloaded ? 'true' : 'false'
+    //   } and keyword: ${a?.keyword}`
+    // );
 
     // was closed, now open
     if (!prevPromptData && a) {
@@ -1326,7 +1331,9 @@ export const promptDataAtom = atom(
         s(termConfigAtom, config);
       }
 
-      s(_inputAtom, a?.input || '');
+      if (!a?.keyword) {
+        s(_inputAtom, a?.input || '');
+      }
       s(hintAtom, a.hint);
       s(placeholderAtom, a.placeholder);
       s(selectedAtom, a.selected);
@@ -1349,7 +1356,7 @@ export const promptDataAtom = atom(
 
       const promptDescription = headerHidden
         ? ''
-        : a.description || script?.description || '';
+        : a.description || (a?.name ? '' : script?.description || '');
       const promptName = headerHidden ? '' : a.name || script?.name || '';
 
       s(descriptionAtom, promptDescription || promptName);
@@ -1647,8 +1654,8 @@ export const openAtom = atom(
       // s(choices, []);
       // s(tabIndex, 0);
       s(closedInput, g(_inputAtom));
-      s(_inputAtom, '');
       s(scoredChoicesAtom, []);
+      s(inputAtom, '');
       s(_panelHTML, '');
 
       s(formHTMLAtom, '');

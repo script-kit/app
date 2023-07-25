@@ -1220,16 +1220,30 @@ const pidMatch = (pid: number, message: string) => {
   return true;
 };
 
-export const prepMain = async (promptData: PromptData) => {
-  sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
-  log.info(`🏋️‍♂️ Prep promptData for ${promptData?.scriptPath}`);
-  setPromptData(promptData);
-};
-
 export const preloadPromptData = async (promptData: PromptData) => {
-  sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
-  log.info(`🏋️‍♂️ Preload promptData for ${promptData?.scriptPath}`);
+  let input = '';
+  if (kitSearch.keyword) {
+    input = `${kitSearch.keyword} `;
+  } else {
+    input = kitSearch.input || '';
+  }
+
+  input = promptData.input || input;
+
+  log.info(
+    `🏋️‍♂️ Preload promptData for ${promptData?.scriptPath} with input:${input}<<<`
+  );
   promptData.preload = true;
+
+  if (kitSearch.keyword) {
+    promptData.keyword = kitSearch.keyword;
+  }
+
+  sendToPrompt(Channel.SET_PROMPT_DATA, {
+    ...promptData,
+    input,
+  });
+
   kitState.preloaded = true;
   kitState.scriptPath = promptData.scriptPath;
   kitState.hideOnEscape = promptData.hideOnEscape;
@@ -1283,7 +1297,11 @@ export const setPromptData = async (promptData: PromptData) => {
   if (kitState.cachePrompt && !promptData.preload) {
     kitState.preloaded = false;
     kitState.cachePrompt = false;
-    preloadPromptDataMap.set(kitState.scriptPath, promptData);
+    preloadPromptDataMap.set(kitState.scriptPath, {
+      ...promptData,
+      input: '',
+      keyword: '',
+    });
   }
 
   if (promptData.flags) {
@@ -1329,6 +1347,10 @@ export const setPromptData = async (promptData: PromptData) => {
   if (kitState.suspended || kitState.screenLocked) return;
   kitState.ui = promptData.ui;
   if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
+
+  if (kitSearch.keyword) {
+    promptData.keyword = kitSearch.keyword || kitSearch.keyword;
+  }
 
   await pingPromptWithTimeout(Channel.SET_PROMPT_DATA, promptData);
 
@@ -1464,7 +1486,7 @@ export const preload = (promptScriptPath: string, show = true) => {
       preloadChoices(choices as Choice[]);
 
       const preview = preloadPreviewMap.get(promptScriptPath) as string;
-      preloadPreview(preview);
+      preloadPreview(preview || `<div></div>`);
 
       kitState.promptBounds = {
         x: promptData.x,
@@ -1479,7 +1501,7 @@ export const preload = (promptScriptPath: string, show = true) => {
             : promptData.height,
       };
 
-      initBounds(promptScriptPath, promptScriptPath === mainScriptPath && show);
+      initBounds(promptScriptPath, show, promptScriptPath === mainScriptPath);
     }
   }
 };
@@ -1579,9 +1601,9 @@ export const invokeSearch = (rawInput: string) => {
   if (kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
     transformedInput = rawInput.match(kitSearch.inputRegex)?.[0] || '';
-    // log.info(
-    //   `Transformed input: ${transformedInput} using regex ${kitSearch.inputRegex}`
-    // );
+    log.info(
+      `Transformed input: ${transformedInput} using regex ${kitSearch.inputRegex}`
+    );
   }
 
   if (kitSearch.choices.length === 0) {
@@ -1997,7 +2019,11 @@ export const onHideOnce = (fn: () => void) => {
   }
 };
 
-export const initBounds = async (forceScriptPath?: string, show = false) => {
+export const initBounds = async (
+  forceScriptPath?: string,
+  show = false,
+  isMain = false
+) => {
   if (promptWindow?.isDestroyed()) return;
 
   const bounds = await getCurrentScreenPromptCache(
@@ -2039,14 +2065,27 @@ export const initBounds = async (forceScriptPath?: string, show = false) => {
   );
 
   if (show) {
-    log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
-    promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
-    if (kitState.isMac) {
-      promptWindow.showInactive();
+    if (isMain) {
+      log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
+      promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
+      if (kitState.isMac) {
+        promptWindow.showInactive();
+      } else {
+        promptWindow.show();
+      }
+      promptWindow.focus();
     } else {
-      promptWindow.show();
+      setTimeout(() => {
+        log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
+        promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
+        if (kitState.isMac) {
+          promptWindow.showInactive();
+        } else {
+          promptWindow.show();
+        }
+        promptWindow.focus();
+      }, 50);
     }
-    promptWindow.focus();
   }
 };
 
@@ -2071,9 +2110,9 @@ const subScriptPath = subscribeKey(
       );
 
       hideAppIfNoWindows(HideReason.NoScript);
+      clearSearch();
       sendToPrompt(Channel.SET_OPEN, false);
       kitState.alwaysOnTop = false;
-      clearSearch();
       return;
     }
 

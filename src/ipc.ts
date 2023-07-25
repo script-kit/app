@@ -62,6 +62,7 @@ const checkShortcodesAndKeywords = (rawInput: string) => {
   if (kitSearch.keyword && !rawInput.startsWith(`${kitSearch.keyword} `)) {
     const keyword = '';
     kitSearch.keyword = keyword;
+    kitSearch.inputRegex = undefined;
     log.info(`🔑 ${keyword} cleared`);
     sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
       keyword,
