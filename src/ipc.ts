@@ -379,7 +379,7 @@ ${data.error}
 
         if (channel === Channel.ESCAPE) {
           log.info(
-            `␛ hideOnEscape ${kitState.hideOnEscape ? 'true' : 'false'}}`
+            `␛ hideOnEscape ${kitState.hideOnEscape ? 'true' : 'false'}`
           );
           if (kitState.hideOnEscape) {
             maybeHide(HideReason.Escape);

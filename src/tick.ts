@@ -603,13 +603,16 @@ export const configureInterval = async () => {
           ? parseInt(kitState?.kenvEnv?.KIT_CLIPBOARD_HISTORY_LIMIT, 10)
           : 100;
 
-        log.info(`📋 Clipboard history limit: ${maxHistory}`);
         if (
           // eslint-disable-next-line no-constant-condition
           clipboardHistory.length > maxHistory
         ) {
           clipboardHistory.pop();
         }
+
+        log.info(
+          `📋 Clipboard history: ${clipboardHistory.length}/${maxHistory}`
+        );
 
         await clipboardStore.set('history', clipboardHistory);
       }

@@ -494,6 +494,24 @@ export const createPromptWindow = async () => {
     if (kitState.isMainScript()) maybeHide(HideReason.LockScreen);
   });
 
+  // Debugging event listener counts...
+  // setInterval(() => {
+  //   const events = promptWindow?.eventNames();
+  //   const logEventCountObject: any = {};
+  //   for (const event of events) {
+  //     const count = promptWindow?.listenerCount(event);
+  //     logEventCountObject[event] = count;
+  //   }
+
+  //   const webContentsEvents = promptWindow?.webContents?.eventNames();
+  //   for (const event of webContentsEvents) {
+  //     const count = promptWindow?.webContents?.listenerCount(event);
+  //     logEventCountObject[`webContents-${String(event)}`] = count;
+  //   }
+
+  //   log.info(logEventCountObject);
+  // }, 2000);
+
   return promptWindow;
 };
 

@@ -970,7 +970,7 @@ const kitMessageMap: ChannelHandler = {
     });
   }),
   VALUE_SUBMITTED: toProcess(async (processInfo, data: any) => {
-    log.info(`VALUE_SUBMITTED`, data?.value);
+    // log.info(`VALUE_SUBMITTED`, data?.value);
     clearSearch();
   }),
   SET_SCRIPT: toProcess(async (processInfo: ProcessInfo, data) => {
@@ -1187,6 +1187,12 @@ const kitMessageMap: ChannelHandler = {
     kitState.scriptPathChanged = false;
     kitState.promptScriptPath = value?.scriptPath || '';
     kitState.hideOnEscape = Boolean(value?.hideOnEscape);
+
+    if (typeof value?.keyword === 'string') {
+      kitSearch.keywords.clear();
+      kitSearch.input = '';
+      kitSearch.keyword = value?.keyword;
+    }
 
     if (value?.ui === UI.mic) {
       appToPrompt(AppChannel.SET_MIC_CONFIG, {
