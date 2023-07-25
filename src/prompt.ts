@@ -1682,7 +1682,8 @@ export const invokeSearch = (rawInput: string) => {
           const c = structuredClone(scoredChoice);
           c.item.tag =
             c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
-          c.item.id = Math.random();
+          // This was breaking the choice.preview lookup in the SDK
+          // c.item.id = Math.random();
           c.item.pass = false;
           matchGroup.push(c);
         }

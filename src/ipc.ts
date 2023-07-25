@@ -363,10 +363,9 @@ ${data.error}
 
         if (kitState.scriptPathChanged) {
           if (channel === Channel.CHOICE_FOCUSED) {
-            if (channel === Channel.CHOICE_FOCUSED)
-              log.verbose(
-                `⛔️ Script path changed, but new prompt not set, but new prompt not set.. Skipping CHOICE_FOCUSED`
-              );
+            log.verbose(
+              `⛔️ Script path changed, but new prompt not set, but new prompt not set.. Skipping CHOICE_FOCUSED`
+            );
             return;
           }
           log.verbose(`Allow choice focus: ${kitState.ui}`);
