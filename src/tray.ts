@@ -34,7 +34,12 @@ import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 import { AppChannel, HideReason, Trigger } from './enums';
 import { mainLogPath, updateLogPath } from './logs';
-import { maybeHide, setBackgroundThrottling } from './prompt';
+import {
+  forcePromptToMouse,
+  getMainPrompt,
+  maybeHide,
+  setBackgroundThrottling,
+} from './prompt';
 
 let tray: Tray | null = null;
 
@@ -330,6 +335,22 @@ export const openMenu = async (event?: KeyboardEvent) => {
       label: `Open Dev Tools`,
       click: async () => {
         emitter.emit(KitEvent.OpenDevTools);
+      },
+    });
+
+    toolsSubmenu.push({
+      label: 'Force Prompt to Front',
+      click: () => {
+        runScript(mainScriptPath, [], {
+          force: true,
+          trigger: Trigger.Tray,
+        })();
+
+        getMainPrompt()?.focus();
+        getMainPrompt()?.setAlwaysOnTop(true, 'pop-up-menu');
+        setTimeout(() => {
+          forcePromptToMouse();
+        }, 2000);
       },
     });
 

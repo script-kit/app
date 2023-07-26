@@ -4,7 +4,7 @@
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
-import { writeJson } from 'fs-extra';
+import { readJson, writeJson } from 'fs-extra';
 import * as nativeKeymap from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
 import log, { LogLevel } from 'electron-log';
@@ -377,11 +377,6 @@ const initState = {
   cmd: isMac ? `cmd` : `ctrl`,
   hideOnEscape: true,
 };
-
-nativeTheme.addListener('updated', () => {
-  kitState.isDark = nativeTheme.shouldUseDarkColors;
-  // kitState.transparencyEnabled = checkTransparencyEnabled();
-});
 
 const initConfig: Config = {
   imagePath: tmpClipboardDir,

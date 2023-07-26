@@ -37,7 +37,7 @@ import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel, Trigger } from './enums';
 import { runScript } from './kit';
-import { processes, spawnShebang } from './process';
+import { processes, spawnShebang, updateTheme } from './process';
 import { compareArrays } from './helpers';
 import { cacheMainScripts } from './install';
 import { getFileImports } from './npm';
@@ -317,7 +317,16 @@ export const setupWatchers = async () => {
       if (existsSync(filePath)) {
         try {
           const envData = dotenv.parse(readFileSync(filePath));
-          kitState.kenvEnv = envData;
+          log.info({
+            KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,
+            KIT_THEME_DARK: envData?.KIT_THEME_DARK,
+          });
+          if (envData?.KIT_THEME_DARK) {
+            kitState.kenvEnv.KIT_THEME_DARK = envData?.KIT_THEME_DARK;
+          }
+          if (envData?.KIT_THEME_LIGHT) {
+            kitState.kenvEnv.KIT_THEME_LIGHT = envData?.KIT_THEME_LIGHT;
+          }
 
           const setCSSVariable = (name: string, value: undefined | string) => {
             if (value) {
@@ -384,6 +393,8 @@ export const setupWatchers = async () => {
           if (trustedKenvsChanged) {
             await refreshScripts();
           }
+
+          updateTheme();
 
           if (envData?.KIT_DEBUG_PROMPT) {
             debugPrompt();

@@ -138,6 +138,7 @@ import {
   forkOptions,
   installEsbuild,
   installKitInKenv,
+  matchPackageJsonEngines,
   ohNo,
   optionalSetupScript,
   optionalSpawnSetup,
@@ -568,6 +569,7 @@ const verifyInstall = async () => {
   const checkKit = await kitExists();
   await setupLog(`Verifying ~/.kenv exists:`);
   const checkKenv = await kenvExists();
+  await matchPackageJsonEngines();
 
   const checkNodeModules = await nodeModulesExists();
   await setupLog(

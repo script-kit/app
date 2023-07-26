@@ -657,7 +657,7 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
       }
       if (script.txt) {
         emitter.emit(KitEvent.RunPromptProcess, {
-          scriptPath: kitPath('main', 'snippets.js'),
+          scriptPath: kitPath('app', 'paste-snippet.js'),
           args: ['--filePath', script?.filePath],
           options: {
             force: false,

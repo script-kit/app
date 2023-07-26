@@ -5,6 +5,8 @@ import log from 'electron-log';
 import { randomUUID } from 'crypto';
 import detect from 'detect-port';
 import untildify from 'untildify';
+import dotenv from 'dotenv';
+
 import {
   app,
   clipboard,
@@ -57,6 +59,7 @@ import {
 import { subscribeKey } from 'valtio/utils';
 import { pathExists, writeJson, readJson, ensureDir } from 'fs-extra';
 import { setScriptTimestamp, getTimestamps } from '@johnlindquist/kit/cjs/db';
+import { readFileSync } from 'fs';
 import { getLog, mainLog, warn } from './logs';
 import {
   alwaysOnTop,
@@ -144,37 +147,7 @@ import { TrackEvent, trackEvent } from './track';
 //   return pExec(`${bin} ${args.join(' ')}`);
 // };
 
-export const maybeConvertColors = async (newTheme: any = {}) => {
-  let prevTheme: any = {};
-  const prevThemeExists = await pathExists(themeDbPath);
-  if (prevThemeExists) {
-    try {
-      log.info(`Found saved theme: ${themeDbPath}`);
-      prevTheme = await readJson(themeDbPath);
-      if (prevTheme?.['--ui-bg-opacity']) delete prevTheme['--ui-bg-opacity'];
-      if (prevTheme?.['--ui-border-opacity'])
-        delete prevTheme['--ui-border-opacity'];
-    } catch (error) {
-      log.warn(`Error reading theme db:`, error);
-    }
-  } else {
-    log.info(`No saved theme found: ${themeDbPath}`);
-  }
-
-  let theme: any = {};
-
-  if (kitState.ready) {
-    theme = {
-      ...prevTheme,
-      ...newTheme,
-    };
-  } else {
-    theme = {
-      ...newTheme,
-      ...prevTheme,
-    };
-  }
-
+export const maybeConvertColors = async (theme: any = {}) => {
   log.info(`🎨 Convert Colors:`, theme);
 
   // eslint-disable-next-line prettier/prettier
@@ -194,10 +167,8 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
 
   log.info(`🫥 Theme opacity: ${theme.opacity}`);
 
-  theme['--ui-bg-opacity'] ||=
-    newTheme?.['ui-bg-opacity'] || theme?.['ui-bg-opacity'] || '0.4';
-  theme['--ui-border-opacity'] ||=
-    newTheme?.['ui-border-opacity'] || theme?.['ui-border-opacity'] || '0.7';
+  theme['--ui-bg-opacity'] ||= theme?.['ui-bg-opacity'] || '0.4';
+  theme['--ui-border-opacity'] ||= theme?.['ui-border-opacity'] || '0.7';
 
   if (appDb?.disableBlurEffect) theme.opacity = '1';
 
@@ -248,26 +219,6 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   // if(value?.['--color-secondary']) delete value['--color-secondary']
   // if(value?.['--opacity']) delete value['--opacity']
 
-  if (theme?.accent === scriptKitTheme?.accent) {
-    log.info(
-      `🎨 Accent detected as ${scriptKitTheme?.accent}. Forcing default theme`
-    );
-    theme = scriptKitTheme;
-  }
-
-  // if kitPath exists
-  const dbPathExists = await pathExists(kitPath('db'));
-  if (dbPathExists) {
-    // Save theme as JSON to disk
-    log.info(`Saving theme to ${themeDbPath}`, theme);
-    log.info(`Result`, { result });
-    try {
-      writeJson(themeDbPath, theme);
-    } catch (error) {
-      log.warn(`Error writing theme db:`, error);
-    }
-  }
-
   const validVibrancies = [
     'appearance-based',
     'light',
@@ -293,8 +244,8 @@ export const maybeConvertColors = async (newTheme: any = {}) => {
   const defaultVibrancy = 'hud';
 
   const vibrancy =
-    newTheme?.vibrancy && validVibrancies.includes(newTheme.vibrancy)
-      ? newTheme.vibrancy
+    theme?.vibrancy && validVibrancies.includes(theme.vibrancy)
+      ? theme.vibrancy
       : defaultVibrancy;
 
   setVibrancy(vibrancy);
@@ -364,6 +315,13 @@ export const setTheme = async (value: any = {}, check = true) => {
   const newValue = await maybeConvertColors(value);
   assign(kitState.theme, newValue);
 
+  // TODO: https://github.com/electron/electron/issues/37705
+  // const promptWindow = getMainPrompt();
+  // const backgroundColor = `rgba(${kitState.theme['--color-background']}, ${kitState.theme['--opacity']})`;
+  // log.info(`🎨 Setting backgroundColor: ${backgroundColor}`);
+
+  // promptWindow.setBackgroundColor(backgroundColor);
+
   sendToPrompt(Channel.SET_THEME, newValue);
 };
 
@@ -404,6 +362,35 @@ const SHOW_IMAGE = async (data: SendData<Channel.SHOW_IMAGE>) => {
     });
   }
 };
+
+export const updateTheme = async () => {
+  kitState.isDark = nativeTheme.shouldUseDarkColors;
+  log.info({
+    isDarkState: kitState.isDark ? 'true' : 'false',
+    isDarkNative: nativeTheme.shouldUseDarkColors ? 'true' : 'false',
+  });
+
+  const themePath = kitState.isDark
+    ? kitState.kenvEnv?.KIT_THEME_DARK
+    : kitState.kenvEnv?.KIT_THEME_LIGHT;
+
+  if (themePath) {
+    log.info(
+      `▓ ${kitState.isDark ? 'true' : 'false'} 👀 Theme path: ${themePath}`
+    );
+    try {
+      const currentTheme = await readJson(themePath);
+      setTheme(currentTheme);
+    } catch (error) {
+      log.warn(error);
+    }
+  } else {
+    log.info(`👀 No themes configured in .env. Using defaults`);
+    const { scriptKitLightTheme, scriptKitTheme } = getThemes();
+    setTheme(kitState.isDark ? scriptKitTheme : scriptKitLightTheme);
+  }
+};
+nativeTheme.addListener('updated', updateTheme);
 
 type WidgetData = {
   widgetId: string;
@@ -1405,6 +1392,11 @@ const kitMessageMap: ChannelHandler = {
   SET_TEMP_THEME: toProcess(async ({ child }, { channel, value }) => {
     const newValue = await maybeConvertColors(value);
     sendToPrompt(Channel.SET_TEMP_THEME, newValue);
+    // TOOD: https://github.com/electron/electron/issues/37705
+    // const backgroundColor = `rgba(${newValue['--color-background']}, ${newValue['--opacity']})`;
+    // log.info(`🎨 Setting backgroundColor: ${backgroundColor}`);
+
+    // getMainPrompt().setBackgroundColor(backgroundColor);
     if (child) {
       childSend(child, {
         channel,
@@ -2882,8 +2874,15 @@ emitter.on(
 //   setChoices(formatScriptChoices(scripts));
 // });
 
-emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
-  setTheme(snapshot(kitState.theme));
+emitter.on(KitEvent.DID_FINISH_LOAD, () => {
+  try {
+    const envData = dotenv.parse(readFileSync(kenvPath('.env')));
+    kitState.kenvEnv = envData;
+  } catch (error) {
+    log.warn(`Error reading kenv env`, error);
+  }
+
+  updateTheme();
 });
 
 subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {

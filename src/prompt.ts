@@ -230,6 +230,7 @@ export const createPromptWindow = async () => {
   }
 
   promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  promptWindow.setFullScreenable(false);
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
 
   if (kitState.isMac) {
@@ -555,7 +556,7 @@ export const alwaysOnTop = (onTop: boolean) => {
   if (promptWindow && !promptWindow.isDestroyed()) {
     if (onTop) log.info(`🔝 Keep "alwaysOnTop"`);
     kitState.alwaysOnTop = onTop;
-    promptWindow.setAlwaysOnTop(onTop, 'screen-saver', 1);
+    promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu');
     if (onTop && kitState.isMac) {
       promptWindow.moveTop();
     }
@@ -1400,13 +1401,17 @@ export const setPromptData = async (promptData: PromptData) => {
   setBackgroundThrottling(true);
 
   setTimeout(() => {
-    promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
+    promptWindow.setAlwaysOnTop(true, 'pop-up-menu');
+    promptWindow.setVisibleOnAllWorkspaces(true, {
+      visibleOnFullScreen: true,
+    });
+    promptWindow.setFullScreenable(false);
   }, 0);
 
   if (topTimeout) clearTimeout(topTimeout);
   topTimeout = setTimeout(() => {
     if (kitState.ignoreBlur) {
-      promptWindow?.setAlwaysOnTop(kitState.alwaysOnTop, 'screen-saver', 1);
+      promptWindow?.setAlwaysOnTop(kitState.alwaysOnTop, 'pop-up-menu');
     }
   }, 1000);
 
@@ -2065,29 +2070,30 @@ export const initBounds = async (
     //   !kitState.promptBounds.height
   );
 
-  if (show) {
-    if (isMain) {
-      log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
-      promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
-      if (kitState.isMac) {
-        promptWindow.showInactive();
-      } else {
-        promptWindow.show();
-      }
-      promptWindow.focus();
-    } else {
-      setTimeout(() => {
-        log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
-        promptWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
-        if (kitState.isMac) {
-          promptWindow.showInactive();
-        } else {
-          promptWindow.show();
-        }
-        promptWindow.focus();
-      }, 50);
-    }
+  log.info({
+    show: show ? 'true' : 'false',
+    isMain: isMain ? 'true' : 'false',
+  });
+  if (!show) {
+    return;
   }
+  if (isMain) {
+    // eslint-disable-next-line promise/param-names
+    await new Promise((r) => setTimeout(r, 40));
+  }
+  log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
+  promptWindow?.setAlwaysOnTop(true, 'pop-up-menu');
+  promptWindow?.setVisibleOnAllWorkspaces(true, {
+    visibleOnFullScreen: true,
+  });
+  promptWindow?.setFullScreenable(false);
+
+  if (kitState.isMac) {
+    promptWindow.showInactive();
+  } else {
+    promptWindow.show();
+  }
+  promptWindow.focus();
 };
 
 const subScriptPath = subscribeKey(
@@ -2181,6 +2187,16 @@ export const clearPromptTimers = async () => {
   } catch (e) {
     log.error(e);
   }
+};
+
+export const forcePromptToMouse = async () => {
+  if (promptWindow?.isDestroyed()) {
+    log.warn(`Prompt window is destroyed. Not forcing to mouse.`);
+    return;
+  }
+
+  const mouse = screen.getCursorScreenPoint();
+  promptWindow?.setPosition(mouse.x, mouse.y);
 };
 
 export const debugPrompt = async () => {

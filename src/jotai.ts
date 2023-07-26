@@ -1258,7 +1258,7 @@ export const themeAtom = atom(
 
     const newTheme = { ...prevTheme, ...a };
 
-    g(logAtom)(`theme: ${JSON.stringify(newTheme)}`);
+    // g(logAtom)(`theme: ${JSON.stringify(newTheme)}`);
 
     s(_themeAtom, newTheme);
   }

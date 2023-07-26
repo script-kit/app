@@ -8,6 +8,7 @@ import download from 'download';
 import { debounce } from 'lodash';
 import path from 'path';
 import tar from 'tar';
+import { promisify } from 'util';
 import StreamZip from 'node-stream-zip';
 import {
   SpawnSyncOptions,
@@ -15,9 +16,17 @@ import {
   fork,
   spawn,
   SpawnSyncReturns,
+  exec,
 } from 'child_process';
 import os, { homedir } from 'os';
-import { ensureDir, writeFile, lstat, readdir } from 'fs-extra';
+import {
+  ensureDir,
+  writeFile,
+  lstat,
+  readdir,
+  readJson,
+  writeJson,
+} from 'fs-extra';
 import { readFile, rm } from 'fs/promises';
 
 import { Channel } from '@johnlindquist/kit/cjs/enum';
@@ -612,3 +621,31 @@ export const cacheMainScripts = debounce(async () => {
     log.warn(`Failed to cache main scripts at startup`, error);
   }
 }, 200);
+
+export const matchPackageJsonEngines = async () => {
+  const execP = promisify(exec);
+
+  const getCommandOutput = async (command: string) => {
+    const { stdout } = await execP(command);
+    return stdout.trim();
+  };
+  const isWin = os.platform().startsWith('win');
+  const npmPath = isWin ? knodePath('bin', 'npm.cmd') : knodePath('bin', 'npm');
+  const nodePath = isWin
+    ? knodePath('bin', 'node.exe')
+    : knodePath('bin', 'node');
+
+  const npmVersion = await getCommandOutput(`${npmPath} --version`);
+  const nodeVersion = await getCommandOutput(`${nodePath} --version`);
+  log.info({
+    npmVersion,
+    nodeVersion,
+  });
+
+  const pkgJson = await readJson(kenvPath('package.json'));
+  pkgJson.engines = {
+    node: nodeVersion.replace('v', ''),
+    npm: npmVersion,
+  };
+  await writeJson(kenvPath('package.json'), pkgJson, { spaces: 2 });
+};
