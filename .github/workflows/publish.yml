@@ -63,7 +63,7 @@ jobs:
       matrix:
         os: [macos-12, windows-latest, ubuntu-latest]
         arch: [x64, arm64]
-        node: [18.16.1]
+        node: [18.15.0]
 
     steps:
       - name: Checkout git repo

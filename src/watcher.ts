@@ -497,7 +497,12 @@ export const setupWatchers = async () => {
     }
 
     if (dir.endsWith('snippets')) {
-      addTextSnippet(filePath);
+      if (eventName === 'add' || eventName === 'change') {
+        addTextSnippet(filePath);
+      } else {
+        removeSnippet(filePath);
+      }
+
       return;
     }
 

@@ -17,6 +17,7 @@ import {
   spawn,
   SpawnSyncReturns,
   exec,
+  ExecOptions,
 } from 'child_process';
 import os, { homedir } from 'os';
 import {
@@ -369,11 +370,11 @@ export const downloadNode = async () => {
   const isWin = process.platform === 'win32';
   const extension = isWin ? 'zip' : 'tar.gz';
 
-  // download node v18.16.1 based on the current platform and architecture
+  // download node v18.15.0 based on the current platform and architecture
   // Examples:
-  // Mac arm64: https://nodejs.org/dist/v18.16.1/node-v18.16.1-darwin-arm64.tar.gz
-  // Linux x64: https://nodejs.org/dist/v18.16.1/node-v18.16.1-linux-x64.tar.gz
-  // Windows x64: https://nodejs.org/dist/v18.16.1/node-v18.16.1-win-x64.zip
+  // Mac arm64: https://nodejs.org/dist/v18.15.0/node-v18.15.0-darwin-arm64.tar.gz
+  // Linux x64: https://nodejs.org/dist/v18.15.0/node-v18.15.0-linux-x64.tar.gz
+  // Windows x64: https://nodejs.org/dist/v18.15.0/node-v18.15.0-win-x64.zip
 
   // Node dist url uses "win", not "win32"
   const nodeVersion = `v${process.versions.node}`;
@@ -416,10 +417,10 @@ export const extractNode = async (file: string) => {
       const zip = new StreamZip.async({ file });
 
       sendSplashBody(`Unzipping ${file} to ${knodePath()}`);
-      // node-18.16.1-win-x64
+      // node-18.15.0-win-x64
       const fileName = path.parse(file).name;
       console.log(`Extacting ${fileName} to ${knodePath('bin')}`);
-      // node-18.16.1-win-x64
+      // node-18.15.0-win-x64
       await zip.extract(fileName, knodePath('bin'));
       await zip.close();
     } catch (error) {
@@ -623,10 +624,22 @@ export const cacheMainScripts = debounce(async () => {
 }, 200);
 
 export const matchPackageJsonEngines = async () => {
+  const KIT = kitPath();
+  const KENV = kenvPath();
+
+  const options: ExecOptions = {
+    cwd: kenvPath(), // Set the current working directory based on the provided parameter
+    env: {
+      KIT,
+      KENV,
+      PATH: KIT_FIRST_PATH + path.delimiter + process?.env?.PATH,
+    },
+  };
   const execP = promisify(exec);
 
   const getCommandOutput = async (command: string) => {
-    const { stdout } = await execP(command);
+    // How do I pass the options to execP?
+    const { stdout } = await execP(command, options);
     return stdout.trim();
   };
   const isWin = os.platform().startsWith('win');
@@ -635,17 +648,22 @@ export const matchPackageJsonEngines = async () => {
     ? knodePath('bin', 'node.exe')
     : knodePath('bin', 'node');
 
-  const npmVersion = await getCommandOutput(`${npmPath} --version`);
-  const nodeVersion = await getCommandOutput(`${nodePath} --version`);
-  log.info({
-    npmVersion,
-    nodeVersion,
-  });
-
   const pkgJson = await readJson(kenvPath('package.json'));
-  pkgJson.engines = {
-    node: nodeVersion.replace('v', ''),
-    npm: npmVersion,
-  };
+  try {
+    const npmVersion = await getCommandOutput(`${npmPath} --version`);
+    const nodeVersion = await getCommandOutput(`${nodePath} --version`);
+    log.info({
+      npmVersion,
+      nodeVersion,
+    });
+
+    pkgJson.engines = {
+      node: nodeVersion.replace('v', ''),
+      npm: npmVersion,
+    };
+  } catch (error) {
+    delete pkgJson.engines;
+  }
+
   await writeJson(kenvPath('package.json'), pkgJson, { spaces: 2 });
 };
