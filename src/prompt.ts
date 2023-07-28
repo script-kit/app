@@ -229,7 +229,6 @@ export const createPromptWindow = async () => {
     });
   }
 
-  promptWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   promptWindow.setFullScreenable(false);
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
 
@@ -1402,9 +1401,7 @@ export const setPromptData = async (promptData: PromptData) => {
 
   setTimeout(() => {
     promptWindow.setAlwaysOnTop(true, 'pop-up-menu');
-    promptWindow.setVisibleOnAllWorkspaces(true, {
-      visibleOnFullScreen: true,
-    });
+
     promptWindow.setFullScreenable(false);
   }, 0);
 
@@ -2083,9 +2080,6 @@ export const initBounds = async (
   }
   log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
   promptWindow?.setAlwaysOnTop(true, 'pop-up-menu');
-  promptWindow?.setVisibleOnAllWorkspaces(true, {
-    visibleOnFullScreen: true,
-  });
   promptWindow?.setFullScreenable(false);
 
   if (kitState.isMac) {

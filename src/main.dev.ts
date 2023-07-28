@@ -138,6 +138,7 @@ import {
   forkOptions,
   installEsbuild,
   installKitInKenv,
+  installPlatformDeps,
   matchPackageJsonEngines,
   ohNo,
   optionalSetupScript,
@@ -916,7 +917,11 @@ const checkKit = async () => {
   optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
 
   if (!requiresInstall) {
-    await Promise.all([installKitInKenv(), installEsbuild()]);
+    await Promise.all([
+      installKitInKenv(),
+      installEsbuild(),
+      installPlatformDeps(),
+    ]);
   }
 
   if (

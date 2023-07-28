@@ -213,6 +213,17 @@ export const installEsbuild = async () => {
   );
 };
 
+export const installPlatformDeps = async () => {
+  if (os.platform().startsWith('darwin')) {
+    return installPackage(
+      `i @johnlindquist/mac-dictionary --save-exact --production --prefer-dedupe --loglevel=verbose`,
+      kitPath()
+    );
+  }
+
+  return null;
+};
+
 const getOptions = () => {
   const options: any = { insecure: true, rejectUnauthorized: false };
   const proxy =
