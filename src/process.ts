@@ -28,7 +28,7 @@ import { snapshot, subscribe } from 'valtio';
 import http from 'http';
 import path from 'path';
 import https from 'https';
-import url from 'url';
+import url, { pathToFileURL } from 'url';
 import sizeOf from 'image-size';
 import { writeFile } from 'fs/promises';
 import { format, formatDistanceToNowStrict } from 'date-fns';
@@ -2252,13 +2252,14 @@ const createChild = ({
     ...kitState.kenvEnv,
   };
   // console.log({ env });
+  const loaderFileUrl = pathToFileURL(kitPath('build', 'loader.js')).href;
   const isWin = os.platform().startsWith('win');
   const child = fork(entry, args, {
     silent: true,
     stdio: 'pipe',
     execPath,
     cwd: os.homedir(),
-    execArgv: [`--experimental-loader`, kitPath('build', 'loader.js')],
+    execArgv: [`--experimental-loader`, loaderFileUrl],
     env: {
       ...env,
       KIT_DEBUG: port ? '1' : '0',
@@ -2268,7 +2269,7 @@ const createChild = ({
           stdio: 'pipe',
           execArgv: [
             `--experimental-loader`,
-            kitPath('build', 'loader.js'),
+            loaderFileUrl,
             `--inspect=${port}`,
           ],
         }
