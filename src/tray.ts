@@ -347,7 +347,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         })();
 
         getMainPrompt()?.focus();
-        getMainPrompt()?.setAlwaysOnTop(true, 'pop-up-menu');
+        getMainPrompt()?.setAlwaysOnTop(true, 'pop-up-menu', 1);
         setTimeout(() => {
           forcePromptToMouse();
         }, 2000);

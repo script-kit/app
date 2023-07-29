@@ -555,7 +555,7 @@ export const alwaysOnTop = (onTop: boolean) => {
   if (promptWindow && !promptWindow.isDestroyed()) {
     if (onTop) log.info(`🔝 Keep "alwaysOnTop"`);
     kitState.alwaysOnTop = onTop;
-    promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu');
+    promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
     if (onTop && kitState.isMac) {
       promptWindow.moveTop();
     }
@@ -1400,7 +1400,7 @@ export const setPromptData = async (promptData: PromptData) => {
   setBackgroundThrottling(true);
 
   setTimeout(() => {
-    promptWindow.setAlwaysOnTop(true, 'pop-up-menu');
+    promptWindow.setAlwaysOnTop(true, 'pop-up-menu', 1);
 
     promptWindow.setFullScreenable(false);
   }, 0);
@@ -1408,7 +1408,7 @@ export const setPromptData = async (promptData: PromptData) => {
   if (topTimeout) clearTimeout(topTimeout);
   topTimeout = setTimeout(() => {
     if (kitState.ignoreBlur) {
-      promptWindow?.setAlwaysOnTop(kitState.alwaysOnTop, 'pop-up-menu');
+      promptWindow?.setAlwaysOnTop(kitState.alwaysOnTop, 'pop-up-menu', 1);
     }
   }, 1000);
 
@@ -2079,7 +2079,7 @@ export const initBounds = async (
     await new Promise((r) => setTimeout(r, 40));
   }
   log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
-  promptWindow?.setAlwaysOnTop(true, 'pop-up-menu');
+  promptWindow?.setAlwaysOnTop(true, 'pop-up-menu', 1);
   promptWindow?.setFullScreenable(false);
 
   if (kitState.isMac) {

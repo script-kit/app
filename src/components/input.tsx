@@ -41,6 +41,7 @@ import {
   inputHeightAtom,
   headerHiddenAtom,
   loadingAtom,
+  deletingInputAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -90,6 +91,7 @@ export default function Input() {
   const inputHeight = useAtomValue(inputHeightAtom);
 
   const setLastKeyDownWasModifier = useSetAtom(lastKeyDownWasModifierAtom);
+  const setDeleting = useSetAtom(deletingInputAtom);
 
   useEffect(() => {
     setInputFocus(Math.random());
@@ -120,8 +122,13 @@ export default function Input() {
       setLastKeyDownWasModifier(
         modifiers.includes(event.key) && event.key !== 'Shift'
       );
+
+      // If deleting, setDeleting to true
+      if (event.key === 'Backspace' || event.key === 'Delete') {
+        setDeleting(true);
+      }
     },
-    [setSelectionStart, setModifiers, setLastKeyDownWasModifier]
+    [setSelectionStart, setModifiers, setLastKeyDownWasModifier, setDeleting]
   );
 
   const onKeyUp = useCallback(

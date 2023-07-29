@@ -1331,7 +1331,7 @@ export const promptDataAtom = atom(
         s(termConfigAtom, config);
       }
 
-      if (!a?.keyword) {
+      if (!a?.keyword && !g(deletingInputAtom)) {
         s(_inputAtom, a?.input || '');
       }
       s(hintAtom, a.hint);
@@ -2628,3 +2628,19 @@ export const triggerKeywordAtom = atom(
 export const hasRightShortcutAtom = atom((g) => {
   return g(shortcutsAtom).find((s) => s?.key === 'right');
 });
+
+const deletingInput = atom(false);
+let deletingInputId: any = null;
+export const deletingInputAtom = atom(
+  (g) => g(deletingInput),
+  // if true, toggle to false after 20ms. Cancel the previous timeout if it exists
+  (g, s, a: boolean) => {
+    if (a) {
+      if (deletingInputId) clearTimeout(deletingInputId);
+      deletingInputId = setTimeout(() => {
+        s(deletingInput, false);
+      }, 50);
+    }
+    s(deletingInput, a);
+  }
+);

@@ -2378,12 +2378,8 @@ export const ensureIdleProcess = () => {
       log.info(`Add one idle process`);
       processes.add(ProcessType.Prompt);
     } else if (idles.length === 1) {
-      log.info(`No need to add idle processes`);
-    } else {
-      log.info(`Remove extra idle processes`);
-      idles.forEach((idle) => {
-        processes.removeByPid(idle.pid);
-      });
+      log.info(`Add one idle processes`);
+      processes.add(ProcessType.Prompt);
     }
   }, 100);
 };
