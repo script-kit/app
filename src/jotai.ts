@@ -1285,7 +1285,10 @@ export const promptDataAtom = atom(
     // g(logAtom)(
     //   `👀 Preloaded: ${a?.scriptPath} ${
     //     wasPromptDataPreloaded ? 'true' : 'false'
-    //   } and keyword: ${a?.keyword}`
+    //   } and keyword: ${a?.keyword}
+    //   prevPromptData: ${prevPromptData?.preload ? 'yup' : 'nope'}
+    //   currentPromptData: ${a?.preload ? 'yup' : 'nope'}
+    //   `
     // );
 
     // was closed, now open
@@ -1331,7 +1334,8 @@ export const promptDataAtom = atom(
         s(termConfigAtom, config);
       }
 
-      if (!a?.keyword && !g(deletingInputAtom)) {
+      if (!a?.keyword && !wasPromptDataPreloaded) {
+        g(logAtom)(`👍 Setting input to ${a?.input || 'nothing'}`);
         s(_inputAtom, a?.input || '');
       }
       s(hintAtom, a.hint);
@@ -1409,16 +1413,16 @@ export const promptDataAtom = atom(
       }
 
       s(promptData, a);
+
+      const channel = g(channelAtom);
+      channel(Channel.ON_INIT);
+
+      ipcRenderer.send(Channel.SET_PROMPT_DATA);
+      s(promptReadyAtom, true);
+
+      s(promptActiveAtom, true);
+      s(tabChangedAtom, false);
     }
-
-    const channel = g(channelAtom);
-    channel(Channel.ON_INIT);
-
-    s(promptReadyAtom, true);
-    ipcRenderer.send(Channel.SET_PROMPT_DATA);
-
-    s(promptActiveAtom, true);
-    s(tabChangedAtom, false);
   }
 );
 
@@ -2629,18 +2633,18 @@ export const hasRightShortcutAtom = atom((g) => {
   return g(shortcutsAtom).find((s) => s?.key === 'right');
 });
 
-const deletingInput = atom(false);
-let deletingInputId: any = null;
-export const deletingInputAtom = atom(
-  (g) => g(deletingInput),
+const typing = atom(false);
+let typingId: any = null;
+export const typingAtom = atom(
+  (g) => g(typing),
   // if true, toggle to false after 20ms. Cancel the previous timeout if it exists
   (g, s, a: boolean) => {
     if (a) {
-      if (deletingInputId) clearTimeout(deletingInputId);
-      deletingInputId = setTimeout(() => {
-        s(deletingInput, false);
+      if (typingId) clearTimeout(typingId);
+      typingId = setTimeout(() => {
+        s(typing, false);
       }, 50);
     }
-    s(deletingInput, a);
+    s(typing, a);
   }
 );

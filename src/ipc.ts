@@ -373,7 +373,12 @@ ${data.error}
         log.verbose(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
 
         if (channel === Channel.INPUT) {
-          if (!message.state.input) kitSearch.input = '';
+          if (!message.state.input) {
+            log.info(`📝 No prompt input`);
+            kitSearch.input = '';
+            kitSearch.inputRegex = undefined;
+            kitSearch.keyword = '';
+          }
           checkShortcodesAndKeywords(message.state.input);
         }
 

@@ -2039,6 +2039,10 @@ export const initBounds = async (
   );
   if (promptWindow?.isDestroyed()) return;
 
+  if (promptWindow?.isVisible()) {
+    log.info(`↖ Ignore init bounds, already visible`);
+    return;
+  }
   log.info(`↖ Init bounds: Prompt ${kitState.promptUI} ui`, bounds);
 
   // If widths or height don't match, send SET_RESIZING to prompt
@@ -2067,17 +2071,24 @@ export const initBounds = async (
     //   !kitState.promptBounds.height
   );
 
-  log.info({
-    show: show ? 'true' : 'false',
-    isMain: isMain ? 'true' : 'false',
-  });
   if (!show) {
     return;
   }
-  if (isMain) {
+  if (!isMain) {
     // eslint-disable-next-line promise/param-names
-    await new Promise((r) => setTimeout(r, 40));
+    // await new Promise((r) => setTimeout(r, 40));
+    // eslint-disable-next-line promise/param-names
+    await new Promise((r) => {
+      const id = setTimeout(() => {
+        r(true);
+      }, 200);
+      ipcMain.once(Channel.ON_INIT, () => {
+        clearTimeout(id);
+        r(true);
+      });
+    });
   }
+
   log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
   promptWindow?.setAlwaysOnTop(true, 'pop-up-menu', 1);
   promptWindow?.setFullScreenable(false);
@@ -2171,6 +2182,18 @@ export const clearPromptCacheFor = async (scriptPath: string) => {
     }
   } catch (e) {
     log.error(e);
+  }
+
+  if (preloadChoicesMap.has(scriptPath)) {
+    preloadChoicesMap.delete(scriptPath);
+  }
+
+  if (preloadPromptDataMap.has(scriptPath)) {
+    preloadPromptDataMap.delete(scriptPath);
+  }
+
+  if (preloadPreviewMap.has(scriptPath)) {
+    preloadPreviewMap.delete(scriptPath);
   }
 };
 

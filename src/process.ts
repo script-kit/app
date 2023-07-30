@@ -1197,8 +1197,8 @@ const kitMessageMap: ChannelHandler = {
 
     if (kitSearch.keyword) {
       value.input = `${kitSearch.keyword} `;
-    } else {
-      kitSearch.input = value.input || '';
+    } else if (value.input && kitState.promptCount < 2) {
+      kitSearch.input = value.input;
     }
 
     setPromptData(value);
@@ -1239,6 +1239,7 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_CHOICES: toProcess(async ({ child }, { channel, value }) => {
+    log.info(`SET_CHOICES preloaded ${kitState.preloaded ? 'true' : 'false'}`);
     if (![UI.arg, UI.hotkey].includes(kitState.ui)) {
       log.info(`⛔️ UI changed before choices sent. Skipping SET_CHOICES`);
 
@@ -1291,7 +1292,7 @@ const kitMessageMap: ChannelHandler = {
       });
     }
 
-    if (kitState.cacheChoices) {
+    if (kitState.cacheChoices && !kitState.preloaded) {
       kitState.cacheChoices = false;
 
       cacheChoices(kitState.scriptPath, formattedChoices);
