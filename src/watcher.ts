@@ -109,12 +109,11 @@ const unlinkBin = (filePath: string) => {
   }
 };
 
-const checkFileImports = debounce(async (script: Script, contents: string) => {
+const checkFileImports = debounce(async (script: Script) => {
   let imports: string[] = [];
   try {
     imports = await getFileImports(
       script.filePath,
-      contents,
       kenvPath('package.json'),
       script.kenv ? kenvPath('kenvs', script.kenv, 'package.json') : undefined
     );
@@ -123,7 +122,7 @@ const checkFileImports = debounce(async (script: Script, contents: string) => {
     imports = [];
   }
 
-  if (imports.length) {
+  if (imports?.length) {
     log.info(`📦 ${script.filePath} missing imports`, imports);
     emitter.emit(KitEvent.RunPromptProcess, {
       scriptPath: kitPath('cli', 'npm.js'),
@@ -168,7 +167,7 @@ export const onScriptsChanged = async (
     if (kitState.ready && !rebuilt) {
       scriptChanged(filePath);
       if (event === 'change') {
-        checkFileImports(script, script?.contents);
+        checkFileImports(script);
       }
     } else {
       log.verbose(

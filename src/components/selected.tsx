@@ -1,7 +1,6 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-import React, { useCallback, useEffect } from 'react';
-import { gsap, Power0 } from 'gsap';
+import React, { useCallback } from 'react';
 import { useAtom } from 'jotai';
 import { flagValueAtom, selectedAtom } from '../jotai';
 import { IconSwapper } from './iconswapper';
@@ -18,19 +17,6 @@ export default function Selected() {
     [setFlagValue]
   );
 
-  useEffect(() => {
-    gsap.fromTo(
-      '#selected',
-      {
-        width: '10%',
-      },
-      {
-        duration: 0.2,
-        width: '100%',
-      }
-    );
-  }, []);
-
   return (
     <div
       id="selected"
@@ -44,7 +30,7 @@ export default function Selected() {
       onClick={onClick}
       className={`
 flex
-w-max
+w-full
 flex-row items-center border-b-2
 border-primary
 pb-[3px]

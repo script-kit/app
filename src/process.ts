@@ -51,13 +51,11 @@ import {
   kenvPath,
   kitDotEnvPath,
   mainScriptPath,
-  themeDbPath,
   execPath,
-  getCachePath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { subscribeKey } from 'valtio/utils';
-import { pathExists, writeJson, readJson, ensureDir } from 'fs-extra';
+import { readJson } from 'fs-extra';
 import { setScriptTimestamp, getTimestamps } from '@johnlindquist/kit/cjs/db';
 import { readFileSync } from 'fs';
 import { getLog, mainLog, warn } from './logs';
@@ -2379,11 +2377,8 @@ export const ensureIdleProcess = () => {
     if (idles.length === 0) {
       log.info(`Add one idle process`);
       processes.add(ProcessType.Prompt);
-    } else if (idles.length === 1) {
-      log.info(`Add one idle processes`);
-      processes.add(ProcessType.Prompt);
     }
-  }, 100);
+  }, 0);
 };
 
 const setTrayScriptError = (pid: number) => {

@@ -11,7 +11,6 @@ interface PackageJson {
 
 export async function getFileImports(
   filePath: string,
-  contents: string,
   rootPackagePath: string,
   kenvPackagePath?: string
 ): Promise<string[]> {
@@ -39,13 +38,18 @@ export async function getFileImports(
     });
   }
 
-  // TODO: I already have the contents, so I don't need to read it again...
-  const sourceFile = ts.createSourceFile(
-    filePath,
-    contents,
-    ts.ScriptTarget.ES2022,
-    true
-  );
+  let sourceFile: ts.SourceFile;
+  try {
+    const contents = readFileSync(filePath, 'utf8');
+    sourceFile = ts.createSourceFile(
+      filePath,
+      contents,
+      ts.ScriptTarget.ES2022,
+      true
+    );
+  } catch (error) {
+    return [];
+  }
 
   const missingImports: string[] = [];
 

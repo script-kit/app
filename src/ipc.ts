@@ -404,6 +404,7 @@ ${data.error}
 
         if (channel === Channel.VALUE_SUBMITTED) {
           log.verbose(`📝 Submitting...`);
+          clearSearch();
 
           if (message?.state?.value === Channel.TERMINAL) {
             message.state.value = ``;
@@ -411,10 +412,10 @@ ${data.error}
 
           if (kitState.isMainScript()) {
             cachePreview(mainScriptPath, message?.state?.preview || '');
-          }
 
-          if (typeof message?.state?.value === 'string') {
-            preload(message?.state?.value);
+            if (typeof message?.state?.value?.filePath === 'string') {
+              preload(message?.state?.value?.filePath);
+            }
           }
         }
 

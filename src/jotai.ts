@@ -1384,7 +1384,28 @@ export const promptDataAtom = atom(
       }
 
       if (a?.html) {
-        s(formHTMLAtom, a.html);
+        // eslint-disable-next-line prefer-destructuring
+        const parser = new DOMParser();
+        const htmlDoc = parser.parseFromString(a.html, 'text/html');
+
+        const inputs = htmlDoc.getElementsByTagName('input');
+        const buttons = htmlDoc.getElementsByTagName('button');
+        const hasSubmit =
+          Array.from(inputs).some(
+            (input) => input.type.toLowerCase() === 'submit'
+          ) ||
+          Array.from(buttons).some(
+            (button) => button.type.toLowerCase() === 'submit'
+          );
+
+        if (!hasSubmit) {
+          const hiddenSubmit = htmlDoc.createElement('input');
+          hiddenSubmit.type = 'submit';
+          hiddenSubmit.style.display = 'none';
+          htmlDoc.body.appendChild(hiddenSubmit);
+        }
+
+        s(formHTMLAtom, htmlDoc.body.innerHTML);
       }
 
       if (a?.formData) {
@@ -1398,9 +1419,9 @@ export const promptDataAtom = atom(
       s(defaultChoiceIdAtom, a?.defaultChoiceId || '');
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
-      if (!g(isMainScriptAtom)) {
-        s(shortcutsAtom, a?.shortcuts || []);
-      }
+
+      s(shortcutsAtom, a?.shortcuts || []);
+
       s(prevChoicesConfig, []);
       s(audioDotAtom, false);
 

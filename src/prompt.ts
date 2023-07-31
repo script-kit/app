@@ -555,7 +555,7 @@ export const alwaysOnTop = (onTop: boolean) => {
   if (promptWindow && !promptWindow.isDestroyed()) {
     if (onTop) log.info(`🔝 Keep "alwaysOnTop"`);
     kitState.alwaysOnTop = onTop;
-    promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
+    promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu');
     if (onTop && kitState.isMac) {
       promptWindow.moveTop();
     }
@@ -1297,6 +1297,9 @@ export const setPromptData = async (promptData: PromptData) => {
   if (kitState.cachePrompt && !promptData.preload) {
     kitState.preloaded = false;
     kitState.cachePrompt = false;
+    log.info(`💝 Caching prompt data`);
+    promptData.name ||= kitState.script.name || '';
+    promptData.description ||= kitState.script.description || '';
     preloadPromptDataMap.set(kitState.scriptPath, {
       ...promptData,
       input: '',
@@ -1400,7 +1403,7 @@ export const setPromptData = async (promptData: PromptData) => {
   setBackgroundThrottling(true);
 
   setTimeout(() => {
-    promptWindow.setAlwaysOnTop(true, 'pop-up-menu', 1);
+    promptWindow.setAlwaysOnTop(true, 'pop-up-menu');
 
     promptWindow.setFullScreenable(false);
   }, 0);
@@ -1408,7 +1411,7 @@ export const setPromptData = async (promptData: PromptData) => {
   if (topTimeout) clearTimeout(topTimeout);
   topTimeout = setTimeout(() => {
     if (kitState.ignoreBlur) {
-      promptWindow?.setAlwaysOnTop(kitState.alwaysOnTop, 'pop-up-menu', 1);
+      promptWindow?.setAlwaysOnTop(kitState.alwaysOnTop, 'pop-up-menu');
     }
   }, 1000);
 
@@ -2090,7 +2093,7 @@ export const initBounds = async (
   }
 
   log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
-  promptWindow?.setAlwaysOnTop(true, 'pop-up-menu', 1);
+  promptWindow?.setAlwaysOnTop(true, 'pop-up-menu');
   promptWindow?.setFullScreenable(false);
 
   if (kitState.isMac) {

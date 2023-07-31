@@ -82,6 +82,7 @@ export enum Trigger {
   RunTxt = 'runTxt',
   Protocol = 'Protocol',
   MissingPackage = 'MissingPackage',
+  Error = 'Error',
 }
 
 export enum HideReason {
