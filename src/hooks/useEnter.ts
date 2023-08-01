@@ -15,6 +15,8 @@ import {
   enterButtonDisabledAtom,
   focusedChoiceAtom,
   hasFocusedChoiceAtom,
+  selectedChoicesAtom,
+  toggleSelectedChoiceAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 
@@ -32,6 +34,8 @@ export default () => {
   const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const hasFocusedChoice = useAtomValue(hasFocusedChoiceAtom);
+  const selectedChoices = useAtomValue(selectedChoicesAtom);
+  const toggleSelectedChoice = useSetAtom(toggleSelectedChoiceAtom);
 
   useHotkeys(
     `enter`,
@@ -66,6 +70,11 @@ export default () => {
         return;
       }
 
+      if (promptData && promptData?.multiple) {
+        toggleSelectedChoice(focusedChoice?.id as string);
+        return;
+      }
+
       if (promptData?.strict && panelHTML?.length === 0) {
         if (choices.length && hasFocusedChoice) {
           submit(focusedChoice?.value);
@@ -85,6 +94,7 @@ export default () => {
       enterButtonDisabled,
       focusedChoice,
       hasFocusedChoice,
+      toggleSelectedChoice,
     ]
   );
 };

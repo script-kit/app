@@ -1553,6 +1553,8 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     preview: g(previewHTMLAtom),
     keyword: '',
     mode: g(modeAtom),
+    multiple: g(promptDataAtom)?.multiple || false,
+    selected: g(selectedChoicesAtom).map((c) => c?.value),
   };
 
   return state;
@@ -1691,6 +1693,7 @@ export const submitValueAtom = atom(
 
     s(closedInput, g(inputAtom));
     s(_flagged, ''); // clear after getting
+    s(selectedChoicesAtom, []);
 
     // if (flag) {
     //   s(_indexAtom, 0);
@@ -2726,3 +2729,16 @@ export const typingAtom = atom(
     s(typing, a);
   }
 );
+
+export const selectedChoicesAtom = atom<Choice[]>([]);
+export const toggleSelectedChoiceAtom = atom(null, (g, s, id: string) => {
+  const selectedChoices = g(selectedChoicesAtom);
+  const scoredChoice = g(choices).find((c) => c?.item?.id === id);
+  const index = selectedChoices.findIndex((c) => c?.id === id);
+  if (index > -1) {
+    selectedChoices.splice(index, 1);
+  } else {
+    selectedChoices.push(scoredChoice?.item as Choice);
+  }
+  s(selectedChoicesAtom, [...selectedChoices]);
+});

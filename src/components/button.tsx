@@ -8,6 +8,7 @@
 import React, { useCallback, useEffect, useState, DragEvent } from 'react';
 import parse from 'html-react-parser';
 import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types/core';
+import { PROMPT } from '@johnlindquist/kit/cjs/enum';
 import { useAtom, useAtomValue } from 'jotai';
 import { ipcRenderer } from 'electron';
 
@@ -25,6 +26,9 @@ import {
   indexAtom,
   submitValueAtom,
   hasRightShortcutAtom,
+  promptDataAtom,
+  toggleSelectedChoiceAtom,
+  selectedChoicesAtom,
 } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -63,6 +67,16 @@ function isNotScript(choice: Choice | Script): choice is Script {
   return (choice as Script)?.command === undefined;
 }
 
+function calculateScale(height: number): string {
+  if (height === PROMPT.ITEM.HEIGHT.XS) {
+    return 'scale-75';
+  }
+  if (height === PROMPT.ITEM.HEIGHT.SM) {
+    return 'scale-90';
+  }
+  return '';
+}
+
 function ChoiceButton({
   index: buttonIndex,
   style,
@@ -83,6 +97,9 @@ function ChoiceButton({
   const input = useAtomValue(inputAtom);
   const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
   const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
+  const [promptData] = useAtom(promptDataAtom);
+  const [, toggleSelectedChoice] = useAtom(toggleSelectedChoiceAtom);
+  const [selectedChoices] = useAtom(selectedChoicesAtom);
 
   // Get the text after the last file separator
   const base = (input || '').split(/[\\/]/).pop() || '';
@@ -101,9 +118,19 @@ function ChoiceButton({
   const onClick = useCallback(
     (e) => {
       e.preventDefault();
-      setSubmitValue(choice?.value);
+      if (promptData?.multiple) {
+        toggleSelectedChoice(choice?.id);
+      } else {
+        setSubmitValue(choice?.value);
+      }
     },
-    [choice.value, setSubmitValue]
+    [
+      promptData.multiple,
+      toggleSelectedChoice,
+      choice.id,
+      choice.value,
+      setSubmitValue,
+    ]
   );
   const onMouseEnter = useCallback(() => {
     if (mouseEnabled) {
@@ -296,7 +323,6 @@ function ChoiceButton({
                 )}
               </div>
             )}
-
             {isScript(choice) && choice?.friendlyShortcut && (
               <div className="flex flex-col px-2">
                 {choice?.friendlyShortcut && (
@@ -334,6 +360,37 @@ function ChoiceButton({
               </div>
             )}
 
+            {promptData?.multiple && (
+              <div>
+                <div
+                  className={`
+                leading-1 ml-2 flex
+                    h-6
+                    w-6
+                    ${calculateScale(choice.height ?? promptData?.itemHeight)}
+                    items-center
+
+                    justify-center
+                    rounded
+                    bg-text-base
+                    bg-opacity-10
+                    fill-current
+
+ text-xs
+        font-bold text-primary/90
+        transition
+        ease-in
+        hover:bg-opacity-20 hover:text-primary/90
+
+
+        `}
+                >
+                  {selectedChoices.find((c) => choice?.id === c?.id) && (
+                    <IconSwapper text="selected" />
+                  )}
+                </div>
+              </div>
+            )}
             {index === buttonIndex &&
               !hasRightShortcut &&
               !choice?.ignoreFlags &&
@@ -345,6 +402,8 @@ function ChoiceButton({
                 leading-1 ml-2 flex
                     h-6
                     w-6
+                    ${calculateScale(choice.height ?? promptData?.itemHeight)}
+
                     items-center
 
                     justify-center

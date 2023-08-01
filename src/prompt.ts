@@ -1917,6 +1917,11 @@ export const setChoices = (
     generated,
   }: { preload: boolean; skipInitialSearch?: boolean; generated?: boolean }
 ) => {
+  sendToPrompt(
+    Channel.SET_SELECTED_CHOICES,
+    (choices || []).filter((c: Choice) => c?.selected)
+  );
+
   if (!choices || !Array.isArray(choices) || choices?.length === 0) {
     kitSearch.choices = [];
     setScoredChoices([]);

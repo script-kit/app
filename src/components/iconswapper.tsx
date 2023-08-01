@@ -11,6 +11,7 @@ import {
   BsArrowLeft,
   BsArrowRight,
   BsOption,
+  BsCheck2,
 } from 'react-icons/bs';
 import {
   MdOutlineKeyboardControlKey,
@@ -38,6 +39,8 @@ export function IconSwapper({ text, className }: IconSwapperProps) {
   const m = app?.isMac;
 
   if (className) styles.className = className;
+
+  if (text === 'selected') return <BsCheck2 {...styles} />;
 
   if (m) return <>{text}</>;
 
