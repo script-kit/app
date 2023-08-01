@@ -695,7 +695,7 @@ export const setupTray = async (checkDb = false, state: Status) => {
       const message = kitState.installing
         ? 'Installing Kit SDK...'
         : kitState.updateInstalling
-        ? 'Applying Update...'
+        ? 'Applying Update to SDK. Please Wait...'
         : 'Starting...';
 
       kitState.status = {

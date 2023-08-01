@@ -1462,14 +1462,18 @@ export const setPromptData = async (promptData: PromptData) => {
   });
 };
 
+const noPreview = `<div></div>`;
 export const preloadPreview = (html: string) => {
+  if (kitSearch.input) return;
   log.info(`🏋️‍♂️ Preload preview`);
   setPreview(html);
 };
 
 export const preloadChoices = (choices: Choice[]) => {
   log.info(`🏋️‍♂️ Preload choices ${choices.length}`);
-  kitSearch.input = '';
+  if (!isVisible()) {
+    kitSearch.input = '';
+  }
   setChoices(choices, { preload: true });
 };
 
@@ -1491,7 +1495,7 @@ export const preload = (promptScriptPath: string, show = true) => {
       preloadChoices(choices as Choice[]);
 
       const preview = preloadPreviewMap.get(promptScriptPath) as string;
-      preloadPreview(preview || `<div></div>`);
+      preloadPreview(preview || noPreview);
 
       kitState.promptBounds = {
         x: promptData.x,
@@ -1606,9 +1610,9 @@ export const invokeSearch = (rawInput: string) => {
   if (kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
     transformedInput = rawInput.match(kitSearch.inputRegex)?.[0] || '';
-    log.info(
-      `Transformed input: ${transformedInput} using regex ${kitSearch.inputRegex}`
-    );
+    // log.info(
+    //   `Transformed input: ${transformedInput} using regex ${kitSearch.inputRegex}`
+    // );
   }
 
   if (kitSearch.choices.length === 0) {
@@ -1961,8 +1965,13 @@ export const setChoices = (
   sendToPrompt(Channel.SET_CHOICES_CONFIG, { preload });
 
   setShortcodes(choices);
-  log.info(`Searching because choices: ${kitSearch.input}`);
-  invokeSearch(skipInitialSearch ? '' : kitSearch.input);
+  const input = skipInitialSearch ? '' : kitSearch.input;
+  // log.info({
+  //   preload: preload ? 'true' : 'false',
+  //   skipInitialSearch: skipInitialSearch ? 'true' : 'false',
+  // });
+  log.info(`Searching because choices: ${input}`);
+  invokeSearch(input);
 };
 
 export const clearPromptCache = async () => {

@@ -400,7 +400,7 @@ export const mouseEnabledAtom = atom(
   }
 );
 
-const index = atom(0);
+const _indexAtom = atom(0);
 
 const choices = atom<ScoredChoice[]>([]);
 
@@ -425,13 +425,18 @@ export const scrollToIndexAtom = atom((g) => {
 let prevChoiceIndexId = 'prevChoiceIndexId';
 
 const flagsIndex = atom(0);
-export const focusedFlagAtom = atom('');
 
 export const hasSkipAtom = atom(false);
 export const allSkipAtom = atom(false);
 export const flagsIndexAtom = atom(
   (g) => g(flagsIndex),
   (g, s, a: number) => {
+    const flagValue = g(flagValueAtom);
+
+    if (!flagValue) {
+      s(focusedFlagValueAtom, '');
+      return;
+    }
     const prevIndex = g(flagsIndex);
     const cs = g(scoredFlagsAtom);
     // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
@@ -487,9 +492,10 @@ export const flagsIndexAtom = atom(
 );
 
 export const indexAtom = atom(
-  (g) => g(index),
+  (g) => g(_indexAtom),
   (g, s, a: number) => {
-    const prevIndex = g(index);
+    // g(logAtom)(`👆 Setting index to ${a}`);
+    const prevIndex = g(_indexAtom);
     const cs = g(choices);
     // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
     const clampedIndex = a < 0 ? cs.length - 1 : a >= cs.length ? 0 : a; // Corrected clamping logic
@@ -531,7 +537,7 @@ export const indexAtom = atom(
     prevChoiceIndexId = choice?.id || 'prevChoiceIndexId';
 
     if (prevIndex !== calcIndex) {
-      s(index, calcIndex);
+      s(_indexAtom, calcIndex);
     }
 
     if (list && requiresScroll === -1) {
@@ -631,7 +637,28 @@ export const scoredChoicesAtom = atom(
       cs[0].item.className = cs?.[0]?.item?.className.replace(`border-t-1`, '');
     }
 
+    const prevChoices = g(choices);
+    const sameChoices =
+      prevChoices.length === a?.length &&
+      prevChoices.every((c, i) => c.item.id === a[i].item.id);
+
+    if (sameChoices) {
+      g(logAtom)(`🙅‍♂️ Same choices...`);
+      return;
+    }
+
     s(choices, cs || []);
+
+    // a.forEach((newChoice, i) => {
+    //   const prevChoice = prevChoices?.[i];
+
+    //   if (!prevChoice || newChoice.item.id !== prevChoice?.item?.id) {
+    //     g(logAtom)(
+    //       `Mismatch: ${newChoice.item.name}: ${newChoice.item.id} vs. ${prevChoice?.item?.name}: ${prevChoice?.item?.id}`
+    //     );
+    //   }
+    // });
+
     s(hasSkipAtom, cs?.some((c) => c?.item?.skip) || false);
     s(allSkipAtom, cs?.every((c) => c?.item?.skip) || false);
     s(indexAtom, 0);
@@ -715,22 +742,22 @@ export const appendInputAtom = atom(null, (g, s, a: string) => {
   }
 });
 
-const invokeSearch = (input: string) => {
-  ipcRenderer.send(AppChannel.INVOKE_SEARCH, { input });
-};
+// const invokeSearch = (input: string) => {
+//   ipcRenderer.send(AppChannel.INVOKE_SEARCH, { input });
+// };
 
-const invokeFlagSearch = (input: string) => {
-  ipcRenderer.send(AppChannel.INVOKE_FLAG_SEARCH, { input });
-};
+// const invokeFlagSearch = (input: string) => {
+//   ipcRenderer.send(AppChannel.INVOKE_FLAG_SEARCH, { input });
+// };
 
-const filterByInput = (g: Getter, s: Setter, input: string) => {
-  if (g(uiAtom) !== UI.arg) return;
-  if (g(flagValueAtom)) {
-    invokeFlagSearch(input);
-  } else {
-    invokeSearch(input);
-  }
-};
+// const filterByInput = (g: Getter, s: Setter, input: string) => {
+//   if (g(uiAtom) !== UI.arg) return;
+//   if (g(flagValueAtom)) {
+//     invokeFlagSearch(input);
+//   } else {
+//     invokeSearch(input);
+//   }
+// };
 
 const _inputChangedAtom = atom(false);
 
@@ -740,6 +767,8 @@ export const changeAtom = atom((g) => (data: any) => {
 });
 
 export const inputCommandChars = atom([]);
+
+export const modeAtom = atom((g) => g(promptData)?.mode || Mode.FILTER);
 
 export const inputAtom = atom(
   (g) => g(_inputAtom),
@@ -762,7 +791,7 @@ export const inputAtom = atom(
 
     const flaggedValue = g(flagValueAtom);
 
-    if (!flaggedValue && !g(submittedAtom)) {
+    if (!g(submittedAtom)) {
       const channel = g(channelAtom);
       channel(Channel.INPUT);
     }
@@ -774,7 +803,7 @@ export const inputAtom = atom(
     }
 
     // If the promptData isn't set, default to FILTER
-    const mode = g(promptData)?.mode || Mode.FILTER;
+    const mode = g(modeAtom);
 
     if (g(tabChangedAtom) && a && prevInput !== a) {
       s(tabChangedAtom, false);
@@ -791,9 +820,9 @@ export const inputAtom = atom(
     }
 
     // TODO: flaggedValue state? Or prevMode when flagged? Hmm...
-    if (mode === Mode.FILTER || flaggedValue) {
-      filterByInput(g, s, a);
-    }
+    // if (mode === Mode.FILTER || flaggedValue) {
+    //   filterByInput(g, s, a);
+    // }
     if (mode === Mode.GENERATE && !flaggedValue) {
       s(loading, true);
       s(loadingAtom, true);
@@ -981,6 +1010,9 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   const totalChoices = scoredChoicesLength;
 
   const choicesHeight = g(choicesHeightAtom);
+  // g(logAtom)({
+  //   choicesHeight,
+  // });
 
   if (ui === UI.arg && choicesHeight > PROMPT.HEIGHT.BASE) {
     mh =
@@ -1112,6 +1144,11 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
 
   // forceResize ||= hasChoices;
 
+  // const hasPreview = g(previewCheckAtom);
+  // g(logAtom)({
+  //   hasPreview: hasPreview ? 'has preview' : 'no preview',
+  // });
+
   const data: ResizeData = {
     id: promptData?.id || 'missing',
     reason,
@@ -1128,7 +1165,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     open: g(_open),
     tabIndex: g(_tabIndex),
     isSplash: g(isSplashAtom),
-    hasPreview: g(previewCheckAtom),
+    hasPreview,
     inputChanged: g(_inputChangedAtom),
     justOpened,
     forceResize,
@@ -1335,7 +1372,7 @@ export const promptDataAtom = atom(
       }
 
       if (!a?.keyword && !wasPromptDataPreloaded) {
-        g(logAtom)(`👍 Setting input to ${a?.input || 'nothing'}`);
+        g(logAtom)(`👍 Setting input to ${a?.input || '_'}`);
         s(_inputAtom, a?.input || '');
       }
       s(hintAtom, a.hint);
@@ -1459,7 +1496,6 @@ export const flagValueAtom = atom(
     if (a === '') {
       s(_inputAtom, g(prevInputAtom));
 
-      s(focusedFlagAtom, '');
       s(selectedAtom, '');
       s(choicesConfigAtom, g(prevChoicesConfig));
       s(indexAtom, g(prevIndexAtom));
@@ -1481,7 +1517,15 @@ export const flagValueAtom = atom(
   }
 );
 
-export const focusedFlagValueAtom = atom('');
+const _focusedFlag = atom('');
+export const focusedFlagValueAtom = atom(
+  (g) => g(_focusedFlag),
+  (g, s, a: string) => {
+    if (a !== g(_focusedFlag)) {
+      s(_focusedFlag, a);
+    }
+  }
+);
 const _submitValue = atom('');
 export const searchDebounceAtom = atom(true);
 export const termFontAtom = atom('monospace');
@@ -1508,6 +1552,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     tabIndex: g(tabIndexAtom),
     preview: g(previewHTMLAtom),
     keyword: '',
+    mode: g(modeAtom),
   };
 
   return state;
@@ -1599,6 +1644,11 @@ export const submitValueAtom = atom(
     const flag = g(focusedFlagValueAtom);
     const value = checkSubmitFormat(a);
 
+    // g(logAtom)({
+    //   submitValue: value,
+    //   flag,
+    // });
+
     // const fC = g(focusedChoiceAtom);
 
     // skip if UI.chat
@@ -1641,8 +1691,15 @@ export const submitValueAtom = atom(
 
     s(closedInput, g(inputAtom));
     s(_flagged, ''); // clear after getting
+
+    // if (flag) {
+    //   s(_indexAtom, 0);
+    //   s(_focused, noChoice);
+    //   s(_inputAtom, '');
+    // }
     s(focusedFlagValueAtom, '');
     s(focusedChoiceAtom, noChoice);
+    s(prevIndexAtom, 0);
 
     s(_submitValue, value);
     // s(_chatMessagesAtom, []);

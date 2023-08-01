@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-loop-func */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-restricted-syntax */
@@ -7,7 +8,7 @@ import path from 'path';
 import { debounce } from 'lodash';
 import axios from 'axios';
 import { Script } from '@johnlindquist/kit';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   kitPath,
   getLogFromScriptPath,
@@ -44,7 +45,7 @@ import { getAssetPath } from './assets';
 import { flagSearch, kitSearch, kitState, clearSearch } from './state';
 import { noChoice } from './defaults';
 
-const checkShortcodesAndKeywords = (rawInput: string) => {
+const checkShortcodesAndKeywords = (rawInput: string): boolean => {
   let transformedInput = rawInput;
   if (kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
@@ -56,11 +57,15 @@ const checkShortcodesAndKeywords = (rawInput: string) => {
   );
   if (shortcodeChoice) {
     sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
-    return;
+    log.info(`🔑 Shortcode: ${transformedInput} triggered`);
+    return false;
   }
 
   if (kitSearch.keyword && !rawInput.startsWith(`${kitSearch.keyword} `)) {
     const keyword = '';
+    if (rawInput === kitSearch.keyword) {
+      kitSearch.input = kitSearch.keyword;
+    }
     kitSearch.keyword = keyword;
     kitSearch.inputRegex = undefined;
     log.info(`🔑 ${keyword} cleared`);
@@ -68,7 +73,8 @@ const checkShortcodesAndKeywords = (rawInput: string) => {
       keyword,
       choice: noChoice,
     });
-    return;
+
+    return false;
   }
 
   if (rawInput.includes(' ')) {
@@ -82,9 +88,12 @@ const checkShortcodesAndKeywords = (rawInput: string) => {
           keyword,
           choice: keywordChoice,
         });
+        return false;
       }
     }
   }
+
+  return true;
 };
 
 const handleChannel =
@@ -173,26 +182,6 @@ ${data.error}
 
   ipcMain.on(AppChannel.RESIZE, (event, resizeData: ResizeData) => {
     resize(resizeData);
-  });
-
-  let prevInput = '';
-  ipcMain.on(AppChannel.INVOKE_SEARCH, (event, { input }) => {
-    debounceInvokeSearch.cancel();
-    // This can prevent the search from being invoked when a keyword is triggered.
-    if (input.endsWith(' ') && input.length > prevInput.length) {
-      prevInput = input;
-      return;
-    }
-    if (kitSearch.choices.length > 5000) {
-      debounceInvokeSearch(input);
-    } else {
-      invokeSearch(input);
-    }
-    prevInput = input;
-  });
-
-  ipcMain.on(AppChannel.INVOKE_FLAG_SEARCH, (event, { input }) => {
-    invokeFlagSearch(input);
   });
 
   ipcMain.on(AppChannel.RELOAD, async () => {
@@ -373,13 +362,35 @@ ${data.error}
         log.verbose(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
 
         if (channel === Channel.INPUT) {
-          if (!message.state.input) {
+          const input = message.state.input as string;
+          // log.info(`📝 Input: ${input}`);
+          if (!input) {
             log.info(`📝 No prompt input`);
             kitSearch.input = '';
-            kitSearch.inputRegex = undefined;
-            kitSearch.keyword = '';
+            // keyword and regex will be cleared by checkShortcodesAndKeywords
+            // kitSearch.inputRegex = undefined;
+            // kitSearch.keyword = '';
           }
-          checkShortcodesAndKeywords(message.state.input);
+
+          const isArg = message.state.ui === UI.arg;
+
+          if (isArg) {
+            const shouldSearch = checkShortcodesAndKeywords(input);
+            const isFilter = message.state.mode === Mode.FILTER;
+            if (shouldSearch && isFilter) {
+              if (message.state.flag) {
+                invokeFlagSearch(input);
+              } else {
+                debounceInvokeSearch.cancel();
+
+                if (kitSearch.choices.length > 5000) {
+                  debounceInvokeSearch(input);
+                } else {
+                  invokeSearch(input);
+                }
+              }
+            }
+          }
         }
 
         if (channel === Channel.ESCAPE) {
