@@ -376,6 +376,7 @@ const initState = {
   waking: true,
   cmd: isMac ? `cmd` : `ctrl`,
   hideOnEscape: true,
+  justFocused: false,
 };
 
 const initConfig: Config = {
@@ -952,6 +953,7 @@ export const kitSearch = {
   inputRegex: undefined as undefined | RegExp,
   keyword: '',
   generated: false,
+  flaggedValue: '',
   choices: [] as Choice[],
   scripts: [] as Script[],
   shortcodes: new Map<string, Choice>(),

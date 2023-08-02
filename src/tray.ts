@@ -34,12 +34,7 @@ import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 import { AppChannel, HideReason, Trigger } from './enums';
 import { mainLogPath, updateLogPath } from './logs';
-import {
-  forcePromptToMouse,
-  getMainPrompt,
-  maybeHide,
-  setBackgroundThrottling,
-} from './prompt';
+import { getMainPrompt, maybeHide, setBackgroundThrottling } from './prompt';
 
 let tray: Tray | null = null;
 
@@ -346,11 +341,11 @@ export const openMenu = async (event?: KeyboardEvent) => {
           trigger: Trigger.Tray,
         })();
 
+        getMainPrompt()?.show();
+        getMainPrompt()?.setPosition(0, 0);
+        getMainPrompt()?.center();
         getMainPrompt()?.focus();
-        getMainPrompt()?.setAlwaysOnTop(true, 'pop-up-menu');
-        setTimeout(() => {
-          forcePromptToMouse();
-        }, 2000);
+        getMainPrompt()?.setAlwaysOnTop(true, 'screen-saver', 1);
       },
     });
 

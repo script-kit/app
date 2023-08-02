@@ -11420,10 +11420,10 @@ jest@27.0.6:
     import-local "^3.0.2"
     jest-cli "^27.0.6"
 
-jotai@2.2.2:
-  version "2.2.2"
-  resolved "https://registry.yarnpkg.com/jotai/-/jotai-2.2.2.tgz#1e181789dcc01ced8240b18b95d9fa10169f9366"
-  integrity sha512-Cn8hnBg1sc5ppFwEgVGTfMR5WSM0hbAasd/bdAwIwTaum0j3OUPqBSC4tyk3jtB95vicML+RRWgKFOn6gtfN0A==
+jotai@2.2.3:
+  version "2.2.3"
+  resolved "https://registry.yarnpkg.com/jotai/-/jotai-2.2.3.tgz#4dd9f429e9cd23d81f08a6b1492931db05ccf79f"
+  integrity sha512-E3tTBb2CKwjAJKUJYVV6rKM8zxmpsPMedRclRnI2RgLzkvgDEH6mhtZPVesxIoixJ8p7949RWd8eo/8TqDDFDA==
 
 "js-tokens@^3.0.0 || ^4.0.0", js-tokens@^4.0.0:
   version "4.0.0"
@@ -18141,10 +18141,10 @@ validate-npm-package-name@^3.0.0, validate-npm-package-name@~3.0.0:
   dependencies:
     builtins "^1.0.3"
 
-valtio@1.11.0:
-  version "1.11.0"
-  resolved "https://registry.yarnpkg.com/valtio/-/valtio-1.11.0.tgz#c029dcd17a0f99d2fbec933721fe64cfd32a31ed"
-  integrity sha512-65Yd0yU5qs86b5lN1eu/nzcTgQ9/6YnD6iO+DDaDbQLn1Zv2w12Gwk43WkPlUBxk5wL/6cD5YMFf7kj6HZ1Kpg==
+valtio@1.11.1:
+  version "1.11.1"
+  resolved "https://registry.yarnpkg.com/valtio/-/valtio-1.11.1.tgz#90303a4d41f3528f17b44bfca7801d108cbd5f58"
+  integrity sha512-sTKWY1e1AVUu4sY9CimoSZpufAsAXO+fzZrw0X5xtijEmDDQaPPLHZxlpONUpTLtvxPjpQURCSdUuUyBszoEOg==
   dependencies:
     proxy-compare "2.5.1"
     use-sync-external-store "1.2.0"

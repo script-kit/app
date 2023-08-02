@@ -170,6 +170,7 @@ export default function Input() {
       style={{
         height: inputHeight || PROMPT.INPUT.HEIGHT.SM,
       }}
+      onMouseEnter={setInputFocus}
       // initial={{ opacity: 0 }}
       // animate={{ opacity: processing ? 0 : 1 }}
       // transition={{ duration: 0.2 }}

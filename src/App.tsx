@@ -159,6 +159,7 @@ import {
   triggerKeywordAtom,
   preventSubmitAtom,
   selectedChoicesAtom,
+  toggleAllSelectedChoicesAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -275,6 +276,7 @@ export default function App() {
   const setChoicesConfig = useSetAtom(choicesConfigAtom);
   const setScoredChoices = useSetAtom(scoredChoicesAtom);
   const setSelectedChoices = useSetAtom(selectedChoicesAtom);
+  const toggleAllSelectedChoices = useSetAtom(toggleAllSelectedChoicesAtom);
   const setScoredFlags = useSetAtom(scoredFlagsAtom);
   const setFooter = useSetAtom(footerAtom);
   const setEnter = useSetAtom(enterAtom);
@@ -489,6 +491,7 @@ export default function App() {
     [Channel.SET_CHOICES_CONFIG]: setChoicesConfig,
     [Channel.SET_SCORED_CHOICES]: setScoredChoices,
     [Channel.SET_SELECTED_CHOICES]: setSelectedChoices,
+    [Channel.TOGGLE_ALL_SELECTED_CHOICES]: toggleAllSelectedChoices,
     [Channel.SET_SCORED_FLAGS]: setScoredFlags,
     [Channel.SET_DESCRIPTION]: setDescription,
     [Channel.SET_EDITOR_CONFIG]: setEditorConfig,

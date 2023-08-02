@@ -494,7 +494,7 @@ export const flagsIndexAtom = atom(
 export const indexAtom = atom(
   (g) => g(_indexAtom),
   (g, s, a: number) => {
-    // g(logAtom)(`👆 Setting index to ${a}`);
+    if (g(flagValueAtom)) return;
     const prevIndex = g(_indexAtom);
     const cs = g(choices);
     // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
@@ -582,10 +582,10 @@ const throttleChoiceFocused = throttle(
     if (choice?.skip) return;
     if (choice?.id === prevFocusedChoiceId) return;
     prevFocusedChoiceId = choice?.id || 'prevFocusedChoiceId';
-    // g(logAtom)(`Focusing ${choice?.name} with ${choice?.id}`);
     if (g(submittedAtom)) return;
     // if (g(_focused)?.id === choice?.id) return;
 
+    // g(logAtom)(`Focusing ${choice?.name} with ${choice?.id}`);
     s(_focused, choice || noChoice);
 
     // g(logAtom)(`Focusing ${choice?.id}`);
@@ -637,16 +637,6 @@ export const scoredChoicesAtom = atom(
       cs[0].item.className = cs?.[0]?.item?.className.replace(`border-t-1`, '');
     }
 
-    const prevChoices = g(choices);
-    const sameChoices =
-      prevChoices.length === a?.length &&
-      prevChoices.every((c, i) => c.item.id === a[i].item.id);
-
-    if (sameChoices) {
-      g(logAtom)(`🙅‍♂️ Same choices...`);
-      return;
-    }
-
     s(choices, cs || []);
 
     // a.forEach((newChoice, i) => {
@@ -687,6 +677,7 @@ export const scoredChoicesAtom = atom(
           const foundChoice = cs[i].item;
           if (foundChoice?.id) {
             s(indexAtom, i);
+            g(logAtom)(`🤔 Found choice: ${foundChoice?.id}`);
             s(focusedChoiceAtom, foundChoice);
             s(requiresScrollAtom, i);
           }
@@ -823,6 +814,7 @@ export const inputAtom = atom(
     // if (mode === Mode.FILTER || flaggedValue) {
     //   filterByInput(g, s, a);
     // }
+
     if (mode === Mode.GENERATE && !flaggedValue) {
       s(loading, true);
       s(loadingAtom, true);
@@ -1371,7 +1363,7 @@ export const promptDataAtom = atom(
         s(termConfigAtom, config);
       }
 
-      if (!a?.keyword && !wasPromptDataPreloaded) {
+      if (!a?.keyword && !g(isMainScriptAtom)) {
         g(logAtom)(`👍 Setting input to ${a?.input || '_'}`);
         s(_inputAtom, a?.input || '');
       }
@@ -1521,6 +1513,7 @@ const _focusedFlag = atom('');
 export const focusedFlagValueAtom = atom(
   (g) => g(_focusedFlag),
   (g, s, a: string) => {
+    // g(logAtom)(`👀 focusedFlagValueAtom: ${a}`);
     if (a !== g(_focusedFlag)) {
       s(_focusedFlag, a);
     }
@@ -1701,7 +1694,6 @@ export const submitValueAtom = atom(
     //   s(_inputAtom, '');
     // }
     s(focusedFlagValueAtom, '');
-    s(focusedChoiceAtom, noChoice);
     s(prevIndexAtom, 0);
 
     s(_submitValue, value);
@@ -1726,6 +1718,7 @@ export const initialResizeAtom = atom<ResizeData | null>(null);
 export const openAtom = atom(
   (g) => g(_open),
   (g, s, a: boolean) => {
+    if (g(_open) === a) return;
     s(mouseEnabledAtom, 0);
 
     if (g(_open) && a === false) {
@@ -1839,7 +1832,7 @@ export const _modifiers = atom<string[]>([]);
 const inputFocus = atom<number>(Math.random());
 export const inputFocusAtom = atom(
   (g) => g(inputFocus),
-  (g, s, a: number) => {
+  (g, s, a: any) => {
     if (g(inputFocus) === a) return;
     ipcRenderer.send(AppChannel.FOCUS_PROMPT);
     s(inputFocus, a);
@@ -2741,4 +2734,13 @@ export const toggleSelectedChoiceAtom = atom(null, (g, s, id: string) => {
     selectedChoices.push(scoredChoice?.item as Choice);
   }
   s(selectedChoicesAtom, [...selectedChoices]);
+});
+export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
+  const selectedChoices = g(selectedChoicesAtom);
+  const cs = g(choices).map((c) => c?.item as Choice);
+  if (selectedChoices.length === cs.length) {
+    s(selectedChoicesAtom, []);
+  } else {
+    s(selectedChoicesAtom, [...cs]);
+  }
 });

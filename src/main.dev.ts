@@ -514,7 +514,17 @@ const ready = async () => {
 
     configureInterval();
 
-    log.info(`NODE_ENV`, process.env.NODE_ENV);
+    if (process.env.NODE_ENV === 'development') {
+      process.on('warning', (warning) => {
+        log.warn(warning);
+      });
+
+      process.on('newListener', (event, listener) => {
+        log.info(`newListener`, event);
+      });
+    }
+
+    // log.info(`NODE_ENV`, process.env.NODE_ENV);
   } catch (error) {
     log.warn(error);
   }

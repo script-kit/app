@@ -147,7 +147,7 @@ ${data.error}
           });
         };
 
-        reload(onReload);
+        reload();
       },
       5000,
       { leading: true }
@@ -348,6 +348,7 @@ ${data.error}
     ipcMain.on(
       channel,
       handleChannel(async ({ child }, message) => {
+        kitSearch.flaggedValue = message.state.flaggedValue;
         message.promptId = kitState.promptId;
 
         if (kitState.scriptPathChanged) {
@@ -373,12 +374,13 @@ ${data.error}
           }
 
           const isArg = message.state.ui === UI.arg;
+          const hasFlag = message.state.flaggedValue;
 
           if (isArg) {
             const shouldSearch = checkShortcodesAndKeywords(input);
             const isFilter = message.state.mode === Mode.FILTER;
             if (shouldSearch && isFilter) {
-              if (message.state.flag) {
+              if (hasFlag) {
                 invokeFlagSearch(input);
               } else {
                 debounceInvokeSearch.cancel();
@@ -390,6 +392,12 @@ ${data.error}
                 }
               }
             }
+          }
+
+          if (hasFlag) {
+            message.channel = Channel.FLAG_INPUT;
+            if (child?.channel && child.connected) child?.send(message);
+            return;
           }
         }
 

@@ -60,7 +60,7 @@ import { setScriptTimestamp, getTimestamps } from '@johnlindquist/kit/cjs/db';
 import { readFileSync } from 'fs';
 import { getLog, mainLog, warn } from './logs';
 import {
-  alwaysOnTop,
+  setPromptAlwaysOnTop,
   appToPrompt,
   blurPrompt,
   clearPromptCache,
@@ -1334,7 +1334,7 @@ const kitMessageMap: ChannelHandler = {
   }),
   SET_ALWAYS_ON_TOP: toProcess(async ({ child }, { channel, value }) => {
     log.verbose(`${channel}: Setting always on top to ${value}`);
-    alwaysOnTop(value as boolean);
+    setPromptAlwaysOnTop(value as boolean);
 
     if (child) {
       childSend(child, {
@@ -2184,6 +2184,19 @@ const kitMessageMap: ChannelHandler = {
     );
     childSend(child, { channel, value });
   }),
+  SET_SELECTED_CHOICES: toProcess(async ({ child }, { channel, value }) => {
+    log.verbose(`SET SELECTED CHOICES`);
+    sendToPrompt(channel, value);
+    childSend(child, { channel, value });
+  }),
+
+  TOGGLE_ALL_SELECTED_CHOICES: toProcess(
+    async ({ child }, { channel, value }) => {
+      log.verbose(`TOGGLE ALL SELECTED CHOICES`);
+      sendToPrompt(channel, value);
+      childSend(child, { channel, value });
+    }
+  ),
 };
 
 export const createMessageHandler =
@@ -2305,7 +2318,7 @@ const createChild = ({
 
       if (debugUrl) {
         kitState.ignoreBlur = true;
-        alwaysOnTop(true);
+        setPromptAlwaysOnTop(true);
         log.info({ debugUrl });
         const devToolsUrl = `devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=${debugUrl}`;
         log.info(`DevTools URL: ${devToolsUrl}`);

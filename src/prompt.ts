@@ -229,7 +229,6 @@ export const createPromptWindow = async () => {
     });
   }
 
-  promptWindow.setFullScreenable(false);
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
 
   if (kitState.isMac) {
@@ -337,7 +336,12 @@ export const createPromptWindow = async () => {
   };
 
   const onBlur = async () => {
-    log.silly(`event: onBlur`);
+    if (kitState.justFocused && isVisible()) {
+      log.info(`🙈 Prompt window was just focused. Ignore blur`);
+      promptWindow?.focus();
+      return;
+    }
+    log.info(`🙈 Prompt window blurred`);
     if (!kitState.isLinux) {
       globalShortcut.unregister(getEmojiShortcut());
       if (kitState.emojiActive) return;
@@ -387,20 +391,25 @@ export const createPromptWindow = async () => {
       kitState.emojiActive = false;
       globalShortcut.register(getEmojiShortcut(), showEmoji);
     }
+
+    kitState.justFocused = true;
+    setTimeout(() => {
+      kitState.justFocused = false;
+    }, 1000);
   });
   // promptWindow?.webContents?.on('blur', onBlur);
   promptWindow?.on('blur', onBlur);
 
   promptWindow?.on('hide', () => {
-    log.silly(`event: hide`);
+    log.info(`🫣 Prompt window hidden`);
     kitState.isPromptReady = false;
     kitState.promptHidden = true;
   });
 
   promptWindow?.on('show', async () => {
+    log.info(`😳 Prompt window shown`);
     kitState.promptHidden = false;
     // kitState.allowBlur = false;
-    log.silly(`event: show`);
   });
 
   promptWindow?.webContents?.setMaxListeners(1);
@@ -551,11 +560,15 @@ export const forceFocus = () => {
   promptWindow?.focus();
 };
 
-export const alwaysOnTop = (onTop: boolean) => {
+export const setPromptAlwaysOnTop = (onTop: boolean) => {
   if (promptWindow && !promptWindow.isDestroyed()) {
     if (onTop) log.info(`🔝 Keep "alwaysOnTop"`);
     kitState.alwaysOnTop = onTop;
-    promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu');
+    promptWindow.setVisibleOnAllWorkspaces(onTop, {
+      visibleOnFullScreen: true,
+      skipTransformProcessType: true,
+    });
+    promptWindow.setAlwaysOnTop(onTop, 'screen-saver', 1);
     if (onTop && kitState.isMac) {
       promptWindow.moveTop();
     }
@@ -1393,40 +1406,7 @@ export const setPromptData = async (promptData: PromptData) => {
     kitState.tabChanged = false;
   }
 
-  if (kitState.isMac) {
-    promptWindow?.showInactive();
-  } else {
-    promptWindow?.show();
-  }
-  log.verbose(`👋 Show Prompt ${kitState.pid} ${kitState.scriptPath}`);
-
-  setBackgroundThrottling(true);
-
-  setTimeout(() => {
-    promptWindow.setAlwaysOnTop(true, 'pop-up-menu');
-
-    promptWindow.setFullScreenable(false);
-  }, 0);
-
-  if (topTimeout) clearTimeout(topTimeout);
-  topTimeout = setTimeout(() => {
-    if (kitState.ignoreBlur) {
-      promptWindow?.setAlwaysOnTop(kitState.alwaysOnTop, 'pop-up-menu');
-    }
-  }, 1000);
-
-  // app.focus({
-  //   steal: true,
-  // });
-  // if (devTools) promptWindow?.webContents.openDevTools();
-  // }
-
-  focusPrompt();
-  sendToPrompt(Channel.SET_OPEN, true);
-
-  setTimeout(() => {
-    kitState.isPromptReady = true;
-  }, 100);
+  showPrompt();
 
   if (boundsCheck) clearTimeout(boundsCheck);
   boundsCheck = setTimeout(async () => {
@@ -1995,18 +1975,18 @@ export const clearPromptCache = async () => {
   }, 1000);
 };
 
-export const reload = (callback: () => void = () => {}) => {
+export const reload = () => {
   log.info(`Reloading prompt window...`);
   if (promptWindow?.isDestroyed()) {
     log.warn(`Prompt window is destroyed. Not reloading.`);
     return;
   }
 
-  if (callback) {
-    promptWindow?.webContents?.once('dom-ready', () => {
-      setTimeout(callback, 1000);
-    });
-  }
+  // if (callback) {
+  //   promptWindow?.webContents?.once('dom-ready', () => {
+  //     setTimeout(callback, 1000);
+  //   });
+  // }
 
   promptWindow?.reload();
 };
@@ -2019,6 +1999,32 @@ export const destroyPromptWindow = () => {
     hideAppIfNoWindows(HideReason.Destroy);
     promptWindow.destroy();
   }
+};
+
+const showPrompt = () => {
+  setPromptAlwaysOnTop(true);
+
+  if (kitState.isMac) {
+    promptWindow.showInactive();
+  } else {
+    promptWindow.show();
+  }
+  promptWindow.setVisibleOnAllWorkspaces(false);
+  setBackgroundThrottling(true);
+
+  if (topTimeout) clearTimeout(topTimeout);
+  topTimeout = setTimeout(() => {
+    if (kitState.ignoreBlur) {
+      setPromptAlwaysOnTop(kitState.alwaysOnTop);
+    }
+  }, 200);
+
+  focusPrompt();
+  sendToPrompt(Channel.SET_OPEN, true);
+
+  setTimeout(() => {
+    kitState.isPromptReady = true;
+  }, 100);
 };
 
 export const onHideOnce = (fn: () => void) => {
@@ -2106,16 +2112,8 @@ export const initBounds = async (
     });
   }
 
-  log.info(`👋 Show Prompt for ${kitState.scriptPath}`);
-  promptWindow?.setAlwaysOnTop(true, 'pop-up-menu');
-  promptWindow?.setFullScreenable(false);
-
-  if (kitState.isMac) {
-    promptWindow.showInactive();
-  } else {
-    promptWindow.show();
-  }
-  promptWindow.focus();
+  log.info(`👋 Show Prompt from initBounds for ${kitState.scriptPath}`);
+  showPrompt();
 };
 
 const subScriptPath = subscribeKey(
