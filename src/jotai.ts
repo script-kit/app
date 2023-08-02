@@ -1529,7 +1529,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     inputChanged: g(_inputChangedAtom),
     flag: g(focusedFlagValueAtom),
     index: g(indexAtom),
-    flaggedValue: g(_flagged),
+    flaggedValue: g(_flagged) || '',
     focused: g(_focused),
     tab: g(tabsAtom)?.[g(_tabIndex)] || '',
     history: g(_history) || [],

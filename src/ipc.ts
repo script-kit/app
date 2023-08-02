@@ -348,7 +348,7 @@ ${data.error}
     ipcMain.on(
       channel,
       handleChannel(async ({ child }, message) => {
-        kitSearch.flaggedValue = message.state.flaggedValue;
+        kitSearch.flaggedValue = message.state?.flaggedValue;
         message.promptId = kitState.promptId;
 
         if (kitState.scriptPathChanged) {

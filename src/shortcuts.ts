@@ -53,7 +53,6 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
           force: true,
           trigger: Trigger.Shortcut,
         });
-        focusPrompt();
       },
       250,
       {
@@ -245,14 +244,6 @@ export const updateMainShortcut = async (filePath: string) => {
           await runPromptProcess(mainScriptPath, [], {
             force: true,
             trigger: Trigger.Menu,
-          });
-          return;
-        }
-
-        if (!isFocused()) {
-          focusPrompt();
-          app.focus({
-            steal: true,
           });
           return;
         }
