@@ -199,7 +199,7 @@ export const runPromptProcess = async (
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
   const processInfo = processes.findIdlePromptProcess();
-  // Add another to the process pool when exhausted
+  // Add another to the process pool when exhausted.
   const { pid, child } = processInfo;
 
   log.info(`${pid}: 🏎 ${promptScriptPath} `);
