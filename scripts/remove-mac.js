@@ -11,7 +11,7 @@ console.log({
 
 let result = await replace({
   files: [srcFilePath],
-  from: /REMOVE-MAC.*END-REMOVE-MAC/gs,
+  from: /REMOVE-MAC.*?END-REMOVE-MAC/gs,
   to: 'REMOVED BY KIT',
 });
 
