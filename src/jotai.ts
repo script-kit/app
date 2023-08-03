@@ -897,6 +897,7 @@ export const preloadedAtom = atom(false);
 export const scriptAtom = atom(
   (g) => g(_script),
   (g, s, a: Script) => {
+    s(isMainScriptAtom, a?.filePath === mainScriptPath);
     s(submittedAtom, false);
     const prevScript = g(_script);
     s(
@@ -944,9 +945,7 @@ export const isKitScriptAtom = atom<boolean>((g) => {
   return (g(_script) as Script)?.filePath?.includes(kitPath());
 });
 
-export const isMainScriptAtom = atom<boolean>((g) => {
-  return g(promptDataAtom)?.scriptPath === mainScriptPath;
-});
+export const isMainScriptAtom = atom(false);
 
 export const isMainScriptInitialAtom = atom<boolean>((g) => {
   return g(isMainScriptAtom) && g(inputAtom) === '';
@@ -1304,6 +1303,7 @@ export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     g(logAtom)(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
+    s(isMainScriptAtom, a?.scriptPath === mainScriptPath);
     if (a?.ui !== UI.arg && !a?.preview) {
       s(previewHTMLAtom, closedDiv);
     }
