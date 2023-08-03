@@ -96,7 +96,7 @@ export const maybeHide = async (reason: string) => {
   if (!promptWindow?.isVisible()) return;
   if (reason === HideReason.NoScript || reason === HideReason.Escape) {
     actualHide();
-    attemptPreload(mainScriptPath, false);
+    // attemptPreload(mainScriptPath, false);
     // clearSearch();
     // invokeSearch('');
     return;
@@ -749,6 +749,10 @@ export const setBounds = async (bounds: Partial<Rectangle>, reason = '') => {
     bounds.height = screenHeight;
   }
 
+  log.info(`📐 setBounds: ${reason}`, {
+    ...bounds,
+  });
+
   try {
     promptWindow.setBounds(bounds);
     const promptBounds = {
@@ -778,23 +782,29 @@ export const isFocused = () => {
 };
 
 let hadPreview = true;
-export const resize = async ({
-  reason,
-  id,
-  topHeight,
-  mainHeight,
-  footerHeight,
-  ui,
-  isSplash,
-  hasPreview,
-  forceResize,
-  forceHeight,
-  forceWidth,
-  inputChanged,
-  justOpened,
-  hasInput,
-  totalChoices,
-}: ResizeData) => {
+let prevResizeData = {} as ResizeData;
+export const resize = async (resizeData: ResizeData) => {
+  if (isEqual(prevResizeData, resizeData)) return;
+  prevResizeData = resizeData;
+
+  const {
+    reason,
+    id,
+    topHeight,
+    mainHeight,
+    footerHeight,
+    ui,
+    isSplash,
+    hasPreview,
+    forceResize,
+    forceHeight,
+    forceWidth,
+    inputChanged,
+    justOpened,
+    hasInput,
+    totalChoices,
+    isMainScript,
+  }: ResizeData = resizeData;
   // log.info({
   //   reason,
   //   topHeight,
@@ -834,7 +844,6 @@ export const resize = async ({
   let cachedX;
   let cachedY;
 
-  const isMainScript = kitState.isMainScript();
   if (isMainScript) {
     const cachedBounds = await getCurrentScreenPromptCache(mainScriptPath);
     if (!hasInput) {
@@ -1306,9 +1315,9 @@ export const setPromptData = async (promptData: PromptData) => {
 
   if (kitState.cachePrompt && !promptData.preload) {
     kitState.cachePrompt = false;
-    log.info(`💝 Caching prompt data`);
     promptData.name ||= kitState.script.name || '';
     promptData.description ||= kitState.script.description || '';
+    log.info(`💝 Caching prompt data`);
     preloadPromptDataMap.set(kitState.scriptPath, {
       ...promptData,
       input: '',
@@ -1319,13 +1328,6 @@ export const setPromptData = async (promptData: PromptData) => {
   if (promptData.flags) {
     setFlags(promptData.flags);
   }
-
-  log.info(`
-😘
-
-PRELOADED: ${kitState.preloaded ? 'true' : 'false'}
-
-  `);
 
   if (kitState.preloaded) {
     kitState.preloaded = false;
@@ -1483,11 +1485,11 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
 
       preloadPromptData(promptData);
 
-      const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
-      preloadChoices(choices as Choice[]);
-
       const preview = preloadPreviewMap.get(promptScriptPath) as string;
       preloadPreview(preview || noPreview);
+
+      const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
+      preloadChoices(choices as Choice[]);
 
       kitState.promptBounds = {
         x: promptData.x,
@@ -2144,14 +2146,18 @@ const subScriptPath = subscribeKey(
     }
 
     if (noScript) {
-      log.verbose(
-        `noScript: scriptPath changed: ${kitState.scriptPath}, prompt count: ${kitState.promptCount}`
+      log.info(
+        `
+🎬: scriptPath changed: ${kitState.scriptPath}, prompt count: ${kitState.promptCount}
+---`
       );
 
       hideAppIfNoWindows(HideReason.NoScript);
       clearSearch();
       sendToPrompt(Channel.SET_OPEN, false);
       kitState.alwaysOnTop = false;
+
+      attemptPreload(mainScriptPath, false);
       return;
     }
 

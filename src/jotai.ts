@@ -945,7 +945,7 @@ export const isKitScriptAtom = atom<boolean>((g) => {
 });
 
 export const isMainScriptAtom = atom<boolean>((g) => {
-  return (g(_script) as Script).filePath === mainScriptPath;
+  return g(promptDataAtom)?.scriptPath === mainScriptPath;
 });
 
 export const isMainScriptInitialAtom = atom<boolean>((g) => {
@@ -1164,6 +1164,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     forceHeight,
     forceWidth,
     totalChoices,
+    isMainScript: g(isMainScriptAtom),
   };
 
   s(prevMh, mh);
@@ -1302,7 +1303,7 @@ let wasPromptDataPreloaded = false;
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
-    // g(logAtom)(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
+    g(logAtom)(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
     if (a?.ui !== UI.arg && !a?.preview) {
       s(previewHTMLAtom, closedDiv);
     }
@@ -1449,7 +1450,13 @@ export const promptDataAtom = atom(
 
       s(onInputSubmitAtom, a?.onInputSubmit || {});
 
-      s(shortcutsAtom, a?.shortcuts || []);
+      // This prevent a "flash" of shortcuts since the focused choice
+      // changes which shortcuts are visible and it's different from
+      // the preloaded shortcuts
+      // TODO: Consider a "choicesControlShortcuts" prop on promptData or similar
+      if (!g(isMainScriptAtom)) {
+        s(shortcutsAtom, a?.shortcuts || []);
+      }
 
       s(prevChoicesConfig, []);
       s(audioDotAtom, false);
@@ -2733,7 +2740,11 @@ export const toggleSelectedChoiceAtom = atom(null, (g, s, id: string) => {
   } else {
     selectedChoices.push(scoredChoice?.item as Choice);
   }
+
   s(selectedChoicesAtom, [...selectedChoices]);
+
+  const channel = g(channelAtom);
+  channel(Channel.SELECTED);
 });
 export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
   const selectedChoices = g(selectedChoicesAtom);
@@ -2743,4 +2754,7 @@ export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
   } else {
     s(selectedChoicesAtom, [...cs]);
   }
+
+  const channel = g(channelAtom);
+  channel(Channel.SELECTED);
 });

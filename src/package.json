@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",
+    "@johnlindquist/mac-clipboard-listener": "^1.0.1",
     "@nut-tree/nut-js": "3.1.2",
     "chokidar": "3.5.3",
     "frontmost-app": "1.0.0",

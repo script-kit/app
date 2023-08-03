@@ -467,6 +467,15 @@ export const configureInterval = async () => {
     }
   }
 
+  // REMOVE-MAC
+  const {
+    start: startMacClipboardListener,
+    stop: stopMacClipboardListener,
+    onClipboardImageChange,
+  } = await import('@johnlindquist/mac-clipboard-listener');
+  stopMacClipboardListener();
+  // END-REMOVE-MAC
+
   const clipboardText$: Observable<any> = new Observable<string>((observer) => {
     log.info(`Creating new Observable for clipboard...`);
     try {
@@ -488,6 +497,22 @@ export const configureInterval = async () => {
           log.error(error);
         }
       });
+
+      // REMOVE-MAC
+
+      startMacClipboardListener();
+
+      onClipboardImageChange(() => {
+        try {
+          log.info(`@johnlindquist/mac-clipboard-listener image changed...`);
+          observer.next('image');
+        } catch (error) {
+          log.error(error);
+        }
+      });
+
+      // END-REMOVE-MAC
+
       clipboardEventListener.listen();
     } catch (e) {
       log.error(`🔴 Failed to start clipboard watcher`);
@@ -498,6 +523,10 @@ export const configureInterval = async () => {
       log.info(`🛑 Attempting to stop clipboard watcher`);
       clipboardEventListener.close();
       log.info(`🛑 Successfully stopped clipboard watcher`);
+
+      // REMOVE-MAC
+      stopMacClipboardListener();
+      // END-REMOVE-MAC
     };
   }).pipe(
     switchMap(async (type: string) => {

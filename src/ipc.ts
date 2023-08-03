@@ -343,6 +343,7 @@ ${data.error}
     Channel.EDITOR_INSERT_TEXT,
     Channel.EDITOR_MOVE_CURSOR,
     Channel.KEYWORD_TRIGGERED,
+    Channel.SELECTED,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
