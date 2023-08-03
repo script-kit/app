@@ -2280,7 +2280,7 @@ export const debugPrompt = async () => {
   shell.openPath(promptLogPath);
 
   const id = setInterval(getPromptInfo, 3000);
-  // stop after 1 minute
+  // stop after 1 minute.
   setTimeout(() => {
     clearInterval(id);
   }, 60000);
