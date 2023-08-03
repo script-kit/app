@@ -33,7 +33,7 @@ import {
   invokeFlagSearch,
   invokeSearch,
   maybeHide,
-  preload,
+  attemptPreload,
   reload,
   resize,
   sendToPrompt,
@@ -433,7 +433,7 @@ ${data.error}
             cachePreview(mainScriptPath, message?.state?.preview || '');
 
             if (typeof message?.state?.value?.filePath === 'string') {
-              preload(message?.state?.value?.filePath);
+              attemptPreload(message?.state?.value?.filePath);
             }
           }
         }

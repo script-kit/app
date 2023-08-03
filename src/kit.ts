@@ -34,7 +34,7 @@ import {
   isVisible,
   sendToPrompt,
   setScript,
-  preload,
+  attemptPreload,
 } from './prompt';
 import { getKitScript, kitState } from './state';
 import { pathsAreEqual } from './helpers';
@@ -166,7 +166,9 @@ export const runPromptProcess = async (
   //   .catch((error) => {});
 
   // If the window is already open, interrupt the process with the new script
-  if (isVisible()) {
+  const visible = isVisible();
+  log.info(`👀 Visible: ${visible ? 'true' : 'false'}`);
+  if (visible) {
     sendToPrompt(
       Channel.START,
       options?.force ? kitState.scriptPath : promptScriptPath
@@ -183,12 +185,13 @@ export const runPromptProcess = async (
     log.info(`💦 Splash install screen visible. Preload Main Menu...`);
     try {
       kitState.scriptPath = mainScriptPath;
-      preload(mainScriptPath);
+      kitState.preloaded = false;
+      attemptPreload(mainScriptPath);
     } catch (error) {
       log.error(error);
     }
   } else if (idlesLength > 0) {
-    preload(promptScriptPath);
+    attemptPreload(promptScriptPath);
   } else {
     ensureIdleProcess();
   }

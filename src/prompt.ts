@@ -96,7 +96,7 @@ export const maybeHide = async (reason: string) => {
   if (!promptWindow?.isVisible()) return;
   if (reason === HideReason.NoScript || reason === HideReason.Escape) {
     actualHide();
-    preload(mainScriptPath, false);
+    attemptPreload(mainScriptPath, false);
     // clearSearch();
     // invokeSearch('');
     return;
@@ -909,8 +909,7 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
   channel: K,
   data?: ChannelMap[K]
 ) => {
-  if (process.env.KIT_SILLY)
-    log.silly(`sendToPrompt: ${String(channel)}`, data);
+  if (process.env.KIT_SILLY) log.info(`sendToPrompt: ${String(channel)}`, data);
   // log.info(`>_ ${channel}`);
   if (
     promptWindow &&
@@ -1127,9 +1126,10 @@ export const setScript = async (
   force = false
 ): Promise<'denied' | 'allowed'> => {
   kitState.resizePaused = false;
-  kitState.cacheChoices = Boolean(script?.cache);
-  kitState.cachePrompt = Boolean(script?.cache);
-  kitState.cachePreview = Boolean(script?.cache);
+  const cache = Boolean(script?.cache);
+  kitState.cacheChoices = cache;
+  kitState.cachePrompt = cache;
+  kitState.cachePreview = cache;
   // log.info(`setScript`, { script, pid });
 
   if (script.filePath === prevScriptPath && pid === prevPid) {
@@ -1257,9 +1257,8 @@ export const preloadPromptData = async (promptData: PromptData) => {
     input,
   });
 
-  kitState.preloaded = true;
   kitState.scriptPath = promptData.scriptPath;
-  kitState.hideOnEscape = promptData.hideOnEscape;
+  kitState.hideOnEscape = Boolean(promptData.hideOnEscape);
 
   if (promptData?.hint) {
     const shortcodes = promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi);
@@ -1294,8 +1293,6 @@ export const preloadPromptData = async (promptData: PromptData) => {
   sendToPrompt(Channel.SET_OPEN, true);
 };
 
-let prevPromptData = {};
-
 export const setPromptData = async (promptData: PromptData) => {
   kitSearch.shortcodes.clear();
   if (promptData?.hint) {
@@ -1308,7 +1305,6 @@ export const setPromptData = async (promptData: PromptData) => {
   }
 
   if (kitState.cachePrompt && !promptData.preload) {
-    kitState.preloaded = false;
     kitState.cachePrompt = false;
     log.info(`💝 Caching prompt data`);
     promptData.name ||= kitState.script.name || '';
@@ -1324,8 +1320,17 @@ export const setPromptData = async (promptData: PromptData) => {
     setFlags(promptData.flags);
   }
 
-  if (isEqual(prevPromptData, promptData)) return;
-  prevPromptData = promptData;
+  log.info(`
+😘
+
+PRELOADED: ${kitState.preloaded ? 'true' : 'false'}
+
+  `);
+
+  if (kitState.preloaded) {
+    kitState.preloaded = false;
+    return;
+  }
 
   kitState.hiddenByUser = false;
   kitState.isPromptReady = false;
@@ -1406,6 +1411,7 @@ export const setPromptData = async (promptData: PromptData) => {
     kitState.tabChanged = false;
   }
 
+  log.info(`👋 Show Prompt from setPromptData for ${kitState.scriptPath}`);
   showPrompt();
 
   if (boundsCheck) clearTimeout(boundsCheck);
@@ -1457,14 +1463,20 @@ export const preloadChoices = (choices: Choice[]) => {
   setChoices(choices, { preload: true });
 };
 
-export const preload = (promptScriptPath: string, show = true) => {
+export const attemptPreload = (promptScriptPath: string, show = true) => {
+  // log out all the keys of preloadPromptDataMap
+  kitState.preloaded = false;
+  log.info(`preloadPromptDataMap`, [...preloadPromptDataMap.keys()]);
   if (preloadPromptDataMap.has(promptScriptPath)) {
+    log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
     if (show) setBackgroundThrottling(false);
     sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
     sendToPrompt(Channel.SET_TAB_INDEX, 0);
     sendToPrompt(AppChannel.SET_PRELOADED, true);
 
     if (preloadChoicesMap.has(promptScriptPath)) {
+      kitState.preloaded = true;
+
       const promptData = preloadPromptDataMap.get(
         promptScriptPath
       ) as PromptData;
@@ -2112,7 +2124,7 @@ export const initBounds = async (
     });
   }
 
-  log.info(`👋 Show Prompt from initBounds for ${kitState.scriptPath}`);
+  log.info(`👋 Show Prompt from preloaded ${kitState.scriptPath}`);
   showPrompt();
 };
 

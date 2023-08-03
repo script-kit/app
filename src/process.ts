@@ -91,7 +91,7 @@ import {
   setScript,
   setTabIndex,
   setVibrancy,
-  preload,
+  attemptPreload,
 } from './prompt';
 import {
   getBackgroundTasks,
@@ -2152,7 +2152,7 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, value });
   }),
   PRELOAD: toProcess(async ({ child }, { channel, value }) => {
-    preload(value);
+    attemptPreload(value);
     childSend(child, { channel, value });
   }),
   CLEAR_TIMESTAMPS: toProcess(async ({ child }, { channel, value }) => {

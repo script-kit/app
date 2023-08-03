@@ -49,6 +49,8 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
           return;
         }
 
+        log.info(`🏚  Shortcut pressed: ${shortcut} -> ${filePath}`);
+
         runPromptProcess(filePath, [], {
           force: true,
           trigger: Trigger.Shortcut,

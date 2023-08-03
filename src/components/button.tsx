@@ -124,13 +124,7 @@ function ChoiceButton({
         setSubmitValue(choice?.value);
       }
     },
-    [
-      promptData.multiple,
-      toggleSelectedChoice,
-      choice.id,
-      choice.value,
-      setSubmitValue,
-    ]
+    [promptData, toggleSelectedChoice, choice.id, choice.value, setSubmitValue]
   );
   const onMouseEnter = useCallback(() => {
     if (mouseEnabled) {
