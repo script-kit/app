@@ -171,8 +171,7 @@ jobs:
         run: |
           npx kit remove-mac
           cd ./src
-          yarn remove node-mac-permissions
-          yarn remove @johnlindquist/mac-clipboard-listener
+          yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener
           Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
           if (Test-Path node_modules\@nut-tree\libnut-darwin) { Remove-Item node_modules\@nut-tree\libnut-darwin -Recurse -Force }
           if (Test-Path node_modules\@nut-tree\libnut-linux) { Remove-Item node_modules\@nut-tree\libnut-linux -Recurse -Force }
@@ -197,10 +196,7 @@ jobs:
           npx kit remove-mac
           npx kit remove-nut
           cd ./src
-          yarn remove node-mac-permissions
-          yarn remove @nut-tree/nut-js
-          yarn remove uiohook-napi
-          yarn remove @johnlindquist/mac-clipboard-listener
+          yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener
           cat ./package.json
           cd ..
           yarn build
@@ -220,8 +216,7 @@ jobs:
         run: |
           npx kit remove-mac
           cd ./src
-          yarn remove node-mac-permissions
-          yarn remove @johnlindquist/mac-clipboard-listener
+          yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
@@ -243,10 +238,7 @@ jobs:
           npx kit remove-mac
           npx kit remove-nut
           cd ./src
-          yarn remove node-mac-permissions
-          yarn remove @nut-tree/nut-js
-          yarn remove uiohook-napi
-          yarn remove @johnlindquist/mac-clipboard-listener
+          yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener
           cat ./package.json
           cd ..
           echo "--- Done removing mac deps ---\n\n"
