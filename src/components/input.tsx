@@ -42,6 +42,8 @@ import {
   headerHiddenAtom,
   loadingAtom,
   typingAtom,
+  shortcutsAtom,
+  logAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -92,6 +94,8 @@ export default function Input() {
 
   const setLastKeyDownWasModifier = useSetAtom(lastKeyDownWasModifierAtom);
   const setTyping = useSetAtom(typingAtom);
+  const [shortcuts] = useAtom(shortcutsAtom);
+  const [log] = useAtom(logAtom);
 
   useEffect(() => {
     setInputFocus(Math.random());
@@ -108,6 +112,29 @@ export default function Input() {
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
+      // if command is pressed
+      if (event.metaKey) {
+        const shortcut = shortcuts.find((s) => s.key.includes('cmd'));
+        const shortcutKey = shortcut.key.split('+').pop();
+        const cmd = shortcut?.key?.includes('cmd');
+
+        if (shortcutKey === event.key && cmd) {
+          event.preventDefault();
+          return;
+        }
+      }
+
+      if (event.ctrlKey) {
+        const shortcut = shortcuts.find((s) => s.key.includes('ctrl'));
+        const shortcutKey = shortcut.key.split('+').pop();
+        const ctrl = shortcut?.key?.includes('ctrl');
+
+        if (shortcutKey === event.key && ctrl) {
+          event.preventDefault();
+          return;
+        }
+      }
+
       const target = event.target as HTMLInputElement;
       setSelectionStart(target.selectionStart as number);
 
@@ -128,7 +155,14 @@ export default function Input() {
         setTyping(true);
       }
     },
-    [setSelectionStart, setModifiers, setLastKeyDownWasModifier, setTyping]
+    [
+      setSelectionStart,
+      setModifiers,
+      setLastKeyDownWasModifier,
+      setTyping,
+      shortcuts,
+      flags,
+    ]
   );
 
   const onKeyUp = useCallback(

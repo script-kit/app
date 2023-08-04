@@ -157,11 +157,7 @@ store(kitPath('db', 'clipboard.json'), {
   });
 let frontmost: any = null;
 export const getClipboardHistory = async () => {
-  const clipboardHistory = await clipboardStore.get('history');
-  if (kitState.authorized && kitState.clipboardWatcherEnabled) {
-    return clipboardHistory;
-  }
-
+  const history = await clipboardStore.get('history');
   if (!kitState.authorized) {
     const choice = {
       name: `Clipboard history requires accessibility access`,
@@ -172,7 +168,7 @@ export const getClipboardHistory = async () => {
 
     kitState.notifyAuthFail = true;
 
-    return [choice];
+    await clipboardStore.set('history', [choice, ...history]);
   }
 
   if (!kitState.clipboardWatcherEnabled) {
@@ -185,7 +181,7 @@ export const getClipboardHistory = async () => {
 
     kitState.notifyAuthFail = true;
 
-    return [choice];
+    await clipboardStore.set('history', [choice, ...history]);
   }
 
   return [];
@@ -321,6 +317,8 @@ export const preStartConfigureInterval = async () => {
       });
 
       log.info(`📋 Clipboard store initialized: ${typeof clipboardStore}`);
+
+      await getClipboardHistory();
     } catch (error) {
       log.error(error);
     }
@@ -569,21 +567,27 @@ export const configureInterval = async () => {
         let value = ``;
 
         if (type === 'image') {
-          value = path.join(tmpClipboardDir, `${timestamp}.png`);
-          itemName = `${timestamp}.png`;
           try {
-            const imageBuffer = await clipboardEventListener.readImage();
-            // if imageBuffer is larger than 5mb, don't save it
-            if (imageBuffer.length > 1024 * 1024 * 5) {
+            const image = clipboard.readImage();
+
+            const pngImageBuffer = image.toPNG();
+
+            log.info(`Image size: ${pngImageBuffer.length} bytes`);
+            if (pngImageBuffer.length > 20 * 1024 * 1024) {
+              log.info('Image size > 20MB. Ignoring...');
               return;
             }
-            await writeFile(value, imageBuffer);
+
+            itemName = `${timestamp}.png`;
+            value = path.join(tmpClipboardDir, itemName);
+
+            await writeFile(value, pngImageBuffer);
           } catch (error) {
             log.error(error);
           }
         } else {
           try {
-            value = await clipboardEventListener.readText();
+            value = clipboard.readText();
             if (value.length > 1280) {
               log.info(`Ignoring clipboard value > 1280 characters`);
               return;

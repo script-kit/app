@@ -458,8 +458,12 @@ body {
 }
 
 .emoji-picker-react .emoji button:focus {
-  @apply bg-bg-base bg-opacity-50;
+  @apply bg-bg-base bg-opacity-90;
   @apply outline outline-1 outline-bg-base;
+}
+
+button.epr-emoji:focus > * {
+  @apply bg-primary/40 !important;
 }
 
 .prose > pre {
