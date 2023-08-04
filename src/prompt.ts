@@ -568,7 +568,7 @@ export const setPromptAlwaysOnTop = (onTop: boolean) => {
       visibleOnFullScreen: true,
       skipTransformProcessType: true,
     });
-    promptWindow.setAlwaysOnTop(onTop, 'screen-saver', 1);
+    promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
     if (onTop && kitState.isMac) {
       promptWindow.moveTop();
     }
@@ -1502,6 +1502,7 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
             : promptData.height,
       };
     }
+
     initBounds(promptScriptPath, show, promptScriptPath === mainScriptPath);
   }
 };

@@ -68,17 +68,15 @@ export default function ChoiceList({ width, height }: ListProps) {
 
   useEffect(() => {
     if (!listRef.current) return;
-    const needsReset = choices.find((c) => c?.item?.height !== itemHeight);
-    if (needsReset) {
-      (listRef?.current as any)?.resetAfterIndex(0);
-    }
-  }, [choices, itemHeight]);
+
+    (listRef?.current as any)?.resetAfterIndex(0);
+  }, [choices]);
 
   const [scrollTimeout, setScrollTimeout] = useState<any>(null);
 
-  const choicesHeight = choices.reduce((acc, choice) => {
-    return acc + (choice?.item?.height || itemHeight);
-  }, 0);
+  // const choicesHeight = choices.reduce((acc, choice) => {
+  //   return acc + (choice?.item?.height || itemHeight);
+  // }, 0);
 
   const itemData = createItemData(choices);
 
@@ -117,10 +115,11 @@ export default function ChoiceList({ width, height }: ListProps) {
           );
         }}
         height={
-          promptData?.resize
-            ? // TODO: add itemHeight to choices in Kit SDK
-              Math.min(height, choicesHeight)
-            : height
+          height
+          // promptData?.resize
+          //   ? // TODO: add itemHeight to choices in Kit SDK
+          //     Math.min(height, choicesHeight)
+          //   : height
         }
         itemCount={choices?.length || 0}
         itemSize={(i) => {

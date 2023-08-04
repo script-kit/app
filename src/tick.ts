@@ -17,7 +17,7 @@ import {
 import { tmpClipboardDir, kitPath } from '@johnlindquist/kit/cjs/utils';
 import { Choice, Script } from '@johnlindquist/kit/types';
 import { store } from '@johnlindquist/kit/cjs/db';
-import { remove } from 'lodash';
+import { debounce, remove } from 'lodash';
 
 import { clipboard, systemPreferences } from 'electron';
 import { emitter, KitEvent } from './events';
@@ -500,14 +500,24 @@ export const configureInterval = async () => {
 
       startMacClipboardListener();
 
-      onClipboardImageChange(() => {
-        try {
-          log.info(`@johnlindquist/mac-clipboard-listener image changed...`);
-          observer.next('image');
-        } catch (error) {
-          log.error(error);
-        }
-      });
+      onClipboardImageChange(
+        debounce(
+          () => {
+            try {
+              log.info(
+                `@johnlindquist/mac-clipboard-listener image changed...`
+              );
+              observer.next('image');
+            } catch (error) {
+              log.error(error);
+            }
+          },
+          1000,
+          {
+            leading: true,
+          }
+        )
+      );
 
       // END-REMOVE-MAC
 

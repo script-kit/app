@@ -345,7 +345,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         getMainPrompt()?.setPosition(0, 0);
         getMainPrompt()?.center();
         getMainPrompt()?.focus();
-        getMainPrompt()?.setAlwaysOnTop(true, 'screen-saver', 1);
+        getMainPrompt()?.setAlwaysOnTop(true, 'pop-up-menu', 1);
       },
     });
 

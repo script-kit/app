@@ -960,7 +960,10 @@ const kitMessageMap: ChannelHandler = {
   }),
   SET_SCRIPT: toProcess(async (processInfo: ProcessInfo, data) => {
     // "app-run" will invoke "SET_SCRIPT"
-    attemptPreload(data?.value?.filePath);
+    // TODO: Attempting to preload on SET_SCRIPT causes weird resizing issues
+    // Need to figure out initBounds, jotai's resize/hasPreview preload
+    // const filePath = data?.value?.filePath;
+    // attemptPreload(filePath);
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
 
