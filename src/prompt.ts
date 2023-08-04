@@ -1317,10 +1317,10 @@ export const setPromptData = async (promptData: PromptData) => {
     kitState.cachePrompt = false;
     promptData.name ||= kitState.script.name || '';
     promptData.description ||= kitState.script.description || '';
-    log.info(`💝 Caching prompt data`);
+    log.info(`💝 Caching prompt data: ${kitState?.scriptPath}`);
     preloadPromptDataMap.set(kitState.scriptPath, {
       ...promptData,
-      input: '',
+      input: promptData?.keyword ? '' : promptData?.input || '',
       keyword: '',
     });
   }
@@ -1476,15 +1476,13 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
     sendToPrompt(Channel.SET_TAB_INDEX, 0);
     sendToPrompt(AppChannel.SET_PRELOADED, true);
 
+    kitState.preloaded = true;
+
+    const promptData = preloadPromptDataMap.get(promptScriptPath) as PromptData;
+
+    preloadPromptData(promptData);
+
     if (preloadChoicesMap.has(promptScriptPath)) {
-      kitState.preloaded = true;
-
-      const promptData = preloadPromptDataMap.get(
-        promptScriptPath
-      ) as PromptData;
-
-      preloadPromptData(promptData);
-
       const preview = preloadPreviewMap.get(promptScriptPath) as string;
       preloadPreview(preview || noPreview);
 
@@ -1503,9 +1501,8 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
             ? PROMPT.HEIGHT.BASE
             : promptData.height,
       };
-
-      initBounds(promptScriptPath, show, promptScriptPath === mainScriptPath);
     }
+    initBounds(promptScriptPath, show, promptScriptPath === mainScriptPath);
   }
 };
 

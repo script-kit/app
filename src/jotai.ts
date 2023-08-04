@@ -617,7 +617,7 @@ export const focusedChoiceAtom = atom(
 export const hasPreviewAtom = atom<boolean>((g) => {
   if (g(allSkipAtom)) return false;
 
-  return g(_previewHTML) !== '';
+  return Boolean(g(_previewHTML) || g(promptData)?.preview || '');
 });
 
 let prevFocusedChoiceId = 'prevFocusedChoiceId';
@@ -1140,6 +1140,24 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
   //   hasPreview: hasPreview ? 'has preview' : 'no preview',
   // });
 
+  const inputChanged = g(_inputChangedAtom);
+
+  mh = Math.ceil(mh || -3) + 3;
+
+  if (inputChanged) {
+    if (mh === 0 && promptData?.preventCollapse) {
+      g(logAtom)(`🍃 Prevent collapse to zero...`);
+      return;
+    }
+
+    if (
+      typeof (promptData?.resize === 'boolean') &&
+      promptData?.resize === false
+    ) {
+      return;
+    }
+  }
+
   const data: ResizeData = {
     id: promptData?.id || 'missing',
     reason,
@@ -1147,7 +1165,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     placeholderOnly,
     topHeight,
     ui,
-    mainHeight: Math.ceil(mh || -3) + 3,
+    mainHeight: mh,
     footerHeight,
     mode: promptData?.mode || Mode.FILTER,
     hasPanel,
@@ -1157,7 +1175,7 @@ const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
     tabIndex: g(_tabIndex),
     isSplash: g(isSplashAtom),
     hasPreview,
-    inputChanged: g(_inputChangedAtom),
+    inputChanged,
     justOpened,
     forceResize,
     forceHeight,
@@ -1302,7 +1320,7 @@ let wasPromptDataPreloaded = false;
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
-    g(logAtom)(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
+    // g(logAtom)(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
     s(isMainScriptAtom, a?.scriptPath === mainScriptPath);
     if (a?.ui !== UI.arg && !a?.preview) {
       s(previewHTMLAtom, closedDiv);
@@ -1363,6 +1381,13 @@ export const promptDataAtom = atom(
 
         s(termConfigAtom, config);
       }
+
+      // g(logAtom)({
+      //   input: a?.input,
+      //   keyword: a?.keyword,
+      //   inputRegex: a?.inputRegex,
+      //   isMainScriptAtom: g(isMainScriptAtom) ? 'true' : 'false',
+      // });
 
       if (!a?.keyword && !g(isMainScriptAtom)) {
         g(logAtom)(`👍 Setting input to ${a?.input || '_'}`);

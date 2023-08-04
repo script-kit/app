@@ -114,24 +114,33 @@ export default function Input() {
     (event: KeyboardEvent<HTMLInputElement>) => {
       // if command is pressed
       if (event.metaKey) {
-        const shortcut = shortcuts.find((s) => s.key.includes('cmd'));
-        const shortcutKey = shortcut.key.split('+').pop();
-        const cmd = shortcut?.key?.includes('cmd');
+        const shortcut = shortcuts.find((s) => (s?.key || '')?.includes('cmd'));
+        const key = shortcut?.key || '';
+        if (key) {
+          const shortcutKey = key?.split('+').pop();
+          const cmd = key?.includes('cmd');
 
-        if (shortcutKey === event.key && cmd) {
-          event.preventDefault();
-          return;
+          if (shortcutKey === event.key && cmd) {
+            event.preventDefault();
+            return;
+          }
         }
       }
 
       if (event.ctrlKey) {
-        const shortcut = shortcuts.find((s) => s.key.includes('ctrl'));
-        const shortcutKey = shortcut.key.split('+').pop();
-        const ctrl = shortcut?.key?.includes('ctrl');
+        const shortcut = shortcuts.find((s) =>
+          (s?.key || '')?.includes('ctrl')
+        );
+        const key = shortcut?.key || '';
 
-        if (shortcutKey === event.key && ctrl) {
-          event.preventDefault();
-          return;
+        if (key) {
+          const shortcutKey = key.split('+').pop();
+          const ctrl = key?.includes('ctrl');
+
+          if (shortcutKey === event.key && ctrl) {
+            event.preventDefault();
+            return;
+          }
         }
       }
 

@@ -159,7 +159,6 @@ export const runPromptProcess = async (
 
   if (isMain && !isSplash) {
     kitState.mainMenuHasRun = true;
-    removeAbandonnedKit();
   }
 
   // readJson(kitPath('db', 'mainShortcuts.json'))

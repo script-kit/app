@@ -959,6 +959,8 @@ const kitMessageMap: ChannelHandler = {
     clearSearch();
   }),
   SET_SCRIPT: toProcess(async (processInfo: ProcessInfo, data) => {
+    // "app-run" will invoke "SET_SCRIPT"
+    attemptPreload(data?.value?.filePath);
     if (processInfo.type === ProcessType.Prompt) {
       processInfo.scriptPath = data.value?.filePath;
 
@@ -2485,10 +2487,12 @@ class Processes extends Array<ProcessInfo> {
 
     child.on('close', () => {
       log.info(`CLOSE`);
+      processes.removeByPid(pid);
     });
 
     child.on('disconnect', () => {
       log.info(`DISCONNECT`);
+      processes.removeByPid(pid);
     });
 
     child.on('exit', (code) => {
@@ -2501,7 +2505,6 @@ class Processes extends Array<ProcessInfo> {
       }
 
       const processInfo = processes.getByPid(pid) as ProcessInfo;
-      emitter.emit(KitEvent.RemoveProcess, processInfo.scriptPath);
 
       if (!processInfo) return;
 
@@ -2554,6 +2557,7 @@ class Processes extends Array<ProcessInfo> {
       };
 
       setTrayScriptError(pid);
+      processes.removeByPid(pid);
 
       trackEvent(TrackEvent.ChildError, {
         error: error?.message,
@@ -2835,6 +2839,13 @@ export const abandonActivePromptProcess = (same = false) => {
   setTimeout(
     () => {
       log.info(`🕵️‍♀️ ${pid}: Checking for abandonned process`);
+
+      for (const p of processes.getAllProcessInfo()) {
+        if (p.pid !== kitState.pid && p.scriptPath === mainScriptPath) {
+          processes.removeByPid(p.pid);
+        }
+      }
+
       if (pid) {
         const pinfo = processes.getByPid(pid);
         if (pinfo && pinfo.child && !pinfo.killed) {
