@@ -1984,10 +1984,10 @@ export const startAtom = atom(null, (g, s, a: string) => {
   // console.log(`🎬 Start ${a}`);
   const script = g(scriptAtom);
 
-  if (script.filePath === a) {
-    const channel = g(channelAtom);
-    channel(Channel.ABANDON);
-  }
+  // if (script.filePath === a) {
+  //   const channel = g(channelAtom);
+  //   channel(Channel.ABANDON);
+  // }
 
   s(_history, []);
 });

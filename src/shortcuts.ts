@@ -1,4 +1,4 @@
-import { app, globalShortcut } from 'electron';
+import { globalShortcut } from 'electron';
 import log from 'electron-log';
 import path from 'path';
 import { readFile } from 'fs/promises';
@@ -10,7 +10,7 @@ import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
-import { focusPrompt, isFocused, isVisible, maybeHide, reload } from './prompt';
+import { isVisible, maybeHide, reload } from './prompt';
 import { convertKey, kitState, subs } from './state';
 import { HideReason, Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
@@ -49,7 +49,9 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
           return;
         }
 
-        log.info(`🏚  Shortcut pressed: ${shortcut} -> ${filePath}`);
+        log.info(`
+----------------------------------------
+🏡  Shortcut pressed: ${shortcut} -> ${filePath}`);
 
         runPromptProcess(filePath, [], {
           force: true,
@@ -235,7 +237,10 @@ export const updateMainShortcut = async (filePath: string) => {
     const mainShortcutAction = debounce(
       async () => {
         kitState.shortcutPressed = finalShortcut;
-        log.info(`🏚  main shortcut`);
+        log.info(`
+
+----------------------------------------
+🏚  Main shortcut pressed: ${finalShortcut}`);
 
         trackEvent(TrackEvent.MainShortcut, {
           login: kitState.user?.login || 'unknown',

@@ -1169,6 +1169,7 @@ const kitMessageMap: ChannelHandler = {
   //   showNotification(data.html || 'You forgot html', data.options);
   // },
   SET_PROMPT_DATA: toProcess(async ({ child, pid }, { channel, value }) => {
+    kitState.promptProcess = child;
     kitState.scriptPathChanged = false;
     kitState.promptScriptPath = value?.scriptPath || '';
     kitState.hideOnEscape = Boolean(value?.hideOnEscape);
@@ -2826,6 +2827,28 @@ export const destroyAllProcesses = () => {
     }
   });
   processes.length = 0;
+};
+
+export const abandonActivePromptProcess = (same = false) => {
+  // eslint-disable-next-line prefer-destructuring
+  const pid = kitState?.promptProcess?.pid;
+  setTimeout(
+    () => {
+      log.info(`🕵️‍♀️ ${pid}: Checking for abandonned process`);
+      if (pid) {
+        const pinfo = processes.getByPid(pid);
+        if (pinfo && pinfo.child && !pinfo.killed) {
+          log.info(`🛑👋 Abandoning previous prompt process: ${pid}`);
+          pinfo.child.send({
+            channel: Channel.ABANDON,
+          });
+        }
+      } else {
+        log.info(`🕵️‍♀️ ${pid}: No process found`);
+      }
+    },
+    same ? 0 : 1000
+  );
 };
 
 export const spawnShebang = async ({

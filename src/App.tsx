@@ -1002,12 +1002,9 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                   {((ui === UI.arg && !panelHTML && choices.length > 0) ||
                     ui === UI.hotkey) && (
                     <AutoSizer>
-                      {({ width, height }) =>
-                        ((ui === UI.arg && !panelHTML && choices.length > 0) ||
-                          ui === UI.hotkey) && (
-                          <List height={height} width={width} />
-                        )
-                      }
+                      {({ width, height }) => (
+                        <List height={height} width={width} />
+                      )}
                     </AutoSizer>
                   )}
                   {(!!(ui === UI.arg || ui === UI.div) &&

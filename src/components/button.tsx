@@ -230,6 +230,38 @@ function ChoiceButton({
       ) : (
         <div className="flex h-full w-full flex-row items-center justify-between">
           <div className="flex h-full flex-row items-center overflow-x-hidden">
+            {/* Checkbox */}
+            {promptData?.multiple && (
+              <div>
+                <div
+                  className={`
+                leading-1 -pl-1 mr-2 flex
+                    h-6
+                    w-6
+                    ${calculateScale(choice.height ?? promptData?.itemHeight)}
+                    items-center
+
+                    justify-center
+                    rounded
+                    bg-text-base
+                    bg-opacity-10
+                    fill-current
+
+ text-xs
+        font-bold text-primary/90
+        transition
+        ease-in
+        hover:bg-opacity-20 hover:text-primary/90
+
+
+        `}
+                >
+                  {selectedChoices.find((c) => choice?.id === c?.id) && (
+                    <IconSwapper text="selected" />
+                  )}
+                </div>
+              </div>
+            )}
             {/* Img */}
             {choice?.img && !imageFail && (
               <img
@@ -354,37 +386,6 @@ function ChoiceButton({
               </div>
             )}
 
-            {promptData?.multiple && (
-              <div>
-                <div
-                  className={`
-                leading-1 ml-2 flex
-                    h-6
-                    w-6
-                    ${calculateScale(choice.height ?? promptData?.itemHeight)}
-                    items-center
-
-                    justify-center
-                    rounded
-                    bg-text-base
-                    bg-opacity-10
-                    fill-current
-
- text-xs
-        font-bold text-primary/90
-        transition
-        ease-in
-        hover:bg-opacity-20 hover:text-primary/90
-
-
-        `}
-                >
-                  {selectedChoices.find((c) => choice?.id === c?.id) && (
-                    <IconSwapper text="selected" />
-                  )}
-                </div>
-              </div>
-            )}
             {index === buttonIndex &&
               !hasRightShortcut &&
               !choice?.ignoreFlags &&

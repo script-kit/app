@@ -377,6 +377,7 @@ const initState = {
   cmd: isMac ? `cmd` : `ctrl`,
   hideOnEscape: true,
   justFocused: false,
+  promptProcess: null as ChildProcess | null,
 };
 
 const initConfig: Config = {

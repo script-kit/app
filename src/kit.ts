@@ -24,6 +24,7 @@ import { ProcessInfo } from '@johnlindquist/kit';
 
 import { emitter, KitEvent } from './events';
 import {
+  abandonActivePromptProcess,
   ensureIdleProcess,
   getIdles,
   processes,
@@ -173,7 +174,9 @@ export const runPromptProcess = async (
       Channel.START,
       options?.force ? kitState.scriptPath : promptScriptPath
     );
-    if (kitState.scriptPath === promptScriptPath && !isSplash) {
+    const sameScript = kitState.scriptPath === promptScriptPath;
+    abandonActivePromptProcess(sameScript);
+    if (sameScript && !isSplash) {
       return null;
     }
   }
