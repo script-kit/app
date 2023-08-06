@@ -1658,9 +1658,9 @@ export const submitValueAtom = atom(
     const channel = g(channelAtom);
 
     const action = g(focusedActionAtom) as any;
-    g(logAtom)({
-      action,
-    });
+    // g(logAtom)({
+    //   action,
+    // });
     if (action.hasAction) {
       channel(Channel.ACTION);
       return;

@@ -4,13 +4,7 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import React, { useCallback } from 'react';
-import {
-  focusedFlagValueAtom,
-  uiAtom,
-  sendShortcutAtom,
-  appConfigAtom,
-  signInActionAtom,
-} from '../jotai';
+import { sendShortcutAtom, appConfigAtom, signInActionAtom } from '../jotai';
 import { bg, textContrast } from './actions';
 import { GithubIcon } from './icons';
 

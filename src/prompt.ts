@@ -273,6 +273,11 @@ export const createPromptWindow = async () => {
     });
 
     sendToPrompt(Channel.APP_DB, { ...appDb });
+
+    const user = snapshot(kitState.user);
+    log.info(`Send user.json to prompt`, user);
+
+    appToPrompt(AppChannel.USER_CHANGED, user);
     setKitStateAtom({
       isSponsor: kitState.isSponsor,
     });
@@ -2031,7 +2036,6 @@ const showPrompt = () => {
     }
   }, 200);
 
-  app.focus({ steal: true });
   focusPrompt();
   sendToPrompt(Channel.SET_OPEN, true);
 
