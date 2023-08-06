@@ -133,9 +133,8 @@ export default function Header() {
       className="flex w-full flex-row justify-between
       "
     >
-      <AnimatePresence key="topBar">
-        {open && loading && <TopBar />}
-      </AnimatePresence>
+      {open && loading && <TopBar />}
+
       <div
         className={`
         flex

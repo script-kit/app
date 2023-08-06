@@ -229,6 +229,11 @@ export const createPromptWindow = async () => {
     });
   }
 
+  promptWindow.setVisibleOnAllWorkspaces(true, {
+    visibleOnFullScreen: true,
+    skipTransformProcessType: true,
+  });
+
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
 
   if (kitState.isMac) {
@@ -564,10 +569,6 @@ export const setPromptAlwaysOnTop = (onTop: boolean) => {
   if (promptWindow && !promptWindow.isDestroyed()) {
     if (onTop) log.info(`🔝 Keep "alwaysOnTop"`);
     kitState.alwaysOnTop = onTop;
-    promptWindow.setVisibleOnAllWorkspaces(onTop, {
-      visibleOnFullScreen: true,
-      skipTransformProcessType: true,
-    });
     promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
     if (onTop && kitState.isMac) {
       promptWindow.moveTop();
@@ -2021,7 +2022,6 @@ const showPrompt = () => {
   } else {
     promptWindow.show();
   }
-  promptWindow.setVisibleOnAllWorkspaces(false);
   setBackgroundThrottling(true);
 
   if (topTimeout) clearTimeout(topTimeout);
@@ -2031,6 +2031,7 @@ const showPrompt = () => {
     }
   }, 200);
 
+  app.focus({ steal: true });
   focusPrompt();
   sendToPrompt(Channel.SET_OPEN, true);
 

@@ -344,6 +344,7 @@ ${data.error}
     Channel.EDITOR_MOVE_CURSOR,
     Channel.KEYWORD_TRIGGERED,
     Channel.SELECTED,
+    Channel.ACTION,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
@@ -433,7 +434,10 @@ ${data.error}
           if (kitState.isMainScript()) {
             cachePreview(mainScriptPath, message?.state?.preview || '');
 
-            if (typeof message?.state?.value?.filePath === 'string') {
+            if (
+              typeof message?.state?.value?.filePath === 'string' &&
+              !message?.state?.flag
+            ) {
               attemptPreload(message?.state?.value?.filePath);
             }
           }

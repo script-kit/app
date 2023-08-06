@@ -38,7 +38,7 @@ const mainFail = (shortcut: string, filePath: string) =>
 
 const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
   try {
-    const shortcutAction = throttle(
+    const shortcutAction = debounce(
       async () => {
         kitState.shortcutPressed = shortcut;
 

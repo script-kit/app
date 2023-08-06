@@ -830,7 +830,13 @@ const _flagsAtom = atom<FlagsOptions>({});
 export const flagsAtom = atom(
   (g) => g(_flagsAtom),
   (g, s, a: FlagsOptions) => {
-    // g(logAtom)({ flags: Object.keys(a) });
+    // g(logAtom)(
+    //   Object.entries(a).map(([k, v]) => {
+    //     return {
+    //       [k]: v?.hasAction ? 'hasAction' : 'noAction',
+    //     };
+    //   })
+    // );
     s(_flagsAtom, a);
   }
 );
@@ -1404,6 +1410,7 @@ export const promptDataAtom = atom(
       s(inputCommandChars, a?.inputCommandChars || []);
 
       s(focusedFlagValueAtom, '');
+
       s(flagsAtom, a?.flags || {});
 
       s(headerHiddenAtom, !!a?.headerClassName?.includes('hidden'));
@@ -1413,10 +1420,9 @@ export const promptDataAtom = atom(
 
       const script = g(scriptAtom);
 
-      const promptDescription = headerHidden
-        ? ''
-        : a.description || (a?.name ? '' : script?.description || '');
-      const promptName = headerHidden ? '' : a.name || script?.name || '';
+      const promptDescription =
+        a.description || (a?.name ? '' : script?.description || '');
+      const promptName = a.name || script?.name || '';
 
       s(descriptionAtom, promptDescription || promptName);
       s(nameAtom, promptDescription ? promptName : promptDescription);
@@ -1548,9 +1554,17 @@ export const focusedFlagValueAtom = atom(
     // g(logAtom)(`👀 focusedFlagValueAtom: ${a}`);
     if (a !== g(_focusedFlag)) {
       s(_focusedFlag, a);
+
+      const flags = g(flagsAtom);
+      const flag = flags[a];
+
+      s(focusedActionAtom, flag || {});
     }
   }
 );
+
+export const focusedActionAtom = atom({});
+
 const _submitValue = atom('');
 export const searchDebounceAtom = atom(true);
 export const termFontAtom = atom('monospace');
@@ -1580,6 +1594,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     mode: g(modeAtom),
     multiple: g(promptDataAtom)?.multiple || false,
     selected: g(selectedChoicesAtom).map((c) => c?.value),
+    action: g(focusedActionAtom),
   };
 
   return state;
@@ -1640,6 +1655,17 @@ export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
+    const channel = g(channelAtom);
+
+    const action = g(focusedActionAtom) as any;
+    g(logAtom)({
+      action,
+    });
+    if (action.hasAction) {
+      channel(Channel.ACTION);
+      return;
+    }
+
     s(onInputSubmitAtom, {});
     // TODO: This was helping with resize flickers before. Not sure if still needed.
     s(promptActiveAtom, false);
@@ -1688,7 +1714,6 @@ export const submitValueAtom = atom(
     // s(_inputAtom, '');
     // s(panelHTMLAtom, ``);
 
-    const channel = g(channelAtom);
     channel(Channel.VALUE_SUBMITTED, {
       value,
       flag,
@@ -2564,6 +2589,12 @@ export const inputFontSizeAtom = atom((g) => {
   }
 
   return fontSize;
+});
+
+export const signInActionAtom = atom((g) => {
+  const shortcuts = g(shortcutsAtom);
+  const action = shortcuts.find((s) => s?.flag === 'sign-in-to-script-kit');
+  return action;
 });
 
 export const actionsAtom = atom((g) => {

@@ -44,6 +44,12 @@ import {
   typingAtom,
   shortcutsAtom,
   logAtom,
+  userAtom,
+  kitStateAtom,
+  hasRightShortcutAtom,
+  descriptionAtom,
+  nameAtom,
+  signInActionAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -51,7 +57,7 @@ import { ActionButton } from './actionbutton';
 import { ActionSeparator } from './actionseparator';
 import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';
-import TopBar from './TopBar';
+import { LoginButton } from './loginbutton';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];
@@ -96,6 +102,12 @@ export default function Input() {
   const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
   const [log] = useAtom(logAtom);
+  const user = useAtomValue(userAtom);
+  const kitState = useAtomValue(kitStateAtom);
+  const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
+  const name = useAtomValue(nameAtom);
+  const description = useAtomValue(descriptionAtom);
+  const signInAction = useAtomValue(signInActionAtom);
 
   useEffect(() => {
     setInputFocus(Math.random());
@@ -209,7 +221,7 @@ export default function Input() {
   return (
     <div
       key="input"
-      className={`flex flex-row ${footerHidden && '-mt-px'}`}
+      className={`flex flex-row ${footerHidden && '-mt-px'} relative`}
       style={{
         height: inputHeight || PROMPT.INPUT.HEIGHT.SM,
       }}
@@ -218,7 +230,11 @@ export default function Input() {
       // animate={{ opacity: processing ? 0 : 1 }}
       // transition={{ duration: 0.2 }}
     >
-      {headerHidden && loading && <TopBar />}
+      {/* {headerHidden && loading && <TopBar />} */}
+      {/* "Hello World" text */}
+      {/* <div className="absolute top-0.5 left-1/2 -translate-x-1/2 transform font-native text-xxs text-primary">
+        {name} - {description}
+      </div> */}
       <div
         className="max-w-full flex-1"
         style={{
@@ -294,26 +310,6 @@ export default function Input() {
           >
             {miniShortcutsVisible && (
               <>
-                <div className="enter-container flex min-w-fit flex-row items-center">
-                  {enterButtonName ? (
-                    <EnterButton
-                      key="enter-button"
-                      name={enterButtonName}
-                      position="right"
-                      shortcut="⏎"
-                      value="enter"
-                      flag=""
-                      disabled={enterButtonDisabled}
-                    />
-                  ) : null}
-                </div>
-                <ActionSeparator />
-                <div className="options-container flex flex-row">
-                  {hasFlags && [
-                    <OptionsButton key="options-button" />,
-                    <ActionSeparator key="options-separator" />,
-                  ]}
-                </div>
                 <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
                   {actions
                     .filter(
@@ -333,7 +329,60 @@ export default function Input() {
               </>
             )}
 
-            <div className="mx-2 flex min-w-0 pt-px">
+            <div className="enter-container flex min-w-fit flex-row items-center">
+              {enterButtonName ? (
+                <EnterButton
+                  key="enter-button"
+                  name={enterButtonName}
+                  position="right"
+                  shortcut="⏎"
+                  value="enter"
+                  flag=""
+                  disabled={enterButtonDisabled}
+                />
+              ) : null}
+              <ActionSeparator key="options-separator" />
+            </div>
+
+            {hasFlags && !hasRightShortcut && (
+              <>
+                <div className="options-container flex flex-row">
+                  <OptionsButton key="options-button" />
+                </div>
+              </>
+            )}
+
+            {kitState.isSponsor ? (
+              <span className="relative pl-1.5 pr-0.5">
+                <img
+                  alt="avatar"
+                  src={user.avatar_url}
+                  className="z-0 w-[22px] rounded-full"
+                />
+                <svg
+                  height="24"
+                  width="24"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="absolute right-[-7px] top-[-5px] z-10 h-[15px] text-primary opacity-90"
+                >
+                  <g fill="currentColor">
+                    <path
+                      d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"
+                      fill="currentColor"
+                    />
+                  </g>
+                </svg>
+              </span>
+            ) : (
+              <>
+                <ActionSeparator key="login-separator" />
+                <LoginButton key="login-button" />
+                <ActionSeparator key="close-login-separator" />
+              </>
+            )}
+
+            <div className="mx-2 flex min-w-0">
               <IconButton />
             </div>
           </div>

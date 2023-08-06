@@ -1321,6 +1321,12 @@ const kitMessageMap: ChannelHandler = {
     log.verbose(`${channel}: Clearing prompt cache`);
     await clearPromptCache();
 
+    getMainPrompt()?.show();
+    getMainPrompt()?.setPosition(0, 0);
+    getMainPrompt()?.center();
+    getMainPrompt()?.focus();
+    getMainPrompt()?.setAlwaysOnTop(true, 'pop-up-menu', 1);
+
     if (child) {
       childSend(child, {
         channel,
