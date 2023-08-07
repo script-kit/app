@@ -110,9 +110,13 @@ function ChoiceButton({
     (event) => {
       event.preventDefault();
       event.stopPropagation();
-      setFlagValue(choice);
+      if (flaggedValue) {
+        setFlagValue('');
+      } else {
+        setFlagValue(choice);
+      }
     },
-    [choice, setFlagValue]
+    [choice, setFlagValue, flaggedValue]
   );
 
   const onClick = useCallback(
@@ -214,7 +218,11 @@ function ChoiceButton({
         outline-none
         focus:outline-none
         ${choice?.className}
-        ${index === buttonIndex ? `opacity-100` : `opacity-90`}
+        ${
+          index === buttonIndex
+            ? `opacity-100`
+            : `opacity-90 ${flaggedValue ? 'opacity-60' : ''}`
+        }
       }`}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
@@ -389,8 +397,7 @@ function ChoiceButton({
             {index === buttonIndex &&
               !hasRightShortcut &&
               !choice?.ignoreFlags &&
-              Boolean(Object.keys(flags).length) &&
-              !flaggedValue && (
+              Boolean(Object.keys(flags).length) && (
                 <div onClick={onRightClick}>
                   <div
                     className={`
@@ -416,7 +423,11 @@ function ChoiceButton({
 
         `}
                   >
-                    <IconSwapper text="→" />
+                    {flaggedValue ? (
+                      <IconSwapper text="selected" />
+                    ) : (
+                      <IconSwapper text="→" />
+                    )}
                   </div>
                 </div>
               )}

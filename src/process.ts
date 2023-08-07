@@ -2842,33 +2842,32 @@ export const destroyAllProcesses = () => {
   processes.length = 0;
 };
 
-export const abandonActivePromptProcess = (same = false) => {
+export const abandonOtherActivePromptProcesses = (sameScript = false) => {
   // eslint-disable-next-line prefer-destructuring
-  const pid = kitState?.promptProcess?.pid;
-  setTimeout(
-    () => {
-      log.info(`🕵️‍♀️ ${pid}: Checking for abandonned process`);
+  const pid = kitState?.pid;
 
-      for (const p of processes.getAllProcessInfo()) {
-        if (p.pid !== kitState.pid && p.scriptPath === mainScriptPath) {
-          processes.removeByPid(p.pid);
-        }
-      }
+  if (sameScript && kitState?.promptProcess?.pid) {
+    processes.removeByPid(kitState?.promptProcess?.pid);
+  }
 
-      if (pid) {
-        const pinfo = processes.getByPid(pid);
-        if (pinfo && pinfo.child && !pinfo.killed) {
-          log.info(`🛑👋 Abandoning previous prompt process: ${pid}`);
+  setTimeout(() => {
+    for (const pinfo of processes)
+      if (
+        pinfo.pid !== kitState.promptProcess?.pid &&
+        pinfo.scriptPath &&
+        pinfo.child &&
+        pinfo.child.connected
+      ) {
+        log.info(`🛑👋 Attempt abandon: ${pid} - ${pinfo.scriptPath}`);
+        try {
           pinfo.child.send({
             channel: Channel.ABANDON,
           });
+        } catch (error) {
+          log.error(`Error sending abandon message`, error);
         }
-      } else {
-        log.info(`🕵️‍♀️ ${pid}: No process found`);
       }
-    },
-    same ? 0 : 1000
-  );
+  }, 250);
 };
 
 export const spawnShebang = async ({

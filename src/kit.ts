@@ -24,7 +24,7 @@ import { ProcessInfo } from '@johnlindquist/kit';
 
 import { emitter, KitEvent } from './events';
 import {
-  abandonActivePromptProcess,
+  abandonOtherActivePromptProcesses,
   ensureIdleProcess,
   getIdles,
   processes,
@@ -126,6 +126,7 @@ emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {
   });
 });
 
+// TODO: Consider removing the "parseScript" and just reading from the scripts db?
 const findScript = async (scriptPath: string) => {
   if (scriptPath === mainScriptPath) {
     return getKitScript(mainScriptPath);
@@ -174,7 +175,7 @@ export const runPromptProcess = async (
       options?.force ? kitState.scriptPath : promptScriptPath
     );
     const sameScript = kitState.scriptPath === promptScriptPath;
-    abandonActivePromptProcess(sameScript);
+    abandonOtherActivePromptProcesses(sameScript);
     if (sameScript && !isSplash) {
       return null;
     }

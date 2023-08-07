@@ -83,9 +83,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   return (
     <div
       id="list"
-      className={`list-component flex w-full flex-row overflow-y-hidden ${
-        flagValue ? 'opacity-60' : ''
-      }`}
+      className="list-component flex w-full flex-row overflow-y-hidden"
       style={
         {
           width,

@@ -946,6 +946,9 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
               {ui === UI.arg && (
                 <ErrorBoundary>
                   <Input key="AppInput" />
+                  {!showTabs && !showSelected && (
+                    <div className="border-b border-ui-border" />
+                  )}
                 </ErrorBoundary>
               )}
 
