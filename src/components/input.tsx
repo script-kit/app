@@ -58,6 +58,7 @@ import { ActionSeparator } from './actionseparator';
 import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';
 import { LoginButton } from './loginbutton';
+import TopBar from './TopBar';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];
@@ -230,7 +231,7 @@ export default function Input() {
       // animate={{ opacity: processing ? 0 : 1 }}
       // transition={{ duration: 0.2 }}
     >
-      {/* {headerHidden && loading && <TopBar />} */}
+      {headerHidden && loading && <TopBar />}
       {/* "Hello World" text */}
       {/* <div className="absolute top-0.5 left-1/2 -translate-x-1/2 transform font-native text-xxs text-primary">
         {name} - {description}
@@ -308,7 +309,7 @@ export default function Input() {
         inputHeight === PROMPT.INPUT.HEIGHT.XS && `origin-right scale-95`
       }`}
           >
-            {/* {miniShortcutsVisible && (
+            {miniShortcutsVisible && (
               <>
                 <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
                   {actions
@@ -327,7 +328,7 @@ export default function Input() {
                     ])}
                 </div>
               </>
-            )} */}
+            )}
 
             <div className="enter-container flex min-w-fit flex-row items-center">
               {enterButtonName ? (

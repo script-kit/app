@@ -17,7 +17,7 @@ export default function TopBar() {
   return (
     <div
       className={`
-      pointer-events-none absolute top-0 left-0 -mt-2px h-0.75 w-screen
+      pointer-events-none absolute top-0 left-0 -mt-px h-0.75 w-screen
 
       `}
     >

@@ -221,7 +221,7 @@ function ChoiceButton({
         ${
           index === buttonIndex
             ? `opacity-100`
-            : `opacity-90 ${flaggedValue ? 'opacity-60' : ''}`
+            : `opacity-90 ${flaggedValue ? 'opacity-30' : ''}`
         }
       }`}
       onClick={onClick}
@@ -297,7 +297,6 @@ function ChoiceButton({
                   scoredChoice?.matches?.slicedName,
                   `bg-primary bg-opacity-5 text-primary`
                 )}
-                {choice?.keyword && '...'}
               </div>
               {/* Description */}
               {(choice?.focused ||
@@ -326,11 +325,15 @@ function ChoiceButton({
               isScrolling ? `-mr-2px` : `0`
             }`}
           >
-            {(choice?.tag || choice?.icon || choice?.pass || isRecent) && (
+            {(choice?.tag ||
+              choice?.keyword ||
+              choice?.icon ||
+              choice?.pass ||
+              isRecent) && (
               <div className="flex flex-row items-center">
                 {((choice?.pass || isRecent) && choice?.kenv
                   ? choice.kenv
-                  : choice.tag) && (
+                  : choice.tag || choice.keyword) && (
                   <div
                     className={`mx-1 font-mono text-xxs ${
                       choice?.tagClassName
@@ -340,7 +343,11 @@ function ChoiceButton({
                     choice?.kenv &&
                     choice?.kenv !== '.kit'
                       ? choice.kenv
-                      : choice.tag}
+                      : choice.tag
+                      ? choice.tag
+                      : choice?.keyword
+                      ? `keyword: ${choice?.keyword}`
+                      : ''}
                   </div>
                 )}
 
@@ -419,15 +426,9 @@ function ChoiceButton({
         transition
         ease-in
         hover:bg-opacity-20 hover:text-primary/90
-
-
         `}
                   >
-                    {flaggedValue ? (
-                      <IconSwapper text="selected" />
-                    ) : (
-                      <IconSwapper text="→" />
-                    )}
+                    <IconSwapper text="→" />
                   </div>
                 </div>
               )}
