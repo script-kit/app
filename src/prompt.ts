@@ -1672,6 +1672,7 @@ export const invokeSearch = (rawInput: string) => {
     let groupedResults: ScoredChoice[] = [];
 
     const matchGroup = [];
+    const matchLastGroup = [];
     const missGroup = [];
     let alias: Choice;
 
@@ -1687,7 +1688,7 @@ export const invokeSearch = (rawInput: string) => {
         choice.name?.toLowerCase()?.startsWith(transformedInput?.toLowerCase())
       ) {
         const scoredChoice = resultMap.get(choice.id);
-        if (scoredChoice) {
+        if (scoredChoice && !scoredChoice?.item?.lastGroup) {
           const c = structuredClone(scoredChoice);
           c.item.tag =
             c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
@@ -1695,6 +1696,15 @@ export const invokeSearch = (rawInput: string) => {
           // c.item.id = Math.random();
           c.item.pass = false;
           matchGroup.push(c);
+        } else if (scoredChoice && scoredChoice?.item?.lastGroup) {
+          const c = structuredClone(scoredChoice);
+          c.item.tag =
+            c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
+          // This was breaking the choice.preview lookup in the SDK
+          // c.item.id = Math.random();
+          c.item.pass = false;
+          log.info(`Found match last: ${c?.item?.name}`);
+          matchLastGroup.push(c);
         }
       } else {
         const hide = choice?.hideWithoutInput && transformedInput === '';
@@ -1705,6 +1715,9 @@ export const invokeSearch = (rawInput: string) => {
           const scoredChoice = resultMap.get(choice.id);
           if (choice?.pass) {
             groupedResults.push(createScoredChoice(choice));
+          } else if (scoredChoice?.item?.lastGroup) {
+            const c = structuredClone(scoredChoice);
+            matchLastGroup.push(c);
           } else if (scoredChoice) {
             groupedResults.push(scoredChoice);
             const removeGroup = removeGroups.get(scoredChoice?.item?.group);
@@ -1765,6 +1778,28 @@ export const invokeSearch = (rawInput: string) => {
         })
       );
       groupedResults.unshift(...matchGroup);
+    }
+
+    if (matchLastGroup.length > 0) {
+      matchLastGroup.sort((a, b) => {
+        if (a?.item?.keyword && !b?.item?.keyword) return -1;
+        if (!a?.item?.keyword && b?.item?.keyword) return 1;
+
+        return 0;
+      });
+      matchLastGroup.unshift(
+        createScoredChoice({
+          name: matchLastGroup[0]?.item?.group || 'Last Match',
+          group: matchLastGroup[0]?.item?.group || 'Last Match',
+          pass: false,
+          skip: true,
+          nameClassName: defaultGroupNameClassName,
+          className: defaultGroupClassName,
+          height: PROMPT.ITEM.HEIGHT.XXXS,
+          id: Math.random().toString(),
+        })
+      );
+      groupedResults.push(...matchLastGroup);
     }
 
     if (groupedResults.length === 0) {
@@ -1888,12 +1923,8 @@ export const setFlags = (f: FlagsWithKeys) => {
     );
   }
 
-  const keys = kitState?.kenvEnv?.KIT_SEARCH_KEYS
-    ? kitState?.kenvEnv?.KIT_SEARCH_KEYS.split(',').map((k) => k.trim())
-    : ['slicedName', 'friendlyShortcut', 'tag', 'group', 'command'];
-
   flagSearch.qs = new QuickScore(choices, {
-    keys: keys.map((name) => ({
+    keys: kitSearch.keys.map((name) => ({
       name,
       scorer,
     })),
@@ -1954,12 +1985,8 @@ export const setChoices = (
     );
   }
 
-  const keys = kitState?.kenvEnv?.KIT_SEARCH_KEYS
-    ? kitState?.kenvEnv?.KIT_SEARCH_KEYS.split(',').map((k) => k.trim())
-    : ['slicedName', 'friendlyShortcut', 'tag', 'group', 'command'];
-
   kitSearch.qs = new QuickScore(choices, {
-    keys: keys.map((name) => ({
+    keys: kitSearch.keys.map((name) => ({
       name,
       scorer,
     })),

@@ -2810,3 +2810,7 @@ export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
   const channel = g(channelAtom);
   channel(Channel.SELECTED);
 });
+
+export const shouldHighlightDescriptionAtom = atom((g) => {
+  return g(promptDataAtom)?.searchKeys?.includes('description');
+});

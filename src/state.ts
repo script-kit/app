@@ -962,6 +962,7 @@ export const kitSearch = {
   hasGroup: false,
   qs: null as null | QuickScore<Choice>,
   commandChars: [] as string[],
+  keys: ['slicedName', 'friendlyShortcut', 'tag', 'group', 'command'],
 };
 
 export const flagSearch = {
@@ -981,4 +982,12 @@ export const clearSearch = () => {
   kitSearch.keywords.clear();
   kitSearch.shortcodes.clear();
   kitSearch.hasGroup = false;
+  kitSearch.commandChars = [];
+  kitSearch.keys = [
+    'slicedName',
+    'friendlyShortcut',
+    'tag',
+    'group',
+    'command',
+  ];
 };

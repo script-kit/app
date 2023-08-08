@@ -42,6 +42,14 @@ export const createWidget = async (
   <style type="text/css">${theme}</style>
   <style>
   body {
+    -webkit-app-region: drag;
+  }
+
+  button, input {
+    -webkit-app-region: no-drag;
+  }
+
+  body {
     ${
       options?.transparent
         ? `
@@ -49,33 +57,11 @@ export const createWidget = async (
         : ``
     }
 
-    ${
-      options?.draggable
-        ? `
-        -webkit-user-select: none;
-        -webkit-app-region: drag;
-    `
-        : ``
-    }
-
     pointer-events: none
   }
 
   * {pointer-events: all;}
-  .draggable {
-    ${
-      options?.draggable
-        ? `
-        -webkit-app-region: drag;
-    `
-        : ``
-    }
   }
-
-  *:not(.draggable):not(body):not(html) {
-    -webkit-app-region: no-drag;
-  }
-
 
   .drag-shadow {
     box-shadow: inset 0 0 .75rem #000000;
@@ -129,17 +115,9 @@ export const createWidget = async (
 
 <div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="${
     options.containerClass
-  } ${isWin ? `` : `draggable`}"></div>
-
-
-${
-  isWin
-    ? `<div class="absolute top-0 left-0 h-8 w-screen draggable"></div>`
-    : ``
-}
+  }}"></div>
 
 <script>
-
   document.addEventListener("click", (event) => {
     let closest = event.target.closest("*[id]")
     if(!closest || !closest?.id) return

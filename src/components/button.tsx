@@ -29,6 +29,7 @@ import {
   promptDataAtom,
   toggleSelectedChoiceAtom,
   selectedChoicesAtom,
+  shouldHighlightDescriptionAtom,
 } from '../jotai';
 
 import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -100,6 +101,7 @@ function ChoiceButton({
   const [promptData] = useAtom(promptDataAtom);
   const [, toggleSelectedChoice] = useAtom(toggleSelectedChoiceAtom);
   const [selectedChoices] = useAtom(selectedChoicesAtom);
+  const [shouldHighlightDescription] = useAtom(shouldHighlightDescriptionAtom);
 
   // Get the text after the last file separator
   const base = (input || '').split(/[\\/]/).pop() || '';
@@ -314,6 +316,12 @@ function ChoiceButton({
                   {modifierDescription ||
                   (index === buttonIndex && choice?.focused)
                     ? choice?.focused
+                    : shouldHighlightDescription
+                    ? highlight(
+                        choice.description || '',
+                        scoredChoice?.matches?.description,
+                        `bg-primary bg-opacity-5 text-primary`
+                      )
                     : choice?.description}
                 </div>
               )}
@@ -327,13 +335,14 @@ function ChoiceButton({
           >
             {(choice?.tag ||
               choice?.keyword ||
+              choice?.trigger ||
               choice?.icon ||
               choice?.pass ||
               isRecent) && (
               <div className="flex flex-row items-center">
                 {((choice?.pass || isRecent) && choice?.kenv
                   ? choice.kenv
-                  : choice.tag || choice.keyword) && (
+                  : choice.tag || choice.keyword || choice.trigger) && (
                   <div
                     className={`mx-1 font-mono text-xxs ${
                       choice?.tagClassName
@@ -347,6 +356,8 @@ function ChoiceButton({
                       ? choice.tag
                       : choice?.keyword
                       ? `keyword: ${choice?.keyword}`
+                      : choice?.trigger
+                      ? `trigger: ${choice?.trigger}`
                       : ''}
                   </div>
                 )}

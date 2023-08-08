@@ -1165,6 +1165,13 @@ const kitMessageMap: ChannelHandler = {
       kitState.promptScriptPath = value?.scriptPath || '';
       kitState.hideOnEscape = Boolean(value?.hideOnEscape);
 
+      kitSearch.keys = value?.searchKeys || [
+        'slicedName',
+        'friendlyShortcut',
+        'tag',
+        'group',
+        'command',
+      ];
       if (typeof value?.keyword === 'string') {
         kitSearch.keywords.clear();
         kitSearch.input = '';
