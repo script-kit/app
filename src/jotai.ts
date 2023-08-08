@@ -2267,6 +2267,7 @@ export const _kitStateAtom = atom({
   isSponsor: false,
   updateDownloaded: false,
   promptCount: 0,
+  noPreview: false,
 });
 
 export const kitStateAtom = atom(

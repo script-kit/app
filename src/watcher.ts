@@ -32,7 +32,12 @@ import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
 import { appDb, kitState, scriptChanged, sponsorCheck } from './state';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
-import { appToPrompt, clearPromptCacheFor, debugPrompt } from './prompt';
+import {
+  appToPrompt,
+  clearPromptCacheFor,
+  debugPrompt,
+  setKitStateAtom,
+} from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel, Trigger } from './enums';
@@ -397,6 +402,22 @@ export const setupWatchers = async () => {
 
           if (envData?.KIT_DEBUG_PROMPT) {
             debugPrompt();
+          }
+
+          if (envData?.KIT_NO_PREVIEW) {
+            setKitStateAtom({
+              noPreview: envData?.KIT_NO_PREVIEW === 'true',
+            });
+          } else if (kitState.noPreview) {
+            setKitStateAtom({
+              noPreview: false,
+            });
+          }
+
+          if (envData?.KIT_WIDTH) {
+            kitState.kenvEnv.KIT_WIDTH = envData?.KIT_WIDTH;
+          } else if (kitState.kenvEnv.KIT_WIDTH) {
+            delete kitState.kenvEnv.KIT_WIDTH;
           }
 
           // if (envData?.KIT_SUSPEND_WATCHERS) {

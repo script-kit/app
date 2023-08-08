@@ -315,7 +315,7 @@ export default function App() {
   const setResizing = useSetAtom(resizingAtom);
   const setAudio = useSetAtom(audioAtom);
   const setSpeak = useSetAtom(speechAtom);
-  const setKitState = useSetAtom(kitStateAtom);
+  const [kitState, setKitState] = useAtom(kitStateAtom);
   const setLastLogLine = useSetAtom(lastLogLineAtom);
   const setLogValue = useSetAtom(logValueAtom);
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
@@ -1022,7 +1022,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
               {/* {previewEnabled && <Preview />} */}
 
-              {(previewCheck || flagValue) && (
+              {!kitState.noPreview && (previewCheck || flagValue) && (
                 <>
                   <PanelResizeHandle
                     id="panelResizeHandle"

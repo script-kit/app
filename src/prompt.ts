@@ -759,6 +759,10 @@ export const setBounds = async (bounds: Partial<Rectangle>, reason = '') => {
     ...bounds,
   });
 
+  if (kitState?.kenvEnv?.KIT_WIDTH) {
+    bounds.width = parseInt(kitState?.kenvEnv?.KIT_WIDTH, 10);
+  }
+
   try {
     promptWindow.setBounds(bounds);
     const promptBounds = {
@@ -2202,7 +2206,7 @@ const subIsSponsor = subscribeKey(kitState, 'isSponsor', (isSponsor) => {
   setKitStateAtom({ isSponsor });
 });
 
-const setKitStateAtom = (partialState: Partial<typeof kitState>) => {
+export const setKitStateAtom = (partialState: Partial<typeof kitState>) => {
   if (
     promptWindow &&
     !promptWindow.isDestroyed() &&

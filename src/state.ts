@@ -378,6 +378,7 @@ const initState = {
   hideOnEscape: true,
   justFocused: false,
   promptProcess: null as ChildProcess | null,
+  noPreview: false,
 };
 
 const initConfig: Config = {
