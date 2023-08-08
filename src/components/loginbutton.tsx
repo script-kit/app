@@ -47,7 +47,7 @@ export function LoginButton() {
       >
         Sign-In
       </div>
-      <GithubIcon className="-mt-3px ml-1 scale-90" />
+      <GithubIcon className="ml-0.5 mb-px scale-90" />
     </button>
   );
 }

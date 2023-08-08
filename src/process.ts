@@ -2226,6 +2226,29 @@ const processesChanged = debounce(() => {
   if (kitState.allowQuit) return;
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
   appToPrompt(AppChannel.PROCESSES, pinfos);
+
+  log.info(`👓 Focused process ${kitState.pid} - ${kitState.scriptPath}`);
+  for (const pinfo of processes) {
+    log.info(
+      `🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`
+    );
+    if (
+      pinfo.pid !== kitState.pid &&
+      // pinfo.pid !== kitState.promptProcess?.pid &&
+      pinfo.scriptPath &&
+      pinfo.child &&
+      pinfo.child.connected
+    ) {
+      log.info(`🛑👋 Attempt abandon: ${pinfo.pid} - ${pinfo.scriptPath}`);
+      try {
+        pinfo.child.send({
+          channel: Channel.ABANDON,
+        });
+      } catch (error) {
+        log.error(`Error sending abandon message`, error);
+      }
+    }
+  }
 }, 10);
 
 export const clearIdleProcesses = () => {
@@ -2699,30 +2722,9 @@ export const destroyAllProcesses = () => {
 
 export const abandonOtherActivePromptProcesses = (sameScript = false) => {
   // eslint-disable-next-line prefer-destructuring
-  const pid = kitState?.pid;
-
-  if (sameScript && kitState?.promptProcess?.pid) {
+  if (sameScript && kitState?.promptProcess?.pid && !kitState.preloaded) {
     processes.removeByPid(kitState?.promptProcess?.pid);
   }
-
-  setTimeout(() => {
-    for (const pinfo of processes)
-      if (
-        pinfo.pid !== kitState.promptProcess?.pid &&
-        pinfo.scriptPath &&
-        pinfo.child &&
-        pinfo.child.connected
-      ) {
-        log.info(`🛑👋 Attempt abandon: ${pid} - ${pinfo.scriptPath}`);
-        try {
-          pinfo.child.send({
-            channel: Channel.ABANDON,
-          });
-        } catch (error) {
-          log.error(`Error sending abandon message`, error);
-        }
-      }
-  }, 250);
 };
 
 export const spawnShebang = async ({
@@ -2762,6 +2764,7 @@ export const spawnShebang = async ({
     // Log out when the process exits
     child.on('exit', (code) => {
       scriptLog.info(`\nProcess exited with code ${code}`);
+      processes.removeByPid(child.pid);
     });
   }
 };

@@ -349,6 +349,7 @@ export default function Input() {
               <>
                 <div className="options-container flex flex-row">
                   <OptionsButton key="options-button" />
+                  <ActionSeparator key="login-separator" />
                 </div>
               </>
             )}
@@ -377,7 +378,6 @@ export default function Input() {
               </span>
             ) : (
               <>
-                <ActionSeparator key="login-separator" />
                 <LoginButton key="login-button" />
                 <ActionSeparator key="close-login-separator" />
               </>
