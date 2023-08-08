@@ -1319,6 +1319,8 @@ export const setPromptData = async (promptData: PromptData) => {
     }
   }
 
+  kitSearch.commandChars = promptData.inputCommandChars || [];
+
   if (kitState.cachePrompt && !promptData.preload) {
     kitState.cachePrompt = false;
     promptData.name ||= kitState.script.name || '';

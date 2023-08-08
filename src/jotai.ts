@@ -757,8 +757,6 @@ export const changeAtom = atom((g) => (data: any) => {
   channel(Channel.CHANGE, { value: data });
 });
 
-export const inputCommandChars = atom([]);
-
 export const modeAtom = atom((g) => g(promptData)?.mode || Mode.FILTER);
 
 export const inputAtom = atom(
@@ -799,15 +797,6 @@ export const inputAtom = atom(
     if (g(tabChangedAtom) && a && prevInput !== a) {
       s(tabChangedAtom, false);
       return;
-    }
-
-    const commandChars = g(inputCommandChars) || [];
-    for await (const ch of commandChars) {
-      if (a.length < prevInput.length && prevInput.endsWith(ch)) return;
-      if (a.endsWith(ch)) {
-        // eslint-disable-next-line promise/param-names
-        await new Promise((r) => setTimeout(r, 50));
-      }
     }
 
     // TODO: flaggedValue state? Or prevMode when flagged? Hmm...
@@ -977,235 +966,243 @@ const resizeSettle = debounce((g: Getter, s: Setter) => {
   resize(g, s, 'SETTLE');
 }, 250);
 
-const resize = (g: Getter, s: Setter, reason = 'UNSET') => {
-  if (reason !== 'SETTLE') resizeSettle(g, s);
+const resize = debounce(
+  (g: Getter, s: Setter, reason = 'UNSET') => {
+    if (reason !== 'SETTLE') resizeSettle(g, s);
 
-  const active = g(promptActiveAtom);
-  // g(logAtom)(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
+    const active = g(promptActiveAtom);
+    // g(logAtom)(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
 
-  if (!active) return;
-  const promptBounds = g(promptBoundsAtom);
+    if (!active) return;
+    const promptBounds = g(promptBoundsAtom);
 
-  const ui = g(uiAtom);
+    const ui = g(uiAtom);
 
-  const scoredChoicesLength = g(scoredChoicesAtom)?.length;
-  // g(logAtom)(`resize: ${reason} - ${ui} length ${scoredChoicesLength}`);
-  const hasPanel = g(_panelHTML) !== '';
-  let mh = g(mainHeightAtom);
+    const scoredChoicesLength = g(scoredChoicesAtom)?.length;
+    // g(logAtom)(`resize: ${reason} - ${ui} length ${scoredChoicesLength}`);
+    const hasPanel = g(_panelHTML) !== '';
+    let mh = g(mainHeightAtom);
 
-  // if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
+    // if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
 
-  const promptData = g(promptDataAtom);
-  const placeholderOnly =
-    promptData?.mode === Mode.FILTER &&
-    scoredChoicesLength === 0 &&
-    ui === UI.arg;
+    const promptData = g(promptDataAtom);
+    const placeholderOnly =
+      promptData?.mode === Mode.FILTER &&
+      scoredChoicesLength === 0 &&
+      ui === UI.arg;
 
-  const topHeight = document.getElementById('header')?.offsetHeight || 0;
-  const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
-  const hasPreview = Boolean(g(hasPreviewAtom) || g(flagValueAtom));
-  const totalChoices = scoredChoicesLength;
+    const topHeight = document.getElementById('header')?.offsetHeight || 0;
+    const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
+    const hasPreview = Boolean(g(hasPreviewAtom) || g(flagValueAtom));
+    const totalChoices = scoredChoicesLength;
 
-  const choicesHeight = g(choicesHeightAtom);
-  // g(logAtom)({
-  //   choicesHeight,
-  // });
+    const choicesHeight = g(choicesHeightAtom);
+    // g(logAtom)({
+    //   choicesHeight,
+    // });
 
-  if (ui === UI.arg && choicesHeight > PROMPT.HEIGHT.BASE) {
-    mh =
-      (promptData?.height && promptData?.height > PROMPT.HEIGHT.BASE
-        ? promptData?.height
-        : PROMPT.HEIGHT.BASE) -
-      topHeight -
-      footerHeight;
-  } else {
-    mh = choicesHeight;
-  }
-
-  if (mh === 0 && hasPanel) {
-    mh = Math.max(g(itemHeightAtom), g(mainHeightAtom));
-  }
-
-  let forceResize = false;
-  let ch = 0;
-
-  try {
-    if (ui === UI.form || ui === UI.fields) {
-      ch = (document as any)?.getElementById(UI.form)?.offsetHeight;
-      mh = ch;
-    } else if (ui === UI.div) {
-      ch = (document as any)?.getElementById('panel')?.offsetHeight;
-      if (ch) {
-        mh = promptData?.height || ch;
-      } else {
-        return;
-      }
-    } else if (ui === UI.arg && hasPanel) {
-      // g(logAtom)(`Force resize: has panel`);
-      ch = (document as any)?.getElementById('panel')?.offsetHeight;
-      mh = ch;
-      forceResize = true;
-    } else if (
-      ui === UI.arg &&
-      !hasPanel &&
-      !scoredChoicesLength &&
-      !document.getElementById('list')
-    ) {
-      // g(logAtom)(`List and panel gone`);
-      ch = 0;
-      mh = 0;
-      forceResize = true;
-    } else if (ui !== UI.arg) {
-      ch = (document as any)?.getElementById('main')?.offsetHeight;
-    }
-
-    if (ui === UI.arg) {
-      forceResize = ch === 0 || Boolean(ch < choicesHeight) || hasPanel;
-    } else if (ui === UI.div) {
-      forceResize = true;
+    if (ui === UI.arg && choicesHeight > PROMPT.HEIGHT.BASE) {
+      mh =
+        (promptData?.height && promptData?.height > PROMPT.HEIGHT.BASE
+          ? promptData?.height
+          : PROMPT.HEIGHT.BASE) -
+        topHeight -
+        footerHeight;
     } else {
-      forceResize = Boolean(ch > g(prevMh));
+      mh = choicesHeight;
     }
-  } catch (error) {
-    g(logAtom)(`Force resize error`);
-  }
 
-  if (topHeight !== prevTopHeight) {
-    forceResize = true;
-    prevTopHeight = topHeight;
-  }
-
-  if (hasPreview && mh < PROMPT.HEIGHT.BASE) {
-    const previewHeight = document.getElementById('preview')?.offsetHeight || 0;
-    mh = Math.max(previewHeight, promptData?.height || PROMPT.HEIGHT.BASE);
-    forceResize = true;
-  }
-
-  if (g(logVisibleAtom)) {
-    const logHeight = document.getElementById('log')?.offsetHeight;
-    // g(logAtom)(`logHeight: ${logHeight}`);
-    mh += logHeight || 0;
-  }
-
-  const justOpened = g(justOpenedAtom);
-  const samePrompt = promptBounds?.id === promptData?.id;
-
-  const forceWidth = samePrompt ? promptBounds?.width : promptData?.width;
-  let forceHeight;
-
-  if (
-    [
-      UI.term,
-      UI.editor,
-      UI.drop,
-      UI.textarea,
-      UI.emoji,
-      UI.chat,
-      UI.mic,
-      UI.webcam,
-    ].includes(ui)
-  ) {
-    forceHeight = samePrompt
-      ? promptBounds?.height
-      : promptData?.height || PROMPT.HEIGHT.BASE;
-    forceResize = true;
-  }
-
-  if (ui === UI.div) {
-    forceHeight = promptData?.height;
-  }
-
-  if (ui === UI.debugger) {
-    forceHeight = 128;
-  }
-
-  const hasInput = Boolean(g(inputAtom)?.length);
-
-  // g(logAtom)({
-  //   forceHeight: forceHeight || 'no forced height',
-  //   forceWidth: forceWidth || 'no forced width',
-  // });
-
-  // g(logAtom)({
-  //   ui,
-  //   ch,
-  //   mh,
-  //   prevMh: g(prevMh),
-  //   hasPreview,
-  //   footerHeight,
-  //   topHeight,
-  //   scoredChoicesLength,
-  //   forceResize,
-  //   promptHeight: promptData?.height || 'UNSET',
-  // });
-
-  // forceResize ||= hasChoices;
-
-  // const hasPreview = g(previewCheckAtom);
-  // g(logAtom)({
-  //   hasPreview: hasPreview ? 'has preview' : 'no preview',
-  // });
-
-  const inputChanged = g(_inputChangedAtom);
-
-  mh = Math.ceil(mh || -3) + 3;
-
-  if (inputChanged) {
-    if (mh === 0 && promptData?.preventCollapse) {
-      g(logAtom)(`🍃 Prevent collapse to zero...`);
-      return;
+    if (mh === 0 && hasPanel) {
+      mh = Math.max(g(itemHeightAtom), g(mainHeightAtom));
     }
+
+    let forceResize = false;
+    let ch = 0;
+
+    try {
+      if (ui === UI.form || ui === UI.fields) {
+        ch = (document as any)?.getElementById(UI.form)?.offsetHeight;
+        mh = ch;
+      } else if (ui === UI.div) {
+        ch = (document as any)?.getElementById('panel')?.offsetHeight;
+        if (ch) {
+          mh = promptData?.height || ch;
+        } else {
+          return;
+        }
+      } else if (ui === UI.arg && hasPanel) {
+        // g(logAtom)(`Force resize: has panel`);
+        ch = (document as any)?.getElementById('panel')?.offsetHeight;
+        mh = ch;
+        forceResize = true;
+      } else if (
+        ui === UI.arg &&
+        !hasPanel &&
+        !scoredChoicesLength &&
+        !document.getElementById('list')
+      ) {
+        // g(logAtom)(`List and panel gone`);
+        ch = 0;
+        mh = 0;
+        forceResize = true;
+      } else if (ui !== UI.arg) {
+        ch = (document as any)?.getElementById('main')?.offsetHeight;
+      }
+
+      if (ui === UI.arg) {
+        forceResize = ch === 0 || Boolean(ch < choicesHeight) || hasPanel;
+      } else if (ui === UI.div) {
+        forceResize = true;
+      } else {
+        forceResize = Boolean(ch > g(prevMh));
+      }
+    } catch (error) {
+      g(logAtom)(`Force resize error`);
+    }
+
+    if (topHeight !== prevTopHeight) {
+      forceResize = true;
+      prevTopHeight = topHeight;
+    }
+
+    if (hasPreview && mh < PROMPT.HEIGHT.BASE) {
+      const previewHeight =
+        document.getElementById('preview')?.offsetHeight || 0;
+      mh = Math.max(previewHeight, promptData?.height || PROMPT.HEIGHT.BASE);
+      forceResize = true;
+    }
+
+    if (g(logVisibleAtom)) {
+      const logHeight = document.getElementById('log')?.offsetHeight;
+      // g(logAtom)(`logHeight: ${logHeight}`);
+      mh += logHeight || 0;
+    }
+
+    const justOpened = g(justOpenedAtom);
+    const samePrompt = promptBounds?.id === promptData?.id;
+
+    const forceWidth = samePrompt ? promptBounds?.width : promptData?.width;
+    let forceHeight;
 
     if (
-      typeof (promptData?.resize === 'boolean') &&
-      promptData?.resize === false
+      [
+        UI.term,
+        UI.editor,
+        UI.drop,
+        UI.textarea,
+        UI.emoji,
+        UI.chat,
+        UI.mic,
+        UI.webcam,
+      ].includes(ui)
     ) {
-      return;
+      forceHeight = samePrompt
+        ? promptBounds?.height
+        : promptData?.height || PROMPT.HEIGHT.BASE;
+      forceResize = true;
     }
+
+    if (ui === UI.div) {
+      forceHeight = promptData?.height;
+    }
+
+    if (ui === UI.debugger) {
+      forceHeight = 128;
+    }
+
+    const hasInput = Boolean(g(inputAtom)?.length);
+
+    // g(logAtom)({
+    //   forceHeight: forceHeight || 'no forced height',
+    //   forceWidth: forceWidth || 'no forced width',
+    // });
+
+    // g(logAtom)({
+    //   ui,
+    //   ch,
+    //   mh,
+    //   prevMh: g(prevMh),
+    //   hasPreview,
+    //   footerHeight,
+    //   topHeight,
+    //   scoredChoicesLength,
+    //   forceResize,
+    //   promptHeight: promptData?.height || 'UNSET',
+    // });
+
+    // forceResize ||= hasChoices;
+
+    // const hasPreview = g(previewCheckAtom);
+    // g(logAtom)({
+    //   hasPreview: hasPreview ? 'has preview' : 'no preview',
+    // });
+
+    const inputChanged = g(_inputChangedAtom);
+
+    mh = Math.ceil(mh || -3) + 3;
+
+    if (inputChanged) {
+      if (mh === 0 && promptData?.preventCollapse) {
+        g(logAtom)(`🍃 Prevent collapse to zero...`);
+        return;
+      }
+
+      if (
+        typeof (promptData?.resize === 'boolean') &&
+        promptData?.resize === false
+      ) {
+        return;
+      }
+    }
+
+    const data: ResizeData = {
+      id: promptData?.id || 'missing',
+      reason,
+      scriptPath: g(_script)?.filePath,
+      placeholderOnly,
+      topHeight,
+      ui,
+      mainHeight: mh,
+      footerHeight,
+      mode: promptData?.mode || Mode.FILTER,
+      hasPanel,
+      hasInput,
+      previewEnabled: g(previewEnabled),
+      open: g(_open),
+      tabIndex: g(_tabIndex),
+      isSplash: g(isSplashAtom),
+      hasPreview,
+      inputChanged,
+      justOpened,
+      forceResize,
+      forceHeight,
+      forceWidth,
+      totalChoices,
+      isMainScript: g(isMainScriptAtom),
+    };
+
+    s(prevMh, mh);
+
+    // console.log(`👋`, data);
+
+    // g(logAtom)({
+    //   justOpened: justOpened ? 'JUST OPENED' : 'NOT JUST OPENED',
+    // });
+
+    debounceSendResize.cancel();
+
+    if (justOpened) {
+      debounceSendResize(data);
+    } else {
+      sendResize(data);
+    }
+  },
+  50,
+  {
+    leading: true,
+    trailing: true,
   }
-
-  const data: ResizeData = {
-    id: promptData?.id || 'missing',
-    reason,
-    scriptPath: g(_script)?.filePath,
-    placeholderOnly,
-    topHeight,
-    ui,
-    mainHeight: mh,
-    footerHeight,
-    mode: promptData?.mode || Mode.FILTER,
-    hasPanel,
-    hasInput,
-    previewEnabled: g(previewEnabled),
-    open: g(_open),
-    tabIndex: g(_tabIndex),
-    isSplash: g(isSplashAtom),
-    hasPreview,
-    inputChanged,
-    justOpened,
-    forceResize,
-    forceHeight,
-    forceWidth,
-    totalChoices,
-    isMainScript: g(isMainScriptAtom),
-  };
-
-  s(prevMh, mh);
-
-  // console.log(`👋`, data);
-
-  // g(logAtom)({
-  //   justOpened: justOpened ? 'JUST OPENED' : 'NOT JUST OPENED',
-  // });
-
-  debounceSendResize.cancel();
-
-  if (justOpened) {
-    debounceSendResize(data);
-  } else {
-    sendResize(data);
-  }
-};
+);
 
 export const topHeightAtom = atom(
   (g) => g(_topHeight),
@@ -1407,7 +1404,6 @@ export const promptDataAtom = atom(
       s(filterInputAtom, ``);
 
       s(processingAtom, false);
-      s(inputCommandChars, a?.inputCommandChars || []);
 
       s(focusedFlagValueAtom, '');
 

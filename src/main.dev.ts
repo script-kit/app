@@ -105,6 +105,7 @@ import {
   initKeymap,
   kitState,
   subs,
+  updateAppDb,
 } from './state';
 import { startSK } from './sk';
 import {
@@ -435,6 +436,8 @@ const systemEvents = () => {
   powerMonitor.addListener('resume', async () => {
     // wait 5 seconds for the system to wake up
     await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    await updateAppDb({});
     log.info(`🌄 System waking. Starting watchers.`);
     await setupWatchers();
 

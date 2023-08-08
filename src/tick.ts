@@ -451,7 +451,7 @@ export const configureInterval = async () => {
     return;
   }
   if (kitState.isMac) {
-    const fullyAuthenticated = kitState.authorized;
+    const fullyAuthenticated = kitState.authorized && appDb?.authorized;
     log.info(`🔑 Authenticated: ${fullyAuthenticated ? '🔓' : '🔒'}`);
     if (!fullyAuthenticated) return;
   }
@@ -664,7 +664,7 @@ export const configureInterval = async () => {
 
 export const startClipboardAndKeyboardWatchers = async () => {
   if (kitState.isMac) {
-    const fullyAuthenticated = kitState.authorized;
+    const fullyAuthenticated = kitState.authorized && appDb?.authorized;
     if (!fullyAuthenticated) return;
   }
 

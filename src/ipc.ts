@@ -45,13 +45,38 @@ import { getAssetPath } from './assets';
 import { flagSearch, kitSearch, kitState, clearSearch } from './state';
 import { noChoice } from './defaults';
 
+let prevTransformedInput = '';
 const checkShortcodesAndKeywords = (rawInput: string): boolean => {
   let transformedInput = rawInput;
+
   if (kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
     transformedInput =
       rawInput.match(new RegExp(kitSearch.inputRegex, 'gi'))?.[0] || '';
   }
+
+  if (kitSearch.commandChars.length) {
+    if (prevTransformedInput === '') {
+      const char = rawInput?.[rawInput.length - 2];
+      if (!kitSearch.commandChars.includes(char)) {
+        prevTransformedInput = transformedInput;
+        kitSearch.input = transformedInput;
+
+        return false;
+      }
+    }
+    for (const char of kitSearch.commandChars) {
+      if (transformedInput.endsWith(char)) {
+        // log.info(`🔑 Command char: ${char} triggered`);
+        prevTransformedInput = transformedInput;
+        kitSearch.input = transformedInput;
+        return false;
+      }
+    }
+  }
+
+  prevTransformedInput = transformedInput;
+
   const shortcodeChoice = kitSearch.shortcodes.get(
     transformedInput.toLowerCase()
   );

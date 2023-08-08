@@ -961,6 +961,7 @@ export const kitSearch = {
   keywords: new Map<string, Choice>(),
   hasGroup: false,
   qs: null as null | QuickScore<Choice>,
+  commandChars: [] as string[],
 };
 
 export const flagSearch = {
