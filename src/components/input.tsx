@@ -10,7 +10,7 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import { PROMPT } from '@johnlindquist/kit/cjs/enum';
+import { Channel, PROMPT } from '@johnlindquist/kit/cjs/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
 import useResizeObserver from '@react-hook/resize-observer';
@@ -50,6 +50,7 @@ import {
   descriptionAtom,
   nameAtom,
   signInActionAtom,
+  channelAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -109,6 +110,7 @@ export default function Input() {
   const name = useAtomValue(nameAtom);
   const description = useAtomValue(descriptionAtom);
   const signInAction = useAtomValue(signInActionAtom);
+  const channel = useAtomValue(channelAtom);
 
   useEffect(() => {
     setInputFocus(Math.random());
@@ -176,6 +178,14 @@ export default function Input() {
       if (event.key !== 'Enter' && event.key !== 'Tab' && !modifiers.length) {
         setTyping(true);
       }
+
+      // If key was delete and the value is empty, clear setInput
+      if (event.key === 'Backspace' && target.value === '') {
+        log(`Clearing input`);
+        channel(Channel.INPUT, {
+          input: '',
+        });
+      }
     },
     [
       setSelectionStart,
@@ -184,6 +194,8 @@ export default function Input() {
       setTyping,
       shortcuts,
       flags,
+      setInput,
+      log,
     ]
   );
 
@@ -309,26 +321,30 @@ export default function Input() {
         inputHeight === PROMPT.INPUT.HEIGHT.XS && `origin-right scale-95`
       }`}
           >
-            {miniShortcutsVisible && (
-              <>
-                <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
-                  {actions
-                    .filter(
-                      (action) => action.position === 'right' && !appDb?.mini
-                    )
-                    .flatMap((action, i, array) => [
-                      // eslint-disable-next-line react/jsx-key
-                      <ActionButton {...action} />,
-                      // eslint-disable-next-line no-nested-ternary
-                      i < array.length - 1 ? (
-                        <ActionSeparator key={`${action?.key}-separator`} />
-                      ) : enterButtonName ? (
-                        <ActionSeparator key={`${action?.key}-separator`} />
-                      ) : null,
-                    ])}
-                </div>
-              </>
-            )}
+            <>
+              <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
+                {actions
+                  .filter(
+                    (action) => action.position === 'right' && !appDb?.mini
+                  )
+                  .flatMap((action, i, array) => {
+                    if (!action?.visible && miniShortcutsVisible) {
+                      return [
+                        // eslint-disable-next-line react/jsx-key
+                        <ActionButton {...action} />,
+                        // eslint-disable-next-line no-nested-ternary
+                        i < array.length - 1 ? (
+                          <ActionSeparator key={`${action?.key}-separator`} />
+                        ) : enterButtonName ? (
+                          <ActionSeparator key={`${action?.key}-separator`} />
+                        ) : null,
+                      ];
+                    }
+
+                    return null;
+                  })}
+              </div>
+            </>
 
             <div className="enter-container flex min-w-fit flex-row items-center">
               {enterButtonName ? (
@@ -344,6 +360,31 @@ export default function Input() {
               ) : null}
               <ActionSeparator key="options-separator" />
             </div>
+
+            <>
+              <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
+                {actions
+                  .filter(
+                    (action) => action.position === 'right' && !appDb?.mini
+                  )
+                  .flatMap((action, i, array) => {
+                    if (action?.visible) {
+                      return [
+                        // eslint-disable-next-line react/jsx-key
+                        <ActionButton {...action} />,
+                        // eslint-disable-next-line no-nested-ternary
+                        i < array.length - 1 ? (
+                          <ActionSeparator key={`${action?.key}-separator`} />
+                        ) : enterButtonName ? (
+                          <ActionSeparator key={`${action?.key}-separator`} />
+                        ) : null,
+                      ];
+                    }
+
+                    return null;
+                  })}
+              </div>
+            </>
 
             {hasFlags && !hasRightShortcut && (
               <>

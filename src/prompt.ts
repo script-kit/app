@@ -794,7 +794,7 @@ export const isFocused = () => {
 let hadPreview = true;
 let prevResizeData = {} as ResizeData;
 export const resize = async (resizeData: ResizeData) => {
-  if (isEqual(prevResizeData, resizeData)) return;
+  // if (isEqual(prevResizeData, resizeData)) return;
   prevResizeData = resizeData;
 
   const {
@@ -1293,6 +1293,8 @@ export const preloadPromptData = async (promptData: PromptData) => {
     setFlags(promptData.flags);
   }
 
+  setBackgroundThrottling(true);
+
   kitState.hiddenByUser = false;
   kitState.isPromptReady = false;
   kitState.alwaysOnTop =
@@ -1474,14 +1476,20 @@ export const preloadChoices = (choices: Choice[]) => {
   if (!isVisible()) {
     kitSearch.input = '';
   }
-  setChoices(choices, { preload: true });
+
+  setChoices(choices, {
+    preload: true,
+  });
 };
 
 export const attemptPreload = (promptScriptPath: string, show = true) => {
   // log out all the keys of preloadPromptDataMap
   kitState.preloaded = false;
-  log.info(`preloadPromptDataMap`, [...preloadPromptDataMap.keys()]);
+  log.info(`preloadPromptDataMap for ${promptScriptPath}`, [
+    ...preloadPromptDataMap.keys(),
+  ]);
   if (preloadPromptDataMap.has(promptScriptPath)) {
+    setBackgroundThrottling(false);
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
     if (show) setBackgroundThrottling(false);
     sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
@@ -1520,7 +1528,7 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
 };
 
 export const setScoredChoices = (choices: ScoredChoice[]) => {
-  if (kitSearch.choices?.length) {
+  if (choices?.length) {
     log.info(`🎼 Scored choices count: ${choices.length}`);
   }
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
@@ -1683,7 +1691,6 @@ export const invokeSearch = (rawInput: string) => {
     for (const choice of kitSearch.choices) {
       if ((choice as Script)?.alias === transformedInput) {
         alias = structuredClone(choice);
-        alias.tag = (choice as Script)?.kenv || choice?.group || '';
         alias.pass = false;
         alias.group = 'Alias';
       } else if (
@@ -1694,7 +1701,7 @@ export const invokeSearch = (rawInput: string) => {
         const scoredChoice = resultMap.get(choice.id);
         if (scoredChoice && !scoredChoice?.item?.lastGroup) {
           const c = structuredClone(scoredChoice);
-          c.item.tag =
+          c.item.tag ||=
             c?.item?.kenv || c?.item?.group === 'Pass' ? '' : c?.item?.group;
           // This was breaking the choice.preview lookup in the SDK
           // c.item.id = Math.random();
@@ -1967,6 +1974,7 @@ export const setChoices = (
 
   if (generated) {
     log.info(`📦 ${kitState.pid} Generated choices: ${choices.length}`);
+
     setScoredChoices(choices.map(createScoredChoice));
     return;
   }

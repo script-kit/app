@@ -421,7 +421,7 @@ const systemEvents = () => {
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);
     if (kitState.isMainScript()) maybeHide(HideReason.Suspend);
-    teardownWatchers();
+    // teardownWatchers();
     sleepSchedule();
     try {
       logMap.clear();
@@ -439,11 +439,11 @@ const systemEvents = () => {
 
     await updateAppDb({});
     log.info(`🌄 System waking. Starting watchers.`);
-    await setupWatchers();
+    // await setupWatchers();
 
     kitState.suspended = false;
 
-    startClipboardAndKeyboardWatchers();
+    // startClipboardAndKeyboardWatchers();
 
     if (!kitState.updateDownloaded) {
       await new Promise((resolve) => setTimeout(resolve, 10000));

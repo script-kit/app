@@ -408,7 +408,7 @@ export const setupWatchers = async () => {
             setKitStateAtom({
               noPreview: envData?.KIT_NO_PREVIEW === 'true',
             });
-          } else if (kitState.noPreview) {
+          } else if (kitState.kenvEnv.KIT_NO_PREVIEW) {
             setKitStateAtom({
               noPreview: false,
             });
@@ -436,6 +436,8 @@ export const setupWatchers = async () => {
           //   log.info(`⌚️ Resuming Watchers`);
           //   setupWatchers();
           // }
+
+          kitState.kenvEnv = envData;
         } catch (error) {
           log.warn(error);
         }

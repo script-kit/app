@@ -333,12 +333,7 @@ function ChoiceButton({
               isScrolling ? `-mr-2px` : `0`
             }`}
           >
-            {(choice?.tag ||
-              choice?.keyword ||
-              choice?.trigger ||
-              choice?.icon ||
-              choice?.pass ||
-              isRecent) && (
+            {(choice?.tag || choice?.icon || choice?.pass || isRecent) && (
               <div className="flex flex-row items-center">
                 {((choice?.pass || isRecent) && choice?.kenv
                   ? choice.kenv
@@ -353,11 +348,11 @@ function ChoiceButton({
                     choice?.kenv !== '.kit'
                       ? choice.kenv
                       : choice.tag
-                      ? choice.tag
-                      : choice?.keyword
-                      ? `keyword: ${choice?.keyword}`
-                      : choice?.trigger
-                      ? `trigger: ${choice?.trigger}`
+                      ? highlight(
+                          choice.tag,
+                          scoredChoice?.matches?.tag,
+                          'bg-text-base bg-opacity-0 text-primary text-opacity-100'
+                        )
                       : ''}
                   </div>
                 )}
@@ -372,24 +367,6 @@ function ChoiceButton({
     `}
                     src={choice?.icon}
                   />
-                )}
-              </div>
-            )}
-            {isScript(choice) && choice?.friendlyShortcut && (
-              <div className="flex flex-col px-2">
-                {choice?.friendlyShortcut && (
-                  <div
-                    className={`
-              font-mono text-xxs
-              ${index === buttonIndex ? `opacity-100` : `opacity-40`}
-              `}
-                  >
-                    {highlight(
-                      choice.friendlyShortcut,
-                      scoredChoice?.matches?.friendlyShortcut,
-                      'bg-text-base bg-opacity-0 text-primary text-opacity-100'
-                    )}
-                  </div>
                 )}
               </div>
             )}

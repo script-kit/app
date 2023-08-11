@@ -261,7 +261,7 @@ function FlagButton({
                   ? choice.kenv
                   : choice.tag) && (
                   <div
-                    className={`mx-1 font-mono text-xxs ${
+                    className={`mx-1 truncate font-mono text-xxs ${
                       choice?.tagClassName
                     } ${index === buttonIndex ? `opacity-70` : `opacity-40`}`}
                   >
@@ -269,7 +269,13 @@ function FlagButton({
                     choice?.kenv &&
                     choice?.kenv !== '.kit'
                       ? choice.kenv
-                      : choice.tag}
+                      : choice.tag
+                      ? highlight(
+                          choice.tag,
+                          scoredChoice?.matches?.tag,
+                          'bg-text-base bg-opacity-0 text-primary text-opacity-100'
+                        )
+                      : ''}
                   </div>
                 )}
 
@@ -287,24 +293,6 @@ function FlagButton({
               </div>
             )}
 
-            {isScript(choice) && choice?.friendlyShortcut && (
-              <div className="flex flex-col px-2">
-                {choice?.friendlyShortcut && (
-                  <div
-                    className={`
-              font-mono text-xxs
-              ${index === buttonIndex ? `opacity-100` : `opacity-40`}
-              `}
-                  >
-                    {highlight(
-                      choice.friendlyShortcut,
-                      scoredChoice?.matches?.friendlyShortcut,
-                      'bg-text-base bg-opacity-0 text-primary text-opacity-100'
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
             {imageFail && (
               <div
                 style={{ aspectRatio: '1/1' }}

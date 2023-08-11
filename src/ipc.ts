@@ -108,6 +108,7 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
       const keywordChoice = kitSearch.keywords.get(keyword);
       if (keywordChoice) {
         kitSearch.keyword = keyword;
+        kitSearch.inputRegex = new RegExp(`^${keyword} `, 'gi');
         log.info(`🔑 ${keyword} triggered`);
         sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
           keyword,

@@ -1022,7 +1022,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
               {/* {previewEnabled && <Preview />} */}
 
-              {!kitState.noPreview && (previewCheck || flagValue) && (
+              {((previewCheck && !kitState.noPreview) || flagValue) && (
                 <>
                   <PanelResizeHandle
                     id="panelResizeHandle"

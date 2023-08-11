@@ -208,6 +208,7 @@ export const closedDiv = `<div></div>`;
 const throttleSetPreview = throttle(
   (g, s, a: string) => {
     s(_previewHTML, a);
+    resize(g, s, 'SET_PREVIEW');
   },
   25,
   {
@@ -628,6 +629,9 @@ export const scoredChoicesAtom = atom(
   (g, s, a: ScoredChoice[]) => {
     s(loadingAtom, false);
     prevFocusedChoiceId = 'prevFocusedChoiceId';
+
+    // g(logAtom)(`⚽️ Scored choices length: ${a?.length}`);
+
     const cs = a;
 
     s(submittedAtom, false);
@@ -699,8 +703,9 @@ export const scoredChoicesAtom = atom(
     } else {
       s(focusedChoiceAtom, noChoice);
       if (isFilter && Boolean(cs)) {
-        if (!g(promptReadyAtom)) return;
-        channel(Channel.NO_CHOICES);
+        if (g(promptReadyAtom)) {
+          channel(Channel.NO_CHOICES);
+        }
       }
     }
     let choicesHeight = 0;
@@ -711,6 +716,7 @@ export const scoredChoicesAtom = atom(
       choicesHeight += height || g(itemHeightAtom);
       if (choicesHeight > 1920) break;
     }
+
     s(choicesHeightAtom, choicesHeight);
     s(mainHeightAtom, choicesHeight);
   }
@@ -906,7 +912,8 @@ export const scriptAtom = atom(
       const preloaded = g(preloadedAtom);
 
       if (!preloaded) {
-        s(scoredChoicesAtom, []);
+        // Removed: Caused a flash of white from no choices
+        // s(scoredChoicesAtom, []);
         s(focusedChoiceAtom, noChoice);
         s(_previewHTML, '');
       }
@@ -997,9 +1004,6 @@ const resize = debounce(
     const totalChoices = scoredChoicesLength;
 
     const choicesHeight = g(choicesHeightAtom);
-    // g(logAtom)({
-    //   choicesHeight,
-    // });
 
     if (ui === UI.arg && choicesHeight > PROMPT.HEIGHT.BASE) {
       mh =
@@ -1008,6 +1012,10 @@ const resize = debounce(
           : PROMPT.HEIGHT.BASE) -
         topHeight -
         footerHeight;
+
+      // g(logAtom)(
+      //   `Choices height > PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE} mh ${mh}`
+      // );
     } else {
       mh = choicesHeight;
     }
@@ -1068,8 +1076,14 @@ const resize = debounce(
     if (hasPreview && mh < PROMPT.HEIGHT.BASE) {
       const previewHeight =
         document.getElementById('preview')?.offsetHeight || 0;
-      mh = Math.max(previewHeight, promptData?.height || PROMPT.HEIGHT.BASE);
+      mh = Math.max(
+        choicesHeight,
+        previewHeight,
+        promptData?.height || PROMPT.HEIGHT.BASE
+      );
       forceResize = true;
+
+      g(logAtom)(`hasPreview: ${PROMPT.HEIGHT.BASE} mh ${mh}`);
     }
 
     if (g(logVisibleAtom)) {
@@ -1118,6 +1132,7 @@ const resize = debounce(
     // });
 
     // g(logAtom)({
+    //   reason,
     //   ui,
     //   ch,
     //   mh,
@@ -1141,18 +1156,9 @@ const resize = debounce(
 
     mh = Math.ceil(mh || -3) + 3;
 
-    if (inputChanged) {
-      if (mh === 0 && promptData?.preventCollapse) {
-        g(logAtom)(`🍃 Prevent collapse to zero...`);
-        return;
-      }
-
-      if (
-        typeof (promptData?.resize === 'boolean') &&
-        promptData?.resize === false
-      ) {
-        return;
-      }
+    if (mh === 0 && promptData?.preventCollapse) {
+      g(logAtom)(`🍃 Prevent collapse to zero...`);
+      return;
     }
 
     const data: ResizeData = {
@@ -2273,6 +2279,10 @@ export const _kitStateAtom = atom({
 export const kitStateAtom = atom(
   (g) => g(_kitStateAtom),
   (g, s, a: any) => {
+    // g(logAtom)({
+    //   type: 'kitStateAtom',
+    //   a,
+    // });
     if (a?.escapePressed) {
       s(audioAtom, null);
     }
@@ -2612,6 +2622,7 @@ export const actionsAtom = atom((g) => {
         arrow: (flag as Action)?.arrow,
         flag: key,
         disabled: Boolean(disabled),
+        visible: Boolean(flag?.visible),
       } as Action;
 
       return action;
@@ -2619,7 +2630,7 @@ export const actionsAtom = atom((g) => {
     .concat(
       shortcuts
         .filter((s) => s?.bar)
-        .map(({ key, name, bar, flag }) => {
+        .map(({ key, name, bar, flag, visible }) => {
           return {
             key,
             name,
@@ -2628,6 +2639,7 @@ export const actionsAtom = atom((g) => {
             position: bar,
             flag,
             disabled: Boolean(disabled),
+            visible: Boolean(visible),
           } as Action;
         })
     );

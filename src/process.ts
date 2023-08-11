@@ -1167,7 +1167,6 @@ const kitMessageMap: ChannelHandler = {
 
       kitSearch.keys = value?.searchKeys || [
         'slicedName',
-        'friendlyShortcut',
         'tag',
         'group',
         'command',
@@ -1361,7 +1360,7 @@ const kitMessageMap: ChannelHandler = {
     sendToPrompt(Channel.SET_FORM, data.value);
   },
   SET_FLAGS: (data) => {
-    log.info(`🇺🇸 Set flags ${Object.keys(data?.value).length}`);
+    log.info(`⛳️ Set flags ${Object.keys(data?.value).length}`);
     sendToPrompt(Channel.SET_FLAGS, data.value);
     setFlags(data.value);
   },
@@ -2135,7 +2134,7 @@ const createChild = ({
     FORCE_COLOR: '1',
     PATH,
     KIT_APP_PATH: app.getAppPath(),
-    ...kitState.kenvEnv,
+    ...snapshot(kitState.kenvEnv),
   };
   // console.log({ env });
   const loaderFileUrl = pathToFileURL(kitPath('build', 'loader.js')).href;
