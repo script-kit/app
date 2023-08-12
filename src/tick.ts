@@ -19,9 +19,9 @@ import { Choice, Script } from '@johnlindquist/kit/types';
 import { store } from '@johnlindquist/kit/cjs/db';
 import { debounce, remove } from 'lodash';
 
-import { clipboard, systemPreferences } from 'electron';
+import { clipboard } from 'electron';
 import { emitter, KitEvent } from './events';
-import { appDb, kitConfig, kitState, subs } from './state';
+import { kitConfig, kitState, subs } from './state';
 import { isFocused } from './prompt';
 import { deleteText } from './keyboard';
 import { Trigger } from './enums';
@@ -316,21 +316,8 @@ export const preStartConfigureInterval = async () => {
   }
   if (kitState.kenvEnv?.KIT_ACCESSIBILITY === 'true') {
     log.info(`💻 Accessibility authorized ✅`);
-    await configureInterval();
+    await startClipboardMonitor();
   }
-};
-
-const checkPreferencesAccessibility = () => {
-  if (kitState.isMac && systemPreferences?.isTrustedAccessibilityClient) {
-    try {
-      return systemPreferences.isTrustedAccessibilityClient(true);
-    } catch (error) {
-      log.error(error);
-      return false;
-    }
-  }
-
-  return true;
 };
 
 const isTransient = () => {
@@ -349,6 +336,10 @@ const isTransient = () => {
 };
 
 export const startKeyboardMonitor = async () => {
+  if (kitState.kenvEnv?.KIT_KEYBOARD === 'false') {
+    log.info(`🔇 Keyboard monitor disabled`);
+    return;
+  }
   const io$ = new Observable((observer) => {
     log.info(`Creating new Observable for uiohook-napi...`);
     try {
@@ -384,21 +375,10 @@ export const startKeyboardMonitor = async () => {
         }
       });
 
-      uIOhook.stop();
-
-      setTimeout(() => {
-        if (checkPreferencesAccessibility()) {
-          log.info(`The line right before uIOhook.start()...`);
-          uIOhook.start();
-          kitState.keyboardWatcherEnabled = true;
-          log.info(`The line right after uIOhook.start()...`);
-          log.info(`🟢 Started keyboard and mouse watcher`);
-        } else {
-          log.error(
-            `🔴 Failed to start keyboard and mouse watcher because Kit.app is not trusted`
-          );
-        }
-      }, 1000);
+      log.info(`The line right before uIOhook.start()...`);
+      uIOhook.start();
+      log.info(`The line right after uIOhook.start()...`);
+      log.info(`🟢 Started keyboard and mouse watcher`);
     } catch (e) {
       log.error(`🔴 Failed to start keyboard and mouse watcher`);
       log.error(e);
@@ -409,14 +389,17 @@ export const startKeyboardMonitor = async () => {
     return () => {
       log.info(`🛑 Attempting to stop keyboard and mouse watcher`);
       uIOhook.stop();
-      kitState.keyboardWatcherEnabled = false;
       log.info(`🛑 Successfully stopped keyboard and mouse watcher`);
     };
   }).pipe(share());
   if (!io$Sub) io$Sub = io$.subscribe(ioEvent as any);
 };
 
-export const configureInterval = async () => {
+export const startClipboardMonitor = async () => {
+  if (kitState.kenvEnv?.KIT_CLIPBOARD === 'false') {
+    log.info(`🔇 Clipboard monitor disabled`);
+    return;
+  }
   log.info(`⌚️ Configuring interval...`);
   if (!kitState.supportsNut) {
     log.info(`🛑 Keyboard watcher not supported on this platform`);
@@ -656,15 +639,9 @@ export const configureInterval = async () => {
 };
 
 export const startClipboardAndKeyboardWatchers = async () => {
-  if (kitState.isMac) {
-    const fullyAuthenticated = kitState.authorized && appDb?.authorized;
-    if (!fullyAuthenticated) return;
-  }
-
-  stopClipboardMonitor();
-  stopKeyboardMonitor();
   await new Promise((resolve) => setTimeout(resolve, 500));
-  configureInterval();
+  startClipboardMonitor();
+  startKeyboardMonitor();
 };
 
 const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
@@ -721,33 +698,6 @@ const subSnippet = subscribeKey(kitState, 'snippet', async (snippet = ``) => {
 const subIsTyping = subscribeKey(kitState, 'isTyping', () => {
   log.silly(`📕 isTyping: ${kitState.isTyping ? 'true' : 'false'}`);
 });
-
-export const stopKeyboardMonitor = () => {
-  if (!kitState.supportsNut) return;
-  try {
-    if (io$Sub) io$Sub.unsubscribe();
-    io$Sub = null;
-    log.info(`✋ Stop keyboard monitor`);
-    try {
-      uIOhook.removeAllListeners();
-      uIOhook.stop();
-    } catch (e) {
-      log.error(e);
-    }
-  } catch (e) {
-    log.error(e);
-  }
-};
-
-export const stopClipboardMonitor = () => {
-  try {
-    if (clipboard$Sub) clipboard$Sub.unsubscribe();
-    clipboard$Sub = null;
-    log.info(`✋ Stop clipboard monitor`);
-  } catch (e) {
-    log.error(e);
-  }
-};
 
 const snippetMap = new Map<
   string,
@@ -858,82 +808,4 @@ export const removeSnippet = (filePath: string) => {
   }
 };
 
-let prevClipboardWatcherEnabled = kitState.clipboardWatcherEnabled;
-const clipboardWatcherEnabledSub = subscribeKey(
-  kitState,
-  'clipboardWatcherEnabled',
-  async (watcherEnabled) => {
-    log.info(
-      `📕 clipboardWatcherEnabled: ${
-        watcherEnabled ? 'true' : 'false'
-      } - wasWatcherEnabled: ${prevClipboardWatcherEnabled ? 'true' : 'false'}`
-    );
-    if (watcherEnabled === prevClipboardWatcherEnabled) return;
-    prevClipboardWatcherEnabled = watcherEnabled;
-
-    if (watcherEnabled) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      if (kitState.authorized) {
-        log.info('📕 Authorized. Starting key watcher...');
-        preStartConfigureInterval();
-      } else {
-        log.info('📕 Not authorized, not starting key watcher');
-      }
-    } else {
-      stopClipboardMonitor();
-    }
-
-    prevClipboardWatcherEnabled = watcherEnabled;
-  }
-);
-
-let prevKeyboardWatcherEnabled = kitState.keyboardWatcherEnabled;
-const keyboardWatcherEnabledSub = subscribeKey(
-  kitState,
-  'keyboardWatcherEnabled',
-  async (watcherEnabled) => {
-    log.info(
-      `📕 keyboardWatcherEnabled: ${
-        watcherEnabled ? 'true' : 'false'
-      } - wasWatcherEnabled: ${prevKeyboardWatcherEnabled ? 'true' : 'false'}`
-    );
-    if (watcherEnabled === prevKeyboardWatcherEnabled) return;
-    prevKeyboardWatcherEnabled = watcherEnabled;
-
-    if (watcherEnabled) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      if (kitState.authorized) {
-        log.info('📕 Authorized. Starting key watcher...');
-        startKeyboardMonitor();
-      } else {
-        log.info('📕 Not authorized, not starting key watcher');
-      }
-    } else {
-      stopKeyboardMonitor();
-    }
-
-    prevKeyboardWatcherEnabled = watcherEnabled;
-  }
-);
-
-// sub to wakeWatcher
-const subWakeWatcher = subscribeKey(
-  kitState,
-  'wakeWatcher',
-  async (wakeWatcher) => {
-    if (wakeWatcher) {
-      startClipboardAndKeyboardWatchers();
-    } else {
-      stopClipboardMonitor();
-      stopKeyboardMonitor();
-    }
-  }
-);
-
-subs.push(
-  subSnippet,
-  subIsTyping,
-  clipboardWatcherEnabledSub,
-  keyboardWatcherEnabledSub,
-  subWakeWatcher
-);
+subs.push(subSnippet, subIsTyping);

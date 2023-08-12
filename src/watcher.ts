@@ -381,16 +381,6 @@ export const setupWatchers = async () => {
             kitState.typedLimit = parseInt(envData?.KIT_TYPED_LIMIT, 10);
           }
 
-          if (envData?.KIT_CLIPBOARD_WATCHER) {
-            kitState.clipboardWatcherEnabled =
-              envData?.KIT_CLIPBOARD_WATCHER === 'true';
-          }
-
-          if (envData?.KIT_KEYBOARD_WATCHER) {
-            kitState.keyboardWatcherEnabled =
-              envData?.KIT_KEYBOARD_WATCHER === 'true';
-          }
-
           const trustedKenvs = (envData?.[kitState.trustedKenvsKey] || '')
             .split(',')
             .filter(Boolean)

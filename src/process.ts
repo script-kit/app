@@ -1882,8 +1882,8 @@ const kitMessageMap: ChannelHandler = {
       clipboard.writeText(text);
 
       const modifier = kitState.isMac ? Key.LeftSuper : Key.LeftControl;
-      await keyboard.pressKey(modifier, Key.V);
-      await keyboard.releaseKey(modifier, Key.V);
+      keyboard.pressKey(modifier, Key.V);
+      keyboard.releaseKey(modifier, Key.V);
       setTimeout(() => {
         kitState.snippet = '';
         childSend(child, { channel, value });
@@ -2809,9 +2809,21 @@ emitter.on(
 //   setChoices(formatScriptChoices(scripts));
 // });
 
-emitter.on(KitEvent.DID_FINISH_LOAD, () => {
+emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
   try {
     const envData = dotenv.parse(readFileSync(kenvPath('.env')));
+    // REMOVE-MAC
+    if (kitState.isMac) {
+      const { getAuthStatus } = await import('node-mac-permissions');
+
+      const authorized = getAuthStatus('accessibility') === 'authorized';
+
+      if (authorized) {
+        envData.KIT_ACCESSIBILITY = 'true';
+      }
+    }
+    // END-REMOVE-MAC
+
     kitState.kenvEnv = envData;
   } catch (error) {
     log.warn(`Error reading kenv env`, error);

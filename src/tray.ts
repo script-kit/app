@@ -284,37 +284,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
       enabled: false,
     });
 
-    // watcherSubmenu.push({
-    //   type: 'separator',
-    // });
-
-    // watcherSubmenu.push({
-    //   label: `${
-    //     kitState.clipboardWatcherEnabled ? 'Stop' : 'Start'
-    //   } Clipboard Watcher`,
-    //   checked: kitState.clipboardWatcherEnabled,
-    //   click: () => {
-    //     kitState.clipboardWatcherEnabled = !kitState.clipboardWatcherEnabled;
-    //   },
-    // });
-
-    // watcherSubmenu.push({
-    //   label: `${
-    //     kitState.keyboardWatcherEnabled ? 'Stop' : 'Start'
-    //   } Keyboard Watcher`,
-    //   checked: kitState.keyboardWatcherEnabled,
-    //   click: () => {
-    //     kitState.keyboardWatcherEnabled = !kitState.keyboardWatcherEnabled;
-    //   },
-    // });
-
-    // watcherSubmenu.push({
-    //   label: `Force Wake Keyboard Watcher (use when snippets aren't firing)`,
-    //   click: () => {
-    //     kitState.wakeWatcher = new Date().getTime();
-    //   },
-    // });
-
     watcherSubmenu.push({
       label: `${
         kitState.suspendWatchers ? `Resume` : `Suspend`

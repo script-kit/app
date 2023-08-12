@@ -306,7 +306,6 @@ const initState = {
   appearance: 'auto' as 'auto' | 'light' | 'dark',
   clipboardWatcherEnabled: !isMac,
   keyboardWatcherEnabled: !isMac,
-  wakeWatcher: new Date().getTime(),
   allowBlur: true,
   keymap: null as any,
   keyboardConfig: {

@@ -75,11 +75,7 @@ import {
   getReleaseChannel,
   getPlatformExtension,
 } from './assets';
-import {
-  clearTickTimers,
-  configureInterval,
-  stopClipboardMonitor,
-} from './tick';
+import { startClipboardAndKeyboardWatchers } from './tick';
 import {
   clearPromptCache,
   createPromptWindow,
@@ -526,7 +522,7 @@ const ready = async () => {
     systemEvents();
     readyPty();
 
-    configureInterval();
+    startClipboardAndKeyboardWatchers();
 
     if (process.env.NODE_ENV === 'development') {
       process.on('warning', (warning) => {
@@ -1022,7 +1018,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   try {
     teardownWatchers();
     sleepSchedule();
-    stopClipboardMonitor();
+
     subs.forEach((sub) => {
       try {
         sub();
@@ -1032,7 +1028,6 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     });
     subs.length = 0;
     clearPromptTimers();
-    clearTickTimers();
     clearStateTimers();
     // destory event emitter named "emitter"
     if (emitter) emitter.removeAllListeners();
