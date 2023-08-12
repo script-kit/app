@@ -425,6 +425,7 @@ export const configureInterval = async () => {
 
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
 
+  // REMOVE-MAC
   if (kitState.isMac) {
     try {
       ({ getFrontmostApp: frontmost } = await import(
@@ -437,7 +438,6 @@ export const configureInterval = async () => {
     }
   }
 
-  // REMOVE-MAC
   const {
     start: startMacClipboardListener,
     onClipboardImageChange,
