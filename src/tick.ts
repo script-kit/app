@@ -151,28 +151,13 @@ store(kitPath('db', 'clipboard.json'), {
 let frontmost: any = null;
 export const getClipboardHistory = async () => {
   const history = await clipboardStore.get('history');
-  if (!kitState.authorized) {
+  if (kitState.isMac && kitState?.kenvEnv?.KIT_ACCESSIBILITY !== 'true') {
     const choice = {
       name: `Clipboard history requires accessibility access`,
       description: `Unable to read clipboard history`,
       value: '__not-authorized__',
     };
     log.info(choice);
-
-    kitState.notifyAuthFail = true;
-
-    await clipboardStore.set('history', [choice, ...history]);
-  }
-
-  if (!kitState.clipboardWatcherEnabled) {
-    const choice = {
-      name: `Clipboard history requires accessibility access`,
-      description: `Unable to read clipboard history`,
-      value: '__watcher-disabled__',
-    };
-    log.info(choice);
-
-    kitState.notifyAuthFail = true;
 
     await clipboardStore.set('history', [choice, ...history]);
   }
@@ -749,18 +734,14 @@ export const addTextSnippet = async (filePath: string) => {
   const { metadata, snippet } = await getSnippet(contents);
 
   if (metadata?.snippet) {
-    if (kitState.authorized) {
-      log.info(`Set snippet: ${metadata.snippet}`);
+    log.info(`Set snippet: ${metadata.snippet}`);
 
-      // If snippet starts with an '*' then it's a postfix
-      snippetMap.set(metadata?.snippet, {
-        filePath,
-        postfix: false,
-        txt: true,
-      });
-    } else {
-      kitState.notifyAuthFail = true;
-    }
+    // If snippet starts with an '*' then it's a postfix
+    snippetMap.set(metadata?.snippet, {
+      filePath,
+      postfix: false,
+      txt: true,
+    });
   }
 };
 
@@ -785,18 +766,14 @@ export const addSnippet = (script: Script) => {
   }
 
   if (script?.snippet) {
-    if (kitState.authorized) {
-      log.info(`Set snippet: ${script.snippet}`);
+    log.info(`Set snippet: ${script.snippet}`);
 
-      // If snippet starts with an '*' then it's a postfix
-      snippetMap.set(script.snippet.replace(/^\*/, ''), {
-        filePath: script.filePath,
-        postfix: script.snippet.startsWith('*'),
-        txt: false,
-      });
-    } else {
-      kitState.notifyAuthFail = true;
-    }
+    // If snippet starts with an '*' then it's a postfix
+    snippetMap.set(script.snippet.replace(/^\*/, ''), {
+      filePath: script.filePath,
+      postfix: script.snippet.startsWith('*'),
+      txt: false,
+    });
   }
 };
 

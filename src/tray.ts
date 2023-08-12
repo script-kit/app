@@ -124,33 +124,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
     const authItems: MenuItemConstructorOptions[] = [];
     const updateItems: MenuItemConstructorOptions[] = [];
 
-    // if (!kitState.authorized && kitState.isMac) {
-    //   // REMOVE-MAC
-    //   authItems.push({
-    //     label: `Click to Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
-    //     click: async () => {
-    //       const { askForAccessibilityAccess } = await import(
-    //         'node-mac-permissions'
-    //       );
-
-    //       askForAccessibilityAccess();
-    //     },
-    //     icon: menuIcon(kitState.notifyAuthFail ? 'warn' : 'cogwheel'),
-    //   });
-
-    //   // END-REMOVE-MAC
-
-    //   authItems.push({
-    //     label: `Select to Learn More About Permissions`,
-    //     click: runScript(kitPath('help', 'authorized-info.js')),
-    //     icon: menuIcon('open_in_new'),
-    //   });
-
-    //   authItems.push({
-    //     type: 'separator',
-    //   });
-    // }
-
     if (kitState.requiresAuthorizedRestart) {
       updateItems.push({
         label: `Click to Restart Kit and Apply Permissions Changes`,
@@ -574,7 +547,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
         };
       }
 
-      kitState.notifyAuthFail = false;
       kitState.trayOpen = false;
       kitState.scriptErrorPath = '';
     });
@@ -625,14 +597,6 @@ export const setupTray = async (checkDb = false, state: Status) => {
   // subscribeKey(kitState, 'transparencyEnabled', () => {
   //   tray?.setImage(trayIcon('default'));
   //   kitState.notifyAuthFail = false;
-  // });
-
-  // subscribeKey(kitState, 'notifyAuthFail', (fail) => {
-  //   if (fail) {
-  //     tray?.setImage(trayIcon('warn'));
-  //   } else {
-  //     tray?.setImage(trayIcon('default'));
-  //   }
   // });
 
   if (tray) {

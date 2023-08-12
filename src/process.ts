@@ -1698,7 +1698,6 @@ const kitMessageMap: ChannelHandler = {
       //       await keyboard.releaseKey(Key.LeftShift, Key.RightShift);
       //   });
       // }
-      if (!kitState.authorized) kitState.notifyAuthFail = true;
       log.info(`${channel}: ${typeof value} ${value}`, {
         isArray: Array.isArray(value),
       });
@@ -1743,7 +1742,6 @@ const kitMessageMap: ChannelHandler = {
       // REMOVE-NUT
       const { keyboard } = await import('@nut-tree/nut-js');
 
-      if (!kitState.authorized) kitState.notifyAuthFail = true;
       log.info(`PRESSING KEY`, { value });
       await keyboard.pressKey(...(value as any));
 
@@ -2074,12 +2072,7 @@ const kitMessageMap: ChannelHandler = {
     await stampDb.write();
   }),
   TOGGLE_WATCHER: onChildChannel(async ({ child }, { channel, value }) => {
-    kitState.clipboardWatcherEnabled = !kitState.clipboardWatcherEnabled;
-
-    log.verbose(
-      `👀 Toggling watcher`,
-      kitState.clipboardWatcherEnabled ? 'ON' : 'OFF'
-    );
+    log.info(`TOGGLE WATCHER DEPRECATED`);
   }),
   SET_SELECTED_CHOICES: onChildChannel(
     async ({ child }, { channel, value }) => {

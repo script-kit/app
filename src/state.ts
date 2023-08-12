@@ -256,7 +256,6 @@ const initState = {
   authorized: false,
   requiresAuthorizedRestart: false,
   fullDiskAccess: false,
-  notifyAuthFail: false,
   mainShortcut: ``,
   isDark: nativeTheme.shouldUseDarkColors,
   // warn: ``,
@@ -304,8 +303,6 @@ const initState = {
   isSponsor: false,
   theme,
   appearance: 'auto' as 'auto' | 'light' | 'dark',
-  clipboardWatcherEnabled: !isMac,
-  keyboardWatcherEnabled: !isMac,
   allowBlur: true,
   keymap: null as any,
   keyboardConfig: {
@@ -415,19 +412,6 @@ const subReady = subscribeKey(kitState, 'ready', (ready) => {
     };
   }
 });
-
-const subNotifyAuthFail = subscribeKey(
-  kitState,
-  'notifyAuthFail',
-  (notifyAuthFail) => {
-    if (notifyAuthFail) {
-      kitState.status = {
-        status: 'warn',
-        message: '',
-      };
-    }
-  }
-);
 
 let hideIntervalId: NodeJS.Timeout | null = null;
 
@@ -655,7 +639,6 @@ subs.push(
   subWindows,
   subStatus,
   subReady,
-  subNotifyAuthFail,
   subAllowBlur,
   subWaking
 );
