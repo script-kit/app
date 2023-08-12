@@ -432,7 +432,7 @@ export const allSkipAtom = atom(false);
 export const flagsIndexAtom = atom(
   (g) => g(flagsIndex),
   (g, s, a: number) => {
-    const flagValue = g(flagValueAtom);
+    const flagValue = g(flaggedChoiceValueAtom);
 
     if (!flagValue) {
       s(focusedFlagValueAtom, '');
@@ -495,7 +495,7 @@ export const flagsIndexAtom = atom(
 export const indexAtom = atom(
   (g) => g(_indexAtom),
   (g, s, a: number) => {
-    if (g(flagValueAtom)) return;
+    if (g(flaggedChoiceValueAtom)) return;
     const prevIndex = g(_indexAtom);
     const cs = g(choices);
     // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
@@ -571,7 +571,7 @@ export const indexAtom = atom(
   }
 );
 
-const _flagged = atom<Choice | string>('');
+const _flaggedValue = atom<Choice | string>('');
 const _focused = atom<Choice | null>(noChoice as Choice);
 
 export const hasFocusedChoiceAtom = atom(
@@ -723,6 +723,7 @@ export const scoredChoicesAtom = atom(
 );
 
 const choicesHeightAtom = atom(0);
+const flagsHeightAtom = atom(0);
 
 export const choicesAtom = atom((g) =>
   g(scoredChoicesAtom).map((result) => result.item)
@@ -784,7 +785,7 @@ export const inputAtom = atom(
 
     s(_inputAtom, a);
 
-    const flaggedValue = g(flagValueAtom);
+    const flaggedValue = g(flaggedChoiceValueAtom);
 
     if (!g(submittedAtom)) {
       const channel = g(channelAtom);
@@ -863,7 +864,7 @@ export const tabIndexAtom = atom(
     if (g(_tabIndex) !== a) {
       s(_tabIndex, a);
       s(flagsAtom, {});
-      s(_flagged, '');
+      s(_flaggedValue, '');
 
       sendTabChanged = sendTabChanged || getSendTabChanged(g);
       sendTabChanged();
@@ -1000,7 +1001,7 @@ const resize = debounce(
 
     const topHeight = document.getElementById('header')?.offsetHeight || 0;
     const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
-    const hasPreview = Boolean(g(hasPreviewAtom) || g(flagValueAtom));
+    const hasPreview = Boolean(g(hasPreviewAtom) || g(flaggedChoiceValueAtom));
     const totalChoices = scoredChoicesLength;
 
     const choicesHeight = g(choicesHeightAtom);
@@ -1077,13 +1078,14 @@ const resize = debounce(
       const previewHeight =
         document.getElementById('preview')?.offsetHeight || 0;
       mh = Math.max(
+        g(flagsHeightAtom),
         choicesHeight,
         previewHeight,
         promptData?.height || PROMPT.HEIGHT.BASE
       );
       forceResize = true;
 
-      g(logAtom)(`hasPreview: ${PROMPT.HEIGHT.BASE} mh ${mh}`);
+      // g(logAtom)(`hasPreview: ${PROMPT.HEIGHT.BASE} mh ${mh}`);
     }
 
     if (g(logVisibleAtom)) {
@@ -1516,14 +1518,17 @@ export const promptDataAtom = atom(
   }
 );
 
-export const flagValueAtom = atom(
-  (g) => g(_flagged),
+export const flaggedChoiceValueAtom = atom(
+  (g) => g(_flaggedValue),
   (g, s, a: any) => {
     s(promptActiveAtom, true);
     const flags = g(_flagsAtom);
     // g(logAtom)({ flagValue: a, flags });
-    if (Object.entries(flags).length === 0) return;
-    s(_flagged, a);
+    if (Object.entries(flags).length === 0 && !g(focusedChoiceAtom)?.actions) {
+      return;
+    }
+    // g(logAtom)({ actions: a?.actions });
+    s(_flaggedValue, a);
 
     if (a === '') {
       s(_inputAtom, g(prevInputAtom));
@@ -1577,7 +1582,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     inputChanged: g(_inputChangedAtom),
     flag: g(focusedFlagValueAtom),
     index: g(indexAtom),
-    flaggedValue: g(_flagged) || '',
+    flaggedValue: g(_flaggedValue) || '',
     focused: g(_focused),
     tab: g(tabsAtom)?.[g(_tabIndex)] || '',
     history: g(_history) || [],
@@ -1744,7 +1749,7 @@ export const submitValueAtom = atom(
     // s(indexAtom, 0);
 
     s(closedInput, g(inputAtom));
-    s(_flagged, ''); // clear after getting
+    s(_flaggedValue, ''); // clear after getting
     s(selectedChoicesAtom, []);
 
     // if (flag) {
@@ -1800,7 +1805,7 @@ export const openAtom = atom(
       s(logHTMLAtom, '');
       // s(uiAtom, UI.arg);
       s(flagsAtom, {});
-      s(_flagged, '');
+      s(_flaggedValue, '');
       s(loading, false);
       s(loadingAtom, false);
       s(editorConfigAtom, {});
@@ -2070,7 +2075,7 @@ export const submitSurveyAtom = atom(null, (_g, _s, a: Survey) => {
 export const showTabsAtom = atom((g) => {
   const isArg = [UI.arg].includes(g(uiAtom));
   const hasTabs = g(tabsAtom)?.length > 0;
-  const noFlagValue = !g(flagValueAtom);
+  const noFlagValue = !g(flaggedChoiceValueAtom);
   return (
     // g(isMainScriptAtom) ||
     isArg && hasTabs && noFlagValue
@@ -2607,7 +2612,7 @@ export const signInActionAtom = atom((g) => {
 export const actionsAtom = atom((g) => {
   const flags = g(flagsAtom);
   const shortcuts = g(shortcutsAtom);
-  const disabled = g(flagValueAtom);
+  const disabled = g(flaggedChoiceValueAtom);
   return Object.entries(flags)
     .filter(([_, flag]) => {
       return flag?.bar && flag?.shortcut;
@@ -2741,6 +2746,17 @@ export const scoredFlagsAtom = atom(
   (g, s, a: ScoredChoice[]) => {
     s(scoredFlags, a);
     s(flagsIndexAtom, 0);
+
+    let choicesHeight = 0;
+
+    for (const {
+      item: { height },
+    } of a) {
+      choicesHeight += height || g(itemHeightAtom);
+      if (choicesHeight > 1920) break;
+    }
+
+    s(flagsHeightAtom, choicesHeight);
   }
 );
 

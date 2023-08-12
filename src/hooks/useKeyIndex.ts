@@ -10,7 +10,7 @@ import {
   shortcutsAtom,
   directionAtom,
   flagsIndexAtom,
-  flagValueAtom,
+  flaggedChoiceValueAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -23,7 +23,7 @@ export default () => {
   const [inputFocus] = useAtom(inputFocusAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
   const [, setDirection] = useAtom(directionAtom);
-  const flagValue = useAtomValue(flagValueAtom);
+  const flagValue = useAtomValue(flaggedChoiceValueAtom);
 
   // useEffect(() => {
   //   const list = document.getElementById('list');

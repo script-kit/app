@@ -470,8 +470,13 @@ export const configureInterval = async () => {
         });
 
         clipboardEventListener.listen();
-      } else {
-        // REMOVE-MAC
+      }
+
+      // REMOVE-MAC
+      else {
+        log.info(
+          `Attempting to start @johnlindquist/mac-clipboard-listener...`
+        );
 
         startMacClipboardListener();
 
@@ -513,7 +518,6 @@ export const configureInterval = async () => {
           )
         );
       }
-
       // END-REMOVE-MAC
     } catch (e) {
       log.error(`🔴 Failed to start clipboard watcher`);

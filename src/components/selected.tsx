@@ -3,11 +3,15 @@
 import React, { useCallback } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { PROMPT } from '@johnlindquist/kit/cjs/enum';
-import { flagValueAtom, inputHeightAtom, selectedAtom } from '../jotai';
+import {
+  flaggedChoiceValueAtom,
+  inputHeightAtom,
+  selectedAtom,
+} from '../jotai';
 import { IconSwapper } from './iconswapper';
 
 export default function Selected() {
-  const [flagValue, setFlagValue] = useAtom(flagValueAtom);
+  const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [selected] = useAtom(selectedAtom);
   const inputHeight = useAtomValue(inputHeightAtom);
 

@@ -153,7 +153,7 @@ import {
   audioDotAtom,
   scrollToIndexAtom,
   scoredFlagsAtom,
-  flagValueAtom,
+  flaggedChoiceValueAtom,
   previewCheckAtom,
   preloadedAtom,
   triggerKeywordAtom,
@@ -320,7 +320,7 @@ export default function App() {
   const setLogValue = useSetAtom(logValueAtom);
   const setEditorLogMode = useSetAtom(editorLogModeAtom);
   const setShortcuts = useSetAtom(shortcutsAtom);
-  const [flagValue, setFlagValue] = useAtom(flagValueAtom);
+  const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [termConfig, setTermConfig] = useAtom(termConfigAtom);
   const setMicConfig = useSetAtom(micConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);

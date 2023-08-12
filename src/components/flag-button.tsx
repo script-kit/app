@@ -14,7 +14,7 @@ import { ipcRenderer } from 'electron';
 import { ChoiceButtonProps } from '../types';
 import {
   flagsAtom,
-  flagValueAtom,
+  flaggedChoiceValueAtom,
   isMouseDownAtom,
   _modifiers,
   buttonNameFontSizeAtom,
@@ -76,7 +76,7 @@ function FlagButton({
 
   const [isMouseDown] = useAtom(isMouseDownAtom);
   const [flags] = useAtom(flagsAtom);
-  const [flaggedValue, setFlagValue] = useAtom(flagValueAtom);
+  const [flaggedValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [modifiers] = useAtom(_modifiers);
   const [modifierDescription, setModifierDescription] = useState('');
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);

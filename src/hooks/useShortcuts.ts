@@ -7,7 +7,7 @@ import {
   cmdAtom,
   focusedFlagValueAtom,
   flagsAtom,
-  flagValueAtom,
+  flaggedChoiceValueAtom,
   indexAtom,
   inputAtom,
   inputFocusAtom,
@@ -30,7 +30,7 @@ export default () => {
   const [focusedChoice] = useAtom(focusedChoiceAtom);
   const [input] = useAtom(inputAtom);
   const [index] = useAtom(indexAtom);
-  const [flagValue, setFlagValue] = useAtom(flagValueAtom);
+  const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [flags] = useAtom(flagsAtom);
   const [, setFlag] = useAtom(focusedFlagValueAtom);
   const [, submit] = useAtom(submitValueAtom);
@@ -124,7 +124,10 @@ export default () => {
       if (hasRightShortcut) return;
       if (selectionStart === input.length && event.key !== 'ArrowLeft') {
         event.preventDefault();
-        if (!flagValue && flagsArray.length) {
+        if (
+          !flagValue &&
+          (flagsArray.length || Boolean(choices?.[index]?.actions))
+        ) {
           setFlagValue(choices.length ? choices[index].value : input);
         }
         channel(Channel.FORWARD);

@@ -10,7 +10,7 @@ import {
   inputAtom,
   indexAtom,
   channelAtom,
-  flagValueAtom,
+  flaggedChoiceValueAtom,
   appConfigAtom,
 } from '../jotai';
 
@@ -22,7 +22,7 @@ export function OptionsButton() {
   const [input] = useAtom(inputAtom);
   const [index] = useAtom(indexAtom);
   const [channel] = useAtom(channelAtom);
-  const [flagValue, setFlagValue] = useAtom(flagValueAtom);
+  const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [app] = useAtom(appConfigAtom);
   const m = app?.isMac;
 

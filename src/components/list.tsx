@@ -12,7 +12,7 @@ import {
   listAtom,
   requiresScrollAtom,
   isScrollingAtom,
-  flagValueAtom,
+  flaggedChoiceValueAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 
@@ -36,7 +36,7 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [list, setList] = useAtom(listAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
   const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
-  const flagValue = useAtomValue(flagValueAtom);
+  const flagValue = useAtomValue(flaggedChoiceValueAtom);
 
   useEffect(() => {
     if (listRef.current) {

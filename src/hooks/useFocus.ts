@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai';
 import { Ref, RefObject, useEffect, useRef } from 'react';
 import {
-  flagValueAtom,
+  flaggedChoiceValueAtom,
   inputFocusAtom,
   isHiddenAtom,
   isMouseDownAtom,
@@ -13,7 +13,7 @@ import {
 } from '../jotai';
 
 export default (ref: RefObject<HTMLElement>) => {
-  const [flagValue] = useAtom(flagValueAtom);
+  const [flagValue] = useAtom(flaggedChoiceValueAtom);
   const [submitted] = useAtom(submittedAtom);
   const [open] = useAtom(openAtom);
   const [mouseDown] = useAtom(isMouseDownAtom);

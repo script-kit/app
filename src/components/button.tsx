@@ -15,7 +15,7 @@ import { ipcRenderer } from 'electron';
 import { ChoiceButtonProps } from '../types';
 import {
   flagsAtom,
-  flagValueAtom,
+  flaggedChoiceValueAtom,
   isMouseDownAtom,
   _modifiers,
   buttonNameFontSizeAtom,
@@ -60,14 +60,6 @@ function highlight(
   return <span>{React.Children.toArray(substrings)}</span>;
 }
 
-function isScript(choice: Choice | Script): choice is Script {
-  return (choice as Script)?.command !== undefined;
-}
-
-function isNotScript(choice: Choice | Script): choice is Script {
-  return (choice as Script)?.command === undefined;
-}
-
 function calculateScale(height: number): string {
   if (height === PROMPT.ITEM.HEIGHT.XS) {
     return 'scale-75';
@@ -90,7 +82,7 @@ function ChoiceButton({
 
   const [isMouseDown] = useAtom(isMouseDownAtom);
   const [flags] = useAtom(flagsAtom);
-  const [flaggedValue, setFlagValue] = useAtom(flagValueAtom);
+  const [flaggedValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [modifiers] = useAtom(_modifiers);
   const [modifierDescription, setModifierDescription] = useState('');
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
@@ -115,7 +107,7 @@ function ChoiceButton({
       if (flaggedValue) {
         setFlagValue('');
       } else {
-        setFlagValue(choice);
+        setFlagValue(choice?.value);
       }
     },
     [choice, setFlagValue, flaggedValue]
@@ -392,7 +384,8 @@ function ChoiceButton({
             {index === buttonIndex &&
               !hasRightShortcut &&
               !choice?.ignoreFlags &&
-              Boolean(Object.keys(flags).length) && (
+              (Boolean(choice?.actions) ||
+                Boolean(Object.keys(flags).length)) && (
                 <div onClick={onRightClick}>
                   <div
                     className={`

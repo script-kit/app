@@ -3,7 +3,7 @@ import { useAtom } from 'jotai';
 
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
-  flagValueAtom,
+  flaggedChoiceValueAtom,
   indexAtom,
   openAtom,
   prevIndexAtom,
@@ -31,7 +31,7 @@ export default () => {
   const [open] = useAtom(openAtom);
   const [sendEscape] = useAtom(escapeAtom);
   const [isReady] = useAtom(isReadyAtom);
-  const [flagValue, setFlagValue] = useAtom(flagValueAtom);
+  const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [input] = useAtom(_inputAtom);
   const [prevInput] = useAtom(prevInputAtom);
 
