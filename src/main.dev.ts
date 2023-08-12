@@ -79,7 +79,6 @@ import {
   clearTickTimers,
   configureInterval,
   stopClipboardMonitor,
-  startClipboardAndKeyboardWatchers,
 } from './tick';
 import {
   clearPromptCache,
@@ -99,7 +98,6 @@ import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import {
   appDb,
   cacheKitScripts,
-  checkAccessibility,
   clearStateTimers,
   getThemes,
   initKeymap,
@@ -492,14 +490,27 @@ const ready = async () => {
     await setupWatchers();
     await setupLog(`Shortcuts Assigned`);
 
-    await checkAccessibility();
-
     const isMac = os.platform() === 'darwin';
 
     await setupLog(``);
     setupDone();
 
-    if (isMac) startSK();
+    // REMOVE-MAC
+    if (isMac) {
+      startSK();
+
+      if (!kitState.kenvEnv?.KIT_ACCESSIBILITY) {
+        setInterval(async () => {
+          const { getAuthStatus } = await import('node-mac-permissions');
+
+          const authorized = getAuthStatus('accessibility') === 'authorized';
+          if (authorized) {
+            runPromptProcess(kitPath('config', 'set-accessible.js'));
+          }
+        }, 1000);
+      }
+    }
+    // END-REMOVE-MAC
     await cacheKitScripts();
 
     // ensureIdleProcess();

@@ -1714,7 +1714,7 @@ export const invokeSearch = (rawInput: string) => {
           // This was breaking the choice.preview lookup in the SDK
           // c.item.id = Math.random();
           c.item.pass = false;
-          log.info(`Found match last: ${c?.item?.name}`);
+          // log.info(`Found match last: ${c?.item?.name}`);
           matchLastGroup.push(c);
         }
       } else {

@@ -21,14 +21,7 @@ import { debounce, remove } from 'lodash';
 
 import { clipboard, systemPreferences } from 'electron';
 import { emitter, KitEvent } from './events';
-import {
-  appDb,
-  checkAccessibility,
-  kitConfig,
-  kitState,
-  subs,
-  updateAppDb,
-} from './state';
+import { appDb, kitConfig, kitState, subs } from './state';
 import { isFocused } from './prompt';
 import { deleteText } from './keyboard';
 import { Trigger } from './enums';
@@ -307,8 +300,6 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
 let io$Sub: Subscription | null = null;
 let clipboard$Sub: Subscription | null = null;
 
-let accessibilityInterval: any = null;
-
 export const preStartConfigureInterval = async () => {
   if (!clipboardStore) {
     try {
@@ -323,28 +314,9 @@ export const preStartConfigureInterval = async () => {
       log.error(error);
     }
   }
-  if (kitState.authorized) {
+  if (kitState.kenvEnv?.KIT_ACCESSIBILITY === 'true') {
     log.info(`💻 Accessibility authorized ✅`);
-    await updateAppDb({ authorized: true });
     await configureInterval();
-  } else {
-    await updateAppDb({ authorized: false });
-    // REMOVE-MAC
-    const { askForAccessibilityAccess } = await import('node-mac-permissions');
-
-    askForAccessibilityAccess();
-
-    accessibilityInterval = setInterval(async () => {
-      log.silly(`Checking for accessibility authorization...`);
-      await checkAccessibility();
-      if (kitState.authorized) {
-        await updateAppDb({ authorized: true });
-        clearInterval(accessibilityInterval);
-        kitState.requiresAuthorizedRestart = true;
-      }
-    }, 5000);
-
-    // END-REMOVE-MAC
   }
 };
 
@@ -450,16 +422,16 @@ export const configureInterval = async () => {
     log.info(`🛑 Keyboard watcher not supported on this platform`);
     return;
   }
-  if (kitState.isMac) {
-    const fullyAuthenticated = kitState.authorized && appDb?.authorized;
-    log.info(`🔑 Authenticated: ${fullyAuthenticated ? '🔓' : '🔒'}`);
-    if (!fullyAuthenticated) return;
-  }
+
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
 
   if (kitState.isMac) {
     try {
-      ({ default: frontmost } = await import('frontmost-app' as any));
+      ({ getFrontmostApp: frontmost } = await import(
+        '@johnlindquist/mac-frontmost'
+      ));
+
+      log.info(frontmost());
     } catch (e) {
       log.warn(e);
     }
@@ -468,60 +440,81 @@ export const configureInterval = async () => {
   // REMOVE-MAC
   const {
     start: startMacClipboardListener,
-    stop: stopMacClipboardListener,
     onClipboardImageChange,
+    onClipboardTextChange,
   } = await import('@johnlindquist/mac-clipboard-listener');
-  stopMacClipboardListener();
+
   // END-REMOVE-MAC
 
   const clipboardText$: Observable<any> = new Observable<string>((observer) => {
     log.info(`Creating new Observable for clipboard...`);
     try {
       log.info(`Attempting to start clipboard...`);
-      clipboardEventListener.on('text', (text) => {
-        try {
-          log.info(`Clipboard text changed...`);
-          observer.next('text');
-        } catch (error) {
-          log.error(error);
-        }
-      });
-
-      clipboardEventListener.on('image', (image) => {
-        try {
-          log.info(`Clipboard image changed...`);
-          observer.next('image');
-        } catch (error) {
-          log.error(error);
-        }
-      });
-
-      // REMOVE-MAC
-
-      startMacClipboardListener();
-
-      onClipboardImageChange(
-        debounce(
-          () => {
-            try {
-              log.info(
-                `@johnlindquist/mac-clipboard-listener image changed...`
-              );
-              observer.next('image');
-            } catch (error) {
-              log.error(error);
-            }
-          },
-          1000,
-          {
-            leading: true,
+      if (!kitState.isMac) {
+        clipboardEventListener.on('text', (text) => {
+          try {
+            log.info(`Clipboard text changed...`);
+            observer.next('text');
+          } catch (error) {
+            log.error(error);
           }
-        )
-      );
+        });
+
+        clipboardEventListener.on('image', (image) => {
+          try {
+            log.info(`Clipboard image changed...`);
+            observer.next('image');
+          } catch (error) {
+            log.error(error);
+          }
+        });
+
+        clipboardEventListener.listen();
+      } else {
+        // REMOVE-MAC
+
+        startMacClipboardListener();
+
+        onClipboardImageChange(
+          debounce(
+            () => {
+              try {
+                log.info(
+                  `@johnlindquist/mac-clipboard-listener image changed...`
+                );
+                observer.next('image');
+              } catch (error) {
+                log.error(error);
+              }
+            },
+            750,
+            {
+              leading: true,
+            }
+          )
+        );
+
+        onClipboardTextChange(
+          debounce(
+            () => {
+              try {
+                log.info(
+                  `@johnlindquist/mac-clipboard-listener text changed...`
+                );
+                observer.next('text');
+              } catch (error) {
+                log.error(error);
+              }
+            },
+            750,
+            {
+              leading: true,
+            }
+          )
+        );
+      }
 
       // END-REMOVE-MAC
-
-      clipboardEventListener.listen();
     } catch (e) {
       log.error(`🔴 Failed to start clipboard watcher`);
       log.error(e);
@@ -531,16 +524,12 @@ export const configureInterval = async () => {
       log.info(`🛑 Attempting to stop clipboard watcher`);
       clipboardEventListener.close();
       log.info(`🛑 Successfully stopped clipboard watcher`);
-
-      // REMOVE-MAC
-      stopMacClipboardListener();
-      // END-REMOVE-MAC
     };
   }).pipe(
     switchMap(async (type: string) => {
       if (kitState.isMac && frontmost) {
         try {
-          const frontmostApp = await frontmost();
+          const frontmostApp = frontmost();
 
           return {
             type,
@@ -944,7 +933,3 @@ subs.push(
   keyboardWatcherEnabledSub,
   subWakeWatcher
 );
-
-export const clearTickTimers = () => {
-  if (accessibilityInterval) clearInterval(accessibilityInterval);
-};

@@ -314,6 +314,14 @@
     bindings "^1.5.0"
     node-addon-api "^7.0.0"
 
+"@johnlindquist/mac-frontmost@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-frontmost/-/mac-frontmost-1.0.0.tgz#d2cd2cef317faabd6e73d2e89ec81854650c8fd6"
+  integrity sha512-px/sUJYDqQ+rX9MbDIZKU5m9hLtc+JWBeAOKLxhGH2HsRw7gcmKIwRhPtCTZR9nlZ7MB7tyyfZAYikgQHmuQUA==
+  dependencies:
+    bindings "^1.5.0"
+    node-addon-api "^7.0.0"
+
 "@nut-tree/libnut-darwin@2.5.2":
   version "2.5.2"
   resolved "https://registry.yarnpkg.com/@nut-tree/libnut-darwin/-/libnut-darwin-2.5.2.tgz#83f091969912bf0d808ecebbab40423f6d30a660"
@@ -554,13 +562,6 @@ fill-range@^7.0.1:
   dependencies:
     to-regex-range "^5.0.1"
 
-frontmost-app@1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/frontmost-app/-/frontmost-app-1.0.0.tgz#05ef4cebe3c4383cee622ee23c99667713fcefb0"
-  integrity sha512-MtdNuW2ZsHiRNW8VCaaJPS6w27AJbrNITaadqoSYVBSkJWCf+057UM75lpp4LwNfmpCLaQForQrhSHRbGZh+mg==
-  dependencies:
-    platform-name "^1.0.0"
-
 fsevents@~2.3.2:
   version "2.3.2"
   resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.3.2.tgz#8a526f78b8fdf4623b709e0b975c52c24c02fd1a"
@@ -612,13 +613,6 @@ inherits@^2.0.3:
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.4.tgz#0fa2c64f932917c3433a0ded55363aae37416b7c"
   integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
-
-inspect-with-kind@^1.0.4:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/inspect-with-kind/-/inspect-with-kind-1.0.5.tgz#fce151d4ce89722c82ca8e9860bb96f9167c316c"
-  integrity sha512-MAQUJuIo7Xqk8EVNP+6d3CKq9c80hi4tjIbIAT6lmGW9W6WzlHiu9PS8uSuUYU+Do+j1baiFp3H25XEVxDIG2g==
-  dependencies:
-    kind-of "^6.0.2"
 
 is-binary-path@~2.1.0:
   version "2.1.0"
@@ -686,11 +680,6 @@ jpeg-js@^0.4.2:
   version "0.4.4"
   resolved "https://registry.yarnpkg.com/jpeg-js/-/jpeg-js-0.4.4.tgz#a9f1c6f1f9f0fa80cdb3484ed9635054d28936aa"
   integrity sha512-WZzeDOEtTOBK4Mdsar0IqEU5sMr3vSV2RqkAIzUEV2BHnUfKGyswWFPFwK5EeDo93K3FohSHbLAjj0s1Wzd+dg==
-
-kind-of@^6.0.2:
-  version "6.0.3"
-  resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
-  integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
 load-bmfont@^1.3.1, load-bmfont@^1.4.0:
   version "1.4.1"
@@ -887,13 +876,6 @@ pixelmatch@^4.0.2:
   integrity sha512-J8B6xqiO37sU/gkcMglv6h5Jbd9xNER7aHzpfRdNmV4IbQBzBpe4l9XmbG+xPF/znacgu2jfEw+wHffaq/YkXA==
   dependencies:
     pngjs "^3.0.0"
-
-platform-name@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/platform-name/-/platform-name-1.0.0.tgz#3396ea7bfea3a68aedd13483e055100f9e609755"
-  integrity sha512-ZRbqJ30uRRKGKW2O1XnG/Ls1K/aBGlnyjq1Z0BbjqDPTNN+XZKFaugCsCm3/mq6XGR5DZNVdV75afpQEvNNY3Q==
-  dependencies:
-    inspect-with-kind "^1.0.4"
 
 pngjs@^3.0.0, pngjs@^3.3.3:
   version "3.4.0"

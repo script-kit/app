@@ -124,32 +124,32 @@ export const openMenu = async (event?: KeyboardEvent) => {
     const authItems: MenuItemConstructorOptions[] = [];
     const updateItems: MenuItemConstructorOptions[] = [];
 
-    if (!kitState.authorized && kitState.isMac) {
-      // REMOVE-MAC
-      authItems.push({
-        label: `Click to Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
-        click: async () => {
-          const { askForAccessibilityAccess } = await import(
-            'node-mac-permissions'
-          );
+    // if (!kitState.authorized && kitState.isMac) {
+    //   // REMOVE-MAC
+    //   authItems.push({
+    //     label: `Click to Open Accessibility Panel to Enable Snippets, Clipbboard History, etc...,`,
+    //     click: async () => {
+    //       const { askForAccessibilityAccess } = await import(
+    //         'node-mac-permissions'
+    //       );
 
-          askForAccessibilityAccess();
-        },
-        icon: menuIcon(kitState.notifyAuthFail ? 'warn' : 'cogwheel'),
-      });
+    //       askForAccessibilityAccess();
+    //     },
+    //     icon: menuIcon(kitState.notifyAuthFail ? 'warn' : 'cogwheel'),
+    //   });
 
-      // END-REMOVE-MAC
+    //   // END-REMOVE-MAC
 
-      authItems.push({
-        label: `Select to Learn More About Permissions`,
-        click: runScript(kitPath('help', 'authorized-info.js')),
-        icon: menuIcon('open_in_new'),
-      });
+    //   authItems.push({
+    //     label: `Select to Learn More About Permissions`,
+    //     click: runScript(kitPath('help', 'authorized-info.js')),
+    //     icon: menuIcon('open_in_new'),
+    //   });
 
-      authItems.push({
-        type: 'separator',
-      });
-    }
+    //   authItems.push({
+    //     type: 'separator',
+    //   });
+    // }
 
     if (kitState.requiresAuthorizedRestart) {
       updateItems.push({
@@ -284,36 +284,36 @@ export const openMenu = async (event?: KeyboardEvent) => {
       enabled: false,
     });
 
-    watcherSubmenu.push({
-      type: 'separator',
-    });
+    // watcherSubmenu.push({
+    //   type: 'separator',
+    // });
 
-    watcherSubmenu.push({
-      label: `${
-        kitState.clipboardWatcherEnabled ? 'Stop' : 'Start'
-      } Clipboard Watcher`,
-      checked: kitState.clipboardWatcherEnabled,
-      click: () => {
-        kitState.clipboardWatcherEnabled = !kitState.clipboardWatcherEnabled;
-      },
-    });
+    // watcherSubmenu.push({
+    //   label: `${
+    //     kitState.clipboardWatcherEnabled ? 'Stop' : 'Start'
+    //   } Clipboard Watcher`,
+    //   checked: kitState.clipboardWatcherEnabled,
+    //   click: () => {
+    //     kitState.clipboardWatcherEnabled = !kitState.clipboardWatcherEnabled;
+    //   },
+    // });
 
-    watcherSubmenu.push({
-      label: `${
-        kitState.keyboardWatcherEnabled ? 'Stop' : 'Start'
-      } Keyboard Watcher`,
-      checked: kitState.keyboardWatcherEnabled,
-      click: () => {
-        kitState.keyboardWatcherEnabled = !kitState.keyboardWatcherEnabled;
-      },
-    });
+    // watcherSubmenu.push({
+    //   label: `${
+    //     kitState.keyboardWatcherEnabled ? 'Stop' : 'Start'
+    //   } Keyboard Watcher`,
+    //   checked: kitState.keyboardWatcherEnabled,
+    //   click: () => {
+    //     kitState.keyboardWatcherEnabled = !kitState.keyboardWatcherEnabled;
+    //   },
+    // });
 
-    watcherSubmenu.push({
-      label: `Force Wake Keyboard Watcher (use when snippets aren't firing)`,
-      click: () => {
-        kitState.wakeWatcher = new Date().getTime();
-      },
-    });
+    // watcherSubmenu.push({
+    //   label: `Force Wake Keyboard Watcher (use when snippets aren't firing)`,
+    //   click: () => {
+    //     kitState.wakeWatcher = new Date().getTime();
+    //   },
+    // });
 
     watcherSubmenu.push({
       label: `${

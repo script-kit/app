@@ -213,34 +213,6 @@ export type WindowsOptions = {
   wid: number;
 };
 
-export const checkAccessibility = () =>
-  new Promise((resolve, reject) => {
-    log.verbose(`🔑 Checking accessibility permissions...`);
-    if (kitState.isMac) {
-      // REMOVE-MAC
-      log.verbose(`💻 Mac detected.`);
-      import('node-mac-permissions')
-        .then(({ getAuthStatus }) => {
-          kitState.authorized = getAuthStatus('accessibility') === 'authorized';
-          log.verbose(
-            `🔑 Accessibility permissions: ${kitState.authorized ? '✅' : '❌'}`
-          );
-          resolve(kitState.authorized);
-          return true;
-        })
-        .catch((error) => {
-          log.error(`🔑 Error checking accessibility permissions: ${error}`);
-          reject(error);
-          return false;
-        });
-      // END-REMOVE-MAC
-    } else {
-      log.info(`💻 Not Mac. Skipping accessibility check.`);
-      kitState.authorized = true;
-      resolve(kitState.authorized);
-    }
-  });
-
 const initState = {
   debugging: false,
   isPanel: false,
