@@ -45,7 +45,7 @@ export function LoginButton() {
         className={`mr-0.5 min-w-0 truncate px-2px
       `}
       >
-        Sign-In
+        Sign In
       </div>
       <GithubIcon className="ml-0.5 mb-px scale-90" />
     </button>

@@ -1401,7 +1401,7 @@ export const promptDataAtom = atom(
       // });
 
       if (!a?.keyword && !g(isMainScriptAtom)) {
-        g(logAtom)(`👍 Setting input to ${a?.input || '_'}`);
+        // g(logAtom)(`👍 Setting input to ${a?.input || '_'}`);
         s(_inputAtom, a?.input || '');
       }
       s(hintAtom, a.hint);
