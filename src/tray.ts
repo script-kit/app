@@ -523,10 +523,10 @@ export const openMenu = async (event?: KeyboardEvent) => {
       {
         type: 'separator',
       },
-      {
-        label: `Open Settings`,
-        click: runScript(kitPath('cli', 'settings.js')),
-      },
+      // {
+      //   label: `Open Settings`,
+      //   click: runScript(kitPath('cli', 'settings.js')),
+      // },
       {
         label: `Change Shortcut`,
         click: runScript(kitPath('cli', 'change-main-shortcut.js')),

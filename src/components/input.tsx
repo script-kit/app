@@ -396,7 +396,7 @@ export default function Input() {
             )}
 
             {kitState.isSponsor ? (
-              <span className="relative pl-1.5 pr-0.5">
+              <span className="relative pl-1 pr-1">
                 <img
                   alt="avatar"
                   src={user.avatar_url}

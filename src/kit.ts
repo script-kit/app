@@ -22,13 +22,13 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 import { ProcessInfo } from '@johnlindquist/kit';
 
+import { subscribeKey } from 'valtio/utils';
 import { emitter, KitEvent } from './events';
 import {
   abandonOtherActivePromptProcesses,
   ensureIdleProcess,
   getIdles,
   processes,
-  removeAbandonnedKit,
 } from './process';
 import {
   hideAppIfNoWindows,
@@ -289,6 +289,15 @@ export const runScript = (...args: string[]) => {
     }
   });
 };
+
+subscribeKey(kitState, 'isSponsor', (isSponsor) => {
+  log.info(`🎨 Sponsor changed:`, isSponsor);
+
+  runScript(
+    kitPath('config', 'toggle-sponsor.js'),
+    isSponsor ? 'true' : 'false'
+  );
+});
 
 emitter.on(KitEvent.OpenLog, async (scriptPath) => {
   const logPath = getLogFromScriptPath(scriptPath);

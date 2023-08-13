@@ -417,7 +417,9 @@ const childSend = (child: ChildProcess, data: any) => {
     if (child && child?.connected) {
       data.promptId = kitState.promptId;
       // log.info(`✉️: ${data.channel}`);
-      child.send(data);
+      child.send(data, (error) => {
+        if (error) log.error('childSend error', error);
+      });
     }
   } catch (error) {
     log.error('childSend error', error);
@@ -741,13 +743,12 @@ const kitMessageMap: ChannelHandler = {
 
         log.info(`${widgetId}: Widget closed`);
         focusPrompt();
-        if (child?.channel && child?.connected) {
-          childSend(child, {
-            channel: Channel.WIDGET_END,
-            widgetId,
-            ...w.getBounds(),
-          });
-        }
+
+        childSend(child, {
+          channel: Channel.WIDGET_END,
+          widgetId,
+          ...w.getBounds(),
+        });
 
         w.removeAllListeners();
         w.destroy();

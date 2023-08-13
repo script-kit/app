@@ -41,6 +41,7 @@ import {
   groupChoices,
   formatChoices,
   kenvPath,
+  kitPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, setScriptTimestamp } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';

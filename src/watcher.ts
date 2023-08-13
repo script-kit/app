@@ -234,6 +234,11 @@ export const checkUserDb = async (eventName: string) => {
   kitState.user = currentUser;
 
   if (eventName === 'unlink') return;
+
+  runScript(
+    kitPath('config', 'set-login'),
+    kitState.user.login || '__KIT_ClEAR_ENV__'
+  );
   if (kitState?.user?.login) {
     const isSponsor = await sponsorCheck('Login', false);
     kitState.isSponsor = isSponsor;

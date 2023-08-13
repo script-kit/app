@@ -109,7 +109,7 @@ import {
   setTheme,
 } from './process';
 import { startIpc } from './ipc';
-import { runPromptProcess } from './kit';
+import { runPromptProcess, runScript } from './kit';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from './defaults';
@@ -501,7 +501,7 @@ const ready = async () => {
 
           const authorized = getAuthStatus('accessibility') === 'authorized';
           if (authorized) {
-            runPromptProcess(kitPath('config', 'set-accessible.js'));
+            runScript(kitPath('config', 'set-accessible.js'));
           }
         }, 1000);
       }
