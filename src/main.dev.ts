@@ -92,6 +92,7 @@ import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import {
+  actualHideDock,
   appDb,
   cacheKitScripts,
   clearStateTimers,
@@ -523,6 +524,7 @@ const ready = async () => {
     readyPty();
 
     startClipboardAndKeyboardWatchers();
+    actualHideDock();
 
     if (process.env.NODE_ENV === 'development') {
       process.on('warning', (warning) => {

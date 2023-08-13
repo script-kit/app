@@ -415,6 +415,11 @@ const subReady = subscribeKey(kitState, 'ready', (ready) => {
 
 let hideIntervalId: NodeJS.Timeout | null = null;
 
+export const actualHideDock = () => {
+  app?.dock?.setIcon(getAssetPath('icon.png'));
+  app?.dock?.hide();
+};
+
 export const hideDock = debounce(() => {
   if (!kitState.isMac) return;
   if (kitState.devToolsCount > 0) return;
@@ -422,12 +427,13 @@ export const hideDock = debounce(() => {
   if (widgetState.widgets.length) return;
   if (windowsState.windows.length) return;
 
-  app?.dock?.setIcon(getAssetPath('icon.png'));
-  app?.dock?.hide();
+  actualHideDock();
+
   if (hideIntervalId) clearInterval(hideIntervalId);
 }, 200);
 
 export const showDock = () => {
+  if (!kitState.kenvEnv.KIT_ALLOW_DOCK) return;
   if (!kitState.ignoreBlur) return;
   if (!kitState.isMac) return;
   if (

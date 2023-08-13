@@ -1057,3 +1057,9 @@ animate-ping
 animate-pulse
 pt-1 border-t-1
 border-t-ui-border
+w-fit
+w-min
+w-max
+h-fit
+h-min
+h-max
