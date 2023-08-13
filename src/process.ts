@@ -118,6 +118,7 @@ import {
   clearClipboardHistory,
   getClipboardHistory,
   removeFromClipboardHistory,
+  syncClipboardStore,
 } from './tick';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { createWidget } from './widget';
@@ -851,10 +852,10 @@ const kitMessageMap: ChannelHandler = {
     }
   ),
 
-  CLEAR_CLIPBOARD_HISTORY: onChildChannel(({ child }, { channel, value }) => {
+  CLIPBOARD_SYNC_HISTORY: onChildChannel(({ child }, { channel, value }) => {
     log.verbose(channel);
 
-    clearClipboardHistory();
+    syncClipboardStore();
   }),
 
   REMOVE_CLIPBOARD_HISTORY_ITEM: onChildChannel(
@@ -2837,23 +2838,3 @@ subscribe(appDb, (db) => {
   log.info(`👩‍💻 Reading app.json`, { ...appDb });
   sendToPrompt(Channel.APP_DB, { ...appDb });
 });
-
-subscribeKey(
-  kitState,
-  'scriptPath',
-  debounce(() => {
-    if (kitState.scriptPath === '') {
-      if (kitState.allowQuit) return;
-      const mains = processes.filter((p) =>
-        pathsAreEqual(p.scriptPath, mainScriptPath)
-      );
-
-      mains.forEach((p) => {
-        log.info(`Killing stray main process ${p.pid}`);
-        if (kitState.pid !== p.pid) {
-          p.child.kill();
-        }
-      });
-    }
-  }, 250)
-);

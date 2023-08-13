@@ -2175,11 +2175,17 @@ export const initBounds = async (
   showPrompt();
 };
 
+let backgroundThrottlingTimeout: NodeJS.Timeout | null = null;
+
 const subScriptPath = subscribeKey(
   kitState,
   'scriptPath',
   async (scriptPath) => {
     log.verbose(`📄 scriptPath changed: ${scriptPath}`);
+
+    if (backgroundThrottlingTimeout) {
+      clearTimeout(backgroundThrottlingTimeout);
+    }
     if (promptWindow?.isDestroyed()) return;
     const noScript = kitState.scriptPath === '';
 
@@ -2203,6 +2209,10 @@ const subScriptPath = subscribeKey(
       kitState.alwaysOnTop = false;
 
       attemptPreload(mainScriptPath, false);
+
+      backgroundThrottlingTimeout = setTimeout(() => {
+        setBackgroundThrottling(true);
+      }, 1000);
       return;
     }
 

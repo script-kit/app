@@ -136,19 +136,27 @@ interface ClipboardItem extends Choice {
 }
 
 let clipboardStore: any;
-
-store(kitPath('db', 'clipboard.json'), {
-  history: [],
-})
-  .then((s) => {
-    log.info(`📋 Clipboard store initialized: ${typeof s}`);
-    clipboardStore = s;
-    return s;
-  })
-  .catch((error) => {
-    log.error(error);
-  });
 let frontmost: any = null;
+
+export const syncClipboardStore = async () => {
+  await new Promise((resolve) => {
+    setTimeout(resolve, 200);
+  });
+  store(kitPath('db', 'clipboard.json'), {
+    history: [],
+  })
+    .then((s) => {
+      log.info(`📋 Clipboard store initialized: ${typeof s}`);
+      clipboardStore = s;
+      return s;
+    })
+    .catch((error) => {
+      log.error(error);
+    });
+};
+
+syncClipboardStore();
+
 export const getClipboardHistory = async () => {
   const history = await clipboardStore.get('history');
   if (kitState.isMac && kitState?.kenvEnv?.KIT_ACCESSIBILITY !== 'true') {
