@@ -721,7 +721,7 @@ const checkKit = async () => {
 
   if (process.env.NODE_ENV === 'development') {
     try {
-      await installExtensions();
+      // await installExtensions();
     } catch (error) {
       log.info(`Failed to install extensions`, error);
     }

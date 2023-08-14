@@ -66,8 +66,7 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
       }
     }
     for (const char of kitSearch.commandChars) {
-      if (transformedInput.endsWith(char)) {
-        // log.info(`🔑 Command char: ${char} triggered`);
+      if (rawInput.endsWith(char)) {
         prevTransformedInput = transformedInput;
         kitSearch.input = transformedInput;
         return false;
