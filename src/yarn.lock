@@ -746,10 +746,10 @@ nice-try@^1.0.4:
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
-node-abi@^3.45.0:
-  version "3.45.0"
-  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.45.0.tgz#f568f163a3bfca5aacfce1fbeee1fa2cc98441f5"
-  integrity sha512-iwXuFrMAcFVi/ZoZiqq8BzAdsLw9kxDfTC0HMyjXfSL/6CSDAGD5UmR7azrAgWV1zKYq7dUUMj4owusBWKLsiQ==
+node-abi@^3.46.0:
+  version "3.46.0"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.46.0.tgz#491adaa8d227ca9702f30b27b2b6b248caa1348f"
+  integrity sha512-LXvP3AqTIrtvH/jllXjkNVbYifpRbt9ThTtymSMSuHmhugQLAWr99QQFTm+ZRht9ziUvdGOgB+esme1C6iE6Lg==
   dependencies:
     semver "^7.3.5"
 
@@ -1007,10 +1007,10 @@ token-types@^4.1.1:
     "@tokenizer/token" "^0.3.0"
     ieee754 "^1.2.1"
 
-uiohook-napi@^1.5.1:
-  version "1.5.1"
-  resolved "https://registry.yarnpkg.com/uiohook-napi/-/uiohook-napi-1.5.1.tgz#dede782f23fbd07b148976fa774dd5f07c310734"
-  integrity sha512-wSBd0LRzomlCQcB09CLk70lobx+UyGmWgNiL5wfoEHkPdDR/5Byivp1uS0NyO61waNFc+KOtcV+As+I3DjS0TA==
+uiohook-napi@^1.5.2:
+  version "1.5.2"
+  resolved "https://registry.yarnpkg.com/uiohook-napi/-/uiohook-napi-1.5.2.tgz#88c14fd95276b8f547329ccd5a4a6937fdf077c7"
+  integrity sha512-XmxEQpgWZerYwrhRk5oBbHSO9pjeEKF7cMG6e+Ak1j5MW7xQUvl/P+qaPAYDfbJ1JsT/E6ontbClBBSy5Z3C0g==
   dependencies:
     node-gyp-build "4.x.x"
 

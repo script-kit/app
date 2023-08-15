@@ -646,7 +646,9 @@ export const scoredChoicesAtom = atom(
       cs[0].item.className = cs?.[0]?.item?.className.replace(`border-t-1`, '');
     }
 
+    g(logAtom)(`⚽️ Scored choices length: ${cs?.length}`);
     s(choices, cs || []);
+    s(currentChoiceHeightsAtom, cs || []);
 
     // a.forEach((newChoice, i) => {
     //   const prevChoice = prevChoices?.[i];
@@ -1801,7 +1803,7 @@ export const openAtom = atom(
       // s(choices, []);
       // s(tabIndex, 0);
       s(closedInput, g(_inputAtom));
-      s(scoredChoicesAtom, []);
+      // s(scoredChoicesAtom, []);
       s(inputAtom, '');
       s(_panelHTML, '');
 
@@ -2848,3 +2850,22 @@ export const toggleAllSelectedChoicesAtom = atom(null, (g, s) => {
 export const shouldHighlightDescriptionAtom = atom((g) => {
   return g(promptDataAtom)?.searchKeys?.includes('description');
 });
+
+const _currentChoiceHeights = atom<number[]>([]);
+export const currentChoiceHeightsAtom = atom(
+  (g) => g(_currentChoiceHeights),
+  (g, s, a: ScoredChoice[]) => {
+    // compare heights of each choice to previous heights
+    const previousChoiceHeights = g(_currentChoiceHeights);
+    const itemHeight = g(itemHeightAtom);
+    const currentChoiceHeights = a?.map((c) => c?.item?.height || itemHeight);
+
+    // g(logAtom)({
+    //   previousChoiceHeights,
+    //   currentChoiceHeights,
+    // });
+
+    if (isEqual(previousChoiceHeights, currentChoiceHeights)) return;
+    s(_currentChoiceHeights, currentChoiceHeights);
+  }
+);

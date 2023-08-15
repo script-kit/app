@@ -25,9 +25,9 @@
     "@nut-tree/nut-js": "3.1.2",
     "chokidar": "3.5.3",
     "native-keymap": "3.3.4",
-    "node-abi": "^3.45.0",
+    "node-abi": "^3.46.0",
     "node-mac-permissions": "2.3.0",
     "node-pty": "1.0.0",
-    "uiohook-napi": "^1.5.1"
+    "uiohook-napi": "^1.5.2"
   }
 }

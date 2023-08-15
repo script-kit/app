@@ -13,6 +13,8 @@ import {
   requiresScrollAtom,
   isScrollingAtom,
   flaggedChoiceValueAtom,
+  logAtom,
+  currentChoiceHeightsAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../types';
 
@@ -37,6 +39,8 @@ export default function ChoiceList({ width, height }: ListProps) {
   const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
   const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
   const flagValue = useAtomValue(flaggedChoiceValueAtom);
+  const log = useAtomValue(logAtom);
+  const currentChoiceHeights = useAtomValue(currentChoiceHeightsAtom);
 
   useEffect(() => {
     if (listRef.current) {
@@ -50,6 +54,7 @@ export default function ChoiceList({ width, height }: ListProps) {
     const scroll = () => {
       if (requiresScroll === -1) return;
       onIndexChange(requiresScroll);
+      log(`📜 Scrolling to ${requiresScroll}`);
       (listRef as any).current.scrollToItem(
         requiresScroll,
         // eslint-disable-next-line no-nested-ternary
@@ -69,8 +74,9 @@ export default function ChoiceList({ width, height }: ListProps) {
   useEffect(() => {
     if (!listRef.current) return;
 
+    log(`🧾 List reset due to choice height changes`);
     (listRef?.current as any)?.resetAfterIndex(0);
-  }, [choices]);
+  }, [currentChoiceHeights]);
 
   const [scrollTimeout, setScrollTimeout] = useState<any>(null);
 
@@ -86,7 +92,7 @@ export default function ChoiceList({ width, height }: ListProps) {
       className="list-component flex w-full flex-row overflow-y-hidden"
       style={
         {
-          width,
+          width: width || '100%',
         } as any
       }
     >

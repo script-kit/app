@@ -1680,12 +1680,16 @@ export const invokeSearch = (rawInput: string) => {
 
     let groupedResults: ScoredChoice[] = [];
 
-    const matchGroup = [];
+    const startsWithGroup = [];
+    const includesGroup = [];
     const matchLastGroup = [];
     const missGroup = [];
     let alias: Choice;
 
+    const lowerCaseInput = transformedInput?.toLowerCase();
+
     for (const choice of kitSearch.choices) {
+      const lowerCaseName = choice.name?.toLowerCase();
       if ((choice as Script)?.alias === transformedInput) {
         alias = structuredClone(choice);
         alias.pass = false;
@@ -1693,7 +1697,7 @@ export const invokeSearch = (rawInput: string) => {
       } else if (
         !choice?.skip &&
         !choice?.miss &&
-        choice.name?.toLowerCase()?.startsWith(transformedInput?.toLowerCase())
+        lowerCaseName?.includes(lowerCaseInput)
       ) {
         const scoredChoice = resultMap.get(choice.id);
         if (scoredChoice && !scoredChoice?.item?.lastGroup) {
@@ -1704,7 +1708,11 @@ export const invokeSearch = (rawInput: string) => {
           // c.item.id = Math.random();
           c.item.pass = false;
           c.item.exact = true;
-          matchGroup.push(c);
+          if (lowerCaseName.startsWith(lowerCaseInput)) {
+            startsWithGroup.push(c);
+          } else {
+            includesGroup.push(c);
+          }
         } else if (scoredChoice && scoredChoice?.item?.lastGroup) {
           const c = structuredClone(scoredChoice);
           c.item.tag =
@@ -1767,14 +1775,17 @@ export const invokeSearch = (rawInput: string) => {
       }
     }
 
-    if (matchGroup.length > 0) {
-      matchGroup.sort((a, b) => {
+    if (startsWithGroup.length > 0) {
+      startsWithGroup.sort((a, b) => {
         if (a?.item?.keyword && !b?.item?.keyword) return -1;
         if (!a?.item?.keyword && b?.item?.keyword) return 1;
 
         return 0;
       });
-      matchGroup.unshift(
+    }
+
+    if (startsWithGroup.length > 0 || includesGroup?.length > 0) {
+      startsWithGroup.unshift(
         createScoredChoice({
           name: 'Exact Match',
           group: 'Match',
@@ -1786,7 +1797,9 @@ export const invokeSearch = (rawInput: string) => {
           id: Math.random().toString(),
         })
       );
-      groupedResults.unshift(...matchGroup);
+
+      startsWithGroup.push(...includesGroup);
+      groupedResults.unshift(...startsWithGroup);
     }
 
     if (matchLastGroup.length > 0) {
@@ -1815,7 +1828,7 @@ export const invokeSearch = (rawInput: string) => {
       groupedResults = missGroup;
     }
 
-    if (alias)
+    if (alias) {
       groupedResults.unshift(
         createScoredChoice({
           name: 'Alias',
@@ -1829,6 +1842,7 @@ export const invokeSearch = (rawInput: string) => {
         }),
         createScoredChoice(alias)
       );
+    }
 
     setScoredChoices(groupedResults);
   } else if (result?.length === 0) {
