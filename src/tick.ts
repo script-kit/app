@@ -547,9 +547,12 @@ export const startClipboardMonitor = async () => {
 
         if (type === 'image') {
           try {
-            const image = clipboard.readImage();
+            log.info(`Attempting to read image from clipboard...`);
+            const image = clipboard.readImage('clipboard');
+            log.info(`Read image from clipboard, converting toPNG()...`);
 
             const pngImageBuffer = image.toPNG();
+            log.info(`Converted image to PNG, checking size...`);
 
             log.info(`Image size: ${pngImageBuffer.length} bytes`);
             if (pngImageBuffer.length > 20 * 1024 * 1024) {
