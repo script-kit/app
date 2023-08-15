@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import clipboardEventListener from '@johnlindquist/clipboard';
 import { Observable, Subscription } from 'rxjs';
-import { delay, filter, share, switchMap } from 'rxjs/operators';
+import { debounceTime, filter, share, switchMap } from 'rxjs/operators';
 import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
 import { format } from 'date-fns';
@@ -528,7 +528,7 @@ export const startClipboardMonitor = async () => {
       };
     }),
     filter((value) => value.type !== 'ignore'),
-    delay(100)
+    debounceTime(100)
   );
 
   if (!clipboard$Sub)

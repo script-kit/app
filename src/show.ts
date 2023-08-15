@@ -486,7 +486,7 @@ export const showWidget = async (
   if (kitState.isMac) {
     widgetWindow = new BrowserWindow(bwOptions);
     if (!options.transparent) {
-      widgetWindow.setVibrancy('hud');
+      widgetWindow.setVibrancy('popover');
     }
   } else if (!options?.transparent) {
     widgetWindow = new BrowserWindow({

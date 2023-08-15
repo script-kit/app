@@ -119,7 +119,7 @@ export const createWidget = async (
 
 <div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="${
     options.containerClass
-  }}"></div>
+  }"></div>
 
 <script>
   document.addEventListener("click", (event) => {
