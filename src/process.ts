@@ -914,7 +914,7 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   HIDE_APP: onChildChannelOverride(
-    async ({ child, scriptPath }, { channel }) => {
+    async ({ child, scriptPath }, { channel, value }) => {
       if (kitState.isMac && app?.dock) app?.dock?.hide();
 
       sendToPrompt(Channel.HIDE_APP);
@@ -939,6 +939,7 @@ const kitMessageMap: ChannelHandler = {
       }
 
       hideAppIfNoWindows(HideReason.User);
+      attemptPreload(value?.preloadScript as string, false);
     }
   ),
 

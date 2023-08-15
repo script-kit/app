@@ -34,7 +34,7 @@ import { emitter, KitEvent } from './events';
 import { getVersion } from './version';
 import { AppChannel, HideReason, Trigger } from './enums';
 import { mainLogPath, updateLogPath } from './logs';
-import { getMainPrompt, maybeHide, setBackgroundThrottling } from './prompt';
+import { getMainPrompt, maybeHide } from './prompt';
 
 let tray: Tray | null = null;
 
@@ -295,15 +295,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
       label: `Force Reload`,
       click: async () => {
         ipcMain.emit(AppChannel.RELOAD);
-      },
-    });
-
-    toolsSubmenu.push({
-      label: `${
-        kitState.isThrottling ? `Unthrottle` : `Throttle`
-      } Background Rendering`,
-      click: async () => {
-        setBackgroundThrottling(!kitState.isThrottling, true);
       },
     });
 

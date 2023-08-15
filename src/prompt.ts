@@ -153,13 +153,13 @@ export const setVibrancy = (
   }
 };
 
-export const setBackgroundThrottling = (enabled: boolean, override = false) => {
-  if (kitState.isWindows && !override) return;
-  if (enabled === kitState.isThrottling) return;
-  kitState.isThrottling = enabled;
-  if (promptWindow?.isDestroyed()) return;
-  log.info(`🚕 setBackgroundThrottling: ${enabled ? 'enabled' : 'disabled'}`);
-  promptWindow?.webContents?.setBackgroundThrottling(enabled);
+export const disableBackgroundThrottling = () => {
+  log.info(`🚕 Disable background throttling`);
+  promptWindow?.webContents?.setBackgroundThrottling(false);
+
+  setTimeout(() => {
+    promptWindow?.webContents?.setBackgroundThrottling(true);
+  }, 100);
 };
 
 export const saveCurrentPromptBounds = async () => {
@@ -1481,7 +1481,7 @@ export const preloadChoices = (choices: Choice[]) => {
 };
 
 export const attemptPreload = (promptScriptPath: string, show = true) => {
-  if (show) setBackgroundThrottling(false);
+  if (show) disableBackgroundThrottling(false);
   // log out all the keys of preloadPromptDataMap
   kitState.preloaded = false;
   log.info(`preloadPromptDataMap for ${promptScriptPath}`, [
@@ -2079,7 +2079,7 @@ const showPrompt = () => {
 
   setTimeout(() => {
     kitState.isPromptReady = true;
-    setBackgroundThrottling(true);
+    disableBackgroundThrottling(true);
   }, 100);
 };
 

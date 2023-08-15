@@ -10,7 +10,12 @@ import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
-import { isVisible, maybeHide, reload } from './prompt';
+import {
+  disableBackgroundThrottling,
+  isVisible,
+  maybeHide,
+  reload,
+} from './prompt';
 import { convertKey, kitState, subs } from './state';
 import { HideReason, Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
@@ -48,6 +53,8 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
 
           return;
         }
+
+        disableBackgroundThrottling();
 
         log.info(`
 ----------------------------------------
@@ -236,6 +243,7 @@ export const updateMainShortcut = async (filePath: string) => {
 
     const mainShortcutAction = debounce(
       async () => {
+        disableBackgroundThrottling();
         kitState.shortcutPressed = finalShortcut;
         log.info(`
 
