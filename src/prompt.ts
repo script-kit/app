@@ -1294,8 +1294,6 @@ export const preloadPromptData = async (promptData: PromptData) => {
     setFlags(promptData.flags);
   }
 
-  setBackgroundThrottling(true);
-
   kitState.hiddenByUser = false;
   kitState.isPromptReady = false;
   kitState.alwaysOnTop =
@@ -1468,7 +1466,6 @@ export const setPromptData = async (promptData: PromptData) => {
 const noPreview = `<div></div>`;
 export const preloadPreview = (html: string) => {
   if (kitSearch.input) return;
-  log.info(`🏋️‍♂️ Preload preview`);
   setPreview(html);
 };
 
@@ -1484,15 +1481,14 @@ export const preloadChoices = (choices: Choice[]) => {
 };
 
 export const attemptPreload = (promptScriptPath: string, show = true) => {
+  if (show) setBackgroundThrottling(false);
   // log out all the keys of preloadPromptDataMap
   kitState.preloaded = false;
   log.info(`preloadPromptDataMap for ${promptScriptPath}`, [
     ...preloadPromptDataMap.keys(),
   ]);
   if (preloadPromptDataMap.has(promptScriptPath)) {
-    setBackgroundThrottling(false);
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
-    if (show) setBackgroundThrottling(false);
     sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
     sendToPrompt(Channel.SET_TAB_INDEX, 0);
     sendToPrompt(AppChannel.SET_PRELOADED, true);
@@ -1707,6 +1703,7 @@ export const invokeSearch = (rawInput: string) => {
           // This was breaking the choice.preview lookup in the SDK
           // c.item.id = Math.random();
           c.item.pass = false;
+          c.item.exact = true;
           matchGroup.push(c);
         } else if (scoredChoice && scoredChoice?.item?.lastGroup) {
           const c = structuredClone(scoredChoice);
@@ -2069,7 +2066,6 @@ const showPrompt = () => {
   } else {
     promptWindow.show();
   }
-  setBackgroundThrottling(true);
 
   if (topTimeout) clearTimeout(topTimeout);
   topTimeout = setTimeout(() => {
@@ -2083,6 +2079,7 @@ const showPrompt = () => {
 
   setTimeout(() => {
     kitState.isPromptReady = true;
+    setBackgroundThrottling(true);
   }, 100);
 };
 
@@ -2175,17 +2172,12 @@ export const initBounds = async (
   showPrompt();
 };
 
-let backgroundThrottlingTimeout: NodeJS.Timeout | null = null;
-
 const subScriptPath = subscribeKey(
   kitState,
   'scriptPath',
   async (scriptPath) => {
     log.verbose(`📄 scriptPath changed: ${scriptPath}`);
 
-    if (backgroundThrottlingTimeout) {
-      clearTimeout(backgroundThrottlingTimeout);
-    }
     if (promptWindow?.isDestroyed()) return;
     const noScript = kitState.scriptPath === '';
 
@@ -2203,16 +2195,12 @@ const subScriptPath = subscribeKey(
 ---`
       );
 
+      attemptPreload(mainScriptPath, false);
       hideAppIfNoWindows(HideReason.NoScript);
       clearSearch();
       sendToPrompt(Channel.SET_OPEN, false);
       kitState.alwaysOnTop = false;
 
-      attemptPreload(mainScriptPath, false);
-
-      backgroundThrottlingTimeout = setTimeout(() => {
-        setBackgroundThrottling(true);
-      }, 1000);
       return;
     }
 

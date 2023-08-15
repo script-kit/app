@@ -113,7 +113,12 @@ export const choicesConfigAtom = atom(
     s(directionAtom, 1);
 
     const promptData = g(promptDataAtom);
-    if (!g(focusedChoiceAtom)?.hasPreview && !promptData?.preview) {
+    const focusedChoice = g(focusedChoiceAtom);
+    if (
+      focusedChoice?.name !== noChoice?.name &&
+      !focusedChoice?.hasPreview &&
+      !promptData?.preview
+    ) {
       s(previewHTMLAtom, closedDiv);
     }
 
@@ -589,8 +594,8 @@ const throttleChoiceFocused = throttle(
     // g(logAtom)(`Focusing ${choice?.name} with ${choice?.id}`);
     s(_focused, choice || noChoice);
 
-    // g(logAtom)(`Focusing ${choice?.id}`);
-    if (choice?.id || choice?.name) {
+    // g(logAtom)(`Focusing id:${choice?.id}, name:${choice?.name}`);
+    if (choice?.id || (choice?.name && choice?.name !== noChoice.name)) {
       if (typeof choice?.preview === 'string') {
         s(previewHTMLAtom, choice?.preview);
       } else if (!choice?.hasPreview) {

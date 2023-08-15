@@ -49,6 +49,10 @@ export const createWidget = async (
     -webkit-app-region: no-drag;
   }
 
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+
   body {
     ${
       options?.transparent

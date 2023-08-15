@@ -2701,7 +2701,9 @@ export const handleWidgetEvents = () => {
     const { widgetId } = data;
     log.info(`📏 ${widgetId} Widget: Fitting to inner child`);
 
-    const options = widgetState.widgets.find(({ id }) => id === widgetId);
+    const options = (widgetState?.widgets || []).find(
+      ({ id }) => id === widgetId
+    );
     if (!options) return;
 
     const { wid, ignoreMeasure, pid } = options;
