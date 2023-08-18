@@ -160,6 +160,7 @@ import {
   preventSubmitAtom,
   selectedChoicesAtom,
   toggleAllSelectedChoicesAtom,
+  attemptPreloadAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -237,12 +238,12 @@ class ErrorBoundary extends React.Component {
 export default function App() {
   const [pid, setPid] = useAtom(pidAtom);
   const [appConfig, setAppConfig] = useAtom(appConfigAtom);
-  const [appDb, setAppDb] = useAtom(appDbAtom);
+  const [, setAppDb] = useAtom(appDbAtom);
   const [open, setOpen] = useAtom(openAtom);
   const [script, setScript] = useAtom(scriptAtom);
   const [hint, setHint] = useAtom(hintAtom);
   const [panelHTML, setPanelHTML] = useAtom(panelHTMLAtom);
-  const [logHtml, setLogHtml] = useAtom(logHTMLAtom);
+  const [, setLogHtml] = useAtom(logHTMLAtom);
   const [hidden, setHidden] = useAtom(isHiddenAtom);
   const [chatMessages, setChatMessages] = useAtom(chatMessagesAtom);
   const addChatMessage = useSetAtom(addChatMessageAtom);
@@ -250,17 +251,15 @@ export default function App() {
   const setChatMessage = useSetAtom(setChatMessageAtom);
   const setPromptBounds = useSetAtom(promptBoundsAtom);
 
-  const [ui, setUi] = useAtom(uiAtom);
+  const [ui] = useAtom(uiAtom);
   const choices = useAtomValue(scoredChoicesAtom);
   const showSelected = useAtomValue(showSelectedAtom);
   const showTabs = useAtomValue(showTabsAtom);
-  const tabs = useAtomValue(tabsAtom);
   const getEditorHistory = useAtomValue(getEditorHistoryAtom);
   const getColor = useAtomValue(colorAtom);
   const onPaste = useAtomValue(onPasteAtom);
   const onDrop = useAtomValue(onDropAtom);
   const logVisible = useAtomValue(logVisibleAtom);
-  const submitted = useAtomValue(submittedAtom);
 
   const setExit = useSetAtom(exitAtom);
   const setScriptHistory = useSetAtom(_history);
@@ -268,8 +267,8 @@ export default function App() {
   const appendInput = useSetAtom(appendInputAtom);
   const setPlaceholder = useSetAtom(placeholderAtom);
   const [promptData, setPromptData] = useAtom(promptDataAtom);
-  const [theme, setTheme] = useAtom(themeAtom);
-  const [tempTheme, setTempTheme] = useAtom(tempThemeAtom);
+  const [, setTheme] = useAtom(themeAtom);
+  const [, setTempTheme] = useAtom(tempThemeAtom);
   const setSplashBody = useSetAtom(splashBodyAtom);
   const setSplashHeader = useSetAtom(splashHeaderAtom);
   const setSplashProgress = useSetAtom(splashProgressAtom);
@@ -310,8 +309,7 @@ export default function App() {
   const setUser = useSetAtom(userAtom);
   const setFocused = useSetAtom(setFocusedChoiceAtom);
   const setIsMouseDown = useSetAtom(isMouseDownAtom);
-  const setAppearance = useSetAtom(appearanceAtom);
-  const [bounds, setBounds] = useAtom(boundsAtom);
+  const [, setBounds] = useAtom(boundsAtom);
   const setResizing = useSetAtom(resizingAtom);
   const setAudio = useSetAtom(audioAtom);
   const setSpeak = useSetAtom(speechAtom);
@@ -324,12 +322,8 @@ export default function App() {
   const [termConfig, setTermConfig] = useAtom(termConfigAtom);
   const setMicConfig = useSetAtom(micConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
-  const [headerHidden, setHeaderHidden] = useAtom(headerHiddenAtom);
-  const [footerHidden, setFooterHidden] = useAtom(footerHiddenAtom);
-  const [inputHeight, setInputHeight] = useAtom(inputHeightAtom);
-  const [itemHeight, setItemHeight] = useAtom(itemHeightAtom);
-  const [previewEnabled] = useAtom(previewEnabledAtom);
-  const [hasPreview] = useAtom(hasPreviewAtom);
+  const [headerHidden] = useAtom(headerHiddenAtom);
+  const [footerHidden] = useAtom(footerHiddenAtom);
   const scrollToIndex = useAtomValue(scrollToIndexAtom);
   const setPreloaded = useSetAtom(preloadedAtom);
   const setTriggerKeyword = useSetAtom(triggerKeywordAtom);
@@ -359,6 +353,8 @@ export default function App() {
   const setAppBounds = useSetAtom(appBoundsAtom);
 
   const setAudioDot = useSetAtom(audioDotAtom);
+
+  const attemptPreload = useSetAtom(attemptPreloadAtom);
 
   useEffect(() => {
     // catch all window errors
@@ -749,6 +745,16 @@ export default function App() {
       ipcRenderer.on(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
     }
 
+    // AppChannel.ATTEMPT_PRELOAD
+    const handleAttemptPreload = (_, scriptPath: string) => {
+      log(`💁 Attempting to preload: ${scriptPath}`);
+      attemptPreload(scriptPath);
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.ATTEMPT_PRELOAD) === 0) {
+      ipcRenderer.on(AppChannel.ATTEMPT_PRELOAD, handleAttemptPreload);
+    }
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
@@ -764,6 +770,7 @@ export default function App() {
       ipcRenderer.off(AppChannel.SCROLL_TO_INDEX, handleScrollToIndex);
       ipcRenderer.off(AppChannel.SET_PRELOADED, handleSetPreloaded);
       ipcRenderer.off(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
+      ipcRenderer.off(AppChannel.ATTEMPT_PRELOAD, handleAttemptPreload);
       // ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
     };
   }, [messageMap]);

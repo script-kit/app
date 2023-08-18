@@ -1272,11 +1272,6 @@ export const preloadPromptData = async (promptData: PromptData) => {
     promptData.keyword = kitSearch.keyword;
   }
 
-  sendToPrompt(Channel.SET_PROMPT_DATA, {
-    ...promptData,
-    input,
-  });
-
   kitState.scriptPath = promptData.scriptPath;
   kitState.hideOnEscape = Boolean(promptData.hideOnEscape);
 
@@ -1463,12 +1458,6 @@ export const setPromptData = async (promptData: PromptData) => {
   });
 };
 
-const noPreview = `<div></div>`;
-export const preloadPreview = (html: string) => {
-  if (kitSearch.input) return;
-  setPreview(html);
-};
-
 export const preloadChoices = (choices: Choice[]) => {
   log.info(`🏋️‍♂️ Preload choices ${choices.length}`);
   if (!isVisible()) {
@@ -1481,7 +1470,9 @@ export const preloadChoices = (choices: Choice[]) => {
 };
 
 export const attemptPreload = (promptScriptPath: string, show = true) => {
+  if (!promptScriptPath) return;
   if (show) disableBackgroundThrottling(false);
+  appToPrompt(AppChannel.ATTEMPT_PRELOAD, promptScriptPath);
   // log out all the keys of preloadPromptDataMap
   kitState.preloaded = false;
   log.info(`preloadPromptDataMap for ${promptScriptPath}`, [
@@ -1489,9 +1480,9 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
   ]);
   if (preloadPromptDataMap.has(promptScriptPath)) {
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
-    sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
-    sendToPrompt(Channel.SET_TAB_INDEX, 0);
-    sendToPrompt(AppChannel.SET_PRELOADED, true);
+    // sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
+    // sendToPrompt(Channel.SET_TAB_INDEX, 0);
+    // sendToPrompt(AppChannel.SET_PRELOADED, true);
 
     kitState.preloaded = true;
 
@@ -1500,8 +1491,8 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
     preloadPromptData(promptData);
 
     if (preloadChoicesMap.has(promptScriptPath)) {
-      const preview = preloadPreviewMap.get(promptScriptPath) as string;
-      preloadPreview(preview || noPreview);
+      // const preview = preloadPreviewMap.get(promptScriptPath) as string;
+      // preloadPreview(preview || noPreview);
 
       const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
       preloadChoices(choices as Choice[]);
