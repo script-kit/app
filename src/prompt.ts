@@ -95,7 +95,11 @@ const actualHide = () => {
 export const maybeHide = async (reason: string) => {
   log.info(`Attempt Hide: ${reason}`);
   if (!promptWindow?.isVisible()) return;
-  if (reason === HideReason.NoScript || reason === HideReason.Escape) {
+  if (
+    reason === HideReason.NoScript ||
+    reason === HideReason.Escape ||
+    reason === HideReason.BeforeExit
+  ) {
     actualHide();
     // attemptPreload(mainScriptPath, false);
     // clearSearch();
@@ -2202,7 +2206,6 @@ const subScriptPath = subscribeKey(
 ---`
       );
 
-      attemptPreload(mainScriptPath, false);
       hideAppIfNoWindows(HideReason.NoScript);
       clearSearch();
       sendToPrompt(Channel.SET_OPEN, false);

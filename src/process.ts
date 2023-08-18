@@ -945,6 +945,12 @@ const kitMessageMap: ChannelHandler = {
     }
   ),
 
+  BEFORE_EXIT: onChildChannelOverride(async ({ child }, { channel }) => {
+    log.info(`🚪 BEFORE_EXIT`);
+    attemptPreload(mainScriptPath, false);
+    hideAppIfNoWindows(HideReason.BeforeExit);
+  }),
+
   QUIT_APP: onChildChannel(async ({ child }, { channel, value }) => {
     await new Promise((resolve) => setTimeout(resolve, 250));
     forceQuit();
