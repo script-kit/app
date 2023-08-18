@@ -3,19 +3,14 @@ import log from 'electron-log';
 import path from 'path';
 import { readFile } from 'fs/promises';
 import { subscribeKey } from 'valtio/utils';
-import { debounce, throttle } from 'lodash';
+import { debounce } from 'lodash';
 
 import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
-import {
-  disableBackgroundThrottling,
-  isVisible,
-  maybeHide,
-  reload,
-} from './prompt';
+import { attemptPreload, isVisible, maybeHide, reload } from './prompt';
 import { convertKey, kitState, subs } from './state';
 import { HideReason, Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
@@ -54,7 +49,7 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
           return;
         }
 
-        disableBackgroundThrottling();
+        attemptPreload(filePath);
 
         log.info(`
 ----------------------------------------
@@ -243,7 +238,7 @@ export const updateMainShortcut = async (filePath: string) => {
 
     const mainShortcutAction = debounce(
       async () => {
-        disableBackgroundThrottling();
+        attemptPreload(mainScriptPath);
         kitState.shortcutPressed = finalShortcut;
         log.info(`
 

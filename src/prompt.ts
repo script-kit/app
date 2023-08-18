@@ -154,10 +154,12 @@ export const setVibrancy = (
 };
 
 export const disableBackgroundThrottling = () => {
-  log.info(`🚕 Disable background throttling`);
+  if (isVisible()) return;
+  log.info(`🛑 Disable background throttling`);
   promptWindow?.webContents?.setBackgroundThrottling(false);
 
   setTimeout(() => {
+    log.info(`🟢 Enable background throttling`);
     promptWindow?.webContents?.setBackgroundThrottling(true);
   }, 100);
 };
@@ -1471,8 +1473,8 @@ export const preloadChoices = (choices: Choice[]) => {
 
 export const attemptPreload = (promptScriptPath: string, show = true) => {
   if (!promptScriptPath) return;
-  if (show) disableBackgroundThrottling(false);
   appToPrompt(AppChannel.ATTEMPT_PRELOAD, promptScriptPath);
+  if (show) disableBackgroundThrottling();
   // log out all the keys of preloadPromptDataMap
   kitState.preloaded = false;
   log.info(`preloadPromptDataMap for ${promptScriptPath}`, [

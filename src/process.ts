@@ -939,7 +939,9 @@ const kitMessageMap: ChannelHandler = {
       }
 
       hideAppIfNoWindows(HideReason.User);
-      attemptPreload(value?.preloadScript as string, false);
+      if (value?.preloadScript) {
+        attemptPreload(value?.preloadScript as string, false);
+      }
     }
   ),
 

@@ -193,8 +193,6 @@ export const runPromptProcess = async (
     } catch (error) {
       log.error(error);
     }
-  } else if (idlesLength > 0) {
-    attemptPreload(promptScriptPath);
   } else {
     ensureIdleProcess();
   }
