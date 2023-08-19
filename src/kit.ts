@@ -193,6 +193,9 @@ export const runPromptProcess = async (
     } catch (error) {
       log.error(error);
     }
+  } else if (idlesLength > 0) {
+    // This is required so if you press the same shortcut twice, it will close the script
+    attemptPreload(promptScriptPath);
   } else {
     ensureIdleProcess();
   }

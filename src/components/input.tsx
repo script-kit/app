@@ -396,7 +396,13 @@ export default function Input() {
             )}
 
             {kitState.isSponsor ? (
-              <span className="relative pl-1 pr-1">
+              <span
+                className={`relative ${
+                  inputHeight === PROMPT.INPUT.HEIGHT.XS
+                    ? `w-[28px]`
+                    : `w-[30px]`
+                } pl-1 pr-1`}
+              >
                 <img
                   alt="avatar"
                   src={user.avatar_url}

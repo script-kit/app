@@ -3,10 +3,8 @@ import React from 'react';
 
 const Inspector = () => {
   return (
-    <div className="h-full w-full flex flex-col justify-center items-center text-text-base text-xl">
-      <h1 className="text-5xl animate-pulse-green-glow">
-        Connecting to Debugger...
-      </h1>
+    <div className="flex h-full w-full flex-col items-center justify-center text-xl text-text-base">
+      <h1 className="animate-pulse-glow text-5xl">Connecting to Debugger...</h1>
     </div>
   );
 };

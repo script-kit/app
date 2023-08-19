@@ -976,7 +976,10 @@ const kitMessageMap: ChannelHandler = {
       scriptName: path.basename(data?.value?.filePath || ''),
     });
 
+    // Need to unset preloaded since the debugger is piggy-backing off the preloaded mainScript
+    kitState.preloaded = false;
     sendToPrompt(Channel.START, data?.value?.filePath);
+
     sendToPrompt(Channel.SET_PROMPT_DATA, {
       ui: UI.debugger,
     });

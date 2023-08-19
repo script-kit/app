@@ -808,14 +808,14 @@ code::after {
   border-radius: 0.6rem;
 }
 
-@keyframes pulse-green-glow {
+@keyframes pulse-glow {
   0% {
     text-shadow: 0 0 0px rgb(var(--color-primary)),
       0 0 0px rgb(var(--color-primary)), 0 0 0px rgb(var(--color-primary));
   }
-  70% {
+  50% {
     text-shadow: 0px 0 0px rgb(var(--color-primary)),
-      0 0 20px rgb(var(--color-primary)), 0 0 0px rgb(var(--color-primary));
+      0 0 5px rgb(var(--color-primary)), 0 0 0px rgb(var(--color-primary));
   }
   100% {
     text-shadow: 0 0 0px rgb(var(--color-primary)),
