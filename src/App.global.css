@@ -808,6 +808,7 @@ code::after {
   border-radius: 0.6rem;
 }
 
+/* Used for the debugger text pulsing */
 @keyframes pulse-glow {
   0% {
     text-shadow: 0 0 0px rgb(var(--color-primary)),
