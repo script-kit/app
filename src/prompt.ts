@@ -1278,6 +1278,11 @@ export const preloadPromptData = async (promptData: PromptData) => {
     promptData.keyword = kitSearch.keyword;
   }
 
+  sendToPrompt(Channel.SET_PROMPT_DATA, {
+    ...promptData,
+    input,
+  });
+
   kitState.scriptPath = promptData.scriptPath;
   kitState.hideOnEscape = Boolean(promptData.hideOnEscape);
 
@@ -1475,9 +1480,14 @@ export const preloadChoices = (choices: Choice[]) => {
   });
 };
 
+const noPreview = `<div></div>`;
+export const preloadPreview = (html: string) => {
+  if (kitSearch.input) return;
+  setPreview(html);
+};
+
 export const attemptPreload = (promptScriptPath: string, show = true) => {
   if (!promptScriptPath) return;
-  appToPrompt(AppChannel.ATTEMPT_PRELOAD, promptScriptPath);
   if (show) disableBackgroundThrottling();
   // log out all the keys of preloadPromptDataMap
   kitState.preloaded = false;
@@ -1497,8 +1507,8 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
     preloadPromptData(promptData);
 
     if (preloadChoicesMap.has(promptScriptPath)) {
-      // const preview = preloadPreviewMap.get(promptScriptPath) as string;
-      // preloadPreview(preview || noPreview);
+      const preview = preloadPreviewMap.get(promptScriptPath) as string;
+      preloadPreview(preview || noPreview);
 
       const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
       preloadChoices(choices as Choice[]);

@@ -40,17 +40,8 @@ import { noChoice, noScript, SPLASH_PATH } from './defaults';
 import { toHex } from './color-utils';
 import { formatShortcut } from './components/formatters';
 import { Action } from './components/actions';
-import {
-  preloadScoredChoicesMap,
-  preloadPromptDataMap,
-  preloadPreviewMap,
-} from './cache';
 
 let placeholderTimeoutId: NodeJS.Timeout;
-
-const cacheNextPromptAtom = atom(false);
-const cacheNextChoicesAtom = atom(false);
-const cacheNextPreviewAtom = atom(false);
 
 export const pidAtom = atom(0);
 const _shortcuts = atom<Shortcut[]>([]);
@@ -222,12 +213,6 @@ export const closedDiv = `<div></div>`;
 const throttleSetPreview = throttle(
   (g, s, a: string) => {
     s(_previewHTML, a);
-    if (g(cacheNextPreviewAtom)) {
-      s(cacheNextPreviewAtom, false);
-      const scriptPath = g(scriptAtom)?.filePath;
-      preloadPreviewMap?.set(scriptPath, a);
-    }
-
     resize(g, s, 'SET_PREVIEW');
   },
   25,
@@ -665,12 +650,6 @@ export const scoredChoicesAtom = atom(
     s(choices, cs || []);
     s(currentChoiceHeightsAtom, cs || []);
 
-    if (g(cacheNextChoicesAtom)) {
-      s(cacheNextChoicesAtom, false);
-      const scriptPath = g(scriptAtom)?.filePath;
-      preloadScoredChoicesMap?.set(scriptPath, cs);
-    }
-
     // a.forEach((newChoice, i) => {
     //   const prevChoice = prevChoices?.[i];
 
@@ -928,12 +907,6 @@ export const scriptAtom = atom(
   (g) => g(_script),
   (g, s, a: Script) => {
     const isMainScript = a?.filePath === mainScriptPath;
-
-    const cacheNext = Boolean(isMainScript || a?.cache);
-
-    s(cacheNextPromptAtom, cacheNext);
-    s(cacheNextChoicesAtom, cacheNext);
-    s(cacheNextPreviewAtom, cacheNext);
 
     s(isMainScriptAtom, isMainScript);
     s(submittedAtom, false);
@@ -1371,17 +1344,6 @@ export const promptDataAtom = atom(
     s(isMainScriptAtom, a?.scriptPath === mainScriptPath);
     if (a?.ui !== UI.arg && !a?.preview) {
       s(previewHTMLAtom, closedDiv);
-    }
-
-    if (g(cacheNextPromptAtom)) {
-      s(cacheNextPromptAtom, false);
-      const scriptPath = g(scriptAtom)?.filePath;
-      g(logAtom)(`💝 Caching prompt data: ${scriptPath}`);
-      preloadPromptDataMap.set(scriptPath, {
-        ...a,
-        input: a?.keyword ? '' : a?.input || '',
-        keyword: '',
-      } as PromptData);
     }
 
     s(isHiddenAtom, false);
@@ -2909,28 +2871,3 @@ export const currentChoiceHeightsAtom = atom(
     s(_currentChoiceHeights, currentChoiceHeights);
   }
 );
-
-export const attemptPreloadAtom = atom(null, (g, s, scriptPath: string) => {
-  // Pause resize?
-  const cachedPromptData = preloadPromptDataMap.get(scriptPath);
-  if (cachedPromptData) {
-    g(logAtom)(`🎬 Preloading ${scriptPath}`);
-    g(scrollToIndexAtom)(0);
-    s(tabIndexAtom, 0);
-    s(preloadedAtom, true);
-
-    cachedPromptData.preload = true;
-
-    s(promptDataAtom, cachedPromptData);
-  }
-
-  const cachedScoredChoices = preloadScoredChoicesMap.get(scriptPath);
-  if (cachedScoredChoices) {
-    s(scoredChoicesAtom, cachedScoredChoices);
-  }
-
-  const cachedPreview = preloadPreviewMap.get(scriptPath);
-  if (cachedPreview) {
-    s(previewHTMLAtom, cachedPreview);
-  }
-});

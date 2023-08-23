@@ -72,7 +72,6 @@ import {
   promptDataAtom,
   scriptAtom,
   submitValueAtom,
-  submittedAtom,
   tabIndexAtom,
   tabsAtom,
   textareaConfigAtom,
@@ -108,7 +107,6 @@ import {
   onPasteAtom,
   onDropAtom,
   addChoiceAtom,
-  appearanceAtom,
   boundsAtom,
   resizingAtom,
   themeAtom,
@@ -143,10 +141,6 @@ import {
   headerHiddenAtom,
   footerHiddenAtom,
   micConfigAtom,
-  itemHeightAtom,
-  inputHeightAtom,
-  previewEnabledAtom,
-  hasPreviewAtom,
   appBoundsAtom,
   indexAtom,
   promptBoundsAtom,
@@ -160,7 +154,6 @@ import {
   preventSubmitAtom,
   selectedChoicesAtom,
   toggleAllSelectedChoicesAtom,
-  attemptPreloadAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useShortcuts, useThemeDetector } from './hooks';
@@ -353,8 +346,6 @@ export default function App() {
   const setAppBounds = useSetAtom(appBoundsAtom);
 
   const setAudioDot = useSetAtom(audioDotAtom);
-
-  const attemptPreload = useSetAtom(attemptPreloadAtom);
 
   useEffect(() => {
     // catch all window errors
@@ -745,16 +736,6 @@ export default function App() {
       ipcRenderer.on(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
     }
 
-    // AppChannel.ATTEMPT_PRELOAD
-    const handleAttemptPreload = (_, scriptPath: string) => {
-      log(`💁 Attempting to preload: ${scriptPath}`);
-      attemptPreload(scriptPath);
-    };
-
-    if (ipcRenderer.listenerCount(AppChannel.ATTEMPT_PRELOAD) === 0) {
-      ipcRenderer.on(AppChannel.ATTEMPT_PRELOAD, handleAttemptPreload);
-    }
-
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
@@ -770,7 +751,6 @@ export default function App() {
       ipcRenderer.off(AppChannel.SCROLL_TO_INDEX, handleScrollToIndex);
       ipcRenderer.off(AppChannel.SET_PRELOADED, handleSetPreloaded);
       ipcRenderer.off(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
-      ipcRenderer.off(AppChannel.ATTEMPT_PRELOAD, handleAttemptPreload);
       // ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
     };
   }, [messageMap]);

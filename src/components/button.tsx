@@ -7,7 +7,7 @@
 /* eslint-disable no-nested-ternary */
 import React, { useCallback, useEffect, useState, DragEvent } from 'react';
 import parse from 'html-react-parser';
-import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types/core';
+import { ScriptMetadata } from '@johnlindquist/kit/types/core';
 import { PROMPT } from '@johnlindquist/kit/cjs/enum';
 import { useAtom, useAtomValue } from 'jotai';
 import { ipcRenderer } from 'electron';
@@ -175,6 +175,8 @@ function ChoiceButton({
 
   const isRecent = choice?.group === 'Recent';
 
+  const scale = calculateScale(choice.height || promptData?.itemHeight);
+
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button
@@ -240,7 +242,7 @@ function ChoiceButton({
                 leading-1 -pl-1 mr-2 flex
                     h-6
                     w-6
-                    ${calculateScale(choice.height ?? promptData?.itemHeight)}
+                    ${scale}
                     items-center
 
                     justify-center
@@ -392,7 +394,7 @@ function ChoiceButton({
                 leading-1 ml-2 flex
                     h-6
                     w-6
-                    ${calculateScale(choice.height ?? promptData?.itemHeight)}
+                    ${scale}
 
                     items-center
 

@@ -419,7 +419,8 @@ const childSend = (child: ChildProcess, data: any) => {
       data.promptId = kitState.promptId;
       // log.info(`✉️: ${data.channel}`);
       child.send(data, (error) => {
-        if (error) log.error('childSend error', error);
+        if (error)
+          log.warn(`Channel ${data?.channel} faileed on ${data?.promptId}`);
       });
     }
   } catch (error) {
@@ -946,9 +947,14 @@ const kitMessageMap: ChannelHandler = {
   ),
 
   BEFORE_EXIT: onChildChannelOverride(async ({ child }, { channel }) => {
-    log.info(`🚪 BEFORE_EXIT`);
-    attemptPreload(mainScriptPath, false);
-    hideAppIfNoWindows(HideReason.BeforeExit);
+    log.info(`🚪 pid: ${child.pid} App received "before exit" or "escape default"... preloading...
+
+
+`);
+    if (kitState.promptCount > 0) {
+      attemptPreload(mainScriptPath, false);
+      hideAppIfNoWindows(HideReason.BeforeExit);
+    }
   }),
 
   QUIT_APP: onChildChannel(async ({ child }, { channel, value }) => {
