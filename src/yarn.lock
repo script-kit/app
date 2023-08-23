@@ -314,12 +314,21 @@
     bindings "^1.5.0"
     node-addon-api "^7.0.0"
 
-"@johnlindquist/mac-frontmost@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-frontmost/-/mac-frontmost-1.0.0.tgz#d2cd2cef317faabd6e73d2e89ec81854650c8fd6"
-  integrity sha512-px/sUJYDqQ+rX9MbDIZKU5m9hLtc+JWBeAOKLxhGH2HsRw7gcmKIwRhPtCTZR9nlZ7MB7tyyfZAYikgQHmuQUA==
+"@johnlindquist/mac-frontmost@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-frontmost/-/mac-frontmost-1.0.2.tgz#a9fd7779dc1edbcf2dc06f5103f424d7ee60a1fb"
+  integrity sha512-GDI/hd6e8FXUCYEejys0D3SseGUJs9BXbiu4e9SPiAc7CVQTug/f/ShcZSgofNkR3bL+hD88L2QW8ITLtoZjsg==
   dependencies:
     bindings "^1.5.0"
+    node-addon-api "^7.0.0"
+
+"@johnlindquist/mac-panel-window@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-panel-window/-/mac-panel-window-1.0.5.tgz#12a7ec04c478046be7133aa8078dac11b1f1c756"
+  integrity sha512-i7qg0avY2Dv1+IaS6XlZAtsn5PH7dLF/MFTjaDJ+f25tpAsqtWLKCPR9Saw0S56BMr5MNtrM45QAdHSmNS3mxg==
+  dependencies:
+    bindings "^1.5.0"
+    nan "^2.17.0"
     node-addon-api "^7.0.0"
 
 "@nut-tree/libnut-darwin@2.5.2":
@@ -746,10 +755,10 @@ nice-try@^1.0.4:
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
-node-abi@^3.46.0:
-  version "3.46.0"
-  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.46.0.tgz#491adaa8d227ca9702f30b27b2b6b248caa1348f"
-  integrity sha512-LXvP3AqTIrtvH/jllXjkNVbYifpRbt9ThTtymSMSuHmhugQLAWr99QQFTm+ZRht9ziUvdGOgB+esme1C6iE6Lg==
+node-abi@^3.47.0:
+  version "3.47.0"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.47.0.tgz#6cbfa2916805ae25c2b7156ca640131632eb05e8"
+  integrity sha512-2s6B2CWZM//kPgwnuI0KrYwNjfdByE25zvAaEpq9IH4zcNsarH8Ihu/UuX6XMPEogDAxkuUFeZn60pXNHAqn3A==
   dependencies:
     semver "^7.3.5"
 

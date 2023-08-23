@@ -87,6 +87,7 @@ import {
   maybeHide,
   reload,
   isVisible,
+  prepPromptForQuit,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -1009,6 +1010,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     allowQuit,
   });
   mainLog.info('allowQuit begin...');
+  await prepPromptForQuit();
 
   // app?.removeAllListeners('window-all-closed');
   if (!allowQuit) return;

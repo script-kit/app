@@ -247,7 +247,7 @@ export const maybeConvertColors = async (theme: any = {}) => {
       ? theme.vibrancy
       : defaultVibrancy;
 
-  setVibrancy(vibrancy);
+  // setVibrancy(vibrancy);
 
   return theme;
 };
@@ -951,7 +951,7 @@ const kitMessageMap: ChannelHandler = {
 
 
 `);
-    if (kitState.promptCount > 0) {
+    if (kitState.promptCount > 0 && !kitState.allowQuit) {
       attemptPreload(mainScriptPath, false);
       hideAppIfNoWindows(HideReason.BeforeExit);
     }
@@ -1795,15 +1795,31 @@ const kitMessageMap: ChannelHandler = {
   ),
 
   MOUSE_LEFT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
+    // REMOVE-NUT
+    const { mouse } = await import('@nut-tree/nut-js');
     await mouse.leftClick();
+    // END-REMOVE-NUT
   }),
 
   MOUSE_RIGHT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
+    // REMOVE-NUT
+    const { mouse } = await import('@nut-tree/nut-js');
     await mouse.rightClick();
+    // END-REMOVE-NUT
   }),
 
   MOUSE_MOVE: onChildChannel(async ({ child }, { channel, value }) => {
+    // REMOVE-NUT
+    const { mouse } = await import('@nut-tree/nut-js');
     await mouse.move(value);
+    // END-REMOVE-NUT
+  }),
+
+  MOUSE_SET_POSITION: onChildChannel(async ({ child }, { channel, value }) => {
+    // REMOVE-NUT
+    const { mouse } = await import('@nut-tree/nut-js');
+    await mouse.setPosition(value);
+    // END-REMOVE-NUT
   }),
 
   // TRASH: toProcess(async ({ child }, { channel, value }) => {

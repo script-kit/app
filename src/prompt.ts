@@ -5,6 +5,14 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable consistent-return */
+
+// REMOVE-MAC
+import {
+  makeKeyWindow,
+  makePanel,
+  makeWindow,
+} from '@johnlindquist/mac-panel-window';
+// END-REMOVE-MAC
 import { PROMPT, Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -77,6 +85,12 @@ let promptWindow: BrowserWindow;
 
 const getDefaultWidth = () => {
   return appDb.mini ? PROMPT.WIDTH.XXXS : PROMPT.WIDTH.BASE;
+};
+
+export const makePromptWindow = async () => {
+  // REMOVE-MAC
+  makeWindow(promptWindow);
+  // END-REMOVE-MAC
 };
 
 export const blurPrompt = () => {
@@ -179,6 +193,21 @@ export const saveCurrentPromptBounds = async () => {
   // }
 };
 
+export const prepPromptForQuit = async () => {
+  // REMOVE-MAC
+  actualHide();
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      makeKeyWindow(new BrowserWindow());
+      makeWindow(promptWindow);
+      promptWindow?.close();
+      resolve(null);
+    });
+  });
+  // END-REMOVE-MAC
+};
+
 export const createPromptWindow = async () => {
   log.silly(`function: createPromptWindow`);
 
@@ -214,7 +243,6 @@ export const createPromptWindow = async () => {
     minHeight: PROMPT.INPUT.HEIGHT.XS,
     x: Math.round(screenWidth / 2 - width / 2 + workX),
     y: Math.round(workY + screenHeight / 8),
-    type: 'panel',
   };
 
   // Disable Windows show animation
@@ -236,10 +264,16 @@ export const createPromptWindow = async () => {
     });
   }
 
-  promptWindow.setVisibleOnAllWorkspaces(true, {
-    visibleOnFullScreen: true,
-    skipTransformProcessType: true,
-  });
+  // REMOVE-MAC
+  if (kitState.isMac) {
+    makePanel(promptWindow);
+  }
+  // END-REMOVE-MAC
+
+  // promptWindow.setVisibleOnAllWorkspaces(true, {
+  //   visibleOnFullScreen: true,
+  //   skipTransformProcessType: true,
+  // });
 
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
 
