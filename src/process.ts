@@ -947,7 +947,7 @@ const kitMessageMap: ChannelHandler = {
   ),
 
   BEFORE_EXIT: onChildChannelOverride(async ({ child }, { channel }) => {
-    log.info(`🚪 pid: ${child.pid} App received "before exit" or "escape default"... preloading...
+    log.info(`✅ pid: ${child.pid} "finishScript" invoked...
 
 
 `);
