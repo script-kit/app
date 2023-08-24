@@ -1530,9 +1530,9 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
   ]);
   if (preloadPromptDataMap.has(promptScriptPath)) {
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
-    // sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
-    // sendToPrompt(Channel.SET_TAB_INDEX, 0);
-    // sendToPrompt(AppChannel.SET_PRELOADED, true);
+    appToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
+    sendToPrompt(Channel.SET_TAB_INDEX, 0);
+    appToPrompt(AppChannel.SET_PRELOADED, true);
 
     kitState.preloaded = true;
 
