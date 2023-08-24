@@ -429,32 +429,39 @@ const systemEvents = () => {
     kitState.suspended = true;
   });
 
-  powerMonitor.addListener('resume', async () => {
-    // wait 5 seconds for the system to wake up
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+  powerMonitor.addListener(
+    'resume',
+    debounce(
+      async () => {
+        // wait 5 seconds for the system to wake up
+        await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    await updateAppDb({});
-    log.info(`🌄 System waking. Starting watchers.`);
-    // await setupWatchers();
+        await updateAppDb({});
+        log.info(`🌄 System waking`);
+        // await setupWatchers();
 
-    kitState.suspended = false;
+        kitState.suspended = false;
 
-    // startClipboardAndKeyboardWatchers();
+        // startClipboardAndKeyboardWatchers();
 
-    if (!kitState.updateDownloaded) {
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+        if (!kitState.updateDownloaded) {
+          await new Promise((resolve) => setTimeout(resolve, 10000));
 
-      try {
-        checkForUpdates();
-      } catch (error) {
-        log.error(`Error checking for updates`, error);
-      }
-    }
+          try {
+            checkForUpdates();
+          } catch (error) {
+            log.error(`Error checking for updates`, error);
+          }
+        }
 
-    setTimeout(() => {
-      kitState.waking = false;
-    }, 10000);
-  });
+        setTimeout(() => {
+          kitState.waking = false;
+        }, 10000);
+      },
+      5000,
+      { leading: true }
+    )
+  );
 
   powerMonitor.addListener('lock-screen', async () => {
     kitState.screenLocked = true;
