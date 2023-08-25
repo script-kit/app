@@ -314,18 +314,18 @@
     bindings "^1.5.0"
     node-addon-api "^7.0.0"
 
-"@johnlindquist/mac-frontmost@^1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-frontmost/-/mac-frontmost-1.0.4.tgz#8c244f751ce9f92a198ba0c7ff4f5408b9bc0d1c"
-  integrity sha512-Ag1TDgFPxsba1tKapWsvCtZKXZ2TeYlFC9wa3SNk8EYLAFKVcV4A3VflLMhkKdbvPojvHsDroFFn0kbDzifyQg==
+"@johnlindquist/mac-frontmost@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-frontmost/-/mac-frontmost-1.0.5.tgz#1cec3e3f84b95c8d350eeb78879df2b5386d1f15"
+  integrity sha512-FkFQYKDIoS/UIlcwecu6UR0l6S5qZejoAk6A6fZO+9MUu50lUsEiMYggmMM4O4ToTBs8IPxZQ/DPxT4pZBdJ5g==
   dependencies:
     bindings "^1.5.0"
     node-addon-api "^7.0.0"
 
-"@johnlindquist/mac-panel-window@^1.0.5":
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-panel-window/-/mac-panel-window-1.0.5.tgz#12a7ec04c478046be7133aa8078dac11b1f1c756"
-  integrity sha512-i7qg0avY2Dv1+IaS6XlZAtsn5PH7dLF/MFTjaDJ+f25tpAsqtWLKCPR9Saw0S56BMr5MNtrM45QAdHSmNS3mxg==
+"@johnlindquist/mac-panel-window@^1.0.8":
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-panel-window/-/mac-panel-window-1.0.8.tgz#fb79be3589cc4ff939dd3c37ee0542e2ae48291b"
+  integrity sha512-uFG6lki6hV8YG3kWZYL8gBvi4ZbkRxh8tN7ra636lzhBAbYFGpcTBkMlo+jjkHdRRc97JeBVQtmVeetSsH40rw==
   dependencies:
     bindings "^1.5.0"
     nan "^2.17.0"
