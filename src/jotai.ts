@@ -784,8 +784,8 @@ export const inputAtom = atom(
       s(selected ? flagsIndexAtom : indexAtom, 0);
     }
 
-    if (a !== g(_inputAtom)) s(_inputChangedAtom, true);
-    if (a === g(_inputAtom)) {
+    if (a !== prevInput) s(_inputChangedAtom, true);
+    if (a === prevInput) {
       s(tabChangedAtom, false);
       return;
     }
@@ -906,6 +906,7 @@ export const preloadedAtom = atom(false);
 export const scriptAtom = atom(
   (g) => g(_script),
   (g, s, a: Script) => {
+    s(lastKeyDownWasModifierAtom, false);
     const isMainScript = a?.filePath === mainScriptPath;
 
     s(isMainScriptAtom, isMainScript);
@@ -2047,6 +2048,7 @@ export const blurAtom = atom(null, (g) => {
 });
 
 export const startAtom = atom(null, (g, s, a: string) => {
+  s(inputAtom, '');
   // console.log(`🎬 Start ${a}`);
   const script = g(scriptAtom);
 
