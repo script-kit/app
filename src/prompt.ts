@@ -1658,6 +1658,7 @@ export const invokeFlagSearch = (input: string) => {
 };
 
 export const invokeSearch = (rawInput: string) => {
+  if (kitState.ui !== UI.arg) return;
   log.info(`Invoke search: ${rawInput}`);
   let transformedInput = rawInput;
   if (kitSearch.inputRegex) {

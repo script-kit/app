@@ -957,7 +957,7 @@ const kitMessageMap: ChannelHandler = {
     log.info(`✅ pid: ${child.pid} "finishScript" invoked...
 
 `);
-    if (kitState.promptCount > 0 && !kitState.allowQuit) {
+    if (!kitState.allowQuit) {
       attemptPreload(mainScriptPath, false);
       sendToPrompt(Channel.SET_INPUT, '');
       hideAppIfNoWindows(HideReason.BeforeExit);
