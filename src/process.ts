@@ -956,7 +956,6 @@ const kitMessageMap: ChannelHandler = {
   BEFORE_EXIT: onChildChannelOverride(async ({ child }, { channel }) => {
     log.info(`✅ pid: ${child.pid} "finishScript" invoked...
 
-
 `);
     if (kitState.promptCount > 0 && !kitState.allowQuit) {
       attemptPreload(mainScriptPath, false);
