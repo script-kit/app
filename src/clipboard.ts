@@ -46,7 +46,10 @@ export const clearClipboardHistory = () => {
 export const addToClipboardHistory = async (clipboardItem: ClipboardItem) => {
   const clipboardHistory = await kitClipboard.store.get('history');
 
-  remove(clipboardHistory, (item) => item.value === value);
+  remove(
+    clipboardHistory,
+    (item: ClipboardItem) => item.value === clipboardItem?.value
+  );
 
   log.silly(`📋 Clipboard`, clipboardItem);
 
