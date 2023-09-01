@@ -619,8 +619,11 @@ export const cacheMainScripts = debounce(async () => {
   try {
     const receiveScripts = (data: { value: Script[] }) => {
       const { value: scripts } = data;
-      log.info(`Caching scripts...`, scripts.length);
-      preloadChoicesMap.set(mainScriptPath, scripts);
+
+      if (Array.isArray(scripts) && scripts.length > 0) {
+        log.info(`Caching scripts...`, scripts.length);
+        preloadChoicesMap.set(mainScriptPath, scripts);
+      }
     };
     const child = fork(
       kitPath('run', 'terminal.js'),

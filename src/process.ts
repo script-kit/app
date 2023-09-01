@@ -403,7 +403,9 @@ export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
   log.info(
     `🎁 Caching choices for ${kitState.scriptPath}: Choices ${choices?.length}`
   );
-  preloadChoicesMap.set(scriptPath, choices);
+  if (Array.isArray(choices)) {
+    preloadChoicesMap.set(scriptPath, choices);
+  }
 };
 
 export const cachePreview = async (scriptPath: string, preview: string) => {
@@ -958,6 +960,7 @@ const kitMessageMap: ChannelHandler = {
 `);
     if (kitState.promptCount > 0 && !kitState.allowQuit) {
       attemptPreload(mainScriptPath, false);
+      sendToPrompt(Channel.SET_INPUT, '');
       hideAppIfNoWindows(HideReason.BeforeExit);
     }
   }),
