@@ -90,7 +90,6 @@ import {
   setPromptProp,
   setScript,
   setTabIndex,
-  setVibrancy,
   attemptPreload,
 } from './prompt';
 import {
@@ -115,15 +114,14 @@ import { show, showDevTools, showInspector, showWidget } from './show';
 
 import { getVersion } from './version';
 import {
-  clearClipboardHistory,
   getClipboardHistory,
   removeFromClipboardHistory,
   syncClipboardStore,
-} from './tick';
+} from './clipboard';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { createWidget } from './widget';
 import { AppChannel, HideReason, Trigger } from './enums';
-import { isKitScript, toRgb, pathsAreEqual, convertShortcut } from './helpers';
+import { isKitScript, toRgb, convertShortcut } from './helpers';
 import { toHex } from './color-utils';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
@@ -426,6 +424,13 @@ const childSend = (child: ChildProcess, data: any) => {
   } catch (error) {
     log.error('childSend error', error);
   }
+};
+
+export const sendToAllActiveChildren = (data: any) => {
+  // log.info(`Sending ${data?.channel} to all active children`);
+  processes.getActiveProcesses().forEach((processInfo) => {
+    childSend(processInfo.child, data);
+  });
 };
 
 const handleChannelMessage = <K extends keyof ChannelMap>(
@@ -2527,6 +2532,10 @@ class Processes extends Array<ProcessInfo> {
     }
 
     return processes.add(ProcessType.Prompt);
+  }
+
+  public getActiveProcesses() {
+    return this.filter((processInfo) => processInfo.scriptPath);
   }
 
   public getByPid(pid: number) {

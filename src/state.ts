@@ -943,3 +943,7 @@ export const clearSearch = () => {
   kitSearch.commandChars = [];
   kitSearch.keys = ['slicedName', 'tag', 'group', 'command'];
 };
+
+export const kitClipboard = {
+  store: null as any,
+};

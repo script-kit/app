@@ -15,9 +15,9 @@ import {
   uIOhook,
 } from 'uiohook-napi';
 import { tmpClipboardDir, kitPath } from '@johnlindquist/kit/cjs/utils';
-import { Choice, Script } from '@johnlindquist/kit/types';
+import { Script } from '@johnlindquist/kit/types';
 import { store } from '@johnlindquist/kit/cjs/db';
-import { debounce, remove } from 'lodash';
+import { debounce } from 'lodash';
 
 import { clipboard } from 'electron';
 import { emitter, KitEvent } from './events';
@@ -25,94 +25,13 @@ import { kitConfig, kitState, subs } from './state';
 import { isFocused } from './prompt';
 import { deleteText } from './keyboard';
 import { Trigger } from './enums';
-import { chars } from './chars';
 
-const UiohookToName = Object.fromEntries(
-  Object.entries(UiohookKey).map(([k, v]) => [v, k])
-);
-
-UiohookToName[UiohookKey.Comma] = ',';
-UiohookToName[UiohookKey.Period] = '.';
-UiohookToName[UiohookKey.Slash] = '/';
-UiohookToName[UiohookKey.Backslash] = '\\';
-UiohookToName[UiohookKey.Semicolon] = ';';
-UiohookToName[UiohookKey.Equal] = '=';
-UiohookToName[UiohookKey.Minus] = '-';
-UiohookToName[UiohookKey.Quote] = "'";
-
-const ShiftMap = {
-  '`': '~',
-  '1': '!',
-  '2': '@',
-  '3': '#',
-  '4': '$',
-  '5': '%',
-  '6': '^',
-  '7': '&',
-  '8': '*',
-  '9': '(',
-  '0': ')',
-  '-': '_',
-  '=': '+',
-  '[': '{',
-  ']': '}',
-  '\\': '|',
-  ';': ':',
-  "'": '"',
-  ',': '<',
-  '.': '>',
-  '/': '?',
-  a: 'A',
-  b: 'B',
-  c: 'C',
-  d: 'D',
-  e: 'E',
-  f: 'F',
-  g: 'G',
-  h: 'H',
-  i: 'I',
-  j: 'J',
-  k: 'K',
-  l: 'L',
-  m: 'M',
-  n: 'N',
-  o: 'O',
-  p: 'P',
-  q: 'Q',
-  r: 'R',
-  s: 'S',
-  t: 'T',
-  u: 'U',
-  v: 'V',
-  w: 'W',
-  x: 'X',
-  y: 'Y',
-  z: 'Z',
-};
-type KeyCodes = keyof typeof ShiftMap;
-
-const toKey = (keycode: number, shift = false) => {
-  try {
-    let key: string = UiohookToName[keycode] || '';
-    if (kitState.keymap) {
-      const char = chars[keycode];
-      if (char) {
-        const keymapChar = kitState.keymap?.[char];
-        if (keymapChar) {
-          key = keymapChar?.value;
-        }
-      }
-    }
-
-    if (shift) {
-      return ShiftMap[key as KeyCodes] || key;
-    }
-    return key.toLowerCase();
-  } catch (error) {
-    log.error(error);
-    return '';
-  }
-};
+import {
+  addToClipboardHistory,
+  getClipboardHistory,
+  syncClipboardStore,
+} from './clipboard';
+import { registerIO, toKey } from './io';
 
 type FrontmostApp = {
   localizedName: string;
@@ -128,66 +47,9 @@ type ClipboardInfo = {
   app: FrontmostApp;
 };
 
-interface ClipboardItem extends Choice {
-  type: string;
-  timestamp: string;
-  maybeSecret: boolean;
-  value: any;
-}
-
-let clipboardStore: any;
 let frontmost: any = null;
 
-export const syncClipboardStore = async () => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 200);
-  });
-  store(kitPath('db', 'clipboard.json'), {
-    history: [],
-  })
-    .then((s) => {
-      log.info(`📋 Clipboard store initialized: ${typeof s}`);
-      clipboardStore = s;
-      return s;
-    })
-    .catch((error) => {
-      log.error(error);
-    });
-};
-
 syncClipboardStore();
-
-export const getClipboardHistory = async () => {
-  const history = await clipboardStore.get('history');
-  if (kitState.isMac && kitState?.kenvEnv?.KIT_ACCESSIBILITY !== 'true') {
-    const choice = {
-      name: `Clipboard history requires accessibility access`,
-      description: `Unable to read clipboard history`,
-      value: '__not-authorized__',
-    };
-    log.info(choice);
-
-    await clipboardStore.set('history', [choice, ...history]);
-  }
-
-  return [];
-};
-
-export const removeFromClipboardHistory = async (itemId: string) => {
-  const clipboardHistory = await clipboardStore.get('history');
-  const index = clipboardHistory.findIndex(({ id }) => itemId === id);
-  if (index > -1) {
-    clipboardHistory.splice(index, 1);
-  } else {
-    log.info(`😅 Could not find ${itemId} in clipboard history`);
-  }
-
-  await clipboardStore.set('history', clipboardHistory);
-};
-
-export const clearClipboardHistory = () => {
-  clipboardStore.set('history', []);
-};
 
 const SPACE = '_';
 
@@ -220,7 +82,7 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
 
     let key = '';
     try {
-      key = toKey(e?.keycode || 0, e.shiftKey);
+      key = (event as any).key as string;
       log.silly(`key: ${key} code: ${e?.keycode}`);
     } catch (error) {
       log.error(error);
@@ -294,13 +156,13 @@ let io$Sub: Subscription | null = null;
 let clipboard$Sub: Subscription | null = null;
 
 export const preStartConfigureInterval = async () => {
-  if (!clipboardStore) {
+  if (!clipboard.store) {
     try {
-      clipboardStore = await store(kitPath('db', 'clipboard.json'), {
+      clipboard.store = await store(kitPath('db', 'clipboard.json'), {
         history: [],
       });
 
-      log.info(`📋 Clipboard store initialized: ${typeof clipboardStore}`);
+      log.info(`📋 Clipboard store initialized: ${typeof clipboard.store}`);
 
       await getClipboardHistory();
     } catch (error) {
@@ -338,38 +200,7 @@ export const startKeyboardMonitor = async () => {
     try {
       log.info(`Attempting to start uiohook-napi...`);
 
-      log.info(`Adding click listeners...`);
-      uIOhook.on('click', (event) => {
-        try {
-          observer.next(event);
-        } catch (error) {
-          log.error(error);
-        }
-      });
-
-      log.info(`Adding keydown listeners...`);
-      uIOhook.on('keydown', (event) => {
-        try {
-          observer.next(event);
-
-          if (event.keycode === UiohookKey.Escape) {
-            log.info(`✋ Escape pressed`);
-            kitState.escapePressed = true;
-          }
-        } catch (error) {
-          log.error(error);
-        }
-      });
-
-      uIOhook.on('keyup', (event) => {
-        if (event.keycode === UiohookKey.Escape) {
-          log.info(`✋ Escape released`);
-          kitState.escapePressed = false;
-        }
-      });
-
-      log.info(`The line right before uIOhook.start()...`);
-      uIOhook.start();
+      registerIO(observer.next.bind(observer));
       log.info(`The line right after uIOhook.start()...`);
       log.info(`🟢 Started keyboard and mouse watcher`);
     } catch (e) {
@@ -607,29 +438,7 @@ export const startClipboardMonitor = async () => {
           maybeSecret,
         };
 
-        const clipboardHistory = await clipboardStore.get('history');
-
-        remove(clipboardHistory, (item) => item.value === value);
-
-        log.silly(`📋 Clipboard`, clipboardItem);
-
-        clipboardHistory.unshift(clipboardItem);
-        const maxHistory = kitState?.kenvEnv?.KIT_CLIPBOARD_HISTORY_LIMIT
-          ? parseInt(kitState?.kenvEnv?.KIT_CLIPBOARD_HISTORY_LIMIT, 10)
-          : 100;
-
-        if (
-          // eslint-disable-next-line no-constant-condition
-          clipboardHistory.length > maxHistory
-        ) {
-          clipboardHistory.pop();
-        }
-
-        log.info(
-          `📋 Clipboard history: ${clipboardHistory.length}/${maxHistory}`
-        );
-
-        await clipboardStore.set('history', clipboardHistory);
+        addToClipboardHistory(clipboardItem);
       }
     );
 };

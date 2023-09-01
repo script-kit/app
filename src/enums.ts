@@ -100,5 +100,5 @@ export enum HideReason {
   RunPromptProcess = 'RunPromptProcess',
   Destroy = 'Destroy',
   NoScript = 'NoScript',
-  BeforeExit = 'BeforExit',
+  BeforeExit = 'BeforeExit',
 }
