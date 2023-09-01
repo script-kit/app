@@ -1,5 +1,6 @@
 import log from 'electron-log';
 import { Choice, Script } from '@johnlindquist/kit/types';
+import { tmpClipboardDir, kitPath } from '@johnlindquist/kit/cjs/utils';
 import { debounce, remove } from 'lodash';
 import { kitState, kitClipboard } from './state';
 
