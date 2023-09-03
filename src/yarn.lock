@@ -322,10 +322,10 @@
     bindings "^1.5.0"
     node-addon-api "^7.0.0"
 
-"@johnlindquist/mac-panel-window@^1.0.15":
-  version "1.0.15"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-panel-window/-/mac-panel-window-1.0.15.tgz#1e25496bc3ed29cf993743ce74de4b5402fed708"
-  integrity sha512-y293QVKb5TXCUKXFQbqRCc7w/ZkI8DdkKvWecMA90piCnaQWnNtgB34esVzQ9XZxfntQeJsQhE1WQrwzkJD5Wg==
+"@johnlindquist/mac-panel-window@^1.0.16":
+  version "1.0.16"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-panel-window/-/mac-panel-window-1.0.16.tgz#1418af8cdfe39094a01ab92fe19ed0faec3c28d4"
+  integrity sha512-kBuu7WzH5fhsw0EJfVVu9/kviDoOPilLXCY9Ms80q2Yn9eIXH8rNy7MNZrNiA+w6xxDl18PWa6sYlV1eiObKhQ==
   dependencies:
     bindings "^1.5.0"
     nan "^2.17.0"
