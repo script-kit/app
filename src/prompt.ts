@@ -613,11 +613,21 @@ export const forceFocus = () => {
 
 export const setPromptAlwaysOnTop = (onTop: boolean) => {
   if (promptWindow && !promptWindow.isDestroyed()) {
-    if (onTop) log.info(`🔝 Keep "alwaysOnTop"`);
+    log.info(
+      `📌 Prompt always on top: ${onTop ? 'true' : 'false'}. ignoreBlur: ${
+        kitState.ignoreBlur ? 'true' : 'false'
+      }`
+    );
     kitState.alwaysOnTop = onTop;
-    promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
-    if (onTop && kitState.isMac) {
-      promptWindow.moveTop();
+    if (onTop) {
+      promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
+      if (kitState.isMac) {
+        promptWindow.moveTop();
+      }
+    } else if (kitState.ignoreBlur) {
+      promptWindow.setAlwaysOnTop(onTop, 'normal');
+    } else {
+      promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
     }
   } else {
     kitState.alwaysOnTop = false;
@@ -2117,9 +2127,10 @@ export const destroyPromptWindow = () => {
   }
 };
 
-const showPrompt = () => {
-  setPromptAlwaysOnTop(true);
+export const hasFocus = () => promptWindow?.isFocused();
 
+export const initShowPrompt = () => {
+  promptWindow?.setAlwaysOnTop(true, 'pop-up-menu', 1);
   if (kitState.isMac) {
     promptWindow.showInactive();
   } else {
@@ -2134,6 +2145,10 @@ const showPrompt = () => {
   }, 200);
 
   focusPrompt();
+};
+
+const showPrompt = () => {
+  initShowPrompt();
   sendToPrompt(Channel.SET_OPEN, true);
 
   setTimeout(() => {

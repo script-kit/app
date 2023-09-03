@@ -303,7 +303,6 @@ const initState = {
   isSponsor: false,
   theme,
   appearance: 'auto' as 'auto' | 'light' | 'dark',
-  allowBlur: true,
   keymap: null as any,
   keyboardConfig: {
     autoDelayMs: 0,
@@ -430,8 +429,6 @@ export const hideDock = debounce(() => {
 }, 200);
 
 export const showDock = () => {
-  if (!kitState.kenvEnv.KIT_ALLOW_DOCK) return;
-  if (!kitState.ignoreBlur) return;
   if (!kitState.isMac) return;
   if (
     kitState.devToolsCount === 0 &&
@@ -463,6 +460,15 @@ export const showDock = () => {
     }, 1000);
   }
 };
+
+const subIgnoreBlur = subscribeKey(kitState, 'ignoreBlur', (ignoreBlur) => {
+  log.info(`👀 Ignore blur: ${ignoreBlur ? 'true' : 'false'}`);
+  if (ignoreBlur) {
+    showDock();
+  } else {
+    hideDock();
+  }
+});
 
 const subWidgets = subscribeKey(widgetState, 'widgets', (widgets) => {
   log.info(`👀 Widgets: ${JSON.stringify(widgets)}`);
@@ -622,15 +628,6 @@ export const sponsorCheck = async (feature: string, block = true) => {
   return true;
 };
 
-// sub to allowBlur
-const subAllowBlur = subscribeKey(kitState, 'allowBlur', (allowBlur) => {
-  if (!allowBlur) {
-    setTimeout(() => {
-      kitState.allowBlur = true;
-    }, 100);
-  }
-});
-
 // subs is an array of functions
 export const subs: (() => void)[] = [];
 subs.push(
@@ -642,8 +639,8 @@ subs.push(
   subWindows,
   subStatus,
   subReady,
-  subAllowBlur,
-  subWaking
+  subWaking,
+  subIgnoreBlur
 );
 
 export const updateAppDb = async (settings: Partial<AppDb>) => {
