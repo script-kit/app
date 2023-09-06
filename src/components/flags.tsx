@@ -22,7 +22,7 @@ const createItemData = memoize(
     } as ChoiceButtonProps['data'])
 );
 
-export default function FlagsList({ width, height }: ListProps) {
+export default function FlagsList({ height }: ListProps) {
   const flagsRef = useRef(null);
   const innerRef = useRef(null);
   // TODO: In case items ever have dynamic height
@@ -83,11 +83,6 @@ export default function FlagsList({ width, height }: ListProps) {
     <div
       id="flags"
       className="flags-component flex w-full flex-row overflow-y-hidden"
-      style={
-        {
-          width,
-        } as any
-      }
     >
       <List
         ref={flagsRef}

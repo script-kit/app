@@ -15187,10 +15187,10 @@ react-refresh@^0.14.0:
   resolved "https://registry.yarnpkg.com/react-refresh/-/react-refresh-0.14.0.tgz#4e02825378a5f227079554d4284889354e5f553e"
   integrity sha512-wViHqhAd8OHeLS/IRMJjTSDHF3U9eWi62F/MledQGPdJGDhodXJ9PBLNGr6WWL7qlH12Mt3TyTpbS+hGXMjCzQ==
 
-react-resizable-panels@^0.0.53:
-  version "0.0.53"
-  resolved "https://registry.yarnpkg.com/react-resizable-panels/-/react-resizable-panels-0.0.53.tgz#d169e45f33ccb38cdc077e0f99049385e89883ca"
-  integrity sha512-lGOJF0Hh5+Y+Usi7x8btmBTi+6CQV1/RKxnj6jVrzvJ9vLbftbSoJPzymOuX8ZCFimlEwP2AKsGtQVKG/KieHA==
+react-resizable-panels@^0.0.55:
+  version "0.0.55"
+  resolved "https://registry.yarnpkg.com/react-resizable-panels/-/react-resizable-panels-0.0.55.tgz#adf06d35ae09748ab7051a4bd2c5be8087ef1a66"
+  integrity sha512-J/LTFzUEjJiqwSjVh8gjUXkQDA8MRPjARASfn++d2+KOgA+9UcRYUfE3QBJixer2vkk+ffQ4cq3QzWzzHgqYpQ==
 
 react-shallow-renderer@^16.13.1:
   version "16.15.0"

@@ -19,7 +19,6 @@ import React, {
   useEffect,
   useRef,
 } from 'react';
-import { gsap } from 'gsap';
 import { ToastContainer, toast, cssTransition } from 'react-toastify';
 import { debounce } from 'lodash';
 import path from 'path';
@@ -324,6 +323,7 @@ export default function App() {
   const index = useAtomValue(indexAtom);
 
   const previewCheck = useAtomValue(previewCheckAtom);
+  const showRightPanel = (previewCheck && !kitState.noPreview) || flagValue;
 
   const log = useAtomValue(logAtom);
   // log({
@@ -802,37 +802,6 @@ export default function App() {
 
   const panelChildRef = useRef<ImperativePanelHandle>(null);
 
-  useEffect(() => {
-    if (promptData?.previewWidthPercent && panelChildRef.current) {
-      const needsAnimation =
-        document.getElementById('#data-panel-id-panelChild')?.style.flexGrow ===
-        0;
-      if (needsAnimation) {
-        gsap.to(
-          '#data-panel-id-panelChild',
-
-          {
-            // 'flex-grow': 0,
-            alpha: 1,
-            // ease: Power0.easeOut,
-            duration: 0.15,
-            'flex-grow': promptData?.previewWidthPercent,
-            onComplete: () => {
-              // set data-panel-size to promptData?.previewWidthPercent
-              panelChildRef.current?.resize(panelChildRef.current?.getSize());
-              const panelResizeElement = document.querySelector(
-                '[data-panel-resize-handle-id="panelResizeHandle"]'
-              );
-              if (panelResizeElement) {
-                panelResizeElement!.tabIndex = -1;
-              }
-            },
-          }
-        );
-      }
-    }
-  }, [panelChildRef.current, previewHTML]);
-
   const onResizeHandleDragging = useCallback(
     debounce((event: MouseEvent) => {
       const size = panelChildRef.current?.getSize();
@@ -991,10 +960,8 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
                   {((ui === UI.arg && !panelHTML && choices.length > 0) ||
                     ui === UI.hotkey) && (
-                    <AutoSizer>
-                      {({ width, height }) => (
-                        <List height={height} width={width} />
-                      )}
+                    <AutoSizer disableWidth>
+                      {({ height }) => <List height={height} />}
                     </AutoSizer>
                   )}
                   {(!!(ui === UI.arg || ui === UI.div) &&
@@ -1009,7 +976,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
               {/* {previewEnabled && <Preview />} */}
 
-              {((previewCheck && !kitState.noPreview) || flagValue) && (
+              {showRightPanel && (
                 <>
                   <PanelResizeHandle
                     id="panelResizeHandle"
@@ -1025,10 +992,8 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                     // }}
                   >
                     {flagValue ? (
-                      <AutoSizer>
-                        {({ width, height }) => (
-                          <FlagsList height={height} width={width} />
-                        )}
+                      <AutoSizer disableWidth>
+                        {({ height }) => <FlagsList height={height} />}
                       </AutoSizer>
                     ) : (
                       <Preview />

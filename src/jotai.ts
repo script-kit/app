@@ -138,6 +138,14 @@ export const choicesConfigAtom = atom(
     }
 
     s(loadingAtom, false);
+    const preloaded = g(preloadedAtom);
+    if (preloaded) {
+      const nextIndex = g(scoredChoicesAtom).findIndex(
+        (sc) => sc.item.id === g(defaultChoiceIdAtom)
+      );
+      // This was flashing the preview to the 0 choice, then back to the default choice
+      s(indexAtom, nextIndex > 0 ? nextIndex : 0);
+    }
 
     // const maybePreview = Boolean(
     //   cs.find((c) => c?.hasPreview) ||
@@ -147,12 +155,6 @@ export const choicesConfigAtom = atom(
     // );
 
     // if (a?.[0]?.name.match(/(?<=\[)\.(?=\])/i)) {
-
-    const nextIndex = g(scoredChoicesAtom).findIndex(
-      (sc) => sc.item.id === g(defaultChoiceIdAtom)
-    );
-
-    s(indexAtom, nextIndex > 0 ? nextIndex : 0);
   }
 );
 
@@ -781,7 +783,7 @@ export const inputAtom = atom(
     const selected = g(showSelectedAtom);
     const prevInput = g(_inputAtom);
     if (prevInput && a === '') {
-      s(selected ? flagsIndexAtom : indexAtom, 0);
+      s(selectedAtom ? flagsIndexAtom : indexAtom, 0);
     }
 
     if (a !== prevInput) s(_inputChangedAtom, true);

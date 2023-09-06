@@ -20,7 +20,6 @@ export interface ChoiceButtonProps {
 }
 export interface ListProps {
   height: number;
-  width: number;
 }
 
 export interface ResizeData {

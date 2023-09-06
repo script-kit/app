@@ -25,7 +25,7 @@ const createItemData = memoize(
     } as ChoiceButtonProps['data'])
 );
 
-export default function ChoiceList({ width, height }: ListProps) {
+export default function ChoiceList({ height }: ListProps) {
   const listRef = useRef(null);
   const innerRef = useRef(null);
   // TODO: In case items ever have dynamic height
@@ -90,11 +90,6 @@ export default function ChoiceList({ width, height }: ListProps) {
     <div
       id="list"
       className="list-component flex w-full flex-row overflow-y-hidden"
-      style={
-        {
-          width: width || '100%',
-        } as any
-      }
     >
       <List
         ref={listRef}

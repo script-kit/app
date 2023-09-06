@@ -420,7 +420,7 @@ const childSend = (child: ChildProcess, data: any) => {
       // log.info(`✉️: ${data.channel}`);
       child.send(data, (error) => {
         if (error)
-          log.warn(`Channel ${data?.channel} faileed on ${data?.promptId}`);
+          log.warn(`Channel ${data?.channel} failed on ${data?.promptId}`);
       });
     }
   } catch (error) {
