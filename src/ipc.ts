@@ -449,7 +449,9 @@ ${data.error}
         }
 
         if (channel === Channel.VALUE_SUBMITTED) {
-          log.verbose(`📝 Submitting...`);
+          log.info(`${child?.pid} 📝 Submitting...
+
+`);
           clearSearch();
 
           if (message?.state?.value === Channel.TERMINAL) {

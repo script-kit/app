@@ -1,7 +1,7 @@
 import { screen } from 'electron';
 import { kitState } from './state';
 
-export const getCurrentScreen = async () => {
+export const getCurrentScreen = () => {
   if (kitState?.kenvEnv?.KIT_DISPLAY) {
     const display = screen.getAllDisplays().find((d) => {
       return d.id === Number(kitState.kenvEnv.KIT_DISPLAY);
@@ -12,9 +12,9 @@ export const getCurrentScreen = async () => {
     }
   }
 
+  const point = screen.getCursorScreenPoint();
   const currentScreen =
-    screen.getDisplayNearestPoint(screen.getCursorScreenPoint()) ||
-    screen.getPrimaryDisplay();
+    screen.getDisplayNearestPoint(point) || screen.getPrimaryDisplay();
 
   return currentScreen;
 };

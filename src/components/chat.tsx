@@ -643,6 +643,18 @@ export function Chat() {
         return;
       }
 
+      if (e.altKey) {
+        e.preventDefault();
+        const direction = e.key === 'ArrowUp' ? -1 : 1;
+        // scroll the messagesRef by 100px
+        messagesRef.current?.scrollBy({
+          top: direction * 100,
+          behavior: 'smooth',
+        });
+
+        return;
+      }
+
       // if copy keyboard shortcut is pressed, then copy the innerText of the focused element
       if (e.key === 'c' && (e.ctrlKey || e.metaKey)) {
         const text = document.activeElement?.innerText;

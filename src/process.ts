@@ -2791,13 +2791,6 @@ export const destroyAllProcesses = () => {
   processes.length = 0;
 };
 
-export const abandonOtherActivePromptProcesses = (sameScript = false) => {
-  // eslint-disable-next-line prefer-destructuring
-  if (sameScript && kitState?.promptProcess?.pid && !kitState.preloaded) {
-    processes.removeByPid(kitState?.promptProcess?.pid);
-  }
-};
-
 export const spawnShebang = async ({
   shebang,
   filePath,

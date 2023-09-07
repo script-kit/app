@@ -165,7 +165,7 @@ export const uiAtom = atom(
   (g) => g(_ui),
   (_g, s, a: UI) => {
     s(_ui, a);
-    if (a & (UI.arg | UI.textarea | UI.hotkey | UI.splash)) {
+    if ([UI.arg, UI.textarea, UI.hotkey, UI.splash].includes(a)) {
       s(inputFocusAtom, true);
     }
     // s(previewHTMLAtom, g(cachedMainPreview));

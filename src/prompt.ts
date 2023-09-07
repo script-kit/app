@@ -214,7 +214,7 @@ export const createPromptWindow = async () => {
   const width = PROMPT.WIDTH.BASE;
   const height = PROMPT.HEIGHT.BASE;
   // const currentScreen = getCurrentScreenFromMouse();
-  const currentScreen = await getCurrentScreen();
+  const currentScreen = getCurrentScreen();
   const { width: screenWidth, height: screenHeight } =
     currentScreen.workAreaSize;
   const { x: workX, y: workY } = currentScreen.workArea;
@@ -647,7 +647,7 @@ export const getCurrentScreenFromPrompt = (): Display => {
   return screen.getDisplayNearestPoint(promptWindow.getBounds());
 };
 
-export const getCurrentScreenPromptCache = async (
+export const getCurrentScreenPromptCache = (
   scriptPath: string,
   {
     ui,
@@ -659,7 +659,7 @@ export const getCurrentScreenPromptCache = async (
     bounds: {},
   }
 ) => {
-  const currentScreen = await getCurrentScreen();
+  const currentScreen = getCurrentScreen();
   const screenId = String(currentScreen.id);
   // log.info(`screens:`, promptState.screens);
 
@@ -678,10 +678,6 @@ export const getCurrentScreenPromptCache = async (
   let width = getDefaultWidth();
   let height = PROMPT.HEIGHT.BASE;
 
-  log.verbose({
-    ui,
-    resize: Boolean(resize),
-  });
   if (ui !== UI.none && resize) {
     if (ui === UI.emoji) {
       width = EMOJI_WIDTH;
@@ -763,7 +759,7 @@ export const setBounds = async (bounds: Partial<Rectangle>, reason = '') => {
   // promptWindow?.setContentSize(bounds.width, bounds.height);
 
   // Keep in bounds on the current screen
-  const currentScreen = await getCurrentScreen();
+  const currentScreen = getCurrentScreen();
   const { x, y, width, height } = bounds;
   const { x: workX, y: workY } = currentScreen.workArea;
   const { width: screenWidth, height: screenHeight } =
@@ -906,7 +902,7 @@ export const resize = async (resizeData: ResizeData) => {
   let cachedY;
 
   if (isMainScript) {
-    const cachedBounds = await getCurrentScreenPromptCache(mainScriptPath);
+    const cachedBounds = getCurrentScreenPromptCache(mainScriptPath);
     if (!hasInput) {
       cachedHeight = cachedBounds?.height || PROMPT.HEIGHT.BASE;
     }
@@ -986,7 +982,11 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
     !promptWindow.isDestroyed() &&
     promptWindow?.webContents
   ) {
-    promptWindow?.webContents.send(String(channel), data);
+    if (channel) {
+      promptWindow?.webContents.send(String(channel), data);
+    } else {
+      log.error(`channel is undefined`, { data });
+    }
   }
 };
 
@@ -1454,7 +1454,9 @@ export const setPromptData = async (promptData: PromptData) => {
 
   kitState.promptCount += 1;
   if (kitState.promptCount === 1) {
-    await initBounds();
+    log.info(`Before initBounds`);
+    initBounds();
+    log.info(`After initBounds`);
   }
   // TODO: Combine types for sendToPrompt and appToPrompt?
   appToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
@@ -1476,15 +1478,17 @@ export const setPromptData = async (promptData: PromptData) => {
     kitState.tabChanged = false;
   }
 
-  log.info(`👋 Show Prompt from setPromptData for ${kitState.scriptPath}`);
-  showPrompt();
+  if (!isVisible()) {
+    log.info(`👋 Show Prompt from setPromptData for ${kitState.scriptPath}`);
+    showPrompt();
+  }
 
   if (boundsCheck) clearTimeout(boundsCheck);
   boundsCheck = setTimeout(async () => {
     if (promptWindow?.isDestroyed()) return;
     const currentBounds = promptWindow?.getBounds();
     // const currentDisplayBounds = getCurrentScreenFromMouse().bounds;
-    const currentDisplayBounds = (await getCurrentScreen()).bounds;
+    const currentDisplayBounds = getCurrentScreen().bounds;
 
     const minX = currentDisplayBounds.x;
     const minY = currentDisplayBounds.y;
@@ -1499,7 +1503,7 @@ export const setPromptData = async (promptData: PromptData) => {
     ) {
       log.info(`Prompt window out of bounds. Clearing cache and resetting.`);
       await clearPromptCacheFor(kitState.scriptPath);
-      await initBounds();
+      initBounds();
     } else {
       log.info(`Prompt window in bounds.`);
     }
@@ -1531,12 +1535,14 @@ export const preloadPreview = (html: string) => {
 };
 
 export const attemptPreload = (promptScriptPath: string, show = true) => {
+  log.info(`attemptPreload for ${promptScriptPath}`);
   if (!promptScriptPath) return;
   // log out all the keys of preloadPromptDataMap
   kitState.preloaded = false;
   log.info(`preloadPromptDataMap for ${promptScriptPath}`, [
     ...preloadPromptDataMap.keys(),
   ]);
+
   if (preloadPromptDataMap.has(promptScriptPath)) {
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
     if (show) {
@@ -1547,7 +1553,7 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
     sendToPrompt(Channel.SET_TAB_INDEX, 0);
     appToPrompt(AppChannel.SET_PRELOADED, true);
 
-    kitState.preloaded = true;
+    // kitState.preloaded = true;
 
     const promptData = preloadPromptDataMap.get(promptScriptPath) as PromptData;
 
@@ -1576,6 +1582,8 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
 
     initBounds(promptScriptPath, show, promptScriptPath === mainScriptPath);
   }
+
+  log.info(`end of attemptPreload`);
 };
 
 export const setScoredChoices = (choices: ScoredChoice[]) => {
@@ -2094,7 +2102,7 @@ export const clearPromptCache = async () => {
 
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
   kitState.resizePaused = true;
-  await initBounds();
+  initBounds();
 
   setTimeout(() => {
     kitState.resizePaused = false;
@@ -2175,14 +2183,15 @@ export const onHideOnce = (fn: () => void) => {
   }
 };
 
-export const initBounds = async (
+export const initBounds = (
   forceScriptPath?: string,
   show = false,
   isMain = false
 ) => {
   if (promptWindow?.isDestroyed()) return;
 
-  const bounds = await getCurrentScreenPromptCache(
+  log.info(`Before getCurrentScreenPromptCache`);
+  const bounds = getCurrentScreenPromptCache(
     forceScriptPath || kitState.scriptPath,
     {
       ui: kitState.promptUI,
@@ -2190,6 +2199,7 @@ export const initBounds = async (
       bounds: kitState.promptBounds,
     }
   );
+  log.info(`After getCurrentScreenPromptCache`);
   if (promptWindow?.isDestroyed()) return;
 
   if (promptWindow?.isVisible()) {
@@ -2226,20 +2236,6 @@ export const initBounds = async (
 
   if (!show) {
     return;
-  }
-  if (!isMain) {
-    // eslint-disable-next-line promise/param-names
-    // await new Promise((r) => setTimeout(r, 40));
-    // eslint-disable-next-line promise/param-names
-    await new Promise((r) => {
-      const id = setTimeout(() => {
-        r(true);
-      }, 200);
-      ipcMain.once(Channel.ON_INIT, () => {
-        clearTimeout(id);
-        r(true);
-      });
-    });
   }
 
   log.info(`👋 Show Prompt from preloaded ${kitState.scriptPath}`);
@@ -2386,7 +2382,7 @@ export const debugPrompt = async () => {
     // END-REMOVE-NUT
 
     const promptBounds = promptWindow?.getBounds();
-    const screenBounds = (await getCurrentScreen()).bounds;
+    const screenBounds = getCurrentScreen().bounds;
     const mouse = screen.getCursorScreenPoint();
 
     promptLog.info({

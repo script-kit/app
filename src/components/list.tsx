@@ -74,9 +74,9 @@ export default function ChoiceList({ height }: ListProps) {
   useEffect(() => {
     if (!listRef.current) return;
 
-    log(`🧾 List reset due to choice height changes`);
+    // log(`🧾 List reset due to choice height changes`);
     (listRef?.current as any)?.resetAfterIndex(0);
-  }, [currentChoiceHeights]);
+  }, [choices]);
 
   const [scrollTimeout, setScrollTimeout] = useState<any>(null);
 

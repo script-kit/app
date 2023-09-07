@@ -12,3 +12,4 @@ export { default as useOpen } from './useOpen';
 export { default as useSave } from './useSave';
 export { default as useTab } from './useTab';
 export { default as useThemeDetector } from './useThemeDetector';
+export { default as useMessages } from './useMessages';

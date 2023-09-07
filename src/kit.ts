@@ -24,12 +24,7 @@ import { ProcessInfo } from '@johnlindquist/kit';
 
 import { subscribeKey } from 'valtio/utils';
 import { emitter, KitEvent } from './events';
-import {
-  abandonOtherActivePromptProcesses,
-  ensureIdleProcess,
-  getIdles,
-  processes,
-} from './process';
+import { ensureIdleProcess, getIdles, processes } from './process';
 import {
   hideAppIfNoWindows,
   isVisible,
@@ -175,7 +170,6 @@ export const runPromptProcess = async (
       options?.force ? kitState.scriptPath : promptScriptPath
     );
     const sameScript = kitState.scriptPath === promptScriptPath;
-    abandonOtherActivePromptProcesses(sameScript);
     if (sameScript && !isSplash) {
       return null;
     }
