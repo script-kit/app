@@ -621,11 +621,17 @@ export const setPromptAlwaysOnTop = (onTop: boolean) => {
     kitState.alwaysOnTop = onTop;
     if (onTop) {
       promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
+
       if (kitState.isMac) {
         promptWindow.moveTop();
+      } else {
+        promptWindow.setVisibleOnAllWorkspaces(true);
       }
     } else if (kitState.ignoreBlur) {
       promptWindow.setAlwaysOnTop(onTop, 'normal');
+      if (!kitState.isMac) {
+        promptWindow.setVisibleOnAllWorkspaces(false);
+      }
     } else {
       promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
     }
@@ -1557,6 +1563,9 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
 
     const promptData = preloadPromptDataMap.get(promptScriptPath) as PromptData;
 
+    if (mainScriptPath === promptScriptPath) {
+      promptData.input = '';
+    }
     preloadPromptData(promptData);
 
     if (preloadChoicesMap.has(promptScriptPath)) {

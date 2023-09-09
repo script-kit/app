@@ -953,16 +953,23 @@ const kitMessageMap: ChannelHandler = {
     }
   ),
 
-  BEFORE_EXIT: onChildChannelOverride(async ({ child }, { channel }) => {
-    log.info(`✅ pid: ${child.pid} "finishScript" invoked...
+  BEFORE_EXIT: onChildChannelOverride(
+    debounce(
+      async ({ child }, { channel }) => {
+        log.info(`✅ pid: ${child.pid} "finishScript" invoked...
 
 `);
-    if (!kitState.allowQuit) {
-      attemptPreload(mainScriptPath, false);
-      sendToPrompt(Channel.SET_INPUT, '');
-      hideAppIfNoWindows(HideReason.BeforeExit);
-    }
-  }),
+        if (!kitState.allowQuit) {
+          attemptPreload(mainScriptPath, false);
+          hideAppIfNoWindows(HideReason.BeforeExit);
+        }
+      },
+      100,
+      {
+        leading: true,
+      }
+    )
+  ),
 
   QUIT_APP: onChildChannel(async ({ child }, { channel, value }) => {
     await new Promise((resolve) => setTimeout(resolve, 250));
