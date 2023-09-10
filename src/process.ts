@@ -91,6 +91,7 @@ import {
   setScript,
   setTabIndex,
   attemptPreload,
+  initOnHide,
 } from './prompt';
 import {
   getBackgroundTasks,
@@ -960,8 +961,8 @@ const kitMessageMap: ChannelHandler = {
 
 `);
         if (!kitState.allowQuit) {
-          attemptPreload(mainScriptPath, false);
-          hideAppIfNoWindows(HideReason.BeforeExit);
+          attemptPreload(mainScriptPath, false, false);
+          initOnHide();
         }
       },
       100,

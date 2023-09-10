@@ -1164,6 +1164,20 @@ const writePromptState = async (
   promptState.screens[screenId][scriptPath] = bounds;
 };
 
+export const initOnHide = () => {
+  const hideHandler = () => {
+    log.info(`👁️ Hidden: Init back to main dimensions`);
+    initBounds(mainScriptPath, false);
+  };
+
+  promptWindow?.once('hide', hideHandler);
+  promptWindow?.once('show', () => {
+    promptWindow?.removeListener('hide', hideHandler);
+  });
+
+  actualHide();
+};
+
 export const hideAppIfNoWindows = (reason: HideReason) => {
   log.silly(`function: hideAppIfNoWindows: ${reason}`);
   if (promptWindow) {
@@ -1540,7 +1554,11 @@ export const preloadPreview = (html: string) => {
   setPreview(html);
 };
 
-export const attemptPreload = (promptScriptPath: string, show = true) => {
+export const attemptPreload = (
+  promptScriptPath: string,
+  show = true,
+  init = true
+) => {
   log.info(`attemptPreload for ${promptScriptPath}`);
   if (!promptScriptPath) return;
   // log out all the keys of preloadPromptDataMap
@@ -1589,7 +1607,9 @@ export const attemptPreload = (promptScriptPath: string, show = true) => {
       };
     }
 
-    initBounds(promptScriptPath, show, promptScriptPath === mainScriptPath);
+    if (init) {
+      initBounds(promptScriptPath, show);
+    }
   }
 
   log.info(`end of attemptPreload`);
@@ -2192,11 +2212,7 @@ export const onHideOnce = (fn: () => void) => {
   }
 };
 
-export const initBounds = (
-  forceScriptPath?: string,
-  show = false,
-  isMain = false
-) => {
+export const initBounds = (forceScriptPath?: string, show = false) => {
   if (promptWindow?.isDestroyed()) return;
 
   log.info(`Before getCurrentScreenPromptCache`);
