@@ -58,7 +58,7 @@ import { subscribeKey } from 'valtio/utils';
 import { readJson } from 'fs-extra';
 import { setScriptTimestamp, getTimestamps } from '@johnlindquist/kit/cjs/db';
 import { readFileSync } from 'fs';
-import { getLog, mainLog, warn } from './logs';
+import { getLog, Logger, mainLog, warn } from './logs';
 import {
   setPromptAlwaysOnTop,
   appToPrompt,
@@ -91,7 +91,8 @@ import {
   setScript,
   setTabIndex,
   attemptPreload,
-  initOnHide,
+  initOnHide as resetToMain,
+  preloadMainScript,
 } from './prompt';
 import {
   getBackgroundTasks,
@@ -412,6 +413,9 @@ export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
 export const cachePreview = async (scriptPath: string, preview: string) => {
   log.verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
   preloadPreviewMap.set(scriptPath, preview);
+  if (kitState.isMainScript()) {
+    appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, preview);
+  }
 };
 
 const childSend = (child: ChildProcess, data: any) => {
@@ -961,8 +965,7 @@ const kitMessageMap: ChannelHandler = {
 
 `);
         if (!kitState.allowQuit) {
-          attemptPreload(mainScriptPath, false, false);
-          initOnHide();
+          resetToMain();
         }
       },
       100,
@@ -1040,7 +1043,14 @@ const kitMessageMap: ChannelHandler = {
       processInfo.scriptPath = data.value?.filePath;
 
       if (processInfo.child.stdout && processInfo.child.stderr) {
-        const scriptLog = getLog(processInfo.scriptPath);
+        let scriptLog: Logger;
+
+        try {
+          scriptLog = getLog(processInfo.scriptPath);
+        } catch (e) {
+          return;
+        }
+
         processInfo.child.stdout.removeAllListeners();
         processInfo.child.stderr.removeAllListeners();
 
@@ -1165,6 +1175,9 @@ const kitMessageMap: ChannelHandler = {
 
   SET_SHORTCUTS: onChildChannel(async ({ child }, { channel, value }) => {
     setShortcuts(value);
+    if (kitState.isMainScript() && kitSearch.input === '') {
+      appToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, value);
+    }
 
     // TOOD: Consider caching shortcuts
     // const cachePath = getCachePath(kitState.scriptPath, 'shortcuts');
@@ -2622,6 +2635,31 @@ export const removeAbandonnedKit = () => {
 };
 
 export const handleWidgetEvents = () => {
+  const initHandler: WidgetHandler = (event, data) => {
+    const { widgetId } = data;
+
+    const w = widgetState.widgets.find(({ id }) => id === widgetId);
+    if (!w) return;
+    const { wid, moved, pid } = w;
+    const widget = BrowserWindow.fromId(wid);
+    const { child } = processes.getByPid(pid) as ProcessInfo;
+    if (!child) return;
+
+    if (moved) {
+      w.moved = false;
+      return;
+    }
+
+    log.info(`🔎 click ${widgetId}`);
+
+    childSend(child, {
+      ...data,
+      ...widget.getBounds(),
+      pid: child.pid,
+      channel: Channel.WIDGET_CLICK,
+    });
+  };
+
   const clickHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
 
@@ -2767,6 +2805,8 @@ export const handleWidgetEvents = () => {
     widget.setSize(data.width, data.height, true);
   };
 
+  // These events are not being caught in the script...
+  ipcMain.on(Channel.WIDGET_INIT, initHandler);
   ipcMain.on(Channel.WIDGET_CLICK, clickHandler);
   ipcMain.on(Channel.WIDGET_DROP, dropHandler);
   ipcMain.on(Channel.WIDGET_MOUSE_DOWN, mouseDownHandler);

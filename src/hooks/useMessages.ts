@@ -86,6 +86,10 @@ import {
   preventSubmitAtom,
   selectedChoicesAtom,
   toggleAllSelectedChoicesAtom,
+  resetPromptAtom,
+  cachedMainScoredChoicesAtom,
+  cachedMainShortcutsAtom,
+  cachedMainPreviewAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../enums';
@@ -168,6 +172,10 @@ export default () => {
   const scrollToIndex = useAtomValue(scrollToIndexAtom);
   const setPreloaded = useSetAtom(preloadedAtom);
   const setTriggerKeyword = useSetAtom(triggerKeywordAtom);
+  const resetPrompt = useSetAtom(resetPromptAtom);
+  const setCachedMainScoredChoices = useSetAtom(cachedMainScoredChoicesAtom);
+  const setCachedMainShortcuts = useSetAtom(cachedMainShortcutsAtom);
+  const setCachedMainPreview = useSetAtom(cachedMainPreviewAtom);
 
   // log({
   //   previewCheck: previewCheck ? '✅' : '🚫',
@@ -443,6 +451,49 @@ export default () => {
       ipcRenderer.on(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
     }
 
+    const handleResetPrompt = () => {
+      resetPrompt();
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.RESET_PROMPT) === 0) {
+      ipcRenderer.on(AppChannel.RESET_PROMPT, handleResetPrompt);
+    }
+
+    const handleSetCachedMainScoredChoices = (_, data) => {
+      setCachedMainScoredChoices(data);
+    };
+
+    if (
+      ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES) === 0
+    ) {
+      ipcRenderer.on(
+        AppChannel.SET_CACHED_MAIN_SCORED_CHOICES,
+        handleSetCachedMainScoredChoices
+      );
+    }
+
+    const handleSetCachedMainShortcuts = (_, data) => {
+      setCachedMainShortcuts(data);
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_SHORTCUTS) === 0) {
+      ipcRenderer.on(
+        AppChannel.SET_CACHED_MAIN_SHORTCUTS,
+        handleSetCachedMainShortcuts
+      );
+    }
+
+    const handleSetCachedMainPreview = (_, data) => {
+      setCachedMainPreview(data);
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_PREVIEW) === 0) {
+      ipcRenderer.on(
+        AppChannel.SET_CACHED_MAIN_PREVIEW,
+        handleSetCachedMainPreview
+      );
+    }
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
@@ -458,6 +509,19 @@ export default () => {
       ipcRenderer.off(AppChannel.SCROLL_TO_INDEX, handleScrollToIndex);
       ipcRenderer.off(AppChannel.SET_PRELOADED, handleSetPreloaded);
       ipcRenderer.off(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
+      ipcRenderer.off(AppChannel.RESET_PROMPT, handleResetPrompt);
+      ipcRenderer.off(
+        AppChannel.SET_CACHED_MAIN_SCORED_CHOICES,
+        handleSetCachedMainScoredChoices
+      );
+      ipcRenderer.off(
+        AppChannel.SET_CACHED_MAIN_SHORTCUTS,
+        handleSetCachedMainShortcuts
+      );
+      ipcRenderer.off(
+        AppChannel.SET_CACHED_MAIN_PREVIEW,
+        handleSetCachedMainPreview
+      );
       // ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
     };
   }, []);

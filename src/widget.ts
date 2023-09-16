@@ -15,6 +15,8 @@ export type WidgetOptions = BrowserWindowConstructorOptions & {
   containerClass?: string;
 };
 
+// TODO: Widget hover elements broken???
+
 export const createWidget = async (
   command: string,
   html = '<h1>html undefined</h1>',
@@ -102,6 +104,10 @@ export const createWidget = async (
           ipcRenderer.on('WIDGET_SET_STATE', (event, state)=> {
             this.setState(state);
             onSetState(state);
+          })
+
+          ipcRenderer.send("WIDGET_INIT", {
+            widgetId: window.widgetId,
           })
         }
       }

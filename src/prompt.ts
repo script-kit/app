@@ -1175,6 +1175,7 @@ export const initOnHide = () => {
     promptWindow?.removeListener('hide', hideHandler);
   });
 
+  appToPrompt(AppChannel.RESET_PROMPT);
   actualHide();
 };
 
@@ -1559,6 +1560,7 @@ export const attemptPreload = (
   show = true,
   init = true
 ) => {
+  const isMainScript = mainScriptPath === promptScriptPath;
   log.info(`attemptPreload for ${promptScriptPath}`);
   if (!promptScriptPath) return;
   // log out all the keys of preloadPromptDataMap
@@ -1567,7 +1569,12 @@ export const attemptPreload = (
     ...preloadPromptDataMap.keys(),
   ]);
 
-  if (preloadPromptDataMap.has(promptScriptPath)) {
+  if (isMainScript) {
+    if (show) {
+      disableBackgroundThrottling();
+    }
+    appToPrompt(AppChannel.RESET_PROMPT);
+  } else if (preloadPromptDataMap.has(promptScriptPath)) {
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
     if (show) {
       disableBackgroundThrottling();
@@ -1620,6 +1627,13 @@ export const setScoredChoices = (choices: ScoredChoice[]) => {
     log.info(`🎼 Scored choices count: ${choices.length}`);
   }
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
+
+  if (kitState.isMainScript() && kitSearch.input === '') {
+    log.info(
+      `Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`
+    );
+    appToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
+  }
 };
 
 export const setScoredFlags = (choices: ScoredChoice[]) => {

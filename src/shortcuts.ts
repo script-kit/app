@@ -246,6 +246,7 @@ export const updateMainShortcut = async (filePath: string) => {
     const mainShortcutAction = debounce(
       async () => {
         kitState.shortcutPressed = finalShortcut;
+
         log.info(`
 
 ----------------------------------------

@@ -428,6 +428,7 @@ export const hideDock = debounce(() => {
   if (hideIntervalId) clearInterval(hideIntervalId);
 }, 200);
 
+// Widgets not showing up in Dock
 export const showDock = () => {
   if (!kitState.isMac) return;
   if (

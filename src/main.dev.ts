@@ -146,6 +146,8 @@ import {
   setupLog,
 } from './install';
 
+// TODO: Read a settings file to get the KENV/KIT paths
+
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';

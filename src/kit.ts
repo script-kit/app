@@ -171,6 +171,7 @@ export const runPromptProcess = async (
     );
     const sameScript = kitState.scriptPath === promptScriptPath;
     if (sameScript && !isSplash) {
+      emitter.emit(KitEvent.KillProcess, kitState.pid);
       return null;
     }
   }

@@ -168,6 +168,10 @@ export const uiAtom = atom(
     if ([UI.arg, UI.textarea, UI.hotkey, UI.splash].includes(a)) {
       s(inputFocusAtom, true);
     }
+
+    if ([UI.splash, UI.term, UI.editor, UI.hotkey].includes(a)) {
+      s(enterAtom, '');
+    }
     // s(previewHTMLAtom, g(cachedMainPreview));
   }
 );
@@ -927,7 +931,7 @@ export const scriptAtom = atom(
       if (!preloaded) {
         // Removed: Caused a flash of white from no choices
         // s(scoredChoicesAtom, []);
-        s(focusedChoiceAtom, noChoice);
+        // s(focusedChoiceAtom, noChoice);
         s(_previewHTML, '');
       }
       //
@@ -1344,7 +1348,11 @@ export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     // g(logAtom)(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
-    s(isMainScriptAtom, a?.scriptPath === mainScriptPath);
+    const isMainScript = a?.scriptPath === mainScriptPath;
+    s(isMainScriptAtom, isMainScript);
+    if (isMainScript && !a?.preload) {
+      s(cachedMainPromptDataAtom, a);
+    }
     if (a?.ui !== UI.arg && !a?.preview) {
       s(previewHTMLAtom, closedDiv);
     }
@@ -2138,12 +2146,6 @@ export const setFocusedChoiceAtom = atom(null, (g, s, a: string) => {
 });
 
 export const enterButtonNameAtom = atom<string>((g) => {
-  const ui = g(uiAtom);
-  if (ui === UI.splash) return '';
-  if (ui === UI.term) return '';
-  if (ui === UI.editor) return '';
-  if (ui === UI.hotkey) return '';
-
   const focusedChoice = g(focusedChoiceAtom);
   if (focusedChoice?.enter) return focusedChoice.enter;
   return g(enterAtom);
@@ -2875,3 +2877,24 @@ export const currentChoiceHeightsAtom = atom(
     s(_currentChoiceHeights, currentChoiceHeights);
   }
 );
+
+export const resetPromptAtom = atom(null, (g, s) => {
+  s(tabIndexAtom, 0);
+  g(scrollToIndexAtom)(0);
+  s(inputAtom, '');
+  const cachedMainPromptData = g(cachedMainPromptDataAtom) as PromptData;
+  cachedMainPromptData.preload = true;
+  const cachedMainScoredChoices = g(cachedMainScoredChoicesAtom);
+  const cachedShortcuts = g(cachedMainShortcutsAtom);
+  const cachedMainPreview = g(cachedMainPreviewAtom);
+
+  s(promptDataAtom, cachedMainPromptData);
+  s(shortcutsAtom, cachedShortcuts);
+  s(previewHTMLAtom, cachedMainPreview);
+  s(scoredChoicesAtom, cachedMainScoredChoices);
+});
+
+export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({});
+export const cachedMainScoredChoicesAtom = atom<ScoredChoice[]>([]);
+export const cachedMainShortcutsAtom = atom<Shortcut[]>([]);
+export const cachedMainPreviewAtom = atom<string>('');
