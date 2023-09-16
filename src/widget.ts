@@ -16,6 +16,7 @@ export type WidgetOptions = BrowserWindowConstructorOptions & {
 };
 
 // TODO: Widget hover elements broken???
+// TODO: Test widget body height/resize/etc
 
 export const createWidget = async (
   command: string,
