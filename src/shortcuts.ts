@@ -7,22 +7,20 @@ import { debounce } from 'lodash';
 
 import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 
-import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
+import { UI } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import {
-  focusPrompt,
   hasFocus,
+  initBounds,
   initShowPrompt,
   isVisible,
-  maybeHide,
   reload,
 } from './prompt';
 import { convertKey, kitState, subs } from './state';
-import { HideReason, Trigger } from './enums';
+import { Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
 import { processes, spawnShebang } from './process';
-import { TrackEvent, trackEvent } from './track';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -243,88 +241,81 @@ export const updateMainShortcut = async (filePath: string) => {
       shortcutMap.delete(mainScriptPath);
     }
 
-    const mainShortcutAction = debounce(
-      async () => {
-        kitState.shortcutPressed = finalShortcut;
+    const mainShortcutAction = async () => {
+      kitState.shortcutPressed = finalShortcut;
 
-        log.info(`
+      log.info(`
 
 ----------------------------------------
 🏚  Main shortcut pressed: ${finalShortcut}`);
 
-        trackEvent(TrackEvent.MainShortcut, {
-          login: kitState.user?.login || 'unknown',
-          sponsor: kitState.isSponsor,
-        });
+      // trackEvent(TrackEvent.MainShortcut, {
+      //   login: kitState.user?.login || 'unknown',
+      //   sponsor: kitState.isSponsor,
+      // });
 
-        if (kitState.promptCount > 0 && !hasFocus()) {
-          initShowPrompt();
-          return;
-        }
+      if (kitState.promptCount > 0 && !hasFocus()) {
+        initShowPrompt();
+        return;
+      }
 
-        if (!isVisible()) {
-          await runPromptProcess(mainScriptPath, [], {
-            force: true,
-            trigger: Trigger.Menu,
-          });
-          return;
-        }
-
-        const pInfo = processes.getByPid(kitState.pid);
-
-        const isSplash = kitState.ui === UI.splash;
-
-        if (!isSplash) {
-          const scriptPingSuccess = await new Promise((resolve, reject) => {
-            try {
-              let pingId: NodeJS.Timeout;
-              const pongHandler = (message: { channel: Channel }) => {
-                if (message?.channel === Channel.PONG) {
-                  log.info(`Successfully pinged script`);
-                  if (pingId) clearTimeout(pingId);
-                  pInfo?.child?.off('message', pongHandler);
-                  resolve(true);
-                }
-              };
-              pInfo?.child?.on('message', pongHandler);
-
-              pingId = setTimeout(() => {
-                pInfo?.child?.off('message', pongHandler);
-                log.error(`Failed to ping script`);
-                maybeHide(HideReason.PingTimeout);
-                resolve(false);
-              }, 500);
-
-              pInfo?.child?.send({
-                channel: Channel.PING,
-                pid: kitState.pid,
-                state: {},
-              });
-            } catch (error) {
-              resolve(false);
-            }
-          });
-
-          if (!scriptPingSuccess) {
-            log.info(`Killing ${kitState.pid}`);
-            processes.removeByPid(kitState.pid);
-            maybeHide(HideReason.MainShortcut);
-            return;
-          }
-        }
-
-        // setPreview(`<div></div>`);
-
+      if (!isVisible()) {
+        initBounds(mainScriptPath, true);
         await runPromptProcess(mainScriptPath, [], {
           force: true,
           trigger: Trigger.Menu,
         });
-      },
-      250,
-      {
-        leading: true,
+        return;
       }
-    );
+
+      const pInfo = processes.getByPid(kitState.pid);
+
+      const isSplash = kitState.ui === UI.splash;
+
+      if (!isSplash) {
+        // const scriptPingSuccess = await new Promise((resolve, reject) => {
+        //   try {
+        //     let pingId: NodeJS.Timeout;
+        //     const pongHandler = (message: { channel: Channel }) => {
+        //       if (message?.channel === Channel.PONG) {
+        //         log.info(`Successfully pinged script`);
+        //         if (pingId) clearTimeout(pingId);
+        //         pInfo?.child?.off('message', pongHandler);
+        //         resolve(true);
+        //       }
+        //     };
+        //     pInfo?.child?.on('message', pongHandler);
+        //     pingId = setTimeout(() => {
+        //       pInfo?.child?.off('message', pongHandler);
+        //       log.error(`Failed to ping script`);
+        //       maybeHide(HideReason.PingTimeout);
+        //       resolve(false);
+        //     }, 500);
+        //     pInfo?.child?.send({
+        //       channel: Channel.PING,
+        //       pid: kitState.pid,
+        //       state: {},
+        //     });
+        //   } catch (error) {
+        //     resolve(false);
+        //   }
+        // });
+        // if (!scriptPingSuccess) {
+        //   log.info(`Killing ${kitState.pid}`);
+        //   processes.removeByPid(kitState.pid);
+        //   maybeHide(HideReason.MainShortcut);
+        //   return;
+        // }
+      }
+
+      // setPreview(`<div></div>`);
+
+      await runPromptProcess(mainScriptPath, [], {
+        force: true,
+        trigger: Trigger.Menu,
+      });
+    };
+
     const ret = globalShortcut.register(finalShortcut, mainShortcutAction);
 
     if (!ret) {
