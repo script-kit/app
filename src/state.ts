@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
 
+import Store, { Schema } from 'electron-store';
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
 import { readJson, writeJson } from 'fs-extra';
@@ -32,6 +33,7 @@ import {
 import {
   parseScript,
   kitPath,
+  kenvPath,
   isParentOfDir,
   mainScriptPath,
   tmpClipboardDir,
@@ -45,6 +47,35 @@ import { noScript } from './defaults';
 import { getAssetPath } from './assets';
 import { emitter, KitEvent } from './events';
 import { Trigger } from './enums';
+
+const schema: Schema<{
+  KENV: string;
+  accessibilityAuthorized: boolean;
+  sponsor: boolean;
+}> = {
+  KENV: {
+    type: 'string',
+    default: kenvPath(),
+  },
+  accessibilityAuthorized: {
+    type: 'boolean',
+    default: true,
+  },
+  sponsor: {
+    type: 'boolean',
+    default: false,
+  },
+};
+export const kitStore = new Store({
+  schema,
+});
+
+const storedKenv = kitStore.get('KENV');
+log.info(`📀 Stored KENV: ${storedKenv}`);
+log.info(`Path to kitStore: ${kitStore.path}`);
+// process.exit();
+
+process.env.KENV = storedKenv;
 
 const release = os.release();
 const isMac = os.platform() === 'darwin';

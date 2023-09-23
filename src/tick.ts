@@ -21,7 +21,7 @@ import { debounce } from 'lodash';
 
 import { clipboard } from 'electron';
 import { emitter, KitEvent } from './events';
-import { kitConfig, kitState, subs } from './state';
+import { kitConfig, kitState, kitStore, subs } from './state';
 import { isFocused } from './prompt';
 import { deleteText } from './keyboard';
 import { Trigger } from './enums';
@@ -169,7 +169,7 @@ export const preStartConfigureInterval = async () => {
       log.error(error);
     }
   }
-  if (kitState.kenvEnv?.KIT_ACCESSIBILITY === 'true') {
+  if (kitStore.get('accessibilityAuthorized')) {
     log.info(`💻 Accessibility authorized ✅`);
     await startClipboardMonitor();
   }

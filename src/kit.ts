@@ -32,7 +32,7 @@ import {
   setScript,
   attemptPreload,
 } from './prompt';
-import { getKitScript, kitState } from './state';
+import { getKitScript, kitState, kitStore } from './state';
 import { pathsAreEqual } from './helpers';
 import { HideReason, Trigger } from './enums';
 import { TrackEvent, trackEvent } from './track';
@@ -289,10 +289,12 @@ export const runScript = (...args: string[]) => {
 subscribeKey(kitState, 'isSponsor', (isSponsor) => {
   log.info(`🎨 Sponsor changed:`, isSponsor);
 
-  runScript(
-    kitPath('config', 'toggle-sponsor.js'),
-    isSponsor ? 'true' : 'false'
-  );
+  // runScript(
+  //   kitPath('config', 'toggle-sponsor.js'),
+  //   isSponsor ? 'true' : 'false'
+  // );
+
+  kitStore.set('sponsor', isSponsor);
 });
 
 emitter.on(KitEvent.OpenLog, async (scriptPath) => {

@@ -1,8 +1,8 @@
 import log from 'electron-log';
-import { Choice, Script } from '@johnlindquist/kit/types';
-import { tmpClipboardDir, kitPath } from '@johnlindquist/kit/cjs/utils';
-import { debounce, remove } from 'lodash';
-import { kitState, kitClipboard } from './state';
+import { Choice } from '@johnlindquist/kit/types';
+import { kitPath } from '@johnlindquist/kit/cjs/utils';
+import { remove } from 'lodash';
+import { kitState, kitClipboard, kitStore } from './state';
 
 export interface ClipboardItem extends Choice {
   type: string;
@@ -13,7 +13,7 @@ export interface ClipboardItem extends Choice {
 
 export const getClipboardHistory = async () => {
   const history = await kitClipboard.store.get('history');
-  if (kitState.isMac && kitState?.kenvEnv?.KIT_ACCESSIBILITY !== 'true') {
+  if (kitState.isMac && kitStore.get('accessibilityAuthorized')) {
     const choice = {
       name: `Clipboard history requires accessibility access`,
       description: `Unable to read clipboard history`,

@@ -100,6 +100,7 @@ import {
   getThemes,
   initKeymap,
   kitState,
+  kitStore,
   subs,
   updateAppDb,
 } from './state';
@@ -481,6 +482,31 @@ const systemEvents = () => {
 
 const ready = async () => {
   try {
+    // REMOVE-MAC
+    const isMac = os.platform() === 'darwin';
+    if (isMac) {
+      startSK();
+
+      const { getAuthStatus } = await import('node-mac-permissions');
+
+      let authorized = getAuthStatus('accessibility') === 'authorized';
+      kitStore.set('accessibilityAuthorized', authorized);
+
+      if (!authorized) {
+        setInterval(async () => {
+          authorized = getAuthStatus('accessibility') === 'authorized';
+          if (authorized) {
+            kitStore.set('accessibilityAuthorized', authorized);
+
+            log.info(`🌎 Accessibility Mode Enabled. Relaunching...`);
+            app.relaunch();
+            app.exit();
+          }
+        }, 1000);
+      }
+    }
+    // END-REMOVE-MAC
+
     await ensureKitDirs();
     await ensureKenvDirs();
     createLogs();
@@ -497,27 +523,8 @@ const ready = async () => {
     await setupWatchers();
     await setupLog(`Shortcuts Assigned`);
 
-    const isMac = os.platform() === 'darwin';
-
     await setupLog(``);
     setupDone();
-
-    // REMOVE-MAC
-    if (isMac) {
-      startSK();
-
-      if (!kitState.kenvEnv?.KIT_ACCESSIBILITY) {
-        setInterval(async () => {
-          const { getAuthStatus } = await import('node-mac-permissions');
-
-          const authorized = getAuthStatus('accessibility') === 'authorized';
-          if (authorized) {
-            runScript(kitPath('config', 'set-accessible.js'));
-          }
-        }, 1000);
-      }
-    }
-    // END-REMOVE-MAC
     await cacheKitScripts();
 
     // ensureIdleProcess();

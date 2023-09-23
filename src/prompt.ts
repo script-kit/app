@@ -1164,7 +1164,7 @@ const writePromptState = async (
   promptState.screens[screenId][scriptPath] = bounds;
 };
 
-export const initOnHide = () => {
+export const resetToMain = () => {
   const hideHandler = () => {
     log.info(`👁️ Hidden: Init back to main dimensions`);
     initBounds(mainScriptPath, false);

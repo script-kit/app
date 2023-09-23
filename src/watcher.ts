@@ -1,5 +1,4 @@
 /* eslint-disable no-restricted-syntax */
-import { app } from 'electron';
 import log from 'electron-log';
 import { assign, debounce } from 'lodash';
 import path from 'path';
@@ -239,6 +238,7 @@ export const checkUserDb = async (eventName: string) => {
     kitPath('config', 'set-login'),
     kitState.user.login || '__KIT_ClEAR_ENV__'
   );
+
   if (kitState?.user?.login) {
     const isSponsor = await sponsorCheck('Login', false);
     kitState.isSponsor = isSponsor;
@@ -327,15 +327,6 @@ export const setupWatchers = async () => {
       if (existsSync(filePath)) {
         try {
           const envData = dotenv.parse(readFileSync(filePath));
-
-          if (
-            envData?.KIT_ACCESSIBILITY === 'true' &&
-            !kitState.kenvEnv.KIT_ACCESSIBILITY
-          ) {
-            log.info(`🌎 Accessibility Mode Enabled. Relaunching...`);
-            app.relaunch();
-            app.exit();
-          }
 
           log.info({
             KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,

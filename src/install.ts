@@ -208,7 +208,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 
 export const installEsbuild = async () => {
   return installPackage(
-    `i esbuild@0.18.17 --save-exact --production --prefer-dedupe --loglevel=verbose`,
+    `i esbuild@0.19.3 --save-exact --production --prefer-dedupe --loglevel=verbose`,
     kitPath()
   );
 };

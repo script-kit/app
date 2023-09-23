@@ -91,8 +91,7 @@ import {
   setScript,
   setTabIndex,
   attemptPreload,
-  initOnHide as resetToMain,
-  preloadMainScript,
+  resetToMain,
 } from './prompt';
 import {
   getBackgroundTasks,
@@ -109,6 +108,7 @@ import {
   preloadPreviewMap,
   kitSearch,
   clearSearch,
+  kitStore,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -2151,6 +2151,11 @@ const kitMessageMap: ChannelHandler = {
       sendToPrompt(channel, value);
     }
   ),
+
+  KENV_NEW_PATH: onChildChannel(async ({ child }, { channel, value }) => {
+    log.verbose(`KENV NEW PATH`, { value });
+    kitStore.set('KENV', value);
+  }),
 };
 
 export const createMessageHandler =
@@ -2214,6 +2219,8 @@ const createChild = ({
     FORCE_COLOR: '1',
     PATH,
     KIT_APP_PATH: app.getAppPath(),
+    KIT_ACCESSIBILITY:
+      kitState.isMac && kitStore.get('accessibilityAuthorized'),
     ...snapshot(kitState.kenvEnv),
   };
   // console.log({ env });
@@ -2902,7 +2909,7 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
       const authorized = getAuthStatus('accessibility') === 'authorized';
 
       if (authorized) {
-        envData.KIT_ACCESSIBILITY = 'true';
+        kitStore.set('accessibilityAuthorized', authorized);
       }
     }
     // END-REMOVE-MAC

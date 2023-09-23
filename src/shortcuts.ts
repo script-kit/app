@@ -16,6 +16,7 @@ import {
   initShowPrompt,
   isVisible,
   reload,
+  resetToMain,
 } from './prompt';
 import { convertKey, kitState, subs } from './state';
 import { Trigger } from './enums';
@@ -260,6 +261,7 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       if (!isVisible()) {
+        resetToMain();
         initBounds(mainScriptPath, true);
         await runPromptProcess(mainScriptPath, [], {
           force: true,
