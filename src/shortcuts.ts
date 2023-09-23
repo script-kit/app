@@ -11,6 +11,7 @@ import { UI } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import {
+  disableBackgroundThrottling,
   hasFocus,
   initBounds,
   initShowPrompt,
@@ -261,6 +262,7 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       if (!isVisible()) {
+        disableBackgroundThrottling();
         resetToMain();
         initBounds(mainScriptPath, true);
         await runPromptProcess(mainScriptPath, [], {
