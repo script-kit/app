@@ -2888,10 +2888,21 @@ export const resetPromptAtom = atom(null, (g, s) => {
   const cachedShortcuts = g(cachedMainShortcutsAtom);
   const cachedMainPreview = g(cachedMainPreviewAtom);
 
-  s(promptDataAtom, cachedMainPromptData);
-  s(shortcutsAtom, cachedShortcuts);
-  s(previewHTMLAtom, cachedMainPreview);
-  s(scoredChoicesAtom, cachedMainScoredChoices);
+  if (cachedMainPromptData) {
+    s(promptDataAtom, cachedMainPromptData);
+  }
+
+  if (cachedShortcuts?.length > 0) {
+    s(shortcutsAtom, cachedShortcuts);
+  }
+
+  if (cachedMainPreview) {
+    s(previewHTMLAtom, cachedMainPreview);
+  }
+
+  if (cachedMainScoredChoices?.length > 0) {
+    s(scoredChoicesAtom, cachedMainScoredChoices);
+  }
 });
 
 export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({});
