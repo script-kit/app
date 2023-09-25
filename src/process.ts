@@ -91,7 +91,7 @@ import {
   setScript,
   setTabIndex,
   attemptPreload,
-  resetToMain,
+  resetToMainAndHide,
 } from './prompt';
 import {
   getBackgroundTasks,
@@ -145,6 +145,16 @@ import { TrackEvent, trackEvent } from './track';
 
 //   return pExec(`${bin} ${args.join(' ')}`);
 // };
+
+export const clearPreview = () => {
+  sendToPrompt(Channel.SET_PREVIEW, `<div></div>`);
+};
+
+export const clearFlags = () => {
+  sendToPrompt(Channel.SET_FLAG_VALUE, '');
+  sendToPrompt(Channel.SET_FLAGS, {});
+  setFlags({});
+};
 
 export const maybeConvertColors = async (theme: any = {}) => {
   log.info(`🎨 Convert Colors:`, theme);
@@ -965,7 +975,7 @@ const kitMessageMap: ChannelHandler = {
 
 `);
         if (!kitState.allowQuit) {
-          resetToMain();
+          resetToMainAndHide();
         }
       },
       100,
@@ -1031,6 +1041,9 @@ const kitMessageMap: ChannelHandler = {
   }),
   VALUE_SUBMITTED: onChildChannelOverride(async (processInfo, data: any) => {
     // log.info(`VALUE_SUBMITTED`, data?.value);
+
+    clearPreview();
+    clearFlags();
     clearSearch();
   }),
   SET_SCRIPT: onChildChannel(async (processInfo: ProcessInfo, data) => {

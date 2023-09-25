@@ -423,7 +423,7 @@ export default function App() {
   );
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary class={open ? '' : 'hidden'}>
       <div
         id="main-container"
         ref={appRef}

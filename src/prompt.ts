@@ -101,7 +101,7 @@ export const blurPrompt = () => {
   }
 };
 
-const actualHide = () => {
+export const actualHide = () => {
   if (!kitState.isMac) promptWindow?.minimize();
   promptWindow?.hide();
 };
@@ -1164,7 +1164,7 @@ const writePromptState = async (
   promptState.screens[screenId][scriptPath] = bounds;
 };
 
-export const resetToMain = () => {
+export const resetToMainAndHide = () => {
   const hideHandler = () => {
     log.info(`👁️ Hidden: Init back to main dimensions`);
     initBounds(mainScriptPath, false);
@@ -2199,12 +2199,12 @@ export const initShowPrompt = () => {
 };
 
 const showPrompt = () => {
+  disableBackgroundThrottling();
   initShowPrompt();
   sendToPrompt(Channel.SET_OPEN, true);
 
   setTimeout(() => {
     kitState.isPromptReady = true;
-    disableBackgroundThrottling(true);
   }, 100);
 };
 
@@ -2224,6 +2224,28 @@ export const onHideOnce = (fn: () => void) => {
 
     promptWindow?.once('hide', handler);
   }
+};
+
+export const initMainBounds = () => {
+  const bounds = getCurrentScreenPromptCache(mainScriptPath);
+  setBounds(
+    bounds,
+    `promptId ${kitState.promptId} - promptCount ${
+      kitState.promptCount
+    } - kitState.promptBounds ${JSON.stringify(kitState.promptBounds)}`
+    // promptWindow?.isVisible() &&
+    //   kitState.promptCount > 1 &&
+    //   !kitState.promptBounds.height
+  );
+};
+
+export const showMainPrompt = () => {
+  initShowPrompt();
+  sendToPrompt(Channel.SET_OPEN, true);
+
+  setTimeout(() => {
+    kitState.isPromptReady = true;
+  }, 100);
 };
 
 export const initBounds = (forceScriptPath?: string, show = false) => {

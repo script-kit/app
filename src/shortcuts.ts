@@ -11,16 +11,17 @@ import { UI } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import {
+  appToPrompt,
   disableBackgroundThrottling,
   hasFocus,
-  initBounds,
+  initMainBounds,
   initShowPrompt,
   isVisible,
   reload,
-  resetToMain,
+  showMainPrompt,
 } from './prompt';
 import { convertKey, kitState, subs } from './state';
-import { Trigger } from './enums';
+import { AppChannel, Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
 import { processes, spawnShebang } from './process';
 
@@ -263,8 +264,10 @@ export const updateMainShortcut = async (filePath: string) => {
 
       if (!isVisible()) {
         disableBackgroundThrottling();
-        resetToMain();
-        initBounds(mainScriptPath, true);
+        appToPrompt(AppChannel.RESET_PROMPT);
+        // TODO: force resize height?
+        initMainBounds();
+        showMainPrompt();
         await runPromptProcess(mainScriptPath, [], {
           force: true,
           trigger: Trigger.Menu,
