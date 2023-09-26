@@ -423,7 +423,7 @@ export default function App() {
   );
 
   return (
-    <ErrorBoundary class={open ? '' : 'hidden'}>
+    <ErrorBoundary>
       <div
         id="main-container"
         ref={appRef}
@@ -483,7 +483,6 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
             } as any
           }
           className={`
-        ${hidden && appConfig.isMac ? 'hidden' : ''}
         flex h-full
         w-full flex-col
         `}
