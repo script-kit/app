@@ -33,6 +33,7 @@ import {
   attemptPreload,
   isFocused,
   focusPrompt,
+  initShowPrompt,
 } from './prompt';
 import { getKitScript, kitState, kitStore } from './state';
 import { pathsAreEqual } from './helpers';
@@ -168,7 +169,7 @@ export const runPromptProcess = async (
   log.info(`👀 Visible: ${visible ? 'true' : 'false'}`);
   if (visible) {
     if (!isFocused()) {
-      focusPrompt();
+      initShowPrompt();
     }
 
     sendToPrompt(

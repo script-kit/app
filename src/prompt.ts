@@ -629,6 +629,7 @@ export const setPromptAlwaysOnTop = (onTop: boolean) => {
       }
     } else if (kitState.ignoreBlur) {
       promptWindow.setAlwaysOnTop(onTop, 'normal');
+      log.info({ onTop, ignoreBlur: kitState.ignoreBlur });
       if (!kitState.isMac) {
         promptWindow.setVisibleOnAllWorkspaces(false);
       }
@@ -1422,10 +1423,12 @@ export const setPromptData = async (promptData: PromptData) => {
   kitState.isPromptReady = false;
   // if (!pidMatch(pid, `setPromptData`)) return;
 
-  kitState.alwaysOnTop =
+  const newAlwaysOnTop =
     typeof promptData?.alwaysOnTop === 'boolean'
       ? promptData.alwaysOnTop
       : false;
+
+  setPromptAlwaysOnTop(newAlwaysOnTop);
 
   if (promptData?.scriptPath !== kitState.scriptPath) {
     log.warn(`🚫 setPromptData: scriptPath doesn't match`);
