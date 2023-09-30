@@ -470,7 +470,6 @@ const systemEvents = () => {
     kitState.screenLocked = true;
 
     if (!isVisible()) {
-      reload();
       maybeHide(HideReason.LockScreen);
     }
   });

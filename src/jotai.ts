@@ -2882,6 +2882,7 @@ export const resetPromptAtom = atom(null, (g, s) => {
   s(tabIndexAtom, 0);
   g(scrollToIndexAtom)(0);
   s(inputAtom, '');
+  s(flaggedChoiceValueAtom, '');
   const cachedMainPromptData = g(cachedMainPromptDataAtom) as PromptData;
   cachedMainPromptData.preload = true;
   const cachedMainScoredChoices = g(cachedMainScoredChoicesAtom);

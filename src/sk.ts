@@ -12,6 +12,7 @@ import { runPromptProcess } from './kit';
 import { Trigger } from './enums';
 import { spawnShebang } from './process';
 
+// TODO: "Force" to front isn't working
 export const startSK = () => {
   const server = net.createServer((stream) => {
     stream.on('data', async (data) => {

@@ -31,6 +31,8 @@ import {
   sendToPrompt,
   setScript,
   attemptPreload,
+  isFocused,
+  focusPrompt,
 } from './prompt';
 import { getKitScript, kitState, kitStore } from './state';
 import { pathsAreEqual } from './helpers';
@@ -165,6 +167,10 @@ export const runPromptProcess = async (
   const visible = isVisible();
   log.info(`👀 Visible: ${visible ? 'true' : 'false'}`);
   if (visible) {
+    if (!isFocused()) {
+      focusPrompt();
+    }
+
     sendToPrompt(
       Channel.START,
       options?.force ? kitState.scriptPath : promptScriptPath
