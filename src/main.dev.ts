@@ -58,6 +58,7 @@ import {
   execPath,
   appDbPath,
   getKenvs,
+  mainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import {
@@ -419,7 +420,7 @@ const systemEvents = () => {
 
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);
-    if (kitState.isMainScript()) maybeHide(HideReason.Suspend);
+    if (kitState.scriptPath === mainScriptPath) maybeHide(HideReason.Suspend);
     // teardownWatchers();
     sleepSchedule();
     try {

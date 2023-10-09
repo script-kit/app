@@ -41,7 +41,7 @@ import {
 import os from 'os';
 import path from 'path';
 import log from 'electron-log';
-import { assign, debounce, isEqual } from 'lodash';
+import { assign, debounce } from 'lodash';
 import {
   mainScriptPath,
   defaultGroupClassName,
@@ -49,7 +49,6 @@ import {
   groupChoices,
   formatChoices,
   kenvPath,
-  kitPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, setScriptTimestamp } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
@@ -551,7 +550,8 @@ export const createPromptWindow = async () => {
 
   powerMonitor.on('lock-screen', () => {
     log.info(`🔒 System locked. Reloading prompt window.`);
-    if (kitState.isMainScript()) maybeHide(HideReason.LockScreen);
+    if (kitState.scriptPath === mainScriptPath)
+      maybeHide(HideReason.LockScreen);
   });
 
   // Debugging event listener counts...
@@ -1442,7 +1442,7 @@ export const setPromptData = async (promptData: PromptData) => {
   kitState.promptUI = promptData.ui;
 
   log.verbose(`setPromptData ${promptData.scriptPath}`);
-  const isMainScript = kitState.isMainScript();
+  const isMainScript = kitState.scriptPath === mainScriptPath;
 
   kitState.promptBounds = {
     x: promptData.x,
@@ -1631,7 +1631,7 @@ export const setScoredChoices = (choices: ScoredChoice[]) => {
   }
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 
-  if (kitState.isMainScript() && kitSearch.input === '') {
+  if (kitState.scriptPath === mainScriptPath && kitSearch.input === '') {
     log.info(
       `Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`
     );

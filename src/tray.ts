@@ -438,7 +438,11 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     const fixItems: MenuItemConstructorOptions[] = [];
 
-    if (kitState.pid && kitState.isMainScript() && kitState.promptCount === 1) {
+    if (
+      kitState.pid &&
+      kitState.scriptPath === mainScriptPath &&
+      kitState.promptCount === 1
+    ) {
       fixItems.push({
         label: `Fix Stuck Process`,
         click: () => {

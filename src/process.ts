@@ -423,7 +423,7 @@ export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
 export const cachePreview = async (scriptPath: string, preview: string) => {
   log.verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
   preloadPreviewMap.set(scriptPath, preview);
-  if (kitState.isMainScript()) {
+  if (kitState.scriptPath === mainScriptPath) {
     appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, preview);
   }
 };
@@ -1188,7 +1188,7 @@ const kitMessageMap: ChannelHandler = {
 
   SET_SHORTCUTS: onChildChannel(async ({ child }, { channel, value }) => {
     setShortcuts(value);
-    if (kitState.isMainScript() && kitSearch.input === '') {
+    if (kitState.scriptPath === mainScriptPath && kitSearch.input === '') {
       appToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, value);
     }
 

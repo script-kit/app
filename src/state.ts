@@ -259,7 +259,6 @@ const initState = {
   ignoreBlur: false,
   preventClose: false,
   isScripts: false,
-  isMainScript: () => kitState.script.filePath === mainScriptPath,
   promptCount: 0,
   isTyping: false,
   snippet: ``,

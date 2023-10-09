@@ -458,7 +458,7 @@ ${data.error}
             message.state.value = ``;
           }
 
-          if (kitState.isMainScript()) {
+          if (kitState.scriptPath === mainScriptPath) {
             cachePreview(mainScriptPath, message?.state?.preview || '');
 
             if (
