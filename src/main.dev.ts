@@ -561,7 +561,7 @@ const ready = async () => {
 
 const kitExists = async () => {
   setupLog(kitPath());
-  const doesKitExist = existsSync(kitPath());
+  const doesKitExist = existsSync(kitPath('package.json'));
 
   await setupLog(`kit${doesKitExist ? `` : ` not`} found`);
 
@@ -638,15 +638,18 @@ const verifyInstall = async () => {
   throw new Error(`Install not verified...`);
 };
 
-const kitSDKVersionMismatch = async () => {
+const isNewVersion = async () => {
   const currentVersion = getVersion();
   const storedVersion = await getStoredVersion();
 
+  const versionMatch = semver.eq(currentVersion, storedVersion);
   await setupLog(
-    `🤔 Stored version: ${storedVersion} -> Current version: ${currentVersion}`
+    `🤔 Stored version: ${storedVersion} -> Current version: ${currentVersion}. Semver match? ${
+      versionMatch ? 'true' : 'false'
+    }`
   );
 
-  return !semver.eq(currentVersion, storedVersion);
+  return !versionMatch;
 };
 
 const checkKit = async () => {
@@ -823,8 +826,7 @@ const checkKit = async () => {
     await extractNode(nodeFilePath);
   }
 
-  const requiresInstall =
-    (await kitSDKVersionMismatch()) || !(await kitExists());
+  const requiresInstall = (await isNewVersion()) || !(await kitExists());
   log.info(`Requires install: ${requiresInstall}`);
   if (await isContributor()) {
     await setupLog(`Welcome fellow contributor! Thanks for all you do!`);
