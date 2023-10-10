@@ -40,7 +40,6 @@ import {
   valueInvalidAtom,
   isHiddenAtom,
   _history,
-  filterInputAtom,
   blurAtom,
   startAtom,
   logoAtom,
@@ -150,7 +149,6 @@ export default () => {
   const setRunning = useSetAtom(runningAtom);
   const setValueInvalid = useSetAtom(valueInvalidAtom);
   const setPreventSubmit = useSetAtom(preventSubmitAtom);
-  const setFilterInput = useSetAtom(filterInputAtom);
   const setBlur = useSetAtom(blurAtom);
   const start = useSetAtom(startAtom);
   const setLogo = useSetAtom(logoAtom);
@@ -228,7 +226,6 @@ export default () => {
     [Channel.SET_PANEL]: setPanelHTML,
     [Channel.SET_PREVIEW]: setPreviewHTML,
     [Channel.SET_FOOTER]: (html) => setFooter(DOMPurify.sanitize(html)),
-    [Channel.SET_FILTER_INPUT]: setFilterInput,
     [Channel.SET_INPUT]: setInput,
     [Channel.GET_INPUT]: () => {
       channel(Channel.GET_INPUT, { value: input });

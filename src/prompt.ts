@@ -1627,11 +1627,15 @@ export const attemptPreload = (
 
 export const setScoredChoices = (choices: ScoredChoice[]) => {
   if (choices?.length) {
-    log.info(`🎼 Scored choices count: ${choices.length}`);
+    // log.info(`🎼 Scored choices count: ${choices.length}`);
   }
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 
-  if (kitState.scriptPath === mainScriptPath && kitSearch.input === '') {
+  if (
+    kitState.scriptPath === mainScriptPath &&
+    kitSearch.input === '' &&
+    choices?.length
+  ) {
     log.info(
       `Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`
     );
@@ -1724,6 +1728,7 @@ export const invokeFlagSearch = (input: string) => {
 export const invokeSearch = (rawInput: string) => {
   if (kitState.ui !== UI.arg) return;
   log.info(`Invoke search: ${rawInput}`);
+  // log.info({ inputRegex: kitSearch.inputRegex });
   let transformedInput = rawInput;
   if (kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
@@ -1742,6 +1747,7 @@ export const invokeSearch = (rawInput: string) => {
   // Should probably separate rawInput from the input that comes after the regex...
   kitSearch.input = transformedInput;
   flagSearch.input = '';
+  // log.info({ transformedInput });
   if (transformedInput === '') {
     const results = kitSearch.choices
       .filter((c) => {

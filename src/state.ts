@@ -52,6 +52,7 @@ const schema: Schema<{
   KENV: string;
   accessibilityAuthorized: boolean;
   sponsor: boolean;
+  version: string;
 }> = {
   KENV: {
     type: 'string',
@@ -64,6 +65,10 @@ const schema: Schema<{
   sponsor: {
     type: 'boolean',
     default: false,
+  },
+  version: {
+    type: 'string',
+    default: '0.0.0',
   },
 };
 export const kitStore = new Store({

@@ -400,10 +400,10 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.9.1.tgz#0611b37db4246c937feef529ddcc018cf8e35708"
   integrity sha512-QpLcX9ZSsq3YYUUnD3nFDY8H7wctAhQj/TFKL8Ya8v5fMm3CFXxo8zStsLAl780ltoYoo1WvKUVGBQK+1ifr7g==
 
-"@types/regenerator-runtime@^0.13.1":
-  version "0.13.1"
-  resolved "https://registry.yarnpkg.com/@types/regenerator-runtime/-/regenerator-runtime-0.13.1.tgz#1285f0b1b0508e0ead609104b9a42409473122d1"
-  integrity sha512-Wr4Kopo+zs7kl1mxveVrP7Hl5nEzauQKdSNFN5Eg27Ze11MAgJYKgidYc9AAkQzGXXWH9lqVzPbXUGH6M8VY6g==
+"@types/regenerator-runtime@^0.13.2":
+  version "0.13.2"
+  resolved "https://registry.yarnpkg.com/@types/regenerator-runtime/-/regenerator-runtime-0.13.2.tgz#301edfbbc50f454500cb7934341fbd030df4e368"
+  integrity sha512-SIYCe4xgq4FSs00vENNHC+L1jxRdN4IKV2abqTu2kb2WkXlPBOml7NK2eCcYdUbQtD8cOWTcBUiYstoiaSNawA==
 
 address@^1.0.1:
   version "1.2.2"

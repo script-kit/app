@@ -423,7 +423,7 @@ export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
 export const cachePreview = async (scriptPath: string, preview: string) => {
   log.verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
   preloadPreviewMap.set(scriptPath, preview);
-  if (kitState.scriptPath === mainScriptPath) {
+  if (kitState.scriptPath === mainScriptPath && preview) {
     appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, preview);
   }
 };
@@ -911,7 +911,7 @@ const kitMessageMap: ChannelHandler = {
   GET_ACTIVE_APP: onChildChannelOverride(async ({ child }, { channel }) => {
     if (kitState.isMac) {
       // REMOVE-MAC
-      const { default: frontmost } = await import(
+      const { getFrontmostApp: frontmost } = await import(
         '@johnlindquist/mac-frontmost' as any
       );
       const frontmostApp = await frontmost();
@@ -1188,7 +1188,11 @@ const kitMessageMap: ChannelHandler = {
 
   SET_SHORTCUTS: onChildChannel(async ({ child }, { channel, value }) => {
     setShortcuts(value);
-    if (kitState.scriptPath === mainScriptPath && kitSearch.input === '') {
+    if (
+      kitState.scriptPath === mainScriptPath &&
+      kitSearch.input === '' &&
+      value?.length
+    ) {
       appToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, value);
     }
 
@@ -1614,7 +1618,18 @@ const kitMessageMap: ChannelHandler = {
 
   CLIPBOARD_WRITE_TEXT: onChildChannel(
     async ({ child }, { channel, value }) => {
-      await clipboard.writeText(value);
+      let text = '';
+      if (typeof value === 'number') {
+        text = value.toString();
+      }
+
+      if (typeof value !== 'string') {
+        text = JSON.stringify(value);
+      }
+
+      if (text) {
+        await clipboard.writeText(text);
+      }
     }
   ),
   CLIPBOARD_WRITE_IMAGE: onChildChannel(

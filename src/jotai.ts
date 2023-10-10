@@ -652,7 +652,7 @@ export const scoredChoicesAtom = atom(
       cs[0].item.className = cs?.[0]?.item?.className.replace(`border-t-1`, '');
     }
 
-    g(logAtom)(`⚽️ Scored choices length: ${cs?.length}`);
+    // g(logAtom)(`⚽️ Scored choices length: ${cs?.length}`);
     s(choices, cs || []);
     s(currentChoiceHeightsAtom, cs || []);
 
@@ -1429,8 +1429,6 @@ export const promptDataAtom = atom(
       s(selectedAtom, a.selected);
       s(tabsAtom, a.tabs);
 
-      s(filterInputAtom, ``);
-
       s(processingAtom, false);
 
       s(focusedFlagValueAtom, '');
@@ -1839,7 +1837,6 @@ export const openAtom = atom(
       s(audioDotAtom, false);
       s(disableSubmitAtom, false);
       g(scrollToIndexAtom)(0);
-      s(filterInputAtom, '');
       // s(tabsAtom, []);
 
       const stream = g(webcamStreamAtom);
@@ -2048,7 +2045,6 @@ export const preventSubmitAtom = atom(null, (g, s, a: string) => {
 
 export const isHiddenAtom = atom(false);
 
-export const filterInputAtom = atom<string>(``);
 export const blurAtom = atom(null, (g) => {
   const open = g(openAtom);
   if (open) {
@@ -2879,10 +2875,6 @@ export const currentChoiceHeightsAtom = atom(
 );
 
 export const resetPromptAtom = atom(null, (g, s) => {
-  s(tabIndexAtom, 0);
-  g(scrollToIndexAtom)(0);
-  s(inputAtom, '');
-  s(flaggedChoiceValueAtom, '');
   const cachedMainPromptData = g(cachedMainPromptDataAtom) as PromptData;
   cachedMainPromptData.preload = true;
   const cachedMainScoredChoices = g(cachedMainScoredChoicesAtom);
@@ -2890,8 +2882,15 @@ export const resetPromptAtom = atom(null, (g, s) => {
   const cachedMainPreview = g(cachedMainPreviewAtom);
 
   if (cachedMainPromptData) {
+    cachedMainPromptData.input = '';
     s(promptDataAtom, cachedMainPromptData);
   }
+
+  s(tabIndexAtom, 0);
+  g(scrollToIndexAtom)(0);
+  s(inputAtom, '');
+  s(prevInputAtom, '');
+  s(flaggedChoiceValueAtom, '');
 
   if (cachedShortcuts?.length > 0) {
     s(shortcutsAtom, cachedShortcuts);

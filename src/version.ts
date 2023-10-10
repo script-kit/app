@@ -1,8 +1,7 @@
 import { app } from 'electron';
-import { getAppDb } from '@johnlindquist/kit/cjs/db';
-import log from 'electron-log';
 import fs from 'fs';
 import { getAssetPath } from './assets';
+import { kitStore } from './state';
 
 // eslint-disable-next-line import/prefer-default-export
 export const getVersionFromText = () => {
@@ -19,16 +18,9 @@ export const getVersion = () => {
 };
 
 export const storeVersion = async (version: string) => {
-  const appDb = await getAppDb();
-  appDb.version = version;
-
-  try {
-    await appDb.write();
-  } catch (error) {
-    log.info(error);
-  }
+  kitStore.set('version', version);
 };
 
 export const getStoredVersion = async () => {
-  return (await getAppDb()).version;
+  return kitStore.get('version');
 };

@@ -638,15 +638,15 @@ const verifyInstall = async () => {
   throw new Error(`Install not verified...`);
 };
 
-const currentVersionIsGreater = async () => {
+const kitSDKVersionMismatch = async () => {
   const currentVersion = getVersion();
   const storedVersion = await getStoredVersion();
 
   await setupLog(
-    `Stored version: ${storedVersion} -> Current version: ${currentVersion}`
+    `🤔 Stored version: ${storedVersion} -> Current version: ${currentVersion}`
   );
 
-  return semver.gt(currentVersion, storedVersion);
+  return !semver.eq(currentVersion, storedVersion);
 };
 
 const checkKit = async () => {
@@ -824,7 +824,7 @@ const checkKit = async () => {
   }
 
   const requiresInstall =
-    (await currentVersionIsGreater()) || !(await kitExists());
+    (await kitSDKVersionMismatch()) || !(await kitExists());
   log.info(`Requires install: ${requiresInstall}`);
   if (await isContributor()) {
     await setupLog(`Welcome fellow contributor! Thanks for all you do!`);
