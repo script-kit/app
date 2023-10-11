@@ -1,9 +1,7 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable no-useless-escape */
 /* eslint-disable no-plusplus */
-/* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable guard-for-in */
 import { atom, Getter, Setter } from 'jotai';
@@ -516,11 +514,17 @@ export const indexAtom = atom(
 
     // Check if going up/down by comparing the prevIndex to the clampedIndex
     let choice = cs?.[clampedIndex]?.item;
+
+    // log .id vs. prevChoiceIndexId
     if (choice?.id === prevChoiceIndexId) return;
     let calcIndex = clampedIndex;
     const direction = g(directionAtom);
     if (g(allSkipAtom)) {
       s(focusedChoiceAtom, noChoice);
+      // g(logAtom)(`⏩ All choices skipped, no focus`);
+      if (!g(promptDataAtom)?.preview) {
+        s(previewHTMLAtom, closedDiv);
+      }
     }
     if (choice?.skip) {
       // Find next choice that doesn't have "skip" set or 0 or length - 1
@@ -2677,7 +2681,7 @@ export const miniShortcutsVisibleAtom = atom((g) => {
 export const socialAtom = atom((g) => {
   if (g(scriptAtom)?.twitter) {
     const twitter = g(scriptAtom)?.twitter;
-    const username = twitter.startsWith('@') ? twitter.slice(1) : twitter;
+    const username = twitter?.startsWith('@') ? twitter.slice(1) : twitter;
 
     return {
       username: twitter,
@@ -2880,6 +2884,10 @@ export const resetPromptAtom = atom(null, (g, s) => {
   const cachedMainScoredChoices = g(cachedMainScoredChoicesAtom);
   const cachedShortcuts = g(cachedMainShortcutsAtom);
   const cachedMainPreview = g(cachedMainPreviewAtom);
+
+  if (cachedMainPromptData?.flags) {
+    s(flagsAtom, cachedMainPromptData.flags);
+  }
 
   if (cachedMainPromptData) {
     cachedMainPromptData.input = '';

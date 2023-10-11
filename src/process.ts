@@ -1,5 +1,4 @@
 /* eslint-disable no-nested-ternary */
-/* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
 import { randomUUID } from 'crypto';
@@ -423,7 +422,12 @@ export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
 export const cachePreview = async (scriptPath: string, preview: string) => {
   log.verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
   preloadPreviewMap.set(scriptPath, preview);
-  if (kitState.scriptPath === mainScriptPath && preview) {
+  if (
+    kitState.scriptPath === mainScriptPath &&
+    preview &&
+    kitSearch.input === '' &&
+    !kitSearch.inputRegex
+  ) {
     appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, preview);
   }
 };
@@ -475,11 +479,11 @@ const handleChannelMessage = <K extends keyof ChannelMap>(
   }
 
   if (isVisible() && !isWidgetMessage && processInfo?.pid !== kitState.pid) {
-    const warning = `💁‍♂️ ${path.basename(processInfo.scriptPath)}: ${
-      data?.pid
-    }: ${data.channel} ignored on current UI. ${data.pid} doesn't match ${
-      kitState.pid
-    }`;
+    const warning = `💁‍♂️ ${path.basename(
+      processInfo.scriptPath
+    )}: ${data?.pid}: ${data.channel} ignored on current UI. ${
+      data.pid
+    } doesn't match ${kitState.pid}`;
     return warn(warning);
   }
 

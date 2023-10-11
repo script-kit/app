@@ -2,7 +2,6 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-bitwise */
-/* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable consistent-return */
 
@@ -113,6 +112,7 @@ export const maybeHide = async (reason: string) => {
     reason === HideReason.Escape ||
     reason === HideReason.BeforeExit
   ) {
+    appToPrompt(AppChannel.RESET_PROMPT);
     actualHide();
     // attemptPreload(mainScriptPath, false);
     // clearSearch();
@@ -195,7 +195,6 @@ export const saveCurrentPromptBounds = async () => {
 export const prepPromptForQuit = async () => {
   // REMOVE-MAC
   actualHide();
-  // eslint-disable-next-line @typescript-eslint/no-shadow
   await new Promise((resolve) => {
     setTimeout(() => {
       makeKeyWindow(new BrowserWindow());
@@ -1153,6 +1152,7 @@ const writePromptState = async (
   scriptPath: string,
   bounds: PromptBounds
 ) => {
+  if (kitSearch.input !== '' || kitSearch.inputRegex) return;
   log.verbose(`writePromptState`, { screenId, scriptPath, bounds });
 
   if (!promptState?.screens) promptState.screens = {};
@@ -1634,6 +1634,7 @@ export const setScoredChoices = (choices: ScoredChoice[]) => {
   if (
     kitState.scriptPath === mainScriptPath &&
     kitSearch.input === '' &&
+    !kitSearch.inputRegex &&
     choices?.length
   ) {
     log.info(
@@ -2080,7 +2081,6 @@ export const setFlags = (f: FlagsWithKeys) => {
 export const setChoices = (
   choices: Choice[],
   {
-    // eslint-disable-next-line @typescript-eslint/no-shadow
     preload,
     skipInitialSearch,
     generated,
