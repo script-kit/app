@@ -1,7 +1,7 @@
 import log from 'electron-log';
 import { UiohookKey, uIOhook } from 'uiohook-napi';
-import { Channel, ProcessType, Value, UI } from '@johnlindquist/kit/cjs/enum';
-import { kitState } from './state';
+import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { getAccessibilityAuthorized, kitState } from './state';
 import { sendToAllActiveChildren } from './process';
 import { chars } from './chars';
 
@@ -92,7 +92,14 @@ export const toKey = (keycode: number, shift = false) => {
   }
 };
 
-export const registerIO = (handler: (event: any) => void) => {
+export const registerIO = async (handler: (event: any) => void) => {
+  const notAuthorized = await getAccessibilityAuthorized();
+  if (!notAuthorized) {
+    log.info(`Requesting accessibility access...`);
+
+    return;
+  }
+
   log.info(`Adding click listeners...`);
   uIOhook.on('click', (event) => {
     try {

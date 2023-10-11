@@ -214,10 +214,6 @@ if (pathExistsSync(appDbPath) && appDb) {
 }
 
 app.setName(APP_NAME);
-if (app?.dock) {
-  app?.dock?.setIcon(getAssetPath('icon.png'));
-}
-
 app.setAsDefaultProtocolClient(KIT_PROTOCOL);
 if (app?.dock) {
   app?.dock?.setIcon(getAssetPath('icon.png'));

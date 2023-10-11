@@ -1,5 +1,4 @@
 /* eslint-disable no-restricted-syntax */
-/* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-nested-ternary */
 
 import Store, { Schema } from 'electron-store';
@@ -464,6 +463,7 @@ export const hideDock = debounce(() => {
 }, 200);
 
 // Widgets not showing up in Dock
+// TODO: Dock is showing when main prompt is open. Check mac panel? Maybe setIcon?
 export const showDock = () => {
   if (!kitState.isMac) return;
   if (
@@ -525,7 +525,7 @@ const subWindows = subscribeKey(windowsState, 'windows', (windows) => {
 
 const subPromptCount = subscribeKey(kitState, 'promptCount', (promptCount) => {
   if (promptCount) {
-    showDock();
+    // showDock();
   } else {
     hideDock();
   }
@@ -979,4 +979,19 @@ export const clearSearch = () => {
 
 export const kitClipboard = {
   store: null as any,
+};
+
+export const getAccessibilityAuthorized = async () => {
+  // REMOVE-MAC
+  const isMac = os.platform() === 'darwin';
+  if (isMac) {
+    const { getAuthStatus } = await import('node-mac-permissions');
+
+    const authorized = getAuthStatus('accessibility') === 'authorized';
+    kitStore.set('accessibilityAuthorized', authorized);
+    return authorized;
+  }
+  // END-REMOVE-MAC
+
+  return true;
 };
