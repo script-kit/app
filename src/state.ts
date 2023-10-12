@@ -780,10 +780,10 @@ export const convertKey = (sourceKey: string) => {
       const target = defaultKeyMap?.[targetKey]?.toUpperCase() || '';
       try {
         if (targetKey.at(-1) !== target.at(-1)) {
-          keymapLog.info(`🔑 Converted key: ${targetKey} -> ${target}`);
+          keymapLog.silly(`🔑 Converted key: ${targetKey} -> ${target}`);
         }
       } catch (error) {
-        keymapLog.info(`🔑 Converted key error: ${targetKey} -> ${target}`);
+        keymapLog.silly(`🔑 Converted key error: ${targetKey} -> ${target}`);
       }
 
       return target || sourceKey;

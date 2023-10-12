@@ -1,6 +1,5 @@
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-nested-ternary */
-/* eslint-disable @typescript-eslint/no-loop-func */
 import {
   Notification,
   Tray,
@@ -327,7 +326,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
               kitState.logLevel = level as LogLevel;
             },
             enabled: kitState.logLevel !== level,
-          } as MenuItemConstructorOptions)
+          }) as MenuItemConstructorOptions
       ),
     });
 
@@ -581,8 +580,8 @@ const menuIcon = (name: iconType) => {
 
 export const getTrayIcon = () => trayIcon('default');
 
-export const setupTray = async (checkDb = false, state: Status) => {
-  log.info(`🎨 Creating tray...`, { checkDb });
+export const setupTray = async (checkDb = false, state: Status = 'default') => {
+  log.info(`🎨 Creating tray...`);
 
   // subscribeKey(kitState, 'isDark', () => {
   //   tray?.setImage(trayIcon('default'));

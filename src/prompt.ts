@@ -1558,11 +1558,7 @@ export const preloadPreview = (html: string) => {
   setPreview(html);
 };
 
-export const attemptPreload = (
-  promptScriptPath: string,
-  show = true,
-  init = true
-) => {
+function _attemptReload(promptScriptPath: string, show = true, init = true) {
   const isMainScript = mainScriptPath === promptScriptPath;
   log.info(`attemptPreload for ${promptScriptPath}`);
   if (!promptScriptPath) return;
@@ -1623,7 +1619,12 @@ export const attemptPreload = (
   }
 
   log.info(`end of attemptPreload`);
-};
+}
+
+export const attemptPreload = debounce(_attemptReload, 200, {
+  leading: true,
+  trailing: false,
+});
 
 export const setScoredChoices = (choices: ScoredChoice[]) => {
   if (choices?.length) {
