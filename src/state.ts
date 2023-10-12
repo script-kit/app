@@ -72,6 +72,7 @@ const schema: Schema<{
 };
 export const kitStore = new Store({
   schema,
+  watch: true,
 });
 
 const storedKenv = kitStore.get('KENV');
