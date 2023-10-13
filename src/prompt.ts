@@ -100,7 +100,7 @@ export const blurPrompt = () => {
 };
 
 export const actualHide = () => {
-  if (!kitState.isMac) promptWindow?.minimize();
+  // if (!kitState.isMac) promptWindow?.minimize();
   promptWindow?.hide();
 };
 
