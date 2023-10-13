@@ -99,8 +99,8 @@ export const handleLogMessage = async (
   result: SpawnSyncReturns<any>,
   required = true
 ) => {
-  console.log(`stdout:`, result?.stdout?.toString());
-  console.log(`stderr:`, result?.stderr?.toString());
+  log.info(`stdout:`, result?.stdout?.toString());
+  log.info(`stderr:`, result?.stderr?.toString());
   const { stdout, stderr, error } = result;
 
   if (stdout?.toString().length) {
@@ -115,7 +115,7 @@ export const handleLogMessage = async (
 
   if (stderr?.toString().length) {
     sendSplashBody(stderr.toString());
-    console.log({ stderr: stderr.toString() });
+    log.info({ stderr: stderr.toString() });
     // throw new Error(stderr.toString());
   }
 
@@ -381,11 +381,11 @@ export const downloadNode = async () => {
   const isWin = process.platform === 'win32';
   const extension = isWin ? 'zip' : 'tar.gz';
 
-  // download node v18.16.1 based on the current platform and architecture
+  // download node v18.17.1 based on the current platform and architecture
   // Examples:
-  // Mac arm64: https://nodejs.org/dist/v18.16.1/node-v18.16.1-darwin-arm64.tar.gz
-  // Linux x64: https://nodejs.org/dist/v18.16.1/node-v18.16.1-linux-x64.tar.gz
-  // Windows x64: https://nodejs.org/dist/v18.16.1/node-v18.16.1-win-x64.zip
+  // Mac arm64: https://nodejs.org/dist/v18.17.1/node-v18.17.1-darwin-arm64.tar.gz
+  // Linux x64: https://nodejs.org/dist/v18.17.1/node-v18.17.1-linux-x64.tar.gz
+  // Windows x64: https://nodejs.org/dist/v18.17.1/node-v18.17.1-win-x64.zip
 
   // Node dist url uses "win", not "win32"
   const nodeVersion = `v${process.versions.node}`;
@@ -428,10 +428,10 @@ export const extractNode = async (file: string) => {
       const zip = new StreamZip.async({ file });
 
       sendSplashBody(`Unzipping ${file} to ${knodePath()}`);
-      // node-18.16.1-win-x64
+      // node-18.17.1-win-x64
       const fileName = path.parse(file).name;
-      console.log(`Extacting ${fileName} to ${knodePath('bin')}`);
-      // node-18.16.1-win-x64
+      log.info(`Extacting ${fileName} to ${knodePath('bin')}`);
+      // node-18.17.1-win-x64
       await zip.extract(fileName, knodePath('bin'));
       await zip.close();
     } catch (error) {
@@ -547,9 +547,10 @@ export const optionalSpawnSetup = (...args: string[]) => {
 
 export const optionalSetupScript = (
   scriptPath: string,
-  args: string[] = [],
+  argsParam: string[],
   callback?: (object: any) => void
 ) => {
+  const args = argsParam || [];
   return new Promise((resolve, reject) => {
     log.info(`Running optional setup script: ${scriptPath} with ${args}`);
     const child = fork(
