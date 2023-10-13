@@ -258,7 +258,6 @@ export const createPromptWindow = async () => {
       vibrancy: 'popover',
       visualEffectState: 'active',
       backgroundColor: '#00000000',
-      backgroundMaterial: kitState.isWin10 ? 'acrylic' : 'mica',
     });
   }
 
@@ -633,7 +632,7 @@ export const setPromptAlwaysOnTop = (onTop: boolean) => {
         promptWindow.setVisibleOnAllWorkspaces(false);
       }
     } else {
-      promptWindow.setAlwaysOnTop(onTop, 'screen-saver', 1);
+      promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
     }
   } else {
     kitState.alwaysOnTop = false;

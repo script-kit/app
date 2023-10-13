@@ -385,7 +385,6 @@ export const show = async (
     vibrancy: 'popover',
     visualEffectState: 'active',
     backgroundColor: '#00000000',
-    backgroundMaterial: kitState.isWin10 ? 'acrylic' : 'mica',
     ...(options?.transparent
       ? {}
       : {
@@ -406,7 +405,6 @@ export const show = async (
 
   showWindow?.webContents.on('before-input-event', (event: any, input) => {
     if (input.key === 'Escape') {
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
       showWindow.destroy();
       if (name === INSTALL_ERROR) {
         app.removeAllListeners('window-all-closed');
@@ -434,10 +432,13 @@ export const show = async (
   await writeFile(showPath, page(html, options));
 
   if (options?.ttl) {
-    setTimeout(() => {
-      showWindow.removeAllListeners();
-      showWindow.destroy();
-    }, options?.ttl);
+    setTimeout(
+      () => {
+        showWindow.removeAllListeners();
+        showWindow.destroy();
+      },
+      options?.ttl
+    );
   }
 
   return new Promise((resolve, reject) => {
@@ -492,7 +493,6 @@ export const showWidget = async (
     widgetWindow = new BrowserWindow({
       ...bwOptions,
       backgroundColor: '#00000000',
-      backgroundMaterial: kitState.isWin10 ? 'acrylic' : 'mica',
     });
   } else {
     widgetWindow = new BrowserWindow(bwOptions);
@@ -503,12 +503,15 @@ export const showWidget = async (
     widgetWindow?.setIgnoreMouseEvents(true, { forward: true });
 
   if (options?.ttl) {
-    setTimeout(() => {
-      log.info(
-        `Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`
-      );
-      widgetWindow.close();
-    }, options?.ttl);
+    setTimeout(
+      () => {
+        log.info(
+          `Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`
+        );
+        widgetWindow.close();
+      },
+      options?.ttl
+    );
   }
 
   return new Promise((resolve, reject) => {
