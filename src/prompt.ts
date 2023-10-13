@@ -100,7 +100,7 @@ export const blurPrompt = () => {
 };
 
 export const actualHide = () => {
-  // if (!kitState.isMac) promptWindow?.minimize();
+  if (!kitState.isMac) promptWindow?.minimize();
   promptWindow?.hide();
 };
 
@@ -633,7 +633,7 @@ export const setPromptAlwaysOnTop = (onTop: boolean) => {
         promptWindow.setVisibleOnAllWorkspaces(false);
       }
     } else {
-      promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
+      promptWindow.setAlwaysOnTop(onTop, 'screen-saver', 1);
     }
   } else {
     kitState.alwaysOnTop = false;
@@ -2191,7 +2191,7 @@ export const destroyPromptWindow = () => {
 export const hasFocus = () => promptWindow?.isFocused();
 
 export const initShowPrompt = () => {
-  promptWindow?.setAlwaysOnTop(true, 'pop-up-menu', 1);
+  promptWindow?.setAlwaysOnTop(true, 'screen-saved', 1);
   if (kitState.isMac) {
     promptWindow.showInactive();
   } else {

@@ -1395,7 +1395,7 @@ const kitMessageMap: ChannelHandler = {
     getMainPrompt()?.setPosition(0, 0);
     getMainPrompt()?.center();
     getMainPrompt()?.focus();
-    getMainPrompt()?.setAlwaysOnTop(true, 'pop-up-menu', 1);
+    getMainPrompt()?.setAlwaysOnTop(true, 'screen-saver', 1);
   }),
   FOCUS: onChildChannel(async ({ child }, { channel, value }) => {
     log.verbose(`${channel}: Manually focusing prompt`);
