@@ -21,12 +21,12 @@
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",
     "@johnlindquist/mac-clipboard-listener": "^1.0.1",
-    "@johnlindquist/mac-frontmost": "^1.0.5",
+    "@johnlindquist/mac-frontmost": "^1.0.6",
     "@johnlindquist/mac-panel-window": "^1.0.17",
     "@nut-tree/nut-js": "3.1.2",
     "chokidar": "3.5.3",
     "native-keymap": "3.3.4",
-    "node-abi": "^3.47.0",
+    "node-abi": "^3.50.0",
     "node-mac-permissions": "2.3.0",
     "node-pty": "1.0.0",
     "uiohook-napi": "^1.5.2"

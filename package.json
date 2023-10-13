@@ -396,7 +396,7 @@
     "monaco-editor": "0.44.0",
     "monaco-editor-webpack-plugin": "7.1.0",
     "nanoid": "3.1.30",
-    "node-abi": "^3.47.0",
+    "node-abi": "^3.50.0",
     "node-downloader-helper": "1.0.18",
     "node-schedule": "2.1.1",
     "node-stream-zip": "^1.15.0",
