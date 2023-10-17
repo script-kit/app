@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useState } from 'react';
 import { VariableSizeList as List } from 'react-window';
@@ -22,7 +23,7 @@ const createItemData = memoize(
   (choices) =>
     ({
       choices,
-    } as ChoiceButtonProps['data'])
+    }) as ChoiceButtonProps['data']
 );
 
 export default function ChoiceList({ height }: ListProps) {
@@ -76,7 +77,7 @@ export default function ChoiceList({ height }: ListProps) {
 
     // log(`🧾 List reset due to choice height changes`);
     (listRef?.current as any)?.resetAfterIndex(0);
-  }, [choices]);
+  }, [choices, promptData]);
 
   const [scrollTimeout, setScrollTimeout] = useState<any>(null);
 

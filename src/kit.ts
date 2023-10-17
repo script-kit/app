@@ -1,8 +1,6 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
-/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-case-declarations */
-/* eslint-disable @typescript-eslint/no-use-before-define */
 import { app } from 'electron';
 import minimist from 'minimist';
 import log from 'electron-log';
@@ -166,16 +164,18 @@ export const runPromptProcess = async (
 
   // If the window is already open, interrupt the process with the new script
   const visible = isVisible();
+  const focused = isFocused();
   log.info(`👀 Visible: ${visible ? 'true' : 'false'}`);
+  if (visible && !focused) {
+    initShowPrompt();
+  }
   if (visible) {
-    if (!isFocused()) {
-      initShowPrompt();
-    }
-
     sendToPrompt(
       Channel.START,
       options?.force ? kitState.scriptPath : promptScriptPath
     );
+  }
+  if (focused) {
     const sameScript = kitState.scriptPath === promptScriptPath;
     if (sameScript && !isSplash) {
       emitter.emit(KitEvent.KillProcess, kitState.pid);

@@ -100,6 +100,7 @@ export const blurPrompt = () => {
 };
 
 export const actualHide = () => {
+  log.info(`🙈 Hiding prompt window`);
   if (!kitState.isMac) promptWindow?.minimize();
   promptWindow?.hide();
 };
@@ -1177,7 +1178,7 @@ export const resetToMainAndHide = () => {
   });
 
   appToPrompt(AppChannel.RESET_PROMPT);
-  actualHide();
+  // actualHide();
 };
 
 export const hideAppIfNoWindows = (reason: HideReason) => {
@@ -1727,9 +1728,10 @@ export const invokeFlagSearch = (input: string) => {
   }
 };
 
-export const invokeSearch = (rawInput: string) => {
+export const invokeSearch = (rawInput: string, reason = 'normal') => {
   if (kitState.ui !== UI.arg) return;
-  log.info(`Invoke search: ${rawInput}`);
+
+  log.info(`Search ${reason}: ${rawInput}`);
   // log.info({ inputRegex: kitSearch.inputRegex });
   let transformedInput = rawInput;
   if (kitSearch.inputRegex) {
@@ -2143,7 +2145,7 @@ export const setChoices = (
   //   skipInitialSearch: skipInitialSearch ? 'true' : 'false',
   // });
   log.info(`Searching because choices: ${input}`);
-  invokeSearch(input);
+  invokeSearch(input, 'setChoices');
 };
 
 export const clearPromptCache = async () => {
@@ -2191,7 +2193,7 @@ export const destroyPromptWindow = () => {
 export const hasFocus = () => promptWindow?.isFocused();
 
 export const initShowPrompt = () => {
-  promptWindow?.setAlwaysOnTop(true, 'screen-saved', 1);
+  promptWindow?.setAlwaysOnTop(true, 'pop-up-menu', 1);
   if (kitState.isMac) {
     promptWindow.showInactive();
   } else {

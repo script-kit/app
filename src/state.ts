@@ -378,6 +378,9 @@ const initState = {
   justFocused: false,
   promptProcess: null as ChildProcess | null,
   noPreview: false,
+  cacheChoices: false,
+  cachePreview: false,
+  cachePrompt: false,
 };
 
 const initConfig: Config = {
@@ -945,6 +948,7 @@ export const kitSearch = {
   input: '',
   inputRegex: undefined as undefined | RegExp,
   keyword: '',
+  keywordCleared: false,
   generated: false,
   flaggedValue: '',
   choices: [] as Choice[],

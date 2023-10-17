@@ -2063,16 +2063,9 @@ export const blurAtom = atom(null, (g) => {
   }
 });
 
+// This should represent when a keyboard shortcut or other triggers starts a sequence of scripts
 export const startAtom = atom(null, (g, s, a: string) => {
   s(inputAtom, '');
-  // console.log(`🎬 Start ${a}`);
-  const script = g(scriptAtom);
-
-  // if (script.filePath === a) {
-  //   const channel = g(channelAtom);
-  //   channel(Channel.ABANDON);
-  // }
-
   s(_history, []);
 });
 

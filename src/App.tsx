@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-bitwise */
 /* eslint-disable react/no-danger */
 /* eslint-disable react/jsx-props-no-spreading */
@@ -9,7 +9,6 @@
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable react/prop-types */
 /* eslint-disable no-nested-ternary */
-/* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import React, {
@@ -66,7 +65,6 @@ import {
   topRefAtom,
   appConfigAtom,
   isHiddenAtom,
-  _history,
   scoredChoicesAtom,
   showTabsAtom,
   showSelectedAtom,
@@ -570,11 +568,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                   )}
                   {(!!(ui === UI.arg || ui === UI.div) &&
                     panelHTML.length > 0 && <Panel />) ||
-                    (ui === UI.form && (
-                      <>
-                        <Form />
-                      </>
-                    ))}
+                    (ui === UI.form && <Form />)}
                 </div>
               </PanelChild>
 

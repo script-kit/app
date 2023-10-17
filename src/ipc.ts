@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-loop-func */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-restricted-syntax */
@@ -47,6 +46,12 @@ import { noChoice } from './defaults';
 
 let prevTransformedInput = '';
 const checkShortcodesAndKeywords = (rawInput: string): boolean => {
+  log.info({
+    rawInput,
+    prevTransformedInput,
+    keyword: kitSearch.keyword,
+  });
+
   let transformedInput = rawInput;
 
   if (kitSearch.inputRegex) {
@@ -93,6 +98,7 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
     kitSearch.keyword = keyword;
     kitSearch.inputRegex = undefined;
     log.info(`🔑 ${keyword} cleared`);
+    kitSearch.keywordCleared = true;
     sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
       keyword,
       choice: noChoice,
@@ -116,6 +122,11 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
         return false;
       }
     }
+  }
+
+  if (kitSearch.keywordCleared) {
+    kitSearch.keywordCleared = false;
+    return false;
   }
 
   return true;
@@ -413,9 +424,9 @@ ${data.error}
                 debounceInvokeSearch.cancel();
 
                 if (kitSearch.choices.length > 5000) {
-                  debounceInvokeSearch(input);
+                  debounceInvokeSearch(input, 'debounce');
                 } else {
-                  invokeSearch(input);
+                  invokeSearch(input, `${channel}`);
                 }
               }
             }
