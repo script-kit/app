@@ -381,6 +381,8 @@ const initState = {
   cacheChoices: false,
   cachePreview: false,
   cachePrompt: false,
+  dockShown: false,
+  attemptingPreload: false,
 };
 
 const initConfig: Config = {
@@ -450,8 +452,10 @@ const subReady = subscribeKey(kitState, 'ready', (ready) => {
 let hideIntervalId: NodeJS.Timeout | null = null;
 
 export const actualHideDock = () => {
+  log.info(`🚢 Hiding dock`);
   app?.dock?.setIcon(getAssetPath('icon.png'));
   app?.dock?.hide();
+  kitState.dockShown = false;
 };
 
 export const hideDock = debounce(() => {
@@ -460,6 +464,7 @@ export const hideDock = debounce(() => {
   if (kitState.promptCount > 0) return;
   if (widgetState.widgets.length) return;
   if (windowsState.windows.length) return;
+  if (!kitState.dockShown) return;
 
   actualHideDock();
 
@@ -481,6 +486,7 @@ export const showDock = () => {
     hideDock.cancel();
     app?.dock?.setIcon(getAssetPath('icon.png'));
     app?.dock?.show();
+    kitState.dockShown = true;
     app?.dock?.setMenu(
       Menu.buildFromTemplate([
         {

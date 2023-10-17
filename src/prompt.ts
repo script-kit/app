@@ -150,12 +150,6 @@ export const maybeHide = async (reason: string) => {
   }
 };
 
-export const forceHide = () => {
-  if (promptWindow?.isVisible()) {
-    promptWindow?.hide();
-  }
-};
-
 export const setVibrancy = (
   vibrancy: Parameters<typeof BrowserWindow.prototype.setVibrancy>[0]
 ) => {
@@ -173,11 +167,11 @@ export const setVibrancy = (
 
 export const disableBackgroundThrottling = () => {
   if (isVisible()) return;
-  log.info(`🛑 Disable background throttling`);
+  log.info(`🏎️ Disable background throttling`);
   promptWindow?.webContents?.setBackgroundThrottling(false);
 
   setTimeout(() => {
-    log.info(`🟢 Enable background throttling`);
+    log.info(`🐢 Enable background throttling`);
     promptWindow?.webContents?.setBackgroundThrottling(true);
   }, 100);
 };
@@ -1178,7 +1172,6 @@ export const resetToMainAndHide = () => {
   });
 
   appToPrompt(AppChannel.RESET_PROMPT);
-  // actualHide();
 };
 
 export const hideAppIfNoWindows = (reason: HideReason) => {
@@ -1559,26 +1552,30 @@ export const preloadPreview = (html: string) => {
   setPreview(html);
 };
 
-function _attemptReload(promptScriptPath: string, show = true, init = true) {
+export const attemptPreload = (
+  promptScriptPath: string,
+  show = true,
+  init = true
+) => {
+  if (kitState.attemptingPreload) return;
+  kitState.attemptingPreload = true;
+  setTimeout(() => {
+    kitState.attemptingPreload = false;
+  }, 200);
+
   const isMainScript = mainScriptPath === promptScriptPath;
   log.info(`attemptPreload for ${promptScriptPath}`);
-  if (!promptScriptPath) return;
+  if (!promptScriptPath && isMainScript) return;
   // log out all the keys of preloadPromptDataMap
   kitState.preloaded = false;
-  log.info(`preloadPromptDataMap for ${promptScriptPath}`, [
-    ...preloadPromptDataMap.keys(),
-  ]);
-
+  if (show) {
+    disableBackgroundThrottling();
+  }
   if (isMainScript) {
-    if (show) {
-      disableBackgroundThrottling();
-    }
+    log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
     appToPrompt(AppChannel.RESET_PROMPT);
   } else if (preloadPromptDataMap.has(promptScriptPath)) {
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
-    if (show) {
-      disableBackgroundThrottling();
-    }
 
     appToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
     sendToPrompt(Channel.SET_TAB_INDEX, 0);
@@ -1620,12 +1617,7 @@ function _attemptReload(promptScriptPath: string, show = true, init = true) {
   }
 
   log.info(`end of attemptPreload`);
-}
-
-export const attemptPreload = debounce(_attemptReload, 200, {
-  leading: true,
-  trailing: false,
-});
+};
 
 export const setScoredChoices = (choices: ScoredChoice[]) => {
   if (choices?.length) {
