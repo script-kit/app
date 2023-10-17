@@ -1629,21 +1629,27 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
   return state;
 });
 
-export const channelAtom = atom((g) => (channel: Channel, override?: any) => {
-  const state = g(appStateAtom);
-  const pid = g(pidAtom);
-  const appMessage: AppMessage = {
-    channel,
-    pid: pid || 0,
-    promptId: g(promptDataAtom)?.id as string,
-    state: {
-      ...state,
-      ...override,
-    },
-  };
+export const channelAtom = atom((g) => {
+  if (g(pauseChannelAtom)) {
+    return () => {};
+  }
+  return (channel: Channel, override?: any) => {
+    const state = g(appStateAtom);
+    const pid = g(pidAtom);
+    const appMessage: AppMessage = {
+      channel,
+      pid: pid || 0,
+      promptId: g(promptDataAtom)?.id as string,
+      state: {
+        ...state,
+        ...override,
+      },
+    };
 
-  // g(logAtom)({ channel, appMessage });
-  ipcRenderer.send(channel, appMessage);
+    // g(logAtom)({ channel, appMessage });
+
+    ipcRenderer.send(channel, appMessage);
+  };
 });
 
 export const onPasteAtom = atom((g) => (event: any) => {
@@ -2375,7 +2381,7 @@ export const colorAtom = atom((g) => {
       ipcRenderer.send(channel, appMessage);
       return color;
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
     return '';
   };
@@ -2418,7 +2424,7 @@ export const chatPushTokenAtom = atom(null, (g, s, a: string) => {
 
     s(chatMessagesAtom, messages);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     s(chatMessagesAtom, []);
   }
 });
@@ -2434,7 +2440,7 @@ export const setChatMessageAtom = atom(
       messages[messageIndex] = a.message;
       s(chatMessagesAtom, messages);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   }
 );
@@ -2878,7 +2884,9 @@ export const currentChoiceHeightsAtom = atom(
   }
 );
 
+const pauseChannelAtom = atom(false);
 export const resetPromptAtom = atom(null, (g, s) => {
+  s(pauseChannelAtom, true);
   const cachedMainPromptData = g(cachedMainPromptDataAtom) as PromptData;
   cachedMainPromptData.preload = true;
   const cachedMainScoredChoices = g(cachedMainScoredChoicesAtom);
@@ -2911,6 +2919,8 @@ export const resetPromptAtom = atom(null, (g, s) => {
   if (cachedMainScoredChoices?.length > 0) {
     s(scoredChoicesAtom, cachedMainScoredChoices);
   }
+
+  s(pauseChannelAtom, false);
 });
 
 export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({});

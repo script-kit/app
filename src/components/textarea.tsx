@@ -2,8 +2,6 @@
 /* eslint-disable react/require-default-props */
 import React, { LegacyRef, useRef } from 'react';
 import { UI } from '@johnlindquist/kit/cjs/enum';
-
-import { motion } from 'framer-motion';
 import { useAtom } from 'jotai';
 
 import { inputAtom, promptDataAtom } from '../jotai';

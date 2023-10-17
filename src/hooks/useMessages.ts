@@ -89,6 +89,7 @@ import {
   cachedMainScoredChoicesAtom,
   cachedMainShortcutsAtom,
   cachedMainPreviewAtom,
+  termFontAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../enums';
@@ -174,6 +175,7 @@ export default () => {
   const setCachedMainScoredChoices = useSetAtom(cachedMainScoredChoicesAtom);
   const setCachedMainShortcuts = useSetAtom(cachedMainShortcutsAtom);
   const setCachedMainPreview = useSetAtom(cachedMainPreviewAtom);
+  const setTermFont = useSetAtom(termFontAtom);
 
   // log({
   //   previewCheck: previewCheck ? '✅' : '🚫',
@@ -491,6 +493,14 @@ export default () => {
       );
     }
 
+    const handleSetTermFont = (_, data) => {
+      setTermFont(data);
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.SET_TERM_FONT) === 0) {
+      ipcRenderer.on(AppChannel.SET_TERM_FONT, handleSetTermFont);
+    }
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
@@ -520,6 +530,8 @@ export default () => {
         handleSetCachedMainPreview
       );
       // ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
+      ipcRenderer.off(AppChannel.SET_TERM_FONT, handleSetTermFont);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 };

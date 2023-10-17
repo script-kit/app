@@ -405,6 +405,15 @@ export const startClipboardMonitor = async () => {
               log.info(`Ignoring clipboard value > 1280 characters`);
               return;
             }
+            if (
+              kitState?.kenvEnv?.KIT_CLIPBOARD_IGNORE_REGEX &&
+              value?.match(kitState?.kenvEnv?.KIT_CLIPBOARD_IGNORE_REGEX)
+            ) {
+              log.info(
+                `Ignoring clipboard value that matches KIT_CLIPBOARD_IGNORE_REGEX`
+              );
+              return;
+            }
             itemName = value.trim().slice(0, 40);
           } catch (error) {
             log.warn(error);
@@ -414,10 +423,14 @@ export const startClipboardMonitor = async () => {
           // TODO: Consider filtering consecutive characters without a space
           maybeSecret = Boolean(
             // no newlines
-            !value.match(/\n/g) &&
+            (!value.match(/\n/g) &&
               value.match(
                 /^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*()-_=+{}[\]<>;:,.|~]{5,}$/i
-              )
+              )) ||
+              (kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX &&
+                value.match(
+                  new RegExp(kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX)
+                ))
           );
         }
 

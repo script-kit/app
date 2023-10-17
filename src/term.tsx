@@ -7,7 +7,6 @@ import { Unicode11Addon } from 'xterm-addon-unicode11';
 import { SearchAddon } from 'xterm-addon-search';
 import { LigaturesAddon } from 'xterm-addon-ligatures';
 import { SerializeAddon } from 'xterm-addon-serialize';
-import { motion } from 'framer-motion';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { throttle } from 'lodash';
 import useResizeObserver from '@react-hook/resize-observer';
@@ -21,6 +20,7 @@ import {
   sendShortcutAtom,
   shortcutsAtom,
   termConfigAtom,
+  termFontAtom,
 } from './jotai';
 
 import XTerm from './components/xterm';
@@ -70,6 +70,7 @@ export default function Terminal() {
   const shortcuts = useAtomValue(shortcutsAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
+  const [fontFamily] = useAtom(termFontAtom);
 
   const attachAddonRef = useRef<AttachIPCAddon | null>(null);
 
@@ -199,7 +200,7 @@ export default function Terminal() {
         <XTerm
           className="h-full max-h-fit w-full max-w-screen-md"
           options={{
-            fontFamily: appDb?.termFont || 'monospace',
+            fontFamily,
             allowTransparency: true,
             theme: isDark ? darkTheme : defaultTheme,
             allowProposedApi: true,

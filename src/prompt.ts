@@ -616,8 +616,9 @@ export const setPromptAlwaysOnTop = (onTop: boolean) => {
         kitState.ignoreBlur ? 'true' : 'false'
       }`
     );
+    const changed = onTop !== kitState.alwaysOnTop;
     kitState.alwaysOnTop = onTop;
-    if (onTop) {
+    if (onTop && changed) {
       promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
 
       if (kitState.isMac) {
@@ -2260,7 +2261,11 @@ export const showMainPrompt = () => {
 export const initBounds = (forceScriptPath?: string, show = false) => {
   if (promptWindow?.isDestroyed()) return;
 
-  log.info(`Before getCurrentScreenPromptCache`);
+  if (promptWindow?.isVisible()) {
+    log.info(`↖ Ignore init bounds, already visible`);
+    return;
+  }
+
   const bounds = getCurrentScreenPromptCache(
     forceScriptPath || kitState.scriptPath,
     {
@@ -2269,13 +2274,6 @@ export const initBounds = (forceScriptPath?: string, show = false) => {
       bounds: kitState.promptBounds,
     }
   );
-  log.info(`After getCurrentScreenPromptCache`);
-  if (promptWindow?.isDestroyed()) return;
-
-  if (promptWindow?.isVisible()) {
-    log.info(`↖ Ignore init bounds, already visible`);
-    return;
-  }
   log.info(`↖ Init bounds: Prompt ${kitState.promptUI} ui`, bounds);
 
   // If widths or height don't match, send SET_RESIZING to prompt

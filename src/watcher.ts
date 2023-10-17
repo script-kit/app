@@ -338,6 +338,9 @@ export const setupWatchers = async () => {
           if (envData?.KIT_THEME_LIGHT) {
             kitState.kenvEnv.KIT_THEME_LIGHT = envData?.KIT_THEME_LIGHT;
           }
+          if (envData?.KIT_TERM_FONT) {
+            appToPrompt(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
+          }
 
           const setCSSVariable = (name: string, value: undefined | string) => {
             if (value) {

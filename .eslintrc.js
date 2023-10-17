@@ -24,6 +24,7 @@ module.exports = {
     'no-undef': 'off',
     'no-unsafe-optional-chaining': 'off',
     'no-promise-executor-return': 'off',
+    'react/jsx-filename-extension': [1, { extensions: ['.tsx'] }],
   },
   parserOptions: {
     ecmaVersion: 2020,
