@@ -1177,12 +1177,11 @@ export const resetToMainAndHide = () => {
 
   try {
     // Manually trigger a render?
-    promptWindow.webContents.executeJavaScript(`
-document.body.style.opacity = '0.9999';
-setTimeout(() => {
-  document.body.style.opacity = '1';
-}, 10);
-`);
+    const [width, height] = promptWindow.getSize();
+    promptWindow.setSize(width + 1, height + 1);
+    setImmediate(() => {
+      promptWindow.setSize(width, height);
+    });
   } catch (error) {
     log.error(error);
   }
