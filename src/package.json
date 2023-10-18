@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/mac-clipboard-listener": "^1.0.1",
+    "@johnlindquist/mac-clipboard-listener": "^1.0.2",
     "@johnlindquist/mac-frontmost": "^1.0.6",
     "@johnlindquist/mac-panel-window": "^1.0.17",
     "@nut-tree/nut-js": "3.1.2",

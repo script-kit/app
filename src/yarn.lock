@@ -306,10 +306,10 @@
   dependencies:
     detect-port "^1.5.1"
 
-"@johnlindquist/mac-clipboard-listener@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-clipboard-listener/-/mac-clipboard-listener-1.0.1.tgz#9a4dda528167617419a1db2b2308366c7ee8b483"
-  integrity sha512-evAalofr2T0eoRggIklIv/9kXnue4jfxXXbUmyUCmzQ+mRAPf0hGTO5RszMqbuYLLa9GgSJE0rLNaadtfDtIPA==
+"@johnlindquist/mac-clipboard-listener@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-clipboard-listener/-/mac-clipboard-listener-1.0.2.tgz#1b1e791ce96520b70484867ee48b8c1e2661d6c1"
+  integrity sha512-bk37QNSBybSrkJrpbydnzUQOxJJrtmxbmDUoG1efLrfS9Ln0dD37MytAoICxB3ih4vu6952DcgJEiLna1lsZQg==
   dependencies:
     bindings "^1.5.0"
     node-addon-api "^7.0.0"
