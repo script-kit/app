@@ -1574,21 +1574,14 @@ export const attemptPreload = (
   if (isMainScript) {
     log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
     appToPrompt(AppChannel.RESET_PROMPT);
-  } else {
-    appToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
-    sendToPrompt(Channel.SET_TAB_INDEX, 0);
-    appToPrompt(AppChannel.SET_PRELOADED, true);
-  }
-
-  if (preloadPromptDataMap.has(promptScriptPath)) {
+  } else if (preloadPromptDataMap.has(promptScriptPath)) {
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
     // kitState.preloaded = true;
 
+    appToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
+    sendToPrompt(Channel.SET_TAB_INDEX, 0);
+    appToPrompt(AppChannel.SET_PRELOADED, true);
     const promptData = preloadPromptDataMap.get(promptScriptPath) as PromptData;
-
-    if (mainScriptPath === promptScriptPath) {
-      promptData.input = '';
-    }
     preloadPromptData(promptData);
 
     if (preloadChoicesMap.has(promptScriptPath)) {
