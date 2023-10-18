@@ -454,6 +454,8 @@ export const sendToAllActiveChildren = (data: any) => {
   });
 };
 
+let resetting = false;
+
 const handleChannelMessage = <K extends keyof ChannelMap>(
   data: SendData<K>,
   fn: (processInfo: ProcessInfo, data: SendData<K>) => void,
@@ -972,22 +974,14 @@ const kitMessageMap: ChannelHandler = {
     }
   ),
 
-  BEFORE_EXIT: onChildChannelOverride(
-    debounce(
-      async ({ child }, { channel }) => {
-        log.info(`✅ pid: ${child.pid} "finishScript" invoked...
-
-`);
-        if (!kitState.allowQuit) {
-          resetToMainAndHide();
-        }
-      },
-      100,
-      {
-        leading: true,
-      }
-    )
-  ),
+  BEFORE_EXIT: onChildChannelOverride(() => {
+    if (resetting) return;
+    resetting = true;
+    setTimeout(() => {
+      resetting = false;
+    }, 200);
+    resetToMainAndHide();
+  }),
 
   QUIT_APP: onChildChannel(async ({ child }, { channel, value }) => {
     await new Promise((resolve) => setTimeout(resolve, 250));

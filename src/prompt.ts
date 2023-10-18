@@ -1162,7 +1162,7 @@ const writePromptState = async (
 
 export const resetToMainAndHide = () => {
   const hideHandler = () => {
-    log.info(`👁️ Hidden: Init back to main dimensions`);
+    log.info(`😶‍🌫️ Hidden: Init back to main dimensions`);
     initBounds(mainScriptPath, false);
   };
 
@@ -1171,7 +1171,9 @@ export const resetToMainAndHide = () => {
     promptWindow?.removeListener('hide', hideHandler);
   });
 
+  log.info(`🤟 Reset to main and hide`);
   appToPrompt(AppChannel.RESET_PROMPT);
+  actualHide();
 };
 
 export const hideAppIfNoWindows = (reason: HideReason) => {
@@ -1557,11 +1559,11 @@ export const attemptPreload = (
   show = true,
   init = true
 ) => {
-  // if (kitState.attemptingPreload) return;
-  // kitState.attemptingPreload = true;
-  // setTimeout(() => {
-  //   kitState.attemptingPreload = false;
-  // }, 200);
+  if (kitState.attemptingPreload) return;
+  kitState.attemptingPreload = true;
+  setTimeout(() => {
+    kitState.attemptingPreload = false;
+  }, 200);
 
   const isMainScript = mainScriptPath === promptScriptPath;
   log.info(`attemptPreload for ${promptScriptPath}`);
