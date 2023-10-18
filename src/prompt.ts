@@ -1175,7 +1175,7 @@ export const resetToMainAndHide = () => {
 };
 
 export const hideAppIfNoWindows = (reason: HideReason) => {
-  log.silly(`function: hideAppIfNoWindows: ${reason}`);
+  log.info(`Hide reason: ${reason}`);
   if (promptWindow) {
     kitState.modifiedByUser = false;
     kitState.ignoreBlur = false;
@@ -1574,13 +1574,14 @@ export const attemptPreload = (
   if (isMainScript) {
     log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
     appToPrompt(AppChannel.RESET_PROMPT);
-  } else if (preloadPromptDataMap.has(promptScriptPath)) {
-    log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
-
+  } else {
     appToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
     sendToPrompt(Channel.SET_TAB_INDEX, 0);
     appToPrompt(AppChannel.SET_PRELOADED, true);
+  }
 
+  if (preloadPromptDataMap.has(promptScriptPath)) {
+    log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
     // kitState.preloaded = true;
 
     const promptData = preloadPromptDataMap.get(promptScriptPath) as PromptData;
