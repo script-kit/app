@@ -1176,7 +1176,6 @@ export const resetToMainAndHide = () => {
   appToPrompt(AppChannel.RESET_PROMPT);
 
   try {
-    // Manually trigger a render?
     // Dispatch a "render" event on the document
     promptWindow.webContents.executeJavaScript(`
 document.dispatchEvent(new Event('render'));
