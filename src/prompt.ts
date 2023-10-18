@@ -1557,11 +1557,11 @@ export const attemptPreload = (
   show = true,
   init = true
 ) => {
-  if (kitState.attemptingPreload) return;
-  kitState.attemptingPreload = true;
-  setTimeout(() => {
-    kitState.attemptingPreload = false;
-  }, 200);
+  // if (kitState.attemptingPreload) return;
+  // kitState.attemptingPreload = true;
+  // setTimeout(() => {
+  //   kitState.attemptingPreload = false;
+  // }, 200);
 
   const isMainScript = mainScriptPath === promptScriptPath;
   log.info(`attemptPreload for ${promptScriptPath}`);
