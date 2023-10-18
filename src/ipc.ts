@@ -41,17 +41,11 @@ import { runPromptProcess } from './kit';
 import { AppChannel, HideReason, Trigger } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
-import { flagSearch, kitSearch, kitState, clearSearch } from './state';
+import { kitSearch, kitState, clearSearch } from './state';
 import { noChoice } from './defaults';
 
 let prevTransformedInput = '';
 const checkShortcodesAndKeywords = (rawInput: string): boolean => {
-  log.info({
-    rawInput,
-    prevTransformedInput,
-    keyword: kitSearch.keyword,
-  });
-
   let transformedInput = rawInput;
 
   if (kitSearch.inputRegex) {

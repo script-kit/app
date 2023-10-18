@@ -1172,8 +1172,8 @@ export const resetToMainAndHide = () => {
   });
 
   log.info(`🤟 Reset to main and hide`);
-  appToPrompt(AppChannel.RESET_PROMPT);
   actualHide();
+  appToPrompt(AppChannel.RESET_PROMPT);
 };
 
 export const hideAppIfNoWindows = (reason: HideReason) => {
