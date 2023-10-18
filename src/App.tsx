@@ -225,6 +225,10 @@ export default function App() {
   useMessages();
 
   useEffect(() => {
+    log(`👩‍💻 UI changed to: ${ui}`);
+  }, [ui]);
+
+  useEffect(() => {
     // catch all window errors
     const errorHandler = async (event: ErrorEvent) => {
       const { message, filename, lineno, colno, error } = event;

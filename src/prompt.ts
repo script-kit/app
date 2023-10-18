@@ -1174,6 +1174,18 @@ export const resetToMainAndHide = () => {
   log.info(`🤟 Reset to main and hide`);
   actualHide();
   appToPrompt(AppChannel.RESET_PROMPT);
+
+  try {
+    // Manually trigger a render?
+    promptWindow.webContents.executeJavaScript(`
+document.body.style.opacity = '0.9999';
+setTimeout(() => {
+  document.body.style.opacity = '1';
+}, 10);
+`);
+  } catch (error) {
+    log.error(error);
+  }
 };
 
 export const hideAppIfNoWindows = (reason: HideReason) => {
