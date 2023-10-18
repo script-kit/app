@@ -68,6 +68,7 @@
       "debug.html",
       "devTools.html",
       "preload.js",
+      "main.prod.js",
       "main.prod.js.map",
       "package.json"
     ],
