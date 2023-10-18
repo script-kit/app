@@ -1177,11 +1177,10 @@ export const resetToMainAndHide = () => {
 
   try {
     // Manually trigger a render?
-    const [width, height] = promptWindow.getSize();
-    promptWindow.setSize(width + 1, height + 1);
-    setImmediate(() => {
-      promptWindow.setSize(width, height);
-    });
+    // Dispatch a "render" event on the document
+    promptWindow.webContents.executeJavaScript(`
+document.dispatchEvent(new Event('render'));
+`);
   } catch (error) {
     log.error(error);
   }

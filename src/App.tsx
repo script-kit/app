@@ -17,6 +17,7 @@ import React, {
   useCallback,
   useEffect,
   useRef,
+  useState,
 } from 'react';
 import { ToastContainer, cssTransition } from 'react-toastify';
 import { debounce } from 'lodash';
@@ -227,6 +228,26 @@ export default function App() {
   useEffect(() => {
     log(`👩‍💻 UI changed to: ${ui}`);
   }, [ui]);
+
+  const [tick, setTick] = useState(new Date());
+
+  useEffect(() => {
+    document.addEventListener('render', () => {
+      setTick(new Date());
+      setTimeout(() => {
+        setTick(new Date());
+      }, 500);
+    });
+  }, []);
+
+  useEffect(() => {
+    log(
+      `👩‍💻 Render after hide: ${tick} -> ${
+        document?.getElementById('input')?.getAttribute('placeholder') ||
+        'no placeholder'
+      }`
+    );
+  }, [tick]);
 
   useEffect(() => {
     // catch all window errors
