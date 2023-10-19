@@ -232,9 +232,15 @@ export default function App() {
   }, [ui]);
 
   useEffect(() => {
-    (window as any).resetPrompt = () => {
+    document.addEventListener('visibilitychange', () => {
+      log(`👁️‍🗨️ visibilitychange: ${document.visibilityState}`);
+    });
+  }, []);
+
+  useEffect(() => {
+    (window as any)._resetPrompt = async () => {
       log(`Resetting prompt...`);
-      resetPrompt();
+      return resetPrompt();
     };
 
     (window as any).log = log;

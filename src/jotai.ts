@@ -1001,7 +1001,7 @@ const resize = debounce(
     const active = g(promptActiveAtom);
     // g(logAtom)(`🌈 ${active ? 'active' : 'inactive'} resize: ${reason}`);
 
-    if (!active) return;
+    if (!active || document.visibilityState === 'hidden') return;
     const promptBounds = g(promptBoundsAtom);
 
     const ui = g(uiAtom);
@@ -2878,7 +2878,7 @@ export const currentChoiceHeightsAtom = atom(
 );
 
 const pauseChannelAtom = atom(false);
-export const resetPromptAtom = atom(null, (g, s) => {
+export const resetPromptAtom = atom(null, async (g, s) => {
   s(pauseChannelAtom, true);
   const cachedMainPromptData = g(cachedMainPromptDataAtom) as PromptData;
   cachedMainPromptData.preload = true;
@@ -2915,6 +2915,8 @@ export const resetPromptAtom = atom(null, (g, s) => {
 
   s(pauseChannelAtom, false);
   g(logAtom)(`✔️ Reset main complete.`);
+
+  return new Promise((resolve) => window.requestAnimationFrame(resolve));
 });
 
 export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({});

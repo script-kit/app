@@ -114,7 +114,7 @@ export const maybeHide = async (reason: string) => {
     reason === HideReason.BeforeExit
   ) {
     actualHide();
-    resetPrompt();
+    // resetPrompt();
     // attemptPreload(mainScriptPath, false);
     // clearSearch();
     // invokeSearch('');
@@ -672,9 +672,12 @@ export const getCurrentScreenPromptCache = (
     return savedPromptBounds;
   }
 
+  getMainPrompt()?.setPosition(0, 0);
+  getMainPrompt()?.center();
+
   // log.info(`resetPromptBounds`, scriptPath);
-  const { width: screenWidth, height: screenHeight } =
-    currentScreen.workAreaSize;
+  // const { width: screenWidth, height: screenHeight } =
+  //   currentScreen.workAreaSize;
 
   let width = getDefaultWidth();
   let height = PROMPT.HEIGHT.BASE;
@@ -711,13 +714,14 @@ export const getCurrentScreenPromptCache = (
   if (typeof bounds?.width === 'number') width = bounds.width;
   if (typeof bounds?.height === 'number') height = bounds.height;
 
-  const { x: workX, y: workY } = currentScreen.workArea;
-  let x = Math.round(screenWidth / 2 - width / 2 + workX);
-  let y = Math.round(workY + screenHeight / 8);
+  // const { x: workX, y: workY } = currentScreen.workArea;
+  // let x = Math.round(screenWidth / 2 - width / 2 + workX);
+  // let y = Math.round(workY + screenHeight / 8);
 
-  if (typeof bounds?.x === 'number') x = bounds.x;
-  if (typeof bounds?.y === 'number') y = bounds.y;
+  // if (typeof bounds?.x === 'number') x = bounds.x;
+  // if (typeof bounds?.y === 'number') y = bounds.y;
 
+  const { x, y } = getMainPrompt()?.getBounds();
   const promptBounds = { x, y, width, height };
 
   if (ui === UI.none) {
@@ -825,8 +829,12 @@ export const setBounds = async (bounds: Partial<Rectangle>, reason = '') => {
 };
 
 export const isVisible = () => {
-  log.silly(`function: isVisible`);
-  return !promptWindow.isDestroyed() && promptWindow.isVisible();
+  if (promptWindow.isDestroyed()) {
+    return false;
+  }
+  const visible = promptWindow?.isVisible();
+  log.silly(`function: isVisible: ${visible ? 'true' : 'false'}`);
+  return visible;
 };
 
 export const devToolsVisible = () => {
@@ -835,8 +843,9 @@ export const devToolsVisible = () => {
 };
 
 export const isFocused = () => {
-  log.silly(`function: isFocused`);
-  return promptWindow?.isFocused();
+  const focused = promptWindow?.isFocused();
+  log.silly(`function: isFocused: ${focused ? 'true' : 'false'}`);
+  return focused;
 };
 
 let hadPreview = true;
@@ -1173,7 +1182,7 @@ export const resetToMainAndHide = () => {
 
   log.info(`🤟 Reset to main and hide`);
   actualHide();
-  resetPrompt();
+  // resetPrompt();
 };
 
 export const hideAppIfNoWindows = (reason: HideReason) => {
@@ -1556,17 +1565,17 @@ export const preloadPreview = (html: string) => {
 
 export const forceRender = async () => {
   const render = await promptWindow.webContents.executeJavaScript(`
+
   (async () => {
     window.log('Force rendering...');
-    let render = await new Promise((res) => {
+    await window._resetPrompt();
+
+    return new Promise((res) => {
       document.documentElement.style.setProperty('--render', Math.random().toString());
       window.requestAnimationFrame(()=> {
         res(String(new Date()))
       });
     });
-
-
-    return render;
   })()
 `);
 
@@ -1582,10 +1591,9 @@ export const resetPrompt = async () => {
   }, 200);
   log.info(`🏋️‍♂️ Reset main`);
   try {
-    // Dispatch a "reset" event on the document
-    await promptWindow.webContents.executeJavaScript(`
-    window.resetPrompt();
-`);
+    //     await promptWindow.webContents.executeJavaScript(`
+    //     window.resetPrompt();
+    // `);
 
     const result = await forceRender();
     log.info(`🏋️ Force render: ${result}`);

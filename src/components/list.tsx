@@ -51,6 +51,7 @@ export default function ChoiceList({ height }: ListProps) {
 
   useEffect(() => {
     if (!listRef.current) return;
+    if (document.visibilityState === 'hidden') return;
 
     const scroll = () => {
       if (requiresScroll === -1) return;
