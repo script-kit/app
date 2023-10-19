@@ -113,7 +113,7 @@ export const maybeHide = async (reason: string) => {
     reason === HideReason.Escape ||
     reason === HideReason.BeforeExit
   ) {
-    appToPrompt(AppChannel.RESET_PROMPT);
+    resetPrompt();
     actualHide();
     // attemptPreload(mainScriptPath, false);
     // clearSearch();
@@ -1173,16 +1173,7 @@ export const resetToMainAndHide = () => {
 
   log.info(`🤟 Reset to main and hide`);
   actualHide();
-  appToPrompt(AppChannel.RESET_PROMPT);
-
-  try {
-    // Dispatch a "render" event on the document
-    promptWindow.webContents.executeJavaScript(`
-document.dispatchEvent(new Event('render'));
-`);
-  } catch (error) {
-    log.error(error);
-  }
+  resetPrompt();
 };
 
 export const hideAppIfNoWindows = (reason: HideReason) => {
@@ -1563,6 +1554,25 @@ export const preloadPreview = (html: string) => {
   setPreview(html);
 };
 
+let resetting = false;
+export const resetPrompt = () => {
+  if (resetting) return;
+  resetting = true;
+  setTimeout(() => {
+    resetting = false;
+  }, 200);
+  log.info(`🏋️‍♂️ Reset main`);
+  appToPrompt(AppChannel.RESET_PROMPT);
+  try {
+    // Dispatch a "render" event on the document
+    promptWindow.webContents.executeJavaScript(`
+document.dispatchEvent(new Event('render'));
+`);
+  } catch (error) {
+    log.error(error);
+  }
+};
+
 export const attemptPreload = (
   promptScriptPath: string,
   show = true,
@@ -1583,8 +1593,7 @@ export const attemptPreload = (
     disableBackgroundThrottling();
   }
   if (isMainScript) {
-    log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
-    appToPrompt(AppChannel.RESET_PROMPT);
+    // log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
   } else if (preloadPromptDataMap.has(promptScriptPath)) {
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
     // kitState.preloaded = true;

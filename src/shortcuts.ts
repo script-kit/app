@@ -11,13 +11,13 @@ import { UI } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import {
-  appToPrompt,
   disableBackgroundThrottling,
   hasFocus,
   initMainBounds,
   initShowPrompt,
   isVisible,
   reload,
+  resetPrompt,
   showMainPrompt,
 } from './prompt';
 import { convertKey, kitState, subs } from './state';
@@ -263,8 +263,8 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       if (!isVisible()) {
+        resetPrompt();
         disableBackgroundThrottling();
-        appToPrompt(AppChannel.RESET_PROMPT);
         // TODO: force resize height?
         initMainBounds();
         showMainPrompt();

@@ -2914,6 +2914,7 @@ export const resetPromptAtom = atom(null, (g, s) => {
   }
 
   s(pauseChannelAtom, false);
+  g(logAtom)(`✔️ Reset main complete.`);
 });
 
 export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({});
