@@ -1585,17 +1585,17 @@ export const attemptPreload = (
   }, 200);
 
   const isMainScript = mainScriptPath === promptScriptPath;
-  log.info(`attemptPreload for ${promptScriptPath}`);
-  if (!promptScriptPath && isMainScript) return;
+  if (!promptScriptPath || isMainScript) return;
   // log out all the keys of preloadPromptDataMap
   kitState.preloaded = false;
-  if (show) {
-    disableBackgroundThrottling();
-  }
+
   if (isMainScript) {
     // log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
   } else if (preloadPromptDataMap.has(promptScriptPath)) {
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
+    if (show) {
+      disableBackgroundThrottling();
+    }
     // kitState.preloaded = true;
 
     appToPrompt(AppChannel.SCROLL_TO_INDEX, 0);

@@ -241,8 +241,13 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    document.documentElement.style.setProperty('--render', String(tick));
+    // Get render variable
+    const render = getComputedStyle(document.documentElement).getPropertyValue(
+      '--render'
+    );
     log(
-      `👩‍💻 Render after hide: ${tick} -> ${
+      `👩‍💻 Render after hide: ${render} -> ${
         document?.getElementById('input')?.getAttribute('placeholder') ||
         'no placeholder'
       }`
