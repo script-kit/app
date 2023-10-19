@@ -263,9 +263,10 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       if (!isVisible()) {
-        resetPrompt();
+        kitState.ignoreBlur = false;
+        kitState.alwaysOnTop = true;
         disableBackgroundThrottling();
-        // TODO: force resize height?
+        await resetPrompt();
         initMainBounds();
         showMainPrompt();
         await runPromptProcess(mainScriptPath, [], {

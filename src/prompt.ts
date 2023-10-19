@@ -113,8 +113,8 @@ export const maybeHide = async (reason: string) => {
     reason === HideReason.Escape ||
     reason === HideReason.BeforeExit
   ) {
-    resetPrompt();
     actualHide();
+    resetPrompt();
     // attemptPreload(mainScriptPath, false);
     // clearSearch();
     // invokeSearch('');
@@ -1554,20 +1554,41 @@ export const preloadPreview = (html: string) => {
   setPreview(html);
 };
 
+export const forceRender = async () => {
+  const render = await promptWindow.webContents.executeJavaScript(`
+  (async () => {
+    window.log('Force rendering...');
+    let render = await new Promise((res) => {
+      document.documentElement.style.setProperty('--render', Math.random().toString());
+      window.requestAnimationFrame(()=> {
+        res(String(new Date()))
+      });
+    });
+
+
+    return render;
+  })()
+`);
+
+  return render;
+};
+
 let resetting = false;
-export const resetPrompt = () => {
+export const resetPrompt = async () => {
   if (resetting) return;
   resetting = true;
   setTimeout(() => {
     resetting = false;
   }, 200);
   log.info(`🏋️‍♂️ Reset main`);
-  appToPrompt(AppChannel.RESET_PROMPT);
   try {
-    // Dispatch a "render" event on the document
-    promptWindow.webContents.executeJavaScript(`
-document.dispatchEvent(new Event('render'));
+    // Dispatch a "reset" event on the document
+    await promptWindow.webContents.executeJavaScript(`
+    window.resetPrompt();
 `);
+
+    const result = await forceRender();
+    log.info(`🏋️ Force render: ${result}`);
   } catch (error) {
     log.error(error);
   }
@@ -2150,7 +2171,6 @@ export const setChoices = (
   //   preload: preload ? 'true' : 'false',
   //   skipInitialSearch: skipInitialSearch ? 'true' : 'false',
   // });
-  log.info(`Searching because choices: ${input}`);
   invokeSearch(input, 'setChoices');
 };
 

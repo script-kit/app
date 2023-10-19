@@ -87,6 +87,7 @@ import {
   appBoundsAtom,
   flaggedChoiceValueAtom,
   previewCheckAtom,
+  resetPromptAtom,
 } from './jotai';
 
 import {
@@ -187,6 +188,7 @@ export default function App() {
 
   const [promptData] = useAtom(promptDataAtom);
 
+  const resetPrompt = useSetAtom(resetPromptAtom);
   const setMainHeight = useSetAtom(mainHeightAtom);
   const setTopHeight = useSetAtom(topHeightAtom);
   const setSubmitValue = useSetAtom(submitValueAtom);
@@ -229,30 +231,14 @@ export default function App() {
     log(`👩‍💻 UI changed to: ${ui}`);
   }, [ui]);
 
-  const [tick, setTick] = useState(new Date());
-
   useEffect(() => {
-    document.addEventListener('render', () => {
-      setTick(new Date());
-      setTimeout(() => {
-        setTick(new Date());
-      }, 500);
-    });
+    (window as any).resetPrompt = () => {
+      log(`Resetting prompt...`);
+      resetPrompt();
+    };
+
+    (window as any).log = log;
   }, []);
-
-  useEffect(() => {
-    document.documentElement.style.setProperty('--render', String(tick));
-    // Get render variable
-    const render = getComputedStyle(document.documentElement).getPropertyValue(
-      '--render'
-    );
-    log(
-      `👩‍💻 Render after hide: ${render} -> ${
-        document?.getElementById('input')?.getAttribute('placeholder') ||
-        'no placeholder'
-      }`
-    );
-  }, [tick]);
 
   useEffect(() => {
     // catch all window errors
