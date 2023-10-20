@@ -11,6 +11,7 @@ import { UI } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import {
+  focusPrompt,
   hasFocus,
   initMainBounds,
   initShowPrompt,
@@ -257,6 +258,7 @@ export const updateMainShortcut = async (filePath: string) => {
       // });
 
       if (kitState.promptCount > 0 && !hasFocus()) {
+        log.info(`Prompt already open. Focusing... ${kitState.promptCount}`);
         initShowPrompt();
         return;
       }
@@ -264,6 +266,7 @@ export const updateMainShortcut = async (filePath: string) => {
       if (!isVisible()) {
         kitState.ignoreBlur = false;
         kitState.alwaysOnTop = true;
+        focusPrompt();
         resetPrompt();
         initMainBounds();
         showMainPrompt();

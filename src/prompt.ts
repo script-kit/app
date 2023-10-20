@@ -431,17 +431,24 @@ export const createPromptWindow = async () => {
     }, 1000);
   });
   // promptWindow?.webContents?.on('blur', onBlur);
-  promptWindow?.on('blur', onBlur);
 
   promptWindow?.on('hide', () => {
     log.info(`🫣 Prompt window hidden`);
     kitState.isPromptReady = false;
     kitState.promptHidden = true;
+
+    promptWindow?.off('blur', onBlur);
   });
 
   promptWindow?.on('show', async () => {
     log.info(`😳 Prompt window shown`);
     kitState.promptHidden = false;
+
+    setTimeout(() => {
+      if (promptWindow?.listenerCount('blur') === 0) {
+        promptWindow?.on('blur', onBlur);
+      }
+    }, 1000);
     // kitState.allowBlur = false;
   });
 
@@ -1023,7 +1030,7 @@ export const pingPromptWithTimeout = async <K extends keyof ChannelMap>(
       promptWindow?.webContents
     ) {
       data.messageId = messageId;
-      log.info(`🎤 ${channel} >>>> ${data?.messageId}`);
+      // log.info(`🎤 ${channel} >>>> ${data?.messageId}`);
       promptWindow?.webContents.send(String(channel), data);
     }
   });
@@ -1428,7 +1435,8 @@ export const setPromptData = async (promptData: PromptData) => {
   const newAlwaysOnTop =
     typeof promptData?.alwaysOnTop === 'boolean'
       ? promptData.alwaysOnTop
-      : false;
+      : // If alwaysOnTop is not defined, use the opposite of ignoreBlur
+        !promptData?.ignoreBlur;
 
   setPromptAlwaysOnTop(newAlwaysOnTop);
 
@@ -1564,19 +1572,14 @@ export const forceRender = () => {
   appToPrompt(AppChannel.RESET_PROMPT);
 };
 
-let resetting = false;
 export const resetPrompt = async () => {
-  if (resetting) return;
-  resetting = true;
-  setTimeout(() => {
-    resetting = false;
-  }, 200);
   log.info(`🏋️‍♂️ Reset main`);
   try {
     //     await promptWindow.webContents.executeJavaScript(`
     //     window.resetPrompt();
     // `);
 
+    kitState.promptCount = 0;
     forceRender();
     log.info(`🏋️ Force rendered...`);
   } catch (error) {
@@ -2353,7 +2356,7 @@ const subScriptPath = subscribeKey(
       hideAppIfNoWindows(HideReason.NoScript);
       clearSearch();
       sendToPrompt(Channel.SET_OPEN, false);
-      kitState.alwaysOnTop = false;
+      // kitState.alwaysOnTop = false;
 
       return;
     }
@@ -2361,6 +2364,10 @@ const subScriptPath = subscribeKey(
     kitState.prevScriptPath = kitState.scriptPath;
   }
 );
+
+const subAlwaysOnTop = subscribeKey(kitState, 'alwaysOnTop', (alwaysOnTop) => {
+  log.info(`👆 Always on top changed: ${alwaysOnTop ? 'on' : 'off'}`);
+});
 
 const subIsSponsor = subscribeKey(kitState, 'isSponsor', (isSponsor) => {
   log.info(`🎨 Sponsor changed:`, isSponsor);

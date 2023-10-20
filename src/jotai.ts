@@ -2907,8 +2907,7 @@ export const currentChoiceHeightsAtom = atom(
 const pauseChannelAtom = atom(false);
 
 export const resetIdAtom = atom(Math.random());
-export const resetPromptAtom = atom(null, async (g, s, a) => {
-  g(logAtom)(`Received messageId: ${a?.messageId}`);
+export const resetPromptAtom = atom(null, async (g, s) => {
   s(pauseChannelAtom, true);
   s(isMainScriptAtom, true);
   const cachedMainPromptData = g(cachedMainPromptDataAtom) as PromptData;

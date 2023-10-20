@@ -450,9 +450,8 @@ export default () => {
       ipcRenderer.on(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
     }
 
-    const handleResetPrompt = (_, data) => {
-      log(`Handling reset prompt ${JSON.stringify(data)}`);
-      resetPrompt(data);
+    const handleResetPrompt = () => {
+      resetPrompt();
     };
 
     if (ipcRenderer.listenerCount(AppChannel.RESET_PROMPT) === 0) {
