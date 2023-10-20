@@ -105,6 +105,7 @@ export default () => {
   const [, setLogHtml] = useAtom(logHTMLAtom);
   const [, setHidden] = useAtom(isHiddenAtom);
   const [, setChatMessages] = useAtom(chatMessagesAtom);
+  const log = useAtomValue(logAtom);
   const addChatMessage = useSetAtom(addChatMessageAtom);
   const chatPushToken = useSetAtom(chatPushTokenAtom);
   const setChatMessage = useSetAtom(setChatMessageAtom);
@@ -200,7 +201,6 @@ export default () => {
   };
 
   const messageMap: ChannelAtomMap = {
-    // [Channel.RESET_PROMPT]: resetPromptHandler,
     [Channel.APP_CONFIG]: setAppConfig,
     [Channel.APP_DB]: setAppDb,
     [Channel.EXIT]: setExit,
@@ -450,8 +450,9 @@ export default () => {
       ipcRenderer.on(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
     }
 
-    const handleResetPrompt = () => {
-      resetPrompt();
+    const handleResetPrompt = (_, data) => {
+      log(`Handling reset prompt ${JSON.stringify(data)}`);
+      resetPrompt(data);
     };
 
     if (ipcRenderer.listenerCount(AppChannel.RESET_PROMPT) === 0) {

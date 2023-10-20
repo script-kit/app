@@ -1240,7 +1240,9 @@ export const topHeightAtom = atom(
     //   return;
     // }
 
-    resize(g, s, 'TOP_HEIGHT');
+    if (!g(isMainScriptAtom)) {
+      resize(g, s, 'TOP_HEIGHT');
+    }
   }
 );
 
@@ -1351,7 +1353,8 @@ let wasPromptDataPreloaded = false;
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
-    // g(logAtom)(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
+    g(logAtom)(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
+
     const isMainScript = a?.scriptPath === mainScriptPath;
     s(isMainScriptAtom, isMainScript);
     if (isMainScript && !a?.preload) {
@@ -1391,6 +1394,7 @@ export const promptDataAtom = atom(
     s(_inputChangedAtom, false);
 
     if (a) {
+      g(logAtom)(`Setting uiAtom to ${a?.ui}`);
       s(uiAtom, a.ui);
       if (a?.theme) s(tempThemeAtom, { ...g(themeAtom), ...(a?.theme || {}) });
 
@@ -1531,7 +1535,7 @@ export const promptDataAtom = atom(
       const channel = g(channelAtom);
       channel(Channel.ON_INIT);
 
-      ipcRenderer.send(Channel.SET_PROMPT_DATA);
+      ipcRenderer.send(Channel.SET_PROMPT_DATA, { messageId: a?.messageId });
       s(promptReadyAtom, true);
 
       s(promptActiveAtom, true);
@@ -1808,7 +1812,7 @@ const lastScriptClosed = atom('');
 
 export const initialResizeAtom = atom<ResizeData | null>(null);
 export const openAtom = atom(
-  (g) => g(_open),
+  (g) => g(_open) && document.visibilityState === 'visible',
   (g, s, a: boolean) => {
     if (g(_open) === a) return;
     s(mouseEnabledAtom, 0);
@@ -2877,9 +2881,36 @@ export const currentChoiceHeightsAtom = atom(
   }
 );
 
+// const rafUntilMainReady = (g) => {
+//   const placeholderSet =
+//     document.getElementById('input')?.getAttribute('placeholder') ===
+//     'Script Kit';
+//   const noHeader = !document.getElementById('header');
+//   const noFooter = !document.getElementById('footer');
+//   const hasList = !!document.getElementById('list');
+//   const isArg = g(uiAtom) === UI.arg;
+
+//   const mainReady = placeholderSet && noHeader && noFooter && hasList && isArg;
+//   const message = `Raffing... ready:${mainReady} -> placeholderSet: ${placeholderSet}, noHeader: ${noHeader}, noFooter: ${noFooter}, hasList: ${hasList}, isArg: ${isArg}`;
+//   g(logAtom)(message);
+//   if (mainReady) {
+//     const messageId = window.resetMessageId;
+//     g(logAtom)(`Sending reset prompt message ${messageId}`);
+//     ipcRenderer.send(AppChannel.RESET_PROMPT, { messageId });
+//   } else {
+//     window.requestAnimationFrame(() => {
+//       rafUntilMainReady(g);
+//     });
+//   }
+// };
+
 const pauseChannelAtom = atom(false);
-export const resetPromptAtom = atom(null, async (g, s) => {
+
+export const resetIdAtom = atom(Math.random());
+export const resetPromptAtom = atom(null, async (g, s, a) => {
+  g(logAtom)(`Received messageId: ${a?.messageId}`);
   s(pauseChannelAtom, true);
+  s(isMainScriptAtom, true);
   const cachedMainPromptData = g(cachedMainPromptDataAtom) as PromptData;
   cachedMainPromptData.preload = true;
   const cachedMainScoredChoices = g(cachedMainScoredChoicesAtom);
@@ -2916,7 +2947,13 @@ export const resetPromptAtom = atom(null, async (g, s) => {
   s(pauseChannelAtom, false);
   g(logAtom)(`✔️ Reset main complete.`);
 
-  return new Promise((resolve) => window.requestAnimationFrame(resolve));
+  const event = new CustomEvent('reset-prompt', {
+    detail: { key: 'value' },
+    bubbles: true,
+    cancelable: true,
+  });
+
+  document.dispatchEvent(event);
 });
 
 export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({});

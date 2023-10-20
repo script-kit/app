@@ -114,7 +114,7 @@ export const maybeHide = async (reason: string) => {
     reason === HideReason.BeforeExit
   ) {
     actualHide();
-    // resetPrompt();
+    resetPrompt();
     // attemptPreload(mainScriptPath, false);
     // clearSearch();
     // invokeSearch('');
@@ -141,10 +141,7 @@ export const maybeHide = async (reason: string) => {
   if (kitState.debugging) return;
   if (!kitState.ignoreBlur && promptWindow?.isVisible()) {
     log.verbose(`Hiding because ${reason}`);
-    if (
-      !promptWindow?.webContents?.isDevToolsOpened() &&
-      !kitState.preventClose
-    ) {
+    if (!kitState.preventClose) {
       actualHide();
     }
   }
@@ -163,17 +160,6 @@ export const setVibrancy = (
   } else {
     log.info(`Custom vibrancy not supported on this platform`);
   }
-};
-
-export const disableBackgroundThrottling = () => {
-  if (isVisible()) return;
-  log.info(`🏎️ Disable background throttling`);
-  promptWindow?.webContents?.setBackgroundThrottling(false);
-
-  setTimeout(() => {
-    log.info(`🐢 Enable background throttling`);
-    promptWindow?.webContents?.setBackgroundThrottling(true);
-  }, 100);
 };
 
 export const saveCurrentPromptBounds = async () => {
@@ -222,7 +208,7 @@ export const createPromptWindow = async () => {
       nodeIntegration: true,
       contextIsolation: false,
       devTools: true,
-      backgroundThrottling: true,
+      backgroundThrottling: false,
       experimentalFeatures: true,
     },
     closable: false,
@@ -268,6 +254,10 @@ export const createPromptWindow = async () => {
   // });
 
   promptWindow?.webContents?.setZoomLevel(ZOOM_LEVEL);
+
+  setInterval(() => {
+    promptWindow?.webContents?.startPainting();
+  }, 100);
 
   if (kitState.isMac) {
     const touchbar = new TouchBar({
@@ -586,8 +576,7 @@ export const focusPrompt = () => {
   if (
     promptWindow &&
     !promptWindow.isDestroyed() &&
-    !promptWindow?.isFocused() &&
-    !promptWindow?.webContents?.isDevToolsOpened()
+    !promptWindow?.isFocused()
   ) {
     try {
       promptWindow?.focus();
@@ -659,7 +648,7 @@ export const getCurrentScreenPromptCache = (
     resize: false,
     bounds: {},
   }
-) => {
+): Partial<Rectangle> => {
   const currentScreen = getCurrentScreen();
   const screenId = String(currentScreen.id);
   // log.info(`screens:`, promptState.screens);
@@ -672,12 +661,9 @@ export const getCurrentScreenPromptCache = (
     return savedPromptBounds;
   }
 
-  getMainPrompt()?.setPosition(0, 0);
-  getMainPrompt()?.center();
-
   // log.info(`resetPromptBounds`, scriptPath);
-  // const { width: screenWidth, height: screenHeight } =
-  //   currentScreen.workAreaSize;
+  const { width: screenWidth, height: screenHeight } =
+    currentScreen.workAreaSize;
 
   let width = getDefaultWidth();
   let height = PROMPT.HEIGHT.BASE;
@@ -714,14 +700,13 @@ export const getCurrentScreenPromptCache = (
   if (typeof bounds?.width === 'number') width = bounds.width;
   if (typeof bounds?.height === 'number') height = bounds.height;
 
-  // const { x: workX, y: workY } = currentScreen.workArea;
-  // let x = Math.round(screenWidth / 2 - width / 2 + workX);
-  // let y = Math.round(workY + screenHeight / 8);
+  const { x: workX, y: workY } = currentScreen.workArea;
+  let x = Math.round(screenWidth / 2 - width / 2 + workX);
+  let y = Math.round(workY + screenHeight / 8);
 
-  // if (typeof bounds?.x === 'number') x = bounds.x;
-  // if (typeof bounds?.y === 'number') y = bounds.y;
+  if (typeof bounds?.x === 'number') x = bounds.x;
+  if (typeof bounds?.y === 'number') y = bounds.y;
 
-  const { x, y } = getMainPrompt()?.getBounds();
   const promptBounds = { x, y, width, height };
 
   if (ui === UI.none) {
@@ -1000,24 +985,34 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
   }
 };
 
+// TODO: Needs refactor to include unique ids, or conflicts will happen
 export const pingPromptWithTimeout = async <K extends keyof ChannelMap>(
   channel: K,
-  data?: ChannelMap[K]
+  timeout: number,
+  data: ChannelMap[K]
 ) => {
+  const messageId = Math.random();
   return new Promise((resolve) => {
     let id: any = null;
-    const handler = () => {
+    const handler = (event, handledData) => {
       if (id) clearTimeout(id);
       log.verbose(`🎤 ${channel} pinged...`);
 
-      resolve('done');
+      if (handledData?.messageId === messageId) {
+        log.info(`Message match: ${messageId}`);
+        resolve('done');
+      } else {
+        log.error(
+          `Message mismatch: ${messageId} !== ${handledData?.messageId}`
+        );
+      }
     };
     id = setTimeout(() => {
       // just in case
       log.verbose(`🎤 ${channel} timeout...`);
       ipcMain.off(channel, handler);
       resolve('done');
-    }, 250);
+    }, timeout);
     ipcMain.once(channel, handler);
     if (process.env.KIT_SILLY)
       log.silly(`sendToPrompt: ${String(channel)}`, data);
@@ -1027,6 +1022,8 @@ export const pingPromptWithTimeout = async <K extends keyof ChannelMap>(
       !promptWindow.isDestroyed() &&
       promptWindow?.webContents
     ) {
+      data.messageId = messageId;
+      log.info(`🎤 ${channel} >>>> ${data?.messageId}`);
       promptWindow?.webContents.send(String(channel), data);
     }
   });
@@ -1182,7 +1179,7 @@ export const resetToMainAndHide = () => {
 
   log.info(`🤟 Reset to main and hide`);
   actualHide();
-  // resetPrompt();
+  resetPrompt();
 };
 
 export const hideAppIfNoWindows = (reason: HideReason) => {
@@ -1467,7 +1464,7 @@ export const setPromptData = async (promptData: PromptData) => {
     promptData.keyword = kitSearch.keyword || kitSearch.keyword;
   }
 
-  await pingPromptWithTimeout(Channel.SET_PROMPT_DATA, promptData);
+  await pingPromptWithTimeout(Channel.SET_PROMPT_DATA, 250, promptData);
 
   if (typeof promptData?.x === 'number' || typeof promptData?.y === 'number') {
     setBounds(
@@ -1563,23 +1560,8 @@ export const preloadPreview = (html: string) => {
   setPreview(html);
 };
 
-export const forceRender = async () => {
-  const render = await promptWindow.webContents.executeJavaScript(`
-
-  (async () => {
-    window.log('Force rendering...');
-    await window._resetPrompt();
-
-    return new Promise((res) => {
-      document.documentElement.style.setProperty('--render', Math.random().toString());
-      window.requestAnimationFrame(()=> {
-        res(String(new Date()))
-      });
-    });
-  })()
-`);
-
-  return render;
+export const forceRender = () => {
+  appToPrompt(AppChannel.RESET_PROMPT);
 };
 
 let resetting = false;
@@ -1595,8 +1577,8 @@ export const resetPrompt = async () => {
     //     window.resetPrompt();
     // `);
 
-    const result = await forceRender();
-    log.info(`🏋️ Force render: ${result}`);
+    forceRender();
+    log.info(`🏋️ Force rendered...`);
   } catch (error) {
     log.error(error);
   }
@@ -1622,9 +1604,6 @@ export const attemptPreload = (
     // log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
   } else if (preloadPromptDataMap.has(promptScriptPath)) {
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
-    if (show) {
-      disableBackgroundThrottling();
-    }
     // kitState.preloaded = true;
 
     appToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
@@ -2227,7 +2206,7 @@ export const destroyPromptWindow = () => {
 export const hasFocus = () => promptWindow?.isFocused();
 
 export const initShowPrompt = () => {
-  promptWindow?.setAlwaysOnTop(true, 'pop-up-menu', 1);
+  setPromptAlwaysOnTop(true);
   if (kitState.isMac) {
     promptWindow.showInactive();
   } else {
@@ -2245,7 +2224,6 @@ export const initShowPrompt = () => {
 };
 
 const showPrompt = () => {
-  disableBackgroundThrottling();
   initShowPrompt();
   sendToPrompt(Channel.SET_OPEN, true);
 
@@ -2274,6 +2252,9 @@ export const onHideOnce = (fn: () => void) => {
 
 export const initMainBounds = () => {
   const bounds = getCurrentScreenPromptCache(mainScriptPath);
+  if (!bounds.height || bounds.height < PROMPT.HEIGHT.BASE) {
+    bounds.height = PROMPT.HEIGHT.BASE;
+  }
   setBounds(
     bounds,
     `promptId ${kitState.promptId} - promptCount ${

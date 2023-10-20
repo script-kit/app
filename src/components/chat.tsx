@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/no-unstable-nested-components */
+/* eslint-disable react/function-component-definition */
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/no-danger */
@@ -17,9 +20,7 @@ import React, {
 import classNames from 'classnames';
 import { FaChevronDown } from 'react-icons/fa';
 import {
-  Button,
   MessageType,
-  MessageBox,
   IMessageListProps,
   MessageListEvent,
   IInputProps,
@@ -33,6 +34,8 @@ import {
   channelAtom,
   uiAtom,
 } from '../jotai';
+import Button from './chat/button';
+import MessageBox from './chat/messagebox';
 
 const ChatInput: React.FC<
   IInputProps & {

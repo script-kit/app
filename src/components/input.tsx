@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/jsx-no-useless-fragment */
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable jsx-a11y/no-autofocus */
@@ -143,8 +145,8 @@ export default function Input() {
       }
 
       if (event.ctrlKey) {
-        const shortcut = shortcuts.find((s) =>
-          (s?.key || '')?.includes('ctrl')
+        const shortcut = shortcuts.find(
+          (s) => (s?.key || '')?.includes('ctrl')
         );
         const key = shortcut?.key || '';
 
@@ -260,7 +262,7 @@ export default function Input() {
           spellCheck="false"
           style={
             {
-              width: `${hiddenInputMeasurerWidth}px`,
+              width: `${Math.max(hiddenInputMeasurerWidth, 128)}px`,
               WebkitAppRegion: 'no-drag',
               WebkitUserSelect: 'none',
               ...(submitted && { caretColor: 'transparent' }),
@@ -321,30 +323,26 @@ export default function Input() {
         inputHeight === PROMPT.INPUT.HEIGHT.XS && `origin-right scale-95`
       }`}
           >
-            <>
-              <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
-                {actions
-                  .filter(
-                    (action) => action.position === 'right' && !appDb?.mini
-                  )
-                  .flatMap((action, i, array) => {
-                    if (!action?.visible && miniShortcutsVisible) {
-                      return [
-                        // eslint-disable-next-line react/jsx-key
-                        <ActionButton {...action} />,
-                        // eslint-disable-next-line no-nested-ternary
-                        i < array.length - 1 ? (
-                          <ActionSeparator key={`${action?.key}-separator`} />
-                        ) : enterButtonName ? (
-                          <ActionSeparator key={`${action?.key}-separator`} />
-                        ) : null,
-                      ];
-                    }
+            <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
+              {actions
+                .filter((action) => action.position === 'right' && !appDb?.mini)
+                .flatMap((action, i, array) => {
+                  if (!action?.visible && miniShortcutsVisible) {
+                    return [
+                      // eslint-disable-next-line react/jsx-key
+                      <ActionButton {...action} />,
+                      // eslint-disable-next-line no-nested-ternary
+                      i < array.length - 1 ? (
+                        <ActionSeparator key={`${action?.key}-separator`} />
+                      ) : enterButtonName ? (
+                        <ActionSeparator key={`${action?.key}-separator`} />
+                      ) : null,
+                    ];
+                  }
 
-                    return null;
-                  })}
-              </div>
-            </>
+                  return null;
+                })}
+            </div>
 
             <div className="enter-container flex min-w-fit flex-row items-center">
               {enterButtonName ? (
@@ -361,30 +359,26 @@ export default function Input() {
               <ActionSeparator key="options-separator" />
             </div>
 
-            <>
-              <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
-                {actions
-                  .filter(
-                    (action) => action.position === 'right' && !appDb?.mini
-                  )
-                  .flatMap((action, i, array) => {
-                    if (action?.visible) {
-                      return [
-                        // eslint-disable-next-line react/jsx-key
-                        <ActionButton {...action} />,
-                        // eslint-disable-next-line no-nested-ternary
-                        i < array.length - 1 ? (
-                          <ActionSeparator key={`${action?.key}-separator`} />
-                        ) : enterButtonName ? (
-                          <ActionSeparator key={`${action?.key}-separator`} />
-                        ) : null,
-                      ];
-                    }
+            <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
+              {actions
+                .filter((action) => action.position === 'right' && !appDb?.mini)
+                .flatMap((action, i, array) => {
+                  if (action?.visible) {
+                    return [
+                      // eslint-disable-next-line react/jsx-key
+                      <ActionButton {...action} />,
+                      // eslint-disable-next-line no-nested-ternary
+                      i < array.length - 1 ? (
+                        <ActionSeparator key={`${action?.key}-separator`} />
+                      ) : enterButtonName ? (
+                        <ActionSeparator key={`${action?.key}-separator`} />
+                      ) : null,
+                    ];
+                  }
 
-                    return null;
-                  })}
-              </div>
-            </>
+                  return null;
+                })}
+            </div>
 
             {hasFlags && !hasRightShortcut && (
               <>

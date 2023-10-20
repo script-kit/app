@@ -1,10 +1,11 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/function-component-definition */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable no-nested-ternary */
 import React, { useCallback } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { XIcon } from '@heroicons/react/outline';
-import { AnimatePresence } from 'framer-motion';
 import {
   descriptionAtom,
   mouseEnabledAtom,
@@ -64,7 +65,7 @@ const TopRightButton = () => {
         "
       >
         <span className="pl-2">Update</span>
-        <i className="gg-play-button -ml-1.5 scale-75" some-aria="" />
+        <i className="gg-play-button -ml-1.5 scale-75" />
       </button>
     );
   }
@@ -78,7 +79,7 @@ const TopRightButton = () => {
         className="primary -mr-2 -mt-0.5 flex cursor-pointer flex-row items-center rounded-md bg-text-base bg-opacity-10 font-bold text-primary text-opacity-90 hover:bg-opacity-20"
       >
         <span className="pl-2">{processes.length - 1}</span>
-        <i className="gg-play-button -ml-1.5 scale-75" some-aria="" />
+        <i className="gg-play-button -ml-1.5 scale-75" />
       </button>
     );
   }
@@ -124,6 +125,7 @@ export default function Header() {
 
   return (
     <div
+      id="header"
       style={
         {
           WebkitAppRegion: 'no-drag',
