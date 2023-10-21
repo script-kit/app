@@ -481,11 +481,11 @@ const handleChannelMessage = <K extends keyof ChannelMap>(
   }
 
   if (isVisible() && !isWidgetMessage && processInfo?.pid !== kitState.pid) {
-    const warning = `💁‍♂️ ${path.basename(
-      processInfo.scriptPath
-    )}: ${data?.pid}: ${data.channel} ignored on current UI. ${
-      data.pid
-    } doesn't match ${kitState.pid}`;
+    const warning = `💁‍♂️ ${path.basename(processInfo.scriptPath)}: ${
+      data?.pid
+    }: ${data.channel} ignored on current UI. ${data.pid} doesn't match ${
+      kitState.pid
+    }`;
     return warn(warning);
   }
 
@@ -953,6 +953,9 @@ const kitMessageMap: ChannelHandler = {
 
       const handler = () => {
         log.info(`🫣 App hidden`);
+        if (!kitState.isMac) {
+          getMainPrompt()?.minimize();
+        }
 
         if (!child?.killed) {
           childSend(child, {
