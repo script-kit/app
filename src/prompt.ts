@@ -101,10 +101,10 @@ export const blurPrompt = () => {
 
 export const actualHide = () => {
   log.info(`🙈 Hiding prompt window`);
-  if (!kitState.isMac) {
-    log.info(`Minimizing app for Windows`);
-    promptWindow?.minimize();
-  }
+  // if (!kitState.isMac) {
+  //   log.info(`Minimizing app for Windows`);
+  //   promptWindow?.minimize();
+  // }
   promptWindow?.hide();
 };
 
@@ -2217,7 +2217,7 @@ export const initShowPrompt = () => {
   if (kitState.isMac) {
     promptWindow.showInactive();
   } else {
-    promptWindow.restore();
+    // promptWindow.restore();
     promptWindow.show();
   }
 
