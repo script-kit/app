@@ -966,11 +966,6 @@ const kitMessageMap: ChannelHandler = {
         handler();
       }
 
-      if (!kitState.isMac) {
-        log.info(`Minimizing app for Windows`);
-        getMainPrompt()?.minimize();
-      }
-
       hideAppIfNoWindows(HideReason.User);
       if (value?.preloadScript) {
         attemptPreload(value?.preloadScript as string, false);

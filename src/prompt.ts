@@ -101,6 +101,10 @@ export const blurPrompt = () => {
 
 export const actualHide = () => {
   log.info(`🙈 Hiding prompt window`);
+  if (!kitState.isMac) {
+    log.info(`Minimizing app for Windows`);
+    promptWindow?.minimize();
+  }
   promptWindow?.hide();
 };
 
@@ -2209,12 +2213,11 @@ export const hasFocus = () => promptWindow?.isFocused();
 
 export const initShowPrompt = () => {
   setPromptAlwaysOnTop(true);
-  if (kitState.isWindows) {
-    promptWindow.restore();
-  }
+
   if (kitState.isMac) {
     promptWindow.showInactive();
   } else {
+    promptWindow.restore();
     promptWindow.show();
   }
 
