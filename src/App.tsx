@@ -512,7 +512,8 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
           onMouseMove={onMouseMove}
         >
           {ui !== UI.log && (
-            <header ref={headerRef} className="relative z-10">
+            // header id using in resize measuring
+            <header id="header" ref={headerRef} className="relative z-10">
               {headerHidden === false && <Header />}
 
               {ui === UI.hotkey && (

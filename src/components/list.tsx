@@ -51,7 +51,6 @@ export default function ChoiceList({ height }: ListProps) {
 
   useEffect(() => {
     if (!listRef.current) return;
-    if (document.visibilityState === 'hidden') return;
 
     const scroll = () => {
       if (requiresScroll === -1) return;
@@ -78,7 +77,7 @@ export default function ChoiceList({ height }: ListProps) {
 
     // log(`🧾 List reset due to choice height changes`);
     (listRef?.current as any)?.resetAfterIndex(0);
-  }, [choices, promptData]);
+  }, [choices, promptData, flagValue]);
 
   const [scrollTimeout, setScrollTimeout] = useState<any>(null);
 
