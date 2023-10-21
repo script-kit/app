@@ -54,6 +54,11 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
       rawInput.match(new RegExp(kitSearch.inputRegex, 'gi'))?.[0] || '';
   }
 
+  if (!prevTransformedInput && !rawInput) {
+    kitSearch.keywordCleared = false;
+    return true;
+  }
+
   if (kitSearch.commandChars.length) {
     if (prevTransformedInput === '') {
       const char = rawInput?.[rawInput.length - 2];

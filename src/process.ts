@@ -953,10 +953,6 @@ const kitMessageMap: ChannelHandler = {
 
       const handler = () => {
         log.info(`🫣 App hidden`);
-        if (!kitState.isMac) {
-          getMainPrompt()?.minimize();
-        }
-
         if (!child?.killed) {
           childSend(child, {
             channel,
@@ -968,6 +964,11 @@ const kitMessageMap: ChannelHandler = {
         onHideOnce(handler);
       } else {
         handler();
+      }
+
+      if (!kitState.isMac) {
+        log.info(`Minimizing app for Windows`);
+        getMainPrompt()?.minimize();
       }
 
       hideAppIfNoWindows(HideReason.User);
