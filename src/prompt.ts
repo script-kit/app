@@ -111,6 +111,11 @@ export const actualHide = () => {
 export const maybeHide = async (reason: string) => {
   log.info(`Attempt Hide: ${reason}`);
   if (!promptWindow?.isVisible()) return;
+
+  if (reason === HideReason.User && !kitState.isMac) {
+    app?.hide();
+    log.info(`app?.hide() for Windows`);
+  }
   if (
     reason === HideReason.NoScript ||
     reason === HideReason.Escape ||
