@@ -112,10 +112,6 @@ export const maybeHide = async (reason: string) => {
   log.info(`Attempt Hide: ${reason}`);
   if (!promptWindow?.isVisible()) return;
 
-  if (reason === HideReason.User && !kitState.isMac) {
-    log.info(`Minimizing app for Windows`);
-    promptWindow?.minimize();
-  }
   if (
     reason === HideReason.NoScript ||
     reason === HideReason.Escape ||
@@ -152,6 +148,11 @@ export const maybeHide = async (reason: string) => {
     if (!kitState.preventClose) {
       actualHide();
     }
+  }
+
+  if (reason === HideReason.User && !kitState.isMac) {
+    log.info(`Minimizing app for Windows`);
+    promptWindow?.minimize();
   }
 };
 
