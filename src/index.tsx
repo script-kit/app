@@ -7,3 +7,11 @@ const container = document.getElementById('root');
 
 const root = createRoot(container as Element);
 root.render(<App />);
+
+(window as any).tick = async () => {
+  root.render(<App />);
+  if (window?.log) {
+    window.log('<App /> rendered ✅');
+  }
+  return Promise.resolve();
+};

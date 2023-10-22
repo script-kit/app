@@ -19,9 +19,10 @@ import {
   reload,
   resetPrompt,
   showMainPrompt,
+  tick,
 } from './prompt';
 import { convertKey, kitState, subs } from './state';
-import { AppChannel, Trigger } from './enums';
+import { Trigger } from './enums';
 import { convertShortcut, shortcutInfo } from './helpers';
 import { processes, spawnShebang } from './process';
 
@@ -266,6 +267,7 @@ export const updateMainShortcut = async (filePath: string) => {
       if (!isVisible()) {
         kitState.ignoreBlur = false;
         kitState.alwaysOnTop = true;
+        await tick();
         focusPrompt();
         resetPrompt();
         initMainBounds();

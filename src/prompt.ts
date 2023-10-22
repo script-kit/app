@@ -1365,13 +1365,10 @@ export const preloadPromptData = async (promptData: PromptData) => {
   kitState.scriptPath = promptData.scriptPath;
   kitState.hideOnEscape = Boolean(promptData.hideOnEscape);
 
+  kitSearch.triggers.clear();
   if (promptData?.hint) {
-    const shortcodes = promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi);
-    if (shortcodes) {
-      kitSearch.shortcodes.clear();
-      for (const shortcode of shortcodes) {
-        kitSearch.shortcodes.set(shortcode, { value: shortcode });
-      }
+    for (const trigger of promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi) || []) {
+      kitSearch.triggers.set(trigger, { name: trigger, value: trigger });
     }
   }
 
@@ -1400,12 +1397,10 @@ export const preloadPromptData = async (promptData: PromptData) => {
 
 export const setPromptData = async (promptData: PromptData) => {
   kitSearch.shortcodes.clear();
+  kitSearch.triggers.clear();
   if (promptData?.hint) {
-    const shortcodes = promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi);
-    if (shortcodes) {
-      for (const shortcode of shortcodes) {
-        kitSearch.shortcodes.set(shortcode, { value: shortcode });
-      }
+    for (const trigger of promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi) || []) {
+      kitSearch.triggers.set(trigger, { name: trigger, value: trigger });
     }
   }
 
@@ -1576,13 +1571,15 @@ export const forceRender = () => {
   appToPrompt(AppChannel.RESET_PROMPT);
 };
 
+export const tick = async () => {
+  return promptWindow.webContents.executeJavaScript(`
+  (async () => { await window.tick(); })();
+`);
+};
+
 export const resetPrompt = async () => {
   log.info(`🏋️‍♂️ Reset main`);
   try {
-    //     await promptWindow.webContents.executeJavaScript(`
-    //     window.resetPrompt();
-    // `);
-
     kitState.promptCount = 0;
     forceRender();
     log.info(`🏋️ Force rendered...`);
@@ -1591,7 +1588,7 @@ export const resetPrompt = async () => {
   }
 };
 
-export const attemptPreload = (
+export const attemptPreload = async (
   promptScriptPath: string,
   show = true,
   init = true
@@ -2012,13 +2009,10 @@ export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
 export const setShortcodes = (choices: Choice[]) => {
   kitSearch.shortcodes.clear();
+  kitSearch.triggers.clear();
 
   for (const choice of choices) {
-    const code = (
-      choice?.shortcode ||
-      choice?.name?.match(/(?<=\[)\w+(?=\])/i)?.[0] ||
-      ''
-    ).toLowerCase();
+    const code = (choice?.shortcode || '').toLowerCase();
 
     if (code) {
       kitSearch.shortcodes.set(code, choice);
@@ -2027,6 +2021,16 @@ export const setShortcodes = (choices: Choice[]) => {
     if (choice?.keyword) {
       // log.info(`🗝 Found keyword ${choice.keyword}`);
       kitSearch.keywords.set(choice.keyword.toLowerCase(), choice);
+    }
+
+    const trigger = (
+      choice?.trigger ||
+      choice?.name?.match(/(?<=\[)\w+(?=\])/i)?.[0] ||
+      ''
+    ).toLowerCase();
+
+    if (choice?.trigger) {
+      kitSearch.triggers.set(trigger, choice);
     }
   }
 };
@@ -2284,7 +2288,7 @@ export const showMainPrompt = () => {
   }, 100);
 };
 
-export const initBounds = (forceScriptPath?: string, show = false) => {
+export const initBounds = async (forceScriptPath?: string, show = false) => {
   if (promptWindow?.isDestroyed()) return;
 
   if (promptWindow?.isVisible()) {
@@ -2327,6 +2331,8 @@ export const initBounds = (forceScriptPath?: string, show = false) => {
     //   kitState.promptCount > 1 &&
     //   !kitState.promptBounds.height
   );
+
+  await tick();
 
   if (!show) {
     return;

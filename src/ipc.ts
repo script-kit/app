@@ -80,12 +80,10 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
 
   prevTransformedInput = transformedInput;
 
-  const shortcodeChoice = kitSearch.shortcodes.get(
-    transformedInput.toLowerCase()
-  );
-  if (shortcodeChoice) {
-    sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
-    log.info(`🔑 Shortcode: ${transformedInput} triggered`);
+  const trigger = kitSearch.triggers.get(transformedInput.toLowerCase());
+  if (trigger) {
+    sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger.value);
+    log.info(`👢 Trigger: ${transformedInput} triggered`);
     return false;
   }
 
@@ -107,6 +105,17 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
   }
 
   if (rawInput.includes(' ')) {
+    if (rawInput.endsWith(' ')) {
+      const shortcodeChoice = kitSearch.shortcodes.get(
+        transformedInput.toLowerCase().trimEnd()
+      );
+      if (shortcodeChoice) {
+        sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
+        log.info(`🔑 Shortcode: ${transformedInput} triggered`);
+        return false;
+      }
+    }
+
     const keyword = rawInput.split(' ')?.[0].trim();
     if (keyword !== kitSearch.keyword) {
       const keywordChoice = kitSearch.keywords.get(keyword);

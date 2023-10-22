@@ -960,6 +960,7 @@ export const kitSearch = {
   choices: [] as Choice[],
   scripts: [] as Script[],
   shortcodes: new Map<string, Choice>(),
+  triggers: new Map<string, Choice>(),
   keywords: new Map<string, Choice>(),
   hasGroup: false,
   qs: null as null | QuickScore<Choice>,
@@ -982,6 +983,7 @@ export const clearSearch = () => {
   kitSearch.input = '';
   kitSearch.qs = null;
   kitSearch.keywords.clear();
+  kitSearch.triggers.clear();
   kitSearch.shortcodes.clear();
   kitSearch.hasGroup = false;
   kitSearch.commandChars = [];
@@ -994,7 +996,6 @@ export const kitClipboard = {
 
 export const getAccessibilityAuthorized = async () => {
   // REMOVE-MAC
-  const isMac = os.platform() === 'darwin';
   if (isMac) {
     const { getAuthStatus } = await import('node-mac-permissions');
 
