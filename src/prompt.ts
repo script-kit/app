@@ -113,8 +113,8 @@ export const maybeHide = async (reason: string) => {
   if (!promptWindow?.isVisible()) return;
 
   if (reason === HideReason.User && !kitState.isMac) {
-    app?.hide();
-    log.info(`app?.hide() for Windows`);
+    log.info(`Minimizing app for Windows`);
+    promptWindow?.minimize();
   }
   if (
     reason === HideReason.NoScript ||
