@@ -39,10 +39,14 @@ import {
   KIT_FIRST_PATH,
   isDir,
   createPathResolver,
-  mainScriptPath,
+  getMainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
-import { destroyPromptWindow, sendToPrompt } from './prompt';
+import {
+  destroyPromptWindow,
+  scoreAndCacheMainChoices,
+  sendToPrompt,
+} from './prompt';
 import { INSTALL_ERROR, show } from './show';
 import { showError } from './main.dev.templates';
 import { mainLogPath } from './logs';
@@ -623,7 +627,11 @@ export const cacheMainScripts = debounce(async () => {
 
       if (Array.isArray(scripts) && scripts.length > 0) {
         log.info(`Caching scripts...`, scripts.length);
-        preloadChoicesMap.set(mainScriptPath, scripts);
+        preloadChoicesMap.set(getMainScriptPath(), scripts);
+        log.info(`✉️ Sending scripts to prompt...`);
+        if (scripts) {
+          scoreAndCacheMainChoices(scripts);
+        }
       }
     };
     const child = fork(

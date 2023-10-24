@@ -34,7 +34,6 @@ import {
   kitPath,
   kenvPath,
   isParentOfDir,
-  mainScriptPath,
   tmpClipboardDir,
   getTrustedKenvsKey,
 } from '@johnlindquist/kit/cjs/utils';

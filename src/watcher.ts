@@ -16,7 +16,7 @@ import {
   kitPath,
   kenvPath,
   resolveToScriptPath,
-  mainScriptPath,
+  getMainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { FSWatcher } from 'chokidar';
@@ -37,6 +37,7 @@ import {
   clearPromptCacheFor,
   debugPrompt,
   setKitStateAtom,
+  togglePromptEnv,
 } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
@@ -438,6 +439,7 @@ export const setupWatchers = async () => {
           // }
 
           kitState.kenvEnv = envData;
+          togglePromptEnv('KIT_MAIN_SCRIPT');
         } catch (error) {
           log.warn(error);
         }
@@ -465,7 +467,7 @@ export const setupWatchers = async () => {
       try {
         const currentAppDb = (await getAppDb()).data;
         assign(appDb, currentAppDb);
-        clearPromptCacheFor(mainScriptPath);
+        clearPromptCacheFor(getMainScriptPath());
       } catch (error) {
         log.warn(error);
       }

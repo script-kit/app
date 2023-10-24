@@ -22,7 +22,7 @@ import {
   kenvPath,
   kitPath,
   knodePath,
-  mainScriptPath,
+  getMainScriptPath,
   isFile,
   getLogFromScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
@@ -60,7 +60,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
   } else if (event?.altKey) {
     emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'alt-click.js'));
   } else {
-    // emitter.emit(KitEvent.RunPromptProcess, mainScriptPath);
+    // emitter.emit(KitEvent.RunPromptProcess, getMainScriptPath());
 
     const updateMenu: MenuItemConstructorOptions = {
       label: 'Check for Updates',
@@ -277,7 +277,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
     toolsSubmenu.push({
       label: 'Force Prompt to Front',
       click: () => {
-        runScript(mainScriptPath, [], {
+        runScript(getMainScriptPath(), [], {
           force: true,
           trigger: Trigger.Tray,
         })();
@@ -439,7 +439,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     if (
       kitState.pid &&
-      kitState.scriptPath === mainScriptPath &&
+      kitState.scriptPath === getMainScriptPath() &&
       kitState.promptCount === 1
     ) {
       fixItems.push({
@@ -461,7 +461,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         label: `Open Kit.app Prompt`,
         // icon: getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`),
         icon: menuIcon('open'),
-        click: runScript(mainScriptPath, [], {
+        click: runScript(getMainScriptPath(), [], {
           force: true,
           trigger: Trigger.Tray,
         }),

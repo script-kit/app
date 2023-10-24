@@ -42,7 +42,7 @@ import path from 'path';
 import log from 'electron-log';
 import { assign, debounce } from 'lodash';
 import {
-  mainScriptPath,
+  getMainScriptPath,
   defaultGroupClassName,
   defaultGroupNameClassName,
   groupChoices,
@@ -115,7 +115,7 @@ export const maybeHide = async (reason: string) => {
   ) {
     actualHide();
     resetPrompt();
-    // attemptPreload(mainScriptPath, false);
+    // attemptPreload(getMainScriptPath(), false);
     // clearSearch();
     // invokeSearch('');
     return;
@@ -400,6 +400,7 @@ export const createPromptWindow = async () => {
     if (promptWindow?.isVisible()) {
       sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
     }
+
     maybeHide(HideReason.Blur);
 
     if (os.platform().startsWith('win')) {
@@ -544,7 +545,7 @@ export const createPromptWindow = async () => {
 
   powerMonitor.on('lock-screen', () => {
     log.info(`🔒 System locked. Reloading prompt window.`);
-    if (kitState.scriptPath === mainScriptPath)
+    if (kitState.scriptPath === getMainScriptPath())
       maybeHide(HideReason.LockScreen);
   });
 
@@ -908,7 +909,7 @@ export const resize = async (resizeData: ResizeData) => {
   let cachedY;
 
   if (isMainScript) {
-    const cachedBounds = getCurrentScreenPromptCache(mainScriptPath);
+    const cachedBounds = getCurrentScreenPromptCache(getMainScriptPath());
     if (!hasInput) {
       cachedHeight = cachedBounds?.height || PROMPT.HEIGHT.BASE;
     }
@@ -1180,7 +1181,7 @@ const writePromptState = async (
 export const resetToMainAndHide = () => {
   const hideHandler = () => {
     log.info(`😶‍🌫️ Hidden: Init back to main dimensions`);
-    initBounds(mainScriptPath, false);
+    initBounds(getMainScriptPath(), false);
   };
 
   promptWindow?.once('hide', hideHandler);
@@ -1271,7 +1272,7 @@ export const setScript = async (
   // if (promptScript?.id === script?.id) return;
   // log.info(script);
 
-  if (script.filePath === mainScriptPath) {
+  if (script.filePath === getMainScriptPath()) {
     script.tabs = script?.tabs?.filter(
       (tab: string) => !tab.match(/join|live/i)
     );
@@ -1284,7 +1285,7 @@ export const setScript = async (
   }
   sendToPrompt(Channel.SET_SCRIPT, script);
 
-  if (script.filePath === mainScriptPath) {
+  if (script.filePath === getMainScriptPath()) {
     emitter.emit(KitEvent.MainScript, script);
   }
 
@@ -1451,7 +1452,7 @@ export const setPromptData = async (promptData: PromptData) => {
   kitState.promptUI = promptData.ui;
 
   log.verbose(`setPromptData ${promptData.scriptPath}`);
-  const isMainScript = kitState.scriptPath === mainScriptPath;
+  const isMainScript = kitState.scriptPath === getMainScriptPath();
 
   kitState.promptBounds = {
     x: promptData.x,
@@ -1599,7 +1600,7 @@ export const attemptPreload = async (
     kitState.attemptingPreload = false;
   }, 200);
 
-  const isMainScript = mainScriptPath === promptScriptPath;
+  const isMainScript = getMainScriptPath() === promptScriptPath;
   if (!promptScriptPath || isMainScript) return;
   // log out all the keys of preloadPromptDataMap
   kitState.preloaded = false;
@@ -1627,11 +1628,11 @@ export const attemptPreload = async (
         x: promptData.x,
         y: promptData.y,
         width:
-          mainScriptPath === promptData.scriptPath
+          getMainScriptPath() === promptData.scriptPath
             ? getDefaultWidth()
             : promptData.width || getDefaultWidth(),
         height:
-          mainScriptPath === promptData.scriptPath
+          getMainScriptPath() === promptData.scriptPath
             ? PROMPT.HEIGHT.BASE
             : promptData.height,
       };
@@ -1652,7 +1653,7 @@ export const setScoredChoices = (choices: ScoredChoice[]) => {
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 
   if (
-    kitState.scriptPath === mainScriptPath &&
+    kitState.scriptPath === getMainScriptPath() &&
     kitSearch.input === '' &&
     !kitSearch.inputRegex &&
     choices?.length
@@ -1744,6 +1745,23 @@ export const invokeFlagSearch = (input: string) => {
   } else {
     setScoredFlags(result);
   }
+};
+
+const cacheMainChoices = (choices: ScoredChoice[]) => {
+  log.info(`Caching main scored choices: ${choices.length}`);
+  appToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
+};
+
+export const scoreAndCacheMainChoices = (scripts: Script[]) => {
+  const results = scripts
+    .filter((c) => {
+      if (c?.miss || c?.pass || c?.hideWithoutInput) return false;
+
+      return true;
+    })
+    .map(createScoredChoice);
+
+  cacheMainChoices(results);
 };
 
 export const invokeSearch = (rawInput: string, reason = 'normal') => {
@@ -2264,7 +2282,7 @@ export const onHideOnce = (fn: () => void) => {
 };
 
 export const initMainBounds = () => {
-  const bounds = getCurrentScreenPromptCache(mainScriptPath);
+  const bounds = getCurrentScreenPromptCache(getMainScriptPath());
   if (!bounds.height || bounds.height < PROMPT.HEIGHT.BASE) {
     bounds.height = PROMPT.HEIGHT.BASE;
   }
@@ -2463,6 +2481,27 @@ export const forcePromptToMouse = async () => {
 
   const mouse = screen.getCursorScreenPoint();
   promptWindow?.setPosition(mouse.x, mouse.y);
+};
+
+export const togglePromptEnv = async (envName: string) => {
+  log.info(`Toggle prompt env: ${envName} to ${kitState.kenvEnv?.[envName]}`);
+
+  if (process.env[envName]) {
+    delete process.env[envName];
+    delete kitState.kenvEnv?.[envName];
+    getMainPrompt()?.webContents.executeJavaScript(`
+    if(!process) process = {};
+    if(!process.env) process.env = {};
+    if(process.env?.["${envName}"]) delete process.env["${envName}"]
+    `);
+  } else if (kitState.kenvEnv?.[envName]) {
+    process.env[envName] = kitState.kenvEnv?.[envName];
+    getMainPrompt()?.webContents.executeJavaScript(`
+    if(!process) process = {};
+    if(!process.env) process.env = {};
+    process.env["${envName}"] = "${kitState.kenvEnv?.[envName]}"
+    `);
+  }
 };
 
 export const debugPrompt = async () => {

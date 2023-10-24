@@ -11,7 +11,7 @@ import log from 'electron-log';
 import colors from 'color-name';
 
 import {
-  mainScriptPath,
+  getMainScriptPath,
   kitPath,
   shortcutNormalizer,
 } from '@johnlindquist/kit/cjs/utils';
@@ -55,8 +55,8 @@ export function pathsAreEqual(path1: string, path2: string) {
 }
 
 export const isKitScript = (scriptPath: string) => {
-  // if scriptPath is not equal to mainScriptPath, return false
-  if (path.relative(scriptPath, mainScriptPath) === '') {
+  // if scriptPath is not equal to getMainScriptPath(), return false
+  if (path.relative(scriptPath, getMainScriptPath()) === '') {
     log.verbose(`>>>> Main script: ${scriptPath}`);
     return false;
   }

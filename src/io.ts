@@ -196,4 +196,5 @@ export const registerIO = async (handler: (event: any) => void) => {
   // TODO: Is there a way to detect that this has hung and restart the app if so?
   log.info(`The line right before uIOhook.start()...`);
   uIOhook.start();
+  log.info(`The line right after uIOhook.start()...`);
 };

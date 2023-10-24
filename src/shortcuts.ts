@@ -5,7 +5,7 @@ import { readFile } from 'fs/promises';
 import { subscribeKey } from 'valtio/utils';
 import { debounce } from 'lodash';
 
-import { mainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
+import { getMainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 
 import { UI } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
@@ -102,7 +102,7 @@ export const registerKillLatestShortcut = () => {
       reload();
       // wait for reload to finish
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      await runPromptProcess(mainScriptPath, [], {
+      await runPromptProcess(getMainScriptPath(), [], {
         force: true,
         trigger: Trigger.Menu,
       });
@@ -229,20 +229,20 @@ export const updateMainShortcut = async (filePath: string) => {
   if (filePath === shortcutsPath) {
     log.info(`SHORTCUTS DB CHANGED:`, filePath);
     const settings = JSON.parse(await readFile(filePath, 'utf-8'));
-    const shortcut = settings?.shortcuts?.[mainScriptPath];
+    const shortcut = settings?.shortcuts?.[getMainScriptPath()];
 
     const finalShortcut = convertShortcut(shortcut, filePath);
     if (!finalShortcut) return;
 
     log.verbose(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
 
-    const old = shortcutMap.get(mainScriptPath);
+    const old = shortcutMap.get(getMainScriptPath());
 
     if (finalShortcut === old?.shortcut) return;
 
     if (old?.shortcut) {
       globalShortcut.unregister(old?.shortcut);
-      shortcutMap.delete(mainScriptPath);
+      shortcutMap.delete(getMainScriptPath());
     }
 
     const mainShortcutAction = async () => {
@@ -272,7 +272,7 @@ export const updateMainShortcut = async (filePath: string) => {
         resetPrompt();
         initMainBounds();
         showMainPrompt();
-        await runPromptProcess(mainScriptPath, [], {
+        await runPromptProcess(getMainScriptPath(), [], {
           force: true,
           trigger: Trigger.Menu,
         });
@@ -321,7 +321,7 @@ export const updateMainShortcut = async (filePath: string) => {
 
       // setPreview(`<div></div>`);
 
-      await runPromptProcess(mainScriptPath, [], {
+      await runPromptProcess(getMainScriptPath(), [], {
         force: true,
         trigger: Trigger.Menu,
       });
@@ -330,14 +330,22 @@ export const updateMainShortcut = async (filePath: string) => {
     const ret = globalShortcut.register(finalShortcut, mainShortcutAction);
 
     if (!ret) {
-      log.warn(`Failed to register: ${finalShortcut} to ${mainScriptPath}`);
-      shortcutInfo(finalShortcut, mainScriptPath, mainFail);
+      log.warn(
+        `Failed to register: ${finalShortcut} to ${getMainScriptPath(
+          process.env.KIT_MAIN_SCRIPT
+        )}`
+      );
+      shortcutInfo(finalShortcut, getMainScriptPath(), mainFail);
     }
 
     if (ret && globalShortcut.isRegistered(finalShortcut)) {
       kitState.mainShortcut = finalShortcut;
-      log.info(`Registered ${finalShortcut} to ${mainScriptPath}`);
-      shortcutMap.set(mainScriptPath, {
+      log.info(
+        `Registered ${finalShortcut} to ${getMainScriptPath(
+          process.env.KIT_MAIN_SCRIPT
+        )}`
+      );
+      shortcutMap.set(getMainScriptPath(), {
         shortcut: finalShortcut,
         shebang: '',
       });

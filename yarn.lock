@@ -5368,7 +5368,7 @@ clone@^1.0.2:
   resolved "https://registry.yarnpkg.com/clone/-/clone-1.0.4.tgz#da309cc263df15994c688ca902179ca3c7cd7c7e"
   integrity sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==
 
-clsx@^1.1.1, clsx@^1.2.1:
+clsx@^1.1.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/clsx/-/clsx-1.2.1.tgz#0ddc4a20a549b59c93a4116bb26f5294ca17dc12"
   integrity sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==
@@ -7072,10 +7072,10 @@ electron-util@^0.17.2:
     electron-is-dev "^1.1.0"
     new-github-issue-url "^0.2.1"
 
-electron@27.0.1:
-  version "27.0.1"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-27.0.1.tgz#809bbe5363f414224789cfa1f3d7237906f71b9e"
-  integrity sha512-AjDGgpf2thNxVXoNqEG+0GCUK4upAEa2B+IoM5Yk9YrOLd6uUOEMfGI9rhPtj+jC14iKOvBdefY2uAzcDC0qng==
+electron@27.0.2:
+  version "27.0.2"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-27.0.2.tgz#5465475e4e5c4de7371dc06e1872b46265a340f0"
+  integrity sha512-4fbcHQ40ZDlqhr5Pamm+M5BF7ry2lGqjFTWTJ/mrBwuiPWu6xhV/RWgUhKBaLqKNfAaNl3eMxV3Jc82gv6JauQ==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^18.11.18"
@@ -7099,12 +7099,10 @@ emittery@^0.8.1:
   resolved "https://registry.yarnpkg.com/emittery/-/emittery-0.8.1.tgz#bb23cc86d03b30aa75a7f734819dee2e1ba70860"
   integrity sha512-uDfvUjVrfGJJhymx/kz6prltenw1u7WrCg1oa94zYY8xxVpLLUu045LAT0dhDZdXG58/EpPL/5kA180fQ/qudg==
 
-emoji-picker-react@4.5.2:
-  version "4.5.2"
-  resolved "https://registry.yarnpkg.com/emoji-picker-react/-/emoji-picker-react-4.5.2.tgz#74317db98099ea0e3d42719768efc7a227f152cd"
-  integrity sha512-08v+yyFizoR9rEtLjuodTdlYQbkk0QWeKm6er0RQjks+b6Bfpw1UX9XheLcXreEAve7VVE7Tcu/kSAIm54V4zA==
-  dependencies:
-    clsx "^1.2.1"
+emoji-picker-react@4.5.4:
+  version "4.5.4"
+  resolved "https://registry.yarnpkg.com/emoji-picker-react/-/emoji-picker-react-4.5.4.tgz#e71606a1429e19cbb15f26ab428a56ac5eebf444"
+  integrity sha512-18o+qVqI83ujBwYlwsF5t+1z+vDz1haP197R67foY2/0oCDqxkTS3FtA15K14TkbnDSXNsfbuCerIjTHF6OhFA==
 
 emoji-regex@^7.0.1:
   version "7.0.3"
@@ -16634,7 +16632,7 @@ syntax-error@^1.1.1:
   dependencies:
     acorn-node "^1.2.0"
 
-tail@^2.2.4:
+tail@^2.2.6:
   version "2.2.6"
   resolved "https://registry.yarnpkg.com/tail/-/tail-2.2.6.tgz#24abd701963639b896c42496d5f416216ec0b558"
   integrity sha512-IQ6G4wK/t8VBauYiGPLx+d3fA5XjSVagjWV5SIYzvEvglbQjwEcukeYI68JOPpdydjxhZ9sIgzRlSmwSpphHyw==

@@ -19,7 +19,7 @@ import {
   ProcessInfo,
 } from '@johnlindquist/kit/types/core';
 
-import { mainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
+import { getMainScriptPath, kitPath } from '@johnlindquist/kit/cjs/utils';
 import {
   EditorConfig,
   TextareaConfig,
@@ -917,18 +917,19 @@ export const scriptAtom = atom(
   (g) => g(_script),
   (g, s, a: Script) => {
     s(lastKeyDownWasModifierAtom, false);
-    const isMainScript = a?.filePath === mainScriptPath;
+    const isMainScript = a?.filePath === getMainScriptPath();
 
     s(isMainScriptAtom, isMainScript);
     s(submittedAtom, false);
     const prevScript = g(_script);
     s(
       backToMainAtom,
-      prevScript?.filePath !== mainScriptPath && a?.filePath === mainScriptPath
+      prevScript?.filePath !== getMainScriptPath() &&
+        a?.filePath === getMainScriptPath()
     );
 
     s(promptReadyAtom, false);
-    if (a.filePath !== mainScriptPath) {
+    if (a.filePath !== getMainScriptPath()) {
       s(choicesConfigAtom, { preload: false });
       const preloaded = g(preloadedAtom);
 
@@ -1351,11 +1352,11 @@ let wasPromptDataPreloaded = false;
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
-    g(logAtom)(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
+    // g(logAtom)(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
 
-    const isMainScript = a?.scriptPath === mainScriptPath;
+    const isMainScript = a?.scriptPath === getMainScriptPath();
     s(isMainScriptAtom, isMainScript);
-    if (isMainScript && !a?.preload) {
+    if (isMainScript && !a?.preload && g(tabIndexAtom) === 0) {
       s(cachedMainPromptDataAtom, a);
     }
     if (a?.ui !== UI.arg && !a?.preview) {
@@ -1780,6 +1781,7 @@ export const submitValueAtom = atom(
 
     s(closedInput, g(inputAtom));
     s(_flaggedValue, ''); // clear after getting
+    s(_focused, null);
     s(selectedChoicesAtom, []);
 
     // if (flag) {
@@ -1849,6 +1851,7 @@ export const openAtom = atom(
       s(audioDotAtom, false);
       s(disableSubmitAtom, false);
       g(scrollToIndexAtom)(0);
+      s(termConfigAtom, {});
       // s(tabsAtom, []);
 
       const stream = g(webcamStreamAtom);
@@ -2451,10 +2454,11 @@ const termConfig = atom<TermConfig>(termConfigDefaults);
 export const termConfigAtom = atom(
   (g) => g(termConfig),
   (g, s, a: Partial<TermConfig> | null) => {
-    s(termConfig, {
+    const config = {
       ...termConfigDefaults,
       ...(a || {}),
-    });
+    };
+    s(termConfig, config);
   }
 );
 

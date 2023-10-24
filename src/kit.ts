@@ -14,7 +14,7 @@ import {
   parseScript,
   kitPath,
   kenvPath,
-  mainScriptPath,
+  getMainScriptPath,
   KIT_FIRST_PATH,
   getLogFromScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
@@ -62,7 +62,7 @@ app.on('second-instance', async (_event, argv) => {
 
 app.on('activate', async (_event, hasVisibleWindows) => {
   kitState.isActivated = true;
-  runPromptProcess(mainScriptPath, [], {
+  runPromptProcess(getMainScriptPath(), [], {
     force: true,
     trigger: Trigger.Kit,
   });
@@ -124,8 +124,8 @@ emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {
 
 // TODO: Consider removing the "parseScript" and just reading from the scripts db?
 const findScript = async (scriptPath: string) => {
-  if (scriptPath === mainScriptPath) {
-    return getKitScript(mainScriptPath);
+  if (scriptPath === getMainScriptPath()) {
+    return getKitScript(getMainScriptPath());
   }
 
   if (
@@ -151,7 +151,7 @@ export const runPromptProcess = async (
     trigger: Trigger.App,
   }
 ): Promise<ProcessInfo | null> => {
-  const isMain = pathsAreEqual(promptScriptPath || '', mainScriptPath);
+  const isMain = pathsAreEqual(promptScriptPath || '', getMainScriptPath());
   const isSplash = kitState.ui === UI.splash;
 
   if (isMain && !isSplash) {
@@ -189,9 +189,9 @@ export const runPromptProcess = async (
   if (isSplash && isMain) {
     log.info(`💦 Splash install screen visible. Preload Main Menu...`);
     try {
-      kitState.scriptPath = mainScriptPath;
+      kitState.scriptPath = getMainScriptPath();
       kitState.preloaded = false;
-      attemptPreload(mainScriptPath);
+      attemptPreload(getMainScriptPath());
     } catch (error) {
       log.error(error);
     }
@@ -231,7 +231,7 @@ export const runPromptProcess = async (
 
   // processes.assignScriptToProcess(promptScriptPath, pid);
   // alwaysOnTop(true);
-  // if (!pathsAreEqual(promptScriptPath || '', mainScriptPath)) {
+  // if (!pathsAreEqual(promptScriptPath || '', getMainScriptPath())) {
   //   log.info(`Enabling ignore blur: ${promptScriptPath}`);
   //   kitState.ignoreBlur = true;
   // }

@@ -58,7 +58,7 @@ import {
   execPath,
   appDbPath,
   getKenvs,
-  mainScriptPath,
+  getMainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import {
@@ -416,7 +416,8 @@ const systemEvents = () => {
 
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);
-    if (kitState.scriptPath === mainScriptPath) maybeHide(HideReason.Suspend);
+    if (kitState.scriptPath === getMainScriptPath())
+      maybeHide(HideReason.Suspend);
     // teardownWatchers();
     sleepSchedule();
     try {
@@ -1006,6 +1007,7 @@ const checkKit = async () => {
 
     sendToPrompt(Channel.SET_READY, true);
 
+    log.info({ mainScriptPath: getMainScriptPath() });
     // startBackgroundTask(kitPath('main', 'app-launcher.js'), [
     //   '--prep',
     //   '--trust',

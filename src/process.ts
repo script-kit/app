@@ -49,7 +49,7 @@ import {
   kitPath,
   kenvPath,
   kitDotEnvPath,
-  mainScriptPath,
+  getMainScriptPath,
   execPath,
 } from '@johnlindquist/kit/cjs/utils';
 
@@ -91,6 +91,7 @@ import {
   setTabIndex,
   attemptPreload,
   resetToMainAndHide,
+  togglePromptEnv,
 } from './prompt';
 import {
   getBackgroundTasks,
@@ -423,7 +424,7 @@ export const cachePreview = async (scriptPath: string, preview: string) => {
   log.verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
   preloadPreviewMap.set(scriptPath, preview);
   if (
-    kitState.scriptPath === mainScriptPath &&
+    kitState.scriptPath === getMainScriptPath() &&
     preview &&
     kitSearch.input === '' &&
     !kitSearch.inputRegex
@@ -481,11 +482,11 @@ const handleChannelMessage = <K extends keyof ChannelMap>(
   }
 
   if (isVisible() && !isWidgetMessage && processInfo?.pid !== kitState.pid) {
-    const warning = `💁‍♂️ ${path.basename(processInfo.scriptPath)}: ${
-      data?.pid
-    }: ${data.channel} ignored on current UI. ${data.pid} doesn't match ${
-      kitState.pid
-    }`;
+    const warning = `💁‍♂️ ${path.basename(
+      processInfo.scriptPath
+    )}: ${data?.pid}: ${data.channel} ignored on current UI. ${
+      data.pid
+    } doesn't match ${kitState.pid}`;
     return warn(warning);
   }
 
@@ -1186,7 +1187,7 @@ const kitMessageMap: ChannelHandler = {
   SET_SHORTCUTS: onChildChannel(async ({ child }, { channel, value }) => {
     setShortcuts(value);
     if (
-      kitState.scriptPath === mainScriptPath &&
+      kitState.scriptPath === getMainScriptPath() &&
       kitSearch.input === '' &&
       value?.length
     ) {
@@ -2940,6 +2941,7 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
     // END-REMOVE-MAC
 
     kitState.kenvEnv = envData;
+    togglePromptEnv('KIT_MAIN_SCRIPT');
   } catch (error) {
     log.warn(`Error reading kenv env`, error);
   }

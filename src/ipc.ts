@@ -12,7 +12,7 @@ import {
   kitPath,
   getLogFromScriptPath,
   tmpDownloadsDir,
-  mainScriptPath,
+  getMainScriptPath,
   isInDir,
   kenvPath,
   isFile,
@@ -233,7 +233,7 @@ ${data.error}
     reload();
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    await runPromptProcess(mainScriptPath, [], {
+    await runPromptProcess(getMainScriptPath(), [], {
       force: true,
       trigger: Trigger.Menu,
     });
@@ -327,7 +327,7 @@ ${data.error}
   );
 
   ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, async () => {
-    runPromptProcess(mainScriptPath, [], {
+    runPromptProcess(getMainScriptPath(), [], {
       force: true,
       trigger: Trigger.Kit,
     });
@@ -477,8 +477,8 @@ ${data.error}
             message.state.value = ``;
           }
 
-          if (kitState.scriptPath === mainScriptPath) {
-            cachePreview(mainScriptPath, message?.state?.preview || '');
+          if (kitState.scriptPath === getMainScriptPath()) {
+            cachePreview(getMainScriptPath(), message?.state?.preview || '');
 
             if (
               typeof message?.state?.value?.filePath === 'string' &&

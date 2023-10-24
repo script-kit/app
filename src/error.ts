@@ -1,11 +1,13 @@
 import { kitPath } from '@johnlindquist/kit/cjs/utils';
 import { debugInfo } from 'electron-util';
+import log from 'electron-log';
 import { debounce } from 'lodash';
 import { Trigger } from './enums';
 import { emitter, KitEvent } from './events';
 import { TrackEvent, trackEvent } from './track';
 
 export const displayError = debounce((error: Error) => {
+  log.error(error);
   trackEvent(TrackEvent.Error, {
     error: error?.name || 'Unknown error',
     message: error?.message || 'Unknown error message',
