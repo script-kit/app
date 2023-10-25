@@ -19,6 +19,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import log from 'electron-log/renderer';
 import { ToastContainer, cssTransition } from 'react-toastify';
 import { debounce } from 'lodash';
 import path from 'path';
@@ -206,8 +207,6 @@ export default function App() {
 
   const previewCheck = useAtomValue(previewCheckAtom);
   const showRightPanel = (previewCheck && !kitState.noPreview) || flagValue;
-
-  const log = useAtomValue(logAtom);
   // log({
   //   previewCheck: previewCheck ? '✅' : '🚫',
   //   previewHTML: previewHTML?.length,
@@ -228,18 +227,18 @@ export default function App() {
   useMessages();
 
   useEffect(() => {
-    log(`👩‍💻 UI changed to: ${ui}`);
+    log.info(`👩‍💻 UI changed to: ${ui}`);
   }, [ui]);
 
   useEffect(() => {
     document.addEventListener('visibilitychange', () => {
-      log(`👁️‍🗨️ visibilitychange: ${document.visibilityState}`);
+      log.info(`👁️‍🗨️ visibilitychange: ${document.visibilityState}`);
     });
   }, []);
 
   useEffect(() => {
     (window as any)._resetPrompt = async () => {
-      log(`Resetting prompt...`);
+      log.info(`Resetting prompt...`);
       return resetPrompt();
     };
 
@@ -250,7 +249,7 @@ export default function App() {
     // catch all window errors
     const errorHandler = async (event: ErrorEvent) => {
       const { message, filename, lineno, colno, error } = event;
-      log({
+      log.info({
         type: 'error',
         message,
         filename,

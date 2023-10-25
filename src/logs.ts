@@ -1,5 +1,4 @@
 /* eslint-disable import/no-cycle */
-/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-console */
 /* eslint-disable import/prefer-default-export */
@@ -22,15 +21,16 @@ if (isDev) {
 }
 
 export const consoleLog = log.create('consoleLog');
-consoleLog.transports.file.resolvePath = () => kenvPath('logs', 'console.log');
+consoleLog.transports.file.resolvePathFn = () =>
+  kenvPath('logs', 'console.log');
 
 export const updateLogPath = path.resolve(app.getPath('logs'), 'update.log');
 export const updateLog = log.create('updateLog');
-updateLog.transports.file.resolvePath = () => updateLogPath;
+updateLog.transports.file.resolvePathFn = () => updateLogPath;
 
 export const mainLogPath = path.resolve(app.getPath('logs'), 'main.log');
 export const mainLog = log.create('mainLog');
-mainLog.transports.file.resolvePath = () => mainLogPath;
+mainLog.transports.file.resolvePathFn = () => mainLogPath;
 
 log.info(`⭐️ Other notable Kit logs:`, {
   mainLogPath,
@@ -58,7 +58,7 @@ export const getLog = (scriptPath: string): Logger => {
     const scriptLog = log.create(scriptPath);
     const logPath = getLogFromScriptPath(scriptPath);
     log.info(`Log path: ${logPath}`);
-    scriptLog.transports.file.resolvePath = () => logPath;
+    scriptLog.transports.file.resolvePathFn = () => logPath;
     scriptLog.transports.file.level = kitState.logLevel;
 
     const _info = scriptLog.info.bind(scriptLog);

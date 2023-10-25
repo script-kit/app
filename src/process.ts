@@ -2492,12 +2492,12 @@ class Processes extends Array<ProcessInfo> {
     const { pid } = child;
 
     child.on('close', () => {
-      log.info(`CLOSE`);
+      log.info(`${pid} CLOSE`);
       processes.removeByPid(pid);
     });
 
     child.on('disconnect', () => {
-      log.info(`DISCONNECT`);
+      log.info(`${pid} DISCONNECTED`);
       processes.removeByPid(pid);
     });
 

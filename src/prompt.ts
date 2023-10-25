@@ -442,6 +442,11 @@ export const createPromptWindow = async () => {
     kitState.isPromptReady = false;
     kitState.promptHidden = true;
 
+    if (!kitState.isLinux) {
+      kitState.emojiActive = false;
+      globalShortcut.unregister(getEmojiShortcut());
+    }
+
     promptWindow?.off('blur', onBlur);
   });
 
@@ -2508,7 +2513,7 @@ export const debugPrompt = async () => {
   const promptLog = log.create('promptLog');
   const promptLogPath = kenvPath('logs', 'prompt.log');
 
-  promptLog.transports.file.resolvePath = () => promptLogPath;
+  promptLog.transports.file.resolvePathFn = () => promptLogPath;
   const getPromptInfo = async () => {
     const activeAppBounds: any = {};
     // REMOVE-NUT

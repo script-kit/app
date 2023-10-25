@@ -148,6 +148,7 @@ import {
   setupLog,
 } from './install';
 
+log.initialize();
 // TODO: Read a settings file to get the KENV/KIT paths
 
 // Disables CSP warnings in browser windows.

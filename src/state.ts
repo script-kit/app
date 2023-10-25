@@ -128,6 +128,7 @@ export interface Background {
 export const backgroundMap = new Map<string, Background>();
 
 export const getBackgroundTasks = () => {
+  log.info('backgroundMap', [...backgroundMap.entries()]);
   const tasks = Array.from(backgroundMap.entries()).map(
     ([filePath, { child, start }]: [string, Background]) => {
       return {
@@ -769,7 +770,7 @@ const defaultKeyMap: {
 
 const keymapLogPath = path.resolve(app.getPath('logs'), 'keymap.log');
 const keymapLog = log.create('keymapLog');
-keymapLog.transports.file.resolvePath = () => keymapLogPath;
+keymapLog.transports.file.resolvePathFn = () => keymapLogPath;
 
 export const convertKey = (sourceKey: string) => {
   if (typeof appDb?.convertKey === 'boolean' && !appDb.convertKey) {
