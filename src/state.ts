@@ -167,7 +167,7 @@ export const scriptChanged = debounce(
     if (!kitState.mainMenuHasRun) return;
     await setScriptTimestamp({ filePath, compileMessage: '' });
   },
-  250,
+  100,
   {
     leading: true,
     trailing: true,

@@ -644,7 +644,7 @@ export const cacheMainScripts = debounce(async () => {
   } catch (error) {
     log.warn(`Failed to cache main scripts at startup`, error);
   }
-}, 200);
+}, 100);
 
 export const matchPackageJsonEngines = async () => {
   const KIT = kitPath();

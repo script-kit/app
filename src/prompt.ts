@@ -727,8 +727,14 @@ export const getCurrentScreenPromptCache = (
   const promptBounds = { x, y, width, height };
 
   if (ui === UI.none) {
-    log.verbose(`Bounds: No ui, returning default`);
-    return promptBounds;
+    const bounds = {
+      ...promptBounds,
+      width: getDefaultWidth(),
+      height: PROMPT.HEIGHT.BASE,
+    };
+
+    log.verbose(`Bounds: No UI`, bounds);
+    return bounds;
   }
 
   return promptBounds;
@@ -1584,14 +1590,14 @@ export const tick = async () => {
 };
 
 export const resetPrompt = async () => {
-  // log.info(`🏋️‍♂️ Reset main`);
-  // try {
-  //   kitState.promptCount = 0;
-  //   forceRender();
-  //   log.info(`🏋️ Force rendered...`);
-  // } catch (error) {
-  //   log.error(error);
-  // }
+  log.info(`🏋️‍♂️ Reset main`);
+  try {
+    kitState.promptCount = 0;
+    forceRender();
+    log.info(`🏋️ Force rendered...`);
+  } catch (error) {
+    log.error(error);
+  }
 };
 
 export const attemptPreload = async (
@@ -1754,6 +1760,10 @@ export const invokeFlagSearch = (input: string) => {
 
 const cacheMainChoices = (choices: ScoredChoice[]) => {
   log.info(`Caching main scored choices: ${choices.length}`);
+  log.info(
+    `Most recent 3:`,
+    choices.slice(1, 3).map((c) => c?.item?.name)
+  );
   appToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
 };
 

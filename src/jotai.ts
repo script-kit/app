@@ -1792,7 +1792,7 @@ export const submitValueAtom = atom(
 
     s(closedInput, g(inputAtom));
     s(_flaggedValue, ''); // clear after getting
-    s(_focused, null);
+    // s(_focused, noChoice);
     s(selectedChoicesAtom, []);
 
     // if (flag) {
@@ -2934,8 +2934,20 @@ export const resetPromptAtom = atom(null, async (g, s) => {
   log.info(`✅ Reset main complete.`);
 });
 
+const cachedMainScoredChoices = atom<ScoredChoice[]>([]);
+export const cachedMainScoredChoicesAtom = atom(
+  (g) => g(cachedMainScoredChoices),
+  (g, s, a: ScoredChoice[]) => {
+    log.info(`📦 Cache main scored choices: ${a?.length}`);
+    s(cachedMainScoredChoices, a);
+
+    if (!g(openAtom)) {
+      s(resetPromptAtom);
+    }
+  }
+);
+
 export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({});
-export const cachedMainScoredChoicesAtom = atom<ScoredChoice[]>([]);
 export const cachedMainShortcutsAtom = atom<Shortcut[]>([]);
 export const cachedMainPreviewAtom = atom<string>('');
 export const cachedMainFlagsAtom = atom<FlagsOptions>({});
