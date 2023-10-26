@@ -48,11 +48,8 @@ import {
   logAtom,
   userAtom,
   kitStateAtom,
-  hasRightShortcutAtom,
-  descriptionAtom,
-  nameAtom,
-  signInActionAtom,
   channelAtom,
+  shouldActionButtonShowOnInputAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -92,7 +89,9 @@ export default function Input() {
   const enterButtonName = useAtomValue(enterButtonNameAtom);
   const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
   const flags = useAtomValue(flagsAtom);
-  const hasFlags = Object.keys(flags)?.length > 0;
+  const shouldActionButtonShowOnInput = useAtomValue(
+    shouldActionButtonShowOnInputAtom
+  );
   const miniShortcutsVisible = useAtomValue(miniShortcutsVisibleAtom);
   const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
     miniShortcutsHoveredAtom
@@ -108,10 +107,6 @@ export default function Input() {
   const [log] = useAtom(logAtom);
   const user = useAtomValue(userAtom);
   const kitState = useAtomValue(kitStateAtom);
-  const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
-  const name = useAtomValue(nameAtom);
-  const description = useAtomValue(descriptionAtom);
-  const signInAction = useAtomValue(signInActionAtom);
   const channel = useAtomValue(channelAtom);
 
   useEffect(() => {
@@ -380,7 +375,7 @@ export default function Input() {
                 })}
             </div>
 
-            {hasFlags && !hasRightShortcut && (
+            {shouldActionButtonShowOnInput && (
               <>
                 <div className="options-container flex flex-row">
                   <OptionsButton key="options-button" />

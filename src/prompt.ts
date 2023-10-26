@@ -381,7 +381,7 @@ export const createPromptWindow = async () => {
     log.info(`🙈 Prompt window blurred`);
     if (!kitState.isLinux) {
       globalShortcut.unregister(getEmojiShortcut());
-      if (kitState.emojiActive) return;
+      kitState.emojiActive = false;
     }
 
     if (!kitState.isPromptReady) return;
@@ -443,8 +443,8 @@ export const createPromptWindow = async () => {
     kitState.promptHidden = true;
 
     if (!kitState.isLinux) {
-      kitState.emojiActive = false;
       globalShortcut.unregister(getEmojiShortcut());
+      kitState.emojiActive = false;
     }
 
     promptWindow?.off('blur', onBlur);
@@ -1584,14 +1584,14 @@ export const tick = async () => {
 };
 
 export const resetPrompt = async () => {
-  log.info(`🏋️‍♂️ Reset main`);
-  try {
-    kitState.promptCount = 0;
-    forceRender();
-    log.info(`🏋️ Force rendered...`);
-  } catch (error) {
-    log.error(error);
-  }
+  // log.info(`🏋️‍♂️ Reset main`);
+  // try {
+  //   kitState.promptCount = 0;
+  //   forceRender();
+  //   log.info(`🏋️ Force rendered...`);
+  // } catch (error) {
+  //   log.error(error);
+  // }
 };
 
 export const attemptPreload = async (
@@ -1772,7 +1772,7 @@ export const scoreAndCacheMainChoices = (scripts: Script[]) => {
 export const invokeSearch = (rawInput: string, reason = 'normal') => {
   if (kitState.ui !== UI.arg) return;
 
-  log.info(`Search ${reason}: ${rawInput}`);
+  // log.info(`Search ${reason}: ${rawInput}`);
   // log.info({ inputRegex: kitSearch.inputRegex });
   let transformedInput = rawInput;
   if (kitSearch.inputRegex) {
@@ -2015,6 +2015,7 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
     if (allMisses) {
       setScoredChoices(result);
     } else {
+      const lowerCaseInput = transformedInput?.toLowerCase();
       const filterConditions = result.filter((r) => {
         if (r.item.miss) return false;
         if (r.item.info) return true;
@@ -2023,6 +2024,28 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
 
         return true;
       });
+      // Sort that r.item.name.includes(transformedInput) is first
+      // And the closer the includes to the start of the name, the closer to the front of the array
+
+      filterConditions.sort((a, b) => {
+        const aIndex = a.item.name.toLowerCase().indexOf(lowerCaseInput);
+        const bIndex = b.item.name.toLowerCase().indexOf(lowerCaseInput);
+
+        if (aIndex === bIndex) {
+          return 0;
+        }
+
+        if (aIndex === -1) {
+          return 1;
+        }
+
+        if (bIndex === -1) {
+          return -1;
+        }
+
+        return aIndex - bIndex;
+      });
+
       setScoredChoices(filterConditions);
     }
   }
@@ -2033,6 +2056,7 @@ export const debounceInvokeSearch = debounce(invokeSearch, 100);
 export const setShortcodes = (choices: Choice[]) => {
   kitSearch.shortcodes.clear();
   kitSearch.triggers.clear();
+  kitSearch.postfixes.clear();
 
   for (const choice of choices) {
     const code = (choice?.shortcode || '').toLowerCase();
@@ -2054,6 +2078,12 @@ export const setShortcodes = (choices: Choice[]) => {
 
     if (choice?.trigger) {
       kitSearch.triggers.set(trigger, choice);
+    }
+
+    const postfix = typeof choice?.pass === 'string';
+
+    if (postfix) {
+      kitSearch.postfixes.set(choice?.pass.trim(), choice);
     }
   }
 };

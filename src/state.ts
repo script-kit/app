@@ -128,7 +128,6 @@ export interface Background {
 export const backgroundMap = new Map<string, Background>();
 
 export const getBackgroundTasks = () => {
-  log.info('backgroundMap', [...backgroundMap.entries()]);
   const tasks = Array.from(backgroundMap.entries()).map(
     ([filePath, { child, start }]: [string, Background]) => {
       return {
@@ -961,6 +960,7 @@ export const kitSearch = {
   scripts: [] as Script[],
   shortcodes: new Map<string, Choice>(),
   triggers: new Map<string, Choice>(),
+  postfixes: new Map<string, Choice>(),
   keywords: new Map<string, Choice>(),
   hasGroup: false,
   qs: null as null | QuickScore<Choice>,
@@ -984,6 +984,7 @@ export const clearSearch = () => {
   kitSearch.qs = null;
   kitSearch.keywords.clear();
   kitSearch.triggers.clear();
+  kitSearch.postfixes.clear();
   kitSearch.shortcodes.clear();
   kitSearch.hasGroup = false;
   kitSearch.commandChars = [];

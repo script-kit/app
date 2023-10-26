@@ -614,9 +614,6 @@ const verifyInstall = async () => {
     checkNodeModules ? `node_modules found` : `node_modules missing`
   );
 
-  await setupLog(`Parsing scripts...`);
-  await cacheMainScripts();
-
   await ensureIdleProcess();
 
   const isKenvConfigured = await kenvConfigured();
@@ -998,6 +995,7 @@ const checkKit = async () => {
     registerKillLatestShortcut();
 
     await ready();
+
     kitState.ready = true;
     kitState.user_id = `${Date.now()}`;
     kitState.app_version = getVersion();
@@ -1014,7 +1012,11 @@ const checkKit = async () => {
     //   '--trust',
     // ]);
 
-    focusPrompt();
+    // focusPrompt();
+    setTimeout(async () => {
+      log.info(`Parsing scripts...`);
+      await cacheMainScripts();
+    }, 1000);
   } catch (error) {
     ohNo(error);
   }

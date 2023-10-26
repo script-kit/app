@@ -842,7 +842,10 @@ export const inputAtom = atom(
 
 const _flagsAtom = atom<FlagsOptions>({});
 export const flagsAtom = atom(
-  (g) => g(_flagsAtom),
+  (g) => {
+    const _flags = g(_flagsAtom);
+    return _flags;
+  },
   (g, s, a: FlagsOptions) => {
     // log.info(
     //   Object.entries(a).map(([k, v]) => {
@@ -881,6 +884,7 @@ export const tabIndexAtom = atom(
     s(prevIndexAtom, 0);
     if (g(_tabIndex) !== a) {
       s(_tabIndex, a);
+      log.info(`tabIndexAtom clearing flagsAtom`);
       s(flagsAtom, {});
       s(_flaggedValue, '');
 
@@ -1345,7 +1349,13 @@ export const themeAtom = atom(
 );
 
 export const headerHiddenAtom = atom(false);
-export const footerHiddenAtom = atom(false);
+const footerHidden = atom(false);
+export const footerHiddenAtom = atom(
+  (g) => g(footerHidden),
+  (g, s, a: boolean) => {
+    s(footerHidden, a);
+  }
+);
 
 const promptReadyAtom = atom(false);
 
@@ -1863,6 +1873,8 @@ export const openAtom = atom(
           (document.getElementById('webcam') as HTMLVideoElement).srcObject =
             null;
       }
+
+      s(resetPromptAtom);
     }
     s(_open, a);
   }
@@ -1968,6 +1980,7 @@ export const exitAtom = atom(
   (g) => true || g(openAtom),
   (g, s, a: number) => {
     if (g(pidAtom) === a) {
+      log.info(`👋 Exit, so setting open to false`);
       s(openAtom, false);
     }
   }
@@ -2152,8 +2165,8 @@ export const setFocusedChoiceAtom = atom(null, (g, s, a: string) => {
 
 export const enterButtonNameAtom = atom<string>((g) => {
   const focusedChoice = g(focusedChoiceAtom);
-  if (focusedChoice?.enter) return focusedChoice.enter;
-  return g(enterAtom);
+  const enter = focusedChoice?.enter || g(enterAtom);
+  return enter;
 });
 
 export const enterButtonDisabledAtom = atom<boolean>((g) => {
@@ -2813,7 +2826,8 @@ export const triggerKeywordAtom = atom(
 );
 
 export const hasRightShortcutAtom = atom((g) => {
-  return g(shortcutsAtom).find((s) => s?.key === 'right');
+  const hasRight = g(shortcutsAtom).find((s) => s?.key === 'right');
+  return hasRight;
 });
 
 const typing = atom(false);
@@ -2891,10 +2905,6 @@ export const resetPromptAtom = atom(null, async (g, s) => {
   const cachedShortcuts = g(cachedMainShortcutsAtom);
   const cachedMainPreview = g(cachedMainPreviewAtom);
 
-  if (cachedMainPromptData?.flags) {
-    s(flagsAtom, cachedMainPromptData.flags);
-  }
-
   if (cachedMainPromptData) {
     cachedMainPromptData.input = '';
     s(promptDataAtom, cachedMainPromptData);
@@ -2916,11 +2926,23 @@ export const resetPromptAtom = atom(null, async (g, s) => {
     s(inputAtom, '');
   }
 
+  // if (cachedMainPromptData?.flags) {
+  //   s(flagsAtom, cachedMainPromptData.flags);
+  // }
+
   s(pauseChannelAtom, false);
-  log.info(`✔️ Reset main complete.`);
+  log.info(`✅ Reset main complete.`);
 });
 
 export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({});
 export const cachedMainScoredChoicesAtom = atom<ScoredChoice[]>([]);
 export const cachedMainShortcutsAtom = atom<Shortcut[]>([]);
 export const cachedMainPreviewAtom = atom<string>('');
+export const cachedMainFlagsAtom = atom<FlagsOptions>({});
+
+export const shouldActionButtonShowOnInputAtom = atom((g) => {
+  const hasFlags = Object.keys(g(flagsAtom)).length > 0;
+  const hasRightShortcut = g(hasRightShortcutAtom);
+
+  return hasFlags && !hasRightShortcut;
+});

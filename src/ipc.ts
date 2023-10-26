@@ -80,11 +80,20 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
 
   prevTransformedInput = transformedInput;
 
-  const trigger = kitSearch.triggers.get(transformedInput.toLowerCase());
+  const lowerCaseInput = transformedInput.toLowerCase();
+  const trigger = kitSearch.triggers.get(lowerCaseInput);
   if (trigger) {
     sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger.value);
     log.info(`👢 Trigger: ${transformedInput} triggered`);
     return false;
+  }
+
+  for (const [k, v] of kitSearch.postfixes.entries()) {
+    if (lowerCaseInput.endsWith(k)) {
+      sendToPrompt(Channel.SET_SUBMIT_VALUE, v.value);
+      log.info(`🥾 Postfix: ${transformedInput} triggered`);
+      return false;
+    }
   }
 
   if (kitSearch.keyword && !rawInput.startsWith(`${kitSearch.keyword} `)) {

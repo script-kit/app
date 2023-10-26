@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { toast } from 'react-toastify';
 import DOMPurify from 'dompurify';
-
+import log from 'electron-log/renderer';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { ipcRenderer } from 'electron';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
@@ -72,7 +72,6 @@ import {
   appendInputAtom,
   micIdAtom,
   webcamIdAtom,
-  logAtom,
   runningAtom,
   micConfigAtom,
   promptBoundsAtom,
@@ -105,7 +104,6 @@ export default () => {
   const [, setLogHtml] = useAtom(logHTMLAtom);
   const [, setHidden] = useAtom(isHiddenAtom);
   const [, setChatMessages] = useAtom(chatMessagesAtom);
-  const log = useAtomValue(logAtom);
   const addChatMessage = useSetAtom(addChatMessageAtom);
   const chatPushToken = useSetAtom(chatPushTokenAtom);
   const setChatMessage = useSetAtom(setChatMessageAtom);
@@ -372,7 +370,7 @@ export default () => {
     ) => void;
 
     const handleCSSVariable: HandleCSSVariableHandler = (_, data) => {
-      console.log(`Setting:`, data?.name, data?.value);
+      log.info(`Setting:`, data?.name, data?.value);
       document.documentElement.style.setProperty(data?.name, data?.value);
     };
 
