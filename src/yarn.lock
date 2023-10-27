@@ -390,7 +390,7 @@
   resolved "https://registry.yarnpkg.com/@tokenizer/token/-/token-0.3.0.tgz#fe98a93fe789247e998c75e74e9c7c63217aa276"
   integrity sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==
 
-"@types/core-js@^2.5.6":
+"@types/core-js@^2.5.7":
   version "2.5.7"
   resolved "https://registry.yarnpkg.com/@types/core-js/-/core-js-2.5.7.tgz#2613063c3747b88b4246665823a34e1769862532"
   integrity sha512-EhO4Lcd2Rs2bZvQwIDMZ1qsaZk8DpdOkQCbKpK0vt7fSjJGXrCA7EPauR/BZ7eJXks1een4FX7JtlhS136fklA==
@@ -400,10 +400,10 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.9.1.tgz#0611b37db4246c937feef529ddcc018cf8e35708"
   integrity sha512-QpLcX9ZSsq3YYUUnD3nFDY8H7wctAhQj/TFKL8Ya8v5fMm3CFXxo8zStsLAl780ltoYoo1WvKUVGBQK+1ifr7g==
 
-"@types/regenerator-runtime@^0.13.2":
-  version "0.13.2"
-  resolved "https://registry.yarnpkg.com/@types/regenerator-runtime/-/regenerator-runtime-0.13.2.tgz#301edfbbc50f454500cb7934341fbd030df4e368"
-  integrity sha512-SIYCe4xgq4FSs00vENNHC+L1jxRdN4IKV2abqTu2kb2WkXlPBOml7NK2eCcYdUbQtD8cOWTcBUiYstoiaSNawA==
+"@types/regenerator-runtime@^0.13.3":
+  version "0.13.3"
+  resolved "https://registry.yarnpkg.com/@types/regenerator-runtime/-/regenerator-runtime-0.13.3.tgz#0366757a16139e2ca9692e2beba302924c41d83c"
+  integrity sha512-5l/scetIVmHSnj6viqApJ8S9qiTlPE9ASspH24bJFku1n9kB9HST+Itpw6o9kUNPGNQRkwIIJ63Xqb0/6rYMYg==
 
 address@^1.0.1:
   version "1.2.2"

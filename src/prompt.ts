@@ -336,6 +336,10 @@ export const createPromptWindow = async () => {
 
   promptWindow?.webContents?.setWindowOpenHandler(({ url }) => {
     log.info(`Opening ${url}`);
+
+    // Only allow websites to open in the browser
+    if (!url.startsWith('http')) return { action: 'deny' };
+
     shell.openExternal(url);
 
     return { action: 'deny' };
