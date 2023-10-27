@@ -19,7 +19,6 @@ import {
   reload,
   resetPrompt,
   showMainPrompt,
-  tick,
 } from './prompt';
 import { convertKey, kitState, subs } from './state';
 import { Trigger } from './enums';
@@ -267,9 +266,8 @@ export const updateMainShortcut = async (filePath: string) => {
       if (!isVisible()) {
         kitState.ignoreBlur = false;
         kitState.alwaysOnTop = true;
-        await tick();
-        focusPrompt();
         resetPrompt();
+        focusPrompt();
         initMainBounds();
         showMainPrompt();
         await runPromptProcess(getMainScriptPath(), [], {

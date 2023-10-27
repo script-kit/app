@@ -405,8 +405,24 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     // Request Notifications Permission
 
-    toolsSubmenu.push({
-      label: `Test Notification Permission`,
+    const permissionsSubmenu: MenuItemConstructorOptions[] = [];
+
+    // REMOVE-MAC
+    if (kitState.isMac) {
+      permissionsSubmenu.push({
+        label: `Request Accessibility Access`,
+        click: async () => {
+          const { askForAccessibilityAccess } = await import(
+            'node-mac-permissions'
+          );
+
+          askForAccessibilityAccess();
+        },
+      });
+    }
+    // END-REMOVE-MAC
+    permissionsSubmenu.push({
+      label: `Request Notification Permission`,
       click: async () => {
         new Notification({
           title: 'Kit.app Notification',
@@ -512,6 +528,10 @@ export const openMenu = async (event?: KeyboardEvent) => {
       {
         label: `Debug`,
         submenu: toolsSubmenu,
+      },
+      {
+        label: `Permissions`,
+        submenu: permissionsSubmenu,
       },
       updateMenu,
       {

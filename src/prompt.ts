@@ -1583,12 +1583,6 @@ export const forceRender = () => {
   appToPrompt(AppChannel.RESET_PROMPT);
 };
 
-export const tick = async () => {
-  return promptWindow.webContents.executeJavaScript(`
-  (async () => { await window.tick(); })();
-`);
-};
-
 export const resetPrompt = async () => {
   log.info(`🏋️‍♂️ Reset main`);
   try {
@@ -2394,8 +2388,6 @@ export const initBounds = async (forceScriptPath?: string, show = false) => {
     //   kitState.promptCount > 1 &&
     //   !kitState.promptBounds.height
   );
-
-  await tick();
 
   if (!show) {
     return;
