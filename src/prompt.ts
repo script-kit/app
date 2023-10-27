@@ -377,12 +377,16 @@ export const createPromptWindow = async () => {
   };
 
   const onBlur = async () => {
+    log.info(`🙈 Prompt window blurred`, {
+      isPromptReady: kitState.isPromptReady,
+      isActivated: kitState.isActivated,
+    });
     if (kitState.justFocused && isVisible()) {
       log.info(`🙈 Prompt window was just focused. Ignore blur`);
       promptWindow?.focus();
       return;
     }
-    log.info(`🙈 Prompt window blurred`);
+
     if (!kitState.isLinux) {
       globalShortcut.unregister(getEmojiShortcut());
       kitState.emojiActive = false;
@@ -399,7 +403,7 @@ export const createPromptWindow = async () => {
 
     // if (!promptWindow?.isFocused()) return;
 
-    log.verbose(`Blur: ${kitState.ignoreBlur ? 'ignored' : 'accepted'}`);
+    log.info(`Blur: ${kitState.ignoreBlur ? 'ignored' : 'accepted'}`);
 
     if (promptWindow?.isVisible()) {
       sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
@@ -439,7 +443,7 @@ export const createPromptWindow = async () => {
       kitState.justFocused = false;
     }, 1000);
   });
-  // promptWindow?.webContents?.on('blur', onBlur);
+  promptWindow?.on('blur', onBlur);
 
   promptWindow?.on('hide', () => {
     log.info(`🫣 Prompt window hidden`);
@@ -450,19 +454,11 @@ export const createPromptWindow = async () => {
       globalShortcut.unregister(getEmojiShortcut());
       kitState.emojiActive = false;
     }
-
-    promptWindow?.off('blur', onBlur);
   });
 
   promptWindow?.on('show', async () => {
     log.info(`😳 Prompt window shown`);
     kitState.promptHidden = false;
-
-    setTimeout(() => {
-      if (promptWindow?.listenerCount('blur') === 0) {
-        promptWindow?.on('blur', onBlur);
-      }
-    }, 1000);
     // kitState.allowBlur = false;
   });
 
@@ -615,15 +611,16 @@ export const forceFocus = () => {
 };
 
 export const setPromptAlwaysOnTop = (onTop: boolean) => {
+  log.info(`function: setPromptAlwaysOnTop: ${onTop ? 'true' : 'false'}`);
   if (promptWindow && !promptWindow.isDestroyed()) {
-    log.info(
-      `📌 Prompt always on top: ${onTop ? 'true' : 'false'}. ignoreBlur: ${
-        kitState.ignoreBlur ? 'true' : 'false'
-      }`
-    );
     const changed = onTop !== kitState.alwaysOnTop;
     kitState.alwaysOnTop = onTop;
     if (onTop && changed) {
+      log.info(
+        `📌 Prompt always on top: ${onTop ? 'true' : 'false'}. ignoreBlur: ${
+          kitState.ignoreBlur ? 'true' : 'false'
+        }`
+      );
       promptWindow.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
 
       if (kitState.isMac) {
@@ -631,9 +628,13 @@ export const setPromptAlwaysOnTop = (onTop: boolean) => {
       } else {
         promptWindow.setVisibleOnAllWorkspaces(true);
       }
-    } else if (kitState.ignoreBlur) {
-      promptWindow.setAlwaysOnTop(onTop, 'normal');
+    } else if (kitState.ignoreBlur && changed) {
       log.info({ onTop, ignoreBlur: kitState.ignoreBlur });
+      promptWindow.setAlwaysOnTop(true, 'normal', 10);
+      setTimeout(() => {
+        promptWindow.setAlwaysOnTop(onTop, 'normal', 10);
+      }, 100);
+
       if (!kitState.isMac) {
         promptWindow.setVisibleOnAllWorkspaces(false);
       }
@@ -1393,7 +1394,6 @@ export const preloadPromptData = async (promptData: PromptData) => {
   }
 
   kitState.hiddenByUser = false;
-  kitState.isPromptReady = false;
   kitState.alwaysOnTop =
     typeof promptData?.alwaysOnTop === 'boolean'
       ? promptData.alwaysOnTop
@@ -1444,8 +1444,9 @@ export const setPromptData = async (promptData: PromptData) => {
   }
 
   kitState.hiddenByUser = false;
-  kitState.isPromptReady = false;
   // if (!pidMatch(pid, `setPromptData`)) return;
+
+  if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
 
   const newAlwaysOnTop =
     typeof promptData?.alwaysOnTop === 'boolean'
@@ -1481,7 +1482,6 @@ export const setPromptData = async (promptData: PromptData) => {
   kitState.promptId = promptData.id;
   if (kitState.suspended || kitState.screenLocked) return;
   kitState.ui = promptData.ui;
-  if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
 
   if (kitSearch.keyword) {
     promptData.keyword = kitSearch.keyword || kitSearch.keyword;
@@ -2594,5 +2594,6 @@ subs.push(
   subUpdateDownloaded,
   subEscapePressed,
   subAppDbMini,
-  subAppDbCachePrompt
+  subAppDbCachePrompt,
+  subAlwaysOnTop
 );
