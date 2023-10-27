@@ -617,7 +617,7 @@ export const setPromptAlwaysOnTop = (onTop: boolean) => {
     kitState.alwaysOnTop = onTop;
     if (onTop && changed) {
       log.info(
-        `📌 Prompt always on top: ${onTop ? 'true' : 'false'}. ignoreBlur: ${
+        `📌 on top: ${onTop ? 'true' : 'false'}. ignoreBlur: ${
           kitState.ignoreBlur ? 'true' : 'false'
         }`
       );
