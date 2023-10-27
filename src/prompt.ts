@@ -661,7 +661,7 @@ export const getCurrentScreenPromptCache = (
     resize,
     bounds,
   }: { ui: UI; resize: boolean; bounds: Partial<Rectangle> } = {
-    ui: UI.none,
+    ui: UI.arg,
     resize: false,
     bounds: {},
   }
@@ -726,7 +726,7 @@ export const getCurrentScreenPromptCache = (
 
   const promptBounds = { x, y, width, height };
 
-  if (ui === UI.none) {
+  if (ui === UI.arg) {
     const bounds = {
       ...promptBounds,
       width: getDefaultWidth(),
@@ -2406,7 +2406,7 @@ const subScriptPath = subscribeKey(
     if (promptWindow?.isDestroyed()) return;
     const noScript = kitState.scriptPath === '';
 
-    kitState.promptUI = UI.none;
+    kitState.promptUI = UI.arg;
     kitState.resizedByChoices = false;
 
     if (pathsAreEqual(scriptPath || '', kitState.scriptErrorPath)) {
