@@ -383,7 +383,8 @@ export const createPromptWindow = async () => {
     });
     if (kitState.justFocused && isVisible()) {
       log.info(`🙈 Prompt window was just focused. Ignore blur`);
-      promptWindow?.focus();
+
+      focusPrompt();
       return;
     }
 
@@ -596,7 +597,13 @@ export const focusPrompt = () => {
     !promptWindow?.isFocused()
   ) {
     try {
-      promptWindow?.focus();
+      if (kitState.isMac) {
+        // REMOVE-MAC
+        makeKeyWindow(promptWindow);
+        // END-REMOVE-MAC
+      } else {
+        promptWindow?.focus();
+      }
     } catch (error) {
       log.error(error);
     }
@@ -607,7 +614,7 @@ export const focusPrompt = () => {
 export const forceFocus = () => {
   log.silly(`function: forceFocus`);
   promptWindow?.show();
-  promptWindow?.focus();
+  focusPrompt();
 };
 
 export const setPromptAlwaysOnTop = (onTop: boolean) => {
