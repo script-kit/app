@@ -149,14 +149,26 @@ import {
 } from './install';
 
 log.initialize();
+
+process.on('uncaughtException', (error) => {
+  log.error(error);
+});
+
+process.on('unhandledRejection', (error) => {
+  log.error(error);
+});
+
+const isLinux = os.platform() === 'linux';
 // TODO: Read a settings file to get the KENV/KIT paths
 
+log.info(`Setting up process.env`);
 // Disables CSP warnings in browser windows.
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 /* eslint-disable */
 (function () {
+  if (isLinux) return;
   if (!process.env.NODE_EXTRA_CA_CERTS) return;
   let extraca: any = null;
   try {
@@ -205,6 +217,7 @@ if (!app.requestSingleInstanceLock()) {
   app.exit();
 }
 
+log.info(`Appending switch: ignore-certificate-errors`);
 app.commandLine.appendSwitch('ignore-certificate-errors');
 
 if (pathExistsSync(appDbPath) && appDb) {

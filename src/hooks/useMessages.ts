@@ -323,6 +323,7 @@ export default () => {
     Object.entries(messageMap).forEach(([key, fn]) => {
       if (ipcRenderer.listenerCount(key) === 0) {
         ipcRenderer.on(key, (_, data) => {
+          log.silly(`🔑 Received ${key} message`);
           // if (data?.kitScript) setScriptName(data?.kitScript);
           // log(`>>>>>>>>>>>>>>>> 🔑 Received ${key} message`);
           // if (!key) {

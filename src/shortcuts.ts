@@ -8,6 +8,7 @@ import { debounce } from 'lodash';
 import { getMainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 
 import { UI } from '@johnlindquist/kit/cjs/enum';
+import { snapshot } from 'valtio';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import {
@@ -264,12 +265,15 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       if (!isVisible()) {
-        kitState.ignoreBlur = false;
-        kitState.alwaysOnTop = true;
-        resetPrompt();
-        initMainBounds();
-        showMainPrompt();
-        focusPrompt();
+        log.info(`Main prompt not visible. Showing...`);
+        log.info(snapshot(kitState.kenvEnv));
+        if (!kitState.kenvEnv?.KIT_NO_IGNORE_BLUR) kitState.ignoreBlur = false;
+        if (!kitState.kenvEnv?.KIT_NO_ALWAYS_ON_TOP)
+          kitState.alwaysOnTop = true;
+        if (!kitState.kenvEnv?.KIT_NO_RESET) resetPrompt();
+        if (!kitState.kenvEnv?.KIT_NO_INIT) initMainBounds();
+        if (!kitState.kenvEnv?.KIT_NO_SHOW) showMainPrompt();
+        if (!kitState.kenvEnv?.KIT_NO_FOCUS) focusPrompt();
         await runPromptProcess(getMainScriptPath(), [], {
           force: true,
           trigger: Trigger.Menu,

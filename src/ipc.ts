@@ -156,6 +156,7 @@ const handleChannel =
     // log.info({
     //   message,
     // });
+    log.silly(`📤 ${message.channel} ${message?.pid}`);
     if (message?.pid === 0) return;
     const processInfo = processes.getByPid(message?.pid);
 
