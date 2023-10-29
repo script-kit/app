@@ -267,9 +267,9 @@ export const updateMainShortcut = async (filePath: string) => {
         kitState.ignoreBlur = false;
         kitState.alwaysOnTop = true;
         resetPrompt();
-        focusPrompt();
         initMainBounds();
         showMainPrompt();
+        focusPrompt();
         await runPromptProcess(getMainScriptPath(), [], {
           force: true,
           trigger: Trigger.Menu,

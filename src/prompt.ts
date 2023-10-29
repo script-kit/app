@@ -837,7 +837,7 @@ export const setBounds = async (bounds: Partial<Rectangle>, reason = '') => {
   }
 
   try {
-    promptWindow.setBounds(bounds);
+    promptWindow.setBounds(bounds, false);
     const promptBounds = {
       id: kitState.promptId,
       ...promptWindow?.getBounds(),
@@ -1611,58 +1611,56 @@ export const attemptPreload = async (
   show = true,
   init = true
 ) => {
-  log.info(`Blocking attemptPreload to test window, bring back!!`);
+  if (kitState.attemptingPreload) return;
+  kitState.attemptingPreload = true;
+  setTimeout(() => {
+    kitState.attemptingPreload = false;
+  }, 200);
 
-  // if (kitState.attemptingPreload) return;
-  // kitState.attemptingPreload = true;
-  // setTimeout(() => {
-  //   kitState.attemptingPreload = false;
-  // }, 200);
+  const isMainScript = getMainScriptPath() === promptScriptPath;
+  if (!promptScriptPath || isMainScript) return;
+  // log out all the keys of preloadPromptDataMap
+  kitState.preloaded = false;
 
-  // const isMainScript = getMainScriptPath() === promptScriptPath;
-  // if (!promptScriptPath || isMainScript) return;
-  // // log out all the keys of preloadPromptDataMap
-  // kitState.preloaded = false;
+  if (isMainScript) {
+    // log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
+  } else if (preloadPromptDataMap.has(promptScriptPath)) {
+    log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
+    // kitState.preloaded = true;
 
-  // if (isMainScript) {
-  //   // log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
-  // } else if (preloadPromptDataMap.has(promptScriptPath)) {
-  //   log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
-  //   // kitState.preloaded = true;
+    appToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
+    sendToPrompt(Channel.SET_TAB_INDEX, 0);
+    appToPrompt(AppChannel.SET_PRELOADED, true);
+    const promptData = preloadPromptDataMap.get(promptScriptPath) as PromptData;
+    preloadPromptData(promptData);
 
-  //   appToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
-  //   sendToPrompt(Channel.SET_TAB_INDEX, 0);
-  //   appToPrompt(AppChannel.SET_PRELOADED, true);
-  //   const promptData = preloadPromptDataMap.get(promptScriptPath) as PromptData;
-  //   preloadPromptData(promptData);
+    if (preloadChoicesMap.has(promptScriptPath)) {
+      const preview = preloadPreviewMap.get(promptScriptPath) as string;
+      preloadPreview(preview || noPreview);
 
-  //   if (preloadChoicesMap.has(promptScriptPath)) {
-  //     const preview = preloadPreviewMap.get(promptScriptPath) as string;
-  //     preloadPreview(preview || noPreview);
+      const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
+      preloadChoices(choices as Choice[]);
 
-  //     const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
-  //     preloadChoices(choices as Choice[]);
+      kitState.promptBounds = {
+        x: promptData.x,
+        y: promptData.y,
+        width:
+          getMainScriptPath() === promptData.scriptPath
+            ? getDefaultWidth()
+            : promptData.width || getDefaultWidth(),
+        height:
+          getMainScriptPath() === promptData.scriptPath
+            ? PROMPT.HEIGHT.BASE
+            : promptData.height,
+      };
+    }
 
-  //     kitState.promptBounds = {
-  //       x: promptData.x,
-  //       y: promptData.y,
-  //       width:
-  //         getMainScriptPath() === promptData.scriptPath
-  //           ? getDefaultWidth()
-  //           : promptData.width || getDefaultWidth(),
-  //       height:
-  //         getMainScriptPath() === promptData.scriptPath
-  //           ? PROMPT.HEIGHT.BASE
-  //           : promptData.height,
-  //     };
-  //   }
+    if (init) {
+      initBounds(promptScriptPath, show);
+    }
+  }
 
-  //   if (init) {
-  //     initBounds(promptScriptPath, show);
-  //   }
-  // }
-
-  // log.info(`end of attemptPreload`);
+  log.info(`end of attemptPreload`);
 };
 
 export const setScoredChoices = (choices: ScoredChoice[]) => {

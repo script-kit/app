@@ -419,6 +419,26 @@ export const openMenu = async (event?: KeyboardEvent) => {
           askForAccessibilityAccess();
         },
       });
+
+      permissionsSubmenu.push({
+        label: `Request Input Monitoring Access`,
+        click: async () => {
+          const { askForInputMonitoringAccess } = await import(
+            'node-mac-permissions'
+          );
+
+          askForInputMonitoringAccess();
+        },
+      });
+
+      permissionsSubmenu.push({
+        label: `Request Full Disk Access`,
+        click: async () => {
+          const { askForFullDiskAccess } = await import('node-mac-permissions');
+
+          askForFullDiskAccess();
+        },
+      });
     }
     // END-REMOVE-MAC
     permissionsSubmenu.push({
