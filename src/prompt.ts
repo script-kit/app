@@ -1203,15 +1203,15 @@ const writePromptState = async (
 };
 
 export const resetToMainAndHide = () => {
-  const hideHandler = () => {
-    log.info(`😶‍🌫️ Hidden: Init back to main dimensions`);
-    initBounds(getMainScriptPath(), false);
-  };
+  // const hideHandler = () => {
+  //   log.info(`😶‍🌫️ Hidden: Init back to main dimensions`);
+  //   initBounds(getMainScriptPath(), false);
+  // };
 
-  promptWindow?.once('hide', hideHandler);
-  promptWindow?.once('show', () => {
-    promptWindow?.removeListener('hide', hideHandler);
-  });
+  // promptWindow?.once('hide', hideHandler);
+  // promptWindow?.once('show', () => {
+  //   promptWindow?.removeListener('hide', hideHandler);
+  // });
 
   log.info(`🤟 Reset to main and hide`);
   actualHide();
