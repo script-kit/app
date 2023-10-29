@@ -1219,6 +1219,7 @@ export const resetToMainAndHide = () => {
 };
 
 export const hideAppIfNoWindows = (reason: HideReason) => {
+  if (!isVisible()) return;
   log.info(`Hide reason: ${reason}`);
   if (promptWindow) {
     kitState.modifiedByUser = false;
