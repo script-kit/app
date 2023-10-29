@@ -1611,56 +1611,58 @@ export const attemptPreload = async (
   show = true,
   init = true
 ) => {
-  if (kitState.attemptingPreload) return;
-  kitState.attemptingPreload = true;
-  setTimeout(() => {
-    kitState.attemptingPreload = false;
-  }, 200);
+  log.info(`Blocking attemptPreload to test window, bring back!!`);
 
-  const isMainScript = getMainScriptPath() === promptScriptPath;
-  if (!promptScriptPath || isMainScript) return;
-  // log out all the keys of preloadPromptDataMap
-  kitState.preloaded = false;
+  // if (kitState.attemptingPreload) return;
+  // kitState.attemptingPreload = true;
+  // setTimeout(() => {
+  //   kitState.attemptingPreload = false;
+  // }, 200);
 
-  if (isMainScript) {
-    // log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
-  } else if (preloadPromptDataMap.has(promptScriptPath)) {
-    log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
-    // kitState.preloaded = true;
+  // const isMainScript = getMainScriptPath() === promptScriptPath;
+  // if (!promptScriptPath || isMainScript) return;
+  // // log out all the keys of preloadPromptDataMap
+  // kitState.preloaded = false;
 
-    appToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
-    sendToPrompt(Channel.SET_TAB_INDEX, 0);
-    appToPrompt(AppChannel.SET_PRELOADED, true);
-    const promptData = preloadPromptDataMap.get(promptScriptPath) as PromptData;
-    preloadPromptData(promptData);
+  // if (isMainScript) {
+  //   // log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
+  // } else if (preloadPromptDataMap.has(promptScriptPath)) {
+  //   log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
+  //   // kitState.preloaded = true;
 
-    if (preloadChoicesMap.has(promptScriptPath)) {
-      const preview = preloadPreviewMap.get(promptScriptPath) as string;
-      preloadPreview(preview || noPreview);
+  //   appToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
+  //   sendToPrompt(Channel.SET_TAB_INDEX, 0);
+  //   appToPrompt(AppChannel.SET_PRELOADED, true);
+  //   const promptData = preloadPromptDataMap.get(promptScriptPath) as PromptData;
+  //   preloadPromptData(promptData);
 
-      const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
-      preloadChoices(choices as Choice[]);
+  //   if (preloadChoicesMap.has(promptScriptPath)) {
+  //     const preview = preloadPreviewMap.get(promptScriptPath) as string;
+  //     preloadPreview(preview || noPreview);
 
-      kitState.promptBounds = {
-        x: promptData.x,
-        y: promptData.y,
-        width:
-          getMainScriptPath() === promptData.scriptPath
-            ? getDefaultWidth()
-            : promptData.width || getDefaultWidth(),
-        height:
-          getMainScriptPath() === promptData.scriptPath
-            ? PROMPT.HEIGHT.BASE
-            : promptData.height,
-      };
-    }
+  //     const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
+  //     preloadChoices(choices as Choice[]);
 
-    if (init) {
-      initBounds(promptScriptPath, show);
-    }
-  }
+  //     kitState.promptBounds = {
+  //       x: promptData.x,
+  //       y: promptData.y,
+  //       width:
+  //         getMainScriptPath() === promptData.scriptPath
+  //           ? getDefaultWidth()
+  //           : promptData.width || getDefaultWidth(),
+  //       height:
+  //         getMainScriptPath() === promptData.scriptPath
+  //           ? PROMPT.HEIGHT.BASE
+  //           : promptData.height,
+  //     };
+  //   }
 
-  log.info(`end of attemptPreload`);
+  //   if (init) {
+  //     initBounds(promptScriptPath, show);
+  //   }
+  // }
+
+  // log.info(`end of attemptPreload`);
 };
 
 export const setScoredChoices = (choices: ScoredChoice[]) => {
