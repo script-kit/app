@@ -100,9 +100,6 @@ export const blurPrompt = () => {
 };
 
 export const actualHide = () => {
-  log.info(
-    `>>> Is minimized? ${promptWindow?.isMinimized() ? 'true' : 'false'}`
-  );
   if (!isVisible()) return;
 
   log.info(`🙈 Hiding prompt window`);
@@ -2295,14 +2292,14 @@ export const destroyPromptWindow = () => {
 export const hasFocus = () => promptWindow?.isFocused();
 
 export const initShowPrompt = () => {
-  setPromptAlwaysOnTop(true);
-
   if (kitState.isMac) {
     promptWindow.showInactive();
   } else {
     // promptWindow.restore();
     promptWindow.show();
   }
+
+  setPromptAlwaysOnTop(true);
 
   if (topTimeout) clearTimeout(topTimeout);
   topTimeout = setTimeout(() => {
