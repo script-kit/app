@@ -100,11 +100,19 @@ export const blurPrompt = () => {
 };
 
 export const actualHide = () => {
+  log.info(
+    `>>> Is minimized? ${promptWindow?.isMinimized() ? 'true' : 'false'}`
+  );
   if (!isVisible()) return;
+
   log.info(`🙈 Hiding prompt window`);
   if (!kitState.isMac) {
-    log.info(`Minimize for Windows to restore focus to previous app`);
-    promptWindow?.minimize();
+    if (promptWindow?.isMinimized()) {
+      log.info(`🌤️ Prompt window is already minimized. Not hiding.`);
+    } else {
+      log.info(`Minimize for Windows to restore focus to previous app`);
+      promptWindow?.minimize();
+    }
   }
   promptWindow?.hide();
 };
