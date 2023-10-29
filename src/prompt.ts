@@ -101,11 +101,11 @@ export const blurPrompt = () => {
 
 export const actualHide = () => {
   log.info(`🙈 Hiding prompt window`);
-  promptWindow?.hide();
   if (!kitState.isMac) {
     log.info(`Minimizing app for Windows to restore focus to previous app`);
     promptWindow?.minimize();
   }
+  promptWindow?.hide();
 };
 
 export const maybeHide = async (reason: string) => {
