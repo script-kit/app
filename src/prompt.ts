@@ -112,7 +112,7 @@ export const actualHide = () => {
   }
 
   log.info(`🙈 Hiding prompt window`);
-  promptWindow?.hide();
+  if (!kitState.kenvEnv?.KIT_NO_HIDE) promptWindow?.hide();
 };
 
 export const maybeHide = async (reason: string) => {
@@ -125,7 +125,7 @@ export const maybeHide = async (reason: string) => {
     reason === HideReason.BeforeExit
   ) {
     actualHide();
-    resetPrompt();
+    if (!kitState.kenvEnv?.KIT_NO_RESET_PROMPT) resetPrompt();
 
     // attemptPreload(getMainScriptPath(), false);
     // clearSearch();
@@ -533,9 +533,7 @@ export const createPromptWindow = async () => {
   };
 
   if (kitState.isLinux) {
-    promptWindow?.on('resize', (event, rect) => {
-      log.silly(`Resize ${rect.width} ${rect.height}`);
-
+    promptWindow?.on('resize', (event) => {
       kitState.modifiedByUser = true;
     });
   } else {
