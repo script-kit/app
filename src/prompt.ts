@@ -1617,6 +1617,7 @@ export const attemptPreload = async (
   show = true,
   init = true
 ) => {
+  if (kitState.kenvEnv?.KIT_NO_ATTEMPT_PRELOAD) return;
   if (kitState.attemptingPreload) return;
   kitState.attemptingPreload = true;
   setTimeout(() => {

@@ -976,6 +976,8 @@ export const flagSearch = {
 };
 
 export const clearSearch = () => {
+  if (kitState.kenvEnv?.KIT_NO_CLEAR_SEARCH) return;
+
   log.info(`🧹 Clearing search...`);
   kitState.ignoreBlur = false;
   kitSearch.keyword = '';

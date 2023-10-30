@@ -16,6 +16,20 @@
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
 
+// eslint-disable-next-line import/newline-after-import
+import log from 'electron-log';
+log.initialize();
+
+process.on('uncaughtException', (error) => {
+  log.error(error);
+});
+
+process.on('unhandledRejection', (error) => {
+  log.error(error);
+});
+
+const isLinux = os.platform() === 'linux';
+
 import {
   app,
   protocol,
@@ -27,6 +41,10 @@ import {
   nativeTheme,
 } from 'electron';
 
+if (isLinux) {
+  app.commandLine.appendSwitch('no-sandbox');
+}
+
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
@@ -35,7 +53,6 @@ import unhandled from 'electron-unhandled';
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import { autoUpdater } from 'electron-updater';
-import log from 'electron-log';
 
 import path from 'path';
 import { fork, SpawnSyncOptions, execFileSync } from 'child_process';
@@ -148,17 +165,6 @@ import {
   setupLog,
 } from './install';
 
-log.initialize();
-
-process.on('uncaughtException', (error) => {
-  log.error(error);
-});
-
-process.on('unhandledRejection', (error) => {
-  log.error(error);
-});
-
-const isLinux = os.platform() === 'linux';
 // TODO: Read a settings file to get the KENV/KIT paths
 
 log.info(`Setting up process.env`);

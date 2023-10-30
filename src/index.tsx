@@ -1,3 +1,12 @@
+/* eslint-disable import/first */
+import log from 'electron-log/renderer';
+
+log.info(`
+---------------------------
+📺 Renderer process started
+---------------------------
+`);
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
