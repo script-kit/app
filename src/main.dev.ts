@@ -92,6 +92,7 @@ import {
   reload,
   isVisible,
   prepPromptForQuit,
+  logPromptState,
 } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -544,6 +545,9 @@ const ready = async () => {
 
     startClipboardAndKeyboardWatchers();
     actualHideDock();
+    setInterval(() => {
+      logPromptState();
+    }, 100);
 
     if (process.env.NODE_ENV === 'development') {
       process.on('warning', (warning) => {
