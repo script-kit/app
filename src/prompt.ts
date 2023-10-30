@@ -132,7 +132,7 @@ export const maybeHide = async (reason: string) => {
         minimized,
       });
 
-      if (visible && minimized) {
+      if (!visible && minimized) {
         initMainBounds();
       } else {
         log.info(`Wasn't visible and minimized. Delaying initMainBounds`);
@@ -1244,7 +1244,6 @@ export const resetToMainAndHide = () => {
 };
 
 export const hideAppIfNoWindows = (reason: HideReason) => {
-  if (!isVisible()) return;
   log.info(`Hide reason: ${reason}`);
   if (promptWindow) {
     kitState.modifiedByUser = false;
