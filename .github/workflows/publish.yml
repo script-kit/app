@@ -149,14 +149,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Node, NPM and Yarn for Linux
-        if: matrix.os == 'ubuntu-latest'
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18.15.0
-
-      - name: Install Node, NPM and Yarn for other OS
-        if: matrix.os != 'ubuntu-latest'
+      - name: Install Node, NPM and Yarn
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
