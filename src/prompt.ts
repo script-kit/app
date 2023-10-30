@@ -108,11 +108,31 @@ export const actualHide = () => {
     } else {
       log.info(`Minimize for Windows to restore focus to previous app`);
       if (!kitState.kenvEnv?.KIT_NO_MINIMIZE) promptWindow?.minimize();
+      if (!kitState.kenvEnv?.KIT_NO_DOUBLE_HIDE) promptWindow?.hide();
     }
   }
 
   log.info(`🙈 Hiding prompt window`);
   if (!kitState.kenvEnv?.KIT_NO_HIDE) promptWindow?.hide();
+
+  const promptState = {
+    isMinimized: promptWindow?.isMinimized(),
+    isVisible: promptWindow?.isVisible(),
+    isFocused: promptWindow?.isFocused(),
+    isDestroyed: promptWindow?.isDestroyed(),
+    isFullScreen: promptWindow?.isFullScreen(),
+    isFullScreenable: promptWindow?.isFullScreenable(),
+    isMaximizable: promptWindow?.isMaximizable(),
+    isResizable: promptWindow?.isResizable(),
+    isModal: promptWindow?.isModal(),
+    isAlwaysOnTop: promptWindow?.isAlwaysOnTop(),
+    isClosable: promptWindow?.isClosable(),
+    isMovable: promptWindow?.isMovable(),
+    isSimpleFullScreen: promptWindow?.isSimpleFullScreen(),
+    isKiosk: promptWindow?.isKiosk(),
+  };
+
+  log.info({ promptState });
 };
 
 export const maybeHide = async (reason: string) => {
