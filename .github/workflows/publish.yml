@@ -149,14 +149,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Node, NPM and Yarn
+      - name: Install Node, NPM and Yarn for Linux
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.15.0
+
+      - name: Install Node, NPM and Yarn for other OS
+        if: matrix.os != 'ubuntu-latest'
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - name: yarn && yarn add @johnlindquist/kit
+
+      - name: Set Electron version for Linux
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          yarn
-          yarn add "@johnlindquist/kit"
+          jq '.devDependencies.electron = "25.3.2"' package.json > temp.json && mv temp.json package.json
 
       - name: Publish windows x64
         if: matrix.os == 'windows-latest' && matrix.arch == 'x64'

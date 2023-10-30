@@ -125,6 +125,27 @@ export const maybeHide = async (reason: string) => {
   ) {
     actualHide();
     resetPrompt();
+    if (kitState.isWindows) {
+      const visible = promptWindow?.isVisible();
+      const minimized = promptWindow?.isMinimized();
+      log.info({
+        visible,
+        minimized,
+      });
+
+      if (visible && minimized) {
+        initMainBounds();
+      } else {
+        log.info(`Wasn't visible and minimized. Delaying initMainBounds`);
+        setTimeout(() => {
+          log.info({
+            visible,
+            minimized,
+          });
+          initMainBounds();
+        }, 10);
+      }
+    }
     // attemptPreload(getMainScriptPath(), false);
     // clearSearch();
     // invokeSearch('');

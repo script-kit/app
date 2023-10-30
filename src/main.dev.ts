@@ -20,16 +20,6 @@
 import log from 'electron-log';
 log.initialize();
 
-process.on('uncaughtException', (error) => {
-  log.error(error);
-});
-
-process.on('unhandledRejection', (error) => {
-  log.error(error);
-});
-
-const isLinux = os.platform() === 'linux';
-
 import {
   app,
   protocol,
@@ -40,10 +30,6 @@ import {
   screen,
   nativeTheme,
 } from 'electron';
-
-if (isLinux) {
-  app.commandLine.appendSwitch('no-sandbox');
-}
 
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
@@ -174,7 +160,6 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 /* eslint-disable */
 (function () {
-  if (isLinux) return;
   if (!process.env.NODE_EXTRA_CA_CERTS) return;
   let extraca: any = null;
   try {
