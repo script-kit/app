@@ -116,7 +116,6 @@ export const actualHide = () => {
 
 export const maybeHide = async (reason: string) => {
   log.info(`Attempt Hide: ${reason}`);
-  if (!promptWindow?.isVisible()) return;
 
   if (
     reason === HideReason.NoScript ||
