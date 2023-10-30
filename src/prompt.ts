@@ -102,6 +102,15 @@ export const blurPrompt = () => {
 export const actualHide = () => {
   if (!isVisible()) return;
 
+  if (!kitState.isMac) {
+    if (promptWindow?.isMinimized()) {
+      log.info(`🌤️ Prompt window is already minimized. Not hiding.`);
+    } else {
+      log.info(`Minimize for Windows to restore focus to previous app`);
+      if (!kitState.kenvEnv?.KIT_NO_MINIMIZE) promptWindow?.minimize();
+    }
+  }
+
   log.info(`🙈 Hiding prompt window`);
   promptWindow?.hide();
 };
@@ -117,27 +126,7 @@ export const maybeHide = async (reason: string) => {
   ) {
     actualHide();
     resetPrompt();
-    if (kitState.isWindows) {
-      const visible = promptWindow?.isVisible();
-      const minimized = promptWindow?.isMinimized();
-      log.info({
-        visible,
-        minimized,
-      });
 
-      if (!visible && minimized) {
-        initMainBounds();
-      } else {
-        log.info(`Wasn't visible and minimized. Delaying initMainBounds`);
-        setTimeout(() => {
-          log.info({
-            visible,
-            minimized,
-          });
-          initMainBounds();
-        }, 10);
-      }
-    }
     // attemptPreload(getMainScriptPath(), false);
     // clearSearch();
     // invokeSearch('');
@@ -466,14 +455,6 @@ export const createPromptWindow = async () => {
   promptWindow?.on('blur', onBlur);
 
   promptWindow?.on('hide', () => {
-    if (!kitState.isMac) {
-      if (promptWindow?.isMinimized()) {
-        log.info(`🌤️ Prompt window is already minimized. Not hiding.`);
-      } else {
-        log.info(`Minimize for Windows to restore focus to previous app`);
-        if (!kitState.kenvEnv?.KIT_NO_MINIMIZE) promptWindow?.minimize();
-      }
-    }
     log.info(`🫣 Prompt window hidden`);
     kitState.isPromptReady = false;
     kitState.promptHidden = true;
