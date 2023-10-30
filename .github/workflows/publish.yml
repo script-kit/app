@@ -154,10 +154,18 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Set Electron version for Linux
+      - name: yarn && yarn add @johnlindquist/kit
         if: matrix.os == 'ubuntu-latest'
         run: |
-          jq '.devDependencies.electron = "25.3.2"' package.json > temp.json && mv temp.json package.json
+          yarn
+          yarn add electron@25.3.2
+          yarn add "@johnlindquist/kit"
+
+      - name: yarn && yarn add @johnlindquist/kit
+        if: matrix.os != 'ubuntu-latest'
+        run: |
+          yarn
+          yarn add "@johnlindquist/kit"
 
       - name: Publish windows x64
         if: matrix.os == 'windows-latest' && matrix.arch == 'x64'
