@@ -39,7 +39,7 @@ import {
 } from 'electron';
 import os from 'os';
 import path from 'path';
-import log from 'electron-log';
+import log, { FileTransport } from 'electron-log';
 import { assign, debounce } from 'lodash';
 import {
   getMainScriptPath,
@@ -103,18 +103,11 @@ export const actualHide = () => {
   if (!isVisible()) return;
 
   log.info(`🙈 Hiding prompt window`);
-  if (!kitState.isMac) {
-    if (promptWindow?.isMinimized()) {
-      log.info(`🌤️ Prompt window is already minimized. Not hiding.`);
-    } else {
-      log.info(`Minimize for Windows to restore focus to previous app`);
-      promptWindow?.minimize();
-    }
-  }
   promptWindow?.hide();
 };
 
 export const maybeHide = async (reason: string) => {
+  if (!isVisible()) return;
   log.info(`Attempt Hide: ${reason}`);
 
   if (
@@ -473,6 +466,14 @@ export const createPromptWindow = async () => {
   promptWindow?.on('blur', onBlur);
 
   promptWindow?.on('hide', () => {
+    if (!kitState.isMac) {
+      if (promptWindow?.isMinimized()) {
+        log.info(`🌤️ Prompt window is already minimized. Not hiding.`);
+      } else {
+        log.info(`Minimize for Windows to restore focus to previous app`);
+        if (!kitState.kenvEnv?.KIT_NO_MINIMIZE) promptWindow?.minimize();
+      }
+    }
     log.info(`🫣 Prompt window hidden`);
     kitState.isPromptReady = false;
     kitState.promptHidden = true;
@@ -550,11 +551,19 @@ export const createPromptWindow = async () => {
     saveCurrentPromptBounds();
   };
 
-  promptWindow?.on('will-resize', (event, rect) => {
-    log.silly(`Will Resize ${rect.width} ${rect.height}`);
+  if (kitState.isLinux) {
+    promptWindow?.on('resize', (event, rect) => {
+      log.silly(`Resize ${rect.width} ${rect.height}`);
 
-    kitState.modifiedByUser = true;
-  });
+      kitState.modifiedByUser = true;
+    });
+  } else {
+    promptWindow?.on('will-resize', (event, rect) => {
+      log.silly(`Will Resize ${rect.width} ${rect.height}`);
+
+      kitState.modifiedByUser = true;
+    });
+  }
 
   const willMoveHandler = debounce(
     () => {
@@ -2580,10 +2589,13 @@ export const togglePromptEnv = async (envName: string) => {
 };
 
 export const debugPrompt = async () => {
-  const promptLog = log.create('promptLog');
+  const promptLog = log.create({
+    logId: 'promptLog',
+  });
   const promptLogPath = kenvPath('logs', 'prompt.log');
 
-  promptLog.transports.file.resolvePathFn = () => promptLogPath;
+  (promptLog.transports.file as FileTransport).resolvePathFn = () =>
+    promptLogPath;
   const getPromptInfo = async () => {
     const activeAppBounds: any = {};
     // REMOVE-NUT

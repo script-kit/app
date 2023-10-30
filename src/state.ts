@@ -7,7 +7,7 @@ import { proxy } from 'valtio/vanilla';
 import { readJson, writeJson } from 'fs-extra';
 import * as nativeKeymap from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
-import log, { LogLevel } from 'electron-log';
+import log, { FileTransport, LogLevel } from 'electron-log';
 import { assign, debounce } from 'lodash';
 import path from 'path';
 import os from 'os';
@@ -768,8 +768,9 @@ const defaultKeyMap: {
 };
 
 const keymapLogPath = path.resolve(app.getPath('logs'), 'keymap.log');
-const keymapLog = log.create('keymapLog');
-keymapLog.transports.file.resolvePathFn = () => keymapLogPath;
+const keymapLog = log.create({ logId: 'keymapLog' });
+(keymapLog.transports.file as FileTransport).resolvePathFn = () =>
+  keymapLogPath;
 
 export const convertKey = (sourceKey: string) => {
   if (typeof appDb?.convertKey === 'boolean' && !appDb.convertKey) {

@@ -459,7 +459,7 @@ export const extractNode = async (file: string) => {
 };
 
 export const createLogs = () => {
-  log.transports.file.resolvePath = () => kitPath('logs', 'kit.log');
+  log.transports.file.resolvePathFn = () => kitPath('logs', 'kit.log');
 };
 
 export const setupLog = async (message: string) => {

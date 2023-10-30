@@ -266,7 +266,7 @@ export const updateMainShortcut = async (filePath: string) => {
 
       if (!isVisible()) {
         log.info(`Main prompt not visible. Showing...`);
-        log.info(snapshot(kitState.kenvEnv));
+        // log.info(snapshot(kitState.kenvEnv));
         if (!kitState.kenvEnv?.KIT_NO_IGNORE_BLUR) kitState.ignoreBlur = false;
         if (!kitState.kenvEnv?.KIT_NO_ALWAYS_ON_TOP)
           kitState.alwaysOnTop = true;

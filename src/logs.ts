@@ -2,7 +2,7 @@
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable no-console */
 /* eslint-disable import/prefer-default-export */
-import log, { LevelOption } from 'electron-log';
+import log, { FileTransport, LevelOption } from 'electron-log';
 import * as path from 'path';
 import { subscribeKey } from 'valtio/utils';
 import fs from 'fs';
@@ -20,17 +20,25 @@ if (isDev) {
   app.setAppLogsPath(app.getPath('logs').replace('Electron', 'Kit'));
 }
 
-export const consoleLog = log.create('consoleLog');
-consoleLog.transports.file.resolvePathFn = () =>
+export const consoleLog = log.create({
+  logId: 'consoleLog',
+});
+
+(consoleLog.transports.file as FileTransport)!.resolvePathFn = () =>
   kenvPath('logs', 'console.log');
 
 export const updateLogPath = path.resolve(app.getPath('logs'), 'update.log');
-export const updateLog = log.create('updateLog');
-updateLog.transports.file.resolvePathFn = () => updateLogPath;
+export const updateLog = log.create({
+  logId: 'updateLog',
+});
+(updateLog.transports.file as FileTransport).resolvePathFn = () =>
+  updateLogPath;
 
 export const mainLogPath = path.resolve(app.getPath('logs'), 'main.log');
-export const mainLog = log.create('mainLog');
-mainLog.transports.file.resolvePathFn = () => mainLogPath;
+export const mainLog = log.create({
+  logId: 'mainLog',
+});
+(mainLog.transports.file as FileTransport).resolvePathFn = () => mainLogPath;
 
 log.info(`⭐️ Other notable Kit logs:`, {
   mainLogPath,
@@ -55,11 +63,13 @@ export const getLog = (scriptPath: string): Logger => {
   try {
     if (logMap.get(scriptPath)) return logMap.get(scriptPath) as Logger;
 
-    const scriptLog = log.create(scriptPath);
+    const scriptLog = log.create({
+      logId: scriptPath,
+    });
     const logPath = getLogFromScriptPath(scriptPath);
     log.info(`Log path: ${logPath}`);
-    scriptLog.transports.file.resolvePathFn = () => logPath;
-    scriptLog.transports.file.level = kitState.logLevel;
+    (scriptLog.transports.file as FileTransport).resolvePathFn = () => logPath;
+    (scriptLog.transports.file as FileTransport).level = kitState.logLevel;
 
     const _info = scriptLog.info.bind(scriptLog);
     const _warn = scriptLog.warn.bind(scriptLog);
