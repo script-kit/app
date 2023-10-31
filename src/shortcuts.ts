@@ -272,9 +272,9 @@ export const updateMainShortcut = async (filePath: string) => {
         kitState.alwaysOnTop = true;
 
         resetPrompt();
-        if (kitState.kenvEnv?.KIT_SHOW_BEFORE) showMainPrompt();
+        if (kitState.isWindows) showMainPrompt();
         initMainBounds();
-        if (!kitState?.kenvEnv?.KIT_NO_SHOW_AFTER) showMainPrompt();
+        if (!kitState.isWindows) showMainPrompt();
         focusPrompt();
         await runPromptProcess(getMainScriptPath(), [], {
           force: true,

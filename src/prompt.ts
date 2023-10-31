@@ -2457,22 +2457,15 @@ export const initMainBounds = () => {
     bounds.width = getDefaultWidth();
   }
 
-  if (kitState.isMac) {
-    setBounds(
-      bounds,
-      `promptId ${kitState.promptId} - promptCount ${
-        kitState.promptCount
-      } - kitState.promptBounds ${JSON.stringify(kitState.promptBounds)}`
-      // promptWindow?.isVisible() &&
-      //   kitState.promptCount > 1 &&
-      //   !kitState.promptBounds.height
-    );
-  } else {
-    if (!kitState.kenvEnv?.KIT_NO_SET_SIZE)
-      promptWindow?.setSize(bounds!.width as number, bounds!.height as number);
-    if (!kitState.kenvEnv?.KIT_NO_SET_POSITION)
-      promptWindow?.setPosition(bounds!.x as number, bounds!.y as number);
-  }
+  setBounds(
+    bounds,
+    `promptId ${kitState.promptId} - promptCount ${
+      kitState.promptCount
+    } - kitState.promptBounds ${JSON.stringify(kitState.promptBounds)}`
+    // promptWindow?.isVisible() &&
+    //   kitState.promptCount > 1 &&
+    //   !kitState.promptBounds.height
+  );
 };
 
 export const showMainPrompt = () => {
