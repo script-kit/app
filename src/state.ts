@@ -27,6 +27,7 @@ import {
   AppDb,
   getAppDb,
   appDefaults,
+  Stamp,
 } from '@johnlindquist/kit/cjs/db';
 
 import {
@@ -162,16 +163,13 @@ export const getSchedule = () => {
     });
 };
 
-export const scriptChanged = debounce(
-  async (filePath: string) => {
+export const debounceSetScriptTimestamp = debounce(
+  (stamp: Stamp & { reason?: string }) => {
     if (!kitState.mainMenuHasRun) return;
-    await setScriptTimestamp({ filePath, compileMessage: '' });
+    log.info(`💮 Stamping ${stamp?.filePath} Reason: ${stamp?.reason}`);
+    setScriptTimestamp(stamp);
   },
-  100,
-  {
-    leading: true,
-    trailing: true,
-  }
+  100
 );
 
 export const cacheKitScripts = async () => {

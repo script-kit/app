@@ -274,6 +274,8 @@ export const updateMainShortcut = async (filePath: string) => {
         resetPrompt();
         if (kitState.isWindows) showMainPrompt();
         initMainBounds();
+        // Give init bounds time to finish. Difficult to test :/
+        await new Promise(setImmediate);
         if (!kitState.isWindows) showMainPrompt();
         focusPrompt();
         await runPromptProcess(getMainScriptPath(), [], {

@@ -545,9 +545,12 @@ const ready = async () => {
 
     startClipboardAndKeyboardWatchers();
     actualHideDock();
-    setInterval(() => {
-      logPromptState();
-    }, 100);
+
+    if (process.env.KIT_LOG_PROMPT_STATE) {
+      setInterval(() => {
+        logPromptState();
+      }, 100);
+    }
 
     if (process.env.NODE_ENV === 'development') {
       process.on('warning', (warning) => {

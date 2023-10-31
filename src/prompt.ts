@@ -880,7 +880,7 @@ export const setBounds = async (bounds: Partial<Rectangle>, reason = '') => {
   const noChange =
     heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
 
-  log.verbose(`📐 setBounds: reason ${reason}`, bounds);
+  log.verbose(`📐 setBounds: ${kitState.scriptPath} reason ${reason}`, bounds);
   log.verbose({
     ...bounds,
     isVisible: isVisible() ? 'true' : 'false',
@@ -1374,16 +1374,13 @@ export const setScript = async (
   kitState.cacheChoices = cache;
   kitState.cachePrompt = cache;
   kitState.cachePreview = cache;
-  // log.info(`setScript`, { script, pid });
+  log.info(`${pid} setScript`, { script: script?.filePath });
 
   if (script.filePath === prevScriptPath && pid === prevPid) {
     // Using a keyboard shortcut to launch a script will hit this scenario
     // Because the app will call `setScript` immediately, then the process will call it too
+    log.info(`Script already set. Ignore`);
     return 'denied';
-  }
-
-  if (kitState.mainMenuHasRun) {
-    setScriptTimestamp({ filePath: script.filePath });
   }
 
   prevScriptPath = script.filePath;
@@ -1883,7 +1880,7 @@ const cacheMainChoices = (choices: ScoredChoice[]) => {
   log.info(`Caching main scored choices: ${choices.length}`);
   log.info(
     `Most recent 3:`,
-    choices.slice(1, 3).map((c) => c?.item?.name)
+    choices.slice(1, 4).map((c) => c?.item?.name)
   );
   appToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
 };
@@ -2447,14 +2444,32 @@ export const onHideOnce = (fn: () => void) => {
   }
 };
 
-export const initMainBounds = () => {
+// let attempts = 0;
+
+// const boundsMatch = async (bounds: Rectangle) => {
+//   const { width, height } = promptWindow?.getBounds();
+//   if (width === bounds.width && height === bounds.height) {
+//     log.info(`↖ Bounds attempt: ${attempts}`);
+//     return true;
+//   }
+
+//   if (attempts < 4) {
+//     attempts += 1;
+//     return new Promise((resolve) => {
+//       setTimeout(async () => {
+//         const match = await boundsMatch(bounds);
+//         attempts = 0;
+//         resolve(match);
+//       }, 0);
+//     });
+//   }
+//   return true;
+// };
+
+export const initMainBounds = async () => {
   const bounds = getCurrentScreenPromptCache(getMainScriptPath());
   if (!bounds.height || bounds.height < PROMPT.HEIGHT.BASE) {
     bounds.height = PROMPT.HEIGHT.BASE;
-  }
-
-  if (!bounds.width) {
-    bounds.width = getDefaultWidth();
   }
 
   setBounds(

@@ -7,7 +7,7 @@ import {
   kitPath,
   appDbPath,
   userDbPath,
-  timestampsPath,
+  statsPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { kitState } from './state';
 
@@ -78,7 +78,7 @@ export const startWatching = (callback: WatcherCallback) => {
       appDbPath,
       shortcutsPath,
       userDbPath,
-      timestampsPath,
+      statsPath,
       kenvPath('.env'),
       kenvPath('package.json'),
     ],

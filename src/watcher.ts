@@ -30,7 +30,12 @@ import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
-import { appDb, kitState, scriptChanged, sponsorCheck } from './state';
+import {
+  appDb,
+  debounceSetScriptTimestamp,
+  kitState,
+  sponsorCheck,
+} from './state';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
 import {
   appToPrompt,
@@ -171,7 +176,7 @@ export const onScriptsChanged = async (
     addSnippet(script);
 
     if (kitState.ready && !rebuilt) {
-      scriptChanged(filePath);
+      debounceSetScriptTimestamp({ filePath, changeStamp: Date.now() });
       if (event === 'change') {
         checkFileImports(script);
       }
@@ -488,8 +493,8 @@ export const setupWatchers = async () => {
       return;
     }
 
-    if (base === 'timestamps.json') {
-      log.info(`timestamps.json changed`);
+    if (base === 'stats.json') {
+      log.info(`stats.json changed`);
       cacheMainScripts();
       return;
     }

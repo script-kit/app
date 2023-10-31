@@ -55,7 +55,7 @@ import {
 
 import { subscribeKey } from 'valtio/utils';
 import { readJson } from 'fs-extra';
-import { setScriptTimestamp, getTimestamps } from '@johnlindquist/kit/cjs/db';
+import { getTimestamps } from '@johnlindquist/kit/cjs/db';
 import { readFileSync } from 'fs';
 import { getLog, Logger, mainLog, warn } from './logs';
 import {
@@ -109,6 +109,7 @@ import {
   kitSearch,
   clearSearch,
   kitStore,
+  debounceSetScriptTimestamp,
 } from './state';
 
 import { emitter, KitEvent } from './events';
@@ -2443,6 +2444,26 @@ class Processes extends Array<ProcessInfo> {
     processesChanged();
   }
 
+  private stampPid(pid: number) {
+    const processInfo = this.getByPid(pid) as ProcessInfo;
+    if (!processInfo) return;
+    if (
+      processInfo.type === ProcessType.Prompt &&
+      !processInfo.scriptPath.includes('.kit')
+    ) {
+      const now = Date.now();
+      const stamp = {
+        filePath: processInfo?.scriptPath,
+        runCount: 1,
+        executionTime: now - processInfo.date,
+        runStamp: processInfo.date,
+        exitStamp: now,
+      };
+
+      debounceSetScriptTimestamp(stamp);
+    }
+  }
+
   public add(
     type: ProcessType = ProcessType.Prompt,
     scriptPath = '',
@@ -2498,6 +2519,7 @@ class Processes extends Array<ProcessInfo> {
 
     child.on('disconnect', () => {
       log.info(`${pid} DISCONNECTED`);
+      this.stampPid(pid);
       processes.removeByPid(pid);
     });
 
@@ -2523,19 +2545,8 @@ class Processes extends Array<ProcessInfo> {
           `${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
         );
 
-        if (
-          processInfo.type === ProcessType.Prompt &&
-          !processInfo.scriptPath.includes('.kit')
-        ) {
-          const stamp = {
-            filePath: processInfo?.scriptPath,
-            runCount: 1,
-            executionTime: Date.now() - processInfo.date,
-          };
-          log.info(`💮 Stamping:`, stamp);
-          if (kitState.mainMenuHasRun) {
-            setScriptTimestamp(stamp);
-          }
+        if (child.pid) {
+          this.stampPid(child.pid);
         }
       } else if (typeof code === 'number') {
         log.error(
