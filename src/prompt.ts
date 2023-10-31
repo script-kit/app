@@ -186,7 +186,6 @@ export const actualHide = () => {
 
   log.info(`🙈 Hiding prompt window`);
   if (!kitState.kenvEnv?.KIT_NO_HIDE) promptWindow?.hide();
-  promptWindow.center();
 };
 
 export const maybeHide = async (reason: string) => {
