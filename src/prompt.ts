@@ -2452,15 +2452,27 @@ export const initMainBounds = () => {
   if (!bounds.height || bounds.height < PROMPT.HEIGHT.BASE) {
     bounds.height = PROMPT.HEIGHT.BASE;
   }
-  setBounds(
-    bounds,
-    `promptId ${kitState.promptId} - promptCount ${
-      kitState.promptCount
-    } - kitState.promptBounds ${JSON.stringify(kitState.promptBounds)}`
-    // promptWindow?.isVisible() &&
-    //   kitState.promptCount > 1 &&
-    //   !kitState.promptBounds.height
-  );
+
+  if (!bounds.width) {
+    bounds.width = getDefaultWidth();
+  }
+
+  if (kitState.isMac) {
+    setBounds(
+      bounds,
+      `promptId ${kitState.promptId} - promptCount ${
+        kitState.promptCount
+      } - kitState.promptBounds ${JSON.stringify(kitState.promptBounds)}`
+      // promptWindow?.isVisible() &&
+      //   kitState.promptCount > 1 &&
+      //   !kitState.promptBounds.height
+    );
+  } else {
+    if (!kitState.kenvEnv?.KIT_NO_SET_SIZE)
+      promptWindow?.setSize(bounds!.width as number, bounds!.height as number);
+    if (!kitState.kenvEnv?.KIT_NO_SET_POSITION)
+      promptWindow?.setPosition(bounds!.x as number, bounds!.y as number);
+  }
 };
 
 export const showMainPrompt = () => {

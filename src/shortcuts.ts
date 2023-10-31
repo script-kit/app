@@ -268,17 +268,14 @@ export const updateMainShortcut = async (filePath: string) => {
       if (!isVisible()) {
         log.info(`Main prompt not visible. Showing...`);
         // log.info(snapshot(kitState.kenvEnv));
-        if (!kitState.kenvEnv?.KIT_NO_IGNORE_BLUR) kitState.ignoreBlur = false;
-        if (!kitState.kenvEnv?.KIT_NO_ALWAYS_ON_TOP)
-          kitState.alwaysOnTop = true;
-        if (kitState.kenvEnv?.KIT_BEFORE_FORCE_CENTERT) forcePromptToCenter();
-        if (kitState.kenvEnv?.KIT_BEFORE_SHOW) showMainPrompt();
-        if (kitState.kenvEnv?.KIT_BEFORE_CENTER) centerPrompt();
-        if (kitState.kenvEnv?.KIT_BEFORE_FOCUS) focusPrompt();
-        if (!kitState.kenvEnv?.KIT_NO_RESET) resetPrompt();
-        if (!kitState.kenvEnv?.KIT_NO_INIT) initMainBounds();
-        if (!kitState.kenvEnv?.KIT_NO_SHOW) showMainPrompt();
-        if (!kitState.kenvEnv?.KIT_NO_FOCUS) focusPrompt();
+        kitState.ignoreBlur = false;
+        kitState.alwaysOnTop = true;
+
+        resetPrompt();
+        if (kitState.kenvEnv?.KIT_SHOW_BEFORE) showMainPrompt();
+        initMainBounds();
+        if (!kitState?.kenvEnv?.KIT_NO_SHOW_AFTER) showMainPrompt();
+        focusPrompt();
         await runPromptProcess(getMainScriptPath(), [], {
           force: true,
           trigger: Trigger.Menu,
