@@ -181,12 +181,12 @@ export const actualHide = () => {
     } else {
       log.info(`Minimize for Windows to restore focus to previous app`);
       if (!kitState.kenvEnv?.KIT_NO_MINIMIZE) promptWindow?.minimize();
-      if (!kitState.kenvEnv?.KIT_NO_DOUBLE_HIDE) promptWindow?.hide();
     }
   }
 
   log.info(`🙈 Hiding prompt window`);
   if (!kitState.kenvEnv?.KIT_NO_HIDE) promptWindow?.hide();
+  promptWindow.center();
 };
 
 export const maybeHide = async (reason: string) => {
@@ -2667,6 +2667,18 @@ export const togglePromptEnv = async (envName: string) => {
     process.env["${envName}"] = "${kitState.kenvEnv?.[envName]}"
     `);
   }
+};
+
+export const centerPrompt = async () => {
+  promptWindow?.center();
+};
+
+export const forcePromptToCenter = async () => {
+  getMainPrompt()?.show();
+  getMainPrompt()?.setPosition(0, 0);
+  getMainPrompt()?.center();
+  getMainPrompt()?.focus();
+  getMainPrompt()?.setAlwaysOnTop(true, 'pop-up-menu', 1);
 };
 
 export const debugPrompt = async () => {
