@@ -149,6 +149,8 @@ export const logPromptState = () => {
     isMovable: promptWindow?.isMovable(),
     isSimpleFullScreen: promptWindow?.isSimpleFullScreen(),
     isKiosk: promptWindow?.isKiosk(),
+    isNormal: promptWindow?.isNormal(),
+    isVisibleOnAllWorkspaces: promptWindow?.isVisibleOnAllWorkspaces(),
   };
 
   // Compare the previous state to the current state
@@ -503,6 +505,34 @@ export const createPromptWindow = async () => {
       kitState.blurredByKit = false;
     }
   };
+
+  promptWindow?.on('always-on-top-changed', () => {
+    log.info(`📌 always-on-top-changed: ${promptWindow?.isAlwaysOnTop()}`);
+  });
+
+  promptWindow?.on('minimize', () => {
+    log.info(`📌 minimize`);
+  });
+
+  promptWindow?.on('restore', () => {
+    log.info(`📌 restore`);
+  });
+
+  promptWindow?.on('maximize', () => {
+    log.info(`📌 maximize`);
+  });
+
+  promptWindow?.on('unmaximize', () => {
+    log.info(`📌 unmaximize`);
+  });
+
+  promptWindow?.on('close', () => {
+    log.info(`📌 close`);
+  });
+
+  promptWindow?.on('closed', () => {
+    log.info(`📌 closed`);
+  });
 
   promptWindow?.webContents?.on('focus', () => {
     log.info(`WebContents Focus`);
