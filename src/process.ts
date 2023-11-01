@@ -1617,12 +1617,12 @@ const kitMessageMap: ChannelHandler = {
 
   CLIPBOARD_WRITE_TEXT: onChildChannel(
     async ({ child }, { channel, value }) => {
-      let text = '';
-      if (typeof value === 'number') {
+      let text;
+      if (typeof value === 'string') {
+        text = value;
+      } else if (typeof value === 'number') {
         text = value.toString();
-      }
-
-      if (typeof value !== 'string') {
+      } else {
         text = JSON.stringify(value);
       }
 
