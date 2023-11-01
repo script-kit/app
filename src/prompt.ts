@@ -180,6 +180,14 @@ export const forceHidePrompt = () => {
   }
 };
 
+export const forceRestorePrompt = () => {
+  log.info(`forceRestorePrompt`);
+  if (promptWindow?.isDestroyed()) return;
+  if (promptWindow) {
+    promptWindow.restore();
+  }
+};
+
 export const forceShowPrompt = () => {
   log.info(`forceShowPrompt`);
   if (promptWindow?.isDestroyed()) return;
@@ -192,17 +200,16 @@ export const actualHide = () => {
   if (!isVisible()) return;
 
   if (!kitState.isMac) {
-    log.info(`Blur for Windows to restore focus to previous app`);
-    if (!kitState.kenvEnv?.KIT_NO_BLUR_BEFORE) promptWindow?.blur();
+    if (promptWindow?.isMinimized()) {
+      log.info(`🌤️ Prompt window is already minimized. Not hiding.`);
+    } else {
+      log.info(`Minimize for Windows to restore focus to previous app`);
+      if (!kitState.kenvEnv?.KIT_NO_MINIMIZE) promptWindow?.minimize();
+    }
   }
 
   log.info(`🙈 Hiding prompt window`);
   if (!kitState.kenvEnv?.KIT_NO_HIDE) promptWindow?.hide();
-
-  if (!kitState.isMac) {
-    log.info(`Blur for Windows to restore focus to previous app`);
-    if (!kitState.kenvEnv?.KIT_NO_BLUR_AFTER) promptWindow?.blur();
-  }
 };
 
 export const maybeHide = async (reason: string) => {
