@@ -337,7 +337,7 @@ export const createPromptWindow = async () => {
 
   assign(appDb, (await getAppDb()).data);
 
-  if (appDb && appDb?.disableBlurEffect) {
+  if ((appDb && appDb?.disableBlurEffect) || !kitState.isMac) {
     promptWindow = new BrowserWindow({
       ...options,
     });
@@ -2594,6 +2594,10 @@ const subScriptPath = subscribeKey(
       hideAppIfNoWindows(HideReason.NoScript);
       clearSearch();
       sendToPrompt(Channel.SET_OPEN, false);
+
+      if (kitState.isWindows) {
+        initMainBounds();
+      }
       // kitState.alwaysOnTop = false;
 
       return;
