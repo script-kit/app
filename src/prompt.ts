@@ -192,16 +192,17 @@ export const actualHide = () => {
   if (!isVisible()) return;
 
   if (!kitState.isMac) {
-    if (promptWindow?.isMinimized()) {
-      log.info(`🌤️ Prompt window is already minimized. Not hiding.`);
-    } else {
-      log.info(`Minimize for Windows to restore focus to previous app`);
-      if (!kitState.kenvEnv?.KIT_NO_MINIMIZE) promptWindow?.minimize();
-    }
+    log.info(`Blur for Windows to restore focus to previous app`);
+    if (!kitState.kenvEnv?.KIT_NO_BLUR_BEFORE) promptWindow?.blur();
   }
 
   log.info(`🙈 Hiding prompt window`);
   if (!kitState.kenvEnv?.KIT_NO_HIDE) promptWindow?.hide();
+
+  if (!kitState.isMac) {
+    log.info(`Blur for Windows to restore focus to previous app`);
+    if (!kitState.kenvEnv?.KIT_NO_BLUR_AFTER) promptWindow?.blur();
+  }
 };
 
 export const maybeHide = async (reason: string) => {
