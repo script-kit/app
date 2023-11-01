@@ -59,6 +59,7 @@ export async function getFileImports(
       !importPath.startsWith('.') &&
       !importPath.startsWith('/') &&
       !importPath.startsWith('\\') &&
+      !importPath.startsWith('node:') &&
       !projectPackages[importPath] &&
       !builtins.includes(importPath)
     ) {
