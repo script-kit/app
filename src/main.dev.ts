@@ -19,6 +19,7 @@
 // eslint-disable-next-line import/newline-after-import
 import log from 'electron-log';
 log.initialize();
+(global as any).log = log.info;
 
 import {
   app,

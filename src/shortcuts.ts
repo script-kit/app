@@ -11,9 +11,12 @@ import { UI } from '@johnlindquist/kit/cjs/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from './events';
 import {
+  actualHide,
   centerPrompt,
   focusPrompt,
+  forceHidePrompt,
   forcePromptToCenter,
+  forceShowPrompt,
   hasFocus,
   initMainBounds,
   initShowPrompt,
@@ -272,11 +275,18 @@ export const updateMainShortcut = async (filePath: string) => {
         kitState.alwaysOnTop = true;
 
         resetPrompt();
-        if (kitState.isWindows) showMainPrompt();
+        if (kitState.isWindows) {
+          showMainPrompt();
+          forceHidePrompt();
+        }
         initMainBounds();
         // Give init bounds time to finish. Difficult to test :/
         await new Promise(setImmediate);
-        if (!kitState.isWindows) showMainPrompt();
+        if (kitState.isWindows) {
+          forceShowPrompt();
+        } else {
+          showMainPrompt();
+        }
         focusPrompt();
         await runPromptProcess(getMainScriptPath(), [], {
           force: true,

@@ -172,6 +172,22 @@ export const logPromptState = () => {
   }
 };
 
+export const forceHidePrompt = () => {
+  log.info(`forceHidePrompt`);
+  if (promptWindow?.isDestroyed()) return;
+  if (promptWindow) {
+    promptWindow.hide();
+  }
+};
+
+export const forceShowPrompt = () => {
+  log.info(`forceShowPrompt`);
+  if (promptWindow?.isDestroyed()) return;
+  if (promptWindow) {
+    promptWindow.show();
+  }
+};
+
 export const actualHide = () => {
   if (!isVisible()) return;
 
