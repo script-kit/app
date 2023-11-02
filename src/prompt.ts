@@ -2423,9 +2423,15 @@ export const destroyPromptWindow = () => {
 export const hasFocus = () => promptWindow?.isFocused();
 
 export const initShowPrompt = () => {
-  if (kitState.isWindows) {
+  if (kitState.isWindows && !isVisible()) {
     try {
-      prevWindow = windowManager.getActiveWindow();
+      const currentWindow = windowManager.getActiveWindow();
+      if (currentWindow.processId !== process.pid) {
+        log.info(
+          `Storing previous window: ${currentWindow.processId} ${currentWindow.path}`
+        );
+        prevWindow = currentWindow;
+      }
     } catch (error) {
       log.error(error);
     }
