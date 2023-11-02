@@ -12,6 +12,8 @@ import {
   makeWindow,
 } from '@johnlindquist/mac-panel-window';
 // END-REMOVE-MAC
+
+import { windowManager, Window } from 'node-window-manager';
 import { PROMPT, Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -199,21 +201,20 @@ export const forceShowPrompt = () => {
 export const actualHide = () => {
   if (!isVisible()) return;
 
-  if (!kitState.isMac) {
-    if (promptWindow?.isMinimized()) {
-      log.info(`🌤️ Prompt window is already minimized. Not hiding.`);
-    } else {
-      log.info(`Minimize for Windows to restore focus to previous app`);
-      if (!kitState.kenvEnv?.KIT_NO_MINIMIZE) promptWindow?.minimize();
-    }
-  }
-
   log.info(`🙈 Hiding prompt window`);
-  if (!kitState.kenvEnv?.KIT_NO_HIDE) promptWindow?.hide();
+  promptWindow?.hide();
 };
 
+let prevWindow: Window;
 export const maybeHide = async (reason: string) => {
   if (!isVisible()) return;
+  if (kitState.isWindows && prevWindow) {
+    try {
+      prevWindow?.bringToTop();
+    } catch (error) {
+      log.error(error);
+    }
+  }
   log.info(`Attempt Hide: ${reason}`);
 
   if (
@@ -2422,6 +2423,13 @@ export const destroyPromptWindow = () => {
 export const hasFocus = () => promptWindow?.isFocused();
 
 export const initShowPrompt = () => {
+  if (kitState.isWindows) {
+    try {
+      prevWindow = windowManager.getActiveWindow();
+    } catch (error) {
+      log.error(error);
+    }
+  }
   if (kitState.isMac) {
     promptWindow.showInactive();
   } else {
