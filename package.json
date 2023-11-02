@@ -15,6 +15,7 @@
     "yarn-dedupe": "yarn-deduplicate yarn.lock",
     "install-electron-deps": "node -r @babel/register .erb/scripts/CheckNativeDep.js && npx electron-builder install-app-deps",
     "silly": "cross-env LOG_LEVEL=silly yarn start",
+    "super-silly": "cross-env ELECTRON_ENABLE_STACK_DUMPING=true ELECTRON_ENABLE_LOGGING=true LOG_LEVEL=silly yarn start",
     "start": "node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
     "sponsor": "KIT_SPONSOR=development yarn start",
     "tiktok": "KIT_SPONSOR=development KIT_TIKTOK=development yarn start",

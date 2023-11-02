@@ -13,7 +13,7 @@ import {
 } from '@johnlindquist/mac-panel-window';
 // END-REMOVE-MAC
 
-import { windowManager, Window } from 'node-window-manager';
+import { windowManager, Window } from '@johnlindquist/node-window-manager';
 import { PROMPT, Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
