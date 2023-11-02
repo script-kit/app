@@ -203,11 +203,6 @@ export const actualHide = () => {
 
   log.info(`🙈 Hiding prompt window`);
   promptWindow?.hide();
-};
-
-let prevWindow: Window;
-export const maybeHide = async (reason: string) => {
-  if (!isVisible()) return;
   if (kitState.isWindows && prevWindow) {
     try {
       prevWindow?.bringToTop();
@@ -215,6 +210,11 @@ export const maybeHide = async (reason: string) => {
       log.error(error);
     }
   }
+};
+
+let prevWindow: Window;
+export const maybeHide = async (reason: string) => {
+  if (!isVisible()) return;
   log.info(`Attempt Hide: ${reason}`);
 
   if (

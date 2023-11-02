@@ -280,6 +280,15 @@ export const updateMainShortcut = async (filePath: string) => {
         // Give init bounds time to finish. Difficult to test :/
         await new Promise(setImmediate);
 
+        if (kitState.kenvEnv.KIT_MAIN_PROMPT_WAIT) {
+          await new Promise((resolve) =>
+            setTimeout(
+              resolve,
+              parseInt(kitState.kenvEnv.KIT_MAIN_PROMPT_WAIT, 10)
+            )
+          );
+        }
+
         showMainPrompt();
 
         focusPrompt();
