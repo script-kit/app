@@ -6483,6 +6483,11 @@ dequal@^2.0.3:
   resolved "https://registry.yarnpkg.com/dequal/-/dequal-2.0.3.tgz#2644214f1997d39ed0ee0ece72335490a7ac67be"
   integrity sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==
 
+derive-valtio@0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/derive-valtio/-/derive-valtio-0.1.0.tgz#4b9fb393dfefccfef15fcbbddd745dd22d5d63d7"
+  integrity sha512-OCg2UsLbXK7GmmpzMXhYkdO64vhJ1ROUUGaTFyHjVwEdMEcTTRj7W1TxLbSBxdY8QLBPCcp66MTyaSy0RpO17A==
+
 des.js@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/des.js/-/des.js-1.1.0.tgz#1d37f5766f3bbff4ee9638e871a8768c173b81da"
@@ -11095,10 +11100,10 @@ jiti@^1.18.2:
   resolved "https://registry.yarnpkg.com/jiti/-/jiti-1.20.0.tgz#2d823b5852ee8963585c8dd8b7992ffc1ae83b42"
   integrity sha512-3TV69ZbrvV6U5DfQimop50jE9Dl6J8O1ja1dvBbMba/sZ3YBEQqJ2VZRoQPVnhlzjNtU1vaXRZVrVjU4qtm8yA==
 
-jotai-effect@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/jotai-effect/-/jotai-effect-0.2.1.tgz#9b2e75163d7182ab3347326ebd29e0f8e9c6795d"
-  integrity sha512-A7YZHD5RuYBqbYtWKKIFHO2EAwNQoxI1Ye2QPamnqVZNzkwMybPe18B7SjDfr4br0lUe76JbWEUjEQ/OWN+pTA==
+jotai-effect@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/jotai-effect/-/jotai-effect-0.2.2.tgz#3083b5a04a09dd2016a780058729481b315845f1"
+  integrity sha512-s169M00SCAqNpdsP/3fl02ESBo6oUFeL1c93VKk8uprH9wkMtJypspCadH+66qKZaH55E5PKZGIpVYyP7sGyig==
 
 jotai@2.5.0:
   version "2.5.0"
@@ -17566,11 +17571,12 @@ validate-npm-package-name@^3.0.0, validate-npm-package-name@~3.0.0:
   dependencies:
     builtins "^1.0.3"
 
-valtio@1.11.3:
-  version "1.11.3"
-  resolved "https://registry.yarnpkg.com/valtio/-/valtio-1.11.3.tgz#92aabcc79458f6af7cf3b2b18cbaef34956dcd8f"
-  integrity sha512-HL50LlM6YrYfai5H9QKSU0HJYOkghyGvZeRMCJSI6q79DWSng0PdCzT3S3M2UAcvtqBSteThqmhh6jHYyxPUTg==
+valtio@1.12.0:
+  version "1.12.0"
+  resolved "https://registry.yarnpkg.com/valtio/-/valtio-1.12.0.tgz#09e67e21d32bb0175912a9e3ec9de072e3544e9c"
+  integrity sha512-co8NkCHeY0NsL0XsL/cSICt5VhTjwZlYT8mi50dYY5thx3r3w1D15A04Lvs9WL/y/Rf98vUKY5PAAJCTLHvkJw==
   dependencies:
+    derive-valtio "0.1.0"
     proxy-compare "2.5.1"
     use-sync-external-store "1.2.0"
 

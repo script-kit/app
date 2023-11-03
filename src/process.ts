@@ -1836,12 +1836,9 @@ const kitMessageMap: ChannelHandler = {
       }
 
       // REMOVE-NUT
-      const { keyboard, Key } = await import('@nut-tree/nut-js');
+      const { keyboard } = await import('@nut-tree/nut-js');
 
-      await new Promise((resolve) => {
-        setTimeout(resolve, 25);
-      });
-
+      log.info(`RELEASING KEY`, { value });
       await keyboard.releaseKey(...(value as any));
 
       childSend(child, { channel, value });
@@ -1972,6 +1969,7 @@ const kitMessageMap: ChannelHandler = {
 
       const modifier = kitState.isMac ? Key.LeftSuper : Key.LeftControl;
       keyboard.pressKey(modifier, Key.V);
+      await new Promise(setImmediate);
       keyboard.releaseKey(modifier, Key.V);
       setTimeout(() => {
         kitState.snippet = '';

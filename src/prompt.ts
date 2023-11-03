@@ -202,7 +202,12 @@ export const actualHide = () => {
   if (!isVisible()) return;
 
   log.info(`🙈 Hiding prompt window`);
-  promptWindow?.hide();
+  if (kitState.isWindows) {
+    windowManager.hideInstantly(promptWindow?.getNativeWindowHandle());
+    promptWindow?.emit('hide');
+  } else {
+    promptWindow?.hide();
+  }
   if (kitState.isWindows && prevWindow) {
     try {
       prevWindow?.bringToTop();
@@ -1740,6 +1745,12 @@ export const resetPrompt = async () => {
   } catch (error) {
     log.error(error);
   }
+
+  if (kitState.isWindows) {
+    setTimeout(() => {
+      windowManager.forceWindowPaint(promptWindow?.getNativeWindowHandle());
+    }, 10);
+  }
 };
 
 export const attemptPreload = async (
@@ -2425,6 +2436,7 @@ export const hasFocus = () => promptWindow?.isFocused();
 export const initShowPrompt = () => {
   if (kitState.isWindows && !isVisible()) {
     try {
+      windowManager.forceWindowPaint(promptWindow?.getNativeWindowHandle());
       const currentWindow = windowManager.getActiveWindow();
       if (currentWindow.processId !== process.pid) {
         log.info(
