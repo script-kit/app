@@ -61,7 +61,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-14, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
         arch: [x64, arm64]
         node: [18.17.1]
 
@@ -260,7 +260,7 @@ jobs:
           yarn electron-builder --publish always --linux AppImage deb rpm --arm64
 
       - name: Publish mac x64
-        if: matrix.os == 'macos-14' && matrix.arch == 'x64'
+        if: matrix.os == 'macos-13' && matrix.arch == 'x64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -276,7 +276,7 @@ jobs:
           ls ./release
 
       - name: Publish mac arm64
-        if: matrix.os == 'macos-14' && matrix.arch == 'arm64'
+        if: matrix.os == 'macos-13' && matrix.arch == 'arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}

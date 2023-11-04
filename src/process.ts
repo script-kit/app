@@ -211,7 +211,9 @@ export const maybeConvertColors = async (theme: any = {}) => {
     log.info(`💄 Setting appearance to ${theme.appearance}`);
   }
 
-  if (theme.opacity) {
+  if (!kitState.isMac) {
+    theme['--opacity'] = '.96';
+  } else if (theme.opacity) {
     theme['--opacity'] = theme.opacity;
   }
 
