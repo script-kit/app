@@ -87,7 +87,6 @@
       "artifactName": "${productName}-Windows-${version}-${arch}.${ext}"
     },
     "mac": {
-      "npmRebuild": true,
       "artifactName": "${productName}-macOS-${version}-${arch}.${ext}",
       "type": "distribution",
       "hardenedRuntime": true,
