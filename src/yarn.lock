@@ -331,10 +331,10 @@
     nan "^2.17.0"
     node-addon-api "^7.0.0"
 
-"@johnlindquist/node-window-manager@^1.0.10":
-  version "1.0.10"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/node-window-manager/-/node-window-manager-1.0.10.tgz#ccf65854d8f6e9f80cf7feb3c3277f9f640e5da3"
-  integrity sha512-9euDXH/L8vNOWTo3i+Tz7jR/E73eH0+KfML3WMF4DXovGxX8esCYTRvTUOW5AYm5z5oTiWPJYhXQDrNe9km0Bw==
+"@johnlindquist/node-window-manager@^1.0.12":
+  version "1.0.12"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/node-window-manager/-/node-window-manager-1.0.12.tgz#8056d50ec50f227eb4aa7b650ee26207a2961f84"
+  integrity sha512-zfLXrZGAMUL8A7zTKoojU78Tny3kXnCQQRIkzdyPizovtStnRWgpKEwC1HGxkGA7Ht3slc/G9nl779QkOVfQEA==
   dependencies:
     bindings "^1.5.0"
     node-addon-api "7.0.0"
