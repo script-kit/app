@@ -306,26 +306,26 @@
   dependencies:
     detect-port "^1.5.1"
 
-"@johnlindquist/mac-clipboard-listener@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-clipboard-listener/-/mac-clipboard-listener-1.0.2.tgz#1b1e791ce96520b70484867ee48b8c1e2661d6c1"
-  integrity sha512-bk37QNSBybSrkJrpbydnzUQOxJJrtmxbmDUoG1efLrfS9Ln0dD37MytAoICxB3ih4vu6952DcgJEiLna1lsZQg==
+"@johnlindquist/mac-clipboard-listener@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-clipboard-listener/-/mac-clipboard-listener-1.0.3.tgz#91c2f120a19fee85b1ae5de58377c785d9c9597a"
+  integrity sha512-2K39ettK4LSgyWHFX4ctRsY/ZS7vTFxFwe2RaGzYmEg5UBePEzHWDJr+3hFl9nwZXGGMdM+EXGoXdXS/VFbfQw==
   dependencies:
     bindings "^1.5.0"
     node-addon-api "^7.0.0"
 
-"@johnlindquist/mac-frontmost@^1.0.6":
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-frontmost/-/mac-frontmost-1.0.6.tgz#7148345512d12875b9eaef1c3fa6db5632d673ff"
-  integrity sha512-ipxSKNxg6+4Rf8lDWSgUk38WQpm/GVRU7e9Llw6+7NpaElHCvUcGd9sB+CQBQ7uG4LUQpX0R8afEUyRhKvOa/w==
+"@johnlindquist/mac-frontmost@^1.0.7":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-frontmost/-/mac-frontmost-1.0.7.tgz#605f1f9552aada91274291317b568e84c218b394"
+  integrity sha512-dCNIV8IRCi0a5yiCIjc8TKy4/QObpjdOmA5r1hz0BThATet+HELo7MyQ42S8HNNiwuXeFiXZKuhnDl6pK9eUBA==
   dependencies:
     bindings "^1.5.0"
     node-addon-api "^7.0.0"
 
-"@johnlindquist/mac-panel-window@^1.0.17":
-  version "1.0.17"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-panel-window/-/mac-panel-window-1.0.17.tgz#408df31d565f432e6872501c2347c80f9d3bd7ab"
-  integrity sha512-TRKenyca6LaD6s7R5x/29dKUuTr0eF14CaKOJ/eS8oLohCmVVZHKXn6L9YhM5tjoR4rtnyEp6wS08tV7/fDIbw==
+"@johnlindquist/mac-panel-window@^1.0.19":
+  version "1.0.20"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/mac-panel-window/-/mac-panel-window-1.0.20.tgz#996b84352a128daa36f3bdc77329912fd4a86608"
+  integrity sha512-9VuXR1vF4cCzUqDjSC6RbC346UdRCWhzav1CUapIIgPZUnkkRkDWDTS1//OkY+XzR0oKbD8fVwvqxYb7mdhlIg==
   dependencies:
     bindings "^1.5.0"
     nan "^2.17.0"
