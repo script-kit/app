@@ -363,6 +363,12 @@ export const createPromptWindow = async () => {
   }
   // END-REMOVE-MAC
 
+  if (kitState.isWindows) {
+    windowManager.setWindowAsPopupWithRoundedCorners(
+      promptWindow?.getNativeWindowHandle()
+    );
+  }
+
   // promptWindow.setVisibleOnAllWorkspaces(true, {
   //   visibleOnFullScreen: true,
   //   skipTransformProcessType: true,
