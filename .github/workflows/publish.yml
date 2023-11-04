@@ -118,6 +118,11 @@ jobs:
         run: |
           echo "RELEASE_CHANNEL=$(git rev-parse --abbrev-ref HEAD)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
       - name: Download kenv
         uses: johnlindquist/kit-action@main
         with:
@@ -153,9 +158,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-
-      - name: Install Latest node-gyp Globally
-        run: npm install -g node-gyp@10.0.1
 
       - name: yarn && yarn add @johnlindquist/kit
         if: matrix.os == 'ubuntu-latest'
