@@ -13,7 +13,7 @@ import {
 } from '@johnlindquist/mac-panel-window';
 // END-REMOVE-MAC
 
-import { windowManager, Window } from '@johnlindquist/node-window-manager';
+// import { windowManager, Window } from '@johnlindquist/node-window-manager';
 import { PROMPT, Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -203,21 +203,21 @@ export const actualHide = () => {
 
   log.info(`🙈 Hiding prompt window`);
   if (kitState.isWindows) {
-    windowManager.hideInstantly(promptWindow?.getNativeWindowHandle());
+    // windowManager.hideInstantly(promptWindow?.getNativeWindowHandle());
     promptWindow?.emit('hide');
   } else {
     promptWindow?.hide();
   }
-  if (kitState.isWindows && prevWindow) {
-    try {
-      prevWindow?.bringToTop();
-    } catch (error) {
-      log.error(error);
-    }
-  }
+  // if (kitState.isWindows && prevWindow) {
+  //   try {
+  //     prevWindow?.bringToTop();
+  //   } catch (error) {
+  //     log.error(error);
+  //   }
+  // }
 };
 
-let prevWindow: Window;
+// let prevWindow: Window;
 export const maybeHide = async (reason: string) => {
   if (!isVisible()) return;
   log.info(`Attempt Hide: ${reason}`);
@@ -1746,11 +1746,11 @@ export const resetPrompt = async () => {
     log.error(error);
   }
 
-  if (kitState.isWindows) {
-    setTimeout(() => {
-      windowManager.forceWindowPaint(promptWindow?.getNativeWindowHandle());
-    }, 10);
-  }
+  // if (kitState.isWindows) {
+  //   setTimeout(() => {
+  //     windowManager.forceWindowPaint(promptWindow?.getNativeWindowHandle());
+  //   }, 10);
+  // }
 };
 
 export const attemptPreload = async (
@@ -2434,20 +2434,20 @@ export const destroyPromptWindow = () => {
 export const hasFocus = () => promptWindow?.isFocused();
 
 export const initShowPrompt = () => {
-  if (kitState.isWindows && !isVisible()) {
-    try {
-      windowManager.forceWindowPaint(promptWindow?.getNativeWindowHandle());
-      const currentWindow = windowManager.getActiveWindow();
-      if (currentWindow.processId !== process.pid) {
-        log.info(
-          `Storing previous window: ${currentWindow.processId} ${currentWindow.path}`
-        );
-        prevWindow = currentWindow;
-      }
-    } catch (error) {
-      log.error(error);
-    }
-  }
+  // if (kitState.isWindows && !isVisible()) {
+  //   try {
+  //     windowManager.forceWindowPaint(promptWindow?.getNativeWindowHandle());
+  //     const currentWindow = windowManager.getActiveWindow();
+  //     if (currentWindow.processId !== process.pid) {
+  //       log.info(
+  //         `Storing previous window: ${currentWindow.processId} ${currentWindow.path}`
+  //       );
+  //       prevWindow = currentWindow;
+  //     }
+  //   } catch (error) {
+  //     log.error(error);
+  //   }
+  // }
   if (kitState.isMac) {
     promptWindow.showInactive();
   } else {
