@@ -60,7 +60,6 @@ import { readFileSync } from 'fs';
 import { getLog, Logger, mainLog, warn } from './logs';
 import {
   setPromptAlwaysOnTop,
-  appToPrompt,
   blurPrompt,
   clearPromptCache,
   focusPrompt,
@@ -72,10 +71,7 @@ import {
   isVisible,
   maybeHide,
   onHideOnce,
-  sendToPrompt,
   setBounds,
-  setChoices,
-  setFlags,
   setFooter,
   setHint,
   setInput,
@@ -111,6 +107,8 @@ import {
   kitStore,
   debounceSetScriptTimestamp,
 } from './state';
+import { sendToPrompt, appToPrompt } from './channel';
+import { setFlags, setChoices } from './search';
 
 import { emitter, KitEvent } from './events';
 import { show, showDevTools, showInspector, showWidget } from './show';

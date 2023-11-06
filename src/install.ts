@@ -42,11 +42,8 @@ import {
   getMainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
-import {
-  destroyPromptWindow,
-  scoreAndCacheMainChoices,
-  sendToPrompt,
-} from './prompt';
+import { destroyPromptWindow, scoreAndCacheMainChoices } from './prompt';
+import { sendToPrompt } from './channel';
 import { INSTALL_ERROR, show } from './show';
 import { showError } from './main.dev.templates';
 import { mainLogPath } from './logs';

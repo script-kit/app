@@ -84,17 +84,16 @@ import { startClipboardAndKeyboardWatchers } from './tick';
 import {
   clearPromptCache,
   createPromptWindow,
-  sendToPrompt,
   setPromptData,
   setScript,
   focusPrompt,
   clearPromptTimers,
   maybeHide,
-  reload,
   isVisible,
   prepPromptForQuit,
   logPromptState,
 } from './prompt';
+import { sendToPrompt } from './channel';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';

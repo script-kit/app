@@ -38,7 +38,6 @@ import {
 } from './state';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
 import {
-  appToPrompt,
   clearPromptCacheFor,
   debugPrompt,
   setKitStateAtom,
@@ -52,6 +51,7 @@ import { processes, spawnShebang, updateTheme } from './process';
 import { compareArrays } from './helpers';
 import { cacheMainScripts } from './install';
 import { getFileImports } from './npm';
+import { appToPrompt } from './channel';
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);

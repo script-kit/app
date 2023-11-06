@@ -9,7 +9,7 @@ import fs from 'fs';
 import { kenvPath, getLogFromScriptPath } from '@johnlindquist/kit/cjs/utils';
 import { Channel } from '@johnlindquist/kit/cjs/enum';
 import { app } from 'electron';
-import { sendToPrompt } from './prompt';
+import { sendToPrompt } from './channel';
 import { stripAnsi } from './ansi';
 import { kitState, subs } from './state';
 import { TrackEvent, trackEvent } from './track';

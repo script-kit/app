@@ -26,7 +26,6 @@ import { ensureIdleProcess, getIdles, processes } from './process';
 import {
   hideAppIfNoWindows,
   isVisible,
-  sendToPrompt,
   setScript,
   attemptPreload,
   isFocused,
@@ -37,6 +36,7 @@ import { getKitScript, kitState, kitStore } from './state';
 import { pathsAreEqual } from './helpers';
 import { HideReason, Trigger } from './enums';
 import { TrackEvent, trackEvent } from './track';
+import { sendToPrompt } from './channel';
 
 app.on('second-instance', async (_event, argv) => {
   log.info('second-instance', argv);

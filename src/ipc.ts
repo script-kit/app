@@ -27,22 +27,20 @@ import { emitter, KitEvent } from './events';
 import { cachePreview, ensureIdleProcess, processes } from './process';
 
 import {
-  debounceInvokeSearch,
   focusPrompt,
-  invokeFlagSearch,
-  invokeSearch,
   maybeHide,
   attemptPreload,
   reload,
   resize,
-  sendToPrompt,
 } from './prompt';
+import { sendToPrompt } from './channel';
 import { runPromptProcess } from './kit';
 import { AppChannel, HideReason, Trigger } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
 import { kitSearch, kitState, clearSearch } from './state';
 import { noChoice } from './defaults';
+import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 
 let prevTransformedInput = '';
 const checkShortcodesAndKeywords = (rawInput: string): boolean => {

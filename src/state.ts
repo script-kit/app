@@ -1009,3 +1009,5 @@ export const getAccessibilityAuthorized = async () => {
 
   return true;
 };
+
+export const windows = new Map<number, BrowserWindow>();

@@ -8,7 +8,7 @@ import * as pty from 'node-pty';
 import { debounce } from 'lodash';
 import { appDb, kitState } from './state';
 import { AppChannel } from './enums';
-import { sendToPrompt } from './prompt';
+import { sendToPrompt } from './channel';
 import { emitter, KitEvent } from './events';
 import { TermConfig } from './types';
 import { displayError } from './error';
