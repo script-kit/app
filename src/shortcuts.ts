@@ -8,16 +8,10 @@ import { debounce } from 'lodash';
 import { getMainScriptPath, shortcutsPath } from '@johnlindquist/kit/cjs/utils';
 
 import { UI } from '@johnlindquist/kit/cjs/enum';
-import { runPromptProcess } from './kit';
+import { runPromptProcess, runScript } from './kit';
 import { emitter, KitEvent } from './events';
 import {
-  actualHide,
-  centerPrompt,
   focusPrompt,
-  forceHidePrompt,
-  forcePromptToCenter,
-  forceRestorePrompt,
-  forceShowPrompt,
   hasFocus,
   initMainBounds,
   initShowPrompt,
@@ -270,6 +264,9 @@ export const updateMainShortcut = async (filePath: string) => {
       }
 
       if (!isVisible()) {
+        if (kitState.kenvEnv?.KIT_MAIN_HOOK_PATH) {
+          runScript(kitState.kenvEnv?.KIT_MAIN_HOOK_PATH);
+        }
         log.info(`Main prompt not visible. Showing...`);
         // log.info(snapshot(kitState.kenvEnv));
         kitState.ignoreBlur = false;
@@ -279,15 +276,6 @@ export const updateMainShortcut = async (filePath: string) => {
         initMainBounds();
         // Give init bounds time to finish. Difficult to test :/
         await new Promise(setImmediate);
-
-        if (kitState.kenvEnv.KIT_MAIN_PROMPT_WAIT) {
-          await new Promise((resolve) =>
-            setTimeout(
-              resolve,
-              parseInt(kitState.kenvEnv.KIT_MAIN_PROMPT_WAIT, 10)
-            )
-          );
-        }
 
         showMainPrompt();
 

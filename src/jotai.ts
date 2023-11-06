@@ -85,20 +85,6 @@ export const placeholderAtom = atom(
   }
 );
 
-const createScoredChoice = (item: Choice): ScoredChoice => {
-  return {
-    item,
-    score: 0,
-    matches: {},
-    _: '',
-  };
-};
-
-function containsSpecialCharacters(str: string) {
-  const regex = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/g;
-  return regex.test(str);
-}
-
 export const filteredChoicesIdAtom = atom<number>(0);
 
 let choicesPreloaded = false;
@@ -119,21 +105,6 @@ export const choicesConfigAtom = atom(
       !promptData?.preview
     ) {
       s(previewHTMLAtom, closedDiv);
-    }
-
-    const key = g(promptDataAtom)?.key as string;
-    if (key) {
-      // sort by the ids stored in the localstorage key
-      const ids = JSON.parse(localStorage.getItem(key) || '[]') || [];
-
-      // TODO: Reimplement recent
-      // actualChoices = actualChoices.sort((choiceA, choiceB) => {
-      //   const aIndex = ids.indexOf(choiceA.id);
-      //   const bIndex = ids.indexOf(choiceB.id);
-      //   if (aIndex === -1) return 1;
-      //   if (bIndex === -1) return -1;
-      //   return aIndex - bIndex;
-      // });
     }
 
     s(loadingAtom, false);
@@ -215,17 +186,10 @@ export const panelHTMLAtom = atom(
 const _previewHTML = atom('');
 export const closedDiv = `<div></div>`;
 
-const throttleSetPreview = throttle(
-  (g, s, a: string) => {
-    s(_previewHTML, a);
-    resize(g, s, 'SET_PREVIEW');
-  },
-  25,
-  {
-    leading: true,
-    trailing: true,
-  }
-);
+const throttleSetPreview = throttle((g, s, a: string) => {
+  s(_previewHTML, a);
+  resize(g, s, 'SET_PREVIEW');
+}, 25);
 export const previewHTMLAtom = atom(
   (g) => {
     const html = DOMPurify.sanitize(

@@ -51,7 +51,7 @@ import {
   formatChoices,
   kenvPath,
 } from '@johnlindquist/kit/cjs/utils';
-import { getAppDb, setScriptTimestamp } from '@johnlindquist/kit/cjs/db';
+import { getAppDb } from '@johnlindquist/kit/cjs/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
@@ -1963,6 +1963,8 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
   kitSearch.input = transformedInput;
   flagSearch.input = '';
   // log.info({ transformedInput });
+  const lowerCaseInput = transformedInput?.toLowerCase();
+
   if (transformedInput === '') {
     const results = kitSearch.choices
       .filter((c) => {
@@ -2016,8 +2018,6 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
     const missGroup = [];
     let alias: Choice;
 
-    const lowerCaseInput = transformedInput?.toLowerCase();
-
     for (const choice of kitSearch.choices) {
       const lowerCaseName = choice.name?.toLowerCase();
       if ((choice as Script)?.alias === transformedInput) {
@@ -2053,6 +2053,24 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
           // log.info(`Found match last: ${c?.item?.name}`);
           matchLastGroup.push(c);
         }
+
+        // Aggressive search everything
+        // else {
+        //   const start = choice?.name?.toLowerCase()?.indexOf(lowerCaseInput);
+
+        //   if (start > -1) {
+        //     const end = start + lowerCaseInput.length;
+        //     log.info({ start, end });
+        //     const scoredChoice = createScoredChoice(choice);
+        //     scoredChoice.matches = {
+        //       slicedName: [[start, end]],
+        //       name: [[start, end]],
+        //     };
+        //     scoredChoice.score = 0.5;
+        //     includesGroup.push(scoredChoice);
+        //     // TODO
+        //   }
+        // }
       } else {
         const hide = choice?.hideWithoutInput && transformedInput === '';
         const miss = choice?.miss && !hide;
@@ -2176,16 +2194,38 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
 
     setScoredChoices(groupedResults);
   } else if (result?.length === 0) {
-    const missGroup = kitSearch.choices
-      .filter((c) => c?.miss || c?.pass || c?.info)
-      .map(createScoredChoice);
-    setScoredChoices(missGroup);
+    const scoredChoices = [];
+    for (const choice of kitSearch.choices) {
+      for (const key of kitSearch.keys) {
+        let start = -1;
+
+        const value = (choice as any)?.[key];
+        if (typeof value === 'string' && value.trim()) {
+          start = value?.toLowerCase()?.indexOf(lowerCaseInput);
+        }
+
+        if (start > -1) {
+          const end = start + lowerCaseInput.length;
+          const scoredChoice = createScoredChoice(choice);
+          scoredChoice.matches = {
+            [key]: [[start, end]],
+          };
+          scoredChoice.score = 1;
+          scoredChoices.push(scoredChoice);
+          break;
+        } else if (choice?.miss || choice?.pass || choice?.info) {
+          scoredChoices.push(createScoredChoice(choice));
+          break;
+        }
+      }
+    }
+
+    setScoredChoices(scoredChoices);
   } else {
     const allMisses = result.every((r) => r?.item?.miss && r?.item?.info);
     if (allMisses) {
       setScoredChoices(result);
     } else {
-      const lowerCaseInput = transformedInput?.toLowerCase();
       const filterConditions = result.filter((r) => {
         if (r.item.miss) return false;
         if (r.item.info) return true;

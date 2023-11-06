@@ -299,7 +299,7 @@ export const startClipboardMonitor = async () => {
                 log.error(error);
               }
             },
-            750,
+            100,
             {
               leading: true,
             }
@@ -318,7 +318,7 @@ export const startClipboardMonitor = async () => {
                 log.error(error);
               }
             },
-            750,
+            100,
             {
               leading: true,
             }
