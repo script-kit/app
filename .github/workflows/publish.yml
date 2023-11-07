@@ -185,6 +185,7 @@ jobs:
         uses: nick-invision/retry@v2
         with:
           max_attempts: 3
+          timeout_minutes: 30
           command: |
             npx kit remove-mac
             cd ./src
@@ -203,6 +204,7 @@ jobs:
         uses: nick-invision/retry@v2
         with:
           max_attempts: 3
+          timeout_minutes: 30
           command: |
             npx kit remove-tick
             npx kit remove-mac
@@ -236,6 +238,7 @@ jobs:
         uses: nick-invision/retry@v2
         with:
           max_attempts: 3
+          timeout_minutes: 30
           command: |
             npx kit remove-mac
             cd ./src
@@ -259,6 +262,7 @@ jobs:
         uses: nick-invision/retry@v2
         with:
           max_attempts: 3
+          timeout_minutes: 30
           command: |
             npx kit remove-tick
             npx kit remove-mac
@@ -285,6 +289,7 @@ jobs:
         uses: nick-invision/retry@v2
         with:
           max_attempts: 3
+          timeout_minutes: 30
           command: |
             yarn build
             yarn electron-builder --publish always --mac --x64
@@ -304,6 +309,7 @@ jobs:
         uses: nick-invision/retry@v2
         with:
           max_attempts: 3
+          timeout_minutes: 30
           command: |
             yarn build
             yarn electron-builder --publish always --mac --arm64
