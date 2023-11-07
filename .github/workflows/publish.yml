@@ -182,21 +182,38 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npx kit remove-mac
-          cd ./src
-          yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
-          Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
-          if (Test-Path node_modules\@nut-tree\libnut-darwin) { Remove-Item node_modules\@nut-tree\libnut-darwin -Recurse -Force }
-          if (Test-Path node_modules\@nut-tree\libnut-linux) { Remove-Item node_modules\@nut-tree\libnut-linux -Recurse -Force }
-          cat ./package.json
-          cd ..
-          echo "--- Done removing mac deps ---\n\n"
-          yarn build
-          yarn electron-builder --publish always --win --x64
+        uses: nick-invision/retry@v2
+        with:
+          max_attempts: 3
+          command: |
+            npx kit remove-mac
+            cd ./src
+            yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
+            Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
+            if (Test-Path node_modules\@nut-tree\libnut-darwin) { Remove-Item node_modules\@nut-tree\libnut-darwin -Recurse -Force }
+            if (Test-Path node_modules\@nut-tree\libnut-linux) { Remove-Item node_modules\@nut-tree\libnut-linux -Recurse -Force }
+            cat ./package.json
+            cd ..
+            echo "--- Done removing mac deps ---\n\n"
+            yarn build
+            yarn electron-builder --publish always --win --x64
 
       - name: Publish windows arm64
         if: matrix.os == 'windows-latest' && matrix.arch == 'arm64'
+        uses: nick-invision/retry@v2
+        with:
+          max_attempts: 3
+          command: |
+            npx kit remove-tick
+            npx kit remove-mac
+            npx kit remove-nut
+            cd ./src
+            yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
+            cat ./package.json
+            cd ..
+            yarn build
+            echo "--- Done removing mac deps ---\n\n"
+            yarn electron-builder --publish always --win --arm64
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -205,17 +222,6 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npx kit remove-tick
-          npx kit remove-mac
-          npx kit remove-nut
-          cd ./src
-          yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
-          cat ./package.json
-          cd ..
-          yarn build
-          echo "--- Done removing mac deps ---\n\n"
-          yarn electron-builder --publish always --win --arm64
 
       - name: Publish linux x64
         if: matrix.os == 'ubuntu-latest' && matrix.arch == 'x64'
@@ -227,15 +233,18 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npx kit remove-mac
-          cd ./src
-          yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
-          cat ./package.json
-          cd ..
-          echo "--- Done removing mac deps ---\n\n"
-          yarn build
-          yarn electron-builder --publish always --linux AppImage deb rpm --x64
+        uses: nick-invision/retry@v2
+        with:
+          max_attempts: 3
+          command: |
+            npx kit remove-mac
+            cd ./src
+            yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
+            cat ./package.json
+            cd ..
+            echo "--- Done removing mac deps ---\n\n"
+            yarn build
+            yarn electron-builder --publish always --linux AppImage deb rpm --x64
 
       - name: Publish linux arm64
         if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
@@ -247,17 +256,20 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npx kit remove-tick
-          npx kit remove-mac
-          npx kit remove-nut
-          cd ./src
-          yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
-          cat ./package.json
-          cd ..
-          echo "--- Done removing mac deps ---\n\n"
-          yarn build
-          yarn electron-builder --publish always --linux AppImage deb rpm --arm64
+        uses: nick-invision/retry@v2
+        with:
+          max_attempts: 3
+          command: |
+            npx kit remove-tick
+            npx kit remove-mac
+            npx kit remove-nut
+            cd ./src
+            yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
+            cat ./package.json
+            cd ..
+            echo "--- Done removing mac deps ---\n\n"
+            yarn build
+            yarn electron-builder --publish always --linux AppImage deb rpm --arm64
 
       - name: Publish mac x64
         if: matrix.os == 'macos-13' && matrix.arch == 'x64'
@@ -270,10 +282,13 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          yarn build
-          yarn electron-builder --publish always --mac --x64
-          ls ./release
+        uses: nick-invision/retry@v2
+        with:
+          max_attempts: 3
+          command: |
+            yarn build
+            yarn electron-builder --publish always --mac --x64
+            ls ./release
 
       - name: Publish mac arm64
         if: matrix.os == 'macos-13' && matrix.arch == 'arm64'
@@ -286,7 +301,10 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          yarn build
-          yarn electron-builder --publish always --mac --arm64
-          ls ./release
+        uses: nick-invision/retry@v2
+        with:
+          max_attempts: 3
+          command: |
+            yarn build
+            yarn electron-builder --publish always --mac --arm64
+            ls ./release
