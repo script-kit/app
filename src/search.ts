@@ -1,4 +1,4 @@
-import { PROMPT, Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
+import { PROMPT, Channel, UI } from '@johnlindquist/kit/cjs/enum';
 import { Choice, Script, FlagsWithKeys } from '@johnlindquist/kit/types/core';
 
 import log from 'electron-log';
@@ -9,11 +9,10 @@ import {
   defaultGroupNameClassName,
   groupChoices,
   formatChoices,
-  kenvPath,
 } from '@johnlindquist/kit/cjs/utils';
 
 import { quickScore, createConfig, QuickScore } from 'quick-score';
-import { AppChannel, HideReason } from './enums';
+import { AppChannel } from './enums';
 import { kitState, kitSearch, flagSearch } from './state';
 import { ScoredChoice } from './types';
 import { createScoredChoice } from './helpers';

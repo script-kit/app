@@ -15,8 +15,8 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/core-js": "^2.5.7",
-    "@types/regenerator-runtime": "^0.13.3"
+    "@types/core-js": "^2.5.8",
+    "@types/regenerator-runtime": "^0.13.4"
   },
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",

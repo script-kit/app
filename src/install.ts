@@ -42,7 +42,11 @@ import {
   getMainScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 
-import { destroyPromptWindow, scoreAndCacheMainChoices } from './prompt';
+import {
+  cacheMainPreview,
+  destroyPromptWindow,
+  scoreAndCacheMainChoices,
+} from './prompt';
 import { sendToPrompt } from './channel';
 import { INSTALL_ERROR, show } from './show';
 import { showError } from './main.dev.templates';
@@ -619,13 +623,23 @@ export const installKitInKenv = async () => {
 
 export const cacheMainScripts = debounce(async () => {
   try {
-    const receiveScripts = (data: { value: Script[] }) => {
-      const { value: scripts } = data;
+    const receiveScripts = ({
+      scripts,
+      preview,
+    }: {
+      scripts: Script[];
+      preview: string;
+    }) => {
+      // log.info({ scripts, preview });
 
       if (Array.isArray(scripts) && scripts.length > 0) {
         log.info(`Caching scripts...`, scripts.length);
+        log.info(`Caching preview`, preview);
         preloadChoicesMap.set(getMainScriptPath(), scripts);
         log.info(`✉️ Sending scripts to prompt...`);
+        if (preview) {
+          cacheMainPreview(preview);
+        }
         if (scripts) {
           scoreAndCacheMainChoices(scripts);
         }
@@ -637,7 +651,7 @@ export const cacheMainScripts = debounce(async () => {
       forkOptions
     );
 
-    child.on('message', receiveScripts);
+    child.once('message', receiveScripts);
   } catch (error) {
     log.warn(`Failed to cache main scripts at startup`, error);
   }

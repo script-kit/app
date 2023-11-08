@@ -1787,7 +1787,12 @@ const cacheMainChoices = (choices: ScoredChoice[]) => {
     `Most recent 3:`,
     choices.slice(1, 4).map((c) => c?.item?.name)
   );
+
   appToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
+};
+
+export const cacheMainPreview = (preview: string) => {
+  appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, preview);
 };
 
 export const scoreAndCacheMainChoices = (scripts: Script[]) => {
