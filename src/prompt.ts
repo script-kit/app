@@ -476,12 +476,6 @@ export const createPromptWindow = async () => {
     });
   });
 
-  // emitter.on(KitEvent.TermExited, (value: string) => {
-  //   appToPrompt(AppChannel.TERM_EXIT, value);
-  // });
-
-  promptWindow?.setMaxListeners(1);
-
   const showEmoji = () => {
     kitState.emojiActive = true;
     log.info(`Using built-in emoji`);
@@ -602,8 +596,6 @@ export const createPromptWindow = async () => {
     kitState.promptHidden = false;
     // kitState.allowBlur = false;
   });
-
-  promptWindow?.webContents?.setMaxListeners(1);
 
   promptWindow?.webContents?.on(
     'did-fail-load',

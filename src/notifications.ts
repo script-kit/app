@@ -19,11 +19,6 @@ export const createNotification = async () => {
     },
   });
 
-  // promptWindow.webContents.once('did-finish-load', () => {
-  //   promptWindow?.webContents.closeDevTools();
-  // });
-
-  notificationWindow?.setMaxListeners(1);
   if (notificationWindow && !notificationWindow.isDestroyed()) {
     notificationWindow?.webContents.on(
       'before-input-event',
