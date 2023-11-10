@@ -25,6 +25,7 @@ import {
   getMainScriptPath,
   isFile,
   getLogFromScriptPath,
+  resolveToScriptPath,
 } from '@johnlindquist/kit/cjs/utils';
 import { getAppDb, getScriptsDb } from '@johnlindquist/kit/cjs/db';
 import { getAssetPath } from './assets';
@@ -89,20 +90,6 @@ export const openMenu = async (event?: KeyboardEvent) => {
     //     icon: menuIcon('red'),
     //   };
     // }
-
-    const runScript =
-      (
-        scriptPath: string,
-        args: string[] = [],
-        options = { force: false, trigger: Trigger.App }
-      ) =>
-      () => {
-        emitter.emit(KitEvent.RunPromptProcess, {
-          scriptPath,
-          args,
-          options,
-        });
-      };
 
     const notifyItems: MenuItemConstructorOptions[] = [];
 
@@ -489,16 +476,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
       ...updateItems,
       ...notifyItems,
       ...authItems,
-      {
-        label: `Open Kit.app Prompt`,
-        // icon: getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`),
-        icon: menuIcon('open'),
-        click: runScript(getMainScriptPath(), [], {
-          force: true,
-          trigger: Trigger.Tray,
-        }),
-        accelerator: kitState.mainShortcut,
-      },
+      createOpenMain(),
       {
         type: 'separator',
       },
@@ -570,7 +548,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
       },
     ]);
     contextMenu.once('menu-will-close', () => {
-      if (!kitState.starting) {
+      if (!kitState.starting && kitState.trayScripts.length === 0) {
         kitState.status = {
           status: 'default',
           message: '',
@@ -616,9 +594,35 @@ const menuIcon = (name: iconType) => {
 
 export const getTrayIcon = () => trayIcon('default');
 
+const runScript =
+  (
+    scriptPath: string,
+    args: string[] = [],
+    options = { force: false, trigger: Trigger.App }
+  ) =>
+  () => {
+    emitter.emit(KitEvent.RunPromptProcess, {
+      scriptPath,
+      args,
+      options,
+    });
+  };
+
+const createOpenMain = () => {
+  return {
+    label: `Open Kit.app Prompt`,
+    // icon: getAssetPath(`IconTemplate${isWin ? `-win` : ``}.png`),
+    icon: menuIcon('open'),
+    click: runScript(getMainScriptPath(), [], {
+      force: true,
+      trigger: Trigger.Tray,
+    }),
+    accelerator: kitState.mainShortcut,
+  };
+};
+
 export const setupTray = async (checkDb = false, state: Status = 'default') => {
   log.info(`🎨 Creating tray...`);
-
   // subscribeKey(kitState, 'isDark', () => {
   //   tray?.setImage(trayIcon('default'));
   //   kitState.notifyAuthFail = false;
@@ -717,6 +721,8 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
     try {
       log.info(`☑ Enable tray`);
 
+      tray.removeAllListeners('mouse-down');
+      tray.removeAllListeners('right-click');
       tray.on('mouse-down', openMenu);
       tray.on('right-click', openMenu);
     } catch (error) {
@@ -755,9 +761,11 @@ subs.push(subTray, subReady);
 
 let leftClickOverride: null | ((event: any) => void) = null;
 export const setTrayMenu = async (scriptPaths: string[]) => {
+  kitState.trayScripts = scriptPaths;
   if (!scriptPaths?.length) {
     if (leftClickOverride) {
-      tray?.off('mouse-down', leftClickOverride);
+      tray?.removeAllListeners('mouse-down');
+      tray?.removeAllListeners('menu-will-close');
       tray?.on('mouse-down', openMenu);
       leftClickOverride = null;
       tray?.setContextMenu(null);
@@ -765,19 +773,37 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
     return;
   }
 
-  const db = await getScriptsDb();
-  const scriptMenuItems = [];
+  const scriptMenuItems: MenuItemConstructorOptions[] = [];
   for (const scriptPath of scriptPaths) {
-    const script = db.scripts.find((s) => s.filePath === scriptPath);
-    if (script) {
-      scriptMenuItems.push({
-        label: script.name,
-        click: () => {
-          emitter.emit(KitEvent.RunPromptProcess, script.filePath);
-        },
-      });
-    }
+    scriptMenuItems.push({
+      label: scriptPath,
+      click: () => {
+        emitter.emit(KitEvent.RunPromptProcess, {
+          scriptPath: resolveToScriptPath(scriptPath, kenvPath()),
+          args: [],
+          options: {
+            force: true,
+            trigger: Trigger.Menu,
+          },
+        });
+      },
+    });
   }
+
+  scriptMenuItems.push({
+    type: 'separator',
+  });
+
+  scriptMenuItems.push(createOpenMain());
+  scriptMenuItems.push({
+    label: 'Reset Menu',
+    click: () => {
+      kitState.trayOpen = false;
+      tray?.setImage(getTrayIcon());
+      tray?.setTitle('');
+      setTrayMenu([]);
+    },
+  });
 
   if (scriptMenuItems.length) {
     const cMenu = Menu.buildFromTemplate(scriptMenuItems);
@@ -787,7 +813,7 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
       kitState.trayOpen = true;
     };
 
-    tray?.off('mouse-down', openMenu);
+    tray?.removeAllListeners('mouse-down');
     tray?.on('mouse-down', leftClickOverride);
   }
 };

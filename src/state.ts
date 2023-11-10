@@ -308,6 +308,7 @@ const initState = {
   logLevel: 'info' as LogLevel,
   preventResize: false,
   trayOpen: false,
+  trayScripts: [] as string[],
   prevScriptPath: ``,
   promptUI: UI.arg,
   promptHasPreview: true,

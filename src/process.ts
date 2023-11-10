@@ -1517,9 +1517,9 @@ const kitMessageMap: ChannelHandler = {
     const notification = new Notification(data.value);
     notification.show();
   },
-  SET_TRAY: (data) => {
-    log.info(JSON.stringify(data));
-    const { label, scripts } = data?.value;
+  SET_TRAY: onChildChannel(async (_, { value }) => {
+    log.info(JSON.stringify(value));
+    const { label, scripts } = value;
     if (label) {
       const image = nativeImage.createFromDataURL(``);
       getTray()?.setImage(image);
@@ -1534,7 +1534,7 @@ const kitMessageMap: ChannelHandler = {
     } else {
       setTrayMenu([]);
     }
-  },
+  }),
   GET_EDITOR_HISTORY: onChildChannel(() => {
     sendToPrompt(Channel.GET_EDITOR_HISTORY);
   }),

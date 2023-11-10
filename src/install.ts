@@ -633,8 +633,10 @@ export const cacheMainScripts = debounce(async () => {
       // log.info({ scripts, preview });
 
       if (Array.isArray(scripts) && scripts.length > 0) {
-        log.info(`Caching scripts...`, scripts.length);
-        log.info(`Caching preview`, preview);
+        log.info(`Caching scripts and preview...`, {
+          scripts: scripts?.length,
+          preview: preview?.length,
+        });
         preloadChoicesMap.set(getMainScriptPath(), scripts);
         log.info(`✉️ Sending scripts to prompt...`);
         if (preview) {

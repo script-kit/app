@@ -2911,7 +2911,13 @@ export const cachedMainScoredChoicesAtom = atom(
   }
 );
 
-export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({});
+export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({
+  ui: UI.arg,
+  input: '',
+  footerClassName: 'hidden',
+  headerClassName: 'hidden',
+  placeholder: 'Script Kit',
+});
 export const cachedMainShortcutsAtom = atom<Shortcut[]>([]);
 export const cachedMainPreviewAtom = atom<string>('');
 export const cachedMainFlagsAtom = atom<FlagsOptions>({});
