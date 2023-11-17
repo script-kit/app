@@ -657,8 +657,8 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
       const message = kitState.installing
         ? 'Installing Kit SDK...'
         : kitState.updateInstalling
-        ? 'Applying Update to SDK. Please Wait...'
-        : 'Starting...';
+          ? 'Applying Update to SDK. Please Wait...'
+          : 'Starting...';
 
       kitState.status = {
         status: 'busy',
@@ -809,6 +809,13 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
     const cMenu = Menu.buildFromTemplate(scriptMenuItems);
 
     leftClickOverride = () => {
+      if (kitState.isLinux) {
+        runScript(getMainScriptPath(), [], {
+          force: true,
+          trigger: Trigger.Tray,
+        });
+        return;
+      }
       tray?.popUpContextMenu(cMenu);
       kitState.trayOpen = true;
     };

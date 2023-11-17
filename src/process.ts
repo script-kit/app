@@ -170,8 +170,8 @@ export const maybeConvertColors = async (theme: any = {}) => {
     (!kitState.isMac
       ? '1'
       : nativeTheme.shouldUseDarkColors
-      ? scriptKitTheme.opacity
-      : scriptKitLightTheme.opacity);
+        ? scriptKitTheme.opacity
+        : scriptKitLightTheme.opacity);
 
   log.info(`🫥 Theme opacity: ${theme.opacity}`);
 
@@ -466,7 +466,7 @@ const handleChannelMessage = <K extends keyof ChannelMap>(
   if (kitState.allowQuit)
     return warn(`⚠️  Tried to send data to ${data.channel} after quit`);
 
-  log.verbose(`toProcess: ${data.channel}`);
+  log.silly(`toProcess: ${data.channel}`);
   const processInfo = processes.getByPid(data?.pid);
   const isWidgetMessage = data.channel.includes('WIDGET');
 
@@ -1259,6 +1259,7 @@ const kitMessageMap: ChannelHandler = {
         'command',
       ];
       if (typeof value?.keyword === 'string') {
+        log.info(`>>>>>>>>>>>>>>>>> SET_PROMPT_DATA keyword clear`);
         kitSearch.keywords.clear();
         kitSearch.input = '';
         kitSearch.keyword = value?.keyword;
@@ -1314,7 +1315,10 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_CHOICES: onChildChannelOverride(async ({ child }, { channel, value }) => {
-    log.info(`SET_CHOICES preloaded ${kitState.preloaded ? 'true' : 'false'}`);
+    log.info(
+      `SET_CHOICES preloaded ${kitState.preloaded ? 'true' : 'false'} ${value
+        .choices?.length} choices`
+    );
     if (![UI.arg, UI.hotkey].includes(kitState.ui)) {
       log.info(`⛔️ UI changed before choices sent. Skipping SET_CHOICES`);
 
@@ -1340,7 +1344,7 @@ const kitMessageMap: ChannelHandler = {
 
     const { choices, skipInitialSearch, inputRegex, generated } = value;
 
-    // log.info({
+    // log.silly({
     //   skipInitialSearch: Boolean(skipInitialSearch) ? 'true' : 'false',
     //   inputRegex: Boolean(inputRegex) ? 'true' : 'false',
     //   generated: Boolean(generated) ? 'true' : 'false',

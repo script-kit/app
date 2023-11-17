@@ -38,7 +38,7 @@ import { runPromptProcess } from './kit';
 import { AppChannel, HideReason, Trigger } from './enums';
 import { ResizeData, Survey } from './types';
 import { getAssetPath } from './assets';
-import { kitSearch, kitState, clearSearch } from './state';
+import { kitSearch, kitState, clearSearch, flagSearch } from './state';
 import { noChoice } from './defaults';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 
@@ -100,6 +100,7 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
       kitSearch.input = kitSearch.keyword;
     }
     kitSearch.keyword = keyword;
+    log.info(`>>>>>>>>>>>>>>>>>>> ${keyword} inputRegex cleared`);
     kitSearch.inputRegex = undefined;
     log.info(`🔑 ${keyword} cleared`);
     kitSearch.keywordCleared = true;
@@ -124,6 +125,7 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
     }
 
     const keyword = rawInput.split(' ')?.[0].trim();
+    log.silly({ keyword, kitSearchKeyword: kitSearch.keyword });
     if (keyword !== kitSearch.keyword) {
       const keywordChoice = kitSearch.keywords.get(keyword);
       if (keywordChoice) {
@@ -414,7 +416,7 @@ ${data.error}
           }
           log.verbose(`Allow choice focus: ${kitState.ui}`);
         }
-        log.verbose(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
+        log.silly(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
 
         if (channel === Channel.INPUT) {
           const input = message.state.input as string;
@@ -433,6 +435,7 @@ ${data.error}
           if (isArg) {
             const shouldSearch = checkShortcodesAndKeywords(input);
             const isFilter = message.state.mode === Mode.FILTER;
+            log.info({ isFilter, shouldSearch, hasFlag });
             if (shouldSearch && isFilter) {
               if (hasFlag) {
                 invokeFlagSearch(input);
@@ -453,6 +456,10 @@ ${data.error}
             if (child?.channel && child.connected) child?.send(message);
             return;
           }
+        }
+
+        if (channel === Channel.ON_MENU_TOGGLE && flagSearch.input) {
+          invokeFlagSearch('');
         }
 
         if (channel === Channel.ESCAPE) {

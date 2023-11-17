@@ -231,7 +231,9 @@ export default function Input() {
   return (
     <div
       key="input"
-      className={`flex flex-row ${footerHidden && '-mt-px'} relative`}
+      className={`flex flex-row ${
+        footerHidden && '-mt-px'
+      } max-w-screen relative`}
       style={{
         height: inputHeight || PROMPT.INPUT.HEIGHT.SM,
       }}
@@ -246,7 +248,7 @@ export default function Input() {
         {name} - {description}
       </div> */}
       <div
-        className="max-w-full flex-1"
+        className="max-w-screen flex-1"
         style={{
           WebkitAppRegion: 'drag',
           WebkitUserSelect: 'none',

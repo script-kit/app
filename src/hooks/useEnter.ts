@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { UI } from '@johnlindquist/kit/cjs/enum';
@@ -17,6 +18,7 @@ import {
   hasFocusedChoiceAtom,
   selectedChoicesAtom,
   toggleSelectedChoiceAtom,
+  flaggedChoiceValueAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 
@@ -28,6 +30,7 @@ export default () => {
   const [promptData] = useAtom(promptDataAtom);
   const [panelHTML] = useAtom(panelHTMLAtom);
   const [, setFlag] = useAtom(focusedFlagValueAtom);
+  const [flagValue] = useAtom(flaggedChoiceValueAtom);
   const [cmd] = useAtom(cmdAtom);
   const [ui] = useAtom(uiAtom);
   const emitEnter = useSetAtom(enterPressedAtom);
@@ -70,7 +73,7 @@ export default () => {
         return;
       }
 
-      if (promptData && promptData?.multiple) {
+      if (promptData && promptData?.multiple && !flagValue) {
         toggleSelectedChoice(focusedChoice?.id as string);
         return;
       }
@@ -95,6 +98,7 @@ export default () => {
       focusedChoice,
       hasFocusedChoice,
       toggleSelectedChoice,
+      flagValue,
     ]
   );
 };

@@ -13,12 +13,13 @@ export default function TopBar() {
     return () => {
       controls.stop();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <div
       className={`
-      pointer-events-none absolute top-0 left-0 -mt-px h-0.75 w-screen
-
+      pointer-events-none absolute left-0 top-0 -mt-px h-0.75 w-full
+      overflow-hidden
       `}
     >
       <motion.div
@@ -30,7 +31,7 @@ export default function TopBar() {
 
           duration: window.innerWidth < 400 ? 1.5 : 2.5,
         }}
-        className="absolute top-0 left-0 h-full w-1/4
+        className="absolute left-0 top-0 h-full w-1/4
         bg-gradient-to-r
         from-transparent via-primary to-transparent
         "

@@ -1424,6 +1424,7 @@ export const setMode = (mode: Mode) => {
 };
 
 export const setInput = (input: string) => {
+  log.info(`>>>>>>>>>>>>>>>>>> clearing keywords`);
   kitSearch.keywords.clear();
   kitSearch.keyword = '';
   kitSearch.input = input;
@@ -1713,6 +1714,7 @@ export const resetPrompt = async () => {
       windowManager.forceWindowPaint(promptWindow?.getNativeWindowHandle());
     }, 10);
   }
+  initMainBounds();
 };
 
 export const attemptPreload = async (
@@ -1735,6 +1737,10 @@ export const attemptPreload = async (
   if (isMainScript) {
     // log.info(`🏋️‍♂️ Reset main: ${promptScriptPath}`);
   } else if (preloadPromptDataMap.has(promptScriptPath)) {
+    if (init) {
+      initBounds(promptScriptPath, show);
+    }
+
     log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
     // kitState.preloaded = true;
 
@@ -1764,10 +1770,6 @@ export const attemptPreload = async (
             : promptData.height,
       };
     }
-
-    if (init) {
-      initBounds(promptScriptPath, show);
-    }
   }
 
   log.info(`end of attemptPreload`);
@@ -1790,7 +1792,7 @@ export const cacheMainPreview = (preview: string) => {
 export const scoreAndCacheMainChoices = (scripts: Script[]) => {
   const results = scripts
     .filter((c) => {
-      if (c?.miss || c?.pass || c?.hideWithoutInput) return false;
+      if (c?.miss || c?.pass || c?.hideWithoutInput || c?.exclude) return false;
 
       return true;
     })

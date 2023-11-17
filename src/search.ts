@@ -21,15 +21,14 @@ import { appToPrompt, sendToPrompt } from './channel';
 export const invokeSearch = (rawInput: string, reason = 'normal') => {
   if (kitState.ui !== UI.arg) return;
 
-  // log.info(`Search ${reason}: ${rawInput}`);
-  // log.info({ inputRegex: kitSearch.inputRegex });
+  log.silly({ inputRegex: JSON.stringify(kitSearch.inputRegex) });
   let transformedInput = rawInput;
   if (kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
     transformedInput = rawInput.match(kitSearch.inputRegex)?.[0] || '';
-    // log.info(
-    //   `Transformed input: ${transformedInput} using regex ${kitSearch.inputRegex}`
-    // );
+    log.silly(
+      `Transformed input: ${transformedInput} using regex ${kitSearch.inputRegex}`
+    );
   }
 
   if (kitSearch.choices.length === 0) {
@@ -72,6 +71,8 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
   const result = (kitSearch?.qs as QuickScore<Choice>)?.search(
     transformedInput
   ) as ScoredChoice[];
+
+  log.info({ result: result.length });
 
   if (kitSearch.hasGroup) {
     // Build a map for constant time access
@@ -343,6 +344,7 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
 export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
 export const invokeFlagSearch = (input: string) => {
+  log.info(`Flag search: ${input} <<<`);
   flagSearch.input = input;
   if (input === '') {
     setScoredFlags(
@@ -499,7 +501,7 @@ export const setShortcodes = (choices: Choice[]) => {
     }
 
     if (choice?.keyword) {
-      // log.info(`🗝 Found keyword ${choice.keyword}`);
+      log.info(`🗝 Found keyword ${choice.keyword}`);
       kitSearch.keywords.set(choice.keyword.toLowerCase(), choice);
     }
 
@@ -530,6 +532,10 @@ export const setChoices = (
     generated,
   }: { preload: boolean; skipInitialSearch?: boolean; generated?: boolean }
 ) => {
+  log.silly(`setChoices!!!!!!!!!!`, {
+    isArray: Array.isArray(choices),
+    length: choices?.length,
+  });
   sendToPrompt(
     Channel.SET_SELECTED_CHOICES,
     (choices || []).filter((c: Choice) => c?.selected)
@@ -544,13 +550,15 @@ export const setChoices = (
   }
 
   if (generated) {
-    log.info(`📦 ${kitState.pid} Generated choices: ${choices.length}`);
+    log.silly(`📦 ${kitState.pid} Generated choices: ${choices.length}`);
 
     setScoredChoices(choices.map(createScoredChoice));
     return;
   }
 
-  log.info(`📦 ${kitState.pid} Choices: ${choices.length} preload: ${preload}`);
+  log.silly(
+    `📦 ${kitState.pid} Choices: ${choices.length} preload: ${preload}`
+  );
   kitSearch.choices = choices.filter((c) => !c?.exclude);
   kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
   function scorer(string: string, query: string, matches: number[][]) {
@@ -581,16 +589,16 @@ export const setChoices = (
 
   setShortcodes(choices);
   const input = skipInitialSearch ? '' : kitSearch.input;
-  // log.info({
-  //   preload: preload ? 'true' : 'false',
-  //   skipInitialSearch: skipInitialSearch ? 'true' : 'false',
-  // });
+  log.silly({
+    preload: preload ? 'true' : 'false',
+    skipInitialSearch: skipInitialSearch ? 'true' : 'false',
+  });
   invokeSearch(input, 'setChoices');
 };
 
 export const setScoredChoices = (choices: ScoredChoice[]) => {
   if (choices?.length) {
-    // log.info(`🎼 Scored choices count: ${choices.length}`);
+    log.silly(`🎼 Scored choices count: ${choices.length}`);
   }
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 
@@ -608,6 +616,6 @@ export const setScoredChoices = (choices: ScoredChoice[]) => {
 };
 
 export const setScoredFlags = (choices: ScoredChoice[]) => {
-  // log.info(`🎼 Scored flags count: ${choices.length}`);
+  log.silly(`🎼 Scored flags count: ${choices.length}`);
   sendToPrompt(Channel.SET_SCORED_FLAGS, choices);
 };

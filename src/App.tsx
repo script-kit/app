@@ -553,7 +553,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
             `}
             >
               <PanelChild minSize={25}>
-                <div className="h-full">
+                <div className="min-h-1 h-full">
                   <ToastContainer
                     pauseOnFocusLoss={false}
                     position="bottom-center"
