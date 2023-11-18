@@ -62,6 +62,7 @@ import {
   preloadPreviewMap,
   clearSearch,
   windows,
+  clearFlagSearch,
 } from './state';
 import { EMOJI_HEIGHT, EMOJI_WIDTH, MIN_WIDTH, ZOOM_LEVEL } from './defaults';
 import { ResizeData, ScoredChoice } from './types';
@@ -1524,6 +1525,7 @@ export const preloadPromptData = async (promptData: PromptData) => {
 };
 
 export const setPromptData = async (promptData: PromptData) => {
+  clearFlagSearch();
   kitSearch.shortcodes.clear();
   kitSearch.triggers.clear();
   if (promptData?.hint) {

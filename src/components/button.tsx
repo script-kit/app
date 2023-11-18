@@ -169,6 +169,7 @@ function ChoiceButton({
     }) as keyof ScriptMetadata;
 
     setModifierDescription((choice as unknown as ScriptMetadata)?.[modifier]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modifiers]);
 
   const [isScrolling] = useAtom(isScrollingAtom);
@@ -200,7 +201,11 @@ function ChoiceButton({
       }}
       className={`
       text-text-base
-      ${index === buttonIndex && !choice?.disableSubmit ? `bg-ui-bg` : ``}
+      ${
+        index === buttonIndex && !choice?.disableSubmit
+          ? choice?.focusedClassName || `bg-ui-bg`
+          : ``
+      }
         flex
         h-16
         w-full
@@ -219,7 +224,7 @@ function ChoiceButton({
             ? `opacity-100`
             : `opacity-90 ${flaggedValue ? 'opacity-30' : ''}`
         }
-      }`}
+      `}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
     >
@@ -293,15 +298,14 @@ function ChoiceButton({
                   scoredChoice?.matches?.slicedName,
                   `bg-primary bg-opacity-5 text-primary`
                 )}
+                {choice?.nameHTML && parse(choice?.nameHTML)}
               </div>
               {/* Description */}
               {(choice?.focused ||
                 choice?.description ||
                 modifierDescription) && (
                 <div
-                  className={`truncate pb-1 ${buttonDescriptionFontSize} ${
-                    choice?.descriptionClassName
-                  }${
+                  className={`truncate pb-1 ${buttonDescriptionFontSize} ${choice?.descriptionClassName}${
                     index === buttonIndex
                       ? ` text-primary opacity-100 `
                       : ` opacity-60 `
@@ -311,12 +315,12 @@ function ChoiceButton({
                   (index === buttonIndex && choice?.focused)
                     ? choice?.focused
                     : shouldHighlightDescription
-                    ? highlight(
-                        choice.description || '',
-                        scoredChoice?.matches?.description,
-                        `bg-primary bg-opacity-5 text-primary`
-                      )
-                    : choice?.description}
+                      ? highlight(
+                          choice.description || '',
+                          scoredChoice?.matches?.description,
+                          `bg-primary bg-opacity-5 text-primary`
+                        )
+                      : choice?.description}
                 </div>
               )}
             </div>
@@ -333,21 +337,21 @@ function ChoiceButton({
                   ? choice.kenv
                   : choice.tag || choice.keyword || choice.trigger) && (
                   <div
-                    className={`mx-1 font-mono text-xxs ${
-                      choice?.tagClassName
-                    } ${index === buttonIndex ? `opacity-70` : `opacity-40`}`}
+                    className={`mx-1 font-mono text-xxs ${choice?.tagClassName} ${
+                      index === buttonIndex ? `opacity-70` : `opacity-40`
+                    }`}
                   >
                     {(choice?.pass || isRecent) &&
                     choice?.kenv &&
                     choice?.kenv !== '.kit'
                       ? choice.kenv
                       : choice.tag
-                      ? highlight(
-                          choice.tag,
-                          scoredChoice?.matches?.tag,
-                          'bg-text-base bg-opacity-0 text-primary text-opacity-100'
-                        )
-                      : ''}
+                        ? highlight(
+                            choice.tag,
+                            scoredChoice?.matches?.tag,
+                            'bg-text-base bg-opacity-0 text-primary text-opacity-100'
+                          )
+                        : ''}
                   </div>
                 )}
 

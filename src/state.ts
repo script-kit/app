@@ -975,6 +975,13 @@ export const flagSearch = {
   qs: null as null | QuickScore<Choice>,
 };
 
+export const clearFlagSearch = () => {
+  flagSearch.input = '';
+  flagSearch.choices = [];
+  flagSearch.hasGroup = false;
+  flagSearch.qs = null;
+};
+
 export const clearSearch = () => {
   if (kitState.kenvEnv?.KIT_NO_CLEAR_SEARCH) return;
 

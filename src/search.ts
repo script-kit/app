@@ -72,8 +72,6 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
     transformedInput
   ) as ScoredChoice[];
 
-  log.info({ result: result.length });
-
   if (kitSearch.hasGroup) {
     // Build a map for constant time access
     const resultMap = new Map();
@@ -615,7 +613,7 @@ export const setScoredChoices = (choices: ScoredChoice[]) => {
   }
 };
 
-export const setScoredFlags = (choices: ScoredChoice[]) => {
+export const setScoredFlags = (choices: ScoredChoice[] = []) => {
   log.silly(`🎼 Scored flags count: ${choices.length}`);
   sendToPrompt(Channel.SET_SCORED_FLAGS, choices);
 };

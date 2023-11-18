@@ -435,7 +435,6 @@ ${data.error}
           if (isArg) {
             const shouldSearch = checkShortcodesAndKeywords(input);
             const isFilter = message.state.mode === Mode.FILTER;
-            log.info({ isFilter, shouldSearch, hasFlag });
             if (shouldSearch && isFilter) {
               if (hasFlag) {
                 invokeFlagSearch(input);

@@ -11,6 +11,11 @@ delete colors.warmGray;
 
 const colorVar = (name, opacityName) => (v) => {
   const { opacityVariable, opacityValue } = v;
+
+  if (typeof opacityName === 'number') {
+    return `rgba(var(--color-${name}), ${opacityName})`;
+  }
+
   if (opacityName !== undefined) {
     return `rgba(var(--color-${name}), var(--${opacityName}))`;
   }
@@ -88,6 +93,9 @@ module.exports = {
       ...colors,
       gray: colors.coolGray,
       primary: colorVar('primary'),
+      'primary-25': colorVar('primary', 0.25),
+      'primary-50': colorVar('primary', 0.5),
+      'primary-75': colorVar('primary', 0.75),
       secondary: colorVar('secondary'),
       'ui-bg': colorVar('secondary', 'ui-bg-opacity'),
       'ui-border': colorVar('secondary', 'ui-border-opacity'),
@@ -109,6 +117,8 @@ module.exports = {
         'spin-slow': 'spin 3s linear infinite',
 
         'pulse-green-glow': 'pulse-green-glow 1.5s infinite ease-in-out',
+        // pulse primary glow
+        'pulse-primary-glow': 'pulse-primary-glow 1.5s infinite ease-in-out',
       },
       backgroundImage: (theme) => ({
         'random-shapes': "url('/src/svg/ui/random-shapes.svg')",

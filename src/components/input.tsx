@@ -50,6 +50,7 @@ import {
   kitStateAtom,
   channelAtom,
   shouldActionButtonShowOnInputAtom,
+  focusedChoiceAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -108,6 +109,7 @@ export default function Input() {
   const user = useAtomValue(userAtom);
   const kitState = useAtomValue(kitStateAtom);
   const channel = useAtomValue(channelAtom);
+  const focusedChoice = useAtomValue(focusedChoiceAtom);
 
   useEffect(() => {
     setInputFocus(Math.random());
@@ -377,7 +379,7 @@ export default function Input() {
                 })}
             </div>
 
-            {shouldActionButtonShowOnInput && (
+            {shouldActionButtonShowOnInput && !focusedChoice?.ignoreFlags && (
               <>
                 <div className="options-container flex flex-row">
                   <OptionsButton key="options-button" />
