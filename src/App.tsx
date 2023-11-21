@@ -553,17 +553,21 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
             `}
             >
               <PanelChild minSize={25}>
-                <div className="min-h-1 h-full">
+                <div className="min-h-1 h-full overflow-x-hidden">
                   <ToastContainer
+                    className="-mt-3 -ml-3"
                     pauseOnFocusLoss={false}
-                    position="bottom-center"
-                    transition={cssTransition({
-                      // don't fade in/out
-                      enter: 'animate__animated animate__slideInUp',
-                      exit: 'animate__animated animate__slideOutDown',
-                      collapseDuration: 0,
-                      collapse: true,
-                    })}
+                    position="top-right"
+                    toastStyle={{
+                      maxHeight: document.body.clientHeight,
+                    }}
+                    // transition={cssTransition({
+                    //   // don't fade in/out
+                    //   // enter: 'animate__animated animate__slideInUp',
+                    //   // exit: 'animate__animated animate__slideOutDown',
+                    //   collapseDuration: 0,
+                    //   collapse: true,
+                    // })}
                   />
 
                   {ui === UI.splash && <Splash />}

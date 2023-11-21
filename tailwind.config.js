@@ -88,6 +88,11 @@ module.exports = {
     },
   },
   theme: {
+    // Add your custom filter here
+    dropShadow: {
+      'primary-glow': '0 0 10px var(--color-primary)',
+      'secondary-glow': '0 0 10px var(--color-secondary)',
+    },
     colors: {
       ...defaultTheme.colors,
       ...colors,
@@ -113,12 +118,32 @@ module.exports = {
       },
     },
     extend: {
-      animation: {
-        'spin-slow': 'spin 3s linear infinite',
+      keyframes: {
+        'pulse-background': {
+          '0%, 100%': {
+            marginLeft: '0px',
+          },
+          '50%': { marginLeft: '10px' },
+        },
+        'ping-emoji': {
+          '0%': {
+            transform: 'scale(.75)',
+          },
+        },
+        'pulse-emoji': {
+          '100%': {
+            transform: 'scale(2)',
+            opacity: 0,
 
-        'pulse-green-glow': 'pulse-green-glow 1.5s infinite ease-in-out',
-        // pulse primary glow
-        'pulse-primary-glow': 'pulse-primary-glow 1.5s infinite ease-in-out',
+            filter:
+              'drop-shadow(0 0 5px var(--color-secondary)) brightness(0%)',
+          },
+        },
+      },
+      animation: {
+        'pulse-background': 'pulse-background ease-in-out 3s infinite',
+        'ping-emoji': 'ping-emoji 1.5s ease-in-out infinite',
+        'pulse-emoji': 'pulse-emoji 1.5s ease-in-out infinite',
       },
       backgroundImage: (theme) => ({
         'random-shapes': "url('/src/svg/ui/random-shapes.svg')",

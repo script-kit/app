@@ -213,7 +213,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 
 export const installEsbuild = async () => {
   return installPackage(
-    `i esbuild@0.19.4 --save-exact --production --prefer-dedupe --loglevel=verbose`,
+    `i esbuild@0.19.5 --save-exact --production --prefer-dedupe --loglevel=verbose`,
     kitPath()
   );
 };
@@ -338,8 +338,8 @@ export const downloadKit = async () => {
     process.platform === 'win32'
       ? 'Windows'
       : process.platform === 'linux'
-      ? 'Linux'
-      : 'macOS';
+        ? 'Linux'
+        : 'macOS';
 
   // Download Kit SDK based on the current platform and architecture
   // Examples:

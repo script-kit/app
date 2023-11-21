@@ -1083,3 +1083,12 @@ to-primary-25
 to-primary-50
 to-primary-75
 to-transparent
+grayscale-0
+grayscale
+drop-shadow-sm
+drop-shadow
+drop-shadow-md
+drop-shadow-lg
+drop-shadow-xl
+drop-shadow-2xl
+drop-shadow-none

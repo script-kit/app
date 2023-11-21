@@ -42,6 +42,9 @@ Favicon gradient
   --animate-duration: 0.25s;
   --animate-delay: 0s;
   --animate-repeat: 1;
+
+  --toastify-toast-min-height: 12px;
+  --toastify-toast-max-height: 40px;
 }
 
 @tailwind base;
@@ -655,6 +658,32 @@ code::after {
   @apply flex;
 }
 
+.Toastify__toast {
+  padding: 4px;
+}
+
+.Toastify__toast-container--top-right {
+  top: 1rem;
+  right: 0.25rem;
+}
+
+@media (max-height: 48px) {
+  :root {
+    --toastify-toast-max-height: 40px;
+  }
+  .Toastify__toast-container--top-right {
+    top: 12px;
+  }
+}
+@media (max-height: 40px) {
+  :root {
+    --toastify-toast-max-height: 32px;
+  }
+  .Toastify__toast-container--top-right {
+    top: 8px;
+  }
+}
+
 .Toastify__toast-theme--light {
   @apply bg-text-base/5;
   /* blur background */
@@ -811,16 +840,22 @@ code::after {
 /* Used for the debugger text pulsing */
 @keyframes pulse-glow {
   0% {
-    text-shadow: 0 0 0px rgb(var(--color-primary)),
-      0 0 0px rgb(var(--color-primary)), 0 0 0px rgb(var(--color-primary));
+    text-shadow:
+      0 0 0px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary));
   }
   50% {
-    text-shadow: 0px 0 0px rgb(var(--color-primary)),
-      0 0 5px rgb(var(--color-primary)), 0 0 0px rgb(var(--color-primary));
+    text-shadow:
+      0px 0 0px rgb(var(--color-primary)),
+      0 0 5px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary));
   }
   100% {
-    text-shadow: 0 0 0px rgb(var(--color-primary)),
-      0 0 0px rgb(var(--color-primary)), 0 0 0px rgb(var(--color-primary));
+    text-shadow:
+      0 0 0px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary));
   }
 }
 
