@@ -122,13 +122,14 @@ module.exports = {
         'spin-pulse': {
           from: {
             transform: 'rotate(90deg)',
-          },
-          '50%': {
+            filter: 'brightness(70%)',
             opacity: 0.5,
           },
+
           to: {
             transform: 'rotate(450deg)',
-            opacity: 1,
+            filter: 'brightness(70%)',
+            opacity: 0.5,
           },
         },
         'pulse-background': {

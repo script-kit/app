@@ -24,10 +24,10 @@ const textContrast = `text-primary text-opacity-90`;
 const iconContext = {
   className: 'animate-spin-pulse text-primary -z-10 absolute',
   style: {
-    top: '0',
-    left: '0',
-    width: '90%',
-    height: '90%',
+    top: '-1px',
+    left: '-2px',
+    width: '100%',
+    height: '100%',
   },
 };
 export function IconButton() {
