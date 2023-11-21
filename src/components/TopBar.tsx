@@ -1,8 +1,11 @@
 import React, { useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
+import { useAtomValue } from 'jotai';
+import { darkAtom } from '../jotai';
 
 export default function TopBar() {
   const controls = useAnimation();
+  const isDark = useAtomValue(darkAtom);
 
   useEffect(() => {
     controls.start({
@@ -18,7 +21,9 @@ export default function TopBar() {
   return (
     <div
       className={`
-      pointer-events-none absolute left-0 top-0 -mt-px h-0.75 w-full
+      pointer-events-none absolute left-0 top-0 h-0.75 ${
+        isDark ? '-mt-px ' : ''
+      } w-full
       overflow-hidden
       `}
     >

@@ -88,6 +88,8 @@ import {
   attemptPreload,
   resetToMainAndHide,
   togglePromptEnv,
+  initShowPrompt,
+  showPrompt,
 } from './prompt';
 import {
   getBackgroundTasks,
@@ -942,6 +944,10 @@ const kitMessageMap: ChannelHandler = {
 
   BLUR_APP: onChildChannel(({ child }, { channel }) => {
     blurPrompt();
+  }),
+
+  SHOW_APP: onChildChannel(({ child }, { channel }) => {
+    showPrompt();
   }),
 
   HIDE_APP: onChildChannelOverride(

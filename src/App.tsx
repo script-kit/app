@@ -17,10 +17,9 @@ import React, {
   useCallback,
   useEffect,
   useRef,
-  useState,
 } from 'react';
 import log from 'electron-log/renderer';
-import { ToastContainer, cssTransition } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import { debounce } from 'lodash';
 import path from 'path';
 import { loader } from '@monaco-editor/react';
@@ -80,7 +79,6 @@ import {
   zoomAtom,
   hasBorderAtom,
   channelAtom,
-  logAtom,
   logVisibleAtom,
   domUpdatedAtom,
   headerHiddenAtom,
@@ -89,6 +87,7 @@ import {
   flaggedChoiceValueAtom,
   previewCheckAtom,
   resetPromptAtom,
+  loadingAtom,
 } from './jotai';
 
 import {
@@ -180,6 +179,7 @@ export default function App() {
   const [chatMessages] = useAtom(chatMessagesAtom);
 
   const [ui] = useAtom(uiAtom);
+  const loading = useAtomValue(loadingAtom);
   const choices = useAtomValue(scoredChoicesAtom);
   const showSelected = useAtomValue(showSelectedAtom);
   const showTabs = useAtomValue(showTabsAtom);
@@ -449,6 +449,7 @@ export default function App() {
         className={`
 min-w-screen h-screen
 min-h-screen w-screen
+overflow-hidden
 text-text-base
 ${hasBorder ? `border-1 border-ui-border` : ``}
 ${appConfig.isMac && hasBorder ? `main-rounded` : ``}

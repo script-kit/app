@@ -1119,24 +1119,22 @@ export const resize = async (resizeData: ResizeData) => {
 
   hadPreview = hasPreview;
 
-  if (isVisible()) {
-    // center x based on current prompt x position
-    const newX = cachedX || Math.round(x + currentWidth / 2 - width / 2);
-    const newY = cachedY || y;
+  // center x based on current prompt x position
+  const newX = cachedX || Math.round(x + currentWidth / 2 - width / 2);
+  const newY = cachedY || y;
 
-    const bounds = { x: newX, y: newY, width, height };
-    setBounds(
-      bounds,
-      `resize: ${reason} -> target: ${targetHeight} max: ${maxHeight} height: ${height}, force: ${
-        forceResize ? 'true' : 'false'
-      }`
-    );
+  const bounds = { x: newX, y: newY, width, height };
+  setBounds(
+    bounds,
+    `resize: ${reason} -> target: ${targetHeight} max: ${maxHeight} height: ${height}, force: ${
+      forceResize ? 'true' : 'false'
+    }`
+  );
 
-    if (kitState.promptCount === 1 && !inputChanged && justOpened) {
-      savePromptBounds(kitState.scriptPath, bounds);
-    }
-    kitState.resizedByChoices = ui === UI.arg;
+  if (kitState.promptCount === 1 && !inputChanged && justOpened) {
+    savePromptBounds(kitState.scriptPath, bounds);
   }
+  kitState.resizedByChoices = ui === UI.arg;
 };
 
 // TODO: Needs refactor to include unique ids, or conflicts will happen
@@ -1641,9 +1639,11 @@ export const setPromptData = async (promptData: PromptData) => {
     kitState.tabChanged = false;
   }
 
-  if (!isVisible()) {
+  if (!isVisible() && promptData?.show) {
     log.info(`👋 Show Prompt from setPromptData for ${kitState.scriptPath}`);
     showPrompt();
+  } else if (isVisible() && !promptData?.show) {
+    actualHide();
   }
 
   if (boundsCheck) clearTimeout(boundsCheck);
@@ -1885,7 +1885,7 @@ export const initShowPrompt = () => {
   focusPrompt();
 };
 
-const showPrompt = () => {
+export const showPrompt = () => {
   initShowPrompt();
   sendToPrompt(Channel.SET_OPEN, true);
 

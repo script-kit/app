@@ -244,7 +244,6 @@ export default function Input() {
       // animate={{ opacity: processing ? 0 : 1 }}
       // transition={{ duration: 0.2 }}
     >
-      {headerHidden && loading && <TopBar />}
       {/* "Hello World" text */}
       {/* <div className="absolute top-0.5 left-1/2 -translate-x-1/2 transform font-native text-xxs text-primary">
         {name} - {description}
@@ -423,7 +422,7 @@ export default function Input() {
               </>
             )}
 
-            <div className="mx-2 flex min-w-0">
+            <div className="relative mx-2 flex min-w-0">
               <IconButton />
             </div>
           </div>

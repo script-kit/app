@@ -1,11 +1,14 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { loadable } from 'jotai/utils';
 import React from 'react';
+import { CgSpinner } from 'react-icons/cg';
+
+import { IconContext } from 'react-icons/lib';
 import { ipcRenderer } from 'electron';
-import { createAssetAtom } from '../jotai';
+import { createAssetAtom, loadingAtom } from '../jotai';
 import { AppChannel } from '../enums';
 
 const loadableIconAtom = loadable(createAssetAtom('svg', 'logo.svg'));
@@ -18,8 +21,17 @@ focus:bg-opacity-20
 `;
 
 const textContrast = `text-primary text-opacity-90`;
-
-export const IconButton = () => {
+const iconContext = {
+  className: 'animate-spin-pulse text-primary -z-10 absolute',
+  style: {
+    top: '0',
+    left: '0',
+    width: '90%',
+    height: '90%',
+  },
+};
+export function IconButton() {
+  const loading = useAtomValue(loadingAtom);
   const [lazyIcon] = useAtom(loadableIconAtom);
   if (lazyIcon.state === 'hasError') return <span>{lazyIcon.error}</span>;
   if (lazyIcon.state === 'loading') {
@@ -31,8 +43,15 @@ export const IconButton = () => {
       key="icon-button"
       tabIndex={-1}
       type="button"
-      className="min-h-fit min-w-fit"
+      className="relative min-h-fit min-w-fit"
     >
+      {loading && (
+        <IconContext.Provider value={iconContext}>
+          <div>
+            <CgSpinner />
+          </div>
+        </IconContext.Provider>
+      )}
       <a
         onClick={(e) => {
           e.preventDefault();
@@ -72,4 +91,4 @@ export const IconButton = () => {
       </a>
     </button>
   );
-};
+}

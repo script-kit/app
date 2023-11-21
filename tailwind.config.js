@@ -119,6 +119,18 @@ module.exports = {
     },
     extend: {
       keyframes: {
+        'spin-pulse': {
+          from: {
+            transform: 'rotate(90deg)',
+          },
+          '50%': {
+            opacity: 0.5,
+          },
+          to: {
+            transform: 'rotate(450deg)',
+            opacity: 1,
+          },
+        },
         'pulse-background': {
           '0%, 100%': {
             marginLeft: '0px',
@@ -144,6 +156,7 @@ module.exports = {
         'pulse-background': 'pulse-background ease-in-out 3s infinite',
         'ping-emoji': 'ping-emoji 1.5s ease-in-out infinite',
         'pulse-emoji': 'pulse-emoji 1.5s ease-in-out infinite',
+        'spin-pulse': 'spin-pulse 1.2s linear infinite',
       },
       backgroundImage: (theme) => ({
         'random-shapes': "url('/src/svg/ui/random-shapes.svg')",

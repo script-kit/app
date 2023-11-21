@@ -134,8 +134,6 @@ export default function Header() {
       className="flex w-full flex-row justify-between
       "
     >
-      {open && loading && <TopBar />}
-
       <div
         className={`
         flex
