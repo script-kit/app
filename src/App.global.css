@@ -663,8 +663,7 @@ code::after {
 }
 
 .Toastify__toast-container--top-right {
-  top: 1rem;
-  right: 0.25rem;
+  @apply top-16 right-1;
 }
 
 @media (max-height: 48px) {
@@ -685,7 +684,7 @@ code::after {
 }
 
 .Toastify__toast-theme--light {
-  @apply bg-text-base/5;
+  @apply bg-bg-base/75;
   /* blur background */
   @apply backdrop-blur-2xl;
   @apply text-text-base/90;
