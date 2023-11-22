@@ -108,7 +108,7 @@ export default function AudioRecorder() {
       log.info(`🎙 Stopping recording...`);
       if (recorderRef.current.state === 'recording') recorderRef.current.stop();
       // destroy the recorder
-      log.info(`Destroying recorder because stop...`);
+      log.info(`🎙️ Destroying recorder because stop...`);
       destroyRecorder();
       log.info(`Audio chunks: ${audioChunks.length}`);
       if (audioChunks.length === 0) return;
