@@ -499,7 +499,7 @@ export const setShortcodes = (choices: Choice[]) => {
     }
 
     if (choice?.keyword) {
-      log.info(`🗝 Found keyword ${choice.keyword}`);
+      // log.info(`🗝 Found keyword ${choice.keyword}`);
       kitSearch.keywords.set(choice.keyword.toLowerCase(), choice);
     }
 
@@ -520,6 +520,11 @@ export const setShortcodes = (choices: Choice[]) => {
       kitSearch.postfixes.set(choice?.pass.trim(), choice);
     }
   }
+
+  // Log the keywords and shortcodes
+  log.info(
+    `🗝 ${kitSearch.keywords.size} keywords, ${kitSearch.shortcodes.size} shortcodes, ${kitSearch.postfixes.size} postfixes, ${kitSearch.triggers.size} triggers`
+  );
 };
 
 export const setChoices = (

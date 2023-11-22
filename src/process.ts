@@ -2133,8 +2133,17 @@ const kitMessageMap: ChannelHandler = {
     log.info(`SET DISABLE SUBMIT`, value);
     sendToPrompt(channel, value);
   }),
-  START_MIC: onChildChannel(async ({ child }, { channel, value }) => {
-    log.info(`START MIC`, value);
+  START_MIC: onChildChannelOverride(async ({ child }, { channel, value }) => {
+    log.info(channel, value);
+    ipcMain.once(channel, (event, data) => {
+      log.info(`ipcMain.once:`, channel, data);
+
+      childSend(child, {
+        channel,
+        value: data,
+      });
+    });
+
     sendToPrompt(channel, value);
   }),
   STOP_MIC: onChildChannel(async ({ child }, { channel, value }) => {

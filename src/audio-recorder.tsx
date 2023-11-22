@@ -3,14 +3,17 @@
 /* eslint-disable no-plusplus */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { UI, Channel } from '@johnlindquist/kit/cjs/enum';
+import log from 'electron-log';
+import os from 'os';
+import path from 'path';
 
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { ipcRenderer } from 'electron';
+import { writeFileSync } from 'fs-extra';
 import {
   channelAtom,
   submitValueAtom,
   micIdAtom,
-  logAtom,
   uiAtom,
   openAtom,
   micConfigAtom,
@@ -37,7 +40,6 @@ export default function AudioRecorder() {
   const [, submit] = useAtom(submitValueAtom);
   const deviceId = useAtomValue(micIdAtom);
   const [volume, setVolume] = useState(0);
-  const log = useAtomValue(logAtom);
   const ui = useAtomValue(uiAtom);
   const open = useAtomValue(openAtom);
   const micConfig = useAtomValue(micConfigAtom);
@@ -59,7 +61,7 @@ export default function AudioRecorder() {
       setAudioChunks((prevAudioChunks) => [...prevAudioChunks, event.data]);
       if (micConfig.stream) {
         const arrayBuffer = await event.data.arrayBuffer();
-        const type = `audio/${micConfig.format}`;
+        const type = `audio/webm;codecs=opus`;
 
         const base64 = arrayBufferToBase64(arrayBuffer, type);
         channel(Channel.ON_AUDIO_DATA, {
@@ -67,11 +69,11 @@ export default function AudioRecorder() {
         });
       }
     },
-    [channel, micConfig.format, micConfig.stream]
+    [channel, micConfig.stream]
   );
 
   const handleStop = useCallback(() => {
-    // console.log('Stopped recording');
+    // console.log.info('Stopped recording');
 
     if (recorderRef.current === null) return;
     recorderRef.current.removeEventListener(
@@ -83,9 +85,9 @@ export default function AudioRecorder() {
   }, [handleDataAvailable]);
 
   const destroyRecorder = useCallback(() => {
-    log(typeof recorderRef?.current);
+    log.info(typeof recorderRef?.current);
     if (recorderRef?.current) {
-      log(`Destroying recorder...`);
+      log.info(`Destroying recorder...`);
       recorderRef.current.stream.getTracks().forEach((track) => track.stop());
       recorderRef.current.removeEventListener('stop', handleStop);
       recorderRef.current.removeEventListener(
@@ -99,35 +101,41 @@ export default function AudioRecorder() {
       audioContextRef.current.close();
       audioContextRef.current = null;
     }
-  }, [handleDataAvailable, handleStop, log]);
+  }, [handleDataAvailable, handleStop]);
 
   const stopRecording = useCallback(async () => {
     if (recorderRef.current !== null) {
-      log(`🎙 Stopping recording...`);
+      log.info(`🎙 Stopping recording...`);
       if (recorderRef.current.state === 'recording') recorderRef.current.stop();
       // destroy the recorder
-      log(`Destroying recorder because stop...`);
+      log.info(`Destroying recorder because stop...`);
       destroyRecorder();
-      log(`Audio chunks: ${audioChunks.length}`);
+      log.info(`Audio chunks: ${audioChunks.length}`);
       if (audioChunks.length === 0) return;
-      const type = `audio/${micConfig.format}`;
+      const type = `audio/webm;codecs=opus`;
       const audioBlob = new Blob(audioChunks, {
         type,
       });
-      const arrayBuffer = Buffer.from(await audioBlob.arrayBuffer());
-      const base64 = arrayBufferToBase64(arrayBuffer, type);
 
-      log(`Submitting audio...`);
-      submit(base64);
+      const tmpFileName = path.join(
+        os.tmpdir(),
+        `recording_${Math.random().toString(36).substring(7)}.webm`
+      );
+      writeFileSync(tmpFileName, Buffer.from(await audioBlob.arrayBuffer()));
+      log.info(`Audio written to temporary file: ${tmpFileName}`);
+
+      log.info(`Submitting audio...`);
+      submit(tmpFileName);
       setAudioChunks([]);
     }
-  }, [audioChunks, log, submit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioChunks, submit]);
 
   const startRecording = useCallback(async () => {
     if (recorderRef.current === null) return;
-    log(`🎤 Starting recording...`);
+    log.info(`🎤 Starting recording...`);
 
-    log(`Got recorder... ${recorderRef.current}`);
+    log.info(`Got recorder... ${recorderRef.current}`);
     recorderRef.current.addEventListener('dataavailable', handleDataAvailable);
     recorderRef.current.addEventListener('stop', handleStop);
     recorderRef.current.start(micConfig.timeSlice);
@@ -154,7 +162,8 @@ export default function AudioRecorder() {
     };
 
     analyzeVolume();
-  }, [channel, log]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channel]);
 
   useEffect(() => {
     if (open && recorderRef.current === null) {
@@ -172,10 +181,10 @@ export default function AudioRecorder() {
           return null;
         })
         .catch((err) => {
-          log(`Error connecting to mic... ${err}`);
+          log.info(`Error connecting to mic... ${err}`);
         });
     }
-  }, [open, deviceId, startRecording, log]);
+  }, [open, deviceId, startRecording]);
 
   useEffect(() => {
     recorderRef.current = null;
@@ -188,16 +197,17 @@ export default function AudioRecorder() {
         recorderRef.current.state === 'recording'
       ) {
         recorderRef.current.stop();
-        log(`Mic unmounted. Stopping tracks and clearing audio chunks...`);
+        log.info(`Mic unmounted. Stopping tracks and clearing audio chunks...`);
         destroyRecorder();
         setAudioChunks([]);
       }
     };
-  }, [log]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const handleStopMic = () => {
-      log(`>>> Handling stop mic...`);
+      log.info(`>>> Handling stop mic...`);
       stopRecording();
     };
 
@@ -206,21 +216,21 @@ export default function AudioRecorder() {
     return () => {
       ipcRenderer.removeListener(Channel.STOP_MIC, handleStopMic);
     };
-  }, [log, stopRecording]);
+  }, [stopRecording]);
 
   useOnEnter(stopRecording);
 
   return (
-    <div id={UI.mic} className="flex flex-row min-w-full min-h-full">
+    <div id={UI.mic} className="flex min-h-full min-w-full flex-row">
       <div
         className={`w-full ${
           hasPreview ? `mt-16 p-2` : `justify-center p-8`
         } flex flex-col items-center text-text-base`}
       >
-        <h1 className="text-5xl text-center">{placeholder || 'Recording'}</h1>
+        <h1 className="text-center text-5xl">{placeholder || 'Recording'}</h1>
         {/* A circle that represents the recording state */}
         <div
-          className="h-4 w-4 rounded-full mt-4"
+          className="mt-4 h-4 w-4 rounded-full"
           style={{
             backgroundColor: `hsl(${volume * 2}, 100%, 50%, 1)`,
           }}

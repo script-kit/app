@@ -88,6 +88,7 @@ import {
   previewCheckAtom,
   resetPromptAtom,
   loadingAtom,
+  audioDotAtom,
 } from './jotai';
 
 import {
@@ -107,6 +108,8 @@ import AudioRecorder from './audio-recorder';
 import Webcam from './webcam';
 import Preview from './components/preview';
 import FlagsList from './components/flags';
+import AudioDot from './audio-dot';
+import LoadingDot from './loading-dot';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -223,6 +226,8 @@ export default function App() {
 
   const domUpdated = useSetAtom(domUpdatedAtom);
   const setAppBounds = useSetAtom(appBoundsAtom);
+
+  const audioDot = useAtomValue(audioDotAtom);
 
   useMessages();
 
@@ -447,8 +452,9 @@ export default function App() {
         id="main-container"
         ref={appRef}
         className={`
-min-w-screen h-screen
-min-h-screen w-screen
+min-w-screen relative
+h-screen min-h-screen
+w-screen
 overflow-hidden
 text-text-base
 ${hasBorder ? `border-1 border-ui-border` : ``}
@@ -475,6 +481,9 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
             }}
           />
         )} */}
+        {audioDot && <AudioDot />}
+        {loading && <LoadingDot />}
+
         <div
           onDrop={(event) => {
             if (ui !== UI.drop) {

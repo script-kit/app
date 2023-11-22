@@ -21,10 +21,7 @@ import {
   applyUpdateAtom,
   promptDataAtom,
   socialAtom,
-  audioDotAtom,
 } from '../jotai';
-import TopBar from './TopBar';
-import AudioDot from '../audio-dot';
 
 const TopRightButton = () => {
   const name = useAtomValue(nameAtom);
@@ -35,7 +32,6 @@ const TopRightButton = () => {
   const runProcesses = useAtomValue(runProcessesAtom);
   const applyUpdate = useAtomValue(applyUpdateAtom);
   const kitState = useAtomValue(kitStateAtom);
-  const audioDot = useAtomValue(audioDotAtom);
   const social = useAtomValue(socialAtom);
 
   const onProcessButtonClick = useCallback(() => {
@@ -45,10 +41,6 @@ const TopRightButton = () => {
   const onUpdateButtonClick = useCallback(() => {
     applyUpdate();
   }, [applyUpdate]);
-
-  if (audioDot) {
-    return <AudioDot />;
-  }
 
   if (kitState.updateDownloaded) {
     return (

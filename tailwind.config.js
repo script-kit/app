@@ -123,13 +123,11 @@ module.exports = {
           from: {
             transform: 'rotate(90deg)',
             filter: 'brightness(70%)',
-            opacity: 0.5,
           },
 
           to: {
             transform: 'rotate(450deg)',
             filter: 'brightness(70%)',
-            opacity: 0.5,
           },
         },
         'pulse-background': {

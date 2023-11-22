@@ -4,9 +4,7 @@
 import { useAtom, useAtomValue } from 'jotai';
 import { loadable } from 'jotai/utils';
 import React from 'react';
-import { CgSpinner } from 'react-icons/cg';
 
-import { IconContext } from 'react-icons/lib';
 import { ipcRenderer } from 'electron';
 import { createAssetAtom, loadingAtom } from '../jotai';
 import { AppChannel } from '../enums';
@@ -45,13 +43,13 @@ export function IconButton() {
       type="button"
       className="relative min-h-fit min-w-fit"
     >
-      {loading && (
+      {/* {loading && (
         <IconContext.Provider value={iconContext}>
           <div>
             <CgSpinner />
           </div>
         </IconContext.Provider>
-      )}
+      )} */}
       <a
         onClick={(e) => {
           e.preventDefault();

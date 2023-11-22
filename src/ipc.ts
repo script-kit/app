@@ -388,7 +388,6 @@ ${data.error}
     Channel.ON_SUBMIT,
     Channel.ON_AUDIO_DATA,
     Channel.GET_DEVICES,
-    Channel.START_MIC,
     Channel.APPEND_EDITOR_VALUE,
     Channel.GET_INPUT,
     Channel.EDITOR_GET_SELECTION,
@@ -416,7 +415,7 @@ ${data.error}
           }
           log.verbose(`Allow choice focus: ${kitState.ui}`);
         }
-        log.silly(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
+        log.info(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
 
         if (channel === Channel.INPUT) {
           const input = message.state.input as string;
