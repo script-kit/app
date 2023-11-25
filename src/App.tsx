@@ -89,6 +89,7 @@ import {
   resetPromptAtom,
   loadingAtom,
   audioDotAtom,
+  isMainScriptAtom,
 } from './jotai';
 
 import {
@@ -110,6 +111,7 @@ import Preview from './components/preview';
 import FlagsList from './components/flags';
 import AudioDot from './audio-dot';
 import LoadingDot from './loading-dot';
+import ProcessesDot from './processes-dot';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -207,6 +209,8 @@ export default function App() {
   const [termConfig] = useAtom(termConfigAtom);
   const [headerHidden] = useAtom(headerHiddenAtom);
   const [footerHidden] = useAtom(footerHiddenAtom);
+  const processes = useAtomValue(processesAtom);
+  const isMainScript = useAtomValue(isMainScriptAtom);
 
   const previewCheck = useAtomValue(previewCheckAtom);
   const showRightPanel = (previewCheck && !kitState.noPreview) || flagValue;
@@ -483,6 +487,7 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
         )} */}
         {audioDot && <AudioDot />}
         {loading && <LoadingDot />}
+        {processes.length > 1 && isMainScript && <ProcessesDot />}
 
         <div
           onDrop={(event) => {

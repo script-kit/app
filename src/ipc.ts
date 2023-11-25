@@ -100,7 +100,6 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
       kitSearch.input = kitSearch.keyword;
     }
     kitSearch.keyword = keyword;
-    log.info(`>>>>>>>>>>>>>>>>>>> ${keyword} inputRegex cleared`);
     kitSearch.inputRegex = undefined;
     log.info(`🔑 ${keyword} cleared`);
     kitSearch.keywordCleared = true;
@@ -386,7 +385,6 @@ ${data.error}
     Channel.CHAT_MESSAGES_CHANGE,
     Channel.ON_INIT,
     Channel.ON_SUBMIT,
-    Channel.ON_AUDIO_DATA,
     Channel.GET_DEVICES,
     Channel.APPEND_EDITOR_VALUE,
     Channel.GET_INPUT,
@@ -398,6 +396,8 @@ ${data.error}
     Channel.KEYWORD_TRIGGERED,
     Channel.SELECTED,
     Channel.ACTION,
+    Channel.MIC_STREAM,
+    Channel.STOP_MIC,
   ]) {
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
@@ -416,6 +416,22 @@ ${data.error}
           log.verbose(`Allow choice focus: ${kitState.ui}`);
         }
         log.info(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
+
+        if (channel === Channel.MIC_STREAM) {
+          const micStreamMessage: any = message;
+          if (
+            micStreamMessage?.state.buffer &&
+            !Buffer.isBuffer(micStreamMessage.buffer)
+          ) {
+            micStreamMessage.state.value = Buffer.from(
+              Object.values(micStreamMessage.state.buffer) as any
+            );
+          }
+
+          child.send(micStreamMessage);
+
+          return;
+        }
 
         if (channel === Channel.INPUT) {
           const input = message.state.input as string;

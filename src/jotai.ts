@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable no-bitwise */
 /* eslint-disable no-useless-escape */
 /* eslint-disable no-plusplus */
@@ -42,7 +43,16 @@ import { Action } from './components/actions';
 
 let placeholderTimeoutId: NodeJS.Timeout;
 
-export const pidAtom = atom(0);
+let currentPid = 0;
+export const getPid = () => currentPid;
+const _pidAtom = atom(0);
+export const pidAtom = atom(
+  (g) => g(_pidAtom),
+  (_g, s, a: number) => {
+    s(_pidAtom, a);
+    currentPid = a;
+  }
+);
 const _shortcuts = atom<Shortcut[]>([]);
 export const shortcutsAtom = atom(
   (g) => {
@@ -2928,3 +2938,19 @@ export const shouldActionButtonShowOnInputAtom = atom((g) => {
 
   return hasFlags && !hasRightShortcut;
 });
+
+const _micStreamEnabledAtom = atom(false);
+export const micStreamEnabledAtom = atom(
+  (g) => g(_micStreamEnabledAtom),
+  (g, s, a: boolean) => {
+    if (g(_micStreamEnabledAtom) === a) return;
+
+    s(_micStreamEnabledAtom, a);
+    log.info(`🎤 Mic stream enabled: ${a ? 'true' : 'false'}`);
+    if (!a) {
+      ipcRenderer.send(Channel.MIC_STREAM, {
+        event: 'end',
+      });
+    }
+  }
+);

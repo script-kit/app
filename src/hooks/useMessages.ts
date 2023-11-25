@@ -89,6 +89,7 @@ import {
   cachedMainShortcutsAtom,
   cachedMainPreviewAtom,
   termFontAtom,
+  micStreamEnabledAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../enums';
@@ -108,6 +109,7 @@ export default () => {
   const chatPushToken = useSetAtom(chatPushTokenAtom);
   const setChatMessage = useSetAtom(setChatMessageAtom);
   const setPromptBounds = useSetAtom(promptBoundsAtom);
+  const setMicStreamEnabled = useSetAtom(micStreamEnabledAtom);
 
   const getEditorHistory = useAtomValue(getEditorHistoryAtom);
   const getColor = useAtomValue(colorAtom);
@@ -267,6 +269,7 @@ export default () => {
     [Channel.CHAT_ADD_MESSAGE]: addChatMessage,
     [Channel.CHAT_PUSH_TOKEN]: chatPushToken,
     [Channel.CHAT_SET_MESSAGE]: setChatMessage,
+    [Channel.MIC_STREAM]: setMicStreamEnabled,
     [Channel.START_MIC]: () => {
       setAudioDot(true);
     },
@@ -356,6 +359,7 @@ export default () => {
       event: Electron.IpcRendererEvent,
       ...args: any[]
     ) => void = (_, data) => {
+      log.info(`Setting mic config:`, data);
       setMicConfig(data);
     };
 

@@ -59,7 +59,6 @@ import { ActionSeparator } from './actionseparator';
 import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';
 import { LoginButton } from './loginbutton';
-import TopBar from './TopBar';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];

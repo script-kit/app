@@ -1265,7 +1265,6 @@ const kitMessageMap: ChannelHandler = {
         'command',
       ];
       if (typeof value?.keyword === 'string') {
-        log.info(`>>>>>>>>>>>>>>>>> SET_PROMPT_DATA keyword clear`);
         kitSearch.keywords.clear();
         kitSearch.input = '';
         kitSearch.keyword = value?.keyword;
@@ -1275,6 +1274,7 @@ const kitMessageMap: ChannelHandler = {
         appToPrompt(AppChannel.SET_MIC_CONFIG, {
           timeSlice: value?.timeSlice || 200,
           format: value?.format || 'webm',
+          stream: value?.stream || false,
         });
       }
       // log.silly(`SET_PROMPT_DATA`);
@@ -2133,23 +2133,14 @@ const kitMessageMap: ChannelHandler = {
     log.info(`SET DISABLE SUBMIT`, value);
     sendToPrompt(channel, value);
   }),
-  START_MIC: onChildChannelOverride(async ({ child }, { channel, value }) => {
-    log.info(channel, value);
-    ipcMain.once(channel, (event, data) => {
-      log.info(`ipcMain.once:`, channel, data);
-
-      childSend(child, {
-        channel,
-        value: data,
-      });
-    });
-
+  START_MIC: onChildChannel(async ({ child }, { channel, value }) => {
     sendToPrompt(channel, value);
   }),
-  STOP_MIC: onChildChannel(async ({ child }, { channel, value }) => {
+  STOP_MIC: onChildChannelOverride(async ({ child }, { channel, value }) => {
     log.info(`STOP MIC`, value);
     sendToPrompt(channel, value);
   }),
+
   TRASH: onChildChannel(async ({ child }, { channel, value }) => {
     for await (const item of value) {
       log.info(`🗑 Trashing`, item);

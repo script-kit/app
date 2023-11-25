@@ -1423,7 +1423,6 @@ export const setMode = (mode: Mode) => {
 };
 
 export const setInput = (input: string) => {
-  log.info(`>>>>>>>>>>>>>>>>>> clearing keywords`);
   kitSearch.keywords.clear();
   kitSearch.keyword = '';
   kitSearch.input = input;
