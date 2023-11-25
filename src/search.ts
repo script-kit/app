@@ -90,6 +90,7 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
 
     let groupedResults: ScoredChoice[] = [];
 
+    const infoGroup = [];
     const startsWithGroup = [];
     const includesGroup = [];
     const matchLastGroup = [];
@@ -98,7 +99,9 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
 
     for (const choice of kitSearch.choices) {
       const lowerCaseName = choice.name?.toLowerCase();
-      if ((choice as Script)?.alias === transformedInput) {
+      if (choice?.info) {
+        infoGroup.push(createScoredChoice(choice));
+      } else if ((choice as Script)?.alias === transformedInput) {
         alias = structuredClone(choice);
         alias.pass = false;
         alias.group = 'Alias';
@@ -152,7 +155,10 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
       } else {
         const hide = choice?.hideWithoutInput && transformedInput === '';
         const miss = choice?.miss && !hide;
-        if (miss) {
+        const info = choice?.info && !hide;
+        if (info) {
+          infoGroup.push(createScoredChoice(choice));
+        } else if (miss) {
           missGroup.push(createScoredChoice(choice));
         } else if (!hide) {
           const scoredChoice = resultMap.get(choice.id);
@@ -270,6 +276,8 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
       );
     }
 
+    groupedResults.unshift(...infoGroup);
+
     setScoredChoices(groupedResults);
   } else if (result?.length === 0) {
     const scoredChoices = [];
@@ -304,9 +312,15 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
     if (allMisses) {
       setScoredChoices(result);
     } else {
+      const infos = kitSearch.choices
+        // exclude "hideWithoutInput" choices if the input is empty
+        .filter(
+          (c) => c?.info && !(c?.hideWithoutInput && transformedInput === '')
+        )
+        .map(createScoredChoice);
       const filterConditions = result.filter((r) => {
         if (r.item.miss) return false;
-        if (r.item.info) return true;
+        if (r.item.info) return false;
         if (r.item.pass) return true;
         if (transformedInput === '' && r.item.hideWithoutInput) return false;
 
@@ -333,6 +347,8 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
 
         return aIndex - bIndex;
       });
+
+      filterConditions.unshift(...infos);
 
       setScoredChoices(filterConditions);
     }

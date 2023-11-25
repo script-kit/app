@@ -1379,6 +1379,9 @@ export const promptDataAtom = atom(
 
     if (a) {
       log.info(`Setting uiAtom to ${a?.ui}`);
+      if (a?.ui !== UI.arg) {
+        s(focusedChoiceAtom, noChoice);
+      }
       s(uiAtom, a.ui);
       if (a?.theme) s(tempThemeAtom, { ...g(themeAtom), ...(a?.theme || {}) });
 

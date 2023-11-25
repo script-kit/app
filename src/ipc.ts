@@ -415,7 +415,7 @@ ${data.error}
           }
           log.verbose(`Allow choice focus: ${kitState.ui}`);
         }
-        log.info(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
+        log.verbose(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
 
         if (channel === Channel.MIC_STREAM) {
           const micStreamMessage: any = message;
