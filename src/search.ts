@@ -72,6 +72,11 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
     transformedInput
   ) as ScoredChoice[];
 
+  // Get result length, but filter out info and miss choices
+  const resultLength = result.filter(
+    (r) => !r?.item?.info && !r?.item?.miss
+  ).length;
+
   if (kitSearch.hasGroup) {
     // Build a map for constant time access
     const resultMap = new Map();
@@ -279,7 +284,7 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
     groupedResults.unshift(...infoGroup);
 
     setScoredChoices(groupedResults);
-  } else if (result?.length === 0) {
+  } else if (resultLength === 0) {
     const scoredChoices = [];
     for (const choice of kitSearch.choices) {
       for (const key of kitSearch.keys) {
