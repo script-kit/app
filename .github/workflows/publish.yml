@@ -293,7 +293,6 @@ jobs:
           command: |
             yarn build
             yarn electron-builder --publish always --mac --x64
-            ls ./release
 
       - name: Publish mac arm64
         if: matrix.os == 'macos-13' && matrix.arch == 'arm64'
@@ -313,4 +312,3 @@ jobs:
           command: |
             yarn build
             yarn electron-builder --publish always --mac --arm64
-            ls ./release
