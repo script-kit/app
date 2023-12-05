@@ -934,6 +934,7 @@ export const scriptAtom = atom(
     s(processingAtom, false);
 
     s(loadingAtom, false);
+    s(progressAtom, 0);
     s(logoAtom, a?.logo || '');
     s(tempThemeAtom, g(themeAtom));
     // s(flagsAtom, {});
@@ -1828,6 +1829,7 @@ export const openAtom = atom(
       s(_flaggedValue, '');
       s(loading, false);
       s(loadingAtom, false);
+      s(progressAtom, 0);
       s(editorConfigAtom, {});
       s(promptData, null);
       s(requiresScrollAtom, -1);
@@ -2957,3 +2959,5 @@ export const micStreamEnabledAtom = atom(
     }
   }
 );
+
+export const progressAtom = atom(0);

@@ -1480,6 +1480,9 @@ const kitMessageMap: ChannelHandler = {
     // log.info(`🏃 setLoading`, { data });
     sendToPrompt(Channel.SET_LOADING, data.value);
   },
+  SET_PROGRESS: (data) => {
+    sendToPrompt(Channel.SET_PROGRESS, data.value);
+  },
   SET_RUNNING: (data) => {
     // log.info(`🏃‍♂️ setRunning`, { data });
     sendToPrompt(Channel.SET_RUNNING, data.value);

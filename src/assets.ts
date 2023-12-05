@@ -46,6 +46,6 @@ export const getNodeVersion = () => {
   try {
     return readFileSync(getAssetPath('node.txt'), 'utf-8').trim();
   } catch (error) {
-    return '18.17.1';
+    return '18.18.2';
   }
 };

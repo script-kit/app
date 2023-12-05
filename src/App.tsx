@@ -112,6 +112,7 @@ import FlagsList from './components/flags';
 import AudioDot from './audio-dot';
 import LoadingDot from './loading-dot';
 import ProcessesDot from './processes-dot';
+import ProgressBar from './progress-bar';
 
 function ensureFirstBackSlash(str: string) {
   return str.length > 0 && str.charAt(0) !== '/' ? `/${str}` : str;
@@ -487,6 +488,7 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
         )} */}
         {audioDot && <AudioDot />}
         {loading && <LoadingDot />}
+        <ProgressBar />
         {processes.length > 1 && isMainScript && <ProcessesDot />}
 
         <div

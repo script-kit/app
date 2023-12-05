@@ -90,6 +90,7 @@ import {
   cachedMainPreviewAtom,
   termFontAtom,
   micStreamEnabledAtom,
+  progressAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../enums';
@@ -148,6 +149,7 @@ export default () => {
   const setName = useSetAtom(nameAtom);
   const setTextareaValue = useSetAtom(textareaValueAtom);
   const setLoading = useSetAtom(loadingAtom);
+  const setProgress = useSetAtom(progressAtom);
   const setRunning = useSetAtom(runningAtom);
   const setValueInvalid = useSetAtom(valueInvalidAtom);
   const setPreventSubmit = useSetAtom(preventSubmitAtom);
@@ -234,6 +236,7 @@ export default () => {
     },
     [Channel.APPEND_INPUT]: appendInput,
     [Channel.SET_LOADING]: setLoading,
+    [Channel.SET_PROGRESS]: setProgress,
     [Channel.SET_RUNNING]: setRunning,
     [Channel.SET_NAME]: setName,
     [Channel.SET_TEXTAREA_VALUE]: setTextareaValue,
