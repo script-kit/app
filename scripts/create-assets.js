@@ -2,13 +2,15 @@
 
 // import '@johnlindquist/kit';
 
-let { chdir } = await import('process');
+import { chdir } from 'process';
 import { rm } from 'fs/promises';
-let tar = await npm('tar');
+import tar from 'tar';
 
-let createPathResolver = (parentDir) => (...parts) => {
-  return path.resolve(parentDir, ...parts);
-};
+let createPathResolver =
+  (parentDir) =>
+  (...parts) => {
+    return path.resolve(parentDir, ...parts);
+  };
 
 chdir(process.env.PWD);
 

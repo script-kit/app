@@ -130,27 +130,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # This script created a tar without the node_modules folder. Moved logic to create-assets
-      # - name: Create Kit tarball
-      #   uses: johnlindquist/kit-action@main
-      #   with:
-      #     script: create-kit-tar
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # tar is required for "create-assets"
+      - name: yarn add tar
+        run: |
+          yarn add tar@6.2.0
 
-      - name: Create Assets for x64
-        if: matrix.arch == 'x64'
+      - name: Create Assets
         uses: johnlindquist/kit-action@main
         with:
-          script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} x64 ${{ env.RELEASE_ID }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Assets for arm64
-        if: matrix.arch == 'arm64'
-        uses: johnlindquist/kit-action@main
-        with:
-          script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} arm64 ${{ env.RELEASE_ID }}
+          script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} ${{ matrix.arch }} ${{ env.RELEASE_ID }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
