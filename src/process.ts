@@ -54,7 +54,7 @@ import {
 } from '@johnlindquist/kit/cjs/utils';
 
 import { subscribeKey } from 'valtio/utils';
-import { readJson } from 'fs-extra';
+import { pathExistsSync, readJson } from 'fs-extra';
 import { getTimestamps } from '@johnlindquist/kit/cjs/db';
 import { readFileSync } from 'fs';
 import { getLog, Logger, mainLog, warn } from './logs';
@@ -386,7 +386,7 @@ export const updateTheme = async () => {
     ? kitState.kenvEnv?.KIT_THEME_DARK
     : kitState.kenvEnv?.KIT_THEME_LIGHT;
 
-  if (themePath) {
+  if (pathExistsSync(themePath)) {
     log.info(
       `▓ ${kitState.isDark ? 'true' : 'false'} 👀 Theme path: ${themePath}`
     );
@@ -2405,6 +2405,7 @@ export const getIdles = () => {
 };
 
 export const ensureIdleProcess = () => {
+  if (!kitState.ready) return;
   log.info(`Ensure idle process`);
   setTimeout(() => {
     const idles = getIdles();

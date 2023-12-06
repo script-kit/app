@@ -86,12 +86,12 @@ import {
   createPromptWindow,
   setPromptData,
   setScript,
-  focusPrompt,
   clearPromptTimers,
   maybeHide,
   isVisible,
   prepPromptForQuit,
   logPromptState,
+  initShowPrompt,
 } from './prompt';
 import { sendToPrompt } from './channel';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
@@ -625,8 +625,6 @@ const verifyInstall = async () => {
     checkNodeModules ? `node_modules found` : `node_modules missing`
   );
 
-  await ensureIdleProcess();
-
   const isKenvConfigured = await kenvConfigured();
   await setupLog(isKenvConfigured ? `kenv .env found` : `kenv .env missinag`);
 
@@ -741,7 +739,7 @@ const checkKit = async () => {
     sendSplashBody(`Starting up...`);
 
     setTimeout(() => {
-      focusPrompt();
+      initShowPrompt();
     }, 500);
   };
 
@@ -1010,6 +1008,8 @@ const checkKit = async () => {
     kitState.ready = true;
     kitState.user_id = `${Date.now()}`;
     kitState.app_version = getVersion();
+
+    ensureIdleProcess();
 
     trackEvent(TrackEvent.Ready, {});
 
