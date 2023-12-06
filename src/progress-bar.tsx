@@ -13,10 +13,10 @@ export default function ProgressBar() {
   }, [progress]);
 
   return (
-    <div className="absolute top-0 left-0 h-0.5 w-screen">
+    <div className="absolute top-0 left-0 h-1 w-screen">
       <div
         ref={progressBarRef}
-        className="h-0.5 bg-primary/80 transition-all duration-300 ease-in-out"
+        className="h-1 bg-gradient-to-b from-primary to-transparent/50 transition-all duration-300 ease-linear"
         style={{ width: '0%' }}
       />
     </div>

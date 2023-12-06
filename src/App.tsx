@@ -90,6 +90,7 @@ import {
   loadingAtom,
   audioDotAtom,
   isMainScriptAtom,
+  progressAtom,
 } from './jotai';
 
 import {
@@ -186,6 +187,7 @@ export default function App() {
 
   const [ui] = useAtom(uiAtom);
   const loading = useAtomValue(loadingAtom);
+  const progress = useAtomValue(progressAtom);
   const choices = useAtomValue(scoredChoicesAtom);
   const showSelected = useAtomValue(showSelectedAtom);
   const showTabs = useAtomValue(showTabsAtom);
@@ -488,7 +490,7 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
         )} */}
         {audioDot && <AudioDot />}
         {loading && <LoadingDot />}
-        <ProgressBar />
+        {progress > 0 && <ProgressBar />}
         {processes.length > 1 && isMainScript && <ProcessesDot />}
 
         <div
