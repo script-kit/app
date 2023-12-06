@@ -200,9 +200,11 @@ export const startKeyboardMonitor = async () => {
     try {
       log.info(`Attempting to start uiohook-napi...`);
 
-      registerIO(observer.next.bind(observer));
-      log.info(`The line right after uIOhook.start()...`);
-      log.info(`🟢 Started keyboard and mouse watcher`);
+      // eslint-disable-next-line promise/catch-or-return, promise/always-return
+      registerIO(observer.next.bind(observer)).then(() => {
+        log.info(`The line right after uIOhook.start()...`);
+        log.info(`🟢 Started keyboard and mouse watcher`);
+      });
     } catch (e) {
       log.error(`🔴 Failed to start keyboard and mouse watcher`);
       log.error(e);
@@ -438,8 +440,8 @@ export const startClipboardMonitor = async () => {
         const appName = isFocused()
           ? 'Script Kit'
           : app?.localizedName
-          ? app.localizedName
-          : 'Unknown';
+            ? app.localizedName
+            : 'Unknown';
 
         const clipboardItem = {
           id: nanoid(),

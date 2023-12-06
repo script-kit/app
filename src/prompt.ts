@@ -71,7 +71,11 @@ import { AppChannel, HideReason } from './enums';
 import { emitter, KitEvent } from './events';
 import { createScoredChoice, pathsAreEqual } from './helpers';
 import { TrackEvent, trackEvent } from './track';
-import { getCurrentScreen } from './screen';
+import {
+  getCurrentScreen,
+  getCurrentScreenFromBounds,
+  isBoundsWithinDisplays,
+} from './screen';
 import { appToPrompt, sendToPrompt } from './channel';
 import { setFlags, setChoices } from './search';
 
@@ -800,11 +804,6 @@ export const getCurrentScreenFromMouse = (): Display => {
   return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
 };
 
-export const getCurrentScreenFromPrompt = (): Display => {
-  // log.info(`function: getCurrentScreenFromPrompt`);
-  return screen.getDisplayNearestPoint(promptWindow.getBounds());
-};
-
 export const getCurrentScreenPromptCache = (
   scriptPath: string,
   {
@@ -923,7 +922,9 @@ export const setBounds = async (bounds: Partial<Rectangle>, reason = '') => {
   // promptWindow?.setContentSize(bounds.width, bounds.height);
 
   // Keep in bounds on the current screen
-  const currentScreen = getCurrentScreen();
+  const currentScreen = isVisible()
+    ? getCurrentScreenFromBounds(promptWindow?.getBounds())
+    : getCurrentScreenFromMouse();
   const { x, y, width, height } = bounds;
   const { x: workX, y: workY } = currentScreen.workArea;
   const { width: screenWidth, height: screenHeight } =
@@ -1262,7 +1263,7 @@ export const savePromptBounds = async (
 
   if (!pointOnMouseScreen(bounds)) return;
 
-  const currentScreen = getCurrentScreenFromPrompt();
+  const currentScreen = getCurrentScreenFromBounds(promptWindow?.getBounds());
 
   try {
     const prevBounds =
@@ -1649,20 +1650,9 @@ export const setPromptData = async (promptData: PromptData) => {
   boundsCheck = setTimeout(async () => {
     if (promptWindow?.isDestroyed()) return;
     const currentBounds = promptWindow?.getBounds();
-    // const currentDisplayBounds = getCurrentScreenFromMouse().bounds;
-    const currentDisplayBounds = getCurrentScreen().bounds;
+    const validBounds = isBoundsWithinDisplays(currentBounds);
 
-    const minX = currentDisplayBounds.x;
-    const minY = currentDisplayBounds.y;
-    const maxX = currentDisplayBounds.x + currentDisplayBounds.width;
-    const maxY = currentDisplayBounds.y + currentDisplayBounds.height;
-
-    if (
-      currentBounds?.x < minX ||
-      currentBounds?.x + currentBounds?.width > maxX ||
-      currentBounds?.y < minY ||
-      currentBounds?.y + currentBounds?.height > maxY
-    ) {
+    if (!validBounds) {
       log.info(`Prompt window out of bounds. Clearing cache and resetting.`);
       await clearPromptCacheFor(kitState.scriptPath);
       initBounds();
