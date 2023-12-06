@@ -130,11 +130,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # tar is required for "create-assets"
-      - name: yarn add tar
-        run: |
-          yarn add tar@6.2.0
-
       - name: Create Assets
         uses: johnlindquist/kit-action@main
         with:
