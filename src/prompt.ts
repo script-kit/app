@@ -367,6 +367,8 @@ export const createPromptWindow = async () => {
     windowManager.setWindowAsPopupWithRoundedCorners(
       promptWindow?.getNativeWindowHandle()
     );
+
+    promptWindow.setHasShadow(true);
   }
 
   // promptWindow.setVisibleOnAllWorkspaces(true, {
@@ -1860,6 +1862,10 @@ export const initShowPrompt = () => {
   } else {
     // promptWindow.restore();
     promptWindow.show();
+  }
+
+  if (kitState.isWindows) {
+    promptWindow.setHasShadow(true);
   }
 
   setPromptAlwaysOnTop(true);
