@@ -13,7 +13,9 @@ import {
 } from '@johnlindquist/mac-panel-window';
 // END-REMOVE-MAC
 
+// REMOVE-NODE-WINDOW-MANAGER
 import { windowManager, Window } from '@johnlindquist/node-window-manager';
+// END-REMOVE-NODE-WINDOW-MANAGER
 import { PROMPT, Channel, Mode, UI } from '@johnlindquist/kit/cjs/enum';
 import {
   Choice,
@@ -201,11 +203,14 @@ export const actualHide = () => {
 
   log.info(`🙈 Hiding prompt window`);
   if (kitState.isWindows) {
+    // REMOVE-NODE-WINDOW-MANAGER
     windowManager.hideInstantly(promptWindow?.getNativeWindowHandle());
     promptWindow?.emit('hide');
+    // END-REMOVE-NODE-WINDOW-MANAGER
   } else {
     promptWindow?.hide();
   }
+  // REMOVE-NODE-WINDOW-MANAGER
   if (kitState.isWindows && prevWindow) {
     try {
       prevWindow?.bringToTop();
@@ -213,9 +218,12 @@ export const actualHide = () => {
       log.error(error);
     }
   }
+  // END-REMOVE-NODE-WINDOW-MANAGER
 };
 
+// REMOVE-NODE-WINDOW-MANAGER
 let prevWindow: Window;
+// END-REMOVE-NODE-WINDOW-MANAGER
 export const maybeHide = async (reason: string) => {
   if (!isVisible()) return;
   log.info(`Attempt Hide: ${reason}`);
@@ -364,11 +372,13 @@ export const createPromptWindow = async () => {
   // END-REMOVE-MAC
 
   if (kitState.isWindows) {
+    // REMOVE-NODE-WINDOW-MANAGER
     windowManager.setWindowAsPopupWithRoundedCorners(
       promptWindow?.getNativeWindowHandle()
     );
 
     promptWindow.setHasShadow(true);
+    // END-REMOVE-NODE-WINDOW-MANAGER
   }
 
   // promptWindow.setVisibleOnAllWorkspaces(true, {
@@ -1703,9 +1713,11 @@ export const resetPrompt = async () => {
   }
 
   if (kitState.isWindows) {
+    // REMOVE-NODE-WINDOW-MANAGER
     setTimeout(() => {
       windowManager.forceWindowPaint(promptWindow?.getNativeWindowHandle());
     }, 10);
+    // END-REMOVE-NODE-WINDOW-MANAGER
   }
   initMainBounds();
 };
@@ -1844,6 +1856,7 @@ export const hasFocus = () => promptWindow?.isFocused();
 
 export const initShowPrompt = () => {
   if (kitState.isWindows && !isVisible()) {
+    // REMOVE-NODE-WINDOW-MANAGER
     try {
       windowManager.forceWindowPaint(promptWindow?.getNativeWindowHandle());
       const currentWindow = windowManager.getActiveWindow();
@@ -1856,6 +1869,7 @@ export const initShowPrompt = () => {
     } catch (error) {
       log.error(error);
     }
+    // END-REMOVE-NODE-WINDOW-MANAGER
   }
   if (kitState.isMac) {
     promptWindow.showInactive();

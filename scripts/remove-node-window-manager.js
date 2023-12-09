@@ -2,7 +2,7 @@
 
 import '@johnlindquist/kit';
 
-console.log(`Removing NUT ⛳️`);
+console.log(`Removing NODE-WINDOW-MANAGER ⛳️`);
 
 let srcFilePath = path.resolve(process.env.PWD, 'src', '*').replace(/\\/g, '/');
 console.log({
@@ -11,7 +11,7 @@ console.log({
 
 let result = await replace({
   files: [srcFilePath],
-  from: /REMOVE-NUT.*?END-REMOVE-NUT/gs,
+  from: /REMOVE-NODE_WINDOW_MANAGER.*?END-REMOVE-NODE_WINDOW_MANAGER/gs,
   to: 'REMOVED BY KIT',
 });
 
