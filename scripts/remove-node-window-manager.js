@@ -11,10 +11,12 @@ console.log({
 
 let result = await replace({
   files: [srcFilePath],
-  from: /REMOVE-NODE_WINDOW_MANAGER.*?END-REMOVE-NODE_WINDOW_MANAGER/gs,
+  from: /REMOVE-NODE-WINDOW-MANAGER.*?END-REMOVE-NODE-WINDOW-MANAGER/gs,
   to: 'REMOVED BY KIT',
 });
 
-console.log({ result });
+if (result.hasChanged && result.file) {
+  console.log(`Updated: ${result.file} 🎉`);
+}
 
 console.log(`Kit is fun! ❤️`);
