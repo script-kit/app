@@ -169,7 +169,7 @@ export default () => {
   const setShortcuts = useSetAtom(shortcutsAtom);
   const [, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [, setTermConfig] = useAtom(termConfigAtom);
-  const setMicConfig = useSetAtom(micConfigAtom);
+  const [micConfig, setMicConfig] = useAtom(micConfigAtom);
   const setTermExit = useSetAtom(termExitAtom);
   const scrollToIndex = useAtomValue(scrollToIndexAtom);
   const setPreloaded = useSetAtom(preloadedAtom);
@@ -273,8 +273,12 @@ export default () => {
     [Channel.CHAT_PUSH_TOKEN]: chatPushToken,
     [Channel.CHAT_SET_MESSAGE]: setChatMessage,
     [Channel.MIC_STREAM]: setMicStreamEnabled,
-    [Channel.START_MIC]: () => {
+    [Channel.START_MIC]: (config: any) => {
       setAudioDot(true);
+      setMicConfig({
+        ...micConfig,
+        ...config,
+      });
     },
     [Channel.HIDE_APP]: () => {
       setHidden(true);

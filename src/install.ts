@@ -552,7 +552,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
 
 export const optionalSetupScript = (
   scriptPath: string,
-  argsParam: string[],
+  argsParam?: string[],
   callback?: (object: any) => void
 ) => {
   const args = argsParam || [];

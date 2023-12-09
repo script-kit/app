@@ -2710,7 +2710,7 @@ export const justOpenedAtom = atom(false);
 export const micConfigAtom = atom({
   timeSlice: 200,
   format: 'webm',
-  stream: false,
+  filePath: '',
 });
 
 export const disableSubmitAtom = atom(false);

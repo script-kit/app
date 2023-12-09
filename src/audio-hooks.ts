@@ -59,7 +59,7 @@ export function useAudioRecorder() {
   };
 
   const handleStop = () => {
-    log.info(`HANDLE STOP...`);
+    log.info(`>>>>>>>>>>> HANDLE STOP...`);
     if (recorderRef.current === null) return;
     recorderRef.current.removeEventListener(
       'dataavailable',
@@ -92,7 +92,7 @@ export function useAudioRecorder() {
   };
 
   const stopRecording = useCallback(async () => {
-    log.info(`🎙 Stopping recording...`);
+    log.info(`🎙 Stopping recording...`, recorderRef.current);
     if (recorderRef.current !== null) {
       if (recorderRef.current.state === 'recording') recorderRef.current.stop();
       // destroy the recorder
@@ -105,14 +105,16 @@ export function useAudioRecorder() {
         type,
       });
 
-      log.info(`Submitting audio...`);
+      log.info(`>>>>>>>>>>>>>>>>>>>>>>>>>>> micConfig`, micConfig);
 
-      const tmpFileName = path.join(
-        os.tmpdir(),
-        `recording_${Math.random().toString(36).substring(7)}.webm`
-      );
+      const tmpFileName =
+        micConfig?.filePath ||
+        path.join(
+          os.tmpdir(),
+          `recording_${Math.random().toString(36).substring(7)}.webm`
+        );
       writeFileSync(tmpFileName, Buffer.from(await audioBlob.arrayBuffer()));
-      log.info(`Audio written to temporary file: ${tmpFileName}`);
+      log.info(`Audio written to file: ${tmpFileName}`);
 
       log.info(`Submitting audio...`);
 
@@ -129,14 +131,19 @@ export function useAudioRecorder() {
   }, [audioChunks, submit, ui]);
 
   const startRecording = async () => {
-    log.info(`🎙 Starting recording...`);
+    log.info(`🎙 Starting recording...`, micConfig, recorderRef.current);
+    if (!recorderRef.current) {
+      await createRecorderRef();
+    }
     if (recorderRef.current) {
+      log.info(`🎙 Recorder exists...`);
       recorderRef.current.addEventListener(
         'dataavailable',
         handleDataAvailable
       );
       recorderRef.current.addEventListener('stop', stopRecording);
-      recorderRef.current.start(micConfig.timeSlice);
+      log.info(`🎙 Recorder state: ${recorderRef.current.state}`);
+      recorderRef.current.start(micConfig?.timeSlice || 200);
 
       audioContextRef.current = new AudioContext();
       const analyser = audioContextRef.current.createAnalyser();
@@ -163,28 +170,35 @@ export function useAudioRecorder() {
     }
   };
 
-  useEffect(() => {
+  const createRecorderRef = useCallback(() => {
     log.info(`🎙 Mic ID changed...`);
-    if (recorderRef.current === null) {
-      const constraints = {
-        audio: deviceId ? { deviceId } : true,
-      };
 
+    const constraints = {
+      audio: deviceId ? { deviceId } : true,
+    };
+
+    return (
       navigator.mediaDevices
         .getUserMedia(constraints)
+        // eslint-disable-next-line promise/always-return
         .then((stream) => {
           const mediaRecorder = new MediaRecorder(stream);
 
           recorderRef.current = mediaRecorder;
-          startRecording();
-          return null;
         })
         .catch((err) => {
           log.info(`Error connecting to mic... ${err}`);
-        });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        })
+    );
   }, [deviceId]);
+
+  useEffect(() => {
+    // eslint-disable-next-line promise/catch-or-return, promise/always-return
+    createRecorderRef().then(() => {
+      startRecording();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createRecorderRef]);
 
   useEffect(() => {
     recorderRef.current = null;

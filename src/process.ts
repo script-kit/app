@@ -1275,6 +1275,7 @@ const kitMessageMap: ChannelHandler = {
           timeSlice: value?.timeSlice || 200,
           format: value?.format || 'webm',
           stream: value?.stream || false,
+          filePath: value?.filePath || '',
         });
       }
       // log.silly(`SET_PROMPT_DATA`);
@@ -2008,7 +2009,13 @@ const kitMessageMap: ChannelHandler = {
       properties: ['openFile'],
     });
 
+    log.info({ response });
+
     const returnValue = response.canceled ? '' : response.filePaths[0];
+
+    log.info({
+      returnValue,
+    });
 
     childSend(child, { channel, value: returnValue });
   }),
@@ -2039,7 +2046,6 @@ const kitMessageMap: ChannelHandler = {
       log.error(`🔊 Error playing ${value}`, error);
     }
     sendToPrompt(Channel.PLAY_AUDIO, value);
-    // childSend(child, { channel, value });
   }),
   STOP_AUDIO: onChildChannel(async ({ child }, { channel, value }) => {
     sendToPrompt(Channel.STOP_AUDIO, value);
@@ -2089,7 +2095,7 @@ const kitMessageMap: ChannelHandler = {
       }
     }
   }),
-  GET_COLOR: onChildChannel(async ({ child }, { channel }) => {
+  GET_COLOR: onChildChannelOverride(async ({ child }, { channel }) => {
     sendToPrompt(Channel.GET_COLOR);
   }),
   CHAT_GET_MESSAGES: onChildChannel(async ({ child }, { channel, value }) => {
