@@ -61,7 +61,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-13-xlarge, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
         arch: [x64, arm64]
         node: [18.17.1]
 
