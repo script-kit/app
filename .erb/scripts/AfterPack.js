@@ -14,14 +14,25 @@ exports.default = async function afterPack(context) {
     electronPlatformName,
     archName,
   });
+
   if (electronPlatformName === 'linux') {
-    console.log(`Rebuilding node-pty for ${archName}...`);
-    const rebuildCmd = `./node_modules/.bin/electron-rebuild --arch=${archName} --module-dir ${path.join(
-      'src',
-      'node_modules',
-      'node-pty'
-    )}`;
-    execSync(rebuildCmd, { stdio: 'inherit' });
-    console.log(`Rebuilt node-pty for ${archName} 🛠`);
+    const unpackedDir = path.join(appOutDir, 'resources', 'app.asar.unpacked');
+    console.log(
+      `Installing node-pty for ${archName} with yarn in ${unpackedDir}...`
+    );
+
+    // Change working directory to app.asar.unpacked
+    process.chdir(unpackedDir);
+
+    // Install node-pty using yarn in the app.asar.unpacked directory
+    const installCmd = `yarn add node-pty`;
+    execSync(installCmd, { stdio: 'inherit' });
+
+    // Change back to the original working directory
+    process.chdir(cwd);
+
+    console.log(
+      `Installed node-pty for ${archName} with yarn in ${unpackedDir} 📦`
+    );
   }
 };
