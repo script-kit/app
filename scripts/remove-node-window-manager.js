@@ -15,8 +15,10 @@ let result = await replace({
   to: 'REMOVED BY KIT',
 });
 
-if (result.hasChanged && result.file) {
-  console.log(`Updated: ${result.file} 🎉`);
+for (const entry of result) {
+  if (entry.hasChanged && entry.file) {
+    console.log(`Updated: ${entry.file} 🎉`);
+  }
 }
 
 console.log(`Kit is fun! ❤️`);

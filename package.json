@@ -52,6 +52,7 @@
     ]
   },
   "build": {
+    "npmRebuild": false,
     "buildDependenciesFromSource": false,
     "generateUpdatesFilesForAllChannels": true,
     "detectUpdateChannel": "true",
@@ -59,7 +60,7 @@
     "appId": "app.scriptkit",
     "asar": true,
     "asarUnpack": [
-      "**\\*.{node,dll}"
+      "**/*.{node,dll}"
     ],
     "files": [
       "dist/",

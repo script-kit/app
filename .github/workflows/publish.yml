@@ -229,7 +229,9 @@ jobs:
             yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
             cat ./package.json
             cd ..
-            echo "--- Done removing mac deps ---\n\n"
+            echo "--- Done removing mac deps, rebuilding node-pty ---\n\n"
+            ./node_modules/.bin/electron-rebuild -f -w node-pty
+            echo "--- Done rebuilding node-pty ---\n\n"
             yarn build
             yarn electron-builder --publish always --linux AppImage deb rpm --x64
 
@@ -256,6 +258,9 @@ jobs:
             yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
             cat ./package.json
             cd ..
+            echo "--- Done removing mac deps, rebuilding node-pty ---\n\n"
+            ./node_modules/.bin/electron-rebuild -f -w node-pty
+            echo "--- Done rebuilding node-pty ---\n\n"
             echo "--- Done removing mac deps ---\n\n"
             yarn build
             yarn electron-builder --publish always --linux AppImage deb rpm --arm64
