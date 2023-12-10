@@ -182,7 +182,9 @@ const write = (text: string) => {
 };
 
 export const readyPty = async () => {
-  const pty = await import('node-pty');
+  const pty = await import(
+    kitState.isLinux ? '@homebridge/node-pty-prebuilt-multiarch' : 'node-pty'
+  );
   ipcMain.on(AppChannel.TERM_READY, async (event, config: TermConfig) => {
     const termWrite = (text: string) => {
       write(text);
