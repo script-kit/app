@@ -61,7 +61,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-13, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, macos-latest]
         arch: [x64, arm64]
         node: [18.17.1]
 
@@ -143,14 +143,14 @@ jobs:
           node-version: ${{ matrix.node }}
 
       - name: yarn && yarn add @johnlindquist/kit
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'macos-latest'
         run: |
           yarn
           yarn add electron@25.9.3
           yarn add "@johnlindquist/kit"
 
       - name: yarn && yarn add @johnlindquist/kit
-        if: matrix.os != 'ubuntu-latest'
+        if: matrix.os != 'macos-latest'
         run: |
           yarn
           yarn add "@johnlindquist/kit"
@@ -272,7 +272,7 @@ jobs:
             yarn electron-builder --publish always --linux AppImage deb rpm --x64
 
       - name: Publish linux arm64
-        if: matrix.os == 'mac-latest' && matrix.arch == 'arm64'
+        if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
