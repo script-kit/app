@@ -14,6 +14,7 @@
     "build-dll": "yarn cross-env NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js",
     "yarn-dedupe": "yarn-deduplicate yarn.lock",
     "install-electron-deps": "node -r @babel/register .erb/scripts/CheckNativeDep.js && npx electron-builder install-app-deps",
+    "rebuild-node-pty": "electron-rebuild -f -o node-pty -m target",
     "silly": "cross-env LOG_LEVEL=silly yarn start",
     "super-silly": "cross-env ELECTRON_ENABLE_STACK_DUMPING=true ELECTRON_ENABLE_LOGGING=true LOG_LEVEL=silly yarn start",
     "start": "node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
@@ -31,7 +32,7 @@
     "m1-dmg": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
     "mac": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --x64 -c.mac.identity=null --publish never",
     "win": "yarn build:local && DEBUG_PROD=true npx electron-builder -w",
-    "linux": "yarn build:local && DEBUG_PROD=true npx electron-builder -l --arm64 --publish never",
+    "linux": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --linux AppImage --publish never --arm64",
     "release": "yarn build:local && DEBUG_PROD=true npx electron-builder -c.mac.identity=null --publish never --mac",
     "cp-vs-assets": "cp -R ./node_modules/monaco-editor/min/vs ./assets",
     "v": "PATH=~/.knode/bin:$PATH node --version",
@@ -50,111 +51,6 @@
     "*.{html,md,yml}": [
       "prettier --ignore-path .eslintignore --single-quote --write"
     ]
-  },
-  "build": {
-    "buildDependenciesFromSource": false,
-    "generateUpdatesFilesForAllChannels": true,
-    "detectUpdateChannel": "true",
-    "productName": "Kit",
-    "appId": "app.scriptkit",
-    "asar": true,
-    "asarUnpack": [
-      "**/*.{node,dll}"
-    ],
-    "files": [
-      "dist/",
-      "fonts/**",
-      "node_modules/",
-      "index.html",
-      "debug.html",
-      "devTools.html",
-      "preload.js",
-      "main.prod.js",
-      "main.prod.js.map",
-      "package.json"
-    ],
-    "afterSign": ".erb/scripts/Notarize.js",
-    "protocols": [
-      {
-        "name": "kit",
-        "role": "Viewer",
-        "schemes": [
-          "kit"
-        ]
-      }
-    ],
-    "win": {
-      "artifactName": "${productName}-Windows-${version}-${arch}.${ext}"
-    },
-    "mac": {
-      "artifactName": "${productName}-macOS-${version}-${arch}.${ext}",
-      "type": "distribution",
-      "hardenedRuntime": true,
-      "entitlements": "assets/entitlements.mac.plist",
-      "entitlementsInherit": "assets/entitlements.mac.plist",
-      "gatekeeperAssess": false,
-      "notarize": false,
-      "extendInfo": {
-        "CFBundleDocumentTypes": [
-          {
-            "CFBundleTypeName": "Folders",
-            "CFBundleTypeRole": "Viewer",
-            "LSHandlerRank": "Alternate",
-            "LSItemContentTypes": [
-              "public.folder",
-              "com.apple.bundle",
-              "com.apple.package",
-              "com.apple.resolvable"
-            ]
-          },
-          {
-            "CFBundleTypeName": "UnixExecutables",
-            "CFBundleTypeRole": "Shell",
-            "LSHandlerRank": "Alternate",
-            "LSItemContentTypes": [
-              "public.unix-executable"
-            ]
-          }
-        ]
-      }
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    },
-    "linux": {
-      "artifactName": "${productName}-Linux-${version}-${arch}.${ext}",
-      "category": "Development"
-    },
-    "directories": {
-      "app": "src",
-      "buildResources": "assets",
-      "output": "release"
-    },
-    "extraResources": [
-      {
-        "from": "assets",
-        "to": "assets",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
-    "publish": {
-      "provider": "github",
-      "owner": "johnlindquist",
-      "repo": "kitapp"
-    }
   },
   "repository": {
     "type": "git",

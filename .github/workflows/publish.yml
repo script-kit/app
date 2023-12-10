@@ -61,7 +61,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-13, windows-latest, macos-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
         arch: [x64, arm64]
         node: [18.17.1]
 
@@ -143,14 +143,14 @@ jobs:
           node-version: ${{ matrix.node }}
 
       - name: yarn && yarn add @johnlindquist/kit
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           yarn
           yarn add electron@25.9.3
           yarn add "@johnlindquist/kit"
 
       - name: yarn && yarn add @johnlindquist/kit
-        if: matrix.os != 'macos-latest'
+        if: matrix.os != 'ubuntu-latest'
         run: |
           yarn
           yarn add "@johnlindquist/kit"
@@ -180,7 +180,7 @@ jobs:
             cd ..
             echo "--- Done removing mac deps ---\n\n"
             yarn build
-            yarn electron-builder --publish always --win --x64
+            yarn electron-builder --publish always --win --x64 -c electron-builder.json
 
       - name: Publish windows arm64
         if: matrix.os == 'windows-latest' && matrix.arch == 'arm64'
@@ -198,7 +198,7 @@ jobs:
             cd ..
             yarn build
             echo "--- Done removing mac deps ---\n\n"
-            yarn electron-builder --publish always --win --arm64
+            yarn electron-builder --publish always --win --arm64 -c electron-builder.json
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -207,47 +207,9 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish mac x64
-        if: matrix.os == 'macos-13' && matrix.arch == 'x64'
-        env:
-          # These values are used for auto updates signing
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          # This is used for uploading release assets to github
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: nick-invision/retry@v2
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
-            yarn build
-            yarn electron-builder --publish always --mac --x64
-
-      - name: Publish mac arm64
-        if: matrix.os == 'macos-13' && matrix.arch == 'arm64'
-        env:
-          # These values are used for auto updates signing
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          # This is used for uploading release assets to github
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: nick-invision/retry@v2
-        with:
-          max_attempts: 3
-          timeout_minutes: 30
-          command: |
-            yarn build
-            yarn electron-builder --publish always --mac --arm64
 
       - name: Publish linux x64
-        if: matrix.os == 'mac-latest' && matrix.arch == 'x64'
+        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'x64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -269,10 +231,11 @@ jobs:
             cd ..
             echo "--- Done removing mac deps ---\n\n"
             yarn build
-            yarn electron-builder --publish always --linux AppImage deb rpm --x64
+            yarn rebuild-node-pty
+            yarn electron-builder --publish always --linux AppImage deb rpm --x64 -c electron-builder-linux-ci.json
 
       - name: Publish linux arm64
-        if: matrix.os == 'macos-latest' && matrix.arch == 'arm64'
+        if: matrix.os == 'mac-latest' && matrix.arch == 'arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -296,4 +259,43 @@ jobs:
             cd ..
             echo "--- Done removing mac deps ---\n\n"
             yarn build
-            yarn electron-builder --publish always --linux AppImage deb rpm --arm64
+            yarn rebuild-node-pty
+            yarn electron-builder --publish always --linux AppImage deb rpm --arm64 -c electron-builder-linux-ci.json
+
+      - name: Publish mac x64
+        if: matrix.os == 'macos-13' && matrix.arch == 'x64'
+        env:
+          # These values are used for auto updates signing
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          # This is used for uploading release assets to github
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: nick-invision/retry@v2
+        with:
+          max_attempts: 3
+          timeout_minutes: 30
+          command: |
+            yarn build
+            yarn electron-builder --publish always --mac --x64 -c electron-builder.json
+
+      - name: Publish mac arm64
+        if: matrix.os == 'macos-13' && matrix.arch == 'arm64'
+        env:
+          # These values are used for auto updates signing
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          # This is used for uploading release assets to github
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: nick-invision/retry@v2
+        with:
+          max_attempts: 3
+          timeout_minutes: 30
+          command: |
+            yarn build
+            yarn electron-builder --publish always --mac --arm64 -c electron-builder.json
