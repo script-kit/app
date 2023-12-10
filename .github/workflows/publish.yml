@@ -225,6 +225,7 @@ jobs:
           command: |
             npx kit remove-mac
             npx kit remove-node-window-manager
+            npx kit patch-node-pty
             cd ./src
             yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
             yarn add @homebridge/node-pty-prebuilt-multiarch
@@ -253,6 +254,7 @@ jobs:
             npx kit remove-mac
             npx kit remove-nut
             npx kit remove-node-window-manager
+            npx kit patch-node-pty
             cd ./src
             yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
             yarn add @homebridge/node-pty-prebuilt-multiarch

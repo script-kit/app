@@ -1,9 +1,10 @@
 /* eslint-disable no-nested-ternary */
 import os from 'os';
 import untildify from 'untildify';
-import { KIT_FIRST_PATH, KIT_LAST_PATH } from '@johnlindquist/kit/cjs/utils';
+import { KIT_FIRST_PATH } from '@johnlindquist/kit/cjs/utils';
 import log from 'electron-log';
 import { ipcMain } from 'electron';
+import * as pty from 'node-pty';
 import { debounce } from 'lodash';
 import { appDb, kitState } from './state';
 import { AppChannel } from './enums';
@@ -12,7 +13,7 @@ import { emitter, KitEvent } from './events';
 import { TermConfig } from './types';
 import { displayError } from './error';
 
-let t: any = null;
+let t: pty.IPty | null = null;
 
 type TermSize = {
   cols: number;
@@ -182,9 +183,6 @@ const write = (text: string) => {
 };
 
 export const readyPty = async () => {
-  const pty = await import(
-    kitState.isLinux ? '@homebridge/node-pty-prebuilt-multiarch' : 'node-pty'
-  );
   ipcMain.on(AppChannel.TERM_READY, async (event, config: TermConfig) => {
     const termWrite = (text: string) => {
       write(text);

@@ -2,7 +2,7 @@
 
 import '@johnlindquist/kit';
 
-console.log(`Removing import ⛳️`);
+console.log(`Removing REMOVE-MAC ⛳️`);
 
 let srcFilePath = path.resolve(process.env.PWD, 'src', '*').replace(/\\/g, '/');
 console.log({
