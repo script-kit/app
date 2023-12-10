@@ -232,7 +232,7 @@ jobs:
             echo "--- Done removing mac deps ---\n\n"
             yarn build
             yarn rebuild-node-pty
-            yarn electron-builder --publish always --linux AppImage deb rpm --x64 -c electron-builder-linux-ci.json
+            yarn electron-builder --publish always --linux AppImage deb rpm --x64
 
       - name: Publish linux arm64
         if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
@@ -260,7 +260,7 @@ jobs:
             echo "--- Done removing mac deps ---\n\n"
             yarn build
             yarn rebuild-node-pty
-            yarn electron-builder --publish always --linux AppImage deb rpm --arm64 -c electron-builder-linux-ci.json
+            yarn electron-builder --publish always --linux AppImage deb rpm --arm64
 
       - name: Publish mac x64
         if: matrix.os == 'macos-13' && matrix.arch == 'x64'

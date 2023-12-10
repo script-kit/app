@@ -52,6 +52,111 @@
       "prettier --ignore-path .eslintignore --single-quote --write"
     ]
   },
+  "build": {
+    "buildDependenciesFromSource": false,
+    "generateUpdatesFilesForAllChannels": true,
+    "detectUpdateChannel": "true",
+    "productName": "Kit",
+    "appId": "app.scriptkit",
+    "asar": true,
+    "asarUnpack": [
+      "**/*.{node,dll}"
+    ],
+    "files": [
+      "dist/",
+      "fonts/**",
+      "node_modules/",
+      "index.html",
+      "debug.html",
+      "devTools.html",
+      "preload.js",
+      "main.prod.js",
+      "main.prod.js.map",
+      "package.json"
+    ],
+    "afterSign": ".erb/scripts/Notarize.js",
+    "protocols": [
+      {
+        "name": "kit",
+        "role": "Viewer",
+        "schemes": [
+          "kit"
+        ]
+      }
+    ],
+    "win": {
+      "artifactName": "${productName}-Windows-${version}-${arch}.${ext}"
+    },
+    "mac": {
+      "artifactName": "${productName}-macOS-${version}-${arch}.${ext}",
+      "type": "distribution",
+      "hardenedRuntime": true,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist",
+      "gatekeeperAssess": false,
+      "notarize": false,
+      "extendInfo": {
+        "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "Folders",
+            "CFBundleTypeRole": "Viewer",
+            "LSHandlerRank": "Alternate",
+            "LSItemContentTypes": [
+              "public.folder",
+              "com.apple.bundle",
+              "com.apple.package",
+              "com.apple.resolvable"
+            ]
+          },
+          {
+            "CFBundleTypeName": "UnixExecutables",
+            "CFBundleTypeRole": "Shell",
+            "LSHandlerRank": "Alternate",
+            "LSItemContentTypes": [
+              "public.unix-executable"
+            ]
+          }
+        ]
+      }
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "linux": {
+      "artifactName": "${productName}-Linux-${version}-${arch}.${ext}",
+      "category": "Development"
+    },
+    "directories": {
+      "app": "src",
+      "buildResources": "assets",
+      "output": "release"
+    },
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "johnlindquist",
+      "repo": "kitapp"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/johnlindquist/kitapp.git"
