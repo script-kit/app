@@ -180,7 +180,7 @@ jobs:
             cd ..
             echo "--- Done removing mac deps ---\n\n"
             yarn build
-            yarn electron-builder --publish always --win --x64 -c electron-builder.json
+            yarn electron-builder --publish always --win --x64
 
       - name: Publish windows arm64
         if: matrix.os == 'windows-latest' && matrix.arch == 'arm64'
@@ -198,7 +198,7 @@ jobs:
             cd ..
             yarn build
             echo "--- Done removing mac deps ---\n\n"
-            yarn electron-builder --publish always --win --arm64 -c electron-builder.json
+            yarn electron-builder --publish always --win --arm64
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -235,7 +235,7 @@ jobs:
             yarn electron-builder --publish always --linux AppImage deb rpm --x64 -c electron-builder-linux-ci.json
 
       - name: Publish linux arm64
-        if: matrix.os == 'mac-latest' && matrix.arch == 'arm64'
+        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -279,7 +279,7 @@ jobs:
           timeout_minutes: 30
           command: |
             yarn build
-            yarn electron-builder --publish always --mac --x64 -c electron-builder.json
+            yarn electron-builder --publish always --mac --x64
 
       - name: Publish mac arm64
         if: matrix.os == 'macos-13' && matrix.arch == 'arm64'
@@ -298,4 +298,4 @@ jobs:
           timeout_minutes: 30
           command: |
             yarn build
-            yarn electron-builder --publish always --mac --arm64 -c electron-builder.json
+            yarn electron-builder --publish always --mac --arm64
