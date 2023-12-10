@@ -146,7 +146,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           yarn
-          yarn add electron@25.9.3
+          # yarn add electron@25.9.3
           yarn add "@johnlindquist/kit"
 
       - name: yarn && yarn add @johnlindquist/kit
@@ -231,7 +231,7 @@ jobs:
             cd ..
             echo "--- Done removing mac deps ---\n\n"
             yarn build
-            yarn rebuild-node-pty
+            # yarn rebuild-node-pty
             yarn electron-builder --publish always --linux AppImage deb rpm --x64
 
       - name: Publish linux arm64
