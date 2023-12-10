@@ -331,10 +331,10 @@
     nan "^2.17.0"
     node-addon-api "^7.0.0"
 
-"@johnlindquist/node-window-manager@^1.0.19":
-  version "1.0.19"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/node-window-manager/-/node-window-manager-1.0.19.tgz#882c36a0d70a0fa0ad4210e4cec7f47933d9408d"
-  integrity sha512-Rt2rrLanecPQqNVVRxNkEcKCfwYZeNbejPz1ZSxoIVe7r7s8vv51pT1kjQbc58TeFZ/GDdPxOopkA6rZ5lWPag==
+"@johnlindquist/node-window-manager@^1.0.21":
+  version "1.0.21"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/node-window-manager/-/node-window-manager-1.0.21.tgz#7cb1f45b92e631546c08778966fa94d9fc6ac331"
+  integrity sha512-BxU3kdxT5xQZLUHNnDQyTYSR1AlLR0Ud6RYgVNN0W5a7FoW2F2+ixIk++g9Ck2NckRFZkVSju4nIwbijwd7Xyg==
   dependencies:
     bindings "^1.5.0"
     node-addon-api "7.0.0"
@@ -804,10 +804,10 @@ node-mac-permissions@2.3.0:
     bindings "^1.5.0"
     node-addon-api "^3.0.2"
 
-node-pty@1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/node-pty/-/node-pty-1.0.0.tgz#7daafc0aca1c4ca3de15c61330373af4af5861fd"
-  integrity sha512-wtBMWWS7dFZm/VgqElrTvtfMq4GzJ6+edFI0Y0zyzygUSZMgZdraDUMUhCIvkjhJjme15qWmbyJbtAx4ot4uZA==
+node-pty@^1.1.0-beta5:
+  version "1.1.0-beta5"
+  resolved "https://registry.yarnpkg.com/node-pty/-/node-pty-1.1.0-beta5.tgz#364386b7058a93070234064f13164ec1ef914993"
+  integrity sha512-j3QdgFHnLY0JWxztrvM3g67RaQLOGvytv+C6mFu0PqD+JILlzqfwuoyqRqVxdZZjoOTUXPfSRj1qPVCaCH+eOw==
   dependencies:
     nan "^2.17.0"
 
