@@ -2126,6 +2126,10 @@ const kitMessageMap: ChannelHandler = {
   SHEBANG: onChildChannel(async ({ child }, { channel, value }) => {
     spawnShebang(value);
   }),
+  ERROR: onChildChannelOverride(async ({ child }, { channel, value }) => {
+    log.error(`ERROR`, value);
+    trackEvent(TrackEvent.Error, value);
+  }),
   GET_TYPED_TEXT: onChildChannelOverride(
     async ({ child }, { channel, value }) => {
       childSend(child, { channel, value: kitState.typedText });

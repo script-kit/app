@@ -1,4 +1,5 @@
 import axios from 'axios';
+import log from 'electron-log';
 import { kitState } from './state';
 
 export enum TrackEvent {
@@ -16,6 +17,7 @@ export enum TrackEvent {
 }
 
 export const trackEvent = (event: TrackEvent, properties: any) => {
+  if (kitState.kenvEnv?.KIT_DISABLE_TELEMETRY) return;
   axios
     .post(`${kitState.url}/api/usage`, {
       event,

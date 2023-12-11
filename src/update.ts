@@ -21,6 +21,10 @@ export const kitIgnore = () => {
 };
 
 export const checkForUpdates = async () => {
+  if (kitState.kenvEnv.KIT_DISABLE_AUTO_UPDATE) {
+    updateLog.info('Auto update disabled. Skipping check...');
+    return;
+  }
   updateLog.log('🔍 Checking for updates');
   const isOnline = await online();
 
