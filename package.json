@@ -30,6 +30,7 @@
     "css": "./node_modules/.bin/postcss -o ./src/dist/style.css ./src/App.global.css",
     "m1": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --arm64 -c.mac.identity=null --publish never",
     "m1-dmg": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
+    "m1-dmg-publish": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish always",
     "mac": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --mac dir --x64 -c.mac.identity=null --publish never",
     "win": "yarn build:local && DEBUG_PROD=true npx electron-builder -w",
     "linux": "PATH=~/.knode/bin:$PATH yarn build:local && DEBUG_PROD=true electron-builder --linux AppImage --publish never --arm64",

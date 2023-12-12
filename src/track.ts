@@ -1,5 +1,4 @@
 import axios from 'axios';
-import log from 'electron-log';
 import { kitState } from './state';
 
 export enum TrackEvent {

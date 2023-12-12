@@ -302,3 +302,12 @@ jobs:
           command: |
             yarn build
             yarn electron-builder --publish always --mac --arm64
+            mv latest-mac.yml latest-mac-arm64.yml
+
+      - name: Merge latest-mac.yml and latest-mac-arm64.yml
+        if: matrix.os == 'macos-13'
+        uses: johnlindquist/kit-action@main
+        with:
+          script: merge-mac-latest-yml johnlindquist kitapp ${{ matrix.arch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

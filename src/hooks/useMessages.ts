@@ -91,6 +91,7 @@ import {
   termFontAtom,
   micStreamEnabledAtom,
   progressAtom,
+  channelAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../enums';
@@ -106,6 +107,9 @@ export default () => {
   const [, setLogHtml] = useAtom(logHTMLAtom);
   const [, setHidden] = useAtom(isHiddenAtom);
   const [, setChatMessages] = useAtom(chatMessagesAtom);
+
+  const channel = useAtomValue(channelAtom);
+
   const addChatMessage = useSetAtom(addChatMessageAtom);
   const chatPushToken = useSetAtom(chatPushTokenAtom);
   const setChatMessage = useSetAtom(setChatMessageAtom);

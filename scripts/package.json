@@ -28,6 +28,7 @@
     "test": ""
   },
   "devDependencies": {
+    "octokit": "^3.1.2",
     "tar": "^6.2.0"
   }
 }

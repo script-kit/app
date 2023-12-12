@@ -53,8 +53,7 @@ syncClipboardStore();
 
 const SPACE = '_';
 
-let prevKey = '';
-const backspace = 'backspace';
+let prevKey = -1;
 const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
   try {
     if ((event as UiohookMouseEvent).button) {
@@ -66,6 +65,7 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
     const e = event as UiohookKeyboardEvent;
 
     if (e.keycode === UiohookKey.Escape) {
+      kitState.typedText = '';
       if (kitState.isTyping) {
         log.info(`✋ Cancel typing`);
         kitState.cancelTyping = true;
@@ -113,20 +113,20 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.altKey) {
       log.silly(`Ignoring modifier key and clearing snippet`);
       kitState.snippet = '';
-      if (key === backspace) {
+      if (e.keycode === UiohookKey.Backspace) {
         kitState.typedText = '';
       }
       return;
     }
 
-    if (key === backspace) {
+    if (e.keycode === UiohookKey.Backspace) {
       log.silly(`Backspace: Removing last character from snippet`);
       kitState.snippet = kitState.snippet.slice(0, -1);
       kitState.typedText = kitState.typedText.slice(0, -1);
       // 57 is the space key
     } else if (e?.keycode === UiohookKey.Space) {
       log.silly(`Space: Adding space to snippet`);
-      if (prevKey === backspace || kitState.snippet.length === 0) {
+      if (prevKey === UiohookKey.Backspace || kitState.snippet.length === 0) {
         kitState.snippet = '';
       } else {
         kitState.snippet += SPACE;
@@ -146,7 +146,7 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
       );
       log.silly(`kitState.snippet = `, kitState.snippet);
     }
-    prevKey = key;
+    prevKey = e.keycode;
   } catch (error) {
     log.error(error);
   }

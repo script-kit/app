@@ -2120,7 +2120,7 @@ const kitMessageMap: ChannelHandler = {
     log.info(`TERM EXIT FROM SCRIPT`, value);
     sendToPrompt(channel, kitState.promptId);
   }),
-  GET_DEVICES: onChildChannel(async ({ child }, { channel, value }) => {
+  GET_DEVICES: onChildChannelOverride(async ({ child }, { channel, value }) => {
     sendToPrompt(channel, value);
   }),
   SHEBANG: onChildChannel(async ({ child }, { channel, value }) => {
