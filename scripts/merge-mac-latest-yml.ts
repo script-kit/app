@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import { Readable } from 'node:stream';
 import { Buffer } from 'node:buffer';
 
-const token = process.env.GH_TOKEN;
+const token = process.env.GITHUB_TOKEN;
 
 const client = new Octokit({
   auth: token,
@@ -72,7 +72,9 @@ const getPlatformFromLatestMacYml = (content) => {
 
 (async () => {
   const allReleases = await client.request(`GET ${URL}`);
+  consle.log({ allReleases });
   const currentRelease = allReleases.data.find((release) => {
+    console.log({ release });
     return release.name === VERSION;
   });
 
