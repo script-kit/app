@@ -3,7 +3,6 @@
 import '@johnlindquist/kit';
 
 import { Octokit } from 'octokit';
-import pkg from './src/package.json' assert { type: 'json' };
 import { TextDecoder } from 'node:util';
 import fs from 'node:fs';
 import { Readable } from 'node:stream';
@@ -35,6 +34,9 @@ console.log({
   LOCAL_FILE_PATH,
 });
 
+let pkgJson = projectPath('src', 'package.json');
+let pkg = await readJson(pkgJson);
+
 const mergeFiles = (intel, arm) => {
   const intelLines = intel.split('\n');
   const armLines = arm.split('\n').splice(2, 6);
@@ -49,8 +51,8 @@ const mergeFiles = (intel, arm) => {
 };
 
 const getPlatformFromLatestMacYml = (content) => {
-  const intelRe = `<app name>-${VERSION}.dmg`;
-  const armRe = `<app name>-${VERSION}-arm64.dmg`;
+  const intelRe = `x64.dmg`;
+  const armRe = `arm64.dmg`;
   const isIntel = content.includes(intelRe);
   const isArm = content.includes(armRe);
 
