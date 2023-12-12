@@ -14,14 +14,12 @@ const client = new Octokit({
   auth: token,
 });
 
-let projectFiles = await readdir(projectPath());
-let srcFiles = await readdir(projectPath('src'));
+// let projectFiles = await readdir(projectPath());
+// let srcFiles = await readdir(projectPath('src'));
 let pkgJsonPath = projectPath('src', 'package.json');
 let pkg = await readJson(pkgJsonPath);
 
 console.log({
-  projectFiles,
-  srcFiles,
   pkgJsonPath,
   pkg,
 });
@@ -30,7 +28,7 @@ const OWNER = await arg('Enter owner name');
 const REPO = await arg('Enter repo name');
 const ARCH = await arg('Enter arch');
 const URL = `/repos/${OWNER}/${REPO}/releases`;
-const VERSION = pkg.version;
+const VERSION = `v${pkg.version}`;
 const FILE_NAME = 'latest-mac.yml';
 const DIR = `release/mac${ARCH === 'arm64' ? '-arm64' : ''}`;
 const LOCAL_FILE_PATH = `./${FILE_NAME}`;
