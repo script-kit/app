@@ -14,6 +14,18 @@ const client = new Octokit({
   auth: token,
 });
 
+let projectFiles = await readdir(projectPath());
+let srcFiles = await readdir(projectPath('src'));
+let pkgJsonPath = projectPath('src', 'package.json');
+let pkg = await readJson(pkgJsonPath);
+
+console.log({
+  projectFiles,
+  srcFiles,
+  pkgJsonPath,
+  pkg,
+});
+
 const OWNER = await arg('Enter owner name');
 const REPO = await arg('Enter repo name');
 const ARCH = await arg('Enter arch');
@@ -33,9 +45,6 @@ console.log({
   DIR,
   LOCAL_FILE_PATH,
 });
-
-let pkgJson = projectPath('src', 'package.json');
-let pkg = await readJson(pkgJson);
 
 const mergeFiles = (intel, arm) => {
   const intelLines = intel.split('\n');
