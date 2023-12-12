@@ -63,7 +63,7 @@ jobs:
       matrix:
         os: [macos-13, windows-latest, ubuntu-latest]
         arch: [x64, arm64]
-        node: [18.17.1]
+        node: [18.18.2]
 
     steps:
       - name: Checkout git repo
@@ -302,7 +302,6 @@ jobs:
           command: |
             yarn build
             yarn electron-builder --publish always --mac --arm64
-            mv latest-mac.yml latest-mac-arm64.yml
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
         if: matrix.os == 'macos-13'

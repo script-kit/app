@@ -3,7 +3,7 @@
 import '@johnlindquist/kit';
 
 import { Octokit } from 'octokit';
-import pkg from './package.json' assert { type: 'json' };
+import pkg from './src/package.json' assert { type: 'json' };
 import { TextDecoder } from 'node:util';
 import fs from 'node:fs';
 import { Readable } from 'node:stream';
