@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/jsx-no-useless-fragment */
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
@@ -51,6 +53,8 @@ import {
   channelAtom,
   shouldActionButtonShowOnInputAtom,
   focusedChoiceAtom,
+  sendShortcutAtom,
+  signInActionAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -109,6 +113,15 @@ export default function Input() {
   const kitState = useAtomValue(kitStateAtom);
   const channel = useAtomValue(channelAtom);
   const focusedChoice = useAtomValue(focusedChoiceAtom);
+  const sendShortcut = useSetAtom(sendShortcutAtom);
+  const action = useAtomValue(signInActionAtom);
+
+  const onClick = useCallback(
+    (event) => {
+      if (action) sendShortcut(action.key);
+    },
+    [action, sendShortcut]
+  );
 
   useEffect(() => {
     setInputFocus(Math.random());
@@ -395,9 +408,10 @@ export default function Input() {
                 } pl-1 pr-1`}
               >
                 <img
+                  onClick={onClick}
                   alt="avatar"
                   src={user.avatar_url}
-                  className="z-0 w-[22px] rounded-full"
+                  className="z-0 w-[22px] cursor-pointer rounded-full hover:opacity-75"
                 />
                 <svg
                   height="24"
