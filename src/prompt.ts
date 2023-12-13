@@ -1005,7 +1005,7 @@ export const isVisible = () => {
     return false;
   }
   const visible = promptWindow?.isVisible();
-  log.silly(`function: isVisible: ${visible ? 'true' : 'false'}`);
+  // log.silly(`function: isVisible: ${visible ? 'true' : 'false'}`);
   return visible;
 };
 

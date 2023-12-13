@@ -19,6 +19,7 @@ import {
   shell,
   globalShortcut,
   nativeTheme,
+  powerMonitor,
 } from 'electron';
 import os from 'os';
 import { assign, remove, debounce } from 'lodash';
@@ -2204,11 +2205,17 @@ const kitMessageMap: ChannelHandler = {
     log.verbose(`KENV NEW PATH`, { value });
     kitStore.set('KENV', value);
   }),
+
+  HEARTBEAT: onChildChannelOverride(async ({ child }, { channel }) => {
+    log.verbose(`❤️ ${channel} from ${child.pid}`);
+  }),
 };
 
 export const createMessageHandler =
   (type: ProcessType) => async (data: GenericSendData) => {
-    if (!data.kitScript) log.info(data);
+    if (!data.kitScript && data?.channel !== Channel.HEARTBEAT) {
+      log.verbose(data);
+    }
 
     if (kitMessageMap[data.channel]) {
       type C = keyof ChannelMap;
@@ -2486,6 +2493,34 @@ class Processes extends Array<ProcessInfo> {
     }
   }
 
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+
+  public startHeartbeat() {
+    if (this.heartbeatInterval) return;
+    this.heartbeat();
+
+    this.heartbeatInterval = setInterval(() => {
+      this.heartbeat();
+    }, 10000);
+  }
+
+  public stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+  }
+
+  public heartbeat() {
+    for (const pInfo of this) {
+      if (pInfo.child && pInfo.child.connected && !pInfo.child?.killed) {
+        pInfo.child.send({
+          channel: Channel.HEARTBEAT,
+        });
+      }
+    }
+  }
+
   public add(
     type: ProcessType = ProcessType.Prompt,
     scriptPath = '',
@@ -2501,6 +2536,7 @@ class Processes extends Array<ProcessInfo> {
     });
 
     log.info(`👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
+
     const info = {
       pid: child.pid,
       child,
@@ -2686,6 +2722,11 @@ class Processes extends Array<ProcessInfo> {
 }
 
 export const processes = new Processes();
+processes.startHeartbeat();
+powerMonitor.addListener('resume', processes.startHeartbeat);
+powerMonitor.addListener('unlock-screen', processes.startHeartbeat);
+powerMonitor.addListener('suspend', processes.stopHeartbeat);
+powerMonitor.addListener('lock-screen', processes.stopHeartbeat);
 
 export const removeAbandonnedKit = () => {
   const kitProcess = processes.find((processInfo) =>
