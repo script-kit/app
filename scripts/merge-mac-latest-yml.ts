@@ -31,7 +31,8 @@ const URL = `/repos/${OWNER}/${REPO}/releases`;
 const VERSION = `v${pkg.version}`;
 const FILE_NAME = 'latest-mac.yml';
 const DIR = `release/mac${ARCH === 'arm64' ? '-arm64' : ''}`;
-const LOCAL_FILE_PATH = `./${FILE_NAME}`;
+const LOCAL_FILE_PATH = `release/${FILE_NAME}`;
+const LOCAL_FILE_WITH_DIR_PATH = `${DIR}/${FILE_NAME}`;
 
 console.log({
   OWNER,
@@ -42,6 +43,7 @@ console.log({
   FILE_NAME,
   DIR,
   LOCAL_FILE_PATH,
+  LOCAL_FILE_WITH_DIR_PATH,
 });
 
 const mergeFiles = (intel, arm) => {
@@ -85,7 +87,21 @@ const getPlatformFromLatestMacYml = (content) => {
     console.log('Release found');
   }
 
-  const localLatestMacYmlExists = fs.existsSync(LOCAL_FILE_PATH);
+  const localFilePathFiles = await readdir(path.dirname(LOCAL_FILE_PATH));
+
+  console.log({ files: localFilePathFiles });
+
+  const localFileWithDirPathFiles = await readdir(
+    path.dirname(LOCAL_FILE_WITH_DIR_PATH)
+  );
+
+  console.log({ files: localFileWithDirPathFiles });
+
+  const localLatestMacYmlExists =
+    fs.existsSync(LOCAL_FILE_PATH) || fs.existsSync(LOCAL_FILE_WITH_DIR_PATH);
+  const actualLocalFilePath = fs.existsSync(LOCAL_FILE_PATH)
+    ? LOCAL_FILE_PATH
+    : LOCAL_FILE_WITH_DIR_PATH;
 
   if (!localLatestMacYmlExists) {
     console.log(`[local] could not find ${FILE_NAME}. Skipping merge`);
@@ -94,7 +110,7 @@ const getPlatformFromLatestMacYml = (content) => {
     console.log(`[local] ${FILE_NAME} found`);
   }
 
-  const localLatestMacYmlContent = fs.readFileSync(LOCAL_FILE_PATH, {
+  const localLatestMacYmlContent = fs.readFileSync(actualLocalFilePath, {
     encoding: 'utf8',
   });
 
