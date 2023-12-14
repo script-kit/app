@@ -136,7 +136,8 @@
     },
     "linux": {
       "artifactName": "${productName}-Linux-${version}-${arch}.${ext}",
-      "category": "Development"
+      "category": "Development",
+      "executableName": "scriptkit"
     },
     "directories": {
       "app": "src",

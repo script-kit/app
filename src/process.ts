@@ -2723,10 +2723,10 @@ class Processes extends Array<ProcessInfo> {
 
 export const processes = new Processes();
 processes.startHeartbeat();
-powerMonitor.addListener('resume', processes.startHeartbeat);
-powerMonitor.addListener('unlock-screen', processes.startHeartbeat);
-powerMonitor.addListener('suspend', processes.stopHeartbeat);
-powerMonitor.addListener('lock-screen', processes.stopHeartbeat);
+powerMonitor.addListener('resume', () => processes.startHeartbeat());
+powerMonitor.addListener('unlock-screen', () => processes.startHeartbeat());
+powerMonitor.addListener('suspend', () => processes.stopHeartbeat());
+powerMonitor.addListener('lock-screen', () => processes.stopHeartbeat());
 
 export const removeAbandonnedKit = () => {
   const kitProcess = processes.find((processInfo) =>
