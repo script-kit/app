@@ -396,6 +396,7 @@
     "jotai-effect": "^0.2.3",
     "lodash": "4.17.21",
     "memoize-one": "5.2.1",
+    "million": "^2.6.4",
     "minimist": "1.2.5",
     "moize": "^6.1.6",
     "monaco-editor": "0.45.0",

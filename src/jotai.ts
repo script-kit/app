@@ -617,6 +617,7 @@ export const scoredChoicesAtom = atom(
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
   (g, s, a: ScoredChoice[]) => {
+    s(cachedAtom, false);
     s(loadingAtom, false);
     prevFocusedChoiceId = 'prevFocusedChoiceId';
 
@@ -2874,44 +2875,57 @@ export const currentChoiceHeightsAtom = atom(
 
 const pauseChannelAtom = atom(false);
 
+export const cachedAtom = atom(false);
+
 export const resetIdAtom = atom(Math.random());
-export const resetPromptAtom = atom(null, async (g, s) => {
-  s(pauseChannelAtom, true);
-  s(isMainScriptAtom, true);
-  const cachedMainPromptData = g(cachedMainPromptDataAtom) as PromptData;
-  cachedMainPromptData.preload = true;
-  const cachedMainScoredChoices = g(cachedMainScoredChoicesAtom);
-  const cachedShortcuts = g(cachedMainShortcutsAtom);
-  const cachedMainPreview = g(cachedMainPreviewAtom);
+export const resetPromptAtom = atom(
+  null,
+  debounce(
+    async (g, s) => {
+      if (document.hasFocus()) return;
+      s(pauseChannelAtom, true);
+      s(isMainScriptAtom, true);
+      const cachedMainPromptData = g(cachedMainPromptDataAtom) as PromptData;
+      cachedMainPromptData.preload = true;
+      const cachedMainScoredChoices = g(cachedMainScoredChoicesAtom);
+      const cachedShortcuts = g(cachedMainShortcutsAtom);
+      const cachedMainPreview = g(cachedMainPreviewAtom);
 
-  if (cachedMainPromptData) {
-    cachedMainPromptData.input = '';
-    s(promptDataAtom, cachedMainPromptData);
-  }
+      if (cachedMainPromptData) {
+        cachedMainPromptData.input = '';
+        s(promptDataAtom, cachedMainPromptData);
+      }
 
-  if (cachedShortcuts?.length > 0) {
-    s(shortcutsAtom, cachedShortcuts);
-  }
+      if (cachedShortcuts?.length > 0) {
+        s(shortcutsAtom, cachedShortcuts);
+      }
 
-  if (cachedMainPreview) {
-    s(previewHTMLAtom, cachedMainPreview);
-  }
+      if (cachedMainPreview) {
+        s(previewHTMLAtom, cachedMainPreview);
+      }
 
-  if (cachedMainScoredChoices?.length > 0) {
-    s(scoredChoicesAtom, cachedMainScoredChoices);
-    s(flaggedChoiceValueAtom, '');
-    s(prevInputAtom, '');
-    s(tabIndexAtom, 0);
-    s(inputAtom, '');
-  }
+      if (cachedMainScoredChoices?.length > 0) {
+        s(scoredChoicesAtom, cachedMainScoredChoices);
+        s(flaggedChoiceValueAtom, '');
+        s(prevInputAtom, '');
+        s(tabIndexAtom, 0);
+        s(inputAtom, '');
+      }
 
-  // if (cachedMainPromptData?.flags) {
-  //   s(flagsAtom, cachedMainPromptData.flags);
-  // }
+      // if (cachedMainPromptData?.flags) {
+      //   s(flagsAtom, cachedMainPromptData.flags);
+      // }
 
-  s(pauseChannelAtom, false);
-  log.info(`✅ Reset main complete.`);
-});
+      s(pauseChannelAtom, false);
+      log.info(`✅ Reset main complete.`);
+      s(cachedAtom, true);
+    },
+    500,
+    {
+      leading: true,
+    }
+  )
+);
 
 const cachedMainScoredChoices = atom<ScoredChoice[]>([]);
 export const cachedMainScoredChoicesAtom = atom(

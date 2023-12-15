@@ -13,11 +13,14 @@ import React, {
   useRef,
   useEffect,
   useState,
+  ChangeEvent,
 } from 'react';
+import log from 'electron-log';
 import { Channel, PROMPT } from '@johnlindquist/kit/cjs/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
 import useResizeObserver from '@react-hook/resize-observer';
+import { debounce } from 'lodash';
 import {
   inputAtom,
   modifiers,
@@ -47,7 +50,6 @@ import {
   loadingAtom,
   typingAtom,
   shortcutsAtom,
-  logAtom,
   userAtom,
   kitStateAtom,
   channelAtom,
@@ -55,6 +57,8 @@ import {
   focusedChoiceAtom,
   sendShortcutAtom,
   signInActionAtom,
+  preloadedAtom,
+  cachedAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -105,10 +109,12 @@ export default function Input() {
   const footerHidden = useAtomValue(footerHiddenAtom);
   const inputHeight = useAtomValue(inputHeightAtom);
 
-  const setLastKeyDownWasModifier = useSetAtom(lastKeyDownWasModifierAtom);
+  const setLastKeyDownWasModifier = debounce(
+    useSetAtom(lastKeyDownWasModifierAtom),
+    100
+  );
   const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
-  const [log] = useAtom(logAtom);
   const user = useAtomValue(userAtom);
   const kitState = useAtomValue(kitStateAtom);
   const channel = useAtomValue(channelAtom);
@@ -181,6 +187,7 @@ export default function Input() {
 
       // if the key is a modifier that isn't shift, return
 
+      setLastKeyDownWasModifier.cancel();
       setLastKeyDownWasModifier(
         modifiers.includes(event.key) && event.key !== 'Shift'
       );
@@ -192,7 +199,7 @@ export default function Input() {
 
       // If key was delete and the value is empty, clear setInput
       if (event.key === 'Backspace' && target.value === '') {
-        log(`Clearing input`);
+        log.info(`Clearing input`);
         channel(Channel.INPUT, {
           input: '',
         });
@@ -206,7 +213,6 @@ export default function Input() {
       shortcuts,
       flags,
       setInput,
-      log,
     ]
   );
 
@@ -230,17 +236,33 @@ export default function Input() {
     setHiddenInputMeasurerWidth(Math.max(newWidth, minWidth));
   });
 
+  const preloaded = useAtomValue(preloadedAtom);
+  const cached = useAtomValue(cachedAtom);
+
   const onChange = useCallback(
-    (event) => {
+    (event: ChangeEvent<HTMLInputElement>) => {
+      log.info(event.target.value, { cached: cached ? 'true' : 'false' });
       if (onInputSubmit[event.target.value] && !submitted) {
         const submitValue = onInputSubmit[event.target.value];
         setSubmitValue(submitValue);
-      } else {
+      } else if (!cached) {
         setInput(event.target.value);
+        setPendingInput('');
+      } else {
+        setPendingInput(event.target.value);
       }
     },
-    [onInputSubmit, submitted, setSubmitValue, setInput]
+    [onInputSubmit, submitted, setSubmitValue, setInput, cached]
   );
+
+  const [pendingInput, setPendingInput] = useState('');
+
+  useEffect(() => {
+    if (!cached && pendingInput) {
+      setInput(pendingInput);
+      setPendingInput('');
+    }
+  }, [cached, pendingInput, setInput]);
 
   return (
     <div

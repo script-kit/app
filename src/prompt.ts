@@ -1001,6 +1001,8 @@ export const setBounds = async (bounds: Partial<Rectangle>, reason = '') => {
 };
 
 export const isVisible = () => {
+  if (!promptWindow) return false;
+
   if (promptWindow.isDestroyed()) {
     return false;
   }
@@ -1023,6 +1025,7 @@ export const isFocused = () => {
 let hadPreview = true;
 let prevResizeData = {} as ResizeData;
 export const resize = async (resizeData: ResizeData) => {
+  if (kitState.isLinux) return;
   // if (isEqual(prevResizeData, resizeData)) return;
   prevResizeData = resizeData;
 
@@ -1535,6 +1538,8 @@ export const preloadPromptData = async (promptData: PromptData) => {
 };
 
 export const setPromptData = async (promptData: PromptData) => {
+  log.info(`
+  >>> 📝 setPromptData for ${promptData?.scriptPath}`);
   clearFlagSearch();
   kitSearch.shortcodes.clear();
   kitSearch.triggers.clear();

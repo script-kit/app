@@ -21,7 +21,7 @@ import { appToPrompt, sendToPrompt } from './channel';
 export const invokeSearch = (rawInput: string, reason = 'normal') => {
   if (kitState.ui !== UI.arg) return;
 
-  log.silly({ inputRegex: JSON.stringify(kitSearch.inputRegex) });
+  // log.silly({ inputRegex: JSON.stringify(kitSearch.inputRegex) });
   let transformedInput = rawInput;
   if (kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
@@ -44,18 +44,20 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
   const lowerCaseInput = transformedInput?.toLowerCase();
 
   if (transformedInput === '') {
-    const results = kitSearch.choices
-      .filter((c) => {
-        if (c?.miss || c?.pass || c?.hideWithoutInput) return false;
-
-        return true;
-      })
-      .map(createScoredChoice);
+    const results = [];
+    for (const choice of kitSearch.choices) {
+      if (!(choice?.miss || choice?.pass || choice?.hideWithoutInput)) {
+        results.push(createScoredChoice(choice));
+      }
+    }
 
     if (results?.length === 0) {
-      const misses = kitSearch.choices
-        .filter((c) => c?.miss || c?.info)
-        .map(createScoredChoice);
+      const misses = [];
+      for (const choice of kitSearch.choices) {
+        if (choice?.miss || choice?.info) {
+          misses.push(createScoredChoice(choice));
+        }
+      }
       setScoredChoices(misses);
     } else {
       setScoredChoices(results);
@@ -317,12 +319,15 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
     if (allMisses) {
       setScoredChoices(result);
     } else {
-      const infos = kitSearch.choices
-        // exclude "hideWithoutInput" choices if the input is empty
-        .filter(
-          (c) => c?.info && !(c?.hideWithoutInput && transformedInput === '')
-        )
-        .map(createScoredChoice);
+      const infos = [];
+      for (const choice of kitSearch.choices) {
+        if (
+          choice?.info &&
+          !(choice?.hideWithoutInput && transformedInput === '')
+        ) {
+          infos.push(createScoredChoice(choice));
+        }
+      }
       const filterConditions = result.filter((r) => {
         if (r.item.miss) return false;
         if (r.item.info) return false;
@@ -431,9 +436,12 @@ export const invokeFlagSearch = (input: string) => {
 
     setScoredFlags(groupedResults);
   } else if (result?.length === 0) {
-    const missGroup = flagSearch.choices
-      .filter((c) => c?.miss)
-      .map(createScoredChoice);
+    const missGroup = [];
+    for (const choice of flagSearch.choices) {
+      if (choice?.miss) {
+        missGroup.push(createScoredChoice(choice));
+      }
+    }
     setScoredFlags(missGroup);
   } else {
     setScoredFlags(result);
@@ -444,14 +452,10 @@ export const setFlags = (f: FlagsWithKeys) => {
   const order = f?.order || [];
   const sortChoicesKey = f?.sortChoicesKey || [];
 
-  let flagChoices = Object.entries(f)
-    .filter(([key]) => {
-      if (key === 'order') return false;
-      if (key === 'sortChoicesKey') return false;
-      return true;
-    })
-    .map(([key, value]: [string, any]) => {
-      return {
+  let flagChoices = [];
+  for (const [key, value] of Object.entries(f)) {
+    if (key !== 'order' && key !== 'sortChoicesKey') {
+      flagChoices.push({
         id: key,
         group: value?.group,
         command: value?.name,
@@ -462,8 +466,9 @@ export const setFlags = (f: FlagsWithKeys) => {
         description: value?.description || '',
         value: key,
         preview: value?.preview || '',
-      };
-    });
+      });
+    }
+  }
 
   if (flagChoices.find((c: Choice) => c?.group)) {
     flagChoices = groupChoices(flagChoices, {

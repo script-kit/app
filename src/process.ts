@@ -1352,12 +1352,6 @@ const kitMessageMap: ChannelHandler = {
 
     const { choices, skipInitialSearch, inputRegex, generated } = value;
 
-    // log.silly({
-    //   skipInitialSearch: Boolean(skipInitialSearch) ? 'true' : 'false',
-    //   inputRegex: Boolean(inputRegex) ? 'true' : 'false',
-    //   generated: Boolean(generated) ? 'true' : 'false',
-    // });
-
     kitSearch.inputRegex = inputRegex
       ? new RegExp(inputRegex, 'gi')
       : undefined;
@@ -2163,7 +2157,9 @@ const kitMessageMap: ChannelHandler = {
   }),
   SET_SCORED_CHOICES: onChildChannel(async ({ child }, { channel, value }) => {
     log.verbose(`SET SCORED CHOICES`);
-    sendToPrompt(channel, value);
+    if (!kitSearch.input) {
+      sendToPrompt(channel, value);
+    }
   }),
   PRELOAD: onChildChannel(async ({ child }, { channel, value }) => {
     attemptPreload(value);
@@ -2214,7 +2210,7 @@ const kitMessageMap: ChannelHandler = {
 export const createMessageHandler =
   (type: ProcessType) => async (data: GenericSendData) => {
     if (!data.kitScript && data?.channel !== Channel.HEARTBEAT) {
-      log.verbose(data);
+      log.info(data);
     }
 
     if (kitMessageMap[data.channel]) {
@@ -2512,6 +2508,7 @@ class Processes extends Array<ProcessInfo> {
   }
 
   public heartbeat() {
+    if (isVisible()) return;
     for (const pInfo of this) {
       if (pInfo.child && pInfo.child.connected && !pInfo.child?.killed) {
         pInfo.child.send({
