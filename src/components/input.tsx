@@ -236,12 +236,11 @@ export default function Input() {
     setHiddenInputMeasurerWidth(Math.max(newWidth, minWidth));
   });
 
-  const preloaded = useAtomValue(preloadedAtom);
   const cached = useAtomValue(cachedAtom);
 
   const onChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      log.info(event.target.value, { cached: cached ? 'true' : 'false' });
+      // log.info(event.target.value, { cached: cached ? 'true' : 'false' });
       if (onInputSubmit[event.target.value] && !submitted) {
         const submitValue = onInputSubmit[event.target.value];
         setSubmitValue(submitValue);

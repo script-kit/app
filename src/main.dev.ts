@@ -20,6 +20,7 @@
 import log from 'electron-log';
 log.initialize();
 (global as any).log = log.info;
+performance.mark('script');
 
 import {
   app,

@@ -1254,6 +1254,7 @@ const kitMessageMap: ChannelHandler = {
   // },
   SET_PROMPT_DATA: onChildChannel(
     async ({ child, pid }, { channel, value }) => {
+      performance.measure('SET_PROMPT_DATA', 'script');
       kitState.promptProcess = child;
       kitState.scriptPathChanged = false;
       kitState.promptScriptPath = value?.scriptPath || '';
@@ -1323,6 +1324,7 @@ const kitMessageMap: ChannelHandler = {
   }),
 
   SET_CHOICES: onChildChannelOverride(async ({ child }, { channel, value }) => {
+    performance.measure('SET_CHOICES', 'script');
     log.info(
       `SET_CHOICES preloaded ${kitState.preloaded ? 'true' : 'false'} ${value
         .choices?.length} choices`
@@ -2996,6 +2998,7 @@ emitter.on(
 //   setChoices(formatScriptChoices(scripts));
 // });
 
+let observer: PerformanceObserver | null = null;
 emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
   try {
     const envData = dotenv.parse(readFileSync(kenvPath('.env')));
@@ -3013,6 +3016,20 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
 
     kitState.kenvEnv = envData;
     togglePromptEnv('KIT_MAIN_SCRIPT');
+
+    if (kitState.kenvEnv?.KIT_MEASURE) {
+      if (observer) observer.disconnect();
+
+      observer = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const entry = entries[0];
+        log.info(`⌚️ [Perf] ${entry.name}: ${entry.duration}`);
+      });
+
+      observer.observe({ entryTypes: ['measure'] });
+    }
+
+    performance.mark('script');
   } catch (error) {
     log.warn(`Error reading kenv env`, error);
   }

@@ -1376,6 +1376,7 @@ export const setScript = async (
   pid: number,
   force = false
 ): Promise<'denied' | 'allowed'> => {
+  performance.mark('script');
   kitState.resizePaused = false;
   const cache = Boolean(script?.cache);
   kitState.cacheChoices = cache;

@@ -830,6 +830,10 @@ export const flagsAtom = atom(
     //   })
     // );
     s(_flagsAtom, a);
+
+    if (g(isMainScriptAtom)) {
+      s(cachedMainFlagsAtom, a);
+    }
   }
 );
 
@@ -2033,6 +2037,7 @@ export const applyUpdateAtom = atom(() => () => {
 export const valueInvalidAtom = atom(null, (g, s, a: string) => {
   if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
   s(processingAtom, false);
+  log.info(`Setting input due to invalid: ${a}`);
   s(inputAtom, '');
   s(_inputChangedAtom, false);
   if (typeof a === 'string') {
@@ -2064,7 +2069,6 @@ export const blurAtom = atom(null, (g) => {
 
 // This should represent when a keyboard shortcut or other triggers starts a sequence of scripts
 export const startAtom = atom(null, (g, s, a: string) => {
-  s(inputAtom, '');
   s(_history, []);
 });
 
@@ -2910,6 +2914,8 @@ export const resetPromptAtom = atom(
         s(prevInputAtom, '');
         s(tabIndexAtom, 0);
         s(inputAtom, '');
+        s(flagsAtom, cachedMainFlagsAtom);
+        s(enterAtom, cachedMainScoredChoices?.[0]?.item?.enter || 'Run');
       }
 
       // if (cachedMainPromptData?.flags) {
@@ -2920,10 +2926,8 @@ export const resetPromptAtom = atom(
       log.info(`✅ Reset main complete.`);
       s(cachedAtom, true);
     },
-    500,
-    {
-      leading: true,
-    }
+    50,
+    { leading: true }
   )
 );
 
