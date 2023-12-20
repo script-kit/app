@@ -326,9 +326,21 @@ const ChatList: FC<IMessageListProps> = ({
   }, []);
 
   const onCopy = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const selection = window.getSelection();
+    // Check if there is a text selection and if it's within the current target element
+    if (
+      selection &&
+      selection.toString() &&
+      e.currentTarget.contains(selection.anchorNode)
+    ) {
+      // If there's selected text, let the browser handle the copy event
+      return;
+    }
+
+    // If no text is selected, proceed with the custom copy logic
+    const text = e.currentTarget.innerText;
     e.preventDefault();
     e.stopPropagation();
-    const text = e.currentTarget.innerText;
     navigator.clipboard.writeText(text);
 
     // Change class from .kit-mbox-copyable to .kit-mbox-copied
@@ -339,10 +351,7 @@ const ChatList: FC<IMessageListProps> = ({
     }
   };
 
-  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {};
 
   const onMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
