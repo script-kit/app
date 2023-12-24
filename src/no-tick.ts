@@ -14,10 +14,13 @@ export const toggleTickOn = async () => {};
 
 export const destroyInterval = () => {};
 
-export const addSnippet = (script: Script) => {
+export const addSnippet = () => {
   return null as any;
 };
 
 export const removeSnippet = (filePath: string) => {};
 
 export const clearTickTimers = () => {};
+export const startClipboardAndKeyboardWatchers = () => {};
+
+export const addTextSnippet = () => {};

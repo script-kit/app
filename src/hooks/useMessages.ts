@@ -92,6 +92,7 @@ import {
   micStreamEnabledAtom,
   progressAtom,
   channelAtom,
+  beforeInputAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../enums';
@@ -183,7 +184,7 @@ export default () => {
   const setCachedMainShortcuts = useSetAtom(cachedMainShortcutsAtom);
   const setCachedMainPreview = useSetAtom(cachedMainPreviewAtom);
   const setTermFont = useSetAtom(termFontAtom);
-
+  const setBeforeInput = useSetAtom(beforeInputAtom);
   // log({
   //   previewCheck: previewCheck ? '✅' : '🚫',
   //   previewHTML: previewHTML?.length,
@@ -515,6 +516,14 @@ export default () => {
       ipcRenderer.on(AppChannel.SET_TERM_FONT, handleSetTermFont);
     }
 
+    const handleBeforeInputEvent = (_, data) => {
+      setBeforeInput(data?.key);
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.BEFORE_INPUT_EVENT) === 0) {
+      ipcRenderer.on(AppChannel.BEFORE_INPUT_EVENT, handleBeforeInputEvent);
+    }
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
@@ -545,6 +554,7 @@ export default () => {
       );
       // ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
       ipcRenderer.off(AppChannel.SET_TERM_FONT, handleSetTermFont);
+      ipcRenderer.off(AppChannel.BEFORE_INPUT_EVENT, handleBeforeInputEvent);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

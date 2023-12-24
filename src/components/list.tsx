@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useState } from 'react';
+import log from 'electron-log';
 import { VariableSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
@@ -40,7 +41,7 @@ export default function ChoiceList({ height }: ListProps) {
   const [requiresScroll, setRequiresScroll] = useAtom(requiresScrollAtom);
   const [isScrolling, setIsScrolling] = useAtom(isScrollingAtom);
   const flagValue = useAtomValue(flaggedChoiceValueAtom);
-  const log = useAtomValue(logAtom);
+
   const currentChoiceHeights = useAtomValue(currentChoiceHeightsAtom);
 
   useEffect(() => {
@@ -55,7 +56,7 @@ export default function ChoiceList({ height }: ListProps) {
     const scroll = () => {
       if (requiresScroll === -1) return;
       onIndexChange(requiresScroll);
-      log(`📜 Scrolling to ${requiresScroll}`);
+      log.verbose(`📜 Scrolling to ${requiresScroll}`);
       (listRef as any).current.scrollToItem(
         requiresScroll,
         // eslint-disable-next-line no-nested-ternary
@@ -75,7 +76,7 @@ export default function ChoiceList({ height }: ListProps) {
   useEffect(() => {
     if (!listRef.current) return;
 
-    // log(`🧾 List reset due to choice height changes`);
+    // log.info(`🧾 List reset due to choice height changes`);
     (listRef?.current as any)?.resetAfterIndex(0);
   }, [choices, promptData, flagValue]);
 

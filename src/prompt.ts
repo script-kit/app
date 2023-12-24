@@ -40,6 +40,7 @@ import {
   app,
   globalShortcut,
 } from 'electron';
+import contextMenu from 'electron-context-menu';
 import os from 'os';
 import path from 'path';
 import log, { FileTransport } from 'electron-log';
@@ -80,6 +81,12 @@ import {
 } from './screen';
 import { appToPrompt, sendToPrompt } from './channel';
 import { setFlags, setChoices } from './search';
+
+contextMenu({
+  showInspectElement: process.env.NODE_ENV === 'development',
+  showSearchWithGoogle: false,
+  showLookUpSelection: false,
+});
 
 let promptWindow: BrowserWindow;
 
@@ -331,6 +338,7 @@ export const createPromptWindow = async () => {
       devTools: true,
       backgroundThrottling: false,
       experimentalFeatures: true,
+      spellcheck: true,
     },
     closable: false,
     minimizable: false,
@@ -456,6 +464,10 @@ export const createPromptWindow = async () => {
 
     promptWindow?.reload();
     promptWindow?.hide();
+  });
+
+  promptWindow?.webContents?.on('before-input-event', (event, input) => {
+    appToPrompt(AppChannel.BEFORE_INPUT_EVENT, input);
   });
 
   //   promptWindow?.webContents?.on('new-window', function (event, url) {
@@ -1025,6 +1037,13 @@ export const isFocused = () => {
 let hadPreview = true;
 let prevResizeData = {} as ResizeData;
 export const resize = async (resizeData: ResizeData) => {
+  /**
+   * Linux doesn't support the "will-resize" or "resized" events making it impossible to distinguish
+   * between when the user is manually resizing the window and when the window is being resized by the app.
+   * Since we can only enable one, we had to choose to allow the user to manually resize the window.
+   *
+   * Hoping to be able to discover a clever workaround in the future 🤞
+   */
   if (kitState.isLinux) return;
   // if (isEqual(prevResizeData, resizeData)) return;
   prevResizeData = resizeData;

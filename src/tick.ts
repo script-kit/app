@@ -21,7 +21,7 @@ import { debounce } from 'lodash';
 
 import { clipboard } from 'electron';
 import { emitter, KitEvent } from './events';
-import { kitConfig, kitState, kitStore, subs } from './state';
+import { kitClipboard, kitConfig, kitState, kitStore, subs } from './state';
 import { isFocused } from './prompt';
 import { deleteText } from './keyboard';
 import { Trigger } from './enums';
@@ -156,13 +156,13 @@ let io$Sub: Subscription | null = null;
 let clipboard$Sub: Subscription | null = null;
 
 export const preStartConfigureInterval = async () => {
-  if (!clipboard.store) {
+  if (!kitClipboard.store) {
     try {
-      clipboard.store = await store(kitPath('db', 'clipboard.json'), {
+      kitClipboard.store = await store(kitPath('db', 'clipboard.json'), {
         history: [],
       });
 
-      log.info(`📋 Clipboard store initialized: ${typeof clipboard.store}`);
+      log.info(`📋 Clipboard store initialized: ${typeof kitClipboard.store}`);
 
       await getClipboardHistory();
     } catch (error) {

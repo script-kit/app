@@ -142,10 +142,18 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      - name: Ubuntu Electron Issue
+        if: matrix.os == 'ubuntu-latest'
+        run: echo "There is an issue with electron >=26 with something in the app causing a crash. It might be with the powerMonitor, but it's still not clear. This will have to be resolved before we can upgrade electron and move to ESM-only."
+
       - name: yarn && yarn add @johnlindquist/kit
         if: matrix.os == 'ubuntu-latest'
         run: |
           yarn
+          # There is an issue with electron >=26 with something in the app causing a crash
+          # I might be with the powerMonitor, but it's still not clear.
+          # This will have to be resolved before we can upgrade electron and move to ESM-only
+
           yarn add electron@25.9.3
           yarn add "@johnlindquist/kit"
 
