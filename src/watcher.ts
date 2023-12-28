@@ -9,7 +9,7 @@ import dotenv from 'dotenv';
 import { rm, readFile } from 'fs/promises';
 import { getAppDb, getScripts, getUserJson } from '@johnlindquist/kit/cjs/db';
 import { Script } from '@johnlindquist/kit/types';
-import { Channel } from '@johnlindquist/kit/cjs/enum';
+import { Channel, Env } from '@johnlindquist/kit/cjs/enum';
 
 import {
   parseScript,
@@ -240,10 +240,7 @@ export const checkUserDb = async (eventName: string) => {
 
   if (eventName === 'unlink') return;
 
-  runScript(
-    kitPath('config', 'set-login'),
-    kitState.user.login || '__KIT_ClEAR_ENV__'
-  );
+  runScript(kitPath('config', 'set-login'), kitState.user.login || Env.REMOVE);
 
   if (kitState?.user?.login) {
     const isSponsor = await sponsorCheck('Login', false);

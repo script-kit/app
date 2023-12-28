@@ -2756,13 +2756,13 @@ export const handleWidgetEvents = () => {
       return;
     }
 
-    log.info(`🔎 click ${widgetId}`);
+    log.info(`👋 ${widgetId} Initialized`);
 
     childSend(child, {
       ...data,
       ...widget.getBounds(),
       pid: child.pid,
-      channel: Channel.WIDGET_CLICK,
+      channel: Channel.WIDGET_INIT,
     });
   };
 
@@ -2919,7 +2919,7 @@ export const handleWidgetEvents = () => {
   ipcMain.on(Channel.WIDGET_INPUT, inputHandler);
   ipcMain.on(Channel.WIDGET_DRAG_START, dragHandler);
   ipcMain.on(Channel.WIDGET_CUSTOM, customHandler);
-  ipcMain.on('WIDGET_MEASURE', measureHandler);
+  ipcMain.on(Channel.WIDGET_MEASURE, measureHandler);
 };
 
 emitter.on(KitEvent.KillProcess, (pid) => {
