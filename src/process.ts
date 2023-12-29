@@ -387,7 +387,7 @@ export const updateTheme = async () => {
     ? kitState.kenvEnv?.KIT_THEME_DARK
     : kitState.kenvEnv?.KIT_THEME_LIGHT;
 
-  if (pathExistsSync(themePath)) {
+  if (themePath && pathExistsSync(themePath)) {
     log.info(
       `▓ ${kitState.isDark ? 'true' : 'false'} 👀 Theme path: ${themePath}`
     );

@@ -80,6 +80,7 @@ export const startWatching = (callback: WatcherCallback) => {
       userDbPath,
       statsPath,
       kenvPath('.env'),
+      kenvPath('kit.css'),
       kenvPath('package.json'),
     ],
     {

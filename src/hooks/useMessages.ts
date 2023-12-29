@@ -93,6 +93,7 @@ import {
   progressAtom,
   channelAtom,
   beforeInputAtom,
+  cssAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../enums';
@@ -111,6 +112,7 @@ export default () => {
 
   const channel = useAtomValue(channelAtom);
 
+  const setCss = useSetAtom(cssAtom);
   const addChatMessage = useSetAtom(addChatMessageAtom);
   const chatPushToken = useSetAtom(chatPushTokenAtom);
   const setChatMessage = useSetAtom(setChatMessageAtom);
@@ -524,6 +526,15 @@ export default () => {
       ipcRenderer.on(AppChannel.BEFORE_INPUT_EVENT, handleBeforeInputEvent);
     }
 
+    const handleCssChanged = (_, data) => {
+      log.info(`CSS changed:`, data);
+      setCss(data);
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.CSS_CHANGED) === 0) {
+      ipcRenderer.on(AppChannel.CSS_CHANGED, handleCssChanged);
+    }
+
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
@@ -555,6 +566,7 @@ export default () => {
       // ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
       ipcRenderer.off(AppChannel.SET_TERM_FONT, handleSetTermFont);
       ipcRenderer.off(AppChannel.BEFORE_INPUT_EVENT, handleBeforeInputEvent);
+      ipcRenderer.off(AppChannel.CSS_CHANGED, handleCssChanged);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

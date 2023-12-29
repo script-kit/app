@@ -91,6 +91,7 @@ import {
   audioDotAtom,
   isMainScriptAtom,
   progressAtom,
+  cssAtom,
 } from './jotai';
 
 import {
@@ -214,6 +215,7 @@ export default function App() {
   const [footerHidden] = useAtom(footerHiddenAtom);
   const processes = useAtomValue(processesAtom);
   const isMainScript = useAtomValue(isMainScriptAtom);
+  const css = useAtomValue(cssAtom);
 
   const previewCheck = useAtomValue(previewCheckAtom);
   const showRightPanel = (previewCheck && !kitState.noPreview) || flagValue;
@@ -469,6 +471,7 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
       `}
       >
         <style>{promptData?.css}</style>
+        <style>{css}</style>
         {/* {lighten && (
           <style
             dangerouslySetInnerHTML={{

@@ -462,12 +462,32 @@ export const createPromptWindow = async () => {
       return;
     }
 
+    promptWindow?.webContents?.once('did-finish-load', () => {
+      log.info(`Prompt window reloaded`);
+      resetToMainAndHide();
+    });
+
     promptWindow?.reload();
-    promptWindow?.hide();
   });
 
+  let escapePressCount = 0;
+  let lastEscapePressTime = 0;
+
   promptWindow?.webContents?.on('before-input-event', (event, input) => {
-    appToPrompt(AppChannel.BEFORE_INPUT_EVENT, input);
+    if (input.key === 'Escape') {
+      const currentTime = Date.now();
+      if (currentTime - lastEscapePressTime <= 300) {
+        escapePressCount += 1;
+        if (escapePressCount >= 5) {
+          log.info(`Escape pressed 5 times quickly, reloading`);
+          promptWindow?.reload();
+          escapePressCount = 0;
+        }
+      } else {
+        escapePressCount = 1;
+      }
+      lastEscapePressTime = currentTime;
+    }
   });
 
   //   promptWindow?.webContents?.on('new-window', function (event, url) {
@@ -589,7 +609,6 @@ export const createPromptWindow = async () => {
 
   promptWindow?.webContents?.on('focus', () => {
     log.info(`WebContents Focus`);
-    kitState.allowBlur = false;
   });
 
   promptWindow?.on('focus', () => {
@@ -623,7 +642,6 @@ export const createPromptWindow = async () => {
   promptWindow?.on('show', async () => {
     log.info(`😳 Prompt window shown`);
     kitState.promptHidden = false;
-    // kitState.allowBlur = false;
   });
 
   promptWindow?.webContents?.on(

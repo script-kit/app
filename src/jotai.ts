@@ -2980,3 +2980,4 @@ export const micStreamEnabledAtom = atom(
 
 export const progressAtom = atom(0);
 export const beforeInputAtom = atom('');
+export const cssAtom = atom('');

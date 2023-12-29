@@ -51,7 +51,7 @@ import { processes, spawnShebang, updateTheme } from './process';
 import { compareArrays } from './helpers';
 import { cacheMainScripts } from './install';
 import { getFileImports } from './npm';
-import { appToPrompt } from './channel';
+import { appToPrompt, sendToPrompt } from './channel';
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
@@ -337,9 +337,13 @@ export const setupWatchers = async () => {
           });
           if (envData?.KIT_THEME_DARK) {
             kitState.kenvEnv.KIT_THEME_DARK = envData?.KIT_THEME_DARK;
+          } else {
+            kitState.kenvEnv.KIT_THEME_DARK = '';
           }
           if (envData?.KIT_THEME_LIGHT) {
             kitState.kenvEnv.KIT_THEME_LIGHT = envData?.KIT_THEME_LIGHT;
+          } else {
+            kitState.kenvEnv.KIT_THEME_LIGHT = '';
           }
           if (envData?.KIT_TERM_FONT) {
             appToPrompt(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
@@ -458,6 +462,16 @@ export const setupWatchers = async () => {
       return;
     }
 
+    if (base === 'kit.css') {
+      log.info(`kit.css ${eventName}`);
+      let css = '';
+      if (eventName !== 'unlink') {
+        css = await readFile(filePath, 'utf8');
+      }
+      sendToPrompt(AppChannel.CSS_CHANGED, css);
+      return;
+    }
+
     if (base === 'package.json') {
       log.info(`package.json changed`);
 
@@ -508,13 +522,10 @@ export const setupWatchers = async () => {
 
     if (dir.endsWith('lib') && eventName === 'change') {
       try {
-        checkFileImports(
-          {
-            filePath,
-            kenv: '',
-          } as Script,
-          readFileSync(filePath, 'utf-8')
-        );
+        checkFileImports({
+          filePath,
+          kenv: '',
+        } as Script);
       } catch (error) {
         log.warn(error);
       }
