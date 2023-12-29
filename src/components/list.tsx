@@ -28,7 +28,7 @@ const createItemData = memoize(
 );
 
 export default function ChoiceList({ height }: ListProps) {
-  const listRef = useRef(null);
+  const listRef = useRef<null | List>(null);
   const innerRef = useRef(null);
   // TODO: In case items ever have dynamic height
   const [choices] = useAtom(scoredChoicesAtom);
@@ -77,7 +77,7 @@ export default function ChoiceList({ height }: ListProps) {
     if (!listRef.current) return;
 
     // log.info(`🧾 List reset due to choice height changes`);
-    (listRef?.current as any)?.resetAfterIndex(0);
+    listRef?.current?.resetAfterIndex(0);
   }, [choices, promptData, flagValue]);
 
   const [scrollTimeout, setScrollTimeout] = useState<any>(null);
@@ -124,7 +124,14 @@ export default function ChoiceList({ height }: ListProps) {
         }
         itemCount={choices?.length || 0}
         itemSize={(i) => {
-          return choices?.[i]?.item?.height || itemHeight;
+          const maybeHeight = choices?.[i]?.item?.height;
+
+          const height =
+            typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
+          // log.info(
+          //   `📜 Item ${i}: Name: ${choices?.[i]?.item?.name} height: ${height}`
+          // );
+          return height;
         }}
         itemKey={(i, data) => {
           const id = data?.choices?.[i]?.item?.id;

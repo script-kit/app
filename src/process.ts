@@ -320,6 +320,11 @@ export const formatScriptChoices = (data: Choice[]) => {
 };
 
 export const setTheme = async (value: any = {}, check = true) => {
+  log.info(`🎨 Setting theme:`, {
+    hasCss: kitState.hasCss,
+    value,
+  });
+  // if (kitState.hasCss) return;
   // if (check) {
   //   await sponsorCheck('Custom Themes');
   //   if (!kitState.isSponsor) return;

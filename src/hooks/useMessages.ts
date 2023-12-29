@@ -389,8 +389,19 @@ export default () => {
     ) => void;
 
     const handleCSSVariable: HandleCSSVariableHandler = (_, data) => {
-      log.info(`Setting:`, data?.name, data?.value);
-      document.documentElement.style.setProperty(data?.name, data?.value);
+      try {
+        log.info(
+          `Changing ${data?.name} from`,
+          document.documentElement.style.getPropertyValue(data?.name),
+          `to`,
+          data?.value
+        );
+        document.documentElement.style.setProperty(data?.name, data?.value);
+        // eslint-disable-next-line no-void
+        void document.body.offsetHeight;
+      } catch (e) {
+        log.error(`Error changing CSS variable:`, e);
+      }
     };
 
     if (ipcRenderer.listenerCount(AppChannel.CSS_VARIABLE) === 0)

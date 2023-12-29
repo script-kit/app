@@ -47,11 +47,12 @@ import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from './events';
 import { AppChannel, Trigger } from './enums';
 import { runScript } from './kit';
-import { processes, spawnShebang, updateTheme } from './process';
+import { processes, setTheme, spawnShebang, updateTheme } from './process';
 import { compareArrays } from './helpers';
 import { cacheMainScripts } from './install';
 import { getFileImports } from './npm';
 import { appToPrompt, sendToPrompt } from './channel';
+import { readKitCss, setCSSVariable } from './theme';
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
@@ -349,13 +350,6 @@ export const setupWatchers = async () => {
             appToPrompt(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
           }
 
-          const setCSSVariable = (name: string, value: undefined | string) => {
-            if (value) {
-              log.info(`Setting CSS`, name, value);
-              appToPrompt(AppChannel.CSS_VARIABLE, { name, value });
-            }
-          };
-
           setCSSVariable(
             '--mono-font',
             envData?.KIT_MONO_FONT || `JetBrains Mono`
@@ -463,12 +457,7 @@ export const setupWatchers = async () => {
     }
 
     if (base === 'kit.css') {
-      log.info(`kit.css ${eventName}`);
-      let css = '';
-      if (eventName !== 'unlink') {
-        css = await readFile(filePath, 'utf8');
-      }
-      sendToPrompt(AppChannel.CSS_CHANGED, css);
+      readKitCss(eventName);
       return;
     }
 

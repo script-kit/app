@@ -381,6 +381,7 @@ const initState = {
   cachePrompt: false,
   dockShown: false,
   attemptingPreload: false,
+  hasCss: false,
 };
 
 const initConfig: Config = {

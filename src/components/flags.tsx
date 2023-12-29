@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useState } from 'react';
 import { VariableSizeList as List } from 'react-window';
@@ -19,11 +20,11 @@ const createItemData = memoize(
   (choices) =>
     ({
       choices,
-    } as ChoiceButtonProps['data'])
+    }) as ChoiceButtonProps['data']
 );
 
 export default function FlagsList({ height }: ListProps) {
-  const flagsRef = useRef(null);
+  const flagsRef = useRef<null | List>(null);
   const innerRef = useRef(null);
   // TODO: In case items ever have dynamic height
   const [choices] = useAtom(scoredFlagsAtom);
@@ -50,7 +51,7 @@ export default function FlagsList({ height }: ListProps) {
     const scroll = () => {
       if (requiresScroll === -1) return;
       onIndexChange(requiresScroll);
-      (flagsRef as any).current.scrollToItem(
+      flagsRef?.current?.scrollToItem(
         requiresScroll,
         // eslint-disable-next-line no-nested-ternary
         requiresScroll > 0 ? 'auto' : 'start'
@@ -114,7 +115,14 @@ export default function FlagsList({ height }: ListProps) {
         }
         itemCount={choices?.length || 0}
         itemSize={(i) => {
-          return choices?.[i]?.item?.height || itemHeight;
+          const maybeHeight = choices?.[i]?.item?.height;
+
+          const height =
+            typeof maybeHeight === 'number' ? maybeHeight : itemHeight;
+          // log.info(
+          //   `📜 Item ${i}: Name: ${choices?.[i]?.item?.name} height: ${height}`
+          // );
+          return height;
         }}
         itemKey={(i, data) => {
           const id = data?.choices?.[i]?.item?.id;

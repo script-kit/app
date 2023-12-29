@@ -152,6 +152,7 @@ import {
   setupDone,
   setupLog,
 } from './install';
+import { readKitCss } from './theme';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -546,6 +547,8 @@ const ready = async () => {
 
     startClipboardAndKeyboardWatchers();
     actualHideDock();
+
+    readKitCss();
 
     if (process.env.KIT_LOG_PROMPT_STATE) {
       setInterval(() => {

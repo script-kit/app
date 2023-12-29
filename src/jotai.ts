@@ -33,6 +33,7 @@ import { editor } from 'monaco-editor';
 
 import { debounce, drop as _drop, isEqual, throttle } from 'lodash';
 import { ipcRenderer, Rectangle } from 'electron';
+import { VariableSizeList } from 'react-window';
 import { MessageType } from 'react-chat-elements';
 import { AppChannel } from './enums';
 import { ResizeData, ScoredChoice, Survey, TermConfig } from './types';
@@ -403,7 +404,7 @@ export const directionAtom = atom<1 | -1>(1);
 export const scrollToIndexAtom = atom((g) => {
   return (i: number) => {
     const list = g(listAtom);
-    (list as any)?.scrollToItem(i);
+    list?.scrollToItem(i);
   };
 });
 
@@ -464,11 +465,11 @@ export const flagsIndexAtom = atom(
     }
 
     if (list && requiresScroll === -1) {
-      (list as any)?.scrollToItem(calcIndex);
+      list?.scrollToItem(calcIndex);
     }
 
     if (list && cs[0]?.item?.skip && calcIndex === 1) {
-      (list as any)?.scrollToItem(0);
+      list?.scrollToItem(0);
     }
 
     const focusedFlag = (choice as Choice)?.value;
@@ -532,11 +533,11 @@ export const indexAtom = atom(
     }
 
     if (list && requiresScroll === -1) {
-      (list as any)?.scrollToItem(calcIndex);
+      list?.scrollToItem(calcIndex);
     }
 
     if (list && cs[0]?.item?.skip && calcIndex === 1) {
-      (list as any)?.scrollToItem(0);
+      list?.scrollToItem(0);
     }
 
     // const clampedIndex = clamp(a, 0, cs.length - 1);
@@ -1316,6 +1317,12 @@ export const themeAtom = atom(
       if (key === 'appearance') {
         s(appearanceAtom, value as Appearance);
       } else {
+        log.info(
+          `Changing ${key} from`,
+          document.documentElement.style.getPropertyValue(key),
+          `to`,
+          value
+        );
         document.documentElement.style.setProperty(key, value);
       }
     });
@@ -2493,8 +2500,8 @@ export const termExitAtom = atom(
 
 export const scrollToAtom = atom<'top' | 'bottom' | 'center' | null>(null);
 
-export const listAtom = atom(null);
-export const flagsListAtom = atom(null);
+export const listAtom = atom<null | VariableSizeList>(null);
+export const flagsListAtom = atom<null | VariableSizeList>(null);
 
 export const webcamStreamAtom = atom<MediaStream | null>(null);
 export const deviceIdAtom = atom<string | null>(null);
