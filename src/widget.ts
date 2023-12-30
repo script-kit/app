@@ -48,7 +48,7 @@ export const createWidget = async (
     -webkit-app-region: drag;
   }
 
-  button, input {
+  button, input, a {
     -webkit-app-region: no-drag;
   }
 
