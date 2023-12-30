@@ -948,6 +948,33 @@ const kitMessageMap: ChannelHandler = {
     childSend(child, { channel, processes });
   }),
 
+  GET_KIT_WINDOWS: onChildChannelOverride(({ child }, { channel }) => {
+    const windows = BrowserWindow.getAllWindows().map((w) => {
+      return {
+        name: w?.getTitle(),
+        id: w?.id.toString(),
+        value: w?.id.toString(),
+        bounds: w?.getBounds(),
+        isFocused: w?.isFocused(),
+        isVisible: w?.isVisible(),
+        isDestroyed: w?.isDestroyed(),
+      };
+    });
+
+    log.info(`GET_KIT_WINDOWS`, { windows });
+
+    childSend(child, { channel, windows });
+  }),
+
+  FOCUS_KIT_WINDOW: onChildChannel(({ child }, { channel, value }) => {
+    const { id } = value;
+    const window = BrowserWindow.fromId(parseInt(id, 10));
+    log.info('Focusing', { id, window });
+    if (window) {
+      window.focus();
+    }
+  }),
+
   BLUR_APP: onChildChannel(({ child }, { channel }) => {
     blurPrompt();
   }),
