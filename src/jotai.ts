@@ -1395,6 +1395,9 @@ export const promptDataAtom = atom(
       if (a?.ui !== UI.arg) {
         s(focusedChoiceAtom, noChoice);
       }
+      if (isMainScript && !a?.input) {
+        s(inputAtom, '');
+      }
       s(uiAtom, a.ui);
       if (a?.theme) s(tempThemeAtom, { ...g(themeAtom), ...(a?.theme || {}) });
 

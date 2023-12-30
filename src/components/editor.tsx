@@ -1,6 +1,7 @@
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-useless-escape */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
 import { Channel, UI } from '@johnlindquist/kit/cjs/enum';
@@ -18,7 +19,6 @@ import {
   editorOptions,
   editorSuggestionsAtom,
   inputAtom,
-  logAtom,
   openAtom,
   scrollToAtom,
   uiAtom,
@@ -108,7 +108,6 @@ export default function Editor() {
   const disposeRef = useRef<any>(null);
   const [scrollTo, setScrollTo] = useAtom(scrollToAtom);
   const [channel] = useAtom(channelAtom);
-  const log = useAtomValue(logAtom);
 
   const m = useMonaco();
 
@@ -413,7 +412,7 @@ export default function Editor() {
 
       channel(Channel.APPEND_EDITOR_VALUE);
     }
-  }, [editor, editorAppend]);
+  }, [editor, editorAppend, channel]);
 
   useEffect(() => {
     const getSelectedText = () => {
@@ -526,7 +525,7 @@ export default function Editor() {
       );
       ipcRenderer.removeListener(Channel.EDITOR_MOVE_CURSOR, moveCursor);
     };
-  }, [editor, channel, log]);
+  }, [editor, channel]);
 
   const theme = kitIsDark ? 'kit-dark' : 'kit-light';
 

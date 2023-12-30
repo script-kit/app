@@ -12750,6 +12750,11 @@ moize@^6.1.6:
     fast-equals "^3.0.1"
     micro-memoize "^4.1.2"
 
+monaco-editor-auto-typings@^0.4.5:
+  version "0.4.5"
+  resolved "https://registry.yarnpkg.com/monaco-editor-auto-typings/-/monaco-editor-auto-typings-0.4.5.tgz#0624bd35f871e07702a226a0c184867850d7d34c"
+  integrity sha512-J1iVXKKhcBRc8t3jhHl2l9WYhnnPBXFOSuRCIpiC7d2aEOX9ZhWuIAWcCtTtvAN4944lfi0lhjuTi4iebe8VDg==
+
 monaco-editor-webpack-plugin@7.1.0:
   version "7.1.0"
   resolved "https://registry.yarnpkg.com/monaco-editor-webpack-plugin/-/monaco-editor-webpack-plugin-7.1.0.tgz#16f265c2b5dbb5fe08681b6b3b7d00d3c5b2ee97"

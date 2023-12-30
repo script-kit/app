@@ -399,6 +399,7 @@
     "minimist": "1.2.5",
     "moize": "^6.1.6",
     "monaco-editor": "0.45.0",
+    "monaco-editor-auto-typings": "^0.4.5",
     "monaco-editor-webpack-plugin": "7.1.0",
     "nanoid": "3.1.30",
     "node-abi": "^3.52.0",
