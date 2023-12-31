@@ -2202,11 +2202,6 @@ export const logAtom = atom((_g) => {
   };
 });
 
-export const addChoiceAtom = atom(null, (g, s, a: Choice) => {
-  const prev = g(unfilteredChoices);
-  s(choicesConfigAtom, Array.isArray(prev) ? [...prev, a] : [a]);
-});
-
 type Appearance = 'light' | 'dark';
 export const appearanceAtom = atom<Appearance>('dark');
 

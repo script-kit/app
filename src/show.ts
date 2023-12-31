@@ -465,7 +465,9 @@ export const showWidget = async (
     : getTopRightCurrentScreen(options);
 
   const bwOptions: BrowserWindowConstructorOptions = {
-    title: 'Script Kit Widget',
+    title: `${path.basename(kitState.scriptPath)} | Process: ${
+      kitState.pid
+    } | id: ${widgetId}`,
     frame: false,
     transparent: kitState.isMac,
     titleBarStyle: 'customButtonsOnHover',

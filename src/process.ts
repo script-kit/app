@@ -111,7 +111,7 @@ import {
   debounceSetScriptTimestamp,
 } from './state';
 import { sendToPrompt, appToPrompt } from './channel';
-import { setFlags, setChoices } from './search';
+import { setFlags, setChoices, invokeSearch } from './search';
 
 import { emitter, KitEvent } from './events';
 import { show, showDevTools, showInspector, showWidget } from './show';
@@ -950,8 +950,16 @@ const kitMessageMap: ChannelHandler = {
 
   GET_KIT_WINDOWS: onChildChannelOverride(({ child }, { channel }) => {
     const windows = BrowserWindow.getAllWindows().map((w) => {
+      const title = w?.getTitle();
+      // eslint-disable-next-line prefer-const
+      let [name, tag, description] = title?.split(' | ');
+      if (tag && description) {
+        description = `Add a title to your widget to customize the name`;
+      }
       return {
-        name: w?.getTitle(),
+        name,
+        tag,
+        description,
         id: w?.id.toString(),
         value: w?.id.toString(),
         bounds: w?.getBounds(),
@@ -969,8 +977,9 @@ const kitMessageMap: ChannelHandler = {
   FOCUS_KIT_WINDOW: onChildChannel(({ child }, { channel, value }) => {
     const { id } = value;
     const window = BrowserWindow.fromId(parseInt(id, 10));
-    log.info('Focusing', { id, window });
+    log.info(`Focusing window ${id}: ${window?.getTitle()}`);
     if (window) {
+      app.focus({ steal: true });
       window.focus();
     }
   }),
@@ -1352,7 +1361,8 @@ const kitMessageMap: ChannelHandler = {
     emitter.emit(KitEvent.CheckForUpdates, true);
   },
   ADD_CHOICE: onChildChannel(async ({ child }, { channel, value }) => {
-    sendToPrompt(Channel.ADD_CHOICE, value);
+    kitSearch.choices.push(value);
+    invokeSearch(kitSearch.input);
   }),
 
   SET_CHOICES: onChildChannelOverride(async ({ child }, { channel, value }) => {

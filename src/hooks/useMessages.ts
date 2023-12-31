@@ -47,7 +47,6 @@ import {
   scoredChoicesAtom,
   setFocusedChoiceAtom,
   footerAtom,
-  addChoiceAtom,
   boundsAtom,
   resizingAtom,
   themeAtom,
@@ -143,7 +142,6 @@ export default () => {
   const setReady = useSetAtom(isReadyAtom);
   const setTabIndex = useSetAtom(tabIndexAtom);
   const setTabs = useSetAtom(tabsAtom);
-  const addChoice = useSetAtom(addChoiceAtom);
   const [, setPreviewHTML] = useAtom(previewHTMLAtom);
   const setEditorConfig = useSetAtom(editorConfigAtom);
   const setEditorSuggestions = useSetAtom(editorSuggestionsAtom);
@@ -268,7 +266,6 @@ export default () => {
     [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
     [Channel.GET_COLOR]: () => getColor(),
     [Channel.CLEAR_TABS]: setTabs,
-    [Channel.ADD_CHOICE]: addChoice,
     [Channel.SET_BOUNDS]: setBounds,
     [Channel.SET_RESIZING]: setResizing,
     [Channel.PLAY_AUDIO]: setAudio,

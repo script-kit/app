@@ -109,3 +109,7 @@ export enum HideReason {
   NoScript = 'NoScript',
   BeforeExit = 'BeforeExit',
 }
+
+export enum Widget {
+  DefaultTitle = 'Script Kit Widget',
+}
