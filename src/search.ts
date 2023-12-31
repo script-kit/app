@@ -106,6 +106,8 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
 
     for (const choice of kitSearch.choices) {
       const lowerCaseName = choice.name?.toLowerCase();
+      const lowerCaseKeyword =
+        choice.keyword?.toLowerCase() || choice?.tag?.toLowerCase() || '';
       if (choice?.info) {
         infoGroup.push(createScoredChoice(choice));
       } else if ((choice as Script)?.alias === transformedInput) {
@@ -115,7 +117,7 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
       } else if (
         !choice?.skip &&
         !choice?.miss &&
-        lowerCaseName?.includes(lowerCaseInput)
+        (lowerCaseName?.includes(lowerCaseInput) || lowerCaseKeyword)
       ) {
         const scoredChoice = resultMap.get(choice.id);
         if (scoredChoice && !scoredChoice?.item?.lastGroup) {
@@ -126,7 +128,13 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
           // c.item.id = Math.random();
           c.item.pass = false;
           c.item.exact = true;
-          if (lowerCaseName.startsWith(lowerCaseInput)) {
+          if (scoredChoice?.item?.keyword) {
+            log.info({ keyword: scoredChoice?.item?.keyword });
+          }
+          if (
+            lowerCaseName.startsWith(lowerCaseInput) ||
+            scoredChoice?.item?.keyword?.startsWith(lowerCaseInput)
+          ) {
             startsWithGroup.push(c);
           } else {
             includesGroup.push(c);
@@ -216,8 +224,14 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
 
     if (startsWithGroup.length > 0) {
       startsWithGroup.sort((a, b) => {
-        if (a?.item?.keyword && !b?.item?.keyword) return -1;
-        if (!a?.item?.keyword && b?.item?.keyword) return 1;
+        const aKeyword = a?.item?.keyword;
+        const bKeyword = b?.item?.keyword;
+
+        if (aKeyword === lowerCaseInput) return -1;
+        if (bKeyword === lowerCaseInput) return 1;
+        if (aKeyword && !bKeyword) return -1;
+        if (!aKeyword && bKeyword) return 1;
+        if (aKeyword && bKeyword) return aKeyword.length - bKeyword.length;
 
         return 0;
       });
