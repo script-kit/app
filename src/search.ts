@@ -117,7 +117,8 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
       } else if (
         !choice?.skip &&
         !choice?.miss &&
-        (lowerCaseName?.includes(lowerCaseInput) || lowerCaseKeyword)
+        (lowerCaseName?.includes(lowerCaseInput) ||
+          lowerCaseKeyword.includes(lowerCaseInput))
       ) {
         const scoredChoice = resultMap.get(choice.id);
         if (scoredChoice && !scoredChoice?.item?.lastGroup) {
@@ -128,9 +129,6 @@ export const invokeSearch = (rawInput: string, reason = 'normal') => {
           // c.item.id = Math.random();
           c.item.pass = false;
           c.item.exact = true;
-          if (scoredChoice?.item?.keyword) {
-            log.info({ keyword: scoredChoice?.item?.keyword });
-          }
           if (
             lowerCaseName.startsWith(lowerCaseInput) ||
             scoredChoice?.item?.keyword?.startsWith(lowerCaseInput)
