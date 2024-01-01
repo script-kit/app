@@ -391,7 +391,7 @@
     "inclusion": "^1.0.1",
     "internet-available": "^1.0.0",
     "is-image": "3.0.0",
-    "jotai": "2.6.0",
+    "jotai": "2.6.1",
     "jotai-effect": "^0.2.3",
     "lodash": "4.17.21",
     "memoize-one": "5.2.1",
