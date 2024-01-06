@@ -13,6 +13,7 @@ export type WidgetOptions = BrowserWindowConstructorOptions & {
   ignoreMouse?: boolean;
   ttl?: number;
   containerClass?: string;
+  css?: string;
 };
 
 // TODO: Widget hover elements broken???
@@ -30,8 +31,6 @@ export const createWidget = async (
 
   const petiteVuePath = getAssetPath('petite-vue.es.js');
 
-  const isWin = os.platform() === 'win32';
-
   const widgetHtml = `
   <meta charset="UTF-8">
   <script>
@@ -44,36 +43,32 @@ export const createWidget = async (
   <link rel="stylesheet" href="${stylePath}">
   <style type="text/css">${theme}</style>
   <style>
-  body {
+  .drag{
     -webkit-app-region: drag;
-  }
-
-  button, input, a {
-    -webkit-app-region: no-drag;
   }
 
   .no-drag {
     -webkit-app-region: no-drag;
   }
 
-  body {
-    ${
-      options?.transparent
-        ? `
-      background-color: rgba(0, 0, 0, 0) !important;`
-        : ``
-    }
 
-    pointer-events: none
+  ${
+    options?.transparent
+      ? `
+  body{
+    background-color: rgba(0, 0, 0, 0) !important;
+    pointer-events: none;
   }
-
-  * {pointer-events: all;}
+  `
+      : ``
   }
 
   .drag-shadow {
     box-shadow: inset 0 0 .75rem #000000;
   }
 </style>
+
+${options?.css ? `<style>${options.css}</style>` : ``}
   <script>
     const { ipcRenderer } = require('electron');
     window.ipcRenderer = ipcRenderer;
@@ -148,6 +143,20 @@ export const createWidget = async (
     if(!closest || !closest?.id) return
     let {id = ""} = closest
     ipcRenderer.send("WIDGET_MOUSE_DOWN", {
+      dataset: {
+        ...event.target.dataset
+      },
+      targetId: id,
+      widgetId: window.widgetId,
+    })
+  })
+
+  // add "mouseup" handler
+  document.addEventListener("mouseup", (event) => {
+    let closest = event.target.closest("*[id]")
+    if(!closest || !closest?.id) return
+    let {id = ""} = closest
+    ipcRenderer.send("WIDGET_MOUSE_UP", {
       dataset: {
         ...event.target.dataset
       },

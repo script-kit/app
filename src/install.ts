@@ -1,6 +1,7 @@
 import { clipboard, shell } from 'electron';
 import { HttpsProxyAgent } from 'hpagent';
 
+import dotenv from 'dotenv';
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import log from 'electron-log';
@@ -27,6 +28,7 @@ import {
   readdir,
   readJson,
   writeJson,
+  stat,
 } from 'fs-extra';
 import { readFile, rm } from 'fs/promises';
 
@@ -273,7 +275,28 @@ export const downloadKenv = async () => {
 
   const fileName = `kenv.zip`;
   const file = osTmpPath(fileName);
-  const url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
+  let url = `https://github.com/johnlindquist/kenv/releases/latest/download/${fileName}`;
+
+  // Check if ~/.kitrc exists, if so, read it and use the KENV_ZIP_URL
+  const kitrcPath = path.resolve(homedir(), '.kitrc');
+  let stat;
+  try {
+    stat = await lstat(kitrcPath);
+  } catch (error) {
+    log.info(`No ~/.kitrc found`);
+  }
+
+  if (stat && stat.isFile()) {
+    const kitRcContents = await readFile(kitrcPath, {
+      encoding: 'utf8',
+    });
+
+    const kitRc = dotenv.parse(kitRcContents);
+    if (kitRc.KENV_ZIP_URL) {
+      log.info(`Using KENV_ZIP_URL from ${kitrcPath}`);
+      url = kitRc.KENV_ZIP_URL;
+    }
+  }
 
   sendSplashBody(`Downloading Kit Environment from ${url}....`);
   try {

@@ -868,11 +868,15 @@ const kitMessageMap: ChannelHandler = {
   WIDGET_CAPTURE_PAGE: onChildChannelOverride(
     async ({ child }, { channel, value }) => {
       const { widgetId } = value as any;
-      const widget = BrowserWindow.fromId(widgetId);
+      const widget = findWidget(widgetId, channel);
       const image = await widget?.capturePage();
+      log.info(`Captured page for widget ${widgetId}`);
 
       if (image) {
-        const imagePath = kenvPath('tmp', `${widgetId}-capture.png`);
+        const imagePath = path.join(
+          os.tmpdir(),
+          `kit-widget-capture-${randomUUID()}.png`
+        );
         log.info(`Captured page for widget ${widgetId} to ${imagePath}`);
         await writeFile(imagePath, image.toPNG());
 
@@ -2897,6 +2901,30 @@ export const handleWidgetEvents = () => {
     });
   };
 
+  const mouseUpHandler: WidgetHandler = (event, data) => {
+    const { widgetId } = data;
+    log.info(`🔽 mouseUp ${widgetId}`);
+
+    const w = widgetState.widgets.find(({ id }) => id === widgetId);
+    if (!w) return;
+    const { wid, moved, pid } = w;
+    const widget = BrowserWindow.fromId(wid);
+    const { child } = processes.getByPid(pid) as ProcessInfo;
+    if (!child) return;
+
+    // if (moved) {
+    //   w.moved = false;
+    //   return;
+    // }
+
+    childSend(child, {
+      ...data,
+      ...widget.getBounds(),
+      pid: child.pid,
+      channel: Channel.WIDGET_MOUSE_UP,
+    });
+  };
+
   const inputHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
     const options = widgetState.widgets.find(({ id }) => id === widgetId);
@@ -2958,6 +2986,7 @@ export const handleWidgetEvents = () => {
   ipcMain.on(Channel.WIDGET_CLICK, clickHandler);
   ipcMain.on(Channel.WIDGET_DROP, dropHandler);
   ipcMain.on(Channel.WIDGET_MOUSE_DOWN, mouseDownHandler);
+  ipcMain.on(Channel.WIDGET_MOUSE_UP, mouseUpHandler);
   ipcMain.on(Channel.WIDGET_INPUT, inputHandler);
   ipcMain.on(Channel.WIDGET_DRAG_START, dragHandler);
   ipcMain.on(Channel.WIDGET_CUSTOM, customHandler);
