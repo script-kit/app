@@ -373,6 +373,10 @@ export const createPromptWindow = async () => {
 
   windows.set(0, promptWindow);
 
+  if (kitState.isWindows) {
+    promptWindow.setBackgroundMaterial('mica');
+  }
+
   // REMOVE-MAC
   if (kitState.isMac) {
     makePanel(promptWindow);
@@ -787,6 +791,9 @@ export const focusPrompt = () => {
         makeKeyWindow(promptWindow);
         // END-REMOVE-MAC
       } else {
+        if (kitState.isWindows) {
+          app.focus({ steal: true });
+        }
         promptWindow?.focus();
       }
     } catch (error) {
