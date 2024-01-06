@@ -364,7 +364,7 @@ export const createPromptWindow = async () => {
   } else {
     promptWindow = new BrowserWindow({
       ...options,
-      transparent: kitState.isMac,
+      transparent: kitState.isMac || kitState.isWindows,
       vibrancy: 'popover',
       visualEffectState: 'active',
       backgroundColor: '#00000000',
@@ -385,9 +385,9 @@ export const createPromptWindow = async () => {
 
   if (kitState.isWindows) {
     // REMOVE-NODE-WINDOW-MANAGER
-    windowManager.setWindowAsPopupWithRoundedCorners(
-      promptWindow?.getNativeWindowHandle()
-    );
+    // windowManager.setWindowAsPopupWithRoundedCorners(
+    //   promptWindow?.getNativeWindowHandle()
+    // );
 
     promptWindow.setHasShadow(true);
     // END-REMOVE-NODE-WINDOW-MANAGER
@@ -791,9 +791,6 @@ export const focusPrompt = () => {
         makeKeyWindow(promptWindow);
         // END-REMOVE-MAC
       } else {
-        if (kitState.isWindows) {
-          app.focus({ steal: true });
-        }
         promptWindow?.focus();
       }
     } catch (error) {
