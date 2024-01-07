@@ -331,10 +331,10 @@
     nan "^2.17.0"
     node-addon-api "^7.0.0"
 
-"@johnlindquist/node-window-manager@^1.0.21":
-  version "1.0.21"
-  resolved "https://registry.yarnpkg.com/@johnlindquist/node-window-manager/-/node-window-manager-1.0.21.tgz#7cb1f45b92e631546c08778966fa94d9fc6ac331"
-  integrity sha512-BxU3kdxT5xQZLUHNnDQyTYSR1AlLR0Ud6RYgVNN0W5a7FoW2F2+ixIk++g9Ck2NckRFZkVSju4nIwbijwd7Xyg==
+"@johnlindquist/node-window-manager@^1.0.22":
+  version "1.0.22"
+  resolved "https://registry.yarnpkg.com/@johnlindquist/node-window-manager/-/node-window-manager-1.0.22.tgz#463610b622fd419ef259f8d82442c940e85e3e48"
+  integrity sha512-Bax2Vy9a9GPgVgrDgaA+eJPWpqaI0LEDQT/UzIR2XE5rV5PdLNUTIY2mugCofLIXRdxg6UfsBTg1N1S5CMCmSw==
   dependencies:
     bindings "^1.5.0"
     node-addon-api "7.0.0"
@@ -409,7 +409,7 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.9.1.tgz#0611b37db4246c937feef529ddcc018cf8e35708"
   integrity sha512-QpLcX9ZSsq3YYUUnD3nFDY8H7wctAhQj/TFKL8Ya8v5fMm3CFXxo8zStsLAl780ltoYoo1WvKUVGBQK+1ifr7g==
 
-"@types/regenerator-runtime@^0.13.4":
+"@types/regenerator-runtime@^0.13.5":
   version "0.13.5"
   resolved "https://registry.yarnpkg.com/@types/regenerator-runtime/-/regenerator-runtime-0.13.5.tgz#988e5fa1e3da8a947932b37bdeb68c8a9184e173"
   integrity sha512-kuQTuRQB2RafkNk1qimK3zu4KSfy6z47diYGXVDcFcAZ3pVTR25CXiSb3adKry+onx2BBB9DBXxxLdbuglx5mw==
@@ -764,10 +764,10 @@ nice-try@^1.0.4:
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
-node-abi@^3.51.0:
-  version "3.51.0"
-  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.51.0.tgz#970bf595ef5a26a271307f8a4befa02823d4e87d"
-  integrity sha512-SQkEP4hmNWjlniS5zdnfIXTk1x7Ome85RDzHlTbBtzE97Gfwz/Ipw4v/Ryk20DWIy3yCNVLVlGKApCnmvYoJbA==
+node-abi@^3.54.0:
+  version "3.54.0"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-3.54.0.tgz#f6386f7548817acac6434c6cba02999c9aebcc69"
+  integrity sha512-p7eGEiQil0YUV3ItH4/tBb781L5impVmmx2E9FRKF7d18XXzp4PGT2tdYMFY6wQqgxD0IwNZOiSJ0/K0fSi/OA==
   dependencies:
     semver "^7.3.5"
 

@@ -385,9 +385,9 @@ export const createPromptWindow = async () => {
 
   if (kitState.isWindows) {
     // REMOVE-NODE-WINDOW-MANAGER
-    // windowManager.setWindowAsPopupWithRoundedCorners(
-    //   promptWindow?.getNativeWindowHandle()
-    // );
+    windowManager.setWindowAsPopupWithRoundedCorners(
+      promptWindow?.getNativeWindowHandle()
+    );
 
     promptWindow.setHasShadow(true);
     // END-REMOVE-NODE-WINDOW-MANAGER
