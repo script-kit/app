@@ -1,5 +1,4 @@
 import path from 'path';
-import os from 'os';
 import { outputFile } from 'fs-extra';
 import { app, BrowserWindowConstructorOptions } from 'electron';
 import { kenvPath } from '@johnlindquist/kit/cjs/utils';

@@ -477,7 +477,6 @@ export const showWidget = async (
       contextIsolation: false,
     },
     ...position,
-    show: false,
     minHeight: 120,
     minWidth: 160,
     movable: true,
@@ -500,6 +499,8 @@ export const showWidget = async (
     widgetWindow = new BrowserWindow(bwOptions);
     widgetWindow.setBackgroundColor(`#00000000`);
   }
+
+  widgetWindow?.focus();
 
   if (options?.ignoreMouse)
     widgetWindow?.setIgnoreMouseEvents(true, { forward: true });

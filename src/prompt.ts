@@ -1922,6 +1922,13 @@ export const initShowPrompt = () => {
     promptWindow.showInactive();
   } else {
     // promptWindow.restore();
+    // REMOVE-NODE-WINDOW-MANAGER
+    windowManager.setWindowAsPopupWithRoundedCorners(
+      promptWindow?.getNativeWindowHandle()
+    );
+
+    promptWindow.setHasShadow(true);
+    // END-REMOVE-NODE-WINDOW-MANAGER
     promptWindow.show();
   }
 
