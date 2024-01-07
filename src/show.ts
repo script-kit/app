@@ -477,6 +477,7 @@ export const showWidget = async (
       contextIsolation: false,
     },
     ...position,
+    show: false,
     minHeight: 120,
     minWidth: 160,
     movable: true,
@@ -499,8 +500,6 @@ export const showWidget = async (
     widgetWindow = new BrowserWindow(bwOptions);
     widgetWindow.setBackgroundColor(`#00000000`);
   }
-
-  widgetWindow?.focus();
 
   if (options?.ignoreMouse)
     widgetWindow?.setIgnoreMouseEvents(true, { forward: true });
@@ -525,7 +524,11 @@ export const showWidget = async (
         // Set the css variables from kitState.theme
         widgetWindow.webContents.send('WIDGET_THEME', snapshot(kitState.theme));
 
-        widgetWindow?.show();
+        const noShow =
+          typeof options?.show === 'boolean' && options?.show === false;
+        if (!noShow) {
+          widgetWindow?.show();
+        }
         resolve(widgetWindow);
       } else {
         log.error(`Widget ${widgetId} failed to load`);

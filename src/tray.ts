@@ -399,7 +399,8 @@ export const openMenu = async (event?: KeyboardEvent) => {
             'node-mac-permissions'
           );
 
-          askForAccessibilityAccess();
+          const result = await askForAccessibilityAccess();
+          log.info(`Accessibility Access: ${result}`);
         },
       });
 
@@ -410,7 +411,8 @@ export const openMenu = async (event?: KeyboardEvent) => {
             'node-mac-permissions'
           );
 
-          askForInputMonitoringAccess();
+          const result = await askForInputMonitoringAccess();
+          log.info(`Input Monitoring Access: ${result}`);
         },
       });
 
@@ -419,7 +421,8 @@ export const openMenu = async (event?: KeyboardEvent) => {
         click: async () => {
           const { askForFullDiskAccess } = await import('node-mac-permissions');
 
-          askForFullDiskAccess();
+          const result = await askForFullDiskAccess();
+          log.info(`Full Disk Access: ${result}`);
         },
       });
     }

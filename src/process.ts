@@ -649,7 +649,7 @@ const kitMessageMap: ChannelHandler = {
     const widget = findWidget(widgetId, channel);
     if (!widget) return;
 
-    // log.info(`WIDGET_CALL`, value);
+    log.info(`📞 WIDGET_CALL`, widgetId, value, args);
     if (widget) {
       try {
         (widget as any)?.[method]?.(...args);
