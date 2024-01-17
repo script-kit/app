@@ -1,0 +1,882 @@
+@import '@fontsource/jetbrains-mono';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/600.css';
+@import '@fontsource/jetbrains-mono/700.css';
+@import '@fontsource/jetbrains-mono/800.css';
+@import 'simplebar/dist/simplebar.min.css';
+@import '@vscode/codicons/dist/codicon.css';
+@import 'xterm/css/xterm.css';
+@import 'react-chat-elements/dist/main.css';
+@import 'react-toastify/dist/ReactToastify.css';
+/* import animate.css */
+@import 'animate.css/animate.min.css';
+
+/*
+Favicon gradient
+<stop stop-color="#FFE86F" />
+<stop offset=".333" stop-color="#FED533" />
+<stop offset=".714" stop-color="#FFB800" />
+<stop offset="1" stop-color="#FFA800" /> */
+
+/* @import '../node_modules/highlight.js/styles/solarized-light.css'; */
+/* .hljs {
+  background: rgba(0, 0, 0, 0.2);
+} */ /* FBBF24 */ /* 4F46E5 */
+/* --color-primary: 79, 70, 229; indigo*/
+/* This will get written to ~/.kit/db/theme.json on first pass */
+:root {
+  --color-text: 255, 255, 255;
+  --color-primary: 251, 191, 36;
+  --color-secondary: 52, 52, 52;
+  --color-background: 15, 15, 15;
+  /* Check useThemeDetector... */
+  --opacity: 0.5;
+  --mono-font: JetBrains Mono;
+  --sans-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
+    'serif';
+
+  --animate-duration: 0.25s;
+  --animate-delay: 0s;
+  --animate-repeat: 1;
+
+  --toastify-toast-min-height: 12px;
+  --toastify-toast-max-height: 40px;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* * {
+  outline: red solid 1px;
+} */
+
+img:before {
+  content: ' ';
+}
+
+img:after {
+  content: '🙈 missing image';
+  @apply text-xxs;
+  @apply font-mono;
+  @apply break-words;
+}
+
+html {
+  @apply h-screen min-h-screen;
+}
+
+body {
+  @apply text-text-base dark:text-white;
+  @apply subpixel-antialiased;
+  @apply overflow-hidden;
+  @apply h-screen min-h-screen;
+  @apply overflow-y-hidden;
+  /* --tw-bg-opacity: 0.3; */
+}
+
+#root {
+  @apply h-screen min-h-screen;
+  @apply overflow-y-hidden;
+
+  /* inset | offset-x | offset-y | blur-radius | spread-radius | color */
+}
+
+.choice {
+  /* box-shadow: 0 0 0 2px white, inset 0 2px 8px black; */
+}
+
+.simplebar-content {
+  @apply h-full w-full;
+}
+
+.simplebar-scrollbar:before {
+  @apply bg-black bg-opacity-50 dark:bg-white;
+  position: absolute;
+  content: '';
+  border-radius: 7px;
+  left: 2px;
+  right: 2px;
+  opacity: 0;
+  transition: opacity 0.2s 0.5s linear;
+}
+
+.log .simplebar-scrollbar:before {
+  @apply bg-white bg-opacity-60 opacity-100 dark:bg-black;
+}
+
+*:not(textarea)::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar::-webkit-scrollbar {
+  display: initial;
+  width: 2px;
+  @apply bg-ui-bg;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-text-base/50;
+  height: 24px;
+  max-height: 24px;
+}
+
+*::-webkit-resizer {
+  display: none;
+}
+
+.kit-docs > h1 {
+  @apply px-2 pt-2;
+}
+
+.kit-docs > h2 {
+  @apply px-2 pt-2;
+}
+
+.kit-docs > p {
+  @apply px-2;
+}
+
+.gg-chevron-left {
+  box-sizing: border-box;
+  position: relative;
+  display: block;
+  transform: scale(var(--tw-scale-x, 1), var(--tw-scale-y, 1));
+  width: 22px;
+  height: 22px;
+  border: 3px solid transparent;
+  border-radius: 100px;
+}
+.gg-chevron-left::after {
+  content: '';
+  display: block;
+  box-sizing: border-box;
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-bottom: 3px solid;
+  border-left: 3px solid;
+  transform: rotate(45deg);
+  left: 6px;
+  top: 3px;
+}
+
+.gg-chevron-right {
+  box-sizing: border-box;
+  position: relative;
+  display: block;
+  transform: scale(var(--ggs, 1));
+  width: 22px;
+  height: 22px;
+  border: 2px solid transparent;
+  border-radius: 100px;
+}
+.gg-chevron-right::after {
+  content: '';
+  display: block;
+  box-sizing: border-box;
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-bottom: 2px solid;
+  border-right: 2px solid;
+  transform: rotate(-45deg);
+  right: 6px;
+  top: 4px;
+}
+
+.gg-image {
+  box-sizing: border-box;
+  position: relative;
+  display: block;
+  transform: scale(var(--tw-scale-x, 1), var(--tw-scale-y, 1));
+  width: 20px;
+  height: 16px;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px;
+  border-radius: 2px;
+}
+.gg-image::after,
+.gg-image::before {
+  content: '';
+  display: block;
+  box-sizing: border-box;
+  position: absolute;
+  border: 2px solid;
+}
+.gg-image::after {
+  transform: rotate(45deg);
+  border-radius: 3px;
+  width: 16px;
+  height: 16px;
+  top: 9px;
+  left: 6px;
+}
+.gg-image::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 100%;
+  top: 2px;
+  left: 2px;
+}
+
+.gg-play-button {
+  box-sizing: border-box;
+  position: relative;
+  display: block;
+  transform: scale(var(--tw-scale-x, 1), var(--tw-scale-y, 1));
+  width: 22px;
+  height: 22px;
+}
+
+.gg-play-button::before {
+  content: '';
+  display: block;
+  box-sizing: border-box;
+  position: absolute;
+  width: 0;
+  height: 10px;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid;
+  top: 6px;
+  left: 9px;
+}
+
+@keyframes loading {
+  0% {
+    left: -40px;
+  }
+  50% {
+    left: calc(100% + 10px);
+  }
+  100% {
+    left: -40px;
+  }
+}
+
+.animate-not-loading {
+  /* right: -400px; */
+}
+
+.animate-loading {
+  right: calc(100% - 40px);
+  animation: loading 4s linear infinite;
+  animation-fill-mode: forwards;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-in;
+  animation-fill-mode: forwards;
+}
+
+.animate-fade-out {
+  animation: fadeOut 0.25s ease-out;
+  animation-fill-mode: forwards;
+}
+
+@layer base {
+  h1 {
+    @apply text-2xl;
+  }
+
+  h2 {
+    @apply text-xl;
+  }
+
+  h3 {
+    @apply text-lg;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply mb-2 font-semibold;
+  }
+
+  a {
+    @apply underline;
+  }
+
+  ul,
+  ol {
+    @apply mb-4;
+  }
+
+  ul,
+  ol {
+    @apply ml-6;
+  }
+
+  ol li {
+    list-style-type: decimal;
+    list-style-position: outside;
+  }
+
+  ul li {
+    list-style-type: disc;
+    list-style-position: outside;
+  }
+
+  .prose > ul li {
+    list-style-type: unset;
+  }
+
+  .prose > ol li {
+    list-style-type: unset;
+  }
+
+  .prose table {
+    table-layout: fixed;
+  }
+
+  .prose table thead {
+    @apply text-base;
+  }
+
+  .prose > blockquote {
+    @apply bg-text-base/5;
+  }
+  .prose > blockquote > p {
+    margin: 0;
+  }
+
+  .prose > ul,
+  ol {
+    @apply ml-0;
+  }
+
+  .prose a {
+    /* @apply block; */
+    @apply w-full;
+    @apply whitespace-pre-wrap;
+    @apply break-words;
+  }
+
+  #panel code {
+    @apply whitespace-pre-wrap;
+  }
+
+  .prose kbd {
+    @apply text-base;
+    @apply font-mono text-sm font-bold;
+  }
+
+  p {
+    @apply mb-0;
+  }
+
+  .kit-form * {
+    @apply text-text-base;
+  }
+
+  .loading::placeholder {
+    display: inline-block;
+    animation: dotty steps(1, end) 1s infinite;
+    content: '';
+  }
+
+  @keyframes dotty {
+    0% {
+      content: '';
+    }
+    25% {
+      content: '.';
+    }
+    50% {
+      content: '..';
+    }
+    75% {
+      content: '...';
+    }
+    100% {
+      content: '';
+    }
+  }
+}
+
+#input {
+  font-stretch: condensed;
+}
+
+#input::placeholder {
+  font-stretch: condensed;
+}
+
+.emoji-picker-react {
+  @apply pt-2;
+}
+
+.emoji-picker-react input.emoji-search {
+  background-color: #00000000 !important;
+  border: none;
+  outline: none;
+}
+.emoji-picker-react input.emoji-search:focus {
+  background-color: #00000000 !important;
+  border: none;
+  outline: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .emoji-picker-react .emoji-categories {
+    filter: invert(100%);
+  }
+}
+
+.emoji-picker-react .emoji-group:before {
+  background-color: #00000000 !important;
+  border: none;
+  outline: none;
+}
+
+.emoji-picker-react li {
+  list-style-type: none;
+}
+
+.emoji-picker-react .emoji button:hover {
+  @apply bg-bg-base bg-opacity-50;
+}
+
+.emoji-picker-react .emoji button:focus {
+  @apply bg-bg-base bg-opacity-90;
+  @apply outline outline-1 outline-bg-base;
+}
+
+button.epr-emoji:focus > * {
+  @apply bg-primary/40 !important;
+}
+
+.prose > pre {
+  @apply m-0 p-0;
+  @apply bg-text-base bg-opacity-0;
+  @apply min-h-8;
+}
+
+code.hljs {
+  @apply block;
+  @apply py-4 pl-4 pr-4;
+  @apply leading-snug;
+  @apply bg-text-base bg-opacity-5;
+  @apply border border-bg-base border-opacity-10;
+  @apply rounded;
+  @apply my-4;
+  @apply text-sm;
+  @apply min-h-4;
+  white-space: break-spaces;
+}
+
+.hljs-copy-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+.hljs-copy-wrapper:hover .hljs-copy-button,
+.hljs-copy-button:focus {
+  transform: translateX(0);
+}
+.hljs-copy-button {
+  @apply text-text-base text-opacity-25 dark:text-white dark:text-opacity-25;
+  @apply top-5 right-1 mt-0.5 h-5 w-5;
+  position: absolute;
+}
+
+.hljs-copy-button:hover {
+  @apply text-text-base text-opacity-50 dark:text-white dark:text-opacity-50;
+}
+
+.dark .prose > pre,
+.prose > pre {
+  @apply p-0;
+}
+
+.hljs-copy-button[data-copied='true'] {
+  text-indent: 0px; /* Shows the inner text */
+  width: auto;
+  background-image: none;
+}
+
+@media (prefers-reduced-motion) {
+  .hljs-copy-button {
+    transition: none;
+  }
+}
+
+.hljs-copy-checked::after {
+  content: '✓';
+  @apply absolute;
+  @apply text-text-base text-opacity-50 dark:text-white dark:text-opacity-50;
+  @apply top-1 right-2;
+  @apply text-xs;
+}
+
+.prose-sm > h3,
+.prose-sm > h2 {
+  @apply mt-4;
+}
+
+ul {
+  @apply ml-0;
+}
+
+.prose-sm > *:first-child {
+  @apply mt-0;
+}
+
+.prose > kbd {
+  /* Styles for keyboard shortcut */
+  @apply text-text-base;
+  @apply font-mono text-sm font-bold;
+  @apply bg-bg-base bg-opacity-10;
+  @apply rounded;
+  @apply px-1;
+  @apply border;
+  @apply border-bg-base border-opacity-25;
+}
+
+.prose code::before,
+code::after {
+  content: none !important;
+}
+
+.prose .hljs {
+  @apply text-text-base text-opacity-80;
+  @apply font-mono font-normal;
+}
+
+.kit-chat-messages {
+  @apply flex-1 overflow-auto p-2;
+}
+
+.kit-chat-input,
+.kit-chat-input > textarea {
+  @apply border-t-1 bg-bg-base bg-opacity-0 px-2 text-text-base outline-none placeholder:text-text-base placeholder:text-opacity-25;
+  @apply min-h-11;
+}
+
+.rce-input,
+.rce-input:focus {
+  @apply rounded-sm bg-bg-base bg-opacity-0 text-text-base outline-none ring-0 ring-opacity-0 focus:outline-none focus:ring-0 focus:ring-primary focus:ring-opacity-25;
+}
+
+.kit-chat-submit {
+  @apply px-2 py-0.5 text-base text-primary;
+}
+
+.rce-container-mbox {
+  @apply my-2 w-full py-1 font-normal;
+}
+
+.rce-mbox:has(.left) {
+  /* inverted with half opacity */
+  @apply ml-6 mr-24 bg-bg-base bg-opacity-0 text-text-base;
+}
+
+.rce-mbox:has(.right) {
+  /* inverted with half opacity */
+  @apply mr-6 ml-24 bg-text-base bg-opacity-10 text-text-base;
+}
+
+.rce-mbox:has(.left),
+.rce-mbox:has(.right) {
+  user-select: text;
+  min-width: 1rem;
+  min-height: 1.5rem;
+  @apply whitespace-pre-wrap px-2.5 text-opacity-90;
+  @apply shadow-sm;
+  @apply focus:shadow-md;
+  @apply py-1 px-3;
+  @apply border border-text-base border-opacity-15;
+
+  /* Set the max width to full - 3rem */
+  max-width: calc(100% - 8rem);
+}
+
+.rce-mbox .left::after {
+  content: '';
+}
+
+.rce-mbox .right::after {
+  content: '';
+}
+
+.rce-input-buttons {
+  @apply mr-1;
+}
+
+.rce-mbox-text .prose {
+  @apply whitespace-normal p-0;
+}
+
+.rce-mbox [tabIndex] {
+  @apply focus:ring-0;
+  @apply focus:outline-none;
+  @apply focus:border-none;
+}
+.rce-mbox:has([tabIndex]:focus) {
+  @apply border border-primary border-opacity-75;
+}
+
+.kit-form input,
+.kit-form textarea,
+.kit-form select,
+.kit-form button {
+  @apply ring-0 focus:ring-0;
+  @apply outline-0 outline-primary !important;
+  @apply border-text-base/15 !important;
+  @apply focus:border-primary/75 !important;
+  @apply bg-bg-base/0;
+  /* make !important */
+}
+
+.rce-mbox code.language-markdown {
+  @apply text-text-base text-opacity-90;
+  @apply font-mono font-normal;
+  @apply text-xs;
+  @apply px-4 py-2;
+  @apply flex;
+}
+
+.Toastify__toast {
+  padding: 4px;
+}
+
+.Toastify__toast-container--top-right {
+  @apply top-16 right-1;
+}
+
+@media (max-height: 48px) {
+  :root {
+    --toastify-toast-max-height: 40px;
+  }
+  .Toastify__toast-container--top-right {
+    top: 12px;
+  }
+}
+@media (max-height: 40px) {
+  :root {
+    --toastify-toast-max-height: 32px;
+  }
+  .Toastify__toast-container--top-right {
+    top: 8px;
+  }
+}
+
+.Toastify__toast-theme--light {
+  @apply bg-bg-base/75;
+  /* blur background */
+  @apply backdrop-blur-2xl;
+  @apply text-text-base/90;
+  @apply border border-text-base/15;
+  @apply text-sm;
+}
+
+.Toastify__close-button--light {
+  @apply font-bold text-text-base;
+}
+
+.Toastify__close-button--light:hover {
+  @apply font-bold text-primary/75;
+}
+
+.Toastify__toast-body {
+  @apply -z-50 pt-1;
+}
+
+.Toastify__progress-bar-theme--light {
+  /* background gradient from bg-base to contrast. Contrast at 75 opacity */
+  @apply bg-gradient-to-r from-primary/30 to-primary/90;
+  @apply -z-50 h-0.5;
+}
+
+.Toastify__toast-container {
+  @apply w-48;
+}
+
+.kit-mbox-copyable:hover {
+  @apply bg-text-base/5;
+}
+
+.kit-mbox-copyable:hover::after {
+  content: '';
+}
+
+.kit-mbox-wrapper > .prose > p {
+  @apply mb-0;
+}
+
+.kit-mbox-wrapper > .prose > h1:first-of-type {
+  @apply mt-4;
+}
+
+.kit-mbox-wrapper code {
+  @apply text-sm;
+}
+
+.rce-mbox ul li,
+.rce-mbox ol li {
+  @apply list-outside;
+  @apply ml-5;
+}
+
+.rce-mbox ol,
+.rce-mbox ul {
+  /* @apply relative; */
+}
+
+/* .kit-mbox-wrapper pre {
+  @apply relative;
+  @apply p-0;
+  @apply border border-text-base/10 rounded;
+  @apply hover:bg-text-base/10;
+}
+
+.kit-mbox-wrapper pre > code {
+  @apply my-0 py-1;
+} */
+
+.kit-mbox {
+  @apply my-2 py-2 px-3;
+  @apply rounded border-1 border-text-base/10;
+}
+
+.kit-mbox > ol,
+.kit-mbox > ul {
+  @apply -ml-6 mb-0;
+}
+
+.kit-mbox > pre {
+  @apply m-0 border-none bg-bg-base/0 p-2;
+}
+
+.kit-mbox > pre:hover {
+  @apply bg-bg-base/0;
+}
+
+.kit-mbox > table {
+  @apply m-0;
+}
+
+.kit-mbox > .rce-mbox {
+  @apply border-none !important;
+}
+
+.kit-mbox-copied:hover::before,
+.kit-mbox-copyable:hover::before {
+  @apply absolute;
+  @apply text-text-base/50;
+  @apply bottom-1.5 right-3;
+  @apply text-xs;
+}
+
+.kit-mbox-copied:hover::before {
+  content: 'Copied';
+}
+
+.kit-mbox-copyable:hover::before {
+  content: 'Copy';
+}
+
+.kit-mbox-copied:hover::after {
+  content: '';
+}
+
+/* if .prose h1 is not followed by anything, remove the bottom padding */
+.prose > h1:only-child {
+  @apply mb-0;
+}
+
+.prose > h1 {
+  @apply mb-2.5;
+}
+
+.prose > blockquote {
+  @apply mt-0;
+}
+
+.prose-sm ~ pre {
+  @apply -mt-6;
+}
+
+/* And not .kit */
+.prose > pre:not(:has(> code.hljs)):not([class^='kit-mbox']) {
+  @apply flex flex-row items-center;
+  @apply text-base;
+  @apply -mt-2 p-2;
+  @apply bg-text-base/5;
+}
+
+.main-container {
+  /* TODO: I don't think this is needed... */
+  box-sizing: border-box !important;
+}
+
+.main-rounded {
+  border-radius: 0.6rem;
+}
+
+/* Used for the debugger text pulsing */
+@keyframes pulse-glow {
+  0% {
+    text-shadow:
+      0 0 0px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary));
+  }
+  50% {
+    text-shadow:
+      0px 0 0px rgb(var(--color-primary)),
+      0 0 5px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary));
+  }
+  100% {
+    text-shadow:
+      0 0 0px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary)),
+      0 0 0px rgb(var(--color-primary));
+  }
+}
+
+#app {
+  @apply bg-bg-base bg-opacity-base !important;
+}
+
+.hide-outline path:first-of-type {
+  @apply hidden;
+}
+/*
+*[class*='bg-secondary'] {
+  @apply bg-white/5;
+}
+
+*[class*='border-secondary'] {
+  @apply border-white/10;
+} */
+
+pre > code {
+  @apply text-xs !important;
+}
+
+.epr-emoji-category-label {
+  @apply bg-ui-bg !important;
+}

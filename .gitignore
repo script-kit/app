@@ -64,3 +64,4 @@ assets/basic-languages
 .yarn
 .clj-kondo
 .lsp
+out/
