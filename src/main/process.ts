@@ -5,9 +5,10 @@ import { randomUUID } from 'crypto';
 import detect from 'detect-port';
 import untildify from 'untildify';
 import dotenv from 'dotenv';
+// REMOVE-MAC
 import nmp from 'node-mac-permissions';
 const { askForAccessibilityAccess, getAuthStatus, askForFullDiskAccess } = nmp;
-
+// END-REMOVE-MAC
 
 import {
   app,

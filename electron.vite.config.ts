@@ -40,6 +40,6 @@ const config = defineConfig({
   },
 });
 
-console.log({ config: JSON.stringify(config, null, 2) });
+// console.log({ config: JSON.stringify(config, null, 2) });
 
 export default config;

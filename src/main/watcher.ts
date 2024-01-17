@@ -86,9 +86,9 @@ const logAllEvents = () => {
     if (event === 'unlink') removes.push(filePath);
   });
 
-  if (adds.length) log.info('adds', adds);
-  if (changes.length) log.info('changes', changes);
-  if (removes.length) log.info('removes', removes);
+  if (adds.length) log.verbose('adds', adds);
+  if (changes.length) log.verbose('changes', changes);
+  if (removes.length) log.verbose('removes', removes);
 
   adds.length = 0;
   changes.length = 0;
@@ -152,7 +152,7 @@ export const onScriptsChanged = async (
   filePath: string,
   rebuilt = false
 ) => {
-  log.info(`👀 ${event} ${filePath}`);
+  log.verbose(`👀 ${event} ${filePath}`);
   if (event === 'unlink') {
     unlink(filePath);
     unlinkBin(filePath);

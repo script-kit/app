@@ -25,10 +25,12 @@ process.on('SIGINT', () => {
 import log from 'electron-log';
 log.initialize();
 (global as any).log = log.info;
-performance.mark('script');
+performance.mark;
 
+// REMOVE-MAC
 import nmp from 'node-mac-permissions';
 const { getAuthStatus } = nmp;
+// END-REMOVE-MAC
 
 import {
   app,
@@ -624,6 +626,15 @@ const nodeModulesExists = async () => {
 };
 
 const verifyInstall = async () => {
+  log.info(`-----------------------------------------------`);
+  log.info(process.env);
+  log.info(`-----------------------------------------------`);
+
+  if (process.env.MAIN_SKIP_SETUP) {
+    log.info(`⏭️ Skipping verifyInstall`);
+    return;
+  }
+
   const checkNode = await nodeExists();
   await setupLog(checkNode ? `node found` : `node missing`);
 
@@ -687,6 +698,10 @@ const checkKit = async () => {
   log.info(`🧐 Checking ${KIT}`, options);
 
   const setupScript = (...args: string[]) => {
+    if (process.env.MAIN_SKIP_SETUP) {
+      log.info(`⏭️ Skipping setupScript`, args);
+      return;
+    }
     return new Promise((resolve, reject) => {
       log.info(`🔨 Running Setup Script ${args.join(' ')}`);
       const child = fork(kitPath('run', 'terminal.js'), args, forkOptions);
@@ -773,6 +788,7 @@ const checkKit = async () => {
   await setupLog(
     `auto updater detected version: ${autoUpdater.currentVersion}`
   );
+
   log.info(`PATH:`, KIT_FIRST_PATH);
   try {
     configureAutoUpdate();

@@ -51,6 +51,10 @@ log.info(`
 
 🟢🟢 🟢  !!!SCRIPT KIT TIME!!! 🟢 🟢 🟢 `);
 
+log.info(`Skipping Setup?`, {
+  MAIN_SKIP_SETUP: process.env.MAIN_SKIP_SETUP,
+});
+
 export interface Logger {
   info: (...args: string[]) => void;
   warn: (...args: string[]) => void;
@@ -118,9 +122,9 @@ export const warn = (message: string) => {
 };
 
 log.transports.console.level = 'info';
-if (process.env.LOG_LEVEL) {
-  log.info('🪵 Setting log level', process.env.LOG_LEVEL);
-  log.transports.file.level = process.env.LOG_LEVEL as LevelOption;
+if (process.env.VITE_LOG_LEVEL) {
+  log.info('🪵 Setting log level', process.env.VITE_LOG_LEVEL);
+  log.transports.file.level = process.env.VITE_LOG_LEVEL as LevelOption;
 } else if (process.env.NODE_ENV === 'production') {
   log.transports.file.level = 'info';
 } else {

@@ -504,6 +504,10 @@ export const forkOptions: ForkOptions = {
 };
 
 export const optionalSpawnSetup = (...args: string[]) => {
+  if (process.env.MAIN_SKIP_SETUP) {
+    log.info(`⏭️ Skipping setup script: ${args.join(' ')}`);
+    return Promise.resolve('done');
+  }
   return new Promise((resolve, reject) => {
     log.info(`Running optional setup script: ${args.join(' ')}`);
     const child = spawn(

@@ -2,8 +2,11 @@
 /* eslint-disable no-nested-ternary */
 
 import Store, { Schema } from 'electron-store';
+
+// REMOVE-MAC
 import nmp from 'node-mac-permissions';
 const { askForAccessibilityAccess, getAuthStatus, askForFullDiskAccess } = nmp;
+// END-REMOVE-MAC
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
@@ -819,12 +822,12 @@ export const initKeymap = async () => {
 
       const alpha = /[A-Za-z]/;
 
-      keymapLog.info(`🔑 Keymap`, { a: value });
+      keymapLog.verbose(`🔑 Keymap`, { a: value });
 
       if (value && value.match(alpha)) {
         kitState.keymap = keymap;
       } else {
-        keymapLog.info(
+        keymapLog.verbose(
           `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`
         );
       }
@@ -832,7 +835,7 @@ export const initKeymap = async () => {
       nativeKeymap.onDidChangeKeyboardLayout(
         debounce(() => {
           keymap = nativeKeymap.getKeyMap();
-          keymapLog.info(`🔑 Keymap changed:`, { keymap });
+          keymapLog.verbose(`🔑 Keymap changed:`, { keymap });
           value = keymap?.KeyA.value;
 
           if (value && value.match(alpha)) {
@@ -841,10 +844,10 @@ export const initKeymap = async () => {
               kitState.keymap = keymap;
               prevKeyMap = keymap;
             } else {
-              log.info('Keymap not changed');
+              log.verbose('Keymap not changed');
             }
           } else {
-            keymapLog.info(
+            keymapLog.verbose(
               `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`
             );
           }
@@ -852,7 +855,7 @@ export const initKeymap = async () => {
       );
 
       if (kitState.keymap)
-        keymapLog.info(
+        keymapLog.verbose(
           `🔑 Keymap: ${JSON.stringify(
             Object.entries(kitState.keymap).map(([k, v]: any) => {
               if (v?.value) return `${k} -> ${v.value}`;

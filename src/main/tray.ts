@@ -10,8 +10,11 @@ import {
   ipcMain,
   app,
 } from 'electron';
+
+// REMOVE-MAC
 import nmp from 'node-mac-permissions';
 const { askForAccessibilityAccess, askForInputMonitoringAccess } = nmp;
+// END-REMOVE-MAC
 
 import { formatDistanceToNow } from 'date-fns';
 import path from 'path';
@@ -633,17 +636,13 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
   }
 
   if (!tray) {
-    // TODO: Fix tray
     tray = new Tray(trayIcon(state));
-    // const trayImagePath = `/Users/johnlindquist/dev/kitapp/assets/tray/default-Template.png`;
-    // tray = new Tray(trayImagePath);
     tray.setIgnoreDoubleClickEvents(true);
 
     subscribeKey(kitState, 'status', (status: KitStatus) => {
       try {
         log.info(`🎨 Tray status: ${status.status}`);
-        // TODO: Fix tray icon
-        // tray?.setImage(trayIcon(status.status));
+        tray?.setImage(trayIcon(status.status));
       } catch (error) {
         log.error(error);
       }

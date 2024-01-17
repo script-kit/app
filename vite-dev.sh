@@ -1,6 +1,6 @@
 #!/bin/bash
 # Start electron-vite dev and keep track of its process ID
-electron-vite dev &
+MAIN_SKIP_SETUP=true electron-vite dev --l info &
 pid=$!
 
 # Create a process group
