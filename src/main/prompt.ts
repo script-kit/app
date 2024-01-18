@@ -347,7 +347,7 @@ export const createPromptWindow = async () => {
       backgroundThrottling: false,
       experimentalFeatures: true,
       spellcheck: true,
-      preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)), // ✅
+      preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)),
       webSecurity: false,
     },
     closable: false,

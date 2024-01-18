@@ -2,8 +2,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import log from 'electron-log';
 // import path from 'node:path';
-import { writeFileSync } from 'fs';
+const { writeFileSync } = window.api.fs;
 // import os from 'os';
+const path = window.api.path;
+const os = window.api.os;
 const { ipcRenderer } = window.electron;
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
@@ -108,17 +110,17 @@ export function useAudioRecorder() {
       log.info(`>>>>>>>>>>>>>>>>>>>>>>>>>>> micConfig`, micConfig);
 
       const tmpFileName = '';
-      // micConfig?.filePath ||
-      // path.join(
-      //   os.tmpdir(),
-      //   `recording_${Math.random().toString(36).substring(7)}.webm`
-      // );
+      micConfig?.filePath ||
+        path.join(
+          os.tmpdir(),
+          `recording_${Math.random().toString(36).substring(7)}.webm`
+        );
       writeFileSync(tmpFileName, Buffer.from(await audioBlob.arrayBuffer()));
       log.info(`Audio written to file: ${tmpFileName}`);
 
       log.info(`Submitting audio...`);
 
-      // channel(Channel.START_MIC, { value: tmpFileName });
+      channel(Channel.START_MIC, { value: tmpFileName });
       if (ui === UI.mic) {
         submit(tmpFileName);
       } else {

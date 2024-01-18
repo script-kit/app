@@ -2,6 +2,7 @@ import { resolve } from 'path';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
 import { BuildOptions } from 'vite';
+import { fileURLToPath } from 'url';
 
 const build: BuildOptions = {
   rollupOptions: {
@@ -20,6 +21,7 @@ const config = defineConfig({
     plugins: [externalizeDepsPlugin()],
   },
   renderer: {
+    assetsInclude: ['**/*.wasm'],
     server: {
       port: 4444,
       fs: {

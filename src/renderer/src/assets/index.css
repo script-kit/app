@@ -379,8 +379,13 @@ body {
   }
 
   .prose kbd {
-    @apply text-base;
-    @apply font-mono text-sm font-bold;
+    @apply bg-text-base/10 text-primary/90; /* Light background */
+    @apply rounded; /* Rounded corners */
+    @apply mx-0.5 px-1; /* Horizontal padding */
+    @apply border-2; /* Border around the element */
+    @apply border-secondary/10; /* Slightly darker border for depth */
+    @apply shadow; /* Optional: subtle shadow for 3D effect */
+    @apply font-mono text-sm font-bold; /* Monospaced font, small size, bold text */
   }
 
   p {

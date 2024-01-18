@@ -54,7 +54,7 @@ type ClipboardInfo = {
 
 let frontmost: any = null;
 
-syncClipboardStore();
+// syncClipboardStore();
 
 const SPACE = '_';
 

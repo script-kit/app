@@ -573,6 +573,11 @@ export const optionalSetupScript = (
   argsParam?: string[],
   callback?: (object: any) => void
 ) => {
+  if (process.env.MAIN_SKIP_SETUP) {
+    log.info(`⏭️ Skipping setup script: ${scriptPath}`);
+    return Promise.resolve('done');
+  }
+
   const args = argsParam || [];
   return new Promise((resolve, reject) => {
     log.info(`Running optional setup script: ${scriptPath} with ${args}`);

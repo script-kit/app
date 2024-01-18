@@ -14,7 +14,7 @@ import fsExtra from 'fs-extra';
 const { readJson, writeJson } = fsExtra;
 import * as nativeKeymap from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
-import log, { FileTransport, LogLevel } from 'electron-log';
+import log, { FileTransport, LevelOption, LogLevel } from 'electron-log';
 import { assign, debounce } from 'lodash-es';
 import path from 'path';
 import os from 'os';
@@ -779,6 +779,9 @@ const keymapLogPath = path.resolve(app.getPath('logs'), 'keymap.log');
 const keymapLog = log.create({ logId: 'keymapLog' });
 (keymapLog.transports.file as FileTransport).resolvePathFn = () =>
   keymapLogPath;
+
+keymapLog.transports.console.level = (process.env.VITE_LOG_LEVEL ||
+  'info') as LevelOption;
 
 export const convertKey = (sourceKey: string) => {
   if (typeof appDb?.convertKey === 'boolean' && !appDb.convertKey) {

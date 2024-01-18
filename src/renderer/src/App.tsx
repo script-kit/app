@@ -105,11 +105,11 @@ import { AppChannel } from './enums';
 import Terminal from './term';
 import Inspector from './components/inspector';
 import { Chat } from './components/chat';
-// import AudioRecorder from './audio-recorder';
+import AudioRecorder from './audio-recorder';
 import Webcam from './webcam';
 import Preview from './components/preview';
 import FlagsList from './components/flags';
-// import AudioDot from './audio-dot';
+import AudioDot from './audio-dot';
 import LoadingDot from './loading-dot';
 import ProcessesDot from './processes-dot';
 import ProgressBar from './progress-bar';
@@ -491,7 +491,7 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
             }}
           />
         )} */}
-        {/* {audioDot && <AudioDot />} */}
+        {audioDot && <AudioDot />}
         {loading && <LoadingDot />}
         {progress > 0 && <ProgressBar />}
         {processes.length > 1 && isMainScript && <ProcessesDot />}
@@ -605,7 +605,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                   {ui === UI.term &&
                     open &&
                     termConfig?.promptId === promptData?.id && <Terminal />}
-                  {/* {ui === UI.mic && open && <AudioRecorder />} */}
+                  {ui === UI.mic && open && <AudioRecorder />}
                   {ui === UI.webcam && open && <Webcam />}
 
                   {((ui === UI.arg && !panelHTML && choices.length > 0) ||

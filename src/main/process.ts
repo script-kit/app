@@ -164,7 +164,7 @@ export const clearFlags = () => {
 };
 
 export const maybeConvertColors = async (theme: any = {}) => {
-  log.info(`🎨 Convert Colors:`, theme);
+  log.verbose(`🎨 Convert Colors:`, theme);
 
   // eslint-disable-next-line prettier/prettier
   theme.foreground ||= theme?.['--color-text'];
@@ -214,7 +214,7 @@ export const maybeConvertColors = async (theme: any = {}) => {
     result = cc.contrastColor();
 
     theme.appearance ||= result === '#FFFFFF' ? 'dark' : 'light';
-    log.info(`💄 Setting appearance to ${theme.appearance}`);
+    log.verbose(`💄 Setting appearance to ${theme.appearance}`);
   }
 
   if (!kitState.isMac) {
@@ -325,7 +325,7 @@ export const formatScriptChoices = (data: Choice[]) => {
 };
 
 export const setTheme = async (value: any = {}, check = true) => {
-  log.info(`🎨 Setting theme:`, {
+  log.verbose(`🎨 Setting theme:`, {
     hasCss: kitState.hasCss,
     value,
   });

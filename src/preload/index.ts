@@ -2,12 +2,16 @@ import { contextBridge, ipcRenderer, webFrame } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
 import { kitPath, getMainScriptPath } from '@johnlindquist/kit/core/utils';
 import path from 'path';
+import os from 'os';
+import fs from 'fs';
 
 // Custom APIs for renderer
 const api = {
   kitPath,
   getMainScriptPath,
   path,
+  os,
+  fs,
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

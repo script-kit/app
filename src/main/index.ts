@@ -164,6 +164,7 @@ import {
   setupLog,
 } from './install';
 import { readKitCss } from './theme';
+import { syncClipboardStore } from './clipboard';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -556,6 +557,7 @@ const ready = async () => {
     systemEvents();
     readyPty();
 
+    syncClipboardStore();
     startClipboardAndKeyboardWatchers();
     actualHideDock();
 
@@ -778,7 +780,9 @@ const checkKit = async () => {
       log.info(`Failed to install extensions`, error);
     }
   }
+  log.info(`Starting IPC...`);
   startIpc();
+  log.info(`IPC started.`);
   await createPromptWindow();
 
   await setupLog(`Prompt window created`);
@@ -831,7 +835,7 @@ const checkKit = async () => {
 
   let nodeVersionMatch = true;
 
-  if (await nodeExists()) {
+  if ((await nodeExists()) && !process.env.MAIN_SKIP_SETUP) {
     log.info(`👍 Node Exists`);
     // Compare nodeVersion to execPath
     const execPathVersion = execFileSync(execPath, ['--version']);
@@ -991,7 +995,7 @@ const checkKit = async () => {
   await setupLog(`Creating bins`);
   optionalSetupScript(kitPath('cli', 'create-all-bins-no-trash.js'));
 
-  if (!requiresInstall) {
+  if (!requiresInstall && !process.env.MAIN_SKIP_SETUP) {
     await Promise.all([
       installKitInKenv(),
       installEsbuild(),

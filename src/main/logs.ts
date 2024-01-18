@@ -122,6 +122,7 @@ export const warn = (message: string) => {
 };
 
 log.transports.console.level = 'info';
+
 if (process.env.VITE_LOG_LEVEL) {
   log.info('🪵 Setting log level', process.env.VITE_LOG_LEVEL);
   log.transports.file.level = process.env.VITE_LOG_LEVEL as LevelOption;
