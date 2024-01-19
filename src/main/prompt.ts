@@ -522,7 +522,13 @@ export const createPromptWindow = async () => {
 
   log.silly(`Loading prompt window html`);
 
-  await promptWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+  if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
+    await promptWindow.loadURL(
+      `${process.env['ELECTRON_RENDERER_URL']}/index.html`
+    );
+  } else {
+    await promptWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+  }
 
   promptWindow.webContents.on('devtools-closed', () => {
     log.silly(`event: devtools-closed`);

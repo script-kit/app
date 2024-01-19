@@ -21,14 +21,21 @@ const config = defineConfig({
     plugins: [externalizeDepsPlugin()],
   },
   renderer: {
-    assetsInclude: ['**/*.wasm'],
     server: {
       port: 4444,
       fs: {
         allow: ['../../src', '../../node_modules/@fontsource'],
       },
     },
-    build,
+    build: {
+      rollupOptions: {
+        ...build.rollupOptions,
+        input: {
+          main: resolve('src/renderer/index.html'),
+          widget: resolve('src/renderer/widget.html'),
+        },
+      },
+    },
     resolve: {
       alias: {
         'electron/main': 'electron',

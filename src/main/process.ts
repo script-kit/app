@@ -2813,6 +2813,10 @@ export const handleWidgetEvents = () => {
     const { widgetId } = data;
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
+    log.info(`🔎 click ${widgetId}`, {
+      w,
+      widgets: widgetState.widgets.map((w) => w.id),
+    });
     if (!w) return;
     const { wid, moved, pid } = w;
     const widget = BrowserWindow.fromId(wid);
@@ -2823,8 +2827,6 @@ export const handleWidgetEvents = () => {
       w.moved = false;
       return;
     }
-
-    log.info(`🔎 click ${widgetId}`);
 
     childSend(child, {
       ...data,
@@ -2876,9 +2878,9 @@ export const handleWidgetEvents = () => {
 
   const mouseDownHandler: WidgetHandler = (event, data) => {
     const { widgetId } = data;
-    log.info(`🔽 mouseDown ${widgetId}`);
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
+    log.info(`🔽 mouseDown ${widgetId}`, { w });
     if (!w) return;
     const { wid, moved, pid } = w;
     const widget = BrowserWindow.fromId(wid);

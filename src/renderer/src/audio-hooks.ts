@@ -1,9 +1,6 @@
 // src/hooks/audio-hook.tsx
 import { useState, useCallback, useRef, useEffect } from 'react';
 import log from 'electron-log';
-// import path from 'node:path';
-const { writeFileSync } = window.api.fs;
-// import os from 'os';
 const path = window.api.path;
 const os = window.api.os;
 const { ipcRenderer } = window.electron;
@@ -109,13 +106,17 @@ export function useAudioRecorder() {
 
       log.info(`>>>>>>>>>>>>>>>>>>>>>>>>>>> micConfig`, micConfig);
 
-      const tmpFileName = '';
-      micConfig?.filePath ||
+      const tmpFileName =
+        micConfig?.filePath ||
         path.join(
           os.tmpdir(),
           `recording_${Math.random().toString(36).substring(7)}.webm`
         );
-      writeFileSync(tmpFileName, Buffer.from(await audioBlob.arrayBuffer()));
+
+      const arrayBuffer = await audioBlob.arrayBuffer();
+
+      window.api.fsPromises.writeFile(tmpFileName, Buffer.from(arrayBuffer));
+
       log.info(`Audio written to file: ${tmpFileName}`);
 
       log.info(`Submitting audio...`);

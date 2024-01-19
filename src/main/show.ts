@@ -23,144 +23,9 @@ import { darkTheme } from '../shared/themes';
 import { forceQuit, kitState } from './state';
 import { getCurrentScreenFromMouse } from './prompt';
 import { fileURLToPath } from 'url';
+import { Channel } from '@johnlindquist/kit/core/enum';
 
 export const INSTALL_ERROR = 'install-error';
-
-const page = (body: string, options: ShowOptions) => {
-  const baseURL = app.getAppPath().replace('\\', '/');
-  const stylePath = `${baseURL}/dist/style.css`;
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="${stylePath}">
-    <style>
-      body {
-        ${
-          options?.transparent
-            ? `
-          background-color: rgba(0, 0, 0, 0) !important;`
-            : ``
-        }
-
-        ${
-          options?.draggable
-            ? `
-            -webkit-user-select: none;
-            -webkit-app-region: drag;
-        `
-            : ``
-        }
-
-        pointer-events: none
-      }
-
-      * {pointer-events: all;}
-      .draggable {-webkit-app-region: drag;}
-    </style>
-
-
-
-    <style>
-    ${darkTheme}
-    </style>
-    <script>
-
-    window.addEventListener('load', () => {
-      let minWidth = document.body.firstElementChild.offsetWidth + 'px'
-      document.body.firstElementChild.style.display = "inline-block"
-      document.body.style.minWidth = minWidth;
-    })
-
-    const {ipcRenderer} = require("electron")
-
-    ipcRenderer.on('UPDATE', (event, {message, header, spinner})=> {
-      if(header) document.querySelector(".header").innerHTML = header
-      if(message) document.querySelector(".message").innerHTML = message
-      if(typeof spinner === "boolean") document.querySelector(".spinner").classList[spinner ? "remove" : "add"]("hidden")
-    })
-
-    let cw = 0
-    let ch = 0
-    let resize = ()=>  setTimeout(()=> {
-      let width =  Math.ceil(document.body.firstElementChild.offsetWidth)
-      let height =  Math.ceil(document.body.firstElementChild.offsetHeight)
-
-      if(width === cw && height === ch) return
-      cw = width
-      ch = height
-
-
-      ipcRenderer.send("WIDGET_RESIZE", {
-        width,
-        height
-      })
-    }, 500)
-
-    ipcRenderer.on('WIDGET_UPDATE', (event, {html})=> {
-      document.body.innerHTML = html
-      resize()
-    })
-
-    resize()
-
-    ${
-      kitState.isMac
-        ? ``
-        : `
-    document.documentElement.style.setProperty("--opacity-themedark", "100%");
-    document.documentElement.style.setProperty("--opacity-themelight", "100%");
-    `
-    }
-    </script>
-</head>
-    ${body}
-    <script>
-
-    document.addEventListener("click", (event) => {
-      console.log(window.id, event.target)
-      ipcRenderer.send("WIDGET_CLICK", {
-        targetId: event.target.id,
-        windowId: window.id
-      })
-    })
-
-    // add "mousedown" handler
-    document.addEventListener("mousedown", (event) => {
-      ipcRenderer.send("WIDGET_MOUSE_DOWN", {
-        targetId: event.target.id,
-        windowId: window.id
-      })
-    })
-
-    document.addEventListener("input", (event) => {
-      ipcRenderer.send("WIDGET_INPUT", {
-        targetId: event.target.id,
-        windowId: window.id,
-        value: event.target.value
-      })
-    })
-
-    // const myObserver = new ResizeObserver(entries => {
-    //   entries.forEach(entry => {
-    //     console.log('width', entry.contentRect.width);
-    //     console.log('height', entry.contentRect.height);
-
-    //     ipcRenderer.send("WIDGET_RESIZE", {
-    //       width: Math.round(entry.contentRect.width),
-    //       height: Math.round(entry.contentRect.height)
-    //     })
-    //   });
-    // });
-
-
-    // myObserver.observe(document.body.firstElementChild);
-
-    </script>
-</html>`;
-};
 
 // let t
 
@@ -296,7 +161,7 @@ export const showInspector = (url: string): BrowserWindow => {
       nodeIntegration: true,
       contextIsolation: false,
       webSecurity: false,
-      preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)), // ✅
+      preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)),
     },
     alwaysOnTop: true,
   });
@@ -427,13 +292,6 @@ export const show = async (
     }
   });
 
-  const showParentDir = kenvPath('tmp', name);
-  await ensureDir(kenvPath('tmp', name));
-
-  const showPath = `${showParentDir}/${name}.html`;
-  log.info(`Load ${showPath} in ${showWindow.id}`);
-  await writeFile(showPath, page(html, options));
-
   if (options?.ttl) {
     setTimeout(
       () => {
@@ -463,9 +321,10 @@ export const showWidget = async (
   filePath: string,
   options: WidgetOptions = {}
 ): Promise<BrowserWindow> => {
+  options.body = options.body || html || '';
   const position = options?.center
-    ? getCenterOnCurrentScreen(options)
-    : getTopRightCurrentScreen(options);
+    ? getCenterOnCurrentScreen(options as BrowserWindowConstructorOptions)
+    : getTopRightCurrentScreen(options as BrowserWindowConstructorOptions);
 
   const bwOptions: BrowserWindowConstructorOptions = {
     title: `${path.basename(kitState.scriptPath)} | Process: ${
@@ -478,6 +337,9 @@ export const showWidget = async (
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      experimentalFeatures: true,
+      preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)),
+      webSecurity: false,
     },
     ...position,
     show: false,
@@ -485,7 +347,7 @@ export const showWidget = async (
     minWidth: 160,
     movable: true,
 
-    ...options,
+    ...(options as BrowserWindowConstructorOptions),
   };
 
   let widgetWindow: BrowserWindow;
@@ -522,10 +384,19 @@ export const showWidget = async (
   return new Promise((resolve, reject) => {
     widgetWindow.webContents.once('did-finish-load', () => {
       if (widgetWindow) {
-        widgetWindow.webContents.send('WIDGET_INIT', options.state || {});
+        widgetWindow.webContents.send(
+          Channel.WIDGET_INIT,
+          {
+            ...options,
+            widgetId,
+          } || {}
+        );
 
         // Set the css variables from kitState.theme
-        widgetWindow.webContents.send('WIDGET_THEME', snapshot(kitState.theme));
+        widgetWindow.webContents.send(
+          Channel.WIDGET_THEME,
+          snapshot(kitState.theme)
+        );
 
         const noShow =
           typeof options?.show === 'boolean' && options?.show === false;
@@ -591,6 +462,13 @@ export const showWidget = async (
         ? html
         : `file://${filePath}`;
     url = `${url}?widgetId=${widgetId}`;
-    widgetWindow?.loadURL(url);
+
+    if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
+      widgetWindow.loadURL(
+        `${process.env['ELECTRON_RENDERER_URL']}/widget.html`
+      );
+    } else {
+      widgetWindow.loadFile(path.join(__dirname, '../renderer/widget.html'));
+    }
   });
 };

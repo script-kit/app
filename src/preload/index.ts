@@ -4,6 +4,7 @@ import { kitPath, getMainScriptPath } from '@johnlindquist/kit/core/utils';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 
 // Custom APIs for renderer
 const api = {
@@ -12,6 +13,7 @@ const api = {
   path,
   os,
   fs,
+  fsPromises,
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to
