@@ -11,7 +11,7 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 import { app } from 'electron';
 import { sendToPrompt } from './channel';
 import { stripAnsi } from './ansi';
-import { kitState, subs } from './state';
+import { kitState, subs } from '../shared/state';
 import { TrackEvent, trackEvent } from './track';
 
 const isDev = process.env.NODE_ENV === 'development';

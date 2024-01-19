@@ -5,6 +5,7 @@ import path from 'path';
 import os from 'os';
 import fs from 'fs';
 import fsPromises from 'fs/promises';
+import url from 'url';
 
 // Custom APIs for renderer
 const api = {
@@ -14,6 +15,7 @@ const api = {
   os,
   fs,
   fsPromises,
+  url,
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

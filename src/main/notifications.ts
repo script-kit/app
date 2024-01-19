@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import { app, BrowserWindow, screen } from 'electron';
-import { getAssetPath } from './assets';
+import { getAssetPath } from '../shared/assets';
 import { KIT_PROTOCOL } from './helpers';
 
 let notificationWindow: BrowserWindow | null = null;

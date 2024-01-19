@@ -18,9 +18,9 @@ import { ShowOptions } from '@johnlindquist/kit/types/kitapp';
 import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
 import { snapshot } from 'valtio';
-import { getAssetPath } from './assets';
+import { getAssetPath } from '../shared/assets';
 import { darkTheme } from '../shared/themes';
-import { forceQuit, kitState } from './state';
+import { forceQuit, kitState } from '../shared/state';
 import { getCurrentScreenFromMouse } from './prompt';
 import { fileURLToPath } from 'url';
 import { Channel } from '@johnlindquist/kit/core/enum';
@@ -318,7 +318,6 @@ export const show = async (
 export const showWidget = async (
   widgetId: string,
   html: string,
-  filePath: string,
   options: WidgetOptions = {}
 ): Promise<BrowserWindow> => {
   options.body = options.body || html || '';
@@ -455,13 +454,11 @@ export const showWidget = async (
       menu.popup(widgetWindow as PopupOptions);
     });
 
-    log.info(`Load ${filePath} in ${widgetWindow.id}`);
+    // log.info(`Load ${filePath} in ${widgetWindow.id}`);
 
-    let url =
-      html.startsWith('http') || html.startsWith('file')
-        ? html
-        : `file://${filePath}`;
-    url = `${url}?widgetId=${widgetId}`;
+    log.info({
+      html,
+    });
 
     if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
       widgetWindow.loadURL(

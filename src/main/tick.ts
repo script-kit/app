@@ -25,11 +25,17 @@ import { store } from '@johnlindquist/kit/core/db';
 import { debounce } from 'lodash-es';
 
 import { clipboard } from 'electron';
-import { emitter, KitEvent } from './events';
-import { kitClipboard, kitConfig, kitState, kitStore, subs } from './state';
+import { emitter, KitEvent } from '../shared/events';
+import {
+  kitClipboard,
+  kitConfig,
+  kitState,
+  kitStore,
+  subs,
+} from '../shared/state';
 import { isFocused } from './prompt';
 import { deleteText } from './keyboard';
-import { Trigger } from './enums';
+import { Trigger } from '../shared/enums';
 
 import {
   addToClipboardHistory,

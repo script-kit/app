@@ -19,7 +19,13 @@ import { assign, debounce } from 'lodash-es';
 import path from 'path';
 import os from 'os';
 import { ChildProcess } from 'child_process';
-import { app, BrowserWindow, Menu, nativeTheme } from 'electron';
+import electron from 'electron';
+const { app, nativeTheme } = electron;
+
+log.info({
+  app,
+  nativeTheme,
+});
 import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import {
@@ -49,8 +55,7 @@ import { UI } from '@johnlindquist/kit/core/enum';
 import axios from 'axios';
 import { QuickScore } from 'quick-score';
 import internetAvailable from './internet-available';
-import { noScript } from '../shared/defaults';
-import { getAssetPath } from './assets';
+import { noScript } from './defaults';
 import { emitter, KitEvent } from './events';
 import { Trigger } from './enums';
 
@@ -214,45 +219,6 @@ const removeP = (pid: number) => {
   }
 };
 
-// const checkTransparencyEnabled = () => {
-//   const version = parseInt(os.release().split('.')[0], 10);
-//   const bigSur = ``;
-//   if (os.platform() === 'darwin' && version < bigSur) {
-//     return false;
-//   }
-
-//   try {
-//     const enabled = !parseInt(
-//       Buffer.from(
-//         execSync('defaults read com.apple.universalaccess reduceTransparency', {
-//           encoding: 'utf8',
-//           maxBuffer: 50 * 1024 * 1024,
-//         })
-//       )
-//         .toString()
-//         .trim(),
-//       10
-//     );
-//     log.info(`transparency enabled: ${enabled}`);
-//     return enabled;
-//   } catch (error) {
-//     return false;
-//   }
-// };
-export type WidgetOptions = {
-  id: string;
-  wid: number;
-  pid: number;
-  moved: boolean;
-  ignoreMouse: boolean;
-  ignoreMeasure: boolean;
-};
-
-export type WindowsOptions = {
-  id: string;
-  wid: number;
-};
-
 const initState = {
   debugging: false,
   isPanel: false,
@@ -396,33 +362,14 @@ const initConfig: Config = {
   deleteSnippet: true,
 };
 
-const initWidgets = {
-  widgets: [] as WidgetOptions[],
-};
-
-const initWindows = {
-  windows: [] as WindowOptions[],
-};
-
 export const appDb: AppDb = proxy(appDefaults);
 export const kitConfig: Config = proxy(initConfig);
 export const kitState: typeof initState = proxy(initState);
 export type kitStateType = typeof initState;
 
-export const widgetState: typeof initWidgets = proxy(initWidgets);
-export const windowsState: typeof initWindows = proxy(initWindows);
 export const promptState = proxy({
   screens: {} as any,
 });
-export const findWidget = (id: string, reason = '') => {
-  const options = widgetState.widgets.find((opts) => opts.id === id);
-  if (!options) {
-    log.warn(`${reason}: widget not found: ${id}`);
-    return null;
-  }
-
-  return BrowserWindow.fromId(options.wid);
-};
 
 export function isSameScript(promptScriptPath: string) {
   const same =
@@ -455,88 +402,15 @@ const subReady = subscribeKey(kitState, 'ready', (ready) => {
   }
 });
 
-let hideIntervalId: NodeJS.Timeout | null = null;
-
-export const actualHideDock = () => {
-  log.info(`🚢 Hiding dock`);
-  app?.dock?.setIcon(getAssetPath('icon.png'));
-  app?.dock?.hide();
-  kitState.dockShown = false;
-};
-
-export const hideDock = debounce(() => {
-  if (!kitState.isMac) return;
-  if (kitState.devToolsCount > 0) return;
-  if (kitState.promptCount > 0) return;
-  if (widgetState.widgets.length) return;
-  if (windowsState.windows.length) return;
-  if (!kitState.dockShown) return;
-
-  actualHideDock();
-
-  if (hideIntervalId) clearInterval(hideIntervalId);
-}, 200);
-
 // Widgets not showing up in Dock
 // TODO: Dock is showing when main prompt is open. Check mac panel? Maybe setIcon?
-export const showDock = () => {
-  if (!kitState.isMac) return;
-  if (
-    kitState.devToolsCount === 0 &&
-    kitState.promptCount === 0 &&
-    widgetState.widgets.length === 0
-  )
-    return;
-
-  if (!app?.dock.isVisible()) {
-    hideDock.cancel();
-    app?.dock?.setIcon(getAssetPath('icon.png'));
-    app?.dock?.show();
-    kitState.dockShown = true;
-    app?.dock?.setMenu(
-      Menu.buildFromTemplate([
-        {
-          label: 'Quit',
-          click: () => {
-            forceQuit();
-          },
-        },
-      ])
-    );
-
-    app?.dock?.setIcon(getAssetPath('icon.png'));
-
-    if (hideIntervalId) clearInterval(hideIntervalId);
-
-    hideIntervalId = setInterval(() => {
-      hideDock();
-    }, 1000);
-  }
-};
 
 const subIgnoreBlur = subscribeKey(kitState, 'ignoreBlur', (ignoreBlur) => {
   log.info(`👀 Ignore blur: ${ignoreBlur ? 'true' : 'false'}`);
   if (ignoreBlur) {
-    showDock();
+    emitter.emit(KitEvent.ShowDock);
   } else {
-    hideDock();
-  }
-});
-
-const subWidgets = subscribeKey(widgetState, 'widgets', (widgets) => {
-  log.info(`👀 Widgets: ${JSON.stringify(widgets)}`);
-  if (widgets.length !== 0) {
-    showDock();
-  } else {
-    hideDock();
-  }
-});
-const subWindows = subscribeKey(windowsState, 'windows', (windows) => {
-  log.info(`👀 Windows: ${JSON.stringify(windows)}`);
-  if (windows.length !== 0) {
-    showDock();
-  } else {
-    hideDock();
+    emitter.emit(KitEvent.HideDock);
   }
 });
 
@@ -544,21 +418,17 @@ const subPromptCount = subscribeKey(kitState, 'promptCount', (promptCount) => {
   if (promptCount) {
     // showDock();
   } else {
-    hideDock();
+    emitter.emit(KitEvent.HideDock);
   }
 });
 
 const subDevToolsCount = subscribeKey(kitState, 'devToolsCount', (count) => {
   if (count === 0) {
-    hideDock();
+    emitter.emit(KitEvent.HideDock);
   } else {
-    showDock();
+    emitter.emit(KitEvent.ShowDock);
   }
 });
-
-// subscribeKey(widgetState, 'widgets', () => {
-//   log.info(`👀 Widgets: ${widgetState.widgets.length}`);
-// });
 
 export const online = async () => {
   log.info(`Checking online status...`);
@@ -581,6 +451,8 @@ export const forceQuit = () => {
   log.info(`Begin force quit...`);
   kitState.allowQuit = true;
 };
+
+emitter.on(KitEvent.ForceQuit, forceQuit);
 
 const subRequiresAuthorizedRestart = subscribeKey(
   kitState,
@@ -688,8 +560,6 @@ subs.push(
   subScriptErrorPath,
   subPromptCount,
   subDevToolsCount,
-  subWidgets,
-  subWindows,
   subStatus,
   subReady,
   subWaking,
@@ -873,59 +743,6 @@ export const initKeymap = async () => {
   }
 };
 
-export const clearStateTimers = () => {
-  if (hideIntervalId) clearInterval(hideIntervalId);
-};
-
-// TODO: Removing logging
-
-// let prevState: null | any = null;
-// subscribe(kitState, () => {
-//   const newState = snapshot(kitState);
-//   if (prevState) {
-//     const diff = rdiff.getDiff(prevState, newState);
-//     if (diff.length > 0) {
-//       log.info(`\n\n👀 State changed: ${JSON.stringify(diff)}`);
-//     }
-//   }
-//   prevState = newState;
-// });
-
-// let prevAppDbState: null | any = null;
-// subscribe(appDb, () => {
-//   const newState = snapshot(appDb);
-//   if (prevAppDbState) {
-//     const diff = rdiff.getDiff(prevAppDbState, newState);
-//     if (diff.length > 0) {
-//       log.info(`\n\n👀 AppDb changed: ${JSON.stringify(diff)}`);
-//     }
-//   }
-//   prevAppDbState = newState;
-// });
-
-// let prevConfigState: null | any = null;
-// subscribe(kitConfig, () => {
-//   const newState = snapshot(kitConfig);
-//   if (prevConfigState) {
-//     const diff = rdiff.getDiff(prevConfigState, newState);
-//     if (diff.length > 0) {
-//       log.info(`\n\n👀 Config changed: ${JSON.stringify(diff)}`);
-//     }
-//   }
-//   prevConfigState = newState;
-// });
-
-// let prevWidgetState: null | any = null;
-// subscribe(widgetState, () => {
-//   const newState = snapshot(widgetState);
-//   if (prevWidgetState) {
-//     const diff = rdiff.getDiff(prevWidgetState, newState);
-//     if (diff.length > 0) {
-//       log.info(`\n\n👀 WidgetState changed: ${JSON.stringify(diff)}`);
-//     }
-//   }
-//   prevWidgetState = newState;
-// });
 export const getEmojiShortcut = () => {
   return kitState?.kenvEnv?.KIT_EMOJI_SHORTCUT || kitState.isMac
     ? 'Command+Control+Space'

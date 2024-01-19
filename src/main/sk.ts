@@ -9,7 +9,7 @@ import {
   parseScript,
 } from '@johnlindquist/kit/core/utils';
 import { runPromptProcess } from './kit';
-import { Trigger } from './enums';
+import { Trigger } from '../shared/enums';
 import { spawnShebang } from './process';
 
 // TODO: "Force" to front isn't working

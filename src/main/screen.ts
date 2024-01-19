@@ -1,5 +1,5 @@
 import { Rectangle, screen } from 'electron';
-import { kitState } from './state';
+import { kitState } from '../shared/state';
 
 export const getCurrentScreen = () => {
   if (kitState?.kenvEnv?.KIT_DISPLAY) {

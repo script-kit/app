@@ -31,6 +31,9 @@ export enum KitEvent {
   TERM_KILL = 'TERM_KILL',
   Sync = 'Sync',
   TermWrite = 'TermWrite',
+  ShowDock = 'ShowDock',
+  HideDock = 'HideDock',
+  ForceQuit = 'ForceQuit',
 }
 
 interface KitEmitter {

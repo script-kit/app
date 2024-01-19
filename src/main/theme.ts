@@ -4,10 +4,10 @@ import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import fsExtra from 'fs-extra';
 const { pathExists } = fsExtra;
-import { kitState } from './state';
+import { kitState } from '../shared/state';
 import { appToPrompt, sendToPrompt } from './channel';
 import { setTheme } from './process';
-import { AppChannel } from './enums';
+import { AppChannel } from '../shared/enums';
 
 export const setCSSVariable = (name: string, value: undefined | string) => {
   if (value) {

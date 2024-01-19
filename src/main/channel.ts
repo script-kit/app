@@ -1,7 +1,7 @@
 import log from 'electron-log';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
-import { AppChannel } from './enums';
-import { windows } from './state';
+import { AppChannel } from '../shared/enums';
+import { windows } from '../shared/state';
 
 export const sendToPrompt = <K extends keyof ChannelMap>(
   channel: K,

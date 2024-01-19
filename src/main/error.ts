@@ -2,8 +2,8 @@ import { kitPath } from '@johnlindquist/kit/core/utils';
 import { debugInfo } from 'electron-util';
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
-import { Trigger } from './enums';
-import { emitter, KitEvent } from './events';
+import { Trigger } from '../shared/enums';
+import { emitter, KitEvent } from '../shared/events';
 import { TrackEvent, trackEvent } from './track';
 
 export const displayError = debounce((error: Error) => {

@@ -3,7 +3,7 @@ import fsExtra from 'fs-extra';
 const { outputFile } = fsExtra;
 import { app, BrowserWindowConstructorOptions } from 'electron';
 import { kenvPath } from '@johnlindquist/kit/core/utils';
-import { getAssetPath } from './assets';
+import { getAssetPath } from '../shared/assets';
 
 export type WidgetOptions = BrowserWindowConstructorOptions & {
   state?: any;
@@ -115,13 +115,7 @@ ${options?.css ? `<style>${options.css}</style>` : ``}
   })
 </script>
 
-<template id="widget-template">
-  ${html}
-</template>
 
-<div id="__widget-container" v-scope="Widget()" @vue:mounted="mounted" class="${
-    options.containerClass
-  }"></div>
 
 <script>
   document.addEventListener("click", (event) => {

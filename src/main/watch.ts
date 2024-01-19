@@ -6,8 +6,8 @@ import { FSWatcher } from 'fs';
 import { app } from 'electron';
 import { Script } from '@johnlindquist/kit/types/core';
 import { runPromptProcess } from './kit';
-import { Trigger } from './enums';
-import { kitState } from './state';
+import { Trigger } from '../shared/enums';
+import { kitState } from '../shared/state';
 
 export const watchMap = new Map();
 

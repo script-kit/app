@@ -102,8 +102,6 @@ import {
   getSchedule,
   kitState,
   kitConfig,
-  widgetState,
-  findWidget,
   forceQuit,
   sponsorCheck,
   appDb,
@@ -114,11 +112,14 @@ import {
   clearSearch,
   kitStore,
   debounceSetScriptTimestamp,
-} from './state';
+} from '../shared/state';
+
+import { widgetState, findWidget } from '../shared/widget';
+
 import { sendToPrompt, appToPrompt } from './channel';
 import { setFlags, setChoices, invokeSearch } from './search';
 
-import { emitter, KitEvent } from './events';
+import { emitter, KitEvent } from '../shared/events';
 import { show, showDevTools, showInspector, showWidget } from './show';
 
 import { getVersion } from './version';
@@ -129,14 +130,14 @@ import {
 } from './clipboard';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { createWidget } from './widget';
-import { AppChannel, HideReason, Trigger } from './enums';
+import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { isKitScript, toRgb, convertShortcut } from './helpers';
 import { toHex } from '../shared/color-utils';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';
 import { darkTheme, lightTheme } from '../shared/themes';
-import { getAssetPath } from './assets';
+import { getAssetPath } from '../shared/assets';
 import { TrackEvent, trackEvent } from './track';
 
 // const trash = async (...args: string[]) => {
@@ -720,10 +721,10 @@ const kitMessageMap: ChannelHandler = {
     ) => {
       const { command, html, options } = value;
       const theme = kitState.isDark ? darkTheme : lightTheme;
-      const filePath = await createWidget(command, html, options, theme);
+      // const filePath = await createWidget(command, html, options, theme);
       kitState.blurredByKit = true;
       const widgetId = Date.now().toString();
-      const widget = await showWidget(widgetId, html, filePath, options);
+      const widget = await showWidget(widgetId, html, options);
       log.info(`${child?.pid}: ⚙️ Creating widget ${widgetId}`);
 
       // widget.on('move', () => {

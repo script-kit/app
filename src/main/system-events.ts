@@ -2,8 +2,8 @@ import { powerMonitor } from 'electron';
 import log from 'electron-log';
 import { Script } from '@johnlindquist/kit/types/core';
 import { runPromptProcess } from './kit';
-import { Trigger } from './enums';
-import { kitState } from './state';
+import { Trigger } from '../shared/enums';
+import { kitState } from '../shared/state';
 
 const validSystemEvents = [
   'suspend',

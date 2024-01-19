@@ -91,7 +91,7 @@ import {
   getAssetPath,
   getReleaseChannel,
   getPlatformExtension,
-} from './assets';
+} from '../shared/assets';
 import { startClipboardAndKeyboardWatchers } from './tick';
 import {
   clearPromptCache,
@@ -110,17 +110,15 @@ import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
 import {
-  actualHideDock,
   appDb,
   cacheKitScripts,
-  clearStateTimers,
   getThemes,
   initKeymap,
   kitState,
   kitStore,
   subs,
   updateAppDb,
-} from './state';
+} from '../shared/state';
 import { startSK } from './sk';
 import {
   destroyAllProcesses,
@@ -135,10 +133,10 @@ import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from '../shared/defaults';
 import { registerKillLatestShortcut } from './shortcuts';
 import { logMap, mainLog } from './logs';
-import { emitter } from './events';
+import { emitter } from '../shared/events';
 import { readyPty } from './pty';
 import { displayError } from './error';
-import { HideReason, Trigger } from './enums';
+import { HideReason, Trigger } from '../shared/enums';
 import { TrackEvent, trackEvent } from './track';
 import {
   cacheMainScripts,
@@ -165,6 +163,7 @@ import {
 } from './install';
 import { readKitCss } from './theme';
 import { syncClipboardStore } from './clipboard';
+import { actualHideDock, clearStateTimers } from '../shared/dock';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 

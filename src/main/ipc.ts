@@ -23,7 +23,7 @@ import { existsSync, renameSync } from 'fs';
 import { writeFile } from 'fs/promises';
 import { DownloaderHelper } from 'node-downloader-helper';
 import detect from 'detect-file-type';
-import { emitter, KitEvent } from './events';
+import { emitter, KitEvent } from '../shared/events';
 import { cachePreview, ensureIdleProcess, processes } from './process';
 
 import {
@@ -35,10 +35,10 @@ import {
 } from './prompt';
 import { sendToPrompt } from './channel';
 import { runPromptProcess } from './kit';
-import { AppChannel, HideReason, Trigger } from './enums';
+import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { ResizeData, Survey } from '../shared/types';
-import { getAssetPath } from './assets';
-import { kitSearch, kitState, clearSearch, flagSearch } from './state';
+import { getAssetPath } from '../shared/assets';
+import { kitSearch, kitState, clearSearch, flagSearch } from '../shared/state';
 import { noChoice } from '../shared/defaults';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 

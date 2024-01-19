@@ -1,5 +1,5 @@
 import log from 'electron-log';
-import { kitState } from './state';
+import { kitState } from '../shared/state';
 
 export const deleteText = async (stringToDelete = '') => {
   if (!kitState.supportsNut) {

@@ -34,11 +34,11 @@ import {
   resolveToScriptPath,
 } from '@johnlindquist/kit/core/utils';
 import { getAppDb, getScriptsDb } from '@johnlindquist/kit/core/db';
-import { getAssetPath } from './assets';
-import { appDb, forceQuit, kitState, subs } from './state';
-import { emitter, KitEvent } from './events';
+import { getAssetPath } from '../shared/assets';
+import { appDb, forceQuit, kitState, subs } from '../shared/state';
+import { emitter, KitEvent } from '../shared/events';
 import { getVersion } from './version';
-import { AppChannel, HideReason, Trigger } from './enums';
+import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { mainLogPath, updateLogPath } from './logs';
 import { forcePromptToCenter, getMainPrompt, maybeHide } from './prompt';
 

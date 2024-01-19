@@ -44,7 +44,7 @@ import { sendToPrompt } from './channel';
 import { INSTALL_ERROR, show } from './show';
 import { showError } from './main.dev.templates';
 import { mainLogPath } from './logs';
-import { kitState, preloadChoicesMap } from './state';
+import { kitState, preloadChoicesMap } from '../shared/state';
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {

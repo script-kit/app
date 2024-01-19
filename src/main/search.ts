@@ -12,8 +12,8 @@ import {
 } from '@johnlindquist/kit/core/utils';
 
 import { quickScore, createConfig, QuickScore } from 'quick-score';
-import { AppChannel } from './enums';
-import { kitState, kitSearch, flagSearch } from './state';
+import { AppChannel } from '../shared/enums';
+import { kitState, kitSearch, flagSearch } from '../shared/state';
 import { ScoredChoice } from '../shared/types';
 import { createScoredChoice } from './helpers';
 import { appToPrompt, sendToPrompt } from './channel';

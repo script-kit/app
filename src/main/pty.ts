@@ -6,10 +6,10 @@ import log from 'electron-log';
 import { ipcMain } from 'electron';
 import * as pty from 'node-pty';
 import { debounce } from 'lodash-es';
-import { appDb, kitState } from './state';
-import { AppChannel } from './enums';
+import { appDb, kitState } from '../shared/state';
+import { AppChannel } from '../shared/enums';
 import { sendToPrompt } from './channel';
-import { emitter, KitEvent } from './events';
+import { emitter, KitEvent } from '../shared/events';
 import { TermConfig } from '../shared/types';
 import { displayError } from './error';
 

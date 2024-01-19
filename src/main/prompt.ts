@@ -54,7 +54,7 @@ import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
 import { ChildProcess } from 'child_process';
-import { getAssetPath } from './assets';
+import { getAssetPath } from '../shared/assets';
 import {
   appDb,
   kitState,
@@ -68,7 +68,7 @@ import {
   clearSearch,
   windows,
   clearFlagSearch,
-} from './state';
+} from '../shared/state';
 import {
   EMOJI_HEIGHT,
   EMOJI_WIDTH,
@@ -77,8 +77,8 @@ import {
 } from '../shared/defaults';
 import { ResizeData, ScoredChoice } from '../shared/types';
 import { getVersion } from './version';
-import { AppChannel, HideReason } from './enums';
-import { emitter, KitEvent } from './events';
+import { AppChannel, HideReason } from '../shared/enums';
+import { emitter, KitEvent } from '../shared/events';
 import { createScoredChoice, pathsAreEqual } from './helpers';
 import { TrackEvent, trackEvent } from './track';
 import {

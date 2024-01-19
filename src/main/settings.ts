@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
-import { appDb } from './state';
+import { appDb } from '../shared/state';
 
 export const startSettings = async () => {
   const handler = () => {

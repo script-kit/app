@@ -16,9 +16,9 @@ import {
   shortcutNormalizer,
 } from '@johnlindquist/kit/core/utils';
 import { Choice } from '@johnlindquist/kit/types/core';
-import { emitter, KitEvent } from './events';
-import { Trigger } from './enums';
-import { convertKey } from './state';
+import { emitter, KitEvent } from '../shared/events';
+import { Trigger } from '../shared/enums';
+import { convertKey } from '../shared/state';
 import { ScoredChoice } from '../shared/types';
 
 export const APP_NAME = 'Kit';

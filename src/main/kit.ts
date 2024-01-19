@@ -22,7 +22,7 @@ import {
 import { ProcessInfo } from '@johnlindquist/kit';
 
 import { subscribeKey } from 'valtio/utils';
-import { emitter, KitEvent } from './events';
+import { emitter, KitEvent } from '../shared/events';
 import { ensureIdleProcess, getIdles, processes } from './process';
 import {
   hideAppIfNoWindows,
@@ -33,9 +33,9 @@ import {
   focusPrompt,
   initShowPrompt,
 } from './prompt';
-import { getKitScript, kitState, kitStore } from './state';
+import { getKitScript, kitState, kitStore } from '../shared/state';
 import { pathsAreEqual } from './helpers';
-import { HideReason, Trigger } from './enums';
+import { HideReason, Trigger } from '../shared/enums';
 import { TrackEvent, trackEvent } from './track';
 import { sendToPrompt } from './channel';
 

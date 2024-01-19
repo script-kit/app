@@ -9,7 +9,7 @@ import {
   userDbPath,
   statsPath,
 } from '@johnlindquist/kit/core/utils';
-import { kitState } from './state';
+import { kitState } from '../shared/state';
 
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
 type WatcherCallback = (

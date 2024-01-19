@@ -13,8 +13,8 @@ import { once } from 'lodash-es';
 import { kitPath } from '@johnlindquist/kit/core/utils';
 import { subscribeKey } from 'valtio/utils';
 import { getVersion, storeVersion } from './version';
-import { emitter, KitEvent } from './events';
-import { forceQuit, kitState, online } from './state';
+import { emitter, KitEvent } from '../shared/events';
+import { forceQuit, kitState, online } from '../shared/state';
 import { updateLog } from './logs';
 
 export const kitIgnore = () => {

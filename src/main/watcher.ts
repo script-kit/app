@@ -35,7 +35,7 @@ import {
   debounceSetScriptTimestamp,
   kitState,
   sponsorCheck,
-} from './state';
+} from '../shared/state';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
 import {
   clearPromptCacheFor,
@@ -44,8 +44,8 @@ import {
   togglePromptEnv,
 } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
-import { emitter, KitEvent } from './events';
-import { AppChannel, Trigger } from './enums';
+import { emitter, KitEvent } from '../shared/events';
+import { AppChannel, Trigger } from '../shared/enums';
 import { runScript } from './kit';
 import { processes, setTheme, spawnShebang, updateTheme } from './process';
 import { compareArrays } from './helpers';
@@ -201,8 +201,8 @@ export const onScriptsChanged = async (
           const command = path.parse(filePath).name;
           const binFilePath = path.resolve(binDirPath, command);
           if (!existsSync(binFilePath)) {
-            log.info(`🔗 Creating bin for ${command}`);
-            runScript(kitPath('cli', 'create-bin'), 'scripts', filePath);
+            // log.info(`🔗 Creating bin for ${command}`);
+            // runScript(kitPath('cli', 'create-bin'), 'scripts', filePath);
           }
         } catch (error) {
           log.error(error);

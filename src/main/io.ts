@@ -1,7 +1,7 @@
 import log from 'electron-log';
 import { UiohookKey, uIOhook } from 'uiohook-napi';
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { getAccessibilityAuthorized, kitState } from './state';
+import { getAccessibilityAuthorized, kitState } from '../shared/state';
 import { sendToAllActiveChildren } from './process';
 import { chars } from './chars';
 

@@ -3,11 +3,11 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 import { parseScript } from '@johnlindquist/kit/core/utils';
 import { SendData } from '@johnlindquist/kit/types/kitapp';
 import { Script } from '@johnlindquist/kit/types/core';
-import { emitter, KitEvent } from './events';
-import { backgroundMap, Background, kitState } from './state';
+import { emitter, KitEvent } from '../shared/events';
+import { backgroundMap, Background, kitState } from '../shared/state';
 import { processes } from './process';
 import { runPromptProcess } from './kit';
-import { Trigger } from './enums';
+import { Trigger } from '../shared/enums';
 
 export const removeBackground = (filePath: string) => {
   if (!filePath) return;

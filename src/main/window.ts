@@ -6,9 +6,10 @@ import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { getLogFromScriptPath } from '@johnlindquist/kit/core/utils';
 import Tail from 'tail';
 import { readFile, stat, writeFile } from 'fs/promises';
-import { getAssetPath } from './assets';
-import { kitState, windowsState } from './state';
-import { WindowChannel } from './enums';
+import { getAssetPath } from '../shared/assets';
+import { kitState } from '../shared/state';
+import { windowsState } from '../shared/windows';
+import { WindowChannel } from '../shared/enums';
 import { getCurrentScreenFromMouse } from './prompt';
 import { fileURLToPath } from 'url';
 

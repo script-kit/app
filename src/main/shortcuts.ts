@@ -12,7 +12,7 @@ import {
 
 import { UI } from '@johnlindquist/kit/core/enum';
 import { runPromptProcess, runScript } from './kit';
-import { emitter, KitEvent } from './events';
+import { emitter, KitEvent } from '../shared/events';
 import {
   focusPrompt,
   hasFocus,
@@ -23,8 +23,8 @@ import {
   resetPrompt,
   showMainPrompt,
 } from './prompt';
-import { convertKey, kitState, subs } from './state';
-import { Trigger } from './enums';
+import { convertKey, kitState, subs } from '../shared/state';
+import { Trigger } from '../shared/enums';
 import { convertShortcut, shortcutInfo } from './helpers';
 import { processes, spawnShebang } from './process';
 

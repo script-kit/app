@@ -1,4 +1,4 @@
-import { getAssetPath } from './assets';
+import { getAssetPath } from '../shared/assets';
 import { getVersion } from './version';
 
 export const SPINNER = `
