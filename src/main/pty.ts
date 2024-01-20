@@ -8,10 +8,10 @@ import * as pty from 'node-pty';
 import { debounce } from 'lodash-es';
 import { appDb, kitState } from '../shared/state';
 import { AppChannel } from '../shared/enums';
-import { sendToSpecificPrompt } from './channel';
 import { emitter, KitEvent } from '../shared/events';
 import { TermConfig } from '../shared/types';
 import { displayError } from './error';
+import { prompts } from './prompts';
 
 let t: pty.IPty | null = null;
 
@@ -103,50 +103,6 @@ function getPtyOptions(config: TermConfig) {
   };
 }
 
-function bufferString(timeout: number) {
-  let s = '';
-  let sender: any = null;
-  return (data: any) => {
-    s += data;
-    if (!sender) {
-      sender = setTimeout(() => {
-        sendToSpecificPrompt(AppChannel.TERM_OUTPUT as any, s);
-        s = '';
-        sender = null;
-      }, timeout);
-    }
-  };
-}
-// binary message buffering
-function bufferUtf8(timeout: number) {
-  let buffer: any[] = [];
-  let sender: any = null;
-  let length = 0;
-  return (data: any) => {
-    const d = typeof data === 'string' ? Buffer.from(data, 'utf8') : data;
-
-    buffer.push(d);
-
-    length += d.length;
-    if (!sender) {
-      sender = setTimeout(() => {
-        const b = Buffer.concat(buffer, length);
-
-        // const s = b.toString('utf8');a
-
-        // if (s.endsWith('\x07')) {
-        //   kitState.terminalOutput = stripAnsi(s);
-        // }
-
-        sendToSpecificPrompt(AppChannel.TERM_OUTPUT as any, b);
-        buffer = [];
-        sender = null;
-        length = 0;
-      }, timeout);
-    }
-  };
-}
-
 const resizeHandler = (_event: any, { cols, rows }: TermSize) => {
   if (t) t?.resize(cols, rows);
 };
@@ -183,114 +139,161 @@ const write = (text: string) => {
 };
 
 export const readyPty = async () => {
-  return;
-  // TODO: Fix this
-  // ipcMain.on(AppChannel.TERM_READY, async (event, config: TermConfig) => {
-  //   const termWrite = (text: string) => {
-  //     write(text);
-  //   };
+  ipcMain.on(AppChannel.TERM_READY, async (event, config: TermConfig) => {
+    if (!config.pid) return;
+    const prompt = prompts.get(config.pid);
+    if (!prompt) return;
+    const sendToPrompt = prompt?.sendToPrompt;
 
-  //   const termKill = (pid: number) => {
-  //     log.verbose(`TERM_KILL`, {
-  //       pid,
-  //       configPid: config?.pid,
-  //     });
-  //     if (pid === config?.pid) {
-  //       ipcMain.off(AppChannel.TERM_EXIT, termExit);
-  //       teardown();
-  //     }
-  //   };
+    function bufferString(timeout: number) {
+      let s = '';
+      let sender: any = null;
+      return (data: any) => {
+        s += data;
+        if (!sender) {
+          sender = setTimeout(() => {
+            sendToPrompt(AppChannel.TERM_OUTPUT as any, s);
+            s = '';
+            sender = null;
+          }, timeout);
+        }
+      };
+    }
+    // binary message buffering
+    function bufferUtf8(timeout: number) {
+      let buffer: any[] = [];
+      let sender: any = null;
+      let length = 0;
+      return (data: any) => {
+        const d = typeof data === 'string' ? Buffer.from(data, 'utf8') : data;
 
-  //   const termExit = () => {
-  //     emitter.off(KitEvent.TERM_KILL, termKill);
-  //     emitter.off(KitEvent.TermWrite, termWrite);
-  //     log.verbose(`TERM_EXIT`);
-  //     teardown();
-  //   };
+        buffer.push(d);
 
-  //   ipcMain.once(AppChannel.TERM_EXIT, termExit);
+        length += d.length;
+        if (!sender) {
+          sender = setTimeout(() => {
+            const b = Buffer.concat(buffer, length);
 
-  //   emitter.once(KitEvent.TERM_KILL, termKill);
+            // const s = b.toString('utf8');a
 
-  //   ipcMain.on(AppChannel.TERM_RESIZE, resizeHandler);
-  //   ipcMain.on(AppChannel.TERM_INPUT, inputHandler);
+            // if (s.endsWith('\x07')) {
+            //   kitState.terminalOutput = stripAnsi(s);
+            // }
 
-  //   const defaultShell = getDefaultShell();
-  //   const { shell, args } = getShellConfig(config, defaultShell);
-  //   const ptyOptions = getPtyOptions(config);
+            sendToPrompt(AppChannel.TERM_OUTPUT as any, b);
+            buffer = [];
+            sender = null;
+            length = 0;
+          }, timeout);
+        }
+      };
+    }
 
-  //   log.info(
-  //     `🐲 >_ Starting term with config: ${JSON.stringify({
-  //       shell: config.shell,
-  //       command: config.command,
-  //       args: config.args,
-  //       cwd: config.cwd,
-  //     })}`
-  //   );
+    const termWrite = (text: string) => {
+      write(text);
+    };
 
-  //   try {
-  //     t = pty.spawn(shell, args, ptyOptions);
-  //   } catch (error) {
-  //     displayError(error as any);
+    const termKill = (pid: number) => {
+      log.verbose(`TERM_KILL`, {
+        pid,
+        configPid: config?.pid,
+      });
+      if (pid === config?.pid) {
+        ipcMain.off(AppChannel.TERM_EXIT, termExit);
+        teardown();
+      }
+    };
 
-  //     teardown();
+    const termExit = () => {
+      emitter.off(KitEvent.TERM_KILL, termKill);
+      emitter.off(KitEvent.TermWrite, termWrite);
+      log.verbose(`TERM_EXIT`);
+      teardown();
+    };
 
-  //     return;
-  //   }
+    ipcMain.once(AppChannel.TERM_EXIT, termExit);
 
-  //   sendToSpecificPrompt(AppChannel.PTY_READY, {});
+    emitter.once(KitEvent.TERM_KILL, termKill);
 
-  //   emitter.on(KitEvent.TermWrite, termWrite);
+    ipcMain.on(AppChannel.TERM_RESIZE, resizeHandler);
+    ipcMain.on(AppChannel.TERM_INPUT, inputHandler);
 
-  //   const sendData = USE_BINARY ? bufferUtf8(5) : bufferString(5);
+    const defaultShell = getDefaultShell();
+    const { shell, args } = getShellConfig(config, defaultShell);
+    const ptyOptions = getPtyOptions(config);
 
-  //   const invokeCommandWhenSettled = debounce(() => {
-  //     log.silly(`Invoking command: ${config.command}`);
-  //     if (config.command && t) {
-  //       write(config.command);
-  //     }
+    log.info(
+      `🐲 >_ Starting term with config: ${JSON.stringify({
+        shell: config.shell,
+        command: config.command,
+        args: config.args,
+        cwd: config.cwd,
+      })}`
+    );
 
-  //     config.command = '';
-  //   }, 200);
+    try {
+      t = pty.spawn(shell, args, ptyOptions);
+    } catch (error) {
+      displayError(error as any);
 
-  //   t.onData(async (data: any) => {
-  //     try {
-  //       sendData(data);
-  //     } catch (ex) {
-  //       log.error(`Error sending data to pty`, ex);
-  //     }
+      teardown();
 
-  //     if (config.command) {
-  //       invokeCommandWhenSettled();
-  //     }
-  //   });
+      return;
+    }
 
-  //   t.onExit(
-  //     debounce(
-  //       () => {
-  //         log.info(`🐲 Term process exited`);
-  //         try {
-  //           if (
-  //             typeof config?.closeOnExit === 'boolean' &&
-  //             !config.closeOnExit
-  //           ) {
-  //             log.info(
-  //               `Process closed, but not closing pty because closeOnExit is false`
-  //             );
-  //           } else {
-  //             teardown();
+    sendToPrompt(AppChannel.PTY_READY, {});
 
-  //             log.info(`🐲 >_ Emit term process exited`);
-  //             emitter.emit(KitEvent.TermExited, '');
-  //           }
-  //           // t = null;
-  //         } catch (error) {
-  //           log.error(`Error closing pty`, error);
-  //         }
-  //       },
-  //       500,
-  //       { leading: true }
-  //     )
-  //   );
-  // });
+    emitter.on(KitEvent.TermWrite, termWrite);
+
+    const sendData = USE_BINARY ? bufferUtf8(5) : bufferString(5);
+
+    const invokeCommandWhenSettled = debounce(() => {
+      log.silly(`Invoking command: ${config.command}`);
+      if (config.command && t) {
+        write(config.command);
+      }
+
+      config.command = '';
+    }, 200);
+
+    t.onData(async (data: any) => {
+      try {
+        sendData(data);
+      } catch (ex) {
+        log.error(`Error sending data to pty`, ex);
+      }
+
+      if (config.command) {
+        invokeCommandWhenSettled();
+      }
+    });
+
+    t.onExit(
+      debounce(
+        () => {
+          log.info(`🐲 Term process exited`);
+          try {
+            if (
+              typeof config?.closeOnExit === 'boolean' &&
+              !config.closeOnExit
+            ) {
+              log.info(
+                `Process closed, but not closing pty because closeOnExit is false`
+              );
+            } else {
+              teardown();
+
+              log.info(`🐲 >_ Emit term process exited`);
+              emitter.emit(KitEvent.TermExited, '');
+            }
+            // t = null;
+          } catch (error) {
+            log.error(`Error closing pty`, error);
+          }
+        },
+        500,
+        { leading: true }
+      )
+    );
+  });
 };

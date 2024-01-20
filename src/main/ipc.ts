@@ -37,7 +37,7 @@ import { runPromptProcess } from './kit';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { ResizeData, Survey } from '../shared/types';
 import { getAssetPath } from '../shared/assets';
-import { kitSearch, kitState, clearSearch, flagSearch } from '../shared/state';
+import { kitState, flagSearch } from '../shared/state';
 import { noChoice } from '../shared/defaults';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 
@@ -49,31 +49,31 @@ const checkShortcodesAndKeywords = (
   const sendToPrompt = createSendToPrompt(prompt);
   let transformedInput = rawInput;
 
-  if (kitSearch.inputRegex) {
+  if (prompt.kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
     transformedInput =
-      rawInput.match(new RegExp(kitSearch.inputRegex, 'gi'))?.[0] || '';
+      rawInput.match(new RegExp(prompt.kitSearch.inputRegex, 'gi'))?.[0] || '';
   }
 
   if (!prevTransformedInput && !rawInput) {
-    kitSearch.keywordCleared = false;
+    prompt.kitSearch.keywordCleared = false;
     return true;
   }
 
-  if (kitSearch.commandChars.length) {
+  if (prompt.kitSearch.commandChars.length) {
     if (prevTransformedInput === '') {
       const char = rawInput?.[rawInput.length - 2];
-      if (!kitSearch.commandChars.includes(char)) {
+      if (!prompt.kitSearch.commandChars.includes(char)) {
         prevTransformedInput = transformedInput;
-        kitSearch.input = transformedInput;
+        prompt.kitSearch.input = transformedInput;
 
         return false;
       }
     }
-    for (const char of kitSearch.commandChars) {
+    for (const char of prompt.kitSearch.commandChars) {
       if (rawInput.endsWith(char)) {
         prevTransformedInput = transformedInput;
-        kitSearch.input = transformedInput;
+        prompt.kitSearch.input = transformedInput;
         return false;
       }
     }
@@ -82,14 +82,14 @@ const checkShortcodesAndKeywords = (
   prevTransformedInput = transformedInput;
 
   const lowerCaseInput = transformedInput.toLowerCase();
-  const trigger = kitSearch.triggers.get(lowerCaseInput);
+  const trigger = prompt.kitSearch.triggers.get(lowerCaseInput);
   if (trigger) {
     sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger.value);
     log.info(`👢 Trigger: ${transformedInput} triggered`);
     return false;
   }
 
-  for (const [k, v] of kitSearch.postfixes.entries()) {
+  for (const [k, v] of prompt.kitSearch.postfixes.entries()) {
     if (lowerCaseInput.endsWith(k)) {
       sendToPrompt(Channel.SET_SUBMIT_VALUE, v.value);
       log.info(`🥾 Postfix: ${transformedInput} triggered`);
@@ -97,15 +97,18 @@ const checkShortcodesAndKeywords = (
     }
   }
 
-  if (kitSearch.keyword && !rawInput.startsWith(`${kitSearch.keyword} `)) {
+  if (
+    prompt.kitSearch.keyword &&
+    !rawInput.startsWith(`${prompt.kitSearch.keyword} `)
+  ) {
     const keyword = '';
-    if (rawInput === kitSearch.keyword) {
-      kitSearch.input = kitSearch.keyword;
+    if (rawInput === prompt.kitSearch.keyword) {
+      prompt.kitSearch.input = prompt.kitSearch.keyword;
     }
-    kitSearch.keyword = keyword;
-    kitSearch.inputRegex = undefined;
+    prompt.kitSearch.keyword = keyword;
+    prompt.kitSearch.inputRegex = undefined;
     log.info(`🔑 ${keyword} cleared`);
-    kitSearch.keywordCleared = true;
+    prompt.kitSearch.keywordCleared = true;
     sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
       keyword,
       choice: noChoice,
@@ -116,7 +119,7 @@ const checkShortcodesAndKeywords = (
 
   if (rawInput.includes(' ')) {
     if (rawInput.endsWith(' ')) {
-      const shortcodeChoice = kitSearch.shortcodes.get(
+      const shortcodeChoice = prompt.kitSearch.shortcodes.get(
         transformedInput.toLowerCase().trimEnd()
       );
       if (shortcodeChoice) {
@@ -127,12 +130,12 @@ const checkShortcodesAndKeywords = (
     }
 
     const keyword = rawInput.split(' ')?.[0].trim();
-    log.silly({ keyword, kitSearchKeyword: kitSearch.keyword });
-    if (keyword !== kitSearch.keyword) {
-      const keywordChoice = kitSearch.keywords.get(keyword);
+    log.silly({ keyword, kitSearchKeyword: prompt.kitSearch.keyword });
+    if (keyword !== prompt.kitSearch.keyword) {
+      const keywordChoice = prompt.kitSearch.keywords.get(keyword);
       if (keywordChoice) {
-        kitSearch.keyword = keyword;
-        kitSearch.inputRegex = new RegExp(`^${keyword} `, 'gi');
+        prompt.kitSearch.keyword = keyword;
+        prompt.kitSearch.inputRegex = new RegExp(`^${keyword} `, 'gi');
         log.info(`🔑 ${keyword} triggered`);
         sendToPrompt(AppChannel.TRIGGER_KEYWORD, {
           keyword,
@@ -143,8 +146,8 @@ const checkShortcodesAndKeywords = (
     }
   }
 
-  if (kitSearch.keywordCleared) {
-    kitSearch.keywordCleared = false;
+  if (prompt.kitSearch.keywordCleared) {
+    prompt.kitSearch.keywordCleared = false;
     return false;
   }
 
@@ -413,7 +416,7 @@ ${data.error}
         const sendToPrompt = prompt.sendToPrompt;
         const appToPrompt = prompt.appToPrompt;
 
-        kitSearch.flaggedValue = message.state?.flaggedValue;
+        prompt.kitSearch.flaggedValue = message.state?.flaggedValue;
 
         prompt.id = promptId || '';
         message.promptId = promptId || '';
@@ -450,10 +453,10 @@ ${data.error}
           // log.info(`📝 Input: ${input}`);
           if (!input) {
             log.info(`📝 No prompt input`);
-            kitSearch.input = '';
+            prompt.kitSearch.input = '';
             // keyword and regex will be cleared by checkShortcodesAndKeywords
-            // kitSearch.inputRegex = undefined;
-            // kitSearch.keyword = '';
+            // prompt.kitSearch.inputRegex = undefined;
+            // prompt.kitSearch.keyword = '';
           }
 
           const isArg = message.state.ui === UI.arg;
@@ -468,10 +471,10 @@ ${data.error}
               } else {
                 debounceInvokeSearch.cancel();
 
-                if (kitSearch.choices.length > 5000) {
+                if (prompt.kitSearch.choices.length > 5000) {
                   debounceInvokeSearch(prompt, input, 'debounce');
                 } else {
-                  invokeSearch(prompt.window, input, `${channel}`);
+                  invokeSearch(prompt, input, `${channel}`);
                 }
               }
             }
@@ -512,7 +515,7 @@ ${data.error}
           log.info(`${child?.pid} 📝 Submitting...
 
 `);
-          clearSearch();
+          prompt.clearSearch();
 
           if (message?.state?.value === Channel.TERMINAL) {
             message.state.value = ``;

@@ -51,19 +51,13 @@ import {
   kitState,
   appDb,
   getThemes,
-  preloadPreviewMap,
-  kitSearch,
   kitStore,
   debounceSetScriptTimestamp,
 } from '../shared/state';
 
 import { widgetState } from '../shared/widget';
 
-import {
-  createAppToPrompt,
-  createSendToPrompt,
-  sendToAllPrompts,
-} from './channel';
+import { createAppToPrompt, sendToAllPrompts } from './channel';
 
 import { emitter, KitEvent } from '../shared/events';
 import { showInspector } from './show';
@@ -267,17 +261,17 @@ type WidgetData = {
 type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
 export const cachePreview = async (scriptPath: string, preview: string) => {
-  log.verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
-  preloadPreviewMap.set(scriptPath, preview);
-  if (
-    kitState.scriptPath === getMainScriptPath() &&
-    preview &&
-    kitSearch.input === '' &&
-    !kitSearch.inputRegex
-  ) {
-    // TODO: Going to need to cache preview so the _next_ prompt has access
-    // appToSpecificPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, preview);
-  }
+  // log.verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
+  // preloadPreviewMap.set(scriptPath, preview);
+  // if (
+  //   kitState.scriptPath === getMainScriptPath() &&
+  //   preview &&
+  //   kitSearch.input === '' &&
+  //   !kitSearch.inputRegex
+  // ) {
+  // TODO: Going to need to cache preview so the _next_ prompt has access
+  // appToSpecificPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, preview);
+  // }
 };
 
 export const childSend = (child: ChildProcess, data: any) => {
@@ -479,7 +473,7 @@ const processesChanged = debounce(() => {
 
   log.info(`👓 Focused process ${kitState.pid} - ${kitState.scriptPath}`);
   for (const pinfo of processes) {
-    const appToPrompt = createAppToPrompt(pinfo.prompt);
+    const appToPrompt = pinfo.prompt.appToPrompt;
     appToPrompt(AppChannel.PROCESSES, pinfos);
     log.info(
       `🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`
@@ -493,9 +487,10 @@ const processesChanged = debounce(() => {
     ) {
       log.info(`🛑👋 Attempt abandon: ${pinfo.pid} - ${pinfo.scriptPath}`);
       try {
-        pinfo.child.send({
-          channel: Channel.ABANDON,
-        });
+        // TODO: Reimplement ABANDON
+        // pinfo.child.send({
+        //   channel: Channel.ABANDON,
+        // });
       } catch (error) {
         log.error(`Error sending abandon message`, error);
       }

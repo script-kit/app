@@ -13,15 +13,13 @@ import {
 
 import { quickScore, createConfig, QuickScore } from 'quick-score';
 import { AppChannel } from '../shared/enums';
-import { kitState, kitSearch, flagSearch } from '../shared/state';
+import { kitState, flagSearch } from '../shared/state';
 import { ScoredChoice } from '../shared/types';
 import { createScoredChoice } from './helpers';
-import { createAppToPrompt, createSendToPrompt } from './channel';
-import { BrowserWindow } from 'electron';
 import { KitPrompt } from './prompt';
 
 export const invokeSearch = (
-  prompt: BrowserWindow,
+  prompt: KitPrompt,
   rawInput: string,
   reason = 'normal'
 ) => {
@@ -29,29 +27,29 @@ export const invokeSearch = (
 
   // log.silly({ inputRegex: JSON.stringify(kitSearch.inputRegex) });
   let transformedInput = rawInput;
-  if (kitSearch.inputRegex) {
+  if (prompt.kitSearch.inputRegex) {
     // eslint-disable-next-line no-param-reassign
-    transformedInput = rawInput.match(kitSearch.inputRegex)?.[0] || '';
+    transformedInput = rawInput.match(prompt.kitSearch.inputRegex)?.[0] || '';
     log.silly(
-      `Transformed input: ${transformedInput} using regex ${kitSearch.inputRegex}`
+      `Transformed input: ${transformedInput} using regex ${prompt.kitSearch.inputRegex}`
     );
   }
 
-  if (kitSearch.choices.length === 0) {
+  if (prompt.kitSearch.choices.length === 0) {
     setScoredChoices(prompt, []);
     return;
   }
 
-  // TODO: Add kitSearch.computedInput?
+  // TODO: Add prompt.kitSearch.computedInput?
   // Should probably separate rawInput from the input that comes after the regex...
-  kitSearch.input = transformedInput;
+  prompt.kitSearch.input = transformedInput;
   flagSearch.input = '';
   // log.info({ transformedInput });
   const lowerCaseInput = transformedInput?.toLowerCase();
 
   if (transformedInput === '') {
     const results = [];
-    for (const choice of kitSearch.choices) {
+    for (const choice of prompt.kitSearch.choices) {
       if (!(choice?.miss || choice?.pass || choice?.hideWithoutInput)) {
         results.push(createScoredChoice(choice));
       }
@@ -59,7 +57,7 @@ export const invokeSearch = (
 
     if (results?.length === 0) {
       const misses = [];
-      for (const choice of kitSearch.choices) {
+      for (const choice of prompt.kitSearch.choices) {
         if (choice?.miss || choice?.info) {
           misses.push(createScoredChoice(choice));
         }
@@ -72,11 +70,11 @@ export const invokeSearch = (
     return;
   }
 
-  if (!kitSearch.qs) {
+  if (!prompt.kitSearch.qs) {
     log.warn(`No qs for ${kitState.scriptPath}`);
     return;
   }
-  const result = (kitSearch?.qs as QuickScore<Choice>)?.search(
+  const result = (prompt.kitSearch?.qs as QuickScore<Choice>)?.search(
     transformedInput
   ) as ScoredChoice[];
 
@@ -85,7 +83,7 @@ export const invokeSearch = (
     (r) => !r?.item?.info && !r?.item?.miss
   ).length;
 
-  if (kitSearch.hasGroup) {
+  if (prompt.kitSearch.hasGroup) {
     // Build a map for constant time access
     const resultMap = new Map();
     const keepGroups = new Set();
@@ -110,7 +108,7 @@ export const invokeSearch = (
     const missGroup = [];
     let alias: Choice;
 
-    for (const choice of kitSearch.choices) {
+    for (const choice of prompt.kitSearch.choices) {
       const lowerCaseName = choice.name?.toLowerCase();
       const lowerCaseKeyword =
         choice.keyword?.toLowerCase() || choice?.tag?.toLowerCase() || '';
@@ -306,8 +304,8 @@ export const invokeSearch = (
     setScoredChoices(prompt, groupedResults);
   } else if (resultLength === 0) {
     const scoredChoices = [];
-    for (const choice of kitSearch.choices) {
-      for (const key of kitSearch.keys) {
+    for (const choice of prompt.kitSearch.choices) {
+      for (const key of prompt.kitSearch.keys) {
         let start = -1;
 
         const value = (choice as any)?.[key];
@@ -338,7 +336,7 @@ export const invokeSearch = (
       setScoredChoices(prompt, result);
     } else {
       const infos = [];
-      for (const choice of kitSearch.choices) {
+      for (const choice of prompt.kitSearch.choices) {
         if (
           choice?.info &&
           !(choice?.hideWithoutInput && transformedInput === '')
@@ -385,7 +383,7 @@ export const invokeSearch = (
 
 export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
-export const invokeFlagSearch = (prompt: BrowserWindow, input: string) => {
+export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
   log.info(`Flag search: ${input} <<<`);
   flagSearch.input = input;
   if (input === '') {
@@ -453,7 +451,7 @@ export const invokeFlagSearch = (prompt: BrowserWindow, input: string) => {
       groupedResults = missGroup;
     }
 
-    setScoredFlags(groupedResults);
+    setScoredFlags(prompt, groupedResults);
   } else if (result?.length === 0) {
     const missGroup = [];
     for (const choice of flagSearch.choices) {
@@ -461,13 +459,13 @@ export const invokeFlagSearch = (prompt: BrowserWindow, input: string) => {
         missGroup.push(createScoredChoice(choice));
       }
     }
-    setScoredFlags(missGroup);
+    setScoredFlags(prompt, missGroup);
   } else {
-    setScoredFlags(result);
+    setScoredFlags(prompt, result);
   }
 };
 
-export const setFlags = (prompt: BrowserWindow, f: FlagsWithKeys) => {
+export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys) => {
   const order = f?.order || [];
   const sortChoicesKey = f?.sortChoicesKey || [];
 
@@ -516,7 +514,7 @@ export const setFlags = (prompt: BrowserWindow, f: FlagsWithKeys) => {
   }
 
   flagSearch.qs = new QuickScore(choices, {
-    keys: kitSearch.keys.map((name) => ({
+    keys: prompt.kitSearch.keys.map((name) => ({
       name,
       scorer,
     })),
@@ -531,21 +529,21 @@ export const setFlags = (prompt: BrowserWindow, f: FlagsWithKeys) => {
   invokeFlagSearch(prompt, flagSearch.input);
 };
 
-export const setShortcodes = (prompt: BrowserWindow, choices: Choice[]) => {
-  kitSearch.shortcodes.clear();
-  kitSearch.triggers.clear();
-  kitSearch.postfixes.clear();
+export const setShortcodes = (prompt: KitPrompt, choices: Choice[]) => {
+  prompt.kitSearch.shortcodes.clear();
+  prompt.kitSearch.triggers.clear();
+  prompt.kitSearch.postfixes.clear();
 
   for (const choice of choices) {
     const code = (choice?.shortcode || '').toLowerCase();
 
     if (code) {
-      kitSearch.shortcodes.set(code, choice);
+      prompt.kitSearch.shortcodes.set(code, choice);
     }
 
     if (choice?.keyword) {
       // log.info(`🗝 Found keyword ${choice.keyword}`);
-      kitSearch.keywords.set(choice.keyword.toLowerCase(), choice);
+      prompt.kitSearch.keywords.set(choice.keyword.toLowerCase(), choice);
     }
 
     // TODO: Parse choice.trigger earlier during choice formatting?
@@ -556,19 +554,19 @@ export const setShortcodes = (prompt: BrowserWindow, choices: Choice[]) => {
     ).toLowerCase();
 
     if (trigger) {
-      kitSearch.triggers.set(trigger, choice);
+      prompt.kitSearch.triggers.set(trigger, choice);
     }
 
     const postfix = typeof choice?.pass === 'string';
 
     if (postfix) {
-      kitSearch.postfixes.set(choice?.pass.trim(), choice);
+      prompt.kitSearch.postfixes.set(choice?.pass.trim(), choice);
     }
   }
 
   // Log the keywords and shortcodes
   log.info(
-    `🗝 ${kitSearch.keywords.size} keywords, ${kitSearch.shortcodes.size} shortcodes, ${kitSearch.postfixes.size} postfixes, ${kitSearch.triggers.size} triggers`
+    `🗝 ${prompt.kitSearch.keywords.size} keywords, ${prompt.kitSearch.shortcodes.size} shortcodes, ${prompt.kitSearch.postfixes.size} postfixes, ${prompt.kitSearch.triggers.size} triggers`
   );
 };
 
@@ -585,32 +583,32 @@ export const setChoices = (
     isArray: Array.isArray(choices),
     length: choices?.length,
   });
-  const sendToPrompt = createSendToPrompt(prompt.window);
+  const sendToPrompt = prompt.sendToPrompt;
   sendToPrompt(
     Channel.SET_SELECTED_CHOICES,
     (choices || []).filter((c: Choice) => c?.selected)
   );
 
   if (!choices || !Array.isArray(choices) || choices?.length === 0) {
-    kitSearch.choices = [];
-    setScoredChoices(prompt.window, []);
-    kitSearch.hasGroup = false;
-    kitSearch.qs = null;
+    prompt.kitSearch.choices = [];
+    setScoredChoices(prompt, []);
+    prompt.kitSearch.hasGroup = false;
+    prompt.kitSearch.qs = null;
     return;
   }
 
   if (generated) {
     log.silly(`📦 ${kitState.pid} Generated choices: ${choices.length}`);
 
-    setScoredChoices(prompt.window, choices.map(createScoredChoice));
+    setScoredChoices(prompt, choices.map(createScoredChoice));
     return;
   }
 
   log.silly(
     `📦 ${kitState.pid} Choices: ${choices.length} preload: ${preload}`
   );
-  kitSearch.choices = choices.filter((c) => !c?.exclude);
-  kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
+  prompt.kitSearch.choices = choices.filter((c) => !c?.exclude);
+  prompt.kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
   function scorer(string: string, query: string, matches: number[][]) {
     return quickScore(
       string,
@@ -626,8 +624,8 @@ export const setChoices = (
     );
   }
 
-  kitSearch.qs = new QuickScore(choices, {
-    keys: kitSearch.keys.map((name) => ({
+  prompt.kitSearch.qs = new QuickScore(choices, {
+    keys: prompt.kitSearch.keys.map((name) => ({
       name,
       scorer,
     })),
@@ -637,31 +635,31 @@ export const setChoices = (
   } as any);
   sendToPrompt(Channel.SET_CHOICES_CONFIG, { preload });
 
-  setShortcodes(prompt.window, choices);
-  const input = skipInitialSearch ? '' : kitSearch.input;
+  setShortcodes(prompt, choices);
+  const input = skipInitialSearch ? '' : prompt.kitSearch.input;
   log.silly({
     preload: preload ? 'true' : 'false',
     skipInitialSearch: skipInitialSearch ? 'true' : 'false',
   });
-  invokeSearch(prompt.window, input, 'setChoices');
+  invokeSearch(prompt, input, 'setChoices');
 };
 
 export const setScoredChoices = (
-  prompt: BrowserWindow,
+  prompt: KitPrompt,
   choices: ScoredChoice[]
 ) => {
   if (choices?.length) {
     log.silly(`🎼 Scored choices count: ${choices.length}`);
   }
 
-  const sendToPrompt = createSendToPrompt(prompt);
-  const appToPrompt = createAppToPrompt(prompt);
+  const sendToPrompt = prompt.sendToPrompt;
+  const appToPrompt = prompt.appToPrompt;
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 
   if (
     kitState.scriptPath === getMainScriptPath() &&
-    kitSearch.input === '' &&
-    !kitSearch.inputRegex &&
+    prompt.kitSearch.input === '' &&
+    !prompt.kitSearch.inputRegex &&
     choices?.length
   ) {
     log.info(
@@ -672,10 +670,9 @@ export const setScoredChoices = (
 };
 
 export const setScoredFlags = (
-  prompt: BrowserWindow,
+  prompt: KitPrompt,
   choices: ScoredChoice[] = []
 ) => {
   log.silly(`🎼 Scored flags count: ${choices.length}`);
-  const sendToPrompt = createSendToPrompt(prompt);
-  sendToPrompt(Channel.SET_SCORED_FLAGS, choices);
+  prompt.sendToPrompt(Channel.SET_SCORED_FLAGS, choices);
 };

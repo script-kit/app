@@ -61,12 +61,9 @@ import {
   subs,
   promptState,
   getEmojiShortcut,
-  kitSearch,
   preloadPromptDataMap,
   preloadChoicesMap,
   preloadPreviewMap,
-  clearSearch,
-  windows,
   clearFlagSearch,
 } from '../shared/state';
 import {
@@ -97,6 +94,7 @@ import { setFlags, setChoices } from './search';
 import { fileURLToPath } from 'url';
 import { prompts } from './prompts';
 import { ProcessAndPrompt, processes } from './process';
+import { QuickScore } from 'quick-score';
 
 contextMenu({
   showInspectElement: process.env.NODE_ENV === 'development',
@@ -305,11 +303,12 @@ export const pointOnMouseScreen = ({ x, y }: Point) => {
 };
 
 const writePromptState = async (
+  prompt: KitPrompt,
   screenId: string,
   scriptPath: string,
   bounds: PromptBounds
 ) => {
-  if (kitSearch.input !== '' || kitSearch.inputRegex) return;
+  if (prompt.kitSearch.input !== '' || prompt.kitSearch.inputRegex) return;
   log.verbose(`writePromptState`, { screenId, scriptPath, bounds });
 
   if (!promptState?.screens) promptState.screens = {};
@@ -380,29 +379,6 @@ export const preloadPromptData = async (promptData: PromptData) => {
   // kitState.ui = promptData.ui;
   // if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
   // sendToSpecificPrompt(Channel.SET_OPEN, true);
-};
-
-export const preloadChoices = (choices: Choice[]) => {
-  // TODO: Preload choices???
-
-  return;
-  log.info(`🏋️‍♂️ Preload choices ${choices.length}`);
-  if (!isVisible()) {
-    kitSearch.input = '';
-  }
-
-  // setChoices(choices, {
-  //   preload: true,
-  // });
-};
-
-const noPreview = `<div></div>`;
-export const preloadPreview = (html: string) => {
-  // TODO: Preload preview???
-
-  return;
-  if (kitSearch.input) return;
-  setPreview(html);
 };
 
 export const attemptPreload = async (
@@ -693,6 +669,42 @@ export class KitPrompt {
   public window: BrowserWindow;
   public sendToPrompt: (channel: Channel, data?: any) => void;
   public appToPrompt: (channel: AppChannel, data?: any) => void;
+
+  kitSearch = {
+    input: '',
+    inputRegex: undefined as undefined | RegExp,
+    keyword: '',
+    keywordCleared: false,
+    generated: false,
+    flaggedValue: '',
+    choices: [] as Choice[],
+    scripts: [] as Script[],
+    shortcodes: new Map<string, Choice>(),
+    triggers: new Map<string, Choice>(),
+    postfixes: new Map<string, Choice>(),
+    keywords: new Map<string, Choice>(),
+    hasGroup: false,
+    qs: null as null | QuickScore<Choice>,
+    commandChars: [] as string[],
+    keys: ['slicedName', 'tag', 'group', 'command'],
+  };
+
+  clearSearch = () => {
+    if (kitState.kenvEnv?.KIT_NO_CLEAR_SEARCH) return;
+
+    log.info(`🧹 Clearing search...`);
+    this.kitSearch.keyword = '';
+    this.kitSearch.choices = [];
+    this.kitSearch.input = '';
+    this.kitSearch.qs = null;
+    this.kitSearch.keywords.clear();
+    this.kitSearch.triggers.clear();
+    this.kitSearch.postfixes.clear();
+    this.kitSearch.shortcodes.clear();
+    this.kitSearch.hasGroup = false;
+    this.kitSearch.commandChars = [];
+    this.kitSearch.keys = ['slicedName', 'tag', 'group', 'command'];
+  };
 
   constructor(pid: number) {
     this.pid = pid;
@@ -1552,7 +1564,12 @@ export class KitPrompt {
 
       // if promptBounds is on the current screen
 
-      writePromptState(String(currentScreen.id), scriptPath, promptBounds);
+      writePromptState(
+        this,
+        String(currentScreen.id),
+        scriptPath,
+        promptBounds
+      );
     } catch (error) {
       log.error(error);
     }
@@ -1769,16 +1786,16 @@ export class KitPrompt {
     log.info(`
     >>> 📝 setPromptData for ${promptData?.scriptPath}`);
     clearFlagSearch();
-    kitSearch.shortcodes.clear();
-    kitSearch.triggers.clear();
+    this.kitSearch.shortcodes.clear();
+    this.kitSearch.triggers.clear();
     if (promptData?.hint) {
       for (const trigger of promptData?.hint?.match(/(?<=\[)\w+(?=\])/gi) ||
         []) {
-        kitSearch.triggers.set(trigger, { name: trigger, value: trigger });
+        this.kitSearch.triggers.set(trigger, { name: trigger, value: trigger });
       }
     }
 
-    kitSearch.commandChars = promptData.inputCommandChars || [];
+    this.kitSearch.commandChars = promptData.inputCommandChars || [];
 
     if (kitState.cachePrompt && !promptData.preload) {
       kitState.cachePrompt = false;
@@ -1793,7 +1810,7 @@ export class KitPrompt {
     }
 
     if (promptData.flags) {
-      setFlags(this.window, promptData.flags);
+      setFlags(this, promptData.flags);
     }
 
     if (kitState.preloaded) {
@@ -1842,8 +1859,8 @@ export class KitPrompt {
     if (kitState.suspended || kitState.screenLocked) return;
     kitState.ui = promptData.ui;
 
-    if (kitSearch.keyword) {
-      promptData.keyword = kitSearch.keyword || kitSearch.keyword;
+    if (this.kitSearch.keyword) {
+      promptData.keyword = this.kitSearch.keyword || this.kitSearch.keyword;
     }
 
     await this.pingPromptWithTimeout(Channel.SET_PROMPT_DATA, 250, promptData);

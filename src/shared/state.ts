@@ -778,25 +778,6 @@ export const preloadChoicesMap = new Map<string, Choice[]>();
 export const preloadPreviewMap = new Map<string, string>();
 export const preloadPromptDataMap = new Map<string, PromptData>();
 
-export const kitSearch = {
-  input: '',
-  inputRegex: undefined as undefined | RegExp,
-  keyword: '',
-  keywordCleared: false,
-  generated: false,
-  flaggedValue: '',
-  choices: [] as Choice[],
-  scripts: [] as Script[],
-  shortcodes: new Map<string, Choice>(),
-  triggers: new Map<string, Choice>(),
-  postfixes: new Map<string, Choice>(),
-  keywords: new Map<string, Choice>(),
-  hasGroup: false,
-  qs: null as null | QuickScore<Choice>,
-  commandChars: [] as string[],
-  keys: ['slicedName', 'tag', 'group', 'command'],
-};
-
 export const flagSearch = {
   input: '',
   choices: [] as Choice[],
@@ -809,24 +790,6 @@ export const clearFlagSearch = () => {
   flagSearch.choices = [];
   flagSearch.hasGroup = false;
   flagSearch.qs = null;
-};
-
-export const clearSearch = () => {
-  if (kitState.kenvEnv?.KIT_NO_CLEAR_SEARCH) return;
-
-  log.info(`🧹 Clearing search...`);
-  kitState.ignoreBlur = false;
-  kitSearch.keyword = '';
-  kitSearch.choices = [];
-  kitSearch.input = '';
-  kitSearch.qs = null;
-  kitSearch.keywords.clear();
-  kitSearch.triggers.clear();
-  kitSearch.postfixes.clear();
-  kitSearch.shortcodes.clear();
-  kitSearch.hasGroup = false;
-  kitSearch.commandChars = [];
-  kitSearch.keys = ['slicedName', 'tag', 'group', 'command'];
 };
 
 export const kitClipboard = {

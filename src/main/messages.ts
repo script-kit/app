@@ -46,8 +46,6 @@ import {
   kitConfig,
   forceQuit,
   sponsorCheck,
-  kitSearch,
-  clearSearch,
   kitStore,
   preloadChoicesMap,
 } from '../shared/state';
@@ -819,7 +817,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
       clearPreview();
       clearFlags();
-      clearSearch();
+      prompt.clearSearch();
     }),
     SET_SCRIPT: onChildChannel(async (processInfo: ProcessInfo, data) => {
       // "app-run" will invoke "SET_SCRIPT"
@@ -902,9 +900,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     SET_INPUT: onChildChannel(async ({ child }, { channel, value }) => {
       // log.info(`💌 SET_INPUT to ${value}`);
-      kitSearch.keywords.clear();
-      kitSearch.keyword = '';
-      kitSearch.input = value;
+      prompt.kitSearch.keywords.clear();
+      prompt.kitSearch.keyword = '';
+      prompt.kitSearch.input = value;
       sendToPrompt(Channel.SET_INPUT, value);
     }),
 
@@ -973,7 +971,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         sendToPrompt(channel, value);
         if (
           kitState.scriptPath === getMainScriptPath() &&
-          kitSearch.input === '' &&
+          prompt.kitSearch.input === '' &&
           value?.length
         ) {
           appToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, value);
@@ -1037,16 +1035,16 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       kitState.promptScriptPath = value?.scriptPath || '';
       kitState.hideOnEscape = Boolean(value?.hideOnEscape);
 
-      kitSearch.keys = value?.searchKeys || [
+      prompt.kitSearch.keys = value?.searchKeys || [
         'slicedName',
         'tag',
         'group',
         'command',
       ];
       if (typeof value?.keyword === 'string') {
-        kitSearch.keywords.clear();
-        kitSearch.input = '';
-        kitSearch.keyword = value?.keyword;
+        prompt.kitSearch.keywords.clear();
+        prompt.kitSearch.input = '';
+        prompt.kitSearch.keyword = value?.keyword;
       }
 
       if (value?.ui === UI.mic) {
@@ -1065,10 +1063,10 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       //   kitState.termEnv = value?.env || {}
       // }
 
-      if (kitSearch.keyword) {
-        value.input = `${kitSearch.keyword} `;
+      if (prompt.kitSearch.keyword) {
+        value.input = `${prompt.kitSearch.keyword} `;
       } else if (value.input && kitState.promptCount < 2) {
-        kitSearch.input = value.input;
+        prompt.kitSearch.input = value.input;
       }
 
       prompt?.setPromptData(value);
@@ -1096,8 +1094,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       emitter.emit(KitEvent.CheckForUpdates, true);
     },
     ADD_CHOICE: onChildChannel(async ({ child }, { channel, value }) => {
-      kitSearch.choices.push(value);
-      invokeSearch(kitSearch.input);
+      prompt.kitSearch.choices.push(value);
+      invokeSearch(prompt, prompt.kitSearch.input);
     }),
 
     SET_CHOICES: onChildChannelOverride(
@@ -1133,7 +1131,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         const { choices, skipInitialSearch, inputRegex, generated } = value;
 
-        kitSearch.inputRegex = inputRegex
+        prompt.kitSearch.inputRegex = inputRegex
           ? new RegExp(inputRegex, 'gi')
           : undefined;
 
@@ -1951,7 +1949,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     SET_SCORED_CHOICES: onChildChannel(
       async ({ child }, { channel, value }) => {
         log.verbose(`SET SCORED CHOICES`);
-        if (!kitSearch.input) {
+        if (!prompt.kitSearch.input) {
           sendToPrompt(channel, value);
         }
       }
