@@ -89,6 +89,7 @@ import {
 import { appToPrompt, sendToPrompt } from './channel';
 import { setFlags, setChoices } from './search';
 import { fileURLToPath } from 'url';
+import { prompts } from '../shared/prompts';
 
 contextMenu({
   showInspectElement: process.env.NODE_ENV === 'development',
@@ -381,7 +382,7 @@ export const createPromptWindow = async () => {
     });
   }
 
-  windows.set(0, promptWindow);
+  prompts.set(0, promptWindow);
 
   if (kitState.isWindows) {
     promptWindow.setBackgroundMaterial('mica');

@@ -1,18 +1,18 @@
 import log from 'electron-log';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { AppChannel } from '../shared/enums';
-import { windows } from '../shared/state';
+import { prompts } from '../shared/prompts';
 
 export const sendToPrompt = <K extends keyof ChannelMap>(
   channel: K,
   data?: ChannelMap[K]
 ) => {
-  const window = windows.get(0);
-  if (process.env.KIT_SILLY) log.info(`sendToPrompt: ${String(channel)}`, data);
+  const prompt = prompts.get(0);
+  log.silly(`sendToPrompt: ${String(channel)}`, data);
   // log.info(`>_ ${channel}`);
-  if (window && !window.isDestroyed() && window?.webContents) {
+  if (prompt && !prompt.isDestroyed() && prompt?.webContents) {
     if (channel) {
-      window?.webContents.send(String(channel), data);
+      prompt?.webContents.send(String(channel), data);
     } else {
       log.error(`channel is undefined`, { data });
     }
@@ -21,9 +21,9 @@ export const sendToPrompt = <K extends keyof ChannelMap>(
 
 export const appToPrompt = (channel: AppChannel, data?: any) => {
   log.silly(`appToPrompt: ${String(channel)} ${data?.kitScript}`);
-  const window = windows.get(0);
+  const prompt = prompts.get(0);
 
-  if (window && !window.isDestroyed() && window?.webContents) {
-    window?.webContents.send(channel, data);
+  if (prompt && !prompt.isDestroyed() && prompt?.webContents) {
+    prompt?.webContents.send(channel, data);
   }
 };
