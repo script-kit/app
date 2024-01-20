@@ -1702,6 +1702,7 @@ export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
+    log.info(`📤 submitValueAtom`, a);
     const channel = g(channelAtom);
 
     const action = g(focusedActionAtom) as any;
@@ -2026,7 +2027,9 @@ export const createAssetAtom = (...parts: string[]) =>
     });
   });
 
-const isReady = atom(false);
+// TODO: Is this still needed?
+// const isReady = atom(false);
+const isReady = atom(true);
 export const isReadyAtom = atom(
   (g) => {
     return g(isReady);

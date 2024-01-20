@@ -5,14 +5,20 @@ import { readFile } from 'fs/promises';
 import fsExtra from 'fs-extra';
 const { pathExists } = fsExtra;
 import { kitState } from '../shared/state';
-import { appToPrompt, sendToPrompt } from './channel';
+import {
+  appToAllPrompts,
+  appToSpecificPrompt,
+  sendToAllPrompts,
+  sendToSpecificPrompt,
+} from './channel';
 import { setTheme } from './process';
 import { AppChannel } from '../shared/enums';
 
 export const setCSSVariable = (name: string, value: undefined | string) => {
   if (value) {
     log.info(`Setting CSS`, name, value);
-    appToPrompt(AppChannel.CSS_VARIABLE, { name, value });
+    // TODO: Implement "appToSpecificPrompt" for CSS Variables?
+    appToAllPrompts(AppChannel.CSS_VARIABLE, { name, value });
   }
 };
 
@@ -60,5 +66,7 @@ export const readKitCss = async (
   if (css) {
     extractAndSetCSSVariables(css);
   }
-  sendToPrompt(AppChannel.CSS_CHANGED, css);
+  // TODO: Implement "sendToAllPrompts"
+  // sendToSpecificPrompt(AppChannel.CSS_CHANGED, css);
+  sendToAllPrompts(AppChannel.CSS_CHANGED, css);
 };

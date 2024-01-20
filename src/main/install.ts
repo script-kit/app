@@ -40,7 +40,7 @@ import {
   destroyPromptWindow,
   scoreAndCacheMainChoices,
 } from './prompt';
-import { sendToPrompt } from './channel';
+
 import { INSTALL_ERROR, show } from './show';
 import { showError } from './main.dev.templates';
 import { mainLogPath } from './logs';
@@ -76,15 +76,15 @@ export const ohNo = async (error: Error) => {
 export const sendSplashBody = (message: string) => {
   if (message.includes('object')) return;
   if (message.toLowerCase().includes('warn')) return;
-  sendToPrompt(Channel.SET_SPLASH_BODY, message);
+  // sendToSpecificPrompt(Channel.SET_SPLASH_BODY, message);
 };
 
 export const sendSplashHeader = (message: string) => {
-  sendToPrompt(Channel.SET_SPLASH_HEADER, message);
+  // sendToSpecificPrompt(Channel.SET_SPLASH_HEADER, message);
 };
 
 export const sendSplashProgress = (progress: number) => {
-  sendToPrompt(Channel.SET_SPLASH_PROGRESS, progress);
+  // sendToSpecificPrompt(Channel.SET_SPLASH_PROGRESS, progress);
 };
 
 export const setupDone = () => {

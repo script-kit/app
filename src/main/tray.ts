@@ -40,7 +40,7 @@ import { emitter, KitEvent } from '../shared/events';
 import { getVersion } from './version';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { mainLogPath, updateLogPath } from './logs';
-import { forcePromptToCenter, getMainPrompt, maybeHide } from './prompt';
+import { prompts } from './prompts';
 
 let tray: Tray | null = null;
 
@@ -275,7 +275,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
           trigger: Trigger.Tray,
         })();
 
-        forcePromptToCenter();
+        prompts.focused?.forcePromptToCenter();
       },
     });
 
@@ -465,7 +465,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         click: () => {
           log.info(`Killing ${kitState.pid}`);
           emitter.emit(KitEvent.KillProcess, kitState.pid);
-          maybeHide(HideReason.MainShortcut);
+          prompts?.focused?.maybeHide(HideReason.MainShortcut);
         },
       });
     }

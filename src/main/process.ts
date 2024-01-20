@@ -27,11 +27,7 @@ import { ChildProcess, fork, spawn } from 'child_process';
 import { Channel, ProcessType, UI } from '@johnlindquist/kit/core/enum';
 import { ProcessInfo } from '@johnlindquist/kit/types/core';
 
-import {
-  ChannelMap,
-  GenericSendData,
-  SendData,
-} from '@johnlindquist/kit/types/kitapp';
+import { GenericSendData } from '@johnlindquist/kit/types/kitapp';
 
 import {
   resolveToScriptPath,
@@ -50,12 +46,7 @@ import fsExtra from 'fs-extra';
 const { pathExistsSync, readJson } = fsExtra;
 import { readFileSync } from 'fs';
 import { getLog, mainLog, warn } from './logs';
-import {
-  setPromptAlwaysOnTop,
-  isVisible,
-  maybeHide,
-  togglePromptEnv,
-} from './prompt';
+import { KitPrompt } from './prompt';
 import {
   kitState,
   appDb,
@@ -68,8 +59,11 @@ import {
 
 import { widgetState } from '../shared/widget';
 
-import { sendToPrompt, appToPrompt } from './channel';
-import { setFlags } from './search';
+import {
+  createAppToPrompt,
+  createSendToPrompt,
+  sendToAllPrompts,
+} from './channel';
 
 import { emitter, KitEvent } from '../shared/events';
 import { showInspector } from './show';
@@ -81,15 +75,23 @@ import { toHex } from '../shared/color-utils';
 import { stripAnsi } from './ansi';
 import { TrackEvent, trackEvent } from './track';
 import { createMessageMap } from './messages';
+import { prompts } from './prompts';
 
-export const clearPreview = () => {
-  sendToPrompt(Channel.SET_PREVIEW, `<div></div>`);
+export type ProcessAndPrompt = ProcessInfo & {
+  prompt: KitPrompt;
+  promptId?: string;
 };
 
+// TODO: Reimplement SET_PREVIEW
+export const clearPreview = () => {
+  // sendToSpecificPrompt(Channel.SET_PREVIEW, `<div></div>`);
+};
+
+// TODO: Reimplement SET_FLAGS
 export const clearFlags = () => {
-  sendToPrompt(Channel.SET_FLAG_VALUE, '');
-  sendToPrompt(Channel.SET_FLAGS, {});
-  setFlags({});
+  // sendToSpecificPrompt(Channel.SET_FLAG_VALUE, '');
+  // sendToSpecificPrompt(Channel.SET_FLAGS, {});
+  // setFlags({});
 };
 
 export const maybeConvertColors = async (theme: any = {}) => {
@@ -221,7 +223,8 @@ export const setTheme = async (value: any = {}, check = true) => {
 
   // promptWindow.setBackgroundColor(backgroundColor);
 
-  sendToPrompt(Channel.SET_THEME, newValue);
+  // TODO: Reimplement SET_THEME
+  sendToAllPrompts(Channel.SET_THEME, newValue);
 };
 
 export const updateTheme = async () => {
@@ -272,7 +275,8 @@ export const cachePreview = async (scriptPath: string, preview: string) => {
     kitSearch.input === '' &&
     !kitSearch.inputRegex
   ) {
-    appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, preview);
+    // TODO: Going to need to cache preview so the _next_ prompt has access
+    // appToSpecificPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, preview);
   }
 };
 
@@ -298,8 +302,9 @@ export const sendToAllActiveChildren = (data: any) => {
   });
 };
 
-export const createMessageHandler = (type: ProcessType) => {
-  const kitMessageMap = createMessageMap();
+export const createMessageHandler = (info: ProcessInfo) => {
+  const { type } = info;
+  const kitMessageMap = createMessageMap(info);
   // log.info({ kitMessageMap });
 
   return async (data: GenericSendData) => {
@@ -400,9 +405,10 @@ const createChild = ({
   let win: BrowserWindow | null = null;
 
   if (port && child && child.stdout && child.stderr) {
-    sendToPrompt(Channel.SET_PROMPT_DATA, {
-      ui: UI.debugger,
-    } as any);
+    // TODO: Reimplement SET_PROMPT_DATA for debugger
+    // sendToSpecificPrompt(Channel.SET_PROMPT_DATA, {
+    //   ui: UI.debugger,
+    // } as any);
     log.info(`Created ${type} process`);
     // child.stdout.on('data', (data) => {
     //   log.info(`Child ${type} data`, data);
@@ -427,7 +433,8 @@ const createChild = ({
 
       if (debugUrl) {
         kitState.ignoreBlur = true;
-        setPromptAlwaysOnTop(true);
+        // TODO: I'm going to have to handle this outside of creatChild so it has access to the prompt created after it or something
+        // setPromptAlwaysOnTop(true);
         log.info({ debugUrl });
         const devToolsUrl = `devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=${debugUrl}`;
         log.info(`DevTools URL: ${devToolsUrl}`);
@@ -439,7 +446,9 @@ const createChild = ({
 
         win.on('close', () => {
           if (child && !child.killed) child?.kill();
-          maybeHide(HideReason.DebuggerClosed);
+          // TODO: I'm going to have to handle this outside of creatChild so it has access to the prompt created after it or something
+
+          // maybeHide(HideReason.DebuggerClosed);
         });
       }
     });
@@ -467,10 +476,11 @@ interface ProcessHandlers {
 const processesChanged = debounce(() => {
   if (kitState.allowQuit) return;
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
-  appToPrompt(AppChannel.PROCESSES, pinfos);
 
   log.info(`👓 Focused process ${kitState.pid} - ${kitState.scriptPath}`);
   for (const pinfo of processes) {
+    const appToPrompt = createAppToPrompt(pinfo.prompt);
+    appToPrompt(AppChannel.PROCESSES, pinfos);
     log.info(
       `🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`
     );
@@ -494,6 +504,7 @@ const processesChanged = debounce(() => {
 }, 10);
 
 export const clearIdleProcesses = () => {
+  return;
   log.info(`Reset all idle processes`);
   processes.getAllProcessInfo().forEach((processInfo) => {
     if (
@@ -541,8 +552,8 @@ const setTrayScriptError = (pid: number) => {
 
 const childShortcutMap = new Map<ChildProcess, string[]>();
 
-class Processes extends Array<ProcessInfo> {
-  public abandonnedProcesses: ProcessInfo[] = [];
+class Processes extends Array<ProcessAndPrompt> {
+  public abandonnedProcesses: ProcessAndPrompt[] = [];
 
   public getAllProcessInfo() {
     return this.map(({ scriptPath, type, pid }) => ({
@@ -606,8 +617,8 @@ class Processes extends Array<ProcessInfo> {
   }
 
   public heartbeat() {
-    if (isVisible()) return;
     for (const pInfo of this) {
+      if (!pInfo?.prompt?.isVisible()) return;
       if (pInfo.child && pInfo.child.connected && !pInfo.child?.killed) {
         pInfo.child.send({
           channel: Channel.HEARTBEAT,
@@ -630,6 +641,14 @@ class Processes extends Array<ProcessInfo> {
       port,
     });
 
+    if (!child.pid) {
+      log.error(`Child process has no pid`, child);
+      throw new Error(`Child process has no pid`);
+    }
+
+    const prompt = new KitPrompt(child.pid);
+
+    prompts.set(child.pid, prompt);
     log.info(`👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
 
     const info = {
@@ -639,10 +658,11 @@ class Processes extends Array<ProcessInfo> {
       scriptPath,
       values: [],
       date: Date.now(),
-    };
+      prompt,
+    } as ProcessAndPrompt;
 
     this.push(info);
-    kitState.addP(info);
+    // kitState.addP(info);
 
     processesChanged();
 
@@ -661,7 +681,7 @@ class Processes extends Array<ProcessInfo> {
         child?.kill();
       }, DEFAULT_TIMEOUT);
 
-    const messageHandler = createMessageHandler(type);
+    const messageHandler = createMessageHandler(info);
     child?.on('message', messageHandler);
 
     const { pid } = child;
@@ -682,7 +702,7 @@ class Processes extends Array<ProcessInfo> {
       if (id) clearTimeout(id);
 
       if (child?.pid === kitState?.pid) {
-        sendToPrompt(Channel.EXIT, pid);
+        prompt.sendToPrompt(Channel.EXIT, pid);
         emitter.emit(KitEvent.TERM_KILL, kitState.promptId);
       }
 
@@ -740,6 +760,7 @@ class Processes extends Array<ProcessInfo> {
   }
 
   public findIdlePromptProcess(): ProcessInfo {
+    log.info(`>>>>>>>>>>>>>> FINDING IDLE PROCESS <<<<<<<<<<<<<<<<`);
     const idles = this.filter(
       (processInfo) =>
         processInfo.type === ProcessType.Prompt &&
@@ -751,6 +772,8 @@ class Processes extends Array<ProcessInfo> {
     if (idles.length) {
       return idles[0];
     }
+
+    log.info(`>>>>>>>>>>>>>> NO IDLE PROCESS FOUND <<<<<<<<<<<<<<<<`);
 
     return processes.add(ProcessType.Prompt);
   }
@@ -1054,7 +1077,8 @@ emitter.on(KitEvent.KillProcess, (pid) => {
 emitter.on(KitEvent.TermExited, (pid) => {
   log.info(`🛑 Term Exited: SUMBMITTING`);
   if (kitState.ui === UI.term) {
-    sendToPrompt(AppChannel.TERM_EXIT, '');
+    // TODO: Reimplement SET_TERM_EXIT
+    // sendToSpecificPrompt(AppChannel.TERM_EXIT, '');
   }
 });
 
@@ -1137,7 +1161,8 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
     // END-REMOVE-MAC
 
     kitState.kenvEnv = envData;
-    togglePromptEnv('KIT_MAIN_SCRIPT');
+    // TODO: Why did I even do this? There has to be a simpler way now
+    // togglePromptEnv('KIT_MAIN_SCRIPT');
 
     if (kitState.kenvEnv?.KIT_MEASURE) {
       if (observer) observer.disconnect();
@@ -1168,5 +1193,7 @@ subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
 
 subscribe(appDb, (db) => {
   log.info(`👩‍💻 Reading app.json`, { ...appDb });
-  sendToPrompt(Channel.APP_DB, { ...appDb });
+
+  // TODO: Reimplement SET_APP_DB
+  sendToAllPrompts(Channel.APP_DB, { ...appDb });
 });

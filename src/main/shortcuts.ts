@@ -13,20 +13,12 @@ import {
 import { UI } from '@johnlindquist/kit/core/enum';
 import { runPromptProcess, runScript } from './kit';
 import { emitter, KitEvent } from '../shared/events';
-import {
-  focusPrompt,
-  hasFocus,
-  initMainBounds,
-  initShowPrompt,
-  isVisible,
-  reload,
-  resetPrompt,
-  showMainPrompt,
-} from './prompt';
+
 import { convertKey, kitState, subs } from '../shared/state';
 import { Trigger } from '../shared/enums';
 import { convertShortcut, shortcutInfo } from './helpers';
 import { processes, spawnShebang } from './process';
+import { prompts } from './prompts';
 
 const registerFail = (shortcut: string, filePath: string) =>
   `# Shortcut Registration Failed
@@ -101,7 +93,7 @@ export const registerKillLatestShortcut = () => {
 
   if (process.env.NODE_ENV === 'development') {
     globalShortcut.register(`Option+${semicolon}`, async () => {
-      reload();
+      prompts?.focused?.reload();
       // wait for reload to finish
       await new Promise((resolve) => setTimeout(resolve, 1000));
       await runPromptProcess(getMainScriptPath(), [], {
@@ -260,13 +252,7 @@ export const updateMainShortcut = async (filePath: string) => {
       //   sponsor: kitState.isSponsor,
       // });
 
-      if (kitState.promptCount > 0 && !hasFocus()) {
-        log.info(`Prompt already open. Focusing... ${kitState.promptCount}`);
-        initShowPrompt();
-        return;
-      }
-
-      if (!isVisible()) {
+      if (!prompts?.next?.isVisible()) {
         if (kitState.kenvEnv?.KIT_MAIN_HOOK_PATH) {
           runScript(kitState.kenvEnv?.KIT_MAIN_HOOK_PATH);
         }
@@ -275,14 +261,11 @@ export const updateMainShortcut = async (filePath: string) => {
         kitState.ignoreBlur = false;
         kitState.alwaysOnTop = true;
 
-        resetPrompt();
-        initMainBounds();
         // Give init bounds time to finish. Difficult to test :/
         await new Promise(setImmediate);
 
-        showMainPrompt();
-
-        focusPrompt();
+        prompts?.next?.initShowPrompt();
+        prompts?.next?.focusPrompt();
         await runPromptProcess(getMainScriptPath(), [], {
           force: true,
           trigger: Trigger.Menu,

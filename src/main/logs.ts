@@ -7,9 +7,7 @@ import * as path from 'path';
 import { subscribeKey } from 'valtio/utils';
 import fs from 'fs';
 import { kenvPath, getLogFromScriptPath } from '@johnlindquist/kit/core/utils';
-import { Channel } from '@johnlindquist/kit/core/enum';
 import { app } from 'electron';
-import { sendToPrompt } from './channel';
 import { stripAnsi } from './ansi';
 import { kitState, subs } from '../shared/state';
 import { TrackEvent, trackEvent } from './track';
@@ -117,7 +115,8 @@ export const getLog = (scriptPath: string): Logger => {
 };
 
 export const warn = (message: string) => {
-  sendToPrompt(Channel.CONSOLE_WARN, message);
+  // TODO: Which prompt should I send warnings to?
+  // sendToSpecificPrompt(Channel.CONSOLE_WARN, message);
   log.warn(message);
 };
 

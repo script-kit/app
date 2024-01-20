@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-restricted-syntax */
-import { ipcMain } from 'electron';
+import { BrowserWindow, ipcMain } from 'electron';
 import log from 'electron-log';
 import path from 'path';
 import { debounce } from 'lodash-es';
@@ -17,23 +17,22 @@ import {
   kenvPath,
   isFile,
 } from '@johnlindquist/kit/core/utils';
-import { ProcessInfo } from '@johnlindquist/kit/types/core';
 import { AppMessage, AppState } from '@johnlindquist/kit/types/kitapp';
 import { existsSync, renameSync } from 'fs';
 import { writeFile } from 'fs/promises';
 import { DownloaderHelper } from 'node-downloader-helper';
 import detect from 'detect-file-type';
 import { emitter, KitEvent } from '../shared/events';
-import { cachePreview, ensureIdleProcess, processes } from './process';
-
 import {
-  focusPrompt,
-  maybeHide,
-  attemptPreload,
-  reload,
-  resize,
-} from './prompt';
-import { sendToPrompt } from './channel';
+  ProcessAndPrompt,
+  cachePreview,
+  ensureIdleProcess,
+  processes,
+} from './process';
+
+import { attemptPreload } from './prompt';
+import { prompts } from './prompts';
+import { createAppToPrompt, createSendToPrompt } from './channel';
 import { runPromptProcess } from './kit';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { ResizeData, Survey } from '../shared/types';
@@ -43,7 +42,11 @@ import { noChoice } from '../shared/defaults';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 
 let prevTransformedInput = '';
-const checkShortcodesAndKeywords = (rawInput: string): boolean => {
+const checkShortcodesAndKeywords = (
+  prompt: BrowserWindow,
+  rawInput: string
+): boolean => {
+  const sendToPrompt = createSendToPrompt(prompt);
   let transformedInput = rawInput;
 
   if (kitSearch.inputRegex) {
@@ -149,7 +152,7 @@ const checkShortcodesAndKeywords = (rawInput: string): boolean => {
 };
 
 const handleChannel =
-  (fn: (processInfo: ProcessInfo, message: AppMessage) => void) =>
+  (fn: (processInfo: ProcessAndPrompt, message: AppMessage) => void) =>
   (_event: any, message: AppMessage) => {
     // TODO: Remove logging
     // log.info({
@@ -171,7 +174,8 @@ const handleChannel =
       log.warn(`${message.channel} failed on ${message?.pid}`);
 
       processes.removeByPid(message?.pid);
-      maybeHide(HideReason.MessageFailed);
+      // TODO: Reimplement failed message with specific prompt
+      // maybeHide(HideReason.MessageFailed);
       ensureIdleProcess();
     }
   };
@@ -200,7 +204,8 @@ ${data.error}
           });
         };
 
-        reload();
+        // TODO: Reimplement
+        // reload();
       },
       5000,
       { leading: true }
@@ -215,7 +220,8 @@ ${data.error}
         log.warn(error);
         if (!kitState.hiddenByUser) {
           setTimeout(() => {
-            reload();
+            // TODO: Reimplement
+            // reload();
             // processes.add(ProcessType.App, kitPath('cli/kit-log.js'), []);
             // escapePromptWindow();
           }, 4000);
@@ -234,12 +240,13 @@ ${data.error}
   });
 
   ipcMain.on(AppChannel.RESIZE, (event, resizeData: ResizeData) => {
-    resize(resizeData);
+    prompts?.focused?.resize(resizeData);
   });
 
   ipcMain.on(AppChannel.RELOAD, async () => {
     log.info(`AppChannel.RELOAD`);
-    reload();
+    // TODO: Reimplement
+    // reload();
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
     await runPromptProcess(getMainScriptPath(), [], {
@@ -349,10 +356,6 @@ ${data.error}
     });
   });
 
-  ipcMain.on(AppChannel.FOCUS_PROMPT, () => {
-    focusPrompt();
-  });
-
   for (const channel of [
     Channel.INPUT,
     Channel.CHANGE,
@@ -402,9 +405,18 @@ ${data.error}
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
       channel,
-      handleChannel(async ({ child }, message) => {
+      handleChannel(async ({ child, promptId }, message) => {
+        if (!child.pid) return;
+        const prompt = prompts.get(message.pid);
+        if (!prompt) return;
+
+        const sendToPrompt = prompt.sendToPrompt;
+        const appToPrompt = prompt.appToPrompt;
+
         kitSearch.flaggedValue = message.state?.flaggedValue;
-        message.promptId = kitState.promptId;
+
+        prompt.id = promptId || '';
+        message.promptId = promptId || '';
 
         if (kitState.scriptPathChanged) {
           if (channel === Channel.CHOICE_FOCUSED) {
@@ -448,18 +460,18 @@ ${data.error}
           const hasFlag = message.state.flaggedValue;
 
           if (isArg) {
-            const shouldSearch = checkShortcodesAndKeywords(input);
+            const shouldSearch = checkShortcodesAndKeywords(prompt, input);
             const isFilter = message.state.mode === Mode.FILTER;
             if (shouldSearch && isFilter) {
               if (hasFlag) {
-                invokeFlagSearch(input);
+                invokeFlagSearch(prompt, input);
               } else {
                 debounceInvokeSearch.cancel();
 
                 if (kitSearch.choices.length > 5000) {
-                  debounceInvokeSearch(input, 'debounce');
+                  debounceInvokeSearch(prompt, input, 'debounce');
                 } else {
-                  invokeSearch(input, `${channel}`);
+                  invokeSearch(prompt.window, input, `${channel}`);
                 }
               }
             }
@@ -473,7 +485,7 @@ ${data.error}
         }
 
         if (channel === Channel.ON_MENU_TOGGLE && flagSearch.input) {
-          invokeFlagSearch('');
+          invokeFlagSearch(prompt, '');
         }
 
         if (channel === Channel.ESCAPE) {
@@ -481,7 +493,7 @@ ${data.error}
             `␛ hideOnEscape ${kitState.hideOnEscape ? 'true' : 'false'}`
           );
           if (kitState.hideOnEscape) {
-            maybeHide(HideReason.Escape);
+            prompts.focused?.maybeHide(HideReason.Escape);
             sendToPrompt(Channel.SET_INPUT, '');
           }
         }
@@ -641,24 +653,4 @@ ${data.error}
     log.info(`🚀 Applying update`);
     kitState.applyUpdate = true;
   });
-
-  // emitter.on(KitEvent.Blur, async () => {
-  //   const promptProcessInfo = await processes.findPromptProcess();
-
-  //   if (promptProcessInfo && promptProcessInfo.scriptPath) {
-  //     const { child, scriptPath } = promptProcessInfo;
-  //     emitter.emit(KitEvent.ResumeShortcuts);
-
-  //     if (child) {
-  //       log.info(`🙈 Blur process: ${scriptPath} id: ${child.pid}`);
-  //       child?.send({ channel: Channel.PROMPT_BLURRED });
-  //     }
-  //   }
-
-  //   setPromptState({
-  //     hidden: false,
-  //   });
-
-  //   sendToPrompt(Channel.PROMPT_BLURRED);
-  // });
 };

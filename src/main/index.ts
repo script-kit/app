@@ -61,8 +61,7 @@ const { ensureDir, pathExistsSync } = fsExtra;
 import { existsSync, readFileSync } from 'fs';
 import { readdir, copyFile } from 'fs/promises';
 
-import { Channel, ProcessType, UI, PROMPT } from '@johnlindquist/kit/core/enum';
-import { PromptData } from '@johnlindquist/kit/types/core';
+import { ProcessType, UI } from '@johnlindquist/kit/core/enum';
 
 import {
   kenvPath,
@@ -93,19 +92,8 @@ import {
   getPlatformExtension,
 } from '../shared/assets';
 import { startClipboardAndKeyboardWatchers } from './tick';
-import {
-  clearPromptCache,
-  createPromptWindow,
-  setPromptData,
-  setScript,
-  clearPromptTimers,
-  maybeHide,
-  isVisible,
-  prepPromptForQuit,
-  logPromptState,
-  initShowPrompt,
-} from './prompt';
-import { sendToPrompt } from './channel';
+import { clearPromptCache, clearPromptTimers, logPromptState } from './prompt';
+
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
@@ -127,7 +115,7 @@ import {
   setTheme,
 } from './process';
 import { startIpc } from './ipc';
-import { runPromptProcess, runScript } from './kit';
+import { runPromptProcess } from './kit';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import { SPLASH_PATH } from '../shared/defaults';
@@ -164,6 +152,7 @@ import {
 import { readKitCss } from './theme';
 import { syncClipboardStore } from './clipboard';
 import { actualHideDock, clearStateTimers } from '../shared/dock';
+import { prompts } from './prompts';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -352,7 +341,8 @@ app.on('web-contents-created', (_, contents) => {
         log.info(`Attempting to run kit protocol:`, JSON.stringify(url));
         // await cliFromParams(url.pathname, url.searchParams);
       } else if (url.protocol === 'submit:') {
-        sendToPrompt(Channel.SET_SUBMIT_VALUE, url.pathname);
+        // TODO: Handle submit protocol
+        // sendToSpecificPrompt(Channel.SET_SUBMIT_VALUE, url.pathname);
       } else if (url.protocol.startsWith('http')) {
         shell.openExternal(url.href);
       }
@@ -438,9 +428,10 @@ const systemEvents = () => {
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);
     if (kitState.scriptPath === getMainScriptPath())
-      maybeHide(HideReason.Suspend);
-    // teardownWatchers();
-    sleepSchedule();
+      // TODO: Hide main prompts when sleep?
+      // maybeHide(HideReason.Suspend);
+      // teardownWatchers();
+      sleepSchedule();
     try {
       logMap.clear();
     } catch (error) {
@@ -488,9 +479,10 @@ const systemEvents = () => {
   powerMonitor.addListener('lock-screen', async () => {
     kitState.screenLocked = true;
 
-    if (!isVisible()) {
-      maybeHide(HideReason.LockScreen);
-    }
+    // TODO: Hide main prompts when sleep?
+    // if (!isVisible()) {
+    // maybeHide(HideReason.LockScreen);
+    // }
   });
 
   powerMonitor.addListener('unlock-screen', async () => {
@@ -741,34 +733,36 @@ const checkKit = async () => {
 
   const showSplash = async () => {
     kitState.ui = UI.splash;
-    await setScript(
-      {
-        name: 'Kit Setup',
-        command: 'splash-screen',
-        filePath: SPLASH_PATH,
-        kenv: '',
-        id: 'spash-screen',
-        type: ProcessType.Prompt,
-        hasPreview: true,
-      },
-      kitState.pid,
-      true
-    );
+    // TODO: Re-implement SHOW SPLASH
+    // await setScript(
+    //   {
+    //     name: 'Kit Setup',
+    //     command: 'splash-screen',
+    //     filePath: SPLASH_PATH,
+    //     kenv: '',
+    //     id: 'spash-screen',
+    //     type: ProcessType.Prompt,
+    //     hasPreview: true,
+    //   },
+    //   kitState.pid,
+    //   true
+    // );
 
     sendSplashHeader(`Installing Kit SDK and Kit Environment...`);
 
     log.info(`🌊 Showing Splash Install Screen`);
-    await setPromptData({
-      ignoreBlur: true,
-      ui: UI.splash,
-      scriptPath: SPLASH_PATH,
-      width: PROMPT.WIDTH.BASE,
-      height: PROMPT.HEIGHT.BASE,
-    } as PromptData);
-    sendSplashBody(`Starting up...`);
+    // await setPromptData({
+    //   ignoreBlur: true,
+    //   ui: UI.splash,
+    //   scriptPath: SPLASH_PATH,
+    //   width: PROMPT.WIDTH.BASE,
+    //   height: PROMPT.HEIGHT.BASE,
+    // } as PromptData);
+    // sendSplashBody(`Starting up...`);
 
     setTimeout(() => {
-      initShowPrompt();
+      // TODO: Implement SPLASH prompt
+      // initShowPrompt();
     }, 500);
   };
 
@@ -782,7 +776,7 @@ const checkKit = async () => {
   log.info(`Starting IPC...`);
   startIpc();
   log.info(`IPC started.`);
-  await createPromptWindow();
+  // await createPromptWindow();
 
   await setupLog(`Prompt window created`);
 
@@ -1048,7 +1042,8 @@ const checkKit = async () => {
 
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
 
-    sendToPrompt(Channel.SET_READY, true);
+    // TODO: Reimplement SET_READY
+    // sendToSpecificPrompt(Channel.SET_READY, true);
 
     log.info({ mainScriptPath: getMainScriptPath() });
     // startBackgroundTask(kitPath('main', 'app-launcher.js'), [
@@ -1073,7 +1068,9 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     allowQuit,
   });
   mainLog.info('allowQuit begin...');
-  await prepPromptForQuit();
+  for (const prompt of prompts) {
+    await prompt.prepPromptForQuit();
+  }
 
   // app?.removeAllListeners('window-all-closed');
   if (!allowQuit) return;

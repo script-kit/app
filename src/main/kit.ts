@@ -24,20 +24,11 @@ import { ProcessInfo } from '@johnlindquist/kit';
 import { subscribeKey } from 'valtio/utils';
 import { emitter, KitEvent } from '../shared/events';
 import { ensureIdleProcess, getIdles, processes } from './process';
-import {
-  hideAppIfNoWindows,
-  isVisible,
-  setScript,
-  attemptPreload,
-  isFocused,
-  focusPrompt,
-  initShowPrompt,
-} from './prompt';
 import { getKitScript, kitState, kitStore } from '../shared/state';
 import { pathsAreEqual } from './helpers';
 import { HideReason, Trigger } from '../shared/enums';
 import { TrackEvent, trackEvent } from './track';
-import { sendToPrompt } from './channel';
+import { prompts } from './prompts';
 
 app.on('second-instance', async (_event, argv) => {
   log.info('second-instance', argv);
@@ -106,12 +97,13 @@ emitter.on(
           }
         : scriptOrScriptAndData;
 
-    if (isVisible()) {
-      kitState.ignoreBlur = false;
-      hideAppIfNoWindows(HideReason.RunPromptProcess);
-    } else {
-      log.info(`Show App: ${scriptPath}`);
-    }
+    // TODO: Each prompt will need its own "ignoreBlur"
+    // if (isVisible()) {
+    //   kitState.ignoreBlur = false;
+    //   // hideAppIfNoWindows(HideReason.RunPromptProcess);
+    // } else {
+    //   log.info(`Show App: ${scriptPath}`);
+    // }
     runPromptProcess(scriptPath, args, options);
   }
 );
@@ -164,25 +156,16 @@ export const runPromptProcess = async (
   //   .catch((error) => {});
 
   // If the window is already open, interrupt the process with the new script
-  const visible = isVisible();
-  const focused = isFocused();
-  log.info(`👀 Visible: ${visible ? 'true' : 'false'}`);
-  if (visible && !focused) {
-    initShowPrompt();
-  }
-  if (visible) {
-    sendToPrompt(
-      Channel.START,
-      options?.force ? kitState.scriptPath : promptScriptPath
-    );
-  }
-  if (focused) {
-    const sameScript = kitState.scriptPath === promptScriptPath;
-    if (sameScript && !isSplash) {
-      emitter.emit(KitEvent.KillProcess, kitState.pid);
-      return null;
-    }
-  }
+
+  prompts.next?.initShowPrompt();
+
+  // TODO: Is this needed?
+  // if (visible) {
+  //   sendToSpecificPrompt(
+  //     Channel.START,
+  //     options?.force ? kitState.scriptPath : promptScriptPath
+  //   );
+  // }
 
   const idlesLength = getIdles().length;
   log.info(`🗿 ${idlesLength} idles`);
@@ -192,13 +175,13 @@ export const runPromptProcess = async (
     try {
       kitState.scriptPath = getMainScriptPath();
       kitState.preloaded = false;
-      attemptPreload(getMainScriptPath());
+      // attemptPreload(getMainScriptPath());
     } catch (error) {
       log.error(error);
     }
   } else if (idlesLength > 0) {
     // This is required so if you press the same shortcut twice, it will close the script
-    attemptPreload(promptScriptPath);
+    // attemptPreload(promptScriptPath);
   } else {
     ensureIdleProcess();
   }
@@ -221,7 +204,11 @@ export const runPromptProcess = async (
 
   const script = await findScript(promptScriptPath);
 
-  const status = await setScript({ ...script }, pid, options?.force);
+  const status = await prompts.next?.setScript(
+    { ...script },
+    pid,
+    options?.force
+  );
   if (status === 'denied') {
     log.info(
       `Another script is already controlling the UI. Denying UI control: ${path.basename(

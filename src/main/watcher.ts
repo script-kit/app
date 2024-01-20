@@ -37,22 +37,18 @@ import {
   sponsorCheck,
 } from '../shared/state';
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
-import {
-  clearPromptCacheFor,
-  debugPrompt,
-  setKitStateAtom,
-  togglePromptEnv,
-} from './prompt';
+import { clearPromptCacheFor, setKitStateAtom } from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from '../shared/events';
 import { AppChannel, Trigger } from '../shared/enums';
 import { runScript } from './kit';
-import { processes, setTheme, spawnShebang, updateTheme } from './process';
+import { processes, spawnShebang, updateTheme } from './process';
 import { compareArrays } from './helpers';
 import { cacheMainScripts } from './install';
 import { getFileImports } from './npm';
-import { appToPrompt, sendToPrompt } from './channel';
+import { appToAllPrompts, appToSpecificPrompt } from './channel';
 import { readKitCss, setCSSVariable } from './theme';
+import { prompts } from './prompts';
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
@@ -253,7 +249,8 @@ export const checkUserDb = async (eventName: string) => {
   const user = snapshot(kitState.user);
   log.info(`Send user.json to prompt`, user);
 
-  appToPrompt(AppChannel.USER_CHANGED, user);
+  // TODO: Reimplement this
+  appToAllPrompts(AppChannel.USER_CHANGED, user);
 };
 
 const triggerRunText = debounce(
@@ -347,7 +344,7 @@ export const setupWatchers = async () => {
             kitState.kenvEnv.KIT_THEME_LIGHT = '';
           }
           if (envData?.KIT_TERM_FONT) {
-            appToPrompt(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
+            appToAllPrompts(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
           }
 
           setCSSVariable(
@@ -369,12 +366,12 @@ export const setupWatchers = async () => {
 
           if (envData?.KIT_MIC) {
             log.info(`Setting mic`, envData?.KIT_MIC);
-            appToPrompt(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
+            appToAllPrompts(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
           }
 
           if (envData?.KIT_WEBCAM) {
             log.info(`Setting webcam`, envData?.KIT_WEBCAM);
-            appToPrompt(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
+            appToAllPrompts(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
           }
 
           if (envData?.KIT_TYPED_LIMIT) {
@@ -401,8 +398,11 @@ export const setupWatchers = async () => {
 
           updateTheme();
 
+          // TODO: Debug a single prompt? All of them?
           if (envData?.KIT_DEBUG_PROMPT) {
-            debugPrompt();
+            for (const prompt of prompts) {
+              prompt?.debugPrompt();
+            }
           }
 
           if (envData?.KIT_NO_PREVIEW) {
@@ -439,7 +439,8 @@ export const setupWatchers = async () => {
           // }
 
           kitState.kenvEnv = envData;
-          togglePromptEnv('KIT_MAIN_SCRIPT');
+          // TODO: I don't think this is necessary any more
+          // togglePromptEnv('KIT_MAIN_SCRIPT');
         } catch (error) {
           log.warn(error);
         }

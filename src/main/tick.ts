@@ -33,7 +33,7 @@ import {
   kitStore,
   subs,
 } from '../shared/state';
-import { isFocused } from './prompt';
+
 import { deleteText } from './keyboard';
 import { Trigger } from '../shared/enums';
 
@@ -43,6 +43,7 @@ import {
   syncClipboardStore,
 } from './clipboard';
 import { registerIO, toKey } from './io';
+import { prompts } from './prompts';
 
 type FrontmostApp = {
   localizedName: string;
@@ -448,7 +449,7 @@ export const startClipboardMonitor = async () => {
         }
 
         // eslint-disable-next-line no-nested-ternary
-        const appName = isFocused()
+        const appName = prompts?.focused
           ? 'Script Kit'
           : app?.localizedName
             ? app.localizedName
