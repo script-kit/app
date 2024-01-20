@@ -569,7 +569,6 @@ class Processes extends Array<ProcessAndPrompt> {
     };
 
     this.push(info);
-    kitState.addP(info);
     processesChanged();
   }
 
@@ -657,7 +656,6 @@ class Processes extends Array<ProcessAndPrompt> {
     } as ProcessAndPrompt;
 
     this.push(info);
-    // kitState.addP(info);
 
     processesChanged();
 
@@ -817,7 +815,6 @@ class Processes extends Array<ProcessAndPrompt> {
 
     if (this.find((i) => i.pid === pid)) {
       this.splice(index, 1);
-      kitState.removeP(pid);
 
       processesChanged();
     }

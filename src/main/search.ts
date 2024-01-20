@@ -48,7 +48,7 @@ export const invokeSearch = (
   const lowerCaseInput = transformedInput?.toLowerCase();
 
   if (transformedInput === '') {
-    const results = [];
+    const results: ScoredChoice[] = [];
     for (const choice of prompt.kitSearch.choices) {
       if (!(choice?.miss || choice?.pass || choice?.hideWithoutInput)) {
         results.push(createScoredChoice(choice));
@@ -56,7 +56,7 @@ export const invokeSearch = (
     }
 
     if (results?.length === 0) {
-      const misses = [];
+      const misses: ScoredChoice[] = [];
       for (const choice of prompt.kitSearch.choices) {
         if (choice?.miss || choice?.info) {
           misses.push(createScoredChoice(choice));
@@ -101,11 +101,11 @@ export const invokeSearch = (
 
     let groupedResults: ScoredChoice[] = [];
 
-    const infoGroup = [];
-    const startsWithGroup = [];
-    const includesGroup = [];
-    const matchLastGroup = [];
-    const missGroup = [];
+    const infoGroup: ScoredChoice[] = [];
+    const startsWithGroup: ScoredChoice[] = [];
+    const includesGroup: ScoredChoice[] = [];
+    const matchLastGroup: ScoredChoice[] = [];
+    const missGroup: ScoredChoice[] = [];
     let alias: Choice;
 
     for (const choice of prompt.kitSearch.choices) {

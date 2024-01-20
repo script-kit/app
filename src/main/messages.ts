@@ -186,19 +186,6 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       childSend(data);
     }
 
-    if (
-      prompt?.isVisible() &&
-      !isWidgetMessage &&
-      processInfo?.pid !== kitState.pid
-    ) {
-      const warning = `💁‍♂️ ${path.basename(
-        processInfo.scriptPath
-      )}: ${data?.pid}: ${data.channel} ignored on current UI. ${
-        data.pid
-      } doesn't match ${kitState.pid}`;
-      return warn(warning);
-    }
-
     return fn(processInfo, data);
   };
 
@@ -549,16 +536,18 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         widget?.on('close', closeHandler);
         child?.on('close', closeHandler);
-        const un = subscribe(kitState.ps, () => {
-          if (!kitState.ps.find((p) => p.pid === child?.pid)) {
-            try {
-              closeHandler();
-              un();
-            } catch (error) {
-              log.error(error);
-            }
-          }
-        });
+
+        // TODO: Widget close logic?
+        // const un = subscribe(kitState.ps, () => {
+        //   if (!kitState.ps.find((p) => p.pid === child?.pid)) {
+        //     try {
+        //       closeHandler();
+        //       un();
+        //     } catch (error) {
+        //       log.error(error);
+        //     }
+        //   }
+        // });
 
         widget?.on('will-move', () => {
           log.verbose(`${widgetId}: 📦 widget will move`);
@@ -858,10 +847,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           processInfo.child.stderr?.on('error', routeToScriptLog);
         }
 
-        const foundP = kitState.ps.find((p) => p.pid === processInfo.pid);
-        if (foundP) {
-          foundP.scriptPath = data.value?.filePath;
-        }
+        info.scriptPath = data.value?.filePath;
       }
       await prompt?.setScript(data.value, processInfo.pid);
     }),

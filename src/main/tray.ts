@@ -41,6 +41,7 @@ import { getVersion } from './version';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { mainLogPath, updateLogPath } from './logs';
 import { prompts } from './prompts';
+import { processes } from './process';
 
 let tray: Tray | null = null;
 
@@ -177,7 +178,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
     const runningScripts: MenuItemConstructorOptions[] = [];
 
-    if (kitState.ps.find((p) => p?.scriptPath)) {
+    if (processes.find((p) => p?.scriptPath)) {
       runningScripts.push({
         type: 'separator',
       });
@@ -187,7 +188,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         enabled: false,
       });
 
-      for await (const { pid, scriptPath, date } of kitState.ps) {
+      for await (const { pid, scriptPath, date } of processes) {
         if (scriptPath) {
           const logItems: MenuItemConstructorOptions[] = [];
           const maybeLog = getLogFromScriptPath(scriptPath);

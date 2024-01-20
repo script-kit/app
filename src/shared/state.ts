@@ -208,24 +208,11 @@ export const getKitScript = (filePath: string): Script => {
   ) as Script;
 };
 
-const addP = (pi: Partial<ProcessInfo>) => {
-  kitState.ps.push(pi);
-};
-
-const removeP = (pid: number) => {
-  const index = kitState.ps.findIndex((p) => p.pid === pid);
-  if (index > -1) {
-    kitState.ps.splice(index, 1);
-  }
-};
-
 const initState = {
   debugging: false,
   isPanel: false,
   hiddenByUser: false,
   ps: [] as Partial<ProcessInfo>[],
-  addP,
-  removeP,
   pid: -1,
   script: noScript,
   ui: UI.arg,

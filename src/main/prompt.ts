@@ -89,7 +89,7 @@ import {
   sendToAllPrompts,
   sendToSpecificPrompt,
 } from './channel';
-import { setFlags, setChoices } from './search';
+import { setFlags, setChoices, invokeSearch } from './search';
 import { fileURLToPath } from 'url';
 import { prompts } from './prompts';
 import { ProcessAndPrompt, processes } from './process';
@@ -1996,8 +1996,8 @@ export class KitPrompt {
       if (!kitState.kenvEnv?.KIT_NO_RESET_PROMPT) this.resetPrompt();
 
       // attemptPreload(getMainScriptPath(), false);
-      // clearSearch();
-      // invokeSearch('');
+      this.clearSearch();
+      invokeSearch(this, '');
       return;
     }
 
@@ -2259,5 +2259,10 @@ export class KitPrompt {
     }
 
     return 'allowed';
+  };
+
+  close = async () => {
+    log.info(`👋 Close prompt window`);
+    this.window?.close();
   };
 }

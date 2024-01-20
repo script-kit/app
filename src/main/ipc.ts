@@ -408,17 +408,12 @@ ${data.error}
     // log.info(`😅 Registering ${channel}`);
     ipcMain.on(
       channel,
-      handleChannel(async ({ child, promptId }, message) => {
-        if (!child.pid) return;
-        const prompt = prompts.get(message.pid);
-        if (!prompt) return;
-
+      handleChannel(async ({ child, prompt, promptId }, message) => {
         const sendToPrompt = prompt.sendToPrompt;
         const appToPrompt = prompt.appToPrompt;
 
         prompt.kitSearch.flaggedValue = message.state?.flaggedValue;
 
-        prompt.id = promptId || '';
         message.promptId = promptId || '';
 
         if (kitState.scriptPathChanged) {
@@ -496,7 +491,7 @@ ${data.error}
             `␛ hideOnEscape ${kitState.hideOnEscape ? 'true' : 'false'}`
           );
           if (kitState.hideOnEscape) {
-            prompts.focused?.maybeHide(HideReason.Escape);
+            prompt.maybeHide(HideReason.Escape);
             sendToPrompt(Channel.SET_INPUT, '');
           }
         }
