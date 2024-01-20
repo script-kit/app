@@ -778,20 +778,6 @@ export const preloadChoicesMap = new Map<string, Choice[]>();
 export const preloadPreviewMap = new Map<string, string>();
 export const preloadPromptDataMap = new Map<string, PromptData>();
 
-export const flagSearch = {
-  input: '',
-  choices: [] as Choice[],
-  hasGroup: false,
-  qs: null as null | QuickScore<Choice>,
-};
-
-export const clearFlagSearch = () => {
-  flagSearch.input = '';
-  flagSearch.choices = [];
-  flagSearch.hasGroup = false;
-  flagSearch.qs = null;
-};
-
 export const kitClipboard = {
   store: null as any,
 };

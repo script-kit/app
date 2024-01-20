@@ -1236,7 +1236,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     SET_FLAGS: (data) => {
       log.info(`⛳️ Set flags ${Object.keys(data?.value).length}`);
       sendToPrompt(Channel.SET_FLAGS, data.value);
-      setFlags(data.value);
+      setFlags(prompt, data.value);
     },
     SET_FLAG_VALUE: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_FLAG_VALUE, value);

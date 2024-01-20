@@ -13,7 +13,7 @@ import {
 
 import { quickScore, createConfig, QuickScore } from 'quick-score';
 import { AppChannel } from '../shared/enums';
-import { kitState, flagSearch } from '../shared/state';
+import { kitState } from '../shared/state';
 import { ScoredChoice } from '../shared/types';
 import { createScoredChoice } from './helpers';
 import { KitPrompt } from './prompt';
@@ -43,7 +43,7 @@ export const invokeSearch = (
   // TODO: Add prompt.kitSearch.computedInput?
   // Should probably separate rawInput from the input that comes after the regex...
   prompt.kitSearch.input = transformedInput;
-  flagSearch.input = '';
+  prompt.flagSearch.input = '';
   // log.info({ transformedInput });
   const lowerCaseInput = transformedInput?.toLowerCase();
 
@@ -385,20 +385,20 @@ export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
 export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
   log.info(`Flag search: ${input} <<<`);
-  flagSearch.input = input;
+  prompt.flagSearch.input = input;
   if (input === '') {
     setScoredFlags(
       prompt,
-      flagSearch.choices
+      prompt.flagSearch.choices
         .filter((c) => !c?.pass && !c?.hideWithoutInput && !c?.miss)
         .map(createScoredChoice)
     );
     return;
   }
 
-  const result = flagSearch?.qs?.search(input) as ScoredChoice[];
+  const result = prompt.flagSearch?.qs?.search(input) as ScoredChoice[];
 
-  if (flagSearch.hasGroup) {
+  if (prompt.flagSearch.hasGroup) {
     // Build a map for constant time access
     const resultMap = new Map();
     const keepGroups = new Set();
@@ -424,7 +424,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
     ];
     const missGroup = [];
 
-    for (const choice of flagSearch.choices) {
+    for (const choice of prompt.flagSearch.choices) {
       const hide = choice?.hideWithoutInput && input === '';
       const miss = choice?.miss && !hide;
       if (miss) {
@@ -454,7 +454,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
     setScoredFlags(prompt, groupedResults);
   } else if (result?.length === 0) {
     const missGroup = [];
-    for (const choice of flagSearch.choices) {
+    for (const choice of prompt.flagSearch.choices) {
       if (choice?.miss) {
         missGroup.push(createScoredChoice(choice));
       }
@@ -496,8 +496,8 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys) => {
 
   const choices = formatChoices(flagChoices);
 
-  flagSearch.choices = choices;
-  flagSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
+  prompt.flagSearch.choices = choices;
+  prompt.flagSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
   function scorer(string: string, query: string, matches: number[][]) {
     return quickScore(
       string,
@@ -513,7 +513,7 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys) => {
     );
   }
 
-  flagSearch.qs = new QuickScore(choices, {
+  prompt.flagSearch.qs = new QuickScore(choices, {
     keys: prompt.kitSearch.keys.map((name) => ({
       name,
       scorer,
@@ -526,7 +526,7 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys) => {
   // setFlagShortcodes(choices);
 
   log.info(`Flag choices: ${choices.length}`);
-  invokeFlagSearch(prompt, flagSearch.input);
+  invokeFlagSearch(prompt, prompt.flagSearch.input);
 };
 
 export const setShortcodes = (prompt: KitPrompt, choices: Choice[]) => {

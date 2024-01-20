@@ -37,7 +37,7 @@ import { runPromptProcess } from './kit';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { ResizeData, Survey } from '../shared/types';
 import { getAssetPath } from '../shared/assets';
-import { kitState, flagSearch } from '../shared/state';
+import { kitState } from '../shared/state';
 import { noChoice } from '../shared/defaults';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 
@@ -487,7 +487,7 @@ ${data.error}
           }
         }
 
-        if (channel === Channel.ON_MENU_TOGGLE && flagSearch.input) {
+        if (channel === Channel.ON_MENU_TOGGLE && prompt.flagSearch.input) {
           invokeFlagSearch(prompt, '');
         }
 

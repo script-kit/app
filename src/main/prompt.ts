@@ -64,7 +64,6 @@ import {
   preloadPromptDataMap,
   preloadChoicesMap,
   preloadPreviewMap,
-  clearFlagSearch,
 } from '../shared/state';
 import {
   EMOJI_HEIGHT,
@@ -706,6 +705,20 @@ export class KitPrompt {
     this.kitSearch.keys = ['slicedName', 'tag', 'group', 'command'];
   };
 
+  flagSearch = {
+    input: '',
+    choices: [] as Choice[],
+    hasGroup: false,
+    qs: null as null | QuickScore<Choice>,
+  };
+
+  clearFlagSearch = () => {
+    this.flagSearch.input = '';
+    this.flagSearch.choices = [];
+    this.flagSearch.hasGroup = false;
+    this.flagSearch.qs = null;
+  };
+
   constructor(pid: number) {
     this.pid = pid;
     log.info(`>>>>>>>>>>>
@@ -849,7 +862,7 @@ export class KitPrompt {
       const user = snapshot(kitState.user);
       log.info(`Send user.json to prompt`, user);
 
-      appToPrompt(AppChannel.USER_CHANGED, user);
+      this.appToPrompt(AppChannel.USER_CHANGED, user);
       setKitStateAtom({
         isSponsor: kitState.isSponsor,
       });
@@ -1782,10 +1795,9 @@ export class KitPrompt {
   };
 
   setPromptData = async (promptData: PromptData) => {
-    const appToPrompt = createAppToPrompt(this.window);
     log.info(`
     >>> 📝 setPromptData for ${promptData?.scriptPath}`);
-    clearFlagSearch();
+    this.clearFlagSearch();
     this.kitSearch.shortcodes.clear();
     this.kitSearch.triggers.clear();
     if (promptData?.hint) {
@@ -1887,7 +1899,7 @@ export class KitPrompt {
       log.info(`After initBounds`);
     }
     // TODO: Combine types for sendToPrompt and appToPrompt?
-    appToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
+    this.appToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));
 
     // positionPrompt({
     //   ui: promptData.ui,
