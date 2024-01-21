@@ -674,6 +674,7 @@ const isNewVersion = async () => {
 };
 
 const checkKit = async () => {
+  prompts.init();
   await setupTray(true, 'busy');
   await setupLog(`Tray created`);
 

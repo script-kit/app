@@ -2,7 +2,7 @@ import log from 'electron-log/renderer';
 
 log.info(`
 ---------------------------
-📺 Renderer process started
+📺 Widget renderer process started
 ---------------------------
 `);
 

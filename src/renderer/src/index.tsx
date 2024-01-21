@@ -27,7 +27,6 @@ window.addEventListener('warning', (warning) => {
   log.warn('Warning: ', warning);
 });
 
-import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './assets/index.css';
@@ -36,5 +35,3 @@ const container = document.getElementById('root');
 
 const root = createRoot(container as Element);
 root.render(<App />);
-// console.log(window.electron.ipcRenderer);
-// root.render(<div>Hello</div>);

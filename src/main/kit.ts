@@ -147,17 +147,18 @@ export const runPromptProcess = async (
   const isMain = pathsAreEqual(promptScriptPath || '', getMainScriptPath());
   const isSplash = kitState.ui === UI.splash;
 
-  if (isMain && !isSplash) {
-    kitState.mainMenuHasRun = true;
-  }
-
   // readJson(kitPath('db', 'mainShortcuts.json'))
   //   .then(setShortcuts)
   //   .catch((error) => {});
 
   // If the window is already open, interrupt the process with the new script
 
-  prompts.next?.initShowPrompt();
+  const info = processes.findIdlePromptProcess();
+  const { prompt, pid, child } = info;
+  // prompt?.initShowPrompt();
+  // prompt?.forceFocus();
+
+  // prompts.next?.initShowPrompt();
 
   // TODO: Is this needed?
   // if (visible) {
@@ -188,13 +189,11 @@ export const runPromptProcess = async (
 
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
-  const processInfo = processes.findIdlePromptProcess();
   // Add another to the process pool when exhausted.
-  const { pid, child } = processInfo;
 
   log.info(`${pid}: 🏎 ${promptScriptPath} `);
-  processInfo.scriptPath = promptScriptPath;
-  processInfo.date = Date.now();
+  info.scriptPath = promptScriptPath;
+  info.date = Date.now();
 
   trackEvent(TrackEvent.ScriptTrigger, {
     script: path.basename(promptScriptPath),
@@ -204,11 +203,7 @@ export const runPromptProcess = async (
 
   const script = await findScript(promptScriptPath);
 
-  const status = await prompts.next?.setScript(
-    { ...script },
-    pid,
-    options?.force
-  );
+  const status = await prompt.setScript({ ...script }, pid, options?.force);
   if (status === 'denied') {
     log.info(
       `Another script is already controlling the UI. Denying UI control: ${path.basename(
@@ -242,7 +237,7 @@ export const runPromptProcess = async (
     },
   });
 
-  return processInfo;
+  return info;
 };
 
 const KIT = kitPath();

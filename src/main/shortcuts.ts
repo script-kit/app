@@ -252,7 +252,7 @@ export const updateMainShortcut = async (filePath: string) => {
       //   sponsor: kitState.isSponsor,
       // });
 
-      if (!prompts?.next?.isVisible()) {
+      if (!prompts?.idle?.isVisible()) {
         if (kitState.kenvEnv?.KIT_MAIN_HOOK_PATH) {
           runScript(kitState.kenvEnv?.KIT_MAIN_HOOK_PATH);
         }
@@ -264,8 +264,8 @@ export const updateMainShortcut = async (filePath: string) => {
         // Give init bounds time to finish. Difficult to test :/
         await new Promise(setImmediate);
 
-        prompts?.next?.initShowPrompt();
-        prompts?.next?.focusPrompt();
+        // prompts?.idle?.initShowPrompt();
+        // prompts?.idle?.focusPrompt();
         await runPromptProcess(getMainScriptPath(), [], {
           force: true,
           trigger: Trigger.Menu,

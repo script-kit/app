@@ -609,7 +609,7 @@ class Processes extends Array<ProcessAndPrompt> {
     args: string[] = [],
     port = 0,
     { resolve, reject }: ProcessHandlers = {}
-  ): ProcessInfo {
+  ): ProcessAndPrompt {
     const child = createChild({
       type,
       scriptPath,
@@ -622,9 +622,8 @@ class Processes extends Array<ProcessAndPrompt> {
       throw new Error(`Child process has no pid`);
     }
 
-    const prompt = new KitPrompt(child.pid);
+    const prompt = prompts.getIdle(child.pid);
 
-    prompts.set(child.pid, prompt);
     log.info(`👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
 
     const info = {
@@ -734,7 +733,7 @@ class Processes extends Array<ProcessAndPrompt> {
     return info;
   }
 
-  public findIdlePromptProcess(): ProcessInfo {
+  public findIdlePromptProcess(): ProcessAndPrompt {
     log.info(`>>>>>>>>>>>>>> FINDING IDLE PROCESS <<<<<<<<<<<<<<<<`);
     const idles = this.filter(
       (processInfo) =>
@@ -1143,15 +1142,15 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
     // togglePromptEnv('KIT_MAIN_SCRIPT');
 
     if (kitState.kenvEnv?.KIT_MEASURE) {
-      if (observer) observer.disconnect();
-
-      observer = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
-        const entry = entries[0];
-        log.info(`⌚️ [Perf] ${entry.name}: ${entry.duration}`);
-      });
-
-      observer.observe({ entryTypes: ['measure'] });
+      // if (observer) observer.disconnect();
+      // if (PerformanceObserver) {
+      //   observer = new PerformanceObserver((list) => {
+      //     const entries = list.getEntries();
+      //     const entry = entries[0];
+      //     log.info(`⌚️ [Perf] ${entry.name}: ${entry.duration}`);
+      //   });
+      //   observer.observe({ entryTypes: ['measure'] });
+      // }
     }
 
     performance.mark('script');

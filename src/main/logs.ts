@@ -25,6 +25,15 @@ export const consoleLog = log.create({
 (consoleLog.transports.file as FileTransport)!.resolvePathFn = () =>
   kenvPath('logs', 'console.log');
 
+export const debugLog = log.create({
+  logId: 'debugLog',
+});
+
+(debugLog.transports.file as FileTransport)!.resolvePathFn = () =>
+  kenvPath('logs', 'debug.log');
+
+(debugLog.transports.console as any).level = 'silent';
+
 export const updateLogPath = path.resolve(app.getPath('logs'), 'update.log');
 export const updateLog = log.create({
   logId: 'updateLog',

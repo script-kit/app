@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-restricted-syntax */
-import { BrowserWindow, ipcMain } from 'electron';
+import { ipcMain } from 'electron';
 import log from 'electron-log';
 import path from 'path';
 import { debounce } from 'lodash-es';
@@ -32,7 +32,6 @@ import {
 
 import { KitPrompt, attemptPreload } from './prompt';
 import { prompts } from './prompts';
-import { createAppToPrompt, createSendToPrompt } from './channel';
 import { runPromptProcess } from './kit';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { ResizeData, Survey } from '../shared/types';

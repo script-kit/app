@@ -717,7 +717,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
 
     HIDE_APP: onChildChannelOverride(
-      async ({ scriptPath }, { channel, value }) => {
+      async ({ scriptPath, child }, { channel, value }) => {
         if (kitState.isMac && app?.dock) app?.dock?.hide();
 
         sendToPrompt(Channel.HIDE_APP);
@@ -736,9 +736,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         if (prompt?.isVisible()) {
           prompt?.onHideOnce(handler);
-        } else {
-          handler();
         }
+        handler();
 
         // hideAppIfNoWindows(HideReason.User);
         if (value?.preloadScript) {

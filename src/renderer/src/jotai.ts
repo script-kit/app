@@ -1231,8 +1231,8 @@ export const topHeightAtom = atom(
     // if (!resizeComplete) {
     //   return;
     // }
-
-    resize(g, s, 'TOP_HEIGHT');
+    // TODO: TOP HEIGHT NECESSARY?
+    // resize(g, s, 'TOP_HEIGHT');
   }
 );
 

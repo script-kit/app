@@ -94,6 +94,7 @@ import { fileURLToPath } from 'url';
 import { prompts } from './prompts';
 import { ProcessAndPrompt, processes } from './process';
 import { QuickScore } from 'quick-score';
+import { debugLog } from './logs';
 
 contextMenu({
   showInspectElement: process.env.NODE_ENV === 'development',
@@ -442,36 +443,31 @@ export const attemptPreload = async (
 
 const cacheMainChoices = (choices: ScoredChoice[]) => {
   // TODO: Reimplement cache?
-  // log.info(`Caching main scored choices: ${choices.length}`);
-  // log.info(
-  //   `Most recent 3:`,
-  //   choices.slice(1, 4).map((c) => c?.item?.name)
-  // );
-  // appToSpecificPrompt(
-  //   promptWindow,
-  //   AppChannel.SET_CACHED_MAIN_SCORED_CHOICES,
-  //   choices
-  // );
+  log.info(`Caching main scored choices: ${choices.length}`);
+  log.info(
+    `Most recent 3:`,
+    choices.slice(1, 4).map((c) => c?.item?.name)
+  );
+  for (const prompt of prompts) {
+    prompt?.appToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
+  }
 };
 
 export const cacheMainPreview = (preview: string) => {
-  // TODO: Reimplement cache?
-  // appToSpecificPrompt(
-  //   promptWindow,
-  //   AppChannel.SET_CACHED_MAIN_PREVIEW,
-  //   preview
-  // );
+  for (const prompt of prompts) {
+    prompt?.appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, preview);
+  }
 };
 
 export const scoreAndCacheMainChoices = (scripts: Script[]) => {
   // TODO: Reimplement score and cache?
-  // const results = scripts
-  //   .filter((c) => {
-  //     if (c?.miss || c?.pass || c?.hideWithoutInput || c?.exclude) return false;
-  //     return true;
-  //   })
-  //   .map(createScoredChoice);
-  // cacheMainChoices(results);
+  const results = scripts
+    .filter((c) => {
+      if (c?.miss || c?.pass || c?.hideWithoutInput || c?.exclude) return false;
+      return true;
+    })
+    .map(createScoredChoice);
+  cacheMainChoices(results);
 };
 
 export const appendChoices = (choices: Choice[]) => {
@@ -719,8 +715,15 @@ export class KitPrompt {
     this.flagSearch.qs = null;
   };
 
-  constructor(pid: number) {
+  boundToProcess = false;
+  bindToProcess = (pid) => {
+    if (this.boundToProcess) return;
     this.pid = pid;
+    this.boundToProcess = true;
+    log.info(`🔗 Binding prompt to process ${pid}`);
+  };
+
+  constructor() {
     log.info(`>>>>>>>>>>>
 
 
@@ -785,10 +788,8 @@ export class KitPrompt {
       });
     }
 
-    const sendToPrompt = createSendToPrompt(this.window);
-    const appToPrompt = createAppToPrompt(this.window);
-    this.sendToPrompt = sendToPrompt;
-    this.appToPrompt = appToPrompt;
+    this.sendToPrompt = createSendToPrompt(this.window);
+    this.appToPrompt = createAppToPrompt(this.window);
 
     if (kitState.isWindows) {
       this.window.setBackgroundMaterial('mica');
@@ -843,7 +844,7 @@ export class KitPrompt {
       kitState.promptHidden = true;
 
       log.silly(`event: did-finish-load`);
-      sendToPrompt(Channel.APP_CONFIG, {
+      this.sendToPrompt(Channel.APP_CONFIG, {
         delimiter: path.delimiter,
         sep: path.sep,
         os: os.platform(),
@@ -857,7 +858,7 @@ export class KitPrompt {
         url: kitState.url,
       });
 
-      sendToPrompt(Channel.APP_DB, { ...appDb });
+      this.sendToPrompt(Channel.APP_DB, { ...appDb });
 
       const user = snapshot(kitState.user);
       log.info(`Send user.json to prompt`, user);
@@ -963,7 +964,7 @@ export class KitPrompt {
       if (kitState.justFocused && this.isVisible()) {
         log.info(`🙈 Prompt window was just focused. Ignore blur`);
 
-        this.focusPrompt();
+        // this.focusPrompt();
         return;
       }
 
@@ -1087,7 +1088,8 @@ export class KitPrompt {
       log.info(`🍀 dom-ready on ${kitState?.scriptPath}`);
 
       // hideAppIfNoWindows(HideReason.DomReady);
-      sendToPrompt(Channel.SET_READY, true);
+      this.sendToPrompt(Channel.SET_READY, true);
+      this.appToPrompt(AppChannel.RESET_PROMPT);
     });
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
@@ -1314,7 +1316,7 @@ export class KitPrompt {
     }
 
     log.info(`👋 Show Prompt from preloaded ${kitState.scriptPath}`);
-    this.showPrompt();
+    // this.showPrompt();
   };
 
   makePromptWindow = async () => {
@@ -1343,16 +1345,6 @@ export class KitPrompt {
 
     const noChange =
       heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
-
-    log.verbose(
-      `📐 setBounds: ${kitState.scriptPath} reason ${reason}`,
-      bounds
-    );
-    log.verbose({
-      ...bounds,
-      isVisible: this.isVisible() ? 'true' : 'false',
-      noChange: noChange ? 'true' : 'false',
-    });
 
     this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
       id: kitState.promptId,
@@ -1425,17 +1417,22 @@ export class KitPrompt {
     }
 
     try {
+      debugLog.info(
+        `📐 setBounds: ${kitState.scriptPath} reason ${reason}`,
+        bounds,
+        {
+          isVisible: this.isVisible() ? 'true' : 'false',
+          noChange: noChange ? 'true' : 'false',
+          pid: this.pid,
+        }
+      );
       this.window.setBounds(bounds, false);
       const promptBounds = {
         id: kitState.promptId,
         ...this.window?.getBounds(),
       };
 
-      sendToSpecificPrompt(
-        this.window,
-        Channel.SET_PROMPT_BOUNDS,
-        promptBounds
-      );
+      this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, promptBounds);
     } catch (error) {
       log.info(`setBounds error ${reason}`, error);
     }
@@ -1659,6 +1656,7 @@ export class KitPrompt {
   };
 
   resize = async (resizeData: ResizeData) => {
+    debugLog.info(`Testing...`, resizeData);
     /**
      * Linux doesn't support the "will-resize" or "resized" events making it impossible to distinguish
      * between when the user is manually resizing the window and when the window is being resized by the app.
@@ -1881,7 +1879,7 @@ export class KitPrompt {
       typeof promptData?.x === 'number' ||
       typeof promptData?.y === 'number'
     ) {
-      setBounds(
+      this.setBounds(
         {
           x: promptData.x,
           y: promptData.y,
@@ -1990,7 +1988,7 @@ export class KitPrompt {
   };
 
   maybeHide = async (reason: string) => {
-    if (!this.isVisible()) return;
+    if (!this.isVisible() || !this.boundToProcess) return;
     log.info(`Attempt Hide: ${reason}`);
 
     if (

@@ -59,6 +59,7 @@ import {
   signInActionAtom,
   preloadedAtom,
   cachedAtom,
+  pidAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -121,6 +122,7 @@ export default function Input() {
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const action = useAtomValue(signInActionAtom);
+  const pid = useAtomValue(pidAtom);
 
   const onClick = useCallback(
     (event) => {
@@ -451,6 +453,7 @@ export default function Input() {
               </span>
             ) : (
               <>
+                Process: {pid}
                 <LoginButton key="login-button" />
                 <ActionSeparator key="close-login-separator" />
               </>
