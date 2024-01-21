@@ -454,25 +454,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
     //   checked: kitState.preventClose,
     // });
 
-    const fixItems: MenuItemConstructorOptions[] = [];
-
-    if (
-      kitState.pid &&
-      kitState.scriptPath === getMainScriptPath() &&
-      kitState.promptCount === 1
-    ) {
-      fixItems.push({
-        label: `Fix Stuck Process`,
-        click: () => {
-          log.info(`Killing ${kitState.pid}`);
-          emitter.emit(KitEvent.KillProcess, kitState.pid);
-          prompts?.focused?.maybeHide(HideReason.MainShortcut);
-        },
-      });
-    }
-
     const contextMenu = Menu.buildFromTemplate([
-      ...fixItems,
       ...updateItems,
       ...notifyItems,
       ...authItems,

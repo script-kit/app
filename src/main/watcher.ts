@@ -484,9 +484,11 @@ export const setupWatchers = async () => {
     if (base === 'scripts.json') {
       log.info(`scripts.json changed`);
       try {
-        processes.getByPid(kitState.pid)?.child?.send({
-          channel: Channel.SCRIPTS_CHANGED,
-        });
+        for (const info of processes) {
+          info?.child?.send({
+            channel: Channel.SCRIPTS_CHANGED,
+          });
+        }
       } catch (error) {
         log.warn(error);
       }

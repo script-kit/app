@@ -273,8 +273,6 @@ export const updateMainShortcut = async (filePath: string) => {
         return;
       }
 
-      const pInfo = processes.getByPid(kitState.pid);
-
       const isSplash = kitState.ui === UI.splash;
 
       if (!isSplash) {

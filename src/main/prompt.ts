@@ -1950,6 +1950,12 @@ export class KitPrompt {
   };
 
   actualHide = () => {
+    if (kitState.isMac) {
+      // REMOVE-MAC
+      makeWindow(this.window);
+      // END-REMOVE-MAC
+    }
+    this.setPromptAlwaysOnTop(false);
     if (!this.isVisible()) return;
 
     log.info(`🙈 Hiding prompt window`);
@@ -2006,7 +2012,7 @@ export class KitPrompt {
       kitState.debugging = false;
       kitState.ignoreBlur = false;
 
-      emitter.emit(KitEvent.KillProcess, kitState.pid);
+      emitter.emit(KitEvent.KillProcess, this.pid);
       this.actualHide();
       this.reload();
 
@@ -2203,22 +2209,6 @@ export class KitPrompt {
     prevScriptPath = script.filePath;
     prevPid = pid;
 
-    const pidMatch = (pid: number, message: string) => {
-      if (pid !== kitState.pid && promptWindow?.isVisible()) {
-        log.info(
-          `pid ${pid} doesn't match active pid ${kitState.pid}. ${message}`
-        );
-        return false;
-      }
-
-      return true;
-    };
-
-    if (!force && (!script?.filePath || !pidMatch(pid, `setScript`))) {
-      return 'denied';
-    }
-
-    kitState.pid = pid;
     const { prompt } = processes.find((p) => p.pid === pid) as ProcessAndPrompt;
     if (!prompt) return 'denied';
 
@@ -2264,5 +2254,10 @@ export class KitPrompt {
   close = async () => {
     log.info(`👋 Close prompt window`);
     this.window?.close();
+  };
+
+  destroy = async () => {
+    log.info(`👋 Destroy prompt window`);
+    this.window?.destroy();
   };
 }

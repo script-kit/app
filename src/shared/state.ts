@@ -212,8 +212,6 @@ const initState = {
   debugging: false,
   isPanel: false,
   hiddenByUser: false,
-  ps: [] as Partial<ProcessInfo>[],
-  pid: -1,
   script: noScript,
   ui: UI.arg,
   blurredByKit: false,

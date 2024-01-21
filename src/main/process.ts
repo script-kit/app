@@ -471,30 +471,12 @@ const processesChanged = debounce(() => {
   if (kitState.allowQuit) return;
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
 
-  log.info(`👓 Focused process ${kitState.pid} - ${kitState.scriptPath}`);
   for (const pinfo of processes) {
     const appToPrompt = pinfo.prompt.appToPrompt;
     appToPrompt(AppChannel.PROCESSES, pinfos);
     log.info(
       `🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`
     );
-    if (
-      pinfo.pid !== kitState.pid &&
-      // pinfo.pid !== kitState.promptProcess?.pid &&
-      pinfo.scriptPath &&
-      pinfo.child &&
-      pinfo.child.connected
-    ) {
-      log.info(`🛑👋 Attempt abandon: ${pinfo.pid} - ${pinfo.scriptPath}`);
-      try {
-        // TODO: Reimplement ABANDON
-        // pinfo.child.send({
-        //   channel: Channel.ABANDON,
-        // });
-      } catch (error) {
-        log.error(`Error sending abandon message`, error);
-      }
-    }
   }
 }, 10);
 
@@ -784,11 +766,13 @@ class Processes extends Array<ProcessAndPrompt> {
   public removeByPid(pid: number) {
     const index = this.findIndex((info) => info.pid === pid);
     if (index === -1) return;
-    const { child, type, scriptPath } = this[index];
+    const { child, type, scriptPath, prompt } = this[index];
     if (!child?.killed) {
       emitter.emit(KitEvent.RemoveProcess, scriptPath);
       child?.removeAllListeners();
       child?.kill();
+      prompt.actualHide();
+      prompt.close();
 
       if (childShortcutMap.has(child)) {
         log.info(`Unregistering shortcuts for child: ${child.pid}`);
@@ -807,11 +791,13 @@ class Processes extends Array<ProcessAndPrompt> {
 
       log.info(`${pid}: 🛑 removed`);
     }
-    if (kitState?.pid === pid) {
-      kitState.scriptPath = '';
-      kitState.promptId = '';
-      kitState.promptCount = 0;
-    }
+
+    // TODO: Does this matter anymore?
+    // if (kitState?.pid === pid) {
+    //   kitState.scriptPath = '';
+    //   kitState.promptId = '';
+    //   kitState.promptCount = 0;
+    // }
 
     if (this.find((i) => i.pid === pid)) {
       this.splice(index, 1);

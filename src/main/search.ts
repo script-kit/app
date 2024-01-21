@@ -598,15 +598,10 @@ export const setChoices = (
   }
 
   if (generated) {
-    log.silly(`📦 ${kitState.pid} Generated choices: ${choices.length}`);
-
     setScoredChoices(prompt, choices.map(createScoredChoice));
     return;
   }
 
-  log.silly(
-    `📦 ${kitState.pid} Choices: ${choices.length} preload: ${preload}`
-  );
   prompt.kitSearch.choices = choices.filter((c) => !c?.exclude);
   prompt.kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
   function scorer(string: string, query: string, matches: number[][]) {

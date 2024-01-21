@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { KitPrompt } from './prompt';
 
 const promptMap = new Map<number, KitPrompt>();
@@ -16,6 +17,7 @@ export const prompts = {
 
     prompt.window?.on('focus', () => {
       this.focused = prompt;
+      log.info(`${pid}: Focusing on prompt ${prompt.id}`);
     });
 
     // prompt.window?.on('blur', () => {
