@@ -30,7 +30,7 @@ import {
   processes,
 } from './process';
 
-import { attemptPreload } from './prompt';
+import { KitPrompt, attemptPreload } from './prompt';
 import { prompts } from './prompts';
 import { createAppToPrompt, createSendToPrompt } from './channel';
 import { runPromptProcess } from './kit';
@@ -43,10 +43,10 @@ import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 
 let prevTransformedInput = '';
 const checkShortcodesAndKeywords = (
-  prompt: BrowserWindow,
+  prompt: KitPrompt,
   rawInput: string
 ): boolean => {
-  const sendToPrompt = createSendToPrompt(prompt);
+  const sendToPrompt = prompt.sendToPrompt;
   let transformedInput = rawInput;
 
   if (prompt.kitSearch.inputRegex) {
