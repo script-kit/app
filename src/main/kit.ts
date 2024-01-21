@@ -155,8 +155,13 @@ export const runPromptProcess = async (
 
   const info = processes.findIdlePromptProcess();
   const { prompt, pid, child } = info;
-  // prompt?.initShowPrompt();
-  // prompt?.forceFocus();
+  log.info(`>>>
+
+🧤 Show and focus ${promptScriptPath}
+
+  <<<`);
+  prompt?.initShowPrompt();
+  prompt?.forceFocus();
 
   // prompts.next?.initShowPrompt();
 

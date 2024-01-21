@@ -453,7 +453,7 @@ export default function Input() {
               </span>
             ) : (
               <>
-                Process: {pid}
+                {/* Process: {pid} */}
                 <LoginButton key="login-button" />
                 <ActionSeparator key="close-login-separator" />
               </>
