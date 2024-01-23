@@ -1,10 +1,11 @@
 import { Menu, app } from 'electron';
-import { KitEvent, emitter } from './events';
+import { KitEvent, emitter } from '../shared/events';
 import log from 'electron-log';
-import { kitState } from './state';
-import { windowsState } from './windows';
-import { getAssetPath } from './assets';
-import { widgetState } from './widget';
+import { kitState, promptState } from '../shared/state';
+import { windowsState } from '../shared/windows';
+import { getAssetPath } from '../shared/assets';
+import { widgetState } from '../shared/widget';
+import { prompts } from './prompts';
 import { debounce } from 'lodash-es';
 
 let hideIntervalId: NodeJS.Timeout | null = null;
@@ -12,9 +13,9 @@ let hideIntervalId: NodeJS.Timeout | null = null;
 export const hideDock = debounce(() => {
   if (!kitState.isMac) return;
   if (kitState.devToolsCount > 0) return;
-  if (kitState.promptCount > 0) return;
   if (widgetState.widgets.length) return;
   if (windowsState.windows.length) return;
+  if (prompts.someVisible()) return;
   if (!kitState.dockShown) return;
 
   actualHideDock();
@@ -26,7 +27,7 @@ export const showDock = () => {
   if (!kitState.isMac) return;
   if (
     kitState.devToolsCount === 0 &&
-    kitState.promptCount === 0 &&
+    !prompts.someVisible() &&
     widgetState.widgets.length === 0
   )
     return;

@@ -44,7 +44,8 @@ import {
 import { INSTALL_ERROR, show } from './show';
 import { showError } from './main.dev.templates';
 import { mainLogPath } from './logs';
-import { kitState, preloadChoicesMap } from '../shared/state';
+import { kitCache, kitState, preloadChoicesMap } from '../shared/state';
+import { createScoredChoice } from './helpers';
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {
@@ -644,6 +645,18 @@ export const installKitInKenv = async () => {
   return installPackage(`i ${kitPath()}`, kenvPath());
 };
 
+const scoreAndCacheMainChoices = (scripts: Script[]) => {
+  // TODO: Reimplement score and cache?
+  const results = scripts
+    .filter((c) => {
+      if (c?.miss || c?.pass || c?.hideWithoutInput || c?.exclude) return false;
+      return true;
+    })
+    .map(createScoredChoice);
+
+  kitCache.choices = results;
+};
+
 export const cacheMainScripts = debounce(async () => {
   try {
     const receiveScripts = ({
@@ -663,7 +676,7 @@ export const cacheMainScripts = debounce(async () => {
         preloadChoicesMap.set(getMainScriptPath(), scripts);
         log.info(`✉️ Sending scripts to prompt...`);
         if (preview) {
-          cacheMainPreview(preview);
+          kitCache.preview = preview;
         }
         if (scripts) {
           scoreAndCacheMainChoices(scripts);

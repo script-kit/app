@@ -276,8 +276,11 @@ export const cachePreview = async (scriptPath: string, preview: string) => {
 
 export const childSend = (child: ChildProcess, data: any) => {
   try {
-    if (child && child?.connected) {
-      data.promptId = kitState.promptId;
+    if (child && child?.connected && child.pid) {
+      const prompt = prompts.get(child.pid);
+      if (prompt) {
+        data.promptId = prompt.id;
+      }
       // log.info(`✉️: ${data.channel}`);
       child.send(data, (error) => {
         if (error)
@@ -426,7 +429,13 @@ const createChild = ({
       const [debugUrl] = data.toString().match(/(?<=ws:\/\/).*/g) || [''];
 
       if (debugUrl) {
-        kitState.ignoreBlur = true;
+        if (child.pid) {
+          const prompt = prompts.get(child.pid);
+          if (prompt) {
+            prompt.ignoreBlur = true;
+          }
+        }
+
         // TODO: I'm going to have to handle this outside of creatChild so it has access to the prompt created after it or something
         // setPromptAlwaysOnTop(true);
         log.info({ debugUrl });
@@ -529,6 +538,7 @@ const setTrayScriptError = (pid: number) => {
 
 const childShortcutMap = new Map<ChildProcess, string[]>();
 
+let promptCount = 0;
 class Processes extends Array<ProcessAndPrompt> {
   public abandonnedProcesses: ProcessAndPrompt[] = [];
 
@@ -622,7 +632,8 @@ class Processes extends Array<ProcessAndPrompt> {
       throw new Error(`Child process has no pid`);
     }
 
-    const prompt = prompts.getIdle(child.pid);
+    const prompt = prompts.attachIdlePromptToProcess(child.pid);
+    prompt.count = ++promptCount;
 
     log.info(`👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
 
@@ -675,10 +686,8 @@ class Processes extends Array<ProcessAndPrompt> {
       log.info(`EXIT`, { pid, code });
       if (id) clearTimeout(id);
 
-      if (child?.pid === kitState?.pid) {
-        prompt.sendToPrompt(Channel.EXIT, pid);
-        emitter.emit(KitEvent.TERM_KILL, kitState.promptId);
-      }
+      prompt.sendToPrompt(Channel.EXIT, pid);
+      emitter.emit(KitEvent.TERM_KILL, prompt.id);
 
       const processInfo = processes.getByPid(pid) as ProcessInfo;
 
@@ -806,14 +815,15 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   public removeCurrentProcess() {
-    const info = this.find(
-      (processInfo) =>
-        processInfo.scriptPath === kitState.scriptPath &&
-        processInfo.type === ProcessType.Prompt
-    );
-    if (info) {
-      this.removeByPid(info.pid);
-    }
+    // TODO: Reimplement?
+    // const info = this.find(
+    //   (processInfo) =>
+    //     processInfo.scriptPath === prompt.scriptPath &&
+    //     processInfo.type === ProcessType.Prompt
+    // );
+    // if (info) {
+    //   this.removeByPid(info.pid);
+    // }
   }
 }
 
@@ -1053,9 +1063,9 @@ emitter.on(KitEvent.KillProcess, (pid) => {
 
 emitter.on(KitEvent.TermExited, (pid) => {
   log.info(`🛑 Term Exited: SUMBMITTING`);
-  if (kitState.ui === UI.term) {
-    // TODO: Reimplement SET_TERM_EXIT
-    // sendToSpecificPrompt(AppChannel.TERM_EXIT, '');
+  const prompt = prompts.get(pid);
+  if (prompt && prompt.ui === UI.term) {
+    prompt.appToPrompt(AppChannel.TERM_EXIT, '');
   }
 });
 

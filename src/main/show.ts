@@ -316,6 +316,7 @@ export const show = async (
 };
 
 export const showWidget = async (
+  scriptPath: string,
   widgetId: string,
   html: string,
   options: WidgetOptions = {}
@@ -326,7 +327,7 @@ export const showWidget = async (
     : getTopRightCurrentScreen(options as BrowserWindowConstructorOptions);
 
   const bwOptions: BrowserWindowConstructorOptions = {
-    title: `${path.basename(kitState.scriptPath)} | id: ${widgetId}`,
+    title: `${path.basename(scriptPath)} | id: ${widgetId}`,
     frame: false,
     transparent: kitState.isMac,
     titleBarStyle: 'customButtonsOnHover',

@@ -99,6 +99,7 @@ export const registerKillLatestShortcut = () => {
       await runPromptProcess(getMainScriptPath(), [], {
         force: true,
         trigger: Trigger.Menu,
+        main: true,
       });
     });
   }
@@ -252,28 +253,28 @@ export const updateMainShortcut = async (filePath: string) => {
       //   sponsor: kitState.isSponsor,
       // });
 
-      if (!prompts?.idle?.isVisible()) {
+      if (prompts.idle && !prompts?.idle?.isVisible()) {
         if (kitState.kenvEnv?.KIT_MAIN_HOOK_PATH) {
           runScript(kitState.kenvEnv?.KIT_MAIN_HOOK_PATH);
         }
         log.info(`Main prompt not visible. Showing...`);
         // log.info(snapshot(kitState.kenvEnv));
-        kitState.ignoreBlur = false;
-        kitState.alwaysOnTop = true;
 
         // Give init bounds time to finish. Difficult to test :/
-        await new Promise(setImmediate);
+        // await new Promise(setImmediate);
 
         // prompts?.idle?.initShowPrompt();
         // prompts?.idle?.focusPrompt();
         await runPromptProcess(getMainScriptPath(), [], {
           force: true,
           trigger: Trigger.Menu,
+          main: true,
         });
         return;
       }
 
-      const isSplash = kitState.ui === UI.splash;
+      // TODO: This isn't right
+      const isSplash = prompts?.idle?.ui === UI.splash;
 
       if (!isSplash) {
         // const scriptPingSuccess = await new Promise((resolve, reject) => {

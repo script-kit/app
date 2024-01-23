@@ -5,8 +5,6 @@
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable consistent-return */
 
-import { electronApp, optimizer, is } from '@electron-toolkit/utils';
-
 // REMOVE-MAC
 import {
   makeKeyWindow,
@@ -18,7 +16,7 @@ import {
 // REMOVE-NODE-WINDOW-MANAGER
 import { windowManager, Window } from '@johnlindquist/node-window-manager';
 // END-REMOVE-NODE-WINDOW-MANAGER
-import { PROMPT, Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
+import { PROMPT, Channel, UI } from '@johnlindquist/kit/core/enum';
 import {
   Choice,
   Script,
@@ -46,14 +44,14 @@ import contextMenu from 'electron-context-menu';
 import os from 'os';
 import path from 'path';
 import log, { FileTransport } from 'electron-log';
-import { assign, debounce } from 'lodash-es';
+import { debounce } from 'lodash-es';
 import { getMainScriptPath, kenvPath } from '@johnlindquist/kit/core/utils';
-import { getAppDb } from '@johnlindquist/kit/core/db';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
 
 import { ChildProcess } from 'child_process';
+import { noScript } from '../shared/defaults';
 import { getAssetPath } from '../shared/assets';
 import {
   appDb,
@@ -64,6 +62,7 @@ import {
   preloadPromptDataMap,
   preloadChoicesMap,
   preloadPreviewMap,
+  kitCache,
 } from '../shared/state';
 import {
   EMOJI_HEIGHT,
@@ -75,7 +74,6 @@ import { ResizeData, ScoredChoice } from '../shared/types';
 import { getVersion } from './version';
 import { AppChannel, HideReason } from '../shared/enums';
 import { emitter, KitEvent } from '../shared/events';
-import { createScoredChoice, pathsAreEqual } from './helpers';
 import { TrackEvent, trackEvent } from './track';
 import {
   getCurrentScreen,
@@ -83,13 +81,11 @@ import {
   isBoundsWithinDisplays,
 } from './screen';
 import {
-  appToSpecificPrompt,
   createAppToPrompt,
   createSendToPrompt,
   sendToAllPrompts,
-  sendToSpecificPrompt,
 } from './channel';
-import { setFlags, setChoices, invokeSearch } from './search';
+import { setFlags, invokeSearch } from './search';
 import { fileURLToPath } from 'url';
 import { prompts } from './prompts';
 import { ProcessAndPrompt, processes } from './process';
@@ -212,7 +208,8 @@ export const getCurrentScreenPromptCache = (
   if (savedPromptBounds) {
     // log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
     // log.info(`Bounds: found saved bounds for ${scriptPath}`);
-    return savedPromptBounds;
+    // TODO: Reimplement div UI based on promptWindow?
+    // return savedPromptBounds;
   }
 
   // log.info(`resetPromptBounds`, scriptPath);
@@ -236,10 +233,11 @@ export const getCurrentScreenPromptCache = (
       // width /= 2;
     }
 
-    if (ui === UI.div) {
-      // width /= 2;
-      height = promptWindow?.getBounds()?.height;
-    }
+    // TODO: Reimplement div UI based on promptWindow?
+    // if (ui === UI.div) {
+    //   // width /= 2;
+    //   height = promptWindow?.getBounds()?.height;
+    // }
 
     if (ui === UI.arg) {
       // width /= 2;
@@ -441,35 +439,6 @@ export const attemptPreload = async (
   // log.info(`end of attemptPreload`);
 };
 
-const cacheMainChoices = (choices: ScoredChoice[]) => {
-  // TODO: Reimplement cache?
-  log.info(`Caching main scored choices: ${choices.length}`);
-  log.info(
-    `Most recent 3:`,
-    choices.slice(1, 4).map((c) => c?.item?.name)
-  );
-  for (const prompt of prompts) {
-    prompt?.appToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
-  }
-};
-
-export const cacheMainPreview = (preview: string) => {
-  for (const prompt of prompts) {
-    prompt?.appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, preview);
-  }
-};
-
-export const scoreAndCacheMainChoices = (scripts: Script[]) => {
-  // TODO: Reimplement score and cache?
-  const results = scripts
-    .filter((c) => {
-      if (c?.miss || c?.pass || c?.hideWithoutInput || c?.exclude) return false;
-      return true;
-    })
-    .map(createScoredChoice);
-  cacheMainChoices(results);
-};
-
 export const appendChoices = (choices: Choice[]) => {
   // TODO: Reimplement append choices?
   // setChoices(kitSearch.choices.concat(choices), { preload: false });
@@ -519,22 +488,6 @@ export const destroyPromptWindow = () => {
 //   }
 //   return true;
 // };
-
-export const initMainBounds = async () => {
-  // const bounds = getCurrentScreenPromptCache(getMainScriptPath());
-  // if (!bounds.height || bounds.height < PROMPT.HEIGHT.BASE) {
-  //   bounds.height = PROMPT.HEIGHT.BASE;
-  // }
-  // setBounds(
-  //   bounds,
-  //   `promptId ${kitState.promptId} - promptCount ${
-  //     kitState.promptCount
-  //   } - kitState.promptBounds ${JSON.stringify(kitState.promptBounds)}`
-  //   // promptWindow?.isVisible() &&
-  //   //   kitState.promptCount > 1 &&
-  //   //   !kitState.promptBounds.height
-  // );
-};
 
 // TODO: I think this was only for the "main" prompt concept
 // const subScriptPath = subscribeKey(
@@ -659,8 +612,28 @@ subs.push(
 );
 
 export class KitPrompt {
-  id: string = '';
-  pid: number = 0;
+  ui = UI.arg;
+  count = 0;
+  id = ``;
+  pid = 0;
+  script = noScript;
+  scriptPath = ``;
+  allowResize = true;
+  resizing = false;
+  ignoreBlur = false;
+  isScripts = true;
+  promptData = null as null | PromptData;
+  firstPrompt = true;
+  justFocused = true;
+  ready = false;
+  alwaysOnTop = true;
+
+  birthTime = performance.now();
+
+  lifeTime = () => {
+    return (performance.now() - this.birthTime) / 1000 + 's';
+  };
+
   public window: BrowserWindow;
   public sendToPrompt: (channel: Channel, data?: any) => void;
   public appToPrompt: (channel: AppChannel, data?: any) => void;
@@ -723,14 +696,15 @@ export class KitPrompt {
     log.info(`🔗 Binding prompt to process ${pid}`);
   };
 
+  promptBounds = {
+    id: ``,
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  };
+
   constructor() {
-    log.info(`>>>>>>>>>>>
-
-
-  createPromptWindow
-
-  >>>>>>>>>>>>>>`);
-
     const width = PROMPT.WIDTH.BASE;
     const height = PROMPT.HEIGHT.BASE;
     // const currentScreen = getCurrentScreenFromMouse();
@@ -958,10 +932,10 @@ export class KitPrompt {
 
     const onBlur = async () => {
       log.info(`🙈 Prompt window blurred`, {
-        isPromptReady: kitState.isPromptReady,
+        isPromptReady: this.ready,
         isActivated: kitState.isActivated,
       });
-      if (kitState.justFocused && this.isVisible()) {
+      if (this.justFocused && this.isVisible()) {
         log.info(`🙈 Prompt window was just focused. Ignore blur`);
 
         // this.focusPrompt();
@@ -973,7 +947,7 @@ export class KitPrompt {
         kitState.emojiActive = false;
       }
 
-      if (!kitState.isPromptReady) return;
+      if (!this.ready) return;
 
       if (this.window.isDestroyed()) return;
       if (kitState.isActivated) {
@@ -984,7 +958,7 @@ export class KitPrompt {
 
       // if (!this.prompt.isFocused()) return;
 
-      log.info(`Blur: ${kitState.ignoreBlur ? 'ignored' : 'accepted'}`);
+      log.info(`Blur: ${this.ignoreBlur ? 'ignored' : 'accepted'}`);
 
       if (this.window.isVisible()) {
         this.sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
@@ -996,9 +970,9 @@ export class KitPrompt {
         return;
       }
 
-      if (kitState.ignoreBlur) {
+      if (this.ignoreBlur) {
         // this.prompt.setVibrancy('popover');
-      } else if (!kitState.ignoreBlur) {
+      } else if (!this.ignoreBlur) {
         log.verbose(`Blurred by kit: off`);
         kitState.blurredByKit = false;
       }
@@ -1046,16 +1020,16 @@ export class KitPrompt {
         globalShortcut.register(getEmojiShortcut(), showEmoji);
       }
 
-      kitState.justFocused = true;
+      this.justFocused = true;
       setTimeout(() => {
-        kitState.justFocused = false;
-      }, 1000);
+        this.justFocused = false;
+      }, 100);
     });
     this.window.on('blur', onBlur);
 
     this.window.on('hide', () => {
       log.info(`🫣 Prompt window hidden`);
-      kitState.isPromptReady = false;
+      this.ready = false;
       kitState.promptHidden = true;
 
       if (!kitState.isLinux) {
@@ -1085,11 +1059,14 @@ export class KitPrompt {
     });
 
     this.window.webContents?.on('dom-ready', () => {
-      log.info(`🍀 dom-ready on ${kitState?.scriptPath}`);
+      log.info(`🍀 dom-ready on ${this?.scriptPath}`);
 
       // hideAppIfNoWindows(HideReason.DomReady);
       this.sendToPrompt(Channel.SET_READY, true);
-      this.appToPrompt(AppChannel.RESET_PROMPT);
+
+      this.initPromptData();
+      this.initMainChoices();
+      this.initMainPreview();
     });
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
@@ -1121,8 +1098,8 @@ export class KitPrompt {
       kitState.modifiedByUser = false;
       log.info(`Resized: ${this.window.getSize()}`);
 
-      if (kitState.isResizing) {
-        kitState.isResizing = false;
+      if (this.resizing) {
+        this.resizing = false;
       }
 
       this.saveCurrentPromptBounds();
@@ -1161,7 +1138,7 @@ export class KitPrompt {
 
     powerMonitor.on('lock-screen', () => {
       log.info(`🔒 System locked. Reloading prompt window.`);
-      if (kitState.scriptPath === getMainScriptPath())
+      if (this.scriptPath === getMainScriptPath())
         this.maybeHide(HideReason.LockScreen);
     });
   }
@@ -1233,8 +1210,8 @@ export class KitPrompt {
 
     if (topTimeout) clearTimeout(topTimeout);
     topTimeout = setTimeout(() => {
-      if (kitState.ignoreBlur) {
-        this.setPromptAlwaysOnTop(kitState.alwaysOnTop);
+      if (this.ignoreBlur) {
+        this.setPromptAlwaysOnTop(this.alwaysOnTop);
       }
     }, 200);
 
@@ -1264,7 +1241,7 @@ export class KitPrompt {
     this.sendToPrompt(Channel.SET_OPEN, true);
 
     setTimeout(() => {
-      kitState.isPromptReady = true;
+      this.ready = true;
     }, 100);
   };
 
@@ -1277,11 +1254,11 @@ export class KitPrompt {
     }
 
     const bounds = getCurrentScreenPromptCache(
-      forceScriptPath || kitState.scriptPath,
+      forceScriptPath || this.scriptPath,
       {
-        ui: kitState.promptUI,
-        resize: kitState.resize,
-        bounds: kitState.promptBounds,
+        ui: this.ui,
+        resize: this.allowResize,
+        bounds: this.window.getBounds(),
       }
     );
     log.info(`↖ Init bounds: Prompt ${kitState.promptUI} ui`, bounds);
@@ -1291,21 +1268,19 @@ export class KitPrompt {
     const { width, height } = this.window?.getBounds();
     if (bounds.width !== width || bounds.height !== height) {
       log.verbose(
-        `Started resizing: ${this.window?.getSize()}. Prompt count: ${
-          kitState.promptCount
+        `Started resizing: ${this.window?.getSize()}. First prompt?: ${
+          this.firstPrompt ? 'true' : 'false'
         }`
       );
 
-      kitState.isResizing = true;
+      this.resizing = true;
     }
 
     // if (isKitScript(kitState.scriptPath)) return;
 
     this.setBounds(
       bounds,
-      `promptId ${kitState.promptId} - promptCount ${
-        kitState.promptCount
-      } - kitState.promptBounds ${JSON.stringify(kitState.promptBounds)}`
+      `promptId ${this.id} - firstPrompt ${this.firstPrompt ? 'true' : 'false'}`
       // this.prompt?.isVisible() &&
       //   kitState.promptCount > 1 &&
       //   !kitState.promptBounds.height
@@ -1315,7 +1290,7 @@ export class KitPrompt {
       return;
     }
 
-    log.info(`👋 Show Prompt from preloaded ${kitState.scriptPath}`);
+    log.info(`👋 Show Prompt from preloaded ${this.scriptPath}`);
     // this.showPrompt();
   };
 
@@ -1333,6 +1308,20 @@ export class KitPrompt {
     }
   };
 
+  initMainBounds = async () => {
+    const bounds = getCurrentScreenPromptCache(getMainScriptPath());
+    if (!bounds.height || bounds.height < PROMPT.HEIGHT.BASE) {
+      bounds.height = PROMPT.HEIGHT.BASE;
+    }
+    this.setBounds(
+      bounds,
+      `promptId ${this.id} - promptCount ${this.firstPrompt ? 'true' : 'false'}`
+      // promptWindow?.isVisible() &&
+      //   kitState.promptCount > 1 &&
+      //   !kitState.promptBounds.height
+    );
+  };
+
   setBounds = async (bounds: Partial<Rectangle>, reason = '') => {
     if (!kitState.ready) return;
     const prevSetBounds = this.window?.getBounds();
@@ -1347,7 +1336,7 @@ export class KitPrompt {
       heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
 
     this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
-      id: kitState.promptId,
+      id: this.id,
       ...bounds,
     });
 
@@ -1359,9 +1348,11 @@ export class KitPrompt {
     // this.prompt?.setContentSize(bounds.width, bounds.height);
 
     // Keep in bounds on the current screen
-    const currentScreen = this.isVisible()
-      ? getCurrentScreenFromBounds(this.window?.getBounds())
-      : this.getCurrentScreenFromMouse();
+    // TODO: Reimplement keep in bounds?
+    // const currentScreen = this.isVisible()
+    //   ? getCurrentScreenFromBounds(this.window?.getBounds())
+    //   : this.getCurrentScreenFromMouse();
+    const currentScreen = this.getCurrentScreenFromMouse();
     const { x, y, width, height } = bounds;
     const { x: workX, y: workY } = currentScreen.workArea;
     const { width: screenWidth, height: screenHeight } =
@@ -1408,9 +1399,9 @@ export class KitPrompt {
       bounds.height = screenHeight;
     }
 
-    log.info(`📐 setBounds: ${reason}`, {
-      ...bounds,
-    });
+    // log.info(`📐 setBounds: ${reason}`, {
+    //   ...bounds,
+    // });
 
     if (kitState?.kenvEnv?.KIT_WIDTH) {
       bounds.width = parseInt(kitState?.kenvEnv?.KIT_WIDTH, 10);
@@ -1418,21 +1409,22 @@ export class KitPrompt {
 
     try {
       debugLog.info(
-        `📐 setBounds: ${kitState.scriptPath} reason ${reason}`,
+        `Count: ${this.count} -> 📐 setBounds: ${this.scriptPath} reason ${reason}`,
         bounds,
         {
+          screen: currentScreen,
           isVisible: this.isVisible() ? 'true' : 'false',
           noChange: noChange ? 'true' : 'false',
           pid: this.pid,
         }
       );
       this.window.setBounds(bounds, false);
-      const promptBounds = {
-        id: kitState.promptId,
+      this.promptBounds = {
+        id: this.id,
         ...this.window?.getBounds(),
       };
 
-      this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, promptBounds);
+      this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, this.promptBounds);
     } catch (error) {
       log.info(`setBounds error ${reason}`, error);
     }
@@ -1503,7 +1495,7 @@ export class KitPrompt {
       const mouse = screen.getCursorScreenPoint();
 
       promptLog.info({
-        scriptPath: kitState.scriptPath,
+        scriptPath: this.scriptPath,
         isVisible: this.window?.isVisible() ? 'true' : 'false',
         promptBounds,
         screenBounds,
@@ -1656,7 +1648,7 @@ export class KitPrompt {
   };
 
   resize = async (resizeData: ResizeData) => {
-    debugLog.info(`Testing...`, resizeData);
+    // debugLog.info(`Testing...`, resizeData);
     /**
      * Linux doesn't support the "will-resize" or "resized" events making it impossible to distinguish
      * between when the user is manually resizing the window and when the window is being resized by the app.
@@ -1706,7 +1698,7 @@ export class KitPrompt {
         this.saveCurrentPromptBounds();
       }, 50);
     }
-    if (!forceHeight && !kitState.resize && !forceResize) return;
+    if (!forceHeight && !this.allowResize && !forceResize) return;
     // if (kitState.promptId !== id || kitState.modifiedByUser) return;
     if (kitState.modifiedByUser) return;
     if (this.window?.isDestroyed()) return;
@@ -1786,15 +1778,21 @@ export class KitPrompt {
       }`
     );
 
-    if (kitState.promptCount === 1 && !inputChanged && justOpened) {
-      this.savePromptBounds(kitState.scriptPath, bounds);
+    if (this.firstPrompt && !inputChanged && justOpened) {
+      this.savePromptBounds(this.scriptPath, bounds);
     }
-    kitState.resizedByChoices = ui === UI.arg;
   };
 
   setPromptData = async (promptData: PromptData) => {
+    if (this.promptData) {
+      this.firstPrompt = false;
+    }
+
+    this.promptData = promptData;
+
     log.info(`
     >>> 📝 setPromptData for ${promptData?.scriptPath}`);
+    this.scriptPath = promptData?.scriptPath;
     this.clearFlagSearch();
     this.kitSearch.shortcodes.clear();
     this.kitSearch.triggers.clear();
@@ -1809,10 +1807,10 @@ export class KitPrompt {
 
     if (kitState.cachePrompt && !promptData.preload) {
       kitState.cachePrompt = false;
-      promptData.name ||= kitState.script.name || '';
-      promptData.description ||= kitState.script.description || '';
-      log.info(`💝 Caching prompt data: ${kitState?.scriptPath}`);
-      preloadPromptDataMap.set(kitState.scriptPath, {
+      promptData.name ||= this.script.name || '';
+      promptData.description ||= this.script.description || '';
+      log.info(`💝 Caching prompt data: ${this?.scriptPath}`);
+      preloadPromptDataMap.set(this.scriptPath, {
         ...promptData,
         input: promptData?.keyword ? '' : promptData?.input || '',
         keyword: '',
@@ -1831,7 +1829,7 @@ export class KitPrompt {
     kitState.hiddenByUser = false;
     // if (!pidMatch(pid, `setPromptData`)) return;
 
-    if (!kitState.ignoreBlur) kitState.ignoreBlur = promptData.ignoreBlur;
+    if (!this.ignoreBlur) this.ignoreBlur = promptData.ignoreBlur;
 
     const newAlwaysOnTop =
       typeof promptData?.alwaysOnTop === 'boolean'
@@ -1841,38 +1839,21 @@ export class KitPrompt {
 
     this.setPromptAlwaysOnTop(newAlwaysOnTop);
 
-    if (promptData?.scriptPath !== kitState.scriptPath) {
-      log.warn(`🚫 setPromptData: scriptPath doesn't match`);
-      log.warn(`${promptData?.scriptPath} !== ${kitState.scriptPath}`);
-
-      return;
-    }
-
-    kitState.resize = promptData?.resize || false;
+    this.allowResize = promptData?.resize || false;
     kitState.shortcutsPaused = promptData.ui === UI.hotkey;
     kitState.promptUI = promptData.ui;
 
     log.verbose(`setPromptData ${promptData.scriptPath}`);
-    const isMainScript = kitState.scriptPath === getMainScriptPath();
-
-    kitState.promptBounds = {
-      x: promptData.x,
-      y: promptData.y,
-      width: isMainScript
-        ? getDefaultWidth()
-        : promptData.width || getDefaultWidth(),
-      height: isMainScript ? PROMPT.HEIGHT.BASE : promptData.height,
-    };
 
     this.id = promptData.id;
-    kitState.promptId = promptData.id;
     if (kitState.suspended || kitState.screenLocked) return;
-    kitState.ui = promptData.ui;
+    this.ui = promptData.ui;
 
     if (this.kitSearch.keyword) {
       promptData.keyword = this.kitSearch.keyword || this.kitSearch.keyword;
     }
 
+    promptData.count = this.count;
     await this.pingPromptWithTimeout(Channel.SET_PROMPT_DATA, 250, promptData);
 
     if (
@@ -1890,8 +1871,7 @@ export class KitPrompt {
       );
     }
 
-    kitState.promptCount += 1;
-    if (kitState.promptCount === 1) {
+    if (kitState.firstPrompt) {
       log.info(`Before initBounds`);
       this.initBounds();
       log.info(`After initBounds`);
@@ -1906,7 +1886,7 @@ export class KitPrompt {
     // });
 
     if (kitState.hasSnippet) {
-      const timeout = +kitState?.script?.snippetdelay || 120;
+      const timeout = this.script?.snippetdelay || 120;
       // eslint-disable-next-line promise/param-names
       await new Promise((r) => setTimeout(r, timeout));
       kitState.hasSnippet = false;
@@ -1917,7 +1897,7 @@ export class KitPrompt {
     }
 
     if (!this.isVisible() && promptData?.show) {
-      log.info(`👋 Show Prompt from setPromptData for ${kitState.scriptPath}`);
+      log.info(`👋 Show Prompt from setPromptData for ${this.scriptPath}`);
       this.showPrompt();
     } else if (this.isVisible() && !promptData?.show) {
       this.actualHide();
@@ -1931,7 +1911,7 @@ export class KitPrompt {
 
       if (!validBounds) {
         log.info(`Prompt window out of bounds. Clearing cache and resetting.`);
-        await clearPromptCacheFor(kitState.scriptPath);
+        await clearPromptCacheFor(this.scriptPath);
         this.initBounds();
       } else {
         log.info(`Prompt window in bounds.`);
@@ -1941,9 +1921,8 @@ export class KitPrompt {
     trackEvent(TrackEvent.SetPrompt, {
       ui: promptData.ui,
       script: path.basename(promptData.scriptPath),
-      name: promptData?.name || kitState?.script?.name || '',
-      description:
-        promptData?.description || kitState?.script?.description || '',
+      name: promptData?.name || this?.script?.name || '',
+      description: promptData?.description || this?.script?.description || '',
     });
   };
 
@@ -2008,7 +1987,7 @@ export class KitPrompt {
     if (reason === HideReason.PingTimeout) {
       log.info(`⛑ Attempting recover...`);
       kitState.debugging = false;
-      kitState.ignoreBlur = false;
+      this.ignoreBlur = false;
 
       emitter.emit(KitEvent.KillProcess, this.pid);
       this.actualHide();
@@ -2023,7 +2002,7 @@ export class KitPrompt {
     }
 
     if (kitState.debugging) return;
-    if (!kitState.ignoreBlur && this.window?.isVisible()) {
+    if (!this.ignoreBlur && this.window?.isVisible()) {
       log.verbose(`Hiding because ${reason}`);
       if (!kitState.preventClose) {
         this.actualHide();
@@ -2034,10 +2013,10 @@ export class KitPrompt {
   saveCurrentPromptBounds = async () => {
     // if (kitState.promptCount === 1) {
     const currentBounds = this.window?.getBounds();
-    this.savePromptBounds(kitState.scriptPath, currentBounds);
+    this.savePromptBounds(this.scriptPath, currentBounds);
 
     this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
-      id: kitState.promptId,
+      id: this.id,
       ...currentBounds,
     });
     // }
@@ -2108,12 +2087,12 @@ export class KitPrompt {
   setPromptAlwaysOnTop = (onTop: boolean) => {
     log.info(`function: setPromptAlwaysOnTop: ${onTop ? 'true' : 'false'}`);
     if (this.window && !this.window.isDestroyed()) {
-      const changed = onTop !== kitState.alwaysOnTop;
-      kitState.alwaysOnTop = onTop;
+      const changed = onTop !== this.alwaysOnTop;
+      this.alwaysOnTop = onTop;
       if (onTop && changed) {
         log.info(
           `📌 on top: ${onTop ? 'true' : 'false'}. ignoreBlur: ${
-            kitState.ignoreBlur ? 'true' : 'false'
+            this.ignoreBlur ? 'true' : 'false'
           }`
         );
         this.window.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
@@ -2123,8 +2102,8 @@ export class KitPrompt {
         } else {
           this.window.setVisibleOnAllWorkspaces(true);
         }
-      } else if (kitState.ignoreBlur && changed) {
-        log.info({ onTop, ignoreBlur: kitState.ignoreBlur });
+      } else if (this.ignoreBlur && changed) {
+        log.info({ onTop, ignoreBlur: this.ignoreBlur });
         this.window.setAlwaysOnTop(true, 'normal', 10);
         setTimeout(() => {
           this.window.setAlwaysOnTop(onTop, 'normal', 10);
@@ -2137,7 +2116,7 @@ export class KitPrompt {
         this.window.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
       }
     } else {
-      kitState.alwaysOnTop = false;
+      this.alwaysOnTop = false;
     }
   };
 
@@ -2153,7 +2132,7 @@ export class KitPrompt {
   };
 
   getCurrentScreenFromMouse = (): Display => {
-    if (this.window?.isVisible() && kitState.promptCount > 1) {
+    if (this.window?.isVisible() && !this.firstPrompt) {
       const [x, y] = this.window?.getPosition();
       return screen.getDisplayNearestPoint({ x, y });
     }
@@ -2167,7 +2146,7 @@ export class KitPrompt {
   resetPrompt = async () => {
     log.info(`🏋️‍♂️ Reset main`);
     try {
-      kitState.promptCount = 0;
+      this.firstPrompt = true;
       this.forceRender();
       log.info(`🏋️ Force rendered...`);
     } catch (error) {
@@ -2216,12 +2195,12 @@ export class KitPrompt {
     //   // promptWindow?.setAlwaysOnTop(false);
     //   // log.warn(`Prompt is always on top, but not a debug script`);
     // }
-    kitState.scriptPath = script.filePath;
+    this.scriptPath = script.filePath;
     kitState.hasSnippet = Boolean(script?.snippet);
     log.verbose(`setScript ${script.filePath}`);
     // if (promptScript?.filePath === script?.filePath) return;
 
-    kitState.script = script;
+    this.script = script;
 
     // if (promptScript?.id === script?.id) return;
     // log.info(script);
@@ -2257,5 +2236,34 @@ export class KitPrompt {
   destroy = async () => {
     log.info(`👋 Destroy prompt window`);
     this.window?.destroy();
+  };
+
+  initPromptData = async () => {
+    this.sendToPrompt(Channel.SET_PROMPT_DATA, {
+      ui: UI.arg,
+      input: '',
+      footerClassName: 'hidden',
+      headerClassName: 'hidden',
+      placeholder: 'Script Kit',
+    });
+  };
+
+  initMainChoices = () => {
+    // TODO: Reimplement cache?
+    log.info(`Caching main scored choices: ${kitCache.choices.length}`);
+    log.info(
+      `Most recent 3:`,
+      kitCache.choices.slice(1, 4).map((c) => c?.item?.name)
+    );
+
+    this.sendToPrompt(Channel.SET_SCORED_CHOICES, kitCache.choices);
+  };
+
+  initMainPreview = () => {
+    log.info({
+      preview: kitCache.preview,
+    });
+    // this.appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
+    this.sendToPrompt(Channel.SET_PREVIEW, kitCache.preview);
   };
 }

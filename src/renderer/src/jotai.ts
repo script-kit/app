@@ -1303,7 +1303,13 @@ export const footerAtom = atom('');
 export const itemHeightAtom = atom(PROMPT.ITEM.HEIGHT.SM);
 export const inputHeightAtom = atom(PROMPT.INPUT.HEIGHT.SM);
 
-const promptData = atom<null | PromptData>(null);
+const promptData = atom<null | Partial<PromptData>>({
+  ui: UI.arg,
+  input: '',
+  footerClassName: 'hidden',
+  headerClassName: 'hidden',
+  placeholder: 'Script Kit',
+});
 
 const _themeAtom = atom({});
 
@@ -1322,7 +1328,7 @@ export const themeAtom = atom(
       if (key === 'appearance') {
         s(appearanceAtom, value as Appearance);
       } else {
-        log.info(
+        log.verbose(
           `Changing ${key} from`,
           document.documentElement.style.getPropertyValue(key),
           `to`,
@@ -1351,12 +1357,17 @@ export const footerHiddenAtom = atom(
 
 const promptReadyAtom = atom(false);
 
+export const countAtom = atom(0);
+
 let wasPromptDataPreloaded = false;
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     // log.info(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
 
+    if (a?.count) {
+      s(countAtom, a.count);
+    }
     const isMainScript = a?.scriptPath === getMainScriptPath();
     s(isMainScriptAtom, isMainScript);
     if (isMainScript && !a?.preload && g(tabIndexAtom) === 0) {
@@ -2948,7 +2959,9 @@ const cachedMainScoredChoices = atom<ScoredChoice[]>([]);
 export const cachedMainScoredChoicesAtom = atom(
   (g) => g(cachedMainScoredChoices),
   (g, s, a: ScoredChoice[]) => {
-    log.info(`📦 Cache main scored choices: ${a?.length}`);
+    log.info(
+      `>>>>>>>>>>>>>>>>>>>>>>>> 📦 Cache main scored choices: ${a?.length}`
+    );
     s(cachedMainScoredChoices, a);
 
     if (!g(openAtom)) {

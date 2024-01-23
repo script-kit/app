@@ -33,6 +33,7 @@ import {
   ProcessInfo,
   Choice,
   PromptData,
+  ScoredChoice,
 } from '@johnlindquist/kit/types/core';
 import {
   setScriptTimestamp,
@@ -208,18 +209,17 @@ export const getKitScript = (filePath: string): Script => {
   ) as Script;
 };
 
+export const kitCache = {
+  choices: [] as ScoredChoice[],
+  preview: '',
+};
+
 const initState = {
   debugging: false,
-  isPanel: false,
   hiddenByUser: false,
-  script: noScript,
-  ui: UI.arg,
   blurredByKit: false,
   modifiedByUser: false,
-  ignoreBlur: false,
   preventClose: false,
-  isScripts: false,
-  promptCount: 0,
   isTyping: false,
   snippet: ``,
   typedText: ``,
@@ -270,18 +270,8 @@ const initState = {
   prevScriptPath: ``,
   promptUI: UI.arg,
   promptHasPreview: true,
-  resize: false,
-  scriptPath: ``,
-  resizedByChoices: false,
   kitScripts: [] as Script[],
   promptId: '__unset__',
-  promptBounds: {
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-  },
-  isResizing: false,
   hasSnippet: false,
   isVisible: false,
   shortcutsPaused: false,
@@ -304,7 +294,6 @@ const initState = {
   shortcutPressed: '',
   supportsNut:
     isMac || (isWin && arch === 'x64') || (isLinux && arch === 'x64'),
-  isPromptReady: false,
   promptHidden: true,
   // DISABLING: Using the "accept" prompt as confirmation that people trust
   // trustedKenvs: [] as string[],
@@ -319,7 +308,6 @@ const initState = {
   platform: `${os.platform()}-${arch}`,
   os_version: os.release(),
   url: `https://scriptkit.com`,
-  alwaysOnTop: false,
   mainMenuHasRun: false,
   idleProcessReady: false,
   scriptPathChanged: false,
@@ -331,7 +319,6 @@ const initState = {
   waking: true,
   cmd: isMac ? `cmd` : `ctrl`,
   hideOnEscape: true,
-  justFocused: false,
   promptProcess: null as ChildProcess | null,
   noPreview: false,
   cacheChoices: false,
@@ -355,14 +342,6 @@ export type kitStateType = typeof initState;
 export const promptState = proxy({
   screens: {} as any,
 });
-
-export function isSameScript(promptScriptPath: string) {
-  const same =
-    path.resolve(kitState.script.filePath || '') ===
-      path.resolve(promptScriptPath) && kitState.promptCount === 1;
-
-  return same;
-}
 
 const subStatus = subscribeKey(kitState, 'status', (status: KitStatus) => {
   log.info(`👀 Status: ${JSON.stringify(status)}`);

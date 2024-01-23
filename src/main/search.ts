@@ -23,7 +23,7 @@ export const invokeSearch = (
   rawInput: string,
   reason = 'normal'
 ) => {
-  if (kitState.ui !== UI.arg) return;
+  if (prompt.ui !== UI.arg) return;
 
   // log.silly({ inputRegex: JSON.stringify(kitSearch.inputRegex) });
   let transformedInput = rawInput;
@@ -71,7 +71,7 @@ export const invokeSearch = (
   }
 
   if (!prompt.kitSearch.qs) {
-    log.warn(`No qs for ${kitState.scriptPath}`);
+    log.warn(`No qs for ${prompt.scriptPath}`);
     return;
   }
   const result = (prompt.kitSearch?.qs as QuickScore<Choice>)?.search(
@@ -652,7 +652,7 @@ export const setScoredChoices = (
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 
   if (
-    kitState.scriptPath === getMainScriptPath() &&
+    prompt.scriptPath === getMainScriptPath() &&
     prompt.kitSearch.input === '' &&
     !prompt.kitSearch.inputRegex &&
     choices?.length

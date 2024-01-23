@@ -60,6 +60,9 @@ import {
   preloadedAtom,
   cachedAtom,
   pidAtom,
+  countAtom,
+  scoredChoicesAtom,
+  cachedMainScoredChoicesAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -123,6 +126,8 @@ export default function Input() {
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const action = useAtomValue(signInActionAtom);
   const pid = useAtomValue(pidAtom);
+  const count = useAtomValue(countAtom);
+  const scoredChoices = useAtomValue(cachedMainScoredChoicesAtom);
 
   const onClick = useCallback(
     (event) => {
@@ -453,7 +458,12 @@ export default function Input() {
               </span>
             ) : (
               <>
-                {/* Process: {pid} */}
+                {/* <span className="text-xxs">
+                  Process: {pid}
+                  Choices: {scoredChoices.length}
+                  Count: {count}
+                </span> */}
+
                 <LoginButton key="login-button" />
                 <ActionSeparator key="close-login-separator" />
               </>

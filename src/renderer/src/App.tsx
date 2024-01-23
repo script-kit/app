@@ -270,6 +270,8 @@ export default function App() {
         lineno,
         colno,
         error,
+        pid,
+        scriptPath: promptData?.scriptPath,
       });
 
       ipcRenderer.send(AppChannel.ERROR_RELOAD, {
@@ -278,6 +280,8 @@ export default function App() {
         lineno,
         colno,
         error,
+        pid,
+        scriptPath: promptData?.scriptPath,
       });
     };
 
@@ -495,7 +499,7 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
         {loading && <LoadingDot />}
         {progress > 0 && <ProgressBar />}
         {processes.length > 1 && isMainScript && <ProcessesDot />}
-
+        {/* {ui} {choices.length} {promptData?.scriptPath} */}
         <div
           onDrop={(event) => {
             if (ui !== UI.drop) {

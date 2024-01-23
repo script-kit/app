@@ -9,12 +9,14 @@ export const prompts = {
     this.idle = new KitPrompt();
   },
   focused: null as KitPrompt | null,
-  getIdle(pid: number) {
+  attachIdlePromptToProcess(pid: number) {
     if (!this.idle) {
       this.init();
     }
+
     const prompt = this.idle as KitPrompt;
     prompt.bindToProcess(pid);
+    this.idle = null;
 
     prompt.window?.on('focus', () => {
       this.focused = prompt;
@@ -26,9 +28,12 @@ export const prompts = {
     });
     promptMap.set(pid, prompt);
 
-    setImmediate(() => {
-      this.idle = new KitPrompt();
-    });
+    // Only set a new idle prompt if the current one has been used
+    if (!this.idle) {
+      setImmediate(() => {
+        this.init();
+      });
+    }
 
     return prompt;
   },
@@ -51,6 +56,15 @@ export const prompts = {
     }
 
     return null;
+  },
+  someVisible: function () {
+    for (const prompt of this) {
+      if (prompt.isVisible()) {
+        return true;
+      }
+    }
+
+    return false;
   },
   // Implement iterator
   // Implement iterator

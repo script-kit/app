@@ -188,7 +188,8 @@ export const startIpc = () => {
     debounce(
       async (event, data: any) => {
         log.info(`AppChannel.ERROR_RELOAD`);
-        const { scriptPath } = kitState;
+        const { scriptPath, pid } = data;
+        const prompt = prompts.get(pid);
         const onReload = async () => {
           const markdown = `# Error
 
@@ -207,7 +208,11 @@ ${data.error}
         };
 
         // TODO: Reimplement
-        // reload();
+        if (prompt) {
+          prompt.reload();
+        } else {
+          log.warn(`No prompt found for pid: ${pid}`);
+        }
       },
       5000,
       { leading: true }
@@ -422,9 +427,9 @@ ${data.error}
             );
             return;
           }
-          log.verbose(`Allow choice focus: ${kitState.ui}`);
+          log.verbose(`Allow choice focus: ${prompt.ui}`);
         }
-        log.verbose(`⬅ ${channel} ${kitState.ui} ${kitState.scriptPath}`);
+        log.verbose(`⬅ ${channel} ${prompt.ui} ${prompt.scriptPath}`);
 
         if (channel === Channel.MIC_STREAM) {
           const micStreamMessage: any = message;
@@ -515,7 +520,7 @@ ${data.error}
             message.state.value = ``;
           }
 
-          if (kitState.scriptPath === getMainScriptPath()) {
+          if (prompt.scriptPath === getMainScriptPath()) {
             cachePreview(getMainScriptPath(), message?.state?.preview || '');
 
             if (

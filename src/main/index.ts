@@ -151,7 +151,7 @@ import {
 } from './install';
 import { readKitCss } from './theme';
 import { syncClipboardStore } from './clipboard';
-import { actualHideDock, clearStateTimers } from '../shared/dock';
+import { actualHideDock, clearStateTimers } from './dock';
 import { prompts } from './prompts';
 
 // TODO: Read a settings file to get the KENV/KIT paths
@@ -427,11 +427,11 @@ const systemEvents = () => {
 
   powerMonitor.addListener('suspend', async () => {
     log.info(`😴 System suspending. Removing watchers.`);
-    if (kitState.scriptPath === getMainScriptPath())
-      // TODO: Hide main prompts when sleep?
-      // maybeHide(HideReason.Suspend);
-      // teardownWatchers();
-      sleepSchedule();
+    // if (kitState.scriptPath === getMainScriptPath())
+    // TODO: Hide main prompts when sleep?
+    // maybeHide(HideReason.Suspend);
+    // teardownWatchers();
+    sleepSchedule();
     try {
       logMap.clear();
     } catch (error) {
@@ -733,7 +733,7 @@ const checkKit = async () => {
   };
 
   const showSplash = async () => {
-    kitState.ui = UI.splash;
+    // kitState.ui = UI.splash;
     // TODO: Re-implement SHOW SPLASH
     // await setScript(
     //   {

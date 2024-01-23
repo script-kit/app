@@ -387,7 +387,7 @@ export default () => {
 
     const handleCSSVariable: HandleCSSVariableHandler = (_, data) => {
       try {
-        log.info(
+        log.verbose(
           `Changing ${data?.name} from`,
           document.documentElement.style.getPropertyValue(data?.name),
           `to`,

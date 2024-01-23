@@ -92,9 +92,7 @@ export type ChannelHandler = {
 };
 
 export const cacheChoices = async (scriptPath: string, choices: Choice[]) => {
-  log.info(
-    `🎁 Caching choices for ${kitState.scriptPath}: Choices ${choices?.length}`
-  );
+  log.info(`🎁 Caching choices for ${scriptPath}: Choices ${choices?.length}`);
   if (Array.isArray(choices)) {
     preloadChoicesMap.set(scriptPath, choices);
   }
@@ -156,7 +154,7 @@ export const formatScriptChoices = (data: Choice[]) => {
 export const createMessageMap = (info: ProcessAndPrompt) => {
   let resetting = false;
 
-  const { prompt } = info;
+  const { prompt, scriptPath } = info;
   const sendToPrompt = prompt.sendToPrompt;
   const appToPrompt = prompt.appToPrompt;
   const setLog = (value) => sendToPrompt(Channel.SET_LOG, value);
@@ -441,7 +439,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         // const filePath = await createWidget(command, html, options, theme);
         kitState.blurredByKit = true;
         const widgetId = Date.now().toString();
-        const widget = await showWidget(widgetId, html, options);
+        const widget = await showWidget(scriptPath, widgetId, html, options);
         log.info(`${child?.pid}: ⚙️ Creating widget ${widgetId}`);
 
         // widget.on('move', () => {
@@ -871,11 +869,11 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     SET_IGNORE_BLUR: onChildChannel(async ({ child }, { channel, value }) => {
       log.info(`SET_IGNORE_BLUR`, { value });
-      kitState.ignoreBlur = value;
+      prompt.ignoreBlur = value;
     }),
 
     SET_RESIZE: (data) => {
-      kitState.resize = data?.value;
+      prompt.allowResize = data?.value;
     },
 
     SET_PAUSE_RESIZE: onChildChannel(async ({ child }, { channel, value }) => {
@@ -945,7 +943,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     SET_PREVIEW: (data) => {
       if (kitState.cachePreview) {
-        cachePreview(kitState.scriptPath, data.value);
+        cachePreview(prompt.scriptPath, data.value);
         kitState.cachePreview = false;
       }
       sendToPrompt(Channel.SET_PREVIEW, data.value);
@@ -955,7 +953,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       async ({ child, prompt }, { channel, value }) => {
         sendToPrompt(channel, value);
         if (
-          kitState.scriptPath === getMainScriptPath() &&
+          prompt.scriptPath === getMainScriptPath() &&
           prompt.kitSearch.input === '' &&
           value?.length
         ) {
@@ -1050,12 +1048,12 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
       if (prompt.kitSearch.keyword) {
         value.input = `${prompt.kitSearch.keyword} `;
-      } else if (value.input && kitState.promptCount < 2) {
+      } else if (value.input && prompt.firstPrompt) {
         prompt.kitSearch.input = value.input;
       }
 
       prompt?.setPromptData(value);
-      kitState.isScripts = Boolean(value?.scripts);
+      prompt.isScripts = Boolean(value?.scripts);
     }),
     SET_PROMPT_PROP: async (data) => {
       prompt?.setPromptProp(data.value);
@@ -1091,7 +1089,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
             kitState.preloaded ? 'true' : 'false'
           } ${value.choices?.length} choices`
         );
-        if (![UI.arg, UI.hotkey].includes(kitState.ui)) {
+        if (![UI.arg, UI.hotkey].includes(prompt.ui)) {
           log.info(`⛔️ UI changed before choices sent. Skipping SET_CHOICES`);
 
           if (child) {
@@ -1121,7 +1119,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           : undefined;
 
         let formattedChoices = choices;
-        if (kitState.isScripts) {
+        if (prompt.isScripts) {
           formattedChoices = formatScriptChoices(choices);
         }
 
@@ -1140,7 +1138,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         if (kitState.cacheChoices && !kitState.preloaded) {
           kitState.cacheChoices = false;
 
-          cacheChoices(kitState.scriptPath, formattedChoices);
+          cacheChoices(prompt.scriptPath, formattedChoices);
         }
       }
     ),

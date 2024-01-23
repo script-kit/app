@@ -26,7 +26,7 @@ import { emitter, KitEvent } from '../shared/events';
 import { ensureIdleProcess, getIdles, processes } from './process';
 import { getKitScript, kitState, kitStore } from '../shared/state';
 import { pathsAreEqual } from './helpers';
-import { HideReason, Trigger } from '../shared/enums';
+import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { TrackEvent, trackEvent } from './track';
 import { prompts } from './prompts';
 
@@ -139,13 +139,15 @@ export const runPromptProcess = async (
   options: {
     force: boolean;
     trigger: Trigger;
+    main?: boolean;
   } = {
     force: false,
     trigger: Trigger.App,
+    main: false,
   }
 ): Promise<ProcessInfo | null> => {
-  const isMain = pathsAreEqual(promptScriptPath || '', getMainScriptPath());
-  const isSplash = kitState.ui === UI.splash;
+  const isMain =
+    options?.main || pathsAreEqual(promptScriptPath || '', getMainScriptPath());
 
   // readJson(kitPath('db', 'mainShortcuts.json'))
   //   .then(setShortcuts)
@@ -155,13 +157,24 @@ export const runPromptProcess = async (
 
   const info = processes.findIdlePromptProcess();
   const { prompt, pid, child } = info;
+  const isSplash = prompt.ui === UI.splash;
   log.info(`>>>
 
-🧤 Show and focus ${promptScriptPath}
+🧤 Show and focus ${promptScriptPath} ${prompt.count} ${pid}
 
   <<<`);
-  prompt?.initShowPrompt();
+  // if (options?.main) {
+  //   prompt.cacheMainChoices();
+  //   prompt.cacheMainPreview();
+  // }
+
+  prompt.ignoreBlur = false;
+  prompt.initMainBounds();
+  prompt.initShowPrompt();
+  prompt.alwaysOnTop = true;
   prompt?.forceFocus();
+
+  log.info(`🐣 Alive for ${prompt.lifeTime()}`);
 
   // prompts.next?.initShowPrompt();
 
@@ -179,7 +192,7 @@ export const runPromptProcess = async (
   if (isSplash && isMain) {
     log.info(`💦 Splash install screen visible. Preload Main Menu...`);
     try {
-      kitState.scriptPath = getMainScriptPath();
+      prompt.scriptPath = getMainScriptPath();
       kitState.preloaded = false;
       // attemptPreload(getMainScriptPath());
     } catch (error) {
