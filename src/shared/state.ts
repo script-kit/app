@@ -178,7 +178,6 @@ export const getSchedule = () => {
 
 export const debounceSetScriptTimestamp = debounce(
   (stamp: Stamp & { reason?: string }) => {
-    if (!kitState.mainMenuHasRun) return;
     log.info(`💮 Stamping ${stamp?.filePath}`);
     setScriptTimestamp(stamp);
   },
@@ -212,6 +211,7 @@ export const getKitScript = (filePath: string): Script => {
 export const kitCache = {
   choices: [] as ScoredChoice[],
   preview: '',
+  promptData: {} as Partial<PromptData>,
 };
 
 const initState = {

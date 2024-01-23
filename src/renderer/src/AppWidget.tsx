@@ -3,7 +3,7 @@ import { Channel } from '@johnlindquist/kit/core/enum';
 import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 import React, { ErrorInfo, Suspense, useEffect, useState } from 'react';
 import { createApp } from 'petite-vue';
-import { AppChannel } from './enums';
+import { AppChannel } from '../../shared/enums';
 
 const { ipcRenderer } = window.electron;
 

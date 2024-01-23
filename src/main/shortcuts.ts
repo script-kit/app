@@ -253,25 +253,26 @@ export const updateMainShortcut = async (filePath: string) => {
       //   sponsor: kitState.isSponsor,
       // });
 
-      if (prompts.idle && !prompts?.idle?.isVisible()) {
-        if (kitState.kenvEnv?.KIT_MAIN_HOOK_PATH) {
-          runScript(kitState.kenvEnv?.KIT_MAIN_HOOK_PATH);
-        }
-        log.info(`Main prompt not visible. Showing...`);
-        // log.info(snapshot(kitState.kenvEnv));
+      // TODO: Logic to handle if you press main while the focused prompt is on the main script
+      // if (prompts.idle && !prompts?.idle?.isVisible()) {
+      //   if (kitState.kenvEnv?.KIT_MAIN_HOOK_PATH) {
+      //     runScript(kitState.kenvEnv?.KIT_MAIN_HOOK_PATH);
+      //   }
+      //   log.info(`Main prompt not visible. Showing...`);
+      //   // log.info(snapshot(kitState.kenvEnv));
 
-        // Give init bounds time to finish. Difficult to test :/
-        // await new Promise(setImmediate);
+      //   // Give init bounds time to finish. Difficult to test :/
+      //   // await new Promise(setImmediate);
 
-        // prompts?.idle?.initShowPrompt();
-        // prompts?.idle?.focusPrompt();
-        await runPromptProcess(getMainScriptPath(), [], {
-          force: true,
-          trigger: Trigger.Menu,
-          main: true,
-        });
-        return;
-      }
+      //   // prompts?.idle?.initShowPrompt();
+      //   // prompts?.idle?.focusPrompt();
+      //   await runPromptProcess(getMainScriptPath(), [], {
+      //     force: true,
+      //     trigger: Trigger.Menu,
+      //     main: true,
+      //   });
+      //   return;
+      // }
 
       // TODO: This isn't right
       const isSplash = prompts?.idle?.ui === UI.splash;

@@ -33,7 +33,7 @@ import {
 } from '../jotai';
 
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg?asset';
-import { AppChannel } from '../enums';
+import { AppChannel } from '../../../shared/enums';
 import { IconSwapper } from './iconswapper';
 
 function highlight(

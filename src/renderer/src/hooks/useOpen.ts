@@ -4,7 +4,7 @@ import { useAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { appStateAtom, choicesAtom, cmdAtom, indexAtom } from '../jotai';
 import { hotkeysOptions } from './shared';
-import { AppChannel } from '../enums';
+import { AppChannel } from '../../../shared/enums';
 
 export default () => {
   const [choices] = useAtom(choicesAtom);

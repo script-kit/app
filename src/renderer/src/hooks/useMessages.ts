@@ -93,12 +93,13 @@ import {
   channelAtom,
   beforeInputAtom,
   cssAtom,
+  initPromptAtom,
 } from '../jotai';
 
-import { AppChannel, WindowChannel } from '../enums';
+import { AppChannel, WindowChannel } from '../../../shared/enums';
 
 export default () => {
-  const [, setPid] = useAtom(pidAtom);
+  const [pid, setPid] = useAtom(pidAtom);
   const [, setAppConfig] = useAtom(appConfigAtom);
   const [, setAppDb] = useAtom(appDbAtom);
   const [, setOpen] = useAtom(openAtom);
@@ -182,6 +183,7 @@ export default () => {
   const resetPrompt = useSetAtom(resetPromptAtom);
   const setCachedMainScoredChoices = useSetAtom(cachedMainScoredChoicesAtom);
   const setCachedMainShortcuts = useSetAtom(cachedMainShortcutsAtom);
+  const initPrompt = useSetAtom(initPromptAtom);
   const setCachedMainPreview = useSetAtom(cachedMainPreviewAtom);
   const setTermFont = useSetAtom(termFontAtom);
   const setBeforeInput = useSetAtom(beforeInputAtom);
@@ -334,6 +336,9 @@ export default () => {
   };
 
   useEffect(() => {
+    log.info(
+      `>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 🔑 Setting up message listeners`
+    );
     Object.entries(messageMap).forEach(([key, fn]) => {
       if (ipcRenderer.listenerCount(key) === 0) {
         ipcRenderer.on(key, (_, data) => {
@@ -518,6 +523,14 @@ export default () => {
       );
     }
 
+    const handleInitPrompt = (_, data) => {
+      initPrompt();
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.INIT_PROMPT) === 0) {
+      ipcRenderer.on(AppChannel.INIT_PROMPT, handleInitPrompt);
+    }
+
     const handleSetTermFont = (_, data) => {
       setTermFont(data);
     };
@@ -542,6 +555,8 @@ export default () => {
     if (ipcRenderer.listenerCount(AppChannel.CSS_CHANGED) === 0) {
       ipcRenderer.on(AppChannel.CSS_CHANGED, handleCssChanged);
     }
+
+    ipcRenderer.send(AppChannel.MESSAGES_READY, pid);
 
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
@@ -575,6 +590,7 @@ export default () => {
       ipcRenderer.off(AppChannel.SET_TERM_FONT, handleSetTermFont);
       ipcRenderer.off(AppChannel.BEFORE_INPUT_EVENT, handleBeforeInputEvent);
       ipcRenderer.off(AppChannel.CSS_CHANGED, handleCssChanged);
+      ipcRenderer.off(AppChannel.INIT_PROMPT, handleInitPrompt);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

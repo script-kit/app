@@ -63,7 +63,7 @@ import { emitter, KitEvent } from '../shared/events';
 import { showInspector } from './show';
 
 import { getVersion } from './version';
-import { AppChannel, HideReason } from '../shared/enums';
+import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { isKitScript, toRgb } from './helpers';
 import { toHex } from '../shared/color-utils';
 import { stripAnsi } from './ansi';
@@ -74,6 +74,7 @@ import { prompts } from './prompts';
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
   promptId?: string;
+  launched: boolean;
 };
 
 // TODO: Reimplement SET_PREVIEW
@@ -353,7 +354,8 @@ const createChild = ({
     args = [resolvePath, ...runArgs];
   }
 
-  const entry = type === ProcessType.Prompt ? KIT_APP_PROMPT : KIT_APP;
+  const isPrompt = type === ProcessType.Prompt;
+  const entry = isPrompt ? KIT_APP_PROMPT : KIT_APP;
 
   const PATH = KIT_FIRST_PATH + path.delimiter + process?.env?.PATH;
 
@@ -508,7 +510,7 @@ export const getIdles = () => {
     .filter(
       (processInfo) =>
         processInfo.type === ProcessType.Prompt &&
-        processInfo?.scriptPath === ''
+        processInfo?.launched === false
     );
 };
 
@@ -543,10 +545,11 @@ class Processes extends Array<ProcessAndPrompt> {
   public abandonnedProcesses: ProcessAndPrompt[] = [];
 
   public getAllProcessInfo() {
-    return this.map(({ scriptPath, type, pid }) => ({
+    return this.map(({ scriptPath, type, pid, launched }) => ({
       type,
       scriptPath,
       pid,
+      launched,
     }));
   }
 
@@ -565,8 +568,9 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   private stampPid(pid: number) {
+    log.info(`>>>>>>>>>>>>>>>>>>>>>>>> ATTEMPTING STAMP!!!!!`);
     const processInfo = this.getByPid(pid) as ProcessInfo;
-    if (!processInfo) return;
+    if (!processInfo || !processInfo.launchedFromMain) return;
     if (
       processInfo.type === ProcessType.Prompt &&
       !processInfo.scriptPath.includes('.kit')
@@ -580,6 +584,7 @@ class Processes extends Array<ProcessAndPrompt> {
         exitStamp: now,
       };
 
+      log.info(`>>>>>>>>>>>>>>>>>>>>>>>> STAMPING!!!!!`, stamp);
       debounceSetScriptTimestamp(stamp);
     }
   }
@@ -645,6 +650,8 @@ class Processes extends Array<ProcessAndPrompt> {
       values: [],
       date: Date.now(),
       prompt,
+      launchedFromMain: false,
+      launched: false,
     } as ProcessAndPrompt;
 
     this.push(info);
@@ -779,8 +786,8 @@ class Processes extends Array<ProcessAndPrompt> {
       emitter.emit(KitEvent.RemoveProcess, scriptPath);
       child?.removeAllListeners();
       child?.kill();
-      prompt.actualHide();
-      prompt.close();
+
+      prompts.delete(pid);
 
       if (childShortcutMap.has(child)) {
         log.info(`Unregistering shortcuts for child: ${child.pid}`);

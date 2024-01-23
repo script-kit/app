@@ -25,7 +25,7 @@ import {
   inputAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
-import { AppChannel } from '../enums';
+import { AppChannel } from '../../../shared/enums';
 
 export default () => {
   const [open] = useAtom(openAtom);

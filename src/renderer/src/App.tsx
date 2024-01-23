@@ -101,7 +101,7 @@ import {
 } from './hooks';
 import Splash from './components/splash';
 import Emoji from './components/emoji';
-import { AppChannel } from './enums';
+import { AppChannel } from '../../shared/enums';
 import Terminal from './term';
 import Inspector from './components/inspector';
 import { Chat } from './components/chat';

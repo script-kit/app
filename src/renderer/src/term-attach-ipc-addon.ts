@@ -2,7 +2,7 @@
 
 const { ipcRenderer } = window.electron;
 import { Terminal, ITerminalAddon } from 'xterm';
-import { AppChannel } from './enums';
+import { AppChannel } from '../../shared/enums';
 import { TermConfig } from '../../shared/types';
 
 export class AttachIPCAddon implements ITerminalAddon {

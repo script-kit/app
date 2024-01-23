@@ -24,7 +24,12 @@ import { ProcessInfo } from '@johnlindquist/kit';
 import { subscribeKey } from 'valtio/utils';
 import { emitter, KitEvent } from '../shared/events';
 import { ensureIdleProcess, getIdles, processes } from './process';
-import { getKitScript, kitState, kitStore } from '../shared/state';
+import {
+  debounceSetScriptTimestamp,
+  getKitScript,
+  kitState,
+  kitStore,
+} from '../shared/state';
 import { pathsAreEqual } from './helpers';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { TrackEvent, trackEvent } from './track';
@@ -156,6 +161,7 @@ export const runPromptProcess = async (
   // If the window is already open, interrupt the process with the new script
 
   const info = processes.findIdlePromptProcess();
+  info.launchedFromMain = isMain;
   const { prompt, pid, child } = info;
   const isSplash = prompt.ui === UI.splash;
   log.info(`>>>

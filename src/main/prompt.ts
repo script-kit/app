@@ -843,12 +843,15 @@ export class KitPrompt {
       });
       emitter.emit(KitEvent.DID_FINISH_LOAD);
 
-      log.info(`>>>>>>>>>>>
-
-
-      end createPromptWindow
-
-      >>>>>>>>>>>>>>`);
+      ipcMain.on(AppChannel.MESSAGES_READY, (event, pid) => {
+        log.info(`📬 Messages ready for ${pid}`);
+        if (this.pid === pid) {
+          this.initPromptData();
+          this.initMainChoices();
+          this.initMainPreview();
+          this.initPrompt();
+        }
+      });
     });
 
     // reload if unresponsive
@@ -1063,10 +1066,6 @@ export class KitPrompt {
 
       // hideAppIfNoWindows(HideReason.DomReady);
       this.sendToPrompt(Channel.SET_READY, true);
-
-      this.initPromptData();
-      this.initMainChoices();
-      this.initMainPreview();
     });
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
@@ -2229,23 +2228,19 @@ export class KitPrompt {
   };
 
   close = async () => {
+    if (!this.window?.isDestroyed()) return;
     log.info(`👋 Close prompt window`);
     this.window?.close();
   };
 
   destroy = async () => {
+    if (!this.window?.isDestroyed()) return;
     log.info(`👋 Destroy prompt window`);
     this.window?.destroy();
   };
 
   initPromptData = async () => {
-    this.sendToPrompt(Channel.SET_PROMPT_DATA, {
-      ui: UI.arg,
-      input: '',
-      footerClassName: 'hidden',
-      headerClassName: 'hidden',
-      placeholder: 'Script Kit',
-    });
+    this.sendToPrompt(Channel.SET_PROMPT_DATA, kitCache.promptData);
   };
 
   initMainChoices = () => {
@@ -2256,14 +2251,22 @@ export class KitPrompt {
       kitCache.choices.slice(1, 4).map((c) => c?.item?.name)
     );
 
-    this.sendToPrompt(Channel.SET_SCORED_CHOICES, kitCache.choices);
+    this.appToPrompt(
+      AppChannel.SET_CACHED_MAIN_SCORED_CHOICES,
+      kitCache.choices
+    );
+    // this.sendToPrompt(Channel.SET_SCORED_CHOICES, kitCache.choices);
   };
 
   initMainPreview = () => {
-    log.info({
-      preview: kitCache.preview,
-    });
-    // this.appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
-    this.sendToPrompt(Channel.SET_PREVIEW, kitCache.preview);
+    // log.info({
+    //   preview: kitCache.preview,
+    // });
+    this.appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
+    // this.sendToPrompt(Channel.SET_PREVIEW, kitCache.preview);
+  };
+
+  initPrompt = () => {
+    this.appToPrompt(AppChannel.INIT_PROMPT, {});
   };
 }

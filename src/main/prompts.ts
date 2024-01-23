@@ -40,8 +40,9 @@ export const prompts = {
   delete: function (pid: number) {
     const prompt = promptMap.get(pid);
     if (prompt && !prompt?.isDestroyed()) {
-      prompt.window?.close();
-      prompt.window?.destroy();
+      prompt?.actualHide();
+      prompt?.close();
+      prompt?.destroy();
     }
     promptMap.delete(pid);
   },

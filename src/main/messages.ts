@@ -744,12 +744,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       }
     ),
 
-    BEFORE_EXIT: onChildChannelOverride(() => {
-      if (resetting) return;
-      resetting = true;
-      setTimeout(() => {
-        resetting = false;
-      }, 200);
+    BEFORE_EXIT: onChildChannelOverride(({ pid }) => {
+      processes.removeByPid(pid);
     }),
 
     QUIT_APP: onChildChannel(async ({ child }, { channel, value }) => {

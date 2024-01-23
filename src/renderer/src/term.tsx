@@ -24,7 +24,7 @@ import {
 } from './jotai';
 
 import XTerm from './components/xterm';
-import { AppChannel } from './enums';
+import { AppChannel } from '../../shared/enums';
 import { AttachIPCAddon } from './term-attach-ipc-addon';
 
 const defaultTheme = {

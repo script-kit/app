@@ -7,7 +7,7 @@ import React from 'react';
 
 const { ipcRenderer } = window.electron;
 import { createAssetAtom, loadingAtom } from '../jotai';
-import { AppChannel } from '../enums';
+import { AppChannel } from '../../../shared/enums';
 
 const loadableIconAtom = loadable(createAssetAtom('svg', 'logo.svg'));
 const transition = { duration: 0.0, ease: 'easeInOut' };

@@ -35,7 +35,7 @@ import { debounce, drop as _drop, isEqual, throttle } from 'lodash-es';
 const { ipcRenderer, Rectangle } = window.electron;
 import { VariableSizeList } from 'react-window';
 import { MessageType } from 'react-chat-elements';
-import { AppChannel } from './enums';
+import { AppChannel } from '../../shared/enums';
 import {
   ResizeData,
   ScoredChoice,
@@ -1885,7 +1885,7 @@ export const openAtom = atom(
             null;
       }
 
-      s(resetPromptAtom);
+      // s(resetPromptAtom);
     }
     s(_open, a);
   }
@@ -2960,13 +2960,10 @@ export const cachedMainScoredChoicesAtom = atom(
   (g) => g(cachedMainScoredChoices),
   (g, s, a: ScoredChoice[]) => {
     log.info(
-      `>>>>>>>>>>>>>>>>>>>>>>>> 📦 Cache main scored choices: ${a?.length}`
+      `>>>>>>>>>>>>>>>>>>>>>>>> 📦 Cache main scored choices: ${a?.length}`,
+      g(promptData)
     );
     s(cachedMainScoredChoices, a);
-
-    if (!g(openAtom)) {
-      s(resetPromptAtom);
-    }
   }
 );
 
@@ -3007,3 +3004,15 @@ export const micStreamEnabledAtom = atom(
 export const progressAtom = atom(0);
 export const beforeInputAtom = atom('');
 export const cssAtom = atom('');
+
+export const initPromptAtom = atom(null, (g, s) => {
+  const promptData = g(cachedMainPromptDataAtom) as PromptData;
+  log.info({ promptData });
+  s(promptDataAtom, promptData);
+  const scoredChoices = g(cachedMainScoredChoicesAtom);
+  log.info({ scoredChoices: scoredChoices.length });
+  s(scoredChoicesAtom, scoredChoices);
+  s(previewHTMLAtom, g(cachedMainPreviewAtom));
+  s(shortcutsAtom, g(cachedMainShortcutsAtom));
+  s(flagsAtom, g(cachedMainFlagsAtom));
+});

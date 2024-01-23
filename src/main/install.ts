@@ -24,7 +24,7 @@ const { ensureDir, writeFile, readdir, readJson, writeJson } = fsExtra;
 import { lstat, readFile, rm } from 'fs/promises';
 
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { Script } from '@johnlindquist/kit/types';
+import { PromptData, Script } from '@johnlindquist/kit/types';
 import {
   kenvPath,
   kitPath,
@@ -46,6 +46,7 @@ import { showError } from './main.dev.templates';
 import { mainLogPath } from './logs';
 import { kitCache, kitState, preloadChoicesMap } from '../shared/state';
 import { createScoredChoice } from './helpers';
+import { prompts } from './prompts';
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {
@@ -655,6 +656,18 @@ const scoreAndCacheMainChoices = (scripts: Script[]) => {
     .map(createScoredChoice);
 
   kitCache.choices = results;
+
+  for (const prompt of prompts) {
+    prompt.initMainChoices();
+  }
+};
+
+const cacheMainPreview = (preview: string) => {
+  kitCache.preview = preview;
+
+  for (const prompt of prompts) {
+    prompt.initMainPreview();
+  }
 };
 
 export const cacheMainScripts = debounce(async () => {
@@ -662,9 +675,11 @@ export const cacheMainScripts = debounce(async () => {
     const receiveScripts = ({
       scripts,
       preview,
+      promptData,
     }: {
       scripts: Script[];
       preview: string;
+      promptData: Partial<PromptData>;
     }) => {
       // log.info({ scripts, preview });
 
@@ -676,7 +691,7 @@ export const cacheMainScripts = debounce(async () => {
         preloadChoicesMap.set(getMainScriptPath(), scripts);
         log.info(`✉️ Sending scripts to prompt...`);
         if (preview) {
-          kitCache.preview = preview;
+          cacheMainPreview(preview);
         }
         if (scripts) {
           scoreAndCacheMainChoices(scripts);
