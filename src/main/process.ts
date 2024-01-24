@@ -510,7 +510,7 @@ export const getIdles = () => {
     .filter(
       (processInfo) =>
         processInfo.type === ProcessType.Prompt &&
-        processInfo?.launched === false
+        processInfo?.scriptPath === ''
     );
 };
 
@@ -779,6 +779,7 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   public removeByPid(pid: number) {
+    log.info(`🛑 removeByPid: ${pid}`);
     const index = this.findIndex((info) => info.pid === pid);
     if (index === -1) return;
     const { child, type, scriptPath, prompt } = this[index];

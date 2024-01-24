@@ -1010,9 +1010,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     SET_PROMPT_DATA: onChildChannel(async (pap, { channel, value }) => {
       const appToPrompt = createAppToPrompt(prompt);
       performance.measure('SET_PROMPT_DATA', 'script');
-      kitState.scriptPathChanged = false;
-      kitState.promptScriptPath = value?.scriptPath || '';
-      kitState.hideOnEscape = Boolean(value?.hideOnEscape);
+      prompt.scriptPath = value?.scriptPath || '';
+      prompt.hideOnEscape = Boolean(value?.hideOnEscape);
 
       prompt.kitSearch.keys = value?.searchKeys || [
         'slicedName',
@@ -1087,18 +1086,6 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         );
         if (![UI.arg, UI.hotkey].includes(prompt.ui)) {
           log.info(`⛔️ UI changed before choices sent. Skipping SET_CHOICES`);
-
-          if (child) {
-            childSend({
-              channel,
-            });
-          }
-          return;
-        }
-        if (kitState.scriptPathChanged) {
-          log.info(
-            `⛔️ Script path changed, but new prompt not set. Skipping SET_CHOICES`
-          );
 
           if (child) {
             childSend({

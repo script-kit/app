@@ -546,7 +546,6 @@ const ready = async () => {
     });
 
     systemEvents();
-    readyPty();
 
     syncClipboardStore();
     startClipboardAndKeyboardWatchers();

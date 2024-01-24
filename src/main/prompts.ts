@@ -39,12 +39,16 @@ export const prompts = {
   },
   delete: function (pid: number) {
     const prompt = promptMap.get(pid);
+    log.info(`🚮 Deleting prompt for ${pid}`);
     if (prompt && !prompt?.isDestroyed()) {
+      prompt?.window?.removeAllListeners();
       prompt?.actualHide();
       prompt?.close();
       prompt?.destroy();
     }
     promptMap.delete(pid);
+
+    log.info(`🚮 Deleted prompt for ${pid}, ${promptMap.size} remaining...`);
   },
   get: function (pid: number) {
     return promptMap.get(pid);

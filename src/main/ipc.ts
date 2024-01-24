@@ -420,15 +420,6 @@ ${data.error}
 
         message.promptId = promptId || '';
 
-        if (kitState.scriptPathChanged) {
-          if (channel === Channel.CHOICE_FOCUSED) {
-            log.verbose(
-              `⛔️ Script path changed, but new prompt not set, but new prompt not set.. Skipping CHOICE_FOCUSED`
-            );
-            return;
-          }
-          log.verbose(`Allow choice focus: ${prompt.ui}`);
-        }
         log.verbose(`⬅ ${channel} ${prompt.ui} ${prompt.scriptPath}`);
 
         if (channel === Channel.MIC_STREAM) {
@@ -491,10 +482,8 @@ ${data.error}
         }
 
         if (channel === Channel.ESCAPE) {
-          log.info(
-            `␛ hideOnEscape ${kitState.hideOnEscape ? 'true' : 'false'}`
-          );
-          if (kitState.hideOnEscape) {
+          log.info(`␛ hideOnEscape ${prompt.hideOnEscape ? 'true' : 'false'}`);
+          if (prompt.hideOnEscape) {
             prompt.maybeHide(HideReason.Escape);
             sendToPrompt(Channel.SET_INPUT, '');
           }

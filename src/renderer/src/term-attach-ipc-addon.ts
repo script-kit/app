@@ -27,7 +27,8 @@ export class AttachIPCAddon implements ITerminalAddon {
     ipcRenderer.on(AppChannel.TERM_OUTPUT, this.termOutputHandler);
 
     terminal.onData((data) => {
-      if (this.terminal) ipcRenderer.send(AppChannel.TERM_INPUT, data);
+      if (this.terminal)
+        ipcRenderer.send(AppChannel.TERM_INPUT, { pid: this.config.pid, data });
     });
 
     terminal.onBinary((data) => {
@@ -35,7 +36,11 @@ export class AttachIPCAddon implements ITerminalAddon {
       for (let i = 0; i < data.length; ++i) {
         buffer[i] = data.charCodeAt(i) & 255;
       }
-      if (this.terminal) ipcRenderer.send(AppChannel.TERM_INPUT, buffer);
+      if (this.terminal)
+        ipcRenderer.send(AppChannel.TERM_INPUT, {
+          pid: this.config.pid,
+          data: buffer,
+        });
     });
 
     if (this.terminal) ipcRenderer.send(AppChannel.TERM_READY, this.config);
@@ -45,6 +50,6 @@ export class AttachIPCAddon implements ITerminalAddon {
     ipcRenderer.off(AppChannel.TERM_OUTPUT, this.termOutputHandler);
     this.terminal?.dispose();
     this.terminal = undefined;
-    ipcRenderer.send(AppChannel.TERM_EXIT, this.config.pid);
+    ipcRenderer.send(AppChannel.TERM_EXIT, this.config);
   }
 }

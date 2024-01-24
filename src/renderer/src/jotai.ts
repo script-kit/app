@@ -2960,8 +2960,7 @@ export const cachedMainScoredChoicesAtom = atom(
   (g) => g(cachedMainScoredChoices),
   (g, s, a: ScoredChoice[]) => {
     log.info(
-      `>>>>>>>>>>>>>>>>>>>>>>>> 📦 Cache main scored choices: ${a?.length}`,
-      g(promptData)
+      `>>>>>>>>>>>>>>>>>>>>>>>> 📦 Cache main scored choices: ${a?.length}`
     );
     s(cachedMainScoredChoices, a);
   }
@@ -2973,6 +2972,7 @@ export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({
   footerClassName: 'hidden',
   headerClassName: 'hidden',
   placeholder: 'Script Kit',
+  enter: 'Run',
 });
 export const cachedMainShortcutsAtom = atom<Shortcut[]>([]);
 export const cachedMainPreviewAtom = atom<string>('');
@@ -3006,11 +3006,12 @@ export const beforeInputAtom = atom('');
 export const cssAtom = atom('');
 
 export const initPromptAtom = atom(null, (g, s) => {
+  log.info(`🚀 Init prompt`);
   const promptData = g(cachedMainPromptDataAtom) as PromptData;
-  log.info({ promptData });
+  // log.info({ promptData });
   s(promptDataAtom, promptData);
   const scoredChoices = g(cachedMainScoredChoicesAtom);
-  log.info({ scoredChoices: scoredChoices.length });
+  // log.info({ scoredChoices: scoredChoices.length });
   s(scoredChoicesAtom, scoredChoices);
   s(previewHTMLAtom, g(cachedMainPreviewAtom));
   s(shortcutsAtom, g(cachedMainShortcutsAtom));

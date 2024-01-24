@@ -91,6 +91,7 @@ import { prompts } from './prompts';
 import { ProcessAndPrompt, processes } from './process';
 import { QuickScore } from 'quick-score';
 import { debugLog } from './logs';
+import { createPty } from './pty';
 
 contextMenu({
   showInspectElement: process.env.NODE_ENV === 'development',
@@ -542,6 +543,12 @@ export const setKitStateAtom = (partialState: Partial<typeof kitState>) => {
   sendToAllPrompts(Channel.SET_KIT_STATE, partialState);
 };
 
+export const setFocusedKitStateAtom = (
+  partialState: Partial<typeof kitState>
+) => {
+  prompts?.focused?.sendToPrompt(Channel.SET_KIT_STATE, partialState);
+};
+
 const subUpdateDownloaded = subscribeKey(
   kitState,
   'updateDownloaded',
@@ -554,7 +561,7 @@ const subEscapePressed = subscribeKey(
   kitState,
   'escapePressed',
   (escapePressed) => {
-    setKitStateAtom({ escapePressed });
+    setFocusedKitStateAtom({ escapePressed });
   }
 );
 
@@ -627,6 +634,7 @@ export class KitPrompt {
   justFocused = true;
   ready = false;
   alwaysOnTop = true;
+  hideOnEscape = false;
 
   birthTime = performance.now();
 
@@ -835,7 +843,7 @@ export class KitPrompt {
       this.sendToPrompt(Channel.APP_DB, { ...appDb });
 
       const user = snapshot(kitState.user);
-      log.info(`Send user.json to prompt`, user);
+      log.info(`did-finish-load, setting prompt user to: ${user?.login}`);
 
       this.appToPrompt(AppChannel.USER_CHANGED, user);
       setKitStateAtom({
@@ -843,15 +851,21 @@ export class KitPrompt {
       });
       emitter.emit(KitEvent.DID_FINISH_LOAD);
 
-      ipcMain.on(AppChannel.MESSAGES_READY, (event, pid) => {
+      const messagesReadyHandler = (event, pid) => {
         log.info(`📬 Messages ready for ${pid}`);
         if (this.pid === pid) {
           this.initPromptData();
           this.initMainChoices();
           this.initMainPreview();
+          this.initMainShortcuts();
+          this.initMainFlags();
           this.initPrompt();
+
+          ipcMain.off(AppChannel.MESSAGES_READY, messagesReadyHandler);
         }
-      });
+      };
+
+      ipcMain.on(AppChannel.MESSAGES_READY, messagesReadyHandler);
     });
 
     // reload if unresponsive
@@ -873,6 +887,16 @@ export class KitPrompt {
     let lastEscapePressTime = 0;
 
     this.window.webContents?.on('before-input-event', (event, input) => {
+      if (
+        (input.key === 'w' && input.meta) ||
+        (input.key === 'w' && input.control)
+      ) {
+        log.info(`Cmd+W or Ctrl+W pressed, destroying window`);
+
+        processes.removeByPid(this.pid);
+        emitter.emit(KitEvent.KillProcess, this.pid);
+        event.preventDefault();
+      }
       if (input.key === 'Escape') {
         const currentTime = Date.now();
         if (currentTime - lastEscapePressTime <= 300) {
@@ -1789,6 +1813,10 @@ export class KitPrompt {
 
     this.promptData = promptData;
 
+    if (promptData.ui === UI.term) {
+      createPty(this);
+    }
+
     log.info(`
     >>> 📝 setPromptData for ${promptData?.scriptPath}`);
     this.scriptPath = promptData?.scriptPath;
@@ -1926,6 +1954,10 @@ export class KitPrompt {
   };
 
   actualHide = () => {
+    if (kitState.emojiActive) {
+      globalShortcut.unregister(getEmojiShortcut());
+      kitState.emojiActive = false;
+    }
     if (kitState.isMac) {
       // REMOVE-MAC
       makeWindow(this.window);
@@ -2264,6 +2296,19 @@ export class KitPrompt {
     // });
     this.appToPrompt(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
     // this.sendToPrompt(Channel.SET_PREVIEW, kitCache.preview);
+  };
+
+  initMainShortcuts = () => {
+    this.appToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, kitCache.shortcuts);
+    // this.sendToPrompt(Channel.SET_SHORTCUTS, kitCache.shortcuts);
+  };
+
+  initMainFlags = () => {
+    this.appToPrompt(
+      AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS,
+      kitCache.scriptFlags
+    );
+    // this.sendToPrompt(Channel.SET_FLAGS, kitCache.flags);
   };
 
   initPrompt = () => {

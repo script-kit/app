@@ -94,6 +94,7 @@ import {
   beforeInputAtom,
   cssAtom,
   initPromptAtom,
+  cachedMainFlagsAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../../../shared/enums';
@@ -183,6 +184,7 @@ export default () => {
   const resetPrompt = useSetAtom(resetPromptAtom);
   const setCachedMainScoredChoices = useSetAtom(cachedMainScoredChoicesAtom);
   const setCachedMainShortcuts = useSetAtom(cachedMainShortcutsAtom);
+  const setCachedMainFlags = useSetAtom(cachedMainFlagsAtom);
   const initPrompt = useSetAtom(initPromptAtom);
   const setCachedMainPreview = useSetAtom(cachedMainPreviewAtom);
   const setTermFont = useSetAtom(termFontAtom);
@@ -523,6 +525,19 @@ export default () => {
       );
     }
 
+    const handleSetCachedMainFlags = (_, data) => {
+      setCachedMainFlags(data);
+    };
+
+    if (
+      ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS) === 0
+    ) {
+      ipcRenderer.on(
+        AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS,
+        handleSetCachedMainFlags
+      );
+    }
+
     const handleInitPrompt = (_, data) => {
       initPrompt();
     };
@@ -591,6 +606,10 @@ export default () => {
       ipcRenderer.off(AppChannel.BEFORE_INPUT_EVENT, handleBeforeInputEvent);
       ipcRenderer.off(AppChannel.CSS_CHANGED, handleCssChanged);
       ipcRenderer.off(AppChannel.INIT_PROMPT, handleInitPrompt);
+      ipcRenderer.off(
+        AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS,
+        handleSetCachedMainFlags
+      );
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

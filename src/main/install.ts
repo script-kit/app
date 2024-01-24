@@ -24,7 +24,12 @@ const { ensureDir, writeFile, readdir, readJson, writeJson } = fsExtra;
 import { lstat, readFile, rm } from 'fs/promises';
 
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { PromptData, Script } from '@johnlindquist/kit/types';
+import {
+  FlagsOptions,
+  PromptData,
+  Script,
+  Shortcut,
+} from '@johnlindquist/kit/types';
 import {
   kenvPath,
   kitPath,
@@ -675,11 +680,13 @@ export const cacheMainScripts = debounce(async () => {
     const receiveScripts = ({
       scripts,
       preview,
-      promptData,
+      shortcuts,
+      scriptFlags,
     }: {
       scripts: Script[];
       preview: string;
-      promptData: Partial<PromptData>;
+      shortcuts: Shortcut[];
+      scriptFlags: FlagsOptions;
     }) => {
       // log.info({ scripts, preview });
 
@@ -695,6 +702,13 @@ export const cacheMainScripts = debounce(async () => {
         }
         if (scripts) {
           scoreAndCacheMainChoices(scripts);
+        }
+        if (shortcuts) {
+          kitCache.shortcuts = shortcuts;
+        }
+
+        if (scriptFlags) {
+          kitCache.scriptFlags = scriptFlags;
         }
       }
     };

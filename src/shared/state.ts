@@ -34,6 +34,8 @@ import {
   Choice,
   PromptData,
   ScoredChoice,
+  Shortcut,
+  FlagsOptions,
 } from '@johnlindquist/kit/types/core';
 import {
   setScriptTimestamp,
@@ -211,7 +213,8 @@ export const getKitScript = (filePath: string): Script => {
 export const kitCache = {
   choices: [] as ScoredChoice[],
   preview: '',
-  promptData: {} as Partial<PromptData>,
+  shortcuts: [] as Shortcut[],
+  scriptFlags: {} as FlagsOptions,
 };
 
 const initState = {
@@ -310,16 +313,12 @@ const initState = {
   url: `https://scriptkit.com`,
   mainMenuHasRun: false,
   idleProcessReady: false,
-  scriptPathChanged: false,
-  promptScriptPath: '',
   preloaded: false,
   emojiActive: false,
   isThrottling: true,
   ignoreInitial: false,
   waking: true,
   cmd: isMac ? `cmd` : `ctrl`,
-  hideOnEscape: true,
-  promptProcess: null as ChildProcess | null,
   noPreview: false,
   cacheChoices: false,
   cachePreview: false,
