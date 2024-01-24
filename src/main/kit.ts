@@ -174,7 +174,6 @@ export const runPromptProcess = async (
   //   prompt.cacheMainPreview();
   // }
 
-  prompt.ignoreBlur = false;
   prompt.initMainBounds();
   prompt.initShowPrompt();
   prompt.alwaysOnTop = true;

@@ -627,7 +627,6 @@ export class KitPrompt {
   scriptPath = ``;
   allowResize = true;
   resizing = false;
-  ignoreBlur = false;
   isScripts = true;
   promptData = null as null | PromptData;
   firstPrompt = true;
@@ -985,8 +984,6 @@ export class KitPrompt {
 
       // if (!this.prompt.isFocused()) return;
 
-      log.info(`Blur: ${this.ignoreBlur ? 'ignored' : 'accepted'}`);
-
       if (this.window.isVisible()) {
         this.sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
       }
@@ -997,12 +994,7 @@ export class KitPrompt {
         return;
       }
 
-      if (this.ignoreBlur) {
-        // this.prompt.setVibrancy('popover');
-      } else if (!this.ignoreBlur) {
-        log.verbose(`Blurred by kit: off`);
-        kitState.blurredByKit = false;
-      }
+      kitState.blurredByKit = false;
     };
 
     this.window.on('always-on-top-changed', () => {
@@ -1170,7 +1162,6 @@ export class KitPrompt {
     this.window?.setPosition(0, 0);
     this.window?.center();
     this.window?.focus();
-    this.window?.setAlwaysOnTop(true, 'pop-up-menu', 1);
   };
 
   reload = () => {
@@ -1232,11 +1223,11 @@ export class KitPrompt {
     this.setPromptAlwaysOnTop(true);
 
     if (topTimeout) clearTimeout(topTimeout);
-    topTimeout = setTimeout(() => {
-      if (this.ignoreBlur) {
-        this.setPromptAlwaysOnTop(this.alwaysOnTop);
-      }
-    }, 200);
+    // topTimeout = setTimeout(() => {
+    //   if (this.ignoreBlur) {
+    //     this.setPromptAlwaysOnTop(this.alwaysOnTop);
+    //   }
+    // }, 200);
 
     this.focusPrompt();
   };
@@ -1487,7 +1478,6 @@ export class KitPrompt {
     this.window.setPosition(0, 0);
     this.window.center();
     this.window.focus();
-    this.window.setAlwaysOnTop(true, 'pop-up-menu', 1);
   };
 
   debugPrompt = async () => {
@@ -1856,8 +1846,6 @@ export class KitPrompt {
     kitState.hiddenByUser = false;
     // if (!pidMatch(pid, `setPromptData`)) return;
 
-    if (!this.ignoreBlur) this.ignoreBlur = promptData.ignoreBlur;
-
     const newAlwaysOnTop =
       typeof promptData?.alwaysOnTop === 'boolean'
         ? promptData.alwaysOnTop
@@ -2018,7 +2006,6 @@ export class KitPrompt {
     if (reason === HideReason.PingTimeout) {
       log.info(`⛑ Attempting recover...`);
       kitState.debugging = false;
-      this.ignoreBlur = false;
 
       emitter.emit(KitEvent.KillProcess, this.pid);
       this.actualHide();
@@ -2033,7 +2020,7 @@ export class KitPrompt {
     }
 
     if (kitState.debugging) return;
-    if (!this.ignoreBlur && this.window?.isVisible()) {
+    if (this.window?.isVisible()) {
       log.verbose(`Hiding because ${reason}`);
       if (!kitState.preventClose) {
         this.actualHide();
@@ -2121,11 +2108,6 @@ export class KitPrompt {
       const changed = onTop !== this.alwaysOnTop;
       this.alwaysOnTop = onTop;
       if (onTop && changed) {
-        log.info(
-          `📌 on top: ${onTop ? 'true' : 'false'}. ignoreBlur: ${
-            this.ignoreBlur ? 'true' : 'false'
-          }`
-        );
         this.window.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
 
         if (kitState.isMac) {
@@ -2133,8 +2115,8 @@ export class KitPrompt {
         } else {
           this.window.setVisibleOnAllWorkspaces(true);
         }
-      } else if (this.ignoreBlur && changed) {
-        log.info({ onTop, ignoreBlur: this.ignoreBlur });
+      } else if (changed) {
+        log.info({ onTop });
         this.window.setAlwaysOnTop(true, 'normal', 10);
         setTimeout(() => {
           this.window.setAlwaysOnTop(onTop, 'normal', 10);

@@ -865,7 +865,6 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     SET_IGNORE_BLUR: onChildChannel(async ({ child }, { channel, value }) => {
       log.info(`SET_IGNORE_BLUR`, { value });
-      prompt.ignoreBlur = value;
     }),
 
     SET_RESIZE: (data) => {

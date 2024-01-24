@@ -433,9 +433,6 @@ const createChild = ({
       if (debugUrl) {
         if (child.pid) {
           const prompt = prompts.get(child.pid);
-          if (prompt) {
-            prompt.ignoreBlur = true;
-          }
         }
 
         // TODO: I'm going to have to handle this outside of creatChild so it has access to the prompt created after it or something
