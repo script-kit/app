@@ -75,6 +75,7 @@ export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
   promptId?: string;
   launched: boolean;
+  launchedFromMain: boolean;
 };
 
 // TODO: Reimplement SET_PREVIEW
@@ -566,7 +567,7 @@ class Processes extends Array<ProcessAndPrompt> {
 
   private stampPid(pid: number) {
     log.info(`>>>>>>>>>>>>>>>>>>>>>>>> ATTEMPTING STAMP!!!!!`);
-    const processInfo = this.getByPid(pid) as ProcessInfo;
+    const processInfo = this.getByPid(pid);
     if (!processInfo || !processInfo.launchedFromMain) return;
     if (
       processInfo.type === ProcessType.Prompt &&
@@ -769,10 +770,10 @@ class Processes extends Array<ProcessAndPrompt> {
     return this.filter((processInfo) => processInfo.scriptPath);
   }
 
-  public getByPid(pid: number) {
+  public getByPid(pid: number): ProcessAndPrompt {
     return [...this, ...this.abandonnedProcesses].find(
       (processInfo) => processInfo.pid === pid
-    );
+    ) as ProcessAndPrompt;
   }
 
   public removeByPid(pid: number) {

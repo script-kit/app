@@ -737,10 +737,12 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         }
         handler();
 
+        prompt.hide();
+
         // hideAppIfNoWindows(HideReason.User);
-        if (value?.preloadScript) {
-          attemptPreload(value?.preloadScript as string, false);
-        }
+        // if (value?.preloadScript) {
+        //   attemptPreload(value?.preloadScript as string, false);
+        // }
       }
     ),
 

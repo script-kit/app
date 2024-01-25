@@ -530,8 +530,20 @@ export const destroyPromptWindow = () => {
 //   }
 // );
 
-const subAlwaysOnTop = subscribeKey(kitState, 'alwaysOnTop', (alwaysOnTop) => {
-  log.info(`👆 Always on top changed: ${alwaysOnTop ? 'on' : 'off'}`);
+let prevEmoji = false;
+const subEmoji = subscribeKey(kitState, 'emojiActive', (emoji) => {
+  if (prevEmoji === emoji) return;
+  prevEmoji = emoji;
+  log.info(`👆 Emoji changed: ${emoji ? 'on' : 'off'}`);
+  const emojiShortcut = getEmojiShortcut();
+  if (emoji) {
+    globalShortcut.register(emojiShortcut, () => {
+      prompts?.focused?.setPromptAlwaysOnTop(false);
+      app.showEmojiPanel();
+    });
+  } else {
+    globalShortcut.unregister(emojiShortcut);
+  }
 });
 
 const subIsSponsor = subscribeKey(kitState, 'isSponsor', (isSponsor) => {
@@ -615,7 +627,7 @@ subs.push(
   subEscapePressed,
   subAppDbMini,
   subAppDbCachePrompt,
-  subAlwaysOnTop
+  subEmoji
 );
 
 export class KitPrompt {
@@ -951,9 +963,12 @@ export class KitPrompt {
     });
 
     const showEmoji = () => {
-      kitState.emojiActive = true;
-      log.info(`Using built-in emoji`);
-      app.showEmojiPanel();
+      // kitState.emojiActive = true;
+      // log.info(`Using built-in emoji`);
+      // this.setPromptAlwaysOnTop(false);
+      // setTimeout(() => {
+      //   app.showEmojiPanel();
+      // }, 50);
     };
 
     const onBlur = async () => {
@@ -969,7 +984,7 @@ export class KitPrompt {
       }
 
       if (!kitState.isLinux) {
-        globalShortcut.unregister(getEmojiShortcut());
+        // globalShortcut.unregister(getEmojiShortcut());
         kitState.emojiActive = false;
       }
 
@@ -988,7 +1003,7 @@ export class KitPrompt {
         this.sendToPrompt(Channel.SET_PROMPT_BLURRED, true);
       }
 
-      this.maybeHide(HideReason.Blur);
+      // this.maybeHide(HideReason.Blur);
 
       if (os.platform().startsWith('win')) {
         return;
@@ -1023,6 +1038,7 @@ export class KitPrompt {
 
     this.window.on('closed', () => {
       log.info(`📌 closed`);
+      kitState.emojiActive = false;
     });
 
     this.window.webContents?.on('focus', () => {
@@ -1035,8 +1051,8 @@ export class KitPrompt {
       if (!kitState.isLinux) {
         log.verbose(`Registering emoji shortcut`);
         // Grab cmd+ctrl+space shortcut to use electron's emoji picker
-        kitState.emojiActive = false;
-        globalShortcut.register(getEmojiShortcut(), showEmoji);
+        kitState.emojiActive = true;
+        // globalShortcut.register(getEmojiShortcut(), showEmoji);
       }
 
       this.justFocused = true;
@@ -1052,7 +1068,7 @@ export class KitPrompt {
       kitState.promptHidden = true;
 
       if (!kitState.isLinux) {
-        globalShortcut.unregister(getEmojiShortcut());
+        // globalShortcut.unregister(getEmojiShortcut());
         kitState.emojiActive = false;
       }
     });
@@ -1230,6 +1246,15 @@ export class KitPrompt {
     // }, 200);
 
     this.focusPrompt();
+  };
+
+  hide = () => {
+    log.info(`Hiding prompt window...`);
+    if (this.window.isDestroyed()) {
+      log.warn(`Prompt window is destroyed. Not hiding.`);
+      return;
+    }
+    this.window.hide();
   };
 
   onHideOnce = (fn: () => void) => {
@@ -1943,7 +1968,7 @@ export class KitPrompt {
 
   actualHide = () => {
     if (kitState.emojiActive) {
-      globalShortcut.unregister(getEmojiShortcut());
+      // globalShortcut.unregister(getEmojiShortcut());
       kitState.emojiActive = false;
     }
     if (kitState.isMac) {
@@ -2075,7 +2100,7 @@ export class KitPrompt {
   };
 
   focusPrompt = () => {
-    log.silly(`👁️  Focusing prompt`);
+    log.info(`👁️  this.focusPrompt`);
     if (
       this.window &&
       !this.window.isDestroyed() &&
@@ -2237,6 +2262,8 @@ export class KitPrompt {
     if (script.filePath === getMainScriptPath()) {
       emitter.emit(KitEvent.MainScript, script);
     }
+
+    log.info(`setScript done`);
 
     return 'allowed';
   };

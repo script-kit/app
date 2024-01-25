@@ -174,10 +174,9 @@ export const runPromptProcess = async (
   //   prompt.cacheMainPreview();
   // }
 
+  prompt.alwaysOnTop = true;
   prompt.initMainBounds();
   prompt.initShowPrompt();
-  prompt.alwaysOnTop = true;
-  prompt?.forceFocus();
 
   log.info(`🐣 Alive for ${prompt.lifeTime()}`);
 
