@@ -47,7 +47,6 @@ export default () => {
   const [submitted, setSubmitted] = useAtom(submittedAtom);
   const [channel] = useAtom(channelAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
-  const [setTopHeight] = useAtom(topHeightAtom);
   const [, setInput] = useAtom(inputAtom);
 
   useHotkeys(

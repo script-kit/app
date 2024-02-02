@@ -120,16 +120,6 @@ const css = `
 `;
 
 // read the :root css variables from the css file and create a theme object
-export const theme =
-  css
-    .match(/:root\s*{([^}]*)}/)?.[1]
-    .split(';')
-    .map((s) => s.trim())
-    .filter((s) => s)
-    .reduce((acc, s) => {
-      const [key, value] = s.split(':');
-      return { ...acc, [key.trim()]: value.trim() };
-    }, {}) || {};
 
 export const serverState = {
   running: false,
@@ -216,6 +206,35 @@ export const kitCache = {
   shortcuts: [] as Shortcut[],
   scriptFlags: {} as FlagsOptions,
 };
+
+export const getThemes = () => ({
+  scriptKitTheme: {
+    foreground: '255, 255, 255',
+    background: '22, 22, 22',
+    accent: '251, 191, 36',
+    opacity: os.platform() === 'darwin' ? '0.5' : '1',
+    ui: '255, 255, 255',
+    'ui-bg-opacity': '0.05',
+    'ui-border-opacity': '0.15',
+    vibrancy: 'popover',
+    appearance: 'dark',
+  },
+  scriptKitLightTheme: {
+    foreground: '2C2C2C',
+    accent: '2F86D3',
+    background: 'white',
+    opacity: os.platform() === 'darwin' ? '0.5' : '1',
+    ui: '204, 204, 204',
+    'ui-bg-opacity': '0.5',
+    'ui-border-opacity': '0.5',
+    vibrancy: 'popover',
+    appearance: 'light',
+  },
+});
+
+export const theme = nativeTheme.shouldUseDarkColors
+  ? getThemes().scriptKitTheme
+  : getThemes().scriptKitLightTheme;
 
 const initState = {
   debugging: false,
@@ -320,7 +339,6 @@ const initState = {
   waking: true,
   cmd: isMac ? `cmd` : `ctrl`,
   noPreview: false,
-  cacheChoices: false,
   cachePreview: false,
   cachePrompt: false,
   dockShown: false,
@@ -711,31 +729,6 @@ export const getEmojiShortcut = () => {
     ? 'Command+Control+Space'
     : 'Super+.';
 };
-
-export const getThemes = () => ({
-  scriptKitTheme: {
-    foreground: '255, 255, 255',
-    background: '22, 22, 22',
-    accent: '251, 191, 36',
-    opacity: kitState.isMac ? '0.5' : '1',
-    ui: '255, 255, 255',
-    'ui-bg-opacity': '0.05',
-    'ui-border-opacity': '0.15',
-    vibrancy: 'popover',
-    appearance: 'dark',
-  },
-  scriptKitLightTheme: {
-    foreground: '2C2C2C',
-    accent: '2F86D3',
-    background: 'white',
-    opacity: kitState.isMac ? '0.5' : '1',
-    ui: '204, 204, 204',
-    'ui-bg-opacity': '0.5',
-    'ui-border-opacity': '0.5',
-    vibrancy: 'popover',
-    appearance: 'light',
-  },
-});
 
 export const preloadChoicesMap = new Map<string, Choice[]>();
 export const preloadPreviewMap = new Map<string, string>();

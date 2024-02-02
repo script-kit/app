@@ -4,6 +4,7 @@ const { ipcRenderer } = window.electron;
 import { Terminal, ITerminalAddon } from 'xterm';
 import { AppChannel } from '../../shared/enums';
 import { TermConfig } from '../../shared/types';
+import log from 'electron-log/renderer';
 
 export class AttachIPCAddon implements ITerminalAddon {
   private terminal: Terminal | undefined;
@@ -43,6 +44,7 @@ export class AttachIPCAddon implements ITerminalAddon {
         });
     });
 
+    log.info(`Sending config`, { config: this.config });
     if (this.terminal) ipcRenderer.send(AppChannel.TERM_READY, this.config);
   }
 

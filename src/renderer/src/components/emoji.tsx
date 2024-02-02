@@ -3,14 +3,11 @@ import React, { useEffect } from 'react';
 import Picker, { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { darkAtom, resizingAtom, submitValueAtom } from '../jotai';
-import { useObserveMainHeight } from '../hooks';
 
 const Emoji = () => {
   const submit = useSetAtom(submitValueAtom);
   const isDark = useAtomValue(darkAtom);
   const resizing = useAtomValue(resizingAtom);
-
-  useObserveMainHeight('.emoji-picker-react');
 
   const onEmojiClick = (emojiObject: EmojiClickData) => {
     const { getImageUrl, ...rest } = emojiObject;

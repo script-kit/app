@@ -1,4 +1,4 @@
-import log from 'electron-log';
+import log from 'electron-log/renderer';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 import React, { ErrorInfo, Suspense, useEffect, useState } from 'react';

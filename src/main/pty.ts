@@ -9,12 +9,122 @@ import { TermConfig } from '../shared/types';
 import { displayError } from './error';
 
 import {
+  getDefaultArgs,
+  getDefaultOptions,
   getDefaultShell,
   getPtyOptions,
   getShellConfig,
   USE_BINARY,
 } from './pty-utils';
 import { KitPrompt } from './prompt';
+
+class PtyPool {
+  private idlePty: pty.IPty | null = null;
+  private bufferedData: any[] = [];
+
+  private bufferData(d: any) {
+    this.bufferedData.push(d);
+  }
+
+  private createPty(shell: string, args: string[], options: any): pty.IPty {
+    return pty.spawn(shell, args, options);
+  }
+
+  public killIdlePty() {
+    if (this?.disposer?.dispose) {
+      log.info(`Disposing idle pty ${this.idlePty?.pid}`);
+      this.disposer.dispose();
+    }
+    if (this.idlePty) {
+      this.bufferedData = [];
+      log.info(`Killing idle pty ${this.idlePty?.pid}`);
+      this.idlePty.kill();
+      this.idlePty = null;
+    }
+  }
+
+  public getIdlePty(
+    shell: string,
+    args: string[],
+    options: any,
+    config: TermConfig
+  ): pty.IPty {
+    const defaultOptions = getDefaultOptions();
+    const sameShell = shell === getDefaultShell();
+
+    const sameArgs =
+      JSON.stringify(args) === JSON.stringify(getDefaultArgs(true));
+
+    const allDefaults = this.idlePty && sameShell && sameArgs;
+
+    if (allDefaults) {
+      const defaultPty = this.idlePty as pty.IPty;
+
+      (defaultPty as any).bufferedData = this.bufferedData;
+      if (options.cwd && options.cwd !== defaultOptions.cwd) {
+        const command =
+          process.platform === 'win32'
+            ? `cd /d "${options.cwd}"\r`
+            : `cd "${options.cwd}"\r`;
+        defaultPty.write(command);
+      }
+
+      if (options.command && options.command !== defaultOptions.command) {
+        config.command = '';
+        defaultPty.write(options.command + '\r');
+      }
+
+      // if (options.env) {
+      //   const exportCommands: string[] = [];
+      //   for (const key in options.env) {
+      //     if (Object.prototype.hasOwnProperty.call(options.env, key)) {
+      //       const value = options.env[key];
+      //       exportCommands.push(`export ${key}=${value}`);
+      //     }
+      //   }
+      //   if (exportCommands.length > 0) {
+      //     defaultPty.write(exportCommands.join(';') + '\r');
+      //   }
+      // }
+
+      this?.disposer?.dispose();
+      this.bufferedData = [];
+      this.idlePty = null;
+      setImmediate(() => {
+        this.prepareNextIdlePty(); // Prepare the next idle pty asynchronously.
+      });
+
+      return defaultPty;
+    } else {
+      return this.createPty(shell, args, options);
+    }
+  }
+
+  onDataHandler = (data: any) => {
+    this.bufferData(data); // Buffer the data from the idle pty
+  };
+
+  disposer: any;
+
+  prepareNextIdlePty() {
+    if (this.idlePty) {
+      return;
+    }
+    log.info(`🐲 >_ Preparing next idle pty`);
+    const shell = getDefaultShell();
+    const args = getDefaultArgs(true);
+    const options = getPtyOptions({});
+    this.idlePty = this.createPty(shell, args, options);
+    this.disposer = this.idlePty.onData(this.onDataHandler);
+  }
+}
+
+const ptyPool = new PtyPool();
+export const createIdlePty = () => {
+  log.info(`🐲 >_ Creating idle pty`);
+  ptyPool.killIdlePty();
+  ptyPool.prepareNextIdlePty();
+};
 
 export const createPty = (prompt: KitPrompt) => {
   let t: pty.IPty | null = null;
@@ -67,10 +177,9 @@ export const createPty = (prompt: KitPrompt) => {
   };
 
   const handleTermReady = async (event, config: TermConfig) => {
+    log.info({ termConfig: config });
     if (!prompt) return;
     if (config.pid !== prompt?.pid) return;
-    const sendToPrompt = prompt?.sendToPrompt;
-    const appToPrompt = prompt?.appToPrompt;
 
     function bufferString(timeout: number) {
       let s = '';
@@ -79,7 +188,7 @@ export const createPty = (prompt: KitPrompt) => {
         s += data;
         if (!sender) {
           sender = setTimeout(() => {
-            sendToPrompt(AppChannel.TERM_OUTPUT as any, s);
+            prompt?.sendToPrompt(AppChannel.TERM_OUTPUT as any, s);
             s = '';
             sender = null;
           }, timeout);
@@ -107,7 +216,7 @@ export const createPty = (prompt: KitPrompt) => {
             //   kitState.terminalOutput = stripAnsi(s);
             // }
 
-            sendToPrompt(AppChannel.TERM_OUTPUT as any, b);
+            prompt?.sendToPrompt(AppChannel.TERM_OUTPUT as any, b);
             buffer = [];
             sender = null;
             length = 0;
@@ -160,7 +269,12 @@ export const createPty = (prompt: KitPrompt) => {
     );
 
     try {
-      t = pty.spawn(shell, args, ptyOptions);
+      t = ptyPool.getIdlePty(shell, args, ptyOptions, config);
+      if ((t as any).bufferedData) {
+        (t as any).bufferedData.forEach((d: any) => {
+          prompt?.sendToPrompt(AppChannel.TERM_OUTPUT, d);
+        });
+      }
     } catch (error) {
       displayError(error as any);
 
@@ -169,7 +283,7 @@ export const createPty = (prompt: KitPrompt) => {
       return;
     }
 
-    appToPrompt(AppChannel.PTY_READY, {});
+    prompt?.sendToPrompt(AppChannel.PTY_READY, {});
 
     emitter.on(KitEvent.TermWrite, termWrite);
 

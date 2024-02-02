@@ -42,6 +42,10 @@ export const defaultConfig: TermConfig = {
   },
 };
 
+export function getDefaultArgs(login: boolean) {
+  return process.platform === 'win32' || !login ? [] : ['-l'];
+}
+
 export function getShellConfig(config: TermConfig, defaultShell: string) {
   let login = true;
   if (typeof config.shell === 'boolean') {
@@ -59,41 +63,52 @@ export function getShellConfig(config: TermConfig, defaultShell: string) {
     }
   }
 
-  const args = config?.args?.length
-    ? config.args
-    : process.platform === 'win32' || !login
-      ? []
-      : ['-l'];
+  const args = config?.args?.length ? config.args : getDefaultArgs(login);
 
   const shell = config.shell || config.env.KIT_SHELL || defaultShell;
 
   return { shell, args };
 }
 
-export function getPtyOptions(config: TermConfig) {
-  const env: any = {
-    ...process.env,
-    ...config?.env,
-    ...{
+export function getDefaultOptions() {
+  return {
+    command: '',
+    useConpty: false,
+    name: 'xterm-256color',
+    cols: 80,
+    rows: 24,
+    cwd: untildify(os.homedir()),
+    encoding: USE_BINARY ? null : 'utf8',
+    env: {
       TERM: 'xterm-256color',
       COLORTERM: 'truecolor',
       TERM_PROGRAM: `Kit`,
       TERM_PROGRAM_VERSION: appDb?.version || '0.0.0',
+      ...process.env,
+      ...kitState.kenvEnv,
     },
   };
+}
+
+export function getPtyOptions(config: Partial<TermConfig>) {
+  const options = getDefaultOptions();
+  const env: Record<string, string> = {
+    ...process.env,
+    ...kitState.kenvEnv,
+    ...config?.env,
+  };
+
+  log.info(`env here:`, kitState.kenvEnv);
 
   env.PATH = config?.env?.PATH || KIT_FIRST_PATH;
   if (kitState.isWindows) {
     env.Path = config?.env?.PATH || KIT_FIRST_PATH;
   }
 
-  return {
-    useConpty: false,
-    name: 'xterm-256color',
-    cols: 80,
-    rows: 24,
-    cwd: untildify(config?.cwd || os.homedir()),
-    encoding: USE_BINARY ? null : 'utf8',
-    env: config?.cleanPath ? process.env : env,
-  };
+  options.env = config?.cleanPath ? process.env : env;
+  options.cwd = config?.cwd || untildify(os.homedir());
+  options.command = config?.command || '';
+  options.encoding = USE_BINARY ? null : 'utf8';
+
+  return options;
 }

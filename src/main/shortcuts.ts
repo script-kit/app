@@ -243,6 +243,12 @@ export const updateMainShortcut = async (filePath: string) => {
     const mainShortcutAction = async () => {
       kitState.shortcutPressed = finalShortcut;
 
+      if (prompts.focused?.scriptPath === getMainScriptPath()) {
+        prompts.focused?.hideInstant();
+        processes.removeByPid(prompts.focused?.pid);
+        return;
+      }
+
       log.info(`
 
 ----------------------------------------

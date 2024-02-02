@@ -7,13 +7,12 @@ import { useAtom, useAtomValue } from 'jotai';
 import { UI } from '@johnlindquist/kit/core/enum';
 import React, { useCallback, useState } from 'react';
 import {
-  closedDiv,
   placeholderAtom,
   previewEnabledAtom,
   previewHTMLAtom,
   submitValueAtom,
+  previewCheckAtom,
 } from '../jotai';
-import { useMountMainHeight } from '../hooks';
 
 export default function Drop() {
   // useEscape();
@@ -26,9 +25,7 @@ export default function Drop() {
   const [previewHTML] = useAtom(previewHTMLAtom);
   const previewEnabled = useAtomValue(previewEnabledAtom);
 
-  const hasPreview = Boolean(
-    previewHTML && previewHTML !== closedDiv && previewEnabled
-  );
+  const hasPreview = useAtomValue(previewCheckAtom);
 
   const onDragEnter = useCallback((event) => {
     // TODO: Check this on windows
@@ -73,14 +70,8 @@ export default function Drop() {
     [submit]
   );
 
-  const containerRef = useMountMainHeight();
-
   return (
-    <div
-      id={UI.drop}
-      ref={containerRef}
-      className="flex h-full min-h-full min-w-full flex-row"
-    >
+    <div id={UI.drop} className="flex h-full min-h-full min-w-full flex-row">
       <div
         tabIndex={0}
         role="region"

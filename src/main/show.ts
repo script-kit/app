@@ -19,7 +19,6 @@ import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
 import { snapshot } from 'valtio';
 import { getAssetPath } from '../shared/assets';
-import { darkTheme } from '../shared/themes';
 import { forceQuit, kitState } from '../shared/state';
 import { getCurrentScreenFromMouse } from './prompt';
 import { fileURLToPath } from 'url';
@@ -177,22 +176,21 @@ export const showInspector = (url: string): BrowserWindow => {
 };
 
 export const showDevTools = async (value: any, url = '') => {
-  const center = getCenterOnCurrentScreen({ width: 800, height: 600 });
-
   const devToolsWindow = new BrowserWindow({
-    ...center,
-    titleBarStyle: 'customButtonsOnHover',
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-    },
-    frame: false,
-    transparent: true,
     // vibrancy: 'menu'
     // visualEffectState: 'active',
     show: false,
     width: 0,
     height: 0,
+    webPreferences: {
+      zoomFactor: 1,
+      devTools: true,
+      sandbox: false,
+      nodeIntegration: true,
+      contextIsolation: false,
+      webSecurity: false,
+      preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)),
+    },
   });
   devToolsWindow.webContents.openDevTools({
     activate: true,
@@ -293,13 +291,10 @@ export const show = async (
   });
 
   if (options?.ttl) {
-    setTimeout(
-      () => {
-        showWindow.removeAllListeners();
-        showWindow.destroy();
-      },
-      options?.ttl
-    );
+    setTimeout(() => {
+      showWindow.removeAllListeners();
+      showWindow.destroy();
+    }, options?.ttl);
   }
 
   return new Promise((resolve, reject) => {
@@ -368,15 +363,12 @@ export const showWidget = async (
     widgetWindow?.setIgnoreMouseEvents(true, { forward: true });
 
   if (options?.ttl) {
-    setTimeout(
-      () => {
-        log.info(
-          `Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`
-        );
-        widgetWindow.close();
-      },
-      options?.ttl
-    );
+    setTimeout(() => {
+      log.info(
+        `Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`
+      );
+      widgetWindow.close();
+    }, options?.ttl);
   }
 
   return new Promise((resolve, reject) => {
@@ -391,10 +383,12 @@ export const showWidget = async (
         );
 
         // Set the css variables from kitState.theme
-        widgetWindow.webContents.send(
-          Channel.WIDGET_THEME,
-          snapshot(kitState.theme)
-        );
+        const theme = snapshot(kitState.theme);
+        log.info(`Current theme`, {
+          channel: Channel.WIDGET_THEME,
+          theme,
+        });
+        widgetWindow.webContents.send('WIDGET_THEME', theme);
 
         const noShow =
           typeof options?.show === 'boolean' && options?.show === false;

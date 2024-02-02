@@ -34,6 +34,7 @@ import { pathsAreEqual } from './helpers';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { TrackEvent, trackEvent } from './track';
 import { prompts } from './prompts';
+import { closedDiv } from '../shared/defaults';
 
 app.on('second-instance', async (_event, argv) => {
   log.info('second-instance', argv);
@@ -175,10 +176,12 @@ export const runPromptProcess = async (
   // }
 
   prompt.alwaysOnTop = true;
-  prompt.initMainBounds();
-  prompt.initShowPrompt();
+  if (isMain) {
+    prompt.initMainBounds();
+    prompt.initShowPrompt();
+  }
 
-  log.info(`🐣 Alive for ${prompt.lifeTime()}`);
+  log.info(`${prompt.pid} 🐣 Alive for ${prompt.lifeTime()}`);
 
   // prompts.next?.initShowPrompt();
 
@@ -202,12 +205,9 @@ export const runPromptProcess = async (
     } catch (error) {
       log.error(error);
     }
-  } else if (idlesLength > 0) {
-    // This is required so if you press the same shortcut twice, it will close the script
-    // attemptPreload(promptScriptPath);
-  } else {
-    ensureIdleProcess();
   }
+
+  ensureIdleProcess();
 
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
@@ -224,6 +224,9 @@ export const runPromptProcess = async (
   });
 
   const script = await findScript(promptScriptPath);
+  log.info(
+    `${pid}: Visible before setScript ${prompt?.isVisible() ? '👀' : '🙈'} ${script?.name}`
+  );
 
   const status = await prompt.setScript({ ...script }, pid, options?.force);
   if (status === 'denied') {

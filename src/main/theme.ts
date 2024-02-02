@@ -5,12 +5,7 @@ import { readFile } from 'fs/promises';
 import fsExtra from 'fs-extra';
 const { pathExists } = fsExtra;
 import { kitState } from '../shared/state';
-import {
-  appToAllPrompts,
-  appToSpecificPrompt,
-  sendToAllPrompts,
-  sendToSpecificPrompt,
-} from './channel';
+import { sendToAllPrompts } from './channel';
 import { setTheme } from './process';
 import { AppChannel } from '../shared/enums';
 
@@ -18,7 +13,7 @@ export const setCSSVariable = (name: string, value: undefined | string) => {
   if (value) {
     log.info(`Setting CSS`, name, value);
     // TODO: Implement "appToSpecificPrompt" for CSS Variables?
-    appToAllPrompts(AppChannel.CSS_VARIABLE, { name, value });
+    sendToAllPrompts(AppChannel.CSS_VARIABLE, { name, value });
   }
 };
 

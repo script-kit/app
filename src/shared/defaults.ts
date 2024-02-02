@@ -43,3 +43,5 @@ export const noChoice: Choice = {
   name: '__app__/no-choice',
   hasPreview: false,
 };
+
+export const closedDiv = `<div></div>`;

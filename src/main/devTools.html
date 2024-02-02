@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -26,7 +26,7 @@
       }
     </style>
     <script>
-      const { ipcRenderer } = require('electron');
+      const { ipcRenderer, Rectangle } = window.electron;
 
       ipcRenderer.on('DEVTOOLS', (event, x) => {
         window['x'] = x;

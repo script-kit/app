@@ -19,12 +19,12 @@ export function slash(p: string) {
 
 const checkPackaged = (name: string) => {
   const dirname = path.dirname(fileURLToPath(import.meta.url));
-  log.info({
-    dirname,
-    name,
-    isPackaged: app.isPackaged,
-    resourcesPath: process.resourcesPath,
-  });
+  // log.info({
+  //   dirname,
+  //   name,
+  //   isPackaged: app.isPackaged,
+  //   resourcesPath: process.resourcesPath,
+  // });
   return app.isPackaged
     ? path.resolve(process.resourcesPath, name)
     : path.resolve(dirname, '..', '..', name);

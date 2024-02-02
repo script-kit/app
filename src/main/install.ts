@@ -23,13 +23,7 @@ import fsExtra from 'fs-extra';
 const { ensureDir, writeFile, readdir, readJson, writeJson } = fsExtra;
 import { lstat, readFile, rm } from 'fs/promises';
 
-import { Channel } from '@johnlindquist/kit/core/enum';
-import {
-  FlagsOptions,
-  PromptData,
-  Script,
-  Shortcut,
-} from '@johnlindquist/kit/types';
+import { FlagsOptions, Script, Shortcut } from '@johnlindquist/kit/types';
 import {
   kenvPath,
   kitPath,
@@ -663,7 +657,9 @@ const scoreAndCacheMainChoices = (scripts: Script[]) => {
   kitCache.choices = results;
 
   for (const prompt of prompts) {
-    prompt.initMainChoices();
+    if (!prompt.isVisible()) {
+      prompt.initMainChoices();
+    }
   }
 };
 
@@ -671,7 +667,9 @@ const cacheMainPreview = (preview: string) => {
   kitCache.preview = preview;
 
   for (const prompt of prompts) {
-    prompt.initMainPreview();
+    if (prompt.pid === 0) {
+      prompt.initMainPreview();
+    }
   }
 };
 

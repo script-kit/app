@@ -17,6 +17,7 @@ import { kitState } from '../shared/state';
 import { ScoredChoice } from '../shared/types';
 import { createScoredChoice } from './helpers';
 import { KitPrompt } from './prompt';
+import { cacheChoices } from './messages';
 
 export const invokeSearch = (
   prompt: KitPrompt,
@@ -579,15 +580,30 @@ export const setChoices = (
     generated,
   }: { preload: boolean; skipInitialSearch?: boolean; generated?: boolean }
 ) => {
-  log.silly(`setChoices!!!!!!!!!!`, {
+  log.info(`setChoices!!!!!!!!!!`, {
     isArray: Array.isArray(choices),
     length: choices?.length,
+    preload,
+    skipInitialSearch,
+    generated,
   });
   const sendToPrompt = prompt.sendToPrompt;
   sendToPrompt(
     Channel.SET_SELECTED_CHOICES,
     (choices || []).filter((c: Choice) => c?.selected)
   );
+
+  if (prompt.cacheScriptChoices) {
+    log.info(
+      `Caching script choices for ${prompt.scriptPath}: ${choices.length}`
+    );
+    cacheChoices(prompt.scriptPath, choices);
+    prompt.cacheScriptChoices = false;
+  } else {
+    log.info(
+      `Not caching script choices for ${prompt.scriptPath}: ${choices.length}`
+    );
+  }
 
   if (!choices || !Array.isArray(choices) || choices?.length === 0) {
     prompt.kitSearch.choices = [];
@@ -644,11 +660,10 @@ export const setScoredChoices = (
   choices: ScoredChoice[]
 ) => {
   if (choices?.length) {
-    log.silly(`🎼 Scored choices count: ${choices.length}`);
+    log.info(`🎼 Scored choices count: ${choices.length}`);
   }
 
   const sendToPrompt = prompt.sendToPrompt;
-  const appToPrompt = prompt.appToPrompt;
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);
 
   if (
@@ -660,7 +675,7 @@ export const setScoredChoices = (
     log.info(
       `Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`
     );
-    appToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
+    sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
   }
 };
 

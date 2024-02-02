@@ -6,7 +6,7 @@ import log from 'electron-log';
 import path from 'path';
 import { debounce } from 'lodash-es';
 import axios from 'axios';
-import { Script } from '@johnlindquist/kit';
+import { AppState, Script } from '@johnlindquist/kit';
 import { Channel, Mode, UI } from '@johnlindquist/kit/core/enum';
 import {
   kitPath,
@@ -17,7 +17,7 @@ import {
   kenvPath,
   isFile,
 } from '@johnlindquist/kit/core/utils';
-import { AppMessage, AppState } from '@johnlindquist/kit/types/kitapp';
+import { AppMessage } from '@johnlindquist/kit/types/kitapp';
 import { existsSync, renameSync } from 'fs';
 import { writeFile } from 'fs/promises';
 import { DownloaderHelper } from 'node-downloader-helper';
@@ -30,7 +30,7 @@ import {
   processes,
 } from './process';
 
-import { KitPrompt, attemptPreload } from './prompt';
+import { KitPrompt } from './prompt';
 import { prompts } from './prompts';
 import { runPromptProcess } from './kit';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
@@ -88,10 +88,11 @@ const checkShortcodesAndKeywords = (
     return false;
   }
 
-  for (const [k, v] of prompt.kitSearch.postfixes.entries()) {
-    if (lowerCaseInput.endsWith(k)) {
-      sendToPrompt(Channel.SET_SUBMIT_VALUE, v.value);
-      log.info(`🥾 Postfix: ${transformedInput} triggered`);
+  for (const [postfix, choice] of prompt.kitSearch.postfixes.entries()) {
+    if (lowerCaseInput.endsWith(postfix)) {
+      choice.postfix = transformedInput.replace(postfix, '');
+      sendToPrompt(Channel.SET_SUBMIT_VALUE, choice);
+      log.info(`🥾 Postfix: ${transformedInput} triggered`, choice);
       return false;
     }
   }
@@ -247,7 +248,10 @@ ${data.error}
   });
 
   ipcMain.on(AppChannel.RESIZE, (event, resizeData: ResizeData) => {
-    prompts?.focused?.resize(resizeData);
+    const prompt = prompts.get(resizeData.pid);
+    if (prompt) {
+      prompt.resize(resizeData);
+    }
   });
 
   ipcMain.on(AppChannel.RELOAD, async () => {
@@ -516,7 +520,7 @@ ${data.error}
               typeof message?.state?.value?.filePath === 'string' &&
               !message?.state?.flag
             ) {
-              attemptPreload(message?.state?.value?.filePath);
+              prompt.attemptPreload(message?.state?.value?.filePath);
             }
           }
         }

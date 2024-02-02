@@ -46,7 +46,7 @@ import { processes, spawnShebang, updateTheme } from './process';
 import { compareArrays } from './helpers';
 import { cacheMainScripts } from './install';
 import { getFileImports } from './npm';
-import { appToAllPrompts, appToSpecificPrompt } from './channel';
+import { sendToAllPrompts } from './channel';
 import { readKitCss, setCSSVariable } from './theme';
 import { prompts } from './prompts';
 
@@ -197,8 +197,8 @@ export const onScriptsChanged = async (
           const command = path.parse(filePath).name;
           const binFilePath = path.resolve(binDirPath, command);
           if (!existsSync(binFilePath)) {
-            // log.info(`🔗 Creating bin for ${command}`);
-            // runScript(kitPath('cli', 'create-bin'), 'scripts', filePath);
+            log.info(`🔗 Creating bin for ${command}`);
+            runScript(kitPath('cli', 'create-bin'), 'scripts', filePath);
           }
         } catch (error) {
           log.error(error);
@@ -250,7 +250,7 @@ export const checkUserDb = async (eventName: string) => {
   log.info(`Send user.json to prompt`, user);
 
   // TODO: Reimplement this
-  appToAllPrompts(AppChannel.USER_CHANGED, user);
+  sendToAllPrompts(AppChannel.USER_CHANGED, user);
 };
 
 const triggerRunText = debounce(
@@ -344,7 +344,7 @@ export const setupWatchers = async () => {
             kitState.kenvEnv.KIT_THEME_LIGHT = '';
           }
           if (envData?.KIT_TERM_FONT) {
-            appToAllPrompts(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
+            sendToAllPrompts(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
           }
 
           setCSSVariable(
@@ -366,12 +366,12 @@ export const setupWatchers = async () => {
 
           if (envData?.KIT_MIC) {
             log.info(`Setting mic`, envData?.KIT_MIC);
-            appToAllPrompts(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
+            sendToAllPrompts(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
           }
 
           if (envData?.KIT_WEBCAM) {
             log.info(`Setting webcam`, envData?.KIT_WEBCAM);
-            appToAllPrompts(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
+            sendToAllPrompts(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
           }
 
           if (envData?.KIT_TYPED_LIMIT) {
@@ -400,9 +400,7 @@ export const setupWatchers = async () => {
 
           // TODO: Debug a single prompt? All of them?
           if (envData?.KIT_DEBUG_PROMPT) {
-            for (const prompt of prompts) {
-              prompt?.debugPrompt();
-            }
+            prompts?.focused?.debugPrompt();
           }
 
           if (envData?.KIT_NO_PREVIEW) {

@@ -3,52 +3,76 @@ import { KitPrompt } from './prompt';
 
 const promptMap = new Map<number, KitPrompt>();
 
+let hasIdlePrompt = false;
 export const prompts = {
   idle: null as KitPrompt | null,
-  init: function () {
-    this.idle = new KitPrompt();
+  createPromptIfNoIdle: function () {
+    log.info(`hasIdlePrompt: ${hasIdlePrompt ? 'true' : 'false'}`);
+    if (!hasIdlePrompt) {
+      this.idle = new KitPrompt();
+      hasIdlePrompt = true;
+      log.info(
+        `🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`
+      );
+      return true;
+    }
+
+    return false;
   },
   focused: null as KitPrompt | null,
   attachIdlePromptToProcess(pid: number) {
-    if (!this.idle) {
-      this.init();
-    }
-
+    const created = this.createPromptIfNoIdle();
+    log.info(`🔗 Attaching idle prompt to process ${pid}`);
     const prompt = this.idle as KitPrompt;
+    hasIdlePrompt = false;
+
     prompt.bindToProcess(pid);
-    this.idle = null;
 
     prompt.window?.on('focus', () => {
       this.focused = prompt;
       log.info(`${pid}: Focusing on prompt ${prompt.id}`);
     });
 
-    prompt.window?.on('closed', () => {
-      promptMap.delete(pid);
-    });
+    // prompt.window?.on('closed', () => {
+    //   promptMap.delete(pid);
+    // });
     promptMap.set(pid, prompt);
 
     // Only set a new idle prompt if the current one has been used
-    if (!this.idle) {
-      setImmediate(() => {
-        this.init();
-      });
-    }
+
+    setTimeout(() => {
+      if (!created) {
+        this.createPromptIfNoIdle();
+      }
+    }, 100);
 
     return prompt;
   },
   delete: function (pid: number) {
     const prompt = promptMap.get(pid);
-    log.info(`🚮 Deleting prompt for ${pid}`);
-    if (prompt && !prompt?.isDestroyed()) {
-      prompt?.window?.removeAllListeners();
-      prompt?.actualHide();
-      prompt?.close();
-      prompt?.destroy();
-    }
     promptMap.delete(pid);
+    if (prompt && !prompt?.isDestroyed()) {
+      if (this.focused === prompt) {
+        this.focused = null;
+      }
+      prompt?.window?.hide();
+      log.info(`${pid}: 🥱 Closing prompt `);
+      prompt?.close();
+      // prompt?.window?.destroy();
+      // prompt?.destroy();
+      // setTimeout(() => {
+      //   if (!prompt?.is()) {
+      //     try {
+      //       log.info(`${pid}: 🧨 Force closing prompt `);
+      //       prompt?.destroy();
+      //     } catch (e) {
+      //       log.info(`${pid}: 🧨 Force closing prompt failed `);
+      //     }
+      //   }
+      // }, 1000);
+    }
 
-    log.info(`🚮 Deleted prompt for ${pid}, ${promptMap.size} remaining...`);
+    log.info(`${pid}: 🚮 Deleted prompt. ${promptMap.size} remaining...`);
   },
   get: function (pid: number) {
     return promptMap.get(pid);

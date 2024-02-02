@@ -4,33 +4,29 @@
 /* eslint-disable jsx-a11y/mouse-events-have-key-events */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable no-nested-ternary */
-import React, { useCallback, KeyboardEvent, useEffect } from 'react';
+import React, { useCallback, KeyboardEvent, useEffect, useRef } from 'react';
 import { UI } from '@johnlindquist/kit/core/enum';
 import parse, { domToReact } from 'html-react-parser';
 import { useAtom, useAtomValue } from 'jotai';
 
 import {
   changeAtom,
-  closedDiv,
   formDataAtom,
   formHTMLAtom,
   logAtom,
   previewHTMLAtom,
   submitValueAtom,
 } from '../jotai';
-import { useObserveMainHeight } from '../hooks';
 
 export default function Form() {
   // useEscape();
 
-  const formRef = useObserveMainHeight<HTMLFormElement>('.wrapper > div');
+  const formRef = useRef<HTMLFormElement>(null);
   const [formHTML] = useAtom(formHTMLAtom);
   const [formData] = useAtom(formDataAtom);
   const [, submit] = useAtom(submitValueAtom);
   const [previewHTML] = useAtom(previewHTMLAtom);
   const log = useAtomValue(logAtom);
-
-  const hasPreview = Boolean(previewHTML && previewHTML !== closedDiv);
 
   const onChange = useAtomValue(changeAtom);
 

@@ -23,7 +23,9 @@ process.on('SIGINT', () => {
 
 // eslint-disable-next-line import/newline-after-import
 import log from 'electron-log';
+global.log = log.create({ logId: 'rendererLog' });
 log.initialize();
+
 (global as any).log = log.info;
 performance.mark;
 
@@ -46,7 +48,7 @@ import {
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from 'electron-devtools-installer';
-
+import dotenv from 'dotenv';
 import unhandled from 'electron-unhandled';
 import electronUpdater from 'electron-updater';
 
@@ -91,6 +93,7 @@ import {
   getReleaseChannel,
   getPlatformExtension,
 } from '../shared/assets';
+import { getThemes } from '../shared/themes';
 import { startClipboardAndKeyboardWatchers } from './tick';
 import { clearPromptCache, clearPromptTimers, logPromptState } from './prompt';
 
@@ -122,7 +125,6 @@ import { SPLASH_PATH } from '../shared/defaults';
 import { registerKillLatestShortcut } from './shortcuts';
 import { logMap, mainLog } from './logs';
 import { emitter } from '../shared/events';
-import { readyPty } from './pty';
 import { displayError } from './error';
 import { HideReason, Trigger } from '../shared/enums';
 import { TrackEvent, trackEvent } from './track';
@@ -153,6 +155,7 @@ import { readKitCss } from './theme';
 import { syncClipboardStore } from './clipboard';
 import { actualHideDock, clearStateTimers } from './dock';
 import { prompts } from './prompts';
+import { createIdlePty } from './pty';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -185,7 +188,49 @@ process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 })();
 /* eslint-enable */
 
-crashReporter.start({ submitURL: '', uploadToServer: false });
+crashReporter.start({
+  productName: 'YourAppName',
+  companyName: 'YourCompany',
+  submitURL: '', // Leave this empty to not send reports to a server
+  uploadToServer: false, // Ensure this is false to prevent uploading
+  extra: {
+    someExtraData: 'You can add extra data to your crash report here',
+  },
+  // Specify the directory where you want to save crash reports
+});
+
+log.info(`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Crash reports are saved in: ${app.getPath('crashDumps')}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+`);
 
 let prevError = ``;
 unhandled({
@@ -235,6 +280,45 @@ const nodeVersion = `v${process.versions.node}`;
 app.on('window-all-closed', (e: Event) => {
   mainLog.log(`🪟 window-all-closed`);
   e.preventDefault();
+});
+
+app?.on('browser-window-blur', () => {
+  log.info(`🪟 browser-window-blur`);
+  kitState.emojiActive = false;
+});
+
+app?.on('did-resign-active', () => {
+  log.info(`🪟 did-resign-active`);
+  kitState.emojiActive = false;
+});
+
+app?.on('child-process-gone', (event, details) => {
+  log.error(`🫣 Child process gone...`);
+  log.error({ event, details });
+});
+
+// gpu-info-update
+// app?.on('gpu-info-update', () => {
+//   log.info(`🫣 gpu-info-update...`);
+//   log.info({
+//     gpuInfo: app?.getGPUInfo('complete'),
+//   });
+// });
+
+// accessibility-support-changed
+app?.on('accessibility-support-changed', (event, details) => {
+  log.info(`🫣 accessibility-support-changed...`);
+  log.info({ event, details });
+});
+
+// app.on('render-process-gone', (event, details) => {
+//   log.error(`🫣 Render process gone...`);
+//   log.error({ event });
+// });
+
+app.on('renderer-process-crashed', (event, webContents, killed) => {
+  log.error(`🫣 Renderer process crashed...`);
+  log.error({ event, webContents, killed });
 });
 
 log.info(`
@@ -673,7 +757,7 @@ const isNewVersion = async () => {
 };
 
 const checkKit = async () => {
-  prompts.init();
+  // prompts.init();
   await setupTray(true, 'busy');
   await setupLog(`Tray created`);
 
@@ -1050,6 +1134,12 @@ const checkKit = async () => {
     //   '--prep',
     //   '--trust',
     // ]);
+
+    const envPath = kenvPath('.env');
+    const envData = dotenv.parse(readFileSync(envPath));
+    log.info(`envData`, envPath, envData);
+    kitState.kenvEnv = envData;
+    createIdlePty();
 
     // focusPrompt();
     setTimeout(async () => {

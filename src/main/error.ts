@@ -1,10 +1,19 @@
 import { kitPath } from '@johnlindquist/kit/core/utils';
-import { debugInfo } from 'electron-util';
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
 import { Trigger } from '../shared/enums';
 import { emitter, KitEvent } from '../shared/events';
 import { TrackEvent, trackEvent } from './track';
+import { app } from 'electron';
+
+const electronVersion = process.versions.electron ?? '0.0.0';
+export const debugInfo = () =>
+  `
+${app.name} ${app.getVersion()}
+Electron ${electronVersion}
+${process.platform} ${os.release()}
+Locale: ${app.getLocale()}
+`.trim();
 
 export const displayError = debounce((error: Error) => {
   log.error(error);

@@ -24,6 +24,7 @@ export interface ListProps {
 
 export interface ResizeData {
   id: string;
+  pid: number;
   reason: string;
   scriptPath: string;
   ui: UI;

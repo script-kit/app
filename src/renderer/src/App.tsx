@@ -11,6 +11,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable jsx-a11y/no-autofocus */
 /* eslint-disable jsx-a11y/label-has-associated-control */
+
 import React, {
   ErrorInfo,
   RefObject,
@@ -90,6 +91,8 @@ import {
   isMainScriptAtom,
   progressAtom,
   cssAtom,
+  triggerResizeAtom,
+  closedAtom,
 } from './jotai';
 
 import {
@@ -163,7 +166,6 @@ class ErrorBoundary extends React.Component {
           >
             Reload Prompt
           </button>
-
           <div className="text-base text-red-500">
             Rendering Error. Opening logs.
           </div>
@@ -200,7 +202,7 @@ export default function App() {
 
   const resetPrompt = useSetAtom(resetPromptAtom);
   const setMainHeight = useSetAtom(mainHeightAtom);
-  const setTopHeight = useSetAtom(topHeightAtom);
+  const triggerResize = useSetAtom(triggerResizeAtom);
   const setSubmitValue = useSetAtom(submitValueAtom);
   const setMouseEnabled = useSetAtom(mouseEnabledAtom);
   const setTopRef = useSetAtom(topRefAtom);
@@ -217,6 +219,7 @@ export default function App() {
   const isMainScript = useAtomValue(isMainScriptAtom);
   const css = useAtomValue(cssAtom);
 
+  const closed = useAtomValue(closedAtom);
   const previewCheck = useAtomValue(previewCheckAtom);
   const showRightPanel = (previewCheck && !kitState.noPreview) || flagValue;
   // log({
@@ -359,7 +362,7 @@ export default function App() {
   const headerRef: RefObject<HTMLDivElement> = useRef(null);
 
   useResizeObserver(headerRef, (entry) => {
-    setTopHeight(entry.contentRect.height);
+    triggerResize(`headerRef: ${entry.contentRect.height}`);
   });
 
   useResizeObserver(appRef, (entry) => {
@@ -404,6 +407,7 @@ export default function App() {
     ipcRenderer.on(AppChannel.PROCESSES, processesHandler);
 
     const userChangedHandler = (_, data) => {
+      log.info(`👩‍💻 User changed`, data);
       setUser(data);
     };
     ipcRenderer.on(AppChannel.USER_CHANGED, userChangedHandler);
@@ -461,22 +465,23 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div
-        id="main-container"
-        ref={appRef}
-        className={`
+      {!closed && (
+        <div
+          id="main-container"
+          ref={appRef}
+          className={`
 min-w-screen relative
 h-screen min-h-screen
 w-screen
 overflow-hidden
 text-text-base
-${hasBorder ? `border-1 border-ui-border` : ``}
+${hasBorder ? `border-ui-border` : ``}
 ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
       `}
-      >
-        <style>{promptData?.css}</style>
-        <style>{css}</style>
-        {/* {lighten && (
+        >
+          <style>{promptData?.css}</style>
+          <style>{css}</style>
+          {/* {lighten && (
           <style
             dangerouslySetInnerHTML={{
               __html: `
@@ -495,177 +500,179 @@ ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
             }}
           />
         )} */}
-        {audioDot && <AudioDot />}
-        {loading && <LoadingDot />}
-        {progress > 0 && <ProgressBar />}
-        {processes.length > 1 && isMainScript && <ProcessesDot />}
-        {/* {ui} {choices.length} {promptData?.scriptPath} */}
-        <div
-          onDrop={(event) => {
-            if (ui !== UI.drop) {
-              channel(Channel.ON_DROP);
+          {audioDot && <AudioDot />}
+          {loading && <LoadingDot />}
+          {progress > 0 && <ProgressBar />}
+          {processes.length > 1 && isMainScript && <ProcessesDot />}
+          {/* {ui} {choices.length} {promptData?.scriptPath} */}
+          <div
+            onDrop={(event) => {
+              if (ui !== UI.drop) {
+                channel(Channel.ON_DROP);
+              }
+              // console.log(`🎉 drop`)n;
+              onDrop(event);
+            }}
+            onDragEnter={() => {
+              channel(Channel.ON_DRAG_ENTER);
+              // console.log(`drag enter`);
+            }}
+            onDragOver={(event) => {
+              channel(Channel.ON_DRAG_OVER);
+              event.stopPropagation();
+              event.preventDefault();
+            }}
+            onDragLeave={() => {
+              channel(Channel.ON_DRAG_LEAVE);
+              // console.log(`drag leave`);
+            }}
+            ref={windowContainerRef}
+            style={
+              {
+                WebkitUserSelect: 'none',
+              } as any
             }
-            // console.log(`🎉 drop`)n;
-            onDrop(event);
-          }}
-          onDragEnter={() => {
-            channel(Channel.ON_DRAG_ENTER);
-            // console.log(`drag enter`);
-          }}
-          onDragOver={(event) => {
-            channel(Channel.ON_DRAG_OVER);
-            event.stopPropagation();
-            event.preventDefault();
-          }}
-          onDragLeave={() => {
-            channel(Channel.ON_DRAG_LEAVE);
-            // console.log(`drag leave`);
-          }}
-          ref={windowContainerRef}
-          style={
-            {
-              WebkitUserSelect: 'none',
-            } as any
-          }
-          className={`
+            className={`
         flex h-full
         w-full flex-col
         `}
-          onMouseDown={onMouseDown}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseLeave}
-          onMouseMove={onMouseMove}
-        >
-          {ui !== UI.log && (
-            // header id using in resize measuring
-            <header id="header" ref={headerRef} className="relative z-10">
-              {headerHidden === false && <Header />}
+            onMouseDown={onMouseDown}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseLeave}
+            onMouseMove={onMouseMove}
+          >
+            {ui !== UI.log && (
+              // header id using in resize measuring
+              <header id="header" ref={headerRef} className="relative z-10">
+                {headerHidden === false && <Header />}
 
-              {ui === UI.hotkey && (
-                <Hotkey
-                  key="AppHotkey"
-                  submit={setSubmitValue}
-                  onHotkeyHeightChanged={setMainHeight}
-                />
-              )}
+                {ui === UI.hotkey && (
+                  <Hotkey
+                    key="AppHotkey"
+                    submit={setSubmitValue}
+                    onHotkeyHeightChanged={setMainHeight}
+                  />
+                )}
 
-              {ui === UI.arg && (
-                <>
-                  <Input key="AppInput" />
-                  {!showTabs && !showSelected && (
-                    <div className="border-b border-ui-border" />
-                  )}
-                </>
-              )}
+                {ui === UI.arg && (
+                  <>
+                    <Input key="AppInput" />
+                    {!showTabs && !showSelected && (
+                      <div className="border-b border-ui-border" />
+                    )}
+                  </>
+                )}
 
-              {hint && <Hint key="AppHint" />}
+                {hint && <Hint key="AppHint" />}
 
-              {(showTabs || showSelected) && (
-                <div>
-                  {showTabs && !showSelected && <Tabs key="AppTabs" />}
-                  {showSelected && <Selected key="AppSelected" />}
-                </div>
-              )}
-            </header>
-          )}
-          {logVisible && <Console key="AppLog" />}
-          <main id="main" className="min-h-1 w-full flex-1 overflow-y-hidden">
-            <PanelGroup
-              direction="horizontal"
-              autoSaveId={script.filePath}
-              className={`flex h-full w-full flex-row
+                {(showTabs || showSelected) && (
+                  <div>
+                    {showTabs && !showSelected && <Tabs key="AppTabs" />}
+                    {showSelected && <Selected key="AppSelected" />}
+                  </div>
+                )}
+              </header>
+            )}
+            {logVisible && <Console key="AppLog" />}
+            <main id="main" className="min-h-1 w-full flex-1 overflow-y-hidden">
+              <PanelGroup
+                direction="horizontal"
+                autoSaveId={script.filePath}
+                className={`flex h-full w-full flex-row
 ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
             `}
-            >
-              <PanelChild minSize={25}>
-                <div className="min-h-1 h-full overflow-x-hidden">
-                  <ToastContainer
-                    className="-mt-3 -ml-3"
-                    pauseOnFocusLoss={false}
-                    position="top-right"
-                    toastStyle={{
-                      maxHeight: document.body.clientHeight,
-                    }}
-                    // transition={cssTransition({
-                    //   // don't fade in/out
-                    //   // enter: 'animate__animated animate__slideInUp',
-                    //   // exit: 'animate__animated animate__slideOutDown',
-                    //   collapseDuration: 0,
-                    //   collapse: true,
-                    // })}
-                  />
+              >
+                <PanelChild minSize={25}>
+                  <div className="h-full min-h-1 overflow-x-hidden">
+                    <ToastContainer
+                      className="-ml-3 -mt-3"
+                      pauseOnFocusLoss={false}
+                      position="top-right"
+                      toastStyle={{
+                        maxHeight: document.body.clientHeight,
+                      }}
+                      // transition={cssTransition({
+                      //   // don't fade in/out
+                      //   // enter: 'animate__animated animate__slideInUp',
+                      //   // exit: 'animate__animated animate__slideOutDown',
+                      //   collapseDuration: 0,
+                      //   collapse: true,
+                      // })}
+                    />
 
-                  {ui === UI.splash && <Splash />}
-                  {ui === UI.drop && <Drop />}
-                  {ui === UI.textarea && <TextArea />}
-                  {ui === UI.editor && <Editor />}
-                  {ui === UI.log && <Log />}
-                  {ui === UI.emoji && <Emoji />}
-                  {ui === UI.debugger && <Inspector />}
-                  {ui === UI.chat && <Chat />}
-                  {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
+                    {ui === UI.splash && <Splash />}
+                    {ui === UI.drop && <Drop />}
+                    {ui === UI.textarea && <TextArea />}
+                    {ui === UI.editor && <Editor />}
+                    {ui === UI.log && <Log />}
+                    {ui === UI.emoji && <Emoji />}
+                    {ui === UI.debugger && <Inspector />}
+                    {ui === UI.chat && <Chat />}
+                    {/* TODO: These UI setup logic "onMount", so open is here in case they were the ui on previous close, then immediately re-opened */}
 
-                  {ui === UI.term &&
-                    open &&
-                    termConfig?.promptId === promptData?.id && <Terminal />}
-                  {ui === UI.mic && open && <AudioRecorder />}
-                  {ui === UI.webcam && open && <Webcam />}
+                    {ui === UI.term &&
+                      open &&
+                      termConfig?.promptId === promptData?.id && <Terminal />}
+                    {ui === UI.mic && open && <AudioRecorder />}
+                    {ui === UI.webcam && open && <Webcam />}
 
-                  {((ui === UI.arg && !panelHTML && choices.length > 0) ||
-                    ui === UI.hotkey) && (
-                    <AutoSizer disableWidth>
-                      {({ height }) => <List height={height} />}
-                    </AutoSizer>
-                  )}
-                  {(!!(ui === UI.arg || ui === UI.div) &&
-                    panelHTML.length > 0 && <Panel />) ||
-                    (ui === UI.form && <Form />)}
-                </div>
-              </PanelChild>
-
-              {/* {previewEnabled && <Preview />} */}
-
-              {showRightPanel && (
-                <>
-                  <PanelResizeHandle
-                    id="panelResizeHandle"
-                    className="w-0.5 border-l-1 border-ui-border hover:-ml-0.5 hover:w-3 hover:border-r-1 hover:border-white/10 hover:bg-white/5"
-                    onDragging={onResizeHandleDragging}
-                  />
-                  <PanelChild
-                    id="panelChild"
-                    collapsible
-                    ref={panelChildRef}
-                    // style={{
-                    //   flexGrow: 0,
-                    // }}
-                  >
-                    {flagValue ? (
+                    {((ui === UI.arg && !panelHTML && choices.length > 0) ||
+                      ui === UI.hotkey) && (
                       <AutoSizer disableWidth>
-                        {({ height }) => <FlagsList height={height} />}
+                        {({ height }) => <List height={height} />}
                       </AutoSizer>
-                    ) : (
-                      <Preview />
                     )}
-                  </PanelChild>
-                </>
-              )}
-            </PanelGroup>
-          </main>
-          {!footerHidden && (
-            <footer
-              id="footer"
-              className={`${promptData?.footerClassName || ''} z-50`}
-            >
-              <ActionBar />
-            </footer>
-          )}
+                    {(!!(ui === UI.arg || ui === UI.div) &&
+                      panelHTML.length > 0 && <Panel />) ||
+                      (ui === UI.form && <Form />)}
+                  </div>
+                </PanelChild>
+
+                {/* {previewEnabled && <Preview />} */}
+
+                {showRightPanel && (
+                  <>
+                    <PanelResizeHandle
+                      id="panelResizeHandle"
+                      className="w-0.5 border-l-1 border-ui-border hover:-ml-0.5 hover:w-3 hover:border-r-1 hover:border-white/10 hover:bg-white/5"
+                      onDragging={onResizeHandleDragging}
+                    />
+                    <PanelChild
+                      id="panelChild"
+                      collapsible
+                      ref={panelChildRef}
+                      // style={{
+                      //   flexGrow: 0,
+                      // }}
+                    >
+                      {flagValue ? (
+                        <AutoSizer disableWidth>
+                          {({ height }) => <FlagsList height={height} />}
+                        </AutoSizer>
+                      ) : (
+                        <Preview />
+                      )}
+                    </PanelChild>
+                  </>
+                )}
+              </PanelGroup>
+            </main>
+            {!footerHidden && (
+              <footer
+                id="footer"
+                className={`${promptData?.footerClassName || ''} z-50`}
+              >
+                <ActionBar />
+              </footer>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio id="audio" />
+      <span className="hiddenfont-mono text-xxs font-bold">font</span>
     </ErrorBoundary>
   );
 }

@@ -5,6 +5,8 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable guard-for-in */
+const path = window.api.path;
+
 import { atom, Getter, Setter } from 'jotai';
 import log from 'electron-log/renderer';
 import DOMPurify from 'dompurify';
@@ -42,7 +44,13 @@ import {
   Survey,
   TermConfig,
 } from '../../shared/types';
-import { noChoice, noScript, SPLASH_PATH } from '../../shared/defaults';
+import {
+  closedDiv,
+  DEFAULT_HEIGHT,
+  noChoice,
+  noScript,
+  SPLASH_PATH,
+} from '../../shared/defaults';
 import { toHex } from '../../shared/color-utils';
 import { formatShortcut } from './components/formatters';
 import { Action } from './components/actions';
@@ -55,6 +63,7 @@ const _pidAtom = atom(0);
 export const pidAtom = atom(
   (g) => g(_pidAtom),
   (_g, s, a: number) => {
+    window.pid = a;
     s(_pidAtom, a);
     currentPid = a;
   }
@@ -200,9 +209,9 @@ export const panelHTMLAtom = atom(
 );
 
 const _previewHTML = atom('');
-export const closedDiv = `<div></div>`;
 
 const throttleSetPreview = throttle((g, s, a: string) => {
+  // log.info(`${window.pid} 👀👀 throttleSetPreview ->> ${a.slice(0, 24)}`);
   s(_previewHTML, a);
   resize(g, s, 'SET_PREVIEW');
 }, 25);
@@ -221,11 +230,12 @@ export const previewHTMLAtom = atom(
   },
 
   (g, s, a: string) => {
-    // log.info(`Setting previewHTML to ${a.slice(0, 24)}`);
+    // log.info(`${window.pid} 👀 previewHTMLAtom ->> ${a.slice(0, 24)}`);
     const prevPreview = g(_previewHTML);
     if (prevPreview === a) return;
     if (g(_previewHTML) !== a) {
       if (a === closedDiv) {
+        throttleSetPreview.cancel();
         s(_previewHTML, '');
       } else {
         throttleSetPreview(g, s, a);
@@ -623,6 +633,9 @@ export const scoredChoicesAtom = atom(
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
   (g, s, a: ScoredChoice[]) => {
+    // log.info(
+    //   `${window.pid} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Setting scoredChoices to ${a?.length}`
+    // );
     s(cachedAtom, false);
     s(loadingAtom, false);
     prevFocusedChoiceId = 'prevFocusedChoiceId';
@@ -680,7 +693,7 @@ export const scoredChoicesAtom = atom(
           const foundChoice = cs[i].item;
           if (foundChoice?.id) {
             s(indexAtom, i);
-            log.info(`🤔 Found choice: ${foundChoice?.id}`);
+            // log.info(`🤔 Found choice: ${foundChoice?.id}`);
             s(focusedChoiceAtom, foundChoice);
             s(requiresScrollAtom, i);
           }
@@ -717,7 +730,13 @@ export const scoredChoicesAtom = atom(
     }
 
     s(choicesHeightAtom, choicesHeight);
-    s(mainHeightAtom, choicesHeight);
+    // log.info({ choicesHeight, here: '🤷‍♂️', count: a?.length, pid: window.pid });
+    const ui = g(uiAtom);
+    if (ui === UI.arg) {
+      s(mainHeightAtom, choicesHeight);
+    } else {
+      s(mainHeightAtom, DEFAULT_HEIGHT);
+    }
   }
 );
 
@@ -869,7 +888,7 @@ export const tabIndexAtom = atom(
     s(prevIndexAtom, 0);
     if (g(_tabIndex) !== a) {
       s(_tabIndex, a);
-      log.info(`tabIndexAtom clearing flagsAtom`);
+      // log.info(`tabIndexAtom clearing flagsAtom`);
       s(flagsAtom, {});
       s(_flaggedValue, '');
 
@@ -907,7 +926,14 @@ export const scriptAtom = atom(
   (g) => g(_script),
   (g, s, a: Script) => {
     s(lastKeyDownWasModifierAtom, false);
+
     const isMainScript = a?.filePath === getMainScriptPath();
+
+    // log.info(`>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    // ${isMainScript ? 'MAIN SCRIPT' : 'NOT MAIN SCRIPT'}
+
+    // <<<<<<<<<<<<<<<<<<<<<<`);
 
     s(isMainScriptAtom, isMainScript);
     s(submittedAtom, false);
@@ -919,7 +945,7 @@ export const scriptAtom = atom(
     );
 
     s(promptReadyAtom, false);
-    if (a.filePath !== getMainScriptPath()) {
+    if (!isMainScript) {
       s(choicesConfigAtom, { preload: false });
       const preloaded = g(preloadedAtom);
 
@@ -927,6 +953,7 @@ export const scriptAtom = atom(
         // Removed: Caused a flash of white from no choices
         // s(scoredChoicesAtom, []);
         // s(focusedChoiceAtom, noChoice);
+        // log.info(`>>>>>>>>>>>>>>>>>>>>>>>>> NOT MAIN SCRIPT< CLEARING`);
         s(_previewHTML, '');
       }
       //
@@ -1001,11 +1028,12 @@ const resize = debounce(
     const scoredChoicesLength = g(scoredChoicesAtom)?.length;
     // log.info(`resize: ${reason} - ${ui} length ${scoredChoicesLength}`);
     const hasPanel = g(_panelHTML) !== '';
+    const promptData = g(promptDataAtom);
+
     let mh = g(mainHeightAtom);
 
     // if (mh === 0 && [UI.form, UI.div].includes(ui)) return;
 
-    const promptData = g(promptDataAtom);
     const placeholderOnly =
       promptData?.mode === Mode.FILTER &&
       scoredChoicesLength === 0 &&
@@ -1013,24 +1041,37 @@ const resize = debounce(
 
     const topHeight = document.getElementById('header')?.offsetHeight || 0;
     const footerHeight = document.getElementById('footer')?.offsetHeight || 0;
-    const hasPreview = Boolean(g(hasPreviewAtom) || g(flaggedChoiceValueAtom));
+
+    const hasPreview = g(previewCheckAtom);
+
+    // log.info({
+    //   pid: window.pid,
+    //   html: g(previewHTMLAtom).slice(0, 24),
+    // });
+
     const totalChoices = scoredChoicesLength;
 
     const choicesHeight = g(choicesHeightAtom);
 
-    if (ui === UI.arg && choicesHeight > PROMPT.HEIGHT.BASE) {
-      mh =
-        (promptData?.height && promptData?.height > PROMPT.HEIGHT.BASE
-          ? promptData?.height
-          : PROMPT.HEIGHT.BASE) -
-        topHeight -
-        footerHeight;
+    // log.info(
+    //   `🥺 ${window.pid}: mh: ${mh} topHeight: ${topHeight} footerHeight: ${footerHeight} `
+    // );
 
-      // log.info(
-      //   `Choices height > PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE} mh ${mh}`
-      // );
-    } else {
-      mh = choicesHeight;
+    if (ui === UI.arg) {
+      if (choicesHeight > PROMPT.HEIGHT.BASE) {
+        mh =
+          (promptData?.height && promptData?.height > PROMPT.HEIGHT.BASE
+            ? promptData?.height
+            : PROMPT.HEIGHT.BASE) -
+          topHeight -
+          footerHeight;
+
+        // log.info(
+        //   `Choices height > PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE} mh ${mh}`
+        // );
+      } else {
+        mh = choicesHeight;
+      }
     }
 
     if (mh === 0 && hasPanel) {
@@ -1078,7 +1119,7 @@ const resize = debounce(
         forceResize = Boolean(ch > g(prevMh));
       }
     } catch (error) {
-      log.info(`Force resize error`);
+      // log.info(`Force resize error`);
     }
 
     if (topHeight !== prevTopHeight) {
@@ -1134,6 +1175,10 @@ const resize = debounce(
       forceHeight = promptData?.height;
     }
 
+    if (ui === UI.arg && g(_flaggedValue)) {
+      forceHeight = PROMPT.HEIGHT.BASE;
+    }
+
     if (ui === UI.debugger) {
       forceHeight = 128;
     }
@@ -1171,12 +1216,30 @@ const resize = debounce(
     mh = Math.ceil(mh || -3) + 3;
 
     if (mh === 0 && promptData?.preventCollapse) {
-      log.info(`🍃 Prevent collapse to zero...`);
+      // log.info(`🍃 Prevent collapse to zero...`);
       return;
+    }
+
+    if (window.pid) {
+      // log.info(
+      //   `Jotai PID: ${window.pid}: ${promptData?.scriptPath}: ${choicesHeight}\n` +
+      //     `+----------------+----------------+----------------+----------------+\n` +
+      //     `|                | Prompt Bounds  | Prompt Data    | Computed Values|\n` +
+      //     `+----------------+----------------+----------------+----------------+\n` +
+      //     `| Width          | ${promptBounds?.width.toString().padEnd(14)} | ${promptData?.width?.toString().padEnd(14)} |                |\n` +
+      //     `| Height         | ${promptBounds?.height.toString().padEnd(14)} | ${promptData?.height?.toString().padEnd(14) || ''.padEnd(14)} |                |\n` +
+      //     `+----------------+----------------+----------------+----------------+\n` +
+      //     `| Same Prompt    | ${samePrompt ? 'Yes'.padEnd(14) : 'No'.padEnd(14)} |                |                |\n` +
+      //     `| Force Width    | ${forceWidth ? 'Yes'.padEnd(14) : 'No'.padEnd(14)} |                |                |\n` +
+      //     `| Force Height   | ${forceHeight ? forceHeight.toString().padEnd(14) : 'No'.padEnd(14)} |                |                |\n` +
+      //     `| Main Height    |                |                | ${mh.toString().padEnd(14)} |\n` +
+      //     `+----------------+----------------+----------------+----------------+`
+      // );
     }
 
     const data: ResizeData = {
       id: promptData?.id || 'missing',
+      pid: window.pid,
       reason,
       scriptPath: g(_script)?.filePath,
       placeholderOnly,
@@ -1196,7 +1259,7 @@ const resize = debounce(
       justOpened,
       forceResize,
       forceHeight,
-      forceWidth,
+      forceWidth: promptData?.width,
       totalChoices,
       isMainScript: g(isMainScriptAtom),
     };
@@ -1227,14 +1290,18 @@ const resize = debounce(
 export const topHeightAtom = atom(
   (g) => g(_topHeight),
   (g, s) => {
-    // const resizeComplete = g(resizeCompleteAtom);
-    // if (!resizeComplete) {
-    //   return;
-    // }
+    const resizeComplete = g(resizeCompleteAtom);
+    if (!resizeComplete) {
+      return;
+    }
     // TODO: TOP HEIGHT NECESSARY?
-    // resize(g, s, 'TOP_HEIGHT');
+    resize(g, s, 'TOP_HEIGHT');
   }
 );
+
+export const triggerResizeAtom = atom(null, (g, s, reason: string) => {
+  resize(g, s, `TRIGGER_RESIZE: ${reason}`);
+});
 
 export const mainHeightAtom = atom(
   (g) => g(mainHeight),
@@ -1328,12 +1395,12 @@ export const themeAtom = atom(
       if (key === 'appearance') {
         s(appearanceAtom, value as Appearance);
       } else {
-        log.verbose(
-          `Changing ${key} from`,
-          document.documentElement.style.getPropertyValue(key),
-          `to`,
-          value
-        );
+        // log.verbose(
+        //   `Changing ${key} from`,
+        //   document.documentElement.style.getPropertyValue(key),
+        //   `to`,
+        //   value
+        // );
         document.documentElement.style.setProperty(key, value);
       }
     });
@@ -1407,7 +1474,7 @@ export const promptDataAtom = atom(
     s(_inputChangedAtom, false);
 
     if (a) {
-      log.info(`Setting uiAtom to ${a?.ui}`);
+      // log.info(`Setting uiAtom to ${a?.ui}`);
       if (a?.ui !== UI.arg) {
         s(focusedChoiceAtom, noChoice);
       }
@@ -1477,7 +1544,7 @@ export const promptDataAtom = atom(
       s(nameAtom, promptDescription ? promptName : promptDescription);
 
       if (!a?.keepPreview && a.preview) {
-        log.info(`👍 Keeping preview`);
+        // log.info(`👍 Keeping preview`);
         s(previewHTMLAtom, a.preview);
       }
 
@@ -1713,7 +1780,7 @@ export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
-    log.info(`📤 submitValueAtom`, a);
+    // log.info(`📤 submitValueAtom`, a);
     const channel = g(channelAtom);
 
     const action = g(focusedActionAtom) as any;
@@ -1991,7 +2058,7 @@ export const exitAtom = atom(
   (g) => g(openAtom),
   (g, s, a: number) => {
     if (g(pidAtom) === a) {
-      log.info(`👋 Exit, so setting open to false`);
+      // log.info(`👋 Exit, so setting open to false`);
       s(openAtom, false);
     }
   }
@@ -2066,7 +2133,7 @@ export const applyUpdateAtom = atom(() => () => {
 export const valueInvalidAtom = atom(null, (g, s, a: string) => {
   if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
   s(processingAtom, false);
-  log.info(`Setting input due to invalid: ${a}`);
+  // log.info(`Setting input due to invalid: ${a}`);
   s(inputAtom, '');
   s(_inputChangedAtom, false);
   if (typeof a === 'string') {
@@ -2156,7 +2223,7 @@ export const onShortcutAtom = atom<OnShortcut>({});
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
   // const log = log;
-  log.info(`🎬 Send shortcut ${shortcut}`);
+  // log.info(`🎬 Send shortcut ${shortcut}`);
 
   channel(Channel.SHORTCUT, { shortcut });
   s(focusedFlagValueAtom, '');
@@ -2768,13 +2835,14 @@ export const lightenUIAtom = atom((g) => {
   return isLightened;
 });
 
-export const promptBoundsAtom = atom({
+const promptBoundsDefault = {
   id: '',
-  width: PROMPT.WIDTH.BASE,
-  height: PROMPT.HEIGHT.BASE,
+  width: 0,
+  height: 0,
   x: 0,
   y: 0,
-});
+};
+export const promptBoundsAtom = atom(promptBoundsDefault);
 
 export const audioDotAtom = atom(false);
 
@@ -2910,6 +2978,7 @@ export const resetPromptAtom = atom(
   null,
   debounce(
     async (g, s) => {
+      return;
       if (document.hasFocus()) return;
       s(pauseChannelAtom, true);
       s(isMainScriptAtom, true);
@@ -2947,7 +3016,7 @@ export const resetPromptAtom = atom(
       // }
 
       s(pauseChannelAtom, false);
-      log.info(`✅ Reset main complete.`);
+      // log.info(`✅ Reset main complete.`);
       s(cachedAtom, true);
     },
     50,
@@ -2959,9 +3028,9 @@ const cachedMainScoredChoices = atom<ScoredChoice[]>([]);
 export const cachedMainScoredChoicesAtom = atom(
   (g) => g(cachedMainScoredChoices),
   (g, s, a: ScoredChoice[]) => {
-    log.info(
-      `>>>>>>>>>>>>>>>>>>>>>>>> 📦 Cache main scored choices: ${a?.length}`
-    );
+    // log.info(
+    //   `>>>>>>>>>>>>>>>>>>>>>>>> 📦 Cache main scored choices: ${a?.length}`
+    // );
     s(cachedMainScoredChoices, a);
   }
 );
@@ -2992,7 +3061,7 @@ export const micStreamEnabledAtom = atom(
     if (g(_micStreamEnabledAtom) === a) return;
 
     s(_micStreamEnabledAtom, a);
-    log.info(`🎤 Mic stream enabled: ${a ? 'true' : 'false'}`);
+    // log.info(`🎤 Mic stream enabled: ${a ? 'true' : 'false'}`);
     if (!a) {
       ipcRenderer.send(Channel.MIC_STREAM, {
         event: 'end',
@@ -3006,14 +3075,32 @@ export const beforeInputAtom = atom('');
 export const cssAtom = atom('');
 
 export const initPromptAtom = atom(null, (g, s) => {
-  log.info(`🚀 Init prompt`);
+  // log.info(`🚀 Init prompt`);
   const promptData = g(cachedMainPromptDataAtom) as PromptData;
   // log.info({ promptData });
   s(promptDataAtom, promptData);
   const scoredChoices = g(cachedMainScoredChoicesAtom);
   // log.info({ scoredChoices: scoredChoices.length });
   s(scoredChoicesAtom, scoredChoices);
+
   s(previewHTMLAtom, g(cachedMainPreviewAtom));
   s(shortcutsAtom, g(cachedMainShortcutsAtom));
   s(flagsAtom, g(cachedMainFlagsAtom));
 });
+
+export const clearCacheAtom = atom(null, (g, s) => {
+  // log.info(
+  //   `${window.pid}--> 📦 CLEARING renderer cache for ${g(scriptAtom).filePath}`
+  // );
+  s(cachedMainPromptDataAtom, {});
+  s(cachedMainScoredChoicesAtom, []);
+  s(cachedMainPreviewAtom, '');
+  s(cachedMainShortcutsAtom, []);
+  s(cachedMainFlagsAtom, {});
+  s(promptDataAtom, {});
+  s(scoredChoicesAtom, []);
+  s(promptBoundsAtom, promptBoundsDefault);
+});
+
+export const mainElementIdAtom = atom<string>('');
+export const closedAtom = atom(false);

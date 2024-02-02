@@ -1,6 +1,6 @@
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-useless-escape */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import MonacoEditor, { Monaco } from '@monaco-editor/react';
 
@@ -15,7 +15,6 @@ import {
   editorThemeAtom,
   shortcutsAtom,
 } from '../jotai';
-import { useMountMainHeight } from '../hooks';
 import { kitLight, nightOwl } from '../editor-themes';
 import { WindowChannel } from '../../../shared/enums';
 
@@ -100,7 +99,7 @@ export default function Log() {
   const [editor, setEditorRef] =
     useState<monacoEditor.IStandaloneCodeEditor | null>(null);
 
-  const containerRef = useMountMainHeight();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const onBeforeMount = useCallback(
     (monaco: Monaco) => {
@@ -208,6 +207,7 @@ export default function Log() {
 
   return (
     <div
+      id="log"
       onMouseEnter={() => setMouseOver(true)}
       onMouseLeave={() => setMouseOver(false)}
       key="editor"

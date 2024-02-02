@@ -57,7 +57,7 @@ import {
 
 import { widgetState } from '../shared/widget';
 
-import { createAppToPrompt, sendToAllPrompts } from './channel';
+import { sendToAllPrompts } from './channel';
 
 import { emitter, KitEvent } from '../shared/events';
 import { showInspector } from './show';
@@ -70,6 +70,7 @@ import { stripAnsi } from './ansi';
 import { TrackEvent, trackEvent } from './track';
 import { createMessageMap } from './messages';
 import { prompts } from './prompts';
+import { createIdlePty } from './pty';
 
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
@@ -383,9 +384,10 @@ const createChild = ({
   const child = fork(entry, args, {
     silent: true,
     stdio: 'pipe',
-    execPath,
+    // TODO: Testing execPath on Windows????
+    // execPath,
     cwd: os.homedir(),
-    execArgv: [`--experimental-loader`, loaderFileUrl],
+    execArgv: [`--loader`, loaderFileUrl],
     env: {
       ...env,
       KIT_DEBUG: port ? '1' : '0',
@@ -393,11 +395,7 @@ const createChild = ({
     ...(port
       ? {
           stdio: 'pipe',
-          execArgv: [
-            `--experimental-loader`,
-            loaderFileUrl,
-            `--inspect=${port}`,
-          ],
+          execArgv: [`--loader`, loaderFileUrl, `--inspect=${port}`],
         }
       : {}),
   });
@@ -652,6 +650,10 @@ class Processes extends Array<ProcessAndPrompt> {
       launched: false,
     } as ProcessAndPrompt;
 
+    // prompt.window.on('closed', () => {
+    //   info.prompt = null;
+    // });
+
     this.push(info);
 
     processesChanged();
@@ -778,15 +780,15 @@ class Processes extends Array<ProcessAndPrompt> {
 
   public removeByPid(pid: number) {
     log.info(`🛑 removeByPid: ${pid}`);
+    prompts.delete(pid);
     const index = this.findIndex((info) => info.pid === pid);
     if (index === -1) return;
     const { child, type, scriptPath, prompt } = this[index];
+
     if (!child?.killed) {
       emitter.emit(KitEvent.RemoveProcess, scriptPath);
       child?.removeAllListeners();
       child?.kill();
-
-      prompts.delete(pid);
 
       if (childShortcutMap.has(child)) {
         log.info(`Unregistering shortcuts for child: ${child.pid}`);
@@ -1142,7 +1144,6 @@ emitter.on(
 let observer: PerformanceObserver | null = null;
 emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
   try {
-    const envData = dotenv.parse(readFileSync(kenvPath('.env')));
     // REMOVE-MAC
     if (kitState.isMac) {
       const authorized = getAuthStatus('accessibility') === 'authorized';
@@ -1153,7 +1154,6 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
     }
     // END-REMOVE-MAC
 
-    kitState.kenvEnv = envData;
     // TODO: Why did I even do this? There has to be a simpler way now
     // togglePromptEnv('KIT_MAIN_SCRIPT');
 
@@ -1177,11 +1177,29 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
   updateTheme();
 });
 
+let prevKenvEnv: Record<string, string> = {};
 subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
+  log.info(`🔑 kenvEnv updated`, kenvEnv);
+  // Compare prevKenvEnv to kenvEnv
+  const keys = Object.keys(kenvEnv);
+  const prevKeys = Object.keys(prevKenvEnv);
+  const addedKeys = keys.filter((key) => !prevKeys.includes(key));
+  const removedKeys = prevKeys.filter((key) => !keys.includes(key));
+  const changedKeys = keys.filter(
+    (key) => prevKeys.includes(key) && prevKenvEnv[key] !== kenvEnv[key]
+  );
+  if (addedKeys.length || removedKeys.length || changedKeys.length) {
+    log.info(`🔑 kenvEnv changes`);
+    prevKenvEnv = kenvEnv;
+  } else {
+    log.info(`🔑 kenvEnv no changes`);
+    return;
+  }
   if (Object.keys(kenvEnv).length === 0) return;
   if (processes.getAllProcessInfo().length === 0) return;
   clearIdleProcesses();
   ensureIdleProcess();
+  createIdlePty();
 });
 
 subscribe(appDb, (db) => {

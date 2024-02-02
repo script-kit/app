@@ -5,7 +5,7 @@ import { UI } from '@johnlindquist/kit/core/enum';
 import { useAtom } from 'jotai';
 
 import { inputAtom, promptDataAtom } from '../jotai';
-import { useClose, useFocus, useMountMainHeight } from '../hooks';
+import { useClose, useFocus } from '../hooks';
 
 // RESIZE ME!!!!!
 
@@ -20,11 +20,9 @@ export default function TextArea() {
 
   // useSave(textAreaValue);
   useClose();
-  // useEscape();
-  const containerRef = useMountMainHeight();
 
   return (
-    <div id={UI.textarea} key="textarea" ref={containerRef}>
+    <div id={UI.textarea} key="textarea">
       <textarea
         ref={textareaRef as LegacyRef<HTMLTextAreaElement>}
         style={

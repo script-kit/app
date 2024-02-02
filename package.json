@@ -1,6 +1,7 @@
 {
   "name": "kit",
   "productName": "Kit",
+  "version": "0.0.0-development",
   "description": "The Script Kit App",
   "main": "./out/main/index.mjs",
   "scripts": {
@@ -41,7 +42,10 @@
     "write-node-version": "node ./scripts/write-node-version.js",
     "vite-start": "electron-vite preview",
     "vite-dev": "./vite-dev.sh",
-    "vite-prebuild": "electron-vite build"
+    "vite-prebuild": "electron-vite build",
+    "vite-package": "electron-vite build --outDir=dist && DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
+    "vite-build": "DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
+    "electron-rebuild": "electron-builder install-app-deps"
   },
   "lint-staged": {
     "*.{jsx,ts,tsx}": [
@@ -68,7 +72,7 @@
       "**/*.{node,dll}"
     ],
     "files": [
-      "dist/",
+      "out/",
       "fonts/**",
       "node_modules/",
       "index.html",
@@ -144,7 +148,6 @@
       "executableName": "scriptkit"
     },
     "directories": {
-      "app": "src",
       "buildResources": "assets",
       "output": "release"
     },
@@ -198,8 +201,7 @@
       "json"
     ],
     "moduleDirectories": [
-      "node_modules",
-      "src/node_modules"
+      "node_modules"
     ],
     "modulePathIgnorePatterns": [
       ".history"
@@ -296,7 +298,7 @@
     "css-loader": "6.8.1",
     "detect-port": "^1.5.1",
     "download": "8.0.0",
-    "electron": "^28.1.4",
+    "electron": "^29.0.0-beta.5",
     "electron-builder": "^24.9.1",
     "electron-devtools-installer": "3.2.0",
     "electron-releases": "3.1171.0",
@@ -356,7 +358,7 @@
     "@johnlindquist/kit": "latest",
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
-    "@johnlindquist/mac-panel-window": "^1.0.21",
+    "@johnlindquist/mac-panel-window": "^1.3.0",
     "@johnlindquist/node-window-manager": "^1.0.22",
     "@monaco-editor/react": "^4.6.0",
     "@nut-tree/nut-js": "3.1.2",
@@ -381,12 +383,12 @@
     "dotenv": "^16.4.1",
     "electron-context-menu": "^3.6.1",
     "electron-debug": "3.2.0",
-    "electron-log": "^5.0.3",
+    "electron-log": "^5.1.1",
     "electron-store": "^8.1.0",
     "electron-unhandled": "^4.0.1",
     "electron-updater": "^6.1.7",
-    "electron-util": "^0.17.2",
-    "emoji-picker-react": "4.6.2",
+    "electron-util": "^0.18.0",
+    "emoji-picker-react": "^4.7.12",
     "es-module-lexer": "^1.4.1",
     "express-ws": "^5.0.2",
     "file-type-cjs-fix": "^1.1.1",
@@ -401,15 +403,15 @@
     "history": "5.3.0",
     "hotkeys-js": "3.12.0",
     "hpagent": "^1.2.0",
-    "html-react-parser": "3.0.15",
+    "html-react-parser": "5.1.1",
     "html-to-image": "1.11.11",
     "image-size": "0.9.4",
     "image-type": "^5.2.0",
     "inclusion": "^1.0.1",
     "internet-available": "^1.0.0",
     "is-image": "3.0.0",
-    "jotai": "2.6.3",
-    "jotai-effect": "^0.3.2",
+    "jotai": "2.6.4",
+    "jotai-effect": "^0.5.0",
     "lodash": "4.17.21",
     "lodash-es": "^4.17.21",
     "memoize-one": "5.2.1",
@@ -424,7 +426,7 @@
     "node-abi": "^3.54.0",
     "node-downloader-helper": "1.0.18",
     "node-mac-permissions": "^2.3.0",
-    "node-pty": "^1.1.0-beta5",
+    "node-pty": "^1.1.0-beta6",
     "node-schedule": "2.1.1",
     "node-stream-zip": "^1.15.0",
     "petite-vue": "^0.4.1",
@@ -436,9 +438,9 @@
     "react-dom": "^18.2.0",
     "react-hotkeys-hook": "3.3.2",
     "react-icons": "^4.12.0",
-    "react-resizable-panels": "^0.0.59",
+    "react-resizable-panels": "^2.0.2",
     "react-toastify": "^9.1.3",
-    "react-virtualized-auto-sizer": "1.0.20",
+    "react-virtualized-auto-sizer": "1.0.21",
     "react-window": "1.8.10",
     "regenerator-runtime": "0.13.11",
     "rxjs": "6.6.7",
@@ -450,7 +452,7 @@
     "tar": "6.2.0",
     "typescript": "^5.3.3",
     "uiohook-napi": "^1.5.3",
-    "untildify": "4.0.0",
+    "untildify": "5.0.0",
     "valtio": "1.13.0",
     "xterm": "5.3.0",
     "xterm-addon-attach": "0.9.0",

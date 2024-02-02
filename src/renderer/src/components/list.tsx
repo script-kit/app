@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useState } from 'react';
-import log from 'electron-log';
+import log from 'electron-log/renderer';
 import { VariableSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';

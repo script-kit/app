@@ -1,7 +1,7 @@
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-useless-escape */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import log from 'electron-log';
+import log from 'electron-log/renderer';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
@@ -22,12 +22,15 @@ import {
   editorOptions,
   editorSuggestionsAtom,
   inputAtom,
+  mainHeightAtom,
   openAtom,
+  promptDataAtom,
   scrollToAtom,
   uiAtom,
 } from '../jotai';
-import { useMountMainHeight } from '../hooks';
+
 import { kitLight, nightOwl } from '../editor-themes';
+import { DEFAULT_HEIGHT } from '../../../shared/defaults';
 
 // loader.config({
 //   paths: {
@@ -154,7 +157,7 @@ export default function Editor() {
     }
   }, [editorSuggestions, editor, options]);
 
-  const containerRef = useMountMainHeight();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const onBeforeMount = useCallback(
     (monaco: Monaco) => {
@@ -538,6 +541,7 @@ export default function Editor() {
       key="editor"
       ref={containerRef}
       className={`
+measure-my-height
       -mb-3 h-full
     w-full pt-3`}
     >

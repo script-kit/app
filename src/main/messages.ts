@@ -52,11 +52,7 @@ import {
 
 import { widgetState, findWidget } from '../shared/widget';
 
-import {
-  createAppToPrompt,
-  createSendToChild,
-  createSendToPrompt,
-} from './channel';
+import { createSendToChild } from './channel';
 import { setFlags, setChoices, invokeSearch } from './search';
 
 import { emitter, KitEvent } from '../shared/events';
@@ -85,7 +81,6 @@ import {
   processes,
 } from './process';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { prompts } from './prompts';
 
 export type ChannelHandler = {
   [key in keyof ChannelMap]: (data: SendData<key>) => void;
@@ -156,7 +151,6 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
   const { prompt, scriptPath } = info;
   const sendToPrompt = prompt.sendToPrompt;
-  const appToPrompt = prompt.appToPrompt;
   const setLog = (value) => sendToPrompt(Channel.SET_LOG, value);
   const childSend = createSendToChild(info);
 
@@ -939,9 +933,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
 
     SET_PREVIEW: (data) => {
-      if (kitState.cachePreview) {
+      if (prompt.cacheScriptPreview) {
         cachePreview(prompt.scriptPath, data.value);
-        kitState.cachePreview = false;
+        prompt.cacheScriptPreview = false;
       }
       sendToPrompt(Channel.SET_PREVIEW, data.value);
     },
@@ -954,7 +948,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           prompt.kitSearch.input === '' &&
           value?.length
         ) {
-          appToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, value);
+          prompt.appToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, value);
         }
 
         // TOOD: Consider caching shortcuts
@@ -1009,7 +1003,6 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     //   showNotification(data.html || 'You forgot html', data.options);
     // },
     SET_PROMPT_DATA: onChildChannel(async (pap, { channel, value }) => {
-      const appToPrompt = createAppToPrompt(prompt);
       performance.measure('SET_PROMPT_DATA', 'script');
       prompt.scriptPath = value?.scriptPath || '';
       prompt.hideOnEscape = Boolean(value?.hideOnEscape);
@@ -1027,7 +1020,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       }
 
       if (value?.ui === UI.mic) {
-        appToPrompt(AppChannel.SET_MIC_CONFIG, {
+        prompt.appToPrompt(AppChannel.SET_MIC_CONFIG, {
           timeSlice: value?.timeSlice || 200,
           format: value?.format || 'webm',
           stream: value?.stream || false,
@@ -1117,12 +1110,6 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           childSend({
             channel,
           });
-        }
-
-        if (kitState.cacheChoices && !kitState.preloaded) {
-          kitState.cacheChoices = false;
-
-          cacheChoices(prompt.scriptPath, formattedChoices);
         }
       }
     ),
@@ -1922,7 +1909,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       }
     ),
     PRELOAD: onChildChannel(async ({ child }, { channel, value }) => {
-      attemptPreload(value);
+      prompt.attemptPreload(value);
     }),
     CLEAR_TIMESTAMPS: onChildChannel(async ({ child }, { channel, value }) => {
       const stampDb = await getTimestamps();

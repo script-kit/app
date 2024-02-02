@@ -95,6 +95,8 @@ import {
   cssAtom,
   initPromptAtom,
   cachedMainFlagsAtom,
+  clearCacheAtom,
+  closedAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../../../shared/enums';
@@ -104,7 +106,7 @@ export default () => {
   const [, setAppConfig] = useAtom(appConfigAtom);
   const [, setAppDb] = useAtom(appDbAtom);
   const [, setOpen] = useAtom(openAtom);
-  const [, setScript] = useAtom(scriptAtom);
+  const [script, setScript] = useAtom(scriptAtom);
   const [, setHint] = useAtom(hintAtom);
   const [, setPanelHTML] = useAtom(panelHTMLAtom);
   const [, setLogHtml] = useAtom(logHTMLAtom);
@@ -201,6 +203,9 @@ export default () => {
   const setMicId = useSetAtom(micIdAtom);
   const setWebcamId = useSetAtom(webcamIdAtom);
   const setAudioDot = useSetAtom(audioDotAtom);
+  const setClosed = useSetAtom(closedAtom);
+
+  const clearCache = useSetAtom(clearCacheAtom);
 
   type ChannelAtomMap = {
     [key in keyof ChannelMap]: (data: ChannelMap[key]) => void;
@@ -344,7 +349,7 @@ export default () => {
     Object.entries(messageMap).forEach(([key, fn]) => {
       if (ipcRenderer.listenerCount(key) === 0) {
         ipcRenderer.on(key, (_, data) => {
-          log.silly(`🔑 Received ${key} message`);
+          // log.info(`🔑 ${script.filePath}:  Received ${key} message`);
           // if (data?.kitScript) setScriptName(data?.kitScript);
           // log(`>>>>>>>>>>>>>>>> 🔑 Received ${key} message`);
           // if (!key) {
@@ -539,6 +544,7 @@ export default () => {
     }
 
     const handleInitPrompt = (_, data) => {
+      log.info(`${pid}: Received init prompt message`);
       initPrompt();
     };
 
@@ -571,7 +577,26 @@ export default () => {
       ipcRenderer.on(AppChannel.CSS_CHANGED, handleCssChanged);
     }
 
-    ipcRenderer.send(AppChannel.MESSAGES_READY, pid);
+    log.info(`Sending messages ready for ${pid} with ${window.pid}`);
+    ipcRenderer.send(AppChannel.MESSAGES_READY, window.pid);
+
+    const handleClearCache = (_, data) => {
+      clearCache();
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.CLEAR_CACHE) === 0) {
+      ipcRenderer.on(AppChannel.CLEAR_CACHE, handleClearCache);
+    }
+
+    const handleClosePrompt = () => {
+      log.info(`${pid}: Closing prompt `);
+
+      setClosed(true);
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.CLOSE_PROMPT) === 0) {
+      ipcRenderer.on(AppChannel.CLOSE_PROMPT, handleClosePrompt);
+    }
 
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
@@ -610,6 +635,8 @@ export default () => {
         AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS,
         handleSetCachedMainFlags
       );
+      ipcRenderer.off(AppChannel.CLEAR_CACHE, handleClearCache);
+      ipcRenderer.off(AppChannel.CLOSE_PROMPT, handleClosePrompt);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

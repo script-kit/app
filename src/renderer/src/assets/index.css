@@ -33,8 +33,8 @@ Favicon gradient
   /* Check useThemeDetector... */
   --opacity: 0.5;
   --mono-font: JetBrains Mono;
-  --sans-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --sans-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   --serif-font: 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
     'serif';
 
@@ -422,11 +422,11 @@ body {
 }
 
 #input {
-  font-stretch: condensed;
+  /* font-stretch: condensed; */
 }
 
 #input::placeholder {
-  font-stretch: condensed;
+  /* font-stretch: condensed; */
 }
 
 .emoji-picker-react {
@@ -502,7 +502,7 @@ code.hljs {
 }
 .hljs-copy-button {
   @apply text-text-base text-opacity-25 dark:text-white dark:text-opacity-25;
-  @apply top-5 right-1 mt-0.5 h-5 w-5;
+  @apply right-1 top-5 mt-0.5 h-5 w-5;
   position: absolute;
 }
 
@@ -531,7 +531,7 @@ code.hljs {
   content: '✓';
   @apply absolute;
   @apply text-text-base text-opacity-50 dark:text-white dark:text-opacity-50;
-  @apply top-1 right-2;
+  @apply right-2 top-1;
   @apply text-xs;
 }
 
@@ -599,7 +599,7 @@ code::after {
 
 .rce-mbox:has(.right) {
   /* inverted with half opacity */
-  @apply mr-6 ml-24 bg-text-base bg-opacity-10 text-text-base;
+  @apply ml-24 mr-6 bg-text-base bg-opacity-10 text-text-base;
 }
 
 .rce-mbox:has(.left),
@@ -610,7 +610,7 @@ code::after {
   @apply whitespace-pre-wrap px-2.5 text-opacity-90;
   @apply shadow-sm;
   @apply focus:shadow-md;
-  @apply py-1 px-3;
+  @apply px-3 py-1;
   @apply border border-text-base border-opacity-15;
 
   /* Set the max width to full - 3rem */
@@ -667,7 +667,7 @@ code::after {
 }
 
 .Toastify__toast-container--top-right {
-  @apply top-16 right-1;
+  @apply right-1 top-16;
 }
 
 @media (max-height: 48px) {
@@ -761,7 +761,7 @@ code::after {
 } */
 
 .kit-mbox {
-  @apply my-2 py-2 px-3;
+  @apply my-2 px-3 py-2;
   @apply rounded border-1 border-text-base/10;
 }
 

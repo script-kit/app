@@ -15,7 +15,7 @@ import React, {
   useState,
   ChangeEvent,
 } from 'react';
-import log from 'electron-log';
+import log from 'electron-log/renderer';
 import { Channel, PROMPT } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
@@ -167,8 +167,8 @@ export default function Input() {
       }
 
       if (event.ctrlKey) {
-        const shortcut = shortcuts.find(
-          (s) => (s?.key || '')?.includes('ctrl')
+        const shortcut = shortcuts.find((s) =>
+          (s?.key || '')?.includes('ctrl')
         );
         const key = shortcut?.key || '';
 
@@ -441,6 +441,7 @@ export default function Input() {
                   src={user.avatar_url}
                   className="z-0 w-[22px] cursor-pointer rounded-full hover:opacity-75"
                 />
+
                 <svg
                   height="24"
                   width="24"

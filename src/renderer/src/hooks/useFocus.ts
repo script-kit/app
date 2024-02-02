@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import log from 'electron-log';
+import log from 'electron-log/renderer';
 import { Ref, RefObject, useEffect, useRef } from 'react';
 import {
   flaggedChoiceValueAtom,
