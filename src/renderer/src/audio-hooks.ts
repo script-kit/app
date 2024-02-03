@@ -1,6 +1,6 @@
 // src/hooks/audio-hook.tsx
 import { useState, useCallback, useRef, useEffect } from 'react';
-import log from 'electron-log/renderer';
+import log from 'electron-log';
 const path = window.api.path;
 const os = window.api.os;
 const { ipcRenderer } = window.electron;

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { toast } from 'react-toastify';
 import DOMPurify from 'dompurify';
-import log from 'electron-log/renderer';
+import log from 'electron-log';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 const { ipcRenderer } = window.electron;
 import { Channel } from '@johnlindquist/kit/core/enum';

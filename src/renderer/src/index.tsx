@@ -1,5 +1,5 @@
 /* eslint-disable import/first */
-// import log from 'electron-log/renderer';
+// import log from 'electron-log';
 
 // log.info(`
 // ---------------------------
@@ -26,7 +26,6 @@
 // window.addEventListener('warning', (warning) => {
 //   log.warn('Warning: ', warning);
 // });
-
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './assets/index.css';

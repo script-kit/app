@@ -1,8 +1,16 @@
 import { resolve } from 'path';
-import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
+import {
+  defineConfig,
+  externalizeDepsPlugin,
+  bytecodePlugin,
+} from 'electron-vite';
 import react from '@vitejs/plugin-react';
-import { BuildOptions } from 'vite';
+import { BuildOptions, Plugin } from 'vite';
 import { fileURLToPath } from 'url';
+import million from 'million/compiler';
+
+// const exclude = ['electron-log', 'node-mac-permissions'];
+const exclude = [];
 
 const build: BuildOptions = {
   rollupOptions: {
@@ -11,14 +19,25 @@ const build: BuildOptions = {
     },
   },
 };
+
+const plugins: Plugin[] = [
+  externalizeDepsPlugin(),
+  bytecodePlugin(),
+] as Plugin[];
+
 const config = defineConfig({
   main: {
     build,
-    plugins: [externalizeDepsPlugin()],
+    plugins,
+    // resolve: {
+    //   alias: {
+    //     'electron-log': 'electron-log/main.js',
+    //   },
+    // },
   },
   preload: {
     build,
-    plugins: [externalizeDepsPlugin()],
+    plugins,
   },
   renderer: {
     server: {
@@ -38,14 +57,14 @@ const config = defineConfig({
     },
     resolve: {
       alias: {
-        'electron/main': 'electron',
-        'electron/common': 'electron',
-        'electron/renderer': 'electron',
-
+        // 'electron/main': 'electron',
+        // 'electron/common': 'electron',
+        // 'electron/renderer': 'electron',
         '@renderer': resolve('src/renderer/src'),
+        // 'electron-log': 'electron-log/renderer.js',
       },
     },
-    plugins: [react()],
+    plugins: [million.vite({ auto: true }), react()],
   },
 });
 

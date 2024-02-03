@@ -4,7 +4,7 @@ const { ipcRenderer } = window.electron;
 import { Terminal, ITerminalAddon } from 'xterm';
 import { AppChannel } from '../../shared/enums';
 import { TermConfig } from '../../shared/types';
-import log from 'electron-log/renderer';
+import log from 'electron-log';
 
 export class AttachIPCAddon implements ITerminalAddon {
   private terminal: Terminal | undefined;

@@ -15,7 +15,7 @@ import React, {
   useState,
   ChangeEvent,
 } from 'react';
-import log from 'electron-log/renderer';
+import log from 'electron-log';
 import { Channel, PROMPT } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 

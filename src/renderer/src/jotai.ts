@@ -8,7 +8,7 @@
 const path = window.api.path;
 
 import { atom, Getter, Setter } from 'jotai';
-import log from 'electron-log/renderer';
+import log from 'electron-log';
 import DOMPurify from 'dompurify';
 import { AppDb, UserDb } from '@johnlindquist/kit/core/db';
 import { Channel, Mode, UI, PROMPT } from '@johnlindquist/kit/core/enum';
@@ -315,7 +315,7 @@ const editorConfig = atom<EditorConfig | null>({
 
 const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   fontFamily: 'JetBrains Mono',
-  fontSize: 18,
+  fontSize: 15,
   minimap: {
     enabled: false,
   },
@@ -1153,23 +1153,23 @@ const resize = debounce(
     const forceWidth = samePrompt ? promptBounds?.width : promptData?.width;
     let forceHeight;
 
-    if (
-      [
-        UI.term,
-        UI.editor,
-        UI.drop,
-        UI.textarea,
-        UI.emoji,
-        UI.chat,
-        UI.mic,
-        UI.webcam,
-      ].includes(ui)
-    ) {
-      forceHeight = samePrompt
-        ? promptBounds?.height
-        : promptData?.height || PROMPT.HEIGHT.BASE;
-      forceResize = true;
-    }
+    // if (
+    //   [
+    //     UI.term,
+    //     UI.editor,
+    //     UI.drop,
+    //     UI.textarea,
+    //     UI.emoji,
+    //     UI.chat,
+    //     UI.mic,
+    //     UI.webcam,
+    //   ].includes(ui)
+    // ) {
+    //   forceHeight = samePrompt
+    //     ? promptBounds?.height
+    //     : promptData?.height || PROMPT.HEIGHT.BASE;
+    //   forceResize = true;
+    // }
 
     if (ui === UI.div) {
       forceHeight = promptData?.height;

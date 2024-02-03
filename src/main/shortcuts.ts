@@ -246,6 +246,7 @@ export const updateMainShortcut = async (filePath: string) => {
       if (prompts.focused?.scriptPath === getMainScriptPath()) {
         prompts.focused?.hideInstant();
         processes.removeByPid(prompts.focused?.pid);
+        prompts.focused = null;
         return;
       }
 

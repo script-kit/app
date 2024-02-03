@@ -18,6 +18,8 @@ import {
 } from './pty-utils';
 import { KitPrompt } from './prompt';
 
+let pool: pty.IPty[] = [];
+
 class PtyPool {
   private idlePty: pty.IPty | null = null;
   private bufferedData: any[] = [];

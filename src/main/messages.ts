@@ -81,6 +81,7 @@ import {
   processes,
 } from './process';
 import { format, formatDistanceToNowStrict } from 'date-fns';
+import { prompts } from './prompts';
 
 export type ChannelHandler = {
   [key in keyof ChannelMap]: (data: SendData<key>) => void;
@@ -662,6 +663,23 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     GET_PROCESSES: onChildChannelOverride(({ child }, { channel }) => {
       childSend({ channel, processes });
+    }),
+
+    GET_PROMPTS: onChildChannelOverride(({ child }, { channel }) => {
+      childSend({
+        channel,
+        prompts: [...prompts].map((p) => {
+          return {
+            id: p.id,
+            pid: p.pid,
+            birthTime: p.birthTime,
+            isFocused: p.isFocused(),
+            isVisible: p.isVisible(),
+            isDestroyed: p.isDestroyed(),
+            bounds: p.window.getBounds(),
+          };
+        }),
+      });
     }),
 
     GET_KIT_WINDOWS: onChildChannelOverride(({ child }, { channel }) => {

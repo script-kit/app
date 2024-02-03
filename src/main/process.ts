@@ -780,6 +780,9 @@ class Processes extends Array<ProcessAndPrompt> {
 
   public removeByPid(pid: number) {
     log.info(`🛑 removeByPid: ${pid}`);
+    if (pid === 0) {
+      log.info(`Invalid pid: ${pid} 🤔`);
+    }
     prompts.delete(pid);
     const index = this.findIndex((info) => info.pid === pid);
     if (index === -1) return;

@@ -46,6 +46,7 @@ const TopRightButton = () => {
     return (
       <button
         type="button"
+        key="update"
         onClick={onUpdateButtonClick}
         tabIndex={-1}
         // add the hand pointer cursor
@@ -65,6 +66,7 @@ const TopRightButton = () => {
   if (isMainScript && processes?.length > 1) {
     return (
       <button
+      key="process"
         type="button"
         tabIndex={-1}
         onClick={onProcessButtonClick}
@@ -157,7 +159,7 @@ export default function Header() {
           className="-mt-4 h-full flex-1"
         />
         <span className="flex flex-row items-end pl-1 text-right">
-          <TopRightButton />
+          <TopRightButton key='top-right-button' />
         </span>
       </div>
       {false && mouseEnabled && (

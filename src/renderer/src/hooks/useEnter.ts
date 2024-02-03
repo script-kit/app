@@ -1,4 +1,4 @@
-import log from 'electron-log/renderer';
+import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { UI } from '@johnlindquist/kit/core/enum';

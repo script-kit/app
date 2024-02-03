@@ -1,7 +1,7 @@
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-useless-escape */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import log from 'electron-log/renderer';
+import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
