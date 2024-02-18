@@ -1,10 +1,3 @@
-/* eslint-disable react/jsx-props-no-spreading */
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable jsx-a11y/mouse-events-have-key-events */
-/* eslint-disable react/no-array-index-key */
-/* eslint-disable no-nested-ternary */
 import React, { useCallback, useEffect, useState, DragEvent } from 'react';
 import parse from 'html-react-parser';
 import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types/core';
@@ -29,31 +22,7 @@ import {
 
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
 import { AppChannel } from '../../../shared/enums';
-import { IconSwapper } from './iconswapper';
-
-function highlight(
-  string: string,
-  matches: [number, number][],
-  className: string
-) {
-  const substrings = [];
-  let previousEnd = 0;
-
-  if (matches?.length) {
-    for (const [start, end] of matches) {
-      const prefix = string.substring(previousEnd, start);
-      const match = (
-        <mark className={className}>{string.substring(start, end)}</mark>
-      );
-
-      substrings.push(prefix, match);
-      previousEnd = end;
-    }
-  }
-  substrings.push(string.substring(previousEnd));
-
-  return <span>{React.Children.toArray(substrings)}</span>;
-}
+import {highlight} from './utils'
 
 function isScript(choice: Choice | Script): choice is Script {
   return (choice as Script)?.command !== undefined;
@@ -75,14 +44,12 @@ function FlagButton({
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
 
   const [isMouseDown] = useAtom(isMouseDownAtom);
-  const [flags] = useAtom(flagsAtom);
-  const [flaggedValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [modifiers] = useAtom(_modifiers);
   const [modifierDescription, setModifierDescription] = useState('');
   const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
   const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
   const input = useAtomValue(inputAtom);
-  const [submitValue, setSubmitValue] = useAtom(submitValueAtom);
+  const [, setSubmitValue] = useAtom(submitValueAtom);
   const [focusedChoice] = useAtom(focusedChoiceAtom);
 
   // Get the text after the last file separator
@@ -139,9 +106,10 @@ function FlagButton({
   useEffect(() => {
     const modifier = modifiers.find((m) => {
       return Object.keys(choice).includes(m);
-    }) as keyof ScriptMetadata;
+    }) as keyof Script;
 
-    setModifierDescription((choice as unknown as ScriptMetadata)?.[modifier]);
+    const description = (choice as Script)?.[modifier];
+    setModifierDescription(typeof description === 'string' ? description : '');
   }, [modifiers]);
 
   const [isScrolling] = useAtom(isScrollingAtom);
@@ -255,8 +223,8 @@ function FlagButton({
           >
             {(choice?.tag || choice?.icon || choice?.pass || isRecent) && (
               <div className="flex flex-row items-center">
-                {((choice?.pass || isRecent) && choice?.kenv
-                  ? choice.kenv
+                {((choice?.pass || isRecent) && (choice as Script)?.kenv
+                  ? (choice as Script).kenv
                   : choice.tag) && (
                   <div
                     className={`mx-1 truncate font-mono text-xxs ${choice?.tagClassName} ${
@@ -264,9 +232,9 @@ function FlagButton({
                     }`}
                   >
                     {(choice?.pass || isRecent) &&
-                    choice?.kenv &&
-                    choice?.kenv !== '.kit'
-                      ? choice.kenv
+                    (choice as Script)?.kenv &&
+                    (choice as Script)?.kenv !== '.kit'
+                      ? (choice as Script).kenv
                       : choice.tag
                         ? highlight(
                             choice.tag,

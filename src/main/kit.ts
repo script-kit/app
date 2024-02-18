@@ -29,6 +29,7 @@ import {
   getKitScript,
   kitState,
   kitStore,
+  sponsorCheck,
 } from '../shared/state';
 import { pathsAreEqual } from './helpers';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
@@ -152,6 +153,16 @@ export const runPromptProcess = async (
     main: false,
   }
 ): Promise<ProcessInfo | null> => {
+  const count = prompts.countVisible();
+  if (count > 2) {
+    const isSponsor = await sponsorCheck('More than 2 prompts');
+    if (!isSponsor) {
+      return null;
+    }
+  }
+
+
+
   const isMain =
     options?.main || pathsAreEqual(promptScriptPath || '', getMainScriptPath());
 

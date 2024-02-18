@@ -56,9 +56,7 @@ import {
 } from '@johnlindquist/kit/core/utils';
 import { UI } from '@johnlindquist/kit/core/enum';
 import axios from 'axios';
-import { QuickScore } from 'quick-score';
 import internetAvailable from './internet-available';
-import { noScript } from './defaults';
 import { emitter, KitEvent } from './events';
 import { Trigger } from './enums';
 
@@ -105,21 +103,6 @@ const isWin11 =
 const isWin10 = isWin && !isWin11;
 const isLinux = os.platform() === 'linux';
 const arch = os.arch();
-
-// const css = readFileSync(path.resolve(__dirname, './App.global.css'), 'utf8');
-const css = `
-:root {
-  --color-text: 255, 255, 255;
-  --color-primary: 251, 191, 36;
-  --color-secondary: 255, 255, 255;
-  --color-background: 22, 22, 22;
-  --opacity: 0.45;
-  --ui-bg-opacity: 0.05;
-  --ui-border-opacity: 0.15;
-}
-`;
-
-// read the :root css variables from the css file and create a theme object
 
 export const serverState = {
   running: false,
@@ -484,6 +467,13 @@ export const sponsorCheck = async (feature: string, block = true) => {
       });
     } catch (error) {
       log.error('Error checking sponsor status', error);
+      kitState.isSponsor = true;
+      return true;
+    }
+
+    // check for axios post error
+    if (!response) {
+      log.error('Error checking sponsor status', response);
       kitState.isSponsor = true;
       return true;
     }

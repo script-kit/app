@@ -1,13 +1,6 @@
-/* eslint-disable react/jsx-props-no-spreading */
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable jsx-a11y/mouse-events-have-key-events */
-/* eslint-disable react/no-array-index-key */
-/* eslint-disable no-nested-ternary */
 import React, { useCallback, useEffect, useState, DragEvent } from 'react';
 import parse from 'html-react-parser';
-import { ScriptMetadata } from '@johnlindquist/kit/types/core';
+import { Script } from '@johnlindquist/kit/types/core';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue } from 'jotai';
 const { ipcRenderer } = window.electron;
@@ -35,32 +28,11 @@ import {
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg?asset';
 import { AppChannel } from '../../../shared/enums';
 import { IconSwapper } from './iconswapper';
+import {highlight} from './utils'
 
-function highlight(
-  string: string,
-  matches: [number, number][],
-  className: string
-) {
-  const substrings = [];
-  let previousEnd = 0;
 
-  if (matches?.length) {
-    for (const [start, end] of matches) {
-      const prefix = string.substring(previousEnd, start);
-      const match = (
-        <mark className={className}>{string.substring(start, end)}</mark>
-      );
 
-      substrings.push(prefix, match);
-      previousEnd = end;
-    }
-  }
-  substrings.push(string.substring(previousEnd));
-
-  return <span>{React.Children.toArray(substrings)}</span>;
-}
-
-function calculateScale(height: number): string {
+function calculateScale(height: number | undefined): string {
   if (height === PROMPT.ITEM.HEIGHT.XS) {
     return 'scale-75';
   }
@@ -166,10 +138,10 @@ function ChoiceButton({
   useEffect(() => {
     const modifier = modifiers.find((m) => {
       return Object.keys(choice).includes(m);
-    }) as keyof ScriptMetadata;
+    }) as keyof Script;
 
-    setModifierDescription((choice as unknown as ScriptMetadata)?.[modifier]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const description = (choice as Script)?.[modifier];
+    setModifierDescription(typeof description === 'string' ? description : '');
   }, [modifiers]);
 
   const [isScrolling] = useAtom(isScrollingAtom);
@@ -179,7 +151,6 @@ function ChoiceButton({
   const scale = calculateScale(choice.height || promptData?.itemHeight);
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button
       type="button"
       {...(choice?.drag
@@ -333,8 +304,8 @@ function ChoiceButton({
           >
             {(choice?.tag || choice?.icon || choice?.pass || isRecent) && (
               <div className="flex flex-row items-center">
-                {((choice?.pass || isRecent) && choice?.kenv
-                  ? choice.kenv
+                {((choice?.pass || isRecent) && (choice as Script)?.kenv
+                  ? (choice as Script).kenv
                   : choice.tag || choice.keyword || choice.trigger) && (
                   <div
                     className={`mx-1 font-mono text-xxs ${choice?.tagClassName} ${
@@ -342,9 +313,9 @@ function ChoiceButton({
                     }`}
                   >
                     {(choice?.pass || isRecent) &&
-                    choice?.kenv &&
-                    choice?.kenv !== '.kit'
-                      ? choice.kenv
+                    (choice as Script)?.kenv &&
+                    (choice as Script).kenv !== '.kit'
+                      ? (choice as Script).kenv
                       : choice.tag
                         ? highlight(
                             choice.tag,

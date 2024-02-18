@@ -418,7 +418,6 @@ ${data.error}
       channel,
       handleChannel(async ({ child, prompt, promptId }, message) => {
         const sendToPrompt = prompt.sendToPrompt;
-        const appToPrompt = prompt.appToPrompt;
 
         prompt.kitSearch.flaggedValue = message.state?.flaggedValue;
 

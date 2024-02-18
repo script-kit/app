@@ -95,6 +95,16 @@ export const prompts = {
 
     return false;
   },
+  countVisible: function () {
+    let count = 0;
+    for (const prompt of this) {
+      if (prompt.isVisible()) {
+        count++;
+      }
+    }
+
+    return count;
+  },
   // Implement iterator
   // Implement iterator
   [Symbol.iterator]: function* () {

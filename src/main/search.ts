@@ -466,11 +466,12 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
   }
 };
 
-export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys) => {
+export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) => {
   const order = f?.order || [];
   const sortChoicesKey = f?.sortChoicesKey || [];
 
-  let flagChoices = [];
+  // TODO: Think through type conversion here
+  let flagChoices: any[] = [];
   for (const [key, value] of Object.entries(f)) {
     if (key !== 'order' && key !== 'sortChoicesKey') {
       flagChoices.push({
@@ -480,6 +481,7 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys) => {
         filePath: value?.name,
         name: value?.name || key,
         shortcut: value?.shortcut || '',
+        tag: value?.tag || value?.shortcut || '',
         friendlyShortcut: value?.shortcut || '',
         description: value?.description || '',
         value: key,
@@ -569,6 +571,10 @@ export const setShortcodes = (prompt: KitPrompt, choices: Choice[]) => {
   log.info(
     `🗝 ${prompt.kitSearch.keywords.size} keywords, ${prompt.kitSearch.shortcodes.size} shortcodes, ${prompt.kitSearch.postfixes.size} postfixes, ${prompt.kitSearch.triggers.size} triggers`
   );
+};
+
+export const appendChoices = (prompt: KitPrompt, choices: Choice[]) => {
+  setChoices(prompt, prompt.kitSearch.choices.concat(choices), { preload: false });
 };
 
 export const setChoices = (

@@ -24,6 +24,7 @@ import {
   unlinkShortcuts,
   updateMainShortcut,
   shortcutScriptChanged,
+  setDefaultMainShortcut,
 } from './shortcuts';
 
 import { cancelSchedule, scheduleScriptChanged } from './schedule';
@@ -208,9 +209,6 @@ export const onScriptsChanged = async (
   }
 };
 
-export const onDbChanged = async (event: any, filePath: string) => {
-  updateMainShortcut(filePath);
-};
 
 let watchers = [] as FSWatcher[];
 
@@ -419,6 +417,16 @@ export const setupWatchers = async () => {
             delete kitState.kenvEnv.KIT_WIDTH;
           }
 
+          if(envData?.KIT_MAIN_SHORTCUT && envData?.KIT_MAIN_SHORTCUT !== kitState.kenvEnv.KIT_MAIN_SHORTCUT){
+            updateMainShortcut(envData?.KIT_MAIN_SHORTCUT);
+          }else {
+            if(kitState.kenvEnv.KIT_MAIN_SHORTCUT && !envData?.KIT_MAIN_SHORTCUT){
+              delete kitState.kenvEnv.KIT_MAIN_SHORTCUT;
+            }
+            setDefaultMainShortcut();
+          }
+
+
           // if (envData?.KIT_SUSPEND_WATCHERS) {
           //   const suspendWatchers = envData?.KIT_SUSPEND_WATCHERS === 'true';
           //   kitState.suspendWatchers = suspendWatchers;
@@ -502,11 +510,6 @@ export const setupWatchers = async () => {
 
     if (base === 'user.json') {
       checkUserDb(eventName);
-      return;
-    }
-
-    if (base === 'shortcuts.json') {
-      onDbChanged(eventName, filePath);
       return;
     }
 

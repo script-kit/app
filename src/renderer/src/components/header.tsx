@@ -5,7 +5,7 @@
 /* eslint-disable no-nested-ternary */
 import React, { useCallback } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
-import { XIcon } from '@heroicons/react/outline';
+import XIcon from '@heroicons/react/24/solid/XMarkIcon';
 import {
   descriptionAtom,
   mouseEnabledAtom,

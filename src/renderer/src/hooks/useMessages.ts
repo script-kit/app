@@ -97,6 +97,9 @@ import {
   cachedMainFlagsAtom,
   clearCacheAtom,
   closedAtom,
+  mainScriptPathAtom,
+  kitPathAtom,
+  kitConfigAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../../../shared/enums';
@@ -191,6 +194,7 @@ export default () => {
   const setCachedMainPreview = useSetAtom(cachedMainPreviewAtom);
   const setTermFont = useSetAtom(termFontAtom);
   const setBeforeInput = useSetAtom(beforeInputAtom);
+  const setKitConfig = useSetAtom(kitConfigAtom);
   // log({
   //   previewCheck: previewCheck ? '✅' : '🚫',
   //   previewHTML: previewHTML?.length,
@@ -577,9 +581,6 @@ export default () => {
       ipcRenderer.on(AppChannel.CSS_CHANGED, handleCssChanged);
     }
 
-    log.info(`Sending messages ready for ${pid} with ${window.pid}`);
-    ipcRenderer.send(AppChannel.MESSAGES_READY, window.pid);
-
     const handleClearCache = (_, data) => {
       clearCache();
     };
@@ -597,6 +598,16 @@ export default () => {
     if (ipcRenderer.listenerCount(AppChannel.CLOSE_PROMPT) === 0) {
       ipcRenderer.on(AppChannel.CLOSE_PROMPT, handleClosePrompt);
     }
+
+    const config = ipcRenderer.sendSync(AppChannel.GET_KIT_CONFIG);
+    log.info({config})
+    window.pid = config.pid;
+
+    setKitConfig(config);
+
+    log.info(`Sending messages ready for ${pid} with ${window.pid}`);
+    ipcRenderer.send(AppChannel.MESSAGES_READY, window.pid);
+
 
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {

@@ -35,7 +35,7 @@ import { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
 import { kitPath, getMainScriptPath } from '@johnlindquist/kit/core/utils';
 
 import fsExtra from 'fs-extra';
-const { pathExistsSync, readJson } = fsExtra;
+// const { pathExistsSync, readJson } = fsExtra;
 import { getTimestamps } from '@johnlindquist/kit/core/db';
 import { getLog, Logger, warn } from './logs';
 import { clearPromptCache, attemptPreload } from './prompt';
@@ -53,7 +53,7 @@ import {
 import { widgetState, findWidget } from '../shared/widget';
 
 import { createSendToChild } from './channel';
-import { setFlags, setChoices, invokeSearch } from './search';
+import { appendChoices, setFlags, setChoices, invokeSearch } from './search';
 
 import { emitter, KitEvent } from '../shared/events';
 import { show, showDevTools, showWidget } from './show';
@@ -77,8 +77,10 @@ import {
   childSend,
   clearFlags,
   clearPreview,
+  maybeConvertColors,
   ProcessAndPrompt,
   processes,
+  setTheme
 } from './process';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
@@ -163,7 +165,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     if (kitState.allowQuit)
       return warn(`⚠️  Tried to send data to ${data.channel} after quit`);
 
-    log.info(`--> toProcess: ${data.channel}`);
+    // log.info(`${data?.pid}: --> toProcess: ${data.channel}`);
     const processInfo = processes.getByPid(data?.pid);
     const isWidgetMessage = data.channel.includes('WIDGET');
 
@@ -966,7 +968,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           prompt.kitSearch.input === '' &&
           value?.length
         ) {
-          prompt.appToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, value);
+          prompt.sendToPrompt(AppChannel.SET_CACHED_MAIN_SHORTCUTS, value);
         }
 
         // TOOD: Consider caching shortcuts
@@ -1038,7 +1040,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       }
 
       if (value?.ui === UI.mic) {
-        prompt.appToPrompt(AppChannel.SET_MIC_CONFIG, {
+        prompt.sendToPrompt(AppChannel.SET_MIC_CONFIG, {
           timeSlice: value?.timeSlice || 200,
           format: value?.format || 'webm',
           stream: value?.stream || false,
@@ -1133,7 +1135,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     ),
 
     APPEND_CHOICES: onChildChannel(async ({ child }, { channel, value }) => {
-      sendToPrompt(channel, value);
+      appendChoices(prompt, value as Choice[]);
     }),
 
     // UPDATE_PROMPT_WARN: (data) => {
@@ -1191,6 +1193,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     SET_TEMP_THEME: onChildChannel(async ({ child }, { channel, value }) => {
       const newValue = await maybeConvertColors(value);
+      log.info(`🎨 Setting temp theme`, newValue);
       sendToPrompt(Channel.SET_TEMP_THEME, newValue);
       // TOOD: https://github.com/electron/electron/issues/37705
       // const backgroundColor = `rgba(${newValue['--color-background']}, ${newValue['--opacity']})`;

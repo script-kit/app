@@ -14,7 +14,7 @@ import {
   flagsRequiresScrollAtom,
   scoredFlagsAtom,
 } from '../jotai';
-import { ChoiceButtonProps, ListProps } from '../types';
+import { ChoiceButtonProps, ListProps } from '../../../shared/types';
 
 const createItemData = memoize(
   (choices) =>

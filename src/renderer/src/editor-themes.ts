@@ -671,15 +671,16 @@ export const nightOwl: monacoEditor.IStandaloneThemeData = {
       token: 'beginning.punctuation.definition.list.markdown',
     },
   ],
+
   colors: {
     'editor.foreground': '#d6deeb',
     'editor.background': '#00000000',
-    'editor.selectionBackground': '#ffffff22',
-    'editor.lineHighlightBackground': '#ffffff01',
-    'editorCursor.foreground': '#80a4c2',
-    'editorWhitespace.foreground': '#2e2040',
-    'editorIndentGuide.background': '#5e81ce52',
-    'editor.selectionHighlightBorder': '#122d42',
+    // 'editor.selectionBackground': '#000000',
+    // 'editor.lineHighlightBackground': '#ffffff01',
+    // 'editorCursor.foreground': '#80a4c2',
+    // 'editorWhitespace.foreground': '#2e2040',
+    // 'editorIndentGuide.background': '#5e81ce52',
+    // 'editor.selectionHighlightBorder': '#122d42',
   },
 };
 

@@ -1,4 +1,5 @@
 import { Rectangle, screen } from 'electron';
+import log from 'electron-log';
 import { kitState } from '../shared/state';
 
 export const getCurrentScreen = () => {
@@ -20,7 +21,9 @@ export const getCurrentScreen = () => {
 };
 
 export const getCurrentScreenFromBounds = (bounds: Rectangle) => {
-  return screen.getDisplayNearestPoint(bounds);
+  const currentScreen =  screen.getDisplayNearestPoint(bounds);
+  log.info('getCurrentScreenFromBounds', currentScreen.id);
+  return currentScreen;
 };
 
 export const isBoundsWithinDisplays = (bounds: Rectangle) => {
@@ -38,3 +41,25 @@ export const isBoundsWithinDisplays = (bounds: Rectangle) => {
     );
   });
 };
+
+export const isBoundsWithinDisplayById = (bounds: Rectangle, displayId: number) => {
+  const display = screen.getAllDisplays().find((d) => {
+    return d.id === displayId;
+  });
+
+  if (display) {
+    const minX = display.bounds.x;
+    const minY = display.bounds.y;
+    const maxX = display.bounds.x + display.bounds.width;
+    const maxY = display.bounds.y + display.bounds.height;
+
+    return (
+      bounds?.x >= minX &&
+      bounds?.x + bounds?.width <= maxX &&
+      bounds?.y >= minY &&
+      bounds?.y + bounds?.height <= maxY
+    );
+  }
+
+  return false;
+}

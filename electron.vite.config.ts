@@ -43,7 +43,7 @@ const config = defineConfig({
     server: {
       port: 4444,
       fs: {
-        allow: ['../../src', '../../node_modules/@fontsource'],
+        allow: ['../../src', '../../node_modules/@fontsource', '../../node_modules/@vscode'],
       },
     },
     build: {

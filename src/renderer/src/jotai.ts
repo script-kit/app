@@ -23,7 +23,6 @@ import {
   ProcessInfo,
 } from '@johnlindquist/kit/types/core';
 
-const { getMainScriptPath, kitPath } = window.api;
 import {
   EditorConfig,
   TextareaConfig,
@@ -34,7 +33,7 @@ import {
 import { editor } from 'monaco-editor';
 
 import { debounce, drop as _drop, isEqual, throttle } from 'lodash-es';
-const { ipcRenderer, Rectangle } = window.electron;
+const { ipcRenderer } = window.electron;
 import { VariableSizeList } from 'react-window';
 import { MessageType } from 'react-chat-elements';
 import { AppChannel } from '../../shared/enums';
@@ -330,6 +329,7 @@ const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   roundedSelection: false,
   renderWhitespace: 'none',
   trimAutoWhitespace: true,
+  renderLineHighlight: 'none',
 };
 
 export const editorOptions =
@@ -927,7 +927,7 @@ export const scriptAtom = atom(
   (g, s, a: Script) => {
     s(lastKeyDownWasModifierAtom, false);
 
-    const isMainScript = a?.filePath === getMainScriptPath();
+    const isMainScript = a?.filePath === g(kitConfigAtom).mainScriptPath;
 
     // log.info(`>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -940,8 +940,8 @@ export const scriptAtom = atom(
     const prevScript = g(_script);
     s(
       backToMainAtom,
-      prevScript?.filePath !== getMainScriptPath() &&
-        a?.filePath === getMainScriptPath()
+      prevScript?.filePath !== g(kitConfigAtom).mainScriptPath &&
+        a?.filePath === g(kitConfigAtom).mainScriptPath
     );
 
     s(promptReadyAtom, false);
@@ -984,7 +984,7 @@ export const scriptAtom = atom(
 );
 
 export const isKitScriptAtom = atom<boolean>((g) => {
-  return (g(_script) as Script)?.filePath?.includes(kitPath());
+  return (g(_script) as Script)?.filePath?.includes(g(kitConfigAtom).kitPath);
 });
 
 export const isMainScriptAtom = atom(false);
@@ -1435,7 +1435,7 @@ export const promptDataAtom = atom(
     if (a?.count) {
       s(countAtom, a.count);
     }
-    const isMainScript = a?.scriptPath === getMainScriptPath();
+    const isMainScript = a?.scriptPath === g(kitConfigAtom).mainScriptPath;
     s(isMainScriptAtom, isMainScript);
     if (isMainScript && !a?.preload && g(tabIndexAtom) === 0) {
       s(cachedMainPromptDataAtom, a);
@@ -3104,3 +3104,7 @@ export const clearCacheAtom = atom(null, (g, s) => {
 
 export const mainElementIdAtom = atom<string>('');
 export const closedAtom = atom(false);
+export const kitConfigAtom = atom({
+  kitPath: '',
+  mainScriptPath: ''
+});

@@ -2,7 +2,7 @@
 import React, { RefObject, useCallback, useRef, useState } from 'react';
 import SimpleBar from 'simplebar-react';
 import useResizeObserver from '@react-hook/resize-observer';
-import { PencilAltIcon } from '@heroicons/react/outline';
+import PencilAltIcon from '@heroicons/react/24/outline/PencilSquareIcon';
 import parse from 'html-react-parser';
 import { useAtom } from 'jotai';
 const { ipcRenderer } = window.electron;

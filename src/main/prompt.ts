@@ -1,10 +1,3 @@
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable no-nested-ternary */
-/* eslint-disable no-bitwise */
-/* eslint-disable import/prefer-default-export */
-/* eslint-disable consistent-return */
-
 // REMOVE-MAC
 import {
   makeKeyWindow,
@@ -32,7 +25,6 @@ import {
   BrowserWindow,
   screen,
   Rectangle,
-  powerMonitor,
   shell,
   BrowserWindowConstructorOptions,
   Point,
@@ -46,7 +38,7 @@ import os from 'os';
 import path from 'path';
 import log, { FileTransport } from 'electron-log';
 import { debounce } from 'lodash-es';
-import { getMainScriptPath, kenvPath } from '@johnlindquist/kit/core/utils';
+import { getMainScriptPath, kenvPath, kitPath } from '@johnlindquist/kit/core/utils';
 import { ChannelMap } from '@johnlindquist/kit/types/kitapp';
 import { Display } from 'electron/main';
 import { differenceInHours } from 'date-fns';
@@ -79,6 +71,7 @@ import { TrackEvent, trackEvent } from './track';
 import {
   getCurrentScreen,
   getCurrentScreenFromBounds,
+  isBoundsWithinDisplayById,
   isBoundsWithinDisplays,
 } from './screen';
 import { sendToAllPrompts } from './channel';
@@ -196,7 +189,7 @@ export const getCurrentScreenPromptCache = (
     resize: false,
     bounds: {},
   }
-): Partial<Rectangle> => {
+): Partial<Rectangle> & {screenId: string} => {
   const currentScreen = getCurrentScreen();
   const screenId = String(currentScreen.id);
   // log.info(`screens:`, promptState.screens);
@@ -204,10 +197,10 @@ export const getCurrentScreenPromptCache = (
   const savedPromptBounds = promptState?.screens?.[screenId]?.[scriptPath];
 
   if (savedPromptBounds) {
-    // log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
-    // log.info(`Bounds: found saved bounds for ${scriptPath}`);
+    log.info(`📱 Screen: ${screenId}: `, savedPromptBounds);
+    log.info(`Bounds: found saved bounds for ${scriptPath}`);
     // TODO: Reimplement div UI based on promptWindow?
-    // return savedPromptBounds;
+    return savedPromptBounds;
   }
 
   // log.info(`resetPromptBounds`, scriptPath);
@@ -257,19 +250,21 @@ export const getCurrentScreenPromptCache = (
   if (typeof bounds?.x === 'number') x = bounds.x;
   if (typeof bounds?.y === 'number') y = bounds.y;
 
-  const promptBounds = { x, y, width, height };
+  const promptBounds = { x, y, width, height, screenId };
 
   if (ui === UI.arg) {
     const bounds = {
       ...promptBounds,
       width: getDefaultWidth(),
       height: PROMPT.HEIGHT.BASE,
+      screenId,
     };
 
     log.verbose(`Bounds: No UI`, bounds);
     return bounds;
   }
 
+  log.info(`Bounds: No saved bounds for ${scriptPath}, returning default bounds`, promptBounds);
   return promptBounds;
 };
 
@@ -331,11 +326,6 @@ let prevPid = 0;
 
 let boundsCheck: any = null;
 let topTimeout: any = null;
-
-export const appendChoices = (choices: Choice[]) => {
-  // TODO: Reimplement append choices?
-  // setChoices(kitSearch.choices.concat(choices), { preload: false });
-};
 
 export const clearPromptCache = async () => {
   // TODO: Reimplement clear prompt cache?
@@ -548,9 +538,14 @@ export class KitPrompt {
     return (performance.now() - this.birthTime) / 1000 + 's';
   };
 
+  get scriptName(){
+    return this.scriptPath.split('/').pop();
+  }
+
   public window: BrowserWindow;
-  public sendToPrompt: (channel: Channel | AppChannel, data?: any) => void;
-  public appToPrompt: (channel: AppChannel, data?: any) => void;
+  public sendToPrompt: (channel: Channel | AppChannel, data?: any) => void = (channel, data)=> {
+    log.warn(`sendToPrompt not set`, { channel, data});
+  };
 
   kitSearch = {
     input: '',
@@ -605,10 +600,6 @@ export class KitPrompt {
   boundToProcess = false;
   bindToProcess = async (pid: number) => {
     if (this.boundToProcess) return;
-    await this.window.webContents.executeJavaScript(`
-window.pid = ${pid};
-window.promptId = "${this.id}";
-    `);
     this.pid = pid;
     this.boundToProcess = true;
     log.info(`${pid}: 🔗 Binding prompt to process`);
@@ -623,6 +614,15 @@ window.promptId = "${this.id}";
   };
 
   constructor() {
+    ipcMain.on(AppChannel.GET_KIT_CONFIG, (event) => {
+      event.returnValue = {
+        kitPath: kitPath(),
+        mainScriptPath: getMainScriptPath(),
+        pid: this.pid,
+      }
+    });
+
+
     const width = PROMPT.WIDTH.BASE;
     const height = PROMPT.HEIGHT.BASE;
     // const currentScreen = getCurrentScreenFromMouse();
@@ -684,16 +684,15 @@ window.promptId = "${this.id}";
 
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
       log.silly(`sendToPrompt: ${String(channel)}`, data);
+
       if (this?.window?.webContents?.send) {
         if (channel) {
-          this.window?.webContents.send(String(channel), data);
+            this.window?.webContents.send(String(channel), data);
         } else {
           log.error(`channel is undefined`, { data });
         }
       }
     };
-
-    this.appToPrompt = this.sendToPrompt;
 
     if (kitState.isWindows) {
       this.window.setBackgroundMaterial('mica');
@@ -791,14 +790,14 @@ window.promptId = "${this.id}";
 
     // reload if unresponsive
     this.window.webContents?.on('unresponsive', () => {
-      log.error(`Prompt window unresponsive. Reloading`);
+      log.error(`${this.pid}: ${this.scriptName}: Prompt window unresponsive. Reloading`);
       if (this.window.isDestroyed()) {
-        log.error(`Prompt window is destroyed. Not reloading`);
+        log.error(`${this.pid}: ${this.scriptName}: Prompt window is destroyed. Not reloading`);
         return;
       }
 
       this.window.webContents?.once('did-finish-load', () => {
-        log.info(`Prompt window reloaded`);
+        log.info(`${this.pid}: Prompt window reloaded`);
       });
 
       this.window.reload();
@@ -871,7 +870,7 @@ window.promptId = "${this.id}";
 
     this.window.webContents?.on(
       'devtools-opened',
-      (event, errorCode, error) => {
+      () => {
         // REMOVE-MAC
         if (kitState.isMac) {
           makeWindow(this.window);
@@ -1011,7 +1010,7 @@ window.promptId = "${this.id}";
     this.window.webContents?.on(
       'did-fail-load',
       (errorCode, errorDescription, validatedURL, isMainFrame) => {
-        log.info(`event: did-fail-load:`, {
+        log.error(`${this.pid} did-fail-load:`, {
           errorCode,
           errorDescription,
           isMainFrame,
@@ -1020,21 +1019,24 @@ window.promptId = "${this.id}";
     );
 
     this.window.webContents?.on('did-stop-loading', () => {
-      log.info(`event: did-stop-loading`);
+      log.info(`${this.pid}: ${this.scriptName}: did-stop-loading`);
     });
 
     this.window.webContents?.on('dom-ready', () => {
-      log.info(`🍀 dom-ready on ${this?.scriptPath}`);
+      log.info(`${this.pid}: 🍀 dom-ready on ${this?.scriptPath}`);
 
       // hideAppIfNoWindows(HideReason.DomReady);
       this.sendToPrompt(Channel.SET_READY, true);
     });
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
+      this.window.show();
+      this.window.webContents?.openDevTools();
+      this.sendToPrompt = () => {};
       this.window.webContents.send = () => {};
       // processes.removeByPid(this.pid);
-      console.log(`🫣 Render process gone...`);
-      console.log({ details });
+      log.error(`${this.pid}: ${this.scriptName}: 🫣 Render process gone...`);
+      log.error({ event, details });
     });
 
     const onResized = async () => {
@@ -1109,7 +1111,7 @@ window.promptId = "${this.id}";
 
   clearCache = () => {
     log.info(`--> 📦 CLEARING CACHE, Not main!`);
-    this.appToPrompt(AppChannel.CLEAR_CACHE, {});
+    this.sendToPrompt(AppChannel.CLEAR_CACHE, {});
   };
 
   initShowPrompt = () => {
@@ -1243,7 +1245,7 @@ window.promptId = "${this.id}";
 
     this.setBounds(
       bounds,
-      `${this.pid} - firstPrompt ${this.firstPrompt ? 'true' : 'false'}`
+      'initBounds'
       // this.prompt?.isVisible() &&
       //   kitState.promptCount > 1 &&
       //   !kitState.promptBounds.height
@@ -1278,7 +1280,7 @@ window.promptId = "${this.id}";
     }
     this.setBounds(
       bounds,
-      `promptId ${this.id} - promptCount ${this.firstPrompt ? 'true' : 'false'}`
+      'initMainBounds'
       // promptWindow?.isVisible() &&
       //   kitState.promptCount > 1 &&
       //   !kitState.promptBounds.height
@@ -1287,15 +1289,15 @@ window.promptId = "${this.id}";
 
   setBounds = async (bounds: Partial<Rectangle>, reason = '') => {
     if (!this.window || this.window.isDestroyed()) return;
-    log.info(`${this.pid}: setBounds initial bounds`, bounds);
+    log.info(`${this.pid}: Attempt ${this.scriptName}: setBounds reason: ${reason}`, bounds);
     if (!kitState.ready) return;
-    const prevSetBounds = this.window?.getBounds();
+    const currentBounds = this.window?.getBounds();
     const widthNotChanged =
-      bounds?.width && Math.abs(bounds.width - prevSetBounds.width) < 4;
+      bounds?.width && Math.abs(bounds.width - currentBounds.width) < 4;
     const heightNotChanged =
-      bounds?.height && Math.abs(bounds.height - prevSetBounds.height) < 4;
-    const xNotChanged = bounds?.x && Math.abs(bounds.x - prevSetBounds.x) < 4;
-    const yNotChanged = bounds?.y && Math.abs(bounds.y - prevSetBounds.y) < 4;
+      bounds?.height && Math.abs(bounds.height - currentBounds.height) < 4;
+    const xNotChanged = bounds?.x && Math.abs(bounds.x - currentBounds.x) < 4;
+    const yNotChanged = bounds?.y && Math.abs(bounds.y - currentBounds.y) < 4;
 
     const noChange =
       heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
@@ -1305,53 +1307,70 @@ window.promptId = "${this.id}";
       ...bounds,
     });
 
-    if (noChange) {
-      return;
-    }
+    // if (noChange) {
+    //   return;
+    // }
 
     // TODO: Maybe use in the future with setting the html body bounds for faster resizing?
     // this.prompt?.setContentSize(bounds.width, bounds.height);
 
     // Keep in bounds on the current screen
     // TODO: Reimplement keep in bounds?
-    // const currentScreen = this.isVisible()
-    //   ? getCurrentScreenFromBounds(this.window?.getBounds())
-    //   : this.getCurrentScreenFromMouse();
-    const currentScreen = this.getCurrentScreenFromMouse();
-    const { x, y, width, height } = bounds;
-    const { x: workX, y: workY } = currentScreen.workArea;
+    const boundsScreen = getCurrentScreenFromBounds(this.window?.getBounds())
+    const mouseScreen = getCurrentScreen()
+    const boundsOnMouseScreen = isBoundsWithinDisplayById(bounds as Rectangle, mouseScreen.id)
+
+    log.info(`boundsScreen.id ${boundsScreen.id} mouseScreen.id ${mouseScreen.id} boundsOnMouseScreen ${boundsOnMouseScreen ? 'true' : 'false'}`)
+
+
+
+    if(boundsScreen.id !== mouseScreen.id && boundsOnMouseScreen) {
+      log.info(`🔀 Mouse screen is different, but bounds are within display. Using mouse screen.`)
+      // return
+    }
+
+    const currentScreen = mouseScreen;
+    // const currentScreen = this.getCurrentScreenFromMouse();
+    let { x, y, width, height } = bounds;
+    let { x: workX, y: workY } = currentScreen.workArea;
     const { width: screenWidth, height: screenHeight } =
       currentScreen.workAreaSize;
 
     if (typeof bounds?.height !== 'number')
-      bounds.height = prevSetBounds.height;
-    if (typeof bounds?.width !== 'number') bounds.width = prevSetBounds.width;
-    if (typeof bounds?.x !== 'number') bounds.x = prevSetBounds.x;
-    if (typeof bounds?.y !== 'number') bounds.y = prevSetBounds.y;
+      bounds.height = currentBounds.height;
+    if (typeof bounds?.width !== 'number') bounds.width = currentBounds.width;
+    if (typeof bounds?.x !== 'number') bounds.x = currentBounds.x;
+    if (typeof bounds?.y !== 'number') bounds.y = currentBounds.y;
 
     const xIsNumber = typeof x === 'number';
+
+    if(!boundsOnMouseScreen){
+
+      x = bounds.x = screenWidth / 2 - (bounds?.width ?? currentBounds.width) / 2 + workX;
+      y = bounds.y = screenHeight / 2.75 - (bounds?.height ?? currentBounds.height) / 2 + workY;
+    }
+
+
 
     if (xIsNumber && x < workX) {
       bounds.x = workX;
     } else if (
       width &&
-      (xIsNumber ? x : prevSetBounds.x) + width > workX + screenWidth
+      (xIsNumber ? x : currentBounds.x) + width > workX + screenWidth
     ) {
       bounds.x = workX + screenWidth - width;
     } else if (xIsNumber) {
       bounds.x = x;
       // } else if (!kitState.tabChanged && kitState.promptCount !== 1) {
     } else {
-      bounds.x = screenWidth / 2 - bounds?.width / 2 + workX;
     }
 
     if (typeof y === 'number' && y < workY) {
       bounds.y = workY;
     } else if (
       height &&
-      (y || prevSetBounds.y) + height > workY + screenHeight
+      (y || currentBounds.y) + height > workY + screenHeight
     ) {
-      bounds.y = workY + screenHeight - height;
     }
 
     // if width and height are larger than the screen, resize to fit
@@ -1373,20 +1392,27 @@ window.promptId = "${this.id}";
     }
 
     try {
-      if (this.pid) {
-        debugLog.info(
-          `Count: ${this.count} -> 📐 setBounds: ${this.scriptPath} reason ${reason}`,
-          bounds
-          // {
-          //   screen: currentScreen,
-          //   isVisible: this.isVisible() ? 'true' : 'false',
-          //   noChange: noChange ? 'true' : 'false',
-          //   pid: this.pid,
-          // }
-        );
-      }
+      // if (this.pid) {
+      //   debugLog.info(
+      //     `Count: ${this.count} -> 📐 setBounds: ${this.scriptPath} reason ${reason}`,
+      //     bounds
+      //     // {
+      //     //   screen: currentScreen,
+      //     //   isVisible: this.isVisible() ? 'true' : 'false',
+      //     //   noChange: noChange ? 'true' : 'false',
+      //     //   pid: this.pid,
+      //     // }
+      //   );
+      // }
 
-      this.window.setBounds(bounds, false);
+      log.info(`${this.pid}: Apply ${this.scriptName}: setBounds reason: ${reason}`, bounds);
+      const finalBounds = {
+        x: Math.round(bounds.x),
+        y: Math.round(bounds.y),
+        width: Math.round(bounds.width),
+        height: Math.round(bounds.height),
+      }
+      this.window.setBounds(finalBounds, false);
       this.promptBounds = {
         id: this.id,
         ...this.window?.getBounds(),
@@ -1481,7 +1507,7 @@ window.promptId = "${this.id}";
   };
 
   pingPrompt = async (channel: AppChannel, data?: any) => {
-    log.silly(`appToPrompt: ${String(channel)} ${data?.kitScript}`);
+    log.silly(`sendToPrompt: ${String(channel)} ${data?.kitScript}`);
     return new Promise((resolve, reject) => {
       if (
         this.window &&
@@ -1492,7 +1518,7 @@ window.promptId = "${this.id}";
           log.info(`🎤 ${channel} !!! <<<<`);
           resolve(true);
         });
-        this.window?.webContents.send(channel, data);
+        this.sendToPrompt(channel, data);
       }
     });
   };
@@ -1611,7 +1637,7 @@ window.promptId = "${this.id}";
       ) {
         data.messageId = messageId;
         // log.info(`🎤 ${channel} >>>> ${data?.messageId}`);
-        this.window?.webContents.send(String(channel), data);
+        this.sendToPrompt(channel, data);
       }
     });
   };
@@ -1875,7 +1901,7 @@ window.promptId = "${this.id}";
           width: promptData.width,
           height: promptData.height,
         },
-        'PROMPT DATA HAS BOUNDS'
+        'setPromptData has bounds'
       );
     }
 
@@ -2032,9 +2058,9 @@ window.promptId = "${this.id}";
       );
       return;
     }
-    log.info(`${this.pid}: 💾 Save Current Bounds: ${this.scriptPath}`);
     // if (kitState.promptCount === 1) {
-    const currentBounds = this.window?.getBounds();
+      const currentBounds = this.window?.getBounds();
+      log.info(`${this.pid}: 💾 Save Current Bounds: ${this.scriptPath}`, currentBounds);
     this.savePromptBounds(this.scriptPath, currentBounds);
 
     this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
@@ -2181,13 +2207,22 @@ window.promptId = "${this.id}";
   getCurrentScreenFromMouse = (): Display => {
     if (this.window?.isVisible() && !this.firstPrompt) {
       const [x, y] = this.window?.getPosition();
-      return screen.getDisplayNearestPoint({ x, y });
+      const currentScreen =  screen.getDisplayNearestPoint({ x, y });
+      log.info(`Current screen from mouse: ${currentScreen.id}`, {
+        visible: this.isVisible,
+        firstPrompt: this.firstPrompt,
+      });
     }
-    return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+    const currentScreen =  screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+    log.info(`Current screen from mouse: ${currentScreen.id}`, {
+      visible: this.isVisible,
+      firstPrompt: this.firstPrompt,
+    });
+    return currentScreen;
   };
 
   forceRender = () => {
-    this.appToPrompt(AppChannel.RESET_PROMPT);
+    this.sendToPrompt(AppChannel.RESET_PROMPT);
   };
 
   resetPrompt = async () => {
@@ -2312,14 +2347,13 @@ window.promptId = "${this.id}";
       }
 
       this.sendToPrompt = () => {};
-      this.appToPrompt = () => {};
 
       // this.window?.close();
 
       // This is crashing the app, is there anything else I can do?
       // this.window?.destroy();
       try {
-        // this.window.close();
+        this.window.close();
       } catch (error) {
         log.error(error);
       }
@@ -2527,11 +2561,12 @@ window.promptId = "${this.id}";
 
     if (isMainScript) {
     } else if (cachedPromptData) {
+      log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`, {init, show});
+
       if (init) {
         this.initBounds(promptScriptPath, show);
       }
 
-      log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`);
       // kitState.preloaded = true;
 
       this.sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);

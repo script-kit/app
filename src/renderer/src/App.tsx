@@ -407,7 +407,7 @@ export default function App() {
     ipcRenderer.on(AppChannel.PROCESSES, processesHandler);
 
     const userChangedHandler = (_, data) => {
-      log.info(`👩‍💻 User changed`, data);
+      log.info(`${window.pid}: 👩‍💻 User changed`, data);
       setUser(data);
     };
     ipcRenderer.on(AppChannel.USER_CHANGED, userChangedHandler);
@@ -475,8 +475,8 @@ h-screen min-h-screen
 w-screen
 overflow-hidden
 text-text-base
-${hasBorder ? `border-ui-border` : ``}
 ${appConfig.isMac && hasBorder ? `main-rounded` : ``}
+${hasBorder ? `border border-ui-border` : ``}
       `}
         >
           <style>{promptData?.css}</style>
@@ -672,7 +672,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio id="audio" />
-      <span className="hiddenfont-mono text-xxs font-bold">font</span>
+      <span className="font-mono text-xxs font-bold">font</span>
     </ErrorBoundary>
   );
 }

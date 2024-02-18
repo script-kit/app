@@ -4,7 +4,7 @@
 @import '@fontsource/jetbrains-mono/600.css';
 @import '@fontsource/jetbrains-mono/700.css';
 @import '@fontsource/jetbrains-mono/800.css';
-@import 'simplebar/dist/simplebar.min.css';
+@import 'simplebar-react/dist/simplebar.min.css';
 @import '@vscode/codicons/dist/codicon.css';
 @import 'xterm/css/xterm.css';
 @import 'react-chat-elements/dist/main.css';
@@ -884,4 +884,18 @@ pre > code {
 
 .epr-emoji-category-label {
   @apply bg-ui-bg !important;
+}
+
+.monaco-editor {
+  @apply outline-none !important;
+}
+
+.monaco-editor .inputarea {
+  @apply bg-ui-bg !important;
+  /* Remove all borders and outlines */
+  @apply border-none !important;
+  @apply outline-none !important;
+  /* Remove ring */
+  @apply ring-0 !important;
+
 }

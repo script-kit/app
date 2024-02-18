@@ -1,17 +1,16 @@
 import { globalShortcut } from 'electron';
 import log from 'electron-log';
 import path from 'path';
-import { readFile } from 'fs/promises';
 import { subscribeKey } from 'valtio/utils';
 import { debounce } from 'lodash-es';
 
 import {
   getMainScriptPath,
-  shortcutsPath,
+
 } from '@johnlindquist/kit/core/utils';
 
 import { UI } from '@johnlindquist/kit/core/enum';
-import { runPromptProcess, runScript } from './kit';
+import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from '../shared/events';
 
 import { convertKey, kitState, subs } from '../shared/state';
@@ -219,14 +218,15 @@ export const shortcutScriptChanged = ({
   }
 };
 
-export const updateMainShortcut = async (filePath: string) => {
-  log.info(`Updating main shortcut for ${filePath}`);
-  if (filePath === shortcutsPath) {
-    log.info(`SHORTCUTS DB CHANGED:`, filePath);
-    const settings = JSON.parse(await readFile(filePath, 'utf-8'));
-    const shortcut = settings?.shortcuts?.[getMainScriptPath()];
+export const setDefaultMainShortcut = async () => {
+  updateMainShortcut(kitState.isMac ? `cmd ;` : `ctrl ;`);
+}
 
-    const finalShortcut = convertShortcut(shortcut, filePath);
+export const updateMainShortcut = async (shortcut:string) => {
+  log.info(`Updating main shortcut to ${shortcut}`);
+
+
+    const finalShortcut = convertShortcut(shortcut, getMainScriptPath());
     if (!finalShortcut) return;
 
     log.verbose(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
@@ -351,7 +351,6 @@ export const updateMainShortcut = async (filePath: string) => {
         shebang: '',
       });
     }
-  }
 };
 
 const pauseShortcuts = () => {

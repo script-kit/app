@@ -6,7 +6,7 @@ import {
   filter,
   share,
   switchMap,
-} from 'rxjs/operators/index.js';
+} from 'rxjs/operators';
 import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
 import { format } from 'date-fns';

@@ -1,5 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react/require-default-props */
 import React, { useEffect, useRef, useState } from 'react';
 import log from 'electron-log';
 import { VariableSizeList as List } from 'react-window';
@@ -15,7 +13,6 @@ import {
   requiresScrollAtom,
   isScrollingAtom,
   flaggedChoiceValueAtom,
-  logAtom,
   currentChoiceHeightsAtom,
 } from '../jotai';
 import { ChoiceButtonProps, ListProps } from '../../../shared/types';

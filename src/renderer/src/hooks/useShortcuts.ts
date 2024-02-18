@@ -1,10 +1,9 @@
+import log from 'electron-log'
 import { Channel } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue } from 'jotai';
-
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
   choicesAtom,
-  cmdAtom,
   focusedFlagValueAtom,
   flagsAtom,
   flaggedChoiceValueAtom,
@@ -23,9 +22,9 @@ import {
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
+import { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 
 export default () => {
-  const [cmd] = useAtom(cmdAtom);
   const [choices] = useAtom(choicesAtom);
   const [focusedChoice] = useAtom(focusedChoiceAtom);
   const [input] = useAtom(inputAtom);
@@ -44,12 +43,12 @@ export default () => {
   const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
 
   useHotkeys(
-    `${cmd}+shift+w`,
+    `mod+shift+w`,
     (event) => {
       setPreviewEnabled(!previewEnabled);
     },
     hotkeysOptions,
-    [setPreviewEnabled, previewEnabled, cmd]
+    [setPreviewEnabled, previewEnabled]
   );
 
   const flagsArray = Object.entries(flags);
@@ -59,51 +58,87 @@ export default () => {
       value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter'
   );
 
-  const flagShortcuts = flagsWithShortcuts
-    .filter(([key, value]) => value?.shortcut)
+  let flagShortcuts = '';
+  for (const [key, value] of flagsWithShortcuts) {
+    if (value?.shortcut) {
+      flagShortcuts += `${value.shortcut},`;
+    }
+  }
+  // Remove the last comma if flagShortcuts is not empty
+  if (flagShortcuts.length > 0) {
+    flagShortcuts = flagShortcuts.slice(0, -1);
+  }
 
-    .map(([key, value]) => value.shortcut)
-    .join(',');
-
-  const flagKeyByShortcut = (shortcut: string) =>
-    flagsWithShortcuts.find(
-      ([key, value]) => value.shortcut === shortcut
-    )?.[0] as string;
+  const flagKeyByShortcut = (shortcut: string) => {
+    for (const [key, value] of flagsWithShortcuts) {
+      if (value.shortcut === shortcut) {
+        return key;
+      }
+    }
+    return null; // Return null if no matching shortcut is found
+  };
 
   useHotkeys(
-    flagShortcuts.length ? flagShortcuts : 'f19',
-    (event, handler) => {
+    flagShortcuts.length ? flagShortcuts.replaceAll('cmd', 'mod') : 'f19',
+    (event, handler:HotkeysEvent) => {
       if (!inputFocus) return;
       event.preventDefault();
 
       if (flagValue) return;
 
-      setFlag(flagKeyByShortcut(handler.key));
-      submit(focusedChoice?.value || input);
+      const key = handler?.keys?.[0];
+      if(!key) return;
+
+      // setFlag(flagKeyByShortcut(key));
+      // submit(focusedChoice?.value || input);
     },
     hotkeysOptions,
     [flags, input, inputFocus, choices, index, flagValue, flagShortcuts]
   );
 
-  const onShortcuts = promptShortcuts.length
-    ? promptShortcuts
-        .filter((ps) => ps?.key)
-        .map((ps) => ps.key)
-        .join(',')
-    : `f19`;
+  let onShortcuts = `f19`;
+  if (promptShortcuts.length) {
+    let keys = '';
+    for (const ps of promptShortcuts) {
+      if (ps?.key) {
+        keys += `${ps.key},`;
+      }
+    }
+    if (keys.length > 0) {
+      // Remove the last comma
+      onShortcuts = keys.slice(0, -1);
+    }
+  }
 
   useHotkeys(
-    onShortcuts,
-    (event, handler) => {
+    onShortcuts.replaceAll('cmd', 'mod'),
+    (event, handler:HotkeysEvent) => {
       event.preventDefault();
 
       if (flagValue) return;
+      const key = handler?.keys?.[0];
+      if (!key) return;
 
-      const found = promptShortcuts.find((ps) => ps.key === handler.key);
-      if (found && found?.flag) {
-        setFlag(found.flag);
+      const found = promptShortcuts.find((ps) => {
+        const [shortcutKey, ...modifiers] = ps?.key?.split('+')?.reverse();
+        const hasKey = shortcutKey === key;
+        const hasModifiers = modifiers.every((modifier) =>{
+          if(modifier === 'cmd'){
+            return handler?.mod || handler?.meta
+          }
+
+          return handler[modifier];
+        });
+
+        return hasKey && hasModifiers;
+      });
+      if (found) {
+        if(found?.flag){
+          setFlag(found.flag);
+        }
+        log.info('sending shortcut', found.key);
+        sendShortcut(found.key);
       }
-      sendShortcut(handler.key);
     },
     hotkeysOptions,
     [
@@ -148,7 +183,6 @@ export default () => {
       index,
       selectionStart,
       flagValue,
-      cmd,
       channel,
       flagShortcuts,
       promptShortcuts,
@@ -156,8 +190,8 @@ export default () => {
     ]
   );
   useHotkeys(
-    `${cmd}+k`,
-    (event) => {
+    `mod+k`,
+    () => {
       if (!inputFocus) return;
 
       if (flagValue) {
@@ -176,7 +210,6 @@ export default () => {
       index,
       selectionStart,
       flagValue,
-      cmd,
       channel,
       flagShortcuts,
       promptShortcuts,

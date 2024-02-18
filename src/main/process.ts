@@ -111,8 +111,8 @@ export const maybeConvertColors = async (theme: any = {}) => {
 
   log.info(`🫥 Theme opacity: ${theme.opacity}`);
 
-  theme['--ui-bg-opacity'] ||= theme?.['ui-bg-opacity'] || '0.4';
-  theme['--ui-border-opacity'] ||= theme?.['ui-border-opacity'] || '0.7';
+  theme['--ui-bg-opacity'] ||= theme?.['ui-bg-opacity'] || kitState.isDark ? scriptKitTheme['ui-bg-opacity'] : scriptKitLightTheme['ui-bg-opacity'];
+  theme['--ui-border-opacity'] ||= theme?.['ui-border-opacity'] || kitState.isDark ? scriptKitTheme['ui-border-opacity'] : scriptKitLightTheme['ui-border-opacity'];
 
   if (appDb?.disableBlurEffect) theme.opacity = '1';
 
@@ -479,8 +479,7 @@ const processesChanged = debounce(() => {
   const pinfos = processes.getAllProcessInfo().filter((p) => p.scriptPath);
 
   for (const pinfo of processes) {
-    const appToPrompt = pinfo.prompt.appToPrompt;
-    appToPrompt(AppChannel.PROCESSES, pinfos);
+    pinfo.prompt.sendToPrompt(AppChannel.PROCESSES, pinfos);
     log.info(
       `🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`
     );
@@ -1076,7 +1075,7 @@ emitter.on(KitEvent.TermExited, (pid) => {
   log.info(`🛑 Term Exited: SUMBMITTING`);
   const prompt = prompts.get(pid);
   if (prompt && prompt.ui === UI.term) {
-    prompt.appToPrompt(AppChannel.TERM_EXIT, '');
+    prompt.sendToPrompt(AppChannel.TERM_EXIT, '');
   }
 });
 

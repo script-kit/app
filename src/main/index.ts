@@ -80,7 +80,6 @@ import {
 
 import {
   getPrefsDb,
-  getShortcutsDb,
   getAppDb,
 } from '@johnlindquist/kit/core/db';
 import { subscribeKey } from 'valtio/utils';
@@ -468,7 +467,6 @@ const ensureKitDirs = async () => {
   await ensureDir(tmpClipboardDir);
   await ensureDir(tmpDownloadsDir);
   await getPrefsDb();
-  await getShortcutsDb();
 };
 
 const ensureKenvDirs = async () => {
