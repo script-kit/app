@@ -6,8 +6,10 @@ import {
 } from 'electron-vite';
 import react from '@vitejs/plugin-react';
 import { BuildOptions, Plugin } from 'vite';
-import { fileURLToPath } from 'url';
 import million from 'million/compiler';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import { terser } from 'rollup-plugin-terser';
+import compressPlugin from 'vite-plugin-compression';
 
 // const exclude = ['electron-log', 'node-mac-permissions'];
 const exclude = [];
@@ -23,6 +25,10 @@ const build: BuildOptions = {
 const plugins: Plugin[] = [
   externalizeDepsPlugin(),
   bytecodePlugin(),
+  nodeResolve(),
+  terser(),
+  compressPlugin(),
+
 ] as Plugin[];
 
 const config = defineConfig({
@@ -64,7 +70,10 @@ const config = defineConfig({
         // 'electron-log': 'electron-log/renderer.js',
       },
     },
-    plugins: [million.vite({ auto: true }), react()],
+    plugins: [
+      ...plugins,
+      million.vite({ auto: true }), react()
+    ],
   },
 });
 
