@@ -3,7 +3,7 @@ import { HttpsProxyAgent } from 'hpagent';
 
 import dotenv from 'dotenv';
 import log from 'electron-log';
-import download from 'download';
+import download, { DownloadOptions } from 'download';
 import { debounce } from 'lodash-es';
 import path from 'path';
 import tar from 'tar';
@@ -22,8 +22,13 @@ import os, { homedir } from 'os';
 import fsExtra from 'fs-extra';
 const { ensureDir, writeFile, readdir, readJson, writeJson } = fsExtra;
 import { lstat, readFile, rm } from 'fs/promises';
-
-import { FlagsOptions, Script, Shortcut } from '@johnlindquist/kit/types';
+import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
+import {
+  FlagsOptions,
+  PromptData,
+  Script,
+  Shortcut,
+} from '@johnlindquist/kit/types';
 import {
   kenvPath,
   kitPath,
@@ -34,11 +39,7 @@ import {
   getMainScriptPath,
 } from '@johnlindquist/kit/core/utils';
 
-import {
-  cacheMainPreview,
-  destroyPromptWindow,
-  scoreAndCacheMainChoices,
-} from './prompt';
+import { KitPrompt, destroyPromptWindow } from './prompt';
 
 import { INSTALL_ERROR, show } from './show';
 import { showError } from './main.dev.templates';
@@ -46,6 +47,8 @@ import { mainLogPath } from './logs';
 import { kitCache, kitState, preloadChoicesMap } from '../shared/state';
 import { createScoredChoice } from './helpers';
 import { prompts } from './prompts';
+import { SPLASH_PATH } from '../shared/defaults';
+import { KitEvent, emitter } from '../shared/events';
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {
@@ -63,7 +66,7 @@ export const ohNo = async (error: Error) => {
   ${error.message}
   ${error.stack}
   ${mainLogContents}
-    `.trim()
+    `.trim(),
     );
     destroyPromptWindow();
     await show(INSTALL_ERROR, showError(error, mainLogContents));
@@ -74,18 +77,61 @@ export const ohNo = async (error: Error) => {
   throw new Error(error.message);
 };
 
+let splashPrompt: KitPrompt | null = null;
+export const showSplash = async () => {
+  log.info(`🌊 Showing splash install screen...`);
+  splashPrompt = new KitPrompt();
+  splashPrompt.ui = UI.splash;
+  splashPrompt.scriptPath = SPLASH_PATH;
+  splashPrompt.initMain = false;
+  splashPrompt.bindToProcess(99999);
+
+  emitter.once(KitEvent.MAIN_SCRIPT_TRIGGERED, () => {
+    try {
+      splashPrompt?.window?.hide();
+      splashPrompt?.window?.close();
+      splashPrompt?.window?.destroy();
+      splashPrompt = null;
+    } catch (error) {
+      log.error(error);
+    }
+  });
+
+  splashPrompt.window.show();
+
+  splashPrompt.messagesReadyCallback = () => {
+    splashPrompt?.setPromptData({
+      show: true,
+      ui: UI.splash,
+      scriptPath: SPLASH_PATH,
+      width: PROMPT.WIDTH.BASE,
+      height: PROMPT.HEIGHT.BASE,
+    } as any);
+  };
+
+  sendSplashHeader(`Installing Kit SDK and Kit Environment...`);
+};
 export const sendSplashBody = (message: string) => {
   if (message.includes('object')) return;
   if (message.toLowerCase().includes('warn')) return;
-  // sendToSpecificPrompt(Channel.SET_SPLASH_BODY, message);
+  message = message.trim();
+  if (!message) return;
+
+  log.info(`🌊 body: ${message}`);
+  splashPrompt?.sendToPrompt(Channel.SET_SPLASH_BODY, message);
 };
 
 export const sendSplashHeader = (message: string) => {
-  // sendToSpecificPrompt(Channel.SET_SPLASH_HEADER, message);
+  message = message.trim();
+  if (!message) return;
+
+  log.info(`🌊 header: ${message}`);
+  splashPrompt?.sendToPrompt(Channel.SET_SPLASH_HEADER, message);
 };
 
 export const sendSplashProgress = (progress: number) => {
-  // sendToSpecificPrompt(Channel.SET_SPLASH_PROGRESS, progress);
+  log.info(`🌊 progress: ${progress}`);
+  splashPrompt?.sendToPrompt(Channel.SET_SPLASH_PROGRESS, progress);
 };
 
 export const setupDone = () => {
@@ -96,7 +142,7 @@ export const setupDone = () => {
 export const handleLogMessage = async (
   message: string,
   result: SpawnSyncReturns<any>,
-  required = true
+  required = true,
 ) => {
   log.info(`stdout:`, result?.stdout?.toString());
   log.info(`stderr:`, result?.stderr?.toString());
@@ -208,7 +254,7 @@ export const installPackage = async (installCommand: string, cwd: string) => {
 export const installEsbuild = async () => {
   return installPackage(
     `i esbuild@0.19.9 --save-exact --production --prefer-dedupe --loglevel=verbose`,
-    kitPath()
+    kitPath(),
   );
 };
 
@@ -216,7 +262,7 @@ export const installPlatformDeps = async () => {
   if (os.platform().startsWith('darwin')) {
     return installPackage(
       `i @johnlindquist/mac-dictionary --save-exact --production --prefer-dedupe --loglevel=verbose`,
-      kitPath()
+      kitPath(),
     );
   }
 
@@ -224,7 +270,11 @@ export const installPlatformDeps = async () => {
 };
 
 const getOptions = () => {
-  const options: any = { insecure: true, rejectUnauthorized: false };
+  const options: any = {
+    insecure: true,
+    rejectUnauthorized: false,
+    followRedirect: true,
+  };
   const proxy =
     process.env.HTTPS_PROXY ||
     process.env.https_proxy ||
@@ -364,9 +414,12 @@ export const downloadKit = async () => {
 
   const kitSDK = `Kit-SDK-${uppercaseOSName}-${version}-${process.arch}.${extension}`;
   const file = osTmpPath(kitSDK);
-  const url = `https://github.com/johnlindquist/kitapp/releases/download/v${version}/${kitSDK}`;
+  let url = `https://github.com/johnlindquist/kitapp/releases/download/v${version}/${kitSDK}`;
+  if (process.env?.KIT_SDK_URL) {
+    url = process.env.KIT_SDK_URL;
+  }
 
-  sendSplashBody(`Download Kit SDK from ${url}`);
+  sendSplashBody(`Downloading Kit SDK from ${url}`);
 
   try {
     const buffer = await download(url, undefined, getOptions());
@@ -485,7 +538,7 @@ export const setupLog = async (message: string) => {
     await new Promise((resolve, reject) =>
       setTimeout(() => {
         resolve(true);
-      }, 500)
+      }, 500),
     );
   }
 };
@@ -514,7 +567,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
     const child = spawn(
       knodePath('bin', 'node'),
       [kitPath('run', 'terminal.js'), ...args],
-      forkOptions
+      forkOptions,
     );
 
     const id = setTimeout(() => {
@@ -572,7 +625,7 @@ export const optionalSpawnSetup = (...args: string[]) => {
 export const optionalSetupScript = (
   scriptPath: string,
   argsParam?: string[],
-  callback?: (object: any) => void
+  callback?: (object: any) => void,
 ) => {
   if (process.env.MAIN_SKIP_SETUP) {
     log.info(`⏭️ Skipping setup script: ${scriptPath}`);
@@ -585,7 +638,7 @@ export const optionalSetupScript = (
     const child = fork(
       kitPath('run', 'terminal.js'),
       [scriptPath, ...args],
-      forkOptions
+      forkOptions,
     );
 
     const id = setTimeout(() => {
@@ -632,7 +685,7 @@ export const optionalSetupScript = (
       if (id) clearTimeout(id);
       log.error(
         `⚠️ Errored on setup script: ${scriptPath.join(' ')}`,
-        error.message
+        error.message,
       );
       resolve('error');
       // reject(error);
@@ -713,7 +766,7 @@ export const cacheMainScripts = debounce(async () => {
     const child = fork(
       kitPath('run', 'terminal.js'),
       [kitPath('setup', 'cache-grouped-scripts.js')],
-      forkOptions
+      forkOptions,
     );
 
     child.once('message', receiveScripts);

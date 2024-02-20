@@ -43,7 +43,7 @@ import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 let prevTransformedInput = '';
 const checkShortcodesAndKeywords = (
   prompt: KitPrompt,
-  rawInput: string
+  rawInput: string,
 ): boolean => {
   const sendToPrompt = prompt.sendToPrompt;
   let transformedInput = rawInput;
@@ -120,7 +120,7 @@ const checkShortcodesAndKeywords = (
   if (rawInput.includes(' ')) {
     if (rawInput.endsWith(' ')) {
       const shortcodeChoice = prompt.kitSearch.shortcodes.get(
-        transformedInput.toLowerCase().trimEnd()
+        transformedInput.toLowerCase().trimEnd(),
       );
       if (shortcodeChoice) {
         sendToPrompt(Channel.SET_SUBMIT_VALUE, shortcodeChoice.value);
@@ -216,8 +216,8 @@ ${data.error}
         }
       },
       5000,
-      { leading: true }
-    )
+      { leading: true },
+    ),
   );
 
   ipcMain.on(
@@ -236,8 +236,8 @@ ${data.error}
         }
       },
       10000,
-      { leading: true }
-    )
+      { leading: true },
+    ),
   );
 
   ipcMain.on(AppChannel.GET_ASSET, (event, { parts }) => {
@@ -263,6 +263,7 @@ ${data.error}
     await runPromptProcess(getMainScriptPath(), [], {
       force: true,
       trigger: Trigger.Menu,
+      sponsorCheck: false,
     });
   });
 
@@ -271,6 +272,7 @@ ${data.error}
     await runPromptProcess(kitPath('cli/edit-file.js'), [logPath], {
       force: true,
       trigger: Trigger.Kit,
+      sponsorCheck: false,
     });
   });
 
@@ -290,13 +292,14 @@ ${data.error}
         '..',
         '..',
         'db',
-        `_${path.basename(filePath).replace(/js$/, 'json')}`
+        `_${path.basename(filePath).replace(/js$/, 'json')}`,
       );
       await runPromptProcess(kitPath('cli/edit-file.js'), [dbPath], {
         force: true,
         trigger: Trigger.Kit,
+        sponsorCheck: false,
       });
-    }
+    },
   );
 
   ipcMain.on(
@@ -312,6 +315,7 @@ ${data.error}
           await runPromptProcess(description, [], {
             force: true,
             trigger: Trigger.Kit,
+            sponsorCheck: false,
           });
         } catch (error) {
           log.error(error);
@@ -326,8 +330,9 @@ ${data.error}
       await runPromptProcess(kitPath('cli/edit-file.js'), [script.filePath], {
         force: true,
         trigger: Trigger.Kit,
+        sponsorCheck: false,
       });
-    }
+    },
   );
 
   ipcMain.on(
@@ -337,8 +342,9 @@ ${data.error}
       await runPromptProcess(kitPath('main/edit.js'), [script.filePath], {
         force: true,
         trigger: Trigger.Kit,
+        sponsorCheck: false,
       });
-    }
+    },
   );
 
   ipcMain.on(
@@ -349,14 +355,16 @@ ${data.error}
       await runPromptProcess(kitPath('cli/edit-file.js'), [filePath], {
         force: true,
         trigger: Trigger.Kit,
+        sponsorCheck: false,
       });
-    }
+    },
   );
 
   ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, async () => {
     runPromptProcess(getMainScriptPath(), [], {
       force: true,
       trigger: Trigger.Kit,
+      sponsorCheck: false,
     });
   });
 
@@ -364,6 +372,7 @@ ${data.error}
     runPromptProcess(kitPath('cli', 'processes.js'), [], {
       force: true,
       trigger: Trigger.Kit,
+      sponsorCheck: false,
     });
   });
 
@@ -432,7 +441,7 @@ ${data.error}
             !Buffer.isBuffer(micStreamMessage.buffer)
           ) {
             micStreamMessage.state.value = Buffer.from(
-              Object.values(micStreamMessage.state.buffer) as any
+              Object.values(micStreamMessage.state.buffer) as any,
             );
           }
 
@@ -552,7 +561,7 @@ ${data.error}
             log.error(e);
           }
         }
-      })
+      }),
     );
   }
 
@@ -581,7 +590,7 @@ ${data.error}
                   } else {
                     resolve(fp);
                   }
-                }
+                },
               );
             });
             dl.start();
@@ -603,7 +612,7 @@ ${data.error}
       } catch (error) {
         log.warn(error);
       }
-    }
+    },
   );
 
   ipcMain.on(AppChannel.FEEDBACK, async (event, data: Survey) => {
@@ -612,7 +621,7 @@ ${data.error}
     try {
       const feedbackResponse = await axios.post(
         `${kitState.url}/api/feedback`,
-        data
+        data,
       );
       log.info(feedbackResponse.data);
 
@@ -633,13 +642,14 @@ ${data.error}
     AppChannel.LOG,
     async (event, { message, level }: { message: any; level: levelType }) => {
       log[level](message);
-    }
+    },
   );
 
   ipcMain.on(AppChannel.LOGIN, async () => {
     runPromptProcess(kitPath('pro', 'login.js'), [], {
       force: true,
       trigger: Trigger.App,
+      sponsorCheck: false,
     });
   });
 

@@ -46,7 +46,9 @@
     "vite-package": "electron-vite build && DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
     "vite-package-build-script": "npm run vite-prebuild && npx kit ./build.ts",
     "vite-build": "DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
-    "electron-rebuild": "electron-builder install-app-deps"
+    "electron-rebuild": "electron-builder install-app-deps",
+    "rimraf-kit-setup": "rimraf ~/.kit-setup ~/.kenv-setup ~/.knode-setup",
+    "kit-setup": "KIT=~/.kit-setup KENV=~/.kenv-setup KNODE=~/.knode-setup electron-vite dev"
   },
   "build": {
     "buildDependenciesFromSource": false,
@@ -229,7 +231,7 @@
     "detect-port": "^1.5.1",
     "dompurify": "^3.0.8",
     "download": "8.0.0",
-    "electron": "^29.0.0-beta.11",
+    "electron": "^29.0.0",
     "electron-builder": "^24.12.0",
     "electron-vite": "^2.0.0",
     "emoji-picker-react": "^4.7.18",
@@ -244,6 +246,7 @@
     "monaco-editor": "^0.46.0",
     "optimize-css-assets-webpack-plugin": "6.0.1",
     "petite-vue": "^0.4.1",
+    "prettier": "3.2.5",
     "react": "^18.2.0",
     "react-chat-elements": "^12.0.13",
     "react-dom": "^18.2.0",
@@ -254,6 +257,7 @@
     "react-toastify": "^10.0.4",
     "react-virtualized-auto-sizer": "^1.0.22",
     "react-window": "1.8.10",
+    "rimraf": "^5.0.5",
     "rollup-plugin-terser": "^7.0.2",
     "simplebar-react": "^3.2.4",
     "tailwindcss": "^3.4.1",
@@ -266,12 +270,11 @@
     "xterm-addon-search": "0.13.0",
     "xterm-addon-serialize": "0.11.0",
     "xterm-addon-unicode11": "0.6.0",
-    "xterm-addon-web-links": "0.9.0",
-    "yarn-deduplicate": "6.0.2"
+    "xterm-addon-web-links": "0.9.0"
   },
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "latest",
+    "@johnlindquist/kit": "^2.2.2",
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
     "@johnlindquist/mac-panel-window": "^1.3.0",
@@ -314,25 +317,6 @@
     "node": "20.9.0"
   },
   "browserslist": [],
-  "prettier": {
-    "plugins": [
-      "prettier-plugin-tailwindcss"
-    ],
-    "overrides": [
-      {
-        "files": [
-          ".prettierrc",
-          ".babelrc",
-          ".eslintrc"
-        ],
-        "options": {
-          "parser": "json"
-        }
-      }
-    ],
-    "singleQuote": true,
-    "trailingComma": "es5"
-  },
   "renovate": {
     "extends": [
       "bliss"

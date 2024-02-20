@@ -39,7 +39,8 @@ export const startSK = () => {
               {
                 force: true,
                 trigger: Trigger.Kar,
-              }
+                sponsorCheck: false,
+              },
             );
           }
           const message = `🚗💨 ~/.kit/kar ${script} ${args}`;
@@ -51,7 +52,7 @@ export const startSK = () => {
 Content-Type: text/plain
 Content-Length: ${message.length}
 
-${message}`
+${message}`,
           );
         } else {
           const message = `🕹 sk needs a script!`;
@@ -63,7 +64,7 @@ ${message}`
 Content-Type: text/plain
 Content-Length: ${message.length}
 
-${message}`
+${message}`,
           );
         }
         stream.end();

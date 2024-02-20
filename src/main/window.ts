@@ -53,7 +53,12 @@ export const createWindow = async ({
     windowsState.windows = windowsState.windows.filter((w) => w.id !== win.id);
   });
 
-  await win.loadURL(`file://${__dirname}/index.html?vs=${getAssetPath('vs')}`);
+  await win.loadFile(
+    fileURLToPath(new URL('../renderer/index.html', import.meta.url)),
+    {
+      query: { vs: getAssetPath('vs') },
+    },
+  );
 
   win.webContents.executeJavaScript(`
   document.title = '${title}'
@@ -82,7 +87,7 @@ export const showLogWindow = async ({
 }) => {
   // TODO: If Log window already exists, just show it
   const alreadyOpen = windowsState.windows.find(
-    (w) => w.scriptPath === scriptPath && w.ui === UI.log
+    (w) => w.scriptPath === scriptPath && w.ui === UI.log,
   );
 
   if (alreadyOpen) {

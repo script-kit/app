@@ -1,6 +1,3 @@
-/* eslint-disable no-nested-ternary */
-/* eslint-disable import/prefer-default-export */
-/* eslint-disable no-case-declarations */
 import { app } from 'electron';
 import minimist from 'minimist';
 import log from 'electron-log';
@@ -56,6 +53,7 @@ app.on('second-instance', async (_event, argv) => {
   runPromptProcess(argScript, argArgs, {
     force: false,
     trigger: Trigger.Kit,
+    sponsorCheck: false,
   });
 });
 
@@ -64,6 +62,7 @@ app.on('activate', async (_event, hasVisibleWindows) => {
   runPromptProcess(getMainScriptPath(), [], {
     force: true,
     trigger: Trigger.Kit,
+    sponsorCheck: false,
   });
 });
 
@@ -90,7 +89,7 @@ emitter.on(
             trigger: Trigger;
           };
         }
-      | string
+      | string,
   ) => {
     const { scriptPath, args, options } =
       typeof scriptOrScriptAndData === 'string'
@@ -100,6 +99,7 @@ emitter.on(
             options: {
               force: false,
               trigger: Trigger.Kit,
+              sponsorCheck: true,
             },
           }
         : scriptOrScriptAndData;
@@ -112,13 +112,14 @@ emitter.on(
     //   log.info(`Show App: ${scriptPath}`);
     // }
     runPromptProcess(scriptPath, args, options);
-  }
+  },
 );
 
 emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {
   runPromptProcess(scriptPath, [], {
     force: false,
     trigger: Trigger.Background,
+    sponsorCheck: false,
   });
 });
 
@@ -147,24 +148,26 @@ export const runPromptProcess = async (
     force: boolean;
     trigger: Trigger;
     main?: boolean;
+    sponsorCheck: boolean;
   } = {
     force: false,
     trigger: Trigger.App,
     main: false,
-  }
+    sponsorCheck: false,
+  },
 ): Promise<ProcessInfo | null> => {
   const count = prompts.countVisible();
-  if (count > 2) {
+  if (count >= 2 && options?.sponsorCheck) {
     const isSponsor = await sponsorCheck('More than 2 prompts');
     if (!isSponsor) {
       return null;
     }
   }
 
-
-
   const isMain =
     options?.main || pathsAreEqual(promptScriptPath || '', getMainScriptPath());
+
+  emitter.emit(KitEvent.MAIN_SCRIPT_TRIGGERED);
 
   // readJson(kitPath('db', 'mainShortcuts.json'))
   //   .then(setShortcuts)
@@ -236,15 +239,15 @@ export const runPromptProcess = async (
 
   const script = await findScript(promptScriptPath);
   log.info(
-    `${pid}: Visible before setScript ${prompt?.isVisible() ? '👀' : '🙈'} ${script?.name}`
+    `${pid}: Visible before setScript ${prompt?.isVisible() ? '👀' : '🙈'} ${script?.name}`,
   );
 
   const status = await prompt.setScript({ ...script }, pid, options?.force);
   if (status === 'denied') {
     log.info(
       `Another script is already controlling the UI. Denying UI control: ${path.basename(
-        promptScriptPath
-      )}`
+        promptScriptPath,
+      )}`,
     );
   }
 
@@ -328,6 +331,7 @@ emitter.on(KitEvent.OpenLog, async (scriptPath) => {
   await runPromptProcess(kitPath('cli/edit-file.js'), [logPath], {
     force: true,
     trigger: Trigger.Kit,
+    sponsorCheck: false,
   });
 });
 
@@ -335,5 +339,6 @@ emitter.on(KitEvent.OpenScript, async (scriptPath) => {
   await runPromptProcess(kitPath('cli/edit-file.js'), [scriptPath], {
     force: true,
     trigger: Trigger.App,
+    sponsorCheck: false,
   });
 });

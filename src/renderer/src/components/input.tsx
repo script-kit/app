@@ -1,12 +1,4 @@
-/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react/jsx-no-useless-fragment */
-/* eslint-disable jsx-a11y/mouse-events-have-key-events */
-/* eslint-disable react/jsx-props-no-spreading */
-/* eslint-disable jsx-a11y/no-autofocus */
-/* eslint-disable react/prop-types */
-import React, {
+import {
   useCallback,
   KeyboardEvent,
   LegacyRef,
@@ -57,11 +49,9 @@ import {
   focusedChoiceAtom,
   sendShortcutAtom,
   signInActionAtom,
-  preloadedAtom,
   cachedAtom,
   pidAtom,
   countAtom,
-  scoredChoicesAtom,
   cachedMainScoredChoicesAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
@@ -102,11 +92,11 @@ export default function Input() {
   const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
   const flags = useAtomValue(flagsAtom);
   const shouldActionButtonShowOnInput = useAtomValue(
-    shouldActionButtonShowOnInputAtom
+    shouldActionButtonShowOnInputAtom,
   );
   const miniShortcutsVisible = useAtomValue(miniShortcutsVisibleAtom);
   const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
-    miniShortcutsHoveredAtom
+    miniShortcutsHoveredAtom,
   );
   const loading = useAtomValue(loadingAtom);
   const headerHidden = useAtomValue(headerHiddenAtom);
@@ -115,7 +105,7 @@ export default function Input() {
 
   const setLastKeyDownWasModifier = debounce(
     useSetAtom(lastKeyDownWasModifierAtom),
-    100
+    100,
   );
   const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
@@ -133,7 +123,7 @@ export default function Input() {
     (event) => {
       if (action) sendShortcut(action.key);
     },
-    [action, sendShortcut]
+    [action, sendShortcut],
   );
 
   useEffect(() => {
@@ -168,7 +158,7 @@ export default function Input() {
 
       if (event.ctrlKey) {
         const shortcut = shortcuts.find((s) =>
-          (s?.key || '')?.includes('ctrl')
+          (s?.key || '')?.includes('ctrl'),
         );
         const key = shortcut?.key || '';
 
@@ -189,14 +179,14 @@ export default function Input() {
       setModifiers(
         modifiers
           .filter((m) => event.getModifierState(m))
-          .flatMap(remapModifiers)
+          .flatMap(remapModifiers),
       );
 
       // if the key is a modifier that isn't shift, return
 
       setLastKeyDownWasModifier.cancel();
       setLastKeyDownWasModifier(
-        modifiers.includes(event.key) && event.key !== 'Shift'
+        modifiers.includes(event.key) && event.key !== 'Shift',
       );
 
       // If not Enter, Tab, or a modifier, setTyping to true
@@ -220,7 +210,7 @@ export default function Input() {
       shortcuts,
       flags,
       setInput,
-    ]
+    ],
   );
 
   const onKeyUp = useCallback(
@@ -228,10 +218,10 @@ export default function Input() {
       setModifiers(
         modifiers
           .filter((m) => event.getModifierState(m))
-          .flatMap(remapModifiers)
+          .flatMap(remapModifiers),
       );
     },
-    [setModifiers]
+    [setModifiers],
   );
 
   const minWidth = 128; // Set a minimum width for the input
@@ -258,7 +248,7 @@ export default function Input() {
         setPendingInput(event.target.value);
       }
     },
-    [onInputSubmit, submitted, setSubmitValue, setInput, cached]
+    [onInputSubmit, submitted, setSubmitValue, setInput, cached],
   );
 
   const [pendingInput, setPendingInput] = useState('');

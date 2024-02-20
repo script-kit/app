@@ -46,7 +46,7 @@ export const sleepSchedule = () => {
             job.name
           } won't run again until wake. Cancel Success? ${
             cancelled ? 'Yes' : 'No'
-          }`
+          }`,
         );
       } catch (error) {
         log.error(error);
@@ -66,7 +66,7 @@ export const scheduleDownloads = async () => {
     log.info(`Running downloads script: ${kitPath('setup', 'downloads.js')}`);
     runScript(
       kitPath('setup', 'downloads.js'),
-      process.env.NODE_ENV === 'development' ? '--dev' : ''
+      process.env.NODE_ENV === 'development' ? '--dev' : '',
     );
   } catch (error) {
     log.error(error);
@@ -84,7 +84,7 @@ export const scheduleScriptChanged = ({
 }: Script) => {
   if (scheduleMap.has(filePath)) {
     log.info(
-      `Schedule script exists. Reschedule: ${filePath} ${scheduleString}`
+      `Schedule script exists. Reschedule: ${filePath} ${scheduleString}`,
     );
     cancelJob(filePath);
   }
@@ -92,10 +92,10 @@ export const scheduleScriptChanged = ({
   if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
     if (scheduleString) {
       log.info(
-        `Ignoring ${filePath} // Schedule metadata because it's not trusted.`
+        `Ignoring ${filePath} // Schedule metadata because it's not trusted.`,
       );
       log.info(
-        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`
+        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`,
       );
     }
 
@@ -123,13 +123,14 @@ export const scheduleScriptChanged = ({
         runPromptProcess(filePath, [], {
           force: false,
           trigger: Trigger.Schedule,
+          sponsorCheck: false,
         });
       };
 
       const job = schedule.scheduleJob(
         filePath,
         scheduleString,
-        scheduledFunction
+        scheduledFunction,
       );
 
       log.info(`Scheduling: ${filePath} for ${scheduleString}`);

@@ -22,13 +22,14 @@ export const removeBackground = (filePath: string) => {
 
 export const startBackgroundTask = async (
   filePath: string,
-  args: string[] = []
+  args: string[] = [],
 ) => {
   removeBackground(filePath);
 
   const processInfo = await runPromptProcess(filePath, args, {
     force: false,
     trigger: Trigger.Background,
+    sponsorCheck: false,
   });
   if (processInfo) {
     const { child } = processInfo;
@@ -50,10 +51,10 @@ export const backgroundScriptChanged = ({
   if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
     if (backgroundString) {
       log.info(
-        `Ignoring ${filePath} // Background metadata because it's not trusted in a trusted kenv.`
+        `Ignoring ${filePath} // Background metadata because it's not trusted in a trusted kenv.`,
       );
       log.info(
-        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`
+        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`,
       );
     }
 
@@ -68,7 +69,7 @@ export const backgroundScriptChanged = ({
 
 export const updateBackground = async (
   filePath: string,
-  fileChange = false
+  fileChange = false,
 ) => {
   const { background: backgroundString } = await parseScript(filePath);
 
@@ -79,7 +80,7 @@ export const updateBackground = async (
     !fileChange
   ) {
     log.info(
-      `Task not running. File not changed. Starting background task for ${filePath}`
+      `Task not running. File not changed. Starting background task for ${filePath}`,
     );
     startBackgroundTask(filePath);
     return;
@@ -88,7 +89,7 @@ export const updateBackground = async (
   // Task running. File changed
   if (backgroundMap.get(filePath) && backgroundString === 'auto') {
     log.info(
-      `Task running. File changed. Restarting background task for ${filePath}`
+      `Task running. File changed. Restarting background task for ${filePath}`,
     );
     removeBackground(filePath);
     startBackgroundTask(filePath);
@@ -107,7 +108,7 @@ emitter.on(
   KitEvent.ToggleBackground,
   async (data: SendData<Channel.TOGGLE_BACKGROUND>) => {
     await toggleBackground(data.value as string);
-  }
+  },
 );
 
 emitter.on(KitEvent.RemoveProcess, removeBackground);

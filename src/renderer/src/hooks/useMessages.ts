@@ -328,7 +328,7 @@ export default () => {
     [Channel.SET_FORM_DATA]: (data) => {
       Object.entries(data).forEach(([key, value]) => {
         const inputElement = document.querySelector(
-          `.kit-form input[data-name="${key}"]`
+          `.kit-form input[data-name="${key}"]`,
         );
 
         if (inputElement) {
@@ -348,7 +348,7 @@ export default () => {
 
   useEffect(() => {
     log.info(
-      `>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 🔑 Setting up message listeners`
+      `>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 🔑 Setting up message listeners`,
     );
     Object.entries(messageMap).forEach(([key, fn]) => {
       if (ipcRenderer.listenerCount(key) === 0) {
@@ -398,7 +398,7 @@ export default () => {
       data: {
         name: string;
         value: string;
-      }
+      },
     ) => void;
 
     const handleCSSVariable: HandleCSSVariableHandler = (_, data) => {
@@ -407,7 +407,7 @@ export default () => {
           `Changing ${data?.name} from`,
           document.documentElement.style.getPropertyValue(data?.name),
           `to`,
-          data?.value
+          data?.value,
         );
         document.documentElement.style.setProperty(data?.name, data?.value);
         // eslint-disable-next-line no-void
@@ -482,7 +482,7 @@ export default () => {
       data: {
         keyword: string;
         choice: Choice;
-      }
+      },
     ) => {
       setTriggerKeyword(data);
     };
@@ -508,7 +508,7 @@ export default () => {
     ) {
       ipcRenderer.on(
         AppChannel.SET_CACHED_MAIN_SCORED_CHOICES,
-        handleSetCachedMainScoredChoices
+        handleSetCachedMainScoredChoices,
       );
     }
 
@@ -519,7 +519,7 @@ export default () => {
     if (ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_SHORTCUTS) === 0) {
       ipcRenderer.on(
         AppChannel.SET_CACHED_MAIN_SHORTCUTS,
-        handleSetCachedMainShortcuts
+        handleSetCachedMainShortcuts,
       );
     }
 
@@ -530,7 +530,7 @@ export default () => {
     if (ipcRenderer.listenerCount(AppChannel.SET_CACHED_MAIN_PREVIEW) === 0) {
       ipcRenderer.on(
         AppChannel.SET_CACHED_MAIN_PREVIEW,
-        handleSetCachedMainPreview
+        handleSetCachedMainPreview,
       );
     }
 
@@ -543,7 +543,7 @@ export default () => {
     ) {
       ipcRenderer.on(
         AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS,
-        handleSetCachedMainFlags
+        handleSetCachedMainFlags,
       );
     }
 
@@ -600,14 +600,13 @@ export default () => {
     }
 
     const config = ipcRenderer.sendSync(AppChannel.GET_KIT_CONFIG);
-    log.info({config})
+    log.info({ config });
     window.pid = config.pid;
 
     setKitConfig(config);
 
     log.info(`Sending messages ready for ${pid} with ${window.pid}`);
     ipcRenderer.send(AppChannel.MESSAGES_READY, window.pid);
-
 
     return () => {
       Object.entries(messageMap).forEach(([key, fn]) => {
@@ -627,15 +626,15 @@ export default () => {
       ipcRenderer.off(AppChannel.RESET_PROMPT, handleResetPrompt);
       ipcRenderer.off(
         AppChannel.SET_CACHED_MAIN_SCORED_CHOICES,
-        handleSetCachedMainScoredChoices
+        handleSetCachedMainScoredChoices,
       );
       ipcRenderer.off(
         AppChannel.SET_CACHED_MAIN_SHORTCUTS,
-        handleSetCachedMainShortcuts
+        handleSetCachedMainShortcuts,
       );
       ipcRenderer.off(
         AppChannel.SET_CACHED_MAIN_PREVIEW,
-        handleSetCachedMainPreview
+        handleSetCachedMainPreview,
       );
       // ipcRenderer.off(AppChannel.SET_BOUNDS, handleSetBounds);
       ipcRenderer.off(AppChannel.SET_TERM_FONT, handleSetTermFont);
@@ -644,7 +643,7 @@ export default () => {
       ipcRenderer.off(AppChannel.INIT_PROMPT, handleInitPrompt);
       ipcRenderer.off(
         AppChannel.SET_CACHED_MAIN_SCRIPT_FLAGS,
-        handleSetCachedMainFlags
+        handleSetCachedMainFlags,
       );
       ipcRenderer.off(AppChannel.CLEAR_CACHE, handleClearCache);
       ipcRenderer.off(AppChannel.CLOSE_PROMPT, handleClosePrompt);

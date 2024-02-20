@@ -105,8 +105,6 @@ export const prompts = {
 
     return count;
   },
-  // Implement iterator
-  // Implement iterator
   [Symbol.iterator]: function* () {
     for (const prompt of promptMap.values()) {
       yield prompt;

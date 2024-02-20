@@ -65,7 +65,7 @@ export const pidAtom = atom(
     window.pid = a;
     s(_pidAtom, a);
     currentPid = a;
-  }
+  },
 );
 const _shortcuts = atom<Shortcut[]>([]);
 export const shortcutsAtom = atom(
@@ -74,7 +74,7 @@ export const shortcutsAtom = atom(
   },
   (g, s, a: Shortcut[]) => {
     s(_shortcuts, a);
-  }
+  },
 );
 
 export const processingAtom = atom(false);
@@ -94,7 +94,7 @@ export const tabsAtom = atom(
     const prevTabs = g(tabs);
     if (isEqual(prevTabs, a)) return;
     s(tabs, a || []);
-  }
+  },
 );
 // const cachedMainPreview = atom('');
 const loading = atom<boolean>(false);
@@ -106,7 +106,7 @@ export const placeholderAtom = atom(
   (_g, s, a: string) => {
     s(placeholder, a);
     if (placeholderTimeoutId) clearTimeout(placeholderTimeoutId);
-  }
+  },
 );
 
 export const filteredChoicesIdAtom = atom<number>(0);
@@ -135,7 +135,7 @@ export const choicesConfigAtom = atom(
     const preloaded = g(preloadedAtom);
     if (preloaded) {
       const nextIndex = g(scoredChoicesAtom).findIndex(
-        (sc) => sc.item.id === g(defaultChoiceIdAtom)
+        (sc) => sc.item.id === g(defaultChoiceIdAtom),
       );
       // This was flashing the preview to the 0 choice, then back to the default choice
       s(indexAtom, nextIndex > 0 ? nextIndex : 0);
@@ -149,7 +149,7 @@ export const choicesConfigAtom = atom(
     // );
 
     // if (a?.[0]?.name.match(/(?<=\[)\.(?=\])/i)) {
-  }
+  },
 );
 
 export const prevChoicesConfig = atom({ preload: false });
@@ -167,7 +167,7 @@ export const uiAtom = atom(
       s(enterAtom, '');
     }
     // s(previewHTMLAtom, g(cachedMainPreview));
-  }
+  },
 );
 
 const hint = atom('');
@@ -177,7 +177,7 @@ export const hintAtom = atom(
     const aHint = typeof a !== 'string' ? '' : a;
     const getConvert = g(convertAtom);
     s(hint, getConvert(true).toHtml(aHint));
-  }
+  },
 );
 
 const _panelHTML = atom<string>('');
@@ -204,7 +204,7 @@ export const panelHTMLAtom = atom(
     )
       s(mainHeightAtom, 0);
     if (a) s(loadingAtom, false);
-  }
+  },
 );
 
 const _previewHTML = atom('');
@@ -222,7 +222,7 @@ export const previewHTMLAtom = atom(
         // allow iframe
         ADD_TAGS: ['iframe'],
         ALLOW_UNKNOWN_PROTOCOLS: true,
-      }
+      },
     );
 
     return html;
@@ -240,7 +240,7 @@ export const previewHTMLAtom = atom(
         throttleSetPreview(g, s, a);
       }
     }
-  }
+  },
 );
 
 const _logLinesAtom = atom<string[]>([]);
@@ -253,7 +253,7 @@ export const logLinesAtom = atom(
     //   }, 100);
     // }
     return s(_logLinesAtom, a);
-  }
+  },
 );
 
 const convertAtom = atom<(inverse?: boolean) => Convert>((g) => {
@@ -297,7 +297,7 @@ export const logHTMLAtom = atom(
       const oldLog = g(logLinesAtom);
       s(logLinesAtom, _drop(oldLog, oldLog.length > 256 ? 256 : 0).concat([a]));
     }
-  }
+  },
 );
 
 export const logHeightAtom = atom<number>(0);
@@ -372,7 +372,7 @@ export const editorConfigAtom = atom(
     channel(Channel.INPUT, { input: a.value });
 
     s(loadingAtom, false);
-  }
+  },
 );
 
 const textareaConfig = atom<TextareaConfig>({
@@ -387,7 +387,7 @@ export const textareaConfigAtom = atom(
   (_g, s, a: TextareaConfig) => {
     s(textareaConfig, a);
     s(textareaValueAtom, a?.value || '');
-  }
+  },
 );
 
 export const formHTMLAtom = atom('');
@@ -398,7 +398,7 @@ export const mouseEnabledAtom = atom(
   (g) => g(mouseEnabled) > 5,
   (g, s, a: number) => {
     s(mouseEnabled, a ? g(mouseEnabled) + a : a);
-  }
+  },
 );
 
 const _indexAtom = atom(0);
@@ -489,7 +489,7 @@ export const flagsIndexAtom = atom(
 
     const focusedFlag = (choice as Choice)?.value;
     s(focusedFlagValueAtom, focusedFlag);
-  }
+  },
 );
 
 export const indexAtom = atom(
@@ -574,14 +574,14 @@ export const indexAtom = atom(
       // );
       // s(prevChoiceId, id);
     }
-  }
+  },
 );
 
 const _flaggedValue = atom<Choice | string>('');
 const _focused = atom<Choice | null>(noChoice as Choice);
 
 export const hasFocusedChoiceAtom = atom(
-  (g) => g(_focused) && g(_focused)?.name !== noChoice.name
+  (g) => g(_focused) && g(_focused)?.name !== noChoice.name,
 );
 
 const throttleChoiceFocused = throttle(
@@ -613,12 +613,12 @@ const throttleChoiceFocused = throttle(
     }
   },
   25,
-  { leading: true, trailing: true }
+  { leading: true, trailing: true },
 );
 
 export const focusedChoiceAtom = atom(
   (g) => g(_focused),
-  throttleChoiceFocused
+  throttleChoiceFocused,
 );
 
 export const hasPreviewAtom = atom<boolean>((g) => {
@@ -686,7 +686,7 @@ export const scoredChoicesAtom = atom(
           (c) =>
             c.item?.id === defaultChoiceId ||
             c.item?.value === defaultValue ||
-            c.item?.name === defaultValue
+            c.item?.name === defaultValue,
         );
 
         if (i !== -1) {
@@ -737,14 +737,14 @@ export const scoredChoicesAtom = atom(
     } else {
       s(mainHeightAtom, DEFAULT_HEIGHT);
     }
-  }
+  },
 );
 
 const choicesHeightAtom = atom(0);
 const flagsHeightAtom = atom(0);
 
 export const choicesAtom = atom((g) =>
-  g(scoredChoicesAtom).map((result) => result.item)
+  g(scoredChoicesAtom).map((result) => result.item),
 );
 
 export const _inputAtom = atom('');
@@ -837,7 +837,7 @@ export const inputAtom = atom(
     if (g(_inputChangedAtom) && a === '') {
       resize(g, s, 'INPUT_CLEARED');
     }
-  }
+  },
 );
 
 const _flagsAtom = atom<FlagsOptions>({});
@@ -859,7 +859,7 @@ export const flagsAtom = atom(
     if (g(isMainScriptAtom)) {
       s(cachedMainFlagsAtom, a);
     }
-  }
+  },
 );
 
 export const tabChangedAtom = atom(false);
@@ -877,7 +877,7 @@ const getSendTabChanged = (g: Getter) =>
     {
       leading: true,
       trailing: true,
-    }
+    },
   );
 
 export const tabIndexAtom = atom(
@@ -897,7 +897,7 @@ export const tabIndexAtom = atom(
 
       s(tabChangedAtom, true);
     }
-  }
+  },
 );
 
 const selected = atom('');
@@ -906,7 +906,7 @@ export const selectedAtom = atom(
   (g, s, a: string) => {
     s(selected, a);
     if (a === '') s(focusedFlagValueAtom, '');
-  }
+  },
 );
 
 export const _history = atom<Script[]>([]);
@@ -941,7 +941,7 @@ export const scriptAtom = atom(
     s(
       backToMainAtom,
       prevScript?.filePath !== g(kitConfigAtom).mainScriptPath &&
-        a?.filePath === g(kitConfigAtom).mainScriptPath
+        a?.filePath === g(kitConfigAtom).mainScriptPath,
     );
 
     s(promptReadyAtom, false);
@@ -980,7 +980,7 @@ export const scriptAtom = atom(
     // s(panelHTMLAtom, `<div/>`);
 
     // if (g(isMainScriptAtom) && !wereChoicesPreloaded) s(_inputAtom, ``);
-  }
+  },
 );
 
 export const isKitScriptAtom = atom<boolean>((g) => {
@@ -1134,7 +1134,7 @@ const resize = debounce(
         g(flagsHeightAtom),
         choicesHeight,
         previewHeight,
-        promptData?.height || PROMPT.HEIGHT.BASE
+        promptData?.height || PROMPT.HEIGHT.BASE,
       );
       forceResize = true;
 
@@ -1284,7 +1284,7 @@ const resize = debounce(
   {
     leading: true,
     trailing: true,
-  }
+  },
 );
 
 export const topHeightAtom = atom(
@@ -1296,7 +1296,7 @@ export const topHeightAtom = atom(
     }
     // TODO: TOP HEIGHT NECESSARY?
     resize(g, s, 'TOP_HEIGHT');
-  }
+  },
 );
 
 export const triggerResizeAtom = atom(null, (g, s, reason: string) => {
@@ -1333,7 +1333,7 @@ export const mainHeightAtom = atom(
       return;
     }
     resize(g, s, 'MAIN_HEIGHT');
-  }
+  },
 );
 
 const checkSubmitFormat = (checkValue: any) => {
@@ -1387,7 +1387,7 @@ export const themeAtom = atom(
     s,
     a: {
       [key: string]: string;
-    }
+    },
   ) => {
     const prevTheme: any = g(_themeAtom);
 
@@ -1410,7 +1410,7 @@ export const themeAtom = atom(
     // log.info(`theme: ${JSON.stringify(newTheme)}`);
 
     s(_themeAtom, newTheme);
-  }
+  },
 );
 
 export const headerHiddenAtom = atom(false);
@@ -1419,7 +1419,7 @@ export const footerHiddenAtom = atom(
   (g) => g(footerHidden),
   (g, s, a: boolean) => {
     s(footerHidden, a);
-  }
+  },
 );
 
 const promptReadyAtom = atom(false);
@@ -1430,7 +1430,7 @@ let wasPromptDataPreloaded = false;
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
-    // log.info(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
+    log.info(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
 
     if (a?.count) {
       s(countAtom, a.count);
@@ -1569,10 +1569,10 @@ export const promptDataAtom = atom(
         const buttons = htmlDoc.getElementsByTagName('button');
         const hasSubmit =
           Array.from(inputs).some(
-            (input) => input.type.toLowerCase() === 'submit'
+            (input) => input.type.toLowerCase() === 'submit',
           ) ||
           Array.from(buttons).some(
-            (button) => button.type.toLowerCase() === 'submit'
+            (button) => button.type.toLowerCase() === 'submit',
           );
 
         if (!hasSubmit) {
@@ -1627,7 +1627,7 @@ export const promptDataAtom = atom(
       s(promptActiveAtom, true);
       s(tabChangedAtom, false);
     }
-  }
+  },
 );
 
 export const flaggedChoiceValueAtom = atom(
@@ -1663,7 +1663,7 @@ export const flaggedChoiceValueAtom = atom(
     channel(Channel.ON_MENU_TOGGLE);
 
     resize(g, s, 'FLAG_VALUE');
-  }
+  },
 );
 
 const _focusedFlag = atom('');
@@ -1679,7 +1679,7 @@ export const focusedFlagValueAtom = atom(
 
       s(focusedActionAtom, flag || {});
     }
-  }
+  },
 );
 
 export const focusedActionAtom = atom({});
@@ -1891,7 +1891,7 @@ export const submitValueAtom = atom(
         (document.getElementById('webcam') as HTMLVideoElement).srcObject =
           null;
     }
-  }
+  },
 );
 
 export const closedInput = atom('');
@@ -1955,7 +1955,7 @@ export const openAtom = atom(
       // s(resetPromptAtom);
     }
     s(_open, a);
-  }
+  },
 );
 
 export const escapeAtom = atom<any>((g) => {
@@ -1998,7 +1998,7 @@ export const tempThemeAtom = atom(
     });
 
     s(tempTheme, a);
-  }
+  },
 );
 
 export const modifiers = [
@@ -2023,7 +2023,7 @@ export const inputFocusAtom = atom(
     if (g(inputFocus) === a) return;
     ipcRenderer.send(AppChannel.FOCUS_PROMPT);
     s(inputFocus, a);
-  }
+  },
 );
 
 const previewEnabled = atom<boolean>(true);
@@ -2032,7 +2032,7 @@ export const previewEnabledAtom = atom(
   (g, s, a: boolean) => {
     s(previewEnabled, a);
     resize(g, s, 'PREVIEW_ENABLED');
-  }
+  },
 );
 
 export const topRefAtom = atom<null | HTMLDivElement>(null);
@@ -2045,13 +2045,13 @@ export const enterAtom = atom(
   (g) => g(_enterAtom),
   (_g, s, a: string) => {
     s(_enterAtom, a);
-  }
+  },
 );
 export const loadingAtom = atom(
   (g) => g(loading) || g(runningAtom),
   (_g, s, a: boolean) => {
     s(loading, a);
-  }
+  },
 );
 
 export const exitAtom = atom(
@@ -2061,7 +2061,7 @@ export const exitAtom = atom(
       // log.info(`👋 Exit, so setting open to false`);
       s(openAtom, false);
     }
-  }
+  },
 );
 
 export const isSplashAtom = atom((g) => {
@@ -2089,7 +2089,7 @@ export const appDbAtom = atom(
   (g, s, a: Partial<AppDb>) => {
     // assign properties from a into appDb
     s(_appDbAtom, { ...g(_appDbAtom), ...a });
-  }
+  },
 );
 
 export const createAssetAtom = (...parts: string[]) =>
@@ -2114,7 +2114,7 @@ export const isReadyAtom = atom(
   },
   (_g, s, a: boolean) => {
     s(isReady, a);
-  }
+  },
 );
 export const cmdAtom = atom((g) => (g(appConfigAtom).isWin ? 'ctrl' : 'cmd'));
 
@@ -2234,7 +2234,7 @@ export const processesAtom = atom<ProcessInfo[]>([]);
 export const setFocusedChoiceAtom = atom(null, (g, s, a: string) => {
   if (!a) return;
   const i = g(choices).findIndex(
-    (c) => c?.item?.id === a || c?.item?.name === a
+    (c) => c?.item?.id === a || c?.item?.name === a,
   );
 
   // console.log.info({ i });
@@ -2300,7 +2300,7 @@ export const boundsAtom = atom(
     setTimeout(() => {
       resize(g, s, 'SETTLED');
     }, 100);
-  }
+  },
 );
 
 export const resizeCompleteAtom = atom(false);
@@ -2320,7 +2320,7 @@ export const audioAtom = atom(
     // console.log.info(`Audio options`, a);
 
     let audio: null | HTMLAudioElement = document.querySelector(
-      '#audio'
+      '#audio',
     ) as HTMLAudioElement;
 
     // create audio element
@@ -2349,7 +2349,7 @@ export const audioAtom = atom(
       audio?.pause();
       if (audio) s(_audioAtom, null);
     }
-  }
+  },
 );
 
 type SpeakOptions = {
@@ -2377,7 +2377,7 @@ export const speechAtom = atom(
         voices.find((v) => v.name === a?.name) || synth.getVoices()[0];
       synth.speak(utterThis);
     }
-  }
+  },
 );
 
 export const updateAvailableAtom = atom(false);
@@ -2403,7 +2403,7 @@ export const kitStateAtom = atom(
       ...g(_kitStateAtom),
       ...a,
     });
-  }
+  },
 );
 
 export const loginAtom = atom((_g) => {
@@ -2427,7 +2427,7 @@ export const editorThemeAtom = atom<{ foreground: string; background: string }>(
     };
 
     return editorTheme;
-  }
+  },
 );
 
 export const isSponsorAtom = atom(false);
@@ -2448,7 +2448,7 @@ export const editorAppendAtom = atom(
       text: a,
       date: new Date().toISOString(),
     });
-  }
+  },
 );
 export const colorAtom = atom((g) => {
   return async () => {
@@ -2486,7 +2486,7 @@ export const chatMessagesAtom = atom(
       pid: g(pidAtom),
     };
     ipcRenderer.send(Channel.CHAT_MESSAGES_CHANGE, appMessage);
-  }
+  },
 );
 
 export const chatMessageSubmitAtom = atom(null, (g, _s, _a: string) => {
@@ -2529,7 +2529,7 @@ export const setChatMessageAtom = atom(
     } catch (error) {
       console.error(error);
     }
-  }
+  },
 );
 export const termConfigDefaults: TermConfig = {
   command: '',
@@ -2548,7 +2548,7 @@ export const termConfigAtom = atom(
       ...(a || {}),
     };
     s(termConfig, config);
-  }
+  },
 );
 
 export const zoomAtom = atom(0);
@@ -2578,8 +2578,8 @@ export const termExitAtom = atom(
     100,
     {
       leading: true,
-    }
-  )
+    },
+  ),
 );
 
 export const scrollToAtom = atom<'top' | 'bottom' | 'center' | null>(null);
@@ -2598,7 +2598,7 @@ export const enterPressedAtom = atom(
     setTimeout(() => {
       s(enterPressed, false);
     }, 100);
-  }
+  },
 );
 
 export const micIdAtom = atom<string | null>(null);
@@ -2755,7 +2755,7 @@ export const actionsAtom = atom((g) => {
             disabled: Boolean(disabled),
             visible: Boolean(visible),
           } as Action;
-        })
+        }),
     );
 });
 
@@ -2867,7 +2867,7 @@ export const scoredFlagsAtom = atom(
     }
 
     s(flagsHeightAtom, choicesHeight);
-  }
+  },
 );
 
 export const previewCheckAtom = atom((g) => {
@@ -2889,7 +2889,7 @@ export const triggerKeywordAtom = atom(
     }: {
       keyword: string;
       choice: Choice;
-    }
+    },
   ) => {
     const channel = g(channelAtom);
 
@@ -2898,7 +2898,7 @@ export const triggerKeywordAtom = atom(
       focused: choice,
       value: choice?.value,
     });
-  }
+  },
 );
 
 export const hasRightShortcutAtom = atom((g) => {
@@ -2919,7 +2919,7 @@ export const typingAtom = atom(
       }, 50);
     }
     s(typing, a);
-  }
+  },
 );
 
 export const selectedChoicesAtom = atom<Choice[]>([]);
@@ -2966,7 +2966,7 @@ export const currentChoiceHeightsAtom = atom(
 
     if (isEqual(previousChoiceHeights, currentChoiceHeights)) return;
     s(_currentChoiceHeights, currentChoiceHeights);
-  }
+  },
 );
 
 const pauseChannelAtom = atom(false);
@@ -3020,8 +3020,8 @@ export const resetPromptAtom = atom(
       s(cachedAtom, true);
     },
     50,
-    { leading: true }
-  )
+    { leading: true },
+  ),
 );
 
 const cachedMainScoredChoices = atom<ScoredChoice[]>([]);
@@ -3032,7 +3032,7 @@ export const cachedMainScoredChoicesAtom = atom(
     //   `>>>>>>>>>>>>>>>>>>>>>>>> 📦 Cache main scored choices: ${a?.length}`
     // );
     s(cachedMainScoredChoices, a);
-  }
+  },
 );
 
 export const cachedMainPromptDataAtom = atom<Partial<PromptData>>({
@@ -3067,7 +3067,7 @@ export const micStreamEnabledAtom = atom(
         event: 'end',
       });
     }
-  }
+  },
 );
 
 export const progressAtom = atom(0);
@@ -3097,7 +3097,7 @@ export const clearCacheAtom = atom(null, (g, s) => {
   s(cachedMainPreviewAtom, '');
   s(cachedMainShortcutsAtom, []);
   s(cachedMainFlagsAtom, {});
-  s(promptDataAtom, {});
+  s(promptDataAtom, {} as PromptData);
   s(scoredChoicesAtom, []);
   s(promptBoundsAtom, promptBoundsDefault);
 });
@@ -3106,5 +3106,5 @@ export const mainElementIdAtom = atom<string>('');
 export const closedAtom = atom(false);
 export const kitConfigAtom = atom({
   kitPath: '',
-  mainScriptPath: ''
+  mainScriptPath: '',
 });

@@ -5,6 +5,7 @@ import { Trigger } from '../shared/enums';
 import { emitter, KitEvent } from '../shared/events';
 import { TrackEvent, trackEvent } from './track';
 import { app } from 'electron';
+import os from 'os';
 
 const electronVersion = process.versions.electron ?? '0.0.0';
 export const debugInfo = () =>

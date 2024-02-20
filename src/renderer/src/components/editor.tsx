@@ -1,7 +1,4 @@
-/* eslint-disable no-template-curly-in-string */
-/* eslint-disable no-useless-escape */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import log from 'electron-log';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
@@ -22,15 +19,12 @@ import {
   editorOptions,
   editorSuggestionsAtom,
   inputAtom,
-  mainHeightAtom,
   openAtom,
-  promptDataAtom,
   scrollToAtom,
   uiAtom,
 } from '../jotai';
 
 import { kitLight, nightOwl } from '../editor-themes';
-import { DEFAULT_HEIGHT } from '../../../shared/defaults';
 
 // loader.config({
 //   paths: {
@@ -92,7 +86,7 @@ const registerPropertiesLanguage = (monaco: Monaco) => {
         kind: monaco.languages.CompletionItemKind.Snippet,
         insertText: {
           value: ['if (${1:condition}) {', '\t$0', '} else {', '\t', '}'].join(
-            '\n'
+            '\n',
           ),
         },
         documentation: 'If-Else Statement',
@@ -143,7 +137,7 @@ export default function Editor() {
               suggestions,
             };
           },
-        }
+        },
       );
     }
   }, [editorSuggestions, m, options]);
@@ -209,7 +203,7 @@ export default function Editor() {
         });
       }
     },
-    [options]
+    [options],
   );
 
   const onMount = useCallback(
@@ -236,7 +230,7 @@ export default function Editor() {
               // console.log(content);
               monaco.languages.typescript.typescriptDefaults.addExtraLib(
                 content,
-                filePath
+                filePath,
               );
             }
           }
@@ -247,7 +241,7 @@ export default function Editor() {
             for (const { content, filePath } of config.extraLibs) {
               monaco.languages.typescript.javascriptDefaults.addExtraLib(
                 content,
-                filePath
+                filePath,
               );
             }
           }
@@ -300,7 +294,7 @@ export default function Editor() {
         mountEditor.revealLineInCenter(Math.floor(lineNumber / 2));
       }
     },
-    [config, containerRef, kitIsDark]
+    [config, containerRef, kitIsDark],
   );
 
   const onChange = useCallback(
@@ -312,11 +306,11 @@ export default function Editor() {
         editor
           ?.getModel()
           ?.getOffsetAt(editor.getPosition() || { lineNumber: 1, column: 1 }) ||
-          0
+          0,
       );
       setInputValue(value);
     },
-    [editor, setCursorPosition, setInputValue]
+    [editor, setCursorPosition, setInputValue],
   );
 
   // When inputValue changes, respect scrollTo bottom
@@ -482,7 +476,7 @@ export default function Editor() {
           position?.lineNumber || 1,
           position?.column || 1,
           position?.lineNumber || 1,
-          position?.column || 1
+          position?.column || 1,
         ),
         text,
         forceMoveMarkers: true,
@@ -523,11 +517,11 @@ export default function Editor() {
       ipcRenderer.removeListener(Channel.EDITOR_GET_SELECTION, getSelectedText);
       ipcRenderer.removeListener(
         Channel.EDITOR_GET_CURSOR_OFFSET,
-        getCursorPosition
+        getCursorPosition,
       );
       ipcRenderer.removeListener(
         Channel.EDITOR_INSERT_TEXT,
-        insertTextAtCursor
+        insertTextAtCursor,
       );
       ipcRenderer.removeListener(Channel.EDITOR_MOVE_CURSOR, moveCursor);
     };

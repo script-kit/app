@@ -60,6 +60,7 @@ const addWatch = (watchString: string, scriptPath: string) => {
         runPromptProcess(scriptPath, [filePath, eventName], {
           force: false,
           trigger: Trigger.Watch,
+          sponsorCheck: false,
         });
       }
     });
@@ -84,10 +85,10 @@ export const watchScriptChanged = ({
   if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
     if (watchString) {
       log.info(
-        `Ignoring ${filePath} // Background metadata because it's not trusted in a trusted kenv.`
+        `Ignoring ${filePath} // Background metadata because it's not trusted in a trusted kenv.`,
       );
       log.info(
-        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`
+        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`,
       );
     }
 

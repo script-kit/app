@@ -50,6 +50,7 @@ import { getFileImports } from './npm';
 import { sendToAllPrompts } from './channel';
 import { readKitCss, setCSSVariable } from './theme';
 import { prompts } from './prompts';
+import { createEnv } from './env.utils';
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
@@ -64,7 +65,7 @@ const unlink = (filePath: string) => {
     'bin',
     path
       .basename(filePath)
-      .replace(new RegExp(`\\${path.extname(filePath)}$`), '')
+      .replace(new RegExp(`\\${path.extname(filePath)}$`), ''),
   );
 
   if (existsSync(binPath)) rm(binPath);
@@ -109,7 +110,7 @@ const unlinkBin = (filePath: string) => {
   const binPath = path.resolve(
     path.dirname(path.dirname(filePath)),
     'bin',
-    path.basename(filePath)
+    path.basename(filePath),
   );
 
   // if binPath exists, remove it
@@ -124,7 +125,7 @@ const checkFileImports = debounce(async (script: Script) => {
     imports = await getFileImports(
       script.filePath,
       kenvPath('package.json'),
-      script.kenv ? kenvPath('kenvs', script.kenv, 'package.json') : undefined
+      script.kenv ? kenvPath('kenvs', script.kenv, 'package.json') : undefined,
     );
   } catch (error) {
     log.error(error);
@@ -147,7 +148,7 @@ const checkFileImports = debounce(async (script: Script) => {
 export const onScriptsChanged = async (
   event: WatchEvent,
   filePath: string,
-  rebuilt = false
+  rebuilt = false,
 ) => {
   log.verbose(`👀 ${event} ${filePath}`);
   if (event === 'unlink') {
@@ -180,7 +181,7 @@ export const onScriptsChanged = async (
       }
     } else {
       log.verbose(
-        `⌚️ ${filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`
+        `⌚️ ${filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`,
       );
     }
 
@@ -193,7 +194,7 @@ export const onScriptsChanged = async (
         try {
           const binDirPath = path.resolve(
             path.dirname(path.dirname(filePath)),
-            'bin'
+            'bin',
           );
           const command = path.parse(filePath).name;
           const binFilePath = path.resolve(binDirPath, command);
@@ -208,7 +209,6 @@ export const onScriptsChanged = async (
     }
   }
 };
-
 
 let watchers = [] as FSWatcher[];
 
@@ -287,7 +287,7 @@ const triggerRunText = debounce(
   1000,
   {
     leading: true,
-  }
+  },
 );
 
 const refreshScripts = debounce(
@@ -299,7 +299,7 @@ const refreshScripts = debounce(
     }
   },
   500,
-  { leading: true }
+  { leading: true },
 );
 
 export const setupWatchers = async () => {
@@ -347,19 +347,19 @@ export const setupWatchers = async () => {
 
           setCSSVariable(
             '--mono-font',
-            envData?.KIT_MONO_FONT || `JetBrains Mono`
+            envData?.KIT_MONO_FONT || `JetBrains Mono`,
           );
           setCSSVariable(
             '--sans-font',
             envData?.KIT_SANS_FONT ||
               `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-        Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`
+        Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`,
           );
           setCSSVariable(
             '--serif-font',
             envData?.KIT_SERIF_FONT ||
               `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
-        'serif'`
+        'serif'`,
           );
 
           if (envData?.KIT_MIC) {
@@ -385,7 +385,7 @@ export const setupWatchers = async () => {
 
           const trustedKenvsChanged = !compareArrays(
             trustedKenvs,
-            kitState.trustedKenvs
+            kitState.trustedKenvs,
           );
 
           kitState.trustedKenvs = trustedKenvs;
@@ -417,34 +417,47 @@ export const setupWatchers = async () => {
             delete kitState.kenvEnv.KIT_WIDTH;
           }
 
-          if(envData?.KIT_MAIN_SHORTCUT && envData?.KIT_MAIN_SHORTCUT !== kitState.kenvEnv.KIT_MAIN_SHORTCUT){
+          if (
+            envData?.KIT_MAIN_SHORTCUT &&
+            envData?.KIT_MAIN_SHORTCUT !== kitState.kenvEnv.KIT_MAIN_SHORTCUT
+          ) {
             updateMainShortcut(envData?.KIT_MAIN_SHORTCUT);
-          }else {
-            if(kitState.kenvEnv.KIT_MAIN_SHORTCUT && !envData?.KIT_MAIN_SHORTCUT){
+          } else {
+            if (
+              kitState.kenvEnv.KIT_MAIN_SHORTCUT &&
+              !envData?.KIT_MAIN_SHORTCUT
+            ) {
               delete kitState.kenvEnv.KIT_MAIN_SHORTCUT;
             }
             setDefaultMainShortcut();
           }
 
+          if (envData?.KIT_SUSPEND_WATCHERS) {
+            const suspendWatchers = envData?.KIT_SUSPEND_WATCHERS === 'true';
+            kitState.suspendWatchers = suspendWatchers;
 
-          // if (envData?.KIT_SUSPEND_WATCHERS) {
-          //   const suspendWatchers = envData?.KIT_SUSPEND_WATCHERS === 'true';
-          //   kitState.suspendWatchers = suspendWatchers;
-
-          //   if (suspendWatchers) {
-          //     log.info(`⌚️ Suspending Watchers`);
-          //     teardownWatchers();
-          //   } else {
-          //     log.info(`⌚️ Resuming Watchers`);
-          //     setupWatchers();
-          //   }
-          // } else if (kitState.suspendWatchers) {
-          //   kitState.suspendWatchers = false;
-          //   log.info(`⌚️ Resuming Watchers`);
-          //   setupWatchers();
-          // }
+            if (suspendWatchers) {
+              log.info(`⌚️ Suspending Watchers`);
+              teardownWatchers();
+            } else {
+              log.info(`⌚️ Resuming Watchers`);
+              setupWatchers();
+            }
+          } else if (kitState.suspendWatchers) {
+            kitState.suspendWatchers = false;
+            log.info(`⌚️ Resuming Watchers`);
+            setupWatchers();
+          }
 
           kitState.kenvEnv = envData;
+          if (prompts.idle?.pid) {
+            processes.getByPid(prompts.idle?.pid).child?.send({
+              pid: prompts.idle?.pid,
+              channel: Channel.ENV_CHANGED,
+              env: createEnv(),
+            });
+          }
+
           // TODO: I don't think this is necessary any more
           // togglePromptEnv('KIT_MAIN_SCRIPT');
         } catch (error) {

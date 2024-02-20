@@ -4,10 +4,7 @@ import path from 'path';
 import { subscribeKey } from 'valtio/utils';
 import { debounce } from 'lodash-es';
 
-import {
-  getMainScriptPath,
-
-} from '@johnlindquist/kit/core/utils';
+import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 
 import { UI } from '@johnlindquist/kit/core/enum';
 import { runPromptProcess } from './kit';
@@ -60,12 +57,13 @@ const registerShortcut = (shortcut: string, filePath: string, shebang = '') => {
         runPromptProcess(filePath, [], {
           force: true,
           trigger: Trigger.Shortcut,
+          sponsorCheck: true,
         });
       },
       250,
       {
         leading: true,
-      }
+      },
     );
     const success = globalShortcut.register(shortcut, shortcutAction);
 
@@ -99,6 +97,7 @@ export const registerKillLatestShortcut = () => {
         force: true,
         trigger: Trigger.Menu,
         main: true,
+        sponsorCheck: true,
       });
     });
   }
@@ -151,10 +150,10 @@ export const shortcutScriptChanged = ({
   if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
     if (shortcut) {
       log.info(
-        `Ignoring ${filePath} // Shortcut metadata because it's not trusted.`
+        `Ignoring ${filePath} // Shortcut metadata because it's not trusted.`,
       );
       log.info(
-        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`
+        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`,
       );
     }
 
@@ -169,11 +168,11 @@ export const shortcutScriptChanged = ({
   // Handle existing shortcuts
 
   const exists = [...shortcutMap.entries()].find(
-    ([, s]) => s?.shortcut === convertedShortcut
+    ([, s]) => s?.shortcut === convertedShortcut,
   );
   if (exists && !sameScript) {
     log.info(
-      `Shortcut ${convertedShortcut} already registered to ${exists[0]}`
+      `Shortcut ${convertedShortcut} already registered to ${exists[0]}`,
     );
     shortcutInfo(convertedShortcut, filePath, alreadyFail, exists[0]);
 
@@ -206,7 +205,7 @@ export const shortcutScriptChanged = ({
   const registerSuccess = registerShortcut(
     convertedShortcut,
     filePath,
-    shebang
+    shebang,
   );
 
   if (registerSuccess && globalShortcut.isRegistered(convertedShortcut)) {
@@ -220,137 +219,70 @@ export const shortcutScriptChanged = ({
 
 export const setDefaultMainShortcut = async () => {
   updateMainShortcut(kitState.isMac ? `cmd ;` : `ctrl ;`);
-}
+};
 
-export const updateMainShortcut = async (shortcut:string) => {
+export const updateMainShortcut = async (shortcut: string) => {
   log.info(`Updating main shortcut to ${shortcut}`);
 
+  const finalShortcut = convertShortcut(shortcut, getMainScriptPath());
+  if (!finalShortcut) return;
 
-    const finalShortcut = convertShortcut(shortcut, getMainScriptPath());
-    if (!finalShortcut) return;
+  log.verbose(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
 
-    log.verbose(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
+  const old = shortcutMap.get(getMainScriptPath());
 
-    const old = shortcutMap.get(getMainScriptPath());
+  if (finalShortcut === old?.shortcut) return;
 
-    if (finalShortcut === old?.shortcut) return;
+  if (old?.shortcut) {
+    globalShortcut.unregister(old?.shortcut);
+    shortcutMap.delete(getMainScriptPath());
+  }
 
-    if (old?.shortcut) {
-      globalShortcut.unregister(old?.shortcut);
-      shortcutMap.delete(getMainScriptPath());
+  const mainShortcutAction = async () => {
+    kitState.shortcutPressed = finalShortcut;
+
+    if (prompts.focused?.scriptPath === getMainScriptPath()) {
+      prompts.focused?.hideInstant();
+      processes.removeByPid(prompts.focused?.pid);
+      prompts.focused = null;
+      return;
     }
 
-    const mainShortcutAction = async () => {
-      kitState.shortcutPressed = finalShortcut;
-
-      if (prompts.focused?.scriptPath === getMainScriptPath()) {
-        prompts.focused?.hideInstant();
-        processes.removeByPid(prompts.focused?.pid);
-        prompts.focused = null;
-        return;
-      }
-
-      log.info(`
+    log.info(`
 
 ----------------------------------------
 🏚  Main shortcut pressed: ${finalShortcut}`);
 
-      // trackEvent(TrackEvent.MainShortcut, {
-      //   login: kitState.user?.login || 'unknown',
-      //   sponsor: kitState.isSponsor,
-      // });
+    await runPromptProcess(getMainScriptPath(), [], {
+      force: true,
+      trigger: Trigger.Menu,
+      sponsorCheck: true,
+    });
+  };
 
-      // TODO: Logic to handle if you press main while the focused prompt is on the main script
-      // if (prompts.idle && !prompts?.idle?.isVisible()) {
-      //   if (kitState.kenvEnv?.KIT_MAIN_HOOK_PATH) {
-      //     runScript(kitState.kenvEnv?.KIT_MAIN_HOOK_PATH);
-      //   }
-      //   log.info(`Main prompt not visible. Showing...`);
-      //   // log.info(snapshot(kitState.kenvEnv));
+  const ret = globalShortcut.register(finalShortcut, mainShortcutAction);
 
-      //   // Give init bounds time to finish. Difficult to test :/
-      //   // await new Promise(setImmediate);
+  if (!ret) {
+    log.warn(
+      `Failed to register: ${finalShortcut} to ${getMainScriptPath(
+        process.env.KIT_MAIN_SCRIPT,
+      )}`,
+    );
+    shortcutInfo(finalShortcut, getMainScriptPath(), mainFail);
+  }
 
-      //   // prompts?.idle?.initShowPrompt();
-      //   // prompts?.idle?.focusPrompt();
-      //   await runPromptProcess(getMainScriptPath(), [], {
-      //     force: true,
-      //     trigger: Trigger.Menu,
-      //     main: true,
-      //   });
-      //   return;
-      // }
-
-      // TODO: This isn't right
-      const isSplash = prompts?.idle?.ui === UI.splash;
-
-      if (!isSplash) {
-        // const scriptPingSuccess = await new Promise((resolve, reject) => {
-        //   try {
-        //     let pingId: NodeJS.Timeout;
-        //     const pongHandler = (message: { channel: Channel }) => {
-        //       if (message?.channel === Channel.PONG) {
-        //         log.info(`Successfully pinged script`);
-        //         if (pingId) clearTimeout(pingId);
-        //         pInfo?.child?.off('message', pongHandler);
-        //         resolve(true);
-        //       }
-        //     };
-        //     pInfo?.child?.on('message', pongHandler);
-        //     pingId = setTimeout(() => {
-        //       pInfo?.child?.off('message', pongHandler);
-        //       log.error(`Failed to ping script`);
-        //       maybeHide(HideReason.PingTimeout);
-        //       resolve(false);
-        //     }, 500);
-        //     pInfo?.child?.send({
-        //       channel: Channel.PING,
-        //       pid: kitState.pid,
-        //       state: {},
-        //     });
-        //   } catch (error) {
-        //     resolve(false);
-        //   }
-        // });
-        // if (!scriptPingSuccess) {
-        //   log.info(`Killing ${kitState.pid}`);
-        //   processes.removeByPid(kitState.pid);
-        //   maybeHide(HideReason.MainShortcut);
-        //   return;
-        // }
-      }
-
-      // setPreview(`<div></div>`);
-
-      await runPromptProcess(getMainScriptPath(), [], {
-        force: true,
-        trigger: Trigger.Menu,
-      });
-    };
-
-    const ret = globalShortcut.register(finalShortcut, mainShortcutAction);
-
-    if (!ret) {
-      log.warn(
-        `Failed to register: ${finalShortcut} to ${getMainScriptPath(
-          process.env.KIT_MAIN_SCRIPT
-        )}`
-      );
-      shortcutInfo(finalShortcut, getMainScriptPath(), mainFail);
-    }
-
-    if (ret && globalShortcut.isRegistered(finalShortcut)) {
-      kitState.mainShortcut = finalShortcut;
-      log.info(
-        `Registered ${finalShortcut} to ${getMainScriptPath(
-          process.env.KIT_MAIN_SCRIPT
-        )}`
-      );
-      shortcutMap.set(getMainScriptPath(), {
-        shortcut: finalShortcut,
-        shebang: '',
-      });
-    }
+  if (ret && globalShortcut.isRegistered(finalShortcut)) {
+    kitState.mainShortcut = finalShortcut;
+    log.info(
+      `Registered ${finalShortcut} to ${getMainScriptPath(
+        process.env.KIT_MAIN_SCRIPT,
+      )}`,
+    );
+    shortcutMap.set(getMainScriptPath(), {
+      shortcut: finalShortcut,
+      shebang: '',
+    });
+  }
 };
 
 const pauseShortcuts = () => {
@@ -383,7 +315,7 @@ const subShortcutsPaused = subscribeKey(
     } else {
       resumeShortcuts();
     }
-  }
+  },
 );
 
 subs.push(subShortcutsPaused);
@@ -403,7 +335,7 @@ const subKeymap = subscribeKey(
     }
 
     prevKeymap = keymap;
-  }, 200)
+  }, 200),
 );
 
 subs.push(subKeymap);

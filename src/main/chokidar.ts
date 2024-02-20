@@ -2,7 +2,6 @@ import path from 'path';
 import chokidar from 'chokidar';
 import log from 'electron-log';
 import {
-  shortcutsPath,
   kenvPath,
   kitPath,
   appDbPath,
@@ -14,7 +13,7 @@ import { kitState } from '../shared/state';
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
 type WatcherCallback = (
   eventName: WatchEvent,
-  filePath: string
+  filePath: string,
 ) => Promise<void>;
 export const startWatching = (callback: WatcherCallback) => {
   const kenvScriptsWatcher = chokidar.watch(
@@ -28,7 +27,7 @@ export const startWatching = (callback: WatcherCallback) => {
       // ignore dotfiles
       ignored: (filePath) => path.basename(filePath).startsWith('.'),
       ignoreInitial: kitState.ignoreInitial,
-    }
+    },
   );
 
   kenvScriptsWatcher.on('all', callback);
@@ -76,7 +75,6 @@ export const startWatching = (callback: WatcherCallback) => {
   const fileWatcher = chokidar.watch(
     [
       appDbPath,
-      shortcutsPath,
       userDbPath,
       statsPath,
       kenvPath('.env'),
@@ -86,7 +84,7 @@ export const startWatching = (callback: WatcherCallback) => {
     {
       disableGlobbing: true,
       ignoreInitial: kitState.ignoreInitial,
-    }
+    },
   );
 
   fileWatcher.on('all', callback);

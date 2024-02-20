@@ -1,27 +1,21 @@
-/* eslint-disable no-nested-ternary */
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable no-continue */
-/* eslint-disable no-nested-ternary */
-/* eslint-disable import/first */
-/* eslint-disable jest/no-identical-title */
-/* eslint-disable jest/expect-expect */
-/* eslint global-require: off, no-console: off */
-
-/**
- * This module executes inside of electron's main process. You can start
- * electron renderer process from here and communicate with the other processes
- * through IPC.
- *
- * When running `yarn build` or `yarn build-main`, this file is compiled to
- * `./src/main.prod.js` using webpack. This gives us some performance wins.
- */
+import {
+  app,
+  protocol,
+  powerMonitor,
+  shell,
+  BrowserWindow,
+  crashReporter,
+  screen,
+  nativeTheme,
+} from 'electron';
 
 process.on('SIGINT', () => {
+  app.quit();
+  app.exit();
   console.log('SIGINT');
   process.exit(0);
 });
 
-// eslint-disable-next-line import/newline-after-import
 import log from 'electron-log';
 global.log = log.create({ logId: 'rendererLog' });
 log.initialize();
@@ -33,17 +27,6 @@ performance.mark;
 import nmp from 'node-mac-permissions';
 const { getAuthStatus } = nmp;
 // END-REMOVE-MAC
-
-import {
-  app,
-  protocol,
-  powerMonitor,
-  shell,
-  BrowserWindow,
-  crashReporter,
-  screen,
-  nativeTheme,
-} from 'electron';
 
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
@@ -63,8 +46,6 @@ const { ensureDir, pathExistsSync } = fsExtra;
 import { existsSync, readFileSync } from 'fs';
 import { readdir, copyFile } from 'fs/promises';
 
-import { ProcessType, UI } from '@johnlindquist/kit/core/enum';
-
 import {
   kenvPath,
   kitPath,
@@ -78,10 +59,7 @@ import {
   getMainScriptPath,
 } from '@johnlindquist/kit/core/utils';
 
-import {
-  getPrefsDb,
-  getAppDb,
-} from '@johnlindquist/kit/core/db';
+import { getPrefsDb, getAppDb } from '@johnlindquist/kit/core/db';
 import { subscribeKey } from 'valtio/utils';
 import { assign, debounce, throttle } from 'lodash-es';
 import { snapshot } from 'valtio';
@@ -92,7 +70,6 @@ import {
   getReleaseChannel,
   getPlatformExtension,
 } from '../shared/assets';
-import { getThemes } from '../shared/themes';
 import { startClipboardAndKeyboardWatchers } from './tick';
 import { clearPromptCache, clearPromptTimers, logPromptState } from './prompt';
 
@@ -120,7 +97,6 @@ import { startIpc } from './ipc';
 import { runPromptProcess } from './kit';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
-import { SPLASH_PATH } from '../shared/defaults';
 import { registerKillLatestShortcut } from './shortcuts';
 import { logMap, mainLog } from './logs';
 import { emitter } from '../shared/events';
@@ -149,6 +125,7 @@ import {
   sendSplashHeader,
   setupDone,
   setupLog,
+  showSplash,
 } from './install';
 import { readKitCss } from './theme';
 import { syncClipboardStore } from './clipboard';
@@ -199,36 +176,7 @@ crashReporter.start({
 });
 
 log.info(`
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Crash reports are saved in: ${app.getPath('crashDumps')}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 `);
 
 let prevError = ``;
@@ -247,7 +195,7 @@ unhandled({
     2500,
     {
       leading: true,
-    }
+    },
   ),
 });
 
@@ -310,14 +258,9 @@ app?.on('accessibility-support-changed', (event, details) => {
   log.info({ event, details });
 });
 
-// app.on('render-process-gone', (event, details) => {
-//   log.error(`🫣 Render process gone...`);
-//   log.error({ event });
-// });
-
-app.on('renderer-process-crashed', (event, webContents, killed) => {
-  log.error(`🫣 Renderer process crashed...`);
-  log.error({ event, webContents, killed });
+app.on('render-process-gone', (event, details) => {
+  log.error(`🫣 Render process gone...`);
+  log.error({ event });
 });
 
 log.info(`
@@ -367,6 +310,7 @@ const cliFromParams = async (cli: string, params: URLSearchParams) => {
     await runPromptProcess(kitPath(`cli/${cli}.js`), [name, '--url', newUrl], {
       force: true,
       trigger: Trigger.Protocol,
+      sponsorCheck: false,
     });
     return true;
   }
@@ -380,7 +324,8 @@ const cliFromParams = async (cli: string, params: URLSearchParams) => {
       {
         force: true,
         trigger: Trigger.Protocol,
-      }
+        sponsorCheck: false,
+      },
     );
     return true;
   }
@@ -480,7 +425,7 @@ const systemEvents = () => {
     debounce(() => {
       log.info(`🖥️ Display added`);
       clearPromptCache();
-    }, 1000)
+    }, 1000),
   );
 
   screen.addListener(
@@ -488,7 +433,7 @@ const systemEvents = () => {
     debounce(() => {
       log.info(`🖥️ Display removed`);
       clearPromptCache();
-    }, 1000)
+    }, 1000),
   );
 
   // screen.addListener(
@@ -554,8 +499,8 @@ const systemEvents = () => {
         }, 10000);
       },
       5000,
-      { leading: true }
-    )
+      { leading: true },
+    ),
   );
 
   powerMonitor.addListener('lock-screen', async () => {
@@ -661,7 +606,7 @@ const kitExists = async () => {
   setupLog(kitPath());
   const doesKitExist = existsSync(kitPath('package.json'));
 
-  await setupLog(`kit${doesKitExist ? `` : ` not`} found`);
+  await setupLog(`kit${doesKitExist ? `` : ` not`} found at ${kitPath()}`);
 
   return doesKitExist;
 };
@@ -673,28 +618,32 @@ const isContributor = async () => {
 
 const kenvExists = async () => {
   const doesKenvExist = existsSync(kenvPath());
-  await setupLog(`kenv${doesKenvExist ? `` : ` not`} found`);
+  await setupLog(`kenv${doesKenvExist ? `` : ` not`} found at ${kenvPath()}`);
 
   return doesKenvExist;
 };
 
 const kenvConfigured = async () => {
   const isKenvConfigured = existsSync(kenvPath('.env'));
-  await setupLog(`kenv is${isKenvConfigured ? `` : ` not`} configured`);
+  await setupLog(
+    `kenv is${isKenvConfigured ? `` : ` not`} configured at ${kenvPath()}`,
+  );
 
   return isKenvConfigured;
 };
 
 const nodeExists = async () => {
   const doesNodeExist = existsSync(execPath);
-  await setupLog(`node${doesNodeExist ? `` : ` not`} found`);
+  await setupLog(`node${doesNodeExist ? `` : ` not`} found at ${execPath}`);
 
   return doesNodeExist;
 };
 
 const nodeModulesExists = async () => {
   const doesNodeModulesExist = existsSync(kitPath('node_modules'));
-  await setupLog(`node_modules${doesNodeModulesExist ? `` : ` not`} found`);
+  await setupLog(
+    `node_modules${doesNodeModulesExist ? `` : ` not`} found at ${kitPath()}`,
+  );
 
   return doesNodeModulesExist;
 };
@@ -720,7 +669,7 @@ const verifyInstall = async () => {
 
   const checkNodeModules = await nodeModulesExists();
   await setupLog(
-    checkNodeModules ? `node_modules found` : `node_modules missing`
+    checkNodeModules ? `node_modules found` : `node_modules missing`,
   );
 
   const isKenvConfigured = await kenvConfigured();
@@ -748,13 +697,22 @@ const isNewVersion = async () => {
   await setupLog(
     `🤔 Stored version: ${storedVersion} -> Current version: ${currentVersion}. Semver match? ${
       versionMatch ? 'true' : 'false'
-    }`
+    }`,
   );
 
   return !versionMatch;
 };
 
 const checkKit = async () => {
+  // log.info(`Waiting 10 seconds...`);
+  // await new Promise((resolve, reject) => {
+  //   setTimeout(() => {
+  //     resolve();
+  //   }, 10000);
+  // });
+
+  log.info(`🧐 Checking ${KIT}`);
+
   // prompts.init();
   await setupTray(true, 'busy');
   await setupLog(`Tray created`);
@@ -813,41 +771,6 @@ const checkKit = async () => {
     });
   };
 
-  const showSplash = async () => {
-    // kitState.ui = UI.splash;
-    // TODO: Re-implement SHOW SPLASH
-    // await setScript(
-    //   {
-    //     name: 'Kit Setup',
-    //     command: 'splash-screen',
-    //     filePath: SPLASH_PATH,
-    //     kenv: '',
-    //     id: 'spash-screen',
-    //     type: ProcessType.Prompt,
-    //     hasPreview: true,
-    //   },
-    //   kitState.pid,
-    //   true
-    // );
-
-    sendSplashHeader(`Installing Kit SDK and Kit Environment...`);
-
-    log.info(`🌊 Showing Splash Install Screen`);
-    // await setPromptData({
-    //   ignoreBlur: true,
-    //   ui: UI.splash,
-    //   scriptPath: SPLASH_PATH,
-    //   width: PROMPT.WIDTH.BASE,
-    //   height: PROMPT.HEIGHT.BASE,
-    // } as PromptData);
-    // sendSplashBody(`Starting up...`);
-
-    setTimeout(() => {
-      // TODO: Implement SPLASH prompt
-      // initShowPrompt();
-    }, 500);
-  };
-
   if (process.env.NODE_ENV === 'development') {
     try {
       // await installExtensions();
@@ -865,7 +788,7 @@ const checkKit = async () => {
   await setupLog(`\n\n---------------------------------`);
   await setupLog(`Launching Script Kit  ${getVersion()}`);
   await setupLog(
-    `auto updater detected version: ${autoUpdater.currentVersion}`
+    `auto updater detected version: ${autoUpdater.currentVersion}`,
   );
 
   log.info(`PATH:`, KIT_FIRST_PATH);
@@ -893,13 +816,13 @@ const checkKit = async () => {
       log.info(
         `🌑 shouldUseDarkColors: ${
           nativeTheme.shouldUseDarkColors ? 'true' : 'false'
-        }`
+        }`,
       );
 
       const { scriptKitTheme, scriptKitLightTheme } = getThemes();
 
       setTheme(
-        nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme
+        nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme,
       );
 
       await showSplash();
@@ -920,7 +843,7 @@ const checkKit = async () => {
 
   if (!(await nodeExists()) || !nodeVersionMatch) {
     await setupLog(
-      `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`
+      `Adding node ${nodeVersion} ${platform} ${arch} ${tildify(knodePath())}`,
     );
 
     let nodeFilePath = '';
@@ -1004,8 +927,8 @@ const checkKit = async () => {
           'terminal-notifier.app',
           'Contents',
           'Resources',
-          'Terminal.icns'
-        )
+          'Terminal.icns',
+        ),
       );
     } catch (error) {
       log.error(error);
@@ -1100,7 +1023,7 @@ const checkKit = async () => {
       optionalSpawnSetup(
         kitPath('main', 'app-launcher.js'),
         '--prep',
-        '--trust'
+        '--trust',
       );
     }
 

@@ -1,33 +1,29 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-nested-ternary */
 
-import Store, { Schema } from 'electron-store';
+import Store, { Schema } from "electron-store";
 
 // REMOVE-MAC
-import nmp from 'node-mac-permissions';
+import nmp from "node-mac-permissions";
 const { askForAccessibilityAccess, getAuthStatus, askForFullDiskAccess } = nmp;
 // END-REMOVE-MAC
 
-import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
-import { proxy } from 'valtio/vanilla';
-import fsExtra from 'fs-extra';
+import { Config, KitStatus } from "@johnlindquist/kit/types/kitapp";
+import { proxy } from "valtio/vanilla";
+import fsExtra from "fs-extra";
 const { readJson, writeJson } = fsExtra;
-import * as nativeKeymap from 'native-keymap';
-import { subscribeKey } from 'valtio/utils';
-import log, { FileTransport, LevelOption, LogLevel } from 'electron-log';
-import { assign, debounce } from 'lodash-es';
-import path from 'path';
-import os from 'os';
-import { ChildProcess } from 'child_process';
-import electron from 'electron';
+import * as nativeKeymap from "native-keymap";
+import { subscribeKey } from "valtio/utils";
+import log, { FileTransport, LevelOption, LogLevel } from "electron-log";
+import { assign, debounce } from "lodash-es";
+import path from "path";
+import os from "os";
+import { ChildProcess } from "child_process";
+import electron from "electron";
 const { app, nativeTheme } = electron;
 
-log.info({
-  app,
-  nativeTheme,
-});
-import schedule, { Job } from 'node-schedule';
-import { readdir } from 'fs/promises';
+import schedule, { Job } from "node-schedule";
+import { readdir } from "fs/promises";
 import {
   Script,
   ProcessInfo,
@@ -36,7 +32,7 @@ import {
   ScoredChoice,
   Shortcut,
   FlagsOptions,
-} from '@johnlindquist/kit/types/core';
+} from "@johnlindquist/kit/types/core";
 import {
   setScriptTimestamp,
   UserDb,
@@ -44,7 +40,7 @@ import {
   getAppDb,
   appDefaults,
   Stamp,
-} from '@johnlindquist/kit/core/db';
+} from "@johnlindquist/kit/core/db";
 
 import {
   parseScript,
@@ -53,12 +49,12 @@ import {
   isParentOfDir,
   tmpClipboardDir,
   getTrustedKenvsKey,
-} from '@johnlindquist/kit/core/utils';
-import { UI } from '@johnlindquist/kit/core/enum';
-import axios from 'axios';
-import internetAvailable from './internet-available';
-import { emitter, KitEvent } from './events';
-import { Trigger } from './enums';
+} from "@johnlindquist/kit/core/utils";
+import { UI } from "@johnlindquist/kit/core/enum";
+import axios from "axios";
+import internetAvailable from "./internet-available";
+import { emitter, KitEvent } from "./events";
+import { Trigger } from "./enums";
 
 const schema: Schema<{
   KENV: string;
@@ -67,20 +63,20 @@ const schema: Schema<{
   version: string;
 }> = {
   KENV: {
-    type: 'string',
+    type: "string",
     default: kenvPath(),
   },
   accessibilityAuthorized: {
-    type: 'boolean',
+    type: "boolean",
     default: true,
   },
   sponsor: {
-    type: 'boolean',
+    type: "boolean",
     default: false,
   },
   version: {
-    type: 'string',
-    default: '0.0.0',
+    type: "string",
+    default: "0.0.0",
   },
 };
 export const kitStore = new Store({
@@ -88,7 +84,7 @@ export const kitStore = new Store({
   watch: true,
 });
 
-const storedKenv = kitStore.get('KENV');
+const storedKenv = process.env?.KENV || kitStore.get("KENV");
 log.info(`📀 Stored KENV: ${storedKenv}`);
 log.info(`Path to kitStore: ${kitStore.path}`);
 // process.exit();
@@ -96,17 +92,17 @@ log.info(`Path to kitStore: ${kitStore.path}`);
 process.env.KENV = storedKenv;
 
 const release = os.release();
-const isMac = os.platform() === 'darwin';
-const isWin = os.platform() === 'win32';
+const isMac = os.platform() === "darwin";
+const isWin = os.platform() === "win32";
 const isWin11 =
-  isWin && (release.startsWith('10.0.22') || release.startsWith('11.'));
+  isWin && (release.startsWith("10.0.22") || release.startsWith("11."));
 const isWin10 = isWin && !isWin11;
-const isLinux = os.platform() === 'linux';
+const isLinux = os.platform() === "linux";
 const arch = os.arch();
 
 export const serverState = {
   running: false,
-  host: '',
+  host: "",
   port: 0,
 };
 
@@ -127,7 +123,7 @@ export const getBackgroundTasks = () => {
           start,
         },
       };
-    }
+    },
   );
 
   return tasks;
@@ -156,62 +152,62 @@ export const debounceSetScriptTimestamp = debounce(
     log.info(`💮 Stamping ${stamp?.filePath}`);
     setScriptTimestamp(stamp);
   },
-  100
+  100,
 );
 
 export const cacheKitScripts = async () => {
-  const kitMainPath = kitPath('main');
+  const kitMainPath = kitPath("main");
   const kitMainScripts = await readdir(kitMainPath);
 
   for await (const main of kitMainScripts) {
-    const mainScript = await parseScript(kitPath('main', main));
+    const mainScript = await parseScript(kitPath("main", main));
     kitState.kitScripts.push(mainScript);
   }
 
-  const kitCliPath = kitPath('cli');
+  const kitCliPath = kitPath("cli");
   const kitCliDir = await readdir(kitCliPath);
-  const kitCliScripts = kitCliDir.filter((f) => f.endsWith('.js'));
+  const kitCliScripts = kitCliDir.filter((f) => f.endsWith(".js"));
   for await (const cli of kitCliScripts) {
-    const cliScript = await parseScript(kitPath('cli', cli));
+    const cliScript = await parseScript(kitPath("cli", cli));
     kitState.kitScripts.push(cliScript);
   }
 };
 
 export const getKitScript = (filePath: string): Script => {
   return kitState.kitScripts.find(
-    (script) => script.filePath === filePath
+    (script) => script.filePath === filePath,
   ) as Script;
 };
 
 export const kitCache = {
   choices: [] as ScoredChoice[],
-  preview: '',
+  preview: "",
   shortcuts: [] as Shortcut[],
   scriptFlags: {} as FlagsOptions,
 };
 
 export const getThemes = () => ({
   scriptKitTheme: {
-    foreground: '255, 255, 255',
-    background: '22, 22, 22',
-    accent: '251, 191, 36',
-    opacity: os.platform() === 'darwin' ? '0.5' : '1',
-    ui: '255, 255, 255',
-    'ui-bg-opacity': '0.05',
-    'ui-border-opacity': '0.15',
-    vibrancy: 'popover',
-    appearance: 'dark',
+    foreground: "255, 255, 255",
+    background: "22, 22, 22",
+    accent: "251, 191, 36",
+    opacity: os.platform() === "darwin" ? "0.5" : "1",
+    ui: "255, 255, 255",
+    "ui-bg-opacity": "0.05",
+    "ui-border-opacity": "0.15",
+    vibrancy: "popover",
+    appearance: "dark",
   },
   scriptKitLightTheme: {
-    foreground: '2C2C2C',
-    accent: '2F86D3',
-    background: 'white',
-    opacity: os.platform() === 'darwin' ? '0.5' : '1',
-    ui: '204, 204, 204',
-    'ui-bg-opacity': '0.5',
-    'ui-border-opacity': '0.5',
-    vibrancy: 'popover',
-    appearance: 'light',
+    foreground: "2C2C2C",
+    accent: "2F86D3",
+    background: "white",
+    opacity: os.platform() === "darwin" ? "0.5" : "1",
+    ui: "204, 204, 204",
+    "ui-bg-opacity": "0.5",
+    "ui-border-opacity": "0.5",
+    vibrancy: "popover",
+    appearance: "light",
   },
 });
 
@@ -229,13 +225,13 @@ const initState = {
   snippet: ``,
   typedText: ``,
   typedLimit: 256,
-  socketURL: '',
+  socketURL: "",
   isShiftDown: false,
   isMac,
   isWin11,
   isWin10,
-  isWindows: os.platform() === 'win32',
-  isLinux: os.platform() === 'linux',
+  isWindows: os.platform() === "win32",
+  isLinux: os.platform() === "linux",
   // transparencyEnabled: checkTransparencyEnabled(),
   starting: true,
   suspended: false,
@@ -259,24 +255,23 @@ const initState = {
   // paused: ``,
   // error: ``,
   status: {
-    status: 'default',
-    message: '',
+    status: "default",
+    message: "",
   } as KitStatus,
-  scriptErrorPath: '',
+  scriptErrorPath: "",
 
   notifications: [] as KitStatus[],
   downloadPercent: 0,
   applyUpdate: false,
   previousDownload: new Date(),
-  logLevel: 'info' as LogLevel,
+  logLevel: "info" as LogLevel,
   preventResize: false,
   trayOpen: false,
   trayScripts: [] as string[],
   prevScriptPath: ``,
-  promptUI: UI.arg,
   promptHasPreview: true,
   kitScripts: [] as Script[],
-  promptId: '__unset__',
+  promptId: "__unset__",
   hasSnippet: false,
   isVisible: false,
   shortcutsPaused: false,
@@ -288,7 +283,7 @@ const initState = {
   user: {} as UserDb,
   isSponsor: false,
   theme,
-  appearance: 'auto' as 'auto' | 'light' | 'dark',
+  appearance: "auto" as "auto" | "light" | "dark",
   keymap: null as any,
   keyboardConfig: {
     autoDelayMs: 0,
@@ -296,9 +291,9 @@ const initState = {
   cancelTyping: false,
   kenvEnv: {} as Record<string, string>,
   escapePressed: false,
-  shortcutPressed: '',
+  shortcutPressed: "",
   supportsNut:
-    isMac || (isWin && arch === 'x64') || (isLinux && arch === 'x64'),
+    isMac || (isWin && arch === "x64") || (isLinux && arch === "x64"),
   promptHidden: true,
   // DISABLING: Using the "accept" prompt as confirmation that people trust
   // trustedKenvs: [] as string[],
@@ -308,8 +303,8 @@ const initState = {
   trustedKenvsKey: getTrustedKenvsKey(),
   tabIndex: 0,
   tabChanged: false,
-  user_id: '',
-  app_version: '',
+  user_id: "",
+  app_version: "",
   platform: `${os.platform()}-${arch}`,
   os_version: os.release(),
   url: `https://scriptkit.com`,
@@ -343,25 +338,25 @@ export const promptState = proxy({
   screens: {} as any,
 });
 
-const subStatus = subscribeKey(kitState, 'status', (status: KitStatus) => {
+const subStatus = subscribeKey(kitState, "status", (status: KitStatus) => {
   log.info(`👀 Status: ${JSON.stringify(status)}`);
 
-  if (status.status !== 'default' && status.message) {
+  if (status.status !== "default" && status.message) {
     kitState.notifications.push(status);
   } else if (kitState.notifications.length > 0) {
     kitState.notifications = [];
   }
 });
 
-const subWaking = subscribeKey(kitState, 'waking', (waking) => {
+const subWaking = subscribeKey(kitState, "waking", (waking) => {
   log.info(`👀 Waking: ${waking}`);
 });
 
-const subReady = subscribeKey(kitState, 'ready', (ready) => {
+const subReady = subscribeKey(kitState, "ready", (ready) => {
   if (ready) {
     kitState.status = {
-      status: 'default',
-      message: '',
+      status: "default",
+      message: "",
     };
   }
 });
@@ -369,8 +364,8 @@ const subReady = subscribeKey(kitState, 'ready', (ready) => {
 // Widgets not showing up in Dock
 // TODO: Dock is showing when main prompt is open. Check mac panel? Maybe setIcon?
 
-const subIgnoreBlur = subscribeKey(kitState, 'ignoreBlur', (ignoreBlur) => {
-  log.info(`👀 Ignore blur: ${ignoreBlur ? 'true' : 'false'}`);
+const subIgnoreBlur = subscribeKey(kitState, "ignoreBlur", (ignoreBlur) => {
+  log.info(`👀 Ignore blur: ${ignoreBlur ? "true" : "false"}`);
   if (ignoreBlur) {
     emitter.emit(KitEvent.ShowDock);
   } else {
@@ -378,7 +373,7 @@ const subIgnoreBlur = subscribeKey(kitState, 'ignoreBlur', (ignoreBlur) => {
   }
 });
 
-const subPromptCount = subscribeKey(kitState, 'promptCount', (promptCount) => {
+const subPromptCount = subscribeKey(kitState, "promptCount", (promptCount) => {
   if (promptCount) {
     // showDock();
   } else {
@@ -386,7 +381,7 @@ const subPromptCount = subscribeKey(kitState, 'promptCount', (promptCount) => {
   }
 });
 
-const subDevToolsCount = subscribeKey(kitState, 'devToolsCount', (count) => {
+const subDevToolsCount = subscribeKey(kitState, "devToolsCount", (count) => {
   if (count === 0) {
     emitter.emit(KitEvent.HideDock);
   } else {
@@ -399,7 +394,7 @@ export const online = async () => {
   try {
     const result = await internetAvailable();
 
-    log.info(`🗼 Status: ${result ? 'Online' : 'Offline'}`);
+    log.info(`🗼 Status: ${result ? "Online" : "Offline"}`);
 
     return result;
   } catch (error) {
@@ -420,39 +415,39 @@ emitter.on(KitEvent.ForceQuit, forceQuit);
 
 const subRequiresAuthorizedRestart = subscribeKey(
   kitState,
-  'requiresAuthorizedRestart',
+  "requiresAuthorizedRestart",
   (requiresAuthorizedRestart) => {
     if (requiresAuthorizedRestart) {
       log.info(`👋 Restarting...`);
       kitState.relaunch = true;
       forceQuit();
     }
-  }
+  },
 );
 
 const subScriptErrorPath = subscribeKey(
   kitState,
-  'scriptErrorPath',
+  "scriptErrorPath",
   (scriptErrorPath) => {
     kitState.status = {
-      status: scriptErrorPath ? 'warn' : 'default',
+      status: scriptErrorPath ? "warn" : "default",
       message: ``,
     };
-  }
+  },
 );
 
 // TODO: I don't need to return booleans AND set kitState.isSponsor. Pick one.
 export const sponsorCheck = async (feature: string, block = true) => {
   log.info(
     `Checking sponsor status... login: ${kitState?.user?.login} ${
-      kitState.isSponsor ? '✅' : '❌'
-    }`
+      kitState.isSponsor ? "✅" : "❌"
+    }`,
   );
   const isOnline = await online();
   if (
     !isOnline ||
-    (process.env.KIT_SPONSOR === 'development' &&
-      os.userInfo().username === 'johnlindquist')
+    (process.env.KIT_SPONSOR === "development" &&
+      os.userInfo().username === "johnlindquist")
   ) {
     kitState.isSponsor = true;
     return true;
@@ -466,14 +461,14 @@ export const sponsorCheck = async (feature: string, block = true) => {
         feature,
       });
     } catch (error) {
-      log.error('Error checking sponsor status', error);
+      log.error("Error checking sponsor status", error);
       kitState.isSponsor = true;
       return true;
     }
 
     // check for axios post error
     if (!response) {
-      log.error('Error checking sponsor status', response);
+      log.error("Error checking sponsor status", response);
       kitState.isSponsor = true;
       return true;
     }
@@ -482,7 +477,7 @@ export const sponsorCheck = async (feature: string, block = true) => {
 
     // check for axios post error
     if (response.status !== 200) {
-      log.error('Error checking sponsor status', response);
+      log.error("Error checking sponsor status", response);
     }
 
     log.info(`🕵️‍♀️ Sponsor check response`, JSON.stringify(response.data));
@@ -492,27 +487,28 @@ export const sponsorCheck = async (feature: string, block = true) => {
       kitState.user.node_id &&
       response.data.id === kitState.user.node_id
     ) {
-      log.info('User is sponsor');
+      log.info("User is sponsor");
       kitState.isSponsor = true;
       return true;
     }
 
     if (response.status !== 200) {
-      log.error('Sponsor check service is down. Granting temp sponsor status');
+      log.error("Sponsor check service is down. Granting temp sponsor status");
       kitState.isSponsor = true;
       return true;
     }
 
     if (block) {
-      log.info('User is not sponsor');
+      log.info("User is not sponsor");
       kitState.isSponsor = false;
 
       emitter.emit(KitEvent.RunPromptProcess, {
-        scriptPath: kitPath('pro', 'sponsor.js'),
+        scriptPath: kitPath("pro", "sponsor.js"),
         args: [feature],
         options: {
           force: true,
           trigger: Trigger.App,
+          sponsorCheck: false,
         },
       });
 
@@ -534,7 +530,7 @@ subs.push(
   subStatus,
   subReady,
   subWaking,
-  subIgnoreBlur
+  subIgnoreBlur,
 );
 
 export const updateAppDb = async (settings: Partial<AppDb>) => {
@@ -552,93 +548,93 @@ export const updateAppDb = async (settings: Partial<AppDb>) => {
 const defaultKeyMap: {
   [key: string]: string;
 } = {
-  KeyA: 'a',
-  KeyB: 'b',
-  KeyC: 'c',
-  KeyD: 'd',
-  KeyE: 'e',
-  KeyF: 'f',
-  KeyG: 'g',
-  KeyH: 'h',
-  KeyI: 'i',
-  KeyJ: 'j',
-  KeyK: 'k',
-  KeyL: 'l',
-  KeyM: 'm',
-  KeyN: 'n',
-  KeyO: 'o',
-  KeyP: 'p',
-  KeyQ: 'q',
-  KeyR: 'r',
-  KeyS: 's',
-  KeyT: 't',
-  KeyU: 'u',
-  KeyV: 'v',
-  KeyW: 'w',
-  KeyX: 'x',
-  KeyY: 'y',
-  KeyZ: 'z',
-  Digit0: '0',
-  Digit1: '1',
-  Digit2: '2',
-  Digit3: '3',
-  Digit4: '4',
-  Digit5: '5',
-  Digit6: '6',
-  Digit7: '7',
-  Digit8: '8',
-  Digit9: '9',
-  Numpad0: '0',
-  Numpad1: '1',
-  Numpad2: '2',
-  Numpad3: '3',
-  Numpad4: '4',
-  Numpad5: '5',
-  Numpad6: '6',
-  Numpad7: '7',
-  Numpad8: '8',
-  Numpad9: '9',
-  NumpadAdd: '+',
-  NumpadSubtract: '-',
-  NumpadMultiply: '*',
-  NumpadDivide: '/',
-  Space: ' ',
-  Minus: '-',
-  Equal: '=',
-  BracketLeft: '[',
-  BracketRight: ']',
-  Backslash: '\\',
-  Semicolon: ';',
+  KeyA: "a",
+  KeyB: "b",
+  KeyC: "c",
+  KeyD: "d",
+  KeyE: "e",
+  KeyF: "f",
+  KeyG: "g",
+  KeyH: "h",
+  KeyI: "i",
+  KeyJ: "j",
+  KeyK: "k",
+  KeyL: "l",
+  KeyM: "m",
+  KeyN: "n",
+  KeyO: "o",
+  KeyP: "p",
+  KeyQ: "q",
+  KeyR: "r",
+  KeyS: "s",
+  KeyT: "t",
+  KeyU: "u",
+  KeyV: "v",
+  KeyW: "w",
+  KeyX: "x",
+  KeyY: "y",
+  KeyZ: "z",
+  Digit0: "0",
+  Digit1: "1",
+  Digit2: "2",
+  Digit3: "3",
+  Digit4: "4",
+  Digit5: "5",
+  Digit6: "6",
+  Digit7: "7",
+  Digit8: "8",
+  Digit9: "9",
+  Numpad0: "0",
+  Numpad1: "1",
+  Numpad2: "2",
+  Numpad3: "3",
+  Numpad4: "4",
+  Numpad5: "5",
+  Numpad6: "6",
+  Numpad7: "7",
+  Numpad8: "8",
+  Numpad9: "9",
+  NumpadAdd: "+",
+  NumpadSubtract: "-",
+  NumpadMultiply: "*",
+  NumpadDivide: "/",
+  Space: " ",
+  Minus: "-",
+  Equal: "=",
+  BracketLeft: "[",
+  BracketRight: "]",
+  Backslash: "\\",
+  Semicolon: ";",
   Quote: "'",
-  Comma: ',',
-  Period: '.',
-  Slash: '/',
-  Backquote: '`',
+  Comma: ",",
+  Period: ".",
+  Slash: "/",
+  Backquote: "`",
 };
 
-const keymapLogPath = path.resolve(app.getPath('logs'), 'keymap.log');
-const keymapLog = log.create({ logId: 'keymapLog' });
+const keymapLogPath = path.resolve(app.getPath("logs"), "keymap.log");
+const keymapLog = log.create({ logId: "keymapLog" });
 (keymapLog.transports.file as FileTransport).resolvePathFn = () =>
   keymapLogPath;
 
 keymapLog.transports.console.level = (process.env.VITE_LOG_LEVEL ||
-  'info') as LevelOption;
+  "info") as LevelOption;
 
 export const convertKey = (sourceKey: string) => {
-  if (typeof appDb?.convertKey === 'boolean' && !appDb.convertKey) {
+  if (typeof appDb?.convertKey === "boolean" && !appDb.convertKey) {
     keymapLog.info(`🔑 Skipping key conversion: ${sourceKey}`);
     return sourceKey;
   }
   if (kitState.keymap) {
     const result = Object.entries(kitState.keymap).find(
       ([, { value }]: [string, any]) =>
-        value.toLowerCase() === sourceKey.toLowerCase()
-    ) || [''];
+        value.toLowerCase() === sourceKey.toLowerCase(),
+    ) || [""];
 
     const targetKey = result[0];
 
     if (targetKey) {
-      const target = defaultKeyMap?.[targetKey]?.toUpperCase() || '';
+      const target = defaultKeyMap?.[targetKey]?.toUpperCase() || "";
       try {
         if (targetKey.at(-1) !== target.at(-1)) {
           keymapLog.silly(`🔑 Converted key: ${targetKey} -> ${target}`);
@@ -661,7 +657,7 @@ export const initKeymap = async () => {
     try {
       let keymap = nativeKeymap.getKeyMap();
       keymapLog.verbose(`🔑 Detected Keymap:`, { keymap });
-      writeJson(kitPath('db', 'keymap.json'), keymap);
+      writeJson(kitPath("db", "keymap.json"), keymap);
       let value = keymap?.KeyA?.value;
 
       const alpha = /[A-Za-z]/;
@@ -672,7 +668,7 @@ export const initKeymap = async () => {
         kitState.keymap = keymap;
       } else {
         keymapLog.verbose(
-          `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`
+          `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`,
         );
       }
 
@@ -688,14 +684,14 @@ export const initKeymap = async () => {
               kitState.keymap = keymap;
               prevKeyMap = keymap;
             } else {
-              log.verbose('Keymap not changed');
+              log.verbose("Keymap not changed");
             }
           } else {
             keymapLog.verbose(
-              `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`
+              `Ignore keymap, found: ${value} in the KeyA value, expected: [A-Za-z]`,
             );
           }
-        }, 500)
+        }, 500),
       );
 
       if (kitState.keymap)
@@ -704,8 +700,8 @@ export const initKeymap = async () => {
             Object.entries(kitState.keymap).map(([k, v]: any) => {
               if (v?.value) return `${k} -> ${v.value}`;
               return `${k} -> null`;
-            })
-          )}`
+            }),
+          )}`,
         );
     } catch (e) {
       keymapLog.error(`🔑 Keymap error... 🤔`);
@@ -716,8 +712,8 @@ export const initKeymap = async () => {
 
 export const getEmojiShortcut = () => {
   return kitState?.kenvEnv?.KIT_EMOJI_SHORTCUT || kitState.isMac
-    ? 'Command+Control+Space'
-    : 'Super+.';
+    ? "Command+Control+Space"
+    : "Super+.";
 };
 
 export const preloadChoicesMap = new Map<string, Choice[]>();
@@ -731,8 +727,8 @@ export const kitClipboard = {
 export const getAccessibilityAuthorized = async () => {
   // REMOVE-MAC
   if (isMac) {
-    const authorized = getAuthStatus('accessibility') === 'authorized';
-    kitStore.set('accessibilityAuthorized', authorized);
+    const authorized = getAuthStatus("accessibility") === "authorized";
+    kitStore.set("accessibilityAuthorized", authorized);
     return authorized;
   }
   // END-REMOVE-MAC

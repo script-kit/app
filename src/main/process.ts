@@ -1,14 +1,12 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
-import dotenv from 'dotenv';
 // REMOVE-MAC
 import nmp from 'node-mac-permissions';
 const { askForAccessibilityAccess, getAuthStatus, askForFullDiskAccess } = nmp;
 // END-REMOVE-MAC
 
 import {
-  app,
   BrowserWindow,
   ipcMain,
   IpcMainEvent,
@@ -19,8 +17,7 @@ import {
 import os from 'os';
 import { assign, debounce } from 'lodash-es';
 import ContrastColor from 'contrast-color';
-import { snapshot, subscribe } from 'valtio';
-import path from 'path';
+import { subscribe } from 'valtio';
 import { pathToFileURL } from 'url';
 
 import { ChildProcess, fork, spawn } from 'child_process';
@@ -33,18 +30,12 @@ import {
   resolveToScriptPath,
   KIT_APP,
   KIT_APP_PROMPT,
-  KIT_FIRST_PATH,
   kitPath,
-  kenvPath,
-  kitDotEnvPath,
-  getMainScriptPath,
-  execPath,
 } from '@johnlindquist/kit/core/utils';
 
 import { subscribeKey } from 'valtio/utils';
 import fsExtra from 'fs-extra';
 const { pathExistsSync, readJson } = fsExtra;
-import { readFileSync } from 'fs';
 import { getLog, mainLog, warn } from './logs';
 import { KitPrompt } from './prompt';
 import {
@@ -62,8 +53,7 @@ import { sendToAllPrompts } from './channel';
 import { emitter, KitEvent } from '../shared/events';
 import { showInspector } from './show';
 
-import { getVersion } from './version';
-import { AppChannel, HideReason, Trigger } from '../shared/enums';
+import { AppChannel } from '../shared/enums';
 import { isKitScript, toRgb } from './helpers';
 import { toHex } from '../shared/color-utils';
 import { stripAnsi } from './ansi';
@@ -71,6 +61,7 @@ import { TrackEvent, trackEvent } from './track';
 import { createMessageMap } from './messages';
 import { prompts } from './prompts';
 import { createIdlePty } from './pty';
+import { createEnv } from './env.utils';
 
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
@@ -111,8 +102,14 @@ export const maybeConvertColors = async (theme: any = {}) => {
 
   log.info(`🫥 Theme opacity: ${theme.opacity}`);
 
-  theme['--ui-bg-opacity'] ||= theme?.['ui-bg-opacity'] || kitState.isDark ? scriptKitTheme['ui-bg-opacity'] : scriptKitLightTheme['ui-bg-opacity'];
-  theme['--ui-border-opacity'] ||= theme?.['ui-border-opacity'] || kitState.isDark ? scriptKitTheme['ui-border-opacity'] : scriptKitLightTheme['ui-border-opacity'];
+  theme['--ui-bg-opacity'] ||=
+    theme?.['ui-bg-opacity'] || kitState.isDark
+      ? scriptKitTheme['ui-bg-opacity']
+      : scriptKitLightTheme['ui-bg-opacity'];
+  theme['--ui-border-opacity'] ||=
+    theme?.['ui-border-opacity'] || kitState.isDark
+      ? scriptKitTheme['ui-border-opacity']
+      : scriptKitLightTheme['ui-border-opacity'];
 
   if (appDb?.disableBlurEffect) theme.opacity = '1';
 
@@ -237,7 +234,7 @@ export const updateTheme = async () => {
 
   if (themePath && pathExistsSync(themePath)) {
     log.info(
-      `▓ ${kitState.isDark ? 'true' : 'false'} 👀 Theme path: ${themePath}`
+      `▓ ${kitState.isDark ? 'true' : 'false'} 👀 Theme path: ${themePath}`,
     );
     try {
       const currentTheme = await readJson(themePath);
@@ -359,25 +356,7 @@ const createChild = ({
   const isPrompt = type === ProcessType.Prompt;
   const entry = isPrompt ? KIT_APP_PROMPT : KIT_APP;
 
-  const PATH = KIT_FIRST_PATH + path.delimiter + process?.env?.PATH;
-
-  const env = {
-    ...process.env,
-    NODE_NO_WARNINGS: '1',
-    KIT_CONTEXT: 'app',
-    KIT_MAIN: scriptPath,
-    KENV: kenvPath(),
-    KIT: kitPath(), // Note: KIT is overwritten by the kenv env in the "app-prompt.js" to load from ~/.kenv/node_modules
-    KIT_DOTENV_PATH: kitDotEnvPath(),
-    KIT_APP_VERSION: getVersion(),
-    PROCESS_TYPE: type,
-    FORCE_COLOR: '1',
-    PATH,
-    KIT_APP_PATH: app.getAppPath(),
-    KIT_ACCESSIBILITY:
-      kitState.isMac && kitStore.get('accessibilityAuthorized'),
-    ...snapshot(kitState.kenvEnv),
-  };
+  const env = createEnv();
   // console.log({ env });
   const loaderFileUrl = pathToFileURL(kitPath('build', 'loader.js')).href;
   const isWin = os.platform().startsWith('win');
@@ -481,7 +460,7 @@ const processesChanged = debounce(() => {
   for (const pinfo of processes) {
     pinfo.prompt.sendToPrompt(AppChannel.PROCESSES, pinfos);
     log.info(
-      `🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`
+      `🏃‍♂️💨 Active process: ${pinfo.pid} - ${pinfo.scriptPath || 'Idle'}`,
     );
   }
 }, 10);
@@ -505,7 +484,7 @@ export const getIdles = () => {
     .filter(
       (processInfo) =>
         processInfo.type === ProcessType.Prompt &&
-        processInfo?.scriptPath === ''
+        processInfo?.scriptPath === '',
     );
 };
 
@@ -618,7 +597,7 @@ class Processes extends Array<ProcessAndPrompt> {
     scriptPath = '',
     args: string[] = [],
     port = 0,
-    { resolve, reject }: ProcessHandlers = {}
+    { resolve, reject }: ProcessHandlers = {},
   ): ProcessAndPrompt {
     const child = createChild({
       type,
@@ -667,7 +646,7 @@ class Processes extends Array<ProcessAndPrompt> {
       ![ProcessType.Background, ProcessType.Prompt].includes(type) &&
       setTimeout(() => {
         log.info(
-          `${child.pid}: ${type} process: ${scriptPath} took > ${DEFAULT_TIMEOUT} seconds. Ending...`
+          `${child.pid}: ${type} process: ${scriptPath} took > ${DEFAULT_TIMEOUT} seconds. Ending...`,
         );
         child?.kill();
       }, DEFAULT_TIMEOUT);
@@ -677,13 +656,17 @@ class Processes extends Array<ProcessAndPrompt> {
 
     const { pid } = child;
 
+    child.on('spawn', () => {
+      log.info(`${pid}: SPAWN`);
+    });
+
     child.on('close', () => {
-      log.info(`${pid} CLOSE`);
+      log.info(`${pid}: CLOSE`);
       processes.removeByPid(pid);
     });
 
     child.on('disconnect', () => {
-      log.info(`${pid} DISCONNECTED`);
+      log.info(`${pid}: DISCONNECTED`);
       this.stampPid(pid);
       processes.removeByPid(pid);
     });
@@ -705,7 +688,7 @@ class Processes extends Array<ProcessAndPrompt> {
 
       if (code === 0) {
         log.info(
-          `${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
+          `${child.pid}: 🟡 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`,
         );
 
         if (child.pid) {
@@ -713,10 +696,10 @@ class Processes extends Array<ProcessAndPrompt> {
         }
       } else if (typeof code === 'number') {
         log.error(
-          `${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`
+          `${child.pid}: 🟥 exit ${code}. ${processInfo.type} process: ${processInfo?.scriptPath}`,
         );
         log.error(
-          `👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors`
+          `👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors`,
         );
 
         setTrayScriptError(pid);
@@ -729,7 +712,7 @@ class Processes extends Array<ProcessAndPrompt> {
       if (error?.message?.includes('EPIPE')) return;
       log.error(`ERROR`, { pid, error });
       log.error(
-        `👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors`
+        `👋 Ask for help: https://github.com/johnlindquist/kit/discussions/categories/errors`,
       );
       kitState.status = {
         status: 'warn',
@@ -753,7 +736,7 @@ class Processes extends Array<ProcessAndPrompt> {
     const idles = this.filter(
       (processInfo) =>
         processInfo.type === ProcessType.Prompt &&
-        processInfo?.scriptPath === ''
+        processInfo?.scriptPath === '',
     );
 
     ensureIdleProcess();
@@ -773,7 +756,7 @@ class Processes extends Array<ProcessAndPrompt> {
 
   public getByPid(pid: number): ProcessAndPrompt {
     return [...this, ...this.abandonnedProcesses].find(
-      (processInfo) => processInfo.pid === pid
+      (processInfo) => processInfo.pid === pid,
     ) as ProcessAndPrompt;
   }
 
@@ -846,7 +829,7 @@ powerMonitor.addListener('lock-screen', () => processes.stopHeartbeat());
 
 export const removeAbandonnedKit = () => {
   const kitProcess = processes.find((processInfo) =>
-    isKitScript(processInfo.scriptPath)
+    isKitScript(processInfo.scriptPath),
   );
 
   if (kitProcess) {
@@ -1042,7 +1025,7 @@ export const handleWidgetEvents = () => {
     log.info(`📏 ${widgetId} Widget: Fitting to inner child`);
 
     const options = (widgetState?.widgets || []).find(
-      ({ id }) => id === widgetId
+      ({ id }) => id === widgetId,
     );
     if (!options) return;
 
@@ -1102,7 +1085,7 @@ export const spawnShebang = async ({
   processes.addExistingProcess(child, filePath);
 
   log.info(
-    `🚀 Spawned process ${child.pid} for ${filePath} with command ${command}`
+    `🚀 Spawned process ${child.pid} for ${filePath} with command ${command}`,
   );
 
   child.unref();
@@ -1134,7 +1117,7 @@ export const spawnShebang = async ({
 
 emitter.on(
   KitEvent.RemoveMostRecent,
-  processes.removeCurrentProcess.bind(processes)
+  processes.removeCurrentProcess.bind(processes),
 );
 // emitter.on(KitEvent.MainScript, () => {
 //   sendToPrompt(Channel.SET_DESCRIPTION, 'Run Script');
@@ -1188,7 +1171,7 @@ subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
   const addedKeys = keys.filter((key) => !prevKeys.includes(key));
   const removedKeys = prevKeys.filter((key) => !keys.includes(key));
   const changedKeys = keys.filter(
-    (key) => prevKeys.includes(key) && prevKenvEnv[key] !== kenvEnv[key]
+    (key) => prevKeys.includes(key) && prevKenvEnv[key] !== kenvEnv[key],
   );
   if (addedKeys.length || removedKeys.length || changedKeys.length) {
     log.info(`🔑 kenvEnv changes`);

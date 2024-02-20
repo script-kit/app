@@ -30,6 +30,7 @@ validSystemEvents.forEach((systemEvent: any) => {
           runPromptProcess(scriptPath, [], {
             force: false,
             trigger: Trigger.System,
+            sponsorCheck: false,
           });
         }
       });
@@ -57,10 +58,10 @@ export const systemScriptChanged = ({
   if (kenv !== '' && !kitState.trustedKenvs.includes(kenv)) {
     if (systemEventsString) {
       log.info(
-        `Ignoring ${filePath} // System metadata because it's not in a trusted kenv.`
+        `Ignoring ${filePath} // System metadata because it's not in a trusted kenv.`,
       );
       log.info(
-        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`
+        `Add "${kitState.trustedKenvsKey}=${kenv}" to your .env file to trust it.`,
       );
     }
 
@@ -71,7 +72,7 @@ export const systemScriptChanged = ({
     const systemEvents = systemEventsString.split(' ');
 
     const valid = systemEvents.every((event) =>
-      validSystemEvents.includes(event as any)
+      validSystemEvents.includes(event as any),
     );
 
     if (valid) {

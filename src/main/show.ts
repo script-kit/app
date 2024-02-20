@@ -95,7 +95,7 @@ const devTools = () => {
 };
 
 const getCenterOnCurrentScreen = (
-  options: BrowserWindowConstructorOptions = {}
+  options: BrowserWindowConstructorOptions = {},
 ) => {
   const cursor = screen.getCursorScreenPoint();
   // Get display with cursor
@@ -119,7 +119,7 @@ const getCenterOnCurrentScreen = (
 };
 
 const getTopRightCurrentScreen = (
-  options: BrowserWindowConstructorOptions = {}
+  options: BrowserWindowConstructorOptions = {},
 ) => {
   const cursor = screen.getCursorScreenPoint();
   // Get display with cursor
@@ -238,7 +238,7 @@ export const show = async (
   name: string,
   html: string,
   options: ShowOptions = {},
-  showOnLoad = true
+  showOnLoad = true,
 ): Promise<BrowserWindow> => {
   const position = options?.center
     ? getCenterOnCurrentScreen(options)
@@ -314,7 +314,7 @@ export const showWidget = async (
   scriptPath: string,
   widgetId: string,
   html: string,
-  options: WidgetOptions = {}
+  options: WidgetOptions = {},
 ): Promise<BrowserWindow> => {
   options.body = options.body || html || '';
   const position = options?.center
@@ -365,7 +365,7 @@ export const showWidget = async (
   if (options?.ttl) {
     setTimeout(() => {
       log.info(
-        `Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`
+        `Close widget: ${widgetWindow.id} due to timeout of ${options.ttl}ms`,
       );
       widgetWindow.close();
     }, options?.ttl);
@@ -379,7 +379,7 @@ export const showWidget = async (
           {
             ...options,
             widgetId,
-          } || {}
+          } || {},
         );
 
         // Set the css variables from kitState.theme
@@ -455,10 +455,12 @@ export const showWidget = async (
 
     if (!app.isPackaged && process.env['ELECTRON_RENDERER_URL']) {
       widgetWindow.loadURL(
-        `${process.env['ELECTRON_RENDERER_URL']}/widget.html`
+        `${process.env['ELECTRON_RENDERER_URL']}/widget.html`,
       );
     } else {
-      widgetWindow.loadFile(path.join(__dirname, '../renderer/widget.html'));
+      widgetWindow.loadFile(
+        fileURLToPath(new URL('../renderer/widget.html', import.meta.url)),
+      );
     }
   });
 };

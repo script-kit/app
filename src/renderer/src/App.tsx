@@ -1,17 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable no-bitwise */
-/* eslint-disable react/no-danger */
-/* eslint-disable react/jsx-props-no-spreading */
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable guard-for-in */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable react/no-array-index-key */
-/* eslint-disable react/prop-types */
-/* eslint-disable no-nested-ternary */
-/* eslint-disable jsx-a11y/no-autofocus */
-/* eslint-disable jsx-a11y/label-has-associated-control */
-
 import React, {
   ErrorInfo,
   RefObject,
@@ -389,7 +375,7 @@ export default function App() {
         ipcRenderer.off(channel, handler);
       };
     },
-    [pid]
+    [pid],
   );
 
   useEffect(() => {
@@ -460,7 +446,7 @@ export default function App() {
         panelChildRef.current?.resize(promptData?.previewWidthPercent);
       }
     }, 250),
-    [promptData?.previewWidthPercent, panelChildRef?.current]
+    [promptData?.previewWidthPercent, panelChildRef?.current],
   );
 
   return (

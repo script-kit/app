@@ -1,14 +1,8 @@
-// kitapp/src/components/splash.tsx
-/* eslint-disable jsx-a11y/accessible-emoji */
-/* eslint-disable no-nested-ternary */
-/* eslint-disable react/no-unescaped-entities */
-
+import iconUrl from '../assets/icon.png';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
-import { loadable } from 'jotai/utils';
 import {
   appConfigAtom,
-  createAssetAtom,
   runMainScriptAtom,
   splashBodyAtom,
   splashHeaderAtom,
@@ -58,16 +52,12 @@ const questions = [
   `Anything else?`,
 ];
 
-const loadableIconAtom = loadable(createAssetAtom('icon.png'));
-
 function Aside() {
   const [appConfig] = useAtom(appConfigAtom);
   const [body] = useAtom(splashBodyAtom);
   const [header] = useAtom(splashHeaderAtom);
   const [progress] = useAtom(splashProgressAtom);
   const [runMainScript] = useAtom(runMainScriptAtom);
-
-  const [lazyIcon] = useAtom(loadableIconAtom);
 
   const links = [
     {
@@ -88,11 +78,7 @@ function Aside() {
     <aside className="col-span-3 flex h-full flex-col justify-between bg-bg-base/40 p-5 pt-12 shadow-inner">
       <div className="flex h-full flex-col items-center">
         <div className="relative">
-          <img
-            src={lazyIcon?.data}
-            className="mb-2 w-24"
-            alt="Script Kit Icon"
-          />
+          <img src={iconUrl} className="mb-2 w-24" alt="Script Kit Icon" />
           {progress !== 100 && (
             <div className="absolute right-0 top-0 rounded-full bg-bg-base bg-opacity-80 p-2 backdrop-blur-lg">
               <Spinner />
@@ -192,7 +178,7 @@ export default function Splash() {
       setSubmitted(true);
       setResponse('');
       setQIndex(
-        qIndex + 1 > questions.length - 1 ? questions.length - 1 : qIndex + 1
+        qIndex + 1 > questions.length - 1 ? questions.length - 1 : qIndex + 1,
       );
       setSubscribeSubmitted(subscribe);
       setContactSubmitted(contact);
