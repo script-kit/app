@@ -6,7 +6,8 @@ import { Arch, Platform, build } from "electron-builder";
 var { readJson } = fsExtra;
 var platform = await arg("platform");
 var arch = await arg("arch");
-console.log("Building for", platform, arch);
+var publish = await arg("publish");
+console.log(`Building for ${platform} ${arch} ${publish}`);
 var pkg = await readJson("package.json");
 var excludeDevDependencies = Object.keys(pkg.devDependencies).map(
   (name) => `!**/node_modules/${name}/**/*`
@@ -118,7 +119,7 @@ switch (platform) {
 console.log("Building with config");
 var result = await build({
   config,
-  publish: "always",
+  publish,
   targets
 });
 console.log("Build result", result);

@@ -16,7 +16,7 @@ const client = new Octokit({
 
 // let projectFiles = await readdir(projectPath());
 // let srcFiles = await readdir(projectPath('src'));
-let pkgJsonPath = projectPath('src', 'package.json');
+let pkgJsonPath = projectPath('package.json');
 let pkg = await readJson(pkgJsonPath);
 
 console.log({
@@ -92,7 +92,7 @@ const getPlatformFromLatestMacYml = (content) => {
   console.log({ files: localFilePathFiles });
 
   const localFileWithDirPathFiles = await readdir(
-    path.dirname(LOCAL_FILE_WITH_DIR_PATH)
+    path.dirname(LOCAL_FILE_WITH_DIR_PATH),
   );
 
   console.log({ files: localFileWithDirPathFiles });
@@ -118,7 +118,7 @@ const getPlatformFromLatestMacYml = (content) => {
 
   if (localPlatform === 'none' || localPlatform === 'both') {
     console.log(
-      `[local] ${FILE_NAME} invalid. Platform: ${localPlatform}. Skipping merge`
+      `[local] ${FILE_NAME} invalid. Platform: ${localPlatform}. Skipping merge`,
     );
     return;
   } else {
@@ -132,12 +132,12 @@ const getPlatformFromLatestMacYml = (content) => {
   if (localPlatformPresentRemotely) {
     try {
       await client.request(
-        `DELETE ${URL}/assets/${localPlatformPresentRemotely.id}`
+        `DELETE ${URL}/assets/${localPlatformPresentRemotely.id}`,
       );
       console.log(`[remote] deleted latest-mac-${localPlatform}.yml`);
     } catch (e) {
       console.log(
-        `[remote] error deleting latest-mac-${localPlatform}.yml. Skipping merge`
+        `[remote] error deleting latest-mac-${localPlatform}.yml. Skipping merge`,
       );
       console.log(e);
       return;
@@ -162,7 +162,7 @@ const getPlatformFromLatestMacYml = (content) => {
     console.log(`[remote] latest-mac-${localPlatform}.yml uploaded`);
   } catch (e) {
     console.log(
-      `[remote] error uploading latest-mac-${localPlatform}.yml. Skipping merge`
+      `[remote] error uploading latest-mac-${localPlatform}.yml. Skipping merge`,
     );
     console.log(e);
     return;
@@ -176,7 +176,7 @@ const getPlatformFromLatestMacYml = (content) => {
 
   if (!remotePlatformFileExists) {
     console.log(
-      `[remote] latest-mac-${remotePlatform}.yml does not exists. Skipping merge`
+      `[remote] latest-mac-${remotePlatform}.yml does not exists. Skipping merge`,
     );
     return;
   } else {
@@ -192,19 +192,19 @@ const getPlatformFromLatestMacYml = (content) => {
         headers: {
           accept: 'application/octet-stream',
         },
-      }
+      },
     );
     console.log(`[remote] latest-mac-${remotePlatform}.yml downloaded`);
   } catch (e) {
     console.log(
-      `[remote] error downloading latest-mac-${remotePlatform}.yml. Skipping merge`
+      `[remote] error downloading latest-mac-${remotePlatform}.yml. Skipping merge`,
     );
     console.log(e);
     return;
   }
 
   const remoteLatestMacYmlContent = new TextDecoder().decode(
-    remotePlatformFile.data
+    remotePlatformFile.data,
   );
 
   try {

@@ -4,7 +4,7 @@
 
 import path from 'path';
 import webpack from 'webpack';
-import { dependencies as externals } from '../../src/package.json';
+import { dependencies as externals } from '../package.json';
 
 export default {
   externals: ['fsevents', ...Object.keys(externals || {})],
