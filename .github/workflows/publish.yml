@@ -15,6 +15,14 @@ jobs:
   semantic:
     runs-on: ubuntu-latest
     steps:
+      - name: Set @johnlindquist/kit@tag to next or main
+        id: set_kit_version
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "kit_tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "kit_tag=next" >> $GITHUB_OUTPUT
+
       - name: Checkout git repo
         uses: actions/checkout@v4
 
@@ -64,15 +72,6 @@ jobs:
         node: [18.18.2]
 
     steps:
-      - name: Set @johnlindquist/kit@tag to next or main
-        id: set_kit_version
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "KIT_TAG=latest" >> $GITHUB_ENV
-          else
-            echo "KIT_TAG=next" >> $GITHUB_ENV
-          fi
-
       - name: Checkout git repo
         uses: actions/checkout@v4
 
@@ -152,7 +151,8 @@ jobs:
       - name: Ubuntu Electron Issue
         if: matrix.os == 'ubuntu-latest'
         run: echo "There is an issue with electron >=26 with something in the app causing a crash. It might be with the powerMonitor, but it's still not clear. This will have to be resolved before we can upgrade electron and move to ESM-only."
-
+        env:
+          KIT_TAG: ${{ needs.semantic.outputs.kit_tag }}
       # - name: npm i @johnlindquist/kit
       #   if: matrix.os == 'ubuntu-latest'
       #   run: |
@@ -163,6 +163,8 @@ jobs:
       - name: npm i @johnlindquist/kit
         # Not sure if Electron 29 fixes the issue, but it's worth a shot
         # if: matrix.os != 'ubuntu-latest'
+        env:
+          KIT_TAG: ${{ needs.semantic.outputs.kit_tag }}
         run: |
           # npm i
           npm i "@johnlindquist/kit@${{ env.KIT_TAG }}"
