@@ -1,9 +1,12 @@
 
 // build.ts
+import "@johnlindquist/kit";
 import fsExtra from "fs-extra";
-import { build } from "electron-builder";
+import { Arch, Platform, build } from "electron-builder";
 var { readJson } = fsExtra;
-console.log("Building for", process.platform);
+var platform = await arg("platform");
+var arch = await arg("arch");
+console.log("Building for", platform, arch);
 var pkg = await readJson("package.json");
 var excludeDevDependencies = Object.keys(pkg.devDependencies).map(
   (name) => `!**/node_modules/${name}/**/*`
@@ -99,6 +102,23 @@ var config = {
     repo: "kitapp"
   }
 };
+var targets;
+var archFlag = Arch[arch];
+switch (platform) {
+  case "mac":
+    targets = Platform.MAC.createTarget(["dmg"], archFlag);
+    break;
+  case "win":
+    targets = Platform.WINDOWS.createTarget(["nsis"], archFlag);
+    break;
+  case "linux":
+    targets = Platform.LINUX.createTarget(["AppImage", "deb", "rpm"], archFlag);
+    break;
+}
 console.log("Building with config");
-var result = await build({ config });
+var result = await build({
+  config,
+  publish: "always",
+  targets
+});
 console.log("Build result", result);

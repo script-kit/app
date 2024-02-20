@@ -24,9 +24,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify that Semantic Release updated src/package.json
+      - name: Verify that Semantic Release updated package.json
         run: |
-          cat src/package.json
+          cat package.json
           echo ${{ steps.semantic.outputs.new_release_version }} > semantic-version.txt
           echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
 
@@ -108,7 +108,7 @@ jobs:
           # Set the release id as an environment variable
           echo "RELEASE_ID=$(cat release-id.txt)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Write the Semantic Version to src/package.json version property
+      - name: Write the Semantic Version to package.json version property
         uses: johnlindquist/kit-action@main
         with:
           script: update-package-version ${{ env.SEMANTIC_VERSION }}
@@ -192,7 +192,7 @@ jobs:
             cd ..
             echo "--- Done removing mac deps ---\n\n"
             vite-prebuild
-            npx kit ./build.ts mac x64
+            npx kit ./build.ts mac x64 always
 
       - name: Publish windows arm64
         if: matrix.os == 'windows-latest' && matrix.arch == 'arm64'
@@ -210,7 +210,7 @@ jobs:
             cd ..
             vite-prebuild
             echo "--- Done removing mac deps ---\n\n"
-            npx kit ./build.ts win arm64
+            npx kit ./build.ts win arm64 always
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -245,7 +245,7 @@ jobs:
             cd ..
             echo "--- Done removing mac deps ---\n\n"
             vite-prebuild
-            npx kit ./build.ts linux x64
+            npx kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
         if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
@@ -274,7 +274,7 @@ jobs:
             cd ..
             echo "--- Done removing mac deps ---\n\n"
             vite-prebuild
-            npx kit ./build.ts linux arm64
+            npx kit ./build.ts linux arm64 always
 
       - name: Publish mac x64
         if: matrix.os == 'macos-13' && matrix.arch == 'x64'
@@ -293,7 +293,7 @@ jobs:
           timeout_minutes: 30
           command: |
             vite-prebuild
-            npx kit ./build.ts mac x64
+            npx kit ./build.ts mac x64 always
 
       - name: Publish mac arm64
         if: matrix.os == 'macos-13' && matrix.arch == 'arm64'
@@ -312,7 +312,7 @@ jobs:
           timeout_minutes: 30
           command: |
             vite-prebuild
-            npx kit ./build.ts mac arm64
+            npx kit ./build.ts mac arm64 always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
         if: matrix.os == 'macos-13'

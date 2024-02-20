@@ -6,8 +6,9 @@ import type { Configuration, PackagerOptions } from 'electron-builder';
 
 const platform = await arg('platform');
 const arch = await arg('arch');
+const publish = await arg('publish');
 
-console.log('Building for', platform, arch);
+console.log(`Building for ${platform} ${arch} ${publish}`);
 
 const pkg = await readJson('package.json');
 const excludeDevDependencies = Object.keys(pkg.devDependencies).map(
@@ -125,7 +126,7 @@ switch (platform) {
 console.log('Building with config');
 const result = await build({
   config,
-  publish: 'always',
+  publish,
   targets,
 });
 console.log('Build result', result);

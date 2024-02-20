@@ -44,7 +44,7 @@
     "vite-dev": "./vite-dev.sh",
     "vite-prebuild": "electron-vite build",
     "vite-package": "electron-vite build && DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
-    "vite-package-build-script": "npm run vite-prebuild && npx kit ./build.ts",
+    "package:mac:arm64": "npm run vite-prebuild && npx kit ./build.ts mac arm64 never",
     "vite-build": "DEBUG_PROD=true electron-builder --mac --arm64 -c.mac.identity=null --publish never",
     "electron-rebuild": "electron-builder install-app-deps",
     "rimraf-kit-setup": "rimraf ~/.kit-setup ~/.kenv-setup ~/.knode-setup",
