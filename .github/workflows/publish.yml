@@ -70,7 +70,7 @@ jobs:
       matrix:
         os: [macos-13, windows-latest, ubuntu-latest]
         arch: [x64, arm64]
-        node: [18.18.2]
+        node: [20.9.0]
 
     steps:
       - name: Checkout git repo
@@ -184,7 +184,7 @@ jobs:
             if (Test-Path node_modules\@nut-tree\libnut-linux) { Remove-Item node_modules\@nut-tree\libnut-linux -Recurse -Force }
             cat ./package.json
             echo "--- Done removing mac deps ---\n\n"
-            vite-prebuild
+            npm run vite-prebuild
             npx kit ./build.ts mac x64 always
 
       - name: Publish windows arm64
@@ -199,9 +199,8 @@ jobs:
             npx kit remove-tick
             npx kit remove-mac
             npx kit remove-nut
-            cd ..
-            vite-prebuild
             echo "--- Done removing mac deps ---\n\n"
+            npm run vite-prebuild
             npx kit ./build.ts win arm64 always
         env:
           # These values are used for auto updates signing
@@ -234,7 +233,7 @@ jobs:
             npm i @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             echo "--- Done removing mac deps ---\n\n"
-            vite-prebuild
+            npm run vite-prebuild
             npx kit ./build.ts linux x64 always
 
       - name: Publish linux arm64
@@ -262,7 +261,7 @@ jobs:
             npm i @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             echo "--- Done removing mac deps ---\n\n"
-            vite-prebuild
+            npm run vite-prebuild
             npx kit ./build.ts linux arm64 always
 
       - name: Publish mac x64
@@ -281,7 +280,7 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            vite-prebuild
+            npm run vite-prebuild
             npx kit ./build.ts mac x64 always
 
       - name: Publish mac arm64
@@ -300,7 +299,7 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            vite-prebuild
+            npm run vite-prebuild
             npx kit ./build.ts mac arm64 always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
