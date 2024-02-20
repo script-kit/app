@@ -105,6 +105,7 @@ const config: Configuration = {
     provider: 'github',
     owner: 'johnlindquist',
     repo: 'kitapp',
+    releaseType: 'prerelease',
   },
 };
 
