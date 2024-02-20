@@ -67,7 +67,7 @@ import {
   MIN_WIDTH,
   ZOOM_LEVEL,
 } from '../shared/defaults';
-import { ResizeData, ScoredChoice, TermConfig } from '../shared/types';
+import { ResizeData } from '../shared/types';
 import { getVersion } from './version';
 import { AppChannel, HideReason } from '../shared/enums';
 import { emitter, KitEvent } from '../shared/events';
@@ -84,8 +84,8 @@ import { fileURLToPath } from 'url';
 import { prompts } from './prompts';
 import { ProcessAndPrompt, processes } from './process';
 import { QuickScore } from 'quick-score';
-import { debugLog } from './logs';
 import { createPty } from './pty';
+import { cliFromParams, runPromptProcess } from './kit';
 
 contextMenu({
   showInspectElement: process.env.NODE_ENV === 'development',
@@ -756,6 +756,38 @@ export class KitPrompt {
         log.error(error);
       }
     }
+
+    this.window.webContents?.on(
+      'will-navigate',
+      async (event, navigationUrl) => {
+        try {
+          const url = new URL(navigationUrl);
+          log.info(`👉 Prevent navigating to ${navigationUrl}`);
+          event.preventDefault();
+
+          const pathname = url.pathname.replace('//', '');
+
+          if (url.host === 'scriptkit.com' && url.pathname === '/api/new') {
+            await cliFromParams('new-from-protocol', url.searchParams);
+          } else if (url.host === 'scriptkit.com' && pathname === 'kenv') {
+            const repo = url.searchParams.get('repo');
+            await runPromptProcess(kitPath('cli', 'kenv-clone.js'), [
+              repo || '',
+            ]);
+          } else if (url.protocol === 'kit:') {
+            log.info(`Attempting to run kit protocol:`, JSON.stringify(url));
+            await cliFromParams(url.pathname, url.searchParams);
+          } else if (url.protocol === 'submit:') {
+            // TODO: Handle submit protocol
+            this.sendToPrompt(Channel.SET_SUBMIT_VALUE, url.pathname);
+          } else if (url.protocol.startsWith('http')) {
+            shell.openExternal(url.href);
+          }
+        } catch (e) {
+          log.warn(e);
+        }
+      },
+    );
 
     this.window.webContents?.on('did-finish-load', () => {
       kitState.hiddenByUser = false;

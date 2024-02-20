@@ -22,17 +22,15 @@ import { subscribeKey } from 'valtio/utils';
 import { emitter, KitEvent } from '../shared/events';
 import { ensureIdleProcess, getIdles, processes } from './process';
 import {
-  debounceSetScriptTimestamp,
   getKitScript,
   kitState,
   kitStore,
   sponsorCheck,
 } from '../shared/state';
 import { pathsAreEqual } from './helpers';
-import { AppChannel, HideReason, Trigger } from '../shared/enums';
+import { Trigger } from '../shared/enums';
 import { TrackEvent, trackEvent } from './track';
 import { prompts } from './prompts';
-import { closedDiv } from '../shared/defaults';
 
 app.on('second-instance', async (_event, argv) => {
   log.info('second-instance', argv);
@@ -342,3 +340,32 @@ emitter.on(KitEvent.OpenScript, async (scriptPath) => {
     sponsorCheck: false,
   });
 });
+
+export const cliFromParams = async (cli: string, params: URLSearchParams) => {
+  const name = params.get('name');
+  const newUrl = params.get('url');
+  if (name && newUrl) {
+    await runPromptProcess(kitPath(`cli/${cli}.js`), [name, '--url', newUrl], {
+      force: true,
+      trigger: Trigger.Protocol,
+      sponsorCheck: false,
+    });
+    return true;
+  }
+
+  const content = params.get('content');
+
+  if (content) {
+    await runPromptProcess(
+      kitPath(`cli/${cli}.js`),
+      [name || '', '--content', content],
+      {
+        force: true,
+        trigger: Trigger.Protocol,
+        sponsorCheck: false,
+      },
+    );
+    return true;
+  }
+  return false;
+};

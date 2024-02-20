@@ -1,9 +1,13 @@
+import '@johnlindquist/kit';
 import fsExtra from 'fs-extra';
 const { readJson } = fsExtra;
-import { build } from 'electron-builder';
-import type { Configuration } from 'electron-builder';
+import { Arch, Platform, build } from 'electron-builder';
+import type { Configuration, PackagerOptions } from 'electron-builder';
 
-console.log('Building for', process.platform);
+const platform = await arg('platform');
+const arch = await arg('arch');
+
+console.log('Building for', platform, arch);
 
 const pkg = await readJson('package.json');
 const excludeDevDependencies = Object.keys(pkg.devDependencies).map(
@@ -103,6 +107,25 @@ const config: Configuration = {
   },
 };
 
+let targets: PackagerOptions['targets'];
+const archFlag = Arch[arch as 'x64' | 'arm64'];
+
+switch (platform) {
+  case 'mac':
+    targets = Platform.MAC.createTarget(['dmg'], archFlag);
+    break;
+  case 'win':
+    targets = Platform.WINDOWS.createTarget(['nsis'], archFlag);
+    break;
+  case 'linux':
+    targets = Platform.LINUX.createTarget(['AppImage', 'deb', 'rpm'], archFlag);
+    break;
+}
+
 console.log('Building with config');
-const result = await build({ config });
+const result = await build({
+  config,
+  publish: 'always',
+  targets,
+});
 console.log('Build result', result);

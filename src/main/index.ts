@@ -2,7 +2,6 @@ import {
   app,
   protocol,
   powerMonitor,
-  shell,
   BrowserWindow,
   crashReporter,
   screen,
@@ -101,7 +100,6 @@ import { registerKillLatestShortcut } from './shortcuts';
 import { logMap, mainLog } from './logs';
 import { emitter } from '../shared/events';
 import { displayError } from './error';
-import { HideReason, Trigger } from '../shared/enums';
 import { TrackEvent, trackEvent } from './track';
 import {
   cacheMainScripts,
@@ -122,7 +120,6 @@ import {
   optionalSetupScript,
   optionalSpawnSetup,
   sendSplashBody,
-  sendSplashHeader,
   setupDone,
   setupLog,
   showSplash,
@@ -303,35 +300,6 @@ const installExtensions = async () => {
   if (result) log.info(`😬 DEVTOOLS INSTALLED`, { result });
 };
 
-const cliFromParams = async (cli: string, params: URLSearchParams) => {
-  const name = params.get('name');
-  const newUrl = params.get('url');
-  if (name && newUrl) {
-    await runPromptProcess(kitPath(`cli/${cli}.js`), [name, '--url', newUrl], {
-      force: true,
-      trigger: Trigger.Protocol,
-      sponsorCheck: false,
-    });
-    return true;
-  }
-
-  const content = params.get('content');
-
-  if (content) {
-    await runPromptProcess(
-      kitPath(`cli/${cli}.js`),
-      [name || '', '--content', content],
-      {
-        force: true,
-        trigger: Trigger.Protocol,
-        sponsorCheck: false,
-      },
-    );
-    return true;
-  }
-  return false;
-};
-
 const newFromProtocol = async (u: string) => {
   const url = new URL(u);
   log.info({ url });
@@ -350,35 +318,6 @@ const newFromProtocol = async (u: string) => {
     }
   }
 };
-
-app.on('web-contents-created', (_, contents) => {
-  contents.on('will-navigate', async (event, navigationUrl) => {
-    try {
-      const url = new URL(navigationUrl);
-      log.info(`👉 Prevent navigating to ${navigationUrl}`);
-      event.preventDefault();
-
-      const pathname = url.pathname.replace('//', '');
-
-      if (url.host === 'scriptkit.com' && url.pathname === '/api/new') {
-        await cliFromParams('new-from-protocol', url.searchParams);
-      } else if (url.host === 'scriptkit.com' && pathname === 'kenv') {
-        const repo = url.searchParams.get('repo');
-        await runPromptProcess(kitPath('cli', 'kenv-clone.js'), [repo || '']);
-      } else if (url.protocol === 'kit:') {
-        log.info(`Attempting to run kit protocol:`, JSON.stringify(url));
-        // await cliFromParams(url.pathname, url.searchParams);
-      } else if (url.protocol === 'submit:') {
-        // TODO: Handle submit protocol
-        // sendToSpecificPrompt(Channel.SET_SUBMIT_VALUE, url.pathname);
-      } else if (url.protocol.startsWith('http')) {
-        shell.openExternal(url.href);
-      }
-    } catch (e) {
-      log.warn(e);
-    }
-  });
-});
 
 const prepareProtocols = async () => {
   app.on('open-url', async (e, u) => {

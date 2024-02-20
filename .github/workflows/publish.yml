@@ -3,15 +3,13 @@ name: Publish
 on:
   push:
     branches:
-      - alpha
-      - beta
       - main
+      - next
 
   workflow_dispatch:
     branches:
-      - alpha
-      - beta
       - main
+      - next
 
 jobs:
   semantic:
@@ -66,6 +64,15 @@ jobs:
         node: [18.18.2]
 
     steps:
+      - name: Set @johnlindquist/kit@tag to next or main
+        id: set_kit_version
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "KIT_TAG=latest" >> $GITHUB_ENV
+          else
+            echo "KIT_TAG=next" >> $GITHUB_ENV
+          fi
+
       - name: Checkout git repo
         uses: actions/checkout@v4
 
@@ -146,22 +153,19 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: echo "There is an issue with electron >=26 with something in the app causing a crash. It might be with the powerMonitor, but it's still not clear. This will have to be resolved before we can upgrade electron and move to ESM-only."
 
-      - name: yarn && yarn add @johnlindquist/kit
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          yarn
-          # There is an issue with electron >=26 with something in the app causing a crash
-          # I might be with the powerMonitor, but it's still not clear.
-          # This will have to be resolved before we can upgrade electron and move to ESM-only
+      # - name: npm i @johnlindquist/kit
+      #   if: matrix.os == 'ubuntu-latest'
+      #   run: |
+      #     # npm i
+      #     npm i electron@25.9.3
+      #     npm i "@johnlindquist/kit@${{ env.KIT_TAG }}"
 
-          yarn add electron@25.9.3
-          yarn add "@johnlindquist/kit"
-
-      - name: yarn && yarn add @johnlindquist/kit
-        if: matrix.os != 'ubuntu-latest'
+      - name: npm i @johnlindquist/kit
+        # Not sure if Electron 29 fixes the issue, but it's worth a shot
+        # if: matrix.os != 'ubuntu-latest'
         run: |
-          yarn
-          yarn add "@johnlindquist/kit"
+          # npm i
+          npm i "@johnlindquist/kit@${{ env.KIT_TAG }}"
 
       - name: Publish windows x64
         if: matrix.os == 'windows-latest' && matrix.arch == 'x64'
@@ -180,15 +184,15 @@ jobs:
           command: |
             npx kit remove-mac
             cd ./src
-            yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
+            npm un node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
             Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
             if (Test-Path node_modules\@nut-tree\libnut-darwin) { Remove-Item node_modules\@nut-tree\libnut-darwin -Recurse -Force }
             if (Test-Path node_modules\@nut-tree\libnut-linux) { Remove-Item node_modules\@nut-tree\libnut-linux -Recurse -Force }
             cat ./package.json
             cd ..
             echo "--- Done removing mac deps ---\n\n"
-            yarn build
-            yarn electron-builder --publish always --win --x64
+            vite-prebuild
+            npx kit ./build.ts mac x64
 
       - name: Publish windows arm64
         if: matrix.os == 'windows-latest' && matrix.arch == 'arm64'
@@ -201,12 +205,12 @@ jobs:
             npx kit remove-mac
             npx kit remove-nut
             cd ./src
-            yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
+            npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
             cat ./package.json
             cd ..
-            yarn build
+            vite-prebuild
             echo "--- Done removing mac deps ---\n\n"
-            yarn electron-builder --publish always --win --arm64
+            npx kit ./build.ts win arm64
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -235,13 +239,13 @@ jobs:
             npx kit remove-node-window-manager
             npx kit patch-node-pty
             cd ./src
-            yarn remove node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
-            yarn add @homebridge/node-pty-prebuilt-multiarch
+            npm un node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
+            npm i @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             cd ..
             echo "--- Done removing mac deps ---\n\n"
-            yarn build
-            yarn electron-builder --publish always --linux AppImage deb rpm --x64
+            vite-prebuild
+            npx kit ./build.ts linux x64
 
       - name: Publish linux arm64
         if: matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64'
@@ -264,14 +268,13 @@ jobs:
             npx kit remove-node-window-manager
             npx kit patch-node-pty
             cd ./src
-            yarn remove node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
-            yarn add @homebridge/node-pty-prebuilt-multiarch
+            npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
+            npm i @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             cd ..
             echo "--- Done removing mac deps ---\n\n"
-            yarn build
-
-            yarn electron-builder --publish always --linux AppImage deb rpm --arm64
+            vite-prebuild
+            npx kit ./build.ts linux arm64
 
       - name: Publish mac x64
         if: matrix.os == 'macos-13' && matrix.arch == 'x64'
@@ -289,8 +292,8 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            yarn build
-            yarn electron-builder --publish always --mac --x64
+            vite-prebuild
+            npx kit ./build.ts mac x64
 
       - name: Publish mac arm64
         if: matrix.os == 'macos-13' && matrix.arch == 'arm64'
@@ -308,8 +311,8 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            yarn build
-            yarn electron-builder --publish always --mac --arm64
+            vite-prebuild
+            npx kit ./build.ts mac arm64
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
         if: matrix.os == 'macos-13'
