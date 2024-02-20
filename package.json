@@ -274,7 +274,7 @@
   },
   "dependencies": {
     "@johnlindquist/clipboard": "^0.1.38",
-    "@johnlindquist/kit": "^2.2.2",
+    "@johnlindquist/kit": "latest",
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
     "@johnlindquist/mac-panel-window": "^1.3.0",

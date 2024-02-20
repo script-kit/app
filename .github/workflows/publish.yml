@@ -149,26 +149,17 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Ubuntu Electron Issue
-        if: matrix.os == 'ubuntu-latest'
-        run: echo "There is an issue with electron >=26 with something in the app causing a crash. It might be with the powerMonitor, but it's still not clear. This will have to be resolved before we can upgrade electron and move to ESM-only."
-        env:
-          KIT_TAG: ${{ needs.semantic.outputs.kit_tag }}
-      # - name: npm i @johnlindquist/kit
+      # - name: Ubuntu Electron Issue
       #   if: matrix.os == 'ubuntu-latest'
-      #   run: |
-      #     # npm i
-      #     npm i electron@25.9.3
-      #     npm i "@johnlindquist/kit@${{ env.KIT_TAG }}"
-
-      - name: npm i @johnlindquist/kit
-        # Not sure if Electron 29 fixes the issue, but it's worth a shot
-        # if: matrix.os != 'ubuntu-latest'
-        env:
-          KIT_TAG: ${{ needs.semantic.outputs.kit_tag }}
-        run: |
-          # npm i
-          npm i "@johnlindquist/kit@${{ env.KIT_TAG }}"
+      #   run: echo "There is an issue with electron >=26 with something in the app causing a crash. It might be with the powerMonitor, but it's still not clear. This will have to be resolved before we can upgrade electron and move to ESM-only."
+      #   env:
+      #     KIT_TAG: ${{ needs.semantic.outputs.kit_tag }}
+      # # - name: npm i @johnlindquist/kit
+      # #   if: matrix.os == 'ubuntu-latest'
+      # #   run: |
+      # #     # npm i
+      # #     npm i electron@25.9.3
+      # #     npm i "@johnlindquist/kit@${{ env.KIT_TAG }}"
 
       - name: Publish windows x64
         if: matrix.os == 'windows-latest' && matrix.arch == 'x64'
@@ -185,14 +176,13 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npx kit remove-mac
-            cd ./src
             npm un node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
+            npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
+            npx kit remove-mac
             Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
             if (Test-Path node_modules\@nut-tree\libnut-darwin) { Remove-Item node_modules\@nut-tree\libnut-darwin -Recurse -Force }
             if (Test-Path node_modules\@nut-tree\libnut-linux) { Remove-Item node_modules\@nut-tree\libnut-linux -Recurse -Force }
             cat ./package.json
-            cd ..
             echo "--- Done removing mac deps ---\n\n"
             vite-prebuild
             npx kit ./build.ts mac x64 always
@@ -204,12 +194,11 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
+            npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
+            npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
             npx kit remove-tick
             npx kit remove-mac
             npx kit remove-nut
-            cd ./src
-            npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
-            cat ./package.json
             cd ..
             vite-prebuild
             echo "--- Done removing mac deps ---\n\n"
@@ -222,7 +211,6 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Publish linux x64
         if: matrix.os == 'ubuntu-latest' && matrix.arch == 'x64'
         env:
@@ -238,14 +226,13 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
+            npm un node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
+            npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
             npx kit remove-mac
             npx kit remove-node-window-manager
             npx kit patch-node-pty
-            cd ./src
-            npm un node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
             npm i @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
-            cd ..
             echo "--- Done removing mac deps ---\n\n"
             vite-prebuild
             npx kit ./build.ts linux x64 always
@@ -265,16 +252,15 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
+            npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
+            npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
             npx kit remove-tick
             npx kit remove-mac
             npx kit remove-nut
             npx kit remove-node-window-manager
             npx kit patch-node-pty
-            cd ./src
-            npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
             npm i @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
-            cd ..
             echo "--- Done removing mac deps ---\n\n"
             vite-prebuild
             npx kit ./build.ts linux arm64 always
