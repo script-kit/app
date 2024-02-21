@@ -46,7 +46,7 @@ if (await isDir('node_modules')) {
 }
 
 let kitPathCopy = createPathResolver(
-  home(`kit-${version}-${platform}-${arch}`)
+  home(`kit-${version}-${platform}-${arch}`),
 );
 
 await ensureDir(kitPathCopy());
@@ -141,7 +141,7 @@ await tar.c(
       return true;
     },
   },
-  ['.']
+  ['.'],
 );
 
 console.log(`Uploading ${name} to releases...`);

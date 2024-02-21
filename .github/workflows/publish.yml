@@ -47,7 +47,7 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@${{ needs.semantic.outputs.kit_tag }}
         with:
           script: create-release ${{ env.SEMANTIC_VERSION }}
         env:
@@ -115,7 +115,7 @@ jobs:
           echo "RELEASE_ID=$(cat release-id.txt)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Write the Semantic Version to package.json version property
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@${{ needs.semantic.outputs.kit_tag }}
         with:
           script: update-package-version ${{ env.SEMANTIC_VERSION }}
         env:
@@ -137,14 +137,14 @@ jobs:
           python-version: '3.11'
 
       - name: Download kenv
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@${{ needs.semantic.outputs.kit_tag }}
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@${{ needs.semantic.outputs.kit_tag }}
         with:
           script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} ${{ matrix.arch }} ${{ env.RELEASE_ID }}
         env:
@@ -318,7 +318,7 @@ jobs:
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
         if: matrix.os == 'macos-13'
-        uses: johnlindquist/kit-action@main
+        uses: johnlindquist/kit-action@${{ needs.semantic.outputs.kit_tag }}
         with:
           script: merge-mac-latest-yml johnlindquist kitapp ${{ matrix.arch }}
         env:
