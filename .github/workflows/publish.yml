@@ -183,7 +183,7 @@ jobs:
 
       - name: Create Assets main
         if: needs.tag.outputs.kit_tag == 'main'
-        uses: johnlindquist/kit-action@$main
+        uses: johnlindquist/kit-action@main
         with:
           script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} ${{ matrix.arch }} ${{ env.RELEASE_ID }}
         env:
