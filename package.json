@@ -197,7 +197,6 @@
   "devDependencies": {
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@electron/notarize": "^2.3.0",
-    "@electron/rebuild": "^3.6.0",
     "@fontsource/jetbrains-mono": "^5.0.18",
     "@heroicons/react": "^2.1.1",
     "@monaco-editor/react": "^4.6.0",
