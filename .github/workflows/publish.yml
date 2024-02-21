@@ -49,19 +49,9 @@ jobs:
           echo ${{ steps.semantic.outputs.new_release_version }} > semantic-version.txt
           echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
 
-      - name: Create Release main
-        if: needs.tag.outputs.kit_tag == 'main'
-        id: create_release_main
-        uses: johnlindquist/kit-action@main
-        with:
-          script: create-release ${{ env.SEMANTIC_VERSION }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Release next
-        if: needs.tag.outputs.kit_tag == 'next'
-        id: create_release_next
-        uses: johnlindquist/kit-action@next
+      - name: Create Release
+        id: create_release
+        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
         with:
           script: create-release ${{ env.SEMANTIC_VERSION }}
         env:
@@ -375,6 +365,6 @@ jobs:
         if: matrix.os == 'macos-13' && needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
-          script: merge-mac-next-yml johnlindquist kitapp ${{ matrix.arch }}
+          script: merge-mac-latest-yml johnlindquist kitapp ${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
