@@ -15,4 +15,4 @@ let releaseResponse = await octokit.rest.repos.createRelease({
 
 console.log(releaseResponse);
 
-core.setOutput('release_id', releaseResponse.data.id);
+core.setOutput('result', releaseResponse.data.id);
