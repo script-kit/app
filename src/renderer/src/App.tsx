@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useRef,
 } from 'react';
-import log from 'electron-log';
+import log from 'electron-log/renderer';
 import { ToastContainer } from 'react-toastify';
 import { debounce } from 'lodash-es';
 

@@ -27,9 +27,6 @@ import nmp from 'node-mac-permissions';
 const { getAuthStatus } = nmp;
 // END-REMOVE-MAC
 
-import installExtension, {
-  REACT_DEVELOPER_TOOLS,
-} from 'electron-devtools-installer';
 import dotenv from 'dotenv';
 import unhandled from 'electron-unhandled';
 import electronUpdater from 'electron-updater';
@@ -93,7 +90,7 @@ import {
   setTheme,
 } from './process';
 import { startIpc } from './ipc';
-import { runPromptProcess } from './kit';
+import { cliFromParams, runPromptProcess } from './kit';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import { registerKillLatestShortcut } from './shortcuts';
@@ -290,15 +287,6 @@ const KIT = kitPath();
 //   require('electron-debug')({ showDevTools: false });
 // }
 
-// fmkadmapgofadopljbjfkapdkoienihi
-const installExtensions = async () => {
-  const result = await installExtension(REACT_DEVELOPER_TOOLS, {
-    loadExtensionOptions: { allowFileAccess: true },
-  }).catch((error) => {
-    log.info(`😬 DEVTOOLS INSTALL FAILED`, { error });
-  });
-  if (result) log.info(`😬 DEVTOOLS INSTALLED`, { result });
-};
 
 const newFromProtocol = async (u: string) => {
   const url = new URL(u);

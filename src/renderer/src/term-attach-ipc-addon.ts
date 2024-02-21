@@ -4,7 +4,7 @@ const { ipcRenderer } = window.electron;
 import { Terminal, ITerminalAddon } from 'xterm';
 import { AppChannel } from '../../shared/enums';
 import { TermConfig } from '../../shared/types';
-import log from 'electron-log';
+import log from 'electron-log/renderer';
 
 export class AttachIPCAddon implements ITerminalAddon {
   private terminal: Terminal | undefined;
@@ -18,7 +18,7 @@ export class AttachIPCAddon implements ITerminalAddon {
   private termOutputHandler = (_event: any, data: string | Buffer) => {
     if (this.terminal)
       this.terminal.write(
-        typeof data === 'string' ? data : new Uint8Array(data)
+        typeof data === 'string' ? data : new Uint8Array(data),
       );
   };
 

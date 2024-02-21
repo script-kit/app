@@ -897,5 +897,4 @@ pre > code {
   @apply outline-none !important;
   /* Remove ring */
   @apply ring-0 !important;
-
 }

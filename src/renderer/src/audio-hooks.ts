@@ -1,6 +1,6 @@
 // src/hooks/audio-hook.tsx
 import { useState, useCallback, useRef, useEffect } from 'react';
-import log from 'electron-log';
+import log from 'electron-log/renderer';
 const path = window.api.path;
 const os = window.api.os;
 const { ipcRenderer } = window.electron;
@@ -38,14 +38,14 @@ export function useAudioRecorder() {
     if (mountPid !== getPid()) {
       stopRecording();
       log.info(
-        `🏞️ Stopping recording... (audio-dot) ${mountPid} doesn't match ${getPid()}`
+        `🏞️ Stopping recording... (audio-dot) ${mountPid} doesn't match ${getPid()}`,
       );
       return;
     }
 
     setAudioChunks((prevAudioChunks) => [...prevAudioChunks, event.data]);
     log.info(
-      `🏞️ Writing to stream... (audio-dot) mount: ${mountPid}, getPid: ${getPid()}`
+      `🏞️ Writing to stream... (audio-dot) mount: ${mountPid}, getPid: ${getPid()}`,
     );
 
     // Write the current chunk to the file
@@ -62,7 +62,7 @@ export function useAudioRecorder() {
     if (recorderRef.current === null) return;
     recorderRef.current.removeEventListener(
       'dataavailable',
-      handleDataAvailable
+      handleDataAvailable,
     );
     recorderRef.current.removeEventListener('stop', handleStop);
     recorderRef.current = null;
@@ -77,7 +77,7 @@ export function useAudioRecorder() {
       recorderRef.current.removeEventListener('stop', handleStop);
       recorderRef.current.removeEventListener(
         'dataavailable',
-        handleDataAvailable
+        handleDataAvailable,
       );
       recorderRef.current = null;
     }
@@ -110,7 +110,7 @@ export function useAudioRecorder() {
         micConfig?.filePath ||
         path.join(
           os.tmpdir(),
-          `recording_${Math.random().toString(36).substring(7)}.webm`
+          `recording_${Math.random().toString(36).substring(7)}.webm`,
         );
 
       const arrayBuffer = await audioBlob.arrayBuffer();
@@ -142,7 +142,7 @@ export function useAudioRecorder() {
       log.info(`🎙 Recorder exists...`);
       recorderRef.current.addEventListener(
         'dataavailable',
-        handleDataAvailable
+        handleDataAvailable,
       );
       recorderRef.current.addEventListener('stop', stopRecording);
       log.info(`🎙 Recorder state: ${recorderRef.current.state}`);
@@ -152,7 +152,7 @@ export function useAudioRecorder() {
       const analyser = audioContextRef.current.createAnalyser();
       analyser.fftSize = 2048;
       const source = audioContextRef.current.createMediaStreamSource(
-        recorderRef.current.stream
+        recorderRef.current.stream,
       );
       source.connect(analyser);
 

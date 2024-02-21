@@ -1,6 +1,6 @@
 import '@johnlindquist/kit';
 import fsExtra from 'fs-extra';
-const { readJson } = fsExtra;
+
 import { Arch, Platform, build } from 'electron-builder';
 import type {
   AfterPackContext,
@@ -14,15 +14,6 @@ const arch = await arg('arch');
 const publish = await arg('publish');
 
 console.log(`🛠️ Building for ${platform} ${arch} ${publish}`);
-
-const pkg = await readJson('package.json');
-const excludeDevDependencies = Object.keys(pkg.devDependencies).map(
-  (name) => `!**/node_modules/${name}/**/*`,
-);
-
-console.log('Excluding devDependencies', excludeDevDependencies);
-
-const asarUnpack = ['assets/**/*'];
 
 const afterSign = async function notarizeMacos(context: AfterPackContext) {
   console.log('Attempting notarization', context);
@@ -54,32 +45,53 @@ const afterSign = async function notarizeMacos(context: AfterPackContext) {
   });
 };
 
+const asarUnpack = ['assets/**/*'];
+
+const dirFiles = (await fsExtra.readdir('.', { withFileTypes: true })).filter(
+  (dir) =>
+    !dir.name.startsWith('out') &&
+    !dir.name.startsWith('node_modules') &&
+    !dir.name.startsWith('release') &&
+    !dir.name.startsWith('assets') &&
+    !dir.name.startsWith('package.json'),
+);
+// If directory, exclude with !directory**/*
+// If file, exclude with !file
+const files = dirFiles
+  .filter((file) => file.isDirectory())
+  .map((dir) => `!${dir.name}/**/*`)
+  .concat(
+    dirFiles.filter((file) => file.isFile()).map((file) => `!${file.name}`),
+  );
+
+console.log({ files });
+
 const config: Configuration = {
   appId: 'app.scriptkit', // Updated appId from package.json
   artifactName: '${productName}-macOS-${version}-${arch}.${ext}',
   productName: 'Kit', // Updated productName from package.json
   directories: {
     output: './release',
-    buildResources: 'assets', // Added from package.json
+    buildResources: 'build',
   },
   asar: true,
   asarUnpack,
   afterSign,
+  files,
   nsis: {
     oneClick: false,
     perMachine: false,
     allowToChangeInstallationDirectory: true,
-    shortcutName: 'Kit', // Updated from massCode to Kit
+    shortcutName: 'Kit',
   },
   mac: {
     icon: 'assets/icon.icns',
     category: 'public.app-category.productivity', // Keep as is or update based on package.json if needed
     hardenedRuntime: true,
-    entitlements: 'assets/entitlements.mac.plist', // Updated from package.json
-    entitlementsInherit: 'assets/entitlements.mac.plist', // Added from package.json
-    gatekeeperAssess: false, // Added from package.json
+    entitlements: 'assets/entitlements.mac.plist',
+    entitlementsInherit: 'assets/entitlements.mac.plist',
+    gatekeeperAssess: false,
     extendInfo: {
-      // Added from package.json
       CFBundleDocumentTypes: [
         {
           CFBundleTypeName: 'Folders',
@@ -104,24 +116,22 @@ const config: Configuration = {
   win: {
     target: 'nsis',
     icon: 'config/icons/icon.ico',
-    artifactName: '${productName}-Windows-${version}-${arch}.${ext}', // Updated from package.json
+    artifactName: '${productName}-Windows-${version}-${arch}.${ext}',
   },
   linux: {
     target: ['snap'],
     icon: 'config/icons',
-    category: 'Development', // Updated from package.json
-    executableName: 'scriptkit', // Added from package.json
-    artifactName: '${productName}-Linux-${version}-${arch}.${ext}', // Updated from package.json
+    category: 'Development',
+    executableName: 'scriptkit',
+    artifactName: '${productName}-Linux-${version}-${arch}.${ext}',
   },
   protocols: [
     {
-      name: 'kit', // Updated from package.json
-      schemes: ['kit'], // Updated from package.json
+      name: 'kit',
+      schemes: ['kit'],
     },
   ],
-  files: ['!**/*', 'out/**/*', ...asarUnpack],
   publish: {
-    // Added from package.json
     provider: 'github',
     owner: 'johnlindquist',
     repo: 'kitapp',

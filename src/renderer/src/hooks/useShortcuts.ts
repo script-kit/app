@@ -1,4 +1,4 @@
-import log from 'electron-log'
+import log from 'electron-log/renderer';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
@@ -48,14 +48,14 @@ export default () => {
       setPreviewEnabled(!previewEnabled);
     },
     hotkeysOptions,
-    [setPreviewEnabled, previewEnabled]
+    [setPreviewEnabled, previewEnabled],
   );
 
   const flagsArray = Object.entries(flags);
 
   const flagsWithShortcuts = flagsArray.filter(
     ([key, value]) =>
-      value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter'
+      value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter',
   );
 
   let flagShortcuts = '';
@@ -80,20 +80,20 @@ export default () => {
 
   useHotkeys(
     flagShortcuts.length ? flagShortcuts.replaceAll('cmd', 'mod') : 'f19',
-    (event, handler:HotkeysEvent) => {
+    (event, handler: HotkeysEvent) => {
       if (!inputFocus) return;
       event.preventDefault();
 
       if (flagValue) return;
 
       const key = handler?.keys?.[0];
-      if(!key) return;
+      if (!key) return;
 
       // setFlag(flagKeyByShortcut(key));
       // submit(focusedChoice?.value || input);
     },
     hotkeysOptions,
-    [flags, input, inputFocus, choices, index, flagValue, flagShortcuts]
+    [flags, input, inputFocus, choices, index, flagValue, flagShortcuts],
   );
 
   let onShortcuts = `f19`;
@@ -112,7 +112,7 @@ export default () => {
 
   useHotkeys(
     onShortcuts.replaceAll('cmd', 'mod'),
-    (event, handler:HotkeysEvent) => {
+    (event, handler: HotkeysEvent) => {
       event.preventDefault();
 
       if (flagValue) return;
@@ -122,9 +122,9 @@ export default () => {
       const found = promptShortcuts.find((ps) => {
         const [shortcutKey, ...modifiers] = ps?.key?.split('+')?.reverse();
         const hasKey = shortcutKey === key;
-        const hasModifiers = modifiers.every((modifier) =>{
-          if(modifier === 'cmd'){
-            return handler?.mod || handler?.meta
+        const hasModifiers = modifiers.every((modifier) => {
+          if (modifier === 'cmd') {
+            return handler?.mod || handler?.meta;
           }
 
           return handler[modifier];
@@ -133,7 +133,7 @@ export default () => {
         return hasKey && hasModifiers;
       });
       if (found) {
-        if(found?.flag){
+        if (found?.flag) {
           setFlag(found.flag);
         }
         log.info('sending shortcut', found.key);
@@ -149,7 +149,7 @@ export default () => {
       promptData,
       sendShortcut,
       setFlag,
-    ]
+    ],
   );
 
   useHotkeys(
@@ -187,7 +187,7 @@ export default () => {
       flagShortcuts,
       promptShortcuts,
       hasRightShortcut,
-    ]
+    ],
   );
   useHotkeys(
     `mod+k`,
@@ -213,6 +213,6 @@ export default () => {
       channel,
       flagShortcuts,
       promptShortcuts,
-    ]
+    ],
   );
 };

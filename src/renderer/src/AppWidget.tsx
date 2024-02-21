@@ -1,4 +1,4 @@
-import log from 'electron-log';
+import log from 'electron-log/renderer';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 import React, { ErrorInfo, Suspense, useEffect, useState } from 'react';
@@ -102,11 +102,11 @@ export default function AppWidget() {
 
       const width = Math.ceil(
         (document.body.firstElementChild as HTMLElement)?.offsetWidth ||
-          window.innerWidth
+          window.innerWidth,
       );
       const height = Math.ceil(
         (document.body.firstElementChild as HTMLElement)?.offsetHeight ||
-          window.innerHeight
+          window.innerHeight,
       );
 
       if (width !== contentWidth || height !== contentHeight) {
@@ -137,7 +137,7 @@ export default function AppWidget() {
 
   useEffect(() => {
     let __widgetContainer = document.getElementById(
-      '__widget-container'
+      '__widget-container',
     ) as HTMLElement;
 
     const handleClick = (event) => {

@@ -8,7 +8,7 @@
 const path = window.api.path;
 
 import { atom, Getter, Setter } from 'jotai';
-import log from 'electron-log';
+import log from 'electron-log/renderer';
 import DOMPurify from 'dompurify';
 import { AppDb, UserDb } from '@johnlindquist/kit/core/db';
 import { Channel, Mode, UI, PROMPT } from '@johnlindquist/kit/core/enum';

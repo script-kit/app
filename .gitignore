@@ -65,3 +65,4 @@ assets/basic-languages
 .clj-kondo
 .lsp
 out/
+.cache/

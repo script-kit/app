@@ -1,5 +1,5 @@
 /* eslint-disable import/first */
-// import log from 'electron-log';
+// import log from 'electron-log/renderer';
 
 // log.info(`
 // ---------------------------

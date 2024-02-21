@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import log from 'electron-log';
+import log from 'electron-log/renderer';
 import { VariableSizeList as List } from 'react-window';
 import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
@@ -21,7 +21,7 @@ const createItemData = memoize(
   (choices) =>
     ({
       choices,
-    }) as ChoiceButtonProps['data']
+    }) as ChoiceButtonProps['data'],
 );
 
 export default function ChoiceList({ height }: ListProps) {
@@ -57,7 +57,7 @@ export default function ChoiceList({ height }: ListProps) {
       (listRef as any).current.scrollToItem(
         requiresScroll,
         // eslint-disable-next-line no-nested-ternary
-        requiresScroll > 0 ? 'auto' : 'start'
+        requiresScroll > 0 ? 'auto' : 'start',
       );
     };
 
@@ -109,7 +109,7 @@ export default function ChoiceList({ height }: ListProps) {
           setScrollTimeout(
             setTimeout(() => {
               setIsScrolling(false);
-            }, 250)
+            }, 250),
           );
         }}
         height={

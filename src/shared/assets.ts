@@ -26,13 +26,13 @@ const checkPackaged = (name: string) => {
   //   resourcesPath: process.resourcesPath,
   // });
   return app.isPackaged
-    ? path.resolve(process.resourcesPath, name)
+    ? path.resolve(process.resourcesPath, 'app.asar.unpacked', name)
     : path.resolve(dirname, '..', '..', name);
 };
 
 export const getAssetPath = (...paths: string[]): string => {
   const assetPath = slash(
-    path.resolve(checkPackaged('assets'), ...paths)
+    path.resolve(checkPackaged('assets'), ...paths),
   ).trim();
   log.info(`Asset: ${assetPath}`);
   return assetPath;

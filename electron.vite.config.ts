@@ -1,5 +1,6 @@
-import { resolve } from 'path';
+import path from 'path';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
+import million from 'million/compiler';
 import react from '@vitejs/plugin-react';
 import { BuildOptions } from 'vite';
 
@@ -23,9 +24,9 @@ export default defineConfig({
   renderer: {
     resolve: {
       alias: {
-        '@renderer': resolve('src/renderer/src'),
+        '@renderer': path.resolve('src/renderer/src'),
       },
     },
-    plugins: [react()],
+    plugins: [million.vite({ auto: true }), react()],
   },
 });
