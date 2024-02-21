@@ -32,8 +32,7 @@ jobs:
 
   semantic:
     outputs:
-      release_id_main: ${{ steps.create_release_main.outputs.release_id }}
-      release_id_next: ${{ steps.create_release_next.outputs.release_id }}
+      release_id: ${{ steps.set_release_id.outputs.release_id }}
       semantic_version: ${{ steps.semantic_version.outputs.new_release_version }}
     needs: tag
     runs-on: ubuntu-latest
@@ -71,6 +70,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set release_id output from create_release_main or create_release_next
+        id: set_release_id
+        run: |
+          echo "release_id=${{ steps.create_release_main.outputs.release_id || steps.create_release_next.outputs.release_id }}" >> $GITHUB_OUTPUT
+
   publish:
     needs: [tag, semantic]
     runs-on: ${{ matrix.os }}
@@ -88,7 +92,7 @@ jobs:
         if: needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
-          script: update-package-version ${{ needs.semantic.outputs.release_id_main}}
+          script: update-package-version ${{ needs.semantic.outputs.release_id}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -96,7 +100,7 @@ jobs:
         if: needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
-          script: update-package-version ${{ needs.semantic.outputs.release_id_main}}
+          script: update-package-version ${{ needs.semantic.outputs.release_id}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -135,7 +139,7 @@ jobs:
         if: needs.tag.outputs.kit_tag == 'main'
         uses: johnlindquist/kit-action@main
         with:
-          script: create-assets${{ needs.semantic.outputs.release_id_main}} ${{ matrix.os }} ${{ matrix.arch }} ${{ needs.semantic.outputs.release_id_main }}
+          script: create-assets${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ matrix.arch }} ${{ needs.semantic.outputs.release_id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -143,7 +147,7 @@ jobs:
         if: needs.tag.outputs.kit_tag == 'next'
         uses: johnlindquist/kit-action@next
         with:
-          script: create-assets${{ needs.semantic.outputs.release_id_main}} ${{ matrix.os }} ${{ matrix.arch }} ${{ needs.semantic.outputs.release_id_main }}
+          script: create-assets${{ needs.semantic.outputs.semantic_version}} ${{ matrix.os }} ${{ matrix.arch }} ${{ needs.semantic.outputs.release_id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
