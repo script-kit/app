@@ -48,9 +48,19 @@ jobs:
           echo ${{ steps.tag.outputs.new_release_version }} > semantic-version.txt
           echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
 
-      - name: Create Release
-        id: create_release
-        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
+      - name: Create Release main
+        if: needs.tag.outputs.kit_tag == 'main'
+        id: create_release_main
+        uses: johnlindquist/kit-action@main
+        with:
+          script: create-release ${{ env.SEMANTIC_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release next
+        if: needs.tag.outputs.kit_tag == 'next'
+        id: create_release_next
+        uses: johnlindquist/kit-action@next
         with:
           script: create-release ${{ env.SEMANTIC_VERSION }}
         env:
@@ -117,8 +127,17 @@ jobs:
           # Set the release id as an environment variable
           echo "RELEASE_ID=$(cat release-id.txt)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Write the Semantic Version to package.json version property
-        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
+      - name: Write the Semantic Version to package.json version property for main
+        if: needs.tag.outputs.kit_tag == 'main'
+        uses: johnlindquist/kit-action@main
+        with:
+          script: update-package-version ${{ env.SEMANTIC_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Write the Semantic Version to package.json version property for next
+        if: needs.tag.outputs.kit_tag == 'next'
+        uses: johnlindquist/kit-action@next
         with:
           script: update-package-version ${{ env.SEMANTIC_VERSION }}
         env:
@@ -139,15 +158,33 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Download kenv
-        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
+      - name: Download kenv main
+        if: needs.tag.outputs.kit_tag == 'main'
+        uses: johnlindquist/kit-action@main
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Assets
-        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
+      - name: Download kenv next
+        if: needs.tag.outputs.kit_tag == 'next'
+        uses: johnlindquist/kit-action@next
+        with:
+          script: download-kenv ${{ env.RELEASE_CHANNEL }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Assets main
+        if: needs.tag.outputs.kit_tag == 'main'
+        uses: johnlindquist/kit-action@$main
+        with:
+          script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} ${{ matrix.arch }} ${{ env.RELEASE_ID }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Assets next
+        if: needs.tag.outputs.kit_tag == 'next'
+        uses: johnlindquist/kit-action@next
         with:
           script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} ${{ matrix.arch }} ${{ env.RELEASE_ID }}
         env:
@@ -319,10 +356,18 @@ jobs:
             npm run vite-prebuild
             npx kit ./build.ts mac arm64 always
 
-      - name: Merge latest-mac.yml and latest-mac-arm64.yml
-        if: matrix.os == 'macos-13'
-        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
+      - name: Merge latest-mac.yml and latest-mac-arm64.yml with main
+        if: matrix.os == 'macos-13' && needs.tag.outputs.kit_tag == 'main'
+        uses: johnlindquist/kit-action@main
         with:
           script: merge-mac-latest-yml johnlindquist kitapp ${{ matrix.arch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge latest-mac.yml and latest-mac-arm64.yml with next
+        if: matrix.os == 'macos-13' && needs.tag.outputs.kit_tag == 'next'
+        uses: johnlindquist/kit-action@next
+        with:
+          script: merge-mac-next-yml johnlindquist kitapp ${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
