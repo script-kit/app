@@ -46,10 +46,9 @@ const afterSign = async function notarizeMacos(context: AfterPackContext) {
 
   await notarize({
     tool: 'notarytool',
-    appBundleId: build.appId,
     appPath: `${appOutDir}/${appName}.app`,
-    appleId: process.env.APPLE_ID,
-    appleIdPassword: process.env.APPLE_ID_PASS,
+    appleId: process.env?.APPLE_ID as string,
+    appleIdPassword: process.env?.APPLE_ID_PASS as string,
     teamId: '9822B7V7MD',
   });
 };
@@ -78,7 +77,7 @@ const config: Configuration = {
     entitlements: 'assets/entitlements.mac.plist', // Updated from package.json
     entitlementsInherit: 'assets/entitlements.mac.plist', // Added from package.json
     gatekeeperAssess: false, // Added from package.json
-    notarize: false, // Added from package.json
+    notarize: Boolean(process.env?.CI),
     extendInfo: {
       // Added from package.json
       CFBundleDocumentTypes: [

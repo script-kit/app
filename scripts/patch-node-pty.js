@@ -3,7 +3,7 @@
 import '@johnlindquist/kit';
 
 console.log(
-  `Patching node-pty with @homebridge/node-pty-prebuilt-multiarch ⛳️`
+  `Patching node-pty with @homebridge/node-pty-prebuilt-multiarch ⛳️`,
 );
 
 let ptyFilePath = path.resolve(process.env.PWD, 'src', 'pty.ts');

@@ -232,7 +232,7 @@ jobs:
             npm i
             npx kit remove-mac
             npx kit remove-node-window-manager
-            npx kit patch-node-pty
+            # npx kit patch-node-pty
             npm i @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             echo "--- Done removing mac deps ---\n\n"
@@ -261,7 +261,7 @@ jobs:
             npx kit remove-mac
             npx kit remove-nut
             npx kit remove-node-window-manager
-            npx kit patch-node-pty
+            # npx kit patch-node-pty
             npm i @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             echo "--- Done removing mac deps ---\n\n"
