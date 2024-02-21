@@ -31,6 +31,7 @@ jobs:
           echo "kit_tag has been set successfully."
 
   semantic:
+    needs: tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout git repo
@@ -45,7 +46,7 @@ jobs:
       - name: Verify that Semantic Release updated package.json
         run: |
           cat package.json
-          echo ${{ steps.tag.outputs.new_release_version }} > semantic-version.txt
+          echo ${{ steps.semantic.outputs.new_release_version }} > semantic-version.txt
           echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
 
       - name: Create Release main
@@ -67,8 +68,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Write the Release id to release-id.txt
+        if: needs.tag.outputs.kit_tag == 'main'
         run: |
-          echo ${{ steps.create_release.outputs.result }} > release-id.txt
+          echo ${{ steps.create_release_main.outputs.result }} > release-id.txt
+
+      - name: Write the Release id to release-id.txt
+        if: needs.tag.outputs.kit_tag == 'next'
+        run: |
+          echo ${{ steps.create_release_next.outputs.result }} > release-id.txt
 
       - name: Upload Semantic Version Artifact
         uses: actions/upload-artifact@v3
@@ -83,7 +90,7 @@ jobs:
           path: release-id.txt
 
   publish:
-    needs: semantic
+    needs: [tag, semantic]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
