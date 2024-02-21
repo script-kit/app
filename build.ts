@@ -2,13 +2,18 @@ import '@johnlindquist/kit';
 import fsExtra from 'fs-extra';
 const { readJson } = fsExtra;
 import { Arch, Platform, build } from 'electron-builder';
-import type { Configuration, PackagerOptions } from 'electron-builder';
+import type {
+  AfterPackContext,
+  Configuration,
+  PackagerOptions,
+} from 'electron-builder';
+import { notarize } from '@electron/notarize';
 
 const platform = await arg('platform');
 const arch = await arg('arch');
 const publish = await arg('publish');
 
-console.log(`Building for ${platform} ${arch} ${publish}`);
+console.log(`🛠️ Building for ${platform} ${arch} ${publish}`);
 
 const pkg = await readJson('package.json');
 const excludeDevDependencies = Object.keys(pkg.devDependencies).map(
@@ -17,20 +22,37 @@ const excludeDevDependencies = Object.keys(pkg.devDependencies).map(
 
 console.log('Excluding devDependencies', excludeDevDependencies);
 
-// const asarUnpack = [
-//   'node_modules/node-mac-permissions/**/*',
-//   'node_modules/@johnlindquist/**/*',
-//   'node_modules/@nut-tree/**/*',
-//   'node_modules/@sentry/**/*',
-//   'node_modules/node-pty/**/*',
-//   'node_modules/clipboardy/**/*',
-//   'node_modules/native-keymap/**/*',
-//   'node_modules/bindings/**/*',
-//   'node_modules/file-uri-to-path/**/*',
-//   'node_modules/detect-port/**/*',
-// ];
-
 const asarUnpack = ['assets/**/*'];
+
+const afterSign = async function notarizeMacos(context: AfterPackContext) {
+  const { electronPlatformName, appOutDir } = context;
+  if (electronPlatformName !== 'darwin') {
+    return;
+  }
+
+  if (!process.env.CI) {
+    console.warn('Skipping notarizing step. Packaging is not running in CI');
+    return;
+  }
+
+  if (!('APPLE_ID' in process.env && 'APPLE_ID_PASS' in process.env)) {
+    console.warn(
+      'Skipping notarizing step. APPLE_ID and APPLE_ID_PASS env variables must be set',
+    );
+    return;
+  }
+
+  const appName = context.packager.appInfo.productFilename;
+
+  await notarize({
+    tool: 'notarytool',
+    appBundleId: build.appId,
+    appPath: `${appOutDir}/${appName}.app`,
+    appleId: process.env.APPLE_ID,
+    appleIdPassword: process.env.APPLE_ID_PASS,
+    teamId: '9822B7V7MD',
+  });
+};
 
 const config: Configuration = {
   appId: 'app.scriptkit', // Updated appId from package.json
@@ -42,8 +64,7 @@ const config: Configuration = {
   },
   asar: true,
   asarUnpack,
-
-  // afterSign: !isTestBuild ? '.erb/scripts/Notarize.js' : undefined, // Updated from package.json
+  afterSign,
   nsis: {
     oneClick: false,
     perMachine: false,

@@ -2,7 +2,9 @@
 
 console.log(`Removing tick 🐞`);
 
-let srcFilePath = path.resolve(process.env.PWD, 'src', '*').replace(/\\/g, '/');
+let srcFilePath = path
+  .resolve(process.env.PWD, 'src', '**', '*')
+  .replace(/\\/g, '/');
 console.log({
   mainFilePath: srcFilePath,
 });

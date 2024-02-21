@@ -4,7 +4,9 @@ import '@johnlindquist/kit';
 
 console.log(`Removing NODE-WINDOW-MANAGER ⛳️`);
 
-let srcFilePath = path.resolve(process.env.PWD, 'src', '*').replace(/\\/g, '/');
+let srcFilePath = path
+  .resolve(process.env.PWD, 'src', '**', '*')
+  .replace(/\\/g, '/');
 console.log({
   mainFilePath: srcFilePath,
 });
