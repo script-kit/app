@@ -73,7 +73,17 @@ jobs:
       - name: Set release_id output from create_release_main or create_release_next
         id: set_release_id
         run: |
-          echo "release_id=${{ steps.create_release_main.outputs.release_id || steps.create_release_next.outputs.release_id }}" >> $GITHUB_OUTPUT
+          echo "Determining release_id based on the workflow step outputs..."
+          if [ -n "${{ steps.create_release_main.outputs.release_id }}" ]; then
+            echo "Found release_id from 'create_release_main': ${{ steps.create_release_main.outputs.release_id }}."
+            echo "release_id=${{ steps.create_release_main.outputs.release_id }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ steps.create_release_next.outputs.release_id }}" ]; then
+            echo "Found release_id from 'create_release_next': ${{ steps.create_release_next.outputs.release_id }}."
+            echo "release_id=${{ steps.create_release_next.outputs.release_id }}" >> $GITHUB_OUTPUT
+          else
+            echo "Failed to determine release_id from the workflow step outputs."
+            exit 1
+          fi
 
   publish:
     needs: [tag, semantic]
