@@ -33,7 +33,7 @@ jobs:
   semantic:
     outputs:
       release_id: ${{ steps.set_release_id.outputs.release_id }}
-      semantic_version: ${{ steps.semantic_version.outputs.new_release_version }}
+      semantic_version: ${{ steps.semantic_version.outputs.semantic_version }}
     needs: tag
     runs-on: ubuntu-latest
     steps:
