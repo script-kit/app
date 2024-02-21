@@ -16,3 +16,4 @@ let releaseResponse = await octokit.rest.repos.createRelease({
 console.log(releaseResponse);
 
 core.setOutput('result', releaseResponse.data.id);
+await writeFile('release-id.txt', releaseResponse.data.id);

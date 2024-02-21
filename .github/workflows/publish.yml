@@ -49,23 +49,23 @@ jobs:
           echo ${{ steps.semantic.outputs.new_release_version }} > semantic-version.txt
           echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
 
-      - name: Create Release
-        id: create_release
-        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
+      - name: Create Release main
+        if: needs.tag.outputs.kit_tag == 'main'
+        id: create_release_main
+        uses: johnlindquist/kit-action@main
         with:
           script: create-release ${{ env.SEMANTIC_VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Write the Release id to release-id.txt
-        if: needs.tag.outputs.kit_tag == 'main'
-        run: |
-          echo ${{ steps.create_release_main.outputs.result }} > release-id.txt
-
-      - name: Write the Release id to release-id.txt
+      - name: Create Release next
         if: needs.tag.outputs.kit_tag == 'next'
-        run: |
-          echo ${{ steps.create_release_next.outputs.result }} > release-id.txt
+        id: create_release_next
+        uses: johnlindquist/kit-action@next
+        with:
+          script: create-release ${{ env.SEMANTIC_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Semantic Version Artifact
         uses: actions/upload-artifact@v3
