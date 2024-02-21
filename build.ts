@@ -37,7 +37,7 @@ const config: Configuration = {
   artifactName: '${productName}-macOS-${version}-${arch}.${ext}',
   productName: 'Kit', // Updated productName from package.json
   directories: {
-    output: './dist',
+    output: './release',
     buildResources: 'assets', // Added from package.json
   },
   asar: true,
