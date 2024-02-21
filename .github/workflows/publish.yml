@@ -12,7 +12,7 @@ on:
       - next
 
 jobs:
-  semantic:
+  tag:
     outputs:
       kit_tag: ${{ steps.set_kit_tag.outputs.kit_tag }}
     runs-on: ubuntu-latest
@@ -30,6 +30,9 @@ jobs:
           fi
           echo "kit_tag has been set successfully."
 
+  semantic:
+    runs-on: ubuntu-latest
+    steps:
       - name: Checkout git repo
         uses: actions/checkout@v4
 
@@ -42,12 +45,12 @@ jobs:
       - name: Verify that Semantic Release updated package.json
         run: |
           cat package.json
-          echo ${{ steps.semantic.outputs.new_release_version }} > semantic-version.txt
+          echo ${{ steps.tag.outputs.new_release_version }} > semantic-version.txt
           echo "SEMANTIC_VERSION=$(cat semantic-version.txt)" >> $GITHUB_ENV
 
       - name: Create Release
         id: create_release
-        uses: johnlindquist/kit-action@${{ needs.semantic.outputs.kit_tag }}
+        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
         with:
           script: create-release ${{ env.SEMANTIC_VERSION }}
         env:
@@ -115,7 +118,7 @@ jobs:
           echo "RELEASE_ID=$(cat release-id.txt)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Write the Semantic Version to package.json version property
-        uses: johnlindquist/kit-action@${{ needs.semantic.outputs.kit_tag }}
+        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
         with:
           script: update-package-version ${{ env.SEMANTIC_VERSION }}
         env:
@@ -137,14 +140,14 @@ jobs:
           python-version: '3.11'
 
       - name: Download kenv
-        uses: johnlindquist/kit-action@${{ needs.semantic.outputs.kit_tag }}
+        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
         with:
           script: download-kenv ${{ env.RELEASE_CHANNEL }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Assets
-        uses: johnlindquist/kit-action@${{ needs.semantic.outputs.kit_tag }}
+        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
         with:
           script: create-assets ${{ env.SEMANTIC_VERSION }} ${{ matrix.os }} ${{ matrix.arch }} ${{ env.RELEASE_ID }}
         env:
@@ -159,7 +162,7 @@ jobs:
       #   if: matrix.os == 'ubuntu-latest'
       #   run: echo "There is an issue with electron >=26 with something in the app causing a crash. It might be with the powerMonitor, but it's still not clear. This will have to be resolved before we can upgrade electron and move to ESM-only."
       #   env:
-      #     KIT_TAG: ${{ needs.semantic.outputs.kit_tag }}
+      #     KIT_TAG: ${{ needs.tag.outputs.kit_tag }}
       # # - name: npm i @johnlindquist/kit
       # #   if: matrix.os == 'ubuntu-latest'
       # #   run: |
@@ -183,7 +186,7 @@ jobs:
           timeout_minutes: 30
           command: |
             npm un node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
-            npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
+            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i
             npx kit remove-mac
             Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
@@ -202,7 +205,7 @@ jobs:
           timeout_minutes: 30
           command: |
             npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
-            npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
+            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i
             npx kit remove-tick
             npx kit remove-mac
@@ -234,7 +237,7 @@ jobs:
           timeout_minutes: 30
           command: |
             npm un node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
-            npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
+            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i
             npx kit remove-mac
             npx kit remove-node-window-manager
@@ -261,7 +264,7 @@ jobs:
           timeout_minutes: 30
           command: |
             npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
-            npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
+            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i
             npx kit remove-tick
             npx kit remove-mac
@@ -290,7 +293,7 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
+            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i
             npm run vite-prebuild
             npx kit ./build.ts mac x64 always
@@ -311,14 +314,14 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
+            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i
             npm run vite-prebuild
             npx kit ./build.ts mac arm64 always
 
       - name: Merge latest-mac.yml and latest-mac-arm64.yml
         if: matrix.os == 'macos-13'
-        uses: johnlindquist/kit-action@${{ needs.semantic.outputs.kit_tag }}
+        uses: johnlindquist/kit-action@${{ needs.tag.outputs.kit_tag }}
         with:
           script: merge-mac-latest-yml johnlindquist kitapp ${{ matrix.arch }}
         env:
