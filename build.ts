@@ -25,6 +25,7 @@ console.log('Excluding devDependencies', excludeDevDependencies);
 const asarUnpack = ['assets/**/*'];
 
 const afterSign = async function notarizeMacos(context: AfterPackContext) {
+  console.log('Attempting notarization', context);
   const { electronPlatformName, appOutDir } = context;
   if (electronPlatformName !== 'darwin') {
     return;
@@ -77,7 +78,6 @@ const config: Configuration = {
     entitlements: 'assets/entitlements.mac.plist', // Updated from package.json
     entitlementsInherit: 'assets/entitlements.mac.plist', // Added from package.json
     gatekeeperAssess: false, // Added from package.json
-    notarize: Boolean(process.env?.CI),
     extendInfo: {
       // Added from package.json
       CFBundleDocumentTypes: [

@@ -13,16 +13,22 @@ on:
 
 jobs:
   semantic:
+    outputs:
+      kit_tag: ${{ steps.set_kit_tag.outputs.kit_tag }}
     runs-on: ubuntu-latest
     steps:
-      - name: Set @johnlindquist/kit@tag to next or main
-        id: set_kit_version
+      - name: Set kit_tag to next or main
+        id: set_kit_tag
         run: |
+          echo "Determining the kit_tag based on the branch name..."
           if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "Branch is 'main'. Setting kit_tag to 'latest'."
             echo "kit_tag=latest" >> $GITHUB_OUTPUT
           else
+            echo "Branch is not 'main'. Assuming it's 'next'. Setting kit_tag to 'next'."
             echo "kit_tag=next" >> $GITHUB_OUTPUT
           fi
+          echo "kit_tag has been set successfully."
 
       - name: Checkout git repo
         uses: actions/checkout@v4
@@ -227,13 +233,13 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm un node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
+            npm un node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
             npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
             npm i
             npx kit remove-mac
             npx kit remove-node-window-manager
             # npx kit patch-node-pty
-            npm i @homebridge/node-pty-prebuilt-multiarch
+            # npm i @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             echo "--- Done removing mac deps ---\n\n"
             npm run vite-prebuild
@@ -254,7 +260,7 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager node-pty
+            npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
             npm i @johnlindquist/kit@${{ needs.semantic.outputs.kit_tag }}
             npm i
             npx kit remove-tick
@@ -262,7 +268,7 @@ jobs:
             npx kit remove-nut
             npx kit remove-node-window-manager
             # npx kit patch-node-pty
-            npm i @homebridge/node-pty-prebuilt-multiarch
+            # npm i @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             echo "--- Done removing mac deps ---\n\n"
             npm run vite-prebuild
