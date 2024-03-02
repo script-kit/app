@@ -8,6 +8,7 @@ import { kitState } from '../shared/state';
 import { sendToAllPrompts } from './channel';
 import { setTheme } from './process';
 import { AppChannel } from '../shared/enums';
+import { WatchEvent } from './chokidar';
 
 export const setCSSVariable = (name: string, value: undefined | string) => {
   if (value) {
@@ -44,9 +45,7 @@ const extractAndSetCSSVariables = (css: string) => {
   }
 };
 
-export const readKitCss = async (
-  eventName: 'change' | 'unlink' | 'add' = 'change'
-) => {
+export const readKitCss = async (eventName: WatchEvent = 'change') => {
   log.info(`kit.css ${eventName}`);
   let css = '';
   kitState.hasCss = eventName !== 'unlink';

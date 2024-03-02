@@ -160,7 +160,7 @@ export const showInspector = (url: string): BrowserWindow => {
       nodeIntegration: true,
       contextIsolation: false,
       webSecurity: false,
-      preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)),
+      // preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)),
     },
     // alwaysOnTop: true,
   });

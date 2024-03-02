@@ -2712,6 +2712,12 @@ export const inputFontSizeAtom = atom((g) => {
   return fontSize;
 });
 
+export const listProcessesActionAtom = atom((g) => {
+  const shortcuts = g(shortcutsAtom);
+  const action = shortcuts.find((s) => s?.key?.endsWith('p'));
+  return action;
+});
+
 export const signInActionAtom = atom((g) => {
   const shortcuts = g(shortcutsAtom);
   const action = shortcuts.find((s) => s?.flag === 'sign-in-to-script-kit');

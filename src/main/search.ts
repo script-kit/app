@@ -22,7 +22,7 @@ import { cacheChoices } from './messages';
 export const invokeSearch = (
   prompt: KitPrompt,
   rawInput: string,
-  reason = 'normal'
+  reason = 'normal',
 ) => {
   if (prompt.ui !== UI.arg) return;
 
@@ -32,7 +32,7 @@ export const invokeSearch = (
     // eslint-disable-next-line no-param-reassign
     transformedInput = rawInput.match(prompt.kitSearch.inputRegex)?.[0] || '';
     log.silly(
-      `Transformed input: ${transformedInput} using regex ${prompt.kitSearch.inputRegex}`
+      `Transformed input: ${transformedInput} using regex ${prompt.kitSearch.inputRegex}`,
     );
   }
 
@@ -76,12 +76,12 @@ export const invokeSearch = (
     return;
   }
   const result = (prompt.kitSearch?.qs as QuickScore<Choice>)?.search(
-    transformedInput
+    transformedInput,
   ) as ScoredChoice[];
 
   // Get result length, but filter out info and miss choices
   const resultLength = result.filter(
-    (r) => !r?.item?.info && !r?.item?.miss
+    (r) => !r?.item?.info && !r?.item?.miss,
   ).length;
 
   if (prompt.kitSearch.hasGroup) {
@@ -212,7 +212,7 @@ export const invokeSearch = (
     // loop through removeGroups and remove groups that have no results
     // Sort removeGroups by index in descending order
     const sortedRemoveGroups = Array.from(removeGroups).sort(
-      (a, b) => b[1].index - a[1].index
+      (a, b) => b[1].index - a[1].index,
     );
     for (const [group, { count, index }] of sortedRemoveGroups) {
       // log.info(`Group ${group} has ${count} results at ${index}`);
@@ -251,7 +251,7 @@ export const invokeSearch = (
           className: defaultGroupClassName,
           height: PROMPT.ITEM.HEIGHT.XXXS,
           id: Math.random().toString(),
-        })
+        }),
       );
 
       startsWithGroup.push(...includesGroup);
@@ -275,7 +275,7 @@ export const invokeSearch = (
           className: defaultGroupClassName,
           height: PROMPT.ITEM.HEIGHT.XXXS,
           id: Math.random().toString(),
-        })
+        }),
       );
       groupedResults.push(...matchLastGroup);
     }
@@ -296,7 +296,7 @@ export const invokeSearch = (
           height: PROMPT.ITEM.HEIGHT.XXXS,
           id: Math.random().toString(),
         }),
-        createScoredChoice(alias)
+        createScoredChoice(alias),
       );
     }
 
@@ -392,7 +392,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
       prompt,
       prompt.flagSearch.choices
         .filter((c) => !c?.pass && !c?.hideWithoutInput && !c?.miss)
-        .map(createScoredChoice)
+        .map(createScoredChoice),
     );
     return;
   }
@@ -466,7 +466,10 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
   }
 };
 
-export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) => {
+export const setFlags = (
+  prompt: KitPrompt,
+  f: FlagsWithKeys & Partial<Choice>,
+) => {
   const order = f?.order || [];
   const sortChoicesKey = f?.sortChoicesKey || [];
 
@@ -512,7 +515,7 @@ export const setFlags = (prompt: KitPrompt, f: FlagsWithKeys & Partial<Choice>) 
         maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
           ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
           : 3,
-      })
+      }),
     );
   }
 
@@ -569,12 +572,14 @@ export const setShortcodes = (prompt: KitPrompt, choices: Choice[]) => {
 
   // Log the keywords and shortcodes
   log.info(
-    `🗝 ${prompt.kitSearch.keywords.size} keywords, ${prompt.kitSearch.shortcodes.size} shortcodes, ${prompt.kitSearch.postfixes.size} postfixes, ${prompt.kitSearch.triggers.size} triggers`
+    `🗝 ${prompt.kitSearch.keywords.size} keywords, ${prompt.kitSearch.shortcodes.size} shortcodes, ${prompt.kitSearch.postfixes.size} postfixes, ${prompt.kitSearch.triggers.size} triggers`,
   );
 };
 
 export const appendChoices = (prompt: KitPrompt, choices: Choice[]) => {
-  setChoices(prompt, prompt.kitSearch.choices.concat(choices), { preload: false });
+  setChoices(prompt, prompt.kitSearch.choices.concat(choices), {
+    preload: false,
+  });
 };
 
 export const setChoices = (
@@ -584,7 +589,7 @@ export const setChoices = (
     preload,
     skipInitialSearch,
     generated,
-  }: { preload: boolean; skipInitialSearch?: boolean; generated?: boolean }
+  }: { preload: boolean; skipInitialSearch?: boolean; generated?: boolean },
 ) => {
   log.info(`setChoices!!!!!!!!!!`, {
     isArray: Array.isArray(choices),
@@ -596,18 +601,18 @@ export const setChoices = (
   const sendToPrompt = prompt.sendToPrompt;
   sendToPrompt(
     Channel.SET_SELECTED_CHOICES,
-    (choices || []).filter((c: Choice) => c?.selected)
+    (choices || []).filter((c: Choice) => c?.selected),
   );
 
   if (prompt.cacheScriptChoices) {
     log.info(
-      `Caching script choices for ${prompt.scriptPath}: ${choices.length}`
+      `Caching script choices for ${prompt.scriptPath}: ${choices.length}`,
     );
     cacheChoices(prompt.scriptPath, choices);
     prompt.cacheScriptChoices = false;
-  } else {
+  } else if (prompt?.scriptPath && choices?.length) {
     log.info(
-      `Not caching script choices for ${prompt.scriptPath}: ${choices.length}`
+      `Not caching script choices for ${prompt.scriptPath}: ${choices.length}`,
     );
   }
 
@@ -637,7 +642,7 @@ export const setChoices = (
         maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
           ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
           : 3,
-      })
+      }),
     );
   }
 
@@ -663,7 +668,7 @@ export const setChoices = (
 
 export const setScoredChoices = (
   prompt: KitPrompt,
-  choices: ScoredChoice[]
+  choices: ScoredChoice[],
 ) => {
   if (choices?.length) {
     log.info(`🎼 Scored choices count: ${choices.length}`);
@@ -679,7 +684,7 @@ export const setScoredChoices = (
     choices?.length
   ) {
     log.info(
-      `Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`
+      `Caching main scored choices: ${choices.length}. First choice: ${choices[0]?.item?.name}`,
     );
     sendToPrompt(AppChannel.SET_CACHED_MAIN_SCORED_CHOICES, choices);
   }
@@ -687,7 +692,7 @@ export const setScoredChoices = (
 
 export const setScoredFlags = (
   prompt: KitPrompt,
-  choices: ScoredChoice[] = []
+  choices: ScoredChoice[] = [],
 ) => {
   log.silly(`🎼 Scored flags count: ${choices.length}`);
   prompt.sendToPrompt(Channel.SET_SCORED_FLAGS, choices);

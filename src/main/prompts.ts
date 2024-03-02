@@ -12,17 +12,30 @@ export const prompts = {
       this.idle = new KitPrompt();
       hasIdlePrompt = true;
       log.info(
-        `🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`
+        `🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`,
       );
       return true;
     }
 
     return false;
   },
+  createDebuggedPrompt: async function () {
+    this.createPromptIfNoIdle();
+    if (!this.idle?.ready) {
+      log.info(`🐞 Waiting for prompt to be ready...`);
+      await this.idle?.waitForReady();
+    }
+    log.info(
+      `${this?.idle?.pid}: 🌅 Idle prompt ready with window id:${this.idle?.window?.id}`,
+    );
+    return this.idle;
+  },
   focused: null as KitPrompt | null,
   attachIdlePromptToProcess(pid: number) {
     const created = this.createPromptIfNoIdle();
-    log.info(`🔗 Attaching idle prompt to process ${pid}`);
+    log.info(
+      `🔗 Attaching idle prompt ${this?.idle?.window?.id} to process ${pid}`,
+    );
     const prompt = this.idle as KitPrompt;
     hasIdlePrompt = false;
 

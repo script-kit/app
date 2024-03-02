@@ -179,7 +179,7 @@ export const runPromptProcess = async (
   const isSplash = prompt.ui === UI.splash;
   log.info(`>>>
 
-🧤 Show and focus ${promptScriptPath} ${prompt.count} ${pid}
+  ${pid}:${prompt.window?.id}: 🧤 Show and focus ${promptScriptPath}
 
   <<<`);
   // if (options?.main) {

@@ -35,6 +35,7 @@ export enum KitEvent {
   HideDock = 'HideDock',
   ForceQuit = 'ForceQuit',
   MAIN_SCRIPT_TRIGGERED = 'MAIN_SCRIPT_TRIGGERED',
+  ProcessGone = 'ProcessGone',
 }
 
 interface KitEmitter {

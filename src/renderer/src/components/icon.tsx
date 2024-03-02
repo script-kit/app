@@ -1,13 +1,18 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { loadable } from 'jotai/utils';
-import React from 'react';
 
-const { ipcRenderer } = window.electron;
-import { createAssetAtom, loadingAtom } from '../jotai';
-import { AppChannel } from '../../../shared/enums';
+import {
+  createAssetAtom,
+  isMainScriptAtom,
+  listProcessesActionAtom,
+  loadingAtom,
+  runMainScriptAtom,
+  runProcessesAtom,
+  sendShortcutAtom,
+} from '../jotai';
 
 const loadableIconAtom = loadable(createAssetAtom('svg', 'logo.svg'));
 const transition = { duration: 0.0, ease: 'easeInOut' };
@@ -31,6 +36,12 @@ const iconContext = {
 export function IconButton() {
   const loading = useAtomValue(loadingAtom);
   const [lazyIcon] = useAtom(loadableIconAtom);
+  const isMainScript = useAtomValue(isMainScriptAtom);
+  const runProcesses = useAtomValue(runProcessesAtom);
+  const runMainProcess = useAtomValue(runMainScriptAtom);
+  const listProcessesAction = useAtomValue(listProcessesActionAtom);
+  const sendShortcut = useSetAtom(sendShortcutAtom);
+
   if (lazyIcon.state === 'hasError') return <span>{lazyIcon.error}</span>;
   if (lazyIcon.state === 'loading') {
     return <span>Loading...</span>;
@@ -53,7 +64,11 @@ export function IconButton() {
       <a
         onClick={(e) => {
           e.preventDefault();
-          ipcRenderer.send(AppChannel.RUN_MAIN_SCRIPT);
+          if (isMainScript) {
+            sendShortcut(listProcessesAction?.key);
+          } else {
+            runMainProcess();
+          }
         }}
         tabIndex={-1}
       >

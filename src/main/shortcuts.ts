@@ -6,7 +6,6 @@ import { debounce } from 'lodash-es';
 
 import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 
-import { UI } from '@johnlindquist/kit/core/enum';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from '../shared/events';
 

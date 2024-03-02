@@ -17,6 +17,7 @@ import {
   kenvPath,
   resolveToScriptPath,
   getMainScriptPath,
+  statsPath,
 } from '@johnlindquist/kit/core/utils';
 
 import { FSWatcher } from 'chokidar';
@@ -145,11 +146,21 @@ const checkFileImports = debounce(async (script: Script) => {
   }
 }, 25);
 
+let firstBatch = true;
+let firstBatchTimeout: NodeJS.Timeout;
 export const onScriptsChanged = async (
   event: WatchEvent,
   filePath: string,
   rebuilt = false,
 ) => {
+  if (firstBatch) {
+    if (firstBatchTimeout) clearTimeout(firstBatchTimeout);
+    firstBatchTimeout = setTimeout(() => {
+      firstBatch = false;
+      log.info(`Finished parsing scripts ✅`);
+    }, 1000);
+  }
+
   log.verbose(`👀 ${event} ${filePath}`);
   if (event === 'unlink') {
     unlink(filePath);
@@ -174,7 +185,7 @@ export const onScriptsChanged = async (
     backgroundScriptChanged(script);
     addSnippet(script);
 
-    if (kitState.ready && !rebuilt) {
+    if (kitState.ready && !rebuilt && !firstBatch) {
       debounceSetScriptTimestamp({ filePath, changeStamp: Date.now() });
       if (event === 'change') {
         checkFileImports(script);
@@ -515,7 +526,7 @@ export const setupWatchers = async () => {
       return;
     }
 
-    if (base === 'stats.json') {
+    if (base === path.basename(statsPath)) {
       log.info(`stats.json changed`);
       cacheMainScripts();
       return;

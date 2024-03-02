@@ -97,9 +97,7 @@ export const showSplash = async () => {
     }
   });
 
-  splashPrompt.window.show();
-
-  splashPrompt.messagesReadyCallback = () => {
+  splashPrompt.readyEmitter.once('ready', async () => {
     splashPrompt?.setPromptData({
       show: true,
       ui: UI.splash,
@@ -107,7 +105,15 @@ export const showSplash = async () => {
       width: PROMPT.WIDTH.BASE,
       height: PROMPT.HEIGHT.BASE,
     } as any);
-  };
+
+    await new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve(true);
+      }, 200);
+    });
+
+    splashPrompt?.window.show();
+  });
 
   sendSplashHeader(`Installing Kit SDK and Kit Environment...`);
 };
@@ -710,9 +716,9 @@ const scoreAndCacheMainChoices = (scripts: Script[]) => {
   kitCache.choices = results;
 
   for (const prompt of prompts) {
-    if (!prompt.isVisible()) {
-      prompt.initMainChoices();
-    }
+    // if (!prompt.isVisible()) {
+    prompt.initMainChoices();
+    // }
   }
 };
 

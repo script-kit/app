@@ -533,8 +533,6 @@ ${data.error}
           }
         }
 
-        if (channel === Channel.BLUR && kitState.debugging) return;
-
         if (
           channel === Channel.ESCAPE ||
           (channel === Channel.SHORTCUT && message.state.shortcut === 'escape')
@@ -542,11 +540,9 @@ ${data.error}
           kitState.shortcutsPaused = false;
           log.verbose({
             submitted: message.state.submitted,
-            debugging: kitState.debugging,
             pid: child.pid,
           });
-          if (message.state.submitted || kitState.debugging) {
-            kitState.debugging = false;
+          if (message.state.submitted) {
             child.kill();
             return;
           }

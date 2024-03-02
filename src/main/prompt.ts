@@ -86,6 +86,7 @@ import { ProcessAndPrompt, processes } from './process';
 import { QuickScore } from 'quick-score';
 import { createPty } from './pty';
 import { cliFromParams, runPromptProcess } from './kit';
+import EventEmitter from 'events';
 
 contextMenu({
   showInspectElement: process.env.NODE_ENV === 'development',
@@ -525,7 +526,6 @@ export class KitPrompt {
   id = ``;
   pid = 0;
   initMain = true;
-  messagesReadyCallback: () => void = () => {};
   script = noScript;
   scriptPath = ``;
   allowResize = true;
@@ -535,6 +535,7 @@ export class KitPrompt {
   firstPrompt = true;
   justFocused = true;
   ready = false;
+  shown = false;
   alwaysOnTop = true;
   hideOnEscape = false;
   cacheScriptChoices = false;
@@ -614,7 +615,7 @@ export class KitPrompt {
     if (this.boundToProcess) return;
     this.pid = pid;
     this.boundToProcess = true;
-    log.info(`${pid}: 🔗 Binding prompt to process`);
+    log.info(`${pid} -> ${this?.window?.id}: 🔗 Binding prompt to process`);
   };
 
   promptBounds = {
@@ -625,6 +626,16 @@ export class KitPrompt {
     height: 0,
   };
 
+  readyEmitter = new EventEmitter();
+
+  waitForReady = async () => {
+    return new Promise<void>((resolve) => {
+      this.readyEmitter.once('ready', () => {
+        log.info(`${this?.window?.id} 🎉 Ready because ready emit`);
+        resolve();
+      });
+    });
+  };
   constructor() {
     ipcMain.on(AppChannel.GET_KIT_CONFIG, (event) => {
       event.returnValue = {
@@ -789,7 +800,7 @@ export class KitPrompt {
       },
     );
 
-    this.window.webContents?.on('did-finish-load', () => {
+    this.window.webContents?.once('did-finish-load', () => {
       kitState.hiddenByUser = false;
       kitState.promptHidden = true;
 
@@ -832,7 +843,8 @@ export class KitPrompt {
           this.initPrompt();
         }
 
-        this.messagesReadyCallback();
+        this.readyEmitter.emit('ready');
+        this.ready = true;
       };
 
       ipcMain.once(AppChannel.MESSAGES_READY, messagesReadyHandler);
@@ -947,10 +959,11 @@ export class KitPrompt {
     });
 
     const onBlur = async () => {
-      log.info(`🙈 Prompt window blurred`, {
-        isPromptReady: this.ready,
-        isActivated: kitState.isActivated,
-      });
+      // log.info(`🙈 Prompt window blurred`, {
+      //   isPromptReady: this.ready,
+      //   isActivated: kitState.isActivated,
+      // });
+
       if (this.justFocused && this.isVisible()) {
         log.info(`🙈 Prompt window was just focused. Ignore blur`);
 
@@ -963,7 +976,7 @@ export class KitPrompt {
         kitState.emojiActive = false;
       }
 
-      if (!this.ready) return;
+      if (!this.shown) return;
 
       if (this.window.isDestroyed()) return;
       if (kitState.isActivated) {
@@ -1046,7 +1059,6 @@ export class KitPrompt {
 
     this.window.on('hide', () => {
       log.info(`🫣 Prompt window hidden`);
-      this.ready = false;
       kitState.promptHidden = true;
 
       if (!kitState.isLinux) {
@@ -1072,19 +1084,25 @@ export class KitPrompt {
     );
 
     this.window.webContents?.on('did-stop-loading', () => {
-      log.info(`${this.pid}: ${this.scriptName}: did-stop-loading`);
+      log.info(
+        `${this.pid}:${this?.window?.id}: ${this.scriptName}: did-stop-loading`,
+      );
     });
 
     this.window.webContents?.on('dom-ready', () => {
-      log.info(`${this.pid}: 🍀 dom-ready on ${this?.scriptPath}`);
+      log.info(
+        `${this.pid}:${this?.window?.id} 🍀 dom-ready on ${this?.scriptPath}`,
+      );
 
       // hideAppIfNoWindows(HideReason.DomReady);
       this.sendToPrompt(Channel.SET_READY, true);
     });
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
-      this.window.show();
-      this.window.webContents?.openDevTools();
+      // this.window.show();
+      // this.window.webContents?.openDevTools();
+
+      processes.removeByPid(this.pid);
       this.sendToPrompt = () => {};
       this.window.webContents.send = () => {};
       // processes.removeByPid(this.pid);
@@ -1256,7 +1274,7 @@ export class KitPrompt {
 
     setTimeout(() => {
       if (!this?.window || this.window?.isDestroyed()) return;
-      this.ready = true;
+      this.shown = true;
     }, 100);
   };
 
@@ -2091,7 +2109,6 @@ export class KitPrompt {
 
     if (reason === HideReason.PingTimeout) {
       log.info(`⛑ Attempting recover...`);
-      kitState.debugging = false;
 
       emitter.emit(KitEvent.KillProcess, this.pid);
       this.actualHide();
@@ -2105,7 +2122,6 @@ export class KitPrompt {
       return;
     }
 
-    if (kitState.debugging) return;
     if (this.window?.isVisible()) {
       log.info(`Hiding because ${reason}`);
       if (!kitState.preventClose) {
@@ -2226,14 +2242,14 @@ export class KitPrompt {
 
       if (changed) {
         if (onTop) {
-          makeKeyWindow(this.window);
+          // makeKeyWindow(this.window);
         } else {
-          makeWindow(this.window);
+          // makeWindow(this.window);
         }
       }
 
       if (onTop && changed) {
-        this.window.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
+        this.window.setAlwaysOnTop(onTop, 'pop-up-menu');
 
         if (kitState.isMac) {
           this.window.moveTop();
@@ -2242,17 +2258,17 @@ export class KitPrompt {
         }
       } else if (changed) {
         log.info({ onTop });
-        this.window.setAlwaysOnTop(true, 'normal', 10);
+        this.window.setAlwaysOnTop(true, 'pop-up-menu');
         setTimeout(() => {
           if (!this?.window || this.window?.isDestroyed()) return;
-          this.window.setAlwaysOnTop(onTop, 'normal', 10);
+          this.window.setAlwaysOnTop(onTop, 'pop-up-menu');
         }, 100);
 
         if (!kitState.isMac) {
           this.window.setVisibleOnAllWorkspaces(false);
         }
       } else {
-        this.window.setAlwaysOnTop(onTop, 'pop-up-menu', 1);
+        this.window.setAlwaysOnTop(onTop, 'pop-up-menu');
       }
     } else {
       this.alwaysOnTop = false;

@@ -382,25 +382,28 @@ const createChild = ({
   let win: BrowserWindow | null = null;
 
   if (port && child && child.stdout && child.stderr) {
-    // TODO: Reimplement SET_PROMPT_DATA for debugger
-    // sendToSpecificPrompt(Channel.SET_PROMPT_DATA, {
-    //   ui: UI.debugger,
-    // } as any);
-    log.info(`Created ${type} process`);
-    // child.stdout.on('data', (data) => {
-    //   log.info(`Child ${type} data`, data);
-    // });
-
-    child.once('disconnect', () => {
-      if (!child.killed) {
+    const closeWindowIfNotDestroyed = () => {
+      log.info(`${child?.pid}: 🚪 Close window if not destroyed`);
+      if (child && !child.killed) {
+        log.info(`${child.pid}: 🐞 Remove debugger process by pid`);
         child.kill();
       }
-    });
 
-    child.once('exit', () => {
-      kitState.debugging = false;
       if (win && !win.isDestroyed()) {
-        win.close();
+        win?.webContents?.closeDevTools();
+        win?.webContents?.close();
+        win?.close();
+        win?.destroy();
+      }
+    };
+
+    let parentPid = child.pid;
+    emitter.once(KitEvent.ProcessGone, (pid) => {
+      log.info(
+        `Kill process: ${pid}, checking if it's the parent of ${child.pid}`,
+      );
+      if (pid === parentPid) {
+        closeWindowIfNotDestroyed();
       }
     });
 
@@ -409,27 +412,13 @@ const createChild = ({
       const [debugUrl] = data.toString().match(/(?<=ws:\/\/).*/g) || [''];
 
       if (debugUrl) {
-        if (child.pid) {
-          const prompt = prompts.get(child.pid);
-        }
-
         // TODO: I'm going to have to handle this outside of creatChild so it has access to the prompt created after it or something
         // setPromptAlwaysOnTop(true);
-        log.info({ debugUrl });
+        log.info({ debugUrl, pid: child?.pid });
         const devToolsUrl = `devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=${debugUrl}`;
         log.info(`DevTools URL: ${devToolsUrl}`);
 
         win = showInspector(devToolsUrl);
-        setTimeout(() => {
-          win?.setAlwaysOnTop(false);
-        }, 500);
-
-        win.on('close', () => {
-          if (child && !child.killed) child?.kill();
-          // TODO: I'm going to have to handle this outside of creatChild so it has access to the prompt created after it or something
-
-          // maybeHide(HideReason.DebuggerClosed);
-        });
       }
     });
 
@@ -660,18 +649,18 @@ class Processes extends Array<ProcessAndPrompt> {
       log.info(`${pid}: SPAWN`);
     });
 
-    child.on('close', () => {
+    child.once('close', () => {
       log.info(`${pid}: CLOSE`);
       processes.removeByPid(pid);
     });
 
-    child.on('disconnect', () => {
+    child.once('disconnect', () => {
       log.info(`${pid}: DISCONNECTED`);
       this.stampPid(pid);
       processes.removeByPid(pid);
     });
 
-    child.on('exit', (code) => {
+    child.once('exit', (code) => {
       log.info(`EXIT`, { pid, code });
       if (id) clearTimeout(id);
 
@@ -772,6 +761,7 @@ class Processes extends Array<ProcessAndPrompt> {
 
     if (!child?.killed) {
       emitter.emit(KitEvent.RemoveProcess, scriptPath);
+      emitter.emit(KitEvent.ProcessGone, pid);
       child?.removeAllListeners();
       child?.kill();
 

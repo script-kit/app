@@ -413,7 +413,7 @@ const ChatList: FC<IMessageListProps> = ({
                       {React.createElement(
                         domNode.name,
                         {},
-                        domToReact(domNode.children, options)
+                        domToReact(domNode.children, options),
                       )}
                     </div>
                   </div>
@@ -566,24 +566,24 @@ export function Chat() {
 
       inputRef.current?.addEventListener(
         'compositionstart',
-        handleCompositionStart
+        handleCompositionStart,
       );
 
       inputRef.current?.addEventListener(
         'compositionend',
-        handleCompositionEnd
+        handleCompositionEnd,
       );
     }
     return () => {
       if (inputRef?.current) {
         inputRef?.current.removeEventListener(
           'compositionstart',
-          handleCompositionStart
+          handleCompositionStart,
         );
 
         inputRef?.current.removeEventListener(
           'compositionend',
-          handleCompositionEnd
+          handleCompositionEnd,
         );
       }
     };
@@ -621,7 +621,7 @@ export function Chat() {
       setMessages,
       submitMessage,
       isComposing,
-    ]
+    ],
   );
 
   // state for cursor position
@@ -640,7 +640,7 @@ export function Chat() {
         onSubmit(e as any);
       }
     },
-    [onSubmit]
+    [onSubmit],
   );
 
   const onKeyUp = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -695,7 +695,7 @@ export function Chat() {
         // if new index is less than 0, set it to the tabIndex of the last message
 
         const element = document.querySelector(
-          `[tabindex="${newIndex}"]`
+          `[tabindex="${newIndex}"]`,
         ) as HTMLInputElement;
         if (element) {
           element?.focus();
@@ -714,7 +714,7 @@ export function Chat() {
         inputRef.current?.focus();
       }
     },
-    [channel, cursorPosition, messages.length]
+    [channel, cursorPosition, messages.length],
   );
 
   const onFocus = () => {

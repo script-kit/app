@@ -393,7 +393,7 @@ export default function App() {
     ipcRenderer.on(AppChannel.PROCESSES, processesHandler);
 
     const userChangedHandler = (_, data) => {
-      log.info(`${window.pid}: 👩‍💻 User changed`, data);
+      // log.info(`${window.pid}: 👩‍💻 User changed`, data?.username);
       setUser(data);
     };
     ipcRenderer.on(AppChannel.USER_CHANGED, userChangedHandler);
@@ -560,7 +560,10 @@ ${hasBorder ? `border border-ui-border` : ``}
               </header>
             )}
             {logVisible && <Console key="AppLog" />}
-            <main id="main" className="min-h-1 w-full flex-1 overflow-y-hidden">
+            <main
+              id="main"
+              className="min-h-[1px] w-full flex-1 overflow-y-hidden"
+            >
               <PanelGroup
                 direction="horizontal"
                 autoSaveId={script.filePath}

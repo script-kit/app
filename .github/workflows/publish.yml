@@ -209,7 +209,7 @@ jobs:
             cat ./package.json
             echo "--- Done removing mac deps ---\n\n"
             npm run vite-prebuild
-            npx kit ./build.ts mac x64 always
+            npx kit ./build.ts win x64 always
 
       - name: Publish windows arm64
         if: matrix.os == 'windows-latest' && matrix.arch == 'arm64'
