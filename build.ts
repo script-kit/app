@@ -36,13 +36,25 @@ const afterSign = async function notarizeMacos(context: AfterPackContext) {
 
   const appName = context.packager.appInfo.productFilename;
 
-  await notarize({
+  console.log('Notarizing', appName);
+  console.log(`Found envs:`, {
+    APPLE_ID: typeof process.env?.APPLE_ID,
+    APPLE_ID_PASS: typeof process.env?.APPLE_ID_PASS,
+    CSC_LINK: typeof process.env?.CSC_LINK,
+    CSC_KEY_PASSWORD: typeof process.env?.CSC_KEY_PASSWORD,
+    APPLE_APP_SPECIFIC_PASSWORD:
+      typeof process.env?.APPLE_APP_SPECIFIC_PASSWORD,
+  });
+
+  const notarizationResult = await notarize({
     tool: 'notarytool',
     appPath: `${appOutDir}/${appName}.app`,
     appleId: process.env?.APPLE_ID as string,
     appleIdPassword: process.env?.APPLE_ID_PASS as string,
     teamId: '9822B7V7MD',
   });
+
+  console.log('Notarization result', notarizationResult);
 };
 
 const asarUnpack = ['assets/**/*'];
