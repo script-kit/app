@@ -496,7 +496,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           if (w?.isDestroyed()) return;
 
           log.info(`${widgetId}: Widget closed`);
-          prompt?.focusPrompt();
+          if (prompt?.isVisible()) {
+            prompt?.focusPrompt();
+          }
 
           childSend({
             channel: Channel.WIDGET_END,

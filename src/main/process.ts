@@ -838,8 +838,12 @@ export const handleWidgetEvents = () => {
     if (!w) return;
     const { wid, moved, pid } = w;
     const widget = BrowserWindow.fromId(wid);
-    const { child } = processes.getByPid(pid) as ProcessInfo;
-    if (!child) return;
+    const pInfo = processes.getByPid(pid) as ProcessInfo;
+    if (!pInfo) {
+      log.error(`No process found for widget ${widgetId}`);
+      return;
+    }
+    if (!pInfo.child) return;
 
     if (moved) {
       w.moved = false;
@@ -848,10 +852,10 @@ export const handleWidgetEvents = () => {
 
     log.info(`👋 ${widgetId} Initialized`);
 
-    childSend(child, {
+    childSend(pInfo.child, {
       ...data,
       ...widget.getBounds(),
-      pid: child.pid,
+      pid: pInfo.child.pid,
       channel: Channel.WIDGET_INIT,
     });
   };
