@@ -155,7 +155,7 @@ const archFlag = Arch[arch as 'x64' | 'arm64'];
 
 switch (platform) {
   case 'mac':
-    targets = Platform.MAC.createTarget(['dmg'], archFlag);
+    targets = Platform.MAC.createTarget(['dmg', 'zip'], archFlag);
     break;
   case 'win':
     targets = Platform.WINDOWS.createTarget(['nsis'], archFlag);

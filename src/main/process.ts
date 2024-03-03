@@ -294,9 +294,9 @@ export const childSend = (child: ChildProcess, data: any) => {
 
 export const sendToAllActiveChildren = (data: any) => {
   // log.info(`Sending ${data?.channel} to all active children`);
-  processes.getActiveProcesses().forEach((processInfo) => {
+  for (const processInfo of processes.getActiveProcesses()) {
     childSend(processInfo.child, data);
-  });
+  }
 };
 
 export const createMessageHandler = (info: ProcessInfo) => {
