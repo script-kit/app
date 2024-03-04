@@ -166,9 +166,14 @@ switch (platform) {
 }
 
 console.log('Building with config');
-const result = await build({
-  config,
-  publish,
-  targets,
-});
-console.log('Build result', result);
+try {
+  const result = await build({
+    config,
+    publish,
+    targets,
+  });
+  console.log('Build result', result);
+} catch (e) {
+  console.error('Build failed', e);
+  process.exit(1);
+}
