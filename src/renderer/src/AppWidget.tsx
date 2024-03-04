@@ -95,6 +95,7 @@ export default function AppWidget() {
   }, []);
 
   useEffect(() => {
+    console.log(`Mounting widget with options: ${JSON.stringify(options)}`);
     const resize = () => {
       if (!document.body.firstElementChild) {
         return;
@@ -254,6 +255,7 @@ export default function AppWidget() {
     }).mount();
 
     return () => {
+      console.log('Unmounting widget');
       document.removeEventListener('click', handleClick);
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('input', handleInput);

@@ -22,6 +22,14 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
   },
   renderer: {
+    build: {
+      rollupOptions: {
+        input: {
+          browser: path.resolve(__dirname, 'src/renderer/index.html'),
+          webview: path.resolve(__dirname, 'src/renderer/widget.html'),
+        },
+      },
+    },
     resolve: {
       alias: {
         '@renderer': path.resolve('src/renderer/src'),

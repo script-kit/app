@@ -217,7 +217,6 @@ export const setTheme = async (value: any = {}, check = true) => {
 
   // promptWindow.setBackgroundColor(backgroundColor);
 
-  // TODO: Reimplement SET_THEME
   sendToAllPrompts(Channel.SET_THEME, newValue);
 };
 

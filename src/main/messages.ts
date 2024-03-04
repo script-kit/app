@@ -432,9 +432,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           value: { command: string; html: string; options: any };
         },
       ) => {
-        const { command, html, options } = value;
-        const theme = kitState.isDark ? darkTheme : lightTheme;
-        // const filePath = await createWidget(command, html, options, theme);
+        const { html, options } = value;
         kitState.blurredByKit = true;
         const widgetId = Date.now().toString();
         const widget = await showWidget(scriptPath, widgetId, html, options);

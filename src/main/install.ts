@@ -1,10 +1,10 @@
-import { clipboard, shell } from 'electron';
+import { clipboard, nativeTheme, shell } from 'electron';
 import { HttpsProxyAgent } from 'hpagent';
 
 import dotenv from 'dotenv';
 import log from 'electron-log';
 import download, { DownloadOptions } from 'download';
-import { debounce } from 'lodash-es';
+import { assign, debounce } from 'lodash-es';
 import path from 'path';
 import tar from 'tar';
 import { promisify } from 'util';
@@ -44,11 +44,17 @@ import { KitPrompt, destroyPromptWindow } from './prompt';
 import { INSTALL_ERROR, show } from './show';
 import { showError } from './main.dev.templates';
 import { mainLogPath } from './logs';
-import { kitCache, kitState, preloadChoicesMap } from '../shared/state';
+import {
+  getThemes,
+  kitCache,
+  kitState,
+  preloadChoicesMap,
+} from '../shared/state';
 import { createScoredChoice } from './helpers';
 import { prompts } from './prompts';
 import { SPLASH_PATH } from '../shared/defaults';
 import { KitEvent, emitter } from '../shared/events';
+import { maybeConvertColors, setTheme } from './process';
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {
@@ -98,6 +104,15 @@ export const showSplash = async () => {
   });
 
   splashPrompt.readyEmitter.once('ready', async () => {
+    const { scriptKitTheme, scriptKitLightTheme } = getThemes();
+    const value = nativeTheme.shouldUseDarkColors
+      ? scriptKitTheme
+      : scriptKitLightTheme;
+    const newValue = await maybeConvertColors(value);
+    assign(kitState.theme, newValue);
+
+    splashPrompt?.sendToPrompt(Channel.SET_THEME, newValue);
+
     splashPrompt?.setPromptData({
       show: true,
       ui: UI.splash,

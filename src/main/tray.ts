@@ -56,14 +56,14 @@ export const openMenu = async (event?: KeyboardEvent) => {
   if (event?.metaKey) {
     emitter.emit(
       KitEvent.RunPromptProcess,
-      kenvPath('app', 'command-click.js')
+      kenvPath('app', 'command-click.js'),
     );
   } else if (event?.shiftKey) {
     emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'shift-click.js'));
   } else if (event?.ctrlKey) {
     emitter.emit(
       KitEvent.RunPromptProcess,
-      kenvPath('app', 'control-click.js')
+      kenvPath('app', 'control-click.js'),
     );
   } else if (event?.altKey) {
     emitter.emit(KitEvent.RunPromptProcess, kenvPath('app', 'alt-click.js'));
@@ -144,7 +144,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
               {
                 force: true,
                 trigger: Trigger.Tray,
-              }
+              },
             ),
           },
           {
@@ -207,7 +207,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
 
           try {
             uptimeLabel = `uptime: ${formatDistanceToNow(
-              new Date(date as number)
+              new Date(date as number),
             )}`;
           } catch (error) {
             // ignore
@@ -296,7 +296,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         click: async () => {
           shell.openPath(kitPath('logs', 'kit.log'));
         },
-      }
+      },
     );
 
     if (kitState.isMac) {
@@ -316,7 +316,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
               kitState.logLevel = level as LogLevel;
             },
             enabled: kitState.logLevel !== level,
-          }) as MenuItemConstructorOptions
+          }) as MenuItemConstructorOptions,
       ),
     });
 
@@ -466,7 +466,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         label: `Script Kit Forum`,
         click: () => {
           shell.openExternal(
-            `https://github.com/johnlindquist/kit/discussions`
+            `https://github.com/johnlindquist/kit/discussions`,
           );
         },
         icon: menuIcon('github'),
@@ -579,7 +579,7 @@ const runScript =
   (
     scriptPath: string,
     args: string[] = [],
-    options = { force: false, trigger: Trigger.App }
+    options = { force: false, trigger: Trigger.App },
   ) =>
   () => {
     emitter.emit(KitEvent.RunPromptProcess, {
@@ -676,7 +676,11 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
       }
     };
 
-    tray.on('mouse-down', startingMenu);
+    if (kitState.isMac) {
+      tray.on('mouse-down', startingMenu);
+    } else {
+      tray.on('click', startingMenu);
+    }
     tray.on('right-click', startingMenu);
 
     globalShortcut.register('CommandOrControl+;', startingMenu);
@@ -703,8 +707,13 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
       log.info(`☑ Enable tray`);
 
       tray.removeAllListeners('mouse-down');
+      tray.removeAllListeners('click');
       tray.removeAllListeners('right-click');
-      tray.on('mouse-down', openMenu);
+      if (kitState.isMac) {
+        tray.on('mouse-down', openMenu);
+      } else {
+        tray.on('click', openMenu);
+      }
       tray.on('right-click', openMenu);
     } catch (error) {
       log.error(error);
@@ -747,7 +756,12 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
     if (leftClickOverride) {
       tray?.removeAllListeners('mouse-down');
       tray?.removeAllListeners('menu-will-close');
-      tray?.on('mouse-down', openMenu);
+
+      if (kitState.isMac) {
+        tray?.on('mouse-down', openMenu);
+      } else {
+        tray?.on('click', openMenu);
+      }
       leftClickOverride = null;
       tray?.setContextMenu(null);
     }
@@ -803,7 +817,13 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
     };
 
     tray?.removeAllListeners('mouse-down');
-    tray?.on('mouse-down', leftClickOverride);
+    tray?.removeAllListeners('click');
+
+    if (kitState.isMac) {
+      tray?.on('mouse-down', leftClickOverride);
+    } else {
+      tray?.on('click', leftClickOverride);
+    }
   }
 };
 

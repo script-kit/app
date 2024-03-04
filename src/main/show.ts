@@ -333,6 +333,7 @@ export const showWidget = async (
       experimentalFeatures: true,
       preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)),
       webSecurity: false,
+      devTools: true,
     },
     ...position,
     show: false,
@@ -394,6 +395,9 @@ export const showWidget = async (
           typeof options?.show === 'boolean' && options?.show === false;
         if (!noShow) {
           widgetWindow?.show();
+        }
+        if (options?.showDevTools) {
+          widgetWindow?.webContents.openDevTools();
         }
         resolve(widgetWindow);
       } else {
