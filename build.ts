@@ -125,13 +125,11 @@ const config: Configuration = {
     },
   },
   win: {
-    target: 'nsis',
-    icon: 'config/icons/icon.ico',
+    icon: 'assets/icon.png',
     artifactName: '${productName}-Windows-${version}-${arch}.${ext}',
   },
   linux: {
-    target: ['snap'],
-    icon: 'config/icons',
+    icon: 'assets/icon.icns',
     category: 'Development',
     executableName: 'scriptkit',
     artifactName: '${productName}-Linux-${version}-${arch}.${ext}',
