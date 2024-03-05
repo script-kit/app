@@ -28,9 +28,7 @@ import {
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg?asset';
 import { AppChannel } from '../../../shared/enums';
 import { IconSwapper } from './iconswapper';
-import {highlight} from './utils'
-
-
+import { highlight } from './utils';
 
 function calculateScale(height: number | undefined): string {
   if (height === PROMPT.ITEM.HEIGHT.XS) {
@@ -82,7 +80,7 @@ function ChoiceButton({
         setFlagValue(choice?.value);
       }
     },
-    [choice, setFlagValue, flaggedValue]
+    [choice, setFlagValue, flaggedValue],
   );
 
   const onClick = useCallback(
@@ -94,7 +92,7 @@ function ChoiceButton({
         setSubmitValue(choice?.value);
       }
     },
-    [promptData, toggleSelectedChoice, choice.id, choice.value, setSubmitValue]
+    [promptData, toggleSelectedChoice, choice.id, choice.value, setSubmitValue],
   );
   const onMouseEnter = useCallback(() => {
     if (mouseEnabled) {
@@ -127,12 +125,12 @@ function ChoiceButton({
           // )}`;
           event.dataTransfer?.setData(
             drag?.format || 'text/plain',
-            drag?.data || `please set drag.data`
+            drag?.data || `please set drag.data`,
           );
         }
       }
     },
-    [choice]
+    [choice],
   );
 
   useEffect(() => {
@@ -198,6 +196,7 @@ function ChoiceButton({
       `}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
+      onMouseOver={onMouseEnter}
     >
       {choice?.html ? (
         parse(choice?.html, {
@@ -267,7 +266,7 @@ function ChoiceButton({
                     ?.replace(/{\s*input\s*}/g, input)
                     .replace(/{\s*base\s*}/g, base),
                   scoredChoice?.matches?.slicedName,
-                  `bg-primary bg-opacity-5 text-primary`
+                  `bg-primary bg-opacity-5 text-primary`,
                 )}
                 {choice?.nameHTML && parse(choice?.nameHTML)}
               </div>
@@ -289,7 +288,7 @@ function ChoiceButton({
                       ? highlight(
                           choice.description || '',
                           scoredChoice?.matches?.description,
-                          `bg-primary bg-opacity-5 text-primary`
+                          `bg-primary bg-opacity-5 text-primary`,
                         )
                       : choice?.description}
                 </div>
@@ -320,7 +319,7 @@ function ChoiceButton({
                         ? highlight(
                             choice.tag,
                             scoredChoice?.matches?.tag,
-                            'bg-text-base bg-opacity-0 text-primary text-opacity-100'
+                            'bg-text-base bg-opacity-0 text-primary text-opacity-100',
                           )
                         : ''}
                   </div>
@@ -386,7 +385,11 @@ function ChoiceButton({
         hover:bg-opacity-20 hover:text-primary/90
         `}
                   >
-                    <IconSwapper text="→" />
+                    {flaggedValue ? (
+                      <IconSwapper text="←" />
+                    ) : (
+                      <IconSwapper text="→" />
+                    )}
                   </div>
                 </div>
               )}

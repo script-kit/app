@@ -83,7 +83,7 @@ export const clearFlags = () => {
 };
 
 export const maybeConvertColors = async (theme: any = {}) => {
-  log.verbose(`🎨 Convert Colors:`, theme);
+  // log.verbose(`🎨 Convert Colors:`, theme);
 
   // eslint-disable-next-line prettier/prettier
   theme.foreground ||= theme?.['--color-text'];
@@ -197,10 +197,10 @@ export const maybeConvertColors = async (theme: any = {}) => {
 };
 
 export const setTheme = async (value: any = {}, check = true) => {
-  log.verbose(`🎨 Setting theme:`, {
-    hasCss: kitState.hasCss,
-    value,
-  });
+  // log.verbose(`🎨 Setting theme:`, {
+  //   hasCss: kitState.hasCss,
+  //   value,
+  // });
   // if (kitState.hasCss) return;
   // if (check) {
   //   await sponsorCheck('Custom Themes');

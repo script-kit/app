@@ -845,6 +845,12 @@ export class KitPrompt {
 
         this.readyEmitter.emit('ready');
         this.ready = true;
+
+        // Force render
+        // Trigger re-layout without visual change
+        this.window?.webContents?.executeJavaScript(
+          `console.log(document.body.offsetHeight);`,
+        );
       };
 
       ipcMain.once(AppChannel.MESSAGES_READY, messagesReadyHandler);
@@ -1906,7 +1912,11 @@ export class KitPrompt {
     }
 
     if (promptData.ui !== UI.arg) {
-      makeWindow(this.window);
+      // REMOVE-MAC
+      if (kitState.isMac) {
+        makeWindow(this.window);
+      }
+      // END-REMOVE-MAC
     }
 
     log.info(`

@@ -526,6 +526,7 @@ ${hasBorder ? `border border-ui-border` : ``}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseLeave}
             onMouseMove={onMouseMove}
+            onMouseEnter={onMouseMove}
           >
             {ui !== UI.log && (
               // header id using in resize measuring

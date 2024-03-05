@@ -22,7 +22,7 @@ import {
 
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
 import { AppChannel } from '../../../shared/enums';
-import {highlight} from './utils'
+import { highlight } from './utils';
 
 function isScript(choice: Choice | Script): choice is Script {
   return (choice as Script)?.command !== undefined;
@@ -62,7 +62,7 @@ function FlagButton({
       e.preventDefault();
       setSubmitValue(focusedChoice?.value);
     },
-    [focusedChoice, setSubmitValue]
+    [focusedChoice, setSubmitValue],
   );
   const onMouseEnter = useCallback(() => {
     if (mouseEnabled) {
@@ -95,12 +95,12 @@ function FlagButton({
           // )}`;
           event.dataTransfer?.setData(
             drag?.format || 'text/plain',
-            drag?.data || `please set drag.data`
+            drag?.data || `please set drag.data`,
           );
         }
       }
     },
-    [choice]
+    [choice],
   );
 
   useEffect(() => {
@@ -156,6 +156,7 @@ function FlagButton({
       }`}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
+      onMouseMove={onMouseEnter}
     >
       {choice?.html ? (
         parse(choice?.html, {
@@ -193,7 +194,7 @@ function FlagButton({
                     ?.replace(/{\s*input\s*}/g, input)
                     .replace(/{\s*base\s*}/g, base),
                   scoredChoice?.matches?.slicedName,
-                  `bg-primary bg-opacity-5 text-primary`
+                  `bg-primary bg-opacity-5 text-primary`,
                 )}
               </div>
               {/* Description */}
@@ -239,7 +240,7 @@ function FlagButton({
                         ? highlight(
                             choice.tag,
                             scoredChoice?.matches?.tag,
-                            'bg-text-base bg-opacity-0 text-primary text-opacity-100'
+                            'bg-text-base bg-opacity-0 text-primary text-opacity-100',
                           )
                         : ''}
                   </div>
