@@ -573,7 +573,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
             `}
               >
-                <PanelChild minSize={25}>
+                <PanelChild minSize={25} id="panel-left">
                   <div className="h-full min-h-1 overflow-x-hidden">
                     <ToastContainer
                       className="-ml-3 -mt-3"
@@ -624,12 +624,12 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                 {showRightPanel && (
                   <>
                     <PanelResizeHandle
-                      id="panelResizeHandle"
+                      id="panel-resize-handle"
                       className="w-0.5 border-l-1 border-ui-border hover:-ml-0.5 hover:w-3 hover:border-r-1 hover:border-white/10 hover:bg-white/5"
                       onDragging={onResizeHandleDragging}
                     />
                     <PanelChild
-                      id="panelChild"
+                      id="panel-right"
                       collapsible
                       ref={panelChildRef}
                       // style={{

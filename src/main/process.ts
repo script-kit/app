@@ -31,6 +31,7 @@ import {
   KIT_APP,
   KIT_APP_PROMPT,
   kitPath,
+  execPath,
 } from '@johnlindquist/kit/core/utils';
 
 import { subscribeKey } from 'valtio/utils';
@@ -363,7 +364,7 @@ const createChild = ({
     silent: true,
     stdio: 'pipe',
     // TODO: Testing execPath on Windows????
-    // execPath,
+    execPath,
     cwd: os.homedir(),
     execArgv: [`--loader`, loaderFileUrl],
     env: {

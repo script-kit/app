@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import DOMPurify from 'dompurify';
 import log from 'electron-log/renderer';
@@ -210,6 +210,11 @@ export default () => {
   const setClosed = useSetAtom(closedAtom);
 
   const clearCache = useSetAtom(clearCacheAtom);
+  const [init, setInit] = useState(false);
+
+  useEffect(() => {
+    console.log(`Setting up messages for ${pid}: ${init ? '✅' : '🚫'}`);
+  }, [init]);
 
   type ChannelAtomMap = {
     [key in keyof ChannelMap]: (data: ChannelMap[key]) => void;
@@ -499,6 +504,14 @@ export default () => {
       ipcRenderer.on(AppChannel.RESET_PROMPT, handleResetPrompt);
     }
 
+    const handleForceRender = () => {
+      setInit(true);
+    };
+
+    if (ipcRenderer.listenerCount(AppChannel.FORCE_RENDER) === 0) {
+      ipcRenderer.on(AppChannel.FORCE_RENDER, handleForceRender);
+    }
+
     const handleSetCachedMainScoredChoices = (_, data) => {
       setCachedMainScoredChoices(data);
     };
@@ -609,6 +622,8 @@ export default () => {
     ipcRenderer.send(AppChannel.MESSAGES_READY, window.pid);
 
     return () => {
+      console.log(`🔑 Removing message listeners for ${pid}`);
+
       Object.entries(messageMap).forEach(([key, fn]) => {
         ipcRenderer.off(key, fn);
       });
@@ -647,6 +662,7 @@ export default () => {
       );
       ipcRenderer.off(AppChannel.CLEAR_CACHE, handleClearCache);
       ipcRenderer.off(AppChannel.CLOSE_PROMPT, handleClosePrompt);
+      ipcRenderer.off(AppChannel.FORCE_RENDER, handleForceRender);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

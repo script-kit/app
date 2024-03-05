@@ -800,6 +800,11 @@ export class KitPrompt {
       },
     );
 
+    this.window.webContents?.on('dom-ready', () => {
+      log.info(`📦 dom-ready`);
+      this.window?.webContents?.setZoomLevel(ZOOM_LEVEL);
+    });
+
     this.window.webContents?.once('did-finish-load', () => {
       kitState.hiddenByUser = false;
       kitState.promptHidden = true;
@@ -851,6 +856,8 @@ export class KitPrompt {
         this.window?.webContents?.executeJavaScript(
           `console.log(document.body.offsetHeight);`,
         );
+
+        this.sendToPrompt(AppChannel.FORCE_RENDER);
       };
 
       ipcMain.once(AppChannel.MESSAGES_READY, messagesReadyHandler);
