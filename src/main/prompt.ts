@@ -730,11 +730,10 @@ export class KitPrompt {
 
     if (kitState.isWindows) {
       // REMOVE-NODE-WINDOW-MANAGER
-      windowManager.setWindowAsPopupWithRoundedCorners(
-        this.window?.getNativeWindowHandle(),
-      );
-
-      this.window.setHasShadow(true);
+      // windowManager.setWindowAsPopupWithRoundedCorners(
+      //   this.window?.getNativeWindowHandle(),
+      // );
+      // this.window.setHasShadow(true);
       // END-REMOVE-NODE-WINDOW-MANAGER
     }
 
@@ -1212,14 +1211,14 @@ export class KitPrompt {
         log.info(
           `${this.pid}:${this.window?.id} Forcing window paint... ${this.initMain ? 'initMain' : 'no initMain'}`,
         );
-        windowManager.forceWindowPaint(this.window.getNativeWindowHandle());
-        const currentWindow = windowManager.getActiveWindow();
-        if (currentWindow.processId !== process.pid) {
-          log.info(
-            `Storing previous window: ${currentWindow.processId} ${currentWindow.path}`,
-          );
-          prevWindow = currentWindow;
-        }
+        // windowManager.forceWindowPaint(this.window.getNativeWindowHandle());
+        // const currentWindow = windowManager.getActiveWindow();
+        // if (currentWindow.processId !== process.pid) {
+        //   log.info(
+        //     `Storing previous window: ${currentWindow.processId} ${currentWindow.path}`,
+        //   );
+        //   prevWindow = currentWindow;
+        // }
       } catch (error) {
         log.error(error);
       }
@@ -1236,13 +1235,13 @@ export class KitPrompt {
     } else {
       // this.prompt.restore();
       // REMOVE-NODE-WINDOW-MANAGER
-      windowManager.setWindowAsPopupWithRoundedCorners(
-        this.window.getNativeWindowHandle(),
-      );
+      // windowManager.setWindowAsPopupWithRoundedCorners(
+      //   this.window.getNativeWindowHandle(),
+      // );
 
-      if (kitState.isWindows) {
-        this.window.setHasShadow(true);
-      }
+      // if (kitState.isWindows) {
+      //   this.window.setHasShadow(true);
+      // }
       // END-REMOVE-NODE-WINDOW-MANAGER
       log.info(`${this.pid}:${this.window?.id} this.window.show()`);
       this.window.show();
@@ -2087,7 +2086,7 @@ export class KitPrompt {
     log.info(`🙈 Hiding prompt window`);
     if (kitState.isWindows) {
       // REMOVE-NODE-WINDOW-MANAGER
-      windowManager.hideInstantly(this.window?.getNativeWindowHandle());
+      // windowManager.hideInstantly(this.window?.getNativeWindowHandle());
       this.window?.emit('hide');
       // END-REMOVE-NODE-WINDOW-MANAGER
     } else {
@@ -2347,10 +2346,10 @@ export class KitPrompt {
 
     if (kitState.isWindows) {
       // REMOVE-NODE-WINDOW-MANAGER
-      setTimeout(() => {
-        if (!this?.window || this.window?.isDestroyed()) return;
-        windowManager.forceWindowPaint(this.window?.getNativeWindowHandle());
-      }, 10);
+      // setTimeout(() => {
+      //   if (!this?.window || this.window?.isDestroyed()) return;
+      //   windowManager.forceWindowPaint(this.window?.getNativeWindowHandle());
+      // }, 10);
       // END-REMOVE-NODE-WINDOW-MANAGER
     }
     this.initBounds();
