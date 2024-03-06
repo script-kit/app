@@ -39,9 +39,7 @@ import {
   isReadyAtom,
   valueInvalidAtom,
   isHiddenAtom,
-  _history,
   blurAtom,
-  startAtom,
   logoAtom,
   getEditorHistoryAtom,
   scoredChoicesAtom,
@@ -96,9 +94,6 @@ import {
   initPromptAtom,
   cachedMainFlagsAtom,
   clearCacheAtom,
-  closedAtom,
-  mainScriptPathAtom,
-  kitPathAtom,
   kitConfigAtom,
 } from '../jotai';
 
@@ -129,7 +124,6 @@ export default () => {
   const getColor = useAtomValue(colorAtom);
 
   const setExit = useSetAtom(exitAtom);
-  const setScriptHistory = useSetAtom(_history);
   const [input, setInput] = useAtom(inputAtom);
   const appendInput = useSetAtom(appendInputAtom);
   const setPlaceholder = useSetAtom(placeholderAtom);
@@ -166,7 +160,6 @@ export default () => {
   const setValueInvalid = useSetAtom(valueInvalidAtom);
   const setPreventSubmit = useSetAtom(preventSubmitAtom);
   const setBlur = useSetAtom(blurAtom);
-  const start = useSetAtom(startAtom);
   const setLogo = useSetAtom(logoAtom);
 
   const setFocused = useSetAtom(setFocusedChoiceAtom);
@@ -207,7 +200,6 @@ export default () => {
   const setMicId = useSetAtom(micIdAtom);
   const setWebcamId = useSetAtom(webcamIdAtom);
   const setAudioDot = useSetAtom(audioDotAtom);
-  const setClosed = useSetAtom(closedAtom);
 
   const clearCache = useSetAtom(clearCacheAtom);
   const [init, setInit] = useState(false);
@@ -235,7 +227,6 @@ export default () => {
     },
     [Channel.SET_PROMPT_BOUNDS]: setPromptBounds,
     [Channel.SET_SCRIPT]: setScript,
-    [Channel.SET_SCRIPT_HISTORY]: setScriptHistory,
     [Channel.SET_CHOICES_CONFIG]: setChoicesConfig,
     [Channel.SET_SCORED_CHOICES]: setScoredChoices,
     [Channel.SET_SELECTED_CHOICES]: setSelectedChoices,
@@ -280,7 +271,6 @@ export default () => {
     [Channel.SET_TEMP_THEME]: setTempTheme,
     [Channel.VALUE_INVALID]: setValueInvalid,
     [Channel.PREVENT_SUBMIT]: setPreventSubmit,
-    [Channel.START]: start,
     [Channel.GET_EDITOR_HISTORY]: getEditorHistory,
     [Channel.GET_COLOR]: () => getColor(),
     [Channel.CLEAR_TABS]: setTabs,
@@ -602,16 +592,6 @@ export default () => {
       ipcRenderer.on(AppChannel.CLEAR_CACHE, handleClearCache);
     }
 
-    const handleClosePrompt = () => {
-      log.info(`${pid}: Closing prompt `);
-
-      setClosed(true);
-    };
-
-    if (ipcRenderer.listenerCount(AppChannel.CLOSE_PROMPT) === 0) {
-      ipcRenderer.on(AppChannel.CLOSE_PROMPT, handleClosePrompt);
-    }
-
     const config = ipcRenderer.sendSync(AppChannel.GET_KIT_CONFIG);
     log.info({ config });
     window.pid = config.pid;
@@ -661,7 +641,6 @@ export default () => {
         handleSetCachedMainFlags,
       );
       ipcRenderer.off(AppChannel.CLEAR_CACHE, handleClearCache);
-      ipcRenderer.off(AppChannel.CLOSE_PROMPT, handleClosePrompt);
       ipcRenderer.off(AppChannel.FORCE_RENDER, handleForceRender);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

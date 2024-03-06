@@ -195,16 +195,6 @@ export const runPromptProcess = async (
 
   log.info(`${prompt.pid} 🐣 Alive for ${prompt.lifeTime()}`);
 
-  // prompts.next?.initShowPrompt();
-
-  // TODO: Is this needed?
-  // if (visible) {
-  //   sendToSpecificPrompt(
-  //     Channel.START,
-  //     options?.force ? kitState.scriptPath : promptScriptPath
-  //   );
-  // }
-
   const idlesLength = getIdles().length;
   log.info(`🗿 ${idlesLength} idles`);
 

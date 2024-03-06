@@ -836,6 +836,8 @@ export class KitPrompt {
       emitter.emit(KitEvent.DID_FINISH_LOAD);
 
       const messagesReadyHandler = (event, pid) => {
+        this.window.webContents.setBackgroundThrottling(false);
+
         log.info(`${this.pid}: 📬 Messages ready. `);
         if (this.initMain) {
           this.initPromptData();
@@ -855,6 +857,10 @@ export class KitPrompt {
         // Trigger re-layout without visual change
         this.window?.webContents?.executeJavaScript(
           `console.log(document.body.offsetHeight);`,
+        );
+
+        log.info(
+          `${this.pid}:${this.window.id}: 🚀 Prompt ready. Forcing render. ${this.window?.isVisible() ? 'visible' : 'hidden'}`,
         );
 
         this.sendToPrompt(AppChannel.FORCE_RENDER);
@@ -1203,6 +1209,9 @@ export class KitPrompt {
     if (kitState.isWindows && !this.isVisible()) {
       // REMOVE-NODE-WINDOW-MANAGER
       try {
+        log.info(
+          `${this.pid}:${this.window?.id} Forcing window paint... ${this.initMain ? 'initMain' : 'no initMain'}`,
+        );
         windowManager.forceWindowPaint(this.window.getNativeWindowHandle());
         const currentWindow = windowManager.getActiveWindow();
         if (currentWindow.processId !== process.pid) {
@@ -1217,6 +1226,7 @@ export class KitPrompt {
       // END-REMOVE-NODE-WINDOW-MANAGER
     }
     if (kitState.isMac) {
+      log.info(`${this.pid}:${this.window?.id} this.window.showInactive()`);
       this.window.showInactive();
       // this.window.webContents.openDevTools({
       //   activate: false,
@@ -1230,13 +1240,12 @@ export class KitPrompt {
         this.window.getNativeWindowHandle(),
       );
 
-      this.window.setHasShadow(true);
+      if (kitState.isWindows) {
+        this.window.setHasShadow(true);
+      }
       // END-REMOVE-NODE-WINDOW-MANAGER
+      log.info(`${this.pid}:${this.window?.id} this.window.show()`);
       this.window.show();
-    }
-
-    if (kitState.isWindows) {
-      this.window.setHasShadow(true);
     }
 
     this.setPromptAlwaysOnTop(true);

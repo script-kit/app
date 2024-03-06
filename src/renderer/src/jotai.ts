@@ -909,14 +909,6 @@ export const selectedAtom = atom(
   },
 );
 
-export const _history = atom<Script[]>([]);
-// export const scriptHistoryAtom = atom(
-//   (g) => g(scriptHistory),
-//   (g, s, a: Script[]) => {
-//     s(scriptHistory, a);
-//   }
-// );
-
 const _script = atom<Script>(noScript);
 const backToMainAtom = atom(false);
 
@@ -960,9 +952,6 @@ export const scriptAtom = atom(
     }
 
     s(preloadedAtom, false);
-
-    const history = g(_history);
-    s(_history, [...history, a]);
     if (a?.tabs) {
       s(tabsAtom, a?.tabs || []);
     }
@@ -1697,7 +1686,6 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     flaggedValue: g(_flaggedValue) || '',
     focused: g(_focused),
     tab: g(tabsAtom)?.[g(_tabIndex)] || '',
-    history: g(_history) || [],
     modifiers: g(_modifiers),
     count: g(choicesAtom).length || 0,
     name: g(nameAtom),
@@ -2161,11 +2149,6 @@ export const blurAtom = atom(null, (g) => {
     const channel = g(channelAtom);
     channel(Channel.BLUR);
   }
-});
-
-// This should represent when a keyboard shortcut or other triggers starts a sequence of scripts
-export const startAtom = atom(null, (g, s, a: string) => {
-  s(_history, []);
 });
 
 export const editorHistory = atom<{ content: string; timestamp: string }[]>([]);
@@ -3109,7 +3092,6 @@ export const clearCacheAtom = atom(null, (g, s) => {
 });
 
 export const mainElementIdAtom = atom<string>('');
-export const closedAtom = atom(false);
 export const kitConfigAtom = atom({
   kitPath: '',
   mainScriptPath: '',

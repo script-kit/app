@@ -799,7 +799,6 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       });
       // // Need to unset preloaded since the debugger is piggy-backing off the preloaded mainScript
       // kitState.preloaded = false;
-      // sendToPrompt(Channel.START, data?.value?.filePath);
       // sendToPrompt(Channel.SET_PROMPT_DATA, {
       //   ui: UI.debugger,
       // });
@@ -816,7 +815,6 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       pInfo.scriptPath = data?.value?.filePath;
       log.info(`🐞 ${pInfo?.pid}: ${data?.value?.filePath} `);
 
-      pInfo?.prompt?.sendToPrompt(Channel.START, data?.value?.filePath);
       pInfo.prompt?.sendToPrompt(Channel.SET_PROMPT_DATA, {
         ui: UI.debugger,
       });
@@ -1292,14 +1290,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     PREVENT_SUBMIT: (data) => {
       sendToPrompt(Channel.PREVENT_SUBMIT, data.value);
     },
-    SET_SCRIPT_HISTORY: (data) => {
-      sendToPrompt(Channel.SET_SCRIPT_HISTORY, data.value);
-    },
+
     SET_FILTER_INPUT: (data) => {
       sendToPrompt(Channel.SET_FILTER_INPUT, data.value);
-    },
-    START: (data) => {
-      sendToPrompt(Channel.START, data.value);
     },
     NOTIFY: (data) => {
       const notification = new Notification(data.value);

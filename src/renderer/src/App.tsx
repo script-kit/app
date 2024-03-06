@@ -78,7 +78,6 @@ import {
   progressAtom,
   cssAtom,
   triggerResizeAtom,
-  closedAtom,
 } from './jotai';
 
 import {
@@ -205,7 +204,6 @@ export default function App() {
   const isMainScript = useAtomValue(isMainScriptAtom);
   const css = useAtomValue(cssAtom);
 
-  const closed = useAtomValue(closedAtom);
   const previewCheck = useAtomValue(previewCheckAtom);
   const showRightPanel = (previewCheck && !kitState.noPreview) || flagValue;
   // log({
@@ -451,7 +449,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      {!closed && (
+      {
         <div
           id="main-container"
           ref={appRef}
@@ -658,7 +656,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
             )}
           </div>
         </div>
-      )}
+      }
 
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio id="audio" />
