@@ -15,6 +15,7 @@ import {
   getMainScriptPath,
   KIT_FIRST_PATH,
   getLogFromScriptPath,
+  execPath,
 } from '@johnlindquist/kit/core/utils';
 import { ProcessInfo } from '@johnlindquist/kit';
 
@@ -270,7 +271,7 @@ export const runPromptProcess = async (
 const KIT = kitPath();
 const forkOptions: ForkOptions = {
   cwd: homedir(),
-  // execPath,
+  execPath,
   env: {
     KIT,
     KENV: kenvPath(),
