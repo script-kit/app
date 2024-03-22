@@ -459,8 +459,6 @@ h-screen min-h-screen
 w-screen
 overflow-hidden
 text-text-base
-${appConfig.isMac && hasBorder ? `main-rounded` : ``}
-${hasBorder ? `border border-ui-border` : ``}
       `}
         >
           <style>{promptData?.css}</style>

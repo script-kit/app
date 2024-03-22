@@ -4,6 +4,9 @@ import {
   makePanel,
   makeWindow,
   hideInstant,
+  getWindowBackgroundColor,
+  getLabelColor,
+  getTextColor,
 } from '@johnlindquist/mac-panel-window';
 // END-REMOVE-MAC
 
@@ -681,6 +684,7 @@ export class KitPrompt {
       minHeight: PROMPT.INPUT.HEIGHT.XS,
       x: Math.round(screenWidth / 2 - width / 2 + workX),
       y: Math.round(workY + screenHeight / 8),
+      // backgroudColor: '#00000000',
     };
 
     // Disable Windows show animation
@@ -725,6 +729,10 @@ export class KitPrompt {
     // REMOVE-MAC
     if (kitState.isMac) {
       makePanel(this.window);
+      log.info({
+        systemBackgroundColor: getWindowBackgroundColor(),
+        systemTextColor: getTextColor(),
+      });
     }
     // END-REMOVE-MAC
 
@@ -789,6 +797,7 @@ export class KitPrompt {
             await cliFromParams(url.pathname, url.searchParams);
           } else if (url.protocol === 'submit:') {
             // TODO: Handle submit protocol
+            log.info(`Attempting to run submit protocol:`, JSON.stringify(url));
             this.sendToPrompt(Channel.SET_SUBMIT_VALUE, url.pathname);
           } else if (url.protocol.startsWith('http')) {
             shell.openExternal(url.href);

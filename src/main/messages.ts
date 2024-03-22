@@ -1013,9 +1013,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       setLog(Channel.CONSOLE_CLEAR);
     },
 
-    SET_TAB_INDEX: (data) => {
-      sendToPrompt(Channel.SET_TAB_INDEX, data.value);
-    },
+    SET_TAB_INDEX: onChildChannel(async ({ child }, { channel, value }) => {
+      sendToPrompt(Channel.SET_TAB_INDEX, value);
+    }),
     DEV_TOOLS: onChildChannel(async ({ child }, { channel, value }) => {
       showDevTools(value);
     }),
