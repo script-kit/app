@@ -35,7 +35,10 @@ const Emoji = () => {
   // }, [width, height]);
 
   useEffect(() => {
-    (document.querySelector('.epr-search') as HTMLElement).focus();
+    const search = document.querySelector('.epr-search') as HTMLElement;
+    if (search) {
+      search.focus();
+    }
   }, []);
 
   return (

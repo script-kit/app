@@ -155,7 +155,7 @@ export const runPromptProcess = async (
     sponsorCheck: false,
   },
 ): Promise<ProcessInfo | null> => {
-  const count = prompts.countVisible();
+  const count = prompts.getVisiblePromptCount();
   if (count >= 2 && options?.sponsorCheck) {
     const isSponsor = await sponsorCheck('More than 2 prompts');
     if (!isSponsor) {

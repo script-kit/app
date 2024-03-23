@@ -1115,7 +1115,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       async ({ child }, { channel, value }) => {
         performance.measure('SET_CHOICES', 'script');
         log.info(
-          `SET_CHOICES preloaded ${
+          `${prompt.pid}: SET_CHOICES preloaded ${
             kitState.preloaded ? 'true' : 'false'
           } ${value.choices?.length} choices`,
         );

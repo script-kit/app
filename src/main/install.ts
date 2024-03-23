@@ -55,6 +55,7 @@ import { prompts } from './prompts';
 import { SPLASH_PATH } from '../shared/defaults';
 import { KitEvent, emitter } from '../shared/events';
 import { maybeConvertColors, setTheme } from './process';
+import { setShortcodes } from './search';
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {
@@ -728,11 +729,18 @@ const scoreAndCacheMainChoices = (scripts: Script[]) => {
     })
     .map(createScoredChoice);
 
+  kitCache.scripts = scripts;
   kitCache.choices = results;
 
   for (const prompt of prompts) {
+    log.info(`${prompt.pid}: initMainChoices`);
     // if (!prompt.isVisible()) {
     prompt.initMainChoices();
+    if (!prompt.isVisible()) {
+      log.info(`${prompt.pid}: setShortcodes`, {
+        triggers: scripts.filter((s) => s.trigger).map((s) => s.trigger),
+      });
+    }
     // }
   }
 };
@@ -773,6 +781,15 @@ export const cacheMainScripts = debounce(async () => {
           cacheMainPreview(preview);
         }
         if (scripts) {
+          // log.info the scripts with triggers
+          log.info(
+            scripts
+              .filter((s) => s.trigger)
+              .map((s) => ({
+                trigger: s.trigger,
+                path: s.filePath,
+              })),
+          );
           scoreAndCacheMainChoices(scripts);
         }
         if (shortcuts) {

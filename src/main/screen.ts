@@ -21,8 +21,7 @@ export const getCurrentScreen = () => {
 };
 
 export const getCurrentScreenFromBounds = (bounds: Rectangle) => {
-  const currentScreen =  screen.getDisplayNearestPoint(bounds);
-  log.info('getCurrentScreenFromBounds', currentScreen.id);
+  const currentScreen = screen.getDisplayNearestPoint(bounds);
   return currentScreen;
 };
 
@@ -42,7 +41,10 @@ export const isBoundsWithinDisplays = (bounds: Rectangle) => {
   });
 };
 
-export const isBoundsWithinDisplayById = (bounds: Rectangle, displayId: number) => {
+export const isBoundsWithinDisplayById = (
+  bounds: Rectangle,
+  displayId: number,
+) => {
   const display = screen.getAllDisplays().find((d) => {
     return d.id === displayId;
   });
@@ -62,4 +64,4 @@ export const isBoundsWithinDisplayById = (bounds: Rectangle, displayId: number) 
   }
 
   return false;
-}
+};

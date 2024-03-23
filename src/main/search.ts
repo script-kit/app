@@ -24,6 +24,8 @@ export const invokeSearch = (
   rawInput: string,
   reason = 'normal',
 ) => {
+  log.info(`${prompt.pid}: Invoke search: ${rawInput} <<<`);
+
   if (prompt.ui !== UI.arg) return;
 
   // log.silly({ inputRegex: JSON.stringify(kitSearch.inputRegex) });
@@ -572,7 +574,7 @@ export const setShortcodes = (prompt: KitPrompt, choices: Choice[]) => {
 
   // Log the keywords and shortcodes
   log.info(
-    `🗝 ${prompt.kitSearch.keywords.size} keywords, ${prompt.kitSearch.shortcodes.size} shortcodes, ${prompt.kitSearch.postfixes.size} postfixes, ${prompt.kitSearch.triggers.size} triggers`,
+    `${prompt.pid}: Short stats: 🗝 ${prompt.kitSearch.keywords.size} keywords, ${prompt.kitSearch.shortcodes.size} shortcodes, ${prompt.kitSearch.postfixes.size} postfixes, ${prompt.kitSearch.triggers.size} triggers`,
   );
 };
 
@@ -591,7 +593,7 @@ export const setChoices = (
     generated,
   }: { preload: boolean; skipInitialSearch?: boolean; generated?: boolean },
 ) => {
-  log.info(`setChoices!!!!!!!!!!`, {
+  log.info(`${prompt.pid}: setChoices!!!!!!!!!!`, {
     isArray: Array.isArray(choices),
     length: choices?.length,
     preload,

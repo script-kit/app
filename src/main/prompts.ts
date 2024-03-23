@@ -3,124 +3,134 @@ import { KitPrompt } from './prompt';
 
 const promptMap = new Map<number, KitPrompt>();
 
-let hasIdlePrompt = false;
 export const prompts = {
+  /**
+   * The idle prompt, which is used when no other prompt is active.
+   */
   idle: null as KitPrompt | null,
-  createPromptIfNoIdle: function () {
-    log.info(`hasIdlePrompt: ${hasIdlePrompt ? 'true' : 'false'}`);
-    if (!hasIdlePrompt) {
+
+  /**
+   * Creates a new idle prompt if one doesn't exist.
+   * @returns True if a new idle prompt was created, false otherwise.
+   */
+  createPromptIfNoIdle: function (): boolean {
+    if (this.idle === null) {
       this.idle = new KitPrompt();
-      hasIdlePrompt = true;
       log.info(
         `🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`,
       );
       return true;
     }
-
     return false;
   },
-  createDebuggedPrompt: async function () {
+
+  /**
+   * Creates a new idle prompt for debugging purposes.
+   * Waits for the prompt to be ready before returning.
+   * @returns The newly created prompt.
+   */
+  createDebuggedPrompt: async function (): Promise<KitPrompt> {
     this.createPromptIfNoIdle();
-    if (!this.idle?.ready) {
+    const idlePrompt = this.idle;
+    if (idlePrompt && !idlePrompt.ready) {
       log.info(`🐞 Waiting for prompt to be ready...`);
-      await this.idle?.waitForReady();
+      await idlePrompt.waitForReady();
     }
     log.info(
-      `${this?.idle?.pid}: 🌅 Idle prompt ready with window id:${this.idle?.window?.id}`,
+      `${idlePrompt?.pid}: 🌅 Idle prompt ready with window id:${idlePrompt?.window?.id}`,
     );
-    return this.idle;
+    return idlePrompt!;
   },
+
+  /**
+   * The currently focused prompt.
+   */
   focused: null as KitPrompt | null,
-  attachIdlePromptToProcess(pid: number) {
+
+  /**
+   * Attaches the idle prompt to a process with the given PID.
+   * @param pid The PID of the process to attach the prompt to.
+   * @returns The attached prompt.
+   */
+  attachIdlePromptToProcess(pid: number): KitPrompt {
     const created = this.createPromptIfNoIdle();
     log.info(
-      `🔗 Attaching idle prompt ${this?.idle?.window?.id} to process ${pid}`,
+      `🔗 Attaching idle prompt ${this.idle?.window?.id} to process ${pid}`,
     );
     const prompt = this.idle as KitPrompt;
-    hasIdlePrompt = false;
-
+    this.idle = null;
     prompt.bindToProcess(pid);
-
     prompt.window?.on('focus', () => {
       this.focused = prompt;
       log.info(`${pid}: Focusing on prompt ${prompt.id}`);
     });
-
-    // prompt.window?.on('closed', () => {
-    //   promptMap.delete(pid);
-    // });
     promptMap.set(pid, prompt);
-
     // Only set a new idle prompt if the current one has been used
-
     setTimeout(() => {
       if (!created) {
         this.createPromptIfNoIdle();
       }
     }, 100);
-
     return prompt;
   },
-  delete: function (pid: number) {
-    const prompt = promptMap.get(pid);
-    promptMap.delete(pid);
-    if (prompt && !prompt?.isDestroyed()) {
-      if (this.focused === prompt) {
-        this.focused = null;
-      }
-      prompt?.window?.hide();
-      log.info(`${pid}: 🥱 Closing prompt `);
-      prompt?.close();
-      // prompt?.window?.destroy();
-      // prompt?.destroy();
-      // setTimeout(() => {
-      //   if (!prompt?.is()) {
-      //     try {
-      //       log.info(`${pid}: 🧨 Force closing prompt `);
-      //       prompt?.destroy();
-      //     } catch (e) {
-      //       log.info(`${pid}: 🧨 Force closing prompt failed `);
-      //     }
-      //   }
-      // }, 1000);
-    }
 
-    log.info(`${pid}: 🚮 Deleted prompt. ${promptMap.size} remaining...`);
+  /**
+   * Deletes the prompt associated with the given PID.
+   * @param pid The PID of the prompt to delete.
+   */
+  delete: function (pid: number): void {
+    const prompt = promptMap.get(pid);
+    if (!prompt) return;
+    promptMap.delete(pid);
+    if (prompt.isDestroyed()) return;
+    if (this.focused === prompt) {
+      this.focused = null;
+    }
+    prompt.window?.hide();
+    log.info(`${pid}: 🥱 Closing prompt`);
+    prompt.close();
+    log.info(`${pid}: 🚮 Deleted prompt. ${promptMap.size} prompts remaining.`);
   },
-  get: function (pid: number) {
+
+  /**
+   * Gets the prompt associated with the given PID.
+   * @param pid The PID of the prompt to get.
+   * @returns The prompt associated with the given PID, or undefined if no such prompt exists.
+   */
+  get: function (pid: number): KitPrompt | undefined {
     return promptMap.get(pid);
   },
-  find: function (predicate: (prompt: KitPrompt) => boolean) {
-    for (const prompt of promptMap.values()) {
-      if (predicate(prompt)) {
-        return prompt;
-      }
-    }
 
-    return null;
+  /**
+   * Finds the first prompt that satisfies the given predicate.
+   * @param predicate The predicate function to test each prompt against.
+   * @returns The first prompt that satisfies the predicate, or null if no such prompt exists.
+   */
+  find: function (predicate: (prompt: KitPrompt) => boolean): KitPrompt | null {
+    return Array.from(promptMap.values()).find(predicate) ?? null;
   },
-  someVisible: function () {
-    for (const prompt of this) {
-      if (prompt.isVisible()) {
-        return true;
-      }
-    }
 
-    return false;
+  /**
+   * Determines whether any prompt is currently visible.
+   * @returns True if any prompt is visible, false otherwise.
+   */
+  isAnyPromptVisible: function (): boolean {
+    return Array.from(promptMap.values()).some((prompt) => prompt.isVisible());
   },
-  countVisible: function () {
-    let count = 0;
-    for (const prompt of this) {
-      if (prompt.isVisible()) {
-        count++;
-      }
-    }
 
-    return count;
+  /**
+   * Gets the number of currently visible prompts.
+   * @returns The number of currently visible prompts.
+   */
+  getVisiblePromptCount: function (): number {
+    return Array.from(promptMap.values()).filter((prompt) => prompt.isVisible())
+      .length;
   },
-  [Symbol.iterator]: function* () {
-    for (const prompt of promptMap.values()) {
-      yield prompt;
-    }
+
+  /**
+   * Allows iteration over all prompts.
+   */
+  *[Symbol.iterator]() {
+    yield* promptMap.values();
   },
 };

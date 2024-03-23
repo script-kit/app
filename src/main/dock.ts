@@ -15,7 +15,7 @@ export const hideDock = debounce(() => {
   if (kitState.devToolsCount > 0) return;
   if (widgetState.widgets.length) return;
   if (windowsState.windows.length) return;
-  if (prompts.someVisible()) return;
+  if (prompts.isAnyPromptVisible()) return;
   if (!kitState.dockShown) return;
 
   actualHideDock();
@@ -27,7 +27,7 @@ export const showDock = () => {
   if (!kitState.isMac) return;
   if (
     kitState.devToolsCount === 0 &&
-    !prompts.someVisible() &&
+    !prompts.isAnyPromptVisible() &&
     widgetState.widgets.length === 0
   )
     return;
@@ -45,7 +45,7 @@ export const showDock = () => {
             emitter.emit(KitEvent.ForceQuit);
           },
         },
-      ])
+      ]),
     );
 
     app?.dock?.setIcon(getAssetPath('icon.png'));

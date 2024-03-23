@@ -45,6 +45,7 @@ const checkShortcodesAndKeywords = (
   prompt: KitPrompt,
   rawInput: string,
 ): boolean => {
+  log.info(`${prompt.pid}: 🔍 Checking shortcodes and keywords...`);
   const sendToPrompt = prompt.sendToPrompt;
   let transformedInput = rawInput;
 
@@ -82,6 +83,10 @@ const checkShortcodesAndKeywords = (
 
   const lowerCaseInput = transformedInput.toLowerCase();
   const trigger = prompt.kitSearch.triggers.get(lowerCaseInput);
+  log.info(`${prompt.pid}: 🚀 Trigger:`, {
+    trigger,
+    triggers: prompt.kitSearch.triggers.keys(),
+  });
   if (trigger) {
     sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger.value);
     log.info(`👢 Trigger: ${transformedInput} triggered`);
