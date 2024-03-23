@@ -24,6 +24,7 @@ import { emitter, KitEvent } from '../shared/events';
 import { ensureIdleProcess, getIdles, processes } from './process';
 import {
   getKitScript,
+  kitCache,
   kitState,
   kitStore,
   sponsorCheck,
@@ -32,6 +33,7 @@ import { pathsAreEqual } from './helpers';
 import { Trigger } from '../shared/enums';
 import { TrackEvent, trackEvent } from './track';
 import { prompts } from './prompts';
+import { setShortcodes } from './search';
 
 app.on('second-instance', async (_event, argv) => {
   log.info('second-instance', argv);
@@ -227,9 +229,14 @@ export const runPromptProcess = async (
   });
 
   const script = await findScript(promptScriptPath);
+  const visible = prompt?.isVisible();
   log.info(
-    `${pid}: Visible before setScript ${prompt?.isVisible() ? '👀' : '🙈'} ${script?.name}`,
+    `${pid}: Visible before setScript ${visible ? '👀' : '🙈'} ${script?.name}`,
   );
+
+  if (visible) {
+    setShortcodes(prompt, kitCache.scripts);
+  }
 
   const status = await prompt.setScript({ ...script }, pid, options?.force);
   if (status === 'denied') {

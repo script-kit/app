@@ -808,12 +808,6 @@ export class KitPrompt {
           log.info(
             `${this.pid}:${this.window?.id} Forcing window rounded, shadow, and paint... ${this.initMain ? 'initMain' : 'no initMain'}`,
           );
-          windowManager.setWindowAsPopupWithRoundedCorners(
-            this.window?.getNativeWindowHandle(),
-          );
-          this.window.setHasShadow(true);
-
-          windowManager.forceWindowPaint(this.window.getNativeWindowHandle());
           const currentWindow = windowManager.getActiveWindow();
           if (currentWindow.processId !== process.pid) {
             log.info(
@@ -821,6 +815,16 @@ export class KitPrompt {
             );
             prevWindow = currentWindow;
           }
+
+          log.info(
+            `${this.pid}: Previous window: ${prevWindow?.processId} - ${prevWindow.path}`,
+          );
+          windowManager.setWindowAsPopupWithRoundedCorners(
+            this.window?.getNativeWindowHandle(),
+          );
+          this.window.setHasShadow(true);
+
+          // windowManager.forceWindowPaint(this.window.getNativeWindowHandle());
         } catch (error) {
           log.error(error);
         }
@@ -830,7 +834,7 @@ export class KitPrompt {
     });
 
     this.window.webContents?.on('dom-ready', () => {
-      log.info(`📦 dom-ready`);
+      log.info(`${this.pid}: 📦 dom-ready`);
       this.window?.webContents?.setZoomLevel(ZOOM_LEVEL);
     });
 
@@ -2243,6 +2247,7 @@ export class KitPrompt {
           // END-REMOVE-MAC
         } else {
           this.window?.focus();
+          this.window?.webContents.focus();
         }
       } catch (error) {
         log.error(error);
