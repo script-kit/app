@@ -97,6 +97,7 @@ const config: Configuration = {
     shortcutName: 'Kit',
   },
   mac: {
+    notarize: false,
     icon: 'assets/icon.icns',
     category: 'public.app-category.productivity', // Keep as is or update based on package.json if needed
     hardenedRuntime: true,
