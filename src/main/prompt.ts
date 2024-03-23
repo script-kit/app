@@ -736,15 +736,6 @@ export class KitPrompt {
     }
     // END-REMOVE-MAC
 
-    if (kitState.isWindows) {
-      // REMOVE-NODE-WINDOW-MANAGER
-      windowManager.setWindowAsPopupWithRoundedCorners(
-        this.window?.getNativeWindowHandle(),
-      );
-      this.window.setHasShadow(true);
-      // END-REMOVE-NODE-WINDOW-MANAGER
-    }
-
     // prompt.setVisibleOnAllWorkspaces(true, {
     //   visibleOnFullScreen: true,
     //   skipTransformProcessType: true,
@@ -810,23 +801,37 @@ export class KitPrompt {
 
     this.window.once('ready-to-show', () => {
       log.info(`${this.pid}: 👍 Ready to show`);
+
+      if (kitState.isWindows) {
+        // REMOVE-NODE-WINDOW-MANAGER
+        try {
+          log.info(
+            `${this.pid}:${this.window?.id} Forcing window rounded, shadow, and paint... ${this.initMain ? 'initMain' : 'no initMain'}`,
+          );
+          windowManager.setWindowAsPopupWithRoundedCorners(
+            this.window?.getNativeWindowHandle(),
+          );
+          this.window.setHasShadow(true);
+
+          windowManager.forceWindowPaint(this.window.getNativeWindowHandle());
+          const currentWindow = windowManager.getActiveWindow();
+          if (currentWindow.processId !== process.pid) {
+            log.info(
+              `Storing previous window: ${currentWindow.processId} ${currentWindow.path}`,
+            );
+            prevWindow = currentWindow;
+          }
+        } catch (error) {
+          log.error(error);
+        }
+
+        // END-REMOVE-NODE-WINDOW-MANAGER
+      }
     });
 
     this.window.webContents?.on('dom-ready', () => {
       log.info(`📦 dom-ready`);
       this.window?.webContents?.setZoomLevel(ZOOM_LEVEL);
-
-      // REMOVE-NODE-WINDOW-MANAGER
-      if (kitState.isWindows) {
-        windowManager.setWindowAsPopupWithRoundedCorners(
-          this.window.getNativeWindowHandle(),
-        );
-
-        if (kitState.isWindows) {
-          this.window.setHasShadow(true);
-        }
-      }
-      // END-REMOVE-NODE-WINDOW-MANAGER
     });
 
     this.window.webContents?.once('did-finish-load', () => {
@@ -1245,25 +1250,6 @@ export class KitPrompt {
 
   initShowPrompt = () => {
     this.sendToPrompt(Channel.SET_OPEN, true);
-    if (kitState.isWindows && !this.isVisible()) {
-      // REMOVE-NODE-WINDOW-MANAGER
-      try {
-        log.info(
-          `${this.pid}:${this.window?.id} Forcing window paint... ${this.initMain ? 'initMain' : 'no initMain'}`,
-        );
-        windowManager.forceWindowPaint(this.window.getNativeWindowHandle());
-        const currentWindow = windowManager.getActiveWindow();
-        if (currentWindow.processId !== process.pid) {
-          log.info(
-            `Storing previous window: ${currentWindow.processId} ${currentWindow.path}`,
-          );
-          prevWindow = currentWindow;
-        }
-      } catch (error) {
-        log.error(error);
-      }
-      // END-REMOVE-NODE-WINDOW-MANAGER
-    }
     if (kitState.isMac) {
       log.info(`${this.pid}:${this.window?.id} this.window.showInactive()`);
       this.window.showInactive();
@@ -2155,7 +2141,6 @@ export class KitPrompt {
       reason === HideReason.BeforeExit
     ) {
       this.actualHide();
-      if (!kitState.kenvEnv?.KIT_NO_RESET_PROMPT) this.resetPrompt();
 
       // attemptPreload(getMainScriptPath(), false);
       this.clearSearch();
@@ -2363,27 +2348,6 @@ export class KitPrompt {
 
   forceRender = () => {
     this.sendToPrompt(AppChannel.RESET_PROMPT);
-  };
-
-  resetPrompt = async () => {
-    log.info(`🏋️‍♂️ Reset main`);
-    try {
-      this.firstPrompt = true;
-      this.forceRender();
-      log.info(`🏋️ Force rendered...`);
-    } catch (error) {
-      log.error(error);
-    }
-
-    if (kitState.isWindows) {
-      // REMOVE-NODE-WINDOW-MANAGER
-      setTimeout(() => {
-        if (!this?.window || this.window?.isDestroyed()) return;
-        windowManager.forceWindowPaint(this.window?.getNativeWindowHandle());
-      }, 10);
-      // END-REMOVE-NODE-WINDOW-MANAGER
-    }
-    this.initBounds();
   };
 
   setScript = async (
