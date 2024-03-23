@@ -684,6 +684,7 @@ export class KitPrompt {
       minHeight: PROMPT.INPUT.HEIGHT.XS,
       x: Math.round(screenWidth / 2 - width / 2 + workX),
       y: Math.round(workY + screenHeight / 8),
+      backgroundColor: '#00000000',
     };
 
     // Disable Windows show animation
@@ -808,12 +809,24 @@ export class KitPrompt {
     );
 
     this.window.once('ready-to-show', () => {
-      log.info(`👍 Ready to show`);
+      log.info(`${this.pid}: 👍 Ready to show`);
     });
 
     this.window.webContents?.on('dom-ready', () => {
       log.info(`📦 dom-ready`);
       this.window?.webContents?.setZoomLevel(ZOOM_LEVEL);
+
+      // REMOVE-NODE-WINDOW-MANAGER
+      if (kitState.isWindows) {
+        windowManager.setWindowAsPopupWithRoundedCorners(
+          this.window.getNativeWindowHandle(),
+        );
+
+        if (kitState.isWindows) {
+          this.window.setHasShadow(true);
+        }
+      }
+      // END-REMOVE-NODE-WINDOW-MANAGER
     });
 
     this.window.webContents?.once('did-finish-load', () => {
@@ -859,6 +872,21 @@ export class KitPrompt {
 
           log.info(`🚀 Prompt init for ${pid}`);
           this.initPrompt();
+
+          this.window.webContents
+            .executeJavaScript(`document.querySelector('#main').innerHTML`)
+            .then((main) => {
+              log.info({ pid: this.pid, main });
+            })
+            .catch((e) => {
+              log.error({
+                pid: this.pid,
+                error: e,
+              });
+            })
+            .finally(() => {
+              log.info(`${this.pid}: 🚀 Prompt js ready`);
+            });
         }
 
         this.readyEmitter.emit('ready');
@@ -1246,15 +1274,6 @@ export class KitPrompt {
       // });
     } else {
       // this.prompt.restore();
-      // REMOVE-NODE-WINDOW-MANAGER
-      windowManager.setWindowAsPopupWithRoundedCorners(
-        this.window.getNativeWindowHandle(),
-      );
-
-      if (kitState.isWindows) {
-        this.window.setHasShadow(true);
-      }
-      // END-REMOVE-NODE-WINDOW-MANAGER
       log.info(`${this.pid}:${this.window?.id} this.window.show()`);
       this.window.show();
     }

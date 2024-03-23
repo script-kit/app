@@ -520,6 +520,10 @@ ${data.error}
           log.info(`${child?.pid} 📝 Submitting...
 
 `);
+
+          if (!prompt.ready) {
+            log.info(`${prompt.pid}: Prompt not ready..`, message);
+          }
           prompt.clearSearch();
 
           if (message?.state?.value === Channel.TERMINAL) {
