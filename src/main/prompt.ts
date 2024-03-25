@@ -879,7 +879,7 @@ export class KitPrompt {
           this.initMainShortcuts();
           this.initMainFlags();
 
-          log.info(`🚀 Prompt init for ${pid}`);
+          log.info(`${pid}: 🚀 Prompt init`);
           this.initPrompt();
 
           this.window.webContents
@@ -2355,11 +2355,15 @@ export class KitPrompt {
     this.sendToPrompt(AppChannel.RESET_PROMPT);
   };
 
+  scriptSet = false;
+
   setScript = async (
     script: Script,
     pid: number,
     force = false,
   ): Promise<'denied' | 'allowed'> => {
+    this.scriptSet = true;
+    log.info(`${this.pid}: ${pid} setScript`, script);
     performance.mark('script');
     kitState.resizePaused = false;
     const cache = Boolean(script?.cache);
@@ -2371,7 +2375,7 @@ export class KitPrompt {
     if (script.filePath === prevScriptPath && pid === prevPid) {
       // Using a keyboard shortcut to launch a script will hit this scenario
       // Because the app will call `setScript` immediately, then the process will call it too
-      log.info(`Script already set. Ignore`);
+      log.info(`${this.pid}: Script already set. Ignore`);
       return 'denied';
     }
 

@@ -940,6 +940,7 @@ export const scriptAtom = atom(
     if (!isMainScript) {
       s(choicesConfigAtom, { preload: false });
       const preloaded = g(preloadedAtom);
+      log.info(`${g(pidAtom)}: Preloaded? ${preloaded ? `YES` : `NO`}`);
 
       if (!preloaded) {
         // Removed: Caused a flash of white from no choices
@@ -1419,7 +1420,8 @@ let wasPromptDataPreloaded = false;
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
-    log.info(`👂 Prompt Data ${a?.id}, ${a?.ui}, ${a?.preview}`);
+    const pid = g(pidAtom);
+    log.info(`${pid}: 👂 Prompt Data ${a?.id}, ${a?.ui}`);
 
     if (a?.count) {
       s(countAtom, a.count);
@@ -1437,14 +1439,14 @@ export const promptDataAtom = atom(
     const prevPromptData = g(promptData);
 
     wasPromptDataPreloaded = Boolean(prevPromptData?.preload && !a?.preload);
-    // log.info(
-    //   `👀 Preloaded: ${a?.scriptPath} ${
-    //     wasPromptDataPreloaded ? 'true' : 'false'
-    //   } and keyword: ${a?.keyword}
-    //   prevPromptData: ${prevPromptData?.preload ? 'yup' : 'nope'}
-    //   currentPromptData: ${a?.preload ? 'yup' : 'nope'}
-    //   `
-    // );
+    log.info(
+      `${g(pidAtom)}: 👀 Preloaded: ${a?.scriptPath} ${
+        wasPromptDataPreloaded ? 'true' : 'false'
+      } and keyword: ${a?.keyword}
+      prevPromptData: ${prevPromptData?.preload ? 'yup' : 'nope'}
+      currentPromptData: ${a?.preload ? 'yup' : 'nope'}
+      `,
+    );
 
     // was closed, now open
     if (!prevPromptData && a) {
@@ -1724,7 +1726,7 @@ export const channelAtom = atom((g) => {
       },
     };
 
-    // log.info({ channel, appMessage });
+    // log.info(`${pid}: 📤 ${channel}`, appMessage.state.value);
 
     ipcRenderer.send(channel, appMessage);
   };
@@ -1768,7 +1770,6 @@ export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
-    // log.info(`📤 submitValueAtom`, a);
     const channel = g(channelAtom);
 
     const action = g(focusedActionAtom) as any;

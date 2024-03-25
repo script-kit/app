@@ -90,7 +90,7 @@ const checkShortcodesAndKeywords = (
   if (trigger) {
     if (prompt.ready) {
       sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger.value);
-      log.info(`👢 Trigger: ${transformedInput} triggered`);
+      log.info(`${prompt.pid}: 👢 Trigger: ${transformedInput} triggered`);
       return false;
     } else {
       log.info(`${prompt.pid}: 😩 Not ready`, JSON.stringify(trigger));
@@ -435,6 +435,7 @@ ${data.error}
     ipcMain.on(
       channel,
       handleChannel(async ({ child, prompt, promptId }, message) => {
+        // log.info(`${prompt.pid}: IPC: 📤 ${channel}`, message.state);
         const sendToPrompt = prompt.sendToPrompt;
 
         prompt.kitSearch.flaggedValue = message.state?.flaggedValue;
@@ -571,7 +572,20 @@ ${data.error}
 
         if (child) {
           try {
-            if (child?.channel && child.connected) child?.send(message);
+            if (channel === Channel.VALUE_SUBMITTED) {
+              log.info(`${prompt.pid}: child.send: ${channel}`, message, {
+                scriptPath: prompt.scriptPath,
+                scriptSet: prompt.scriptSet,
+              });
+            }
+            if (child?.channel && child.connected) {
+              child?.send(message);
+            } else {
+              log.warn(
+                `${prompt.pid}: Child not connected: ${channel}`,
+                message,
+              );
+            }
           } catch (e) {
             // ignore logging EPIPE errors
             log.error(`📤 ${channel} ERROR`, message);

@@ -228,8 +228,8 @@ export default function App() {
   useMessages();
 
   useEffect(() => {
-    log.info(`👩‍💻 UI changed to: ${ui}`);
-  }, [ui]);
+    log.info(`${pid}: 👩‍💻 UI changed to: ${ui}`);
+  }, [ui, pid]);
 
   useEffect(() => {
     document.addEventListener('visibilitychange', () => {

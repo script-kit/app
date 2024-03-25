@@ -8,7 +8,7 @@ import { prompts } from './prompts';
 export const sendToSpecificPrompt = <K extends keyof ChannelMap>(
   prompt: BrowserWindow,
   channel: K,
-  data?: ChannelMap[K]
+  data?: ChannelMap[K],
 ) => {
   log.info(`sendToFocusedPrompt: ${String(channel)}`, data);
   // log.info(`>_ ${channel}`);
@@ -24,7 +24,7 @@ export const sendToSpecificPrompt = <K extends keyof ChannelMap>(
 
 export const sendToAllPrompts = <K extends keyof ChannelMap>(
   channel: K | AppChannel,
-  data?: ChannelMap[K]
+  data?: ChannelMap[K],
 ) => {
   log.info(`sendToAllPrompts: ${String(channel)}`, data);
   // log.info(`>_ ${channel}`);
@@ -32,6 +32,7 @@ export const sendToAllPrompts = <K extends keyof ChannelMap>(
   for (const prompt of prompts) {
     if (prompt && !prompt.isDestroyed() && prompt?.window?.webContents) {
       if (channel) {
+        log.info(`${prompt.pid}: ${prompt.id}: ALL -> ${channel}`);
         prompt.sendToPrompt(channel, data);
       } else {
         log.error(`channel is undefined`, { data });
@@ -44,7 +45,7 @@ export const createSendToChild = (pap: ProcessAndPrompt) => (data: any) => {
   try {
     if (pap?.child && pap?.child?.connected && data?.channel) {
       data.promptId = pap?.promptId;
-      // log.info(`✉️: ${data.channel}`);
+      // log.info(`${pap?.pid}: ${data.channel}`);
       pap?.child.send(data, (error) => {
         if (error)
           log.warn(`Channel ${data?.channel} failed on ${data?.promptId}`);
