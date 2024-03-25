@@ -343,7 +343,7 @@ export default () => {
 
   useEffect(() => {
     log.info(
-      `>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 🔑 Setting up message listeners`,
+      `>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 🔑 Setting up message listeners for ${pid}`,
     );
     Object.entries(messageMap).forEach(([key, fn]) => {
       if (ipcRenderer.listenerCount(key) === 0) {
@@ -593,7 +593,7 @@ export default () => {
     }
 
     const config = ipcRenderer.sendSync(AppChannel.GET_KIT_CONFIG);
-    log.info({ config });
+    // log.info({ config });
     window.pid = config.pid;
 
     setKitConfig(config);
@@ -644,5 +644,5 @@ export default () => {
       ipcRenderer.off(AppChannel.FORCE_RENDER, handleForceRender);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pid]);
 };

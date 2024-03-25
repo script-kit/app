@@ -464,7 +464,7 @@ ${data.error}
           const input = message.state.input as string;
           // log.info(`📝 Input: ${input}`);
           if (!input) {
-            log.info(`📝 No prompt input`);
+            log.info(`${prompt.pid}: 📝 No prompt input`);
             prompt.kitSearch.input = '';
             // keyword and regex will be cleared by checkShortcodesAndKeywords
             // prompt.kitSearch.inputRegex = undefined;

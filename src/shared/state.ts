@@ -185,6 +185,11 @@ export const kitCache = {
   preview: '',
   shortcuts: [] as Shortcut[],
   scriptFlags: {} as FlagsOptions,
+  triggers: new Map<string, Choice>(),
+  postfixes: new Map<string, Choice>(),
+  keywords: new Map<string, Choice>(),
+  shortcodes: new Map<string, Choice>(),
+  keys: ['slicedName', 'tag', 'group', 'command'],
 };
 
 export const getThemes = () => ({

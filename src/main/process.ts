@@ -603,7 +603,11 @@ class Processes extends Array<ProcessAndPrompt> {
     const prompt = prompts.attachIdlePromptToProcess(child.pid);
     prompt.count = ++promptCount;
 
-    log.info(`👶 Create child ${type} process: ${child.pid}`, scriptPath, args);
+    log.info(
+      `${child.pid}: 👶 Create child ${type} process: ${child.pid}`,
+      scriptPath,
+      args,
+    );
 
     const info = {
       pid: child.pid,

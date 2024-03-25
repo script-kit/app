@@ -82,7 +82,7 @@ import {
   isBoundsWithinDisplays,
 } from './screen';
 import { sendToAllPrompts } from './channel';
-import { setFlags, setChoices, invokeSearch, setShortcodes } from './search';
+import { setFlags, setChoices, invokeSearch, scorer } from './search';
 import { fileURLToPath } from 'url';
 import { prompts } from './prompts';
 import { ProcessAndPrompt, processes } from './process';
@@ -570,16 +570,24 @@ export class KitPrompt {
     keywordCleared: false,
     generated: false,
     flaggedValue: '',
-    choices: [] as Choice[],
-    scripts: [] as Script[],
-    shortcodes: new Map<string, Choice>(),
-    triggers: new Map<string, Choice>(),
-    postfixes: new Map<string, Choice>(),
-    keywords: new Map<string, Choice>(),
+    choices: kitCache.scripts as Choice[],
+    scripts: kitCache.scripts as Script[],
+    triggers: kitCache.triggers,
+    postfixes: kitCache.postfixes,
+    keywords: kitCache.keywords,
+    shortcodes: kitCache.shortcodes,
     hasGroup: false,
-    qs: null as null | QuickScore<Choice>,
+    qs: new QuickScore(kitCache.choices, {
+      keys: kitCache.keys.map((name) => ({
+        name,
+        scorer,
+      })),
+      minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
+        ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
+        : 0.6,
+    }),
     commandChars: [] as string[],
-    keys: ['slicedName', 'tag', 'group', 'command'],
+    keys: kitCache.keys,
   };
 
   clearSearch = () => {
@@ -589,7 +597,7 @@ export class KitPrompt {
     this.kitSearch.keyword = '';
     this.kitSearch.choices = [];
     this.kitSearch.input = '';
-    this.kitSearch.qs = null;
+    this.kitSearch.qs = new QuickScore([], { keys: ['name'] }); // Adjust according to your actual keys
     this.kitSearch.keywords.clear();
     this.kitSearch.triggers.clear();
     this.kitSearch.postfixes.clear();
@@ -685,6 +693,8 @@ export class KitPrompt {
       x: Math.round(screenWidth / 2 - width / 2 + workX),
       y: Math.round(workY + screenHeight / 8),
       backgroundColor: '#00000000',
+      backgroundMaterial: 'mica',
+      transparent: true,
     };
 
     // Disable Windows show animation
@@ -810,15 +820,10 @@ export class KitPrompt {
           );
           const currentWindow = windowManager.getActiveWindow();
           if (currentWindow.processId !== process.pid) {
-            log.info(
-              `Storing previous window: ${currentWindow.processId} ${currentWindow.path}`,
-            );
+            log.info(`Storing previous window: ${currentWindow.processId}`);
             prevWindow = currentWindow;
           }
 
-          log.info(
-            `${this.pid}: Previous window: ${prevWindow?.processId} - ${prevWindow.path}`,
-          );
           windowManager.setWindowAsPopupWithRoundedCorners(
             this.window?.getNativeWindowHandle(),
           );
@@ -860,7 +865,9 @@ export class KitPrompt {
       this.sendToPrompt(Channel.APP_DB, { ...appDb });
 
       const user = snapshot(kitState.user);
-      log.info(`did-finish-load, setting prompt user to: ${user?.login}`);
+      log.info(
+        `${this.pid}: did-finish-load, setting prompt user to: ${user?.login}`,
+      );
 
       this.sendToPrompt(AppChannel.USER_CHANGED, user);
       setKitStateAtom({
@@ -882,20 +889,20 @@ export class KitPrompt {
           log.info(`${pid}: 🚀 Prompt init`);
           this.initPrompt();
 
-          this.window.webContents
-            .executeJavaScript(`document.querySelector('#main').innerHTML`)
-            .then((main) => {
-              log.info({ pid: this.pid, main });
-            })
-            .catch((e) => {
-              log.error({
-                pid: this.pid,
-                error: e,
-              });
-            })
-            .finally(() => {
-              log.info(`${this.pid}: 🚀 Prompt js ready`);
-            });
+          // this.window.webContents
+          //   .executeJavaScript(`document.querySelector('#main').innerHTML`)
+          //   .then((main) => {
+          //     log.info({ pid: this.pid, main });
+          //   })
+          //   .catch((e) => {
+          //     log.error({
+          //       pid: this.pid,
+          //       error: e,
+          //     });
+          //   })
+          //   .finally(() => {
+          //     log.info(`${this.pid}: 🚀 Prompt js ready`);
+          //   });
         }
 
         this.readyEmitter.emit('ready');
@@ -1265,6 +1272,7 @@ export class KitPrompt {
     } else {
       // this.prompt.restore();
       log.info(`${this.pid}:${this.window?.id} this.window.show()`);
+      // windowManager.showInstantly(this.window.getNativeWindowHandle());
       this.window.show();
     }
 
@@ -2060,7 +2068,7 @@ export class KitPrompt {
     if (!this.isVisible() && promptData?.show) {
       this.showAfterNextResize = true;
       log.info(`👋 Show Prompt from setPromptData for ${this.scriptPath}`);
-      // this.showPrompt();
+      this.showPrompt();
     } else if (this.isVisible() && !promptData?.show) {
       this.actualHide();
     }
@@ -2148,7 +2156,7 @@ export class KitPrompt {
 
       // attemptPreload(getMainScriptPath(), false);
       this.clearSearch();
-      invokeSearch(this, '');
+      invokeSearch(this, '', 'maybeHide, so clear');
       return;
     }
 

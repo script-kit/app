@@ -720,6 +720,38 @@ export const installKitInKenv = async () => {
   return installPackage(`i ${kitPath()}`, kenvPath());
 };
 
+const cacheTriggers = (choices: Choice[]) => {
+  for (const choice of choices) {
+    const code = (choice?.shortcode || '').toLowerCase();
+
+    if (code) {
+      kitCache.shortcodes.set(code, choice);
+    }
+
+    if (choice?.keyword) {
+      // log.info(`🗝 Found keyword ${choice.keyword}`);
+      kitCache.keywords.set(choice.keyword.toLowerCase(), choice);
+    }
+
+    // TODO: Parse choice.trigger earlier during choice formatting?
+    const trigger = (
+      choice?.trigger ||
+      choice?.name?.match(/(?<=\[)\w+(?=\])/i)?.[0] ||
+      ''
+    ).toLowerCase();
+
+    if (trigger) {
+      kitCache.triggers.set(trigger, choice);
+    }
+
+    const postfix = typeof choice?.pass === 'string';
+
+    if (postfix) {
+      kitCache.postfixes.set(choice?.pass.trim(), choice);
+    }
+  }
+};
+
 const scoreAndCacheMainChoices = (scripts: Script[]) => {
   // TODO: Reimplement score and cache?
   const results = scripts
@@ -731,6 +763,7 @@ const scoreAndCacheMainChoices = (scripts: Script[]) => {
 
   kitCache.scripts = scripts;
   kitCache.choices = results;
+  cacheTriggers(results);
 
   for (const prompt of prompts) {
     log.info(`${prompt.pid}: initMainChoices`);

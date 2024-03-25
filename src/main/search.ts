@@ -24,7 +24,7 @@ export const invokeSearch = (
   rawInput: string,
   reason = 'normal',
 ) => {
-  log.info(`${prompt.pid}: Invoke search: ${rawInput} <<<`);
+  log.info(`${prompt.pid}: ${reason}: Invoke search: ${rawInput} <<<`);
 
   if (prompt.ui !== UI.arg) return;
 
@@ -39,7 +39,7 @@ export const invokeSearch = (
   }
 
   if (prompt.kitSearch.choices.length === 0) {
-    setScoredChoices(prompt, []);
+    setScoredChoices(prompt, [], 'prompt.kitSearch.choices.length === 0');
     return;
   }
 
@@ -65,9 +65,17 @@ export const invokeSearch = (
           misses.push(createScoredChoice(choice));
         }
       }
-      setScoredChoices(prompt, misses);
+      setScoredChoices(
+        prompt,
+        misses,
+        'transformedInput === "" && results.length === 0',
+      );
     } else {
-      setScoredChoices(prompt, results);
+      setScoredChoices(
+        prompt,
+        results,
+        'transformedInput === "" && results.length > 0',
+      );
     }
 
     return;
@@ -304,7 +312,7 @@ export const invokeSearch = (
 
     groupedResults.unshift(...infoGroup);
 
-    setScoredChoices(prompt, groupedResults);
+    setScoredChoices(prompt, groupedResults, 'prompt.kitSearch.hasGroup');
   } else if (resultLength === 0) {
     const scoredChoices = [];
     for (const choice of prompt.kitSearch.choices) {
@@ -332,11 +340,11 @@ export const invokeSearch = (
       }
     }
 
-    setScoredChoices(prompt, scoredChoices);
+    setScoredChoices(prompt, scoredChoices, 'resultLength === 0');
   } else {
     const allMisses = result.every((r) => r?.item?.miss && r?.item?.info);
     if (allMisses) {
-      setScoredChoices(prompt, result);
+      setScoredChoices(prompt, result, 'allMisses');
     } else {
       const infos = [];
       for (const choice of prompt.kitSearch.choices) {
@@ -379,7 +387,7 @@ export const invokeSearch = (
 
       filterConditions.unshift(...infos);
 
-      setScoredChoices(prompt, filterConditions);
+      setScoredChoices(prompt, filterConditions, 'resultLength > 0');
     }
   }
 };
@@ -584,6 +592,25 @@ export const appendChoices = (prompt: KitPrompt, choices: Choice[]) => {
   });
 };
 
+export function scorer(
+  string: string,
+  query: string,
+  matches: [number, number][] | undefined,
+) {
+  return quickScore(
+    string,
+    query,
+    matches,
+    undefined,
+    undefined,
+    createConfig({
+      maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
+        ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
+        : 3,
+    }),
+  );
+}
+
 export const setChoices = (
   prompt: KitPrompt,
   choices: Choice[],
@@ -620,33 +647,23 @@ export const setChoices = (
 
   if (!choices || !Array.isArray(choices) || choices?.length === 0) {
     prompt.kitSearch.choices = [];
-    setScoredChoices(prompt, []);
+    setScoredChoices(
+      prompt,
+      [],
+      '!choices || !Array.isArray(choices) || choices.length === 0',
+    );
     prompt.kitSearch.hasGroup = false;
     prompt.kitSearch.qs = null;
     return;
   }
 
   if (generated) {
-    setScoredChoices(prompt, choices.map(createScoredChoice));
+    setScoredChoices(prompt, choices.map(createScoredChoice), 'generated');
     return;
   }
 
   prompt.kitSearch.choices = choices.filter((c) => !c?.exclude);
   prompt.kitSearch.hasGroup = Boolean(choices?.find((c: Choice) => c?.group));
-  function scorer(string: string, query: string, matches: number[][]) {
-    return quickScore(
-      string,
-      query,
-      matches as any,
-      undefined,
-      undefined,
-      createConfig({
-        maxIterations: kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS
-          ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MAX_ITERATIONS, 32)
-          : 3,
-      }),
-    );
-  }
 
   prompt.kitSearch.qs = new QuickScore(choices, {
     keys: prompt.kitSearch.keys.map((name) => ({
@@ -671,10 +688,11 @@ export const setChoices = (
 export const setScoredChoices = (
   prompt: KitPrompt,
   choices: ScoredChoice[],
+  reason = 'default',
 ) => {
-  if (choices?.length) {
-    log.info(`🎼 Scored choices count: ${choices.length}`);
-  }
+  log.info(
+    `${prompt.pid}: ${reason} 🎼 Scored choices count: ${choices.length}`,
+  );
 
   const sendToPrompt = prompt.sendToPrompt;
   sendToPrompt(Channel.SET_SCORED_CHOICES, choices);

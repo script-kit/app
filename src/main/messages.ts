@@ -1108,7 +1108,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     },
     ADD_CHOICE: onChildChannel(async ({ child }, { channel, value }) => {
       prompt.kitSearch.choices.push(value);
-      invokeSearch(prompt, prompt.kitSearch.input);
+      invokeSearch(prompt, prompt.kitSearch.input, 'ADD_CHOICE');
     }),
 
     SET_CHOICES: onChildChannelOverride(
