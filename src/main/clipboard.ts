@@ -48,7 +48,7 @@ export const addToClipboardHistory = async (clipboardItem: ClipboardItem) => {
 
   remove(
     clipboardHistory,
-    (item: ClipboardItem) => item.value === clipboardItem?.value
+    (item: ClipboardItem) => item.value === clipboardItem?.value,
   );
 
   log.silly(`📋 Clipboard`, clipboardItem);
@@ -56,7 +56,7 @@ export const addToClipboardHistory = async (clipboardItem: ClipboardItem) => {
   clipboardHistory.unshift(clipboardItem);
   const maxHistory = kitState?.kenvEnv?.KIT_CLIPBOARD_HISTORY_LIMIT
     ? parseInt(kitState?.kenvEnv?.KIT_CLIPBOARD_HISTORY_LIMIT, 10)
-    : 100;
+    : 128;
 
   if (
     // eslint-disable-next-line no-constant-condition

@@ -338,6 +338,20 @@ export const setupWatchers = async () => {
         try {
           const envData = dotenv.parse(readFileSync(filePath));
 
+          // const resetKeyboardAndClipboard = () => {
+          //   if (envData?.KIT_CLIPBOARD) {
+          //     kitState.kenvEnv.KIT_CLIPBOARD = envData?.KIT_CLIPBOARD;
+          //   } else if (!envData?.KIT_CLIPBOARD) {
+          //     delete kitState.kenvEnv.KIT_CLIPBOARD;
+          //   }
+
+          //   if (envData?.KIT_KEYBOARD) {
+          //     kitState.kenvEnv.KIT_KEYBOARD = envData?.KIT_KEYBOARD;
+          //   } else if (!envData?.KIT_KEYBOARD) {
+          //     delete kitState.kenvEnv.KIT_KEYBOARD;
+          //   }
+          // };
+
           log.info({
             KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,
             KIT_THEME_DARK: envData?.KIT_THEME_DARK,
@@ -442,6 +456,27 @@ export const setupWatchers = async () => {
             }
             setDefaultMainShortcut();
           }
+
+          // if (envData?.KIT_LOW_CPU) {
+          //   kitState.kenvEnv.KIT_LOW_CPU = envData?.KIT_LOW_CPU;
+          //   if (envData?.KIT_LOW_CPU === 'true') {
+          //     log.info(`🔋 Low CPU Mode. KIT_LOW_CPU=true`);
+          //     envData.KIT_SUSPEND_WATCHERS = 'true';
+          //     kitState.kenvEnv.KIT_CLIPBOARD = 'false';
+          //     kitState.kenvEnv.KIT_KEYBOARD = 'false';
+          //   } else {
+          //     log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=false`);
+          //     envData.KIT_SUSPEND_WATCHERS = 'false';
+          //     resetKeyboardAndClipboard();
+          //   }
+          //   startClipboardAndKeyboardWatchers();
+          // } else if (kitState.kenvEnv.KIT_LOW_CPU) {
+          //   delete kitState.kenvEnv.KIT_LOW_CPU;
+          //   log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=empty string`);
+          //   envData.KIT_SUSPEND_WATCHERS = 'false';
+          //   resetKeyboardAndClipboard();
+          //   startClipboardAndKeyboardWatchers();
+          // }
 
           if (envData?.KIT_SUSPEND_WATCHERS) {
             const suspendWatchers = envData?.KIT_SUSPEND_WATCHERS === 'true';

@@ -1,12 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import clipboardEventListener from '@johnlindquist/clipboard';
 import { Observable, Subscription } from 'rxjs';
-import {
-  debounceTime,
-  filter,
-  share,
-  switchMap,
-} from 'rxjs/operators';
+import { debounceTime, filter, share, switchMap } from 'rxjs/operators';
 import log from 'electron-log';
 import { subscribeKey } from 'valtio/utils';
 import { format } from 'date-fns';
@@ -154,7 +149,7 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
     } else {
       kitState.snippet = `${kitState.snippet}${key}`;
       kitState.typedText = `${kitState.typedText}${key}`.slice(
-        -kitState.typedLimit
+        -kitState.typedLimit,
       );
       log.silly(`kitState.snippet = `, kitState.snippet);
     }
@@ -205,6 +200,7 @@ const isTransient = () => {
 export const startKeyboardMonitor = async () => {
   if (kitState.kenvEnv?.KIT_KEYBOARD === 'false') {
     log.info(`🔇 Keyboard monitor disabled`);
+    if (io$Sub) io$Sub.unsubscribe();
     return;
   }
   const io$ = new Observable((observer) => {
@@ -236,6 +232,7 @@ export const startKeyboardMonitor = async () => {
 export const startClipboardMonitor = async () => {
   if (kitState.kenvEnv?.KIT_CLIPBOARD === 'false') {
     log.info(`🔇 Clipboard monitor disabled`);
+    if (clipboard$Sub) clipboard$Sub.unsubscribe();
     return;
   }
   log.info(`⌚️ Configuring interval...`);
@@ -296,7 +293,7 @@ export const startClipboardMonitor = async () => {
       // REMOVE-MAC
       else {
         log.info(
-          `Attempting to start @johnlindquist/mac-clipboard-listener...`
+          `Attempting to start @johnlindquist/mac-clipboard-listener...`,
         );
 
         startMacClipboardListener();
@@ -306,7 +303,7 @@ export const startClipboardMonitor = async () => {
             () => {
               try {
                 log.info(
-                  `@johnlindquist/mac-clipboard-listener image changed...`
+                  `@johnlindquist/mac-clipboard-listener image changed...`,
                 );
                 observer.next('image');
               } catch (error) {
@@ -316,8 +313,8 @@ export const startClipboardMonitor = async () => {
             100,
             {
               leading: true,
-            }
-          )
+            },
+          ),
         );
 
         onClipboardTextChange(
@@ -325,7 +322,7 @@ export const startClipboardMonitor = async () => {
             () => {
               try {
                 log.info(
-                  `@johnlindquist/mac-clipboard-listener text changed...`
+                  `@johnlindquist/mac-clipboard-listener text changed...`,
                 );
                 observer.next('text');
               } catch (error) {
@@ -335,8 +332,8 @@ export const startClipboardMonitor = async () => {
             100,
             {
               leading: true,
-            }
-          )
+            },
+          ),
         );
       }
       // END-REMOVE-MAC
@@ -373,7 +370,7 @@ export const startClipboardMonitor = async () => {
       };
     }),
     filter((value) => value.type !== 'ignore'),
-    debounceTime(100)
+    debounceTime(100),
   );
 
   if (!clipboard$Sub)
@@ -424,7 +421,7 @@ export const startClipboardMonitor = async () => {
               value?.match(kitState?.kenvEnv?.KIT_CLIPBOARD_IGNORE_REGEX)
             ) {
               log.info(
-                `Ignoring clipboard value that matches KIT_CLIPBOARD_IGNORE_REGEX`
+                `Ignoring clipboard value that matches KIT_CLIPBOARD_IGNORE_REGEX`,
               );
               return;
             }
@@ -439,12 +436,12 @@ export const startClipboardMonitor = async () => {
             // no newlines
             (!value.match(/\n/g) &&
               value.match(
-                /^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*()-_=+{}[\]<>;:,.|~]{5,}$/i
+                /^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*()-_=+{}[\]<>;:,.|~]{5,}$/i,
               )) ||
               (kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX &&
                 value.match(
-                  new RegExp(kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX)
-                ))
+                  new RegExp(kitState?.kenvEnv?.KIT_MAYBE_SECRET_REGEX),
+                )),
           );
         }
 
@@ -466,7 +463,7 @@ export const startClipboardMonitor = async () => {
         };
 
         addToClipboardHistory(clipboardItem);
-      }
+      },
     );
 };
 
@@ -541,7 +538,7 @@ const snippetMap = new Map<
 >();
 
 const getSnippet = (
-  contents: string
+  contents: string,
 ): {
   metadata: Record<string, string>;
   snippet: string;
@@ -602,10 +599,10 @@ export const addSnippet = (script: Script) => {
   if (script?.kenv !== '' && !kitState.trustedKenvs.includes(script?.kenv)) {
     if (script?.snippet) {
       log.info(
-        `Ignoring ${script?.filePath} // Snippet metadata because it's not trusted in a trusted kenv.`
+        `Ignoring ${script?.filePath} // Snippet metadata because it's not trusted in a trusted kenv.`,
       );
       log.info(
-        `Add "${kitState.trustedKenvsKey}=${script?.kenv}" to your .env file to trust it.`
+        `Add "${kitState.trustedKenvsKey}=${script?.kenv}" to your .env file to trust it.`,
       );
     }
 

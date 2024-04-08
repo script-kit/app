@@ -144,6 +144,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
               {
                 force: true,
                 trigger: Trigger.Tray,
+                sponsorCheck: false,
               },
             ),
           },
@@ -259,6 +260,16 @@ export const openMenu = async (event?: KeyboardEvent) => {
       },
     });
 
+    // const isLowCpuEnabled = kitState.kenvEnv.KIT_LOW_CPU === 'true';
+
+    // watcherSubmenu.push({
+    //   label: `${isLowCpuEnabled ? `Disable` : `Enable`} Low CPU Mode`,
+    //   click: runScript(kitPath('cli', 'set-env-var.js'), [
+    //     'KIT_LOW_CPU',
+    //     isLowCpuEnabled ? 'false' : 'true',
+    //   ]),
+    // });
+
     const toolsSubmenu: MenuItemConstructorOptions[] = [];
 
     toolsSubmenu.push({
@@ -274,6 +285,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         runScript(getMainScriptPath(), [], {
           force: true,
           trigger: Trigger.Tray,
+          sponsorCheck: false,
         })();
 
         prompts.focused?.forcePromptToCenter();
@@ -438,6 +450,7 @@ export const openMenu = async (event?: KeyboardEvent) => {
         runScript(kitPath('debug', 'test-notification.js'), [], {
           force: true,
           trigger: Trigger.Tray,
+          sponsorCheck: false,
         });
       },
     });
@@ -579,9 +592,10 @@ const runScript =
   (
     scriptPath: string,
     args: string[] = [],
-    options = { force: false, trigger: Trigger.App },
+    options = { force: false, trigger: Trigger.App, sponsorCheck: false },
   ) =>
   () => {
+    log.info(`🎨 Running script: ${scriptPath}`);
     emitter.emit(KitEvent.RunPromptProcess, {
       scriptPath,
       args,
@@ -597,6 +611,7 @@ const createOpenMain = () => {
     click: runScript(getMainScriptPath(), [], {
       force: true,
       trigger: Trigger.Tray,
+      sponsorCheck: true,
     }),
     accelerator: kitState.mainShortcut,
   };
@@ -779,6 +794,7 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
           options: {
             force: true,
             trigger: Trigger.Menu,
+            sponsorCheck: false,
           },
         });
       },
@@ -809,6 +825,7 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
         runScript(getMainScriptPath(), [], {
           force: true,
           trigger: Trigger.Tray,
+          sponsorCheck: false,
         });
         return;
       }

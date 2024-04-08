@@ -674,7 +674,7 @@ export class KitPrompt {
         nodeIntegration: true,
         contextIsolation: false,
         devTools: true,
-        backgroundThrottling: false,
+        // backgroundThrottling: false,
         // experimentalFeatures: true,
         spellcheck: true,
         preload: fileURLToPath(
@@ -694,7 +694,7 @@ export class KitPrompt {
       y: Math.round(workY + screenHeight / 8),
       backgroundColor: '#00000000',
       backgroundMaterial: 'mica',
-      transparent: true,
+      transparent: kitState.kenvEnv?.KIT_TRANSPARENT === 'false' || true,
     };
 
     // Disable Windows show animation
@@ -876,7 +876,7 @@ export class KitPrompt {
       emitter.emit(KitEvent.DID_FINISH_LOAD);
 
       const messagesReadyHandler = (event, pid) => {
-        this.window.webContents.setBackgroundThrottling(false);
+        // this.window.webContents.setBackgroundThrottling(false);
 
         log.info(`${this.pid}: 📬 Messages ready. `);
         if (this.initMain) {

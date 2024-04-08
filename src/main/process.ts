@@ -1162,7 +1162,7 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
 
 let prevKenvEnv: Record<string, string> = {};
 subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
-  log.info(`🔑 kenvEnv updated`, kenvEnv);
+  // log.info(`🔑 kenvEnv updated`, kenvEnv);
   // Compare prevKenvEnv to kenvEnv
   const keys = Object.keys(kenvEnv);
   const prevKeys = Object.keys(prevKenvEnv);
@@ -1172,7 +1172,11 @@ subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
     (key) => prevKeys.includes(key) && prevKenvEnv[key] !== kenvEnv[key],
   );
   if (addedKeys.length || removedKeys.length || changedKeys.length) {
-    log.info(`🔑 kenvEnv changes`);
+    log.info(`🔑 kenvEnv changes`, {
+      addedKeys,
+      changedKeys,
+      removedKeys,
+    });
     prevKenvEnv = kenvEnv;
   } else {
     log.info(`🔑 kenvEnv no changes`);

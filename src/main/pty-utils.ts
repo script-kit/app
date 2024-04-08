@@ -98,7 +98,7 @@ export function getPtyOptions(config: Partial<TermConfig>) {
     ...config?.env,
   };
 
-  log.info(`env here:`, kitState.kenvEnv);
+  // log.info(`env here:`, kitState.kenvEnv);
 
   env.PATH = config?.env?.PATH || KIT_FIRST_PATH;
   if (kitState.isWindows) {
