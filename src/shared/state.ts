@@ -36,7 +36,6 @@ import {
   setScriptTimestamp,
   UserDb,
   AppDb,
-  appDefaults,
   Stamp,
 } from '@johnlindquist/kit/core/db';
 
@@ -333,7 +332,6 @@ const initConfig: Config = {
   deleteSnippet: true,
 };
 
-export const appDb: AppDb = proxy(appDefaults);
 export const kitConfig: Config = proxy(initConfig);
 export const kitState: typeof initState = proxy(initState);
 export type kitStateType = typeof initState;
