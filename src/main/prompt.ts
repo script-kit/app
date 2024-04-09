@@ -84,7 +84,7 @@ import { sendToAllPrompts } from './channel';
 import { setFlags, setChoices, invokeSearch, scorer } from './search';
 import { fileURLToPath } from 'url';
 import { prompts } from './prompts';
-import { ProcessAndPrompt, processes } from './process';
+import { ProcessAndPrompt, ensureIdleProcess, processes } from './process';
 import { QuickScore } from 'quick-score';
 import { createPty } from './pty';
 import { cliFromParams, runPromptProcess } from './kit';
@@ -811,12 +811,7 @@ export class KitPrompt {
             prevWindow = currentWindow;
           }
 
-          windowManager.setWindowAsPopupWithRoundedCorners(
-            this.window?.getNativeWindowHandle(),
-          );
           this.window.setHasShadow(true);
-
-          // windowManager.forceWindowPaint(this.window.getNativeWindowHandle());
         } catch (error) {
           log.error(error);
         }
@@ -1162,9 +1157,6 @@ export class KitPrompt {
     });
 
     this.window.webContents?.on('render-process-gone', (event, details) => {
-      // this.window.show();
-      // this.window.webContents?.openDevTools();
-
       processes.removeByPid(this.pid);
       this.sendToPrompt = () => {};
       this.window.webContents.send = () => {};
@@ -1261,11 +1253,21 @@ export class KitPrompt {
     } else {
       // this.prompt.restore();
       log.info(`${this.pid}:${this.window?.id} this.window.show()`);
-      // windowManager.showInstantly(this.window.getNativeWindowHandle());
+
+      // REMOVE-NODE-WINDOW-MANAGER
+      if (kitState.isWindows) {
+        windowManager.setWindowAsPopupWithRoundedCorners(
+          this.window?.getNativeWindowHandle(),
+        );
+        windowManager.forceWindowPaint(this.window.getNativeWindowHandle());
+      }
+      // END-REMOVE-NODE-WINDOW-MANAGER
       this.window.show();
     }
 
     this.setPromptAlwaysOnTop(true);
+
+    ensureIdleProcess();
 
     if (topTimeout) clearTimeout(topTimeout);
     // topTimeout = setTimeout(() => {
@@ -2512,10 +2514,6 @@ export class KitPrompt {
         // hasFocus: w.isFocused() ? 'Yes' : 'No',
         // visibleOnAllWorkspaces: w.isVisibleOnAllWorkspaces() ? 'Yes' : 'No',
       }));
-
-      for (const w of allWindows) {
-        // w.show();
-      }
 
       const promptTable = promptStates
         .map(

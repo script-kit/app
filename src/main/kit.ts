@@ -213,7 +213,7 @@ export const runPromptProcess = async (
     }
   }
 
-  ensureIdleProcess();
+  // ensureIdleProcess();
 
   log.info(`🏃‍♀️ Run ${promptScriptPath}`);
 
