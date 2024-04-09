@@ -12,7 +12,6 @@ import { throttle } from 'lodash-es';
 import useResizeObserver from '@react-hook/resize-observer';
 import {
   appBoundsAtom,
-  appDbAtom,
   darkAtom,
   hasPreviewAtom,
   logAtom,
@@ -89,7 +88,7 @@ export default function Terminal() {
       t.loadAddon(
         new WebLinksAddon((e, uri) => {
           shell.openExternal(uri);
-        })
+        }),
       );
 
       // t.loadAddon(new WebglAddon());
@@ -164,7 +163,6 @@ export default function Terminal() {
     };
   }, []);
 
-  const [appDb] = useAtom(appDbAtom);
   const appBounds = useAtomValue(appBoundsAtom);
   const log = useAtomValue(logAtom);
 
@@ -184,7 +182,7 @@ export default function Terminal() {
       const dimensions = fitRef.current.proposeDimensions();
       if (!dimensions) return;
       ipcRenderer.send(AppChannel.TERM_RESIZE, dimensions);
-    }, 150)
+    }, 150),
   );
 
   return (

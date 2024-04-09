@@ -5,17 +5,17 @@ import Store, { Schema } from 'electron-store';
 
 // REMOVE-MAC
 import nmp from 'node-mac-permissions';
-const { askForAccessibilityAccess, getAuthStatus, askForFullDiskAccess } = nmp;
+const { getAuthStatus } = nmp;
 // END-REMOVE-MAC
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
 import fsExtra from 'fs-extra';
-const { readJson, writeJson } = fsExtra;
+const { writeJson } = fsExtra;
 import * as nativeKeymap from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
 import log, { FileTransport, LevelOption, LogLevel } from 'electron-log';
-import { assign, debounce } from 'lodash-es';
+import { debounce } from 'lodash-es';
 import path from 'path';
 import os from 'os';
 import { ChildProcess } from 'child_process';
@@ -26,7 +26,6 @@ import schedule, { Job } from 'node-schedule';
 import { readdir } from 'fs/promises';
 import {
   Script,
-  ProcessInfo,
   Choice,
   PromptData,
   ScoredChoice,
@@ -37,7 +36,6 @@ import {
   setScriptTimestamp,
   UserDb,
   AppDb,
-  getAppDb,
   appDefaults,
   Stamp,
 } from '@johnlindquist/kit/core/db';
@@ -50,11 +48,11 @@ import {
   tmpClipboardDir,
   getTrustedKenvsKey,
 } from '@johnlindquist/kit/core/utils';
-import { UI } from '@johnlindquist/kit/core/enum';
 import axios from 'axios';
 import internetAvailable from './internet-available';
 import { emitter, KitEvent } from './events';
 import { Trigger } from './enums';
+import { kenvEnv } from '@johnlindquist/kit/types/env';
 
 const schema: Schema<{
   KENV: string;
@@ -295,7 +293,7 @@ const initState = {
     autoDelayMs: 0,
   } as any,
   cancelTyping: false,
-  kenvEnv: {} as Record<string, string>,
+  kenvEnv: {} as kenvEnv,
   escapePressed: false,
   shortcutPressed: '',
   supportsNut:
@@ -539,18 +537,6 @@ subs.push(
   subIgnoreBlur,
 );
 
-export const updateAppDb = async (settings: Partial<AppDb>) => {
-  const db = await getAppDb();
-  assign(db, settings);
-  assign(appDb, settings);
-
-  try {
-    await db.write();
-  } catch (error) {
-    log.info(error);
-  }
-};
-
 const defaultKeyMap: {
   [key: string]: string;
 } = {
@@ -627,7 +613,7 @@ keymapLog.transports.console.level = (process.env.VITE_LOG_LEVEL ||
   'info') as LevelOption;
 
 export const convertKey = (sourceKey: string) => {
-  if (typeof appDb?.convertKey === 'boolean' && !appDb.convertKey) {
+  if (kitState.kenvEnv?.KIT_CONVERT_KEY === 'false') {
     keymapLog.info(`🔑 Skipping key conversion: ${sourceKey}`);
     return sourceKey;
   }

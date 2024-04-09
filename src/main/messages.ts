@@ -762,6 +762,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     ),
 
     BEFORE_EXIT: onChildChannelOverride(({ pid }) => {
+      log.info(`${pid}: 🚪 Before exit`);
+      processes.stampPid(pid);
       processes.removeByPid(pid);
     }),
 

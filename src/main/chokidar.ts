@@ -4,7 +4,6 @@ import log from 'electron-log';
 import {
   kenvPath,
   kitPath,
-  appDbPath,
   userDbPath,
   statsPath,
 } from '@johnlindquist/kit/core/utils';
@@ -74,7 +73,6 @@ export const startWatching = (callback: WatcherCallback) => {
 
   const fileWatcher = chokidar.watch(
     [
-      appDbPath,
       userDbPath,
       statsPath,
       kenvPath('.env'),

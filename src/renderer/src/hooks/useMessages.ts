@@ -57,7 +57,6 @@ import {
   logValueAtom,
   shortcutsAtom,
   editorAppendAtom,
-  appDbAtom,
   colorAtom,
   chatMessagesAtom,
   addChatMessageAtom,
@@ -102,7 +101,6 @@ import { AppChannel, WindowChannel } from '../../../shared/enums';
 export default () => {
   const [pid, setPid] = useAtom(pidAtom);
   const [, setAppConfig] = useAtom(appConfigAtom);
-  const [, setAppDb] = useAtom(appDbAtom);
   const [, setOpen] = useAtom(openAtom);
   const [script, setScript] = useAtom(scriptAtom);
   const [, setHint] = useAtom(hintAtom);
@@ -219,7 +217,6 @@ export default () => {
 
   const messageMap: ChannelAtomMap = {
     [Channel.APP_CONFIG]: setAppConfig,
-    [Channel.APP_DB]: setAppDb,
     [Channel.EXIT]: setExit,
     [Channel.SET_PID]: (pid) => {
       toast.dismiss();

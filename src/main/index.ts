@@ -8,6 +8,8 @@ import {
   nativeTheme,
 } from 'electron';
 
+import './env';
+
 process.on('SIGINT', () => {
   app.quit();
   app.exit();
@@ -50,16 +52,14 @@ import {
   tmpClipboardDir,
   tmpDownloadsDir,
   execPath,
-  appDbPath,
   getKenvs,
   getMainScriptPath,
 } from '@johnlindquist/kit/core/utils';
 
-import { getPrefsDb, getAppDb } from '@johnlindquist/kit/core/db';
+import { getPrefsDb } from '@johnlindquist/kit/core/db';
 import { subscribeKey } from 'valtio/utils';
-import { assign, debounce, throttle } from 'lodash-es';
-import { snapshot } from 'valtio';
-import { setupTray } from './tray';
+import { debounce, throttle } from 'lodash-es';
+import { checkTray, setupTray } from './tray';
 import { setupWatchers, teardownWatchers } from './watcher';
 import {
   getAssetPath,
@@ -72,15 +72,14 @@ import { clearPromptCache, clearPromptTimers, logPromptState } from './prompt';
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
 import { checkForUpdates, configureAutoUpdate, kitIgnore } from './update';
+import { kenvEnv } from '@johnlindquist/kit/types/env';
 import {
-  appDb,
   cacheKitScripts,
   getThemes,
   initKeymap,
   kitState,
   kitStore,
   subs,
-  updateAppDb,
 } from '../shared/state';
 import { startSK } from './sk';
 import {
@@ -93,7 +92,7 @@ import { startIpc } from './ipc';
 import { cliFromParams, runPromptProcess } from './kit';
 import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
-import { registerKillLatestShortcut } from './shortcuts';
+import { registerKillLatestShortcut, updateMainShortcut } from './shortcuts';
 import { logMap, mainLog } from './logs';
 import { emitter } from '../shared/events';
 import { displayError } from './error';
@@ -200,9 +199,11 @@ if (!app.requestSingleInstanceLock()) {
 log.info(`Appending switch: ignore-certificate-errors`);
 app.commandLine.appendSwitch('ignore-certificate-errors');
 
-if (pathExistsSync(appDbPath) && appDb) {
-  log.info(`Prefs:`, { appDb: snapshot(appDb) });
-  if (appDb.disableGpu) {
+const kenvEnvPath = kenvPath('.env');
+const envExists = pathExistsSync(kenvEnvPath);
+if (envExists) {
+  const envData = dotenv.parse(readFileSync(kenvEnvPath)) as kenvEnv;
+  if (envData.KIT_DISABLE_GPU) {
     app.disableHardwareAcceleration();
   }
 }
@@ -286,7 +287,6 @@ const KIT = kitPath();
 // ) {
 //   require('electron-debug')({ showDevTools: false });
 // }
-
 
 const newFromProtocol = async (u: string) => {
   const url = new URL(u);
@@ -403,7 +403,6 @@ const systemEvents = () => {
         // wait 5 seconds for the system to wake up
         await new Promise((resolve) => setTimeout(resolve, 5000));
 
-        await updateAppDb({});
         log.info(`🌄 System waking`);
         // await setupWatchers();
 
@@ -478,7 +477,6 @@ const ready = async () => {
     await setupSettings();
 
     await setupTray(true, 'default');
-    assign(appDb, (await getAppDb()).data);
 
     await setupLog(`Tray created`);
 
@@ -506,6 +504,12 @@ const ready = async () => {
     actualHideDock();
 
     readKitCss();
+
+    checkTray();
+
+    updateMainShortcut(
+      kitState.kenvEnv.KIT_MAIN_SHORTCUT || kitState.isMac ? 'cmd ;' : 'ctrl ;',
+    );
 
     if (process.env.KIT_LOG_PROMPT_STATE) {
       setInterval(() => {
@@ -985,7 +989,7 @@ const checkKit = async () => {
 
     const envPath = kenvPath('.env');
     const envData = dotenv.parse(readFileSync(envPath));
-    log.info(`envData`, envPath, envData);
+    // log.info(`envData`, envPath, envData);
     kitState.kenvEnv = envData;
     createIdlePty();
 

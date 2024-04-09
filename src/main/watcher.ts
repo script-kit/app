@@ -1,13 +1,13 @@
 /* eslint-disable no-restricted-syntax */
 import log from 'electron-log';
-import { assign, debounce } from 'lodash-es';
+import { debounce } from 'lodash-es';
 import path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 import dotenv from 'dotenv';
 import { rm, readFile } from 'fs/promises';
-import { getAppDb, getScripts, getUserJson } from '@johnlindquist/kit/core/db';
+import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
 import { Script } from '@johnlindquist/kit/types';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
 
@@ -16,30 +16,29 @@ import {
   kitPath,
   kenvPath,
   resolveToScriptPath,
-  getMainScriptPath,
   statsPath,
 } from '@johnlindquist/kit/core/utils';
 
 import { FSWatcher } from 'chokidar';
-import {
-  unlinkShortcuts,
-  updateMainShortcut,
-  shortcutScriptChanged,
-  setDefaultMainShortcut,
-} from './shortcuts';
+import { unlinkShortcuts, shortcutScriptChanged } from './shortcuts';
 
 import { cancelSchedule, scheduleScriptChanged } from './schedule';
 import { unlinkEvents, systemScriptChanged } from './system-events';
 import { removeWatch, watchScriptChanged } from './watch';
 import { backgroundScriptChanged, removeBackground } from './background';
 import {
-  appDb,
   debounceSetScriptTimestamp,
   kitState,
   sponsorCheck,
 } from '../shared/state';
+import { kenvEnv } from '@johnlindquist/kit/types/env';
+
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
-import { clearPromptCacheFor, setKitStateAtom } from './prompt';
+import {
+  clearPromptCache,
+  clearPromptCacheFor,
+  setKitStateAtom,
+} from './prompt';
 import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from '../shared/events';
 import { AppChannel, Trigger } from '../shared/enums';
@@ -313,6 +312,182 @@ const refreshScripts = debounce(
   { leading: true },
 );
 
+export const parseEnvFile = debounce(
+  async (filePath: string, eventName: WatchEvent) => {
+    log.info(`🌎 .env ${eventName}`);
+
+    if (existsSync(filePath)) {
+      try {
+        const envData = dotenv.parse(readFileSync(filePath)) as kenvEnv;
+
+        // const resetKeyboardAndClipboard = () => {
+        //   if (envData?.KIT_CLIPBOARD) {
+        //     kitState.kenvEnv.KIT_CLIPBOARD = envData?.KIT_CLIPBOARD;
+        //   } else if (!envData?.KIT_CLIPBOARD) {
+        //     delete kitState.kenvEnv.KIT_CLIPBOARD;
+        //   }
+
+        //   if (envData?.KIT_KEYBOARD) {
+        //     kitState.kenvEnv.KIT_KEYBOARD = envData?.KIT_KEYBOARD;
+        //   } else if (!envData?.KIT_KEYBOARD) {
+        //     delete kitState.kenvEnv.KIT_KEYBOARD;
+        //   }
+        // };
+
+        log.info({
+          KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,
+          KIT_THEME_DARK: envData?.KIT_THEME_DARK,
+        });
+
+        if (envData?.KIT_TERM_FONT) {
+          sendToAllPrompts(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
+        }
+
+        setCSSVariable(
+          '--mono-font',
+          envData?.KIT_MONO_FONT || `JetBrains Mono`,
+        );
+        setCSSVariable(
+          '--sans-font',
+          envData?.KIT_SANS_FONT ||
+            `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`,
+        );
+        setCSSVariable(
+          '--serif-font',
+          envData?.KIT_SERIF_FONT ||
+            `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
+    'serif'`,
+        );
+
+        if (envData?.KIT_MIC) {
+          log.info(`Setting mic`, envData?.KIT_MIC);
+          sendToAllPrompts(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
+        }
+
+        if (envData?.KIT_WEBCAM) {
+          log.info(`Setting webcam`, envData?.KIT_WEBCAM);
+          sendToAllPrompts(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
+        }
+
+        if (envData?.KIT_TYPED_LIMIT) {
+          kitState.typedLimit = parseInt(envData?.KIT_TYPED_LIMIT, 10);
+        }
+
+        const trustedKenvs = (envData?.[kitState.trustedKenvsKey] || '')
+          .split(',')
+          .filter(Boolean)
+          .map((kenv) => kenv.trim());
+
+        log.info(`👩‍⚖️ Trusted Kenvs`, trustedKenvs);
+
+        const trustedKenvsChanged = !compareArrays(
+          trustedKenvs,
+          kitState.trustedKenvs,
+        );
+
+        kitState.trustedKenvs = trustedKenvs;
+
+        if (trustedKenvsChanged) {
+          await refreshScripts();
+        }
+
+        updateTheme();
+
+        // TODO: Debug a single prompt? All of them?
+        if (envData?.KIT_DEBUG_PROMPT) {
+          prompts?.focused?.debugPrompt();
+        }
+
+        if (envData?.KIT_NO_PREVIEW) {
+          setKitStateAtom({
+            noPreview: envData?.KIT_NO_PREVIEW === 'true',
+          });
+        } else if (kitState.kenvEnv.KIT_NO_PREVIEW) {
+          setKitStateAtom({
+            noPreview: false,
+          });
+        }
+
+        if (envData?.KIT_WIDTH) {
+          kitState.kenvEnv.KIT_WIDTH = envData?.KIT_WIDTH;
+        } else if (kitState.kenvEnv.KIT_WIDTH) {
+          kitState.kenvEnv.KIT_WIDTH = undefined;
+        }
+
+        // if (envData?.KIT_LOW_CPU) {
+        //   kitState.kenvEnv.KIT_LOW_CPU = envData?.KIT_LOW_CPU;
+        //   if (envData?.KIT_LOW_CPU === 'true') {
+        //     log.info(`🔋 Low CPU Mode. KIT_LOW_CPU=true`);
+        //     envData.KIT_SUSPEND_WATCHERS = 'true';
+        //     kitState.kenvEnv.KIT_CLIPBOARD = 'false';
+        //     kitState.kenvEnv.KIT_KEYBOARD = 'false';
+        //   } else {
+        //     log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=false`);
+        //     envData.KIT_SUSPEND_WATCHERS = 'false';
+        //     resetKeyboardAndClipboard();
+        //   }
+        //   startClipboardAndKeyboardWatchers();
+        // } else if (kitState.kenvEnv.KIT_LOW_CPU) {
+        //   delete kitState.kenvEnv.KIT_LOW_CPU;
+        //   log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=empty string`);
+        //   envData.KIT_SUSPEND_WATCHERS = 'false';
+        //   resetKeyboardAndClipboard();
+        //   startClipboardAndKeyboardWatchers();
+        // }
+
+        if (envData?.KIT_CACHE_PROMPT) {
+          clearPromptCache();
+        } else if (kitState.kenvEnv.KIT_CACHE_PROMPT) {
+          delete kitState.kenvEnv.KIT_CACHE_PROMPT;
+          clearPromptCache();
+        }
+
+        if (envData?.KIT_SUSPEND_WATCHERS) {
+          const suspendWatchers = envData?.KIT_SUSPEND_WATCHERS === 'true';
+          kitState.suspendWatchers = suspendWatchers;
+
+          if (suspendWatchers) {
+            log.info(`⌚️ Suspending Watchers`);
+            teardownWatchers();
+          } else {
+            log.info(`⌚️ Resuming Watchers`);
+            setupWatchers();
+          }
+        } else if (kitState.suspendWatchers) {
+          kitState.suspendWatchers = false;
+          log.info(`⌚️ Resuming Watchers`);
+          setupWatchers();
+        }
+
+        kitState.kenvEnv = envData;
+        if (prompts.idle?.pid) {
+          processes.getByPid(prompts.idle?.pid).child?.send({
+            pid: prompts.idle?.pid,
+            channel: Channel.ENV_CHANGED,
+            env: createEnv(),
+          });
+        }
+
+        // TODO: I don't think this is necessary any more
+        // togglePromptEnv('KIT_MAIN_SCRIPT');
+      } catch (error) {
+        log.warn(error);
+      }
+
+      // if (envData?.KIT_SHELL) kitState.envShell = envData?.KIT_SHELL;
+      // TODO: Would need to update the dark/light contrast
+      // setCSSVariable('--color-text', envData?.KIT_COLOR_TEXT);
+      // setCSSVariable('--color-background', envData?.KIT_COLOR_BACKGROUND);
+      // setCSSVariable('--color-primary', envData?.KIT_COLOR_PRIMARY);
+      // setCSSVariable('--color-secondary', envData?.KIT_COLOR_SECONDARY);
+      // setCSSVariable('--opacity', envData?.KIT_OPACITY);
+    }
+  },
+  1000,
+  { leading: true },
+);
+
 export const setupWatchers = async () => {
   await teardownWatchers();
   if (kitState.ignoreInitial) {
@@ -332,193 +507,7 @@ export const setupWatchers = async () => {
     }
 
     if (base === '.env') {
-      log.info(`🌎 .env ${eventName}`);
-
-      if (existsSync(filePath)) {
-        try {
-          const envData = dotenv.parse(readFileSync(filePath));
-
-          // const resetKeyboardAndClipboard = () => {
-          //   if (envData?.KIT_CLIPBOARD) {
-          //     kitState.kenvEnv.KIT_CLIPBOARD = envData?.KIT_CLIPBOARD;
-          //   } else if (!envData?.KIT_CLIPBOARD) {
-          //     delete kitState.kenvEnv.KIT_CLIPBOARD;
-          //   }
-
-          //   if (envData?.KIT_KEYBOARD) {
-          //     kitState.kenvEnv.KIT_KEYBOARD = envData?.KIT_KEYBOARD;
-          //   } else if (!envData?.KIT_KEYBOARD) {
-          //     delete kitState.kenvEnv.KIT_KEYBOARD;
-          //   }
-          // };
-
-          log.info({
-            KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,
-            KIT_THEME_DARK: envData?.KIT_THEME_DARK,
-          });
-          if (envData?.KIT_THEME_DARK) {
-            kitState.kenvEnv.KIT_THEME_DARK = envData?.KIT_THEME_DARK;
-          } else {
-            kitState.kenvEnv.KIT_THEME_DARK = '';
-          }
-          if (envData?.KIT_THEME_LIGHT) {
-            kitState.kenvEnv.KIT_THEME_LIGHT = envData?.KIT_THEME_LIGHT;
-          } else {
-            kitState.kenvEnv.KIT_THEME_LIGHT = '';
-          }
-          if (envData?.KIT_TERM_FONT) {
-            sendToAllPrompts(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
-          }
-
-          setCSSVariable(
-            '--mono-font',
-            envData?.KIT_MONO_FONT || `JetBrains Mono`,
-          );
-          setCSSVariable(
-            '--sans-font',
-            envData?.KIT_SANS_FONT ||
-              `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-        Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`,
-          );
-          setCSSVariable(
-            '--serif-font',
-            envData?.KIT_SERIF_FONT ||
-              `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
-        'serif'`,
-          );
-
-          if (envData?.KIT_MIC) {
-            log.info(`Setting mic`, envData?.KIT_MIC);
-            sendToAllPrompts(AppChannel.SET_MIC_ID, envData?.KIT_MIC);
-          }
-
-          if (envData?.KIT_WEBCAM) {
-            log.info(`Setting webcam`, envData?.KIT_WEBCAM);
-            sendToAllPrompts(AppChannel.SET_WEBCAM_ID, envData?.KIT_WEBCAM);
-          }
-
-          if (envData?.KIT_TYPED_LIMIT) {
-            kitState.typedLimit = parseInt(envData?.KIT_TYPED_LIMIT, 10);
-          }
-
-          const trustedKenvs = (envData?.[kitState.trustedKenvsKey] || '')
-            .split(',')
-            .filter(Boolean)
-            .map((kenv) => kenv.trim());
-
-          log.info(`👩‍⚖️ Trusted Kenvs`, trustedKenvs);
-
-          const trustedKenvsChanged = !compareArrays(
-            trustedKenvs,
-            kitState.trustedKenvs,
-          );
-
-          kitState.trustedKenvs = trustedKenvs;
-
-          if (trustedKenvsChanged) {
-            await refreshScripts();
-          }
-
-          updateTheme();
-
-          // TODO: Debug a single prompt? All of them?
-          if (envData?.KIT_DEBUG_PROMPT) {
-            prompts?.focused?.debugPrompt();
-          }
-
-          if (envData?.KIT_NO_PREVIEW) {
-            setKitStateAtom({
-              noPreview: envData?.KIT_NO_PREVIEW === 'true',
-            });
-          } else if (kitState.kenvEnv.KIT_NO_PREVIEW) {
-            setKitStateAtom({
-              noPreview: false,
-            });
-          }
-
-          if (envData?.KIT_WIDTH) {
-            kitState.kenvEnv.KIT_WIDTH = envData?.KIT_WIDTH;
-          } else if (kitState.kenvEnv.KIT_WIDTH) {
-            delete kitState.kenvEnv.KIT_WIDTH;
-          }
-
-          if (
-            envData?.KIT_MAIN_SHORTCUT &&
-            envData?.KIT_MAIN_SHORTCUT !== kitState.kenvEnv.KIT_MAIN_SHORTCUT
-          ) {
-            updateMainShortcut(envData?.KIT_MAIN_SHORTCUT);
-          } else {
-            if (
-              kitState.kenvEnv.KIT_MAIN_SHORTCUT &&
-              !envData?.KIT_MAIN_SHORTCUT
-            ) {
-              delete kitState.kenvEnv.KIT_MAIN_SHORTCUT;
-            }
-            setDefaultMainShortcut();
-          }
-
-          // if (envData?.KIT_LOW_CPU) {
-          //   kitState.kenvEnv.KIT_LOW_CPU = envData?.KIT_LOW_CPU;
-          //   if (envData?.KIT_LOW_CPU === 'true') {
-          //     log.info(`🔋 Low CPU Mode. KIT_LOW_CPU=true`);
-          //     envData.KIT_SUSPEND_WATCHERS = 'true';
-          //     kitState.kenvEnv.KIT_CLIPBOARD = 'false';
-          //     kitState.kenvEnv.KIT_KEYBOARD = 'false';
-          //   } else {
-          //     log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=false`);
-          //     envData.KIT_SUSPEND_WATCHERS = 'false';
-          //     resetKeyboardAndClipboard();
-          //   }
-          //   startClipboardAndKeyboardWatchers();
-          // } else if (kitState.kenvEnv.KIT_LOW_CPU) {
-          //   delete kitState.kenvEnv.KIT_LOW_CPU;
-          //   log.info(`🔋 Normal CPU Mode. KIT_LOW_CPU=empty string`);
-          //   envData.KIT_SUSPEND_WATCHERS = 'false';
-          //   resetKeyboardAndClipboard();
-          //   startClipboardAndKeyboardWatchers();
-          // }
-
-          if (envData?.KIT_SUSPEND_WATCHERS) {
-            const suspendWatchers = envData?.KIT_SUSPEND_WATCHERS === 'true';
-            kitState.suspendWatchers = suspendWatchers;
-
-            if (suspendWatchers) {
-              log.info(`⌚️ Suspending Watchers`);
-              teardownWatchers();
-            } else {
-              log.info(`⌚️ Resuming Watchers`);
-              setupWatchers();
-            }
-          } else if (kitState.suspendWatchers) {
-            kitState.suspendWatchers = false;
-            log.info(`⌚️ Resuming Watchers`);
-            setupWatchers();
-          }
-
-          kitState.kenvEnv = envData;
-          if (prompts.idle?.pid) {
-            processes.getByPid(prompts.idle?.pid).child?.send({
-              pid: prompts.idle?.pid,
-              channel: Channel.ENV_CHANGED,
-              env: createEnv(),
-            });
-          }
-
-          // TODO: I don't think this is necessary any more
-          // togglePromptEnv('KIT_MAIN_SCRIPT');
-        } catch (error) {
-          log.warn(error);
-        }
-
-        // if (envData?.KIT_SHELL) kitState.envShell = envData?.KIT_SHELL;
-        // TODO: Would need to update the dark/light contrast
-        // setCSSVariable('--color-text', envData?.KIT_COLOR_TEXT);
-        // setCSSVariable('--color-background', envData?.KIT_COLOR_BACKGROUND);
-        // setCSSVariable('--color-primary', envData?.KIT_COLOR_PRIMARY);
-        // setCSSVariable('--color-secondary', envData?.KIT_COLOR_SECONDARY);
-        // setCSSVariable('--opacity', envData?.KIT_OPACITY);
-      }
-
+      parseEnvFile(filePath, eventName);
       return;
     }
 
@@ -529,19 +518,6 @@ export const setupWatchers = async () => {
 
     if (base === 'package.json') {
       log.info(`package.json changed`);
-
-      return;
-    }
-
-    if (base === 'app.json') {
-      log.info(`app.json changed`);
-      try {
-        const currentAppDb = (await getAppDb()).data;
-        assign(appDb, currentAppDb);
-        clearPromptCacheFor(getMainScriptPath());
-      } catch (error) {
-        log.warn(error);
-      }
 
       return;
     }

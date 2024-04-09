@@ -56,6 +56,8 @@ import { SPLASH_PATH } from '../shared/defaults';
 import { KitEvent, emitter } from '../shared/events';
 import { maybeConvertColors, setTheme } from './process';
 import { setShortcodes } from './search';
+import { sendToAllPrompts } from './channel';
+import { AppChannel } from '../shared/enums';
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {
@@ -770,9 +772,9 @@ const scoreAndCacheMainChoices = (scripts: Script[]) => {
     // if (!prompt.isVisible()) {
     prompt.initMainChoices();
     if (!prompt.isVisible()) {
-      log.info(`${prompt.pid}: setShortcodes`, {
-        triggers: scripts.filter((s) => s.trigger).map((s) => s.trigger),
-      });
+      // log.info(`${prompt.pid}: setShortcodes`, {
+      //   triggers: scripts.filter((s) => s.trigger).map((s) => s.trigger),
+      // });
     }
     // }
   }
@@ -815,14 +817,14 @@ export const cacheMainScripts = debounce(async () => {
         }
         if (scripts) {
           // log.info the scripts with triggers
-          log.info(
-            scripts
-              .filter((s) => s.trigger)
-              .map((s) => ({
-                trigger: s.trigger,
-                path: s.filePath,
-              })),
-          );
+          // log.info(
+          //   scripts
+          //     .filter((s) => s.trigger)
+          //     .map((s) => ({
+          //       trigger: s.trigger,
+          //       path: s.filePath,
+          //     })),
+          // );
           scoreAndCacheMainChoices(scripts);
         }
         if (shortcuts) {
@@ -832,6 +834,9 @@ export const cacheMainScripts = debounce(async () => {
         if (scriptFlags) {
           kitCache.scriptFlags = scriptFlags;
         }
+
+        sendToAllPrompts(AppChannel.SET_CACHED_MAIN_PREVIEW, kitCache.preview);
+        sendToAllPrompts(AppChannel.INIT_PROMPT, {});
       }
     };
     const child = fork(

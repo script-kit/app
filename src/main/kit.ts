@@ -192,6 +192,7 @@ export const runPromptProcess = async (
 
   prompt.alwaysOnTop = true;
   if (isMain) {
+    log.info(`${pid}: 🏠 Main script: ${promptScriptPath}`);
     prompt.initMainBounds();
     prompt.initShowPrompt();
   }
@@ -231,7 +232,7 @@ export const runPromptProcess = async (
   const script = await findScript(promptScriptPath);
   const visible = prompt?.isVisible();
   log.info(
-    `${pid}: Visible before setScript ${visible ? '👀' : '🙈'} ${script?.name}`,
+    `${pid}: ${visible ? '👀 visible' : '🙈 not visible'} before setScript ${script?.name}`,
   );
 
   if (visible) {

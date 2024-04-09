@@ -4,7 +4,6 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtomValue, useAtom } from 'jotai';
 import { UI } from '@johnlindquist/kit/core/enum';
-import React from 'react';
 import { IconButton } from './icon';
 import { ActionButton } from './actionbutton';
 import { EnterButton } from './actionenterbutton';
@@ -14,7 +13,6 @@ import {
   uiAtom,
   enterButtonNameAtom,
   enterButtonDisabledAtom,
-  appDbAtom,
   actionsAtom,
   appConfigAtom,
   lightenUIAtom,
@@ -34,7 +32,6 @@ export default function ActionBar() {
   const [enterButtonName] = useAtom(enterButtonNameAtom);
   const [enterButtonDisabled] = useAtom(enterButtonDisabledAtom);
   const [ui] = useAtom(uiAtom);
-  const [appDb] = useAtom(appDbAtom);
   const [app] = useAtom(appConfigAtom);
   const m = app?.isMac;
   const lightenUI = useAtomValue(lightenUIAtom);
@@ -55,9 +52,7 @@ export default function ActionBar() {
     <div
       className={`
       flex flex-row
-      ${ui === UI.splash ? `` : `border-t border-ui-border`}
-      bg-ui-bg
-    ${ui === UI.splash && `bg-secondary/0`}
+      ${ui === UI.splash ? `` : `border-t border-ui-border bg-ui-bg`}
     min-h-6.5 h-6.5 max-h-6.5
     items-center justify-center
     overflow-hidden px-4 pt-px
@@ -72,7 +67,7 @@ export default function ActionBar() {
         }`}
       >
         {actions
-          .filter((action) => action.position === 'left' && !appDb?.mini)
+          .filter((action) => action.position === 'left')
           .flatMap((action, i, array) => [
             // eslint-disable-next-line react/jsx-key
             <ActionButton {...action} />,
@@ -105,11 +100,9 @@ text-opacity-75
       )}
 
       <div
-        className={`
-      ${appDb?.mini ? `w-full justify-between` : `justify-center`}
-      right-container flex flex-row items-center ${
-        !m ? `pb-2px` : `pb-px`
-      } overflow-hidden`}
+        className={`justify-center right-container flex flex-row items-center ${
+          !m ? `pb-2px` : `pb-px`
+        } overflow-hidden`}
       >
         <div className="options-container flex flex-row">
           {hasFlags && [
@@ -119,7 +112,7 @@ text-opacity-75
         </div>
         <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
           {actions
-            .filter((action) => action.position === 'right' && !appDb?.mini)
+            .filter((action) => action.position === 'right')
             .flatMap((action, i, array) => [
               // eslint-disable-next-line react/jsx-key
               <ActionButton {...action} />,

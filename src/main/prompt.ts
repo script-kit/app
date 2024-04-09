@@ -54,7 +54,6 @@ import { ChildProcess } from 'child_process';
 import { closedDiv, noScript } from '../shared/defaults';
 import { getAssetPath } from '../shared/assets';
 import {
-  appDb,
   kitState,
   subs,
   promptState,
@@ -98,7 +97,7 @@ contextMenu({
 });
 
 const getDefaultWidth = () => {
-  return appDb.mini ? PROMPT.WIDTH.XXXS : PROMPT.WIDTH.BASE;
+  return PROMPT.WIDTH.BASE;
 };
 
 interface PromptState {
@@ -470,14 +469,6 @@ const subEscapePressed = subscribeKey(
   },
 );
 
-const subAppDbMini = subscribeKey(appDb, 'mini', () => {
-  clearPromptCache();
-});
-
-const subAppDbCachePrompt = subscribeKey(appDb, 'cachePrompt', () => {
-  clearPromptCache();
-});
-
 export const clearPromptCacheFor = async (scriptPath: string) => {
   try {
     const displays = screen.getAllDisplays();
@@ -518,8 +509,6 @@ subs.push(
   subIsSponsor,
   subUpdateDownloaded,
   subEscapePressed,
-  subAppDbMini,
-  subAppDbCachePrompt,
   subEmoji,
 );
 
@@ -697,11 +686,9 @@ export class KitPrompt {
       transparent: kitState.kenvEnv?.KIT_TRANSPARENT === 'false' || true,
     };
 
-    // Disable Windows show animation
-    // TODO: Move appDb to electron store
-    // assign(appDb, (await getAppDb()).data);
+    // Disable Windows show animation somehow...
 
-    if ((appDb && appDb?.disableBlurEffect) || !kitState.isMac) {
+    if (kitState.kenvEnv?.KIT_DISABLE_BLUR === 'true' || !kitState.isMac) {
       this.window = new BrowserWindow({
         ...options,
       });
@@ -857,12 +844,12 @@ export class KitPrompt {
         assetPath: getAssetPath(),
         version: getVersion(),
         isDark: kitState.isDark,
-        searchDebounce: appDb.searchDebounce || true,
-        termFont: appDb.termFont || 'monospace',
+        searchDebounce: Boolean(
+          kitState.kenvEnv?.KIT_SEARCH_DEBOUNCE === 'false',
+        ),
+        termFont: kitState.kenvEnv?.KIT_TERM_FONT || 'monospace',
         url: kitState.url,
       });
-
-      this.sendToPrompt(Channel.APP_DB, { ...appDb });
 
       const user = snapshot(kitState.user);
       log.info(
@@ -875,7 +862,7 @@ export class KitPrompt {
       });
       emitter.emit(KitEvent.DID_FINISH_LOAD);
 
-      const messagesReadyHandler = (event, pid) => {
+      const messagesReadyHandler = async (event, pid) => {
         // this.window.webContents.setBackgroundThrottling(false);
 
         log.info(`${this.pid}: 📬 Messages ready. `);
@@ -910,15 +897,17 @@ export class KitPrompt {
 
         // Force render
         // Trigger re-layout without visual change
-        this.window?.webContents?.executeJavaScript(
-          `console.log(document.body.offsetHeight);`,
-        );
 
         log.info(
           `${this.pid}:${this.window.id}: 🚀 Prompt ready. Forcing render. ${this.window?.isVisible() ? 'visible' : 'hidden'}`,
         );
 
         this.sendToPrompt(AppChannel.FORCE_RENDER);
+        await this.window?.webContents?.executeJavaScript(
+          `console.log(document.body.offsetHeight);`,
+        );
+
+        this.window.webContents.setBackgroundThrottling(true);
       };
 
       ipcMain.once(AppChannel.MESSAGES_READY, messagesReadyHandler);
@@ -1662,7 +1651,7 @@ export class KitPrompt {
     b: number = Bounds.Position | Bounds.Size,
   ) => {
     if (!this.window || this.window.isDestroyed()) return;
-    if (!appDb.cachePrompt) {
+    if (kitState.kenvEnv?.KIT_CACHE_PROMPT === 'false') {
       log.info(`Cache prompt disabled. Ignore saving bounds`);
       return;
     }
@@ -1776,6 +1765,7 @@ export class KitPrompt {
   };
 
   resize = async (resizeData: ResizeData) => {
+    // log.info({ resizeData });
     // debugLog.info(`Testing...`, resizeData);
     /**
      * Linux doesn't support the "will-resize" or "resized" events making it impossible to distinguish
@@ -2380,18 +2370,18 @@ export class KitPrompt {
     this.cacheScriptPromptData = cache;
     log.info(`${pid} setScript`, { script: script?.filePath });
 
-    if (script.filePath === prevScriptPath && pid === prevPid) {
-      // Using a keyboard shortcut to launch a script will hit this scenario
-      // Because the app will call `setScript` immediately, then the process will call it too
-      log.info(`${this.pid}: Script already set. Ignore`);
-      return 'denied';
-    }
+    // if (script.filePath === prevScriptPath && pid === prevPid) {
+    //   // Using a keyboard shortcut to launch a script will hit this scenario
+    //   // Because the app will call `setScript` immediately, then the process will call it too
+    //   log.info(`${this.pid}: Script already set. Ignore`);
+    //   return 'denied';
+    // }
 
-    prevScriptPath = script.filePath;
-    prevPid = pid;
+    // prevScriptPath = script.filePath;
+    // prevPid = pid;
 
-    const { prompt } = processes.find((p) => p.pid === pid) as ProcessAndPrompt;
-    if (!prompt) return 'denied';
+    // const { prompt } = processes.find((p) => p.pid === pid) as ProcessAndPrompt;
+    // if (!prompt) return 'denied';
 
     this.sendToPrompt(Channel.SET_PID, pid);
 
@@ -2401,7 +2391,6 @@ export class KitPrompt {
     // }
     this.scriptPath = script.filePath;
     kitState.hasSnippet = Boolean(script?.snippet);
-    log.verbose(`setScript ${script.filePath}`);
     // if (promptScript?.filePath === script?.filePath) return;
 
     this.script = script;

@@ -26,7 +26,7 @@ export const sendToAllPrompts = <K extends keyof ChannelMap>(
   channel: K | AppChannel,
   data?: ChannelMap[K],
 ) => {
-  log.info(`sendToAllPrompts: ${String(channel)}`, data);
+  // log.info(`sendToAllPrompts: ${String(channel)}`, data);
   // log.info(`>_ ${channel}`);
 
   for (const prompt of prompts) {

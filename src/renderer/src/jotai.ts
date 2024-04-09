@@ -53,6 +53,7 @@ import {
 import { toHex } from '../../shared/color-utils';
 import { formatShortcut } from './components/formatters';
 import { Action } from './components/actions';
+import { Rectangle } from 'electron';
 
 let placeholderTimeoutId: NodeJS.Timeout;
 
@@ -83,11 +84,6 @@ export const submittedAtom = atom(false);
 const tabs = atom<string[]>([]);
 export const tabsAtom = atom(
   (g) => {
-    if (g(appDbAtom).mini) {
-      return g(tabs).filter((t, i) => {
-        return t === `Account__` || i < 2;
-      });
-    }
     return g(tabs);
   },
   (g, s, a: string[]) => {
@@ -1005,6 +1001,7 @@ const resizeSettle = debounce((g: Getter, s: Setter) => {
 
 const resize = debounce(
   (g: Getter, s: Setter, reason = 'UNSET') => {
+    log.info(`${g(pidAtom)}: ${g(scriptAtom)?.filePath}: 🌈 resize: ${reason}`);
     if (reason !== 'SETTLE') resizeSettle(g, s);
 
     const active = g(promptActiveAtom);
@@ -1056,9 +1053,9 @@ const resize = debounce(
           topHeight -
           footerHeight;
 
-        // log.info(
-        //   `Choices height > PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE} mh ${mh}`
-        // );
+        log.info(
+          `Choices height > PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE} mh ${mh}`,
+        );
       } else {
         mh = choicesHeight;
       }
@@ -1299,6 +1296,10 @@ export const mainHeightAtom = atom(
     const prevHeight = g(mainHeight);
 
     const nextMainHeight = a < 0 ? 0 : a;
+
+    // log.info(
+    //   `${g(pidAtom)}:${g(scriptAtom)?.filePath}: 🌈 mainHeight: ${nextMainHeight} (${a})`,
+    // );
 
     if (nextMainHeight === 0) {
       if (g(panelHTMLAtom) !== '') return;
@@ -2071,15 +2072,6 @@ export const appConfigAtom = atom<AppConfig & { url: string }>({
   delimiter: '',
   url: '',
 });
-
-const _appDbAtom = atom<Partial<AppDb>>({});
-export const appDbAtom = atom(
-  (g) => g(_appDbAtom),
-  (g, s, a: Partial<AppDb>) => {
-    // assign properties from a into appDb
-    s(_appDbAtom, { ...g(_appDbAtom), ...a });
-  },
-);
 
 export const createAssetAtom = (...parts: string[]) =>
   atom(() => {
@@ -2861,11 +2853,10 @@ export const scoredFlagsAtom = atom(
 );
 
 export const previewCheckAtom = atom((g) => {
-  const appDb = g(appDbAtom);
   const previewHTML = g(previewHTMLAtom);
   const enabled = g(previewEnabledAtom);
   const hidden = g(isHiddenAtom);
-  return Boolean(!appDb.mini && previewHTML && enabled && !hidden);
+  return Boolean(previewHTML && enabled && !hidden);
 });
 
 export const triggerKeywordAtom = atom(
@@ -3068,9 +3059,18 @@ export const initPromptAtom = atom(null, (g, s) => {
   // log.info(`🚀 Init prompt`);
   const promptData = g(cachedMainPromptDataAtom) as PromptData;
   // log.info({ promptData });
+  const currentPromptData = g(promptDataAtom);
+  if (currentPromptData?.id) {
+    log.info(
+      `🚪 Init prompt skipped. Already initialized as ${currentPromptData?.id}`,
+    );
+    return;
+  }
   s(promptDataAtom, promptData);
   const scoredChoices = g(cachedMainScoredChoicesAtom);
-  // log.info({ scoredChoices: scoredChoices.length });
+  log.info({
+    scoredChoices: scoredChoices.slice(0, 2).map((c) => c.item.name),
+  });
   s(scoredChoicesAtom, scoredChoices);
 
   s(previewHTMLAtom, g(cachedMainPreviewAtom));

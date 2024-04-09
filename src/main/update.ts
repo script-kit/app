@@ -42,10 +42,6 @@ export const checkForUpdates = async () => {
   const isWin = os.platform().startsWith('win');
   if (isWin) return; // TODO: Get a Windows app cert
 
-  // const autoUpdate = existsSync(appDbPath)
-  //   ? (await getAppDb())?.autoUpdate
-  //   : true;
-
   if (process.env.TEST_UPDATE) {
     autoUpdater.forceDevUpdateConfig = true;
   }
@@ -73,7 +69,7 @@ const parseChannel = (version: string) => {
 let updateInfo = null as any;
 export const configureAutoUpdate = async () => {
   updateLog.info(
-    `Configuring auto-update: ${process.env.TEST_UPDATE ? 'TEST' : 'PROD'}`
+    `Configuring auto-update: ${process.env.TEST_UPDATE ? 'TEST' : 'PROD'}`,
   );
   if (process.env.TEST_UPDATE) {
     updateLog.info(`Forcing dev update config`);
@@ -88,7 +84,7 @@ export const configureAutoUpdate = async () => {
         '..',
         'Caches',
         'Kit',
-        'pending'
+        'pending',
       );
       const files = await readdir(cachePath);
       if (files) {
@@ -166,11 +162,11 @@ export const configureAutoUpdate = async () => {
       }
     } else if (version === newVersion) {
       updateLog.info(
-        `Blocking update. You're version is ${version} and found ${newVersion}`
+        `Blocking update. You're version is ${version} and found ${newVersion}`,
       );
     } else {
       updateLog.info(
-        `Blocking update. You're on ${currentChannel}, but requested ${newChannel}`
+        `Blocking update. You're on ${currentChannel}, but requested ${newChannel}`,
       );
     }
   });

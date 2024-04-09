@@ -216,23 +216,20 @@ export const shortcutScriptChanged = ({
   }
 };
 
-export const setDefaultMainShortcut = async () => {
-  updateMainShortcut(kitState.isMac ? `cmd ;` : `ctrl ;`);
-};
-
 export const updateMainShortcut = async (shortcut: string) => {
   log.info(`Updating main shortcut to ${shortcut}`);
 
   const finalShortcut = convertShortcut(shortcut, getMainScriptPath());
   if (!finalShortcut) return;
 
-  log.verbose(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
+  log.info(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
 
   const old = shortcutMap.get(getMainScriptPath());
 
   if (finalShortcut === old?.shortcut) return;
 
   if (old?.shortcut) {
+    log.info(`Unregistering old main shortcut: ${old?.shortcut}`);
     globalShortcut.unregister(old?.shortcut);
     shortcutMap.delete(getMainScriptPath());
   }

@@ -41,10 +41,10 @@ import { getLog, mainLog, warn } from './logs';
 import { KitPrompt } from './prompt';
 import {
   kitState,
-  appDb,
   getThemes,
   kitStore,
   debounceSetScriptTimestamp,
+  kenvEnv,
 } from '../shared/state';
 
 import { widgetState } from '../shared/widget';
@@ -112,7 +112,7 @@ export const maybeConvertColors = async (theme: any = {}) => {
       ? scriptKitTheme['ui-border-opacity']
       : scriptKitLightTheme['ui-border-opacity'];
 
-  if (appDb?.disableBlurEffect) theme.opacity = '1';
+  if (kitState.kenvEnv.KIT_DISABLE_BLUR === 'true') theme.opacity = '1';
 
   if (theme.foreground) {
     const foreground = toRgb(theme.foreground);
@@ -530,7 +530,7 @@ class Processes extends Array<ProcessAndPrompt> {
     processesChanged();
   }
 
-  private stampPid(pid: number) {
+  stampPid(pid: number) {
     log.info(`>>>>>>>>>>>>>>>>>>>>>>>> ATTEMPTING STAMP!!!!!`);
     const processInfo = this.getByPid(pid);
     if (!processInfo || !processInfo.launchedFromMain) return;
@@ -1158,40 +1158,4 @@ emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
   }
 
   updateTheme();
-});
-
-let prevKenvEnv: Record<string, string> = {};
-subscribeKey(kitState, 'kenvEnv', (kenvEnv) => {
-  // log.info(`🔑 kenvEnv updated`, kenvEnv);
-  // Compare prevKenvEnv to kenvEnv
-  const keys = Object.keys(kenvEnv);
-  const prevKeys = Object.keys(prevKenvEnv);
-  const addedKeys = keys.filter((key) => !prevKeys.includes(key));
-  const removedKeys = prevKeys.filter((key) => !keys.includes(key));
-  const changedKeys = keys.filter(
-    (key) => prevKeys.includes(key) && prevKenvEnv[key] !== kenvEnv[key],
-  );
-  if (addedKeys.length || removedKeys.length || changedKeys.length) {
-    log.info(`🔑 kenvEnv changes`, {
-      addedKeys,
-      changedKeys,
-      removedKeys,
-    });
-    prevKenvEnv = kenvEnv;
-  } else {
-    log.info(`🔑 kenvEnv no changes`);
-    return;
-  }
-  if (Object.keys(kenvEnv).length === 0) return;
-  if (processes.getAllProcessInfo().length === 0) return;
-  clearIdleProcesses();
-  ensureIdleProcess();
-  createIdlePty();
-});
-
-subscribe(appDb, (db) => {
-  log.info(`👩‍💻 Reading app.json`, { ...appDb });
-
-  // TODO: Reimplement SET_APP_DB
-  sendToAllPrompts(Channel.APP_DB, { ...appDb });
 });

@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
 
 import {
-  appDbAtom,
   inputHeightAtom,
   kitStateAtom,
   mouseEnabledAtom,
@@ -44,7 +43,6 @@ const TabName = ({ tab, selected }: { tab: string; selected: boolean }) => {
 };
 
 export default function KitTabs() {
-  const appDb = useAtomValue(appDbAtom);
   const [tabs] = useAtom(tabsAtom);
   const [mouseEnabled] = useAtom(mouseEnabledAtom);
   const [tabIndex, setTabIndex] = useAtom(tabIndexAtom);

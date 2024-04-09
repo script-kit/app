@@ -33,12 +33,12 @@ import {
   getLogFromScriptPath,
   resolveToScriptPath,
 } from '@johnlindquist/kit/core/utils';
-import { getAppDb, getScriptsDb } from '@johnlindquist/kit/core/db';
+import { getEnvVar } from '@johnlindquist/kit/api/kit';
 import { getAssetPath } from '../shared/assets';
-import { appDb, forceQuit, kitState, subs } from '../shared/state';
+import { forceQuit, kitState, subs } from '../shared/state';
 import { emitter, KitEvent } from '../shared/events';
 import { getVersion } from './version';
-import { AppChannel, HideReason, Trigger } from '../shared/enums';
+import { AppChannel, Trigger } from '../shared/enums';
 import { mainLogPath, updateLogPath } from './logs';
 import { prompts } from './prompts';
 import { processes } from './process';
@@ -703,12 +703,12 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
     if (!kitState.ready) {
       globalShortcut.unregister('CommandOrControl+;');
     }
-    const fileAppDb = await getAppDb();
-    if (
-      checkDb &&
-      typeof fileAppDb?.tray === 'boolean' &&
-      fileAppDb.tray === false
-    ) {
+
+    const trayEnabled = kitState.kenvEnv?.KIT_TRAY !== 'false';
+    log.info(
+      `🎨 Tray enabled by .env KIT_TRAY: ${trayEnabled ? 'true' : 'false'}`,
+    );
+    if (checkDb && !trayEnabled) {
       const notification = new Notification({
         title: `Kit.app started with icon hidden`,
         body: `${getVersion()}`,
@@ -746,14 +746,6 @@ export const destroyTray = () => {
   }
 };
 
-const subTray = subscribeKey(appDb, 'tray', () => {
-  if (!appDb.tray && tray) {
-    destroyTray();
-  } else {
-    setupTray(false, 'default');
-  }
-});
-
 const subReady = subscribeKey(kitState, 'ready', () => {
   if (kitState.trayOpen) {
     app?.focus({
@@ -762,7 +754,7 @@ const subReady = subscribeKey(kitState, 'ready', () => {
   }
 });
 
-subs.push(subTray, subReady);
+subs.push(subReady);
 
 let leftClickOverride: null | ((event: any) => void) = null;
 export const setTrayMenu = async (scriptPaths: string[]) => {
@@ -771,12 +763,12 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
     if (leftClickOverride) {
       tray?.removeAllListeners('mouse-down');
       tray?.removeAllListeners('menu-will-close');
+      tray?.on('click', openMenu);
 
-      if (kitState.isMac) {
-        tray?.on('mouse-down', openMenu);
-      } else {
-        tray?.on('click', openMenu);
-      }
+      // if (kitState.isMac) {
+      //   tray?.on('mouse-down', openMenu);
+      // } else {
+      // }
       leftClickOverride = null;
       tray?.setContextMenu(null);
     }
@@ -836,13 +828,21 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
     tray?.removeAllListeners('mouse-down');
     tray?.removeAllListeners('click');
 
-    if (kitState.isMac) {
-      tray?.on('mouse-down', leftClickOverride);
-    } else {
-      tray?.on('click', leftClickOverride);
-    }
+    tray?.on('click', leftClickOverride);
+    // if (kitState.isMac) {
+    //   tray?.on('mouse-down', leftClickOverride);
+    // } else {
+    // }
   }
 };
 
 // Can also use the OPEN_MENU channel
 emitter.on(KitEvent.TrayClick, openMenu);
+
+export const checkTray = () => {
+  if (kitState.kenvEnv?.KIT_TRAY === 'false') {
+    destroyTray();
+  } else {
+    setupTray(false, 'default');
+  }
+};

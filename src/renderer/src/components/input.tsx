@@ -29,7 +29,6 @@ import {
   uiAtom,
   inputFontSizeAtom,
   actionsAtom,
-  appDbAtom,
   enterButtonNameAtom,
   flagsAtom,
   enterButtonDisabledAtom,
@@ -87,7 +86,6 @@ export default function Input() {
   const [ui] = useAtom(uiAtom);
   const [fontSize] = useAtom(inputFontSizeAtom);
   const actions = useAtomValue(actionsAtom);
-  const appDb = useAtomValue(appDbAtom);
   const enterButtonName = useAtomValue(enterButtonNameAtom);
   const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
   const flags = useAtomValue(flagsAtom);
@@ -353,7 +351,7 @@ export default function Input() {
           >
             <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
               {actions
-                .filter((action) => action.position === 'right' && !appDb?.mini)
+                .filter((action) => action.position === 'right')
                 .flatMap((action, i, array) => {
                   if (!action?.visible && miniShortcutsVisible) {
                     return [
@@ -389,7 +387,7 @@ export default function Input() {
 
             <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
               {actions
-                .filter((action) => action.position === 'right' && !appDb?.mini)
+                .filter((action) => action.position === 'right')
                 .flatMap((action, i, array) => {
                   if (action?.visible) {
                     return [

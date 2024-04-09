@@ -16,7 +16,9 @@ export const removeBackground = (filePath: string) => {
     backgroundMap.delete(filePath);
 
     log.info('Removing background task', filePath);
-    processes.removeByPid(child.pid);
+    if (child?.pid) {
+      processes.removeByPid(child.pid);
+    }
   }
 };
 

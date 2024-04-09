@@ -2,8 +2,9 @@ import os from 'os';
 import untildify from 'untildify';
 import { KIT_FIRST_PATH } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
-import { appDb, kitState } from '../shared/state';
+import { kitState } from '../shared/state';
 import { TermConfig } from '../shared/types';
+import { getVersion } from './version';
 
 export const USE_BINARY = os.platform() !== 'win32';
 
@@ -83,7 +84,7 @@ export function getDefaultOptions() {
       TERM: 'xterm-256color',
       COLORTERM: 'truecolor',
       TERM_PROGRAM: `Kit`,
-      TERM_PROGRAM_VERSION: appDb?.version || '0.0.0',
+      TERM_PROGRAM_VERSION: getVersion() || '0.0.0',
       ...process.env,
       ...kitState.kenvEnv,
     },

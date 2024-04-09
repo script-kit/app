@@ -4,6 +4,9 @@ import { KitPrompt } from './prompt';
 const promptMap = new Map<number, KitPrompt>();
 
 export const prompts = {
+  pids() {
+    return Array.from(promptMap.keys());
+  },
   /**
    * The idle prompt, which is used when no other prompt is active.
    */

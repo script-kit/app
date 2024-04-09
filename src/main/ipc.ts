@@ -258,6 +258,11 @@ ${data.error}
 
   ipcMain.on(AppChannel.RESIZE, (event, resizeData: ResizeData) => {
     const prompt = prompts.get(resizeData.pid);
+    // log.info(`>>>>>>>>>>>>> AppChannel.RESIZE`, {
+    //   prompt,
+    //   pid: resizeData.pid,
+    //   pids: prompts.pids(),
+    // });
     if (prompt) {
       prompt.resize(resizeData);
     }
@@ -572,12 +577,12 @@ ${data.error}
 
         if (child) {
           try {
-            if (channel === Channel.VALUE_SUBMITTED) {
-              log.info(`${prompt.pid}: child.send: ${channel}`, message, {
-                scriptPath: prompt.scriptPath,
-                scriptSet: prompt.scriptSet,
-              });
-            }
+            // if (channel === Channel.VALUE_SUBMITTED) {
+            //   log.info(`${prompt.pid}: child.send: ${channel}`, message, {
+            //     scriptPath: prompt.scriptPath,
+            //     scriptSet: prompt.scriptSet,
+            //   });
+            // }
             if (child?.channel && child.connected) {
               child?.send(message);
             } else {

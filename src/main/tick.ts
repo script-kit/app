@@ -210,7 +210,6 @@ export const startKeyboardMonitor = async () => {
 
       // eslint-disable-next-line promise/catch-or-return, promise/always-return
       registerIO(observer.next.bind(observer)).then(() => {
-        log.info(`The line right after uIOhook.start()...`);
         log.info(`🟢 Started keyboard and mouse watcher`);
       });
     } catch (e) {

@@ -1,6 +1,5 @@
 /* eslint-disable import/prefer-default-export */
 import { app, BrowserWindow, screen } from 'electron';
-import { getAssetPath } from '../shared/assets';
 import { KIT_PROTOCOL } from './helpers';
 
 let notificationWindow: BrowserWindow | null = null;
@@ -28,7 +27,7 @@ export const createNotification = async () => {
           hidePromptWindow();
           notificationWindow?.webContents.send('escape', {});
         }
-      }
+      },
     );
   }
   return notificationWindow;
@@ -56,7 +55,7 @@ export const showNotification = (html: string, options: any = {}) => {
       baseURLForDataURL: `${KIT_PROTOCOL}://${app
         .getAppPath()
         .replace('\\', '/')}/`,
-    }
+    },
   );
   if (!notificationWindow?.isVisible()) {
     const cursor = screen.getCursorScreenPoint();
