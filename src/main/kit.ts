@@ -178,6 +178,9 @@ export const runPromptProcess = async (
 
   const info = processes.findIdlePromptProcess();
   info.launchedFromMain = isMain;
+  if (!kitState.hasOpenedMainMenu && isMain) {
+    kitState.hasOpenedMainMenu = true;
+  }
   const { prompt, pid, child } = info;
   const isSplash = prompt.ui === UI.splash;
   log.info(`>>>

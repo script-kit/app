@@ -147,6 +147,9 @@ export const getSchedule = () => {
 export const debounceSetScriptTimestamp = debounce(
   (stamp: Stamp & { reason?: string }) => {
     log.info(`💮 Stamping ${stamp?.filePath}`);
+    if (!kitState.hasOpenedMainMenu) {
+      return;
+    }
     setScriptTimestamp(stamp);
   },
   100,
@@ -225,6 +228,7 @@ const initState = {
   modifiedByUser: false,
   preventClose: false,
   isTyping: false,
+  hasOpenedMainMenu: false,
   snippet: ``,
   typedText: ``,
   typedLimit: 256,

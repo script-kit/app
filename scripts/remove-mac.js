@@ -5,7 +5,7 @@ import '@johnlindquist/kit';
 console.log(`Removing REMOVE-MAC ⛳️`);
 
 let srcFilePath = path
-  .resolve(process.env.PWD, 'src', '**', '*')
+  .resolve(process.env?.PWD || '', 'src', '**', '*')
   .replace(/\\/g, '/');
 console.log({
   mainFilePath: srcFilePath,

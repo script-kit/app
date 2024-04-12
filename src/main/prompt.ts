@@ -5,7 +5,6 @@ import {
   makeWindow,
   hideInstant,
   getWindowBackgroundColor,
-  getLabelColor,
   getTextColor,
 } from '@johnlindquist/mac-panel-window';
 // END-REMOVE-MAC
@@ -800,23 +799,21 @@ export class KitPrompt {
       log.info(`${this.pid}: 👍 Ready to show`);
 
       if (kitState.isWindows) {
-        // REMOVE-NODE-WINDOW-MANAGER
         try {
           log.info(
             `${this.pid}:${this.window?.id} Forcing window rounded, shadow, and paint... ${this.initMain ? 'initMain' : 'no initMain'}`,
           );
-          const currentWindow = windowManager.getActiveWindow();
-          if (currentWindow.processId !== process.pid) {
-            log.info(`Storing previous window: ${currentWindow.processId}`);
-            prevWindow = currentWindow;
-          }
-
           this.window.setHasShadow(true);
+
+          this.window.showInactive();
+          setTimeout(() => {
+            this.window.hide();
+          }, kitState.kenvEnv.KIT_WINDOWS_PRERENDER_TIMEOUT || 500);
+
+          // Show window inactive super far offscreen just to force a paint, then im
         } catch (error) {
           log.error(error);
         }
-
-        // END-REMOVE-NODE-WINDOW-MANAGER
       }
     });
 
@@ -1010,10 +1007,12 @@ export class KitPrompt {
 
     emitter.on(KitEvent.OpenDevTools, () => {
       log.silly(`event: OpenDevTools`);
-      this.window.webContents?.openDevTools({
-        activate: true,
-        mode: 'detach',
-      });
+      if (prompts.focused?.pid === this?.pid) {
+        this.window.webContents?.openDevTools({
+          activate: true,
+          mode: 'detach',
+        });
+      }
     });
 
     const onBlur = async () => {
@@ -1254,6 +1253,12 @@ export class KitPrompt {
       // this.prompt.restore();
       log.info(`${this.pid}:${this.window?.id} this.window.show()`);
 
+      const currentWindow = windowManager.getActiveWindow();
+      if (currentWindow.processId !== process.pid) {
+        log.info(`Storing previous window: ${currentWindow.processId}`);
+        prevWindow = currentWindow;
+      }
+
       // REMOVE-NODE-WINDOW-MANAGER
       if (kitState.isWindows) {
         windowManager.setWindowAsPopupWithRoundedCorners(
@@ -1322,10 +1327,10 @@ export class KitPrompt {
   initBounds = async (forceScriptPath?: string, show = false) => {
     if (this?.window?.isDestroyed()) return;
 
-    if (this.window?.isVisible()) {
-      log.info(`↖ Ignore init bounds, already visible`);
-      return;
-    }
+    // if (this.window?.isVisible()) {
+    //   log.info(`↖ Ignore init bounds, already visible`);
+    //   return;
+    // }
 
     const bounds = getCurrentScreenPromptCache(
       forceScriptPath || this.scriptPath,
@@ -1406,7 +1411,7 @@ export class KitPrompt {
       bounds,
     );
     if (!kitState.ready) return;
-    const currentBounds = this.window?.getBounds();
+    const currentBounds = this.window.getBounds();
     const widthNotChanged =
       bounds?.width && Math.abs(bounds.width - currentBounds.width) < 4;
     const heightNotChanged =
@@ -1416,6 +1421,11 @@ export class KitPrompt {
 
     const noChange =
       heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
+
+    if (noChange) {
+      log.info(`📐 No change in bounds, ignoring`);
+      return;
+    }
 
     this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
       id: this.id,
@@ -1451,7 +1461,7 @@ export class KitPrompt {
 
     const currentScreen = mouseScreen;
     // const currentScreen = this.getCurrentScreenFromMouse();
-    let { x, y, width, height } = bounds;
+    let { x, y, width, height } = { ...currentBounds, ...bounds };
     let { x: workX, y: workY } = currentScreen.workArea;
     const { width: screenWidth, height: screenHeight } =
       currentScreen.workAreaSize;
@@ -1465,12 +1475,14 @@ export class KitPrompt {
     const xIsNumber = typeof x === 'number';
 
     if (!boundsOnMouseScreen) {
-      x = bounds.x =
-        screenWidth / 2 - (bounds?.width ?? currentBounds.width) / 2 + workX;
-      y = bounds.y =
-        screenHeight / 2.75 -
-        (bounds?.height ?? currentBounds.height) / 2 +
-        workY;
+      // x = bounds.x =
+      //   screenWidth / 2 - (bounds?.width ?? currentBounds.width) / 2 + workX;
+      // y = bounds.y =
+      //   screenHeight / 2.75 -
+      //   (bounds?.height ?? currentBounds.height) / 2 +
+      //   workY;
+
+      this.window.center();
     }
 
     if (xIsNumber && x < workX) {

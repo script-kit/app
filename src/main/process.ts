@@ -753,6 +753,10 @@ class Processes extends Array<ProcessAndPrompt> {
     ) as ProcessAndPrompt;
   }
 
+  public getChildByPid(pid: number): ChildProcess {
+    return this.getByPid(pid)?.child;
+  }
+
   public removeByPid(pid: number) {
     log.info(`🛑 removeByPid: ${pid}`);
     if (pid === 0) {
@@ -875,13 +879,15 @@ export const handleWidgetEvents = () => {
     if (!w) return;
     const { wid, moved, pid } = w;
     const widget = BrowserWindow.fromId(wid);
-    const { child } = processes.getByPid(pid) as ProcessInfo;
+    const child = processes.getChildByPid(pid);
     if (!child) return;
 
     if (moved) {
       w.moved = false;
       return;
     }
+
+    if (!widget) return;
 
     childSend(child, {
       ...data,
@@ -898,10 +904,12 @@ export const handleWidgetEvents = () => {
     if (!w) return;
     const { wid, moved, pid } = w;
     const widget = BrowserWindow.fromId(wid);
-    const { child } = processes.getByPid(pid) as ProcessInfo;
+    const child = processes.getChildByPid(pid);
     if (!child) return;
 
     log.info(`💧 drop ${widgetId}`);
+
+    if (!widget) return;
 
     childSend(child, {
       ...data,
@@ -918,7 +926,7 @@ export const handleWidgetEvents = () => {
     if (!w) return;
     const { wid, moved, pid } = w;
     const widget = BrowserWindow.fromId(wid);
-    const { child } = processes.getByPid(pid) as ProcessInfo;
+    const child = processes.getChildByPid(pid);
     if (!child) return;
 
     log.info(`💧 custom ${widgetId}`);
@@ -939,7 +947,8 @@ export const handleWidgetEvents = () => {
     if (!w) return;
     const { wid, moved, pid } = w;
     const widget = BrowserWindow.fromId(wid);
-    const { child } = processes.getByPid(pid) as ProcessInfo;
+    if (!widget) return;
+    const child = processes.getChildByPid(pid);
     if (!child) return;
 
     // if (moved) {
@@ -963,13 +972,15 @@ export const handleWidgetEvents = () => {
     if (!w) return;
     const { wid, moved, pid } = w;
     const widget = BrowserWindow.fromId(wid);
-    const { child } = processes.getByPid(pid) as ProcessInfo;
+    const child = processes.getChildByPid(pid);
     if (!child) return;
 
     // if (moved) {
     //   w.moved = false;
     //   return;
     // }
+
+    if (!widget) return;
 
     childSend(child, {
       ...data,
@@ -985,7 +996,7 @@ export const handleWidgetEvents = () => {
     if (!options) return;
     const { pid, wid } = options;
     const widget = BrowserWindow.fromId(wid);
-    const { child } = processes.getByPid(pid) as ProcessInfo;
+    const child = processes.getChildByPid(pid);
     if (!child || !widget) return;
 
     childSend(child, {
@@ -1005,7 +1016,7 @@ export const handleWidgetEvents = () => {
     if (!options) return;
     const { pid, wid } = options;
     const widget = BrowserWindow.fromId(wid);
-    const { child } = processes.getByPid(pid) as ProcessInfo;
+    const child = processes.getChildByPid(pid);
     if (!child || !widget) return;
 
     try {
@@ -1029,7 +1040,7 @@ export const handleWidgetEvents = () => {
 
     const { wid, ignoreMeasure, pid } = options;
     const widget = BrowserWindow.fromId(wid);
-    const { child } = processes.getByPid(pid) as ProcessInfo;
+    const child = processes.getChildByPid(pid);
     if (!child || !widget || ignoreMeasure) return;
 
     widget.setSize(data.width, data.height, true);

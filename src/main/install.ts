@@ -6,7 +6,7 @@ import log from 'electron-log';
 import download, { DownloadOptions } from 'download';
 import { assign, debounce } from 'lodash-es';
 import path from 'path';
-import tar from 'tar';
+import * as tar from 'tar';
 import { promisify } from 'util';
 import StreamZip from 'node-stream-zip';
 import {

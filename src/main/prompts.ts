@@ -4,6 +4,7 @@ import { KitPrompt } from './prompt';
 const promptMap = new Map<number, KitPrompt>();
 
 export const prompts = {
+  lastFocused: null as KitPrompt | null,
   pids() {
     return Array.from(promptMap.keys());
   },
