@@ -346,12 +346,18 @@ const ensureKenvDirs = async () => {
   await ensureDir(kenvPath('assets'));
 };
 
+const assignDisplays = () => {
+  kitState.displays = screen.getAllDisplays();
+};
+
 const systemEvents = () => {
   screen.addListener(
     'display-added',
     debounce(() => {
       log.info(`🖥️ Display added`);
       clearPromptCache();
+
+      assignDisplays();
     }, 1000),
   );
 
@@ -360,16 +366,18 @@ const systemEvents = () => {
     debounce(() => {
       log.info(`🖥️ Display removed`);
       clearPromptCache();
+      assignDisplays();
     }, 1000),
   );
 
-  // screen.addListener(
-  //   'display-metrics-changed',
-  //   debounce((_, metrics) => {
-  //     log.info(`🖥️ Display metrics changed`);
-  //     log.info(metrics);
-  //   }, 1000)
-  // );
+  screen.addListener(
+    'display-metrics-changed',
+    debounce((_, metrics) => {
+      log.info(`🖥️ Display metrics changed`);
+      log.info(metrics);
+      assignDisplays();
+    }, 1000),
+  );
 
   powerMonitor.addListener('on-battery', () => {
     log.info(`🔋 on battery`);
@@ -444,6 +452,7 @@ const systemEvents = () => {
 };
 
 const ready = async () => {
+  assignDisplays();
   try {
     // REMOVE-MAC
     const isMac = os.platform() === 'darwin';

@@ -1383,15 +1383,15 @@ export const themeAtom = atom(
     const prevTheme: any = g(_themeAtom);
 
     Object.entries(a).forEach(([key, value]) => {
-      if (key === 'appearance') {
+      if (key === 'appearance' && key.startsWith('--')) {
         s(appearanceAtom, value as Appearance);
       } else {
-        // log.verbose(
-        //   `Changing ${key} from`,
-        //   document.documentElement.style.getPropertyValue(key),
-        //   `to`,
-        //   value
-        // );
+        log.info(
+          `${g(pidAtom)}: 🐠 Changing ${key} from`,
+          document.documentElement.style.getPropertyValue(key),
+          `to`,
+          value,
+        );
         document.documentElement.style.setProperty(key, value);
       }
     });

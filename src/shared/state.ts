@@ -19,7 +19,7 @@ import { debounce } from 'lodash-es';
 import path from 'path';
 import os from 'os';
 import { ChildProcess } from 'child_process';
-import electron from 'electron';
+import electron, { Display } from 'electron';
 const { app, nativeTheme } = electron;
 
 import schedule, { Job } from 'node-schedule';
@@ -222,6 +222,7 @@ export const theme = nativeTheme.shouldUseDarkColors
   : getThemes().scriptKitLightTheme;
 
 const initState = {
+  displays: [] as Display[],
   debugging: false,
   hiddenByUser: false,
   blurredByKit: false,

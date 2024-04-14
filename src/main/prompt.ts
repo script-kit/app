@@ -804,7 +804,19 @@ export class KitPrompt {
             `${this.pid}:${this.window?.id} Forcing window rounded, shadow, and paint... ${this.initMain ? 'initMain' : 'no initMain'}`,
           );
           this.window.setHasShadow(true);
+          const getTopMostAndLeftMost = () => {
+            const displays = kitState.displays;
+            const topMost = Math.min(
+              ...displays.map((display) => display.bounds.y),
+            );
+            const leftMost = Math.min(
+              ...displays.map((display) => display.bounds.x),
+            );
+            return { topMost, leftMost };
+          };
 
+          const { topMost, leftMost } = getTopMostAndLeftMost();
+          this.window.setPosition(leftMost - 1000, topMost - 1000);
           this.window.showInactive();
           setTimeout(() => {
             this.window.hide();
