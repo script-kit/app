@@ -751,7 +751,8 @@ const checkKit = async () => {
   log.info(`Stored version: ${storedVersion}`);
 
   const isMac = os.platform() === 'darwin';
-  if (!(await kitExists()) || storedVersion === '0.0.0') {
+  const isWindows = os.platform() === 'win32';
+  if (!(await kitExists()) || storedVersion === '0.0.0' || isWindows) {
     if (!process.env.KIT_SPLASH) {
       log.info(
         `🌑 shouldUseDarkColors: ${

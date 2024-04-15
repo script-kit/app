@@ -1254,7 +1254,14 @@ export class KitPrompt {
     this.sendToPrompt(AppChannel.CLEAR_CACHE, {});
   };
 
+  showIfNotVisible = () => {
+    if (!this.window.isVisible()) {
+      this.window.show();
+    }
+  };
+
   initShowPrompt = () => {
+    this.focusPrompt();
     this.sendToPrompt(Channel.SET_OPEN, true);
     if (kitState.isMac) {
       log.info(`${this.pid}:${this.window?.id} this.window.showInactive()`);
@@ -1281,14 +1288,12 @@ export class KitPrompt {
         );
       }
       // END-REMOVE-NODE-WINDOW-MANAGER
-      this.window.show();
+      this.showIfNotVisible();
     }
 
     this.setPromptAlwaysOnTop(true);
 
     if (topTimeout) clearTimeout(topTimeout);
-
-    this.focusPrompt();
 
     setTimeout(() => {
       ensureIdleProcess();

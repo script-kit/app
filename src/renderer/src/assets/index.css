@@ -25,7 +25,8 @@ Favicon gradient
 } */ /* FBBF24 */ /* 4F46E5 */
 /* --color-primary: 79, 70, 229; indigo*/
 /* This will get written to ~/.kit/db/theme.json on first pass */
-:root {
+html {
+  @apply h-screen min-h-screen;
   --color-text: 255, 255, 255;
   --color-primary: 251, 191, 36;
   --color-secondary: 52, 52, 52;
@@ -64,10 +65,6 @@ img:after {
   @apply text-xxs;
   @apply font-mono;
   @apply break-words;
-}
-
-html {
-  @apply h-screen min-h-screen;
 }
 
 body {

@@ -78,6 +78,7 @@ import {
   progressAtom,
   cssAtom,
   triggerResizeAtom,
+  themeAtom,
 } from './jotai';
 
 import {
@@ -219,6 +220,7 @@ export default function App() {
   const hasBorder = useAtomValue(hasBorderAtom);
 
   const channel = useAtomValue(channelAtom);
+  const theme = useAtomValue(themeAtom);
 
   const domUpdated = useSetAtom(domUpdatedAtom);
   const setAppBounds = useSetAtom(appBoundsAtom);
@@ -226,6 +228,24 @@ export default function App() {
   const audioDot = useAtomValue(audioDotAtom);
 
   useMessages();
+
+  useEffect(() => {
+    // log all of the :root css variables and their values
+    const root = document.querySelector('html');
+    const rootStyles = getComputedStyle(root);
+    console.log({ rootStyles });
+    const rootVars = Array.from(rootStyles).filter((name) =>
+      name.startsWith('--'),
+    );
+
+    // Create an object to hold the variable names and their values
+    const styles = getComputedStyle(root);
+
+    log.info(`${pid}: 👩‍💻 Root variables`, {
+      cssVariables: styles.cssText,
+      theme,
+    });
+  }, [theme]);
 
   useEffect(() => {
     log.info(`${pid}: 👩‍💻 UI changed to: ${ui}`);
@@ -237,14 +257,14 @@ export default function App() {
     });
   }, [pid]);
 
-  useEffect(() => {
-    (window as any)._resetPrompt = async () => {
-      log.info(`Resetting prompt...`);
-      return resetPrompt();
-    };
+  // useEffect(() => {
+  //   (window as any)._resetPrompt = async () => {
+  //     log.info(`Resetting prompt...`);
+  //     return resetPrompt();
+  //   };
 
-    (window as any).log = log;
-  }, []);
+  //   (window as any).log = log;
+  // }, []);
 
   useEffect(() => {
     // catch all window errors
