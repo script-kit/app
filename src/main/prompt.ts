@@ -540,7 +540,7 @@ export class KitPrompt {
   };
 
   get scriptName() {
-    return this.scriptPath.split('/').pop();
+    return this?.scriptPath?.split('/')?.pop() || '';
   }
 
   public window: BrowserWindow;
@@ -696,8 +696,11 @@ export class KitPrompt {
         ...options,
         transparent: kitState.isMac || kitState.isWindows,
         vibrancy: 'popover',
+        // titleBarStyle: 'default',
+        // title: 'Script Kit',
         visualEffectState: 'active',
         backgroundColor: '#00000000',
+        // alwaysOnTop: true,
       });
     }
 
@@ -1276,7 +1279,6 @@ export class KitPrompt {
         windowManager.setWindowAsPopupWithRoundedCorners(
           this.window?.getNativeWindowHandle(),
         );
-        windowManager.forceWindowPaint(this.window.getNativeWindowHandle());
       }
       // END-REMOVE-NODE-WINDOW-MANAGER
       this.window.show();
@@ -1284,16 +1286,13 @@ export class KitPrompt {
 
     this.setPromptAlwaysOnTop(true);
 
-    ensureIdleProcess();
-
     if (topTimeout) clearTimeout(topTimeout);
-    // topTimeout = setTimeout(() => {
-    //   if (this.ignoreBlur) {
-    //     this.setPromptAlwaysOnTop(this.alwaysOnTop);
-    //   }
-    // }, 200);
 
     this.focusPrompt();
+
+    setTimeout(() => {
+      ensureIdleProcess();
+    }, 100);
   };
 
   hide = () => {
@@ -2287,36 +2286,12 @@ export class KitPrompt {
   };
 
   setPromptAlwaysOnTop = (onTop: boolean) => {
+    log.info(`${this.pid}: Ignoring always on top`);
+    return;
     log.info(`function: setPromptAlwaysOnTop: ${onTop ? 'true' : 'false'}`);
     if (this.window && !this.window.isDestroyed()) {
       const changed = onTop !== this.alwaysOnTop;
       this.alwaysOnTop = onTop;
-
-      // if (onTop) {
-      //   setWindowLevel(this.window, WindowLevel.NSFloatingWindowLevel);
-      //   updateWindowCollectionBehavior(
-      //     this.window,
-      //     NSWindowCollectionBehavior.Managed,
-      //     NSWindowCollectionBehavior.FullScreenAuxiliary
-      //   );
-      //   bringToFront(this.window);
-      // } else {
-      //   setWindowLevel(this.window, WindowLevel.NSNormalWindowLevel);
-      //   updateWindowCollectionBehavior(
-      //     this.window,
-      //     NSWindowCollectionBehavior.Managed,
-      //     NSWindowCollectionBehavior.CanJoinAllSpaces,
-      //     NSWindowCollectionBehavior.FullScreenAuxiliary
-      //   );
-      // }
-
-      if (changed) {
-        if (onTop) {
-          // makeKeyWindow(this.window);
-        } else {
-          // makeWindow(this.window);
-        }
-      }
 
       if (onTop && changed) {
         this.window.setAlwaysOnTop(onTop, 'pop-up-menu');

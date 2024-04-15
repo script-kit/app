@@ -233,9 +233,9 @@ export default function App() {
 
   useEffect(() => {
     document.addEventListener('visibilitychange', () => {
-      log.info(`👁️‍🗨️ visibilitychange: ${document.visibilityState}`);
+      log.info(`${pid}: 👁️‍🗨️ visibilitychange: ${document.visibilityState}`);
     });
-  }, []);
+  }, [pid]);
 
   useEffect(() => {
     (window as any)._resetPrompt = async () => {

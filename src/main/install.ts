@@ -569,6 +569,7 @@ export const setupLog = async (message: string) => {
 
 export const forkOptions: ForkOptions = {
   cwd: homedir(),
+  windowsHide: true,
   env: {
     KIT: kitPath(),
     KENV: kenvPath(),

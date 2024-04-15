@@ -367,6 +367,7 @@ const createChild = ({
     execPath,
     cwd: os.homedir(),
     execArgv: [`--loader`, loaderFileUrl],
+    windowsHide: true,
     env: {
       ...env,
       KIT_DEBUG: port ? '1' : '0',
