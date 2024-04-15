@@ -284,6 +284,8 @@ const KIT = kitPath();
 const forkOptions: ForkOptions = {
   cwd: homedir(),
   execPath,
+  detached: true,
+  windowsHide: true,
   env: {
     KIT,
     KENV: kenvPath(),
