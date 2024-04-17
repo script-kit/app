@@ -1,10 +1,10 @@
+import log from 'electron-log';
 import React, { useCallback, useEffect, useState, DragEvent } from 'react';
 import parse from 'html-react-parser';
 import { Script } from '@johnlindquist/kit/types/core';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue } from 'jotai';
 const { ipcRenderer } = window.electron;
-import log from 'electron-log';
 
 import { ChoiceButtonProps } from '../../../shared/types';
 import {

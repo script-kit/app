@@ -483,9 +483,13 @@ export const ensureIdleProcess = () => {
   log.info(`Ensure idle process`);
   setTimeout(() => {
     const idles = getIdles();
-    if (idles.length === 0) {
-      log.info(`Add one idle process`);
-      processes.add(ProcessType.Prompt);
+    const requiredIdleProcesses = 1;
+    const missingProcesses = requiredIdleProcesses - idles.length;
+    if (missingProcesses > 0) {
+      log.info(`Adding ${missingProcesses} idle process(es)`);
+      for (let i = 0; i < missingProcesses; i++) {
+        processes.add(ProcessType.Prompt);
+      }
     }
   }, 0);
 };

@@ -24,13 +24,7 @@ export const invokeSearch = (
   rawInput: string,
   reason = 'normal',
 ) => {
-  log.info(`
-
-👀👀👀👀
-${prompt.pid}: ${reason}: Invoke search: '${rawInput}'
-👀👀👀👀
-
-`);
+  // log.info(`${prompt.pid}: ${reason}: Invoke search: '${rawInput}'`);
 
   if (prompt.ui !== UI.arg) return;
 

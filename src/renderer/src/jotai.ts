@@ -1423,6 +1423,7 @@ export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     const pid = g(pidAtom);
+    // s(appendToLogHTMLAtom, a?.id || 'id missing');
     log.info(`${pid}: 👂 Prompt Data ${a?.id}, ${a?.ui}`);
 
     if (a?.count) {
@@ -1838,6 +1839,12 @@ export const submitValueAtom = atom(
     // s(_inputAtom, '');
     // s(panelHTMLAtom, ``);
 
+    // log.info(
+    //   `😘😘😘😘😘😘😘
+
+    // `,
+    //   value,
+    // );
     // s(appendToLogHTMLAtom, `VALUE_SUBMITTED: ${Object.keys(value).join('\n')}`);
 
     channel(Channel.VALUE_SUBMITTED, {

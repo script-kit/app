@@ -750,9 +750,15 @@ const cacheTriggers = (choices: Choice[]) => {
       kitCache.triggers.set(trigger, choice);
     }
 
-    const postfix = typeof choice?.pass === 'string';
+    const postfix =
+      typeof choice?.pass === 'string' &&
+      choice?.pass !== 'true' &&
+      choice?.pass !== 'false'
+        ? choice.pass
+        : '';
 
     if (postfix) {
+      // log.info(`🔚 Found postfix ${choice.pass}`);
       kitCache.postfixes.set(choice?.pass.trim(), choice);
     }
   }

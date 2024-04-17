@@ -68,7 +68,7 @@ import {
   MIN_WIDTH,
   ZOOM_LEVEL,
 } from '../shared/defaults';
-import { ResizeData } from '../shared/types';
+import { ResizeData, ScoredChoice } from '../shared/types';
 import { getVersion } from './version';
 import { AppChannel, HideReason } from '../shared/enums';
 import { emitter, KitEvent } from '../shared/events';
@@ -573,7 +573,7 @@ export class KitPrompt {
       minimumScore: kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE
         ? parseInt(kitState?.kenvEnv?.KIT_SEARCH_MIN_SCORE, 10)
         : 0.6,
-    }),
+    }) as QuickScore<ScoredChoice> | null,
     commandChars: [] as string[],
     keys: kitCache.keys,
   };
@@ -2376,21 +2376,6 @@ export class KitPrompt {
     pid: number,
     force = false,
   ): Promise<'denied' | 'allowed'> => {
-    log.info(
-      `🤔🤔🤔🤔
-
-
-
-
-      From->to`,
-      this.scriptPath,
-      script.filePath,
-    );
-    if (this.scriptPath === script.filePath) {
-      log.info(`Script already set. Ignore`);
-      return 'denied';
-    }
-
     this.scriptSet = true;
     log.info(`${this.pid}: ${pid} setScript`, script);
     performance.mark('script');

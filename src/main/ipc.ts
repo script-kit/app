@@ -95,18 +95,6 @@ ${prompt.pid}: 🔍 Checking shortcodes and keywords... '${rawInput}'
   });
   if (trigger) {
     if (prompt.ready) {
-      const pap = processes.getByPid(prompt.pid);
-      if (pap?.child?.connected) {
-        log.info(`${prompt.pid}: 🚀 Sending main interrupt`);
-
-        pap?.child?.send({
-          channel: Channel.MAIN_INTERRUPT,
-          script: trigger?.filePath,
-          args: [],
-          trigger: Trigger.App,
-          ...trigger,
-        });
-      }
       sendToPrompt(
         Channel.SET_SUBMIT_VALUE,
         trigger?.value ? trigger.value : trigger,
@@ -562,7 +550,7 @@ ${data.error}
           if (!prompt.ready) {
             log.info(`${prompt.pid}: Prompt not ready..`, message);
           }
-          // prompt.clearSearch();
+          prompt.clearSearch();
 
           if (message?.state?.value === Channel.TERMINAL) {
             message.state.value = ``;
