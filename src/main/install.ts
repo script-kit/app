@@ -23,6 +23,7 @@ import fsExtra from 'fs-extra';
 const { ensureDir, writeFile, readdir, readJson, writeJson } = fsExtra;
 import { lstat, readFile, rm } from 'fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
+import { CACHED_GROUPED_SCRIPTS_WORKER } from '@johnlindquist/kit/workers';
 import {
   FlagsOptions,
   PromptData,
@@ -49,6 +50,7 @@ import {
   kitCache,
   kitState,
   preloadChoicesMap,
+  workers,
 } from '../shared/state';
 import { createScoredChoice } from './helpers';
 import { prompts } from './prompts';
@@ -58,6 +60,7 @@ import { maybeConvertColors, setTheme } from './process';
 import { setShortcodes } from './search';
 import { sendToAllPrompts } from './channel';
 import { AppChannel } from '../shared/enums';
+import { Worker } from 'worker_threads';
 
 let isOhNo = false;
 export const ohNo = async (error: Error) => {
@@ -791,7 +794,7 @@ const cacheMainPreview = (preview: string) => {
   }
 };
 
-export const cacheMainScripts = debounce(async () => {
+export const cacheMainScripts = debounce(async (stamp = null) => {
   try {
     const receiveScripts = ({
       scripts,
@@ -804,8 +807,6 @@ export const cacheMainScripts = debounce(async () => {
       shortcuts: Shortcut[];
       scriptFlags: FlagsOptions;
     }) => {
-      // log.info({ scripts, preview });
-
       if (Array.isArray(scripts) && scripts.length > 0) {
         log.info(`Caching scripts and preview...`, {
           scripts: scripts?.length,
@@ -840,13 +841,42 @@ export const cacheMainScripts = debounce(async () => {
         sendToAllPrompts(AppChannel.INIT_PROMPT, {});
       }
     };
-    const child = fork(
-      kitPath('run', 'terminal.js'),
-      [kitPath('setup', 'cache-grouped-scripts.js')],
-      forkOptions,
-    );
+    // const child = fork(
+    //   kitPath('run', 'terminal.js'),
+    //   [kitPath('setup', 'cache-grouped-scripts.js')],
+    //   forkOptions,
+    // );
 
-    child.once('message', receiveScripts);
+    if (!workers.cacheScripts) {
+      log.info(`Creating worker: ${CACHED_GROUPED_SCRIPTS_WORKER}...`);
+      workers.cacheScripts = new Worker(CACHED_GROUPED_SCRIPTS_WORKER);
+      workers.cacheScripts.on('exit', (exitCode) => {
+        log.error(`Worker exited`, {
+          exitCode,
+        });
+      });
+      workers.cacheScripts.on('message', receiveScripts);
+      workers.cacheScripts.on('messageerror', (error) => {
+        log.error(`MessageError: Failed to cache main scripts`, error);
+      });
+      // handle errors
+      workers.cacheScripts.on('error', (error) => {
+        if (error instanceof Error) {
+          log.error(`Failed to cache main scripts`, {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+          });
+        } else {
+          log.error(`Failed to cache main scripts`, {
+            error: error,
+          });
+        }
+      });
+    }
+
+    log.info(`Posting`);
+    workers.cacheScripts.postMessage(stamp);
   } catch (error) {
     log.warn(`Failed to cache main scripts at startup`, error);
   }

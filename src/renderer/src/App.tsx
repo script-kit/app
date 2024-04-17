@@ -79,6 +79,7 @@ import {
   cssAtom,
   triggerResizeAtom,
   themeAtom,
+  shortcodesAtom,
 } from './jotai';
 
 import {
@@ -183,6 +184,7 @@ export default function App() {
   const onPaste = useAtomValue(onPasteAtom);
   const onDrop = useAtomValue(onDropAtom);
   const logVisible = useAtomValue(logVisibleAtom);
+  const shortcodes = useAtomValue(shortcodesAtom);
 
   const [promptData] = useAtom(promptDataAtom);
 
@@ -577,6 +579,11 @@ text-text-base
               </header>
             )}
             {logVisible && <Console key="AppLog" />}
+            {/* <span className="text-xxs">
+              {pid}
+              {shortcodes}
+            </span> */}
+
             <main
               id="main"
               className="min-h-[1px] w-full flex-1 overflow-y-hidden"

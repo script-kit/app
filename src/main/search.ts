@@ -24,7 +24,7 @@ export const invokeSearch = (
   rawInput: string,
   reason = 'normal',
 ) => {
-  log.info(`${prompt.pid}: ${reason}: Invoke search: ${rawInput} <<<`);
+  log.info(`${prompt.pid}: ${reason}: Invoke search: '${rawInput}'`);
 
   if (prompt.ui !== UI.arg) return;
 
@@ -580,6 +580,8 @@ export const setShortcodes = (prompt: KitPrompt, choices: Choice[]) => {
     }
   }
 
+  prompt.updateShortcodes();
+
   // Log the keywords and shortcodes
   log.info(
     `${prompt.pid}: Short stats: 🗝 ${prompt.kitSearch.keywords.size} keywords, ${prompt.kitSearch.shortcodes.size} shortcodes, ${prompt.kitSearch.postfixes.size} postfixes, ${prompt.kitSearch.triggers.size} triggers`,
@@ -620,13 +622,19 @@ export const setChoices = (
     generated,
   }: { preload: boolean; skipInitialSearch?: boolean; generated?: boolean },
 ) => {
-  log.info(`${prompt.pid}: setChoices!!!!!!!!!!`, {
-    isArray: Array.isArray(choices),
-    length: choices?.length,
-    preload,
-    skipInitialSearch,
-    generated,
-  });
+  log.info(
+    `
+❤️ ---- ❤️
+  ${prompt.pid}: setChoices:`,
+    {
+      input: prompt.kitSearch.input,
+      isArray: Array.isArray(choices),
+      length: choices?.length,
+      preload,
+      skipInitialSearch,
+      generated,
+    },
+  );
   const sendToPrompt = prompt.sendToPrompt;
   sendToPrompt(
     Channel.SET_SELECTED_CHOICES,
@@ -657,8 +665,9 @@ export const setChoices = (
     return;
   }
 
+  const scoredChoices = choices.map(createScoredChoice);
   if (generated) {
-    setScoredChoices(prompt, choices.map(createScoredChoice), 'generated');
+    setScoredChoices(prompt, scoredChoices, 'generated');
     return;
   }
 

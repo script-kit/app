@@ -52,6 +52,7 @@ import {
   pidAtom,
   countAtom,
   cachedMainScoredChoicesAtom,
+  shortcodesAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -60,6 +61,7 @@ import { ActionSeparator } from './actionseparator';
 import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';
 import { LoginButton } from './loginbutton';
+import { AppChannel } from 'src/shared/enums';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];
@@ -72,6 +74,7 @@ export default function Input() {
   const inputRef = useRef<HTMLInputElement>(null);
   useFocus(inputRef);
 
+  const shortcodes = useAtomValue(shortcodesAtom);
   const [inputValue, setInput] = useAtom(inputAtom);
   const [, setTabIndex] = useAtom(tabIndexAtom);
   const [unfilteredChoices] = useAtom(choicesConfigAtom);
@@ -174,6 +177,16 @@ export default function Input() {
       const target = event.target as HTMLInputElement;
       setSelectionStart(target.selectionStart as number);
 
+      const input = target.value + event.key;
+      // log.info(`${window.pid}: onKeyDown: ${input}`);
+      if (input && shortcodes.includes(input)) {
+        log.info(`${window.pid}: preventDefault(): found: '${input}'`);
+        event.preventDefault();
+        channel(Channel.INPUT, {
+          input,
+        });
+      }
+
       setModifiers(
         modifiers
           .filter((m) => event.getModifierState(m))
@@ -208,6 +221,7 @@ export default function Input() {
       shortcuts,
       flags,
       setInput,
+      shortcodes,
     ],
   );
 

@@ -36,6 +36,7 @@ export enum KitEvent {
   ForceQuit = 'ForceQuit',
   MAIN_SCRIPT_TRIGGERED = 'MAIN_SCRIPT_TRIGGERED',
   ProcessGone = 'ProcessGone',
+  SetScriptTimestamp = 'SetScriptTimestamp',
 }
 
 interface KitEmitter {

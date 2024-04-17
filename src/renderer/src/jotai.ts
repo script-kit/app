@@ -296,6 +296,11 @@ export const logHTMLAtom = atom(
   },
 );
 
+export const appendToLogHTMLAtom = atom(null, (g, s, a: string) => {
+  const oldLog = g(logLinesAtom);
+  s(logLinesAtom, _drop(oldLog, oldLog.length > 256 ? 256 : 0).concat([a]));
+});
+
 export const logHeightAtom = atom<number>(0);
 
 export const logVisibleAtom = atom((g) => {
@@ -1001,7 +1006,7 @@ const resizeSettle = debounce((g: Getter, s: Setter) => {
 
 const resize = debounce(
   (g: Getter, s: Setter, reason = 'UNSET') => {
-    log.info(`${g(pidAtom)}: ${g(scriptAtom)?.filePath}: 🌈 resize: ${reason}`);
+    // log.info(`${g(pidAtom)}: ${g(scriptAtom)?.filePath}: 🌈 resize: ${reason}`);
     if (reason !== 'SETTLE') resizeSettle(g, s);
 
     const active = g(promptActiveAtom);
@@ -1052,10 +1057,6 @@ const resize = debounce(
             : PROMPT.HEIGHT.BASE) -
           topHeight -
           footerHeight;
-
-        log.info(
-          `Choices height > PROMPT.HEIGHT.BASE: ${PROMPT.HEIGHT.BASE} mh ${mh}`,
-        );
       } else {
         mh = choicesHeight;
       }
@@ -1471,7 +1472,7 @@ export const promptDataAtom = atom(
         s(focusedChoiceAtom, noChoice);
       }
       if (isMainScript && !a?.input) {
-        s(inputAtom, '');
+        // s(inputAtom, '');
       }
       s(uiAtom, a.ui);
       if (a?.theme) s(tempThemeAtom, { ...g(themeAtom), ...(a?.theme || {}) });
@@ -1830,6 +1831,8 @@ export const submitValueAtom = atom(
     // s(_inputAtom, '');
     // s(panelHTMLAtom, ``);
 
+    // s(appendToLogHTMLAtom, `VALUE_SUBMITTED: ${Object.keys(value).join('\n')}`);
+
     channel(Channel.VALUE_SUBMITTED, {
       value,
       flag,
@@ -1907,7 +1910,7 @@ export const openAtom = atom(
       // s(tabIndex, 0);
       s(closedInput, g(_inputAtom));
       // s(scoredChoicesAtom, []);
-      s(inputAtom, '');
+      // s(inputAtom, '');
       s(_panelHTML, '');
 
       s(formHTMLAtom, '');
@@ -2859,6 +2862,8 @@ export const previewCheckAtom = atom((g) => {
   return Boolean(previewHTML && enabled && !hidden);
 });
 
+export const shortcodesAtom = atom<string[]>([]);
+
 export const triggerKeywordAtom = atom(
   (g) => {},
   (
@@ -3068,9 +3073,10 @@ export const initPromptAtom = atom(null, (g, s) => {
   }
   s(promptDataAtom, promptData);
   const scoredChoices = g(cachedMainScoredChoicesAtom);
-  log.info({
-    scoredChoices: scoredChoices.slice(0, 2).map((c) => c.item.name),
-  });
+  log.info(
+    `${window.pid}: scoredChoices`,
+    scoredChoices.slice(0, 2).map((c) => c.item.name),
+  );
   s(scoredChoicesAtom, scoredChoices);
 
   s(previewHTMLAtom, g(cachedMainPreviewAtom));

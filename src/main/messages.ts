@@ -172,7 +172,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     if (!processInfo) {
       return warn(
-        `${data?.pid}: Can't find process associated with ${
+        `${data?.pid}:${data?.channel}: Can't find process associated with ${
           isWidgetMessage ? `widget` : `script`
         }`,
       );

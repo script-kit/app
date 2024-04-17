@@ -590,6 +590,7 @@ export class KitPrompt {
     this.kitSearch.triggers.clear();
     this.kitSearch.postfixes.clear();
     this.kitSearch.shortcodes.clear();
+    this.updateShortcodes();
     this.kitSearch.hasGroup = false;
     this.kitSearch.commandChars = [];
     this.kitSearch.keys = ['slicedName', 'tag', 'group', 'command'];
@@ -1261,6 +1262,7 @@ export class KitPrompt {
   };
 
   initShowPrompt = () => {
+    this.setPromptAlwaysOnTop(true);
     this.focusPrompt();
     this.sendToPrompt(Channel.SET_OPEN, true);
     if (kitState.isMac) {
@@ -1291,13 +1293,11 @@ export class KitPrompt {
       this.showIfNotVisible();
     }
 
-    this.setPromptAlwaysOnTop(true);
-
     if (topTimeout) clearTimeout(topTimeout);
 
     setTimeout(() => {
       ensureIdleProcess();
-    }, 100);
+    }, 10);
   };
 
   hide = () => {
@@ -1956,6 +1956,17 @@ export class KitPrompt {
     }
   };
 
+  updateShortcodes = () => {
+    const shortcodes = [
+      ...Array.from(this.kitSearch.shortcodes.keys(), (k) => `${k} `),
+      ...this.kitSearch.triggers.keys(),
+    ];
+
+    log.info(`${this.pid}: Shortcodes:`, shortcodes.join(', '));
+
+    this.sendToPrompt(Channel.SET_SHORTCODES, shortcodes);
+  };
+
   setPromptData = async (promptData: PromptData) => {
     if (this.promptData) {
       this.firstPrompt = false;
@@ -1997,6 +2008,7 @@ export class KitPrompt {
     }
 
     this.kitSearch.commandChars = promptData.inputCommandChars || [];
+    this.updateShortcodes();
 
     if (this.cacheScriptPromptData && !promptData.preload) {
       this.cacheScriptPromptData = false;
@@ -2291,8 +2303,6 @@ export class KitPrompt {
   };
 
   setPromptAlwaysOnTop = (onTop: boolean) => {
-    log.info(`${this.pid}: Ignoring always on top`);
-    return;
     log.info(`function: setPromptAlwaysOnTop: ${onTop ? 'true' : 'false'}`);
     if (this.window && !this.window.isDestroyed()) {
       const changed = onTop !== this.alwaysOnTop;
@@ -2642,6 +2652,7 @@ export class KitPrompt {
         this.kitSearch.triggers.set(trigger, { name: trigger, value: trigger });
       }
     }
+    this.updateShortcodes();
     if (promptData.flags) {
       setFlags(this, promptData.flags);
     }

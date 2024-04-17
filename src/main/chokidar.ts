@@ -1,12 +1,7 @@
 import path from 'path';
 import chokidar from 'chokidar';
 import log from 'electron-log';
-import {
-  kenvPath,
-  kitPath,
-  userDbPath,
-  statsPath,
-} from '@johnlindquist/kit/core/utils';
+import { kenvPath, kitPath, userDbPath } from '@johnlindquist/kit/core/utils';
 import { kitState } from '../shared/state';
 
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
@@ -74,7 +69,6 @@ export const startWatching = (callback: WatcherCallback) => {
   const fileWatcher = chokidar.watch(
     [
       userDbPath,
-      statsPath,
       kenvPath('.env'),
       kenvPath('kit.css'),
       kenvPath('package.json'),

@@ -16,7 +16,6 @@ import {
   kitPath,
   kenvPath,
   resolveToScriptPath,
-  statsPath,
 } from '@johnlindquist/kit/core/utils';
 
 import { FSWatcher } from 'chokidar';
@@ -30,8 +29,10 @@ import {
   debounceSetScriptTimestamp,
   kitState,
   sponsorCheck,
+  workers,
 } from '../shared/state';
 import { kenvEnv } from '@johnlindquist/kit/types/env';
+import { CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
 
 import { addSnippet, addTextSnippet, removeSnippet } from './tick';
 import {
@@ -51,6 +52,7 @@ import { sendToAllPrompts } from './channel';
 import { readKitCss, setCSSVariable } from './theme';
 import { prompts } from './prompts';
 import { createEnv } from './env.utils';
+import { Worker } from 'worker_threads';
 
 const unlink = (filePath: string) => {
   unlinkShortcuts(filePath);
@@ -185,7 +187,11 @@ export const onScriptsChanged = async (
     addSnippet(script);
 
     if (kitState.ready && !rebuilt && !firstBatch) {
-      debounceSetScriptTimestamp({ filePath, changeStamp: Date.now() });
+      debounceSetScriptTimestamp({
+        filePath,
+        changeStamp: Date.now(),
+        reason: `${event} ${filePath}`,
+      });
       if (event === 'change') {
         checkFileImports(script);
       }
@@ -210,7 +216,24 @@ export const onScriptsChanged = async (
           const binFilePath = path.resolve(binDirPath, command);
           if (!existsSync(binFilePath)) {
             log.info(`🔗 Creating bin for ${command}`);
-            runScript(kitPath('cli', 'create-bin'), 'scripts', filePath);
+            // runScript(kitPath('cli', 'create-bin'), 'scripts', filePath);
+            if (!workers.createBin) {
+              workers.createBin = new Worker(CREATE_BIN_WORKER);
+            }
+
+            workers.createBin.removeAllListeners();
+
+            workers.createBin.once('message', (message) => {
+              log.info(`Bin created for ${command}`, message);
+            });
+            workers.createBin.once('error', (error) => {
+              log.error(`Error creating bin for ${command}`, error);
+            });
+
+            log.info(`🔗 Post message for bin for ${command}`);
+            workers.createBin.postMessage(filePath);
+          } else {
+            log.info(`🔗 Bin already exists for ${command}`);
           }
         } catch (error) {
           log.error(error);
@@ -534,12 +557,6 @@ export const setupWatchers = async () => {
         log.warn(error);
       }
 
-      return;
-    }
-
-    if (base === path.basename(statsPath)) {
-      log.info(`stats.json changed`);
-      cacheMainScripts();
       return;
     }
 

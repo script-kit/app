@@ -532,7 +532,7 @@ class Processes extends Array<ProcessAndPrompt> {
   }
 
   stampPid(pid: number) {
-    log.info(`>>>>>>>>>>>>>>>>>>>>>>>> ATTEMPTING STAMP!!!!!`);
+    log.info(`${pid}: 📅 Stamp PID`);
     const processInfo = this.getByPid(pid);
     if (!processInfo || !processInfo.launchedFromMain) return;
     if (
@@ -549,7 +549,11 @@ class Processes extends Array<ProcessAndPrompt> {
       };
 
       log.info(`>>>>>>>>>>>>>>>>>>>>>>>> STAMPING!!!!!`, stamp);
-      debounceSetScriptTimestamp(stamp);
+
+      debounceSetScriptTimestamp({
+        ...stamp,
+        reason: `stampPid`,
+      });
     }
   }
 

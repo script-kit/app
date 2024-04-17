@@ -94,7 +94,7 @@ import { scheduleDownloads, sleepSchedule } from './schedule';
 import { startSettings as setupSettings } from './settings';
 import { registerKillLatestShortcut, updateMainShortcut } from './shortcuts';
 import { logMap, mainLog } from './logs';
-import { emitter } from '../shared/events';
+import { KitEvent, emitter } from '../shared/events';
 import { displayError } from './error';
 import { TrackEvent, trackEvent } from './track';
 import {
@@ -125,6 +125,7 @@ import { syncClipboardStore } from './clipboard';
 import { actualHideDock, clearStateTimers } from './dock';
 import { prompts } from './prompts';
 import { createIdlePty } from './pty';
+import { Worker } from 'worker_threads';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -751,8 +752,7 @@ const checkKit = async () => {
   log.info(`Stored version: ${storedVersion}`);
 
   const isMac = os.platform() === 'darwin';
-  const isWindows = os.platform() === 'win32';
-  if (!(await kitExists()) || storedVersion === '0.0.0' || isWindows) {
+  if (!(await kitExists()) || storedVersion === '0.0.0') {
     if (!process.env.KIT_SPLASH) {
       log.info(
         `🌑 shouldUseDarkColors: ${
@@ -1012,6 +1012,10 @@ const checkKit = async () => {
     ohNo(error);
   }
 };
+
+emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
+  await cacheMainScripts(stamp);
+});
 
 app.whenReady().then(checkKit).catch(ohNo);
 

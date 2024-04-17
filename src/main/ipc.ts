@@ -542,7 +542,7 @@ ${data.error}
           if (!prompt.ready) {
             log.info(`${prompt.pid}: Prompt not ready..`, message);
           }
-          prompt.clearSearch();
+          // prompt.clearSearch();
 
           if (message?.state?.value === Channel.TERMINAL) {
             message.state.value = ``;

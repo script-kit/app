@@ -94,6 +94,7 @@ import {
   cachedMainFlagsAtom,
   clearCacheAtom,
   kitConfigAtom,
+  shortcodesAtom,
 } from '../jotai';
 
 import { AppChannel, WindowChannel } from '../../../shared/enums';
@@ -186,6 +187,7 @@ export default () => {
   const setTermFont = useSetAtom(termFontAtom);
   const setBeforeInput = useSetAtom(beforeInputAtom);
   const setKitConfig = useSetAtom(kitConfigAtom);
+  const setShortcodes = useSetAtom(shortcodesAtom);
   // log({
   //   previewCheck: previewCheck ? '✅' : '🚫',
   //   previewHTML: previewHTML?.length,
@@ -216,6 +218,7 @@ export default () => {
   };
 
   const messageMap: ChannelAtomMap = {
+    [Channel.SET_SHORTCODES]: setShortcodes,
     [Channel.APP_CONFIG]: setAppConfig,
     [Channel.EXIT]: setExit,
     [Channel.SET_PID]: (pid) => {

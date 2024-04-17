@@ -52,6 +52,7 @@ import internetAvailable from './internet-available';
 import { emitter, KitEvent } from './events';
 import { Trigger } from './enums';
 import { kenvEnv } from '@johnlindquist/kit/types/env';
+import { Worker } from 'worker_threads';
 
 const schema: Schema<{
   KENV: string;
@@ -144,13 +145,19 @@ export const getSchedule = () => {
     });
 };
 
+export const workers = {
+  createBin: null as Worker | null,
+  cacheScripts: null as Worker | null,
+};
+
 export const debounceSetScriptTimestamp = debounce(
   (stamp: Stamp & { reason?: string }) => {
-    log.info(`💮 Stamping ${stamp?.filePath}`);
+    log.info(`💮 Stamping ${stamp?.filePath} - ${stamp?.reason}`);
     if (!kitState.hasOpenedMainMenu) {
       return;
     }
-    setScriptTimestamp(stamp);
+
+    emitter.emit(KitEvent.SetScriptTimestamp, stamp);
   },
   100,
 );
