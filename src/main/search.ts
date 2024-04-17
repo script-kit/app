@@ -24,7 +24,13 @@ export const invokeSearch = (
   rawInput: string,
   reason = 'normal',
 ) => {
-  log.info(`${prompt.pid}: ${reason}: Invoke search: '${rawInput}'`);
+  log.info(`
+
+👀👀👀👀
+${prompt.pid}: ${reason}: Invoke search: '${rawInput}'
+👀👀👀👀
+
+`);
 
   if (prompt.ui !== UI.arg) return;
 
@@ -314,7 +320,7 @@ export const invokeSearch = (
 
     setScoredChoices(prompt, groupedResults, 'prompt.kitSearch.hasGroup');
   } else if (resultLength === 0) {
-    const scoredChoices = [];
+    const scoredChoices: ScoredChoice[] = [];
     for (const choice of prompt.kitSearch.choices) {
       for (const key of prompt.kitSearch.keys) {
         let start = -1;
@@ -433,7 +439,7 @@ export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
         height: PROMPT.ITEM.HEIGHT.XXXS,
       }),
     ];
-    const missGroup = [];
+    const missGroup: ScoredChoice[] = [];
 
     for (const choice of prompt.flagSearch.choices) {
       const hide = choice?.hideWithoutInput && input === '';
@@ -624,7 +630,7 @@ export const setChoices = (
 ) => {
   log.info(
     `
-❤️ ---- ❤️
+❤️ ---- ${prompt.scriptPath} ---- ❤️
   ${prompt.pid}: setChoices:`,
     {
       input: prompt.kitSearch.input,

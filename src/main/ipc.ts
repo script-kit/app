@@ -45,7 +45,13 @@ const checkShortcodesAndKeywords = (
   prompt: KitPrompt,
   rawInput: string,
 ): boolean => {
-  log.info(`${prompt.pid}: 🔍 Checking shortcodes and keywords...`);
+  log.info(`
+
+  🔍🔍🔍
+${prompt.pid}: 🔍 Checking shortcodes and keywords... '${rawInput}'
+  🔍🔍🔍
+
+  `);
   const sendToPrompt = prompt.sendToPrompt;
   let transformedInput = rawInput;
 
@@ -89,7 +95,22 @@ const checkShortcodesAndKeywords = (
   });
   if (trigger) {
     if (prompt.ready) {
-      sendToPrompt(Channel.SET_SUBMIT_VALUE, trigger.value);
+      const pap = processes.getByPid(prompt.pid);
+      if (pap?.child?.connected) {
+        log.info(`${prompt.pid}: 🚀 Sending main interrupt`);
+
+        pap?.child?.send({
+          channel: Channel.MAIN_INTERRUPT,
+          script: trigger?.filePath,
+          args: [],
+          trigger: Trigger.App,
+          ...trigger,
+        });
+      }
+      sendToPrompt(
+        Channel.SET_SUBMIT_VALUE,
+        trigger?.value ? trigger.value : trigger,
+      );
       log.info(`${prompt.pid}: 👢 Trigger: ${transformedInput} triggered`);
       return false;
     } else {
@@ -99,7 +120,7 @@ const checkShortcodesAndKeywords = (
 
   for (const [postfix, choice] of prompt.kitSearch.postfixes.entries()) {
     if (lowerCaseInput.endsWith(postfix)) {
-      choice.postfix = transformedInput.replace(postfix, '');
+      (choice as Script).postfix = transformedInput.replace(postfix, '');
       sendToPrompt(Channel.SET_SUBMIT_VALUE, choice);
       log.info(`🥾 Postfix: ${transformedInput} triggered`, choice);
       return false;
@@ -139,7 +160,6 @@ const checkShortcodesAndKeywords = (
     }
 
     const keyword = rawInput.split(' ')?.[0].trim();
-    log.silly({ keyword, kitSearchKeyword: prompt.kitSearch.keyword });
     if (keyword !== prompt.kitSearch.keyword) {
       const keywordChoice = prompt.kitSearch.keywords.get(keyword);
       if (keywordChoice) {

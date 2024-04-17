@@ -1387,12 +1387,12 @@ export const themeAtom = atom(
       if (key === 'appearance' && key.startsWith('--')) {
         s(appearanceAtom, value as Appearance);
       } else {
-        log.info(
-          `${g(pidAtom)}: 🐠 Changing ${key} from`,
-          document.documentElement.style.getPropertyValue(key),
-          `to`,
-          value,
-        );
+        // log.info(
+        //   `${g(pidAtom)}: 🐠 Changing ${key} from`,
+        //   document.documentElement.style.getPropertyValue(key),
+        //   `to`,
+        //   value,
+        // );
         document.documentElement.style.setProperty(key, value);
       }
     });
@@ -1772,6 +1772,13 @@ export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
+    //     log.info(
+    //       `
+    // 👉    👉  👉
+
+    //     submitValueAtom`,
+    //       JSON.stringify(a),
+    //     );
     const channel = g(channelAtom);
 
     const action = g(focusedActionAtom) as any;

@@ -4,6 +4,7 @@ import { Script } from '@johnlindquist/kit/types/core';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue } from 'jotai';
 const { ipcRenderer } = window.electron;
+import log from 'electron-log';
 
 import { ChoiceButtonProps } from '../../../shared/types';
 import {
@@ -72,6 +73,7 @@ function ChoiceButton({
 
   const onRightClick = useCallback(
     (event) => {
+      log.info(`Right clicked choice: ${choice?.id}`);
       event.preventDefault();
       event.stopPropagation();
       if (flaggedValue) {
@@ -85,6 +87,7 @@ function ChoiceButton({
 
   const onClick = useCallback(
     (e) => {
+      log.info(`Clicked choice: ${choice?.id}`);
       e.preventDefault();
       if (promptData?.multiple) {
         toggleSelectedChoice(choice?.id);
@@ -151,12 +154,8 @@ function ChoiceButton({
   return (
     <button
       type="button"
-      {...(choice?.drag
-        ? {
-            draggable: true,
-            onDragStart,
-          }
-        : {})}
+      draggable={!!choice?.drag}
+      onDragStart={choice?.drag ? onDragStart : undefined}
       onContextMenu={onRightClick}
       style={{
         cursor: mouseEnabled

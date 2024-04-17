@@ -53,6 +53,7 @@ import {
   countAtom,
   cachedMainScoredChoicesAtom,
   shortcodesAtom,
+  appendToLogHTMLAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -61,7 +62,6 @@ import { ActionSeparator } from './actionseparator';
 import { EnterButton } from './actionenterbutton';
 import { OptionsButton } from './actionoptionsbutton';
 import { LoginButton } from './loginbutton';
-import { AppChannel } from 'src/shared/enums';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];
@@ -75,6 +75,7 @@ export default function Input() {
   useFocus(inputRef);
 
   const shortcodes = useAtomValue(shortcodesAtom);
+  const setAppendToLog = useSetAtom(appendToLogHTMLAtom);
   const [inputValue, setInput] = useAtom(inputAtom);
   const [, setTabIndex] = useAtom(tabIndexAtom);
   const [unfilteredChoices] = useAtom(choicesConfigAtom);
@@ -181,6 +182,7 @@ export default function Input() {
       // log.info(`${window.pid}: onKeyDown: ${input}`);
       if (input && shortcodes.includes(input)) {
         log.info(`${window.pid}: preventDefault(): found: '${input}'`);
+        // setAppendToLog(`${window.pid}: preventDefault(): found: '${input}'`);
         event.preventDefault();
         channel(Channel.INPUT, {
           input,

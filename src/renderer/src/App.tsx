@@ -243,10 +243,10 @@ export default function App() {
     // Create an object to hold the variable names and their values
     const styles = getComputedStyle(root);
 
-    log.info(`${pid}: 👩‍💻 Root variables`, {
-      cssVariables: styles.cssText,
-      theme,
-    });
+    // log.info(`${pid}: 👩‍💻 Root variables`, {
+    //   cssVariables: styles.cssText,
+    //   theme,
+    // });
   }, [theme]);
 
   useEffect(() => {

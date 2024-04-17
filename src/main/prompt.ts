@@ -2376,6 +2376,21 @@ export class KitPrompt {
     pid: number,
     force = false,
   ): Promise<'denied' | 'allowed'> => {
+    log.info(
+      `🤔🤔🤔🤔
+
+
+
+
+      From->to`,
+      this.scriptPath,
+      script.filePath,
+    );
+    if (this.scriptPath === script.filePath) {
+      log.info(`Script already set. Ignore`);
+      return 'denied';
+    }
+
     this.scriptSet = true;
     log.info(`${this.pid}: ${pid} setScript`, script);
     performance.mark('script');
