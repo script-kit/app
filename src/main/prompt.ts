@@ -682,8 +682,8 @@ export class KitPrompt {
       x: Math.round(screenWidth / 2 - width / 2 + workX),
       y: Math.round(workY + screenHeight / 8),
       backgroundColor: '#00000000',
-      backgroundMaterial: 'mica',
-      transparent: kitState.kenvEnv?.KIT_TRANSPARENT === 'false' || true,
+      backgroundMaterial: kitState.kenvEnv?.KIT_BACKGROUND_MATERIAL || 'mica',
+      transparent: kitState.kenvEnv?.KIT_TRANSPARENT === 'false' ? false : true,
     };
 
     // Disable Windows show animation somehow...
@@ -721,10 +721,6 @@ export class KitPrompt {
         }
       }
     };
-
-    if (kitState.isWindows) {
-      this.window.setBackgroundMaterial('mica');
-    }
 
     // REMOVE-MAC
     if (kitState.isMac) {
@@ -822,9 +818,14 @@ export class KitPrompt {
           const { topMost, leftMost } = getTopMostAndLeftMost();
           this.window.setPosition(leftMost - 1000, topMost - 1000);
           this.window.showInactive();
-          setTimeout(() => {
-            this.window.hide();
-          }, kitState.kenvEnv.KIT_WINDOWS_PRERENDER_TIMEOUT || 500);
+          setTimeout(
+            () => {
+              this.window.hide();
+            },
+            kitState.kenvEnv?.KIT_WINDOWS_PRERENDER_TIMEOUT
+              ? parseInt(kitState.kenvEnv?.KIT_WINDOWS_PRERENDER_TIMEOUT)
+              : 500,
+          );
 
           // Show window inactive super far offscreen just to force a paint, then im
         } catch (error) {

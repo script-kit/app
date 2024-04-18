@@ -17,7 +17,6 @@ import {
 import os from 'os';
 import { assign, debounce } from 'lodash-es';
 import ContrastColor from 'contrast-color';
-import { subscribe } from 'valtio';
 import { pathToFileURL } from 'url';
 
 import { ChildProcess, fork, spawn } from 'child_process';
@@ -34,7 +33,6 @@ import {
   execPath,
 } from '@johnlindquist/kit/core/utils';
 
-import { subscribeKey } from 'valtio/utils';
 import fsExtra from 'fs-extra';
 const { pathExistsSync, readJson } = fsExtra;
 import { getLog, mainLog, warn } from './logs';
@@ -44,7 +42,6 @@ import {
   getThemes,
   kitStore,
   debounceSetScriptTimestamp,
-  kenvEnv,
 } from '../shared/state';
 
 import { widgetState } from '../shared/widget';
@@ -61,7 +58,6 @@ import { stripAnsi } from './ansi';
 import { TrackEvent, trackEvent } from './track';
 import { createMessageMap } from './messages';
 import { prompts } from './prompts';
-import { createIdlePty } from './pty';
 import { createEnv } from './env.utils';
 
 export type ProcessAndPrompt = ProcessInfo & {
@@ -84,7 +80,7 @@ export const clearFlags = () => {
 };
 
 export const maybeConvertColors = async (theme: any = {}) => {
-  // log.verbose(`🎨 Convert Colors:`, theme);
+  log.info(`🎨 Convert Colors:`, theme);
 
   // eslint-disable-next-line prettier/prettier
   theme.foreground ||= theme?.['--color-text'];
@@ -102,15 +98,16 @@ export const maybeConvertColors = async (theme: any = {}) => {
         : scriptKitLightTheme.opacity);
 
   log.info(`🫥 Theme opacity: ${theme.opacity}`);
+  const themeUIBgOpacity =
+    theme?.['ui-bg-opacity'] || scriptKitLightTheme['ui-bg-opacity'];
 
-  theme['--ui-bg-opacity'] ||=
-    theme?.['ui-bg-opacity'] || kitState.isDark
-      ? scriptKitTheme['ui-bg-opacity']
-      : scriptKitLightTheme['ui-bg-opacity'];
+  log.info(
+    `🫥 Theme ui-bg-opacity: ${theme?.['ui-bg-opacity']}, ${themeUIBgOpacity}`,
+  );
+  theme['--ui-bg-opacity'] = themeUIBgOpacity;
+  log.info(`🫥 Theme ui-bg-opacity: ${theme['--ui-bg-opacity']}`);
   theme['--ui-border-opacity'] ||=
-    theme?.['ui-border-opacity'] || kitState.isDark
-      ? scriptKitTheme['ui-border-opacity']
-      : scriptKitLightTheme['ui-border-opacity'];
+    theme?.['ui-border-opacity'] || scriptKitLightTheme['ui-border-opacity'];
 
   if (kitState.kenvEnv.KIT_DISABLE_BLUR === 'true') theme.opacity = '1';
 
@@ -193,6 +190,8 @@ export const maybeConvertColors = async (theme: any = {}) => {
       : defaultVibrancy;
 
   // setVibrancy(vibrancy);
+
+  log.info(`🎨 Theme:`, theme);
 
   return theme;
 };
@@ -379,6 +378,9 @@ const createChild = ({
         }
       : {}),
   });
+
+  log.info(`
+  ${child.pid}: 🚀 Create child process: ${entry} ${args.join(' ')}`);
 
   let win: BrowserWindow | null = null;
 

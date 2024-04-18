@@ -53,9 +53,9 @@ export default function ActionBar() {
       className={`
       flex flex-row
       ${ui === UI.splash ? `` : `border-t border-ui-border bg-ui-bg`}
-    min-h-6.5 h-6.5 max-h-6.5
+    min-h-7 h-7 max-h-7
     items-center justify-center
-    overflow-hidden px-4 pt-px
+    overflow-hidden px-4 py-px
     ${lightenUI && `lighten`}
     `}
     >
