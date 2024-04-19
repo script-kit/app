@@ -369,12 +369,16 @@ const createChild = ({
   const beforeChildForkPerfMark = performance.now();
   const child = fork(entry, args, {
     silent: true,
-    // stdio: 'pipe',
+    stdio: kitState?.kenvEnv?.KIT_STDIO || 'pipe',
     // TODO: Testing execPath on Windows????
-    ...(kitState.kenvEnv?.KIT_USE_EXEC_PATH === 'true' ? { execPath } : {}),
-    cwd: os.homedir(),
+    ...(kitState.kenvEnv?.KIT_USE_EXEC_PATH === 'true'
+      ? { execPath }
+      : kitState.isWindows
+        ? { execPath }
+        : {}),
+    cwd: kitState?.kenvEnv?.KIT_CWD || os.homedir(),
     execArgv: [`--loader`, loaderFileUrl],
-    windowsHide: true,
+    windowsHide: kitState?.kenvEnv?.KIT_WINDOWS_HIDE === 'true' ? true : false,
     detached: port ? false : true,
     env: {
       ...env,
@@ -531,7 +535,9 @@ export const ensureIdleProcess = () => {
   log.info(`Ensure idle process`);
   setTimeout(() => {
     const idles = getIdles();
-    const requiredIdleProcesses = 1;
+    const requiredIdleProcesses = kitState?.kenvEnv?.KIT_IDLE_PROCESSES
+      ? parseInt(kitState.kenvEnv.KIT_IDLE_PROCESSES)
+      : 1;
     const missingProcesses = requiredIdleProcesses - idles.length;
     if (missingProcesses > 0) {
       log.info(`Adding ${missingProcesses} idle process(es)`);

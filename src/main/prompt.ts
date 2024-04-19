@@ -653,7 +653,7 @@ export class KitPrompt {
       currentScreen.workAreaSize;
     const { x: workX, y: workY } = currentScreen.workArea;
 
-    const options: BrowserWindowConstructorOptions = {
+    const options = {
       useContentSize: true,
       frame: false,
       hasShadow: true,
@@ -681,28 +681,29 @@ export class KitPrompt {
       minHeight: PROMPT.INPUT.HEIGHT.XS,
       x: Math.round(screenWidth / 2 - width / 2 + workX),
       y: Math.round(workY + screenHeight / 8),
-      backgroundColor: '#00000000',
+      backgroundColor: kitState?.kenvEnv?.KIT_BACKGROUND_COLOR || '#00000000',
       backgroundMaterial: kitState.kenvEnv?.KIT_BACKGROUND_MATERIAL || 'mica',
-      transparent: kitState.kenvEnv?.KIT_TRANSPARENT === 'false' ? false : true,
-    };
+      transparent:
+        kitState.kenvEnv?.KIT_TRANSPARENT === 'false'
+          ? false
+          : kitState.isLinux
+            ? false
+            : true,
+    } as BrowserWindowConstructorOptions;
 
     // Disable Windows show animation somehow...
 
-    if (kitState.kenvEnv?.KIT_DISABLE_BLUR === 'true' || !kitState.isMac) {
+    if (kitState.isMac) {
       this.window = new BrowserWindow({
         ...options,
-      });
-    } else {
-      this.window = new BrowserWindow({
-        ...options,
-        transparent: kitState.isMac || kitState.isWindows,
         vibrancy: 'popover',
         // titleBarStyle: 'default',
         // title: 'Script Kit',
         visualEffectState: 'active',
-        backgroundColor: '#00000000',
         // alwaysOnTop: true,
       });
+    } else {
+      this.window = new BrowserWindow(options);
     }
 
     // this.window.webContents.executeJavaScript(`

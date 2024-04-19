@@ -136,7 +136,7 @@
     "emoji-picker-react": "^4.9.2",
     "eslint": "^9.0.0",
     "eslint-config-erb": "4.1.0",
-    "framer-motion": "^11.1.5",
+    "framer-motion": "^11.1.7",
     "html-react-parser": "^5.1.10",
     "jotai": "2.8.0",
     "lodash-es": "^4.17.21",
