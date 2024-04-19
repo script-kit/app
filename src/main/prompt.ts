@@ -2737,7 +2737,13 @@ export class KitPrompt {
 
   hideInstant = () => {
     // REMOVE-MAC
-    hideInstant(this.window);
+    if (kitState.isMac) {
+      hideInstant(this.window);
+    }
     // END-REMOVE-MAC
+
+    if (!kitState.isMac) {
+      this.window?.hide();
+    }
   };
 }

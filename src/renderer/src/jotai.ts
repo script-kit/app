@@ -1773,13 +1773,13 @@ export const promptActiveAtom = atom(false);
 export const submitValueAtom = atom(
   (g) => g(_submitValue),
   (g, s, a: any) => {
-    //     log.info(
-    //       `
+    // log.info(
+    //   `
     // 👉    👉  👉
 
     //     submitValueAtom`,
-    //       JSON.stringify(a),
-    //     );
+    //   JSON.stringify(a),
+    // );
     const channel = g(channelAtom);
 
     const action = g(focusedActionAtom) as any;

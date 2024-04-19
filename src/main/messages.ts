@@ -234,6 +234,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
   };
 
   const kitMessageMap: ChannelHandler = {
+    KIT_LOADING: () => {},
+    KIT_READY: () => {},
+    MAIN_MENU_READY: () => {},
     PONG: (data) => {},
     QUIT_AND_RELAUNCH: () => {
       log.info(`👋 Quitting and relaunching`);
@@ -763,6 +766,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     BEFORE_EXIT: onChildChannelOverride(({ pid }) => {
       log.info(`${pid}: 🚪 Before exit`);
+      prompt?.hideInstant();
       processes.stampPid(pid);
       processes.removeByPid(pid);
     }),

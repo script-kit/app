@@ -304,10 +304,17 @@ export const createMessageHandler = (info: ProcessInfo) => {
   // log.info({ kitMessageMap });
 
   return async (data: GenericSendData) => {
-    if (!data.kitScript && data?.channel !== Channel.HEARTBEAT) {
+    if (
+      !data.kitScript &&
+      data?.channel !== Channel.HEARTBEAT &&
+      ![
+        Channel.KIT_LOADING,
+        Channel.KIT_READY,
+        Channel.MAIN_MENU_READY,
+      ].includes(data.channel)
+    ) {
       log.info(data);
     }
-
     const channelFn = kitMessageMap[data.channel as Channel];
 
     if (channelFn) {
@@ -359,14 +366,16 @@ const createChild = ({
   // console.log({ env });
   const loaderFileUrl = pathToFileURL(kitPath('build', 'loader.js')).href;
   const isWin = os.platform().startsWith('win');
+  const beforeChildForkPerfMark = performance.now();
   const child = fork(entry, args, {
     silent: true,
-    stdio: 'pipe',
+    // stdio: 'pipe',
     // TODO: Testing execPath on Windows????
-    execPath,
+    ...(kitState.kenvEnv?.KIT_USE_EXEC_PATH === 'true' ? { execPath } : {}),
     cwd: os.homedir(),
     execArgv: [`--loader`, loaderFileUrl],
     windowsHide: true,
+    detached: port ? false : true,
     env: {
       ...env,
       KIT_DEBUG: port ? '1' : '0',
@@ -377,6 +386,43 @@ const createChild = ({
           execArgv: [`--loader`, loaderFileUrl, `--inspect=${port}`],
         }
       : {}),
+  });
+
+  const kitLoadingHandler = (data) => {
+    if (data?.channel === Channel.KIT_LOADING) {
+      log.info(
+        `${child.pid}: KIT_LOADING ${data?.value} in ${performance.now() - beforeChildForkPerfMark}ms`,
+      );
+      // child.off('message', kitLoadingHandler);
+    }
+  };
+
+  child.on('message', kitLoadingHandler);
+
+  const kitReadyHandler = (data) => {
+    if (data?.channel === Channel.KIT_READY) {
+      log.info(
+        `${child.pid}: KIT_READY in ${performance.now() - beforeChildForkPerfMark}ms`,
+      );
+      child.off('message', kitReadyHandler);
+    }
+  };
+
+  child.on('message', kitReadyHandler);
+
+  const mainMenuReadyHandler = (data) => {
+    if (data?.channel === Channel.MAIN_MENU_READY) {
+      log.info(
+        `${child.pid}: MAIN_MENU_READY in ${performance.now() - beforeChildForkPerfMark}ms`,
+      );
+      child.off('message', mainMenuReadyHandler);
+    }
+  };
+
+  child.on('spawn', () => {
+    log.info(
+      `${child?.pid}: SPAWN in ${performance.now() - beforeChildForkPerfMark}ms`,
+    );
   });
 
   log.info(`
@@ -659,10 +705,6 @@ class Processes extends Array<ProcessAndPrompt> {
     child?.on('message', messageHandler);
 
     const { pid } = child;
-
-    child.on('spawn', () => {
-      log.info(`${pid}: SPAWN`);
-    });
 
     child.once('close', () => {
       log.info(`${pid}: CLOSE`);

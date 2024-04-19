@@ -31,7 +31,7 @@ html {
   --color-primary: 251, 191, 36;
   --color-secondary: 52, 52, 52;
   --color-background: 15, 15, 15;
-  --ui-bg-opacity: 0.9;
+  --ui-bg-opacity: 0.05;
   --ui-border-opacity: 0.15;
   /* Check useThemeDetector... */
   --mono-font: JetBrains Mono;

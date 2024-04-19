@@ -45,13 +45,13 @@ const checkShortcodesAndKeywords = (
   prompt: KitPrompt,
   rawInput: string,
 ): boolean => {
-  log.info(`
+  //   log.info(`
 
-  🔍🔍🔍
-${prompt.pid}: 🔍 Checking shortcodes and keywords... '${rawInput}'
-  🔍🔍🔍
+  //   🔍🔍🔍
+  // ${prompt.pid}: 🔍 Checking shortcodes and keywords... '${rawInput}'
+  //   🔍🔍🔍
 
-  `);
+  //   `);
   const sendToPrompt = prompt.sendToPrompt;
   let transformedInput = rawInput;
 
@@ -107,10 +107,10 @@ ${prompt.pid}: 🔍 Checking shortcodes and keywords... '${rawInput}'
   }
 
   for (const [postfix, choice] of prompt.kitSearch.postfixes.entries()) {
-    if (lowerCaseInput.endsWith(postfix)) {
+    if (choice && lowerCaseInput.endsWith(postfix)) {
+      log.info(`🥾 Postfix: ${transformedInput} triggered`, choice);
       (choice as Script).postfix = transformedInput.replace(postfix, '');
       sendToPrompt(Channel.SET_SUBMIT_VALUE, choice);
-      log.info(`🥾 Postfix: ${transformedInput} triggered`, choice);
       return false;
     }
   }
@@ -535,17 +535,16 @@ ${data.error}
         }
 
         if (channel === Channel.VALUE_SUBMITTED) {
-          //           log.info(
-          //             `${child?.pid} 📝 Submitting...
+          // log.info(
+          //   `${child?.pid} 📝 Submitting...
 
           // `,
-          //             {
-          //               script: prompt.scriptPath,
-          //               input: message.state.input,
-          //               ready: prompt.ready,
-          //               shown: prompt.shown,
-          //             },
-          //           );
+          //   message,
+          // );
+
+          if (!message?.state?.value && message?.state?.script) {
+            message.state.value = message.state.focused;
+          }
 
           if (!prompt.ready) {
             log.info(`${prompt.pid}: Prompt not ready..`, message);
