@@ -125,7 +125,6 @@ import { syncClipboardStore } from './clipboard';
 import { actualHideDock, clearStateTimers } from './dock';
 import { prompts } from './prompts';
 import { createIdlePty } from './pty';
-import { Worker } from 'worker_threads';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 

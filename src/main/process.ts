@@ -80,7 +80,7 @@ export const clearFlags = () => {
 };
 
 export const maybeConvertColors = async (theme: any = {}) => {
-  log.info(`🎨 Convert Colors:`, theme);
+  // log.info(`🎨 Convert Colors:`, theme);
 
   // eslint-disable-next-line prettier/prettier
   theme.foreground ||= theme?.['--color-text'];
