@@ -20,7 +20,7 @@ import { WindowChannel } from '../../../shared/enums';
 
 const registerLogLanguage = (
   monaco: Monaco,
-  theme: { foreground: string; background: string }
+  theme: { foreground: string; background: string },
 ) => {
   monaco.languages.register({ id: 'log' });
 
@@ -108,7 +108,7 @@ export default function Log() {
 
       registerLogLanguage(monaco, theme);
     },
-    [theme]
+    [theme],
   );
 
   const onMount = useCallback(
@@ -153,7 +153,7 @@ export default function Log() {
 
       ipcRenderer.send(WindowChannel.MOUNTED);
     },
-    [config, containerRef, isDark]
+    [config, containerRef, isDark],
   );
 
   useEffect(() => {
@@ -196,13 +196,20 @@ export default function Log() {
   }, [mouseOver, editor, logValue]);
 
   useEffect(() => {
-    setShortcuts([
+    const shortcuts = [
       {
         name: 'Clear Log',
         key: `${cmd}+y`,
         bar: 'right',
       },
-    ]);
+      {
+        name: 'Close',
+        key: `${cmd}+w`,
+        bar: 'right',
+      },
+    ];
+    console.log({ shortcuts });
+    setShortcuts(shortcuts);
   }, [cmd, setShortcuts]);
 
   return (

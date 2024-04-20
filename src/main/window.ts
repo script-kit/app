@@ -12,6 +12,7 @@ import { windowsState } from '../shared/windows';
 import { WindowChannel } from '../shared/enums';
 import { getCurrentScreenFromMouse } from './prompt';
 import { fileURLToPath } from 'url';
+import { getPromptOptions } from './prompt.options';
 
 export const createWindow = async ({
   ui,
@@ -22,26 +23,9 @@ export const createWindow = async ({
   scriptPath: string;
   title: string;
 }) => {
-  const win = new BrowserWindow({
-    width: 800,
-    height: 600,
-    icon: getAssetPath('icon.png'),
-    // transparent: true,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      devTools: true,
-      preload: fileURLToPath(new URL('../preload/index.mjs', import.meta.url)), // ✅
-    },
-    frame: true,
-    hasShadow: true,
-
-    show: false,
-    title,
-    roundedCorners: true,
-    vibrancy: 'menu',
-    backgroundColor: '#00000000',
-  });
+  const options = getPromptOptions();
+  log.info(`Creating log window for ${scriptPath}`);
+  const win = new BrowserWindow(options);
 
   windowsState.windows.push({
     scriptPath,
@@ -86,11 +70,15 @@ export const showLogWindow = async ({
   pid: number;
 }) => {
   // TODO: If Log window already exists, just show it
+  let tail: Tail.Tail;
   const alreadyOpen = windowsState.windows.find(
     (w) => w.scriptPath === scriptPath && w.ui === UI.log,
   );
 
   if (alreadyOpen) {
+    log.info(`${alreadyOpen?.id}: Log window already open for ${scriptPath}`, {
+      alreadyOpen,
+    });
     BrowserWindow.fromId(alreadyOpen.id)?.showInactive();
     return;
   }
@@ -125,10 +113,21 @@ export const showLogWindow = async ({
         await writeFile(logPath, '');
         win.webContents.send(WindowChannel.SET_LOG_VALUE, '');
       }
+
+      if (message?.state?.shortcut?.endsWith('w')) {
+        log.info(`Closing log window`);
+        tail?.unwatch();
+        win.close();
+        win.destroy();
+        windowsState.windows = windowsState.windows.filter(
+          (w) => w.id !== win.id,
+        );
+        log.info(`Close handled. Destroying log window ${win.id}`);
+      }
     }
 
     if (channel === WindowChannel.MOUNTED) {
-      const tail = new Tail.Tail(logPath, {
+      tail = new Tail.Tail(logPath, {
         fromBeginning: true,
         follow: true,
       });
@@ -148,10 +147,6 @@ export const showLogWindow = async ({
         log.info({ data });
         if (win.isDestroyed()) return;
         win.webContents.send(WindowChannel.SET_LAST_LOG_LINE, data);
-      });
-
-      win.on('close', () => {
-        tail.unwatch();
       });
     }
   });

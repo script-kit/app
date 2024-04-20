@@ -88,6 +88,7 @@ import { QuickScore } from 'quick-score';
 import { createPty } from './pty';
 import { cliFromParams, runPromptProcess } from './kit';
 import EventEmitter from 'events';
+import { getPromptOptions } from './prompt.options';
 
 contextMenu({
   showInspectElement: process.env.NODE_ENV === 'development',
@@ -645,71 +646,8 @@ export class KitPrompt {
       };
     });
 
-    const width = PROMPT.WIDTH.BASE;
-    const height = PROMPT.HEIGHT.BASE;
-    // const currentScreen = getCurrentScreenFromMouse();
-    const currentScreen = getCurrentScreen();
-    const { width: screenWidth, height: screenHeight } =
-      currentScreen.workAreaSize;
-    const { x: workX, y: workY } = currentScreen.workArea;
-
-    const options = {
-      useContentSize: true,
-      frame: false,
-      hasShadow: true,
-      show: false,
-      icon: getAssetPath('icon.png'),
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false,
-        devTools: true,
-        // backgroundThrottling: false,
-        // experimentalFeatures: true,
-        spellcheck: true,
-        preload: fileURLToPath(
-          new URL('../preload/index.mjs', import.meta.url),
-        ),
-        webSecurity: false,
-      },
-      minimizable: false,
-      maximizable: false,
-      movable: true,
-      skipTaskbar: true,
-      width,
-      height,
-      minWidth: MIN_WIDTH,
-      minHeight: PROMPT.INPUT.HEIGHT.XS,
-      x: Math.round(screenWidth / 2 - width / 2 + workX),
-      y: Math.round(workY + screenHeight / 8),
-      backgroundColor: kitState?.kenvEnv?.KIT_BACKGROUND_COLOR || '#00000000',
-      backgroundMaterial: kitState.kenvEnv?.KIT_BACKGROUND_MATERIAL || 'mica',
-      transparent:
-        kitState.kenvEnv?.KIT_TRANSPARENT === 'false'
-          ? false
-          : kitState.isLinux
-            ? false
-            : true,
-    } as BrowserWindowConstructorOptions;
-
-    // Disable Windows show animation somehow...
-
-    if (kitState.isMac) {
-      this.window = new BrowserWindow({
-        ...options,
-        vibrancy: 'popover',
-        // titleBarStyle: 'default',
-        // title: 'Script Kit',
-        visualEffectState: 'active',
-        // alwaysOnTop: true,
-      });
-    } else {
-      this.window = new BrowserWindow(options);
-    }
-
-    // this.window.webContents.executeJavaScript(`
-    // window.promptId = ${this.id}
-    // window.pid = ${this.pid}
-    // `);
+    const options = getPromptOptions();
+    this.window = new BrowserWindow(options);
 
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
       log.silly(`sendToPrompt: ${String(channel)}`, data);

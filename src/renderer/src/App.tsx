@@ -232,24 +232,6 @@ export default function App() {
   useMessages();
 
   useEffect(() => {
-    // log all of the :root css variables and their values
-    const root = document.querySelector('html');
-    const rootStyles = getComputedStyle(root);
-    console.log({ rootStyles });
-    const rootVars = Array.from(rootStyles).filter((name) =>
-      name.startsWith('--'),
-    );
-
-    // Create an object to hold the variable names and their values
-    const styles = getComputedStyle(root);
-
-    // log.info(`${pid}: 👩‍💻 Root variables`, {
-    //   cssVariables: styles.cssText,
-    //   theme,
-    // });
-  }, [theme]);
-
-  useEffect(() => {
     log.info(`${pid}: 👩‍💻 UI changed to: ${ui}`);
   }, [ui, pid]);
 
@@ -361,7 +343,7 @@ export default function App() {
 
   useShortcuts();
   useEnter();
-  useThemeDetector();
+  // useThemeDetector();
 
   const appRef: RefObject<HTMLDivElement> = useRef(null);
   const windowContainerRef: RefObject<HTMLDivElement> = useRef(null);

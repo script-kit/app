@@ -1370,34 +1370,32 @@ const promptData = atom<null | Partial<PromptData>>({
   placeholder: 'Script Kit',
 });
 
-const _themeAtom = atom({});
+const _themeAtom = atom<Record<string, string>>({});
+
+const setCSSVars = (theme: Record<string, string>) => {
+  Object.entries(theme).forEach(([key, value]) => {
+    if (key.startsWith('--')) {
+      // log.info(
+      //   `${g(pidAtom)}: 🐠 Changing ${key} from`,
+      //   document.documentElement.style.getPropertyValue(key),
+      //   `to`,
+      //   value,
+      // );
+      document.documentElement.style.setProperty(key, value);
+    }
+  });
+};
 
 export const themeAtom = atom(
   (g) => g(_themeAtom),
-  (
-    g,
-    s,
-    a: {
-      [key: string]: string;
-    },
-  ) => {
+  (g, s, theme: Record<string, string> = {}) => {
     const prevTheme: any = g(_themeAtom);
+    if (theme['appearance']) {
+      s(appearanceAtom, theme['appearance'] as Appearance);
+    }
 
-    Object.entries(a).forEach(([key, value]) => {
-      if (key === 'appearance' && key.startsWith('--')) {
-        s(appearanceAtom, value as Appearance);
-      } else {
-        // log.info(
-        //   `${g(pidAtom)}: 🐠 Changing ${key} from`,
-        //   document.documentElement.style.getPropertyValue(key),
-        //   `to`,
-        //   value,
-        // );
-        document.documentElement.style.setProperty(key, value);
-      }
-    });
-
-    const newTheme = { ...prevTheme, ...a };
+    setCSSVars(theme);
+    const newTheme = { ...prevTheme, ...theme };
 
     // log.info(`theme: ${JSON.stringify(newTheme)}`);
 
@@ -1839,12 +1837,12 @@ export const submitValueAtom = atom(
     // s(_inputAtom, '');
     // s(panelHTMLAtom, ``);
 
-    // log.info(
-    //   `😘😘😘😘😘😘😘
+    log.info(
+      `😘😘😘😘😘😘😘
 
-    // `,
-    //   value,
-    // );
+    `,
+      value,
+    );
     // s(appendToLogHTMLAtom, `VALUE_SUBMITTED: ${Object.keys(value).join('\n')}`);
 
     channel(Channel.VALUE_SUBMITTED, {
@@ -1996,15 +1994,16 @@ const emptyFilePathBounds: FilePathBounds = {
 };
 export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 
-const tempTheme = atom({});
+const tempTheme = atom<Record<string, string>>({});
 export const tempThemeAtom = atom(
   (g) => g(tempTheme),
-  (_g, s, a: { [key: string]: string }) => {
-    Object.entries(a).forEach(([key, value]) => {
-      document.documentElement.style.setProperty(key, value);
-    });
+  (_g, s, theme: Record<string, string>) => {
+    if (theme['appearance']) {
+      s(appearanceAtom, theme['appearance'] as Appearance);
+    }
 
-    s(tempTheme, a);
+    setCSSVars(theme);
+    s(tempTheme, theme);
   },
 );
 

@@ -1,11 +1,13 @@
 import log from 'electron-log';
+import { UI } from '@johnlindquist/kit/core/enum';
 import { proxy } from 'valtio/vanilla';
 import { KitEvent, emitter } from './events';
 import { subscribeKey } from 'valtio/utils';
 
 export type WindowOptions = {
-  id: string;
-  wid: number;
+  scriptPath: string;
+  id: number;
+  ui: UI;
 };
 
 const initWindows = {
