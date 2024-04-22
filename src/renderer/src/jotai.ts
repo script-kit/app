@@ -2552,18 +2552,18 @@ export const termExitAtom = atom(
   null,
   debounce(
     (g, s, a: string) => {
+      log.info(`🐲 Term exit from prompt`, { a });
       const ui = g(uiAtom);
       const submitted = g(submittedAtom);
-      const open = g(openAtom);
       const currentTermConfig = g(termConfigAtom);
       const currentPromptData = g(promptDataAtom);
 
       if (
         ui === UI.term &&
-        open &&
         !submitted &&
         currentTermConfig.promptId === currentPromptData.id
       ) {
+        log.info(`🐲 Term exit and submit`);
         s(submitValueAtom, a);
       }
     },

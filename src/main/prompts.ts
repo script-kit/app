@@ -4,6 +4,7 @@ import { KitPrompt } from './prompt';
 const promptMap = new Map<number, KitPrompt>();
 
 export const prompts = {
+  appRunning: true,
   lastFocused: null as KitPrompt | null,
   pids() {
     return Array.from(promptMap.keys());
@@ -18,7 +19,7 @@ export const prompts = {
    * @returns True if a new idle prompt was created, false otherwise.
    */
   createPromptIfNoIdle: function (): boolean {
-    if (this.idle === null) {
+    if (this.idle === null && this.appRunning) {
       this.idle = new KitPrompt();
       log.info(
         `🌅 Initializing idle prompt with window id:${this.idle?.window?.id}`,

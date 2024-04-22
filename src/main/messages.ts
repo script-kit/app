@@ -772,7 +772,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
 
     QUIT_APP: onChildChannel(async ({ child }, { channel, value }) => {
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      prompt?.window?.hide();
       forceQuit();
     }),
     SET_KIT_STATE: onChildChannel(async (processInfo, data) => {

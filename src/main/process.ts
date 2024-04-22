@@ -728,7 +728,7 @@ class Processes extends Array<ProcessAndPrompt> {
       if (id) clearTimeout(id);
 
       prompt.sendToPrompt(Channel.EXIT, pid);
-      emitter.emit(KitEvent.TERM_KILL, prompt.id);
+      emitter.emit(KitEvent.TERM_KILL, pid);
 
       const processInfo = processes.getByPid(pid) as ProcessInfo;
 
@@ -829,6 +829,8 @@ class Processes extends Array<ProcessAndPrompt> {
     if (!child?.killed) {
       emitter.emit(KitEvent.RemoveProcess, scriptPath);
       emitter.emit(KitEvent.ProcessGone, pid);
+      log.info(`Emitting ${KitEvent.TERM_KILL} for ${pid}`);
+      emitter.emit(KitEvent.TERM_KILL, pid);
       child?.removeAllListeners();
       child?.kill();
 

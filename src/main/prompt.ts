@@ -4,8 +4,6 @@ import {
   makePanel,
   makeWindow,
   hideInstant,
-  getWindowBackgroundColor,
-  getTextColor,
 } from '@johnlindquist/mac-panel-window';
 // END-REMOVE-MAC
 
@@ -28,7 +26,6 @@ import {
   screen,
   Rectangle,
   shell,
-  BrowserWindowConstructorOptions,
   Point,
   TouchBar,
   ipcMain,
@@ -62,12 +59,7 @@ import {
   preloadPreviewMap,
   kitCache,
 } from '../shared/state';
-import {
-  EMOJI_HEIGHT,
-  EMOJI_WIDTH,
-  MIN_WIDTH,
-  ZOOM_LEVEL,
-} from '../shared/defaults';
+import { EMOJI_HEIGHT, EMOJI_WIDTH, ZOOM_LEVEL } from '../shared/defaults';
 import { ResizeData, ScoredChoice } from '../shared/types';
 import { getVersion } from './version';
 import { AppChannel, HideReason } from '../shared/enums';
@@ -83,7 +75,7 @@ import { sendToAllPrompts } from './channel';
 import { setFlags, setChoices, invokeSearch, scorer } from './search';
 import { fileURLToPath } from 'url';
 import { prompts } from './prompts';
-import { ProcessAndPrompt, ensureIdleProcess, processes } from './process';
+import { ensureIdleProcess, processes } from './process';
 import { QuickScore } from 'quick-score';
 import { createPty } from './pty';
 import { cliFromParams, runPromptProcess } from './kit';
@@ -664,10 +656,10 @@ export class KitPrompt {
     // REMOVE-MAC
     if (kitState.isMac) {
       makePanel(this.window);
-      log.info({
-        systemBackgroundColor: getWindowBackgroundColor(),
-        systemTextColor: getTextColor(),
-      });
+      // log.info({
+      //   systemBackgroundColor: getWindowBackgroundColor(),
+      //   systemTextColor: getTextColor(),
+      // });
     }
     // END-REMOVE-MAC
 
@@ -1207,6 +1199,7 @@ export class KitPrompt {
     this.sendToPrompt(Channel.SET_OPEN, true);
     if (kitState.isMac) {
       log.info(`${this.pid}:${this.window?.id} this.window.showInactive()`);
+      makeKeyWindow(this.window);
       this.window.showInactive();
       // this.window.webContents.openDevTools({
       //   activate: false,
@@ -2181,11 +2174,13 @@ export class KitPrompt {
     // REMOVE-MAC
     this.actualHide();
     await new Promise((resolve) => {
+      makeWindow(this.window);
       setTimeout(() => {
-        if (!this.window || this.window?.isDestroyed()) return;
-        makeKeyWindow(new BrowserWindow());
-        makeWindow(this.window);
-        this.window?.close();
+        if (!this.window || this.window?.isDestroyed()) {
+          resolve(null);
+          return;
+        }
+        this?.close();
         resolve(null);
       });
     });
@@ -2222,8 +2217,8 @@ export class KitPrompt {
       try {
         if (kitState.isMac) {
           // REMOVE-MAC
-          log.info(`🥱 >>>>>>> 🥱 makeKeyWindow`);
-          makeKeyWindow(this.window);
+          // log.info(`🥱 >>>>>>> 🥱 makeKeyWindow`);
+          // makeKeyWindow(this.window);
           // END-REMOVE-MAC
         } else {
           this.window?.focus();
@@ -2419,6 +2414,8 @@ export class KitPrompt {
       // This is crashing the app, is there anything else I can do?
       // this.window?.destroy();
       try {
+        // makeWindow(this.window);
+        this.window.setClosable(true);
         this.window.close();
       } catch (error) {
         log.error(error);
@@ -2438,83 +2435,83 @@ export class KitPrompt {
 
     // check browser window cleanup
 
-    setTimeout(() => {
-      const promptStates = [...prompts].map((p) => ({
-        pid: p.pid,
-        scriptPath: p.scriptPath,
-        window: p.window,
-      }));
+    // setTimeout(() => {
+    //   const promptStates = [...prompts].map((p) => ({
+    //     pid: p.pid,
+    //     scriptPath: p.scriptPath,
+    //     window: p.window,
+    //   }));
 
-      const allWindows = BrowserWindow.getAllWindows();
-      const windowStates = allWindows.map((w) => ({
-        id: w.id,
-        destroyed: w.isDestroyed() ? 'Yes' : 'No',
-        closable: w.isClosable() ? 'Yes' : 'No',
-        // focusable: w.isFocusable() ? 'Yes' : 'No',
-        // minimizable: w.isMinimizable() ? 'Yes' : 'No',
-        // maximizable: w.isMaximizable() ? 'Yes' : 'No',
-        // modal: w.isModal() ? 'Yes' : 'No',
-        // movable: w.isMovable() ? 'Yes' : 'No',
-        // resizable: w.isResizable() ? 'Yes' : 'No',
-        // visible: w.isVisible() ? 'Yes' : 'No',
-        // fullscreen: w.isFullScreen() ? 'Yes' : 'No',
-        // fullscreenable: w.isFullScreenable() ? 'Yes' : 'No',
-        // kiosk: w.isKiosk() ? 'Yes' : 'No',
-        // alwaysOnTop: w.isAlwaysOnTop() ? 'Yes' : 'No',
-        // normal: w.isNormal() ? 'Yes' : 'No',
-        // minimized: w.isMinimized() ? 'Yes' : 'No',
-        // maximized: w.isMaximized() ? 'Yes' : 'No',
-        // hasShadow: w.hasShadow() ? 'Yes' : 'No',
-        // hasFocus: w.isFocused() ? 'Yes' : 'No',
-        // visibleOnAllWorkspaces: w.isVisibleOnAllWorkspaces() ? 'Yes' : 'No',
-      }));
+    //   const allWindows = BrowserWindow.getAllWindows();
+    //   const windowStates = allWindows.map((w) => ({
+    //     id: w.id,
+    //     destroyed: w.isDestroyed() ? 'Yes' : 'No',
+    //     closable: w.isClosable() ? 'Yes' : 'No',
+    //     // focusable: w.isFocusable() ? 'Yes' : 'No',
+    //     // minimizable: w.isMinimizable() ? 'Yes' : 'No',
+    //     // maximizable: w.isMaximizable() ? 'Yes' : 'No',
+    //     // modal: w.isModal() ? 'Yes' : 'No',
+    //     // movable: w.isMovable() ? 'Yes' : 'No',
+    //     // resizable: w.isResizable() ? 'Yes' : 'No',
+    //     // visible: w.isVisible() ? 'Yes' : 'No',
+    //     // fullscreen: w.isFullScreen() ? 'Yes' : 'No',
+    //     // fullscreenable: w.isFullScreenable() ? 'Yes' : 'No',
+    //     // kiosk: w.isKiosk() ? 'Yes' : 'No',
+    //     // alwaysOnTop: w.isAlwaysOnTop() ? 'Yes' : 'No',
+    //     // normal: w.isNormal() ? 'Yes' : 'No',
+    //     // minimized: w.isMinimized() ? 'Yes' : 'No',
+    //     // maximized: w.isMaximized() ? 'Yes' : 'No',
+    //     // hasShadow: w.hasShadow() ? 'Yes' : 'No',
+    //     // hasFocus: w.isFocused() ? 'Yes' : 'No',
+    //     // visibleOnAllWorkspaces: w.isVisibleOnAllWorkspaces() ? 'Yes' : 'No',
+    //   }));
 
-      const promptTable = promptStates
-        .map(
-          (p) =>
-            `PID: ${p.pid} | ` +
-            `Script: ${p.scriptPath} | ` +
-            `Window: ${p.window ? p.window.id : 'No'}`,
-        )
-        .join('\n');
+    //   const promptTable = promptStates
+    //     .map(
+    //       (p) =>
+    //         `PID: ${p.pid} | ` +
+    //         `Script: ${p.scriptPath} | ` +
+    //         `Window: ${p.window ? p.window.id : 'No'}`,
+    //     )
+    //     .join('\n');
 
-      const stateTable = windowStates
-        .map(
-          (ws) =>
-            `ID: ${ws.id} | ` +
-            `Destroyed: ${ws.destroyed} | ` +
-            `Closable: ${ws.closable} | `,
-          // `Focusable: ${ws.focusable} | ` +
-          // `Minimizable: ${ws.minimizable} | ` +
-          // `Maximizable: ${ws.maximizable} | ` +
-          // `Modal: ${ws.modal} | ` +
-          // `Movable: ${ws.movable} | ` +
-          // `Resizable: ${ws.resizable} | ` +
-          // `Visible: ${ws.visible} | ` +
-          // `Fullscreen: ${ws.fullscreen} | ` +
-          // `Fullscreenable: ${ws.fullscreenable} | ` +
-          // `Kiosk: ${ws.kiosk} | ` +
-          // `AlwaysOnTop: ${ws.alwaysOnTop} | ` +
-          // `Normal: ${ws.normal} | ` +
-          // `Minimized: ${ws.minimized} | ` +
-          // `Maximized: ${ws.maximized} | ` +
-          // `HasShadow: ${ws.hasShadow} | ` +
-          // `HasFocus: ${ws.hasFocus} | ` +
-          // `VisibleOnAllWorkspaces: ${ws.visibleOnAllWorkspaces} | `
-        )
-        .join('\n');
-      // Log or handle the stateTable string as needed
+    //   const stateTable = windowStates
+    //     .map(
+    //       (ws) =>
+    //         `ID: ${ws.id} | ` +
+    //         `Destroyed: ${ws.destroyed} | ` +
+    //         `Closable: ${ws.closable} | `,
+    //       // `Focusable: ${ws.focusable} | ` +
+    //       // `Minimizable: ${ws.minimizable} | ` +
+    //       // `Maximizable: ${ws.maximizable} | ` +
+    //       // `Modal: ${ws.modal} | ` +
+    //       // `Movable: ${ws.movable} | ` +
+    //       // `Resizable: ${ws.resizable} | ` +
+    //       // `Visible: ${ws.visible} | ` +
+    //       // `Fullscreen: ${ws.fullscreen} | ` +
+    //       // `Fullscreenable: ${ws.fullscreenable} | ` +
+    //       // `Kiosk: ${ws.kiosk} | ` +
+    //       // `AlwaysOnTop: ${ws.alwaysOnTop} | ` +
+    //       // `Normal: ${ws.normal} | ` +
+    //       // `Minimized: ${ws.minimized} | ` +
+    //       // `Maximized: ${ws.maximized} | ` +
+    //       // `HasShadow: ${ws.hasShadow} | ` +
+    //       // `HasFocus: ${ws.hasFocus} | ` +
+    //       // `VisibleOnAllWorkspaces: ${ws.visibleOnAllWorkspaces} | `
+    //     )
+    //     .join('\n');
+    //   // Log or handle the stateTable string as needed
 
-      const processTable = processes.map((p) => {
-        return `PID: ${p.pid} | Script: ${p.scriptPath}`;
-      });
+    //   const processTable = processes.map((p) => {
+    //     return `PID: ${p.pid} | Script: ${p.scriptPath}`;
+    //   });
 
-      log.info(`Prompt States:\n${promptTable}`);
-      log.info(`Process States:\n${processTable}`);
-      log.info(`Browser Window States:\n${stateTable}`);
+    //   log.info(`Prompt States:\n${promptTable}`);
+    //   log.info(`Process States:\n${processTable}`);
+    //   log.info(`Browser Window States:\n${stateTable}`);
 
-      // this.window.destroy();
-    }, 2000);
+    //   // this.window.destroy();
+    // }, 2000);
 
     return;
   };
@@ -2686,3 +2683,28 @@ export class KitPrompt {
     }
   };
 }
+
+export const prepQuitWindow = async () => {
+  // REMOVE-MAC
+  log.info(`👋 Prep quit window`);
+  const options = getPromptOptions();
+  const window = new BrowserWindow(options);
+
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      log.info(`👋 Prep quit window timeout`);
+      if (!window?.isDestroyed()) {
+        makeKeyWindow(window);
+      }
+
+      for (const prompt of prompts) {
+        makeWindow(prompt.window);
+      }
+      window?.close();
+      log.info(`👋 Prep quit window done`);
+      resolve(null);
+    });
+  });
+
+  // END-REMOVE-MAC
+};

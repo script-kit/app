@@ -66,8 +66,16 @@ import {
   getReleaseChannel,
   getPlatformExtension,
 } from '../shared/assets';
-import { startClipboardAndKeyboardWatchers } from './tick';
-import { clearPromptCache, clearPromptTimers, logPromptState } from './prompt';
+import {
+  startClipboardAndKeyboardWatchers,
+  stopClipboardAndKeyboardWatchers,
+} from './tick';
+import {
+  clearPromptCache,
+  clearPromptTimers,
+  logPromptState,
+  prepQuitWindow,
+} from './prompt';
 
 import { APP_NAME, KIT_PROTOCOL, tildify } from './helpers';
 import { getVersion, getStoredVersion, storeVersion } from './version';
@@ -124,7 +132,7 @@ import { readKitCss } from './theme';
 import { syncClipboardStore } from './clipboard';
 import { actualHideDock, clearStateTimers } from './dock';
 import { prompts } from './prompts';
-import { createIdlePty } from './pty';
+import { createIdlePty, destroyPtyPool } from './pty';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -220,8 +228,11 @@ const platform = os.platform();
 const nodeVersion = `v${process.versions.node}`;
 
 app.on('window-all-closed', (e: Event) => {
-  mainLog.log(`🪟 window-all-closed`);
-  e.preventDefault();
+  log.info(`🪟 window-all-closed`, e);
+  if (!kitState.allowQuit) {
+    mainLog.log(`🪟 window-all-closed`);
+    e.preventDefault();
+  }
 });
 
 app?.on('browser-window-blur', () => {
@@ -1018,14 +1029,36 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
 
 app.whenReady().then(checkKit).catch(ohNo);
 
+app?.on('will-quit', (e) => {
+  log.info(`🚪 will-quit`);
+});
+
+app?.on('before-quit', (e) => {
+  log.info(`🚪 before-quit`);
+  prepQuitWindow();
+  setTimeout(() => {
+    app.quit();
+    app.exit();
+  });
+});
+
 subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   trackEvent(TrackEvent.Quit, {
     allowQuit,
   });
+
+  // app?.removeAllListeners('window-all-closed');
+  app?.removeAllListeners();
+  // emitter?.removeAllListeners();
+  // ipcMain?.removeAllListeners();
   mainLog.info('allowQuit begin...');
+  prompts.appRunning = false;
+  await prepQuitWindow();
   for (const prompt of prompts) {
     await prompt.prepPromptForQuit();
   }
+
+  prompts.idle?.prepPromptForQuit();
 
   // app?.removeAllListeners('window-all-closed');
   if (!allowQuit) return;
@@ -1037,6 +1070,7 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   try {
     teardownWatchers();
     sleepSchedule();
+    await destroyPtyPool();
 
     subs.forEach((sub) => {
       try {
@@ -1064,27 +1098,38 @@ subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
     mainLog.error(error);
   }
 
-  app?.removeAllListeners('window-all-closed');
-  app?.removeAllListeners();
-
-  BrowserWindow.getAllWindows().forEach((win) => {
-    if (!win?.isDestroyed()) {
-      win.removeAllListeners();
-      win?.destroy();
+  setTimeout(() => {
+    const windows = BrowserWindow.getAllWindows();
+    for (const window of windows) {
+      log.info(`🪟 Closing window... ${window.id}`);
+      window.close();
+      window?.destroy();
     }
+
+    setTimeout(() => {
+      const windows = BrowserWindow.getAllWindows();
+      for (const window of windows) {
+        log.info(`🪟 Final closing window... ${window.id}`);
+        window.close();
+        window?.destroy();
+      }
+
+      destroyPtyPool();
+      log.info(`🚪 Why is this app still running with all the windows closed?`);
+      try {
+        if (kitState?.quitAndInstall) {
+          mainLog.info(`🚀 Quit and Install`);
+          autoUpdater?.quitAndInstall();
+        } else {
+          mainLog.info(`🚀 Quit`);
+          app?.quit();
+          app?.exit(0);
+        }
+      } catch (error) {
+        mainLog.error(error);
+        app?.quit();
+        app?.exit(0);
+      }
+    });
   });
-
-  try {
-    if (kitState?.quitAndInstall) {
-      mainLog.info(`🚀 Quit and Install`);
-      autoUpdater?.quitAndInstall();
-    } else {
-      mainLog.info(`🚀 Quit`);
-      app?.quit();
-    }
-  } catch (error) {
-    mainLog.error(error);
-    app?.quit();
-    app?.exit(0);
-  }
 });
