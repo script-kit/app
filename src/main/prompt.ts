@@ -1187,26 +1187,8 @@ export class KitPrompt {
     this.sendToPrompt(AppChannel.CLEAR_CACHE, {});
   };
 
-  showIfNotVisible = () => {
-    if (!this.window.isVisible()) {
-      this.window.show();
-    }
-  };
-
   initShowPrompt = () => {
-    this.setPromptAlwaysOnTop(true);
-    this.focusPrompt();
-    this.sendToPrompt(Channel.SET_OPEN, true);
-    if (kitState.isMac) {
-      log.info(`${this.pid}:${this.window?.id} this.window.showInactive()`);
-      makeKeyWindow(this.window);
-      this.window.showInactive();
-      // this.window.webContents.openDevTools({
-      //   activate: false,
-      //   mode: 'detach',
-      //   title: 'Prompt DevTools',
-      // });
-    } else {
+    if (!kitState.isMac) {
       // this.prompt.restore();
       log.info(`${this.pid}:${this.window?.id} this.window.show()`);
 
@@ -1223,8 +1205,11 @@ export class KitPrompt {
         );
       }
       // END-REMOVE-NODE-WINDOW-MANAGER
-      this.showIfNotVisible();
     }
+
+    this.setPromptAlwaysOnTop(true);
+    this.focusPrompt();
+    this.sendToPrompt(Channel.SET_OPEN, true);
 
     if (topTimeout) clearTimeout(topTimeout);
 
@@ -2217,8 +2202,9 @@ export class KitPrompt {
       try {
         if (kitState.isMac) {
           // REMOVE-MAC
-          // log.info(`🥱 >>>>>>> 🥱 makeKeyWindow`);
-          // makeKeyWindow(this.window);
+          log.info(`🥱 >>>>>>> 🥱 makeKeyWindow`);
+          this.window?.showInactive();
+          makeKeyWindow(this.window);
           // END-REMOVE-MAC
         } else {
           this.window?.focus();
@@ -2414,7 +2400,12 @@ export class KitPrompt {
       // This is crashing the app, is there anything else I can do?
       // this.window?.destroy();
       try {
-        // makeWindow(this.window);
+        // REMOVE-MAC
+        if (kitState.isMac) {
+          makeWindow(this.window);
+        }
+        // END-REMOVE-MAC
+
         this.window.setClosable(true);
         this.window.close();
       } catch (error) {
@@ -2698,6 +2689,7 @@ export const prepQuitWindow = async () => {
       }
 
       for (const prompt of prompts) {
+        if (prompt?.window?.isDestroyed()) continue;
         makeWindow(prompt.window);
       }
       window?.close();
