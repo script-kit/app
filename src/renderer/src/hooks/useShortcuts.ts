@@ -24,6 +24,30 @@ import {
 import { hotkeysOptions } from './shared';
 import { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 
+function isEventShortcut(event: HotkeysEvent, shortcut: string): boolean {
+  const shortcutEvent = {
+    mod: shortcut.includes('mod') || shortcut.includes('cmd'),
+    shift: shortcut.includes('shift'),
+    alt: shortcut.includes('alt'),
+    ctrl: shortcut.includes('ctrl'),
+    meta: shortcut.includes('meta'),
+    keys: [shortcut.split('+').pop() as string],
+  } as HotkeysEvent;
+
+  // log.info({
+  //   event,
+  //   shortcutEvent,
+  // });
+  // compare the event with the shortcut
+  return (
+    event.mod === shortcutEvent.mod &&
+    event.shift === shortcutEvent.shift &&
+    event.alt === shortcutEvent.alt &&
+    event.ctrl === shortcutEvent.ctrl &&
+    event.meta === shortcutEvent.meta &&
+    event?.keys?.[0] === shortcutEvent?.keys?.[0]
+  );
+}
 export default () => {
   const [choices] = useAtom(choicesAtom);
   const [focusedChoice] = useAtom(focusedChoiceAtom);
@@ -69,10 +93,10 @@ export default () => {
     flagShortcuts = flagShortcuts.slice(0, -1);
   }
 
-  const flagKeyByShortcut = (shortcut: string) => {
-    for (const [key, value] of flagsWithShortcuts) {
-      if (value.shortcut === shortcut) {
-        return key;
+  const flagByHandler = (event: HotkeysEvent) => {
+    for (const [flag, value] of flagsWithShortcuts) {
+      if (isEventShortcut(event, value.shortcut)) {
+        return flag;
       }
     }
     return null; // Return null if no matching shortcut is found
@@ -89,8 +113,11 @@ export default () => {
       const key = handler?.keys?.[0];
       if (!key) return;
 
-      // setFlag(flagKeyByShortcut(key));
-      // submit(focusedChoice?.value || input);
+      const flag = flagByHandler(handler) as string;
+      const submitValue = focusedChoice?.value || input;
+      // log.info('flag shortcut', { flagShortcuts, handler, flag, submitValue });
+      setFlag(flag);
+      submit(submitValue);
     },
     hotkeysOptions,
     [flags, input, inputFocus, choices, index, flagValue, flagShortcuts],
@@ -120,17 +147,11 @@ export default () => {
       if (!key) return;
 
       const found = promptShortcuts.find((ps) => {
-        const [shortcutKey, ...modifiers] = ps?.key?.split('+')?.reverse();
-        const hasKey = shortcutKey === key;
-        const hasModifiers = modifiers.every((modifier) => {
-          if (modifier === 'cmd') {
-            return handler?.mod || handler?.meta;
-          }
+        if (isEventShortcut(handler, ps.key)) {
+          return ps;
+        }
 
-          return handler[modifier];
-        });
-
-        return hasKey && hasModifiers;
+        return null;
       });
       if (found) {
         if (found?.flag) {

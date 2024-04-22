@@ -74,6 +74,7 @@ export const shortcutsAtom = atom(
     return g(_shortcuts);
   },
   (g, s, a: Shortcut[]) => {
+    // log.info(`🔥 Setting shortcuts to ${a.length}`, a);
     s(_shortcuts, a);
   },
 );

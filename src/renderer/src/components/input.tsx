@@ -180,7 +180,21 @@ export default function Input() {
 
       const input = target.value + event.key;
       // log.info(`${window.pid}: onKeyDown: ${input}`);
-      if (input && shortcodes.includes(input)) {
+      // log.info({
+      //   modifiersLength: modifiers.length,
+      //   modifiers,
+      // });
+
+      const currentModifiers = modifiers
+        .filter((m) => event.getModifierState(m))
+        .flatMap(remapModifiers);
+
+      const modifiersNotShift = currentModifiers.filter((m) => m !== 'shift');
+      if (
+        input &&
+        shortcodes.includes(input) &&
+        modifiersNotShift.length === 0
+      ) {
         log.info(`${window.pid}: preventDefault(): found: '${input}'`);
         // setAppendToLog(`${window.pid}: preventDefault(): found: '${input}'`);
         event.preventDefault();
@@ -189,11 +203,7 @@ export default function Input() {
         });
       }
 
-      setModifiers(
-        modifiers
-          .filter((m) => event.getModifierState(m))
-          .flatMap(remapModifiers),
-      );
+      setModifiers(currentModifiers);
 
       // if the key is a modifier that isn't shift, return
 

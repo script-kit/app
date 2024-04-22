@@ -1904,13 +1904,13 @@ export class KitPrompt {
       createPty(this);
     }
 
-    if (promptData.ui !== UI.arg) {
-      // REMOVE-MAC
-      if (kitState.isMac) {
-        makeWindow(this.window);
-      }
-      // END-REMOVE-MAC
-    }
+    // if (promptData.ui !== UI.arg) {
+    //   // REMOVE-MAC
+    //   if (kitState.isMac) {
+    //     makeWindow(this.window);
+    //   }
+    //   // END-REMOVE-MAC
+    // }
 
     log.info(`
     >>> 📝 setPromptData for ${promptData?.scriptPath}`);
