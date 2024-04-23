@@ -131,7 +131,7 @@
     "detect-port": "^1.5.1",
     "dompurify": "^3.1.0",
     "electron": "^30.0.1",
-    "electron-builder": "24.13.3",
+    "electron-builder": "^25.0.0-alpha.6",
     "electron-vite": "^2.2.0",
     "emoji-picker-react": "^4.9.2",
     "eslint": "^9.1.1",
