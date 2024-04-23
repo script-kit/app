@@ -283,7 +283,9 @@ export const childSend = (child: ChildProcess, data: any) => {
       // log.info(`✉️: ${data.channel}`);
       child.send(data, (error) => {
         if (error)
-          log.warn(`Channel ${data?.channel} failed on ${data?.promptId}`);
+          log.warn(
+            `${child?.pid}: ${data?.channel} ignored. Already finished: ${data?.promptId}`,
+          );
       });
     }
   } catch (error) {
@@ -664,7 +666,6 @@ class Processes extends Array<ProcessAndPrompt> {
     }
 
     const prompt = prompts.attachIdlePromptToProcess(child.pid);
-    prompt.count = ++promptCount;
 
     log.info(
       `${child.pid}: 👶 Create child ${type} process: ${child.pid}`,

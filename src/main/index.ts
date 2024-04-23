@@ -1033,14 +1033,14 @@ app?.on('will-quit', (e) => {
   log.info(`🚪 will-quit`);
 });
 
-app?.on('before-quit', (e) => {
-  log.info(`🚪 before-quit`);
-  prepQuitWindow();
-  setTimeout(() => {
-    app.quit();
-    app.exit();
-  });
-});
+// app?.on('before-quit', (e) => {
+//   log.info(`🚪 before-quit`);
+//   prepQuitWindow();
+//   setTimeout(() => {
+//     app.quit();
+//     app.exit();
+//   });
+// });
 
 subscribeKey(kitState, 'allowQuit', async (allowQuit) => {
   trackEvent(TrackEvent.Quit, {

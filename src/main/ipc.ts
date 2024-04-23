@@ -171,6 +171,21 @@ const checkShortcodesAndKeywords = (
   return true;
 };
 
+const handleMessageFail = debounce(
+  (message: AppMessage) => {
+    log.warn(
+      `${message?.pid}: pid closed. Attempted ${message.channel}, but ignored.`,
+    );
+
+    processes.removeByPid(message?.pid);
+    // TODO: Reimplement failed message with specific prompt
+    // maybeHide(HideReason.MessageFailed);
+    ensureIdleProcess();
+  },
+  100,
+  { leading: true },
+);
+
 const handleChannel =
   (fn: (processInfo: ProcessAndPrompt, message: AppMessage) => void) =>
   (_event: any, message: AppMessage) => {
@@ -191,12 +206,7 @@ const handleChannel =
 
       // log.info(`${message.channel}`, message.pid);
     } else if (message.pid !== -1 && !kitState.preloaded) {
-      log.warn(`${message.channel} failed on ${message?.pid}`);
-
-      processes.removeByPid(message?.pid);
-      // TODO: Reimplement failed message with specific prompt
-      // maybeHide(HideReason.MessageFailed);
-      ensureIdleProcess();
+      handleMessageFail(message);
     }
   };
 

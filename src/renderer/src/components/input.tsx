@@ -49,9 +49,6 @@ import {
   sendShortcutAtom,
   signInActionAtom,
   cachedAtom,
-  pidAtom,
-  countAtom,
-  cachedMainScoredChoicesAtom,
   shortcodesAtom,
   appendToLogHTMLAtom,
 } from '../jotai';
@@ -117,9 +114,6 @@ export default function Input() {
   const focusedChoice = useAtomValue(focusedChoiceAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const action = useAtomValue(signInActionAtom);
-  const pid = useAtomValue(pidAtom);
-  const count = useAtomValue(countAtom);
-  const scoredChoices = useAtomValue(cachedMainScoredChoicesAtom);
 
   const onClick = useCallback(
     (event) => {

@@ -1310,12 +1310,6 @@ export class KitPrompt {
     // this.showPrompt();
   };
 
-  makePromptWindow = async () => {
-    // REMOVE-MAC
-    makeWindow(this.window);
-    // END-REMOVE-MAC
-  };
-
   blurPrompt = () => {
     log.info(`blurPrompt`);
     if (this.window.isDestroyed()) return;
@@ -1668,50 +1662,6 @@ export class KitPrompt {
     }
   };
 
-  pingPromptWithTimeout = async <K extends keyof ChannelMap>(
-    channel: K,
-    timeout: number,
-    data: ChannelMap[K],
-  ) => {
-    const messageId = Math.random();
-    return new Promise((resolve) => {
-      let id: any = null;
-      const handler = (event, handledData) => {
-        if (id) clearTimeout(id);
-        log.verbose(`🎤 ${channel} pinged...`);
-
-        if (handledData?.messageId === messageId) {
-          log.info(`Message match: ${messageId}`);
-          resolve('done');
-        } else {
-          log.error(
-            `Message mismatch: ${messageId} !== ${handledData?.messageId}`,
-          );
-        }
-      };
-      id = setTimeout(() => {
-        if (!this.window || this.window?.isDestroyed()) return;
-        // just in case
-        log.verbose(`🎤 ${channel} timeout...`);
-        ipcMain.off(channel, handler);
-        resolve('done');
-      }, timeout);
-      ipcMain.once(channel, handler);
-      if (process.env.KIT_SILLY)
-        log.silly(`sendToPrompt: ${String(channel)}`, data);
-      // log.info(`>_ ${channel}`);
-      if (
-        this.window &&
-        !this.window.isDestroyed() &&
-        this.window?.webContents
-      ) {
-        data.messageId = messageId;
-        // log.info(`🎤 ${channel} >>>> ${data?.messageId}`);
-        this.sendToPrompt(channel, data);
-      }
-    });
-  };
-
   resize = async (resizeData: ResizeData) => {
     // log.info({ resizeData });
     // debugLog.info(`Testing...`, resizeData);
@@ -1972,8 +1922,7 @@ export class KitPrompt {
       promptData.keyword = this.kitSearch.keyword || this.kitSearch.keyword;
     }
 
-    promptData.count = this.count;
-    await this.pingPromptWithTimeout(Channel.SET_PROMPT_DATA, 250, promptData);
+    this.sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
 
     if (
       typeof promptData?.x === 'number' ||
@@ -2054,11 +2003,12 @@ export class KitPrompt {
       // globalShortcut.unregister(getEmojiShortcut());
       kitState.emojiActive = false;
     }
-    if (kitState.isMac) {
-      // REMOVE-MAC
-      makeWindow(this.window);
-      // END-REMOVE-MAC
-    }
+    // if (kitState.isMac) {
+    //   // REMOVE-MAC
+    //   log.info(`🙈 Hiding prompt window`);
+    //   makeWindow(this.window);
+    //   // END-REMOVE-MAC
+    // }
     this.setPromptAlwaysOnTop(false);
     if (!this.isVisible()) return;
 
@@ -2402,19 +2352,21 @@ export class KitPrompt {
       try {
         // REMOVE-MAC
         if (kitState.isMac) {
+          log.info(`Before makeWindow(this.window)`);
           makeWindow(this.window);
+          log.info(`After makeWindow(this.window)`);
         }
         // END-REMOVE-MAC
 
         this.window.setClosable(true);
         this.window.close();
+        log.info(`${this?.pid}: window ${this?.window?.id}: closed`);
       } catch (error) {
         log.error(error);
       }
 
       setImmediate(() => {
         this.window.destroy();
-        this.window = null;
       });
 
       // this.window = null;
@@ -2692,7 +2644,9 @@ export const prepQuitWindow = async () => {
         if (prompt?.window?.isDestroyed()) continue;
         makeWindow(prompt.window);
       }
-      window?.close();
+      if (!window?.isDestroyed()) {
+        window?.close();
+      }
       log.info(`👋 Prep quit window done`);
       resolve(null);
     });

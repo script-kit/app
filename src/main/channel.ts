@@ -48,7 +48,9 @@ export const createSendToChild = (pap: ProcessAndPrompt) => (data: any) => {
       // log.info(`${pap?.pid}: ${data.channel}`);
       pap?.child.send(data, (error) => {
         if (error)
-          log.warn(`Channel ${data?.channel} failed on ${data?.promptId}`);
+          log.warn(
+            `${pap?.child?.pid}: ${data?.channel} couldn't send from ${data?.promptId}. Process already gone.`,
+          );
       });
     }
   } catch (error) {

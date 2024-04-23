@@ -1415,8 +1415,6 @@ export const footerHiddenAtom = atom(
 
 const promptReadyAtom = atom(false);
 
-export const countAtom = atom(0);
-
 let wasPromptDataPreloaded = false;
 export const promptDataAtom = atom(
   (g) => g(promptData),
@@ -1425,9 +1423,6 @@ export const promptDataAtom = atom(
     // s(appendToLogHTMLAtom, a?.id || 'id missing');
     log.info(`${pid}: 👂 Prompt Data ${a?.id}, ${a?.ui}`);
 
-    if (a?.count) {
-      s(countAtom, a.count);
-    }
     const isMainScript = a?.scriptPath === g(kitConfigAtom).mainScriptPath;
     s(isMainScriptAtom, isMainScript);
     if (isMainScript && !a?.preload && g(tabIndexAtom) === 0) {
