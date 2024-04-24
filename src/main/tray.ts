@@ -284,28 +284,45 @@ const buildPermissionsSubmenu = (): MenuItemConstructorOptions[] => {
   return permissionsSubmenu;
 };
 
-const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
-  const toolsSubmenu: MenuItemConstructorOptions[] = [];
+const buildPromptsSubmenu = (): MenuItemConstructorOptions[] => {
+  const promptsSubmenu: MenuItemConstructorOptions[] = [];
 
-  toolsSubmenu.push({
-    label: `Open Dev Tools`,
+  promptsSubmenu.push({
+    label: `Open Focused Prompt Dev Tools`,
     click: async () => {
-      emitter.emit(KitEvent.OpenDevTools);
+      log.info(`Opening focused prompt dev tools...`);
+      prompts?.focused?.window?.webContents?.openDevTools();
     },
   });
 
-  toolsSubmenu.push({
-    label: 'Force Prompt to Front',
+  promptsSubmenu.push({
+    label: 'Center Focused Prompt',
     click: () => {
-      runScript(getMainScriptPath(), [], {
-        force: true,
-        trigger: Trigger.Tray,
-        sponsorCheck: false,
-      })();
-
+      log.info(`Centering focused prompt...`);
       prompts.focused?.forcePromptToCenter();
     },
   });
+
+  promptsSubmenu.push({
+    label: 'Gather All Prompts to Center',
+    click: () => {
+      log.info(`Gathering all prompts to center...`);
+      for (const prompt of prompts) {
+        prompt.forcePromptToCenter();
+      }
+    },
+  });
+
+  promptsSubmenu.push({
+    label: `Clear Prompt Cache`,
+    click: runScript(kitPath('cli', 'kit-clear-prompt.js')),
+  });
+
+  return promptsSubmenu;
+};
+
+const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
+  const toolsSubmenu: MenuItemConstructorOptions[] = [];
 
   toolsSubmenu.push({
     label: `Force Reload`,
@@ -372,11 +389,6 @@ const buildToolsSubmenu = (): MenuItemConstructorOptions[] => {
   toolsSubmenu.push({
     label: `Reveal ~/.kenv`,
     click: runScript(kitPath('help', 'reveal-kenv.js')),
-  });
-
-  toolsSubmenu.push({
-    label: `Reset Prompt`,
-    click: runScript(kitPath('cli', 'kit-clear-prompt.js')),
   });
 
   toolsSubmenu.push({
@@ -554,16 +566,20 @@ export const openMenu = debounce(
           enabled: false,
         },
         {
-          label: `Watchers`,
-          submenu: buildWatcherSubmenu(),
+          label: `Prompts`,
+          submenu: buildPromptsSubmenu(),
         },
         {
-          label: `Debug`,
+          label: `Tools`,
           submenu: buildToolsSubmenu(),
         },
         {
           label: `Permissions`,
           submenu: buildPermissionsSubmenu(),
+        },
+        {
+          label: `Watchers`,
+          submenu: buildWatcherSubmenu(),
         },
         updateMenu,
         {

@@ -3,7 +3,7 @@
 import log from 'electron-log';
 // REMOVE-MAC
 import nmp from 'node-mac-permissions';
-const { askForAccessibilityAccess, getAuthStatus, askForFullDiskAccess } = nmp;
+const { getAuthStatus } = nmp;
 // END-REMOVE-MAC
 
 import {
@@ -89,13 +89,10 @@ export const maybeConvertColors = async (theme: any = {}) => {
   theme.ui ||= theme?.['--color-secondary'];
 
   const { scriptKitTheme, scriptKitLightTheme } = getThemes();
-  theme.opacity ||=
-    theme?.['--opacity'] ||
-    (!kitState.isMac
-      ? '1'
-      : nativeTheme.shouldUseDarkColors
-        ? scriptKitTheme.opacity
-        : scriptKitLightTheme.opacity);
+  theme.opacity ||= theme?.['--opacity'];
+  nativeTheme.shouldUseDarkColors
+    ? scriptKitTheme.opacity
+    : scriptKitLightTheme.opacity;
 
   log.info(`🫥 Theme opacity: ${theme.opacity}`);
   const themeUIBgOpacity =
@@ -140,11 +137,7 @@ export const maybeConvertColors = async (theme: any = {}) => {
     log.verbose(`💄 Setting appearance to ${theme.appearance}`);
   }
 
-  if (!kitState.isMac) {
-    theme['--opacity'] = '.96';
-  } else if (theme.opacity) {
-    theme['--opacity'] = theme.opacity;
-  }
+  theme['--opacity'] = `${theme.opacity}`;
 
   if (theme.ui) delete theme.ui;
   if (theme.background) delete theme.background;
@@ -183,11 +176,6 @@ export const maybeConvertColors = async (theme: any = {}) => {
   ];
 
   const defaultVibrancy = 'hud';
-
-  const vibrancy =
-    theme?.vibrancy && validVibrancies.includes(theme.vibrancy)
-      ? theme.vibrancy
-      : defaultVibrancy;
 
   // setVibrancy(vibrancy);
 
@@ -259,7 +247,7 @@ type WidgetData = {
 };
 type WidgetHandler = (event: IpcMainEvent, data: WidgetData) => void;
 
-export const cachePreview = async (scriptPath: string, preview: string) => {
+export const cachePreview = async () => {
   // log.verbose(`🎁 Caching preview for ${kitState.scriptPath}`);
   // preloadPreviewMap.set(scriptPath, preview);
   // if (
@@ -367,7 +355,6 @@ const createChild = ({
   const env = createEnv();
   // console.log({ env });
   const loaderFileUrl = pathToFileURL(kitPath('build', 'loader.js')).href;
-  const isWin = os.platform().startsWith('win');
   const beforeChildForkPerfMark = performance.now();
   const child = fork(entry, args, {
     silent: true,
@@ -564,7 +551,6 @@ const setTrayScriptError = (pid: number) => {
 
 const childShortcutMap = new Map<ChildProcess, string[]>();
 
-let promptCount = 0;
 class Processes extends Array<ProcessAndPrompt> {
   public abandonnedProcesses: ProcessAndPrompt[] = [];
 
@@ -825,7 +811,7 @@ class Processes extends Array<ProcessAndPrompt> {
     prompts.delete(pid);
     const index = this.findIndex((info) => info.pid === pid);
     if (index === -1) return;
-    const { child, type, scriptPath, prompt } = this[index];
+    const { child, scriptPath } = this[index];
 
     if (!child?.killed) {
       emitter.emit(KitEvent.RemoveProcess, scriptPath);
@@ -964,7 +950,7 @@ export const handleWidgetEvents = () => {
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!w) return;
-    const { wid, moved, pid } = w;
+    const { wid, pid } = w;
     const widget = BrowserWindow.fromId(wid);
     const child = processes.getChildByPid(pid);
     if (!child) return;
@@ -986,7 +972,7 @@ export const handleWidgetEvents = () => {
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!w) return;
-    const { wid, moved, pid } = w;
+    const { wid, pid } = w;
     const widget = BrowserWindow.fromId(wid);
     const child = processes.getChildByPid(pid);
     if (!child) return;
@@ -1007,7 +993,7 @@ export const handleWidgetEvents = () => {
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
     log.info(`🔽 mouseDown ${widgetId}`, { w });
     if (!w) return;
-    const { wid, moved, pid } = w;
+    const { wid, pid } = w;
     const widget = BrowserWindow.fromId(wid);
     if (!widget) return;
     const child = processes.getChildByPid(pid);
@@ -1032,7 +1018,7 @@ export const handleWidgetEvents = () => {
 
     const w = widgetState.widgets.find(({ id }) => id === widgetId);
     if (!w) return;
-    const { wid, moved, pid } = w;
+    const { wid, pid } = w;
     const widget = BrowserWindow.fromId(wid);
     const child = processes.getChildByPid(pid);
     if (!child) return;
@@ -1197,7 +1183,6 @@ emitter.on(
 //   setChoices(formatScriptChoices(scripts));
 // });
 
-let observer: PerformanceObserver | null = null;
 emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
   try {
     // REMOVE-MAC
