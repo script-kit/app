@@ -449,7 +449,7 @@ overflow-hidden
 text-text-base
       `}
         >
-          <style>{promptData?.css}</style>
+          {promptData?.css && <style>{promptData?.css}</style>}
           <style>{css}</style>
           {/* {lighten && (
           <style

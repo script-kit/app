@@ -46,7 +46,6 @@ import { AppChannel, Trigger } from '../shared/enums';
 import { runScript } from './kit';
 import { processes, spawnShebang, updateTheme } from './process';
 import { compareArrays } from './helpers';
-import { cacheMainScripts } from './install';
 import { getFileImports } from './npm';
 import { sendToAllPrompts } from './channel';
 import { readKitCss, setCSSVariable } from './theme';
@@ -366,22 +365,40 @@ export const parseEnvFile = debounce(
           sendToAllPrompts(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
         }
 
-        setCSSVariable(
-          '--mono-font',
-          envData?.KIT_MONO_FONT || `JetBrains Mono`,
-        );
-        setCSSVariable(
-          '--sans-font',
-          envData?.KIT_SANS_FONT ||
-            `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`,
-        );
-        setCSSVariable(
-          '--serif-font',
-          envData?.KIT_SERIF_FONT ||
-            `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
-    'serif'`,
-        );
+        const defaultKitMono = `JetBrains Mono`;
+
+        if (envData?.KIT_MONO_FONT) {
+          setCSSVariable(
+            '--mono-font',
+            envData?.KIT_MONO_FONT || defaultKitMono,
+          );
+        } else if (kitState.kenvEnv.KIT_MONO_FONT) {
+          delete kitState.kenvEnv.KIT_MONO_FONT;
+          setCSSVariable('--mono-font', defaultKitMono);
+        }
+
+        const defaultKitSans = `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'`;
+        if (envData?.KIT_SANS_FONT) {
+          setCSSVariable(
+            '--sans-font',
+            envData?.KIT_SANS_FONT || defaultKitSans,
+          );
+        } else if (kitState.kenvEnv.KIT_SANS_FONT) {
+          delete kitState.kenvEnv.KIT_SANS_FONT;
+          setCSSVariable('--sans-font', defaultKitSans);
+        }
+
+        const defaultKitSerif = `'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times',
+        'serif'`;
+        if (envData?.KIT_SERIF_FONT) {
+          setCSSVariable(
+            '--serif-font',
+            envData?.KIT_SERIF_FONT || defaultKitSerif,
+          );
+        } else if (kitState.kenvEnv.KIT_SERIF_FONT) {
+          delete kitState.kenvEnv.KIT_SERIF_FONT;
+          setCSSVariable('--serif-font', defaultKitSerif);
+        }
 
         if (envData?.KIT_MIC) {
           log.info(`Setting mic`, envData?.KIT_MIC);

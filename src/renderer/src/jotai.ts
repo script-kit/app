@@ -1374,17 +1374,20 @@ const promptData = atom<null | Partial<PromptData>>({
 const _themeAtom = atom<Record<string, string>>({});
 
 const setCSSVars = (theme: Record<string, string>) => {
-  Object.entries(theme).forEach(([key, value]) => {
-    if (key.startsWith('--')) {
-      // log.info(
-      //   `${g(pidAtom)}: 🐠 Changing ${key} from`,
-      //   document.documentElement.style.getPropertyValue(key),
-      //   `to`,
-      //   value,
-      // );
-      document.documentElement.style.setProperty(key, value);
-    }
-  });
+  Object.entries(theme)
+    // sort "--opacity" to the front
+    .sort((a, b) => (a[0].includes('opacity') ? -1 : 1))
+    .forEach(([key, value]) => {
+      if (key.startsWith('--')) {
+        // log.info(
+        //   `${g(pidAtom)}: 🐠 Changing ${key} from`,
+        //   document.documentElement.style.getPropertyValue(key),
+        //   `to`,
+        //   value,
+        // );
+        document.documentElement.style.setProperty(key, value);
+      }
+    });
 };
 
 export const themeAtom = atom(
