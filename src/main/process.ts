@@ -63,7 +63,6 @@ import { createEnv } from './env.utils';
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
   promptId?: string;
-  launched: boolean;
   launchedFromMain: boolean;
 };
 
@@ -555,11 +554,10 @@ class Processes extends Array<ProcessAndPrompt> {
   public abandonnedProcesses: ProcessAndPrompt[] = [];
 
   public getAllProcessInfo() {
-    return this.map(({ scriptPath, type, pid, launched }) => ({
+    return this.map(({ scriptPath, type, pid }) => ({
       type,
       scriptPath,
       pid,
-      launched,
     }));
   }
 
@@ -571,9 +569,9 @@ class Processes extends Array<ProcessAndPrompt> {
       scriptPath,
       values: [],
       date: Date.now(),
-    };
+    } as Partial<ProcessAndPrompt>;
 
-    this.push(info);
+    this.push(info as ProcessAndPrompt);
     processesChanged();
   }
 
@@ -668,7 +666,6 @@ class Processes extends Array<ProcessAndPrompt> {
       date: Date.now(),
       prompt,
       launchedFromMain: false,
-      launched: false,
     } as ProcessAndPrompt;
 
     // prompt.window.on('closed', () => {
