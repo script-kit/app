@@ -663,6 +663,14 @@ export class KitPrompt {
     }
     // END-REMOVE-MAC
 
+    // REMOVE-NODE-WINDOW-MANAGER
+    if (kitState.isWindows) {
+      windowManager.setWindowAsPopupWithRoundedCorners(
+        this.window?.getNativeWindowHandle(),
+      );
+    }
+    // END-REMOVE-NODE-WINDOW-MANAGER
+
     // prompt.setVisibleOnAllWorkspaces(true, {
     //   visibleOnFullScreen: true,
     //   skipTransformProcessType: true,
@@ -1197,14 +1205,6 @@ export class KitPrompt {
         log.info(`Storing previous window: ${currentWindow.processId}`);
         prevWindow = currentWindow;
       }
-
-      // REMOVE-NODE-WINDOW-MANAGER
-      if (kitState.isWindows) {
-        windowManager.setWindowAsPopupWithRoundedCorners(
-          this.window?.getNativeWindowHandle(),
-        );
-      }
-      // END-REMOVE-NODE-WINDOW-MANAGER
     }
 
     this.setPromptAlwaysOnTop(true);
@@ -2157,13 +2157,13 @@ export class KitPrompt {
           makeKeyWindow(this.window);
           // END-REMOVE-MAC
         } else {
+          this.window?.show();
           this.window?.focus();
           this.window?.webContents.focus();
         }
       } catch (error) {
         log.error(error);
       }
-      // this.prompt?.focusOnWebView();
     }
   };
 

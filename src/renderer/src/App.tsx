@@ -106,22 +106,6 @@ import ProgressBar from './progress-bar';
 import * as monaco from 'monaco-editor';
 import { loader } from '@monaco-editor/react';
 loader.config({ monaco });
-// function ensureFirstBackSlash(str) {
-//   return str.length > 0 && str.charAt(0) !== '/' ? '/' + str : str;
-// }
-
-// function uriFromPath(_path) {
-//   const pathName = window.api.path.resolve(_path).replace(/\\/g, '/');
-//   return encodeURI('file://' + ensureFirstBackSlash(pathName));
-// }
-
-// loader.config({
-//   paths: {
-//     vs: uriFromPath(
-//       window.api.path.join('./node_modules/monaco-editor/min/vs')
-//     ),
-//   },
-// });
 
 class ErrorBoundary extends React.Component {
   // eslint-disable-next-line react/state-in-constructor

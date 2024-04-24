@@ -26,14 +26,6 @@ import {
 
 import { kitLight, nightOwl } from '../editor-themes';
 
-// loader.config({
-//   paths: {
-//     vs: uriFromPath(
-//       path.join(__dirname, '../node_modules/monaco-editor/min/vs')
-//     ),
-//   },
-// });
-
 const registerPropertiesLanguage = (monaco: Monaco) => {
   monaco.languages.register({ id: 'properties' });
 

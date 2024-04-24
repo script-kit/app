@@ -25,7 +25,12 @@ export const createWindow = async ({
 }) => {
   const options = getPromptOptions();
   log.info(`Creating log window for ${scriptPath}`);
-  const win = new BrowserWindow(options);
+
+  const win = new BrowserWindow({
+    ...options,
+    title,
+    frame: true,
+  });
 
   windowsState.windows.push({
     scriptPath,
