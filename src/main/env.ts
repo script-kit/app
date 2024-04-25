@@ -51,9 +51,11 @@ subscribeKey(kitState, 'kenvEnv', (kenvEnv: kenvEnv) => {
 
   if (updatedKeys.length) {
     if (updatedKeys.includes('KIT_MAIN_SHORTCUT')) {
-      updateMainShortcut(
-        kenvEnv.KIT_MAIN_SHORTCUT || kitState.isMac ? 'cmd ;' : 'ctrl ;',
+      log.info(
+        `🔑 kenvEnv.KIT_MAIN_SHORTCUT updated`,
+        kenvEnv.KIT_MAIN_SHORTCUT,
       );
+      updateMainShortcut(kenvEnv.KIT_MAIN_SHORTCUT);
     }
   }
 });

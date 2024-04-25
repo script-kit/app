@@ -527,9 +527,7 @@ const ready = async () => {
 
     checkTray();
 
-    updateMainShortcut(
-      kitState.kenvEnv.KIT_MAIN_SHORTCUT || kitState.isMac ? 'cmd ;' : 'ctrl ;',
-    );
+    updateMainShortcut(kitState?.kenvEnv?.KIT_MAIN_SHORTCUT);
 
     if (process.env.KIT_LOG_PROMPT_STATE) {
       setInterval(() => {

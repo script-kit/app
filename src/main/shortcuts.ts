@@ -216,10 +216,15 @@ export const shortcutScriptChanged = ({
   }
 };
 
-export const updateMainShortcut = async (shortcut: string) => {
-  log.info(`Updating main shortcut to ${shortcut}`);
+export const updateMainShortcut = async (shortcut?: string) => {
+  const checkShortcut = shortcut
+    ? shortcut
+    : kitState.isMac
+      ? 'cmd ;'
+      : 'ctrl ;';
+  log.info(`updateMainShortcut with ${checkShortcut}`);
 
-  const finalShortcut = convertShortcut(shortcut, getMainScriptPath());
+  const finalShortcut = convertShortcut(checkShortcut, getMainScriptPath());
   if (!finalShortcut) return;
 
   log.info(`Converted main shortcut from ${shortcut} to ${finalShortcut}`);
