@@ -33,7 +33,7 @@ const extractAndSetCSSVariables = (css: string) => {
   }, {});
 
   log.info(`Setting Theme`, themeMap);
-  setTheme(themeMap);
+  setTheme(themeMap, `extractAndSetCSSVariables()`);
 
   if (matches) {
     for (const match of matches) {

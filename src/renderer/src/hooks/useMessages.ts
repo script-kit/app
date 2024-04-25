@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import DOMPurify from 'dompurify';
 import log from 'electron-log/renderer';
+import { debounce } from 'lodash-es';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 const { ipcRenderer } = window.electron;
 import { Channel } from '@johnlindquist/kit/core/enum';
@@ -267,7 +268,10 @@ export default () => {
     [Channel.SET_SPLASH_BODY]: setSplashBody,
     [Channel.SET_SPLASH_HEADER]: setSplashHeader,
     [Channel.SET_SPLASH_PROGRESS]: setSplashProgress,
-    [Channel.SET_THEME]: setTheme,
+    [Channel.SET_THEME]: debounce((theme) => {
+      log.info(`${window.pid}: 🐠 Channel.SET_THEME`, theme);
+      setTheme(theme);
+    }, 50),
     [Channel.SET_TEMP_THEME]: setTempTheme,
     [Channel.VALUE_INVALID]: setValueInvalid,
     [Channel.PREVENT_SUBMIT]: setPreventSubmit,

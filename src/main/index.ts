@@ -774,6 +774,7 @@ const checkKit = async () => {
 
       setTheme(
         nativeTheme.shouldUseDarkColors ? scriptKitTheme : scriptKitLightTheme,
+        'install',
       );
 
       await showSplash();

@@ -183,7 +183,8 @@ export const maybeConvertColors = async (theme: any = {}) => {
   return theme;
 };
 
-export const setTheme = async (value: any = {}, check = true) => {
+export const setTheme = async (value: any = {}, reason = '') => {
+  log.info(`🎨 Setting theme because ${reason}`);
   // log.verbose(`🎨 Setting theme:`, {
   //   hasCss: kitState.hasCss,
   //   value,
@@ -224,14 +225,17 @@ export const updateTheme = async () => {
     );
     try {
       const currentTheme = await readJson(themePath);
-      setTheme(currentTheme);
+      setTheme(currentTheme, `updateTheme() with themePath: ${themePath}`);
     } catch (error) {
       log.warn(error);
     }
   } else {
     log.info(`👀 No themes configured in .env. Using defaults`);
     const { scriptKitLightTheme, scriptKitTheme } = getThemes();
-    setTheme(kitState.isDark ? scriptKitTheme : scriptKitLightTheme);
+    setTheme(
+      kitState.isDark ? scriptKitTheme : scriptKitLightTheme,
+      `updateTheme() with no themePath`,
+    );
   }
 };
 nativeTheme.addListener('updated', updateTheme);

@@ -3,7 +3,7 @@ import { HttpsProxyAgent } from 'hpagent';
 
 import dotenv from 'dotenv';
 import log from 'electron-log';
-import download, { DownloadOptions } from 'download';
+import download from 'download';
 import { assign, debounce } from 'lodash-es';
 import path from 'path';
 import * as tar from 'tar';
@@ -24,12 +24,7 @@ const { ensureDir, writeFile, readdir, readJson, writeJson } = fsExtra;
 import { lstat, readFile, rm } from 'fs/promises';
 import { Channel, PROMPT, UI } from '@johnlindquist/kit/core/enum';
 import { CACHED_GROUPED_SCRIPTS_WORKER } from '@johnlindquist/kit/workers';
-import {
-  FlagsOptions,
-  PromptData,
-  Script,
-  Shortcut,
-} from '@johnlindquist/kit/types';
+import { FlagsOptions, Script, Shortcut } from '@johnlindquist/kit/types';
 import {
   kenvPath,
   kitPath,
@@ -56,8 +51,7 @@ import { createScoredChoice } from './helpers';
 import { prompts } from './prompts';
 import { SPLASH_PATH } from '../shared/defaults';
 import { KitEvent, emitter } from '../shared/events';
-import { maybeConvertColors, setTheme } from './process';
-import { setShortcodes } from './search';
+import { maybeConvertColors } from './process';
 import { sendToAllPrompts } from './channel';
 import { AppChannel } from '../shared/enums';
 import { Worker } from 'worker_threads';

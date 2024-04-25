@@ -966,7 +966,7 @@ export const scriptAtom = atom(
     s(loadingAtom, false);
     s(progressAtom, 0);
     s(logoAtom, a?.logo || '');
-    s(tempThemeAtom, g(themeAtom));
+    s(_tempThemeAtom, g(themeAtom));
     // s(flagsAtom, {});
 
     // s(panelHTMLAtom, `<div/>`);
@@ -1377,16 +1377,18 @@ const setCSSVars = (theme: Record<string, string>) => {
   const sortedEntries = Object.entries(theme).sort((a, b) =>
     a[0].includes('opacity') ? -1 : 1,
   );
+  let logMessages = [`${window.pid}: 🐠 Setting CSS Vars`];
+
   for (const [key, value] of sortedEntries) {
     if (key.startsWith('--')) {
-      // log.info(
-      //   `${g(pidAtom)}: 🐠 Changing ${key} from`,
-      //   document.documentElement.style.getPropertyValue(key),
-      //   `to`,
-      //   value,
-      // );
+      const oldValue = document.documentElement.style.getPropertyValue(key);
       document.documentElement.style.setProperty(key, value);
+      logMessages.push(`${key}: ${oldValue} -> ${value}`);
     }
+  }
+
+  if (logMessages.length > 0) {
+    log.info(logMessages.join('\n'));
   }
 };
 
@@ -1398,12 +1400,14 @@ export const themeAtom = atom(
       s(appearanceAtom, theme['appearance'] as Appearance);
     }
 
+    log.info(`${window.pid}: themeAtom`);
     setCSSVars(theme);
     const newTheme = { ...prevTheme, ...theme };
 
     // log.info(`theme: ${JSON.stringify(newTheme)}`);
 
     s(_themeAtom, newTheme);
+    s(_tempThemeAtom, newTheme);
   },
 );
 
@@ -1993,16 +1997,17 @@ const emptyFilePathBounds: FilePathBounds = {
 };
 export const filePathBoundsAtom = atom<FilePathBounds>(emptyFilePathBounds);
 
-const tempTheme = atom<Record<string, string>>({});
+const _tempThemeAtom = atom<Record<string, string>>({});
 export const tempThemeAtom = atom(
-  (g) => g(tempTheme),
+  (g) => g(_tempThemeAtom),
   (_g, s, theme: Record<string, string>) => {
     if (theme['appearance']) {
       s(appearanceAtom, theme['appearance'] as Appearance);
     }
 
+    log.info(`${window.pid}: tempThemeAtom`);
     setCSSVars(theme);
-    s(tempTheme, theme);
+    s(_tempThemeAtom, theme);
   },
 );
 

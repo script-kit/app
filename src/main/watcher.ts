@@ -356,10 +356,28 @@ export const parseEnvFile = debounce(
         //   }
         // };
 
-        log.info({
-          KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,
-          KIT_THEME_DARK: envData?.KIT_THEME_DARK,
-        });
+        // log.info({
+        //   KIT_THEME_LIGHT: envData?.KIT_THEME_LIGHT,
+        //   KIT_THEME_DARK: envData?.KIT_THEME_DARK,
+        // });
+
+        if (envData?.KIT_THEME_LIGHT) {
+          log.info(`Setting light theme`, envData?.KIT_THEME_LIGHT);
+          kitState.kenvEnv.KIT_THEME_LIGHT = envData?.KIT_THEME_LIGHT;
+        } else if (kitState.kenvEnv.KIT_THEME_LIGHT) {
+          delete kitState.kenvEnv.KIT_THEME_LIGHT;
+          log.info(`Removing light theme`);
+        }
+
+        if (envData?.KIT_THEME_DARK) {
+          log.info(`Setting dark theme`, envData?.KIT_THEME_DARK);
+          kitState.kenvEnv.KIT_THEME_DARK = envData?.KIT_THEME_DARK;
+        } else if (kitState.kenvEnv.KIT_THEME_DARK) {
+          delete kitState.kenvEnv.KIT_THEME_DARK;
+          log.info(`Removing dark theme`);
+        }
+
+        updateTheme();
 
         if (envData?.KIT_TERM_FONT) {
           sendToAllPrompts(AppChannel.SET_TERM_FONT, envData?.KIT_TERM_FONT);
@@ -431,8 +449,6 @@ export const parseEnvFile = debounce(
         if (trustedKenvsChanged) {
           await refreshScripts();
         }
-
-        updateTheme();
 
         // TODO: Debug a single prompt? All of them?
         if (envData?.KIT_DEBUG_PROMPT) {

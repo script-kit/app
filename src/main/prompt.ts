@@ -75,7 +75,7 @@ import { sendToAllPrompts } from './channel';
 import { setFlags, setChoices, invokeSearch, scorer } from './search';
 import { fileURLToPath } from 'url';
 import { prompts } from './prompts';
-import { ensureIdleProcess, processes } from './process';
+import { ensureIdleProcess, processes, updateTheme } from './process';
 import { QuickScore } from 'quick-score';
 import { createPty } from './pty';
 import { cliFromParams, runPromptProcess } from './kit';
@@ -736,6 +736,7 @@ export class KitPrompt {
 
     this.window.once('ready-to-show', () => {
       log.info(`${this.pid}: 👍 Ready to show`);
+      updateTheme();
 
       if (kitState.isWindows) {
         try {
@@ -2174,6 +2175,7 @@ export class KitPrompt {
   };
 
   setPromptAlwaysOnTop = (onTop: boolean) => {
+    return;
     log.info(`function: setPromptAlwaysOnTop: ${onTop ? 'true' : 'false'}`);
     if (this.window && !this.window.isDestroyed()) {
       const changed = onTop !== this.alwaysOnTop;
