@@ -69,6 +69,7 @@ img:after {
 }
 
 body {
+  @apply bg-bg-base bg-opacity-base !important;
   @apply text-text-base dark:text-white;
   @apply subpixel-antialiased;
   @apply overflow-hidden;
@@ -859,10 +860,6 @@ code::after {
       0 0 0px rgb(var(--color-primary)),
       0 0 0px rgb(var(--color-primary));
   }
-}
-
-#app {
-  @apply bg-bg-base bg-opacity-base !important;
 }
 
 .hide-outline path:first-of-type {
