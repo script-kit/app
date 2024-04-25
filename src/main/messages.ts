@@ -1182,8 +1182,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
     SET_ALWAYS_ON_TOP: onChildChannel(
       async ({ child, prompt }, { channel, value }) => {
-        log.verbose(`${channel}: Setting always on top to ${value}`);
-        prompt?.setPromptAlwaysOnTop(value as boolean);
+        log.info(`${prompt.pid}: 🎩 Setting always on top to ${value}`);
+        prompt?.setPromptAlwaysOnTop(value as boolean, true);
       },
     ),
     CLEAR_TABS: () => {

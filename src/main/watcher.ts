@@ -540,8 +540,7 @@ export const parseEnvFile = debounce(
       // setCSSVariable('--opacity', envData?.KIT_OPACITY);
     }
   },
-  1000,
-  { leading: true },
+  100,
 );
 
 export const setupWatchers = async () => {

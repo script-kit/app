@@ -958,7 +958,15 @@ export class KitPrompt {
 
     this.window.webContents.on('devtools-closed', () => {
       log.silly(`event: devtools-closed`);
-      this.window.setAlwaysOnTop(false);
+
+      if (kitState.isMac) {
+        // REMOVE-MAC
+        log.info(`${this.pid}: 👋 setPromptAlwaysOnTop: false, so makeWindow`);
+        makeWindow(this.window);
+        // END-REMOVE-MAC
+      } else {
+        this.setPromptAlwaysOnTop(false);
+      }
       this.maybeHide(HideReason.DevToolsClosed);
     });
 
@@ -1903,12 +1911,13 @@ export class KitPrompt {
     kitState.hiddenByUser = false;
     // if (!pidMatch(pid, `setPromptData`)) return;
 
-    const newAlwaysOnTop =
-      typeof promptData?.alwaysOnTop === 'boolean'
-        ? promptData.alwaysOnTop
-        : false;
+    if (typeof promptData?.alwaysOnTop === 'boolean') {
+      log.info(
+        `📌 setPromptAlwaysOnTop from promptData: ${promptData.alwaysOnTop ? 'true' : 'false'}`,
+      );
 
-    this.setPromptAlwaysOnTop(newAlwaysOnTop);
+      this.setPromptAlwaysOnTop(promptData.alwaysOnTop, true);
+    }
 
     this.allowResize = promptData?.resize || false;
     kitState.shortcutsPaused = promptData.ui === UI.hotkey;
@@ -2174,9 +2183,15 @@ export class KitPrompt {
     this.focusPrompt();
   };
 
-  setPromptAlwaysOnTop = (onTop: boolean) => {
-    return;
-    log.info(`function: setPromptAlwaysOnTop: ${onTop ? 'true' : 'false'}`);
+  setPromptAlwaysOnTop = (onTop: boolean, manual = false) => {
+    if (kitState.isMac) {
+      const allow = manual && onTop;
+      if (!allow) {
+        return;
+      }
+    }
+
+    // log.info(`function: setPromptAlwaysOnTop: ${onTop ? 'true' : 'false'}`);
     if (this.window && !this.window.isDestroyed()) {
       const changed = onTop !== this.alwaysOnTop;
       this.alwaysOnTop = onTop;
