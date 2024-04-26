@@ -1976,8 +1976,8 @@ export class KitPrompt {
 
     if (!this.isVisible() && promptData?.show) {
       this.showAfterNextResize = true;
-      log.info(`👋 Show Prompt from setPromptData for ${this.scriptPath}`);
-      this.showPrompt();
+      // log.info(`👋 Show Prompt from setPromptData for ${this.scriptPath}`);
+      // this.showPrompt();
     } else if (this.isVisible() && !promptData?.show) {
       this.actualHide();
     }

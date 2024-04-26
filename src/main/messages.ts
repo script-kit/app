@@ -1995,6 +1995,14 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     HEARTBEAT: onChildChannelOverride(async ({ child }, { channel }) => {
       log.verbose(`❤️ ${channel} from ${child.pid}`);
     }),
+    GET_THEME: onChildChannelOverride(async ({ child }, { channel }) => {
+      const value = snapshot(kitState.theme);
+      log.info(`${child?.pid}: ${channel}`, value);
+      childSend({
+        channel,
+        value,
+      });
+    }),
   };
 
   return kitMessageMap;
