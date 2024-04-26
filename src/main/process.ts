@@ -552,7 +552,7 @@ const setTrayScriptError = (pid: number) => {
   }
 };
 
-const childShortcutMap = new Map<ChildProcess, string[]>();
+export const childShortcutMap = new Map<number, string[]>();
 
 class Processes extends Array<ProcessAndPrompt> {
   public abandonnedProcesses: ProcessAndPrompt[] = [];
@@ -822,19 +822,22 @@ class Processes extends Array<ProcessAndPrompt> {
       child?.removeAllListeners();
       child?.kill();
 
-      if (childShortcutMap.has(child)) {
-        log.info(`Unregistering shortcuts for child: ${child.pid}`);
-        const shortcuts = childShortcutMap.get(child) || [];
+      if (child?.pid && childShortcutMap.has(child.pid)) {
+        log.info(`${child.pid}: Unregistering shortcuts`);
+        const shortcuts = childShortcutMap.get(child.pid) || [];
         shortcuts.forEach((shortcut) => {
-          log.info(`Unregistering shortcut: ${shortcut}`);
+          log.info(`${child.pid}: Unregistering shortcut: ${shortcut}`);
 
           try {
             globalShortcut.unregister(shortcut);
           } catch (error) {
-            log.error(`Error unregistering shortcut: ${shortcut}`, error);
+            log.error(
+              `${child.pid}: Error unregistering shortcut: ${shortcut}`,
+              error,
+            );
           }
         });
-        childShortcutMap.delete(child);
+        childShortcutMap.delete(child.pid);
       }
 
       log.info(`${pid}: 🛑 removed`);

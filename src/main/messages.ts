@@ -1,5 +1,5 @@
 import log from 'electron-log';
-import url, { pathToFileURL } from 'url';
+import url from 'url';
 import { randomUUID } from 'crypto';
 import detect from 'detect-port';
 import sizeOf from 'image-size';
@@ -22,7 +22,7 @@ import {
 } from 'electron';
 import os from 'os';
 import { remove } from 'lodash-es';
-import { snapshot, subscribe } from 'valtio';
+import { snapshot } from 'valtio';
 import path from 'path';
 import http from 'http';
 import https from 'https';
@@ -34,11 +34,10 @@ import { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
 
 import { kitPath, getMainScriptPath } from '@johnlindquist/kit/core/utils';
 
-import fsExtra from 'fs-extra';
 // const { pathExistsSync, readJson } = fsExtra;
 import { getTimestamps } from '@johnlindquist/kit/core/db';
 import { getLog, Logger, warn } from './logs';
-import { clearPromptCache, attemptPreload } from './prompt';
+import { clearPromptCache } from './prompt';
 import {
   getBackgroundTasks,
   getSchedule,
@@ -64,17 +63,16 @@ import {
   syncClipboardStore,
 } from './clipboard';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
-import { AppChannel, HideReason, Trigger } from '../shared/enums';
+import { AppChannel, Trigger } from '../shared/enums';
 import { convertShortcut } from './helpers';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';
-import { darkTheme, lightTheme } from '../shared/themes';
 import { getAssetPath } from '../shared/assets';
 import { TrackEvent, trackEvent } from './track';
 import {
   cachePreview,
-  childSend,
+  childShortcutMap,
   clearFlags,
   clearPreview,
   maybeConvertColors,
@@ -84,7 +82,6 @@ import {
 } from './process';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
-import { cacheMainScripts } from './install';
 
 export type ChannelHandler = {
   [key in keyof ChannelMap]: (data: SendData<key>) => void;
@@ -789,7 +786,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       log.info(`🧘 FOCUS_PROMPT`, value);
       const process = processes.getByPid(parseInt(pid, 10));
       // log.info({ process });
-      process?.prompt?.focusPrompt();
+      process?.prompt?.forceFocus();
     }),
     DEBUG_SCRIPT: onChildChannelOverride(async (processInfo, data) => {
       // TODO: Re-enable DEBUG_SCRIPT
@@ -1177,7 +1174,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       },
     ),
     FOCUS: onChildChannel(async ({ child }, { channel, value }) => {
-      log.verbose(`${channel}: Manually focusing prompt`);
+      log.info(`${child.pid}: ${channel}: Manually focusing prompt`);
       prompt?.forceFocus();
     }),
     SET_ALWAYS_ON_TOP: onChildChannel(
@@ -1450,7 +1447,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
 
     REGISTER_GLOBAL_SHORTCUT: onChildChannelOverride(
-      async ({ scriptPath }, { channel, value }) => {
+      async ({ child, scriptPath }, { channel, value }) => {
         const properShortcut = convertShortcut(value, scriptPath);
         log.info(
           `App: registering global shortcut ${value} as ${properShortcut}`,
@@ -1468,11 +1465,11 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         log.info(`Shortcut ${value}: ${result ? 'success' : 'failure'}}`);
 
-        if (result) {
-          if (!childShortcutMap.has(child)) {
-            childShortcutMap.set([properShortcut]);
+        if (result && child?.pid) {
+          if (child?.pid && !childShortcutMap.has(child.pid)) {
+            childShortcutMap.set(child.pid, [properShortcut]);
           } else {
-            childShortcutMap.get(child)?.push(properShortcut);
+            childShortcutMap.get(child.pid)?.push(properShortcut);
           }
 
           childSend({
@@ -1481,7 +1478,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           });
         } else {
           log.error(
-            `😅 Kit.app: Global shortcut: ${value} as ${properShortcut} failed to register`,
+            `${child?.pid}: 😅 Kit.app: Global shortcut: ${value} as ${properShortcut} failed to register`,
           );
           const infoScript = kitPath('cli', 'info.js');
           const markdown = `# Failed to register global shortcut: ${value}`;
@@ -1503,18 +1500,18 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     ),
 
     UNREGISTER_GLOBAL_SHORTCUT: onChildChannel(
-      async ({ scriptPath }, { channel, value }) => {
+      async ({ scriptPath, child }, { channel, value }) => {
         log.info(`App: unregistering global shortcut ${value}`);
 
         const properShortcut = convertShortcut(value, scriptPath);
-        if (childShortcutMap.has(child)) {
-          const shortcuts = childShortcutMap.get(child);
+        if (child?.pid && childShortcutMap.has(child.pid)) {
+          const shortcuts = childShortcutMap.get(child.pid);
           const index = shortcuts?.indexOf(value);
-          if (index !== -1) {
+          if (typeof index === 'number' && index > -1) {
             shortcuts?.splice(index, 1);
           }
           if (shortcuts?.length === 0) {
-            childShortcutMap.delete(child);
+            childShortcutMap.delete(child.pid);
           }
         }
 

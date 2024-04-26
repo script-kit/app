@@ -665,9 +665,11 @@ export class KitPrompt {
 
     // REMOVE-NODE-WINDOW-MANAGER
     if (kitState.isWindows) {
-      windowManager.setWindowAsPopupWithRoundedCorners(
-        this.window?.getNativeWindowHandle(),
-      );
+      if (kitState?.kenvEnv?.KIT_DISABLE_ROUNDED_CORNERS !== 'true') {
+        windowManager.setWindowAsPopupWithRoundedCorners(
+          this.window?.getNativeWindowHandle(),
+        );
+      }
     }
     // END-REMOVE-NODE-WINDOW-MANAGER
 
@@ -986,6 +988,12 @@ export class KitPrompt {
       //   isActivated: kitState.isActivated,
       // });
 
+      // REMOVE-MAC
+      if (kitState.isMac) {
+        makeWindow(this.window);
+      }
+      // END-REMOVE-MAC
+
       if (this.justFocused && this.isVisible()) {
         log.info(`🙈 Prompt window was just focused. Ignore blur`);
 
@@ -1206,13 +1214,16 @@ export class KitPrompt {
 
   initShowPrompt = () => {
     if (!kitState.isMac) {
-      // this.prompt.restore();
-      log.info(`${this.pid}:${this.window?.id} this.window.show()`);
+      if (kitState?.kenvEnv?.KIT_PROMPT_RESTORE === 'true') {
+        this.window?.restore();
+      }
 
-      const currentWindow = windowManager.getActiveWindow();
-      if (currentWindow.processId !== process.pid) {
-        log.info(`Storing previous window: ${currentWindow.processId}`);
-        prevWindow = currentWindow;
+      if (kitState?.kenvEnv?.KIT_DISABLE_PREVIOUS_ACTIVE_WINDOW !== 'true') {
+        const currentWindow = windowManager.getActiveWindow();
+        if (currentWindow.processId !== process.pid) {
+          log.info(`Storing previous window: ${currentWindow.processId}`);
+          prevWindow = currentWindow;
+        }
       }
     }
 
@@ -2178,9 +2189,9 @@ export class KitPrompt {
   };
 
   forceFocus = () => {
-    log.silly(`function: forceFocus`);
+    log.info(`${this.pid}: forceFocus`);
     this.window?.show();
-    this.focusPrompt();
+    this.window?.focus();
   };
 
   setPromptAlwaysOnTop = (onTop: boolean, manual = false) => {
@@ -2200,7 +2211,7 @@ export class KitPrompt {
       this.alwaysOnTop = onTop;
 
       if (onTop && changed) {
-        this.window.setAlwaysOnTop(onTop, 'pop-up-menu');
+        this.window.setAlwaysOnTop(onTop, 'screen-saver');
 
         if (kitState.isMac) {
           this.window.moveTop();
@@ -2209,17 +2220,17 @@ export class KitPrompt {
         }
       } else if (changed) {
         log.info({ onTop });
-        this.window.setAlwaysOnTop(true, 'pop-up-menu');
+        this.window.setAlwaysOnTop(true, 'screen-saver');
         setTimeout(() => {
           if (!this?.window || this.window?.isDestroyed()) return;
-          this.window.setAlwaysOnTop(onTop, 'pop-up-menu');
+          this.window.setAlwaysOnTop(onTop, 'screen-saver');
         }, 100);
 
         if (!kitState.isMac) {
           this.window.setVisibleOnAllWorkspaces(false);
         }
       } else {
-        this.window.setAlwaysOnTop(onTop, 'pop-up-menu');
+        this.window.setAlwaysOnTop(onTop, 'screen-saver');
       }
     } else {
       this.alwaysOnTop = false;
