@@ -177,12 +177,12 @@ jobs:
       #   run: echo "There is an issue with electron >=26 with something in the app causing a crash. It might be with the powerMonitor, but it's still not clear. This will have to be resolved before we can upgrade electron and move to ESM-only."
       #   env:
       #     KIT_TAG: ${{ needs.tag.outputs.kit_tag }}
-      # # - name: npm i @johnlindquist/kit
+      # # - name: npm i --force @johnlindquist/kit
       # #   if: matrix.os == 'ubuntu-latest'
       # #   run: |
-      # #     # npm i
-      # #     npm i electron@25.9.3
-      # #     npm i "@johnlindquist/kit@${{ env.KIT_TAG }}"
+      # #     # npm i --force
+      # #     npm i --force electron@25.9.3
+      # #     npm i --force "@johnlindquist/kit@${{ env.KIT_TAG }}"
 
       - name: Publish windows x64
         if: matrix.os == 'windows-latest' && matrix.arch == 'x64'
@@ -199,9 +199,9 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm un node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
-            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            npm i
+            npm un --force node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm i --force
             npx kit remove-mac
             Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
             if (Test-Path node_modules\@nut-tree\libnut-darwin) { Remove-Item node_modules\@nut-tree\libnut-darwin -Recurse -Force }
@@ -218,9 +218,9 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
-            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            npm i
+            npm un --force node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm i --force
             npx kit remove-tick
             npx kit remove-mac
             npx kit remove-nut
@@ -250,13 +250,13 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm un node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
-            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            npm i
+            npm un --force node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm i --force
             npx kit remove-mac
             npx kit remove-node-window-manager
             # npx kit patch-node-pty
-            # npm i @homebridge/node-pty-prebuilt-multiarch
+            # npm i --force @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             echo "--- Done removing mac deps ---\n\n"
             npm run vite-prebuild
@@ -277,15 +277,15 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm un node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
-            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            npm i
+            npm un --force node-mac-permissions @nut-tree/nut-js uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm i --force
             npx kit remove-tick
             npx kit remove-mac
             npx kit remove-nut
             npx kit remove-node-window-manager
             # npx kit patch-node-pty
-            # npm i @homebridge/node-pty-prebuilt-multiarch
+            # npm i --force @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
             echo "--- Done removing mac deps ---\n\n"
             npm run vite-prebuild
@@ -307,8 +307,8 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            npm i
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm i --force
             npm run vite-prebuild
             npx kit ./build.ts mac x64 always
 
@@ -328,8 +328,8 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm i @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            npm i
+            npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
+            npm i --force
             npm run vite-prebuild
             npx kit ./build.ts mac arm64 always
 
