@@ -2184,6 +2184,9 @@ export class KitPrompt {
   };
 
   setPromptAlwaysOnTop = (onTop: boolean, manual = false) => {
+    if (kitState?.kenvEnv?.KIT_DISABLE_ALWAYS_ON_TOP === 'true') {
+      return;
+    }
     if (kitState.isMac) {
       const allow = manual && onTop;
       if (!allow) {
@@ -2669,5 +2672,15 @@ export const prepQuitWindow = async () => {
     });
   });
 
+  // END-REMOVE-MAC
+};
+
+export const makeSplashWindow = async (window?: BrowserWindow) => {
+  // REMOVE-MAC
+  log.info(`👋 Make splash window`);
+  if (!window) {
+    return;
+  }
+  makeWindow(window);
   // END-REMOVE-MAC
 };

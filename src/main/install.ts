@@ -35,7 +35,7 @@ import {
   getMainScriptPath,
 } from '@johnlindquist/kit/core/utils';
 
-import { KitPrompt, destroyPromptWindow } from './prompt';
+import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
 
 import { INSTALL_ERROR, show } from './show';
 import { showError } from './main.dev.templates';
@@ -94,6 +94,7 @@ export const showSplash = async () => {
 
   emitter.once(KitEvent.MAIN_SCRIPT_TRIGGERED, () => {
     try {
+      makeSplashWindow(splashPrompt?.window);
       splashPrompt?.window?.hide();
       splashPrompt?.window?.close();
       splashPrompt?.window?.destroy();

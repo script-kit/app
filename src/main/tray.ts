@@ -758,6 +758,7 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
     };
 
     globalShortcut.register('CommandOrControl+;', startingMenu);
+    tray?.on('click', startingMenu);
   } else {
     if (!kitState.ready) {
       globalShortcut.unregister('CommandOrControl+;');
