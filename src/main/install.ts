@@ -379,29 +379,34 @@ export const downloadKenv = async () => {
 
 export const cleanKit = async () => {
   log.info(`🧹 Cleaning ${kitPath()}`);
-  const pathToClean = kitPath();
+  // Remove the entire kit directory
+  await rm(kitPath(), {
+    recursive: true,
+    force: true,
+  });
+  // const pathToClean = kitPath();
 
-  const keep = (file: string) =>
-    file === 'db' || file === 'node_modules' || file === 'assets';
+  // const keep = (file: string) =>
+  //   file === 'db' || file === 'node_modules' || file === 'assets';
 
-  // eslint-disable-next-line no-restricted-syntax
-  for await (const file of await readdir(pathToClean)) {
-    if (keep(file)) {
-      log.info(`👍 Keeping ${file}`);
-      // eslint-disable-next-line no-continue
-      continue;
-    }
+  // // eslint-disable-next-line no-restricted-syntax
+  // for await (const file of await readdir(pathToClean)) {
+  //   if (keep(file)) {
+  //     log.info(`👍 Keeping ${file}`);
+  //     // eslint-disable-next-line no-continue
+  //     continue;
+  //   }
 
-    const filePath = path.resolve(pathToClean, file);
-    const stat = await lstat(filePath);
-    if (stat.isDirectory()) {
-      await rm(filePath, { recursive: true, force: true });
-      log.info(`🧹 Cleaning dir ${filePath}`);
-    } else {
-      await rm(filePath);
-      log.info(`🧹 Cleaning file ${filePath}`);
-    }
-  }
+  //   const filePath = path.resolve(pathToClean, file);
+  //   const stat = await lstat(filePath);
+  //   if (stat.isDirectory()) {
+  //     await rm(filePath, { recursive: true, force: true });
+  //     log.info(`🧹 Cleaning dir ${filePath}`);
+  //   } else {
+  //     await rm(filePath);
+  //     log.info(`🧹 Cleaning file ${filePath}`);
+  //   }
+  // }
 };
 
 export const extractKitTar = async (file: string) => {

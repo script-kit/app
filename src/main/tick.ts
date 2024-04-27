@@ -1,5 +1,5 @@
 /* eslint-disable import/prefer-default-export */
-import clipboardEventListener from '@johnlindquist/clipboard';
+import { Clipboard } from '@johnlindquist/clipboard';
 import { Observable, Subscription } from 'rxjs';
 import { debounceTime, filter, share, switchMap } from 'rxjs/operators';
 import log from 'electron-log';
@@ -197,6 +197,7 @@ const isTransient = () => {
   });
 };
 
+let clipboardEventListener: Clipboard | null = null;
 export const startKeyboardMonitor = async () => {
   if (kitState.kenvEnv?.KIT_KEYBOARD === 'false') {
     log.info(`🔇 Keyboard monitor disabled`);
@@ -268,6 +269,7 @@ export const startClipboardMonitor = async () => {
     try {
       log.info(`Attempting to start clipboard...`);
       if (!kitState.isMac) {
+        clipboardEventListener = new Clipboard();
         clipboardEventListener.on('text', (text) => {
           try {
             log.info(`Clipboard text changed...`);
@@ -343,7 +345,7 @@ export const startClipboardMonitor = async () => {
 
     return () => {
       log.info(`🛑 Attempting to stop clipboard watcher`);
-      clipboardEventListener.close();
+      clipboardEventListener?.close();
       log.info(`🛑 Successfully stopped clipboard watcher`);
     };
   }).pipe(

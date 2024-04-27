@@ -79,7 +79,9 @@ function ChoiceButton({
       if (flaggedValue) {
         setFlagValue('');
       } else {
-        setFlagValue(choice?.value);
+        // log.info(`Setting flag value:`, choice);
+        // TODO: On mac, a script has a ".value". On windows, it doesn't. WHY?
+        setFlagValue(choice?.value ? choice?.value : choice);
       }
     },
     [choice, setFlagValue, flaggedValue],

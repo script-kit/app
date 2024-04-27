@@ -736,7 +736,7 @@ export class KitPrompt {
       },
     );
 
-    this.window.once('ready-to-show', () => {
+    this.window.once('ready-to-show', async () => {
       log.info(`${this.pid}: 👍 Ready to show`);
       updateTheme();
 
@@ -758,16 +758,25 @@ export class KitPrompt {
           };
 
           const { topMost, leftMost } = getTopMostAndLeftMost();
+          const kitShowInactiveTimeout = kitState.kenvEnv
+            ?.KIT_WINDOWS_PRERENDER_SHOW_INACTIVE_TIMEOUT
+            ? parseInt(
+                kitState.kenvEnv?.KIT_WINDOWS_PRERENDER_SHOW_INACTIVE_TIMEOUT,
+              )
+            : 100;
+          const kitWindowsPrerenderTimeout = kitState.kenvEnv
+            ?.KIT_WINDOWS_PRERENDER_TIMEOUT
+            ? parseInt(kitState.kenvEnv?.KIT_WINDOWS_PRERENDER_TIMEOUT)
+            : 300;
           this.window.setPosition(leftMost - 1000, topMost - 1000);
-          this.window.showInactive();
-          setTimeout(
-            () => {
-              this.window.hide();
-            },
-            kitState.kenvEnv?.KIT_WINDOWS_PRERENDER_TIMEOUT
-              ? parseInt(kitState.kenvEnv?.KIT_WINDOWS_PRERENDER_TIMEOUT)
-              : 500,
+          await new Promise((resolve) =>
+            setTimeout(resolve, kitShowInactiveTimeout),
           );
+          this.window.showInactive();
+          await new Promise((resolve) =>
+            setTimeout(resolve, kitWindowsPrerenderTimeout),
+          );
+          this.window.hide();
 
           // Show window inactive super far offscreen just to force a paint, then im
         } catch (error) {
@@ -2178,9 +2187,8 @@ export class KitPrompt {
           makeKeyWindow(this.window);
           // END-REMOVE-MAC
         } else {
-          this.window?.show();
+          this.window?.showInactive();
           this.window?.focus();
-          this.window?.webContents.focus();
         }
       } catch (error) {
         log.error(error);

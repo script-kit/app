@@ -32,7 +32,11 @@ import { Choice, ProcessInfo, Script } from '@johnlindquist/kit/types/core';
 
 import { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
 
-import { kitPath, getMainScriptPath } from '@johnlindquist/kit/core/utils';
+import {
+  kitPath,
+  kenvPath,
+  getMainScriptPath,
+} from '@johnlindquist/kit/core/utils';
 
 // const { pathExistsSync, readJson } = fsExtra;
 import { getTimestamps } from '@johnlindquist/kit/core/db';
