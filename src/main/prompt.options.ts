@@ -41,21 +41,14 @@ export const getPromptOptions = () => {
     minHeight: PROMPT.INPUT.HEIGHT.XS,
     x: Math.round(screenWidth / 2 - width / 2 + workX),
     y: Math.round(workY + screenHeight / 8),
-    backgroundColor: kitState?.kenvEnv?.KIT_BACKGROUND_COLOR || '#00000000',
-    backgroundMaterial: kitState.kenvEnv?.KIT_BACKGROUND_MATERIAL || 'mica',
-    transparent:
-      kitState.kenvEnv?.KIT_TRANSPARENT === 'false'
-        ? false
-        : kitState.isLinux
-          ? false
-          : true,
   } as BrowserWindowConstructorOptions;
 
   if (kitState.isMac) {
     options.vibrancy = 'popover';
-    // titleBarStyle: 'default',
-    // title: 'Script Kit',
     options.visualEffectState = 'active';
+    options.backgroundColor =
+      kitState.kenvEnv.KIT_BACKGROUND_COLOR || '#00000000';
+    options.transparent = true;
   }
 
   return options;

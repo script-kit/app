@@ -739,50 +739,6 @@ export class KitPrompt {
     this.window.once('ready-to-show', async () => {
       log.info(`${this.pid}: 👍 Ready to show`);
       updateTheme();
-
-      if (kitState.isWindows) {
-        try {
-          log.info(
-            `${this.pid}:${this.window?.id} Forcing window rounded, shadow, and paint... ${this.initMain ? 'initMain' : 'no initMain'}`,
-          );
-          this.window.setHasShadow(true);
-          const getTopMostAndLeftMost = () => {
-            const displays = kitState.displays;
-            const topMost = Math.min(
-              ...displays.map((display) => display.bounds.y),
-            );
-            const leftMost = Math.min(
-              ...displays.map((display) => display.bounds.x),
-            );
-            return { topMost, leftMost };
-          };
-
-          const { topMost, leftMost } = getTopMostAndLeftMost();
-          const kitShowInactiveTimeout = kitState.kenvEnv
-            ?.KIT_WINDOWS_PRERENDER_SHOW_INACTIVE_TIMEOUT
-            ? parseInt(
-                kitState.kenvEnv?.KIT_WINDOWS_PRERENDER_SHOW_INACTIVE_TIMEOUT,
-              )
-            : 100;
-          const kitWindowsPrerenderTimeout = kitState.kenvEnv
-            ?.KIT_WINDOWS_PRERENDER_TIMEOUT
-            ? parseInt(kitState.kenvEnv?.KIT_WINDOWS_PRERENDER_TIMEOUT)
-            : 300;
-          this.window.setPosition(leftMost - 1000, topMost - 1000);
-          await new Promise((resolve) =>
-            setTimeout(resolve, kitShowInactiveTimeout),
-          );
-          this.window.showInactive();
-          await new Promise((resolve) =>
-            setTimeout(resolve, kitWindowsPrerenderTimeout),
-          );
-          this.window.hide();
-
-          // Show window inactive super far offscreen just to force a paint, then im
-        } catch (error) {
-          log.error(error);
-        }
-      }
     });
 
     this.window.webContents?.on('dom-ready', () => {

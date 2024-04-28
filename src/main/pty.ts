@@ -198,7 +198,7 @@ export const createPty = (prompt: KitPrompt) => {
         ptyPool.killPty(pid);
       }
     } catch (error) {
-      log.error(`Error killing pty`, error);
+      log.error(`Error killing pty ${pid} (probably already dead)`);
     }
   };
 
