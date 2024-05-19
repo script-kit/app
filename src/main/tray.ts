@@ -58,6 +58,21 @@ const buildRunningScriptsSubmenu = async (): Promise<
   const runningScripts: MenuItemConstructorOptions[] = [];
 
   if (processes.find((p) => p?.scriptPath)) {
+    // Terminate all running scripts
+
+    runningScripts.push({
+      type: 'separator',
+    });
+
+    runningScripts.push({
+      label: 'Terminate All Running Scripts',
+      click: () => {
+        for (const { pid } of processes) {
+          processes.removeByPid(pid);
+        }
+      },
+    });
+
     runningScripts.push({
       type: 'separator',
     });

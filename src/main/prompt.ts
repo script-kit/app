@@ -641,6 +641,10 @@ export class KitPrompt {
     const options = getPromptOptions();
     this.window = new BrowserWindow(options);
 
+    let timeout = 2000;
+    if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_HIDE_TIMEOUT) {
+      timeout = parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_HIDE_TIMEOUT);
+    }
     if (kitState.isWindows) {
       setInterval(() => {
         this.window?.hide();
@@ -648,7 +652,7 @@ export class KitPrompt {
           'Hiding prompt window. Current position',
           this.window?.getPosition(),
         );
-      }, 2000);
+      }, timeout);
     }
 
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
@@ -2146,6 +2150,7 @@ export class KitPrompt {
       !this.window.isDestroyed() &&
       !this.window?.isFocused()
     ) {
+      this?.window?.setFocusable(true);
       try {
         if (kitState.isMac) {
           // REMOVE-MAC

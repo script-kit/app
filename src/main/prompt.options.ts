@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { fileURLToPath } from 'url';
 import { getAssetPath } from '../shared/assets';
 import { getCurrentScreen } from './screen';
@@ -35,6 +36,11 @@ export const getPromptOptions = () => {
     transparent = true;
   }
 
+  let focusable = false;
+  if (kitState?.kenvEnv?.KIT_FORCE_FOCUSABLE === 'true') {
+    focusable = true;
+  }
+
   let x = Math.round(screenWidth / 2 - width / 2 + workX);
   if (kitState.isWindows) {
     x = -10000;
@@ -62,7 +68,31 @@ export const getPromptOptions = () => {
     show = true;
   }
 
+  let backgroundColor = '#00000000';
+  if (kitState?.kenvEnv?.KIT_BACKGROUND_COLOR) {
+    backgroundColor = kitState.kenvEnv.KIT_BACKGROUND_COLOR;
+  }
+
+  let backgroundMaterial = 'mica';
+  if (kitState?.kenvEnv?.KIT_BACKGROUND_MATERIAL) {
+    backgroundMaterial = kitState.kenvEnv.KIT_BACKGROUND_MATERIAL;
+  }
+
+  // Log all of the conditional options:
+  log.info('Prompt Options:', {
+    backgroundThrottling,
+    hasShadow,
+    frame,
+    transparent,
+    x,
+    y,
+    show,
+    backgroundColor,
+    backgroundMaterial,
+  });
+
   const options = {
+    focusable,
     useContentSize: true,
     frame,
     hasShadow,
@@ -90,6 +120,8 @@ export const getPromptOptions = () => {
     transparent,
     x,
     y,
+    backgroundColor,
+    backgroundMaterial,
   } as BrowserWindowConstructorOptions;
 
   if (kitState.isMac) {
