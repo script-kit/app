@@ -86,6 +86,7 @@ import {
 } from './process';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
+import { enigo } from './enigo';
 
 export type ChannelHandler = {
   [key in keyof ChannelMap]: (data: SendData<key>) => void;
@@ -1330,6 +1331,17 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       warn(`${value}: Terminating process ${value}`);
       processes.removeByPid(value);
     }),
+    TERMINATE_ALL_PROCESSES: onChildChannel(async ({ child }, { channel }) => {
+      warn(`Terminating all processes`);
+      const activeProcesses = processes.getActiveProcesses();
+      activeProcesses.forEach((process) => {
+        try {
+          processes.removeByPid(process?.pid);
+        } catch (error) {
+          log.error(`Error terminating process ${process?.pid}`, error);
+        }
+      });
+    }),
 
     GET_APP_STATE: onChildChannelOverride(
       async ({ child }, { channel, value }) => {
@@ -1533,7 +1545,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         }
 
         // REMOVE-NUT
-        const { keyboard, Key } = await import('@nut-tree/nut-js');
+        const { KeyboardKey } = await import('@johnlindquist/kit-enigo');
         if (kitState.shortcutPressed) {
           // Get the modifiers from the accelerator
           const modifiers = kitState.shortcutPressed.split('+');
@@ -1606,10 +1618,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           return;
         }
         // REMOVE-NUT
-        const { keyboard } = await import('@nut-tree/nut-js');
-
         log.info(`PRESSING KEY`, { value });
-        await keyboard.pressKey(...(value as any));
+        await enigo.pressKey(value as KeyboardKey[]);
 
         childSend({ channel, value });
 
@@ -1627,10 +1637,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         }
 
         // REMOVE-NUT
-        const { keyboard } = await import('@nut-tree/nut-js');
-
         log.info(`RELEASING KEY`, { value });
-        await keyboard.releaseKey(...(value as any));
+        enigo.releaseKey(value as any);
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1639,30 +1647,28 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     MOUSE_LEFT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      const { mouse } = await import('@nut-tree/nut-js');
-      await mouse.leftClick();
+      const { MouseButton } = await import('@johnlindquist/kit-enigo');
+      enigo.setButtonClick(MouseButton.Left);
       // END-REMOVE-NUT
     }),
 
     MOUSE_RIGHT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      const { mouse } = await import('@nut-tree/nut-js');
-      await mouse.rightClick();
+      const { MouseButton } = await import('@johnlindquist/kit-enigo');
+      enigo.setButtonClick(MouseButton.Right);
       // END-REMOVE-NUT
     }),
 
     MOUSE_MOVE: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      const { mouse } = await import('@nut-tree/nut-js');
-      await mouse.move(value);
+      enigo.setMousePosition(value.x, value.y);
       // END-REMOVE-NUT
     }),
 
     MOUSE_SET_POSITION: onChildChannel(
       async ({ child }, { channel, value }) => {
         // REMOVE-NUT
-        const { mouse } = await import('@nut-tree/nut-js');
-        await mouse.setPosition(value);
+        enigo.setMousePosition(value.x, value.y);
         // END-REMOVE-NUT
       },
     ),
@@ -1745,7 +1751,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         }
 
         // REMOVE-NUT
-        const { keyboard, Key } = await import('@nut-tree/nut-js');
+        const { KeyboardKey } = await import('@johnlindquist/kit-enigo');
 
         const text = value?.text;
         const hide = value?.hide;
@@ -1757,10 +1763,14 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         log.info(`SET SELECTED TEXT`, text);
         clipboard.writeText(text);
 
-        const modifier = kitState.isMac ? Key.LeftSuper : Key.LeftControl;
-        keyboard.pressKey(modifier, Key.V);
+        const modifier = kitState.isMac
+          ? KeyboardKey.Meta
+          : KeyboardKey.Control;
+        // keyboard.pressKey(modifier, Key.V);
+        enigo.pressKey([modifier, KeyboardKey.V]);
         await new Promise(setImmediate);
-        keyboard.releaseKey(modifier, Key.V);
+        // keyboard.releaseKey(modifier, Key.V);
+        enigo.releaseKey([modifier, KeyboardKey.V]);
         setTimeout(() => {
           kitState.snippet = '';
           childSend({ channel, value });

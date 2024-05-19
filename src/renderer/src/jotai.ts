@@ -1047,7 +1047,7 @@ const resize = debounce(
     const choicesHeight = g(choicesHeightAtom);
 
     // log.info(
-    //   `🥺 ${window.pid}: mh: ${mh} topHeight: ${topHeight} footerHeight: ${footerHeight} `
+    //   `1: 🥺 ${window.pid}: mh: ${mh} topHeight: ${topHeight} footerHeight: ${footerHeight} `,
     // );
 
     if (ui === UI.arg) {
@@ -1202,7 +1202,8 @@ const resize = debounce(
 
     const inputChanged = g(_inputChangedAtom);
 
-    mh = Math.ceil(mh || -3) + 3;
+    // This hack doesn't seem necessary anymore... but why?
+    // mh = Math.ceil(mh || -3) + 3;
 
     if (mh === 0 && promptData?.preventCollapse) {
       // log.info(`🍃 Prevent collapse to zero...`);

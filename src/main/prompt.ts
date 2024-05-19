@@ -1519,18 +1519,17 @@ export class KitPrompt {
       promptLogPath;
     const getPromptInfo = async () => {
       const activeAppBounds: any = {};
-      // REMOVE-NUT
-      const { getActiveWindow } = await import('@nut-tree/nut-js');
-      const activeWindow = await getActiveWindow();
+      // REMOVE-NODE-WINDOW-MANAGER
+      const activeWindow = windowManager.getActiveWindow();
       if (activeWindow) {
-        const region = await activeWindow.region;
-        activeAppBounds.x = region.left;
-        activeAppBounds.y = region.top;
-        activeAppBounds.width = region.width;
-        activeAppBounds.height = region.height;
-        activeAppBounds.title = await activeWindow.title;
+        const bounds = activeWindow.getBounds();
+        activeAppBounds.x = bounds.x;
+        activeAppBounds.y = bounds.y;
+        activeAppBounds.width = bounds.width;
+        activeAppBounds.height = bounds.height;
+        activeAppBounds.title = activeWindow.getTitle();
       }
-      // END-REMOVE-NUT
+      // END-REMOVE-NODE-WINDOW-MANAGER
 
       const promptBounds = this.window?.getBounds();
       const screenBounds = getCurrentScreen().bounds;
@@ -1684,6 +1683,8 @@ export class KitPrompt {
       this.showAfterNextResize = false;
       this.showPrompt();
     }
+
+    log.info(`📐 Resize main height: ${mainHeight}`);
     // log.info({
     //   reason,
     //   topHeight,
