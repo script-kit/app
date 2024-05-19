@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useState, DragEvent } from 'react';
 import parse from 'html-react-parser';
-import { Choice, Script, ScriptMetadata } from '@johnlindquist/kit/types/core';
+import { Choice, Script } from '@johnlindquist/kit/types/core';
 import { useAtom, useAtomValue } from 'jotai';
 const { ipcRenderer } = window.electron;
 
 import { ChoiceButtonProps } from '../../../shared/types';
 import {
-  flagsAtom,
-  flaggedChoiceValueAtom,
   isMouseDownAtom,
   _modifiers,
   buttonNameFontSizeAtom,
@@ -23,14 +21,6 @@ import {
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
 import { AppChannel } from '../../../shared/enums';
 import { highlight } from './utils';
-
-function isScript(choice: Choice | Script): choice is Script {
-  return (choice as Script)?.command !== undefined;
-}
-
-function isNotScript(choice: Choice | Script): choice is Script {
-  return (choice as Script)?.command === undefined;
-}
 
 function FlagButton({
   index: buttonIndex,

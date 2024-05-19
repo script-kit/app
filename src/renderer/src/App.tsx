@@ -46,7 +46,6 @@ import {
   promptDataAtom,
   scriptAtom,
   submitValueAtom,
-  topHeightAtom,
   uiAtom,
   topRefAtom,
   appConfigAtom,
@@ -82,13 +81,7 @@ import {
   shortcodesAtom,
 } from './jotai';
 
-import {
-  useEnter,
-  useEscape,
-  useMessages,
-  useShortcuts,
-  useThemeDetector,
-} from './hooks';
+import { useEnter, useEscape, useMessages, useShortcuts } from './hooks';
 import Splash from './components/splash';
 import Emoji from './components/emoji';
 import { AppChannel } from '../../shared/enums';
@@ -151,12 +144,10 @@ class ErrorBoundary extends React.Component {
 
 export default function App() {
   const [pid] = useAtom(pidAtom);
-  const [appConfig] = useAtom(appConfigAtom);
   const [open] = useAtom(openAtom);
   const [script] = useAtom(scriptAtom);
   const [hint] = useAtom(hintAtom);
   const [panelHTML] = useAtom(panelHTMLAtom);
-  const [hidden] = useAtom(isHiddenAtom);
   const [chatMessages] = useAtom(chatMessagesAtom);
 
   const [ui] = useAtom(uiAtom);
@@ -168,11 +159,9 @@ export default function App() {
   const onPaste = useAtomValue(onPasteAtom);
   const onDrop = useAtomValue(onDropAtom);
   const logVisible = useAtomValue(logVisibleAtom);
-  const shortcodes = useAtomValue(shortcodesAtom);
 
   const [promptData] = useAtom(promptDataAtom);
 
-  const resetPrompt = useSetAtom(resetPromptAtom);
   const setMainHeight = useSetAtom(mainHeightAtom);
   const triggerResize = useSetAtom(triggerResizeAtom);
   const setSubmitValue = useSetAtom(submitValueAtom);
@@ -203,10 +192,7 @@ export default function App() {
 
   const [zoomLevel, setZoom] = useAtom(zoomAtom);
 
-  const hasBorder = useAtomValue(hasBorderAtom);
-
   const channel = useAtomValue(channelAtom);
-  const theme = useAtomValue(themeAtom);
 
   const domUpdated = useSetAtom(domUpdatedAtom);
   const setAppBounds = useSetAtom(appBoundsAtom);
@@ -435,6 +421,12 @@ export default function App() {
     [promptData?.previewWidthPercent, panelChildRef?.current],
   );
 
+  // useEffect(() => {
+  //   if (promptData?.previewWidthPercent) {
+  //     panelChildRef.current?.resize(promptData.previewWidthPercent);
+  //   }
+  // }, [promptData?.previewWidthPercent]);
+
   return (
     <ErrorBoundary>
       {
@@ -562,7 +554,14 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
             `}
               >
-                <PanelChild minSize={25} id="panel-left">
+                <PanelChild
+                  minSize={25}
+                  id="panel-left"
+                  style={{
+                    flexGrow: 100 - (promptData?.previewWidthPercent || 60),
+                  }}
+                  order={1}
+                >
                   <div className="h-full min-h-1 overflow-x-hidden">
                     <ToastContainer
                       className="-ml-3 -mt-3"
@@ -608,8 +607,6 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                   </div>
                 </PanelChild>
 
-                {/* {previewEnabled && <Preview />} */}
-
                 {showRightPanel && (
                   <>
                     <PanelResizeHandle
@@ -617,13 +614,14 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                       className="w-0.5 border-l-1 border-ui-border hover:-ml-0.5 hover:w-3 hover:border-r-1 hover:border-white/10 hover:bg-white/5"
                       onDragging={onResizeHandleDragging}
                     />
+
                     <PanelChild
                       id="panel-right"
-                      collapsible
                       ref={panelChildRef}
-                      // style={{
-                      //   flexGrow: 0,
-                      // }}
+                      style={{
+                        flexGrow: promptData?.previewWidthPercent || 60,
+                      }}
+                      order={2}
                     >
                       {flagValue ? (
                         <AutoSizer disableWidth>

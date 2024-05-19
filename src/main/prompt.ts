@@ -641,6 +641,16 @@ export class KitPrompt {
     const options = getPromptOptions();
     this.window = new BrowserWindow(options);
 
+    if (kitState.isWindows) {
+      setInterval(() => {
+        this.window?.hide();
+        log.info(
+          'Hiding prompt window. Current position',
+          this.window?.getPosition(),
+        );
+      }, 2000);
+    }
+
     this.sendToPrompt = (channel: Channel | AppChannel, data) => {
       log.silly(`sendToPrompt: ${String(channel)}`, data);
 

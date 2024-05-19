@@ -31,14 +31,12 @@ import { AppChannel } from '../../../shared/enums';
 import { IconSwapper } from './iconswapper';
 import { highlight } from './utils';
 
-function calculateScale(height: number | undefined): string {
-  if (height === PROMPT.ITEM.HEIGHT.XS) {
+function calculateScale(height: number = PROMPT.ITEM.HEIGHT.SM): string {
+  if (height < PROMPT.ITEM.HEIGHT.SM) {
     return 'scale-75';
   }
-  if (height === PROMPT.ITEM.HEIGHT.SM) {
-    return 'scale-90';
-  }
-  return '';
+
+  return 'scale-90';
 }
 
 function ChoiceButton({

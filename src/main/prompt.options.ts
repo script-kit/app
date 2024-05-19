@@ -15,13 +15,61 @@ export const getPromptOptions = () => {
     currentScreen.workAreaSize;
   const { x: workX, y: workY } = currentScreen.workArea;
 
+  let backgroundThrottling = true;
+  if (kitState?.kenvEnv?.KIT_DISABLE_BACKGROUND_THROTTLE === 'true') {
+    backgroundThrottling = false;
+  }
+
+  let hasShadow = true;
+  if (kitState?.kenvEnv?.KIT_DISABLE_SHADOW === 'true') {
+    hasShadow = false;
+  }
+
+  let frame = false;
+  if (kitState?.kenvEnv?.KIT_ENABLE_FRAME === 'true') {
+    frame = true;
+  }
+
+  let transparent = false;
+  if (kitState?.kenvEnv?.KIT_ENABLE_TRANSPARENT === 'true') {
+    transparent = true;
+  }
+
+  let x = Math.round(screenWidth / 2 - width / 2 + workX);
+  if (kitState.isWindows) {
+    x = -10000;
+  }
+
+  if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_X) {
+    x = parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_X);
+  }
+
+  let y = Math.round(workY + screenHeight / 8);
+  if (kitState.isWindows) {
+    y = -10000;
+  }
+
+  if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_Y) {
+    y = parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_Y);
+  }
+
+  let show = false;
+  if (kitState.isWindows) {
+    show = true;
+  }
+
+  if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_SHOW === 'true') {
+    show = true;
+  }
+
   const options = {
     useContentSize: true,
-    frame: false,
-    hasShadow: true,
-    show: false,
+    frame,
+    hasShadow,
+    show,
     icon: getAssetPath('icon.png'),
     webPreferences: {
+      backgroundThrottling,
       nodeIntegration: true,
       contextIsolation: false,
       devTools: true,
@@ -39,8 +87,9 @@ export const getPromptOptions = () => {
     height,
     minWidth: MIN_WIDTH,
     minHeight: PROMPT.INPUT.HEIGHT.XS,
-    x: Math.round(screenWidth / 2 - width / 2 + workX),
-    y: Math.round(workY + screenHeight / 8),
+    transparent,
+    x,
+    y,
   } as BrowserWindowConstructorOptions;
 
   if (kitState.isMac) {
