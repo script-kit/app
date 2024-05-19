@@ -647,13 +647,15 @@ export class KitPrompt {
     }
     if (kitState.isWindows) {
       setTimeout(() => {
-        if (!this.window?.isFocusable()) {
-          this.window?.hide();
+        if (this?.window && !this.window.isDestroyed()) {
+          if (!this.window.isFocusable()) {
+            this.window.hide();
+          }
+          log.info(
+            'Hiding prompt window. Current position',
+            this.window.getPosition(),
+          );
         }
-        log.info(
-          'Hiding prompt window. Current position',
-          this.window?.getPosition(),
-        );
       }, timeout);
     }
 

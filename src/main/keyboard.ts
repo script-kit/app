@@ -1,6 +1,6 @@
 import log from 'electron-log';
 import { kitState } from '../shared/state';
-import { enigo } from './enigo';
+import { getEnigo } from './enigo';
 
 export const deleteText = async (stringToDelete = '') => {
   if (!kitState.supportsNut) {
@@ -19,8 +19,8 @@ export const deleteText = async (stringToDelete = '') => {
   kitState.isTyping = true;
   for await (const k of stringToDelete.split('').reverse().join('')) {
     // await keyboard.type(Key.Backspace);
-    enigo.pressKey([KeyboardKey.Backspace]);
-    enigo.releaseKey([KeyboardKey.Backspace]);
+    getEnigo().pressKey([KeyboardKey.Backspace]);
+    getEnigo().releaseKey([KeyboardKey.Backspace]);
     log.silly(`Deleted ${k}`);
   }
 

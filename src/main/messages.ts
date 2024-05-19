@@ -86,7 +86,7 @@ import {
 } from './process';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
-import { enigo } from './enigo';
+import { getEnigo } from './enigo';
 
 export type ChannelHandler = {
   [key in keyof ChannelMap]: (data: SendData<key>) => void;
@@ -1619,7 +1619,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         }
         // REMOVE-NUT
         log.info(`PRESSING KEY`, { value });
-        await enigo.pressKey(value as KeyboardKey[]);
+        getEnigo().pressKey(value as KeyboardKey[]);
 
         childSend({ channel, value });
 
@@ -1638,7 +1638,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         // REMOVE-NUT
         log.info(`RELEASING KEY`, { value });
-        enigo.releaseKey(value as any);
+        getEnigo().releaseKey(value as any);
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1648,27 +1648,27 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     MOUSE_LEFT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
       const { MouseButton } = await import('@johnlindquist/kit-enigo');
-      enigo.setButtonClick(MouseButton.Left);
+      getEnigo().setButtonClick(MouseButton.Left);
       // END-REMOVE-NUT
     }),
 
     MOUSE_RIGHT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
       const { MouseButton } = await import('@johnlindquist/kit-enigo');
-      enigo.setButtonClick(MouseButton.Right);
+      getEnigo().setButtonClick(MouseButton.Right);
       // END-REMOVE-NUT
     }),
 
     MOUSE_MOVE: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      enigo.setMousePosition(value.x, value.y);
+      getEnigo().setMousePosition(value.x, value.y);
       // END-REMOVE-NUT
     }),
 
     MOUSE_SET_POSITION: onChildChannel(
       async ({ child }, { channel, value }) => {
         // REMOVE-NUT
-        enigo.setMousePosition(value.x, value.y);
+        getEnigo().setMousePosition(value.x, value.y);
         // END-REMOVE-NUT
       },
     ),
@@ -1767,10 +1767,10 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           ? KeyboardKey.Meta
           : KeyboardKey.Control;
         // keyboard.pressKey(modifier, Key.V);
-        enigo.pressKey([modifier, KeyboardKey.V]);
+        getEnigo().pressKey([modifier, KeyboardKey.V]);
         await new Promise(setImmediate);
         // keyboard.releaseKey(modifier, Key.V);
-        enigo.releaseKey([modifier, KeyboardKey.V]);
+        getEnigo().releaseKey([modifier, KeyboardKey.V]);
         setTimeout(() => {
           kitState.snippet = '';
           childSend({ channel, value });
