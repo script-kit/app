@@ -408,7 +408,7 @@ const ChatList: FC<IMessageListProps> = ({
                 }`;
 
                 return (
-                  <div className="relative">
+                  <div className="relative" key={`${domNode.name}-${i}`}>
                     <div {...domNode.attribs}>
                       {React.createElement(
                         domNode.name,

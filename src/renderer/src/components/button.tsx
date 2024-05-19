@@ -1,5 +1,11 @@
 import log from 'electron-log';
-import React, { useCallback, useEffect, useState, DragEvent } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+  DragEvent,
+  useMemo,
+} from 'react';
 import parse from 'html-react-parser';
 import { Script } from '@johnlindquist/kit/types/core';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
@@ -136,6 +142,24 @@ function ChoiceButton({
     [choice],
   );
 
+  const memoizedChoiceName = useMemo(() => {
+    return choice.name
+      ?.replace(/{\s*input\s*}/g, input)
+      .replace(/{\s*base\s*}/g, base);
+  }, [choice.name, input, base]);
+
+  const memoizedHtmlDomNode = useMemo(() => {
+    if (!choice?.html) return '';
+    return parse(choice?.html, {
+      replace: (domNode: any) => {
+        if (domNode?.attribs && index === buttonIndex) {
+          domNode.attribs.class += ' focused';
+        }
+        return domNode;
+      },
+    });
+  }, [choice?.html, index, buttonIndex]);
+
   useEffect(() => {
     const modifier = modifiers.find((m) => {
       return Object.keys(choice).includes(m);
@@ -198,13 +222,7 @@ function ChoiceButton({
       onMouseOver={onMouseEnter}
     >
       {choice?.html ? (
-        parse(choice?.html, {
-          replace: (domNode: any) => {
-            if (domNode?.attribs && index === buttonIndex)
-              domNode.attribs.class += ' focused';
-            return domNode;
-          },
-        })
+        memoizedHtmlDomNode
       ) : (
         <div className="flex h-full w-full flex-row items-center justify-between">
           <div className="flex h-full flex-row items-center overflow-x-hidden">
@@ -261,9 +279,7 @@ function ChoiceButton({
                 className={`${buttonNameFontSize} truncate ${choice?.nameClassName}`}
               >
                 {highlight(
-                  choice.name
-                    ?.replace(/{\s*input\s*}/g, input)
-                    .replace(/{\s*base\s*}/g, base),
+                  memoizedChoiceName,
                   scoredChoice?.matches?.slicedName,
                   `bg-primary bg-opacity-5 text-primary`,
                 )}

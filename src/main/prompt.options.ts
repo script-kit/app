@@ -36,7 +36,7 @@ export const getPromptOptions = () => {
     transparent = true;
   }
 
-  let focusable = false;
+  let focusable = kitState.isWindows ? false : true;
   if (kitState?.kenvEnv?.KIT_FORCE_FOCUSABLE === 'true') {
     focusable = true;
   }

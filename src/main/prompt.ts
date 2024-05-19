@@ -2150,7 +2150,6 @@ export class KitPrompt {
       !this.window.isDestroyed() &&
       !this.window?.isFocused()
     ) {
-      this?.window?.setFocusable(true);
       try {
         if (kitState.isMac) {
           // REMOVE-MAC
@@ -2159,6 +2158,7 @@ export class KitPrompt {
           makeKeyWindow(this.window);
           // END-REMOVE-MAC
         } else {
+          this?.window?.setFocusable(true);
           this.window?.showInactive();
           this.window?.focus();
         }

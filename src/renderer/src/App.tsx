@@ -3,6 +3,7 @@ import React, {
   RefObject,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
 } from 'react';
 import log from 'electron-log/renderer';
@@ -48,8 +49,6 @@ import {
   submitValueAtom,
   uiAtom,
   topRefAtom,
-  appConfigAtom,
-  isHiddenAtom,
   scoredChoicesAtom,
   showTabsAtom,
   showSelectedAtom,
@@ -61,7 +60,6 @@ import {
   chatMessagesAtom,
   termConfigAtom,
   zoomAtom,
-  hasBorderAtom,
   channelAtom,
   logVisibleAtom,
   domUpdatedAtom,
@@ -70,15 +68,12 @@ import {
   appBoundsAtom,
   flaggedChoiceValueAtom,
   previewCheckAtom,
-  resetPromptAtom,
   loadingAtom,
   audioDotAtom,
   isMainScriptAtom,
   progressAtom,
   cssAtom,
   triggerResizeAtom,
-  themeAtom,
-  shortcodesAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useMessages, useShortcuts } from './hooks';
@@ -427,6 +422,22 @@ export default function App() {
   //   }
   // }, [promptData?.previewWidthPercent]);
 
+  const defaultRightPanelWidth = 60;
+  const panelLeftStyle = useMemo(
+    () => ({
+      flexGrow:
+        100 - (promptData?.previewWidthPercent || defaultRightPanelWidth),
+    }),
+    [promptData?.previewWidthPercent],
+  );
+
+  const panelRightStyle = useMemo(
+    () => ({
+      flexGrow: promptData?.previewWidthPercent || defaultRightPanelWidth,
+    }),
+    [promptData?.previewWidthPercent],
+  );
+
   return (
     <ErrorBoundary>
       {
@@ -557,9 +568,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                 <PanelChild
                   minSize={25}
                   id="panel-left"
-                  style={{
-                    flexGrow: 100 - (promptData?.previewWidthPercent || 60),
-                  }}
+                  style={panelLeftStyle}
                   order={1}
                 >
                   <div className="h-full min-h-1 overflow-x-hidden">
@@ -618,9 +627,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                     <PanelChild
                       id="panel-right"
                       ref={panelChildRef}
-                      style={{
-                        flexGrow: promptData?.previewWidthPercent || 60,
-                      }}
+                      style={panelRightStyle}
                       order={2}
                     >
                       {flagValue ? (
