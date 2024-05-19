@@ -647,7 +647,9 @@ export class KitPrompt {
     }
     if (kitState.isWindows) {
       setTimeout(() => {
-        this.window?.hide();
+        if (!this.window?.isFocusable()) {
+          this.window?.hide();
+        }
         log.info(
           'Hiding prompt window. Current position',
           this.window?.getPosition(),
