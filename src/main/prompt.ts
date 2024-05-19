@@ -646,7 +646,7 @@ export class KitPrompt {
       timeout = parseInt(kitState?.kenvEnv?.KIT_PROMPT_INITIAL_HIDE_TIMEOUT);
     }
     if (kitState.isWindows) {
-      setInterval(() => {
+      setTimeout(() => {
         this.window?.hide();
         log.info(
           'Hiding prompt window. Current position',
