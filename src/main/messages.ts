@@ -9,7 +9,7 @@ import robot from '@hurdlegroup/robotjs';
 // END-REMOVE-NUT
 // REMOVE-MAC
 import nmp from 'node-mac-permissions';
-const { askForAccessibilityAccess, getAuthStatus, askForFullDiskAccess } = nmp;
+const { askForAccessibilityAccess, getAuthStatus } = nmp;
 // END-REMOVE-MAC
 
 import {
@@ -96,10 +96,9 @@ import {
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
 
-let modifier = 'control';
-if (kitState.isMac) {
-  modifier = 'command';
-}
+const getModifier = () => {
+  return kitState.isMac ? 'command' : 'control';
+};
 
 export type ChannelHandler = {
   [key in keyof ChannelMap]: (data: SendData<key>) => void;
@@ -1658,8 +1657,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         // REMOVE-NUT
 
         log.info(`COPYING`);
-        robot.keyTap('c', modifier);
-        robot.keyToggle('c', 'up', modifier);
+        robot.keyTap('c', getModifier());
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1677,8 +1675,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         // REMOVE-NUT
         log.info(`PASTING`);
-        robot.keyTap('v', modifier);
-        robot.keyToggle('v', 'up', modifier);
+        robot.keyTap('v', getModifier());
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1696,7 +1693,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         // REMOVE-NUT
         log.info(`CUTTING`);
-        robot.keyTap('x', modifier);
+        robot.keyTap('x', getModifier());
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1714,7 +1711,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         // REMOVE-NUT
         log.info(`SELECTING ALL`);
-        robot.keyTap('a', modifier);
+        robot.keyTap('a', getModifier());
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1732,7 +1729,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         // REMOVE-NUT
         log.info(`UNDO`);
-        robot.keyTap('z', modifier);
+        robot.keyTap('z', getModifier());
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1890,7 +1887,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         log.info(`SET SELECTED TEXT`, text);
         clipboard.writeText(text);
 
-        robot.keyTap('v', modifier);
+        robot.keyTap('v', getModifier());
         setTimeout(() => {
           kitState.snippet = '';
           childSend({ channel, value });
