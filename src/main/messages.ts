@@ -1649,13 +1649,17 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     KEYBOARD_COPY: onChildChannelOverride(
       async ({ child }, { channel, value }) => {
         if (!kitState.supportsNut) {
-          log.warn(`cv`);
+          log.warn(
+            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a cv soon!`,
+          );
           return;
         }
 
         // REMOVE-NUT
 
+        log.info(`COPYING`);
         robot.keyTap('c', modifier);
+        robot.keyToggle('c', 'up', modifier);
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1673,7 +1677,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         // REMOVE-NUT
         log.info(`PASTING`);
-        robot.keyTap('v', 'command');
+        robot.keyTap('v', modifier);
+        robot.keyToggle('v', 'up', modifier);
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1885,10 +1890,6 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         log.info(`SET SELECTED TEXT`, text);
         clipboard.writeText(text);
 
-        let modifier = 'control';
-        if (kitState.isMac) {
-          modifier = 'command';
-        }
         robot.keyTap('v', modifier);
         setTimeout(() => {
           kitState.snippet = '';
