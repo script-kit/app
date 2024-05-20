@@ -4,7 +4,9 @@ import { randomUUID } from 'crypto';
 import detect from 'detect-port';
 import sizeOf from 'image-size';
 import untildify from 'untildify';
+// REMOVE-NUT
 import robot from '@hurdlegroup/robotjs';
+// END-REMOVE-NUT
 // REMOVE-MAC
 import nmp from 'node-mac-permissions';
 const { askForAccessibilityAccess, getAuthStatus, askForFullDiskAccess } = nmp;
