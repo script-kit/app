@@ -5,7 +5,7 @@ import detect from 'detect-port';
 import sizeOf from 'image-size';
 import untildify from 'untildify';
 // REMOVE-NUT
-import robot from '@hurdlegroup/robotjs';
+import robot from '@jitsi/robotjs';
 // END-REMOVE-NUT
 // REMOVE-MAC
 import nmp from 'node-mac-permissions';
@@ -97,7 +97,7 @@ import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
 
 const getModifier = () => {
-  return kitState.isMac ? 'command' : 'control';
+  return kitState.isMac ? ['command'] : ['control'];
 };
 
 export type ChannelHandler = {
@@ -1657,9 +1657,21 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         // REMOVE-NUT
         const modifier = getModifier();
         log.info(`COPYING with ${modifier}+c`);
+        const beforeText = clipboard.readText();
         robot.keyTap('c', modifier);
 
+        let afterText = clipboard.readText();
+        const maxTries = 5;
+        let tries = 0;
+        while (beforeText === afterText && tries < maxTries) {
+          afterText = clipboard.readText();
+          tries++;
+          log.info(`Retrying copy`, { tries, afterText });
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+
         childSend({ channel, value });
+
         // END-REMOVE-NUT
       },
     ),

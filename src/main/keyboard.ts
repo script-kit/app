@@ -2,7 +2,7 @@ import log from 'electron-log';
 import { kitState } from '../shared/state';
 
 // REMOVE-NUT
-import robot from '@hurdlegroup/robotjs';
+import robot from '@jitsi/robotjs';
 // END-REMOVE-NUT
 
 export const deleteText = async (stringToDelete = '') => {
