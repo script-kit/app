@@ -1,6 +1,7 @@
 import log from 'electron-log';
 import { kitState } from '../shared/state';
-import { getEnigo } from './enigo';
+import { Key } from '@johnlindquist/kit/core/enum';
+import robot from '@hurdlegroup/robotjs';
 
 export const deleteText = async (stringToDelete = '') => {
   if (!kitState.supportsNut) {
@@ -12,15 +13,14 @@ export const deleteText = async (stringToDelete = '') => {
 
   // REMOVE-NUT
 
-  const { KeyboardKey } = await import('@johnlindquist/kit-enigo');
   // const prevDelay = keyboard.config.autoDelayMs;
   // keyboard.config.autoDelayMs = 0;
 
   kitState.isTyping = true;
   for await (const k of stringToDelete.split('').reverse().join('')) {
     // await keyboard.type(Key.Backspace);
-    getEnigo().pressKey([KeyboardKey.Backspace]);
-    getEnigo().releaseKey([KeyboardKey.Backspace]);
+    robot.keyTap('backspace');
+
     log.silly(`Deleted ${k}`);
   }
 

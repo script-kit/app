@@ -801,7 +801,7 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
       if (kitState.isMac) {
         tray.on('mouse-down', openMenu);
       } else {
-        tray.on('click', openMenu);
+        tray.on('right-click', openMenu);
       }
       tray.on('right-click', openMenu);
     } catch (error) {
@@ -843,7 +843,7 @@ export const setTrayMenu = async (scriptPaths: string[]) => {
       if (kitState.isMac) {
         tray?.on('mouse-down', openMenu);
       } else {
-        tray?.on('click', openMenu);
+        tray?.on('right-click', openMenu);
       }
       leftClickOverride = null;
       tray?.setContextMenu(null);

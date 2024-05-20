@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import detect from 'detect-port';
 import sizeOf from 'image-size';
 import untildify from 'untildify';
+import robot from '@hurdlegroup/robotjs';
 // REMOVE-MAC
 import nmp from 'node-mac-permissions';
 const { askForAccessibilityAccess, getAuthStatus, askForFullDiskAccess } = nmp;
@@ -27,7 +28,13 @@ import path from 'path';
 import http from 'http';
 import https from 'https';
 import { writeFile } from 'fs/promises';
-import { Channel, ProcessType, Value, UI } from '@johnlindquist/kit/core/enum';
+import {
+  Channel,
+  Key,
+  ProcessType,
+  Value,
+  UI,
+} from '@johnlindquist/kit/core/enum';
 import { Choice, ProcessInfo, Script } from '@johnlindquist/kit/types/core';
 
 import { ChannelMap, SendData } from '@johnlindquist/kit/types/kitapp';
@@ -86,7 +93,11 @@ import {
 } from './process';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
-import { getEnigo } from './enigo';
+
+let modifier = 'control';
+if (kitState.isMac) {
+  modifier = 'command';
+}
 
 export type ChannelHandler = {
   [key in keyof ChannelMap]: (data: SendData<key>) => void;
@@ -1545,7 +1556,6 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         }
 
         // REMOVE-NUT
-        const { KeyboardKey } = await import('@johnlindquist/kit-enigo');
         if (kitState.shortcutPressed) {
           // Get the modifiers from the accelerator
           const modifiers = kitState.shortcutPressed.split('+');
@@ -1556,50 +1566,41 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
           if (Key?.[mainKey]) {
             log.info(`Releasing ${mainKey}`);
-            await keyboard.releaseKey(Key[mainKey] as any);
+            // await keyboard.releaseKey(Key[mainKey] as any);
+            robot.keyToggle(mainKey, 'up');
           }
         }
-
-        //   modifiers.forEach(async (modifier) => {
-        //     log.info(`Releasing ${modifier}`);
-        //     if (modifier === 'Control')
-        //       await keyboard.releaseKey(Key.LeftControl, Key.RightControl);
-
-        //     if (modifier === 'Command')
-        //       await keyboard.releaseKey(Key.LeftSuper, Key.RightSuper);
-
-        //     if (modifier === 'Alt' || modifier === 'Option')
-        //       await keyboard.releaseKey(Key.LeftAlt, Key.RightAlt);
-
-        //     if (modifier === 'Shift')
-        //       await keyboard.releaseKey(Key.LeftShift, Key.RightShift);
-        //   });
-        // }
         log.info(`${channel}: ${typeof value} ${value}`, {
           isArray: Array.isArray(value),
         });
         log.info(`${channel}: ${[...value]}`);
         const firstItem = value?.[0];
         log.info({ type: typeof firstItem, firstItem });
-        keyboard.config.autoDelayMs =
-          kitState?.keyboardConfig?.autoDelayMs || 0;
+        // keyboard.config.autoDelayMs =
+        //   kitState?.keyboardConfig?.autoDelayMs || 0;
         kitState.isTyping = true;
 
-        try {
-          for await (const k of typeof firstItem === 'string'
-            ? firstItem.split('')
-            : value) {
-            if (!kitState.cancelTyping) await keyboard.type(k);
-          }
-        } catch (error) {
-          log.error(`KEYBOARD ERROR TYPE`, error);
-        }
+        robot.typeString(value?.[0] as string);
+
+        // try {
+        //   const itemOrItems =
+        //     typeof firstItem === 'string'
+        //       ? (firstItem as string).split('')
+        //       : value;
+        //   for await (const k of itemOrItems) {
+        //     if (!kitState.cancelTyping) {
+        //       log.info(`Typing ${k}`);
+        //     }
+        //   }
+        // } catch (error) {
+        //   log.error(`KEYBOARD ERROR TYPE`, error);
+        // }
 
         setTimeout(() => {
           kitState.snippet = '';
           kitState.isTyping = false;
           kitState.cancelTyping = false;
-          keyboard.config.autoDelayMs = 0;
+          // keyboard.config.autoDelayMs = 0;
           childSend({
             channel,
           });
@@ -1613,16 +1614,120 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       async ({ child }, { channel, value }) => {
         if (!kitState.supportsNut) {
           log.warn(
-            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
+            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a cv soon!`,
           );
           return;
         }
         // REMOVE-NUT
         log.info(`PRESSING KEY`, { value });
-        getEnigo().pressKey(value as KeyboardKey[]);
+        const modifiers = [
+          Key.LeftControl,
+          Key.LeftShift,
+          Key.LeftAlt,
+          Key.LeftSuper,
+          Key.RightControl,
+          Key.RightShift,
+          Key.RightAlt,
+          Key.RightSuper,
+        ];
+
+        const key = (value as Key[]).find((v) => !modifiers.includes(v));
+        const activeModifiers = (value as Key[]).filter((v) =>
+          modifiers.includes(v),
+        );
+
+        robot.keyTap(key as string, activeModifiers);
 
         childSend({ channel, value });
 
+        // END-REMOVE-NUT
+      },
+    ),
+
+    KEYBOARD_COPY: onChildChannelOverride(
+      async ({ child }, { channel, value }) => {
+        if (!kitState.supportsNut) {
+          log.warn(`cv`);
+          return;
+        }
+
+        // REMOVE-NUT
+
+        robot.keyTap('c', modifier);
+
+        childSend({ channel, value });
+        // END-REMOVE-NUT
+      },
+    ),
+
+    KEYBOARD_PASTE: onChildChannelOverride(
+      async ({ child }, { channel, value }) => {
+        if (!kitState.supportsNut) {
+          log.warn(
+            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
+          );
+          return;
+        }
+
+        // REMOVE-NUT
+        log.info(`PASTING`);
+        robot.keyTap('v', 'command');
+
+        childSend({ channel, value });
+        // END-REMOVE-NUT
+      },
+    ),
+
+    KEYBOARD_CUT: onChildChannelOverride(
+      async ({ child }, { channel, value }) => {
+        if (!kitState.supportsNut) {
+          log.warn(
+            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
+          );
+          return;
+        }
+
+        // REMOVE-NUT
+        log.info(`CUTTING`);
+        robot.keyTap('x', modifier);
+
+        childSend({ channel, value });
+        // END-REMOVE-NUT
+      },
+    ),
+
+    KEYBOARD_SELECT_ALL: onChildChannelOverride(
+      async ({ child }, { channel, value }) => {
+        if (!kitState.supportsNut) {
+          log.warn(
+            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
+          );
+          return;
+        }
+
+        // REMOVE-NUT
+        log.info(`SELECTING ALL`);
+        robot.keyTap('a', modifier);
+
+        childSend({ channel, value });
+        // END-REMOVE-NUT
+      },
+    ),
+
+    KEYBOARD_UNDO: onChildChannelOverride(
+      async ({ child }, { channel, value }) => {
+        if (!kitState.supportsNut) {
+          log.warn(
+            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
+          );
+          return;
+        }
+
+        // REMOVE-NUT
+        log.info(`UNDO`);
+        robot.keyTap('z', modifier);
+
+        childSend({ channel, value });
         // END-REMOVE-NUT
       },
     ),
@@ -1638,7 +1743,23 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         // REMOVE-NUT
         log.info(`RELEASING KEY`, { value });
-        getEnigo().releaseKey(value as any);
+        const modifiers = [
+          Key.LeftControl,
+          Key.LeftShift,
+          Key.LeftAlt,
+          Key.LeftSuper,
+          Key.RightControl,
+          Key.RightShift,
+          Key.RightAlt,
+          Key.RightSuper,
+        ];
+
+        const key = (value as Key[]).find((v) => !modifiers.includes(v));
+        const activeModifiers = (value as Key[]).filter((v) =>
+          modifiers.includes(v),
+        );
+
+        robot.keyToggle(key as string, 'up', activeModifiers);
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1647,28 +1768,28 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     MOUSE_LEFT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      const { MouseButton } = await import('@johnlindquist/kit-enigo');
-      getEnigo().setButtonClick(MouseButton.Left);
+      robot.mouseClick('left');
       // END-REMOVE-NUT
     }),
 
     MOUSE_RIGHT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      const { MouseButton } = await import('@johnlindquist/kit-enigo');
-      getEnigo().setButtonClick(MouseButton.Right);
+      robot.mouseClick('right');
       // END-REMOVE-NUT
     }),
 
     MOUSE_MOVE: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      getEnigo().setMousePosition(value.x, value.y);
+      for (const v of value) {
+        robot.moveMouseSmooth(v.x, v.y);
+      }
       // END-REMOVE-NUT
     }),
 
     MOUSE_SET_POSITION: onChildChannel(
       async ({ child }, { channel, value }) => {
         // REMOVE-NUT
-        getEnigo().setMousePosition(value.x, value.y);
+        robot.moveMouse(value.x, value.y);
         // END-REMOVE-NUT
       },
     ),
@@ -1745,13 +1866,12 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       async ({ child }, { channel, value }) => {
         if (!kitState.supportsNut) {
           log.warn(
-            `SET_SELECTED_TEXT: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
+            `SET_SELECTED_TEXT: Nut not yay supported! on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
           );
           return;
         }
 
         // REMOVE-NUT
-        const { KeyboardKey } = await import('@johnlindquist/kit-enigo');
 
         const text = value?.text;
         const hide = value?.hide;
@@ -1763,14 +1883,11 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         log.info(`SET SELECTED TEXT`, text);
         clipboard.writeText(text);
 
-        const modifier = kitState.isMac
-          ? KeyboardKey.Meta
-          : KeyboardKey.Control;
-        // keyboard.pressKey(modifier, Key.V);
-        getEnigo().pressKey([modifier, KeyboardKey.V]);
-        await new Promise(setImmediate);
-        // keyboard.releaseKey(modifier, Key.V);
-        getEnigo().releaseKey([modifier, KeyboardKey.V]);
+        let modifier = 'control';
+        if (kitState.isMac) {
+          modifier = 'command';
+        }
+        robot.keyTap('v', modifier);
         setTimeout(() => {
           kitState.snippet = '';
           childSend({ channel, value });
