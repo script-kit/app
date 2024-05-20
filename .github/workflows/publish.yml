@@ -218,7 +218,7 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm un --force node-mac-permissions @hurdlegroup/robotjs uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
+            npm un --force node-mac-permissions @jitsi/robotjsrobotjs uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npx kit remove-tick
@@ -280,7 +280,7 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm un --force node-mac-permissions @hurdlegroup/robotjs uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
+            npm un --force node-mac-permissions @jitsi/robotjsrobotjs uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npx kit remove-tick
