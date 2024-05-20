@@ -1558,6 +1558,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         // REMOVE-NUT
         if (kitState.shortcutPressed) {
+          log.info(`Releasing ${kitState.shortcutPressed}`);
           // Get the modifiers from the accelerator
           const modifiers = kitState.shortcutPressed.split('+');
           // Remove the last item, which is the key
@@ -1568,21 +1569,20 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           if (Key?.[mainKey]) {
             log.info(`Releasing ${mainKey}`);
             // await keyboard.releaseKey(Key[mainKey] as any);
-            robot.keyToggle(mainKey, 'up');
+            // robot.keyToggle(getModifier(), 'up');
           }
         }
-        log.info(`${channel}: ${typeof value} ${value}`, {
-          isArray: Array.isArray(value),
-        });
-        log.info(`${channel}: ${[...value]}`);
-        const firstItem = value?.[0];
-        log.info({ type: typeof firstItem, firstItem });
+        log.info(
+          `${channel}: ${typeof value} ${value}, isArray: ${Array.isArray(value)}, expanded: ${[...value]}`,
+        );
         // keyboard.config.autoDelayMs =
         //   kitState?.keyboardConfig?.autoDelayMs || 0;
         kitState.isTyping = true;
-
-        robot.typeString(value?.[0] as string);
-
+        if (typeof value === 'string') {
+          robot.typeString(value);
+        } else if (typeof value?.[0] === 'string') {
+          robot.typeString(value[0]);
+        }
         // try {
         //   const itemOrItems =
         //     typeof firstItem === 'string'
@@ -1655,9 +1655,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         }
 
         // REMOVE-NUT
-
-        log.info(`COPYING`);
-        robot.keyTap('c', getModifier());
+        const modifier = getModifier();
+        log.info(`COPYING with ${modifier}+c`);
+        robot.keyTap('c', modifier);
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1674,8 +1674,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         }
 
         // REMOVE-NUT
-        log.info(`PASTING`);
-        robot.keyTap('v', getModifier());
+        const modifier = getModifier();
+        log.info(`PASTING with ${modifier}+v`);
+        robot.keyTap('v', modifier);
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1692,8 +1693,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         }
 
         // REMOVE-NUT
-        log.info(`CUTTING`);
-        robot.keyTap('x', getModifier());
+        const modifier = getModifier();
+        log.info(`CUTTING with ${modifier}+x`);
+        robot.keyTap('x', modifier);
 
         childSend({ channel, value });
         // END-REMOVE-NUT
