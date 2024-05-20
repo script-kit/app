@@ -250,6 +250,9 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
+            sudo apt-get update
+            sudo apt-get install -y libxtst-dev
+            sudo apt-get install -y python2.7 make gcc libpng++-dev
             npm un --force node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
