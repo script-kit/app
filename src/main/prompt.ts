@@ -1204,7 +1204,10 @@ export class KitPrompt {
       if (kitState?.kenvEnv?.KIT_DISABLE_PREVIOUS_ACTIVE_WINDOW !== 'true') {
         const currentWindow = windowManager.getActiveWindow();
         if (currentWindow.processId !== process.pid) {
-          log.info(`Storing previous window: ${currentWindow.processId}`);
+          log.info(
+            `Storing previous window: ${currentWindow.processId}`,
+            currentWindow,
+          );
           prevWindow = currentWindow;
         }
       }
@@ -1227,7 +1230,7 @@ export class KitPrompt {
       log.warn(`Prompt window is destroyed. Not hiding.`);
       return;
     }
-    this.window.hide();
+    this.actualHide();
   };
 
   onHideOnce = (fn: () => void) => {
@@ -2022,19 +2025,19 @@ export class KitPrompt {
       // REMOVE-NODE-WINDOW-MANAGER
       windowManager.hideInstantly(this.window?.getNativeWindowHandle());
       this.window?.emit('hide');
+      if (prevWindow) {
+        try {
+          prevWindow?.bringToTop();
+        } catch (error) {
+          log.error(error);
+        }
+      } else {
+        log.info(`No previous window to bring to top...`);
+      }
       // END-REMOVE-NODE-WINDOW-MANAGER
     } else {
       this.window?.hide();
     }
-    // REMOVE-NODE-WINDOW-MANAGER
-    if (kitState.isWindows && prevWindow) {
-      try {
-        prevWindow?.bringToTop();
-      } catch (error) {
-        log.error(error);
-      }
-    }
-    // END-REMOVE-NODE-WINDOW-MANAGER
   };
 
   isVisible = () => {
