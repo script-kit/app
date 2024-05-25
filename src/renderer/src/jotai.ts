@@ -1591,7 +1591,7 @@ export const promptDataAtom = atom(
       s(defaultValueAtom, a?.defaultValue || '');
       s(defaultChoiceIdAtom, a?.defaultChoiceId || '');
 
-      s(onInputSubmitAtom, a?.onInputSubmit || {});
+      s(onInputSubmitAtom, a?.shortcodes || {});
 
       // This prevent a "flash" of shortcuts since the focused choice
       // changes which shortcuts are visible and it's different from

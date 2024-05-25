@@ -47,6 +47,8 @@ export default function ActionBar() {
     !hasRightShortcut;
 
   const actions = focusedChoice?.ignoreFlags ? [] : _actions;
+  const rightActions =
+    actions.filter((action) => action.position === 'right') || [];
 
   return (
     <div
@@ -107,22 +109,22 @@ text-opacity-75
         <div className="options-container flex flex-row">
           {hasFlags && [
             <OptionsButton key="options-button" />,
-            <ActionSeparator key="options-separator" />,
+            rightActions.length > 0 && (
+              <ActionSeparator key="options-separator" />
+            ),
           ]}
         </div>
         <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
-          {actions
-            .filter((action) => action.position === 'right')
-            .flatMap((action, i, array) => [
-              // eslint-disable-next-line react/jsx-key
-              <ActionButton {...action} />,
-              // eslint-disable-next-line no-nested-ternary
-              i < array.length - 1 ? (
-                <ActionSeparator key={`${action?.key}-separator`} />
-              ) : enterButtonName ? (
-                <ActionSeparator key={`${action?.key}-separator`} />
-              ) : null,
-            ])}
+          {rightActions.flatMap((action, i, array) => [
+            // eslint-disable-next-line react/jsx-key
+            <ActionButton {...action} />,
+            // eslint-disable-next-line no-nested-ternary
+            i < array.length - 1 ? (
+              <ActionSeparator key={`${action?.key}-separator`} />
+            ) : enterButtonName ? (
+              <ActionSeparator key={`${action?.key}-separator`} />
+            ) : null,
+          ])}
         </div>
         <div className="enter-container flex min-w-fit flex-row items-center">
           {enterButtonName ? (

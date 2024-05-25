@@ -80,7 +80,7 @@ import { QuickScore } from 'quick-score';
 import { createPty } from './pty';
 import { cliFromParams, runPromptProcess } from './kit';
 import EventEmitter from 'events';
-import { getPromptOptions } from './prompt.options';
+import { OFFSCREEN_X, OFFSCREEN_Y, getPromptOptions } from './prompt.options';
 
 contextMenu({
   showInspectElement: process.env.NODE_ENV === 'development',
@@ -246,8 +246,8 @@ export const getCurrentScreenPromptCache = (
   let x = Math.round(screenWidth / 2 - width / 2 + workX);
   let y = Math.round(workY + screenHeight / 8);
 
-  if (typeof bounds?.x === 'number') x = bounds.x;
-  if (typeof bounds?.y === 'number') y = bounds.y;
+  if (typeof bounds?.x === 'number' && bounds.x !== OFFSCREEN_X) x = bounds.x;
+  if (typeof bounds?.y === 'number' && bounds.y !== OFFSCREEN_Y) y = bounds.y;
 
   const promptBounds = { x, y, width, height, screenId };
 
@@ -1668,6 +1668,9 @@ export class KitPrompt {
   };
 
   resize = async (resizeData: ResizeData) => {
+    if (kitState.isWindows) {
+      if (!this.window?.isFocusable()) return;
+    }
     // log.info({ resizeData });
     // debugLog.info(`Testing...`, resizeData);
     /**
@@ -1843,10 +1846,6 @@ export class KitPrompt {
   };
 
   setPromptData = async (promptData: PromptData) => {
-    if (this.promptData) {
-      this.firstPrompt = false;
-    }
-
     this.promptData = promptData;
 
     if (promptData.ui === UI.term) {
@@ -1951,6 +1950,8 @@ export class KitPrompt {
       log.info(`${this.pid} Before initBounds`);
       this.initBounds();
       log.info(`${this.pid} After initBounds`);
+      this.focusPrompt();
+      this.firstPrompt = false;
     }
     // TODO: Combine types for sendToPrompt and appToPrompt?
     this.sendToPrompt(AppChannel.USER_CHANGED, snapshot(kitState.user));

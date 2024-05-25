@@ -7,6 +7,9 @@ import { kitState } from '../shared/state';
 import { MIN_WIDTH } from '../shared/defaults';
 import { BrowserWindowConstructorOptions } from 'electron';
 
+export const OFFSCREEN_X = -10000;
+export const OFFSCREEN_Y = -10000;
+
 export const getPromptOptions = () => {
   const width = PROMPT.WIDTH.BASE;
   const height = PROMPT.HEIGHT.BASE;
@@ -43,7 +46,7 @@ export const getPromptOptions = () => {
 
   let x = Math.round(screenWidth / 2 - width / 2 + workX);
   if (kitState.isWindows) {
-    x = -10000;
+    x = OFFSCREEN_X;
   }
 
   if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_X) {
@@ -52,7 +55,7 @@ export const getPromptOptions = () => {
 
   let y = Math.round(workY + screenHeight / 8);
   if (kitState.isWindows) {
-    y = -10000;
+    y = OFFSCREEN_Y;
   }
 
   if (kitState?.kenvEnv?.KIT_PROMPT_INITIAL_Y) {

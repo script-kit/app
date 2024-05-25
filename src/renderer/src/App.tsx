@@ -452,6 +452,9 @@ overflow-hidden
 text-text-base
       `}
         >
+          <span className="font-mono text-xxs font-bold absolute top-[-100px] left-[-100px]">
+            .
+          </span>
           {promptData?.css && <style>{promptData?.css}</style>}
           <style>{css}</style>
           {/* {lighten && (
@@ -656,7 +659,6 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
 
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio id="audio" />
-      <span className="font-mono text-xxs font-bold">font</span>
     </ErrorBoundary>
   );
 }

@@ -773,7 +773,11 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
     };
 
     globalShortcut.register('CommandOrControl+;', startingMenu);
-    tray?.on('click', startingMenu);
+    if (kitState.isWindows) {
+      tray?.on('right-click', startingMenu);
+    } else {
+      tray?.on('click', startingMenu);
+    }
   } else {
     if (!kitState.ready) {
       globalShortcut.unregister('CommandOrControl+;');
@@ -803,7 +807,6 @@ export const setupTray = async (checkDb = false, state: Status = 'default') => {
       } else {
         tray.on('right-click', openMenu);
       }
-      tray.on('right-click', openMenu);
     } catch (error) {
       log.error(error);
     }
