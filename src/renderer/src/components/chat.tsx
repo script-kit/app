@@ -33,6 +33,7 @@ import {
   inputAtom,
   channelAtom,
   uiAtom,
+  promptDataAtom,
 } from '../jotai';
 import Button from './chat/button';
 import MessageBox from './chat/messagebox';
@@ -539,6 +540,7 @@ export function Chat() {
 
   // Create messages state array
   const [messages, setMessages] = useAtom(chatMessagesAtom);
+  const [promptData] = useAtom(promptDataAtom);
 
   const submitMessage = useSetAtom(chatMessageSubmitAtom);
   const [placeholder] = useAtom(placeholderAtom);
@@ -559,6 +561,7 @@ export function Chat() {
     };
 
     if (inputRef.current) {
+      inputRef.current.style.height = '25px';
       inputRef.current.focus();
       // set the tabindex of the input to 0
       inputRef.current.setAttribute('tabindex', '0');
@@ -634,13 +637,18 @@ export function Chat() {
 
       // Check if the user pressed the Enter key
       if (e.key === 'Enter') {
+        // return if the input is empty
         if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) {
+          return;
+        }
+        if (input.length === 0) {
+          e.preventDefault();
           return;
         }
         onSubmit(e as any);
       }
     },
-    [onSubmit],
+    [onSubmit, input, promptData?.strict],
   );
 
   const onKeyUp = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -772,11 +780,13 @@ export function Chat() {
         rightButtons={
           <Button
             buttonRef={buttonRef}
-            className="kit-chat-submit bg-ui-bg"
+            className={`
+            ${input.length === 0 && promptData?.strict ? 'opacity-50 cursor-not-allowed' : ''} kit-chat-submit bg-ui-bg`}
             backgroundColor=""
             color=""
             text="⏎"
             onClick={onSubmit}
+            disabled={input.length === 0 && promptData?.strict}
           />
         }
         onKeyDown={onKeyDown}

@@ -54,6 +54,7 @@ class PtyPool {
 
   private createPty(shell: string, args: string[], options: any): pty.IPty {
     log.info(`🐲 Creating pty with shell: ${shell}, args: ${args}`);
+    options.windowsHide = true;
     const p = pty.spawn(shell, args, options);
     this.ptys.push(p);
     return p;

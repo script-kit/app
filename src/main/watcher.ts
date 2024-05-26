@@ -601,7 +601,7 @@ export const setupWatchers = async () => {
     }
 
     if (dir.endsWith('lib') && eventName !== 'ready') {
-      // Remove the kenvPath(".scripts") files
+      // Remove the kenvPath("scripts/.cache") files
       const scriptsDir = kenvPath('scripts', '.cache');
       log.info(
         `Detected changes in ${kenvPath('lib')}. Clearing ${scriptsDir}...`,
@@ -611,9 +611,9 @@ export const setupWatchers = async () => {
         const filePath = path.join(scriptsDir, file);
         try {
           await rm(filePath);
-          log.info(`Removed file: ${filePath}`);
+          log.info(`Removed cached file: ${filePath}`);
         } catch (error) {
-          log.warn(`Failed to remove file: ${filePath}`, error);
+          log.warn(`Failed to remove cached file: ${filePath}`, error);
         }
       }
       try {
