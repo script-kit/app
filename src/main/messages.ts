@@ -165,6 +165,7 @@ export const formatScriptChoices = (data: Choice[]) => {
 };
 
 export const createMessageMap = (info: ProcessAndPrompt) => {
+  let exiting = false;
   let resetting = false;
 
   const { prompt, scriptPath } = info;
@@ -779,6 +780,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     ),
 
     BEFORE_EXIT: onChildChannelOverride(({ pid }) => {
+      if (exiting) return;
+      exiting = true;
       log.info(`${pid}: 🚪 Before exit`);
       prompt?.hideInstant();
       processes.stampPid(pid);
@@ -2017,7 +2020,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     GET_COLOR: onChildChannelOverride(async ({ child }, { channel }) => {
       sendToPrompt(Channel.GET_COLOR);
     }),
-    CHAT_GET_MESSAGES: onChildChannel(async (_, { channel, value }) => {
+    CHAT_GET_MESSAGES: onChildChannelOverride(async (_, { channel, value }) => {
       prompt?.getFromPrompt(info.child, channel, value);
     }),
     CHAT_SET_MESSAGES: onChildChannel(async ({ child }, { channel, value }) => {

@@ -233,7 +233,6 @@ const initState = {
   debugging: false,
   hiddenByUser: false,
   blurredByKit: false,
-  modifiedByUser: false,
   preventClose: false,
   isTyping: false,
   hasOpenedMainMenu: false,

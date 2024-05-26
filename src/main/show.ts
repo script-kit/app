@@ -373,7 +373,7 @@ export const showWidget = async (
   }
 
   return new Promise((resolve, reject) => {
-    widgetWindow.webContents.once('did-finish-load', () => {
+    widgetWindow.webContents.once('dom-ready', () => {
       if (widgetWindow) {
         widgetWindow.webContents.send(
           Channel.WIDGET_INIT,

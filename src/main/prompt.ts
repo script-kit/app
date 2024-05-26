@@ -544,6 +544,8 @@ export class KitPrompt {
     log.warn(`sendToPrompt not set`, { channel, data });
   };
 
+  modifiedByUser = false;
+
   kitSearch = {
     input: '',
     inputRegex: undefined as undefined | RegExp,
@@ -1122,7 +1124,7 @@ export class KitPrompt {
 
     const onResized = async () => {
       log.silly(`event: onResized`);
-      kitState.modifiedByUser = false;
+      this.modifiedByUser = false;
       log.info(`Resized: ${this.window.getSize()}`);
 
       if (this.resizing) {
@@ -1134,13 +1136,13 @@ export class KitPrompt {
 
     if (kitState.isLinux) {
       this.window.on('resize', (event) => {
-        kitState.modifiedByUser = true;
+        this.modifiedByUser = true;
       });
     } else {
       this.window.on('will-resize', (event, rect) => {
         log.silly(`Will Resize ${rect.width} ${rect.height}`);
 
-        kitState.modifiedByUser = true;
+        this.modifiedByUser = true;
       });
     }
 
@@ -1155,7 +1157,7 @@ export class KitPrompt {
 
     const onMoved = debounce(async () => {
       log.silly(`event: onMove`);
-      kitState.modifiedByUser = false;
+      this.modifiedByUser = false;
       this.saveCurrentPromptBounds();
     }, 250);
 
@@ -1482,6 +1484,14 @@ export class KitPrompt {
         width: Math.round(bounds.width),
         height: Math.round(bounds.height),
       };
+
+      if (kitState.isWindows) {
+        if (!this.window?.isFocusable()) {
+          finalBounds.x = OFFSCREEN_X;
+          finalBounds.y = OFFSCREEN_Y;
+        }
+      }
+
       this.window.setBounds(finalBounds, false);
       this.promptBounds = {
         id: this.id,
@@ -1668,9 +1678,6 @@ export class KitPrompt {
   };
 
   resize = async (resizeData: ResizeData) => {
-    if (kitState.isWindows) {
-      if (!this.window?.isFocusable()) return;
-    }
     // log.info({ resizeData });
     // debugLog.info(`Testing...`, resizeData);
     /**
@@ -1733,7 +1740,7 @@ export class KitPrompt {
     }
     if (!forceHeight && !this.allowResize && !forceResize) return;
     // if (kitState.promptId !== id || kitState.modifiedByUser) return;
-    if (kitState.modifiedByUser) return;
+    if (this.modifiedByUser) return;
     if (this.window?.isDestroyed()) return;
 
     const {
@@ -1948,6 +1955,9 @@ export class KitPrompt {
 
     if (this.firstPrompt) {
       log.info(`${this.pid} Before initBounds`);
+      if (kitState.isWindows) {
+        this.window?.setFocusable(true);
+      }
       this.initBounds();
       log.info(`${this.pid} After initBounds`);
       this.focusPrompt();

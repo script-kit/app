@@ -811,7 +811,25 @@ class Processes extends Array<ProcessAndPrompt> {
     }
     prompts.delete(pid);
     const index = this.findIndex((info) => info.pid === pid);
-    if (index === -1) return;
+    if (index === -1) {
+      log.info(`No process found for pid: ${pid}`);
+      // Find a system process with the pid and kill it
+      let systemProcess: ChildProcess | null = null;
+      try {
+        if (process.platform === 'win32') {
+          systemProcess = spawn('taskkill', ['/PID', pid.toString(), '/F']);
+        } else {
+          systemProcess = spawn('kill', ['-9', pid.toString()]);
+        }
+        log.info(
+          `${pid}: Killed system process using ${systemProcess.spawnargs}`,
+        );
+      } catch (error) {
+        log.error(`${pid}: Error killing system process: ${error}`);
+      }
+
+      return;
+    }
     const { child, scriptPath } = this[index];
 
     if (!child?.killed) {

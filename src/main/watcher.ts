@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'fs';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 import dotenv from 'dotenv';
-import { rm, readFile } from 'fs/promises';
+import { rm, readdir, readFile } from 'fs/promises';
 import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
 import { Script } from '@johnlindquist/kit/types';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
@@ -600,9 +600,24 @@ export const setupWatchers = async () => {
       return;
     }
 
-    if (dir.endsWith('lib') && eventName === 'change') {
+    if (dir.endsWith('lib') && eventName !== 'ready') {
+      // Remove the kenvPath(".scripts") files
+      const scriptsDir = kenvPath('scripts', '.cache');
+      log.info(
+        `Detected changes in ${kenvPath('lib')}. Clearing ${scriptsDir}...`,
+      );
+      const files = await readdir(scriptsDir);
+      for (const file of files) {
+        const filePath = path.join(scriptsDir, file);
+        try {
+          await rm(filePath);
+          log.info(`Removed file: ${filePath}`);
+        } catch (error) {
+          log.warn(`Failed to remove file: ${filePath}`, error);
+        }
+      }
       try {
-        checkFileImports({
+        await checkFileImports({
           filePath,
           kenv: '',
         } as Script);
