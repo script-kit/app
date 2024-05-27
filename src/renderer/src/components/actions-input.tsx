@@ -14,51 +14,35 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import useResizeObserver from '@react-hook/resize-observer';
 import { debounce } from 'lodash-es';
 import {
-  inputAtom,
   modifiers,
   _modifiers,
-  placeholderAtom,
   promptDataAtom,
   selectionStartAtom,
   submittedAtom,
   submitValueAtom,
-  tabIndexAtom,
-  choicesConfigAtom,
   onInputSubmitAtom,
   inputFocusAtom,
   uiAtom,
   inputFontSizeAtom,
-  actionsAtom,
-  enterButtonNameAtom,
   flagsAtom,
-  enterButtonDisabledAtom,
-  miniShortcutsVisibleAtom,
   miniShortcutsHoveredAtom,
   lastKeyDownWasModifierAtom,
   footerHiddenAtom,
   inputHeightAtom,
-  headerHiddenAtom,
-  loadingAtom,
   typingAtom,
   shortcutsAtom,
-  userAtom,
-  kitStateAtom,
   channelAtom,
-  shouldActionButtonShowOnInputAtom,
-  focusedChoiceAtom,
   sendShortcutAtom,
   signInActionAtom,
   cachedAtom,
   shortcodesAtom,
-  appendToLogHTMLAtom,
+  actionsInputAtom,
+  actionsPlaceholderAtom,
+  flaggedChoiceValueAtom,
+  actionsInputFocusAtom,
+  actionsInputHeightAtom,
 } from '../jotai';
-import { useFocus, useKeyIndex, useTab } from '../hooks';
-import { IconButton } from './icon';
-import { ActionButton } from './actionbutton';
-import { ActionSeparator } from './actionseparator';
-import { EnterButton } from './actionenterbutton';
-import { OptionsButton } from './actionoptionsbutton';
-import { LoginButton } from './loginbutton';
+import { useFocus, useActionsKeyIndex, useTab } from '../hooks';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];
@@ -67,40 +51,30 @@ const remapModifiers = (m: string) => {
   return m.toLowerCase();
 };
 
-export default function Input() {
+export default function ActionsInput() {
   const inputRef = useRef<HTMLInputElement>(null);
   useFocus(inputRef);
 
   const shortcodes = useAtomValue(shortcodesAtom);
-  const setAppendToLog = useSetAtom(appendToLogHTMLAtom);
-  const [inputValue, setInput] = useAtom(inputAtom);
-  const [, setTabIndex] = useAtom(tabIndexAtom);
-  const [unfilteredChoices] = useAtom(choicesConfigAtom);
+  const [inputValue, setInput] = useAtom(actionsInputAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);
-  const [placeholder] = useAtom(placeholderAtom);
+  const [placeholder] = useAtom(actionsPlaceholderAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [submitted] = useAtom(submittedAtom);
   const [, setSelectionStart] = useAtom(selectionStartAtom);
   const [currentModifiers, setModifiers] = useAtom(_modifiers);
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
-  const [inputFocus, setInputFocus] = useAtom(inputFocusAtom);
-  const [ui] = useAtom(uiAtom);
+  const [, setInputFocus] = useAtom(actionsInputFocusAtom);
   const [fontSize] = useAtom(inputFontSizeAtom);
-  const actions = useAtomValue(actionsAtom);
-  const enterButtonName = useAtomValue(enterButtonNameAtom);
-  const enterButtonDisabled = useAtomValue(enterButtonDisabledAtom);
+
   const flags = useAtomValue(flagsAtom);
-  const shouldActionButtonShowOnInput = useAtomValue(
-    shouldActionButtonShowOnInputAtom,
-  );
-  const miniShortcutsVisible = useAtomValue(miniShortcutsVisibleAtom);
+
   const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
     miniShortcutsHoveredAtom,
   );
-  const loading = useAtomValue(loadingAtom);
-  const headerHidden = useAtomValue(headerHiddenAtom);
+
   const footerHidden = useAtomValue(footerHiddenAtom);
-  const inputHeight = useAtomValue(inputHeightAtom);
+  const inputHeight = useAtomValue(actionsInputHeightAtom);
 
   const setLastKeyDownWasModifier = debounce(
     useSetAtom(lastKeyDownWasModifierAtom),
@@ -108,18 +82,11 @@ export default function Input() {
   );
   const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
-  const user = useAtomValue(userAtom);
-  const kitState = useAtomValue(kitStateAtom);
-  const channel = useAtomValue(channelAtom);
-  const focusedChoice = useAtomValue(focusedChoiceAtom);
-  const sendShortcut = useSetAtom(sendShortcutAtom);
-  const action = useAtomValue(signInActionAtom);
 
-  const onClick = useCallback(
-    (event) => {
-      if (action) sendShortcut(action.key);
-    },
-    [action, sendShortcut],
+  const channel = useAtomValue(channelAtom);
+
+  const [flaggedChoiceValue, setFlaggedChoiceValue] = useAtom(
+    flaggedChoiceValueAtom,
   );
 
   useEffect(() => {
@@ -133,7 +100,7 @@ export default function Input() {
   }, [setInputFocus, setMiniShortcutsHovered, setModifiers]);
 
   useTab();
-  useKeyIndex();
+  useActionsKeyIndex();
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
@@ -246,7 +213,7 @@ export default function Input() {
   const [hiddenInputMeasurerWidth, setHiddenInputMeasurerWidth] = useState(0);
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
-  useResizeObserver(hiddenInputRef, (entry) => {
+  useResizeObserver(hiddenInputRef, () => {
     const newWidth = Math.ceil(hiddenInputRef?.current?.offsetWidth + 1); // Adding 1px for better accuracy
     setHiddenInputMeasurerWidth(Math.max(newWidth, minWidth));
   });
@@ -260,7 +227,7 @@ export default function Input() {
         const submitValue = onInputSubmit[event.target.value];
         setSubmitValue(submitValue);
       } else if (!cached) {
-        log.info(`Setting input: ${event.target.value}`);
+        log.info(`Setting actions input: ${event.target.value}`);
         setInput(event.target.value);
         setPendingInput('');
       } else {
@@ -286,7 +253,8 @@ export default function Input() {
         footerHidden && '-mt-px'
       } max-w-screen relative`}
       style={{
-        height: inputHeight || PROMPT.INPUT.HEIGHT.SM,
+        height: inputHeight,
+        minHeight: inputHeight,
       }}
       onMouseEnter={setInputFocus}
       // initial={{ opacity: 0 }}
@@ -297,13 +265,7 @@ export default function Input() {
       {/* <div className="absolute top-0.5 left-1/2 -translate-x-1/2 transform font-native text-xxs text-primary">
         {name} - {description}
       </div> */}
-      <div
-        className="max-w-screen flex-1"
-        style={{
-          WebkitAppRegion: 'drag',
-          WebkitUserSelect: 'none',
-        }}
-      >
+      <div className="max-w-screen flex-1">
         <input
           id="input"
           spellCheck="false"
@@ -352,139 +314,6 @@ export default function Input() {
           {`${inputValue || placeholder}-pr`}
         </span>
       </div>
-      {footerHidden && (
-        <div
-          className="flex flex-row items-center justify-end overflow-x-clip"
-          style={{
-            maxWidth: '80%',
-          }}
-        >
-          <div
-            onMouseOver={() => setMiniShortcutsHovered(true)}
-            onMouseLeave={() => setMiniShortcutsHovered(false)}
-            style={{
-              height: inputHeight || PROMPT.INPUT.HEIGHT.BASE,
-            }}
-            className={`right-container
-      flex min-w-fit flex-grow flex-row items-center justify-end overflow-hidden ${
-        inputHeight === PROMPT.INPUT.HEIGHT.XS && `origin-right scale-95`
-      }`}
-          >
-            <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
-              {actions
-                .filter((action) => action.position === 'right')
-                .flatMap((action, i, array) => {
-                  if (!action?.visible && miniShortcutsVisible) {
-                    return [
-                      // eslint-disable-next-line react/jsx-key
-                      <ActionButton {...action} />,
-                      // eslint-disable-next-line no-nested-ternary
-                      i < array.length - 1 ? (
-                        <ActionSeparator key={`${action?.key}-separator`} />
-                      ) : enterButtonName ? (
-                        <ActionSeparator key={`${action?.key}-separator`} />
-                      ) : null,
-                    ];
-                  }
-
-                  return null;
-                })}
-            </div>
-
-            <div className="enter-container flex min-w-fit flex-row items-center">
-              {enterButtonName ? (
-                <EnterButton
-                  key="enter-button"
-                  name={enterButtonName}
-                  position="right"
-                  shortcut="⏎"
-                  value="enter"
-                  flag=""
-                  disabled={enterButtonDisabled}
-                />
-              ) : null}
-              <ActionSeparator key="options-separator" />
-            </div>
-
-            <div className="flex flex-grow-0 flex-row items-center overflow-hidden">
-              {actions
-                .filter((action) => action.position === 'right')
-                .flatMap((action, i, array) => {
-                  if (action?.visible) {
-                    return [
-                      // eslint-disable-next-line react/jsx-key
-                      <ActionButton {...action} />,
-                      // eslint-disable-next-line no-nested-ternary
-                      i < array.length - 1 ? (
-                        <ActionSeparator key={`${action?.key}-separator`} />
-                      ) : enterButtonName ? (
-                        <ActionSeparator key={`${action?.key}-separator`} />
-                      ) : null,
-                    ];
-                  }
-
-                  return null;
-                })}
-            </div>
-
-            {shouldActionButtonShowOnInput && !focusedChoice?.ignoreFlags && (
-              <>
-                <div className="options-container flex flex-row">
-                  <OptionsButton key="options-button" />
-                  <ActionSeparator key="login-separator" />
-                </div>
-              </>
-            )}
-
-            {kitState.isSponsor ? (
-              <span
-                className={`relative ${
-                  inputHeight === PROMPT.INPUT.HEIGHT.XS
-                    ? `w-[28px]`
-                    : `w-[30px]`
-                } pl-1 pr-1`}
-              >
-                <img
-                  onClick={onClick}
-                  alt="avatar"
-                  src={user.avatar_url}
-                  className="z-0 w-[22px] cursor-pointer rounded-full hover:opacity-75"
-                />
-
-                <svg
-                  height="24"
-                  width="24"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="absolute right-[-7px] top-[-5px] z-10 h-[15px] text-primary opacity-90"
-                >
-                  <g fill="currentColor">
-                    <path
-                      d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27z"
-                      fill="currentColor"
-                    />
-                  </g>
-                </svg>
-              </span>
-            ) : (
-              <>
-                {/* <span className="text-xxs">
-                  Process: {pid}
-                  Choices: {scoredChoices.length}
-                  Count: {count}
-                </span> */}
-
-                <LoginButton key="login-button" />
-                <ActionSeparator key="close-login-separator" />
-              </>
-            )}
-
-            <div className="relative mx-2 flex min-w-0">
-              <IconButton />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ export { default as useFocus } from './useFocus';
 export { default as useGetDb } from './useGetDb';
 export { default as useKeyDirection } from './useKeyDirection';
 export { default as useKeyIndex } from './useKeyIndex';
+export { default as useActionsKeyIndex } from './useActionsKeyIndex';
 export { default as useObserveMainHeight } from './useObserveMainHeight';
 export { default as useMountMainHeight } from './useMountMainHeight';
 export { default as useOpen } from './useOpen';

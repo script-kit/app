@@ -86,7 +86,7 @@ import { Chat } from './components/chat';
 import AudioRecorder from './audio-recorder';
 import Webcam from './webcam';
 import Preview from './components/preview';
-import FlagsList from './components/flags';
+import ActionsList from './components/actions-list';
 import AudioDot from './audio-dot';
 import LoadingDot from './loading-dot';
 import ProcessesDot from './processes-dot';
@@ -511,6 +511,7 @@ text-text-base
             className={`
         flex h-full
         w-full flex-col
+        relative
         `}
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}
@@ -633,17 +634,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                       // style={panelRightStyle}
                       order={2}
                     >
-                      {flagValue ? (
-                        [
-                          ui !== UI.arg && <Input key="AppInput" />,
-                          <div className="border-b border-ui-border" />,
-                          <AutoSizer disableWidth>
-                            {({ height }) => <FlagsList height={height} />}
-                          </AutoSizer>,
-                        ]
-                      ) : (
-                        <Preview />
-                      )}
+                      <Preview />
                     </PanelChild>
                   </>
                 )}
@@ -657,6 +648,12 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                 <ActionBar />
               </footer>
             )}
+            {flagValue && [
+              ui !== UI.arg && <Input key="AppInput" />,
+              <div className="border-b border-ui-border" />,
+
+              <ActionsList key="AppFlags" />,
+            ]}
           </div>
         </div>
       }

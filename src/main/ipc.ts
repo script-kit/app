@@ -409,6 +409,7 @@ ${data.error}
   });
 
   for (const channel of [
+    Channel.ACTIONS_INPUT,
     Channel.INPUT,
     Channel.CHANGE,
     Channel.CHOICE_FOCUSED,
@@ -501,29 +502,20 @@ ${data.error}
             const shouldSearch = checkShortcodesAndKeywords(prompt, input);
             const isFilter = message.state.mode === Mode.FILTER;
             if (shouldSearch && isFilter) {
-              if (hasFlag) {
-                invokeFlagSearch(prompt, input);
-              } else {
-                debounceInvokeSearch.cancel();
+              debounceInvokeSearch.cancel();
 
-                if (prompt.kitSearch.choices.length > 5000) {
-                  debounceInvokeSearch(prompt, input, 'debounce');
-                } else {
-                  invokeSearch(prompt, input, `${channel}`);
-                }
+              if (prompt.kitSearch.choices.length > 5000) {
+                debounceInvokeSearch(prompt, input, 'debounce');
+              } else {
+                invokeSearch(prompt, input, `${channel}`);
               }
             }
           }
+        }
 
-          if (!isArg && hasFlag) {
-            invokeFlagSearch(prompt, input);
-          }
-
-          if (hasFlag) {
-            message.channel = Channel.FLAG_INPUT;
-            if (child?.channel && child.connected) child?.send(message);
-            return;
-          }
+        if (channel === Channel.ACTIONS_INPUT) {
+          const actionsInput = message.state.actionsInput as string;
+          invokeFlagSearch(prompt, actionsInput);
         }
 
         if (channel === Channel.ON_MENU_TOGGLE && prompt.flagSearch.input) {

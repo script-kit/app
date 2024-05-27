@@ -5,7 +5,6 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable guard-for-in */
-const path = window.api.path;
 
 import { atom, Getter, Setter } from 'jotai';
 import log from 'electron-log/renderer';
@@ -98,6 +97,8 @@ const loading = atom<boolean>(false);
 export const runningAtom = atom(false);
 
 const placeholder = atom('');
+export const actionsPlaceholderAtom = atom('Actions');
+
 export const placeholderAtom = atom(
   (g) => g(placeholder),
   (_g, s, a: string) => {
@@ -743,7 +744,7 @@ export const scoredChoicesAtom = atom(
 );
 
 const choicesHeightAtom = atom(0);
-const flagsHeightAtom = atom(0);
+export const flagsHeightAtom = atom(0);
 
 export const choicesAtom = atom((g) =>
   g(scoredChoicesAtom).map((result) => result.item),
@@ -785,6 +786,25 @@ export const changeAtom = atom((g) => (data: any) => {
 });
 
 export const modeAtom = atom((g) => g(promptData)?.mode || Mode.FILTER);
+
+const _actionsInputAtom = atom('');
+export const actionsInputAtom = atom(
+  (g) => g(_actionsInputAtom),
+  async (g, s, a: string) => {
+    // log.info(`✉️ inputAtom: ${a}`);
+    s(directionAtom, 1);
+
+    s(_actionsInputAtom, a);
+
+    if (!g(submittedAtom)) {
+      const channel = g(channelAtom);
+      // TODO: npm link isn't working in the renderer code for some reason
+      channel(Channel.ACTIONS_INPUT || 'ACTIONS_INPUT');
+    }
+
+    s(mouseEnabledAtom, 0);
+  },
+);
 
 export const inputAtom = atom(
   (g) => g(_inputAtom),
@@ -1361,6 +1381,8 @@ const checkSubmitFormat = (checkValue: any) => {
 export const footerAtom = atom('');
 
 // Create an itemHeightAtom
+export const actionsItemHeightAtom = atom(PROMPT.ITEM.HEIGHT.XS);
+export const actionsInputHeightAtom = atom(PROMPT.INPUT.HEIGHT.XS);
 export const itemHeightAtom = atom(PROMPT.ITEM.HEIGHT.SM);
 export const inputHeightAtom = atom(PROMPT.INPUT.HEIGHT.SM);
 
@@ -1692,6 +1714,7 @@ export const termFontAtom = atom('monospace');
 export const appStateAtom = atom<AppState>((g: Getter) => {
   const state = {
     input: g(_inputAtom),
+    actionsInput: g(_actionsInputAtom),
     inputChanged: g(_inputChangedAtom),
     flag: g(focusedFlagValueAtom),
     index: g(indexAtom),
@@ -1714,7 +1737,7 @@ export const appStateAtom = atom<AppState>((g: Getter) => {
     multiple: g(promptDataAtom)?.multiple || false,
     selected: g(selectedChoicesAtom).map((c) => c?.value),
     action: g(focusedActionAtom),
-  };
+  } as AppState;
 
   return state;
 });
@@ -1736,7 +1759,7 @@ export const channelAtom = atom((g) => {
       },
     };
 
-    // log.info(`${pid}: 📤 ${channel}`, appMessage.state.value);
+    log.info(`${pid}: 📤 ${channel}`, appMessage.state.value);
 
     ipcRenderer.send(channel, appMessage);
   };
@@ -2039,6 +2062,15 @@ export const inputFocusAtom = atom(
     if (g(inputFocus) === a) return;
     ipcRenderer.send(AppChannel.FOCUS_PROMPT);
     s(inputFocus, a);
+  },
+);
+
+const actionsInputFocus = atom<number>(Math.random());
+export const actionsInputFocusAtom = atom(
+  (g) => g(actionsInputFocus),
+  (g, s, a: any) => {
+    if (g(actionsInputFocus) === a) return;
+    s(actionsInputFocus, a);
   },
 );
 
@@ -2875,6 +2907,11 @@ export const scoredFlagsAtom = atom(
     } of a) {
       choicesHeight += height || g(itemHeightAtom);
       if (choicesHeight > 1920) break;
+    }
+
+    // if the first cs has a `border-t-1`, remove it
+    if (a?.[0]?.item?.className) {
+      a[0].item.className = a?.[0]?.item?.className.replace(`border-t-1`, '');
     }
 
     s(flagsHeightAtom, choicesHeight);
