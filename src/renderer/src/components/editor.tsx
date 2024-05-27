@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import MonacoEditor, { Monaco, useMonaco } from '@monaco-editor/react';
@@ -18,10 +19,12 @@ import {
   editorCursorPosAtom,
   editorOptions,
   editorSuggestionsAtom,
+  flaggedChoiceValueAtom,
   inputAtom,
   openAtom,
   scrollToAtom,
   uiAtom,
+  unflaggedInputAtom,
 } from '../jotai';
 
 import { kitLight, nightOwl } from '../editor-themes';
@@ -91,7 +94,8 @@ export default function Editor() {
   const [config] = useAtom(editorConfigAtom);
   const [kitIsDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
-  const [inputValue, setInputValue] = useAtom(inputAtom);
+  const [, setInputValue] = useAtom(inputAtom);
+  const [inputValue] = useAtom(unflaggedInputAtom);
   const setCursorPosition = useSetAtom(editorCursorPosAtom);
   const [ui] = useAtom(uiAtom);
   const [options] = useAtom(editorOptions);
@@ -100,6 +104,9 @@ export default function Editor() {
   const disposeRef = useRef<any>(null);
   const [scrollTo, setScrollTo] = useAtom(scrollToAtom);
   const [channel] = useAtom(channelAtom);
+  const [flaggedChoiceValue, setFlaggedChoiceValue] = useAtom(
+    flaggedChoiceValueAtom,
+  );
 
   const m = useMonaco();
 
@@ -144,6 +151,12 @@ export default function Editor() {
   }, [editorSuggestions, editor, options]);
 
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!flaggedChoiceValue) {
+      editor?.focus();
+    }
+  }, [flaggedChoiceValue]);
 
   const onBeforeMount = useCallback(
     (monaco: Monaco) => {
@@ -201,6 +214,14 @@ export default function Editor() {
   const onMount = useCallback(
     (mountEditor: monacoEditor.IStandaloneCodeEditor, monaco: Monaco) => {
       setEditorRef(mountEditor);
+
+      // Remove the cmd/control + k binding
+      mountEditor.addCommand(
+        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
+        () => {
+          setFlaggedChoiceValue(mountEditor.getModel()?.getValue() || '');
+        },
+      );
 
       mountEditor.focus();
 

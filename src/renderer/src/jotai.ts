@@ -1629,6 +1629,11 @@ export const promptDataAtom = atom(
 export const flaggedChoiceValueAtom = atom(
   (g) => g(_flaggedValue),
   (g, s, a: any) => {
+    if (a) {
+      // TODO: Refactor actions to decouple from choices/flags
+      s(cachedInputAtom, g(_inputAtom));
+    }
+
     s(promptActiveAtom, true);
     const flags = g(_flagsAtom);
     // log.info({ flagValue: a, flags });
@@ -2247,6 +2252,8 @@ export const enterButtonNameAtom = atom<string>((g) => {
 });
 
 export const enterButtonDisabledAtom = atom<boolean>((g) => {
+  if (g(flaggedChoiceValueAtom)) return false;
+
   const disableSubmit = g(disableSubmitAtom);
   if (disableSubmit) return true;
 
@@ -2475,6 +2482,7 @@ const _chatMessagesAtom = atom<Partial<MessageType>[]>([]);
 export const chatMessagesAtom = atom(
   (g) => g(_chatMessagesAtom),
   (g, s, a: Partial<MessageType>[]) => {
+    log.info({ a });
     s(_chatMessagesAtom, a);
 
     const appMessage = {
@@ -2978,55 +2986,6 @@ const pauseChannelAtom = atom(false);
 export const cachedAtom = atom(false);
 
 export const resetIdAtom = atom(Math.random());
-export const resetPromptAtom = atom(
-  null,
-  debounce(
-    async (g, s) => {
-      return;
-      if (document.hasFocus()) return;
-      s(pauseChannelAtom, true);
-      s(isMainScriptAtom, true);
-      const cachedMainPromptData = g(cachedMainPromptDataAtom) as PromptData;
-      cachedMainPromptData.preload = true;
-      const cachedMainScoredChoices = g(cachedMainScoredChoicesAtom);
-      const cachedShortcuts = g(cachedMainShortcutsAtom);
-      const cachedMainPreview = g(cachedMainPreviewAtom);
-
-      if (cachedMainPromptData) {
-        cachedMainPromptData.input = '';
-        s(promptDataAtom, cachedMainPromptData);
-      }
-
-      if (cachedShortcuts?.length > 0) {
-        s(shortcutsAtom, cachedShortcuts);
-      }
-
-      if (cachedMainPreview) {
-        s(previewHTMLAtom, cachedMainPreview);
-      }
-
-      if (cachedMainScoredChoices?.length > 0) {
-        s(scoredChoicesAtom, cachedMainScoredChoices);
-        s(flaggedChoiceValueAtom, '');
-        s(prevInputAtom, '');
-        s(tabIndexAtom, 0);
-        s(inputAtom, '');
-        s(flagsAtom, cachedMainFlagsAtom);
-        s(enterAtom, cachedMainScoredChoices?.[0]?.item?.enter || 'Run');
-      }
-
-      // if (cachedMainPromptData?.flags) {
-      //   s(flagsAtom, cachedMainPromptData.flags);
-      // }
-
-      s(pauseChannelAtom, false);
-      // log.info(`✅ Reset main complete.`);
-      s(cachedAtom, true);
-    },
-    50,
-    { leading: true },
-  ),
-);
 
 const cachedMainScoredChoices = atom<ScoredChoice[]>([]);
 export const cachedMainScoredChoicesAtom = atom(
@@ -3120,4 +3079,12 @@ export const mainElementIdAtom = atom<string>('');
 export const kitConfigAtom = atom({
   kitPath: '',
   mainScriptPath: '',
+});
+
+export const cachedInputAtom = atom('');
+export const unflaggedInputAtom = atom((g) => {
+  if (g(flaggedChoiceValueAtom)) {
+    return g(cachedInputAtom);
+  }
+  return g(inputAtom);
 });

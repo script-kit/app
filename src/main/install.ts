@@ -380,10 +380,15 @@ export const downloadKenv = async () => {
 export const cleanKit = async () => {
   log.info(`🧹 Cleaning ${kitPath()}`);
   // Remove the entire kit directory
-  await rm(kitPath(), {
-    recursive: true,
-    force: true,
-  });
+  try {
+    await rm(kitPath(), {
+      recursive: true,
+      force: true,
+    });
+  } catch (error) {
+    log.error(error);
+  }
+
   // const pathToClean = kitPath();
 
   // const keep = (file: string) =>

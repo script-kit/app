@@ -88,6 +88,7 @@ export default function AppWidget() {
 
     // Add other event listeners here
 
+    ipcRenderer.send(Channel.WIDGET_GET);
     return () => {
       ipcRenderer.off(Channel.WIDGET_INIT, handleWidgetInit);
       // Remove other event listeners here

@@ -2032,23 +2032,8 @@ export class KitPrompt {
     if (!this.isVisible()) return;
 
     log.info(`🙈 Hiding prompt window`);
-    if (kitState.isWindows) {
-      // REMOVE-NODE-WINDOW-MANAGER
-      windowManager.hideInstantly(this.window?.getNativeWindowHandle());
-      this.window?.emit('hide');
-      if (prevWindow) {
-        try {
-          prevWindow?.bringToTop();
-        } catch (error) {
-          log.error(error);
-        }
-      } else {
-        log.info(`No previous window to bring to top...`);
-      }
-      // END-REMOVE-NODE-WINDOW-MANAGER
-    } else {
-      this.window?.hide();
-    }
+
+    this.hideInstant();
   };
 
   isVisible = () => {
@@ -2644,13 +2629,29 @@ export class KitPrompt {
   };
 
   hideInstant = () => {
+    if (kitState.isWindows) {
+      // REMOVE-NODE-WINDOW-MANAGER
+      windowManager.hideInstantly(this.window?.getNativeWindowHandle());
+      this.window?.emit('hide');
+      if (prevWindow) {
+        try {
+          prevWindow?.bringToTop();
+        } catch (error) {
+          log.error(error);
+        }
+      } else {
+        log.info(`No previous window to bring to top...`);
+      }
+      // END-REMOVE-NODE-WINDOW-MANAGER
+    }
+
     // REMOVE-MAC
     if (kitState.isMac) {
       hideInstant(this.window);
     }
     // END-REMOVE-MAC
 
-    if (!kitState.isMac) {
+    if (kitState.isLinux) {
       this.window?.hide();
     }
   };

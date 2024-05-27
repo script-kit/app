@@ -7,7 +7,7 @@ import {
   useState,
   ChangeEvent,
 } from 'react';
-import log from 'electron-log/renderer';
+import log from 'electron-log';
 import { Channel, PROMPT } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
@@ -260,6 +260,7 @@ export default function Input() {
         const submitValue = onInputSubmit[event.target.value];
         setSubmitValue(submitValue);
       } else if (!cached) {
+        log.info(`Setting input: ${event.target.value}`);
         setInput(event.target.value);
         setPendingInput('');
       } else {

@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { UI } from '@johnlindquist/kit/core/enum';
@@ -54,7 +55,8 @@ export default () => {
           UI.emoji,
           UI.fields,
           UI.chat,
-        ].includes(ui)
+        ].includes(ui) &&
+        !flagValue
       ) {
         return;
       }
@@ -78,7 +80,7 @@ export default () => {
       }
 
       if (promptData?.strict && panelHTML?.length === 0) {
-        if (choices.length && hasFocusedChoice) {
+        if ((choices.length && hasFocusedChoice) || flagValue) {
           submit(focusedChoice?.value);
         }
       } else {

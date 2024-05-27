@@ -1,5 +1,5 @@
 import log from 'electron-log/renderer';
-import { Channel } from '@johnlindquist/kit/core/enum';
+import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import {
@@ -19,6 +19,7 @@ import {
   previewEnabledAtom,
   focusedChoiceAtom,
   hasRightShortcutAtom,
+  uiAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -63,6 +64,7 @@ export default () => {
   const [promptData] = useAtom(promptDataAtom);
   const [promptShortcuts] = useAtom(shortcutsAtom);
   const [, sendShortcut] = useAtom(sendShortcutAtom);
+  const [ui] = useAtom(uiAtom);
   const [previewEnabled, setPreviewEnabled] = useAtom(previewEnabledAtom);
   const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
 
@@ -213,7 +215,13 @@ export default () => {
   useHotkeys(
     `mod+k`,
     () => {
-      if (!inputFocus) return;
+      log.info('mod+k', {
+        ui,
+        flagValue,
+        inputFocus,
+        focusedChoice,
+      });
+      if (ui === UI.arg && !inputFocus) return;
 
       if (flagValue) {
         setFlagValue('');
@@ -234,6 +242,7 @@ export default () => {
       channel,
       flagShortcuts,
       promptShortcuts,
+      ui,
     ],
   );
 };

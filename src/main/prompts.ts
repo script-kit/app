@@ -91,7 +91,7 @@ export const prompts = {
     if (this.focused === prompt) {
       this.focused = null;
     }
-    prompt.window?.hide();
+    prompt.actualHide();
     log.info(`${pid}: 🥱 Closing prompt`);
     prompt.close();
     log.info(`${pid}: 🚮 Deleted prompt. ${promptMap.size} prompts remaining.`);

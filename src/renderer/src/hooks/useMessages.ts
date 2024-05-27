@@ -81,7 +81,6 @@ import {
   preventSubmitAtom,
   selectedChoicesAtom,
   toggleAllSelectedChoicesAtom,
-  resetPromptAtom,
   cachedMainScoredChoicesAtom,
   cachedMainShortcutsAtom,
   cachedMainPreviewAtom,
@@ -179,7 +178,6 @@ export default () => {
   const scrollToIndex = useAtomValue(scrollToIndexAtom);
   const setPreloaded = useSetAtom(preloadedAtom);
   const setTriggerKeyword = useSetAtom(triggerKeywordAtom);
-  const resetPrompt = useSetAtom(resetPromptAtom);
   const setCachedMainScoredChoices = useSetAtom(cachedMainScoredChoicesAtom);
   const setCachedMainShortcuts = useSetAtom(cachedMainShortcutsAtom);
   const setCachedMainFlags = useSetAtom(cachedMainFlagsAtom);
@@ -490,14 +488,6 @@ export default () => {
       ipcRenderer.on(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
     }
 
-    const handleResetPrompt = () => {
-      resetPrompt();
-    };
-
-    if (ipcRenderer.listenerCount(AppChannel.RESET_PROMPT) === 0) {
-      ipcRenderer.on(AppChannel.RESET_PROMPT, handleResetPrompt);
-    }
-
     const handleForceRender = () => {
       setInit(true);
     };
@@ -622,7 +612,6 @@ export default () => {
       ipcRenderer.off(AppChannel.SCROLL_TO_INDEX, handleScrollToIndex);
       ipcRenderer.off(AppChannel.SET_PRELOADED, handleSetPreloaded);
       ipcRenderer.off(AppChannel.TRIGGER_KEYWORD, handleTriggerKeyword);
-      ipcRenderer.off(AppChannel.RESET_PROMPT, handleResetPrompt);
       ipcRenderer.off(
         AppChannel.SET_CACHED_MAIN_SCORED_CHOICES,
         handleSetCachedMainScoredChoices,

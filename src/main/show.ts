@@ -373,7 +373,7 @@ export const showWidget = async (
   }
 
   return new Promise((resolve, reject) => {
-    widgetWindow.webContents.once('dom-ready', () => {
+    widgetWindow.webContents.ipc.once(Channel.WIDGET_GET, () => {
       if (widgetWindow) {
         widgetWindow.webContents.send(
           Channel.WIDGET_INIT,

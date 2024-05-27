@@ -515,6 +515,10 @@ ${data.error}
             }
           }
 
+          if (!isArg && hasFlag) {
+            invokeFlagSearch(prompt, input);
+          }
+
           if (hasFlag) {
             message.channel = Channel.FLAG_INPUT;
             if (child?.channel && child.connected) child?.send(message);

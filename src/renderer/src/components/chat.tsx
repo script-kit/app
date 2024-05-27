@@ -4,6 +4,7 @@
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/no-danger */
+import log from 'electron-log';
 import { useAtom, useSetAtom } from 'jotai';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 
@@ -561,7 +562,6 @@ export function Chat() {
     };
 
     if (inputRef.current) {
-      inputRef.current.style.height = '25px';
       inputRef.current.focus();
       // set the tabindex of the input to 0
       inputRef.current.setAttribute('tabindex', '0');
@@ -605,14 +605,16 @@ export function Chat() {
     (e: any) => {
       e.preventDefault();
       if (isComposing) return;
-      setMessages([
+      const updatedMessages = [
         ...messages,
         {
           position: 'right',
           type: 'text',
           text: currentMessage,
         },
-      ]);
+      ] as MessageType[];
+
+      setMessages(updatedMessages);
       submitMessage(currentMessage);
       setCurrentMessage('');
       if (clearRef.current) clearRef.current();
@@ -765,7 +767,6 @@ export function Chat() {
         }}
       />
       <ChatInput
-        autoHeight
         multiline
         clear={(c) => {
           clearRef.current = c;

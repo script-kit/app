@@ -423,20 +423,20 @@ export default function App() {
   // }, [promptData?.previewWidthPercent]);
 
   const defaultRightPanelWidth = 60;
-  const panelLeftStyle = useMemo(
-    () => ({
-      flexGrow:
-        100 - (promptData?.previewWidthPercent || defaultRightPanelWidth),
-    }),
-    [promptData?.previewWidthPercent],
-  );
+  // const panelLeftStyle = useMemo(
+  //   () => ({
+  //     flexGrow:
+  //       100 - (promptData?.previewWidthPercent || defaultRightPanelWidth),
+  //   }),
+  //   [promptData?.previewWidthPercent],
+  // );
 
-  const panelRightStyle = useMemo(
-    () => ({
-      flexGrow: promptData?.previewWidthPercent || defaultRightPanelWidth,
-    }),
-    [promptData?.previewWidthPercent],
-  );
+  // const panelRightStyle = useMemo(
+  //   () => ({
+  //     flexGrow: promptData?.previewWidthPercent || defaultRightPanelWidth,
+  //   }),
+  //   [promptData?.previewWidthPercent],
+  // );
 
   return (
     <ErrorBoundary>
@@ -571,7 +571,7 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                 <PanelChild
                   minSize={25}
                   id="panel-left"
-                  style={panelLeftStyle}
+                  // style={panelLeftStyle}
                   order={1}
                 >
                   <div className="h-full min-h-1 overflow-x-hidden">
@@ -630,13 +630,17 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                     <PanelChild
                       id="panel-right"
                       ref={panelChildRef}
-                      style={panelRightStyle}
+                      // style={panelRightStyle}
                       order={2}
                     >
                       {flagValue ? (
-                        <AutoSizer disableWidth>
-                          {({ height }) => <FlagsList height={height} />}
-                        </AutoSizer>
+                        [
+                          ui !== UI.arg && <Input key="AppInput" />,
+                          <div className="border-b border-ui-border" />,
+                          <AutoSizer disableWidth>
+                            {({ height }) => <FlagsList height={height} />}
+                          </AutoSizer>,
+                        ]
                       ) : (
                         <Preview />
                       )}
