@@ -2,6 +2,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
+import log from 'electron-log';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { UI } from '@johnlindquist/kit/core/enum';
 import React, { useCallback } from 'react';
@@ -27,7 +28,7 @@ export function ActionButton(action: Action) {
         event.preventDefault();
 
         const el = document.querySelector(
-          `[name="${action.name.toLowerCase()}"]`
+          `[name="${action.name.toLowerCase()}"]`,
         ) as HTMLInputElement;
 
         if (el) {
@@ -38,7 +39,7 @@ export function ActionButton(action: Action) {
         sendShortcut(action.value);
       }
     },
-    [ui, action, setFlag, sendShortcut]
+    [ui, action, setFlag, sendShortcut],
   );
 
   return (
@@ -51,7 +52,7 @@ export function ActionButton(action: Action) {
   flex h-full flex-row items-center
   justify-center
   rounded py-0.5
-  px-1.5
+  px-1
   text-sm
 
   font-medium
@@ -60,7 +61,7 @@ export function ActionButton(action: Action) {
   transition-opacity duration-200 ease-out
   ${action?.disabled ? `text-primary text-opacity-25` : `${bg} ${textContrast}`}
   `}
-      onClick={onClick}
+      onClick={action?.onClick ?? onClick}
       // blur on mouse down
       onMouseOut={(e) => e.currentTarget.blur()}
     >

@@ -51,7 +51,6 @@ import {
   topRefAtom,
   scoredChoicesAtom,
   showTabsAtom,
-  showSelectedAtom,
   processesAtom,
   onPasteAtom,
   onDropAtom,
@@ -74,6 +73,7 @@ import {
   progressAtom,
   cssAtom,
   triggerResizeAtom,
+  inputAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useMessages, useShortcuts } from './hooks';
@@ -139,6 +139,7 @@ class ErrorBoundary extends React.Component {
 
 export default function App() {
   const [pid] = useAtom(pidAtom);
+  const [input] = useAtom(inputAtom);
   const [open] = useAtom(openAtom);
   const [script] = useAtom(scriptAtom);
   const [hint] = useAtom(hintAtom);
@@ -149,7 +150,6 @@ export default function App() {
   const loading = useAtomValue(loadingAtom);
   const progress = useAtomValue(progressAtom);
   const choices = useAtomValue(scoredChoicesAtom);
-  const showSelected = useAtomValue(showSelectedAtom);
   const showTabs = useAtomValue(showTabsAtom);
   const onPaste = useAtomValue(onPasteAtom);
   const onDrop = useAtomValue(onDropAtom);
@@ -176,7 +176,7 @@ export default function App() {
   const css = useAtomValue(cssAtom);
 
   const previewCheck = useAtomValue(previewCheckAtom);
-  const showRightPanel = (previewCheck && !kitState.noPreview) || flagValue;
+  const showRightPanel = previewCheck && !kitState.noPreview;
   // log({
   //   previewCheck: previewCheck ? '✅' : '🚫',
   //   previewHTML: previewHTML?.length,
@@ -306,6 +306,7 @@ export default function App() {
     };
   }, [setZoom]);
 
+  useEscape();
   useShortcuts();
   useEnter();
   // useThemeDetector();
@@ -396,8 +397,6 @@ export default function App() {
       document.removeEventListener('paste', onPaste);
     };
   }, [onPaste]);
-
-  useEscape();
 
   const panelChildRef = useRef<ImperativePanelHandle>(null);
 
@@ -535,20 +534,13 @@ text-text-base
                 {ui === UI.arg && (
                   <>
                     <Input key="AppInput" />
-                    {!showTabs && !showSelected && (
-                      <div className="border-b border-ui-border" />
-                    )}
+                    {!showTabs && <div className="border-b border-ui-border" />}
                   </>
                 )}
 
                 {hint && <Hint key="AppHint" />}
 
-                {(showTabs || showSelected) && (
-                  <div>
-                    {showTabs && !showSelected && <Tabs key="AppTabs" />}
-                    {showSelected && <Selected key="AppSelected" />}
-                  </div>
-                )}
+                {showTabs && <div>{showTabs && <Tabs key="AppTabs" />}</div>}
               </header>
             )}
             {logVisible && <Console key="AppLog" />}
@@ -561,11 +553,13 @@ text-text-base
               id="main"
               className="min-h-[1px] w-full flex-1 overflow-y-hidden"
             >
+              {flagValue && <ActionsList key="ActionsList" />}
+
               <PanelGroup
                 direction="horizontal"
                 autoSaveId={script.filePath}
                 className={`flex h-full w-full flex-row
-${showTabs || showSelected ? 'border-t border-ui-border' : ''}
+${showTabs ? 'border-t border-ui-border' : ''}
 
             `}
               >
@@ -648,12 +642,6 @@ ${showTabs || showSelected ? 'border-t border-ui-border' : ''}
                 <ActionBar />
               </footer>
             )}
-            {flagValue && [
-              ui !== UI.arg && <Input key="AppInput" />,
-              <div className="border-b border-ui-border" />,
-
-              <ActionsList key="AppFlags" />,
-            ]}
           </div>
         </div>
       }

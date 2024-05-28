@@ -894,10 +894,3 @@ pre > code {
   /* Remove ring */
   @apply ring-0 !important;
 }
-
-.actions-list {
-  position: absolute;
-  top: 1rem;
-  transform: translateX(50%);
-  transform-origin: top center;
-}

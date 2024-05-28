@@ -8,10 +8,9 @@ import {
   ChangeEvent,
 } from 'react';
 import log from 'electron-log';
-import { Channel, PROMPT } from '@johnlindquist/kit/core/enum';
+import { Channel } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
-import useResizeObserver from '@react-hook/resize-observer';
 import { debounce } from 'lodash-es';
 import {
   modifiers,
@@ -21,19 +20,13 @@ import {
   submittedAtom,
   submitValueAtom,
   onInputSubmitAtom,
-  inputFocusAtom,
-  uiAtom,
-  inputFontSizeAtom,
   flagsAtom,
   miniShortcutsHoveredAtom,
   lastKeyDownWasModifierAtom,
   footerHiddenAtom,
-  inputHeightAtom,
   typingAtom,
   shortcutsAtom,
   channelAtom,
-  sendShortcutAtom,
-  signInActionAtom,
   cachedAtom,
   shortcodesAtom,
   actionsInputAtom,
@@ -41,6 +34,7 @@ import {
   flaggedChoiceValueAtom,
   actionsInputFocusAtom,
   actionsInputHeightAtom,
+  actionsInputFontSizeAtom,
 } from '../jotai';
 import { useFocus, useActionsKeyIndex, useTab } from '../hooks';
 
@@ -65,7 +59,7 @@ export default function ActionsInput() {
   const [currentModifiers, setModifiers] = useAtom(_modifiers);
   const [onInputSubmit] = useAtom(onInputSubmitAtom);
   const [, setInputFocus] = useAtom(actionsInputFocusAtom);
-  const [fontSize] = useAtom(inputFontSizeAtom);
+  const [fontSize] = useAtom(actionsInputFontSizeAtom);
 
   const flags = useAtomValue(flagsAtom);
 
@@ -209,15 +203,6 @@ export default function ActionsInput() {
     [setModifiers],
   );
 
-  const minWidth = 128; // Set a minimum width for the input
-  const [hiddenInputMeasurerWidth, setHiddenInputMeasurerWidth] = useState(0);
-  const hiddenInputRef = useRef<HTMLInputElement>(null);
-
-  useResizeObserver(hiddenInputRef, () => {
-    const newWidth = Math.ceil(hiddenInputRef?.current?.offsetWidth + 1); // Adding 1px for better accuracy
-    setHiddenInputMeasurerWidth(Math.max(newWidth, minWidth));
-  });
-
   const cached = useAtomValue(cachedAtom);
 
   const onChange = useCallback(
@@ -271,9 +256,7 @@ export default function ActionsInput() {
           spellCheck="false"
           style={
             {
-              width: `${Math.max(hiddenInputMeasurerWidth, 128)}px`,
-              WebkitAppRegion: 'no-drag',
-              WebkitUserSelect: 'none',
+              width: '100%',
               ...(submitted && { caretColor: 'transparent' }),
             } as any
           }
@@ -289,7 +272,6 @@ export default function ActionsInput() {
       max-w-full border-none px-4 py-0 ring-0 ring-opacity-0
       focus:border-none focus:ring-0
       focus:ring-opacity-0
-      ${promptData?.inputClassName || ''}
       `}
           onChange={onChange}
           onKeyDown={onKeyDown}
@@ -300,19 +282,6 @@ export default function ActionsInput() {
           type={promptData?.secret ? 'password' : promptData?.type || 'text'}
           value={inputValue}
         />
-        <span
-          ref={hiddenInputRef}
-          id="hidden-input-measurer"
-          className={`${fontSize} px-4 tracking-normal`}
-          style={{
-            position: 'absolute',
-            visibility: 'hidden',
-            // don't break on any lines
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {`${inputValue || placeholder}-pr`}
-        </span>
       </div>
     </div>
   );

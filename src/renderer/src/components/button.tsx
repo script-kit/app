@@ -30,6 +30,7 @@ import {
   toggleSelectedChoiceAtom,
   selectedChoicesAtom,
   shouldHighlightDescriptionAtom,
+  kitStateAtom,
 } from '../jotai';
 
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg?asset';

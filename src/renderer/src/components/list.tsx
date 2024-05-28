@@ -75,7 +75,7 @@ export default function ChoiceList({ height }: ListProps) {
 
     // log.info(`🧾 List reset due to choice height changes`);
     listRef?.current?.resetAfterIndex(0);
-  }, [choices, promptData, flagValue]);
+  }, [choices, promptData]);
 
   const [scrollTimeout, setScrollTimeout] = useState<any>(null);
 

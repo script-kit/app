@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { UI } from '@johnlindquist/kit/core/enum';
 import { useAtom } from 'jotai';
 
@@ -16,12 +17,10 @@ import {
   shortcutsAtom,
   promptDataAtom,
   runningAtom,
-  logAtom,
   submittedAtom,
   scriptAtom,
   channelAtom,
   isMainScriptAtom,
-  topHeightAtom,
   inputAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
@@ -43,7 +42,6 @@ export default () => {
   const [script] = useAtom(scriptAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [, setRunning] = useAtom(runningAtom);
-  const [log] = useAtom(logAtom);
   const [submitted, setSubmitted] = useAtom(submittedAtom);
   const [channel] = useAtom(channelAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
@@ -52,6 +50,11 @@ export default () => {
   useHotkeys(
     'escape',
     (event) => {
+      log.info('Escape pressed in useEscape.ts', {
+        flagValue,
+        input,
+      });
+
       event.preventDefault();
       if (
         script?.filePath !== promptData?.scriptPath ||
@@ -62,6 +65,12 @@ export default () => {
       }
 
       if (shortcuts?.find((s) => s.key === 'escape') && !flagValue) return;
+
+      log.info({
+        flagValue,
+        isReady,
+        ui,
+      });
 
       if (flagValue) {
         setFlagValue('');
@@ -87,6 +96,6 @@ export default () => {
       submitted,
       channel,
       isMainScript,
-    ]
+    ],
   );
 };

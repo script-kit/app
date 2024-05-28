@@ -125,6 +125,7 @@ export const getPromptOptions = () => {
     y,
     backgroundColor,
     backgroundMaterial,
+    type: 'panel',
   } as BrowserWindowConstructorOptions;
 
   if (kitState.isMac) {

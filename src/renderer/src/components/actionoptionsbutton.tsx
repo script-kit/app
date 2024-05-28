@@ -3,7 +3,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/jsx-props-no-spreading */
 import { useAtom } from 'jotai';
-import { Channel } from '@johnlindquist/kit/core/enum';
+import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import React, { useCallback } from 'react';
 import {
   choicesAtom,
@@ -12,10 +12,11 @@ import {
   channelAtom,
   flaggedChoiceValueAtom,
   appConfigAtom,
+  uiAtom,
+  actionsButtonActionAtom,
 } from '../jotai';
 
-import { bg, textContrast } from './actions';
-import { IconSwapper } from './iconswapper';
+import { ActionButton } from './actionbutton';
 
 export function OptionsButton() {
   const [choices] = useAtom(choicesAtom);
@@ -24,51 +25,19 @@ export function OptionsButton() {
   const [channel] = useAtom(channelAtom);
   const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [app] = useAtom(appConfigAtom);
+  const [ui] = useAtom(uiAtom);
   const m = app?.isMac;
+  const [actionsAction] = useAtom(actionsButtonActionAtom);
 
   const onClick = useCallback(() => {
     if (flagValue) {
       setFlagValue('');
       channel(Channel.FORWARD);
     } else {
-      setFlagValue(choices.length ? choices[index].value : input);
+      setFlagValue(choices.length ? choices[index].value : input || ui);
       channel(Channel.BACK);
     }
   }, [choices, input, index, channel, flagValue, setFlagValue]);
 
-  return (
-    // eslint-disable-next-line jsx-a11y/mouse-events-have-key-events
-    <button
-      type="button"
-      tabIndex={-1}
-      className={`
-  flex flex-row items-center justify-center
-  py-0.5 px-1 text-sm
-  font-medium
-  outline-none
-  ${textContrast}
-
-  ${bg}
-
-  rounded
-  `}
-      onClick={onClick}
-      onMouseOut={(e) => e.currentTarget.blur()}
-    >
-      <div className="mr-0.5 px-0.5">{flagValue ? 'Back' : 'Actions'}</div>
-      <div className={`${!m && `mt-px`} flex flex-row`}>
-        <div
-          className="
-          py-.5 mx-0.5 rounded
-
-          bg-ui-bg
-          px-1
-          hover:border-opacity-10
-          "
-        >
-          <IconSwapper text={flagValue ? '←' : '→'} />
-        </div>
-      </div>
-    </button>
-  );
+  return <ActionButton {...actionsAction} onClick={onClick} />;
 }

@@ -95,7 +95,7 @@ export default function Editor() {
   const [kitIsDark] = useAtom(darkAtom);
   const [open] = useAtom(openAtom);
   const [, setInputValue] = useAtom(inputAtom);
-  const [inputValue] = useAtom(unflaggedInputAtom);
+  const [inputValue] = useAtom(inputAtom);
   const setCursorPosition = useSetAtom(editorCursorPosAtom);
   const [ui] = useAtom(uiAtom);
   const [options] = useAtom(editorOptions);
@@ -219,7 +219,8 @@ export default function Editor() {
       mountEditor.addCommand(
         monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK,
         () => {
-          setFlaggedChoiceValue(mountEditor.getModel()?.getValue() || '');
+          const value = mountEditor.getModel()?.getValue();
+          setFlaggedChoiceValue(value || ui);
         },
       );
 

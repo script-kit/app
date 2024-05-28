@@ -6,8 +6,6 @@ import { useAtom, useAtomValue } from 'jotai';
 import memoize from 'memoize-one';
 import FlagButton from './flag-button';
 import {
-  itemHeightAtom,
-  promptDataAtom,
   isScrollingAtom,
   flagsListAtom,
   flagsIndexAtom,
@@ -36,7 +34,7 @@ function InnerList({ height }) {
   const [index, onIndexChange] = useAtom(flagsIndexAtom);
   // const [inputValue] = useAtom(inputAtom);
   // const [mainHeight, setMainHeight] = useAtom(mainHeightAtom);
-  const itemHeight = useAtomValue(itemHeightAtom);
+  const itemHeight = useAtomValue(actionsItemHeightAtom);
 
   const [list, setList] = useAtom(flagsListAtom);
   const [requiresScroll, setRequiresScroll] = useAtom(flagsRequiresScrollAtom);
@@ -138,26 +136,29 @@ w-full
 }
 
 export default function FlagsList() {
-  const [choices] = useAtom(scoredFlagsAtom);
-  const itemHeight = useAtomValue(actionsItemHeightAtom);
   const inputHeight = useAtomValue(actionsInputHeightAtom);
-
   const actionsHeight = useAtomValue(flagsHeightAtom);
+
   return (
     <div
       id="flags"
       className="
+
       z-50
       flags-component flex w-96 flex-col overflow-y-hidden
       max-h-[80vh]
-      actions-list
+      absolute
+      top-7
+      transform
+      translate-x-1/2
+      origin-top
       rounded-lg
-      backdrop-blur-xl bg-bg-base/90
+      bg-bg-base
       border border-ui-border
       shadow-lg
       "
       style={{
-        height: actionsHeight + inputHeight + 2, // 2px for the border, hmm....
+        height: actionsHeight + inputHeight + (actionsHeight === 0 ? 0 : 3), // 3px for the border, hmm....
         minHeight: inputHeight,
       }}
     >

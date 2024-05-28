@@ -7,6 +7,7 @@ export type Action = {
   flag: string;
   disabled: boolean;
   arrow?: string;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 };
 
 export const bg = `

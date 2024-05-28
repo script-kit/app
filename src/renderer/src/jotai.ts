@@ -97,7 +97,20 @@ const loading = atom<boolean>(false);
 export const runningAtom = atom(false);
 
 const placeholder = atom('');
-export const actionsPlaceholderAtom = atom('Actions');
+
+export const hasActionsAtom = atom((g) => {
+  const flags = g(flagsAtom);
+  const focusedChoice = g(focusedChoiceAtom);
+  if (Object.entries(flags).length === 0 && !focusedChoice?.actions) {
+    return false;
+  }
+  return true;
+});
+
+export const actionsPlaceholderAtom = atom((g) => {
+  const hasActions = g(hasActionsAtom);
+  return hasActions ? 'Actions' : 'No Actions Defined...';
+});
 
 export const placeholderAtom = atom(
   (g) => g(placeholder),
@@ -155,7 +168,7 @@ export const prevChoicesConfig = atom({ preload: false });
 const _ui = atom<UI>(UI.arg);
 export const uiAtom = atom(
   (g) => g(_ui),
-  (_g, s, a: UI) => {
+  (g, s, a: UI) => {
     s(_ui, a);
     if ([UI.arg, UI.textarea, UI.hotkey, UI.splash].includes(a)) {
       s(inputFocusAtom, true);
@@ -163,6 +176,10 @@ export const uiAtom = atom(
 
     if ([UI.splash, UI.term, UI.editor, UI.hotkey].includes(a)) {
       s(enterAtom, '');
+    }
+
+    if (a !== UI.arg && g(scoredChoicesAtom)?.length) {
+      s(scoredChoicesAtom, []);
     }
     // s(previewHTMLAtom, g(cachedMainPreview));
   },
@@ -1381,8 +1398,8 @@ const checkSubmitFormat = (checkValue: any) => {
 export const footerAtom = atom('');
 
 // Create an itemHeightAtom
-export const actionsItemHeightAtom = atom(PROMPT.ITEM.HEIGHT.XS);
-export const actionsInputHeightAtom = atom(PROMPT.INPUT.HEIGHT.XS);
+export const actionsItemHeightAtom = atom(PROMPT.ITEM.HEIGHT.SM);
+export const actionsInputHeightAtom = atom(PROMPT.INPUT.HEIGHT.XS - 2);
 export const itemHeightAtom = atom(PROMPT.ITEM.HEIGHT.SM);
 export const inputHeightAtom = atom(PROMPT.INPUT.HEIGHT.SM);
 
@@ -1634,6 +1651,10 @@ export const promptDataAtom = atom(
         s(enterAtom, a.enter);
       }
 
+      if (!g(hasActionsAtom)) {
+        s(flagsHeightAtom, 0);
+      }
+
       s(promptData, a);
 
       const channel = g(channelAtom);
@@ -1651,32 +1672,28 @@ export const promptDataAtom = atom(
 export const flaggedChoiceValueAtom = atom(
   (g) => g(_flaggedValue),
   (g, s, a: any) => {
-    if (a) {
-      // TODO: Refactor actions to decouple from choices/flags
-      s(cachedInputAtom, g(_inputAtom));
-    }
-
     s(promptActiveAtom, true);
     const flags = g(_flagsAtom);
     // log.info({ flagValue: a, flags });
-    if (Object.entries(flags).length === 0 && !g(focusedChoiceAtom)?.actions) {
-      return;
-    }
+    // if (Object.entries(flags).length === 0 && !g(focusedChoiceAtom)?.actions) {
+    //   return;
+    // }
     // log.info({ actions: a?.actions });
     s(_flaggedValue, a);
 
     if (a === '') {
-      s(_inputAtom, g(prevInputAtom));
+      // s(_inputAtom, g(prevInputAtom));
 
       s(selectedAtom, '');
       s(choicesConfigAtom, g(prevChoicesConfig));
       s(indexAtom, g(prevIndexAtom));
+      s(actionsInputAtom, '');
     } else {
-      s(selectedAtom, typeof a === 'string' ? a : (a as Choice).name);
+      s(selectedAtom, typeof a === 'string' ? a : (a as Choice)?.name);
 
       s(prevIndexAtom, g(indexAtom));
-      s(prevInputAtom, g(inputAtom));
-      s(inputAtom, '');
+      // s(prevInputAtom, g(inputAtom));
+      // s(inputAtom, '');
 
       s(directionAtom, 1);
       s(flagsIndexAtom, 0);
@@ -1759,7 +1776,7 @@ export const channelAtom = atom((g) => {
       },
     };
 
-    log.info(`${pid}: 📤 ${channel}`, appMessage.state.value);
+    // log.info(`${pid}: 📤 ${channel}`, appMessage.state.value);
 
     ipcRenderer.send(channel, appMessage);
   };
@@ -2003,6 +2020,7 @@ export const escapeAtom = atom<any>((g) => {
       synth.cancel();
     }
 
+    log.info(`👋 Sending Channel.ESCAPE`);
     channel(Channel.ESCAPE);
   };
 });
@@ -2065,7 +2083,7 @@ export const inputFocusAtom = atom(
   },
 );
 
-const actionsInputFocus = atom<number>(Math.random());
+const actionsInputFocus = atom<number>(0);
 export const actionsInputFocusAtom = atom(
   (g) => g(actionsInputFocus),
   (g, s, a: any) => {
@@ -2129,6 +2147,19 @@ export const appConfigAtom = atom<AppConfig & { url: string }>({
   version: '',
   delimiter: '',
   url: '',
+});
+
+export const actionsButtonActionAtom = atom<Action>((g) => {
+  const isMac = g(appConfigAtom).isMac;
+  const flagValue = g(flaggedChoiceValueAtom);
+
+  return {
+    name: 'Actions',
+    value: isMac ? 'cmd+k' : 'ctrl+k',
+    shortcut: isMac ? '⌘+K' : '⌃+K',
+    position: 'right',
+    disabled: false,
+  } as Action;
 });
 
 export const createAssetAtom = (...parts: string[]) =>
@@ -2228,10 +2259,9 @@ export const submitSurveyAtom = atom(null, (_g, _s, a: Survey) => {
 export const showTabsAtom = atom((g) => {
   const isArg = [UI.arg].includes(g(uiAtom));
   const hasTabs = g(tabsAtom)?.length > 0;
-  const noFlagValue = !g(flaggedChoiceValueAtom);
   return (
     // g(isMainScriptAtom) ||
-    isArg && hasTabs && noFlagValue
+    isArg && hasTabs
   );
 });
 
@@ -2423,6 +2453,7 @@ export const _kitStateAtom = atom({
   updateDownloaded: false,
   promptCount: 0,
   noPreview: false,
+  isMac: false,
 });
 
 export const kitStateAtom = atom(
@@ -2641,6 +2672,8 @@ export const enterPressedAtom = atom(
 export const micIdAtom = atom<string | null>(null);
 export const webcamIdAtom = atom<string | null>(null);
 
+export const actionsButtonNameFontSizeAtom = atom('text-xs');
+
 export const buttonNameFontSizeAtom = atom((g) => {
   let fontSize = `text-base`;
   const itemHeight = g(itemHeightAtom);
@@ -2677,6 +2710,8 @@ export const buttonNameFontSizeAtom = atom((g) => {
   return fontSize;
 });
 
+export const actionsButtonDescriptionFontSizeAtom = atom('text-xxs');
+
 export const buttonDescriptionFontSizeAtom = atom((g) => {
   const itemHeight = g(itemHeightAtom);
   let fontSize = `text-xs`;
@@ -2712,6 +2747,8 @@ export const buttonDescriptionFontSizeAtom = atom((g) => {
 
   return fontSize;
 });
+
+export const actionsInputFontSizeAtom = atom(PROMPT.INPUT.HEIGHT.XS);
 
 export const inputFontSizeAtom = atom((g) => {
   let fontSize = `text-2xl`;
@@ -2894,6 +2931,9 @@ export const isScrollingAtom = atom(false);
 const scoredFlags = atom([] as ScoredChoice[]);
 export const scoredFlagsAtom = atom(
   (g) => {
+    if (!g(hasActionsAtom)) {
+      return [];
+    }
     return g(scoredFlags);
   },
   (g, s, a: ScoredChoice[]) => {
@@ -2905,7 +2945,7 @@ export const scoredFlagsAtom = atom(
     for (const {
       item: { height },
     } of a) {
-      choicesHeight += height || g(itemHeightAtom);
+      choicesHeight += height || g(actionsItemHeightAtom);
       if (choicesHeight > 1920) break;
     }
 
@@ -3116,12 +3156,4 @@ export const mainElementIdAtom = atom<string>('');
 export const kitConfigAtom = atom({
   kitPath: '',
   mainScriptPath: '',
-});
-
-export const cachedInputAtom = atom('');
-export const unflaggedInputAtom = atom((g) => {
-  if (g(flaggedChoiceValueAtom)) {
-    return g(cachedInputAtom);
-  }
-  return g(inputAtom);
 });

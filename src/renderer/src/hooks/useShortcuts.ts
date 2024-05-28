@@ -20,6 +20,7 @@ import {
   focusedChoiceAtom,
   hasRightShortcutAtom,
   uiAtom,
+  actionsInputFocusAtom,
 } from '../jotai';
 
 import { hotkeysOptions } from './shared';
@@ -67,6 +68,7 @@ export default () => {
   const [ui] = useAtom(uiAtom);
   const [previewEnabled, setPreviewEnabled] = useAtom(previewEnabledAtom);
   const hasRightShortcut = useAtomValue(hasRightShortcutAtom);
+  const actionsInputFocus = useAtomValue(actionsInputFocusAtom);
 
   useHotkeys(
     `mod+shift+w`,
@@ -148,6 +150,14 @@ export default () => {
       const key = handler?.keys?.[0];
       if (!key) return;
 
+      log.info({
+        key,
+        actionsInputFocus,
+      });
+      if (key === 'escape' && actionsInputFocus) return;
+
+      log.info(`After escape check: ${key}`);
+
       const found = promptShortcuts.find((ps) => {
         if (isEventShortcut(handler, ps.key)) {
           return ps;
@@ -164,15 +174,7 @@ export default () => {
       }
     },
     hotkeysOptions,
-    [
-      flagValue,
-      inputFocus,
-      promptShortcuts,
-      flagShortcuts,
-      promptData,
-      sendShortcut,
-      setFlag,
-    ],
+    [flagValue, promptShortcuts, flagShortcuts, promptData, actionsInputFocus],
   );
 
   useHotkeys(
@@ -213,13 +215,12 @@ export default () => {
     ],
   );
   useHotkeys(
-    `mod+k`,
+    `mod+k,mod+shift+p`,
     () => {
-      log.info('mod+k', {
+      log.info('mod+k or mod+shift+p pressed', {
         ui,
-        flagValue,
         inputFocus,
-        focusedChoice,
+        length: choices.length,
       });
       if (ui === UI.arg && !inputFocus) return;
 
@@ -228,7 +229,8 @@ export default () => {
       } else if (choices.length) {
         setFlagValue(focusedChoice?.value);
       } else {
-        setFlagValue(input);
+        log.info('setFlagValue', input || ui);
+        setFlagValue(ui === UI.arg ? input : ui);
       }
     },
     hotkeysOptions,

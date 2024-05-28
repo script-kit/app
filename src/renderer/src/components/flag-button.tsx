@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState, DragEvent } from 'react';
 import parse from 'html-react-parser';
-import { Choice, Script } from '@johnlindquist/kit/types/core';
+import { Script } from '@johnlindquist/kit/types/core';
 import { useAtom, useAtomValue } from 'jotai';
 const { ipcRenderer } = window.electron;
 
@@ -8,14 +8,14 @@ import { ChoiceButtonProps } from '../../../shared/types';
 import {
   isMouseDownAtom,
   _modifiers,
-  buttonNameFontSizeAtom,
-  buttonDescriptionFontSizeAtom,
   isScrollingAtom,
   inputAtom,
   mouseEnabledAtom,
   submitValueAtom,
   flagsIndexAtom,
   focusedChoiceAtom,
+  actionsButtonNameFontSizeAtom,
+  actionsButtonDescriptionFontSizeAtom,
 } from '../jotai';
 
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
@@ -36,8 +36,10 @@ function FlagButton({
   const [isMouseDown] = useAtom(isMouseDownAtom);
   const [modifiers] = useAtom(_modifiers);
   const [modifierDescription, setModifierDescription] = useState('');
-  const [buttonNameFontSize] = useAtom(buttonNameFontSizeAtom);
-  const [buttonDescriptionFontSize] = useAtom(buttonDescriptionFontSizeAtom);
+  const [buttonNameFontSize] = useAtom(actionsButtonNameFontSizeAtom);
+  const [buttonDescriptionFontSize] = useAtom(
+    actionsButtonDescriptionFontSizeAtom,
+  );
   const input = useAtomValue(inputAtom);
   const [, setSubmitValue] = useAtom(submitValueAtom);
   const [focusedChoice] = useAtom(focusedChoiceAtom);
@@ -138,6 +140,7 @@ function FlagButton({
         justify-between
         whitespace-nowrap
         px-4
+        pt-2px
         text-left
         outline-none
         focus:outline-none
@@ -158,7 +161,7 @@ function FlagButton({
         })
       ) : (
         <div className="flex h-full w-full flex-row items-center justify-between">
-          <div className="flex h-full flex-row items-center overflow-x-hidden">
+          <div className="flex h-full flex-row items-center overflow-x-hidden mt-0.5">
             {/* Img */}
             {choice?.img && !imageFail && (
               <img

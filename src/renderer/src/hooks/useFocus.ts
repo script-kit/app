@@ -25,7 +25,7 @@ export default (ref: RefObject<HTMLElement>) => {
   const [isHidden] = useAtom(isHiddenAtom);
 
   useEffect(() => {
-    if (inputFocus && ref?.current) {
+    if (ref?.current) {
       // console.log(`Focusing`, ref?.current);
       ref?.current.focus();
     }
