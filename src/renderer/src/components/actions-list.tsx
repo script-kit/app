@@ -153,7 +153,9 @@ export default function FlagsList() {
       translate-x-1/2
       origin-top
       rounded-lg
-      bg-bg-base
+      bg-bg-base/90
+      backdrop-filter
+      backdrop-blur-xl
       border border-ui-border
       shadow-lg
       "

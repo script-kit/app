@@ -7,7 +7,7 @@ import React, {
   useRef,
 } from 'react';
 import log from 'electron-log/renderer';
-import { ToastContainer } from 'react-toastify';
+import { Bounce, ToastContainer, cssTransition } from 'react-toastify';
 import { debounce } from 'lodash-es';
 
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
@@ -571,19 +571,19 @@ ${showTabs ? 'border-t border-ui-border' : ''}
                 >
                   <div className="h-full min-h-1 overflow-x-hidden">
                     <ToastContainer
-                      className="-ml-3 -mt-3"
+                      className="-ml-3 -mt-20"
                       pauseOnFocusLoss={false}
-                      position="top-right"
+                      position="bottom-right"
                       toastStyle={{
                         maxHeight: document.body.clientHeight,
                       }}
-                      // transition={cssTransition({
-                      //   // don't fade in/out
-                      //   // enter: 'animate__animated animate__slideInUp',
-                      //   // exit: 'animate__animated animate__slideOutDown',
-                      //   collapseDuration: 0,
-                      //   collapse: true,
-                      // })}
+                      transition={cssTransition({
+                        // don't fade in/out
+                        enter: 'toast-fade-in',
+                        exit: 'toast-fade-out',
+                        collapseDuration: 0,
+                        collapse: true,
+                      })}
                     />
 
                     {ui === UI.splash && <Splash />}

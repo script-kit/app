@@ -109,7 +109,7 @@ export const hasActionsAtom = atom((g) => {
 
 export const actionsPlaceholderAtom = atom((g) => {
   const hasActions = g(hasActionsAtom);
-  return hasActions ? 'Actions' : 'No Actions Defined...';
+  return hasActions ? 'Actions' : 'No Actions Available';
 });
 
 export const placeholderAtom = atom(
@@ -1553,6 +1553,7 @@ export const promptDataAtom = atom(
         // log.info(`👍 Setting input to ${a?.input || '_'}`);
         s(_inputAtom, a?.input || '');
       }
+      s(_flaggedValue, '');
       s(hintAtom, a.hint);
       s(placeholderAtom, a.placeholder);
       s(selectedAtom, a.selected);
@@ -1886,12 +1887,15 @@ export const submitValueAtom = atom(
     // s(_inputAtom, '');
     // s(panelHTMLAtom, ``);
 
-    log.info(
-      `😘😘😘😘😘😘😘
+    // log.info(
+    //   `😘😘😘😘😘😘😘
 
-    `,
-      value,
-    );
+    // `,
+    //   {
+    //     value,
+    //     flag,
+    //   },
+    // );
     // s(appendToLogHTMLAtom, `VALUE_SUBMITTED: ${Object.keys(value).join('\n')}`);
 
     channel(Channel.VALUE_SUBMITTED, {
@@ -2840,14 +2844,25 @@ export const actionsAtom = atom((g) => {
 });
 
 export const miniShortcutsHoveredAtom = atom(false);
-export const lastKeyDownWasModifierAtom = atom(false);
+export const _lastKeyDownWasModifierAtom = atom(false);
+export const lastKeyDownWasModifierAtom = atom(
+  (g) => g(_lastKeyDownWasModifierAtom),
+  (g, s, a: boolean) => {
+    log.info(`🔑 Last key down was modifier: ${a}`);
+    s(_lastKeyDownWasModifierAtom, a);
+  },
+);
 
 export const miniShortcutsVisibleAtom = atom((g) => {
   const ms = g(_modifiers).filter((m) => !m.toLowerCase().includes('shift'));
   const justOpened = g(justOpenedAtom);
+  const flagValue = g(flaggedChoiceValueAtom);
 
   return (
-    (!justOpened && ms.length > 0 && g(lastKeyDownWasModifierAtom)) ||
+    (!justOpened &&
+      ms.length > 0 &&
+      g(lastKeyDownWasModifierAtom) &&
+      !flagValue) ||
     g(miniShortcutsHoveredAtom)
   );
 });

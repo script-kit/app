@@ -51,6 +51,7 @@ import {
   cachedAtom,
   shortcodesAtom,
   appendToLogHTMLAtom,
+  _lastKeyDownWasModifierAtom,
 } from '../jotai';
 import { useFocus, useKeyIndex, useTab } from '../hooks';
 import { IconButton } from './icon';
@@ -104,8 +105,9 @@ export default function Input() {
 
   const setLastKeyDownWasModifier = debounce(
     useSetAtom(lastKeyDownWasModifierAtom),
-    100,
+    300,
   );
+  const _setLastKeyDownWasModifier = useSetAtom(_lastKeyDownWasModifierAtom);
   const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
   const user = useAtomValue(userAtom);
@@ -201,7 +203,9 @@ export default function Input() {
 
       // if the key is a modifier that isn't shift, return
 
-      setLastKeyDownWasModifier.cancel();
+      if (typeof setLastKeyDownWasModifier?.cancel === 'function') {
+        setLastKeyDownWasModifier.cancel();
+      }
       setLastKeyDownWasModifier(
         modifiers.includes(event.key) && event.key !== 'Shift',
       );
@@ -238,6 +242,11 @@ export default function Input() {
           .filter((m) => event.getModifierState(m))
           .flatMap(remapModifiers),
       );
+
+      if (typeof setLastKeyDownWasModifier?.cancel === 'function') {
+        setLastKeyDownWasModifier.cancel();
+      }
+      _setLastKeyDownWasModifier(false);
     },
     [setModifiers],
   );

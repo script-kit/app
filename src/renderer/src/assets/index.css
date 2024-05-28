@@ -285,6 +285,16 @@ body {
   }
 }
 
+.toast-fade-in {
+  animation: fadeIn 0.1s ease-in;
+  animation-fill-mode: forwards;
+}
+
+.toast-fade-out {
+  animation: fadeOut 0.1s ease-out;
+  animation-fill-mode: forwards;
+}
+
 .animate-fade-in {
   animation: fadeIn 0.25s ease-in;
   animation-fill-mode: forwards;
@@ -688,9 +698,9 @@ code::after {
 }
 
 .Toastify__toast-theme--light {
-  @apply bg-bg-base/75;
+  @apply bg-bg-base/90;
   /* blur background */
-  @apply backdrop-blur-2xl;
+  @apply backdrop-blur-xl;
   @apply text-text-base/90;
   @apply border border-text-base/15;
   @apply text-sm;

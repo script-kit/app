@@ -13,6 +13,7 @@ import useResizeObserver from '@react-hook/resize-observer';
 import {
   appBoundsAtom,
   darkAtom,
+  flaggedChoiceValueAtom,
   hasPreviewAtom,
   logAtom,
   promptDataAtom,
@@ -70,6 +71,7 @@ export default function Terminal() {
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const [hasPreview] = useAtom(hasPreviewAtom);
   const [fontFamily] = useAtom(termFontAtom);
+  const [flagValue] = useAtom(flaggedChoiceValueAtom);
 
   const attachAddonRef = useRef<AttachIPCAddon | null>(null);
 
@@ -162,6 +164,12 @@ export default function Terminal() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!flagValue) {
+      xtermRef.current?.terminal?.focus();
+    }
+  }, [flagValue]);
 
   const appBounds = useAtomValue(appBoundsAtom);
   const log = useAtomValue(logAtom);

@@ -11,19 +11,11 @@ import log from 'electron-log';
 import { Channel } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
-import { debounce } from 'lodash-es';
 import {
   modifiers,
   _modifiers,
-  promptDataAtom,
-  selectionStartAtom,
   submittedAtom,
-  submitValueAtom,
-  onInputSubmitAtom,
   flagsAtom,
-  miniShortcutsHoveredAtom,
-  lastKeyDownWasModifierAtom,
-  footerHiddenAtom,
   typingAtom,
   shortcutsAtom,
   channelAtom,
@@ -31,12 +23,13 @@ import {
   shortcodesAtom,
   actionsInputAtom,
   actionsPlaceholderAtom,
-  flaggedChoiceValueAtom,
   actionsInputFocusAtom,
   actionsInputHeightAtom,
   actionsInputFontSizeAtom,
 } from '../jotai';
 import { useFocus, useActionsKeyIndex, useTab } from '../hooks';
+import { EnterButton } from './actionenterbutton';
+import { ActionsEnterButton } from './actions-actionenterbutton';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];
@@ -51,47 +44,28 @@ export default function ActionsInput() {
 
   const shortcodes = useAtomValue(shortcodesAtom);
   const [inputValue, setInput] = useAtom(actionsInputAtom);
-  const [, setSubmitValue] = useAtom(submitValueAtom);
   const [placeholder] = useAtom(actionsPlaceholderAtom);
-  const [promptData] = useAtom(promptDataAtom);
   const [submitted] = useAtom(submittedAtom);
-  const [, setSelectionStart] = useAtom(selectionStartAtom);
-  const [currentModifiers, setModifiers] = useAtom(_modifiers);
-  const [onInputSubmit] = useAtom(onInputSubmitAtom);
+
   const [, setInputFocus] = useAtom(actionsInputFocusAtom);
   const [fontSize] = useAtom(actionsInputFontSizeAtom);
 
   const flags = useAtomValue(flagsAtom);
 
-  const [miniShortcutsHovered, setMiniShortcutsHovered] = useAtom(
-    miniShortcutsHoveredAtom,
-  );
-
-  const footerHidden = useAtomValue(footerHiddenAtom);
   const inputHeight = useAtomValue(actionsInputHeightAtom);
 
-  const setLastKeyDownWasModifier = debounce(
-    useSetAtom(lastKeyDownWasModifierAtom),
-    100,
-  );
   const setTyping = useSetAtom(typingAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
 
   const channel = useAtomValue(channelAtom);
 
-  const [flaggedChoiceValue, setFlaggedChoiceValue] = useAtom(
-    flaggedChoiceValueAtom,
-  );
-
   useEffect(() => {
     setInputFocus(Math.random());
-    setMiniShortcutsHovered(false);
-    setModifiers([]);
 
     return () => {
       setInputFocus(0);
     };
-  }, [setInputFocus, setMiniShortcutsHovered, setModifiers]);
+  }, [setInputFocus]);
 
   useTab();
   useActionsKeyIndex();
@@ -131,7 +105,6 @@ export default function ActionsInput() {
       }
 
       const target = event.target as HTMLInputElement;
-      setSelectionStart(target.selectionStart as number);
 
       const input = target.value + event.key;
       // log.info(`${window.pid}: onKeyDown: ${input}`);
@@ -153,19 +126,12 @@ export default function ActionsInput() {
         log.info(`${window.pid}: preventDefault(): found: '${input}'`);
         // setAppendToLog(`${window.pid}: preventDefault(): found: '${input}'`);
         event.preventDefault();
-        channel(Channel.INPUT, {
+        channel(Channel.ACTIONS_INPUT || 'ACTIONS_INPUT', {
           input,
         });
       }
 
-      setModifiers(currentModifiers);
-
       // if the key is a modifier that isn't shift, return
-
-      setLastKeyDownWasModifier.cancel();
-      setLastKeyDownWasModifier(
-        modifiers.includes(event.key) && event.key !== 'Shift',
-      );
 
       // If not Enter, Tab, or a modifier, setTyping to true
       if (event.key !== 'Enter' && event.key !== 'Tab' && !modifiers.length) {
@@ -175,32 +141,12 @@ export default function ActionsInput() {
       // If key was delete and the value is empty, clear setInput
       if (event.key === 'Backspace' && target.value === '') {
         log.info(`Clearing input`);
-        channel(Channel.INPUT, {
+        channel(Channel.ACTIONS_INPUT || 'ACTIONS_INPUT', {
           input: '',
         });
       }
     },
-    [
-      setSelectionStart,
-      setModifiers,
-      setLastKeyDownWasModifier,
-      setTyping,
-      shortcuts,
-      flags,
-      setInput,
-      shortcodes,
-    ],
-  );
-
-  const onKeyUp = useCallback(
-    (event) => {
-      setModifiers(
-        modifiers
-          .filter((m) => event.getModifierState(m))
-          .flatMap(remapModifiers),
-      );
-    },
-    [setModifiers],
+    [setTyping, shortcuts, flags, setInput, shortcodes],
   );
 
   const cached = useAtomValue(cachedAtom);
@@ -208,18 +154,10 @@ export default function ActionsInput() {
   const onChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       // log.info(event.target.value, { cached: cached ? 'true' : 'false' });
-      if (onInputSubmit[event.target.value] && !submitted) {
-        const submitValue = onInputSubmit[event.target.value];
-        setSubmitValue(submitValue);
-      } else if (!cached) {
-        log.info(`Setting actions input: ${event.target.value}`);
-        setInput(event.target.value);
-        setPendingInput('');
-      } else {
-        setPendingInput(event.target.value);
-      }
+
+      setInput(event.target.value);
     },
-    [onInputSubmit, submitted, setSubmitValue, setInput, cached],
+    [setInput],
   );
 
   const [pendingInput, setPendingInput] = useState('');
@@ -234,9 +172,7 @@ export default function ActionsInput() {
   return (
     <div
       key="input"
-      className={`flex flex-row ${
-        footerHidden && '-mt-px'
-      } max-w-screen relative`}
+      className={`flex flex-row max-w-screen relative`}
       style={{
         height: inputHeight,
         minHeight: inputHeight,
@@ -275,14 +211,24 @@ export default function ActionsInput() {
       `}
           onChange={onChange}
           onKeyDown={onKeyDown}
-          onKeyUp={onKeyUp}
-          onKeyUpCapture={onKeyUp}
           placeholder={placeholder}
           ref={inputRef as LegacyRef<HTMLInputElement>}
-          type={promptData?.secret ? 'password' : promptData?.type || 'text'}
+          type={'text'}
           value={inputValue}
         />
       </div>
+
+      {/* <div className="flex flex-row items-center justify-center mr-2">
+        <ActionsEnterButton
+          key="actions-enter-button"
+          name=""
+          position="right"
+          shortcut="⏎"
+          value="enter"
+          flag=""
+          disabled={false}
+        />
+      </div> */}
     </div>
   );
 }

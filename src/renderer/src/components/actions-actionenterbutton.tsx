@@ -16,7 +16,7 @@ import {
 import { Action, bg, textContrast } from './actions';
 import { IconSwapper } from './iconswapper';
 
-export function EnterButton(action: Action) {
+export function ActionsEnterButton(action: Action) {
   const ui = useAtomValue(uiAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const pressEnter = useSetAtom(enterPressedAtom);
@@ -63,10 +63,9 @@ export function EnterButton(action: Action) {
       disabled={action?.disabled}
       tabIndex={action?.value === 'enter' ? 0 : -1}
       className={`
-  flex h-full flex-row items-center
+  flex h-6 flex-row items-center
   justify-center
-  rounded py-0.5
-  px-1.5
+  rounded
   text-sm
 
 
@@ -79,7 +78,7 @@ export function EnterButton(action: Action) {
       onMouseOut={(e) => e.currentTarget.blur()}
     >
       <div
-        className={`mr-0.5 min-w-0 truncate px-2px hover:cursor-pointer
+        className={` min-w-0 truncate  hover:cursor-pointer
       `}
       >
         {action.name}

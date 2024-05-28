@@ -395,7 +395,7 @@ export const invokeSearch = (
 export const debounceInvokeSearch = debounce(invokeSearch, 100);
 
 export const invokeFlagSearch = (prompt: KitPrompt, input: string) => {
-  log.info(`Flag search: ${input} <<<`);
+  // log.info(`Flag search: ${input} <<<`);
   prompt.flagSearch.input = input;
   if (input === '') {
     setScoredFlags(

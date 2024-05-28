@@ -127,7 +127,7 @@
     "date-fns": "^3.6.0",
     "detect-port": "^1.6.1",
     "dompurify": "^3.1.4",
-    "electron": "^31.0.0-beta.6",
+    "electron": "^30.0.8",
     "electron-builder": "^25.0.0-alpha.6",
     "electron-vite": "^2.2.0",
     "emoji-picker-react": "^4.9.3",
@@ -210,7 +210,7 @@
     "valtio": "^1.13.2"
   },
   "engines": {
-    "node": "20.12.2"
+    "node": "20.11.1"
   },
   "browserslist": [],
   "renovate": {
