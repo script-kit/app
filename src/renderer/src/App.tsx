@@ -3,11 +3,10 @@ import React, {
   RefObject,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
 } from 'react';
 import log from 'electron-log/renderer';
-import { Bounce, ToastContainer, cssTransition } from 'react-toastify';
+import { ToastContainer, cssTransition } from 'react-toastify';
 import { debounce } from 'lodash-es';
 
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
@@ -29,7 +28,6 @@ import Drop from './components/drop';
 import Editor from './components/editor';
 import Hotkey from './components/hotkey';
 import Hint from './components/hint';
-import Selected from './components/selected';
 import TextArea from './components/textarea';
 import Panel from './components/panel';
 import Console from './components/console';
@@ -74,6 +72,7 @@ import {
   cssAtom,
   triggerResizeAtom,
   inputAtom,
+  focusedElementAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useMessages, useShortcuts } from './hooks';
@@ -194,7 +193,30 @@ export default function App() {
 
   const audioDot = useAtomValue(audioDotAtom);
 
+  const [focusedElement, setFocusedElement] = useAtom(focusedElementAtom);
+
   useMessages();
+
+  useEffect(() => {
+    const handleFocusIn = (event: FocusEvent) => {
+      log.info(
+        'Focused element:',
+        (event.target as HTMLElement).id ||
+          (event.target as HTMLElement).nodeName,
+      );
+
+      // id isn't "actions-input"
+      if ((event.target as HTMLElement).id !== 'actions-input') {
+        setFocusedElement(event.target as HTMLElement);
+      }
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+    };
+  }, []);
 
   useEffect(() => {
     log.info(`${pid}: 👩‍💻 UI changed to: ${ui}`);
@@ -571,7 +593,6 @@ ${showTabs ? 'border-t border-ui-border' : ''}
                 >
                   <div className="h-full min-h-1 overflow-x-hidden">
                     <ToastContainer
-                      className="-ml-3 -mt-20"
                       pauseOnFocusLoss={false}
                       position="bottom-right"
                       toastStyle={{

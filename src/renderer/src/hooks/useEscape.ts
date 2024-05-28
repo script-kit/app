@@ -1,4 +1,3 @@
-import log from 'electron-log';
 import { UI } from '@johnlindquist/kit/core/enum';
 import { useAtom } from 'jotai';
 
@@ -7,8 +6,6 @@ import {
   flaggedChoiceValueAtom,
   indexAtom,
   openAtom,
-  prevIndexAtom,
-  prevInputAtom,
   _inputAtom,
   isReadyAtom,
   escapeAtom,
@@ -21,7 +18,6 @@ import {
   scriptAtom,
   channelAtom,
   isMainScriptAtom,
-  inputAtom,
 } from '../jotai';
 import { hotkeysOptions } from './shared';
 import { AppChannel } from '../../../shared/enums';
@@ -32,29 +28,21 @@ export default () => {
   const [isReady] = useAtom(isReadyAtom);
   const [flagValue, setFlagValue] = useAtom(flaggedChoiceValueAtom);
   const [input] = useAtom(_inputAtom);
-  const [prevInput] = useAtom(prevInputAtom);
 
   const [index] = useAtom(indexAtom);
-  const [prevIndex] = useAtom(prevIndexAtom);
   const [ui] = useAtom(uiAtom);
   const [runMainScript] = useAtom(runMainScriptAtom);
   const [shortcuts] = useAtom(shortcutsAtom);
   const [script] = useAtom(scriptAtom);
   const [promptData] = useAtom(promptDataAtom);
   const [, setRunning] = useAtom(runningAtom);
-  const [submitted, setSubmitted] = useAtom(submittedAtom);
+  const [submitted] = useAtom(submittedAtom);
   const [channel] = useAtom(channelAtom);
   const [isMainScript] = useAtom(isMainScriptAtom);
-  const [, setInput] = useAtom(inputAtom);
 
   useHotkeys(
     'escape',
     (event) => {
-      log.info('Escape pressed in useEscape.ts', {
-        flagValue,
-        input,
-      });
-
       event.preventDefault();
       if (
         script?.filePath !== promptData?.scriptPath ||
@@ -65,12 +53,6 @@ export default () => {
       }
 
       if (shortcuts?.find((s) => s.key === 'escape') && !flagValue) return;
-
-      log.info({
-        flagValue,
-        isReady,
-        ui,
-      });
 
       if (flagValue) {
         setFlagValue('');

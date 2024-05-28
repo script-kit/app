@@ -152,12 +152,6 @@ export default function Editor() {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!flaggedChoiceValue) {
-      editor?.focus();
-    }
-  }, [flaggedChoiceValue]);
-
   const onBeforeMount = useCallback(
     (monaco: Monaco) => {
       monaco.editor.defineTheme('kit-dark', nightOwl);

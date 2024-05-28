@@ -3172,3 +3172,5 @@ export const kitConfigAtom = atom({
   kitPath: '',
   mainScriptPath: '',
 });
+
+export const focusedElementAtom = atom<null | HTMLElement>(null);

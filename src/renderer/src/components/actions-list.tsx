@@ -14,6 +14,7 @@ import {
   actionsItemHeightAtom,
   actionsInputHeightAtom,
   flagsHeightAtom,
+  focusedElementAtom,
 } from '../jotai';
 import { ChoiceButtonProps } from '../../../shared/types';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -135,9 +136,19 @@ w-full
   );
 }
 
-export default function FlagsList() {
+export default function ActionsList() {
   const inputHeight = useAtomValue(actionsInputHeightAtom);
   const actionsHeight = useAtomValue(flagsHeightAtom);
+
+  const [prevFocusedElement] = useAtom(focusedElementAtom);
+
+  useEffect(() => {
+    return () => {
+      if (prevFocusedElement) {
+        prevFocusedElement.focus();
+      }
+    };
+  }, [prevFocusedElement]);
 
   return (
     <div
@@ -160,7 +171,7 @@ export default function FlagsList() {
       shadow-lg
       "
       style={{
-        height: actionsHeight + inputHeight + (actionsHeight === 0 ? 0 : 3), // 3px for the border, hmm....
+        height: actionsHeight + inputHeight + (actionsHeight === 0 ? 2 : 3), // 3px for the border, hmm....
         minHeight: inputHeight,
       }}
     >

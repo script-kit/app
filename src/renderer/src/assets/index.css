@@ -673,11 +673,16 @@ code::after {
 }
 
 .Toastify__toast {
-  padding: 4px;
+  @apply p-1;
+  @apply mb-1 !important;
 }
 
 .Toastify__toast-container--top-right {
   @apply right-1 top-16;
+}
+
+.Toastify__toast-container--bottom-right {
+  @apply right-2 bottom-2 !important;
 }
 
 @media (max-height: 48px) {

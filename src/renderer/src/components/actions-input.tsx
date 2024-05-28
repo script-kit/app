@@ -28,8 +28,6 @@ import {
   actionsInputFontSizeAtom,
 } from '../jotai';
 import { useFocus, useActionsKeyIndex, useTab } from '../hooks';
-import { EnterButton } from './actionenterbutton';
-import { ActionsEnterButton } from './actions-actionenterbutton';
 
 const remapModifiers = (m: string) => {
   if (m === 'Meta') return ['cmd'];
@@ -188,7 +186,7 @@ export default function ActionsInput() {
       </div> */}
       <div className="max-w-screen flex-1">
         <input
-          id="input"
+          id="actions-input"
           spellCheck="false"
           style={
             {

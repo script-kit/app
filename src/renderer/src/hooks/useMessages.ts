@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
+import { ToastOptions, toast } from 'react-toastify';
 import DOMPurify from 'dompurify';
 import log from 'electron-log/renderer';
 import { debounce } from 'lodash-es';
