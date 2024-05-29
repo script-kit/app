@@ -1355,6 +1355,13 @@ export class KitPrompt {
     const xNotChanged = bounds?.x && Math.abs(bounds.x - currentBounds.x) < 4;
     const yNotChanged = bounds?.y && Math.abs(bounds.y - currentBounds.y) < 4;
 
+    // log.info({
+    //   widthNotChanged,
+    //   heightNotChanged,
+    //   xNotChanged,
+    //   yNotChanged,
+    // });
+
     const noChange =
       heightNotChanged && widthNotChanged && xNotChanged && yNotChanged;
 
@@ -1484,6 +1491,8 @@ export class KitPrompt {
         width: Math.round(bounds.width),
         height: Math.round(bounds.height),
       };
+
+      // log.info(`Final bounds:`, finalBounds);
 
       if (kitState.isWindows) {
         if (!this.window?.isFocusable()) {
@@ -1938,10 +1947,22 @@ export class KitPrompt {
 
     this.sendToPrompt(Channel.SET_PROMPT_DATA, promptData);
 
+    const isMainScript = getMainScriptPath() === promptData.scriptPath;
+
     if (
-      typeof promptData?.x === 'number' ||
-      typeof promptData?.y === 'number'
+      !isMainScript &&
+      (typeof promptData?.x === 'number' ||
+        typeof promptData?.y === 'number' ||
+        typeof promptData?.width === 'number' ||
+        typeof promptData?.height === 'number')
     ) {
+      log.info(`Found bounds`, {
+        x: promptData.x,
+        y: promptData.y,
+        width: promptData.width,
+        height: promptData.height,
+      });
+
       this.setBounds(
         {
           x: promptData.x,
@@ -1953,7 +1974,7 @@ export class KitPrompt {
       );
     }
 
-    if (this.firstPrompt) {
+    if (this.firstPrompt && !isMainScript) {
       log.info(`${this.pid} Before initBounds`);
       if (kitState.isWindows) {
         this.window?.setFocusable(true);

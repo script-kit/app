@@ -81,6 +81,7 @@ export default () => {
 
       if (promptData?.strict && panelHTML?.length === 0) {
         if ((choices.length && hasFocusedChoice) || flagValue) {
+          // log.info(`submitting focused choice: ${focusedChoice?.value}`);
           submit(focusedChoice?.value);
         }
       } else {

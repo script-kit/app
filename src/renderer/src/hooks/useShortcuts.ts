@@ -109,10 +109,10 @@ export default () => {
   useHotkeys(
     flagShortcuts.length ? flagShortcuts.replaceAll('cmd', 'mod') : 'f19',
     (event, handler: HotkeysEvent) => {
-      if (!inputFocus) return;
+      // log.info('flag shortcuts', { flagShortcuts, handler });
       event.preventDefault();
 
-      if (flagValue) return;
+      // if (flagValue) return;
 
       const key = handler?.keys?.[0];
       if (!key) return;
@@ -144,16 +144,13 @@ export default () => {
   useHotkeys(
     onShortcuts.replaceAll('cmd', 'mod'),
     (event, handler: HotkeysEvent) => {
+      // log.info('prompt shortcuts', { promptShortcuts, handler });
       event.preventDefault();
 
-      if (flagValue) return;
+      // if (flagValue) return;
       const key = handler?.keys?.[0];
       if (!key) return;
 
-      log.info({
-        key,
-        actionsInputFocus,
-      });
       if (key === 'escape' && actionsInputFocus) return;
 
       log.info(`After escape check: ${key}`);

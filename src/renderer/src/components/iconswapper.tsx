@@ -30,11 +30,7 @@ type IconSwapperProps = {
   text: string;
   className?: string;
 };
-IconSwapper.defaultProps = {
-  className: '',
-};
-
-export function IconSwapper({ text, className }: IconSwapperProps) {
+export function IconSwapper({ text, className = '' }: IconSwapperProps) {
   const [app] = useAtom(appConfigAtom);
   const m = app?.isMac;
 

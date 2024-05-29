@@ -39,6 +39,30 @@ import {
 import Button from './chat/button';
 import MessageBox from './chat/messagebox';
 
+const parser = new DOMParser();
+const checkValidHtml = (html: string) => {
+  const doc = parser.parseFromString(html, 'text/html');
+  const isValid = doc.body.innerHTML === html;
+  return isValid;
+};
+
+const escapeMap: { [char: string]: string } = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#x27;', // OWASP recommended for apostrophe
+  '/': '&#x2F;', // OWASP recommended for forward slash
+};
+
+const escapeRegExp = /[&<>"'/]/g;
+
+const escapeHtml = (html: string) => {
+  const escaped = html.replace(escapeRegExp, (char) => escapeMap[char]);
+
+  return escaped;
+};
+
 const ChatInput: React.FC<
   IInputProps & {
     setInput: (fn: (text: string) => void) => void;
@@ -605,17 +629,20 @@ export function Chat() {
     (e: any) => {
       e.preventDefault();
       if (isComposing) return;
+      // const validHtml = checkValidHtml(currentMessage);
+      // Escape html characters if invalid
+      const text = escapeHtml(currentMessage);
       const updatedMessages = [
         ...messages,
         {
           position: 'right',
           type: 'text',
-          text: currentMessage,
+          text,
         },
       ] as MessageType[];
 
       setMessages(updatedMessages);
-      submitMessage(currentMessage);
+      submitMessage(text);
       setCurrentMessage('');
       if (clearRef.current) clearRef.current();
     },

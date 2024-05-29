@@ -685,6 +685,11 @@ code::after {
   @apply right-2 bottom-2 !important;
 }
 
+/* Conditional style if another element exists */
+body:has(#footer) .Toastify__toast-container--bottom-right {
+  @apply bottom-8 !important;
+}
+
 @media (max-height: 48px) {
   :root {
     --toastify-toast-max-height: 40px;

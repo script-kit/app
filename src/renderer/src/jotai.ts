@@ -431,6 +431,8 @@ export const prevInputAtom = atom('');
 export const defaultValueAtom = atom('');
 export const defaultChoiceIdAtom = atom('');
 
+export const defaultActionsIdAtom = atom('');
+
 export const flagsRequiresScrollAtom = atom(-1);
 export const requiresScrollAtom = atom(-1);
 
@@ -698,7 +700,7 @@ export const scoredChoicesAtom = atom(
       s(panelHTMLAtom, ``);
 
       const defaultValue: any = g(defaultValueAtom);
-      const defaultChoiceId: string = g(defaultChoiceIdAtom);
+      const defaultChoiceId = g(defaultChoiceIdAtom);
       const prevIndex = g(prevIndexAtom);
       const input = g(inputAtom);
       if (cs?.length && (defaultValue || defaultChoiceId)) {
@@ -1197,11 +1199,21 @@ const resize = debounce(
     //   forceResize = true;
     // }
 
-    if (ui === UI.div) {
-      forceHeight = promptData?.height;
+    const flaggedValue = g(_flaggedValue);
+
+    if (ui !== UI.arg) {
+      if (
+        flaggedValue &&
+        promptData?.height &&
+        promptData?.height < PROMPT.HEIGHT.BASE
+      ) {
+        forceHeight = PROMPT.HEIGHT.BASE;
+      } else {
+        forceHeight = promptData?.height;
+      }
     }
 
-    if (ui === UI.arg && g(_flaggedValue)) {
+    if (ui === UI.arg && flaggedValue) {
       forceHeight = PROMPT.HEIGHT.BASE;
     }
 
@@ -1836,6 +1848,9 @@ export const submitValueAtom = atom(
     // });
     if (action.hasAction) {
       channel(Channel.ACTION);
+      if (!action?.keepOpen) {
+        s(flaggedChoiceValueAtom, '');
+      }
       return;
     }
 
@@ -2291,7 +2306,7 @@ export const onShortcutAtom = atom<OnShortcut>({});
 export const sendShortcutAtom = atom(null, (g, s, shortcut: string) => {
   const channel = g(channelAtom);
   // const log = log;
-  // log.info(`🎬 Send shortcut ${shortcut}`);
+  log.info(`🎬 Send shortcut ${shortcut}`);
 
   channel(Channel.SHORTCUT, { shortcut });
   s(focusedFlagValueAtom, '');
@@ -2970,6 +2985,14 @@ export const scoredFlagsAtom = atom(
     }
 
     s(flagsHeightAtom, choicesHeight);
+
+    const defaultActionId = g(defaultActionsIdAtom);
+    if (defaultActionId) {
+      const defaultActionIndex = a.findIndex(
+        (c) => c?.item?.id === defaultActionId,
+      );
+      s(flagsIndexAtom, defaultActionIndex || 0);
+    }
   },
 );
 

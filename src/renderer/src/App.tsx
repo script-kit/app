@@ -102,6 +102,7 @@ class ErrorBoundary extends React.Component {
   };
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    log.warn('ErrorBoundary:', error, info);
     // Display fallback UI
     this.setState({ hasError: true, info });
     // You can also log the error to an error reporting service
@@ -199,14 +200,17 @@ export default function App() {
 
   useEffect(() => {
     const handleFocusIn = (event: FocusEvent) => {
-      log.info(
-        'Focused element:',
-        (event.target as HTMLElement).id ||
-          (event.target as HTMLElement).nodeName,
-      );
-
       // id isn't "actions-input"
-      if ((event.target as HTMLElement).id !== 'actions-input') {
+      const target = event.target as HTMLElement;
+      const tag = target.tagName;
+      if (
+        target.id !== 'actions-input' &&
+        (tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          tag === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        log.info(`🔍 Focused element: ${target.id || target.nodeName}`);
         setFocusedElement(event.target as HTMLElement);
       }
     };
