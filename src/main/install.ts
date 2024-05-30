@@ -291,6 +291,13 @@ export const installPlatformDeps = async () => {
   return null;
 };
 
+export const installNoDom = async () => {
+  return installPackage(
+    `i @typescript/lib-dom@npm:@johnlindquist/no-dom --save-exact --production --prefer-dedupe --loglevel=verbose`,
+    kitPath(),
+  );
+};
+
 const getOptions = () => {
   const options: any = {
     insecure: true,

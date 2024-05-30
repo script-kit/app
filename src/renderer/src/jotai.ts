@@ -20,6 +20,8 @@ import {
   Shortcut,
   AppState,
   ProcessInfo,
+  Action,
+  FlagsWithKeys,
 } from '@johnlindquist/kit/types/core';
 
 import {
@@ -51,7 +53,6 @@ import {
 } from '../../shared/defaults';
 import { toHex } from '../../shared/color-utils';
 import { formatShortcut } from './components/formatters';
-import { Action } from './components/actions';
 import { Rectangle } from 'electron';
 
 let placeholderTimeoutId: NodeJS.Timeout;
@@ -1735,7 +1736,7 @@ export const focusedFlagValueAtom = atom(
   },
 );
 
-export const focusedActionAtom = atom({});
+export const focusedActionAtom = atom<Action>({} as Action);
 
 const _submitValue = atom('');
 export const searchDebounceAtom = atom(true);
@@ -1842,13 +1843,13 @@ export const submitValueAtom = atom(
     // );
     const channel = g(channelAtom);
 
-    const action = g(focusedActionAtom) as any;
+    const action = g(focusedActionAtom);
     // log.info({
     //   action,
     // });
-    if (action.hasAction) {
+    if ((action as FlagsWithKeys).hasAction) {
       channel(Channel.ACTION);
-      if (!action?.keepOpen) {
+      if (action?.close) {
         s(flaggedChoiceValueAtom, '');
       }
       return;

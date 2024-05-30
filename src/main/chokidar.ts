@@ -14,7 +14,8 @@ export const startWatching = (callback: WatcherCallback) => {
     [
       path.resolve(kenvPath('snippets', '*')),
       path.resolve(kenvPath('scripts', '*')),
-      path.resolve(kenvPath('lib', '**', '*')),
+      path.resolve(kenvPath('lib', '**', '*.ts')),
+      path.resolve(kenvPath('lib', '**', '*.js')),
     ],
     {
       depth: 0,
@@ -42,7 +43,8 @@ export const startWatching = (callback: WatcherCallback) => {
     const globs = [
       path.resolve(filePath, 'snippets', '*'),
       path.resolve(filePath, 'scripts', '*'),
-      path.resolve(filePath, 'lib', '**', '*'),
+      path.resolve(filePath, 'lib', '**', '*.ts'),
+      path.resolve(filePath, 'lib', '**', '*.js'),
     ];
 
     setTimeout(() => {

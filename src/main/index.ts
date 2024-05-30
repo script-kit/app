@@ -118,6 +118,7 @@ import {
   forkOptions,
   installEsbuild,
   installKitInKenv,
+  installNoDom,
   installPlatformDeps,
   matchPackageJsonEngines,
   ohNo,
@@ -948,6 +949,7 @@ const checkKit = async () => {
       installKitInKenv(),
       installEsbuild(),
       installPlatformDeps(),
+      installNoDom(),
     ]);
   }
 

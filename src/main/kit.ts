@@ -92,6 +92,13 @@ emitter.on(
         }
       | string,
   ) => {
+    if (!kitState.ready) {
+      log.warn(
+        'Kit not ready. Ignoring prompt process:',
+        scriptOrScriptAndData,
+      );
+      return;
+    }
     const { scriptPath, args, options } =
       typeof scriptOrScriptAndData === 'string'
         ? {

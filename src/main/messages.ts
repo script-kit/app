@@ -2148,6 +2148,14 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         value,
       });
     }),
+
+    CLOSE_ACTIONS: onChildChannel(async ({ child }, { channel, value }) => {
+      sendToPrompt(Channel.SET_FLAG_VALUE, '');
+    }),
+
+    OPEN_ACTIONS: onChildChannel(async ({ child }, { channel, value }) => {
+      sendToPrompt(Channel.SET_FLAG_VALUE, 'action');
+    }),
   };
 
   return kitMessageMap;

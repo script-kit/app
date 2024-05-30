@@ -77,7 +77,7 @@ export const toRgb = (hexOrRgbOrName: string) => {
   if (colors[hexOrRgbOrName]) return colors[hexOrRgbOrName].join(',');
 
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(
-    hexOrRgbOrName
+    hexOrRgbOrName,
   );
 
   if (!result) return `0, 0, 0`;
@@ -116,7 +116,7 @@ const infoScript = kitPath('cli', 'info.js');
 const conversionFail = (
   shortcut: string,
   filePath: string,
-  otherPath = ''
+  otherPath = '',
 ) => `# Shortcut Conversion Failed
 
 Attempted to convert to a valid shortcut, but result was invalid:
@@ -124,7 +124,7 @@ Attempted to convert to a valid shortcut, but result was invalid:
 <code>${shortcut}</code>
 
 Please open ${path.basename(
-  filePath
+  filePath,
 )} and try again or ask a question in our [Github Discussions](https://github.com/johnlindquist/kit/discussions)
 `;
 
@@ -132,7 +132,7 @@ export const shortcutInfo = async (
   shortcut: string,
   targetScriptPath: string,
   md = conversionFail,
-  otherScriptPath = ''
+  otherScriptPath = '',
 ) => {
   const markdown = md(shortcut, targetScriptPath, otherScriptPath);
   // log.info(markdown);
