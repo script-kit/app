@@ -166,7 +166,10 @@ const getDepWatcher = () => {
       `🔍 ${filePath} triggered a ${eventName} event. It's a known dependency of one of more scripts. Doing a reverse lookup...`,
     );
 
-    const relativeFilePath = path.relative(kenvPath(), filePath);
+    // globby requires forward slashes
+    const relativeFilePath = path
+      .relative(kenvPath(), filePath)
+      .replace(/\\/g, '/');
     const affectedScripts = findEntryScripts(depGraph, relativeFilePath);
 
     log.info(
@@ -225,11 +228,14 @@ const madgeAllScripts = debounce(async () => {
     withFileTypes: true,
   });
 
+  // globby requires forward slashes
   const allScriptPaths = await globby([
-    kenvPath('scripts', '*'),
+    kenvPath('scripts', '*').replace(/\\/g, '/'),
     ...kenvs
       .filter((k) => k.isDirectory())
-      .map((kenv) => kenvPath('kenvs', kenv.name, 'scripts', '*')),
+      .map((kenv) =>
+        kenvPath('kenvs', kenv.name, 'scripts', '*').replace(/\\/g, '/'),
+      ),
   ]);
 
   log.info(`🔍 ${allScriptPaths.length} scripts found`);

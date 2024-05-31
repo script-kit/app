@@ -40,6 +40,7 @@ import { kitCache, kitState } from '../shared/state';
 import { noChoice } from '../shared/defaults';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 
+let actionsOpenTimeout: NodeJS.Timeout;
 let prevTransformedInput = '';
 const checkShortcodesAndKeywords = (
   prompt: KitPrompt,
@@ -516,6 +517,21 @@ ${data.error}
         if (channel === Channel.ACTIONS_INPUT) {
           const actionsInput = message.state.actionsInput as string;
           invokeFlagSearch(prompt, actionsInput);
+        }
+
+        if (channel === Channel.ON_MENU_TOGGLE) {
+          const hasFlaggedValue = Boolean(message.state.flaggedValue);
+          log.info(`🔍 Actions menu ${hasFlaggedValue ? 'open' : 'closed'}`);
+          prompt.actionsOpen = hasFlaggedValue;
+
+          if (hasFlaggedValue) {
+            prompt.wasActionsJustOpen = true;
+          } else {
+            clearTimeout(actionsOpenTimeout);
+            actionsOpenTimeout = setTimeout(() => {
+              prompt.wasActionsJustOpen = false;
+            }, 50);
+          }
         }
 
         if (channel === Channel.ON_MENU_TOGGLE && prompt.flagSearch.input) {

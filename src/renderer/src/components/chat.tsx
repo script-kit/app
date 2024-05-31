@@ -7,7 +7,7 @@
 import log from 'electron-log';
 import { useAtom, useSetAtom } from 'jotai';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
-
+import { debounce } from 'lodash-es';
 import parse, { domToReact } from 'html-react-parser';
 import React, {
   useEffect,
@@ -62,6 +62,10 @@ const escapeHtml = (html: string) => {
 
   return escaped;
 };
+
+const copyToClipboard = debounce((text: string) => {
+  navigator.clipboard.writeText(text);
+}, 100);
 
 const ChatInput: React.FC<
   IInputProps & {
@@ -367,7 +371,7 @@ const ChatList: FC<IMessageListProps> = ({
     const text = e.currentTarget.innerText;
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard.writeText(text);
+    copyToClipboard(text);
 
     // Change class from .kit-mbox-copyable to .kit-mbox-copied
     const element = e.currentTarget;

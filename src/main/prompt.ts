@@ -525,6 +525,8 @@ export class KitPrompt {
   cacheScriptChoices = false;
   cacheScriptPromptData = false;
   cacheScriptPreview = false;
+  actionsOpen = false;
+  wasActionsJustOpen = false;
 
   birthTime = performance.now();
 
@@ -878,7 +880,8 @@ export class KitPrompt {
         (isW && (kitState.isMac ? input.meta : input.control)) ||
         (this.firstPrompt &&
           this.scriptPath === getMainScriptPath() &&
-          isEscape)
+          isEscape &&
+          !this.wasActionsJustOpen)
       ) {
         if (isW) {
           log.info(
@@ -1331,6 +1334,9 @@ export class KitPrompt {
   };
 
   initMainBounds = async () => {
+    if (kitState.isWindows) {
+      this.window?.setFocusable(true);
+    }
     const bounds = getCurrentScreenPromptCache(getMainScriptPath());
     if (!bounds.height || bounds.height < PROMPT.HEIGHT.BASE) {
       bounds.height = PROMPT.HEIGHT.BASE;
