@@ -1141,7 +1141,11 @@ export class KitPrompt {
     } else {
       this.window.on('will-resize', (event, rect) => {
         log.silly(`Will Resize ${rect.width} ${rect.height}`);
-
+        this.sendToPrompt(Channel.SET_PROMPT_BOUNDS, {
+          id: this.id,
+          ...rect,
+          human: true,
+        });
         this.modifiedByUser = true;
       });
     }

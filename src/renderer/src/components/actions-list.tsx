@@ -154,14 +154,14 @@ export default function ActionsList() {
     <div
       id="flags"
       className="
-
       z-50
       flags-component flex w-96 flex-col overflow-y-hidden
       max-h-[80vh]
       absolute
       top-7
       transform
-      translate-x-1/2
+      left-1/2
+      -translate-x-1/2
       origin-top
       rounded-lg
       bg-bg-base/90

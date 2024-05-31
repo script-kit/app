@@ -1,16 +1,17 @@
 /* eslint-disable no-restricted-syntax */
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
+
 import path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 import dotenv from 'dotenv';
-import { rm, readdir, readFile, lstat } from 'fs/promises';
+import { rm, readdir, readFile, writeFile, lstat } from 'fs/promises';
 import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
 import { Script } from '@johnlindquist/kit/types';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
-import madge from 'madge';
+import madge, { MadgeModuleDependencyGraph } from 'madge';
 import { globby } from 'globby';
 
 import {
@@ -20,7 +21,7 @@ import {
   resolveToScriptPath,
 } from '@johnlindquist/kit/core/utils';
 
-import { FSWatcher } from 'chokidar';
+import chokidar, { FSWatcher } from 'chokidar';
 import { unlinkShortcuts, shortcutScriptChanged } from './shortcuts';
 
 import { cancelSchedule, scheduleScriptChanged } from './schedule';
@@ -47,7 +48,7 @@ import { emitter, KitEvent } from '../shared/events';
 import { AppChannel, Trigger } from '../shared/enums';
 import { runScript } from './kit';
 import { processes, spawnShebang, updateTheme } from './process';
-import { compareArrays } from './helpers';
+import { compareArrays, isInDirectory } from './helpers';
 import { getFileImports } from './npm';
 import { sendToAllPrompts } from './channel';
 import { readKitCss, setCSSVariable } from './theme';
@@ -151,9 +152,121 @@ const checkFileImports = debounce(async (script: Script) => {
   }
 }, 25);
 
+let depWatcher: FSWatcher;
+let depGraph: MadgeModuleDependencyGraph = {};
+const getDepWatcher = () => {
+  if (depWatcher) return depWatcher;
+
+  depWatcher = chokidar.watch(kenvPath('package.json'), {
+    ignoreInitial: kitState.ignoreInitial,
+  });
+
+  depWatcher.on('all', async (eventName, filePath) => {
+    log.info(
+      `🔍 ${filePath} triggered a ${eventName} event. It's a known dependency of one of more scripts. Doing a reverse lookup...`,
+    );
+
+    const relativeFilePath = path.relative(kenvPath(), filePath);
+    const affectedScripts = findEntryScripts(depGraph, relativeFilePath);
+
+    log.info(
+      `🔍 ${filePath} is a dependency of these scripts:`,
+      Array.from(affectedScripts),
+    );
+    log.info(`Clearing their respective caches...`);
+
+    for await (const relativeScriptPath of affectedScripts) {
+      const cachePath = path.join(
+        path.dirname(kenvPath(relativeScriptPath)),
+        '.cache',
+        path.basename(relativeScriptPath) + '.js',
+      );
+      if (await lstat(cachePath).catch(() => false)) {
+        log.info(`🔥 Clearing cache for ${relativeScriptPath} at ${cachePath}`);
+        await rm(cachePath);
+      } else {
+        log.info(
+          `🤔 Cache for ${relativeScriptPath} at ${cachePath} does not exist`,
+        );
+      }
+    }
+  });
+
+  return depWatcher;
+};
+
+function findEntryScripts(
+  graph: MadgeModuleDependencyGraph,
+  relativeDepPath: string,
+  checkedScripts: Set<string> = new Set(),
+): Set<string> {
+  const entries = new Set<string>();
+  for (const [script, deps] of Object.entries(graph)) {
+    if (deps.length === 0) {
+    } else if (deps.includes(relativeDepPath) && !checkedScripts.has(script)) {
+      log.info(`🔍 Found ${relativeDepPath} as a dependency of`, script);
+      checkedScripts.add(script);
+      // Recursively find other scripts that depend on this script
+      const more = findEntryScripts(graph, script, checkedScripts);
+      if (more.size === 0) {
+        entries.add(script);
+      } else {
+        // Merge results from deeper calls
+        more.forEach((entry) => entries.add(entry));
+      }
+    }
+  }
+
+  return entries;
+}
+
 const madgeAllScripts = debounce(async () => {
-  log.info(`👀 Madge all scripts`);
-}, 25);
+  const kenvs = await readdir(kenvPath('kenvs'), {
+    withFileTypes: true,
+  });
+
+  const allScriptPaths = await globby([
+    kenvPath('scripts', '*'),
+    ...kenvs
+      .filter((k) => k.isDirectory())
+      .map((kenv) => kenvPath('kenvs', kenv.name, 'scripts', '*')),
+  ]);
+
+  log.info(`🔍 ${allScriptPaths.length} scripts found`);
+
+  const fileMadge = await madge(allScriptPaths, {
+    baseDir: kenvPath(),
+    dependencyFilter: (source) => {
+      // Path is relative to kenvPath()
+
+      return !source.includes('.kit') && isInDirectory(source, kenvPath());
+    },
+  });
+  depGraph = fileMadge.obj();
+
+  const depWatcher = getDepWatcher();
+  const watched = depWatcher.getWatched();
+  for (const [dir, files] of Object.entries(watched)) {
+    for (const file of files) {
+      const filePath = path.join(dir, file);
+      log.info(`Unwatching ${filePath}`);
+      depWatcher.unwatch(filePath);
+    }
+  }
+  for (const scriptKey of Object.keys(depGraph)) {
+    const deps = depGraph[scriptKey];
+
+    for (const dep of deps) {
+      const depKenvPath = kenvPath(dep);
+      log.info(`Watching ${depKenvPath}`);
+      depWatcher.add(depKenvPath);
+    }
+
+    if (deps.length > 0) {
+      log.info(`${scriptKey} has ${deps.length} dependencies`, deps);
+    }
+  }
+}, 100);
 
 let firstBatch = true;
 let firstBatchTimeout: NodeJS.Timeout;
@@ -169,6 +282,8 @@ export const onScriptsChanged = async (
       log.info(`Finished parsing scripts ✅`);
     }, 1000);
   }
+
+  madgeAllScripts();
 
   log.verbose(`👀 ${event} ${filePath}`);
   if (event === 'unlink') {
@@ -607,76 +722,45 @@ export const setupWatchers = async () => {
     }
 
     if (dir.endsWith('lib') && eventName !== 'ready') {
-      const kenvs = await readdir(kenvPath('kenvs'), {
-        withFileTypes: true,
-      });
-      const allScriptPaths = await globby([
-        kenvPath('scripts', '*'),
-        ...kenvs
-          .filter((k) => k.isDirectory())
-          .map((kenv) => kenvPath('kenvs', kenv.name, 'scripts', '*')),
-      ]);
+      // for (const scriptPath of allScriptPaths) {
+      //   performance.mark('madge-start');
+      //   const fileMadge = await madge(scriptPath, {
+      //     baseDir: kenvPath(),
+      //     dependencyFilter: (source) => {
+      //       return !source.includes('.kit');
+      //     },
+      //   });
+      //   const obj = fileMadge.obj();
+      // Remove kenvPath() from filePath
 
-      for (const scriptPath of allScriptPaths) {
-        performance.mark('madge-start');
-        const fileMadge = await madge(scriptPath, {
-          baseDir: kenvPath(),
-          dependencyFilter: (source) => {
-            return !source.includes('.kit');
-          },
-        });
-        const obj = fileMadge.obj();
-        // Remove kenvPath() from filePath
-        const filePathWithoutKenv = path.relative(kenvPath(), filePath);
-        // log.info(`🔍 ${filePath}`, filePathWithoutKenv);
-
-        if (obj[filePathWithoutKenv]) {
-          log.info(`🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐🧐`);
-          const scriptFileCachePath = path.join(
-            path.dirname(scriptPath),
-            '.cache',
-            path.basename(scriptPath) + '.js',
-          );
-
-          log.info(
-            `Found that ${scriptPath} uses ${filePath} so removing ${scriptFileCachePath}`,
-          );
-          // if exists using lstat, remove
-          if (await lstat(scriptFileCachePath).catch(() => false)) {
-            log.info(`Removing ${scriptFileCachePath}`);
-            await rm(scriptFileCachePath);
-          } else {
-            log.info(`${scriptFileCachePath} does not exist`);
-          }
-
-          // log.info(`🔍 ${filePath}`, obj, { filePathWithoutKenv });
-          // performance.mark('madge-end');
-          // const madgeDuration = performance.measure(
-          //   'madge',
-          //   'madge-start',
-          //   'madge-end',
-          // );
-          // log.info(
-          //   `🔍 ${filePath} analysis duration: ${madgeDuration.duration}ms`,
-          // );
-        }
-      }
+      // log.info(`🔍 ${filePath}`, obj, { filePathWithoutKenv });
+      // performance.mark('madge-end');
+      // const madgeDuration = performance.measure(
+      //   'madge',
+      //   'madge-start',
+      //   'madge-end',
+      // );
+      // log.info(
+      //   `🔍 ${filePath} analysis duration: ${madgeDuration.duration}ms`,
+      // );
+      //   }
+      // }
 
       // Remove the kenvPath("scripts/.cache") files
-      const scriptsDir = kenvPath('scripts', '.cache');
-      log.info(
-        `Detected changes in ${kenvPath('lib')}. Clearing ${scriptsDir}...`,
-      );
-      const files = await readdir(scriptsDir);
-      for (const file of files) {
-        const filePath = path.join(scriptsDir, file);
-        try {
-          await rm(filePath);
-          log.info(`Removed cached file: ${filePath}`);
-        } catch (error) {
-          log.warn(`Failed to remove cached file: ${filePath}`, error);
-        }
-      }
+      // const scriptsDir = kenvPath('scripts', '.cache');
+      // log.info(
+      //   `Detected changes in ${kenvPath('lib')}. Clearing ${scriptsDir}...`,
+      // );
+      // const files = await readdir(scriptsDir);
+      // for (const file of files) {
+      //   const filePath = path.join(scriptsDir, file);
+      //   try {
+      //     await rm(filePath);
+      //     log.info(`Removed cached file: ${filePath}`);
+      //   } catch (error) {
+      //     log.warn(`Failed to remove cached file: ${filePath}`, error);
+      //   }
+      // }
       try {
         await checkFileImports({
           filePath,

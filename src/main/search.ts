@@ -488,6 +488,7 @@ export const setFlags = (
   for (const [key, value] of Object.entries(f)) {
     if (key !== 'order' && key !== 'sortChoicesKey') {
       flagChoices.push({
+        ...(value as any),
         id: key,
         group: value?.group,
         command: value?.name,

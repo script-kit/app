@@ -1045,8 +1045,14 @@ const resizeSettle = debounce((g: Getter, s: Setter) => {
   resize(g, s, 'SETTLE');
 }, 250);
 
+export const promptResizedByHumanAtom = atom(false);
+
 const resize = debounce(
   (g: Getter, s: Setter, reason = 'UNSET') => {
+    const human = g(promptResizedByHumanAtom);
+    if (human) {
+      return;
+    }
     // log.info(`${g(pidAtom)}: ${g(scriptAtom)?.filePath}: 🌈 resize: ${reason}`);
     if (reason !== 'SETTLE') resizeSettle(g, s);
 
@@ -1844,12 +1850,13 @@ export const submitValueAtom = atom(
     const channel = g(channelAtom);
 
     const action = g(focusedActionAtom);
-    // log.info({
-    //   action,
-    // });
+    log.info({
+      action,
+    });
     if ((action as FlagsWithKeys).hasAction) {
       channel(Channel.ACTION);
       if (action?.close) {
+        log.info(`Closing actions <<<<<<<<<<<<<<<<<<<<<<<<`);
         s(flaggedChoiceValueAtom, '');
       }
       return;
@@ -2692,7 +2699,7 @@ export const enterPressedAtom = atom(
 export const micIdAtom = atom<string | null>(null);
 export const webcamIdAtom = atom<string | null>(null);
 
-export const actionsButtonNameFontSizeAtom = atom('text-xs');
+export const actionsButtonNameFontSizeAtom = atom('text-sm');
 
 export const buttonNameFontSizeAtom = atom((g) => {
   let fontSize = `text-base`;
@@ -2730,7 +2737,7 @@ export const buttonNameFontSizeAtom = atom((g) => {
   return fontSize;
 });
 
-export const actionsButtonDescriptionFontSizeAtom = atom('text-xxs');
+export const actionsButtonDescriptionFontSizeAtom = atom('text-xs');
 
 export const buttonDescriptionFontSizeAtom = atom((g) => {
   const itemHeight = g(itemHeightAtom);
@@ -2768,7 +2775,7 @@ export const buttonDescriptionFontSizeAtom = atom((g) => {
   return fontSize;
 });
 
-export const actionsInputFontSizeAtom = atom(PROMPT.INPUT.HEIGHT.XS);
+export const actionsInputFontSizeAtom = atom('text-lg');
 
 export const inputFontSizeAtom = atom((g) => {
   let fontSize = `text-2xl`;
@@ -2953,7 +2960,32 @@ const promptBoundsDefault = {
   x: 0,
   y: 0,
 };
-export const promptBoundsAtom = atom(promptBoundsDefault);
+
+const _promptBoundsAtom = atom(promptBoundsDefault);
+export const promptBoundsAtom = atom(
+  (g) => {
+    const bounds = g(_promptBoundsAtom);
+    return bounds;
+  },
+  (
+    g,
+    s,
+    a: {
+      id: string;
+      width: number;
+      height: number;
+      x: number;
+      y: number;
+      human?: boolean;
+    },
+  ) => {
+    if (a?.human) {
+      log.info(`😙 Prompt resized by human: ${a.width}x${a.height}`);
+      s(promptResizedByHumanAtom, true);
+    }
+    s(_promptBoundsAtom, a);
+  },
+);
 
 export const audioDotAtom = atom(false);
 

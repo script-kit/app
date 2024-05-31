@@ -42,8 +42,14 @@ export function tildify(absolutePath: string) {
 }
 
 export const isInDirectory = (filePath: string, dir: string) => {
-  const relative = path.relative(dir, filePath);
-  return !relative.startsWith(`..`) && !path.isAbsolute(relative);
+  const relation = path.relative(dir, filePath);
+
+  return Boolean(
+    relation &&
+      relation !== '..' &&
+      !relation.startsWith(`..${path.sep}`) &&
+      relation !== path.resolve(filePath),
+  );
 };
 
 export function pathsAreEqual(path1: string, path2: string) {
