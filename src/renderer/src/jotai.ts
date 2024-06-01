@@ -2572,7 +2572,6 @@ const _chatMessagesAtom = atom<Partial<MessageType>[]>([]);
 export const chatMessagesAtom = atom(
   (g) => g(_chatMessagesAtom),
   (g, s, a: Partial<MessageType>[]) => {
-    log.info({ a });
     s(_chatMessagesAtom, a);
 
     const appMessage = {
@@ -3230,3 +3229,5 @@ export const kitConfigAtom = atom({
 });
 
 export const focusedElementAtom = atom<null | HTMLElement>(null);
+
+export const preventChatScrollAtom = atom(false);

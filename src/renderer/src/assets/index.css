@@ -108,8 +108,8 @@ body {
   @apply bg-white bg-opacity-60 opacity-100 dark:bg-black;
 }
 
-*:not(textarea)::-webkit-scrollbar {
-  display: none;
+*:not(textarea):not(.scrollbar):not(.chat-scrollbar)::-webkit-scrollbar {
+  width: 0 !important;
 }
 
 .scrollbar::-webkit-scrollbar {
@@ -120,10 +120,21 @@ body {
 
 .scrollbar::-webkit-scrollbar-thumb {
   @apply bg-text-base/50;
-  height: 24px;
+  height: 2px;
   max-height: 24px;
 }
 
+.chat-scrollbar::-webkit-scrollbar {
+  display: initial;
+  width: 5px;
+  @apply bg-ui-bg;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-text-base/50;
+  height: 2px;
+  max-height: 24px;
+}
 *::-webkit-resizer {
   display: none;
 }
@@ -580,7 +591,7 @@ code::after {
 }
 
 .kit-chat-messages {
-  @apply flex-1 overflow-auto p-2;
+  @apply flex-1 overflow-auto;
 }
 
 .kit-chat-input,

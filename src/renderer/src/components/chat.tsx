@@ -35,6 +35,7 @@ import {
   channelAtom,
   uiAtom,
   promptDataAtom,
+  preventChatScrollAtom,
 } from '../jotai';
 import Button from './chat/button';
 import MessageBox from './chat/messagebox';
@@ -213,6 +214,7 @@ const ChatList: FC<IMessageListProps> = ({
   const [scrollBottom, setScrollBottom] = useState(0);
   const [_downButton, setDownButton] = useState(false);
   const prevProps = useRef(props);
+  const [preventScroll, setPreventScroll] = useAtom(preventChatScrollAtom);
 
   const checkScroll = () => {
     const e = referance;
@@ -220,7 +222,7 @@ const ChatList: FC<IMessageListProps> = ({
 
     if (
       toBottomHeight === '100%' ||
-      (toBottomHeight && scrollBottom < toBottomHeight)
+      (toBottomHeight && scrollBottom < Number(toBottomHeight))
     ) {
       e.current.scrollTop = e.current.scrollHeight; // scroll to bottom
     } else if (lockable === true) {
@@ -234,11 +236,15 @@ const ChatList: FC<IMessageListProps> = ({
 
     if (prevProps.current.dataSource.length !== props.dataSource.length) {
       setScrollBottom(getBottom(referance));
-      checkScroll();
+      if (preventScroll) {
+        log.info(`Scrolling interrupted by user`);
+      } else {
+        checkScroll();
+      }
     }
 
     prevProps.current = props;
-  }, [checkScroll, prevProps, referance]);
+  }, [checkScroll, prevProps, referance, preventScroll]);
 
   const getBottom = (e: any) => {
     if (e.current)
@@ -326,6 +332,18 @@ const ChatList: FC<IMessageListProps> = ({
     // }
   };
 
+  const onWheel = (e: React.WheelEvent<HTMLElement>): void => {
+    const atBottom =
+      e.currentTarget.scrollHeight - e.currentTarget.scrollTop ===
+      e.currentTarget.offsetHeight;
+
+    if (atBottom) {
+      setPreventScroll(false);
+    } else {
+      setPreventScroll(true);
+    }
+  };
+
   const toBottom = (e: any) => {
     if (!referance) return;
     referance.current.scrollTop = referance.current.scrollHeight;
@@ -348,10 +366,15 @@ const ChatList: FC<IMessageListProps> = ({
   const onFocus = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
     // smooth scroll to focused element
     const element = e.currentTarget;
-    element.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-      inline: 'center',
+    // search the parent until you find the .rce-container-mbox
+    let parent = element.parentElement;
+    while (parent && !parent.classList.contains('rce-container-mbox')) {
+      parent = parent.parentElement;
+    }
+    (parent || element).scrollIntoView({
+      // behavior: 'smooth',
+      block: 'start',
+      inline: 'start',
     });
   }, []);
 
@@ -407,14 +430,29 @@ const ChatList: FC<IMessageListProps> = ({
     }
   };
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // on mount, force the -webkit-scrollbar pseudo element to be displayed
+  useEffect(() => {
+    if (containerRef) {
+    }
+  }, []);
+
   return (
     <div
+      ref={containerRef}
+      // show scrollbar
       className={classNames(['rce-container-mlist', props.className])}
       // eslint-disable-next-line react/jsx-props-no-spreading
       {...props.customProps}
     >
       {!!props.children && props.isShowChild && props.children}
-      <div ref={referance} onScroll={onScroll} className="rce-mlist">
+      <div
+        ref={referance}
+        onScroll={onScroll}
+        onWheel={onWheel}
+        className="rce-mlist chat-scrollbar"
+      >
         {props.dataSource.map((x, i: number, array) => {
           const options = {
             replace: (domNode: any) => {
@@ -702,7 +740,7 @@ export function Chat() {
         // scroll the messagesRef by 100px
         messagesRef.current?.scrollBy({
           top: direction * 100,
-          behavior: 'smooth',
+          // behavior: 'smooth',
         });
 
         return;
@@ -762,22 +800,25 @@ export function Chat() {
     // Scroll messagesRef to the bottom
     messagesRef.current?.scrollTo({
       top: messagesRef.current.scrollHeight,
-      behavior: 'smooth',
+      // behavior: 'smooth',
     });
   };
 
+  const [preventScroll, setPreventScroll] = useAtom(preventChatScrollAtom);
+
   // when messages changes, scroll to the bottom
   useEffect(() => {
+    if (preventScroll) return;
     const element = document.querySelector('.kit-chat-messages > .rce-mlist');
 
     if (element) {
       // smooth scroll to the bottom
       element.scrollTo({
         top: element.scrollHeight,
-        behavior: 'smooth',
+        // behavior: 'smooth',
       });
     }
-  }, [messages]);
+  }, [messages, preventScroll]);
 
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
@@ -789,13 +830,9 @@ export function Chat() {
       <ChatList
         referance={messagesRef}
         dataSource={messages as MessageType[]}
-        className="kit-chat-messages"
+        className="kit-chat-messages overflow-y-scroll"
         toBottomHeight="100%"
         notchStyle={{ display: 'none' }}
-        // Copy the content of the message on click
-        onClick={(e: any) => {
-          navigator.clipboard.writeText(e.text);
-        }}
       />
       <ChatInput
         multiline
