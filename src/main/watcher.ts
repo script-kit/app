@@ -243,9 +243,10 @@ const madgeAllScripts = debounce(async () => {
   const fileMadge = await madge(allScriptPaths, {
     baseDir: kenvPath(),
     dependencyFilter: (source) => {
-      // Path is relative to kenvPath()
-
-      return !source.includes('.kit') && isInDirectory(source, kenvPath());
+      const isInKenvPath = isInDirectory(source, kenvPath());
+      const notInKitSDK = !source.includes('.kit');
+      const notAURL = !source.includes('://');
+      return isInKenvPath && notInKitSDK && notAURL;
     },
   });
   depGraph = fileMadge.obj();

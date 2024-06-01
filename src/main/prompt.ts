@@ -1959,30 +1959,32 @@ export class KitPrompt {
 
     const isMainScript = getMainScriptPath() === promptData.scriptPath;
 
-    if (
-      !isMainScript &&
-      (typeof promptData?.x === 'number' ||
-        typeof promptData?.y === 'number' ||
-        typeof promptData?.width === 'number' ||
-        typeof promptData?.height === 'number')
-    ) {
-      log.info(`Found bounds`, {
-        x: promptData.x,
-        y: promptData.y,
-        width: promptData.width,
-        height: promptData.height,
-      });
+    // browse.js passes a height of 46px which causes a "shrink flash" here. I'm not sure if this setBounds call is necessary
+    // There's still an issue with setBounds when using a shortcut where the prompt needs to resize before its shown
+    // if (
+    //   !isMainScript &&
+    //   (typeof promptData?.x === 'number' ||
+    //     typeof promptData?.y === 'number' ||
+    //     typeof promptData?.width === 'number' ||
+    //     typeof promptData?.height === 'number')
+    // ) {
+    //   log.info(`Found bounds`, {
+    //     x: promptData.x,
+    //     y: promptData.y,
+    //     width: promptData.width,
+    //     height: promptData.height,
+    //   });
 
-      this.setBounds(
-        {
-          x: promptData.x,
-          y: promptData.y,
-          width: promptData.width,
-          height: promptData.height,
-        },
-        'setPromptData has bounds',
-      );
-    }
+    //   this.setBounds(
+    //     {
+    //       x: promptData.x,
+    //       y: promptData.y,
+    //       width: promptData.width,
+    //       height: promptData.height,
+    //     },
+    //     'setPromptData has bounds',
+    //   );
+    // }
 
     if (this.firstPrompt && !isMainScript) {
       log.info(`${this.pid} Before initBounds`);
