@@ -1550,6 +1550,69 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       },
     ),
 
+    KEYBOARD_TYPE_RATE: onChildChannelOverride(
+      async ({ child }, { channel, value: { rate, textOrKeys } }) => {
+        if (!kitState.supportsNut) {
+          log.warn(
+            `Keyboard type: Nut not supported on Windows arm64 or Linux arm64. Hoping to find a solution soon!`,
+          );
+          return;
+        }
+
+        // REMOVE-NUT
+        if (kitState.shortcutPressed) {
+          log.info(`Releasing ${kitState.shortcutPressed}`);
+          // Get the modifiers from the accelerator
+          const modifiers = kitState.shortcutPressed.split('+');
+          // Remove the last item, which is the key
+          const mainKey: any = modifiers.pop() || '';
+
+          log.info(`Pressing ${mainKey}`);
+
+          if (Key?.[mainKey]) {
+            log.info(`Releasing ${mainKey}`);
+            // await keyboard.releaseKey(Key[mainKey] as any);
+            // robot.keyToggle(getModifier(), 'up');
+          }
+        }
+        // log.info(
+        //   `${channel}: ${typeof textOrKeys} ${textOrKeys}, isArray: ${Array.isArray(textOrKeys)}, expanded: ${[...textOrKeys]}`,
+        // );
+        // keyboard.config.autoDelayMs =
+        //   kitState?.keyboardConfig?.autoDelayMs || 0;
+        kitState.isTyping = true;
+        // I can't remember why we do this. Something to do with "nut's" old typing system?
+        const text =
+          typeof textOrKeys === 'string' ? textOrKeys : textOrKeys[0];
+        try {
+          if (typeof rate === 'number') {
+            log.info(`⌨️ Typing ${text} with delay ${rate}`);
+            robot.typeStringDelayed(text, rate);
+          } else {
+            log.info(`⌨️ Typing ${text} without delay`);
+            robot.typeString(text);
+          }
+        } catch (error) {
+          log.error(`KEYBOARD ERROR TYPE`, error);
+        }
+
+        setTimeout(
+          () => {
+            kitState.snippet = '';
+            kitState.isTyping = false;
+            kitState.cancelTyping = false;
+            // keyboard.config.autoDelayMs = 0;
+            childSend({
+              channel,
+            });
+          },
+          Math.max(textOrKeys.length, 100),
+        );
+
+        // END-REMOVE-NUT
+      },
+    ),
+
     KEYBOARD_TYPE: onChildChannelOverride(
       async ({ child }, { channel, value }) => {
         if (!kitState.supportsNut) {
@@ -1575,40 +1638,39 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
             // robot.keyToggle(getModifier(), 'up');
           }
         }
-        log.info(
-          `${channel}: ${typeof value} ${value}, isArray: ${Array.isArray(value)}, expanded: ${[...value]}`,
-        );
+        // log.info(
+        //   `${channel}: ${typeof value} ${value}, isArray: ${Array.isArray(value)}, expanded: ${[...value]}`,
+        // );
         // keyboard.config.autoDelayMs =
         //   kitState?.keyboardConfig?.autoDelayMs || 0;
         kitState.isTyping = true;
-        if (typeof value === 'string') {
-          robot.typeString(value);
-        } else if (typeof value?.[0] === 'string') {
-          robot.typeString(value[0]);
+        const speed = kitState?.kenvEnv?.KIT_TYPING_SPEED;
+        // I can't remember why we do this. Something to do with "nut's" old typing system?
+        const text = typeof value === 'string' ? value : value[0];
+        try {
+          if (typeof speed === 'number') {
+            log.info(`⌨️ Typing ${text} with delay ${speed}`);
+            robot.typeStringDelayed(text, speed);
+          } else {
+            log.info(`⌨️ Typing ${text} without delay`);
+            robot.typeString(text);
+          }
+        } catch (error) {
+          log.error(`KEYBOARD ERROR TYPE`, error);
         }
-        // try {
-        //   const itemOrItems =
-        //     typeof firstItem === 'string'
-        //       ? (firstItem as string).split('')
-        //       : value;
-        //   for await (const k of itemOrItems) {
-        //     if (!kitState.cancelTyping) {
-        //       log.info(`Typing ${k}`);
-        //     }
-        //   }
-        // } catch (error) {
-        //   log.error(`KEYBOARD ERROR TYPE`, error);
-        // }
 
-        setTimeout(() => {
-          kitState.snippet = '';
-          kitState.isTyping = false;
-          kitState.cancelTyping = false;
-          // keyboard.config.autoDelayMs = 0;
-          childSend({
-            channel,
-          });
-        }, value.length);
+        setTimeout(
+          () => {
+            kitState.snippet = '';
+            kitState.isTyping = false;
+            kitState.cancelTyping = false;
+            // keyboard.config.autoDelayMs = 0;
+            childSend({
+              channel,
+            });
+          },
+          Math.max(value.length, 100),
+        );
 
         // END-REMOVE-NUT
       },
@@ -1847,9 +1909,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
 
     KEYBOARD_CONFIG: async (data) => {
-      if (data?.value) {
-        kitState.keyboardConfig = data.value;
-      }
+      log.warn(
+        `keyboard.config() is deprecated. Use keyboard.typeDelayed() or keyboard.type() with KIT_TYPING_RATE set instead.`,
+      );
     },
     SET_CONFIG: async (data) => {
       if (data?.value) {
