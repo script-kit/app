@@ -26,10 +26,10 @@ import {
 import os from 'os';
 import { remove } from 'lodash-es';
 import { snapshot } from 'valtio';
-import path from 'path';
-import http from 'http';
-import https from 'https';
-import { writeFile } from 'fs/promises';
+import path from 'node:path';
+import http from 'node:http';
+import https from 'node:https';
+import { writeFile } from 'node:fs/promises';
 import {
   Channel,
   Key,
@@ -50,7 +50,7 @@ import {
 // const { pathExistsSync, readJson } = fsExtra;
 import { getTimestamps } from '@johnlindquist/kit/core/db';
 import { getLog, Logger, warn } from './logs';
-import { clearPromptCache } from './prompt';
+import { clearPromptCache, getCurrentScreenFromMouse } from './prompt';
 import {
   getBackgroundTasks,
   getSchedule,
@@ -84,6 +84,7 @@ import { stripAnsi } from './ansi';
 import { getAssetPath } from '../shared/assets';
 import { TrackEvent, trackEvent } from './track';
 import {
+  SYSTEM_CHANNELS,
   cachePreview,
   childShortcutMap,
   clearFlags,
@@ -95,6 +96,7 @@ import {
 } from './process';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
+import { getSourceFromRectangle } from './screen';
 
 const getModifier = () => {
   return kitState.isMac ? ['command'] : ['control'];
@@ -2218,6 +2220,56 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     OPEN_ACTIONS: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_FLAG_VALUE, 'action');
     }),
+    SCREENSHOT: onChildChannelOverride(
+      async ({ child }, { channel, value }) => {
+        log.info(`📸 Screenshot`, {
+          channel,
+          value,
+        });
+
+        const screen = getCurrentScreenFromMouse();
+        const displayId = (value?.displayId || screen.id).toString();
+        const bounds = value?.bounds || screen.bounds;
+
+        const mouseSource = await getSourceFromRectangle(displayId, bounds);
+
+        if (mouseSource) {
+          const image = mouseSource.thumbnail.toPNG();
+          log.info(`📸 Creating screenshot...`);
+          // await writeFile(kenvPath('screenshot.png'), image);
+          const tmpPath = path.join(
+            os.tmpdir(),
+            `${new Date().toISOString().split('T')[0]}_screenshot.png`,
+          );
+          log.info(`Writing screenshot to ${tmpPath}`);
+          await writeFile(tmpPath, image);
+          log.info(`Sending screenshot to ${channel}`);
+          childSend({ channel, value: tmpPath });
+        } else {
+          log.error(`❌ No screenshot source found. Returning null`);
+          childSend({ channel, value: null });
+        }
+      },
+    ),
+    ...SYSTEM_CHANNELS.reduce((acc, channel) => {
+      acc[channel] = onChildChannel(async ({ child }, { channel, value }) => {
+        log.info(`SYSTEM CHANNEL`, { channel, value });
+        if (value && info?.preventChannels?.has(channel)) {
+          info?.preventChannels?.delete(channel);
+          log.info(`${child.pid} ${channel} removed from "prevent" list`, {
+            channel,
+            value,
+          });
+        } else {
+          info?.preventChannels?.add(channel);
+          log.info(`${child.pid} ${channel} added to "prevent" list`, {
+            channel,
+            value,
+          });
+        }
+      });
+      return acc;
+    }, {}),
   };
 
   return kitMessageMap;

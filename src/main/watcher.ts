@@ -136,6 +136,8 @@ const checkFileImports = debounce(async (script: Script) => {
     imports = [];
   }
 
+  log.info({ imports });
+
   if (
     imports?.length &&
     kitState.kenvEnv?.KIT_DISABLE_AUTO_INSTALL !== 'true'

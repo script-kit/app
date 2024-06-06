@@ -33,6 +33,7 @@ import {
   isDir,
   createPathResolver,
   getMainScriptPath,
+  isFile,
 } from '@johnlindquist/kit/core/utils';
 
 import { KitPrompt, destroyPromptWindow, makeSplashWindow } from './prompt';
@@ -273,28 +274,57 @@ export const installPackage = async (installCommand: string, cwd: string) => {
   });
 };
 
+const installDependency = async (dependencyName, installCommand) => {
+  if (await kenvPackageJsonExists()) {
+    const pkgJson = await readJson(kenvPath('package.json'));
+    const allDeps = [
+      ...Object.keys(pkgJson.dependencies || {}),
+      ...Object.keys(pkgJson.devDependencies || {}),
+    ];
+    if (allDeps.includes(dependencyName)) {
+      log.info(`${dependencyName} already installed in ${kenvPath()}`);
+      return null;
+    } else {
+      log.info(`Installing ${dependencyName} in ${kenvPath()}`);
+      return installPackage(installCommand, kitPath());
+    }
+  }
+
+  log.info(
+    `No package.json found in ${kenvPath()}. Skipping installation of ${dependencyName}`,
+  );
+  return null;
+};
+
 export const installEsbuild = async () => {
-  return installPackage(
-    `i esbuild@0.21.4 --save-exact --production --prefer-dedupe --loglevel=verbose`,
-    kitPath(),
+  return installDependency(
+    'esbuild',
+    `i -D esbuild@0.21.4 --save-exact --production --prefer-dedupe --loglevel=verbose`,
+  );
+};
+
+export const installNoDom = async () => {
+  return installDependency(
+    '@johnlindquist/no-dom',
+    `i -D @typescript/lib-dom@npm:@johnlindquist/no-dom --save-exact --production --prefer-dedupe --loglevel=verbose`,
   );
 };
 
 export const installPlatformDeps = async () => {
   if (os.platform().startsWith('darwin')) {
-    return installPackage(
-      `i @johnlindquist/mac-dictionary --save-exact --production --prefer-dedupe --loglevel=verbose`,
-      kitPath(),
+    return installDependency(
+      '@johnlindquist/mac-dictionary',
+      `i -D @johnlindquist/mac-dictionary --save-exact --production --prefer-dedupe --loglevel=verbose`,
     );
   }
 
   return null;
 };
 
-export const installNoDom = async () => {
-  return installPackage(
-    `i @typescript/lib-dom@npm:@johnlindquist/no-dom --save-exact --production --prefer-dedupe --loglevel=verbose`,
-    kitPath(),
+export const installKitInKenv = async () => {
+  return installDependency(
+    `@johnlindquist/kit`,
+    `i -D ${kitPath()} --production --prefer-dedupe --loglevel=verbose`,
   );
 };
 
@@ -734,8 +764,8 @@ export const optionalSetupScript = (
   });
 };
 
-export const installKitInKenv = async () => {
-  return installPackage(`i ${kitPath()}`, kenvPath());
+export const kenvPackageJsonExists = async () => {
+  return await isFile(kenvPath('package.json'));
 };
 
 const cacheTriggers = (choices: Choice[]) => {

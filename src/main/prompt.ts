@@ -173,9 +173,9 @@ export const getCurrentScreenFromMouse = (): Display => {
   return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
 };
 
-// REMOVE-NODE-WINDOW-MANAGER
-let prevWindow: Window;
-// END-REMOVE-NODE-WINDOW-MANAGER
+export const getAllScreens = (): Display[] => {
+  return screen.getAllDisplays();
+};
 
 export const getCurrentScreenPromptCache = (
   scriptPath: string,
@@ -1208,17 +1208,6 @@ export class KitPrompt {
     if (!kitState.isMac) {
       if (kitState?.kenvEnv?.KIT_PROMPT_RESTORE === 'true') {
         this.window?.restore();
-      }
-
-      if (kitState?.kenvEnv?.KIT_DISABLE_PREVIOUS_ACTIVE_WINDOW !== 'true') {
-        const currentWindow = windowManager.getActiveWindow();
-        if (currentWindow.processId !== process.pid) {
-          log.info(
-            `Storing previous window: ${currentWindow.processId}`,
-            currentWindow,
-          );
-          prevWindow = currentWindow;
-        }
       }
     }
 
@@ -2346,6 +2335,7 @@ export class KitPrompt {
         kitState.previousDownload = new Date();
       }
     }
+
     this.sendToPrompt(Channel.SET_SCRIPT, script);
 
     if (script.filePath === getMainScriptPath()) {
@@ -2665,16 +2655,8 @@ export class KitPrompt {
     if (kitState.isWindows) {
       // REMOVE-NODE-WINDOW-MANAGER
       windowManager.hideInstantly(this.window?.getNativeWindowHandle());
+      this.window?.emit('blur');
       this.window?.emit('hide');
-      if (prevWindow) {
-        try {
-          prevWindow?.bringToTop();
-        } catch (error) {
-          log.error(error);
-        }
-      } else {
-        log.info(`No previous window to bring to top...`);
-      }
       // END-REMOVE-NODE-WINDOW-MANAGER
     }
 

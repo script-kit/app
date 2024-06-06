@@ -64,6 +64,7 @@ export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
   promptId?: string;
   launchedFromMain: boolean;
+  preventChannels?: Set<Channel>;
 };
 
 // TODO: Reimplement SET_PREVIEW
@@ -284,9 +285,15 @@ export const childSend = (child: ChildProcess, data: any) => {
   }
 };
 
-export const sendToAllActiveChildren = (data: any) => {
+export const sendToAllActiveChildren = (data: {
+  channel: Channel;
+  state?: any;
+}) => {
   // log.info(`Sending ${data?.channel} to all active children`);
   for (const processInfo of processes.getActiveProcesses()) {
+    const prevent = processInfo.preventChannels?.has(data.channel);
+    if (prevent) continue;
+    log.info({ prevent, channel: data.channel });
     childSend(processInfo.child, data);
   }
 };
@@ -337,7 +344,15 @@ interface CreateChildInfo {
 }
 
 const DEFAULT_TIMEOUT = 15000;
-
+export const SYSTEM_CHANNELS: Channel[] = [
+  Channel.SYSTEM_CLICK,
+  Channel.SYSTEM_MOUSEDOWN,
+  Channel.SYSTEM_MOUSEUP,
+  Channel.SYSTEM_MOUSEMOVE,
+  Channel.SYSTEM_KEYDOWN,
+  Channel.SYSTEM_KEYUP,
+  Channel.SYSTEM_WHEEL,
+];
 const createChild = ({
   type,
   scriptPath = 'kit',
@@ -666,6 +681,7 @@ class Processes extends Array<ProcessAndPrompt> {
       date: Date.now(),
       prompt,
       launchedFromMain: false,
+      preventChannels: new Set<Channel>(SYSTEM_CHANNELS),
     } as ProcessAndPrompt;
 
     // prompt.window.on('closed', () => {

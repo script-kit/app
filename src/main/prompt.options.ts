@@ -125,7 +125,7 @@ export const getPromptOptions = () => {
     y,
     backgroundColor,
     backgroundMaterial,
-    type: 'panel',
+    // NOTE: AVOID type 'panel' on MacOS. This breaks the "mac-panel-window" behavior because it attempts to restore it to the "previous" window type.
   } as BrowserWindowConstructorOptions;
 
   if (kitState.isMac) {
