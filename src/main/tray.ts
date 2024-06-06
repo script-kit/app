@@ -65,21 +65,19 @@ const buildRunningScriptsSubmenu = async (): Promise<
     });
 
     runningScripts.push({
-      label: 'Terminate All Running Scripts',
-      click: () => {
-        for (const { pid } of processes) {
-          processes.removeByPid(pid);
-        }
-      },
-    });
-
-    runningScripts.push({
       type: 'separator',
     });
 
     runningScripts.push({
       label: 'Running Proccesses',
       enabled: false,
+    });
+
+    runningScripts.push({
+      label: 'Terminate All',
+      click: () => {
+        processes.removeAllRunningProcesses();
+      },
     });
 
     for await (const { pid, scriptPath, date } of processes) {

@@ -519,6 +519,7 @@ export const indexAtom = atom(
   (g) => g(_indexAtom),
   (g, s, a: number) => {
     if (g(flaggedChoiceValueAtom)) return;
+    if (g(submittedAtom)) return;
     const prevIndex = g(_indexAtom);
     const cs = g(choices);
     // if a is > cs.length, set to 0, if a is < 0, set to cs.length - 1
@@ -667,7 +668,7 @@ export const scoredChoicesAtom = atom(
 
     const cs = a;
 
-    s(submittedAtom, false);
+    // s(submittedAtom, false);
 
     // if the first cs has a `border-t-1`, remove it
     if (cs?.[0]?.item?.className) {
@@ -926,7 +927,7 @@ export const tabIndexAtom = atom(
   (g) => g(_tabIndex),
   (g, s, a: number) => {
     s(_inputChangedAtom, false);
-    s(submittedAtom, false);
+    // s(submittedAtom, false);
     s(prevIndexAtom, 0);
     if (g(_tabIndex) !== a) {
       s(_tabIndex, a);
@@ -970,7 +971,6 @@ export const scriptAtom = atom(
     // <<<<<<<<<<<<<<<<<<<<<<`);
 
     s(isMainScriptAtom, isMainScript);
-    s(submittedAtom, false);
     const prevScript = g(_script);
     s(
       backToMainAtom,
@@ -1570,8 +1570,10 @@ export const promptDataAtom = atom(
 
       if (!a?.keyword && !g(isMainScriptAtom)) {
         // log.info(`👍 Setting input to ${a?.input || '_'}`);
-        s(_inputAtom, a?.input || '');
+        const inputWhileSubmitted = g(inputWhileSubmittedAtom);
+        s(_inputAtom, a?.input || inputWhileSubmitted || '');
       }
+      s(_inputWhileSubmittedAtom, '');
       s(_flaggedValue, '');
       s(hintAtom, a.hint);
       s(placeholderAtom, a.placeholder);
@@ -3231,3 +3233,12 @@ export const kitConfigAtom = atom({
 export const focusedElementAtom = atom<null | HTMLElement>(null);
 
 export const preventChatScrollAtom = atom(false);
+
+const _inputWhileSubmittedAtom = atom('');
+export const inputWhileSubmittedAtom = atom(
+  (g) => g(_inputWhileSubmittedAtom),
+  (g, s, a: string) => {
+    log.info(`🔥 Input while submitted: ${a}`);
+    s(_inputWhileSubmittedAtom, a);
+  },
+);

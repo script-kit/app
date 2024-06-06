@@ -332,6 +332,7 @@ export default function Input() {
       placeholder:tracking-normal
       focus:outline-none
       ${fontSize}
+      ${submitted && 'text-opacity-50'}
       h-full
       max-w-full border-none px-4 py-0 ring-0 ring-opacity-0
       focus:border-none focus:ring-0

@@ -816,6 +816,16 @@ class Processes extends Array<ProcessAndPrompt> {
     return this.getByPid(pid)?.child;
   }
 
+  public removeAllRunningProcesses() {
+    const runningIds = this.filter(({ scriptPath }) => scriptPath).map(
+      ({ pid, scriptPath }) => ({ pid, scriptPath }),
+    );
+    for (const { pid, scriptPath } of runningIds) {
+      log.info(`🔥 Attempt removeAllRunningProcesses: ${pid} - ${scriptPath}`);
+      this.removeByPid(pid);
+    }
+  }
+
   public removeByPid(pid: number) {
     log.info(`🛑 removeByPid: ${pid}`);
     if (pid === 0) {

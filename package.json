@@ -128,7 +128,7 @@
     "date-fns": "^3.6.0",
     "detect-port": "^1.6.1",
     "dompurify": "^3.1.5",
-    "electron": "^30.0.9",
+    "electron": "^30.1.0",
     "electron-builder": "^25.0.0-alpha.9",
     "electron-vite": "^2.2.0",
     "emoji-picker-react": "^4.9.4",

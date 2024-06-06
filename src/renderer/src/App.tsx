@@ -73,6 +73,8 @@ import {
   triggerResizeAtom,
   inputAtom,
   focusedElementAtom,
+  submittedAtom,
+  inputWhileSubmittedAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useMessages, useShortcuts } from './hooks';
@@ -174,6 +176,12 @@ export default function App() {
   const processes = useAtomValue(processesAtom);
   const isMainScript = useAtomValue(isMainScriptAtom);
   const css = useAtomValue(cssAtom);
+  const [submitted, setSubmitted] = useAtom(submittedAtom);
+  const [inputWhileSubmitted, setInputWhileSubmitted] = useAtom(
+    inputWhileSubmittedAtom,
+  );
+
+  const submittedInputRef = useRef<HTMLInputElement>(null);
 
   const previewCheck = useAtomValue(previewCheckAtom);
   const showRightPanel = previewCheck && !kitState.noPreview;
@@ -225,6 +233,12 @@ export default function App() {
   useEffect(() => {
     log.info(`${pid}: 👩‍💻 UI changed to: ${ui}`);
   }, [ui, pid]);
+
+  useEffect(() => {
+    if (submitted) {
+      submittedInputRef.current?.focus();
+    }
+  }, [submitted]);
 
   useEffect(() => {
     document.addEventListener('visibilitychange', () => {
@@ -559,6 +573,20 @@ text-text-base
 
                 {ui === UI.arg && (
                   <>
+                    {submitted && (
+                      <input
+                        style={{
+                          position: 'absolute',
+                          top: -1000,
+                          left: -1000,
+                        }}
+                        ref={submittedInputRef}
+                        onChange={(e) => {
+                          log.info(`Change while submitted: ${e.target.value}`);
+                          setInputWhileSubmitted(e.target.value);
+                        }}
+                      />
+                    )}
                     <Input key="AppInput" />
                     {!showTabs && <div className="border-b border-ui-border" />}
                   </>
