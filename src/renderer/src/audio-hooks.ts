@@ -1,4 +1,3 @@
-// src/hooks/audio-hook.tsx
 import { useState, useCallback, useRef, useEffect } from 'react';
 import log from 'electron-log/renderer';
 const path = window.api.path;
@@ -12,6 +11,8 @@ import {
   getPid,
   micConfigAtom,
   micIdAtom,
+  micMediaRecorderAtom,
+  micStateAtom,
   submitValueAtom,
   uiAtom,
 } from './jotai';
@@ -21,7 +22,7 @@ let mountPid: number;
 export function useAudioRecorder() {
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [, submit] = useAtom(submitValueAtom);
-  const deviceId = useAtomValue(micIdAtom);
+  const micId = useAtomValue(micIdAtom);
   const micConfig = useAtomValue(micConfigAtom);
   const [channel] = useAtom(channelAtom);
   const [volume, setVolume] = useState(0);
@@ -29,9 +30,11 @@ export function useAudioRecorder() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const setAudioDot = useSetAtom(audioDotAtom);
   const [ui] = useAtom(uiAtom);
+  const [, setMicState] = useAtom(micStateAtom);
 
   useEffect(() => {
     mountPid = getPid();
+    setMicState('idle');
   }, []);
 
   const handleDataAvailable = async (event: BlobEvent) => {
@@ -92,6 +95,7 @@ export function useAudioRecorder() {
 
   const stopRecording = useCallback(async () => {
     log.info(`🎙 Stopping recording...`, recorderRef.current);
+    setMicState('stopped');
     if (recorderRef.current !== null) {
       if (recorderRef.current.state === 'recording') recorderRef.current.stop();
       // destroy the recorder
@@ -139,6 +143,7 @@ export function useAudioRecorder() {
       await createRecorderRef();
     }
     if (recorderRef.current) {
+      setMicState('recording');
       log.info(`🎙 Recorder exists...`);
       recorderRef.current.addEventListener(
         'dataavailable',
@@ -173,11 +178,20 @@ export function useAudioRecorder() {
     }
   };
 
+  const micMediaRecorder = useAtomValue(micMediaRecorderAtom);
+
+  // TODO: I'm hopeful one day to be able to cache the micMediaRecorder. But since each prompt operates in a separatel window, I'd have to isolate to a single window
   const createRecorderRef = useCallback(() => {
-    log.info(`🎙 Mic ID changed...`);
+    log.info(`🎙 createRecorderRef...`, { micId });
+
+    // if (micMediaRecorder) {
+    //   log.info(`🎙 Using existing mic media recorder...`);
+    //   recorderRef.current = micMediaRecorder;
+    //   return new Promise((resolve) => resolve(recorderRef.current));
+    // }
 
     const constraints = {
-      audio: deviceId ? { deviceId } : true,
+      audio: micId ? { deviceId: micId } : true,
     };
 
     return (
@@ -193,7 +207,7 @@ export function useAudioRecorder() {
           log.info(`Error connecting to mic... ${err}`);
         })
     );
-  }, [deviceId]);
+  }, [micId]);
 
   useEffect(() => {
     // eslint-disable-next-line promise/catch-or-return, promise/always-return

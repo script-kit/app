@@ -218,3 +218,20 @@ export const compareArrays = (arr1: any[], arr2: any[]) => {
     return value === arr2Sorted[index];
   });
 };
+
+export const isLocalPath = (input: string) => {
+  try {
+    const parsedUrl = new URL(input);
+    // If the URL is successfully parsed and has a protocol, it's a remote URL
+    if (parsedUrl.protocol) {
+      return false;
+    }
+  } catch (error) {
+    // An error in parsing the URL means it's likely a local path
+    // Additional checks can be made here if necessary
+  }
+
+  // Further checks to confirm it's a valid local path could be added here
+  // For now, we assume any non-URL is a local path
+  return true;
+};

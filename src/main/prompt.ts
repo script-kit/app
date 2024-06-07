@@ -849,6 +849,16 @@ export class KitPrompt {
       };
 
       ipcMain.once(AppChannel.MESSAGES_READY, messagesReadyHandler);
+
+      if (kitState.kenvEnv?.KIT_MIC) {
+        this.sendToPrompt(AppChannel.SET_MIC_ID, kitState.kenvEnv.KIT_MIC);
+      }
+      if (kitState.kenvEnv?.KIT_WEBCAM) {
+        this.sendToPrompt(
+          AppChannel.SET_WEBCAM_ID,
+          kitState.kenvEnv.KIT_WEBCAM,
+        );
+      }
     });
 
     // reload if unresponsive
@@ -2669,6 +2679,8 @@ export class KitPrompt {
     if (kitState.isLinux) {
       this.window?.hide();
     }
+
+    kitState.shortcutsPaused = false;
   };
 }
 

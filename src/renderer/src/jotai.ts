@@ -2413,6 +2413,7 @@ export const audioAtom = atom(
   (g) => g(_audioAtom),
   (g, s, a: AudioOptions | null) => {
     // console.log.info(`Audio options`, a);
+    log.info(`Audio options`, { a });
 
     let audio: null | HTMLAudioElement = document.querySelector(
       '#audio',
@@ -2424,6 +2425,50 @@ export const audioAtom = atom(
       audio.id = 'audio';
       document.body.appendChild(audio);
     }
+
+    const endHandler = () => {
+      log.info(`Audio ended`);
+      s(_audioAtom, null);
+      g(channelAtom)(Channel.PLAY_AUDIO);
+    };
+
+    const playHandler = () => {
+      log.info(`Audio playing`);
+      audio.removeEventListener('play', playHandler);
+    };
+
+    const pauseHandler = () => {
+      log.info(`Audio paused`);
+      audio.removeEventListener('pause', pauseHandler);
+    };
+
+    const errorHandler = (e) => {
+      // Handle the error based on the error code
+      switch (e.target.error.code) {
+        case e.target.error.MEDIA_ERR_ABORTED:
+          log.error('Audio playback aborted by the user.');
+          break;
+        case e.target.error.MEDIA_ERR_NETWORK:
+          log.error('A network error caused the audio download to fail.');
+          break;
+        case e.target.error.MEDIA_ERR_DECODE:
+          log.error(
+            'The audio playback was aborted due to a corruption problem or because the audio used features your browser did not support.',
+          );
+          break;
+        case e.target.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+          log.error(
+            'The audio could not be loaded, either because the server or network failed or because the format is not supported.',
+          );
+          break;
+        default:
+          log.error('An unknown error occurred.');
+          break;
+      }
+
+      audio.removeEventListener('error', errorHandler);
+    };
+
     if (a?.filePath) {
       s(_audioAtom, a);
       const { filePath, ...options } = a;
@@ -2432,16 +2477,27 @@ export const audioAtom = atom(
       // allow all from cross origin
       audio.crossOrigin = 'anonymous';
       // allow all file types
+      // if filePath is a file on the system, use the `file://` protocol
       audio.setAttribute('src', filePath);
-      audio.play();
+      log.info(`Playing audio`, {
+        audio: typeof audio,
+        filePath,
+      });
 
       // listen for when the audio ends
-      audio.addEventListener('ended', () => {
-        s(_audioAtom, null);
-        g(channelAtom)(Channel.PLAY_AUDIO);
-      });
+
+      audio.addEventListener('play', playHandler);
+      audio.addEventListener('pause', pauseHandler);
+      audio.addEventListener('error', errorHandler, true);
+      audio.addEventListener('ended', endHandler);
+
+      audio.play();
     } else {
       audio?.pause();
+      audio?.removeEventListener('ended', endHandler);
+      audio?.removeEventListener('play', playHandler);
+      audio?.removeEventListener('pause', pauseHandler);
+      audio?.removeEventListener('error', errorHandler);
       if (audio) s(_audioAtom, null);
     }
   },
@@ -2455,11 +2511,14 @@ export const _speechAtom = atom<SpeakOptions | null>(null);
 
 export const speechAtom = atom(
   (g) => g(_speechAtom),
-  (_g, _s, a: SpeakOptions) => {
+  (g, _s, a: SpeakOptions) => {
+    const pid = g(pidAtom);
+    log.info(`${pid}: 🔊 Speak`, { a });
     if (a) {
       // If SpeechSynthesis is playing, cancel
       const synth = window.speechSynthesis;
       if (synth.speaking) {
+        log.info(`${pid}: 🔊 Cancelling speak`);
         synth.cancel();
       }
 
@@ -2470,6 +2529,15 @@ export const speechAtom = atom(
       const voices = synth.getVoices();
       utterThis.voice =
         voices.find((v) => v.name === a?.name) || synth.getVoices()[0];
+
+      // on speak complete
+      const handler = () => {
+        log.info(`${pid}: 🔊 Speak complete`);
+        g(channelAtom)(Channel.SPEAK_TEXT);
+        utterThis.removeEventListener('end', handler);
+      };
+      utterThis.addEventListener('end', handler);
+
       synth.speak(utterThis);
     }
   },
@@ -2697,7 +2765,14 @@ export const enterPressedAtom = atom(
   },
 );
 
-export const micIdAtom = atom<string | null>(null);
+const _micIdAtom = atom<string | null>(null);
+export const micIdAtom = atom(
+  (g) => g(_micIdAtom),
+  (g, s, a: string | null) => {
+    log.info(`🎙 micIdAtom`, { a });
+    s(_micIdAtom, a);
+  },
+);
 export const webcamIdAtom = atom<string | null>(null);
 
 export const actionsButtonNameFontSizeAtom = atom('text-sm');
@@ -2872,7 +2947,7 @@ export const _lastKeyDownWasModifierAtom = atom(false);
 export const lastKeyDownWasModifierAtom = atom(
   (g) => g(_lastKeyDownWasModifierAtom),
   (g, s, a: boolean) => {
-    log.info(`🔑 Last key down was modifier: ${a}`);
+    // log.info(`🔑 Last key down was modifier: ${a}`);
     s(_lastKeyDownWasModifierAtom, a);
   },
 );
@@ -3242,3 +3317,6 @@ export const inputWhileSubmittedAtom = atom(
     s(_inputWhileSubmittedAtom, a);
   },
 );
+
+export const micMediaRecorderAtom = atom<MediaRecorder | null>(null);
+export const micStateAtom = atom<'idle' | 'recording' | 'stopped'>('idle');

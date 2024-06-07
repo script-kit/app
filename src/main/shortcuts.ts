@@ -310,6 +310,10 @@ const subShortcutsPaused = subscribeKey(
   'shortcutsPaused',
   (shortcutsPaused) => {
     if (paused === shortcutsPaused) return;
+    log.info(`✂️ shortcutsPaused change...`, {
+      oldPaused: paused,
+      newPaused: shortcutsPaused,
+    });
     paused = shortcutsPaused;
     if (shortcutsPaused) {
       pauseShortcuts();

@@ -60,6 +60,7 @@ import {
   sponsorCheck,
   kitStore,
   preloadChoicesMap,
+  debounceSetScriptTimestamp,
 } from '../shared/state';
 
 import { widgetState, findWidget } from '../shared/widget';
@@ -77,7 +78,7 @@ import {
 } from './clipboard';
 import { getTray, getTrayIcon, setTrayMenu } from './tray';
 import { AppChannel, Trigger } from '../shared/enums';
-import { convertShortcut } from './helpers';
+import { convertShortcut, isLocalPath } from './helpers';
 import { deleteText } from './keyboard';
 import { showLogWindow } from './window';
 import { stripAnsi } from './ansi';
@@ -97,6 +98,7 @@ import {
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
 import { getSourceFromRectangle } from './screen';
+import { displayError } from './error';
 
 const getModifier = () => {
   return kitState.isMac ? ['command'] : ['control'];
@@ -172,6 +174,12 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
   const { prompt, scriptPath } = info;
   const sendToPrompt = prompt.sendToPrompt;
+  const waitForPrompt = async (channel: Channel, value: any) => {
+    prompt.window?.webContents?.ipc?.once(channel, () => {
+      childSend({ channel, value });
+    });
+    sendToPrompt(channel, value);
+  };
   const setLog = (value) => sendToPrompt(Channel.SET_LOG, value);
   const childSend = createSendToChild(info);
 
@@ -869,8 +877,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       // Need to figure out initBounds, jotai's resize/hasPreview preload
       // const filePath = data?.value?.filePath;
       // attemptPreload(filePath);
+      const filePath = data?.value?.filePath;
       if (processInfo.type === ProcessType.Prompt) {
-        processInfo.scriptPath = data.value?.filePath;
+        processInfo.scriptPath = filePath;
 
         if (processInfo.child.stdout && processInfo.child.stderr) {
           let scriptLog: Logger;
@@ -902,8 +911,13 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           processInfo.child.stderr?.on('error', routeToScriptLog);
         }
 
-        info.scriptPath = data.value?.filePath;
+        info.scriptPath = filePath;
       }
+      debounceSetScriptTimestamp({
+        filePath,
+        changeStamp: Date.now(),
+        reason: `run ${filePath}`,
+      });
       await prompt?.setScript(data.value, processInfo.pid);
     }),
     SET_STATUS: onChildChannel(async (_, data) => {
@@ -1704,6 +1718,12 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           modifiers.includes(v),
         );
 
+        if (!key) {
+          log.error(`KEYBOARD ERROR PRESS KEY`, { value });
+          childSend({ channel, value: false });
+          return;
+        }
+
         robot.keyTap(key as string, activeModifiers);
 
         childSend({ channel, value });
@@ -1843,6 +1863,12 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         const activeModifiers = (value as Key[]).filter((v) =>
           modifiers.includes(v),
         );
+
+        if (!key) {
+          log.error(`KEYBOARD ERROR PRESS KEY`, { value });
+          childSend({ channel, value: false });
+          return;
+        }
 
         robot.keyToggle(key as string, 'up', activeModifiers);
 
@@ -2025,20 +2051,36 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     BEEP: onChildChannel(async ({ child }, { channel, value }) => {
       shell.beep();
     }),
-    PLAY_AUDIO: onChildChannel(async ({ child }, { channel, value }: any) => {
-      try {
-        log.info(`🔊 Playing ${value?.filePath || value}`);
-      } catch (error) {
-        log.error(`🔊 Error playing ${value}`, error);
-      }
-      sendToPrompt(Channel.PLAY_AUDIO, value);
-    }),
+    PLAY_AUDIO: onChildChannelOverride(
+      async ({ child }, { channel, value }: any) => {
+        try {
+          log.info(`🔊 Playing ${value?.filePath || value}`);
+        } catch (error) {
+          log.error(`🔊 Error playing ${value}`, error);
+        }
+
+        // if value?.filePath is a file on the system, use the `file://` protocol ensure cross-platform compatibility
+        const isLocalFilePath = isLocalPath(value?.filePath);
+        if (isLocalFilePath) {
+          const normalizedPath = path.normalize(value.filePath);
+          const fileUrlPath = url.pathToFileURL(normalizedPath).href;
+          log.info(
+            `Converting audio file path ${value.filePath} to ${fileUrlPath}`,
+          );
+          value.filePath = fileUrlPath;
+        }
+
+        waitForPrompt(channel, value);
+      },
+    ),
     STOP_AUDIO: onChildChannel(async ({ child }, { channel, value }) => {
-      sendToPrompt(Channel.STOP_AUDIO, value);
+      sendToPrompt(channel, value);
     }),
-    SPEAK_TEXT: onChildChannel(async ({ child }, { channel, value }) => {
-      sendToPrompt(Channel.SPEAK_TEXT, value);
-    }),
+    SPEAK_TEXT: onChildChannelOverride(
+      async ({ child }, { channel, value }) => {
+        waitForPrompt(channel, value);
+      },
+    ),
 
     CUT_TEXT: onChildChannelOverride(async ({ child }, { channel, value }) => {
       const text = kitState.snippet;

@@ -75,6 +75,8 @@ import {
   focusedElementAtom,
   submittedAtom,
   inputWhileSubmittedAtom,
+  micIdAtom,
+  micMediaRecorderAtom,
 } from './jotai';
 
 import { useEnter, useEscape, useMessages, useShortcuts } from './hooks';
@@ -205,6 +207,35 @@ export default function App() {
   const [focusedElement, setFocusedElement] = useAtom(focusedElementAtom);
 
   useMessages();
+
+  const micId = useAtomValue(micIdAtom);
+  const [micMediaRecorder, setMicMediaRecorder] = useAtom(micMediaRecorderAtom);
+
+  // TODO: Can I have access to the mic "instantly"? I don't like the delay, but this makes it looks like it's always recording
+  // useEffect(() => {
+  //   log.info(`🎙 Mic ID changed...`, { micId });
+
+  //   if (!micId) {
+  //     return;
+  //   }
+
+  //   const constraints = {
+  //     audio: micId ? { deviceId: micId } : true,
+  //   };
+
+  //   navigator.mediaDevices
+  //     .getUserMedia(constraints)
+  //     // eslint-disable-next-line promise/always-return
+  //     .then((stream) => {
+  //       log.info(`🎙 Connected to mic...`);
+  //       const mediaRecorder = new MediaRecorder(stream);
+
+  //       setMicMediaRecorder(mediaRecorder);
+  //     })
+  //     .catch((err) => {
+  //       log.info(`Error connecting to mic... ${err}`);
+  //     });
+  // }, [micId]);
 
   useEffect(() => {
     const handleFocusIn = (event: FocusEvent) => {

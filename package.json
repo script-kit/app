@@ -117,6 +117,7 @@
     "@types/react-window": "1.8.8",
     "@types/tail": "^2.2.3",
     "@types/tar": "^6.1.13",
+    "@typescript/lib-dom": "npm:@types/web@^0.0.148",
     "@vitejs/plugin-react": "^4.3.0",
     "@vscode/codicons": "^0.0.36",
     "animate.css": "^4.1.1",

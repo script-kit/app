@@ -590,7 +590,7 @@ class Processes extends Array<ProcessAndPrompt> {
     processesChanged();
   }
 
-  stampPid(pid: number) {
+  public stampPid(pid: number) {
     log.info(`${pid}: 📅 Stamp PID`);
     const processInfo = this.getByPid(pid);
     if (!processInfo || !processInfo.launchedFromMain) return;
@@ -881,6 +881,8 @@ class Processes extends Array<ProcessAndPrompt> {
       }
 
       log.info(`${pid}: 🛑 removed`);
+
+      kitState.shortcutsPaused = false;
     }
 
     // TODO: Does this matter anymore?
