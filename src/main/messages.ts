@@ -85,7 +85,7 @@ import { stripAnsi } from './ansi';
 import { getAssetPath } from '../shared/assets';
 import { TrackEvent, trackEvent } from './track';
 import {
-  SYSTEM_CHANNELS,
+  HANDLER_CHANNELS,
   cachePreview,
   childShortcutMap,
   clearFlags,
@@ -2293,7 +2293,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         }
       },
     ),
-    ...SYSTEM_CHANNELS.reduce((acc, channel) => {
+    ...HANDLER_CHANNELS.reduce((acc, channel) => {
       acc[channel] = onChildChannel(async ({ child }, { channel, value }) => {
         log.info(`SYSTEM CHANNEL`, { channel, value });
         if (value && info?.preventChannels?.has(channel)) {

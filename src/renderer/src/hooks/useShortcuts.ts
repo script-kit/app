@@ -109,7 +109,7 @@ export default () => {
   useHotkeys(
     flagShortcuts.length ? flagShortcuts.replaceAll('cmd', 'mod') : 'f19',
     (event, handler: HotkeysEvent) => {
-      // log.info('flag shortcuts', { flagShortcuts, handler });
+      log.info('flag shortcuts', { flagShortcuts, handler });
       event.preventDefault();
 
       // if (flagValue) return;
@@ -144,7 +144,7 @@ export default () => {
   useHotkeys(
     onShortcuts.replaceAll('cmd', 'mod'),
     (event, handler: HotkeysEvent) => {
-      // log.info('prompt shortcuts', { promptShortcuts, handler });
+      log.info('prompt shortcuts', { promptShortcuts, handler });
       event.preventDefault();
 
       // if (flagValue) return;

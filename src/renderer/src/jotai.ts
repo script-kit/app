@@ -6,7 +6,7 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable guard-for-in */
 
-import { atom, Getter, Setter } from 'jotai';
+import { Atom, atom, Getter, Setter } from 'jotai';
 import log from 'electron-log/renderer';
 import DOMPurify from 'dompurify';
 import { AppDb, UserDb } from '@johnlindquist/kit/core/db';
@@ -54,6 +54,14 @@ import {
 import { toHex } from '../../shared/color-utils';
 import { formatShortcut } from './components/formatters';
 import { Rectangle } from 'electron';
+
+function arraysEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
 
 let placeholderTimeoutId: NodeJS.Timeout;
 
@@ -653,11 +661,13 @@ export const hasPreviewAtom = atom<boolean>((g) => {
 });
 
 let prevFocusedChoiceId = 'prevFocusedChoiceId';
+
+const prevScoredChoicesIdsAtom = atom<string[]>([]);
 export const scoredChoicesAtom = atom(
   (g) => g(choices),
   // Setting to `null` should only happen when using setPanel
   // This helps skip sending `onNoChoices`
-  (g, s, a: ScoredChoice[]) => {
+  (g, s, cs: ScoredChoice[]) => {
     // log.info(
     //   `${window.pid} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Setting scoredChoices to ${a?.length}`
     // );
@@ -665,9 +675,17 @@ export const scoredChoicesAtom = atom(
     s(loadingAtom, false);
     prevFocusedChoiceId = 'prevFocusedChoiceId';
 
-    // log.info(`⚽️ Scored choices length: ${a?.length}`);
+    const csIds = cs.map((c) => c.item.id) as string[];
+    const prevIds = g(prevScoredChoicesIdsAtom);
+    const changed = !arraysEqual(prevIds, csIds);
+    // log.info({
+    //   csIds,
+    //   prevIds,
+    //   changed,
+    // });
+    s(prevScoredChoicesIdsAtom, csIds);
 
-    const cs = a;
+    // log.info(`⚽️ Scored choices length: ${a?.length}`);
 
     // s(submittedAtom, false);
 
@@ -692,7 +710,9 @@ export const scoredChoicesAtom = atom(
 
     s(hasSkipAtom, cs?.some((c) => c?.item?.skip) || false);
     s(allSkipAtom, cs?.every((c) => c?.item?.skip) || false);
-    s(indexAtom, 0);
+    if (changed) {
+      s(indexAtom, 0);
+    }
 
     const isFilter =
       g(uiAtom) === UI.arg && g(promptData)?.mode === Mode.FILTER;
@@ -727,7 +747,12 @@ export const scoredChoicesAtom = atom(
         s(defaultChoiceIdAtom, '');
       } else if (input.length > 0) {
         s(requiresScrollAtom, g(requiresScrollAtom) > 0 ? 0 : -1);
-        s(indexAtom, 0);
+
+        const keyword = g(promptDataAtom)?.keyword;
+        log.info({ keyword, inputLength: input.length });
+        if (changed) {
+          s(indexAtom, 0);
+        }
       } else if (prevIndex && !g(selectedAtom)) {
         let adjustForGroup = prevIndex;
         if (cs?.[prevIndex - 1]?.item?.skip) {
@@ -749,7 +774,7 @@ export const scoredChoicesAtom = atom(
 
     for (const {
       item: { height },
-    } of a) {
+    } of cs) {
       choicesHeight += height || g(itemHeightAtom);
       if (choicesHeight > 1920) break;
     }
@@ -3324,3 +3349,51 @@ export const inputWhileSubmittedAtom = atom(
 
 export const micMediaRecorderAtom = atom<MediaRecorder | null>(null);
 export const micStateAtom = atom<'idle' | 'recording' | 'stopped'>('idle');
+
+export const shortcutStringsAtom: Atom<
+  Set<{
+    type: 'shortcut' | 'action' | 'flag';
+    value: string;
+  }>
+> = atom((g) => {
+  const shortcuts = g(shortcutsAtom);
+  const actions = g(actionsAtom);
+  const flags = g(flagsAtom);
+  function transformKeys(items, keyName, type) {
+    return items
+      .map((item) => {
+        const key = item[keyName];
+        if (key) {
+          const value = key.replaceAll(' ', '+');
+          return {
+            type,
+            value,
+          };
+        }
+        return false;
+      })
+      .filter(Boolean);
+  }
+
+  const shortcutKeys = transformKeys(shortcuts, 'key', 'shortcut');
+  const actionKeys = transformKeys(actions, 'key', 'action');
+  const flagKeys = transformKeys(Object.values(flags), 'shortcut', 'flag');
+
+  log.verbose({
+    shortcuts: shortcutKeys,
+    actions: actionKeys,
+    flags: flagKeys,
+  });
+  return new Set([...shortcutKeys, ...actionKeys, ...flagKeys]);
+});
+
+export const submitInputAtom = atom(null, (g, s) => {
+  const input = g(inputAtom);
+  s(submitValueAtom, input);
+});
+
+export const setFlagByShortcutAtom = atom(null, (g, s, a: string) => {
+  const flags = g(flagsAtom);
+  const flag = Object.keys(flags).find((key) => flags[key]?.shortcut === a);
+  s(flaggedChoiceValueAtom, flag);
+});

@@ -111,7 +111,8 @@ export default function KitTabs() {
       )}
       <div
         key="tabs"
-        className="w-full overflow-x-scroll"
+        // overflow-x-scroll was causing padding underneath, how to fix?
+        className="w-full"
         style={
           {
             WebkitAppRegion: 'no-drag',

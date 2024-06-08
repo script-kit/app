@@ -344,7 +344,7 @@ interface CreateChildInfo {
 }
 
 const DEFAULT_TIMEOUT = 15000;
-export const SYSTEM_CHANNELS: Channel[] = [
+export const HANDLER_CHANNELS: Channel[] = [
   Channel.SYSTEM_CLICK,
   Channel.SYSTEM_MOUSEDOWN,
   Channel.SYSTEM_MOUSEUP,
@@ -352,6 +352,9 @@ export const SYSTEM_CHANNELS: Channel[] = [
   Channel.SYSTEM_KEYDOWN,
   Channel.SYSTEM_KEYUP,
   Channel.SYSTEM_WHEEL,
+  Channel.SCRIPT_ADDED,
+  Channel.SCRIPT_REMOVED,
+  Channel.SCRIPT_CHANGED,
 ];
 const createChild = ({
   type,
@@ -681,7 +684,7 @@ class Processes extends Array<ProcessAndPrompt> {
       date: Date.now(),
       prompt,
       launchedFromMain: false,
-      preventChannels: new Set<Channel>(SYSTEM_CHANNELS),
+      preventChannels: new Set<Channel>(HANDLER_CHANNELS),
     } as ProcessAndPrompt;
 
     // prompt.window.on('closed', () => {

@@ -47,7 +47,12 @@ import { startWatching, WatchEvent } from './chokidar';
 import { emitter, KitEvent } from '../shared/events';
 import { AppChannel, Trigger } from '../shared/enums';
 import { runScript } from './kit';
-import { processes, spawnShebang, updateTheme } from './process';
+import {
+  processes,
+  sendToAllActiveChildren,
+  spawnShebang,
+  updateTheme,
+} from './process';
 import { compareArrays, isInDirectory } from './helpers';
 import { getFileImports } from './npm';
 import { sendToAllPrompts } from './channel';
@@ -194,6 +199,16 @@ const getDepWatcher = () => {
           `🤔 Cache for ${relativeScriptPath} at ${cachePath} does not exist`,
         );
       }
+
+      const fullPath = kenvPath(relativeScriptPath);
+      log.info(`Sending ${fullPath} to all active children`, {
+        event: Channel.SCRIPT_CHANGED,
+        state: fullPath,
+      });
+      sendToAllActiveChildren({
+        channel: Channel.SCRIPT_CHANGED,
+        state: fullPath,
+      });
     }
   });
 
@@ -258,7 +273,7 @@ const madgeAllScripts = debounce(async () => {
   for (const [dir, files] of Object.entries(watched)) {
     for (const file of files) {
       const filePath = path.join(dir, file);
-      log.info(`Unwatching ${filePath}`);
+      log.verbose(`Unwatching ${filePath}`);
       depWatcher.unwatch(filePath);
     }
   }
@@ -267,12 +282,12 @@ const madgeAllScripts = debounce(async () => {
 
     for (const dep of deps) {
       const depKenvPath = kenvPath(dep);
-      log.info(`Watching ${depKenvPath}`);
+      log.verbose(`Watching ${depKenvPath}`);
       depWatcher.add(depKenvPath);
     }
 
     if (deps.length > 0) {
-      log.info(`${scriptKey} has ${deps.length} dependencies`, deps);
+      log.verbose(`${scriptKey} has ${deps.length} dependencies`, deps);
     }
   }
 }, 100);
@@ -298,6 +313,10 @@ export const onScriptsChanged = async (
   if (event === 'unlink') {
     unlink(filePath);
     unlinkBin(filePath);
+    sendToAllActiveChildren({
+      channel: Channel.SCRIPT_REMOVED,
+      state: filePath,
+    });
   }
 
   if (
@@ -326,12 +345,21 @@ export const onScriptsChanged = async (
       });
       if (event === 'change') {
         checkFileImports(script);
+        sendToAllActiveChildren({
+          channel: Channel.SCRIPT_CHANGED,
+          state: filePath,
+        });
       }
     } else {
       log.verbose(
         `⌚️ ${filePath} changed, but main menu hasn't run yet. Skipping compiling TS and/or timestamping...`,
       );
     }
+
+    sendToAllActiveChildren({
+      channel: Channel.SCRIPT_ADDED,
+      state: filePath,
+    });
 
     clearPromptCacheFor(filePath);
   }

@@ -90,10 +90,10 @@ const checkShortcodesAndKeywords = (
 
   const lowerCaseInput = transformedInput.toLowerCase();
   const trigger = prompt.kitSearch.triggers.get(lowerCaseInput);
-  log.info(`${prompt.pid}: 🚀 Trigger:`, {
-    trigger,
-    triggers: prompt.kitSearch.triggers.keys(),
-  });
+  // log.verbose(`${prompt.pid}: 🚀 Trigger:`, {
+  //   trigger,
+  //   triggers: prompt.kitSearch.triggers.keys(),
+  // });
   if (trigger) {
     if (prompt.ready) {
       sendToPrompt(

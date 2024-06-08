@@ -739,7 +739,7 @@ export const setScoredChoices = (
   choices: ScoredChoice[],
   reason = 'default',
 ) => {
-  log.info(
+  log.verbose(
     `${prompt.pid}: ${reason} 🎼 Scored choices count: ${choices.length}`,
   );
 

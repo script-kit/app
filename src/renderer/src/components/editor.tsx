@@ -12,6 +12,7 @@ import {
 
 const { ipcRenderer } = window.electron;
 import {
+  appConfigAtom,
   channelAtom,
   darkAtom,
   editorAppendAtom,
@@ -20,14 +21,20 @@ import {
   editorOptions,
   editorSuggestionsAtom,
   flaggedChoiceValueAtom,
+  focusedFlagValueAtom,
   inputAtom,
   openAtom,
   scrollToAtom,
+  sendShortcutAtom,
+  setFlagByShortcutAtom,
+  shortcutStringsAtom,
+  submitInputAtom,
+  submitValueAtom,
   uiAtom,
-  unflaggedInputAtom,
 } from '../jotai';
 
 import { kitLight, nightOwl } from '../editor-themes';
+import { convertStringShortcutToMoncacoNumber } from '@renderer/utils/keycodes';
 
 const registerPropertiesLanguage = (monaco: Monaco) => {
   monaco.languages.register({ id: 'properties' });
@@ -534,6 +541,42 @@ export default function Editor() {
       ipcRenderer.removeListener(Channel.EDITOR_MOVE_CURSOR, moveCursor);
     };
   }, [editor, channel]);
+
+  const shortcutStrings = useAtomValue(shortcutStringsAtom);
+  const appConfig = useAtomValue(appConfigAtom);
+  const sendShortcut = useSetAtom(sendShortcutAtom);
+  const setFlagByShortcut = useSetAtom(setFlagByShortcutAtom);
+  const submitInput = useSetAtom(submitInputAtom);
+
+  useEffect(() => {
+    if (appConfig) {
+      for (const { type, value } of shortcutStrings) {
+        // log.info(`Assigning shortcut`, { type, value });
+        const result = convertStringShortcutToMoncacoNumber(
+          value,
+          appConfig?.isWin,
+        );
+
+        if (result) {
+          editor?.addCommand(result, () => {
+            log.info(`🏆`, { value, type });
+            if (type === 'shortcut') {
+              sendShortcut(value);
+            }
+            if (type === 'flag') {
+              setFlagByShortcut(value);
+              submitInput();
+            }
+
+            if (type === 'action') {
+              setFlagByShortcut(value);
+              submitInput();
+            }
+          });
+        }
+      }
+    }
+  }, [editor, shortcutStrings, appConfig]);
 
   const theme = kitIsDark ? 'kit-dark' : 'kit-light';
 
