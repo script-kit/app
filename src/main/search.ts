@@ -191,7 +191,44 @@ export const invokeSearch = (
         } else if (!hide) {
           const scoredChoice = resultMap.get(choice.id);
           if (choice?.pass) {
-            groupedResults.push(createScoredChoice(choice));
+            if (
+              typeof choice?.pass === 'string' &&
+              (choice?.pass as string).startsWith('/')
+            ) {
+              // log.info(`Found regex pass: ${choice?.pass} on ${choice?.name}`);
+              const lastSlashIndex = choice?.pass.lastIndexOf('/');
+              if (!lastSlashIndex) {
+                log.warn(
+                  `No terminating slashes found in regex pattern: ${choice?.pass} for ${choice?.name}`,
+                );
+              } else {
+                const regexPatternWithFlags = choice?.pass;
+                const regexPattern = regexPatternWithFlags.slice(
+                  1,
+                  lastSlashIndex,
+                );
+                const flags =
+                  lastSlashIndex === -1
+                    ? ''
+                    : regexPatternWithFlags.slice(lastSlashIndex + 1);
+
+                const regex = new RegExp(regexPattern, flags);
+
+                // log.info(
+                //   `Using regex pattern: ${regexPattern} with flags: ${flags}`,
+                // );
+                const result = regex.test(transformedInput);
+
+                if (result) {
+                  log.info(
+                    `Matched regex pass: ${choice?.pass} on ${choice?.name}`,
+                  );
+                  groupedResults.push(createScoredChoice(choice));
+                }
+              }
+            } else {
+              groupedResults.push(createScoredChoice(choice));
+            }
           } else if (scoredChoice?.item?.lastGroup) {
             const c = structuredClone(scoredChoice);
             matchLastGroup.push(c);
@@ -574,7 +611,9 @@ export const setShortcodes = (prompt: KitPrompt, choices: Choice[]) => {
       prompt.kitSearch.triggers.set(trigger, choice);
     }
 
-    const postfix = typeof choice?.pass === 'string';
+    const postfix =
+      typeof choice?.pass === 'string' &&
+      !(choice?.pass as string).startsWith('/');
 
     if (postfix) {
       prompt.kitSearch.postfixes.set(choice?.pass.trim(), choice);

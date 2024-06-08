@@ -225,6 +225,12 @@ export const installPackage = async (installCommand: string, cwd: string) => {
     log.info(`${cwd}: 👷 ${npmPath} ${installCommand}`);
 
     // Execute the spawn command with the appropriate npm path, install command and options
+    log.info(`👷 Spawning npm install`, {
+      npmPath,
+      installCommand,
+      options,
+    });
+
     const child = spawn(npmPath, installCommand.split(' '), options);
 
     // Display a loading message with a spinner
@@ -286,7 +292,12 @@ const installDependency = async (dependencyName, installCommand) => {
       return null;
     } else {
       log.info(`Installing ${dependencyName} in ${kenvPath()}`);
-      return installPackage(installCommand, kitPath());
+      try {
+        return installPackage(installCommand, kitPath());
+      } catch (error) {
+        log.error(error);
+        return null;
+      }
     }
   }
 
@@ -297,35 +308,56 @@ const installDependency = async (dependencyName, installCommand) => {
 };
 
 export const installEsbuild = async () => {
-  return installDependency(
+  const result = await installDependency(
     'esbuild',
     `i -D esbuild@0.21.4 --save-exact --production --prefer-dedupe --loglevel=verbose`,
   );
+
+  if (result) {
+    log.info(`Installed esbuild`);
+  } else {
+    log.info(`Failed to install esbuild`);
+  }
 };
 
 export const installNoDom = async () => {
-  return installDependency(
-    '@johnlindquist/no-dom',
+  const result = await installDependency(
+    '@typescript/lib-dom',
     `i -D @typescript/lib-dom@npm:@johnlindquist/no-dom --save-exact --production --prefer-dedupe --loglevel=verbose`,
   );
+  if (result) {
+    log.info(`Installed @johnlindquist/no-dom`);
+  } else {
+    log.info(`Failed to install @johnlindquist/no-dom`);
+  }
 };
 
 export const installPlatformDeps = async () => {
   if (os.platform().startsWith('darwin')) {
-    return installDependency(
+    const result = await installDependency(
       '@johnlindquist/mac-dictionary',
       `i -D @johnlindquist/mac-dictionary --save-exact --production --prefer-dedupe --loglevel=verbose`,
     );
+    if (result) {
+      log.info(`Installed @johnlindquist/mac-dictionary`);
+    } else {
+      log.info(`Failed to install @johnlindquist/mac-dictionary`);
+    }
   }
 
   return null;
 };
 
 export const installKitInKenv = async () => {
-  return installDependency(
+  const result = await installDependency(
     `@johnlindquist/kit`,
     `i -D ${kitPath()} --production --prefer-dedupe --loglevel=verbose`,
   );
+  if (result) {
+    log.info(`Installed @johnlindquist/kit`);
+  } else {
+    log.info(`Failed to install @johnlindquist/kit`);
+  }
 };
 
 const getOptions = () => {

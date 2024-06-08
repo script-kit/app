@@ -351,6 +351,7 @@ const defaultEditorOptions: editor.IStandaloneEditorConstructionOptions = {
   renderWhitespace: 'none',
   trimAutoWhitespace: true,
   renderLineHighlight: 'none',
+  stickyScroll: false,
 };
 
 export const editorOptions =
@@ -1488,6 +1489,9 @@ export const promptDataAtom = atom(
     const pid = g(pidAtom);
     // s(appendToLogHTMLAtom, a?.id || 'id missing');
     log.info(`${pid}: 👂 Prompt Data ${a?.id}, ${a?.ui}`);
+
+    if (Array.isArray(a?.choices)) {
+    }
 
     const isMainScript = a?.scriptPath === g(kitConfigAtom).mainScriptPath;
     s(isMainScriptAtom, isMainScript);
@@ -3262,7 +3266,7 @@ export const beforeInputAtom = atom('');
 export const cssAtom = atom('');
 
 export const initPromptAtom = atom(null, (g, s) => {
-  // log.info(`🚀 Init prompt`);
+  log.info(`🚀 Init prompt`);
   const promptData = g(cachedMainPromptDataAtom) as PromptData;
   // log.info({ promptData });
   const currentPromptData = g(promptDataAtom);
