@@ -256,7 +256,6 @@ const madgeAllScripts = debounce(async () => {
   ]);
 
   log.info(`🔍 ${allScriptPaths.length} scripts found`);
-
   const fileMadge = await madge(allScriptPaths, {
     baseDir: kenvPath(),
     dependencyFilter: (source) => {

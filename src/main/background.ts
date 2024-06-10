@@ -73,12 +73,14 @@ export const updateBackground = async (
   filePath: string,
   fileChange = false,
 ) => {
-  const { background: backgroundString } = await parseScript(filePath);
+  const script = await parseScript(filePath);
+  const backgroundString = script?.background;
 
   // Task not running. File not changed
+  const isTrue = typeof backgroundString === 'boolean' && backgroundString;
   if (
     !backgroundMap.get(filePath) &&
-    (backgroundString === 'true' || backgroundString === 'auto') &&
+    (isTrue || backgroundString === 'auto') &&
     !fileChange
   ) {
     log.info(

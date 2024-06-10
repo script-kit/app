@@ -3,10 +3,11 @@ import minimist from 'minimist';
 import log from 'electron-log';
 import path from 'path';
 import fsExtra from 'fs-extra';
-const { pathExistsSync } = fsExtra;
+const { pathExistsSync, readJson } = fsExtra;
 import { fork, ForkOptions } from 'child_process';
 import { homedir } from 'os';
 
+import type { Script } from '@johnlindquist/kit/types/core';
 import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import {
   parseScript,
@@ -16,6 +17,7 @@ import {
   KIT_FIRST_PATH,
   getLogFromScriptPath,
   execPath,
+  scriptsDbPath,
 } from '@johnlindquist/kit/core/utils';
 import { ProcessInfo } from '@johnlindquist/kit';
 
@@ -131,6 +133,21 @@ emitter.on(KitEvent.RunBackgroundProcess, (scriptPath: string) => {
   });
 });
 
+export const getScriptFromDbWithFallback = async (scriptPath: string) => {
+  try {
+    const db = await readJson(scriptsDbPath);
+    const script = db?.scripts?.find((s: Script) => s.filePath === scriptPath);
+    if (script) {
+      log.info(`Found script in db: ${scriptPath}`, script);
+      return script;
+    }
+  } catch (error) {
+    log.warn(error);
+  }
+
+  return await parseScript(scriptPath);
+};
+
 // TODO: Consider removing the "parseScript" and just reading from the scripts db?
 const findScript = async (scriptPath: string) => {
   if (scriptPath === getMainScriptPath()) {
@@ -183,7 +200,10 @@ export const runPromptProcess = async (
 
   // If the window is already open, interrupt the process with the new script
 
+  // TODO: Handle Schedule/Background/etc without prompts?
+  // Quickly firing schedule processes would create WAY too many prompts
   const info = processes.findIdlePromptProcess();
+
   info.launchedFromMain = isMain;
   if (!kitState.hasOpenedMainMenu && isMain) {
     kitState.hasOpenedMainMenu = true;

@@ -193,7 +193,7 @@ export default function Input() {
       ) {
         log.info(`${window.pid}: preventDefault(): found: '${input}'`);
         // setAppendToLog(`${window.pid}: preventDefault(): found: '${input}'`);
-        event.preventDefault();
+        // event.preventDefault();
         channel(Channel.INPUT, {
           input,
         });

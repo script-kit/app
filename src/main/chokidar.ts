@@ -87,5 +87,20 @@ export const startWatching = (callback: WatcherCallback) => {
   runWatcher.on('all', callback);
 
   kitState.ignoreInitial = true;
+
   return [kenvScriptsWatcher, kenvsWatcher, fileWatcher, runWatcher];
+
+  // TODO: Do I need to watch scripts.json?
+  // const scriptsJsonWatcher = chokidar.watch(kitPath('db', 'scripts.json'), {
+  //   disableGlobbing: true,
+  //   ignoreInitial: true,
+  // });
+  // scriptsJsonWatcher.on('all', callback);
+  // return [
+  //   kenvScriptsWatcher,
+  //   kenvsWatcher,
+  //   fileWatcher,
+  //   runWatcher,
+  //   scriptsJsonWatcher,
+  // ];
 };

@@ -293,7 +293,7 @@ export const sendToAllActiveChildren = (data: {
   for (const processInfo of processes.getActiveProcesses()) {
     const prevent = processInfo.preventChannels?.has(data.channel);
     if (prevent) continue;
-    log.info({ prevent, channel: data.channel });
+    log.info({ pid: processInfo?.pid, prevent, channel: data.channel });
     childSend(processInfo.child, data);
   }
 };
@@ -514,7 +514,7 @@ const processesChanged = debounce(() => {
 }, 10);
 
 export const clearIdleProcesses = () => {
-  return;
+  // return;
   log.info(`Reset all idle processes`);
   processes.getAllProcessInfo().forEach((processInfo) => {
     if (

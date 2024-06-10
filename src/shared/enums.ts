@@ -1,3 +1,5 @@
+import { ProcessType } from '@johnlindquist/kit/core/enum';
+
 export enum AppChannel {
   BUILD_TS_SCRIPT = 'BUILD_TS_SCRIPT',
   CSS_CHANGED = 'CSS_CHANGED',
@@ -81,14 +83,14 @@ export enum WindowChannel {
 }
 
 export enum Trigger {
-  App = 'app',
-  Background = 'background',
+  App = ProcessType.App,
+  Background = ProcessType.Background,
   Info = 'info',
-  Schedule = 'schedule',
+  Schedule = ProcessType.Schedule,
   Snippet = 'snippet',
-  System = 'system',
+  System = ProcessType.System,
   Shortcut = 'shortcut',
-  Watch = 'watch',
+  Watch = ProcessType.Watch,
   Kit = 'kit',
   Kar = 'kar',
   Menu = 'menu',
