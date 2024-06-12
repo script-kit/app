@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-syntax */
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
 
