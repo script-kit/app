@@ -267,7 +267,7 @@ export default () => {
     [Channel.SET_SPLASH_HEADER]: setSplashHeader,
     [Channel.SET_SPLASH_PROGRESS]: setSplashProgress,
     [Channel.SET_THEME]: debounce((theme) => {
-      log.info(`${window.pid}: 🐠 Channel.SET_THEME`, theme);
+      log.verbose(`${window.pid}: 🐠 Channel.SET_THEME`, theme);
       setTheme(theme);
     }, 50),
     [Channel.SET_TEMP_THEME]: setTempTheme,

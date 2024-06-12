@@ -7,7 +7,7 @@ import { existsSync, readFileSync } from 'fs';
 import { snapshot } from 'valtio';
 import { subscribeKey } from 'valtio/utils';
 import dotenv from 'dotenv';
-import { rm, readdir, readFile, writeFile, lstat } from 'fs/promises';
+import { rm, readdir, readFile, lstat } from 'fs/promises';
 import { getScripts, getUserJson } from '@johnlindquist/kit/core/db';
 import { Script } from '@johnlindquist/kit/types';
 import { Channel, Env } from '@johnlindquist/kit/core/enum';
@@ -256,6 +256,7 @@ const madgeAllScripts = debounce(async () => {
   ]);
 
   log.info(`🔍 ${allScriptPaths.length} scripts found`);
+
   const fileMadge = await madge(allScriptPaths, {
     baseDir: kenvPath(),
     dependencyFilter: (source) => {

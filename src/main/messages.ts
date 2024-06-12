@@ -86,7 +86,6 @@ import { getAssetPath } from '../shared/assets';
 import { TrackEvent, trackEvent } from './track';
 import {
   HANDLER_CHANNELS,
-  cachePreview,
   childShortcutMap,
   clearFlags,
   clearPreview,
@@ -98,7 +97,10 @@ import {
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
 import { getSourceFromRectangle } from './screen';
-import { displayError } from './error';
+
+const comparePromptIds = (id1: string, id2: string) => {
+  return id1.slice(-2) === id2.slice(-2);
+};
 
 const getModifier = () => {
   return kitState.isMac ? ['command'] : ['control'];
@@ -185,7 +187,11 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
   const handleChannelMessage = <K extends keyof ChannelMap>(
     data: SendData<K>,
-    fn: (processInfo: ProcessAndPrompt, data: SendData<K>) => void,
+    fn: (
+      processInfo: ProcessAndPrompt,
+      data: SendData<K>,
+      samePrompt?: boolean,
+    ) => void,
     sendToChild?: boolean,
   ) => {
     if (kitState.allowQuit)
@@ -203,23 +209,34 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       );
     }
 
+    const samePrompt = comparePromptIds(data?.promptId, prompt.id);
+    const result = fn(processInfo, data, samePrompt);
+
     if (sendToChild) {
       childSend(data);
     }
 
-    return fn(processInfo, data);
+    return result;
   };
 
   const onChildChannel =
     <K extends keyof ChannelMap>(
-      fn: (processInfo: ProcessAndPrompt, data: SendData<K>) => void,
+      fn: (
+        processInfo: ProcessAndPrompt,
+        data: SendData<K>,
+        samePrompt?: boolean,
+      ) => void,
     ) =>
     (data: SendData<K>) =>
       handleChannelMessage(data, fn, true);
 
   const onChildChannelOverride =
     <K extends keyof ChannelMap>(
-      fn: (processInfo: ProcessAndPrompt, data: SendData<K>) => void,
+      fn: (
+        processInfo: ProcessAndPrompt,
+        data: SendData<K>,
+        samePrompt?: boolean,
+      ) => void,
     ) =>
     (data: SendData<K>) =>
       handleChannelMessage(data, fn);
@@ -781,11 +798,6 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         handler();
 
         prompt.hide();
-
-        // hideAppIfNoWindows(HideReason.User);
-        // if (value?.preloadScript) {
-        //   attemptPreload(value?.preloadScript as string, false);
-        // }
       },
     ),
 
@@ -877,6 +889,16 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       // Need to figure out initBounds, jotai's resize/hasPreview preload
       // const filePath = data?.value?.filePath;
       // attemptPreload(filePath);
+
+      if (prompt.preloaded && getMainScriptPath() === data?.value?.filePath) {
+        log.info(
+          `👀 ${prompt.pid}: Ignoring main setScript because preloaded:`,
+          prompt.preloaded,
+        );
+        prompt.preloaded = '';
+        return;
+      }
+
       const filePath = data?.value?.filePath;
       if (processInfo.type === ProcessType.Prompt) {
         processInfo.scriptPath = filePath;
@@ -952,13 +974,22 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       kitState.resizePaused = value;
     }),
 
-    SET_INPUT: onChildChannel(async ({ child }, { channel, value }) => {
-      // log.info(`💌 SET_INPUT to ${value}`);
-      prompt.kitSearch.keywords.clear();
-      prompt.kitSearch.keyword = '';
-      prompt.kitSearch.input = value;
-      sendToPrompt(Channel.SET_INPUT, value);
-    }),
+    SET_INPUT: onChildChannel(
+      async ({ child }, { channel, value, promptId }, samePrompt) => {
+        if (samePrompt) {
+          // log.info(`💌 SET_INPUT to ${value}`);
+          prompt.kitSearch.keywords.clear();
+          prompt.kitSearch.keyword = '';
+          prompt.kitSearch.input = value;
+          sendToPrompt(Channel.SET_INPUT, value);
+        } else {
+          log.warn(`${prompt.pid}: ⛔️ SET_INPUT: Prompt ID mismatch`, {
+            dataId: promptId,
+            promptId: prompt.id,
+          });
+        }
+      },
+    ),
 
     GET_INPUT: onChildChannel(async ({ child }, { channel }) => {
       sendToPrompt(Channel.GET_INPUT);
@@ -996,33 +1027,54 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       sendToPrompt(Channel.SCROLL_TO, value);
     }),
 
-    SET_PLACEHOLDER: (data) => {
-      sendToPrompt(Channel.SET_PLACEHOLDER, data.value);
-    },
+    SET_PLACEHOLDER: onChildChannel(async ({ child }, { channel, value }) => {
+      sendToPrompt(Channel.SET_PLACEHOLDER, value);
+    }),
 
     SET_ENTER: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_ENTER, value);
     }),
 
-    SET_FOOTER: (data) => {
-      sendToPrompt(Channel.SET_FOOTER, data.value);
-    },
-
-    SET_PANEL: onChildChannel(async ({ child }, { channel, value }) => {
-      sendToPrompt(Channel.SET_PANEL, value);
+    SET_FOOTER: onChildChannel(async ({ child }, { channel, value }) => {
+      sendToPrompt(Channel.SET_FOOTER, value);
     }),
 
-    SET_PREVIEW: (data) => {
-      if (prompt.cacheScriptPreview) {
-        cachePreview(prompt.scriptPath, data.value);
-        prompt.cacheScriptPreview = false;
-      }
-      sendToPrompt(Channel.SET_PREVIEW, data.value);
-    },
+    SET_PANEL: onChildChannel(
+      async ({ child }, { channel, value, promptId }, samePrompt) => {
+        if (samePrompt) {
+          sendToPrompt(Channel.SET_PANEL, value);
+        } else {
+          log.warn(`${prompt.pid}: ⛔️ SET_PANEL: Prompt ID mismatch`, {
+            dataId: promptId,
+            promptId: prompt.id,
+          });
+        }
+      },
+    ),
+
+    SET_PREVIEW: onChildChannel(
+      async ({ child }, { channel, value, promptId }, samePrompt) => {
+        if (samePrompt) {
+          sendToPrompt(Channel.SET_PREVIEW, value);
+        } else {
+          log.warn(`${prompt.pid}: ⛔️ SET_PREVIEW: Prompt ID mismatch`, {
+            dataId: promptId,
+            promptId: prompt.id,
+          });
+        }
+      },
+    ),
 
     SET_SHORTCUTS: onChildChannel(
-      async ({ child, prompt }, { channel, value }) => {
-        sendToPrompt(channel, value);
+      async ({ child, prompt }, { channel, value, promptId }, samePrompt) => {
+        if (samePrompt) {
+          sendToPrompt(channel, value);
+        } else {
+          log.warn(`${prompt.pid}: ⛔️ SET_SHORTCUTS: Prompt ID mismatch`, {
+            dataId: promptId,
+            promptId: prompt.id,
+          });
+        }
         if (
           prompt.scriptPath === getMainScriptPath() &&
           prompt.kitSearch.input === '' &&
@@ -1048,9 +1100,9 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       },
     ),
 
-    CONSOLE_CLEAR: () => {
+    CONSOLE_CLEAR: onChildChannel(async ({ child }, { channel }) => {
       setLog(Channel.CONSOLE_CLEAR);
-    },
+    }),
 
     SET_TAB_INDEX: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_TAB_INDEX, value);
@@ -1082,48 +1134,78 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     //   showNotification(data.html || 'You forgot html', data.options);
     // },
-    SET_PROMPT_DATA: onChildChannel(async (pap, { channel, value }) => {
-      performance.measure('SET_PROMPT_DATA', 'script');
-      prompt.scriptPath = value?.scriptPath || '';
-      prompt.hideOnEscape = Boolean(value?.hideOnEscape);
-
-      prompt.kitSearch.keys = value?.searchKeys || [
-        'slicedName',
-        'tag',
-        'group',
-        'command',
-      ];
-      if (typeof value?.keyword === 'string') {
-        prompt.kitSearch.keywords.clear();
-        prompt.kitSearch.input = '';
-        prompt.kitSearch.keyword = value?.keyword;
-      }
-
-      if (value?.ui === UI.mic) {
-        prompt.sendToPrompt(AppChannel.SET_MIC_CONFIG, {
-          timeSlice: value?.timeSlice || 200,
-          format: value?.format || 'webm',
-          stream: value?.stream || false,
-          filePath: value?.filePath || '',
+    SET_PROMPT_DATA: onChildChannel(
+      async (pap, { channel, value, promptId }) => {
+        performance.measure('SET_PROMPT_DATA', 'script');
+        log.info(`${prompt.pid}: 📝 SET_PROMPT_DATA`, {
+          preloaded: prompt.preloaded,
+          id: prompt.id,
+          promptId,
         });
-      }
-      // log.silly(`SET_PROMPT_DATA`);
 
-      // if (value?.ui === UI.term) {
-      //   kitState.termCommand = value?.input || ''
-      //   kitState.termCwd = value?.cwd || ''
-      //   kitState.termEnv = value?.env || {}
-      // }
+        if (prompt.preloaded && value?.scriptPath === getMainScriptPath()) {
+          log.info(`${prompt.pid}: 📝 IGNORE SET_PROMPT_DATA on Main`, {
+            preloaded: prompt.preloaded,
+            id: prompt.id,
+            promptId,
+          });
+          prompt.preloaded = '';
+          return;
+        }
 
-      if (prompt.kitSearch.keyword) {
-        value.input = `${prompt.kitSearch.keyword} `;
-      } else if (value.input && prompt.firstPrompt) {
-        prompt.kitSearch.input = value.input;
-      }
+        if (prompt.preloaded && prompt.id.startsWith(prompt.preloaded)) {
+          log.info(`${prompt.pid}: 📝 IGNORE SET_PROMPT_DATA on Preloaded`, {
+            preloaded: prompt.preloaded,
+            id: prompt.id,
+            promptId,
+          });
+          prompt.preloaded = '';
+          return;
+        }
 
-      prompt?.setPromptData(value);
-      prompt.isScripts = Boolean(value?.scripts);
-    }),
+        prompt.id = promptId;
+        prompt.scriptPath = value?.scriptPath || '';
+        prompt.hideOnEscape = Boolean(value?.hideOnEscape);
+
+        prompt.kitSearch.keys = value?.searchKeys || [
+          'slicedName',
+          'tag',
+          'group',
+          'command',
+        ];
+        if (typeof value?.keyword === 'string') {
+          prompt.kitSearch.keywords.clear();
+          prompt.kitSearch.input = '';
+          prompt.kitSearch.keyword = value?.keyword;
+        }
+
+        if (value?.ui === UI.mic) {
+          prompt.sendToPrompt(AppChannel.SET_MIC_CONFIG, {
+            timeSlice: value?.timeSlice || 200,
+            format: value?.format || 'webm',
+            stream: value?.stream || false,
+            filePath: value?.filePath || '',
+          });
+        }
+        // log.silly(`SET_PROMPT_DATA`);
+
+        // if (value?.ui === UI.term) {
+        //   kitState.termCommand = value?.input || ''
+        //   kitState.termCwd = value?.cwd || ''
+        //   kitState.termEnv = value?.env || {}
+        // }
+
+        if (prompt.kitSearch.keyword) {
+          value.input = `${prompt.kitSearch.keyword} `;
+        } else if (value.input && prompt.firstPrompt) {
+          prompt.kitSearch.input = value.input;
+        }
+
+        prompt?.setPromptData(value);
+        prompt.isScripts = Boolean(value?.scripts);
+      },
+    ),
+
     SET_PROMPT_PROP: async (data) => {
       prompt?.setPromptProp(data.value);
     },
@@ -1151,13 +1233,14 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
 
     SET_CHOICES: onChildChannelOverride(
-      async ({ child }, { channel, value }) => {
+      async ({ child }, { channel, value, promptId }, samePrompt) => {
         performance.measure('SET_CHOICES', 'script');
-        log.info(
-          `${prompt.pid}: SET_CHOICES preloaded ${
-            kitState.preloaded ? 'true' : 'false'
-          } ${value.choices?.length} choices`,
-        );
+        log.info(`${prompt.pid}: SET_CHOICES`, {
+          length: value?.choices?.length,
+          preloaded: prompt.preloaded,
+          dataId: promptId,
+          promptId: prompt.id,
+        });
         if (![UI.arg, UI.hotkey].includes(prompt.ui)) {
           log.info(`⛔️ UI changed before choices sent. Skipping SET_CHOICES`);
 
@@ -1169,22 +1252,38 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           return;
         }
 
-        const { choices, skipInitialSearch, inputRegex, generated } = value;
+        if (samePrompt) {
+          const { choices, skipInitialSearch, inputRegex, generated } = value;
 
-        prompt.kitSearch.inputRegex = inputRegex
-          ? new RegExp(inputRegex, 'gi')
-          : undefined;
+          // const choiceIds = choices.map((choice) => choice.id).join(',');hks
+          // if (prevChoiceIds === choiceIds) {
+          //   log.info(`${prompt.pid}: ⛔️ SET_CHOICES: No changes`, {
+          //     dataId: promptId,
+          //   });
+          //   return;
+          // }
+          // prevChoiceIds = choiceIds;
 
-        let formattedChoices = choices;
-        if (prompt.isScripts) {
-          formattedChoices = formatScriptChoices(choices);
+          prompt.kitSearch.inputRegex = inputRegex
+            ? new RegExp(inputRegex, 'gi')
+            : undefined;
+
+          let formattedChoices = choices;
+          if (prompt.isScripts) {
+            formattedChoices = formatScriptChoices(choices);
+          }
+
+          setChoices(prompt, formattedChoices, {
+            preload: false,
+            skipInitialSearch,
+            generated: Boolean(generated),
+          });
+        } else {
+          log.warn(`${prompt.pid}: ⛔️ SET_CHOICES: Prompt ID mismatch`, {
+            dataId: promptId,
+            promptId: prompt.id,
+          });
         }
-
-        setChoices(prompt, formattedChoices, {
-          preload: false,
-          skipInitialSearch,
-          generated: Boolean(generated),
-        });
 
         if (child) {
           childSend({
@@ -1194,9 +1293,18 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       },
     ),
 
-    APPEND_CHOICES: onChildChannel(async ({ child }, { channel, value }) => {
-      appendChoices(prompt, value as Choice[]);
-    }),
+    APPEND_CHOICES: onChildChannel(
+      async ({ child }, { channel, value, promptId }, samePrompt) => {
+        if (samePrompt) {
+          appendChoices(prompt, value as Choice[]);
+        } else {
+          log.warn(`${prompt.pid}: ⛔️ APPEND_CHOICES: Prompt ID mismatch`, {
+            dataId: promptId,
+            promptId: prompt.id,
+          });
+        }
+      },
+    ),
 
     // UPDATE_PROMPT_WARN: (data) => {
     //   setPlaceholder(data.info as string);
@@ -1268,11 +1376,20 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     SET_FORM: (data) => {
       sendToPrompt(Channel.SET_FORM, data.value);
     },
-    SET_FLAGS: (data) => {
-      log.info(`⛳️ Set flags ${Object.keys(data?.value).length}`);
-      sendToPrompt(Channel.SET_FLAGS, data.value);
-      setFlags(prompt, data.value);
-    },
+    SET_FLAGS: onChildChannel(
+      async ({ child }, { channel, value, promptId }, samePrompt) => {
+        if (promptId === prompt.id) {
+          log.info(`⛳️ Set flags ${Object.keys(value).length}`);
+          sendToPrompt(Channel.SET_FLAGS, data.value);
+          setFlags(prompt, data.value);
+        } else {
+          log.warn(`${prompt.pid}: ⛔️ SET_FLAGS: Prompt ID mismatch`, {
+            dataId: promptId,
+            promptId: prompt.id,
+          });
+        }
+      },
+    ),
     SET_FLAG_VALUE: onChildChannel(async ({ child }, { channel, value }) => {
       sendToPrompt(Channel.SET_FLAG_VALUE, value);
     }),

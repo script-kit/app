@@ -533,6 +533,7 @@ export class KitPrompt {
   lifeTime = () => {
     return (performance.now() - this.birthTime) / 1000 + 's';
   };
+  preloaded: string = '';
 
   get scriptName() {
     return this?.scriptPath?.split('/')?.pop() || '';
@@ -1893,8 +1894,6 @@ export class KitPrompt {
     //   // END-REMOVE-MAC
     // }
 
-    log.info(`
-    >>> 📝 setPromptData for ${promptData?.scriptPath}`);
     this.scriptPath = promptData?.scriptPath;
     this.clearFlagSearch();
     this.kitSearch.shortcodes.clear();
@@ -1925,10 +1924,11 @@ export class KitPrompt {
       setFlags(this, promptData.flags);
     }
 
-    if (kitState.preloaded) {
-      kitState.preloaded = false;
-      return;
-    }
+    // TODO: When to handled preloaded?
+    // if (this.preloaded) {
+    //   this.preloaded = '';
+    //   return;
+    // }
 
     kitState.hiddenByUser = false;
     // if (!pidMatch(pid, `setPromptData`)) return;
@@ -2090,7 +2090,6 @@ export class KitPrompt {
     ) {
       this.actualHide();
 
-      // attemptPreload(getMainScriptPath(), false);
       this.clearSearch();
       invokeSearch(this, '', 'maybeHide, so clear');
       return;
@@ -2294,14 +2293,15 @@ export class KitPrompt {
     force = false,
   ): Promise<'denied' | 'allowed'> => {
     this.scriptSet = true;
-    log.info(`${this.pid}: ${pid} setScript`, script);
+    log.info(`${this.pid}: ${pid} setScript`, script, {
+      preloaded: this.preloaded || 'none',
+    });
     performance.mark('script');
     kitState.resizePaused = false;
     const cache = Boolean(script?.cache);
     this.cacheScriptChoices = cache;
     this.cacheScriptPreview = cache;
     this.cacheScriptPromptData = cache;
-    log.info(`${pid} setScript`, { script: script?.filePath });
 
     // if (script.filePath === prevScriptPath && pid === prevPid) {
     //   // Using a keyboard shortcut to launch a script will hit this scenario
@@ -2594,72 +2594,78 @@ export class KitPrompt {
     this.sendToPrompt(Channel.SET_OPEN, true);
   };
 
-  attemptPreload = async (
-    promptScriptPath: string,
-    show = true,
-    init = true,
-  ) => {
-    const isMainScript = getMainScriptPath() === promptScriptPath;
-    if (!promptScriptPath || isMainScript) return;
-    // log out all the keys of preloadPromptDataMap
-    kitState.preloaded = false;
+  attemptPreload = debounce(
+    async (promptScriptPath: string, show = true, init = true) => {
+      const isMainScript = getMainScriptPath() === promptScriptPath;
+      if (!promptScriptPath || isMainScript) return;
+      // log out all the keys of preloadPromptDataMap
+      this.preloaded = '';
 
-    const cachedPromptData = preloadPromptDataMap.has(promptScriptPath);
-    log.info(`${this.pid}: 🏋️‍♂️ attemptPreload: ${promptScriptPath}`, {
-      hasData: cachedPromptData ? 'true' : 'false',
-    });
+      const cachedPromptData = preloadPromptDataMap.has(promptScriptPath);
+      log.info(`${this.pid}: 🏋️‍♂️ attemptPreload: ${promptScriptPath}`, {
+        hasData: cachedPromptData ? 'true' : 'false',
+      });
 
-    if (isMainScript) {
-    } else if (cachedPromptData) {
-      log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`, { init, show });
+      if (isMainScript) {
+      } else if (cachedPromptData) {
+        log.info(`🏋️‍♂️ Preload prompt: ${promptScriptPath}`, { init, show });
 
-      if (init) {
-        this.initBounds(promptScriptPath, show);
+        if (init) {
+          this.initBounds(promptScriptPath, show);
+        }
+
+        // kitState.preloaded = true;
+
+        this.sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
+        this.sendToPrompt(Channel.SET_TAB_INDEX, 0);
+        this.sendToPrompt(AppChannel.SET_PRELOADED, true);
+        const promptData = preloadPromptDataMap.get(
+          promptScriptPath,
+        ) as PromptData;
+        this.preloadPromptData(promptData);
+
+        const hasCachedChoices = preloadChoicesMap.has(promptScriptPath);
+
+        if (hasCachedChoices) {
+          const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
+          log.info(`🏋️‍♂️ Preload choices: ${promptScriptPath}`, choices.length);
+          setChoices(this, choices, {
+            preload: true,
+            generated: false,
+            skipInitialSearch: true,
+          });
+
+          // this.setBounds({
+          //   x: promptData.x,
+          //   y: promptData.y,
+          //   width:
+          //     getMainScriptPath() === promptData.scriptPath
+          //       ? getDefaultWidth()
+          //       : promptData.width || getDefaultWidth(),
+          //   height:
+          //     getMainScriptPath() === promptData.scriptPath
+          //       ? PROMPT.HEIGHT.BASE
+          //       : promptData.height,
+          // });
+
+          const preview = preloadPreviewMap.get(promptScriptPath) as string;
+          if (preview) {
+            log.info(`${this.pid}: 🏋️‍♂️ Preload preview: ${promptScriptPath}`);
+          }
+          this.sendToPrompt(Channel.SET_PREVIEW, preview || closedDiv);
+        } else {
+          log.info(`No cached choices for ${promptScriptPath}`);
+        }
       }
 
-      // kitState.preloaded = true;
-
-      this.sendToPrompt(AppChannel.SCROLL_TO_INDEX, 0);
-      this.sendToPrompt(Channel.SET_TAB_INDEX, 0);
-      this.sendToPrompt(AppChannel.SET_PRELOADED, true);
-      const promptData = preloadPromptDataMap.get(
-        promptScriptPath,
-      ) as PromptData;
-      this.preloadPromptData(promptData);
-
-      const hasCachedChoices = preloadChoicesMap.has(promptScriptPath);
-
-      if (hasCachedChoices) {
-        const choices = preloadChoicesMap.get(promptScriptPath) as Choice[];
-        log.info(`🏋️‍♂️ Preload choices: ${promptScriptPath}`, choices.length);
-        setChoices(this, choices, {
-          preload: true,
-          generated: false,
-          skipInitialSearch: true,
-        });
-
-        // this.setBounds({
-        //   x: promptData.x,
-        //   y: promptData.y,
-        //   width:
-        //     getMainScriptPath() === promptData.scriptPath
-        //       ? getDefaultWidth()
-        //       : promptData.width || getDefaultWidth(),
-        //   height:
-        //     getMainScriptPath() === promptData.scriptPath
-        //       ? PROMPT.HEIGHT.BASE
-        //       : promptData.height,
-        // });
-
-        const preview = preloadPreviewMap.get(promptScriptPath) as string;
-        this.sendToPrompt(Channel.SET_PREVIEW, preview || closedDiv);
-      } else {
-        log.info(`No cached choices for ${promptScriptPath}`);
-      }
-    }
-
-    log.info(`end of attemptPreload`);
-  };
+      log.info(`end of attemptPreload`);
+      this.preloaded = promptScriptPath;
+    },
+    25,
+    {
+      leading: true,
+    },
+  );
 
   hideInstant = () => {
     if (kitState.isWindows) {

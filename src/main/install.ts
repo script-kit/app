@@ -906,7 +906,7 @@ export const cacheMainScripts = debounce(async (stamp = null) => {
           //       trigger: s.trigger,
           //       path: s.filePath,
           //     })),
-          // );
+          // );;
           scoreAndCacheMainChoices(scripts);
         }
         if (shortcuts) {

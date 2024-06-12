@@ -23,7 +23,7 @@ import { ProcessInfo } from '@johnlindquist/kit';
 
 import { subscribeKey } from 'valtio/utils';
 import { emitter, KitEvent } from '../shared/events';
-import { ensureIdleProcess, getIdles, processes } from './process';
+import { getIdles, processes } from './process';
 import {
   getKitScript,
   kitCache,
@@ -236,8 +236,7 @@ export const runPromptProcess = async (
     log.info(`💦 Splash install screen visible. Preload Main Menu...`);
     try {
       prompt.scriptPath = getMainScriptPath();
-      kitState.preloaded = false;
-      // attemptPreload(getMainScriptPath());
+      prompt.preloaded = '';
     } catch (error) {
       log.error(error);
     }

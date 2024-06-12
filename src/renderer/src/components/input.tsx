@@ -318,7 +318,7 @@ export default function Input() {
           spellCheck="false"
           style={
             {
-              width: `${Math.max(hiddenInputMeasurerWidth, 128)}px`,
+              width: `${Math.max(hiddenInputMeasurerWidth, inputValue?.length > 12 ? 256 : 128)}px`,
               WebkitAppRegion: 'no-drag',
               WebkitUserSelect: 'none',
               ...(submitted && { caretColor: 'transparent' }),

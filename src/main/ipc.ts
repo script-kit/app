@@ -206,7 +206,8 @@ const handleChannel =
       }
 
       // log.info(`${message.channel}`, message.pid);
-    } else if (message.pid !== -1 && !kitState.preloaded) {
+      // TODO: Handler preloaded?
+    } else if (message.pid !== -1) {
       handleMessageFail(message);
     }
   };
@@ -578,8 +579,6 @@ ${data.error}
           }
 
           if (prompt.scriptPath === getMainScriptPath()) {
-            cachePreview(getMainScriptPath(), message?.state?.preview || '');
-
             if (
               typeof message?.state?.value?.filePath === 'string' &&
               !message?.state?.flag

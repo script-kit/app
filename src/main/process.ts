@@ -94,15 +94,15 @@ export const maybeConvertColors = async (theme: any = {}) => {
     ? scriptKitTheme.opacity
     : scriptKitLightTheme.opacity;
 
-  log.info(`🫥 Theme opacity: ${theme.opacity}`);
+  log.verbose(`🫥 Theme opacity: ${theme.opacity}`);
   const themeUIBgOpacity =
     theme?.['ui-bg-opacity'] || scriptKitLightTheme['ui-bg-opacity'];
 
-  log.info(
+  log.verbose(
     `🫥 Theme ui-bg-opacity: ${theme?.['ui-bg-opacity']}, ${themeUIBgOpacity}`,
   );
   theme['--ui-bg-opacity'] = themeUIBgOpacity;
-  log.info(`🫥 Theme ui-bg-opacity: ${theme['--ui-bg-opacity']}`);
+  log.verbose(`🫥 Theme ui-bg-opacity: ${theme['--ui-bg-opacity']}`);
   theme['--ui-border-opacity'] ||=
     theme?.['ui-border-opacity'] || scriptKitLightTheme['ui-border-opacity'];
 
@@ -179,7 +179,7 @@ export const maybeConvertColors = async (theme: any = {}) => {
 
   // setVibrancy(vibrancy);
 
-  log.info(`🎨 Theme:`, theme);
+  log.verbose(`🎨 Theme:`, theme);
 
   return theme;
 };

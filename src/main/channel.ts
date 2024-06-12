@@ -31,6 +31,15 @@ export const sendToAllPrompts = <K extends keyof ChannelMap>(
 
   for (const prompt of prompts) {
     if (prompt && !prompt.isDestroyed() && prompt?.window?.webContents) {
+      const ignoreChannelsWhenOpen =
+        channel === AppChannel.SET_CACHED_MAIN_PREVIEW ||
+        channel === AppChannel.INIT_PROMPT;
+      if (prompt.scriptPath && ignoreChannelsWhenOpen) {
+        log.info(
+          `${prompt.pid}: 🏋️‍♂️ ignoring: ${channel} on ${prompt.scriptPath}`,
+        );
+        continue;
+      }
       if (channel) {
         log.info(`${prompt.pid}: ${prompt.id}: ALL -> ${channel}`);
         prompt.sendToPrompt(channel, data);
@@ -44,7 +53,7 @@ export const sendToAllPrompts = <K extends keyof ChannelMap>(
 export const createSendToChild = (pap: ProcessAndPrompt) => (data: any) => {
   try {
     if (pap?.child && pap?.child?.connected && data?.channel) {
-      data.promptId = pap?.promptId;
+      // data.promptId = pap?.promptId;
       // log.info(`${pap?.pid}: ${data.channel}`);
       pap?.child.send(data, (error) => {
         if (error)

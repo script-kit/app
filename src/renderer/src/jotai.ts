@@ -238,6 +238,7 @@ const throttleSetPreview = throttle((g, s, a: string) => {
   s(_previewHTML, a);
   resize(g, s, 'SET_PREVIEW');
 }, 25);
+
 export const previewHTMLAtom = atom(
   (g) => {
     const html = DOMPurify.sanitize(
@@ -1473,7 +1474,7 @@ const setCSSVars = (theme: Record<string, string>) => {
   }
 
   if (logMessages.length > 0) {
-    log.info(logMessages.join('\n'));
+    log.verbose(logMessages.join('\n'));
   }
 };
 
@@ -1508,15 +1509,13 @@ export const footerHiddenAtom = atom(
 const promptReadyAtom = atom(false);
 
 let wasPromptDataPreloaded = false;
+
 export const promptDataAtom = atom(
   (g) => g(promptData),
   (g, s, a: null | PromptData) => {
     const pid = g(pidAtom);
     // s(appendToLogHTMLAtom, a?.id || 'id missing');
     log.info(`${pid}: 👂 Prompt Data ${a?.id}, ${a?.ui}`);
-
-    if (Array.isArray(a?.choices)) {
-    }
 
     const isMainScript = a?.scriptPath === g(kitConfigAtom).mainScriptPath;
     s(isMainScriptAtom, isMainScript);
@@ -1600,7 +1599,19 @@ export const promptDataAtom = atom(
       if (!a?.keyword && !g(isMainScriptAtom)) {
         // log.info(`👍 Setting input to ${a?.input || '_'}`);
         const inputWhileSubmitted = g(inputWhileSubmittedAtom);
-        s(_inputAtom, a?.input || inputWhileSubmitted || '');
+        const forceInput = a?.input || inputWhileSubmitted || '';
+        log.info(`${pid}: 👂 FORCE INPUT:`, {
+          input: forceInput,
+          inputWhileSubmitted,
+          a: a?.input,
+        });
+
+        const prevInput = g(_inputAtom);
+        if (forceInput && !prevInput.startsWith(forceInput)) {
+          s(_inputAtom, forceInput);
+        } else if (!forceInput) {
+          s(_inputAtom, forceInput);
+        }
       }
       s(_inputWhileSubmittedAtom, '');
       s(_flaggedValue, '');
@@ -3291,7 +3302,7 @@ export const beforeInputAtom = atom('');
 export const cssAtom = atom('');
 
 export const initPromptAtom = atom(null, (g, s) => {
-  log.info(`🚀 Init prompt`);
+  log.info(`${window.pid}: 🚀 Init prompt`);
   const promptData = g(cachedMainPromptDataAtom) as PromptData;
   // log.info({ promptData });
   const currentPromptData = g(promptDataAtom);
