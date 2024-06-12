@@ -8,7 +8,7 @@ import {
   ChangeEvent,
 } from 'react';
 import log from 'electron-log';
-import { Channel } from '@johnlindquist/kit/core/enum';
+import { Channel, UI } from '@johnlindquist/kit/core/enum';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
 import {
@@ -26,6 +26,8 @@ import {
   actionsInputFocusAtom,
   actionsInputHeightAtom,
   actionsInputFontSizeAtom,
+  focusedChoiceAtom,
+  uiAtom,
 } from '../jotai';
 import { useFocus, useActionsKeyIndex, useTab } from '../hooks';
 
@@ -167,10 +169,16 @@ export default function ActionsInput() {
     }
   }, [cached, pendingInput, setInput]);
 
+  const focusedChoice = useAtomValue(focusedChoiceAtom);
+  const ui = useAtomValue(uiAtom);
+
+  const focusedName =
+    ui === UI.arg && focusedChoice?.name ? focusedChoice.name : '';
+
   return (
     <div
       key="input"
-      className={`flex flex-row max-w-screen relative`}
+      className={`flex flex-col max-w-screen border-b border-ui-border`}
       style={{
         height: inputHeight,
         minHeight: inputHeight,
@@ -184,7 +192,8 @@ export default function ActionsInput() {
       {/* <div className="absolute top-0.5 left-1/2 -translate-x-1/2 transform font-native text-xxs text-primary">
         {name} - {description}
       </div> */}
-      <div className="max-w-screen flex-1">
+
+      <div className="max-w-screen flex-1 relative">
         <input
           id="actions-input"
           spellCheck="false"
@@ -214,6 +223,15 @@ export default function ActionsInput() {
           type={'text'}
           value={inputValue}
         />
+
+        {focusedName && (
+          <div className="text-text-base/50 text-xs font-medium absolute right-[6px] top-[5px]">
+            {focusedName}
+          </div>
+        )}
+        {/* <div className="text-primary/90 text-xxs font-medium uppercase absolute bottom-0 left-0">
+          nice
+        </div> */}
       </div>
 
       {/* <div className="flex flex-row items-center justify-center mr-2">

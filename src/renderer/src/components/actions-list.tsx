@@ -171,20 +171,21 @@ export default function ActionsList() {
       shadow-lg
       "
       style={{
-        height: actionsHeight + inputHeight + (actionsHeight === 0 ? 2 : 3), // 3px for the border, hmm....
+        height: actionsHeight + inputHeight + (actionsHeight === 0 ? 1 : 2), // 3px for the border, hmm....
         minHeight: inputHeight,
       }}
     >
       <ActionsInput />
-      <div className="border-b border-ui-border" />
-      <div className="flex-1">
-        <AutoSizer disableWidth className="w-full">
-          {({ height }) => (
-            <>
-              <InnerList height={height} />
-            </>
-          )}
-        </AutoSizer>
+      <div className="flex h-full">
+        <div className="flex-1">
+          <AutoSizer disableWidth className="w-full">
+            {({ height }) => (
+              <>
+                <InnerList height={height} />
+              </>
+            )}
+          </AutoSizer>
+        </div>
       </div>
     </div>
   );
