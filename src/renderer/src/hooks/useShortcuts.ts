@@ -26,6 +26,16 @@ import {
 import { hotkeysOptions } from './shared';
 import { HotkeysEvent } from 'react-hotkeys-hook/dist/types';
 
+function getKey(event: HotkeysEvent) {
+  const key = event?.keys?.[0];
+  if (key === 'period') return '.';
+  if (key === 'comma') return ',';
+  if (key === 'slash') return '/';
+  // if (key === 'quote') return '"';
+
+  return key;
+}
+
 function isEventShortcut(event: HotkeysEvent, shortcut: string): boolean {
   const shortcutEvent = {
     mod: shortcut.includes('mod') || shortcut.includes('cmd'),
@@ -36,10 +46,7 @@ function isEventShortcut(event: HotkeysEvent, shortcut: string): boolean {
     keys: [shortcut.split('+').pop() as string],
   } as HotkeysEvent;
 
-  // log.info({
-  //   event,
-  //   shortcutEvent,
-  // });
+  const eventKey = getKey(event);
   // compare the event with the shortcut
   return (
     event.mod === shortcutEvent.mod &&
@@ -47,7 +54,7 @@ function isEventShortcut(event: HotkeysEvent, shortcut: string): boolean {
     event.alt === shortcutEvent.alt &&
     event.ctrl === shortcutEvent.ctrl &&
     event.meta === shortcutEvent.meta &&
-    event?.keys?.[0] === shortcutEvent?.keys?.[0]
+    eventKey === shortcutEvent?.keys?.[0]
   );
 }
 export default () => {
@@ -86,19 +93,23 @@ export default () => {
       value?.shortcut && value?.shortcut?.toLowerCase() !== 'enter',
   );
 
-  let flagShortcuts = '';
+  let flagShortcuts: string[] = [];
   for (const [key, value] of flagsWithShortcuts) {
     if (value?.shortcut) {
-      flagShortcuts += `${value.shortcut},`;
+      flagShortcuts.push(
+        value.shortcut.replace('cmd', 'mod').replace(',', 'comma'),
+      );
     }
-  }
-  // Remove the last comma if flagShortcuts is not empty
-  if (flagShortcuts.length > 0) {
-    flagShortcuts = flagShortcuts.slice(0, -1);
   }
 
   const flagByHandler = (event: HotkeysEvent) => {
     for (const [flag, value] of flagsWithShortcuts) {
+      // log.info('🥸 flaggy shortcut', {
+      //   flagShortcuts,
+      //   handler: event,
+      //   flag,
+      //   value,
+      // });
       if (isEventShortcut(event, value.shortcut)) {
         return flag;
       }
@@ -106,10 +117,10 @@ export default () => {
     return null; // Return null if no matching shortcut is found
   };
 
+  // log.info({ flagShortcuts });
   useHotkeys(
-    flagShortcuts.length ? flagShortcuts.replaceAll('cmd', 'mod') : 'f19',
+    flagShortcuts.length ? flagShortcuts : ['f19'],
     (event, handler: HotkeysEvent) => {
-      log.info('flag shortcuts', { flagShortcuts, handler });
       event.preventDefault();
 
       // if (flagValue) return;
@@ -119,7 +130,12 @@ export default () => {
 
       const flag = flagByHandler(handler) as string;
       const submitValue = focusedChoice?.value || input;
-      // log.info('flag shortcut', { flagShortcuts, handler, flag, submitValue });
+      // log.info('🥸 flaggy shortcut', {
+      //   flagShortcuts,
+      //   handler,
+      //   flag,
+      //   submitValue,
+      // });
       setFlag(flag);
       submit(submitValue);
     },

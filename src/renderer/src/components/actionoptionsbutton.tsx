@@ -39,5 +39,11 @@ export function OptionsButton() {
     }
   }, [choices, input, index, channel, flagValue, setFlagValue]);
 
-  return <ActionButton {...actionsAction} onClick={onClick} />;
+  return (
+    <ActionButton
+      {...actionsAction}
+      extraClassName={flagValue ? 'bg-opacity-10' : ''}
+      onClick={onClick}
+    />
+  );
 }

@@ -98,8 +98,23 @@ import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
 import { getSourceFromRectangle } from './screen';
 
-const comparePromptIds = (id1: string, id2: string) => {
-  return id1.slice(-2) === id2.slice(-2);
+let prevId1: string;
+let prevId2: string;
+let prevResult: boolean;
+
+const comparePromptScriptsById = (id1: string, id2: string) => {
+  if (id1 === prevId1 && id2 === prevId2) {
+    return prevResult;
+  }
+
+  const id1Number = id1.slice(0, -2);
+  const id2Number = id2.slice(0, -2);
+
+  prevId1 = id1;
+  prevId2 = id2;
+  prevResult = id1Number === id2Number;
+
+  return prevResult;
 };
 
 const getModifier = () => {
@@ -209,7 +224,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       );
     }
 
-    const samePrompt = comparePromptIds(data?.promptId, prompt.id);
+    const samePrompt = comparePromptScriptsById(data?.promptId, prompt.id);
     const result = fn(processInfo, data, samePrompt);
 
     if (sendToChild) {
@@ -1378,10 +1393,10 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     },
     SET_FLAGS: onChildChannel(
       async ({ child }, { channel, value, promptId }, samePrompt) => {
-        if (promptId === prompt.id) {
+        if (samePrompt) {
           log.info(`⛳️ Set flags ${Object.keys(value).length}`);
-          sendToPrompt(Channel.SET_FLAGS, data.value);
-          setFlags(prompt, data.value);
+          sendToPrompt(Channel.SET_FLAGS, value);
+          setFlags(prompt, value as any);
         } else {
           log.warn(`${prompt.pid}: ⛔️ SET_FLAGS: Prompt ID mismatch`, {
             dataId: promptId,

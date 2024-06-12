@@ -15,7 +15,7 @@ import {
 import { Action, bg, textContrast } from './actions';
 import { IconSwapper } from './iconswapper';
 
-export function ActionButton(action: Action) {
+export function ActionButton(action: Action & { extraClassName?: string }) {
   const ui = useAtomValue(uiAtom);
   const sendShortcut = useSetAtom(sendShortcutAtom);
   const setFlag = useSetAtom(focusedFlagValueAtom);
@@ -60,6 +60,7 @@ export function ActionButton(action: Action) {
   outline-none
   transition-opacity duration-200 ease-out
   ${action?.disabled ? `text-primary text-opacity-25` : `${bg} ${textContrast}`}
+  ${action?.extraClassName}
   `}
       onClick={action?.onClick ?? onClick}
       // blur on mouse down

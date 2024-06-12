@@ -373,7 +373,7 @@ function ChoiceButton({
               </div>
             )}
 
-            {index === buttonIndex &&
+            {/* {index === buttonIndex &&
               !hasRightShortcut &&
               !choice?.ignoreFlags &&
               (Boolean(choice?.actions) ||
@@ -408,7 +408,7 @@ function ChoiceButton({
                     )}
                   </div>
                 </div>
-              )}
+              )} */}
           </div>
         </div>
       )}
