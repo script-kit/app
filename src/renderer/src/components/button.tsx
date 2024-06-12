@@ -291,7 +291,7 @@ function ChoiceButton({
                 choice?.description ||
                 modifierDescription) && (
                 <div
-                  className={`truncate pb-1 ${buttonDescriptionFontSize} ${choice?.descriptionClassName}${
+                  className={`truncate ${buttonDescriptionFontSize} ${choice?.descriptionClassName}${
                     index === buttonIndex
                       ? ` text-primary opacity-100 `
                       : ` opacity-60 `

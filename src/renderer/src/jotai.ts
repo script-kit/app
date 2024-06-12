@@ -2868,7 +2868,7 @@ export const buttonDescriptionFontSizeAtom = atom((g) => {
       break;
 
     case PROMPT.ITEM.HEIGHT.SM:
-      fontSize = `text-xxs`;
+      fontSize = `text-xs`;
       break;
 
     case PROMPT.ITEM.HEIGHT.BASE:

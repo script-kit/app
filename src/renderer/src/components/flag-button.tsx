@@ -140,7 +140,7 @@ function FlagButton({
         justify-between
         whitespace-nowrap
         px-4
-        pt-2px
+
         text-left
         outline-none
         focus:outline-none
@@ -151,6 +151,7 @@ function FlagButton({
       onMouseEnter={onMouseEnter}
       onMouseMove={onMouseEnter}
     >
+      {/* <span className="text-primary/90 text-xxs">{JSON.stringify(choice)}</span> */}
       {choice?.html ? (
         parse(choice?.html, {
           replace: (domNode: any) => {
