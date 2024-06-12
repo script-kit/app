@@ -639,7 +639,6 @@ text-text-base
               className="min-h-[1px] w-full flex-1 overflow-y-hidden"
             >
               {flagValue && <ActionsList key="ActionsList" />}
-
               <PanelGroup
                 direction="horizontal"
                 autoSaveId={script.filePath}
