@@ -2653,13 +2653,15 @@ export class KitPrompt {
             log.info(`${this.pid}: 🏋️‍♂️ Preload preview: ${promptScriptPath}`);
           }
           this.sendToPrompt(Channel.SET_PREVIEW, preview || closedDiv);
+
+          this.preloaded = promptScriptPath;
         } else {
           log.info(`No cached choices for ${promptScriptPath}`);
+          this.preloaded = '';
         }
       }
 
-      log.info(`end of attemptPreload`);
-      this.preloaded = promptScriptPath;
+      log.info(`end of attemptPreload. Assigning preloaded`);
     },
     25,
     {
