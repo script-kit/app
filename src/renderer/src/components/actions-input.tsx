@@ -225,7 +225,7 @@ export default function ActionsInput() {
         />
 
         {focusedName && (
-          <div className="text-text-base/50 text-xs font-medium absolute right-[6px] top-[5px]">
+          <div className="text-primary/90 text-xs absolute right-[8px] top-[5px]">
             {focusedName}
           </div>
         )}

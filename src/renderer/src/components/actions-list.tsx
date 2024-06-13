@@ -158,7 +158,7 @@ export default function ActionsList() {
       flags-component flex w-96 flex-col overflow-y-hidden
       max-h-[80vh]
       absolute
-      top-7
+      top-9
       transform
       left-1/2
       -translate-x-1/2
