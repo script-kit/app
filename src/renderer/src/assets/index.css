@@ -925,3 +925,7 @@ pre > code {
   /* Remove ring */
   @apply ring-0 !important;
 }
+
+.font-normal-medium {
+  font-weight: 450;
+}

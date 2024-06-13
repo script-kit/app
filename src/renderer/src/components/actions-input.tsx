@@ -225,13 +225,10 @@ export default function ActionsInput() {
         />
 
         {focusedName && (
-          <div className="text-primary/90 text-xs absolute right-[8px] top-[5px]">
+          <div className="text-primary/90 text-xs absolute right-[8px] top-[5px] font-normal-medium">
             {focusedName}
           </div>
         )}
-        {/* <div className="text-primary/90 text-xxs font-medium uppercase absolute bottom-0 left-0">
-          nice
-        </div> */}
       </div>
 
       {/* <div className="flex flex-row items-center justify-center mr-2">

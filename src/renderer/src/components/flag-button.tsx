@@ -16,11 +16,13 @@ import {
   focusedChoiceAtom,
   actionsButtonNameFontSizeAtom,
   actionsButtonDescriptionFontSizeAtom,
+  uiAtom,
 } from '../jotai';
 
 // import { ReactComponent as NoImageIcon } from '../svg/ui/icons8-no-image.svg';
 import { AppChannel } from '../../../shared/enums';
 import { highlight } from './utils';
+import { UI } from '@johnlindquist/kit/core/enum';
 
 function FlagButton({
   index: buttonIndex,
@@ -63,6 +65,10 @@ function FlagButton({
   }, [buttonIndex, mouseEnabled, setIndex]);
 
   const [imageFail, setImageFail] = useState(false);
+  const ui = useAtomValue(uiAtom);
+
+  const focusedName =
+    ui === UI.arg && focusedChoice?.name ? focusedChoice.name : '';
 
   useEffect(() => {
     setImageFail(false);
@@ -205,7 +211,9 @@ function FlagButton({
                   {modifierDescription ||
                   (index === buttonIndex && choice?.focused)
                     ? choice?.focused
-                    : choice?.description}
+                    : focusedName
+                      ? choice?.description?.replace('{{name}}', focusedName)
+                      : choice?.description}
                 </div>
               )}
             </div>
