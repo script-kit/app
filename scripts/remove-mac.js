@@ -33,4 +33,4 @@ for (const entry of result) {
   }
 }
 
-console.log(`Kit is fun!!! ❤️`);
+console.log(`Kit is fun!!! 💛`);
