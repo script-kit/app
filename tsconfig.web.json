@@ -5,7 +5,8 @@
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.tsx",
     "src/preload/*.d.ts",
-    "src/shared/*"
+    "src/shared/*",
+    "src/shims/**/*"
   ],
   "compilerOptions": {
     "target": "esnext",

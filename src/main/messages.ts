@@ -7,10 +7,9 @@ import untildify from 'untildify';
 // REMOVE-NUT
 import robot from '@jitsi/robotjs';
 // END-REMOVE-NUT
-// REMOVE-MAC
-import nmp from 'node-mac-permissions';
-const { askForAccessibilityAccess, getAuthStatus } = nmp;
-// END-REMOVE-MAC
+
+import { importNodeMacPermissionsOrShim } from '../shims/macos/nmp';
+const { askForAccessibilityAccess, getAuthStatus } = await importNodeMacPermissionsOrShim();
 
 import {
   app,
@@ -303,9 +302,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     ENABLE_ACCESSIBILITY: onChildChannelOverride(
       async ({ child }, { channel, value }) => {
         log.info(`👋 Enabling accessibility`);
-        // REMOVE-MAC
         askForAccessibilityAccess();
-        // END-REMOVE-MAC
       },
     ),
 
@@ -706,13 +703,11 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
     GET_ACTIVE_APP: onChildChannelOverride(async ({ child }, { channel }) => {
       if (kitState.isMac) {
-        // REMOVE-MAC
         const { getFrontmostApp: frontmost } = await import(
           '@johnlindquist/mac-frontmost' as any
         );
         const frontmostApp = await frontmost();
         childSend({ channel, app: frontmostApp });
-        // END-REMOVE-MAC
       } else {
         // TODO: implement for windows
         childSend({ channel, app: {} });
@@ -2094,14 +2089,12 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       if (process.env.NODE_ENV === 'development' || !kitState.isMac) {
         value = true;
       } else {
-        // REMOVE-MAC
         const authStatus = getAuthStatus('full-disk-access');
         if (authStatus === 'authorized') {
           value = true;
         } else {
           // askForFullDiskAccess();
         }
-        // END-REMOVE-MAC
       }
     }),
 

@@ -1,6 +1,6 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
-  "include": ["electron.vite.config.*", "src/main/*", "src/preload/*", "src/shared/*"],
+  "include": ["electron.vite.config.*", "src/main/*", "src/preload/*", "src/shared/*", "src/shims/**/*"],
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",

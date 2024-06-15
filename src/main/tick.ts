@@ -39,6 +39,8 @@ import {
 } from './clipboard';
 import { registerIO, toKey } from './io';
 import { prompts } from './prompts';
+import { importMacFrontmostOrShim } from '../shims/macos/mac-frontmost';
+import { importMacClipboardListenerOrShim } from '../shims/macos/mac-clipboard-listener';
 
 type FrontmostApp = {
   localizedName: string;
@@ -243,12 +245,9 @@ export const startClipboardMonitor = async () => {
 
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
 
-  // REMOVE-MAC
   if (kitState.isMac) {
     try {
-      ({ getFrontmostApp: frontmost } = await import(
-        '@johnlindquist/mac-frontmost'
-      ));
+      ({ getFrontmostApp: frontmost } = await importMacFrontmostOrShim());
 
       log.info(frontmost());
     } catch (e) {
@@ -260,9 +259,7 @@ export const startClipboardMonitor = async () => {
     start: startMacClipboardListener,
     onClipboardImageChange,
     onClipboardTextChange,
-  } = await import('@johnlindquist/mac-clipboard-listener');
-
-  // END-REMOVE-MAC
+  } = await importMacClipboardListenerOrShim();
 
   const clipboardText$: Observable<any> = new Observable<string>((observer) => {
     log.info(`Creating new Observable for clipboard...`);
@@ -291,8 +288,8 @@ export const startClipboardMonitor = async () => {
         clipboardEventListener.listen();
       }
 
-      // REMOVE-MAC
       else {
+
         log.info(
           `Attempting to start @johnlindquist/mac-clipboard-listener...`,
         );
@@ -337,7 +334,6 @@ export const startClipboardMonitor = async () => {
           ),
         );
       }
-      // END-REMOVE-MAC
     } catch (e) {
       log.error(`🔴 Failed to start clipboard watcher`);
       log.error(e);

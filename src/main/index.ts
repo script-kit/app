@@ -24,10 +24,8 @@ log.initialize();
 (global as any).log = log.info;
 performance.mark;
 
-// REMOVE-MAC
-import nmp from 'node-mac-permissions';
-const { getAuthStatus } = nmp;
-// END-REMOVE-MAC
+import { importNodeMacPermissionsOrShim } from '../shims/macos/nmp';
+const { getAuthStatus } = await importNodeMacPermissionsOrShim();
 
 import dotenv from 'dotenv';
 import unhandled from 'electron-unhandled';
@@ -466,7 +464,6 @@ const systemEvents = () => {
 const ready = async () => {
   assignDisplays();
   try {
-    // REMOVE-MAC
     const isMac = os.platform() === 'darwin';
     if (isMac) {
       startSK();
@@ -487,7 +484,6 @@ const ready = async () => {
         }, 1000);
       }
     }
-    // END-REMOVE-MAC
 
     await ensureKitDirs();
     await ensureKenvDirs();

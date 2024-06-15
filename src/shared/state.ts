@@ -2,11 +2,8 @@
 /* eslint-disable no-nested-ternary */
 
 import Store, { Schema } from 'electron-store';
-
-// REMOVE-MAC
-import nmp from 'node-mac-permissions';
-const { getAuthStatus } = nmp;
-// END-REMOVE-MAC
+import { importNodeMacPermissionsOrShim } from '../shims/macos/nmp';
+const { getAuthStatus } = await importNodeMacPermissionsOrShim();
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
@@ -726,13 +723,11 @@ export const kitClipboard = {
 };
 
 export const getAccessibilityAuthorized = async () => {
-  // REMOVE-MAC
   if (isMac) {
     const authorized = getAuthStatus('accessibility') === 'authorized';
     kitStore.set('accessibilityAuthorized', authorized);
     return authorized;
   }
-  // END-REMOVE-MAC
 
   return true;
 };

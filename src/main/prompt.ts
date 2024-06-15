@@ -1,11 +1,10 @@
-// REMOVE-MAC
-import {
+import { importMacPanelWindowOrShim } from '../shims/macos/mpw';
+const {
   makeKeyWindow,
   makePanel,
   makeWindow,
-  hideInstant,
-} from '@johnlindquist/mac-panel-window';
-// END-REMOVE-MAC
+  hideInstant
+} = await importMacPanelWindowOrShim();
 
 // REMOVE-NODE-WINDOW-MANAGER
 import { windowManager, Window } from '@johnlindquist/node-window-manager';
@@ -676,7 +675,6 @@ export class KitPrompt {
       }
     };
 
-    // REMOVE-MAC
     if (kitState.isMac) {
       makePanel(this.window);
       // log.info({
@@ -684,7 +682,6 @@ export class KitPrompt {
       //   systemTextColor: getTextColor(),
       // });
     }
-    // END-REMOVE-MAC
 
     // REMOVE-NODE-WINDOW-MANAGER
     if (kitState.isWindows) {
@@ -950,21 +947,17 @@ export class KitPrompt {
     }
 
     this.window.webContents?.on('devtools-opened', () => {
-      // REMOVE-MAC
       if (kitState.isMac) {
         makeWindow(this.window);
       }
-      // END-REMOVE-MAC
     });
 
     this.window.webContents.on('devtools-closed', () => {
       log.silly(`event: devtools-closed`);
 
       if (kitState.isMac) {
-        // REMOVE-MAC
         log.info(`${this.pid}: 👋 setPromptAlwaysOnTop: false, so makeWindow`);
         makeWindow(this.window);
-        // END-REMOVE-MAC
       } else {
         this.setPromptAlwaysOnTop(false);
       }
@@ -987,11 +980,9 @@ export class KitPrompt {
       //   isActivated: kitState.isActivated,
       // });
 
-      // REMOVE-MAC
       if (kitState.isMac) {
         makeWindow(this.window);
       }
-      // END-REMOVE-MAC
 
       if (this.justFocused && this.isVisible()) {
         log.info(`🙈 Prompt window was just focused. Ignore blur`);
@@ -1887,11 +1878,9 @@ export class KitPrompt {
     }
 
     // if (promptData.ui !== UI.arg) {
-    //   // REMOVE-MAC
     //   if (kitState.isMac) {
     //     makeWindow(this.window);
     //   }
-    //   // END-REMOVE-MAC
     // }
 
     this.scriptPath = promptData?.scriptPath;
@@ -2055,10 +2044,8 @@ export class KitPrompt {
       kitState.emojiActive = false;
     }
     // if (kitState.isMac) {
-    //   // REMOVE-MAC
     //   log.info(`🙈 Hiding prompt window`);
     //   makeWindow(this.window);
-    //   // END-REMOVE-MAC
     // }
     this.setPromptAlwaysOnTop(false);
     if (!this.isVisible()) return;
@@ -2141,7 +2128,6 @@ export class KitPrompt {
   };
 
   prepPromptForQuit = async () => {
-    // REMOVE-MAC
     this.actualHide();
     await new Promise((resolve) => {
       makeWindow(this.window);
@@ -2154,7 +2140,6 @@ export class KitPrompt {
         resolve(null);
       });
     });
-    // END-REMOVE-MAC
   };
 
   setVibrancy = (
@@ -2186,11 +2171,7 @@ export class KitPrompt {
     ) {
       try {
         if (kitState.isMac) {
-          // REMOVE-MAC
-          log.info(`🥱 >>>>>>> 🥱 makeKeyWindow`);
-          this.window?.showInactive();
-          makeKeyWindow(this.window);
-          // END-REMOVE-MAC
+          // REMOVED BY KIT
         } else {
           this?.window?.setFocusable(true);
           this.window?.showInactive();
@@ -2377,7 +2358,6 @@ export class KitPrompt {
       // makeWindow(this.window);
 
       if (this?.window && kitState.isMac) {
-        // REMOVE-MAC
         log.info(`Before willClosePanel`);
         // makeKeyWindow(prompts.idle)
         // this.setPromptAlwaysOnTop(false);
@@ -2387,7 +2367,6 @@ export class KitPrompt {
         // this.window.emit('close');
         // this.window.emit('closed');
         log.info(`After willClosePanel`);
-        // END-REMOVE-MAC
       }
 
       this.sendToPrompt = () => {};
@@ -2397,13 +2376,11 @@ export class KitPrompt {
       // This is crashing the app, is there anything else I can do?
       // this.window?.destroy();
       try {
-        // REMOVE-MAC
         if (kitState.isMac) {
           log.info(`Before makeWindow(this.window)`);
           makeWindow(this.window);
           log.info(`After makeWindow(this.window)`);
         }
-        // END-REMOVE-MAC
 
         this.window.setClosable(true);
         this.window.close();
@@ -2678,11 +2655,9 @@ export class KitPrompt {
       // END-REMOVE-NODE-WINDOW-MANAGER
     }
 
-    // REMOVE-MAC
     if (kitState.isMac) {
       hideInstant(this.window);
     }
-    // END-REMOVE-MAC
 
     if (kitState.isLinux) {
       this.window?.hide();
@@ -2693,7 +2668,9 @@ export class KitPrompt {
 }
 
 export const prepQuitWindow = async () => {
-  // REMOVE-MAC
+  if (!kitState.isMac) {
+    return;
+  }
   log.info(`👋 Prep quit window`);
   const options = getPromptOptions();
   const window = new BrowserWindow(options);
@@ -2716,16 +2693,15 @@ export const prepQuitWindow = async () => {
       resolve(null);
     });
   });
-
-  // END-REMOVE-MAC
 };
 
 export const makeSplashWindow = async (window?: BrowserWindow) => {
-  // REMOVE-MAC
+  if (!kitState.isMac) {
+    return;
+  }
   log.info(`👋 Make splash window`);
   if (!window) {
     return;
   }
   makeWindow(window);
-  // END-REMOVE-MAC
 };
