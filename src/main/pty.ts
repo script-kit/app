@@ -213,7 +213,14 @@ export const createPty = (prompt: KitPrompt) => {
   };
 
   const handleTermReady = async (event, config: TermConfig) => {
-    log.info({ termConfig: config });
+    log.info({
+      termConfig: {
+        command: config?.command || '<no command>',
+        args: config?.args || '<no args>',
+        cwd: config?.cwd || '<no cwd>',
+        shell: config?.shell || '<no shell>',
+      },
+    });
     if (!prompt) return;
     if (config.pid !== prompt?.pid) return;
 
