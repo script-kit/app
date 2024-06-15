@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 // import '@johnlindquist/kit';
 
 let { chdir } = await import('process');

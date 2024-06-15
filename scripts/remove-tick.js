@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 console.log(`Removing tick 🐞`);
 
 let srcFilePath = path

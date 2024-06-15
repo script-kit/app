@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 import '@johnlindquist/kit';
 
 import { Octokit } from 'octokit';

@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 let version = await arg('Enter the version number');
 let tag_name = `v${version}`;
 

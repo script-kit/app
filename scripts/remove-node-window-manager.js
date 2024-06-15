@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 import '@johnlindquist/kit';
 
 console.log(`Removing NODE-WINDOW-MANAGER ⛳️`);
