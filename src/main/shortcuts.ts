@@ -9,7 +9,7 @@ import { getMainScriptPath } from '@johnlindquist/kit/core/utils';
 import { runPromptProcess } from './kit';
 import { emitter, KitEvent } from '../shared/events';
 
-import { convertKey, kitState, subs } from '../shared/state';
+import { convertKey, kitState, subs } from './state';
 import { Trigger } from '../shared/enums';
 import { convertShortcut, shortcutInfo } from './helpers';
 import { processes, spawnShebang } from './process';

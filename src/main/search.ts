@@ -13,7 +13,7 @@ import {
 
 import { quickScore, createConfig, QuickScore } from 'quick-score';
 import { AppChannel } from '../shared/enums';
-import { kitState } from '../shared/state';
+import { kitState } from './state';
 import { ScoredChoice } from '../shared/types';
 import { createScoredChoice } from './helpers';
 import { KitPrompt } from './prompt';

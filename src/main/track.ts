@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { kitState } from '../shared/state';
+import { kitState } from './state';
 
 export enum TrackEvent {
   Ready = 'Ready',

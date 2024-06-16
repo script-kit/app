@@ -47,7 +47,7 @@ import {
   kitState,
   preloadChoicesMap,
   workers,
-} from '../shared/state';
+} from './state';
 import { createScoredChoice } from './helpers';
 import { prompts } from './prompts';
 import { SPLASH_PATH } from '../shared/defaults';

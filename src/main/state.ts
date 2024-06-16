@@ -2,8 +2,6 @@
 /* eslint-disable no-nested-ternary */
 
 import Store, { Schema } from 'electron-store';
-import { importNodeMacPermissionsOrShim } from '../shims/macos/nmp';
-const { getAuthStatus } = await importNodeMacPermissionsOrShim();
 
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
@@ -45,11 +43,12 @@ import {
   getTrustedKenvsKey,
 } from '@johnlindquist/kit/core/utils';
 import axios from 'axios';
-import internetAvailable from './internet-available';
-import { emitter, KitEvent } from './events';
-import { Trigger } from './enums';
+import internetAvailable from '../shared/internet-available';
+import { emitter, KitEvent } from '../shared/events';
+import { Trigger } from '../shared/enums';
 import { kenvEnv } from '@johnlindquist/kit/types/env';
 import { Worker } from 'worker_threads';
+import shims from './shims';
 
 const schema: Schema<{
   KENV: string;
@@ -724,7 +723,7 @@ export const kitClipboard = {
 
 export const getAccessibilityAuthorized = async () => {
   if (isMac) {
-    const authorized = getAuthStatus('accessibility') === 'authorized';
+    const authorized = shims.getAuthStatus('accessibility') === 'authorized';
     kitStore.set('accessibilityAuthorized', authorized);
     return authorized;
   }

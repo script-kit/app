@@ -2,7 +2,6 @@
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
 import { importNodeMacPermissionsOrShim } from '../shims/macos/nmp';
-const { getAuthStatus } = await importNodeMacPermissionsOrShim();
 
 import {
   BrowserWindow,
@@ -40,7 +39,7 @@ import {
   getThemes,
   kitStore,
   debounceSetScriptTimestamp,
-} from '../shared/state';
+} from './state';
 
 import { widgetState } from '../shared/widget';
 
@@ -57,6 +56,7 @@ import { TrackEvent, trackEvent } from './track';
 import { createMessageMap } from './messages';
 import { prompts } from './prompts';
 import { createEnv } from './env.utils';
+import shims from './shims';
 
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
@@ -1233,7 +1233,7 @@ emitter.on(
 emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
   try {
     if (kitState.isMac) {
-      const authorized = getAuthStatus('accessibility') === 'authorized';
+      const authorized = shims.getAuthStatus('accessibility') === 'authorized';
 
       if (authorized) {
         kitStore.set('accessibilityAuthorized', authorized);

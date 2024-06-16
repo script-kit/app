@@ -1,5 +1,5 @@
 import log from 'electron-log';
-import { kitState } from '../shared/state';
+import { kitState } from './state';
 
 // REMOVE-NUT
 import robot from '@jitsi/robotjs';

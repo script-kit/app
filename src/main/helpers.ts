@@ -18,7 +18,7 @@ import {
 import { Choice } from '@johnlindquist/kit/types/core';
 import { emitter, KitEvent } from '../shared/events';
 import { Trigger } from '../shared/enums';
-import { convertKey } from '../shared/state';
+import { convertKey } from './state';
 import { ScoredChoice } from '../shared/types';
 
 export const APP_NAME = 'Kit';

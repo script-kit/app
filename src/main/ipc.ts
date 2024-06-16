@@ -36,7 +36,7 @@ import { runPromptProcess } from './kit';
 import { AppChannel, HideReason, Trigger } from '../shared/enums';
 import { ResizeData, Survey } from '../shared/types';
 import { getAssetPath } from '../shared/assets';
-import { kitCache, kitState } from '../shared/state';
+import { kitCache, kitState } from './state';
 import { noChoice } from '../shared/defaults';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
 

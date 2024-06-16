@@ -3,7 +3,7 @@ import log from 'electron-log';
 import { Script } from '@johnlindquist/kit/types/core';
 import { runPromptProcess } from './kit';
 import { Trigger } from '../shared/enums';
-import { kitState } from '../shared/state';
+import { kitState } from './state';
 
 const validSystemEvents = [
   'suspend',

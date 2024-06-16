@@ -32,7 +32,7 @@ import {
 } from '@johnlindquist/kit/core/utils';
 
 import { getAssetPath } from '../shared/assets';
-import { forceQuit, kitState, subs } from '../shared/state';
+import { forceQuit, kitState, subs } from './state';
 import { emitter, KitEvent } from '../shared/events';
 import { getVersion } from './version';
 import { AppChannel, Trigger } from '../shared/enums';

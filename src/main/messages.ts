@@ -8,9 +8,6 @@ import untildify from 'untildify';
 import robot from '@jitsi/robotjs';
 // END-REMOVE-NUT
 
-import { importNodeMacPermissionsOrShim } from '../shims/macos/nmp';
-const { askForAccessibilityAccess, getAuthStatus } = await importNodeMacPermissionsOrShim();
-
 import {
   app,
   clipboard,
@@ -60,7 +57,7 @@ import {
   kitStore,
   preloadChoicesMap,
   debounceSetScriptTimestamp,
-} from '../shared/state';
+} from './state';
 
 import { widgetState, findWidget } from '../shared/widget';
 
@@ -96,6 +93,7 @@ import {
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
 import { getSourceFromRectangle } from './screen';
+import shims from './shims';
 
 let prevId1: string;
 let prevId2: string;
@@ -302,7 +300,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     ENABLE_ACCESSIBILITY: onChildChannelOverride(
       async ({ child }, { channel, value }) => {
         log.info(`👋 Enabling accessibility`);
-        askForAccessibilityAccess();
+        shims.askForAccessibilityAccess();
       },
     ),
 
@@ -703,10 +701,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
     GET_ACTIVE_APP: onChildChannelOverride(async ({ child }, { channel }) => {
       if (kitState.isMac) {
-        const { getFrontmostApp: frontmost } = await import(
-          '@johnlindquist/mac-frontmost' as any
-        );
-        const frontmostApp = await frontmost();
+        const frontmostApp = shims.getFrontmostApp();
         childSend({ channel, app: frontmostApp });
       } else {
         // TODO: implement for windows
@@ -2089,7 +2084,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       if (process.env.NODE_ENV === 'development' || !kitState.isMac) {
         value = true;
       } else {
-        const authStatus = getAuthStatus('full-disk-access');
+        const authStatus = shims.getAuthStatus('full-disk-access');
         if (authStatus === 'authorized') {
           value = true;
         } else {

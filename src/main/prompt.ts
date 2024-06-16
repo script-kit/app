@@ -1,11 +1,3 @@
-import { importMacPanelWindowOrShim } from '../shims/macos/mpw';
-const {
-  makeKeyWindow,
-  makePanel,
-  makeWindow,
-  hideInstant
-} = await importMacPanelWindowOrShim();
-
 // REMOVE-NODE-WINDOW-MANAGER
 import { windowManager, Window } from '@johnlindquist/node-window-manager';
 // END-REMOVE-NODE-WINDOW-MANAGER
@@ -57,7 +49,7 @@ import {
   preloadChoicesMap,
   preloadPreviewMap,
   kitCache,
-} from '../shared/state';
+} from './state';
 import { EMOJI_HEIGHT, EMOJI_WIDTH, ZOOM_LEVEL } from '../shared/defaults';
 import { ResizeData, ScoredChoice } from '../shared/types';
 import { getVersion } from './version';
@@ -80,6 +72,7 @@ import { createPty } from './pty';
 import { cliFromParams, runPromptProcess } from './kit';
 import EventEmitter from 'events';
 import { OFFSCREEN_X, OFFSCREEN_Y, getPromptOptions } from './prompt.options';
+import shims from './shims';
 
 contextMenu({
   showInspectElement: process.env.NODE_ENV === 'development',
@@ -321,9 +314,6 @@ export type ScriptTrigger =
   | 'background'
   | 'schedule'
   | 'snippet';
-
-let prevScriptPath = '';
-let prevPid = 0;
 
 let boundsCheck: any = null;
 let topTimeout: any = null;
@@ -633,6 +623,33 @@ export class KitPrompt {
       });
     });
   };
+
+  async makeWindow() {
+    if (kitState.isMac) {
+      if (this.window && !this.window.isDestroyed()) {
+        shims.makeWindow(this.window);
+      }
+    }
+  }
+
+  async makeKeyWindow() {
+    if (kitState.isMac) {
+      if (this.window && !this.window.isDestroyed()) {
+        shims.makeKeyWindow(this.window);
+      }
+    }
+  }
+
+  async makePanel() {
+    if (kitState.isMac) {
+      shims.makePanel(this.window);
+
+      if (this.window && !this.window.isDestroyed()) {
+        shims.makePanel(this.window);
+      }
+    }
+  }
+
   constructor() {
     ipcMain.on(AppChannel.GET_KIT_CONFIG, (event) => {
       event.returnValue = {
@@ -674,14 +691,6 @@ export class KitPrompt {
         }
       }
     };
-
-    if (kitState.isMac) {
-      makePanel(this.window);
-      // log.info({
-      //   systemBackgroundColor: getWindowBackgroundColor(),
-      //   systemTextColor: getTextColor(),
-      // });
-    }
 
     // REMOVE-NODE-WINDOW-MANAGER
     if (kitState.isWindows) {
@@ -946,18 +955,16 @@ export class KitPrompt {
       );
     }
 
-    this.window.webContents?.on('devtools-opened', () => {
-      if (kitState.isMac) {
-        makeWindow(this.window);
-      }
+    this.window.webContents?.on('devtools-opened', async () => {
+      this.makeWindow();
     });
 
-    this.window.webContents.on('devtools-closed', () => {
+    this.window.webContents.on('devtools-closed', async () => {
       log.silly(`event: devtools-closed`);
 
       if (kitState.isMac) {
         log.info(`${this.pid}: 👋 setPromptAlwaysOnTop: false, so makeWindow`);
-        makeWindow(this.window);
+        this.makeWindow();
       } else {
         this.setPromptAlwaysOnTop(false);
       }
@@ -981,7 +988,7 @@ export class KitPrompt {
       // });
 
       if (kitState.isMac) {
-        makeWindow(this.window);
+        this.makeWindow();
       }
 
       if (this.justFocused && this.isVisible()) {
@@ -1140,7 +1147,7 @@ export class KitPrompt {
     };
 
     if (kitState.isLinux) {
-      this.window.on('resize', (event) => {
+      this.window.on('resize', () => {
         this.modifiedByUser = true;
       });
     } else {
@@ -1597,7 +1604,7 @@ export class KitPrompt {
 
   pingPrompt = async (channel: AppChannel, data?: any) => {
     log.silly(`sendToPrompt: ${String(channel)} ${data?.kitScript}`);
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (
         this.window &&
         !this.window.isDestroyed() &&
@@ -1703,7 +1710,6 @@ export class KitPrompt {
 
     const {
       reason,
-      id,
       topHeight,
       mainHeight,
       footerHeight,
@@ -1716,7 +1722,6 @@ export class KitPrompt {
       inputChanged,
       justOpened,
       hasInput,
-      totalChoices,
       isMainScript,
     }: ResizeData = resizeData;
 
@@ -2130,7 +2135,7 @@ export class KitPrompt {
   prepPromptForQuit = async () => {
     this.actualHide();
     await new Promise((resolve) => {
-      makeWindow(this.window);
+      this.makeWindow();
       setTimeout(() => {
         if (!this.window || this.window?.isDestroyed()) {
           resolve(null);
@@ -2171,7 +2176,8 @@ export class KitPrompt {
     ) {
       try {
         if (kitState.isMac) {
-          // REMOVED BY KIT
+          this.window?.show();
+          this.makeKeyWindow();
         } else {
           this?.window?.setFocusable(true);
           this.window?.showInactive();
@@ -2378,7 +2384,7 @@ export class KitPrompt {
       try {
         if (kitState.isMac) {
           log.info(`Before makeWindow(this.window)`);
-          makeWindow(this.window);
+          this.makeWindow();
           log.info(`After makeWindow(this.window)`);
         }
 
@@ -2646,7 +2652,7 @@ export class KitPrompt {
     },
   );
 
-  hideInstant = () => {
+  hideInstant = async () => {
     if (kitState.isWindows) {
       // REMOVE-NODE-WINDOW-MANAGER
       windowManager.hideInstantly(this.window?.getNativeWindowHandle());
@@ -2656,7 +2662,7 @@ export class KitPrompt {
     }
 
     if (kitState.isMac) {
-      hideInstant(this.window);
+      shims.hideInstant(this.window);
     }
 
     if (kitState.isLinux) {
@@ -2675,16 +2681,16 @@ export const prepQuitWindow = async () => {
   const options = getPromptOptions();
   const window = new BrowserWindow(options);
 
-  await new Promise((resolve) => {
-    setTimeout(() => {
+  await new Promise(async (resolve) => {
+    setTimeout(async () => {
       log.info(`👋 Prep quit window timeout`);
       if (!window?.isDestroyed()) {
-        makeKeyWindow(window);
+        shims.makeKeyWindow(window);
       }
 
       for (const prompt of prompts) {
         if (prompt?.window?.isDestroyed()) continue;
-        makeWindow(prompt.window);
+        shims.makeWindow(prompt.window);
       }
       if (!window?.isDestroyed()) {
         window?.close();
@@ -2703,5 +2709,6 @@ export const makeSplashWindow = async (window?: BrowserWindow) => {
   if (!window) {
     return;
   }
-  makeWindow(window);
+
+  shims.makeWindow(window);
 };

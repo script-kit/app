@@ -21,13 +21,7 @@ import { debounce } from 'lodash-es';
 
 import { clipboard } from 'electron';
 import { emitter, KitEvent } from '../shared/events';
-import {
-  kitClipboard,
-  kitConfig,
-  kitState,
-  kitStore,
-  subs,
-} from '../shared/state';
+import { kitClipboard, kitConfig, kitState, kitStore, subs } from './state';
 
 import { deleteText } from './keyboard';
 import { Trigger } from '../shared/enums';
@@ -39,8 +33,7 @@ import {
 } from './clipboard';
 import { registerIO, toKey } from './io';
 import { prompts } from './prompts';
-import { importMacFrontmostOrShim } from '../shims/macos/mac-frontmost';
-import { importMacClipboardListenerOrShim } from '../shims/macos/mac-clipboard-listener';
+import shims from './shims';
 
 type FrontmostApp = {
   localizedName: string;
@@ -247,19 +240,11 @@ export const startClipboardMonitor = async () => {
 
   if (kitState.isMac) {
     try {
-      ({ getFrontmostApp: frontmost } = await importMacFrontmostOrShim());
-
-      log.info(frontmost());
+      log.info(shims.getFrontmostApp());
     } catch (e) {
       log.warn(e);
     }
   }
-
-  const {
-    start: startMacClipboardListener,
-    onClipboardImageChange,
-    onClipboardTextChange,
-  } = await importMacClipboardListenerOrShim();
 
   const clipboardText$: Observable<any> = new Observable<string>((observer) => {
     log.info(`Creating new Observable for clipboard...`);
@@ -286,17 +271,14 @@ export const startClipboardMonitor = async () => {
         });
 
         clipboardEventListener.listen();
-      }
-
-      else {
-
+      } else {
         log.info(
           `Attempting to start @johnlindquist/mac-clipboard-listener...`,
         );
 
-        startMacClipboardListener();
+        shims.startMacClipboardListener();
 
-        onClipboardImageChange(
+        shims.onClipboardImageChange(
           debounce(
             () => {
               try {
@@ -315,7 +297,7 @@ export const startClipboardMonitor = async () => {
           ),
         );
 
-        onClipboardTextChange(
+        shims.onClipboardTextChange(
           debounce(
             () => {
               try {
