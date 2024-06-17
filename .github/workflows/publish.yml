@@ -194,6 +194,8 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILD_ARCH: x64
+          ELECTRON_BUILD_PLATFORM: win32
         uses: nick-invision/retry@v3
         with:
           max_attempts: 3
@@ -230,6 +232,9 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILD_ARCH: arm64
+          ELECTRON_BUILD_PLATFORM: win32
+
       - name: Publish linux x64
         if: matrix.os == 'ubuntu-latest' && matrix.arch == 'x64'
         env:
@@ -240,6 +245,9 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILD_ARCH: x64
+          ELECTRON_BUILD_PLATFORM: linux
+
         uses: nick-invision/retry@v3
         with:
           max_attempts: 3
@@ -267,6 +275,9 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILD_ARCH: x64
+          ELECTRON_BUILD_PLATFORM: linux
+
         uses: nick-invision/retry@v3
         with:
           max_attempts: 3
@@ -293,6 +304,9 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILD_ARCH: x64
+          ELECTRON_BUILD_PLATFORM: darwin
+
         uses: nick-invision/retry@v3
         with:
           max_attempts: 3
@@ -314,6 +328,9 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           # This is used for uploading release assets to github
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ELECTRON_BUILD_ARCH: arm64
+          ELECTRON_BUILD_PLATFORM: darwin
+
         uses: nick-invision/retry@v3
         with:
           max_attempts: 3

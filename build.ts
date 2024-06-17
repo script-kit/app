@@ -16,10 +16,6 @@ import packageJson from './package.json';
 const platform = (await arg('platform')) as 'linux' | 'mac' | 'win';
 const arch = (await arg('arch')) as 'arm64' | 'x64';
 
-if (arch) {
-  process.env.ELECTRON_BUILD_ARCH = arch; //force the arch into the shim too
-}
-
 const publish = await arg('publish');
 
 const electronVersion = packageJson.devDependencies['electron'].replace(
@@ -114,6 +110,7 @@ const config: Configuration = {
   asarUnpack,
   afterSign,
   files,
+
   nsis: {
     oneClick: false,
     perMachine: false,

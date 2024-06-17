@@ -2,9 +2,14 @@ import os from 'node:os';
 import log from 'electron-log';
 
 // get arch
+console.log({
+  ELECTRON_BUILD_ARCH: process.env.ELECTRON_BUILD_ARCH || 'unknown',
+  ELECTRON_BUILD_PLATFORM: process.env.ELECTRON_BUILD_PLATFORM || 'unknown',
+});
 const arch = (process.env.ELECTRON_BUILD_ARCH ||
   process.arch) as NodeJS.Architecture;
-const platform = os.platform();
+const platform = (process.env.ELECTRON_BUILD_PLATFORM ||
+  os.platform()) as NodeJS.Platform;
 
 type Target = `${NodeJS.Platform}-${NodeJS.Architecture}`;
 const target: Target = `${platform}-${arch}`;
@@ -61,7 +66,7 @@ const shims: Shims = {
 
 export const include = () => {
   const deps = supportMap[target] || [];
-  console.log(`Including shims: ${deps.join(', ')}`);
+  console.log(`Including shims for ${target}: ${deps.join(', ')}`);
   return deps;
 };
 
