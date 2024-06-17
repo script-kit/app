@@ -2,7 +2,8 @@ import os from 'node:os';
 import log from 'electron-log';
 
 // get arch
-const arch = process.arch;
+const arch = (process.env.ELECTRON_BUILD_ARCH ||
+  process.arch) as NodeJS.Architecture;
 const platform = os.platform();
 
 type Target = `${NodeJS.Platform}-${NodeJS.Architecture}`;
