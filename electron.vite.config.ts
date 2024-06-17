@@ -14,7 +14,10 @@ const build: BuildOptions = {
     external:
       platform() === 'darwin'
         ? []
-        : Object.keys(packageJson.optionalDependencies),
+        : // Current the build process uninstalls these deps when target a different platform.
+          // We'll need to consider each target platform variation here, but for now, just
+          // getting the CI to pass
+          Object.keys(packageJson?.optionalDependencies || {}),
   },
 };
 
