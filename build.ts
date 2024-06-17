@@ -191,7 +191,9 @@ try {
   console.log(
     `Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`,
   );
-  execSync(`npm uninstall ${uninstallDeps.join(' ')}`);
+  if (uninstallDeps.length > 0) {
+    execSync(`npm uninstall ${uninstallDeps.join(' ')}`);
+  }
   const result = await build({
     config,
     publish,
