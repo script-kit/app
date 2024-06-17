@@ -1,9 +1,9 @@
 import '@johnlindquist/kit';
 import fsExtra from 'fs-extra';
-import { include } from './src/main/shims';
+import { execSync } from 'node:child_process';
+import { include, external } from './src/main/shims';
 
 import { Arch, Platform, build } from 'electron-builder';
-import { Rebuilder, RebuilderOptions } from '@electron/rebuild/lib/rebuild';
 import type {
   AfterPackContext,
   Configuration,
@@ -187,16 +187,11 @@ switch (platform) {
 
 console.log('Building with config');
 try {
-  // const rebuilderOptions: RebuilderOptions = {
-  //   buildPath: process.cwd(),
-  //   // Get electronVersion
-  //   electronVersion,
-  //   arch,
-  //   lifecycle: new EventEmitter(),
-  //   onlyModules,
-  // };
-  // const rebuilder = new Rebuilder(rebuilderOptions);
-  // await rebuilder.rebuild();
+  const uninstallDeps = external();
+  console.log(
+    `Removing external dependencies: ${uninstallDeps.join(', ')} before @electron/rebuild kicks in`,
+  );
+  execSync(`npm uninstall ${uninstallDeps.join(' ')}`);
   const result = await build({
     config,
     publish,
