@@ -59,12 +59,16 @@ const shims: Shims = {
 };
 
 export const include = () => {
-  return supportMap[target] || [];
+  const deps = supportMap[target] || [];
+  console.log(`Including shims: ${deps.join(', ')}`);
+  return deps;
 };
 
 export const external = () => {
   const internal = include();
-  return optionalDependencies.filter((dep) => !internal.includes(dep));
+  const deps = optionalDependencies.filter((dep) => !internal.includes(dep));
+  console.log(`External shims: ${deps.join(', ')}`);
+  return deps;
 };
 
 export async function loadShims() {

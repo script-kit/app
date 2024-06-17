@@ -1,19 +1,34 @@
 import '@johnlindquist/kit';
 import fsExtra from 'fs-extra';
+import { include } from './src/main/shims';
 
 import { Arch, Platform, build } from 'electron-builder';
+import { Rebuilder, RebuilderOptions } from '@electron/rebuild/lib/rebuild';
 import type {
   AfterPackContext,
   Configuration,
   PackagerOptions,
 } from 'electron-builder';
 import { notarize } from '@electron/notarize';
+import EventEmitter from 'events';
+import packageJson from './package.json';
 
-const platform = await arg('platform');
-const arch = await arg('arch');
+const platform = (await arg('platform')) as 'linux' | 'mac' | 'win';
+const arch = (await arg('arch')) as 'arm64' | 'x64';
 const publish = await arg('publish');
 
-console.log(`🛠️ Building for ${platform} ${arch} ${publish}`);
+const electronVersion = packageJson.devDependencies['electron'].replace(
+  '^',
+  '',
+);
+
+const onlyModules = include();
+
+console.log(
+  `🛠️ Building for ${platform} ${arch} ${publish} using ${electronVersion}`,
+);
+
+console.log(`Will only build: ${onlyModules}`);
 
 const afterSign = async function notarizeMacos(context: AfterPackContext) {
   console.log('Attempting notarization', context);
@@ -81,10 +96,19 @@ const files = dirFiles
 
 console.log({ files });
 
+export async function nodeGypRebuild(
+  frameworkInfo: DesktopFrameworkInfo,
+  arch: Arch,
+  platform: Platform,
+) {
+  return rebuild(process.cwd(), false, frameworkInfo, arch, platform);
+}
+
 const config: Configuration = {
   appId: 'app.scriptkit', // Updated appId from package.json
   artifactName: '${productName}-macOS-${version}-${arch}.${ext}',
   productName: 'Kit', // Updated productName from package.json
+  buildDependenciesFromSource: false,
   directories: {
     output: './release',
     buildResources: 'build',
@@ -169,6 +193,16 @@ switch (platform) {
 
 console.log('Building with config');
 try {
+  const rebuilderOptions: RebuilderOptions = {
+    buildPath: process.cwd(),
+    // Get electronVersion
+    electronVersion,
+    arch,
+    lifecycle: new EventEmitter(),
+    onlyModules,
+  };
+  const rebuilder = new Rebuilder(rebuilderOptions);
+  await rebuilder.rebuild();
   const result = await build({
     config,
     publish,
