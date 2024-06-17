@@ -199,7 +199,6 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm un --force node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
@@ -217,11 +216,9 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm un --force node-mac-permissions @jitsi/robotjs uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npx kit remove-tick
-            npx kit remove-nut
             echo "--- Done removing mac deps ---\n\n"
             npm run vite-prebuild
             npx kit ./build.ts win arm64 always
@@ -251,10 +248,8 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y libxtst-dev
             sudo apt-get install -y python2.7 make gcc libpng++-dev
-            npm un --force node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
-            npx kit remove-node-window-manager
             # npx kit patch-node-pty
             # npm i --force @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
@@ -277,12 +272,9 @@ jobs:
           max_attempts: 3
           timeout_minutes: 30
           command: |
-            npm un --force node-mac-permissions @jitsi/robotjs uiohook-napi @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npx kit remove-tick
-            npx kit remove-nut
-            npx kit remove-node-window-manager
             # npx kit patch-node-pty
             # npm i --force @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json

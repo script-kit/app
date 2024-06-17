@@ -1233,7 +1233,9 @@ emitter.on(
 emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
   try {
     if (kitState.isMac) {
-      const authorized = shims.getAuthStatus('accessibility') === 'authorized';
+      const authorized =
+        shims['node-mac-permissions'].getAuthStatus('accessibility') ===
+        'authorized';
 
       if (authorized) {
         kitStore.set('accessibilityAuthorized', authorized);

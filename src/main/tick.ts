@@ -240,7 +240,7 @@ export const startClipboardMonitor = async () => {
 
   if (kitState.isMac) {
     try {
-      log.info(shims.getFrontmostApp());
+      log.info(shims['@johnlindquist/mac-frontmost'].getFrontmostApp());
     } catch (e) {
       log.warn(e);
     }
@@ -276,9 +276,9 @@ export const startClipboardMonitor = async () => {
           `Attempting to start @johnlindquist/mac-clipboard-listener...`,
         );
 
-        shims.startMacClipboardListener();
+        shims['@johnlindquist/mac-clipboard-listener'].start();
 
-        shims.onClipboardImageChange(
+        shims['@johnlindquist/mac-clipboard-listener'].onClipboardImageChange(
           debounce(
             () => {
               try {
@@ -297,7 +297,7 @@ export const startClipboardMonitor = async () => {
           ),
         );
 
-        shims.onClipboardTextChange(
+        shims['@johnlindquist/mac-clipboard-listener'].onClipboardTextChange(
           debounce(
             () => {
               try {

@@ -1,9 +1,6 @@
 import log from 'electron-log';
 import { kitState } from './state';
-
-// REMOVE-NUT
-import robot from '@jitsi/robotjs';
-// END-REMOVE-NUT
+import shims from './shims';
 
 export const deleteText = async (stringToDelete = '') => {
   if (!kitState.supportsNut) {
@@ -21,7 +18,7 @@ export const deleteText = async (stringToDelete = '') => {
   kitState.isTyping = true;
   for await (const k of stringToDelete.split('').reverse().join('')) {
     // await keyboard.type(Key.Backspace);
-    robot.keyTap('backspace');
+    shims['@jitsi/robotjs'].keyTap('backspace');
 
     log.silly(`Deleted ${k}`);
   }

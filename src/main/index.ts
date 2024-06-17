@@ -468,13 +468,17 @@ const ready = async () => {
       startSK();
 
       log.info(`isMac`);
-      let authorized = shims.getAuthStatus('accessibility') === 'authorized';
+      let authorized =
+        shims['node-mac-permissions'].getAuthStatus('accessibility') ===
+        'authorized';
       log.info(`authorized`, authorized);
       kitStore.set('accessibilityAuthorized', authorized);
 
       if (!authorized) {
         setInterval(async () => {
-          authorized = shims.getAuthStatus('accessibility') === 'authorized';
+          authorized =
+            shims['node-mac-permissions'].getAuthStatus('accessibility') ===
+            'authorized';
           if (authorized) {
             kitStore.set('accessibilityAuthorized', authorized);
 

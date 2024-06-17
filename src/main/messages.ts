@@ -4,9 +4,6 @@ import { randomUUID } from 'crypto';
 import detect from 'detect-port';
 import sizeOf from 'image-size';
 import untildify from 'untildify';
-// REMOVE-NUT
-import robot from '@jitsi/robotjs';
-// END-REMOVE-NUT
 
 import {
   app,
@@ -300,7 +297,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     ENABLE_ACCESSIBILITY: onChildChannelOverride(
       async ({ child }, { channel, value }) => {
         log.info(`👋 Enabling accessibility`);
-        shims.askForAccessibilityAccess();
+        shims['node-mac-permissions'].askForAccessibilityAccess();
       },
     ),
 
@@ -701,7 +698,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
     GET_ACTIVE_APP: onChildChannelOverride(async ({ child }, { channel }) => {
       if (kitState.isMac) {
-        const frontmostApp = shims.getFrontmostApp();
+        const frontmostApp =
+          shims['@johnlindquist/mac-frontmost'].getFrontmostApp();
         childSend({ channel, app: frontmostApp });
       } else {
         // TODO: implement for windows
@@ -1725,10 +1723,10 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         try {
           if (typeof rate === 'number') {
             log.info(`⌨️ Typing ${text} with delay ${rate}`);
-            robot.typeStringDelayed(text, rate);
+            shims['@jitsi/robotjs'].typeStringDelayed(text, rate);
           } else {
             log.info(`⌨️ Typing ${text} without delay`);
-            robot.typeString(text);
+            shims['@jitsi/robotjs'].typeString(text);
           }
         } catch (error) {
           log.error(`KEYBOARD ERROR TYPE`, error);
@@ -1788,10 +1786,10 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         try {
           if (typeof speed === 'number') {
             log.info(`⌨️ Typing ${text} with delay ${speed}`);
-            robot.typeStringDelayed(text, speed);
+            shims['@jitsi/robotjs'].typeStringDelayed(text, speed);
           } else {
             log.info(`⌨️ Typing ${text} without delay`);
-            robot.typeString(text);
+            shims['@jitsi/robotjs'].typeString(text);
           }
         } catch (error) {
           log.error(`KEYBOARD ERROR TYPE`, error);
@@ -1846,7 +1844,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           return;
         }
 
-        robot.keyTap(key as string, activeModifiers);
+        shims['@jitsi/robotjs'].keyTap(key as string, activeModifiers);
 
         childSend({ channel, value });
 
@@ -1867,7 +1865,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         const modifier = getModifier();
         log.info(`COPYING with ${modifier}+c`);
         const beforeText = clipboard.readText();
-        robot.keyTap('c', modifier);
+        shims['@jitsi/robotjs'].keyTap('c', modifier);
 
         let afterText = clipboard.readText();
         const maxTries = 5;
@@ -1897,7 +1895,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
         // REMOVE-NUT
         const modifier = getModifier();
         log.info(`PASTING with ${modifier}+v`);
-        robot.keyTap('v', modifier);
+        shims['@jitsi/robotjs'].keyTap('v', modifier);
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1913,13 +1911,11 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           return;
         }
 
-        // REMOVE-NUT
         const modifier = getModifier();
         log.info(`CUTTING with ${modifier}+x`);
-        robot.keyTap('x', modifier);
+        shims['@jitsi/robotjs'].keyTap('x', modifier);
 
         childSend({ channel, value });
-        // END-REMOVE-NUT
       },
     ),
 
@@ -1932,12 +1928,10 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           return;
         }
 
-        // REMOVE-NUT
         log.info(`SELECTING ALL`);
-        robot.keyTap('a', getModifier());
+        shims['@jitsi/robotjs'].keyTap('a', getModifier());
 
         childSend({ channel, value });
-        // END-REMOVE-NUT
       },
     ),
 
@@ -1952,7 +1946,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
         // REMOVE-NUT
         log.info(`UNDO`);
-        robot.keyTap('z', getModifier());
+        shims['@jitsi/robotjs'].keyTap('z', getModifier());
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -1992,7 +1986,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
           return;
         }
 
-        robot.keyToggle(key as string, 'up', activeModifiers);
+        shims['@jitsi/robotjs'].keyToggle(key as string, 'up', activeModifiers);
 
         childSend({ channel, value });
         // END-REMOVE-NUT
@@ -2001,20 +1995,20 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
 
     MOUSE_LEFT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      robot.mouseClick('left');
+      shims['@jitsi/robotjs'].mouseClick('left');
       // END-REMOVE-NUT
     }),
 
     MOUSE_RIGHT_CLICK: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
-      robot.mouseClick('right');
+      shims['@jitsi/robotjs'].mouseClick('right');
       // END-REMOVE-NUT
     }),
 
     MOUSE_MOVE: onChildChannel(async ({ child }, { channel, value }) => {
       // REMOVE-NUT
       for (const v of value) {
-        robot.moveMouseSmooth(v.x, v.y);
+        shims['@jitsi/robotjs'].moveMouseSmooth(v.x, v.y);
       }
       // END-REMOVE-NUT
     }),
@@ -2022,7 +2016,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     MOUSE_SET_POSITION: onChildChannel(
       async ({ child }, { channel, value }) => {
         // REMOVE-NUT
-        robot.moveMouse(value.x, value.y);
+        shims['@jitsi/robotjs'].moveMouse(value.x, value.y);
         // END-REMOVE-NUT
       },
     ),
@@ -2084,7 +2078,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       if (process.env.NODE_ENV === 'development' || !kitState.isMac) {
         value = true;
       } else {
-        const authStatus = shims.getAuthStatus('full-disk-access');
+        const authStatus =
+          shims['node-mac-permissions'].getAuthStatus('full-disk-access');
         if (authStatus === 'authorized') {
           value = true;
         } else {

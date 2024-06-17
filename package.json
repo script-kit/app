@@ -168,10 +168,8 @@
     "xterm-addon-web-links": "0.9.0"
   },
   "dependencies": {
-    "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
     "@johnlindquist/kit": "^2.7.0",
-    "@johnlindquist/node-window-manager": "^1.0.24",
     "@rollup/plugin-commonjs": "^26.0.1",
     "axios": "^1.7.2",
     "builtin-modules": "^4.0.0",
@@ -206,15 +204,17 @@
     "tail": "^2.2.6",
     "tar": "^7.2.0",
     "typescript": "^5.4.5",
-    "uiohook-napi": "^1.5.4",
     "untildify": "5.0.0",
     "valtio": "^1.13.2"
   },
   "optionalDependencies": {
+    "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/mac-clipboard-listener": "^1.0.3",
     "@johnlindquist/mac-frontmost": "^1.0.7",
     "@johnlindquist/mac-panel-window": "^1.3.5",
-    "node-mac-permissions": "^2.4.0"
+    "@johnlindquist/node-window-manager": "^1.0.24",
+    "node-mac-permissions": "^2.4.0",
+    "uiohook-napi": "^1.5.4"
   },
   "engines": {
     "node": "20.11.1"

@@ -3,21 +3,15 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import million from 'million/compiler';
 import react from '@vitejs/plugin-react';
 import { BuildOptions } from 'vite';
-import { platform } from 'node:os';
-import packageJson from './package.json';
+
+import { external, include } from './src/main/shims';
 
 const build: BuildOptions = {
   rollupOptions: {
     output: {
       format: 'es',
     },
-    external:
-      platform() === 'darwin'
-        ? []
-        : // Current the build process uninstalls these deps when target a different platform.
-          // We'll need to consider each target platform variation here, but for now, just
-          // getting the CI to pass
-          Object.keys(packageJson?.optionalDependencies || {}),
+    external: external(),
   },
 };
 
@@ -26,10 +20,7 @@ export default defineConfig({
     build,
     plugins: [
       externalizeDepsPlugin({
-        include:
-          platform() === 'darwin'
-            ? Object.keys(packageJson.optionalDependencies)
-            : [],
+        include: include(),
       }),
     ],
   },

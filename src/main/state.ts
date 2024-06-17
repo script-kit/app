@@ -723,7 +723,9 @@ export const kitClipboard = {
 
 export const getAccessibilityAuthorized = async () => {
   if (isMac) {
-    const authorized = shims.getAuthStatus('accessibility') === 'authorized';
+    const authorized =
+      shims['node-mac-permissions'].getAuthStatus('accessibility') ===
+      'authorized';
     kitStore.set('accessibilityAuthorized', authorized);
     return authorized;
   }

@@ -1,6 +1,3 @@
-// REMOVE-NODE-WINDOW-MANAGER
-import { windowManager, Window } from '@johnlindquist/node-window-manager';
-// END-REMOVE-NODE-WINDOW-MANAGER
 import { PROMPT, Channel, UI } from '@johnlindquist/kit/core/enum';
 import {
   Choice,
@@ -627,7 +624,7 @@ export class KitPrompt {
   async makeWindow() {
     if (kitState.isMac) {
       if (this.window && !this.window.isDestroyed()) {
-        shims.makeWindow(this.window);
+        shims['@johnlindquist/mac-panel-window'].makeWindow(this.window);
       }
     }
   }
@@ -635,17 +632,17 @@ export class KitPrompt {
   async makeKeyWindow() {
     if (kitState.isMac) {
       if (this.window && !this.window.isDestroyed()) {
-        shims.makeKeyWindow(this.window);
+        shims['@johnlindquist/mac-panel-window'].makeKeyWindow(this.window);
       }
     }
   }
 
   async makePanel() {
     if (kitState.isMac) {
-      shims.makePanel(this.window);
+      shims['@johnlindquist/mac-panel-window'].makePanel(this.window);
 
       if (this.window && !this.window.isDestroyed()) {
-        shims.makePanel(this.window);
+        shims['@johnlindquist/mac-panel-window'].makePanel(this.window);
       }
     }
   }
@@ -695,7 +692,9 @@ export class KitPrompt {
     // REMOVE-NODE-WINDOW-MANAGER
     if (kitState.isWindows) {
       if (kitState?.kenvEnv?.KIT_DISABLE_ROUNDED_CORNERS !== 'true') {
-        windowManager.setWindowAsPopupWithRoundedCorners(
+        shims[
+          '@johnlindquist/node-window-manager'
+        ].windowManager.setWindowAsPopupWithRoundedCorners(
           this.window?.getNativeWindowHandle(),
         );
       }
@@ -1568,7 +1567,10 @@ export class KitPrompt {
     const getPromptInfo = async () => {
       const activeAppBounds: any = {};
       // REMOVE-NODE-WINDOW-MANAGER
-      const activeWindow = windowManager.getActiveWindow();
+      const activeWindow =
+        shims[
+          '@johnlindquist/node-window-manager'
+        ].windowManager.getActiveWindow();
       if (activeWindow) {
         const bounds = activeWindow.getBounds();
         activeAppBounds.x = bounds.x;
@@ -2655,14 +2657,16 @@ export class KitPrompt {
   hideInstant = async () => {
     if (kitState.isWindows) {
       // REMOVE-NODE-WINDOW-MANAGER
-      windowManager.hideInstantly(this.window?.getNativeWindowHandle());
+      shims['@johnlindquist/node-window-manager'].windowManager.hideInstantly(
+        this.window?.getNativeWindowHandle(),
+      );
       this.window?.emit('blur');
       this.window?.emit('hide');
       // END-REMOVE-NODE-WINDOW-MANAGER
     }
 
     if (kitState.isMac) {
-      shims.hideInstant(this.window);
+      shims['@johnlindquist/mac-panel-window'].hideInstant(this.window);
     }
 
     if (kitState.isLinux) {
@@ -2685,12 +2689,12 @@ export const prepQuitWindow = async () => {
     setTimeout(async () => {
       log.info(`👋 Prep quit window timeout`);
       if (!window?.isDestroyed()) {
-        shims.makeKeyWindow(window);
+        shims['@johnlindquist/mac-panel-window'].makeKeyWindow(window);
       }
 
       for (const prompt of prompts) {
         if (prompt?.window?.isDestroyed()) continue;
-        shims.makeWindow(prompt.window);
+        shims['@johnlindquist/mac-panel-window'].makeWindow(prompt.window);
       }
       if (!window?.isDestroyed()) {
         window?.close();
@@ -2710,5 +2714,5 @@ export const makeSplashWindow = async (window?: BrowserWindow) => {
     return;
   }
 
-  shims.makeWindow(window);
+  shims['@johnlindquist/mac-panel-window'].makeWindow(window);
 };
