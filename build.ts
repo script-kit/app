@@ -101,19 +101,11 @@ const files = dirFiles
 
 console.log({ files });
 
-export async function nodeGypRebuild(
-  frameworkInfo: DesktopFrameworkInfo,
-  arch: Arch,
-  platform: Platform,
-) {
-  return rebuild(process.cwd(), false, frameworkInfo, arch, platform);
-}
-
 const config: Configuration = {
   appId: 'app.scriptkit', // Updated appId from package.json
   artifactName: '${productName}-macOS-${version}-${arch}.${ext}',
   productName: 'Kit', // Updated productName from package.json
-  buildDependenciesFromSource: false,
+  // buildDependenciesFromSource: false,
   directories: {
     output: './release',
     buildResources: 'build',
@@ -198,16 +190,16 @@ switch (platform) {
 
 console.log('Building with config');
 try {
-  const rebuilderOptions: RebuilderOptions = {
-    buildPath: process.cwd(),
-    // Get electronVersion
-    electronVersion,
-    arch,
-    lifecycle: new EventEmitter(),
-    onlyModules,
-  };
-  const rebuilder = new Rebuilder(rebuilderOptions);
-  await rebuilder.rebuild();
+  // const rebuilderOptions: RebuilderOptions = {
+  //   buildPath: process.cwd(),
+  //   // Get electronVersion
+  //   electronVersion,
+  //   arch,
+  //   lifecycle: new EventEmitter(),
+  //   onlyModules,
+  // };
+  // const rebuilder = new Rebuilder(rebuilderOptions);
+  // await rebuilder.rebuild();
   const result = await build({
     config,
     publish,
