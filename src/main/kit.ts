@@ -30,7 +30,7 @@ import {
   kitState,
   kitStore,
   sponsorCheck,
-} from '../shared/state';
+} from './state';
 import { pathsAreEqual } from './helpers';
 import { Trigger } from '../shared/enums';
 import { TrackEvent, trackEvent } from './track';

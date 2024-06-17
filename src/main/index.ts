@@ -24,11 +24,6 @@ log.initialize();
 (global as any).log = log.info;
 performance.mark;
 
-// REMOVE-MAC
-import nmp from 'node-mac-permissions';
-const { getAuthStatus } = nmp;
-// END-REMOVE-MAC
-
 import dotenv from 'dotenv';
 import unhandled from 'electron-unhandled';
 import electronUpdater from 'electron-updater';
@@ -88,7 +83,7 @@ import {
   kitState,
   kitStore,
   subs,
-} from '../shared/state';
+} from './state';
 import { startSK } from './sk';
 import {
   destroyAllProcesses,
@@ -134,6 +129,7 @@ import { syncClipboardStore } from './clipboard';
 import { actualHideDock, clearStateTimers } from './dock';
 import { prompts } from './prompts';
 import { createIdlePty, destroyPtyPool } from './pty';
+import shims, { loadShims } from './shims';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -464,19 +460,21 @@ const systemEvents = () => {
 };
 
 const ready = async () => {
+  log.info(`ready`);
   assignDisplays();
   try {
-    // REMOVE-MAC
     const isMac = os.platform() === 'darwin';
     if (isMac) {
       startSK();
 
-      let authorized = getAuthStatus('accessibility') === 'authorized';
+      log.info(`isMac`);
+      let authorized = shims.getAuthStatus('accessibility') === 'authorized';
+      log.info(`authorized`, authorized);
       kitStore.set('accessibilityAuthorized', authorized);
 
       if (!authorized) {
         setInterval(async () => {
-          authorized = getAuthStatus('accessibility') === 'authorized';
+          authorized = shims.getAuthStatus('accessibility') === 'authorized';
           if (authorized) {
             kitStore.set('accessibilityAuthorized', authorized);
 
@@ -487,7 +485,6 @@ const ready = async () => {
         }, 1000);
       }
     }
-    // END-REMOVE-MAC
 
     await ensureKitDirs();
     await ensureKenvDirs();
@@ -654,6 +651,7 @@ const isNewVersion = async () => {
 };
 
 const checkKit = async () => {
+  log.info(`checkKit`);
   // log.info(`Waiting 10 seconds...`);
   // await new Promise((resolve, reject) => {
   //   setTimeout(() => {
@@ -888,6 +886,7 @@ const checkKit = async () => {
 
   // await handleSpawnReturns(`docs-pull`, pullDocsResult);
 
+  log.info(`kenvExists`);
   if (!(await kenvExists())) {
     // Step 4: Use kit wrapper to run setup.js script
     // configWindow?.show();
@@ -953,6 +952,7 @@ const checkKit = async () => {
     ]);
   }
 
+  log.info(`installKitInKenv`);
   if (
     requiresInstall &&
     (await kenvExists()) &&
@@ -967,8 +967,10 @@ const checkKit = async () => {
   }
 
   try {
+    log.info(`verifyInstall`);
     await verifyInstall();
 
+    log.info(`storeVersion`);
     await storeVersion(getVersion());
 
     if (kitState.isMac) {
@@ -1028,7 +1030,11 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
   await cacheMainScripts(stamp);
 });
 
-app.whenReady().then(checkKit).catch(ohNo);
+app
+  .whenReady()
+  .then(() => loadShims())
+  .then(() => checkKit())
+  .catch(ohNo);
 
 app?.on('will-quit', (e) => {
   log.info(`🚪 will-quit`);

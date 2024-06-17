@@ -1,7 +1,7 @@
 import { Menu, app } from 'electron';
 import { KitEvent, emitter } from '../shared/events';
 import log from 'electron-log';
-import { kitState, promptState } from '../shared/state';
+import { kitState, promptState } from './state';
 import { windowsState } from '../shared/windows';
 import { getAssetPath } from '../shared/assets';
 import { widgetState } from '../shared/widget';

@@ -21,13 +21,7 @@ import { debounce } from 'lodash-es';
 
 import { clipboard } from 'electron';
 import { emitter, KitEvent } from '../shared/events';
-import {
-  kitClipboard,
-  kitConfig,
-  kitState,
-  kitStore,
-  subs,
-} from '../shared/state';
+import { kitClipboard, kitConfig, kitState, kitStore, subs } from './state';
 
 import { deleteText } from './keyboard';
 import { Trigger } from '../shared/enums';
@@ -39,6 +33,7 @@ import {
 } from './clipboard';
 import { registerIO, toKey } from './io';
 import { prompts } from './prompts';
+import shims from './shims';
 
 type FrontmostApp = {
   localizedName: string;
@@ -243,26 +238,13 @@ export const startClipboardMonitor = async () => {
 
   log.info(`Initializing 🖱 mouse and ⌨️ keyboard watcher`);
 
-  // REMOVE-MAC
   if (kitState.isMac) {
     try {
-      ({ getFrontmostApp: frontmost } = await import(
-        '@johnlindquist/mac-frontmost'
-      ));
-
-      log.info(frontmost());
+      log.info(shims.getFrontmostApp());
     } catch (e) {
       log.warn(e);
     }
   }
-
-  const {
-    start: startMacClipboardListener,
-    onClipboardImageChange,
-    onClipboardTextChange,
-  } = await import('@johnlindquist/mac-clipboard-listener');
-
-  // END-REMOVE-MAC
 
   const clipboardText$: Observable<any> = new Observable<string>((observer) => {
     log.info(`Creating new Observable for clipboard...`);
@@ -289,17 +271,14 @@ export const startClipboardMonitor = async () => {
         });
 
         clipboardEventListener.listen();
-      }
-
-      // REMOVE-MAC
-      else {
+      } else {
         log.info(
           `Attempting to start @johnlindquist/mac-clipboard-listener...`,
         );
 
-        startMacClipboardListener();
+        shims.startMacClipboardListener();
 
-        onClipboardImageChange(
+        shims.onClipboardImageChange(
           debounce(
             () => {
               try {
@@ -318,7 +297,7 @@ export const startClipboardMonitor = async () => {
           ),
         );
 
-        onClipboardTextChange(
+        shims.onClipboardTextChange(
           debounce(
             () => {
               try {
@@ -337,7 +316,6 @@ export const startClipboardMonitor = async () => {
           ),
         );
       }
-      // END-REMOVE-MAC
     } catch (e) {
       log.error(`🔴 Failed to start clipboard watcher`);
       log.error(e);

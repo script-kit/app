@@ -2,7 +2,7 @@ import log from 'electron-log';
 import { Choice } from '@johnlindquist/kit/types';
 import { kitPath } from '@johnlindquist/kit/core/utils';
 import { remove } from 'lodash-es';
-import { kitState, kitClipboard, kitStore } from '../shared/state';
+import { kitState, kitClipboard, kitStore } from './state';
 
 export interface ClipboardItem extends Choice {
   type: string;

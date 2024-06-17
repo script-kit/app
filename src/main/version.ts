@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import fs from 'fs';
 import { getAssetPath } from '../shared/assets';
-import { kitStore } from '../shared/state';
+import { kitStore } from './state';
 
 // eslint-disable-next-line import/prefer-default-export
 export const getVersionFromText = () => {

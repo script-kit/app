@@ -7,10 +7,6 @@ import untildify from 'untildify';
 // REMOVE-NUT
 import robot from '@jitsi/robotjs';
 // END-REMOVE-NUT
-// REMOVE-MAC
-import nmp from 'node-mac-permissions';
-const { askForAccessibilityAccess, getAuthStatus } = nmp;
-// END-REMOVE-MAC
 
 import {
   app,
@@ -61,7 +57,7 @@ import {
   kitStore,
   preloadChoicesMap,
   debounceSetScriptTimestamp,
-} from '../shared/state';
+} from './state';
 
 import { widgetState, findWidget } from '../shared/widget';
 
@@ -97,6 +93,7 @@ import {
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { prompts } from './prompts';
 import { getSourceFromRectangle } from './screen';
+import shims from './shims';
 
 let prevId1: string;
 let prevId2: string;
@@ -303,9 +300,7 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     ENABLE_ACCESSIBILITY: onChildChannelOverride(
       async ({ child }, { channel, value }) => {
         log.info(`👋 Enabling accessibility`);
-        // REMOVE-MAC
-        askForAccessibilityAccess();
-        // END-REMOVE-MAC
+        shims.askForAccessibilityAccess();
       },
     ),
 
@@ -706,13 +701,8 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
     }),
     GET_ACTIVE_APP: onChildChannelOverride(async ({ child }, { channel }) => {
       if (kitState.isMac) {
-        // REMOVE-MAC
-        const { getFrontmostApp: frontmost } = await import(
-          '@johnlindquist/mac-frontmost' as any
-        );
-        const frontmostApp = await frontmost();
+        const frontmostApp = shims.getFrontmostApp();
         childSend({ channel, app: frontmostApp });
-        // END-REMOVE-MAC
       } else {
         // TODO: implement for windows
         childSend({ channel, app: {} });
@@ -2094,14 +2084,12 @@ export const createMessageMap = (info: ProcessAndPrompt) => {
       if (process.env.NODE_ENV === 'development' || !kitState.isMac) {
         value = true;
       } else {
-        // REMOVE-MAC
-        const authStatus = getAuthStatus('full-disk-access');
+        const authStatus = shims.getAuthStatus('full-disk-access');
         if (authStatus === 'authorized') {
           value = true;
         } else {
           // askForFullDiskAccess();
         }
-        // END-REMOVE-MAC
       }
     }),
 

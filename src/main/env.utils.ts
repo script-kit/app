@@ -8,7 +8,7 @@ import {
 } from '@johnlindquist/kit/core/utils';
 import { getVersion } from './version';
 import { app } from 'electron';
-import { kitState, kitStore } from '../shared/state';
+import { kitState, kitStore } from './state';
 
 export const createEnv = () => {
   const PATH = KIT_FIRST_PATH + path.delimiter + process?.env?.PATH;

@@ -1,10 +1,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable import/prefer-default-export */
 import log from 'electron-log';
-// REMOVE-MAC
-import nmp from 'node-mac-permissions';
-const { getAuthStatus } = nmp;
-// END-REMOVE-MAC
+import { importNodeMacPermissionsOrShim } from '../shims/macos/nmp';
 
 import {
   BrowserWindow,
@@ -42,7 +39,7 @@ import {
   getThemes,
   kitStore,
   debounceSetScriptTimestamp,
-} from '../shared/state';
+} from './state';
 
 import { widgetState } from '../shared/widget';
 
@@ -59,6 +56,7 @@ import { TrackEvent, trackEvent } from './track';
 import { createMessageMap } from './messages';
 import { prompts } from './prompts';
 import { createEnv } from './env.utils';
+import shims from './shims';
 
 export type ProcessAndPrompt = ProcessInfo & {
   prompt: KitPrompt;
@@ -1234,15 +1232,13 @@ emitter.on(
 
 emitter.on(KitEvent.DID_FINISH_LOAD, async () => {
   try {
-    // REMOVE-MAC
     if (kitState.isMac) {
-      const authorized = getAuthStatus('accessibility') === 'authorized';
+      const authorized = shims.getAuthStatus('accessibility') === 'authorized';
 
       if (authorized) {
         kitStore.set('accessibilityAuthorized', authorized);
       }
     }
-    // END-REMOVE-MAC
 
     // TODO: Why did I even do this? There has to be a simpler way now
     // togglePromptEnv('KIT_MAIN_SCRIPT');

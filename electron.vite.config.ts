@@ -3,19 +3,32 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import million from 'million/compiler';
 import react from '@vitejs/plugin-react';
 import { BuildOptions } from 'vite';
+import { platform } from 'node:os';
+import packageJson from './package.json';
 
 const build: BuildOptions = {
   rollupOptions: {
     output: {
       format: 'es',
     },
+    external:
+      platform() === 'darwin'
+        ? []
+        : Object.keys(packageJson.optionalDependencies),
   },
 };
 
 export default defineConfig({
   main: {
     build,
-    plugins: [externalizeDepsPlugin()],
+    plugins: [
+      externalizeDepsPlugin({
+        include:
+          platform() === 'darwin'
+            ? Object.keys(packageJson.optionalDependencies)
+            : [],
+      }),
+    ],
   },
   preload: {
     build,

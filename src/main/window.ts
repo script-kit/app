@@ -7,7 +7,7 @@ import { getLogFromScriptPath } from '@johnlindquist/kit/core/utils';
 import Tail from 'tail';
 import { readFile, stat, writeFile } from 'fs/promises';
 import { getAssetPath } from '../shared/assets';
-import { kitState } from '../shared/state';
+import { kitState } from './state';
 import { windowsState } from '../shared/windows';
 import { WindowChannel } from '../shared/enums';
 import { getCurrentScreenFromMouse } from './prompt';

@@ -2,7 +2,7 @@ import os from 'os';
 import untildify from 'untildify';
 import { KIT_FIRST_PATH } from '@johnlindquist/kit/core/utils';
 import log from 'electron-log';
-import { kitState } from '../shared/state';
+import { kitState } from './state';
 import { TermConfig } from '../shared/types';
 import { getVersion } from './version';
 

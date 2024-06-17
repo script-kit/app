@@ -11,10 +11,7 @@ import {
   app,
 } from 'electron';
 
-// REMOVE-MAC
-import nmp from 'node-mac-permissions';
-const { askForAccessibilityAccess, askForInputMonitoringAccess } = nmp;
-// END-REMOVE-MAC
+// REMOVED BY KIT
 
 import { formatDistanceToNow } from 'date-fns';
 import path from 'path';
@@ -35,7 +32,7 @@ import {
 } from '@johnlindquist/kit/core/utils';
 
 import { getAssetPath } from '../shared/assets';
-import { forceQuit, kitState, subs } from '../shared/state';
+import { forceQuit, kitState, subs } from './state';
 import { emitter, KitEvent } from '../shared/events';
 import { getVersion } from './version';
 import { AppChannel, Trigger } from '../shared/enums';
@@ -248,33 +245,7 @@ const buildWatcherSubmenu = (): MenuItemConstructorOptions[] => {
 const buildPermissionsSubmenu = (): MenuItemConstructorOptions[] => {
   const permissionsSubmenu: MenuItemConstructorOptions[] = [];
 
-  // REMOVE-MAC
-  if (kitState.isMac) {
-    permissionsSubmenu.push({
-      label: `Request Accessibility Access`,
-      click: async () => {
-        const result = await askForAccessibilityAccess();
-        log.info(`Accessibility Access: ${result}`);
-      },
-    });
-
-    permissionsSubmenu.push({
-      label: `Request Input Monitoring Access`,
-      click: async () => {
-        const result = await askForInputMonitoringAccess();
-        log.info(`Input Monitoring Access: ${result}`);
-      },
-    });
-
-    permissionsSubmenu.push({
-      label: `Request Full Disk Access`,
-      click: async () => {
-        // const result = await askForFullDiskAccess();
-        // log.info(`Full Disk Access: ${result}`);
-      },
-    });
-  }
-  // END-REMOVE-MAC
+  // REMOVED BY KIT
   permissionsSubmenu.push({
     label: `Request Notification Permission`,
     click: async () => {

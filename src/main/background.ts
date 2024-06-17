@@ -4,7 +4,7 @@ import { parseScript } from '@johnlindquist/kit/core/utils';
 import { SendData } from '@johnlindquist/kit/types/kitapp';
 import { Script } from '@johnlindquist/kit/types/core';
 import { emitter, KitEvent } from '../shared/events';
-import { backgroundMap, Background, kitState } from '../shared/state';
+import { backgroundMap, Background, kitState } from './state';
 import { processes } from './process';
 import { runPromptProcess } from './kit';
 import { Trigger } from '../shared/enums';

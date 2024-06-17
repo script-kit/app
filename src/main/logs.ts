@@ -9,7 +9,7 @@ import fs from 'fs';
 import { kenvPath, getLogFromScriptPath } from '@johnlindquist/kit/core/utils';
 import { app } from 'electron';
 import { stripAnsi } from './ansi';
-import { kitState, subs } from '../shared/state';
+import { kitState, subs } from './state';
 import { TrackEvent, trackEvent } from './track';
 
 const isDev = process.env.NODE_ENV === 'development';

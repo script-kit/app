@@ -4,7 +4,7 @@ import log from 'electron-log';
 import { readFile } from 'fs/promises';
 import fsExtra from 'fs-extra';
 const { pathExists } = fsExtra;
-import { kitState } from '../shared/state';
+import { kitState } from './state';
 import { sendToAllPrompts } from './channel';
 import { setTheme } from './process';
 import { AppChannel } from '../shared/enums';

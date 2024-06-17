@@ -32,7 +32,7 @@ import {
   kitState,
   sponsorCheck,
   workers,
-} from '../shared/state';
+} from './state';
 import { kenvEnv } from '@johnlindquist/kit/types/env';
 import { CREATE_BIN_WORKER } from '@johnlindquist/kit/workers';
 

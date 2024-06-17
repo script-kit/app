@@ -19,7 +19,7 @@ import { WidgetOptions } from '@johnlindquist/kit/types/pro';
 
 import { snapshot } from 'valtio';
 import { getAssetPath } from '../shared/assets';
-import { forceQuit, kitState } from '../shared/state';
+import { forceQuit, kitState } from './state';
 import { getCurrentScreenFromMouse } from './prompt';
 import { fileURLToPath } from 'url';
 import { Channel } from '@johnlindquist/kit/core/enum';

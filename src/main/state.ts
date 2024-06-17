@@ -3,11 +3,6 @@
 
 import Store, { Schema } from 'electron-store';
 
-// REMOVE-MAC
-import nmp from 'node-mac-permissions';
-const { getAuthStatus } = nmp;
-// END-REMOVE-MAC
-
 import { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import { proxy } from 'valtio/vanilla';
 import fsExtra from 'fs-extra';
@@ -48,11 +43,12 @@ import {
   getTrustedKenvsKey,
 } from '@johnlindquist/kit/core/utils';
 import axios from 'axios';
-import internetAvailable from './internet-available';
-import { emitter, KitEvent } from './events';
-import { Trigger } from './enums';
+import internetAvailable from '../shared/internet-available';
+import { emitter, KitEvent } from '../shared/events';
+import { Trigger } from '../shared/enums';
 import { kenvEnv } from '@johnlindquist/kit/types/env';
 import { Worker } from 'worker_threads';
+import shims from './shims';
 
 const schema: Schema<{
   KENV: string;
@@ -726,13 +722,11 @@ export const kitClipboard = {
 };
 
 export const getAccessibilityAuthorized = async () => {
-  // REMOVE-MAC
   if (isMac) {
-    const authorized = getAuthStatus('accessibility') === 'authorized';
+    const authorized = shims.getAuthStatus('accessibility') === 'authorized';
     kitStore.set('accessibilityAuthorized', authorized);
     return authorized;
   }
-  // END-REMOVE-MAC
 
   return true;
 };

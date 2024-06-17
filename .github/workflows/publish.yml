@@ -202,7 +202,6 @@ jobs:
             npm un --force node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
-            npx kit remove-mac
             Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
             if (Test-Path node_modules\@nut-tree\libnut-darwin) { Remove-Item node_modules\@nut-tree\libnut-darwin -Recurse -Force }
             if (Test-Path node_modules\@nut-tree\libnut-linux) { Remove-Item node_modules\@nut-tree\libnut-linux -Recurse -Force }
@@ -222,7 +221,6 @@ jobs:
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npx kit remove-tick
-            npx kit remove-mac
             npx kit remove-nut
             echo "--- Done removing mac deps ---\n\n"
             npm run vite-prebuild
@@ -256,7 +254,6 @@ jobs:
             npm un --force node-mac-permissions @johnlindquist/mac-clipboard-listener @johnlindquist/mac-frontmost @johnlindquist/mac-panel-window @johnlindquist/node-window-manager
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
-            npx kit remove-mac
             npx kit remove-node-window-manager
             # npx kit patch-node-pty
             # npm i --force @homebridge/node-pty-prebuilt-multiarch
@@ -284,7 +281,6 @@ jobs:
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
             npm i --force
             npx kit remove-tick
-            npx kit remove-mac
             npx kit remove-nut
             npx kit remove-node-window-manager
             # npx kit patch-node-pty

@@ -4,7 +4,7 @@ import log from 'electron-log';
 import { Script } from '@johnlindquist/kit/types/core';
 import { kitPath } from '@johnlindquist/kit/core/utils';
 import { runPromptProcess, runScript } from './kit';
-import { kitState, online, scheduleMap } from '../shared/state';
+import { kitState, online, scheduleMap } from './state';
 import { Trigger } from '../shared/enums';
 
 export const cancelJob = (filePath: string) => {

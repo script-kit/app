@@ -171,9 +171,6 @@
     "@jitsi/robotjs": "^0.6.13",
     "@johnlindquist/clipboard": "^0.1.38",
     "@johnlindquist/kit": "^2.7.0",
-    "@johnlindquist/mac-clipboard-listener": "^1.0.3",
-    "@johnlindquist/mac-frontmost": "^1.0.7",
-    "@johnlindquist/mac-panel-window": "^1.3.5",
     "@johnlindquist/node-window-manager": "^1.0.24",
     "@rollup/plugin-commonjs": "^26.0.1",
     "axios": "^1.7.2",
@@ -199,7 +196,6 @@
     "native-keymap": "3.3.5",
     "node-abi": "^3.65.0",
     "node-downloader-helper": "^2.1.9",
-    "node-mac-permissions": "^2.4.0",
     "node-pty": "^1.1.0-beta14",
     "node-schedule": "2.1.1",
     "node-stream-zip": "^1.15.0",
@@ -213,6 +209,12 @@
     "uiohook-napi": "^1.5.4",
     "untildify": "5.0.0",
     "valtio": "^1.13.2"
+  },
+  "optionalDependencies": {
+    "@johnlindquist/mac-clipboard-listener": "^1.0.3",
+    "@johnlindquist/mac-frontmost": "^1.0.7",
+    "@johnlindquist/mac-panel-window": "^1.3.5",
+    "node-mac-permissions": "^2.4.0"
   },
   "engines": {
     "node": "20.11.1"

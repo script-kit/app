@@ -3,7 +3,7 @@
 import log from 'electron-log';
 
 import { subscribeKey } from 'valtio/utils';
-import { kitState, kenvEnv } from '../shared/state';
+import { kitState, kenvEnv } from './state';
 
 import { createIdlePty } from './pty';
 import { clearIdleProcesses, ensureIdleProcess, processes } from './process';

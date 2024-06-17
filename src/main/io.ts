@@ -1,12 +1,12 @@
 import log from 'electron-log';
 import { UiohookKey, uIOhook } from 'uiohook-napi';
 import { Channel } from '@johnlindquist/kit/core/enum';
-import { getAccessibilityAuthorized, kitState } from '../shared/state';
+import { getAccessibilityAuthorized, kitState } from './state';
 import { sendToAllActiveChildren } from './process';
 import { chars } from './chars';
 
 export const UiohookToName = Object.fromEntries(
-  Object.entries(UiohookKey).map(([k, v]) => [v, k])
+  Object.entries(UiohookKey).map(([k, v]) => [v, k]),
 );
 
 UiohookToName[UiohookKey.Comma] = ',';

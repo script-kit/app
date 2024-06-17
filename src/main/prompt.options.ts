@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import { getAssetPath } from '../shared/assets';
 import { getCurrentScreen } from './screen';
 import { PROMPT } from '@johnlindquist/kit/core/enum';
-import { kitState } from '../shared/state';
+import { kitState } from './state';
 import { MIN_WIDTH } from '../shared/defaults';
 import { BrowserWindowConstructorOptions } from 'electron';
 

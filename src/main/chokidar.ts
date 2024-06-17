@@ -2,7 +2,7 @@ import path from 'path';
 import chokidar from 'chokidar';
 import log from 'electron-log';
 import { kenvPath, kitPath, userDbPath } from '@johnlindquist/kit/core/utils';
-import { kitState } from '../shared/state';
+import { kitState } from './state';
 
 export type WatchEvent = 'add' | 'change' | 'unlink' | 'ready';
 type WatcherCallback = (
