@@ -1034,11 +1034,7 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
   await cacheMainScripts(stamp);
 });
 
-app
-  .whenReady()
-  .then(() => loadShims())
-  .then(() => checkKit())
-  .catch(ohNo);
+app.whenReady().then(loadShims).then(checkKit).catch(ohNo);
 
 app?.on('will-quit', (e) => {
   log.info(`🚪 will-quit`);

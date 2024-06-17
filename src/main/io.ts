@@ -5,8 +5,7 @@ import { sendToAllActiveChildren } from './process';
 import { chars } from './chars';
 import shims from './shims';
 
-const UiohookKey = shims['uiohook-napi'].UiohookKey;
-const uiohook = shims['uiohook-napi'].uIOhook;
+const { UiohookKey, uIOhook } = shims['uiohook-napi'];
 
 export const UiohookToName = Object.fromEntries(
   Object.entries(UiohookKey).map(([k, v]) => [v, k]),
@@ -104,7 +103,7 @@ export const registerIO = async (handler: (event: any) => void) => {
   }
 
   log.info(`Adding click listeners...`);
-  uiohook.on('click', (event) => {
+  uIOhook.on('click', (event) => {
     try {
       handler(event);
       sendToAllActiveChildren({
@@ -116,7 +115,7 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  uiohook.on('mousedown', (event) => {
+  uIOhook.on('mousedown', (event) => {
     try {
       sendToAllActiveChildren({
         channel: Channel.SYSTEM_MOUSEDOWN,
@@ -127,7 +126,7 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  uiohook.on('mouseup', (event) => {
+  uIOhook.on('mouseup', (event) => {
     try {
       sendToAllActiveChildren({
         channel: Channel.SYSTEM_MOUSEUP,
@@ -138,7 +137,7 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  uiohook.on('mousemove', (event) => {
+  uIOhook.on('mousemove', (event) => {
     try {
       sendToAllActiveChildren({
         channel: Channel.SYSTEM_MOUSEMOVE,
@@ -149,7 +148,7 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  uiohook.on('wheel', (event) => {
+  uIOhook.on('wheel', (event) => {
     try {
       sendToAllActiveChildren({
         channel: Channel.SYSTEM_WHEEL,
@@ -162,7 +161,7 @@ export const registerIO = async (handler: (event: any) => void) => {
 
   log.info(`Adding keydown listeners...`);
   let key = '';
-  uiohook.on('keydown', (event) => {
+  uIOhook.on('keydown', (event) => {
     try {
       key = toKey(event.keycode, event.shiftKey);
       (event as any).key = key;
@@ -183,7 +182,7 @@ export const registerIO = async (handler: (event: any) => void) => {
     }
   });
 
-  uiohook.on('keyup', (event) => {
+  uIOhook.on('keyup', (event) => {
     (event as any).key = key;
     (event as any).text = kitState.snippet;
     sendToAllActiveChildren({
@@ -198,6 +197,6 @@ export const registerIO = async (handler: (event: any) => void) => {
 
   // TODO: Is there a way to detect that this has hung and restart the app if so?
   log.info(`The line right before uIOhook.start()...`);
-  uiohook.start();
+  uIOhook.start();
   log.info(`The line right after uIOhook.start()...`);
 };

@@ -24,9 +24,9 @@ const mpw = '@johnlindquist/mac-panel-window' as const;
 
 // Object.keys(packageJson.optionalDependencies)
 const optionalDependencies = [robot, uiohook, nmp, nwm, mcl, mf, mpw] as const;
-type OptionalDependencies = (typeof optionalDependencies)[number];
+type OptionalDependency = (typeof optionalDependencies)[number];
 
-const supportMap: Partial<Record<Target, OptionalDependencies[]>> = {
+const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
   'win32-arm64': [robot, uiohook, nwm],
   'win32-x64': [robot, uiohook, nwm],
   'darwin-arm64': [robot, uiohook, nmp, nwm, mcl, mf, mpw],
@@ -34,7 +34,6 @@ const supportMap: Partial<Record<Target, OptionalDependencies[]>> = {
   'linux-arm64': [],
   'linux-x64': [robot, uiohook],
 } as const;
-
 interface Shims {
   [robot]: typeof import('@jitsi/robotjs');
   [uiohook]: typeof import('uiohook-napi');
@@ -50,6 +49,8 @@ const notImplemented = new Proxy(
   {
     get: (target, prop: string) => () => {
       log.warn(`${prop} not supported on ${target}`);
+
+      return notImplemented;
     },
   },
 );
@@ -78,12 +79,18 @@ export const external = () => {
 };
 
 export async function loadShims() {
-  const exportDefaults: OptionalDependencies[] = [nmp];
+  log.info(`
+
+
+>>>>>>>>>> LOADING SHIMS
+
+  `);
+  const exportDefaults: OptionalDependency[] = [nmp];
   const deps = include();
   for (const dep of deps) {
     log.info(`Loading shim: ${dep}`);
     const shim = await import(dep);
-    log.info(`Loaded shim: ${dep}`);
+    log.info(`Loaded shim: ${dep}`, shim);
     shims[dep] = exportDefaults.includes(dep) ? shim.default : shim;
   }
 }

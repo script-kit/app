@@ -207,7 +207,6 @@ jobs:
             if (Test-Path node_modules\@nut-tree\libnut-darwin) { Remove-Item node_modules\@nut-tree\libnut-darwin -Recurse -Force }
             if (Test-Path node_modules\@nut-tree\libnut-linux) { Remove-Item node_modules\@nut-tree\libnut-linux -Recurse -Force }
             cat ./package.json
-            echo "--- Done removing mac deps ---\n\n"
             npm run vite-prebuild
             npx kit ./build.ts win x64 always
 
@@ -289,7 +288,6 @@ jobs:
             # npx kit patch-node-pty
             # npm i --force @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
-            echo "--- Done removing mac deps ---\n\n"
             npm run vite-prebuild
             npx kit ./build.ts linux arm64 always
 

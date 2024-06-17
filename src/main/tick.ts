@@ -8,12 +8,7 @@ import { format } from 'date-fns';
 import { writeFile, readFile } from 'fs/promises';
 import path from 'path';
 import { nanoid } from 'nanoid';
-import {
-  UiohookKeyboardEvent,
-  UiohookKey,
-  UiohookMouseEvent,
-  uIOhook,
-} from 'uiohook-napi';
+
 import { tmpClipboardDir, kitPath } from '@johnlindquist/kit/core/utils';
 import { Script } from '@johnlindquist/kit/types';
 import { store } from '@johnlindquist/kit/core/db';
@@ -56,6 +51,10 @@ let frontmost: any = null;
 const SPACE = '_';
 
 let prevKey = -1;
+// TODO: Figure out how to import types off of shims
+type UiohookKeyboardEvent = any;
+type UiohookMouseEvent = any;
+
 const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
   try {
     if ((event as UiohookMouseEvent).button) {
