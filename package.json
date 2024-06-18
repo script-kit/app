@@ -10,6 +10,8 @@
     "build:main": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.babel.js",
     "build:renderer": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.renderer.prod.babel.js",
     "rebuild": "electron-rebuild",
+    "format:check": "biome check .",
+    "format:fix": "biome check . --write --unsafe",
     "lint": "cross-env NODE_ENV=development eslint . --cache --ext .js,.jsx,.ts,.tsx",
     "package": "yarn build && npx electron-builder build --publish never",
     "yarn-dedupe": "yarn-deduplicate yarn.lock",
@@ -93,6 +95,7 @@
     ]
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.8.1",
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@electron/notarize": "^2.3.2",
     "@fontsource/jetbrains-mono": "^5.0.20",
