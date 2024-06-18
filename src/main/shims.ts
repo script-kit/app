@@ -34,6 +34,13 @@ const supportMap: Partial<Record<Target, OptionalDependency[]>> = {
   'linux-arm64': [],
   'linux-x64': [robot, uiohook],
 } as const;
+
+export const supportsDependency = (dep: OptionalDependency) => {
+  return supportMap[target]?.includes(dep);
+};
+
+const exportDefaults: OptionalDependency[] = [nmp, robot];
+
 interface Shims {
   //@ts-ignore This import might not work, depending on the platform
   [robot]: typeof import('@jitsi/robotjs');
@@ -51,17 +58,22 @@ interface Shims {
   [mpw]: typeof import('@johnlindquist/mac-panel-window');
 }
 
-const createShim = <T extends keyof Shims>(packageName: T, depth = 0): Shims[T] =>
+const createShim = <T extends keyof Shims>(
+  packageName: T,
+  depth = 0,
+): Shims[T] =>
   new Proxy(
     {},
     {
       get: (_target, prop: string) => {
-        log.warn(`Accessing ${prop.toString()} not supported on ${packageName}`);
+        log.warn(
+          `Accessing ${prop.toString()} not supported on ${packageName}`,
+        );
 
         if (depth > 0) {
-          throw Error(
+          log.error(
             `The shim for ${packageName} appears to get accessed deeply with '${prop}', indicating ` +
-            'that platform checks are missing.'
+              'that platform checks are missing.',
           );
         }
 
@@ -77,7 +89,7 @@ const shims: Shims = {
   [nwm]: createShim('@johnlindquist/node-window-manager'),
   [mf]: createShim('@johnlindquist/mac-frontmost'),
   [mpw]: createShim('@johnlindquist/mac-panel-window'),
-  [mcl]: createShim('@johnlindquist/mac-clipboard-listener')
+  [mcl]: createShim('@johnlindquist/mac-clipboard-listener'),
 };
 
 export const include = () => {
@@ -97,16 +109,15 @@ export async function loadSupportedOptionalLibraries() {
   log.info(`
 
 
->>>>>>>>>> LOADING SHIMS
+>>>>>>>>>> LOADING OPTIONAL LIBRARIES
 
   `);
-  const exportDefaults: OptionalDependency[] = [nmp];
   const deps = include();
   for (const dep of deps) {
-    log.info(`Loading shim: ${dep}`);
+    log.info(`Loading: ${dep}`);
     const shim = await import(dep);
-    log.info(`Loaded shim: ${dep}`, shim);
     shims[dep] = exportDefaults.includes(dep) ? shim.default : shim;
+    log.info(`Loaded: ${dep}. Available:`, Object.keys(shims[dep]));
   }
 }
 

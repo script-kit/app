@@ -1566,7 +1566,6 @@ export class KitPrompt {
       promptLogPath;
     const getPromptInfo = async () => {
       const activeAppBounds: any = {};
-      // REMOVE-NODE-WINDOW-MANAGER
       const activeWindow =
         shims[
           '@johnlindquist/node-window-manager'
@@ -1579,7 +1578,6 @@ export class KitPrompt {
         activeAppBounds.height = bounds.height;
         activeAppBounds.title = activeWindow.getTitle();
       }
-      // END-REMOVE-NODE-WINDOW-MANAGER
 
       const promptBounds = this.window?.getBounds();
       const screenBounds = getCurrentScreen().bounds;

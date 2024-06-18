@@ -28,7 +28,7 @@ import {
 } from './clipboard';
 import { registerIO, toKey } from './io';
 import { prompts } from './prompts';
-import shims from './shims';
+import shims, { supportsDependency } from './shims';
 
 type FrontmostApp = {
   localizedName: string;
@@ -51,11 +51,20 @@ let frontmost: any = null;
 const SPACE = '_';
 
 let prevKey = -1;
-// TODO: Figure out how to import types off of shims
-type UiohookKeyboardEvent = any;
-type UiohookMouseEvent = any;
+
+// @ts-ignore This import might not work, depending on the platform
+import type {
+  UiohookKeyboardEvent,
+  UiohookMouseEvent,
+  UiohookKey,
+} from 'uiohook-napi';
+let uiohookKeyCode: typeof UiohookKey;
 
 const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
+  if (!uiohookKeyCode) {
+    uiohookKeyCode = shims['uiohook-napi'].UiohookKey;
+  }
+
   try {
     if ((event as UiohookMouseEvent).button) {
       log.silly('Clicked. Clearing snippet.');
@@ -65,7 +74,7 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
 
     const e = event as UiohookKeyboardEvent;
 
-    if (e.keycode === UiohookKey.Escape) {
+    if (e.keycode === uiohookKeyCode.Escape) {
       kitState.typedText = '';
       if (kitState.isTyping) {
         log.info(`✋ Cancel typing`);
@@ -93,10 +102,10 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
 
     // Clear on arrow keys
     if (
-      e.keycode === UiohookKey.ArrowLeft ||
-      e.keycode === UiohookKey.ArrowRight ||
-      e.keycode === UiohookKey.ArrowUp ||
-      e.keycode === UiohookKey.ArrowDown
+      e.keycode === uiohookKeyCode.ArrowLeft ||
+      e.keycode === uiohookKeyCode.ArrowRight ||
+      e.keycode === uiohookKeyCode.ArrowUp ||
+      e.keycode === uiohookKeyCode.ArrowDown
     ) {
       log.silly(`Ignoring arrow key and clearing snippet`);
       kitState.snippet = '';
@@ -105,7 +114,10 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
     }
 
     // 42 is shift
-    if (e.keycode === UiohookKey.Shift || e.keycode === UiohookKey.ShiftRight) {
+    if (
+      e.keycode === uiohookKeyCode.Shift ||
+      e.keycode === uiohookKeyCode.ShiftRight
+    ) {
       log.silly(`Ignoring shift key`);
       return;
     }
@@ -114,27 +126,30 @@ const ioEvent = async (event: UiohookKeyboardEvent | UiohookMouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.altKey) {
       log.silly(`Ignoring modifier key and clearing snippet`);
       kitState.snippet = '';
-      if (e.keycode === UiohookKey.Backspace) {
+      if (e.keycode === uiohookKeyCode.Backspace) {
         kitState.typedText = '';
       }
       return;
     }
 
-    if (e.keycode === UiohookKey.Backspace) {
+    if (e.keycode === uiohookKeyCode.Backspace) {
       log.silly(`Backspace: Removing last character from snippet`);
       kitState.snippet = kitState.snippet.slice(0, -1);
       kitState.typedText = kitState.typedText.slice(0, -1);
       // 57 is the space key
-    } else if (e?.keycode === UiohookKey.Space) {
+    } else if (e?.keycode === uiohookKeyCode.Space) {
       log.silly(`Space: Adding space to snippet`);
-      if (prevKey === UiohookKey.Backspace || kitState.snippet.length === 0) {
+      if (
+        prevKey === uiohookKeyCode.Backspace ||
+        kitState.snippet.length === 0
+      ) {
         kitState.snippet = '';
       } else {
         kitState.snippet += SPACE;
         kitState.typedText = `${kitState.typedText} `;
       }
     } else if (
-      e?.keycode === UiohookKey.Quote ||
+      e?.keycode === uiohookKeyCode.Quote ||
       key.length > 1 ||
       key === ''
     ) {
@@ -216,6 +231,8 @@ export const startKeyboardMonitor = async () => {
 
     return () => {
       log.info(`🛑 Attempting to stop keyboard and mouse watcher`);
+      const { uIOhook } = shims['uiohook-napi'];
+
       uIOhook.stop();
       log.info(`🛑 Successfully stopped keyboard and mouse watcher`);
     };
@@ -251,7 +268,7 @@ export const startClipboardMonitor = async () => {
       log.info(`Attempting to start clipboard...`);
       if (!kitState.isMac) {
         clipboardEventListener = new Clipboard();
-        clipboardEventListener.on('text', (text) => {
+        clipboardEventListener.on('text', () => {
           try {
             log.info(`Clipboard text changed...`);
             observer.next('text');
@@ -260,7 +277,7 @@ export const startClipboardMonitor = async () => {
           }
         });
 
-        clipboardEventListener.on('image', (image) => {
+        clipboardEventListener.on('image', () => {
           try {
             log.info(`Clipboard image changed...`);
             observer.next('image');
@@ -553,7 +570,7 @@ export const addTextSnippet = async (filePath: string) => {
   }
 
   const contents = await readFile(filePath, 'utf8');
-  const { metadata, snippet } = await getSnippet(contents);
+  const { metadata } = await getSnippet(contents);
 
   if (metadata?.snippet) {
     log.info(`Set snippet: ${metadata.snippet}`);

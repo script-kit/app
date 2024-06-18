@@ -5,21 +5,6 @@ import { sendToAllActiveChildren } from './process';
 import { chars } from './chars';
 import shims from './shims';
 
-const { UiohookKey, uIOhook } = shims['uiohook-napi'];
-
-export const UiohookToName = Object.fromEntries(
-  Object.entries(UiohookKey).map(([k, v]) => [v, k]),
-);
-
-UiohookToName[UiohookKey.Comma] = ',';
-UiohookToName[UiohookKey.Period] = '.';
-UiohookToName[UiohookKey.Slash] = '/';
-UiohookToName[UiohookKey.Backslash] = '\\';
-UiohookToName[UiohookKey.Semicolon] = ';';
-UiohookToName[UiohookKey.Equal] = '=';
-UiohookToName[UiohookKey.Minus] = '-';
-UiohookToName[UiohookKey.Quote] = "'";
-
 export const ShiftMap = {
   '`': '~',
   '1': '!',
@@ -71,7 +56,28 @@ export const ShiftMap = {
 };
 type KeyCodes = keyof typeof ShiftMap;
 
+let UiohookToName: Record<number, string>;
+function createUiohookToName() {
+  const { UiohookKey } = shims['uiohook-napi'];
+
+  UiohookToName = Object.fromEntries(
+    Object.entries(UiohookKey).map(([k, v]) => [v, k]),
+  );
+
+  UiohookToName[UiohookKey.Comma] = ',';
+  UiohookToName[UiohookKey.Period] = '.';
+  UiohookToName[UiohookKey.Slash] = '/';
+  UiohookToName[UiohookKey.Backslash] = '\\';
+  UiohookToName[UiohookKey.Semicolon] = ';';
+  UiohookToName[UiohookKey.Equal] = '=';
+  UiohookToName[UiohookKey.Minus] = '-';
+  UiohookToName[UiohookKey.Quote] = "'";
+}
+
 export const toKey = (keycode: number, shift = false) => {
+  if (!UiohookToName) {
+    createUiohookToName();
+  }
   try {
     let key: string = UiohookToName[keycode] || '';
     if (kitState.keymap) {
@@ -95,6 +101,8 @@ export const toKey = (keycode: number, shift = false) => {
 };
 
 export const registerIO = async (handler: (event: any) => void) => {
+  const { UiohookKey, uIOhook } = shims['uiohook-napi'];
+
   const notAuthorized = await getAccessibilityAuthorized();
   if (!notAuthorized) {
     log.info(`Requesting accessibility access...`);

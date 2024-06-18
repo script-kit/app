@@ -202,10 +202,6 @@ jobs:
           timeout_minutes: 30
           command: |
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            npm i --force
-            Push-Location node_modules\uiohook-napi\prebuilds; Get-ChildItem | Where-Object { $_.Name -notmatch '^win' } | Remove-Item -Recurse -Force; Pop-Location
-            if (Test-Path node_modules\@nut-tree\libnut-darwin) { Remove-Item node_modules\@nut-tree\libnut-darwin -Recurse -Force }
-            if (Test-Path node_modules\@nut-tree\libnut-linux) { Remove-Item node_modules\@nut-tree\libnut-linux -Recurse -Force }
             cat ./package.json
             npm run vite-prebuild
             npx kit ./build.ts win x64 always
@@ -218,9 +214,7 @@ jobs:
           timeout_minutes: 30
           command: |
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            npm i --force
             npx kit remove-tick
-            echo "--- Done removing mac deps ---\n\n"
             npm run vite-prebuild
             npx kit ./build.ts win arm64 always
         env:
@@ -256,11 +250,9 @@ jobs:
             sudo apt-get install -y libxtst-dev
             sudo apt-get install -y python2.7 make gcc libpng++-dev
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            npm i --force
             # npx kit patch-node-pty
             # npm i --force @homebridge/node-pty-prebuilt-multiarch
             cat ./package.json
-            echo "--- Done removing mac deps ---\n\n"
             npm run vite-prebuild
             npx kit ./build.ts linux x64 always
 
@@ -283,7 +275,6 @@ jobs:
           timeout_minutes: 30
           command: |
             npm i --force @johnlindquist/kit@${{ needs.tag.outputs.kit_tag }}
-            npm i --force
             npx kit remove-tick
             # npx kit patch-node-pty
             # npm i --force @homebridge/node-pty-prebuilt-multiarch
