@@ -129,7 +129,7 @@ import { syncClipboardStore } from './clipboard';
 import { actualHideDock, clearStateTimers } from './dock';
 import { prompts } from './prompts';
 import { createIdlePty, destroyPtyPool } from './pty';
-import shims, { loadShims } from './shims';
+import shims, { loadSupportedOptionalLibraries } from './shims';
 
 // TODO: Read a settings file to get the KENV/KIT paths
 
@@ -1034,7 +1034,7 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
   await cacheMainScripts(stamp);
 });
 
-app.whenReady().then(loadShims).then(checkKit).catch(ohNo);
+app.whenReady().then(loadSupportedOptionalLibraries).then(checkKit).catch(ohNo);
 
 app?.on('will-quit', (e) => {
   log.info(`🚪 will-quit`);
