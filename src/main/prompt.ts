@@ -623,27 +623,22 @@ export class KitPrompt {
 
   async makeWindow() {
     if (kitState.isMac) {
-      if (this.window && !this.window.isDestroyed()) {
-        shims['@johnlindquist/mac-panel-window'].makeWindow(this.window);
-      }
+      log.info(`${this.pid}: 📌 Making window`);
+      shims['@johnlindquist/mac-panel-window'].makeWindow(this.window);
     }
   }
 
   async makeKeyWindow() {
     if (kitState.isMac) {
-      if (this.window && !this.window.isDestroyed()) {
-        shims['@johnlindquist/mac-panel-window'].makeKeyWindow(this.window);
-      }
+      log.info(`${this.pid}: 📌 Making key window`);
+      shims['@johnlindquist/mac-panel-window'].makeKeyWindow(this.window);
     }
   }
 
   async makePanel() {
     if (kitState.isMac) {
+      log.info(`${this.pid}: 📌 Making panel`);
       shims['@johnlindquist/mac-panel-window'].makePanel(this.window);
-
-      if (this.window && !this.window.isDestroyed()) {
-        shims['@johnlindquist/mac-panel-window'].makePanel(this.window);
-      }
     }
   }
 
@@ -689,7 +684,8 @@ export class KitPrompt {
       }
     };
 
-    // REMOVE-NODE-WINDOW-MANAGER
+    this.makePanel();
+
     if (kitState.isWindows) {
       if (kitState?.kenvEnv?.KIT_DISABLE_ROUNDED_CORNERS !== 'true') {
         shims[
@@ -699,7 +695,6 @@ export class KitPrompt {
         );
       }
     }
-    // END-REMOVE-NODE-WINDOW-MANAGER
 
     // prompt.setVisibleOnAllWorkspaces(true, {
     //   visibleOnFullScreen: true,
@@ -2176,7 +2171,7 @@ export class KitPrompt {
     ) {
       try {
         if (kitState.isMac) {
-          this.window?.show();
+          this.window?.showInactive();
           this.makeKeyWindow();
         } else {
           this?.window?.setFocusable(true);
@@ -2664,6 +2659,7 @@ export class KitPrompt {
     }
 
     if (kitState.isMac) {
+      log.info(`${this.pid}: 📌 Hiding instant`);
       shims['@johnlindquist/mac-panel-window'].hideInstant(this.window);
     }
 
