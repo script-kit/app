@@ -2,7 +2,7 @@ import { ipcMain } from 'electron';
 /* eslint-disable no-nested-ternary */
 import log from 'electron-log';
 import { debounce } from 'lodash-es';
-import * as pty from 'node-pty';
+import pty from 'node-pty';
 import { AppChannel } from '../shared/enums';
 import { KitEvent, emitter } from '../shared/events';
 import type { TermConfig } from '../shared/types';
@@ -174,7 +174,7 @@ export const createPty = (prompt: KitPrompt) => {
       return;
     }
     try {
-      t.write(data?.data);
+      t?.write(data?.data);
     } catch (error) {
       log.error('Error writing to pty', error);
     }
@@ -206,7 +206,7 @@ export const createPty = (prompt: KitPrompt) => {
     }
   };
 
-  const handleTermReady = async (event, config: TermConfig) => {
+  const handleTermReady = async (_event, config: TermConfig) => {
     log.info({
       termConfig: {
         command: config?.command || '<no command>',
@@ -342,7 +342,7 @@ export const createPty = (prompt: KitPrompt) => {
       config.command = '';
     }, 200);
 
-    t.onData(async (data: any) => {
+    t.onData((data: any) => {
       try {
         sendData(data);
       } catch (ex) {

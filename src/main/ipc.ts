@@ -23,7 +23,7 @@ import log from 'electron-log';
 import { debounce } from 'lodash-es';
 import { DownloaderHelper } from 'node-downloader-helper';
 import { KitEvent, emitter } from '../shared/events';
-import { type ProcessAndPrompt, cachePreview, ensureIdleProcess, processes } from './process';
+import { type ProcessAndPrompt, ensureIdleProcess, processes } from './process';
 
 import { getAssetPath } from '../shared/assets';
 import { noChoice } from '../shared/defaults';
@@ -33,7 +33,7 @@ import { runPromptProcess } from './kit';
 import type { KitPrompt } from './prompt';
 import { prompts } from './prompts';
 import { debounceInvokeSearch, invokeFlagSearch, invokeSearch } from './search';
-import { kitCache, kitState } from './state';
+import { kitState } from './state';
 
 let actionsOpenTimeout: NodeJS.Timeout;
 let prevTransformedInput = '';
@@ -197,26 +197,26 @@ export const startIpc = () => {
   ipcMain.on(
     AppChannel.ERROR_RELOAD,
     debounce(
-      async (event, data: any) => {
+      (_event, data: any) => {
         log.info('AppChannel.ERROR_RELOAD');
-        const { scriptPath, pid } = data;
+        const { /*scriptPath,*/ pid } = data;
         const prompt = prompts.get(pid);
-        const onReload = async () => {
-          const markdown = `# Error
-
-${data.message}
-
-${data.error}
-          `;
-          emitter.emit(KitEvent.RunPromptProcess, {
-            scriptPath: kitPath('cli', 'info.js'),
-            args: [path.basename(scriptPath), 'Error... ', markdown],
-            options: {
-              force: true,
-              trigger: Trigger.Info,
-            },
-          });
-        };
+        //         const onReload = async () => {
+        //           const markdown = `# Error
+        //
+        // ${data.message}
+        //
+        // ${data.error}
+        //           `;
+        //           emitter.emit(KitEvent.RunPromptProcess, {
+        //             scriptPath: kitPath('cli', 'info.js'),
+        //             args: [path.basename(scriptPath), 'Error... ', markdown],
+        //             options: {
+        //               force: true,
+        //               trigger: Trigger.Info,
+        //             },
+        //           });
+        //         };
 
         // TODO: Reimplement
         if (prompt) {
@@ -257,7 +257,7 @@ ${data.error}
     event.sender.send(AppChannel.GET_ASSET, { assetPath });
   });
 
-  ipcMain.on(AppChannel.RESIZE, (event, resizeData: ResizeData) => {
+  ipcMain.on(AppChannel.RESIZE, (_event, resizeData: ResizeData) => {
     const prompt = prompts.get(resizeData.pid);
     // log.info(`>>>>>>>>>>>>> AppChannel.RESIZE`, {
     //   prompt,
@@ -282,7 +282,7 @@ ${data.error}
     });
   });
 
-  ipcMain.on(AppChannel.OPEN_SCRIPT_LOG, async (event, script: Script) => {
+  ipcMain.on(AppChannel.OPEN_SCRIPT_LOG, async (_event, script: Script) => {
     const logPath = getLogFromScriptPath((script as Script).filePath);
     await runPromptProcess(kitPath('cli/edit-file.js'), [logPath], {
       force: true,
@@ -291,14 +291,14 @@ ${data.error}
     });
   });
 
-  ipcMain.on(AppChannel.END_PROCESS, (event, { pid }) => {
+  ipcMain.on(AppChannel.END_PROCESS, (_event, { pid }) => {
     const processInfo = processes.getByPid(pid);
     if (processInfo) {
       processes.removeByPid(pid);
     }
   });
 
-  ipcMain.on(AppChannel.OPEN_SCRIPT_DB, async (event, { focused, script }: AppState) => {
+  ipcMain.on(AppChannel.OPEN_SCRIPT_DB, async (_event, { focused, script }: AppState) => {
     const filePath = (focused as any)?.filePath || script?.filePath;
     const dbPath = path.resolve(filePath, '..', '..', 'db', `_${path.basename(filePath).replace(/js$/, 'json')}`);
     await runPromptProcess(kitPath('cli/edit-file.js'), [dbPath], {
@@ -308,7 +308,7 @@ ${data.error}
     });
   });
 
-  ipcMain.on(AppChannel.OPEN_SCRIPT, async (event, { script, description, input }: Required<AppState>) => {
+  ipcMain.on(AppChannel.OPEN_SCRIPT, async (_event, { script, description, input }: Required<AppState>) => {
     // When the editor is editing a script. Toggle back to running the script.
     const descriptionIsFile = await isFile(description);
     const descriptionIsInKenv = isInDir(kenvPath())(description);
@@ -340,8 +340,8 @@ ${data.error}
     });
   });
 
-  ipcMain.on(AppChannel.EDIT_SCRIPT, async (event, { script }: Required<AppState>) => {
-    if ((isInDir(kitPath()), script.filePath)) {
+  ipcMain.on(AppChannel.EDIT_SCRIPT, async (_event, { script }: Required<AppState>) => {
+    if (isInDir(kitPath())(script.filePath)) {
       return;
     }
     await runPromptProcess(kitPath('main/edit.js'), [script.filePath], {
@@ -351,7 +351,7 @@ ${data.error}
     });
   });
 
-  ipcMain.on(AppChannel.OPEN_FILE, async (event, { script, focused }: Required<AppState>) => {
+  ipcMain.on(AppChannel.OPEN_FILE, async (_event, { script, focused }: Required<AppState>) => {
     const filePath = (focused as any)?.filePath || script?.filePath;
 
     await runPromptProcess(kitPath('cli/edit-file.js'), [filePath], {
@@ -361,21 +361,21 @@ ${data.error}
     });
   });
 
-  ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, async () => {
+  ipcMain.on(AppChannel.RUN_MAIN_SCRIPT, () =>
     runPromptProcess(getMainScriptPath(), [], {
       force: true,
       trigger: Trigger.Kit,
       sponsorCheck: false,
-    });
-  });
+    }),
+  );
 
-  ipcMain.on(AppChannel.RUN_PROCESSES_SCRIPT, async () => {
+  ipcMain.on(AppChannel.RUN_PROCESSES_SCRIPT, () =>
     runPromptProcess(kitPath('cli', 'processes.js'), [], {
       force: true,
       trigger: Trigger.Kit,
       sponsorCheck: false,
-    });
-  });
+    }),
+  );
 
   for (const channel of [
     Channel.ACTIONS_INPUT,
@@ -460,7 +460,7 @@ ${data.error}
           }
 
           const isArg = message.state.ui === UI.arg;
-          const hasFlag = message.state.flaggedValue;
+          // const hasFlag = message.state.flaggedValue;
 
           if (isArg) {
             const shouldSearch = checkShortcodesAndKeywords(prompt, input);
@@ -510,7 +510,7 @@ ${data.error}
         }
 
         if (channel === Channel.ABANDON) {
-          log.info('⚠️ ABANDON', message.pid);
+          log.info('! ABANDON', message.pid);
         }
         // log.info({ channel, message });
         if ([Channel.VALUE_SUBMITTED, Channel.TAB_CHANGED].includes(channel)) {
@@ -582,11 +582,11 @@ ${data.error}
     );
   }
 
-  ipcMain.on(AppChannel.DRAG_FILE_PATH, async (event, { filePath, icon }: { filePath: string; icon: string }) => {
+  ipcMain.on(AppChannel.DRAG_FILE_PATH, async (event, { filePath }: { filePath: string; icon: string }) => {
     try {
       let newPath = filePath;
       if (filePath.startsWith('http')) {
-        newPath = await new Promise((resolve, reject) => {
+        newPath = await new Promise((resolve) => {
           const dl = new DownloaderHelper(filePath, tmpDownloadsDir, {
             override: true,
           });
@@ -626,7 +626,7 @@ ${data.error}
     }
   });
 
-  ipcMain.on(AppChannel.FEEDBACK, async (event, data: Survey) => {
+  ipcMain.on(AppChannel.FEEDBACK, async (_event, data: Survey) => {
     // runScript(kitPath('cli', 'feedback.js'), JSON.stringify(data));
 
     try {
@@ -646,11 +646,11 @@ ${data.error}
   });
 
   type levelType = 'debug' | 'info' | 'warn' | 'error' | 'silly';
-  ipcMain.on(AppChannel.LOG, async (event, { message, level }: { message: any; level: levelType }) => {
+  ipcMain.on(AppChannel.LOG, (_event, { message, level }: { message: any; level: levelType }) => {
     log[level](message);
   });
 
-  ipcMain.on(AppChannel.LOGIN, async () => {
+  ipcMain.on(AppChannel.LOGIN, () => {
     runPromptProcess(kitPath('pro', 'login.js'), [], {
       force: true,
       trigger: Trigger.App,
@@ -658,7 +658,7 @@ ${data.error}
     });
   });
 
-  ipcMain.on(AppChannel.APPLY_UPDATE, async (event, data: any) => {
+  ipcMain.on(AppChannel.APPLY_UPDATE, (_event, _data: any) => {
     log.info('🚀 Applying update');
     kitState.applyUpdate = true;
   });

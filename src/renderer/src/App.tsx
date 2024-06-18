@@ -69,6 +69,7 @@ import {
 } from './jotai';
 
 import { loader } from '@monaco-editor/react';
+// biome-ignore lint/style/noNamespaceImport: Don't touch this, it fragile as heck
 import * as monaco from 'monaco-editor';
 import { AppChannel } from '../../shared/enums';
 import AudioDot from './audio-dot';
@@ -244,7 +245,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    log.info(`${pid}: 👩‍💻 UI changed to: ${ui}`);
+    log.info(`${pid}: 👩 UI changed to: ${ui}`);
   }, [ui, pid]);
 
   useEffect(() => {
@@ -255,7 +256,7 @@ export default function App() {
 
   useEffect(() => {
     document.addEventListener('visibilitychange', () => {
-      log.info(`${pid}: 👁️‍🗨️ visibilitychange: ${document.visibilityState}`);
+      log.info(`${pid}: 👁 visibilitychange: ${document.visibilityState}`);
     });
   }, [pid]);
 
@@ -414,7 +415,7 @@ export default function App() {
     ipcRenderer.on(AppChannel.PROCESSES, processesHandler);
 
     const userChangedHandler = (_, data) => {
-      // log.info(`${window.pid}: 👩‍💻 User changed`, data?.username);
+      // log.info(`${window.pid}: 👩 User changed`, data?.username);
       setUser(data);
     };
     ipcRenderer.on(AppChannel.USER_CHANGED, userChangedHandler);

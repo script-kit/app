@@ -720,7 +720,6 @@ const checkKit = async () => {
   const storedVersion = await getStoredVersion();
   log.info(`Stored version: ${storedVersion}`);
 
-  const isMac = os.platform() === 'darwin';
   if (!(await kitExists()) || storedVersion === '0.0.0') {
     if (!process.env.KIT_SPLASH) {
       log.info(`🌑 shouldUseDarkColors: ${nativeTheme.shouldUseDarkColors ? 'true' : 'false'}`);
@@ -962,7 +961,7 @@ const checkKit = async () => {
       await cacheMainScripts();
     }, 1000);
   } catch (error) {
-    ohNo(error);
+    ohNo(error).then();
   }
 };
 
@@ -972,7 +971,7 @@ emitter.on(KitEvent.SetScriptTimestamp, async (stamp) => {
 
 app.whenReady().then(loadSupportedOptionalLibraries).then(checkKit).catch(ohNo);
 
-app?.on('will-quit', (e) => {
+app?.on('will-quit', (_e) => {
   log.info('🚪 will-quit');
 });
 

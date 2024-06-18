@@ -29,7 +29,7 @@ Attempting to assign <code>${shortcut}</code> to ${filePath}...
 <code>${shortcut}</code> is already registered to ${path.basename(otherPath)}
 `;
 
-const mainFail = (shortcut: string, filePath: string) =>
+const mainFail = (shortcut: string, _filePath: string) =>
   `# Failed to Register Main Shortcut
 
 <code>${shortcut}</code> failed to register. May already be registered to another app.`;
@@ -204,7 +204,7 @@ export const shortcutScriptChanged = ({
   }
 };
 
-export const updateMainShortcut = async (shortcut?: string) => {
+export const updateMainShortcut = (shortcut?: string) => {
   const checkShortcut = shortcut ? shortcut : kitState.isMac ? 'cmd ;' : 'ctrl ;';
   log.info(`updateMainShortcut with ${checkShortcut}`);
 
@@ -231,7 +231,7 @@ export const updateMainShortcut = async (shortcut?: string) => {
     kitState.shortcutPressed = finalShortcut;
 
     if (prompts.focused?.scriptPath === getMainScriptPath()) {
-      prompts.focused?.hideInstant();
+      prompts.focused?.hideInstant().then();
       processes.removeByPid(prompts.focused?.pid);
       prompts.focused = null;
       return;
@@ -289,7 +289,7 @@ const subShortcutsPaused = subscribeKey(kitState, 'shortcutsPaused', (shortcutsP
   if (paused === shortcutsPaused) {
     return;
   }
-  log.info('✂️ shortcutsPaused change...', {
+  log.info('✂ shortcutsPaused change...', {
     oldPaused: paused,
     newPaused: shortcutsPaused,
   });

@@ -15,7 +15,7 @@ const highlightAdjacentAndWordStart = (name: string, input: string) => {
       ili += 1;
       prevQualifies = true;
       return (
-        <span key={i} className={className}>
+        <span key={`${name}_${letter}`} className={className}>
           {letter}
         </span>
       );
@@ -23,7 +23,7 @@ const highlightAdjacentAndWordStart = (name: string, input: string) => {
 
     prevQualifies = Boolean(letter.match(/\W/));
 
-    return <span key={i}>{letter}</span>;
+    return <span key={`${name}_${letter}_${prevQualifies}`}>{letter}</span>;
   });
 };
 

@@ -1,6 +1,4 @@
-import fs from 'node:fs';
 import { app } from 'electron';
-import { getAssetPath } from '../shared/assets';
 import { kitStore } from './state';
 
 // eslint-disable-next-line import/prefer-default-export
@@ -19,10 +17,6 @@ export const getVersion = () => {
   return app.getVersion();
 };
 
-export const storeVersion = async (version: string) => {
-  kitStore.set('version', version);
-};
+export const storeVersion = (version: string) => kitStore.set('version', version);
 
-export const getStoredVersion = async () => {
-  return kitStore.get('version');
-};
+export const getStoredVersion = () => kitStore.get('version');

@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import * as path from 'node:path';
+import path from 'node:path';
 import { getLogFromScriptPath, kenvPath } from '@johnlindquist/kit/core/utils';
 import { app } from 'electron';
 /* eslint-disable import/no-cycle */

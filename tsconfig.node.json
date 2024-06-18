@@ -11,6 +11,6 @@
     "skipLibCheck": true,
     "composite": true,
     "types": ["electron-vite/node"],
-    "isolatedModules": false,
-  },
+    "isolatedModules": false
+  }
 }

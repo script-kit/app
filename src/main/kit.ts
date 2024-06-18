@@ -31,7 +31,7 @@ import { setShortcodes } from './search';
 import { getKitScript, kitCache, kitState, kitStore, sponsorCheck } from './state';
 import { TrackEvent, trackEvent } from './track';
 
-app.on('second-instance', async (_event, argv) => {
+app.on('second-instance', (_event, argv) => {
   log.info('second-instance', argv);
   const { _ } = minimist(argv);
   const [, , argScript, ...argArgs] = _;
@@ -54,7 +54,7 @@ app.on('second-instance', async (_event, argv) => {
   });
 });
 
-app.on('activate', async (_event, hasVisibleWindows) => {
+app.on('activate', (_event, hasVisibleWindows) => {
   kitState.isActivated = true;
   runPromptProcess(getMainScriptPath(), [], {
     force: true,

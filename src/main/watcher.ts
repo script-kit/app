@@ -117,7 +117,7 @@ const unlinkBin = (filePath: string) => {
 };
 
 const checkFileImports = debounce(async (script: Script) => {
-  let imports: string[] = [];
+  let imports: string[];
   try {
     imports = await getFileImports(
       script.filePath,
@@ -783,7 +783,7 @@ export const setupWatchers = async () => {
   });
 };
 
-subscribeKey(kitState, 'suspendWatchers', async (suspendWatchers) => {
+subscribeKey(kitState, 'suspendWatchers', (suspendWatchers) => {
   if (suspendWatchers) {
     log.info('⌚️ Suspending Watchers');
     teardownWatchers();
@@ -803,6 +803,6 @@ emitter.on(KitEvent.RestartWatcher, async () => {
   }
 });
 
-emitter.on(KitEvent.Sync, async () => {
+emitter.on(KitEvent.Sync, () => {
   checkUserDb('sync');
 });

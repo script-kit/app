@@ -6,19 +6,16 @@ import Store, { type Schema } from 'electron-store';
 import type { Config, KitStatus } from '@johnlindquist/kit/types/kitapp';
 import fsExtra from 'fs-extra';
 import { proxy } from 'valtio/vanilla';
-const { writeJson } = fsExtra;
 import type { ChildProcess } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import electron, { type Display } from 'electron';
 import log, { type FileTransport, type LevelOption, type LogLevel } from 'electron-log';
 import { debounce } from 'lodash-es';
-import * as nativeKeymap from 'native-keymap';
+import nativeKeymap from 'native-keymap';
 import { subscribeKey } from 'valtio/utils';
-const { app, nativeTheme } = electron;
-
 import { readdir } from 'node:fs/promises';
-import { AppDb, type Stamp, type UserDb, setScriptTimestamp } from '@johnlindquist/kit/core/db';
+import { type Stamp, type UserDb } from '@johnlindquist/kit/core/db';
 import type { Choice, FlagsOptions, PromptData, ScoredChoice, Script, Shortcut } from '@johnlindquist/kit/types/core';
 import schedule, { type Job } from 'node-schedule';
 
@@ -34,9 +31,12 @@ import {
 import type { kenvEnv } from '@johnlindquist/kit/types/env';
 import axios from 'axios';
 import { Trigger } from '../shared/enums';
-import { KitEvent, emitter } from '../shared/events';
+import { emitter, KitEvent } from '../shared/events';
 import internetAvailable from '../shared/internet-available';
 import shims from './shims';
+
+const { writeJson } = fsExtra;
+const { app, nativeTheme } = electron;
 
 const schema: Schema<{
   KENV: string;
@@ -110,18 +110,13 @@ export const getBackgroundTasks = () => {
 
 export const scheduleMap = new Map<string, Job>();
 
-export const getSchedule = () => {
-  return Array.from(scheduleMap.entries())
-    .filter(([filePath, job]) => {
-      return schedule.scheduledJobs?.[filePath] === job && !isParentOfDir(kitPath(), filePath);
-    })
-    .map(([filePath, job]: [string, Job]) => {
-      return {
-        filePath,
-        date: job.nextInvocation(),
-      };
-    });
-};
+export const getSchedule = () =>
+  Array.from(scheduleMap.entries())
+    .filter(([filePath, job]) => schedule.scheduledJobs?.[filePath] === job && !isParentOfDir(kitPath(), filePath))
+    .map(([filePath, job]: [string, Job]) => ({
+      filePath,
+      date: job.nextInvocation(),
+    }));
 
 export const workers = {
   createBin: null as Worker | null,
@@ -451,7 +446,7 @@ export const sponsorCheck = async (feature: string, block = true) => {
       log.error('Error checking sponsor status', response);
     }
 
-    log.info('🕵️‍♀️ Sponsor check response', JSON.stringify(response.data));
+    log.info('🕵 Sponsor check response', JSON.stringify(response.data));
 
     if (response.data && kitState.user.node_id && response.data.id === kitState.user.node_id) {
       log.info('User is sponsor');
@@ -673,7 +668,7 @@ export const kitClipboard = {
   store: null as any,
 };
 
-export const getAccessibilityAuthorized = async () => {
+export const getAccessibilityAuthorized = () => {
   if (isMac) {
     const authorized = shims['node-mac-permissions'].getAuthStatus('accessibility') === 'authorized';
     kitStore.set('accessibilityAuthorized', authorized);

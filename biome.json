@@ -11,7 +11,7 @@
     "enabled": true
   },
   "linter": {
-    "ignore": ["assets"],
+    "ignore": ["assets", ".erb"],
     "enabled": true,
     "rules": {
       "all": true,
@@ -19,13 +19,18 @@
         "noExcessiveCognitiveComplexity": "off",
         "noForEach": "off"
       },
+      "a11y": {
+        "useMediaCaption": "off",
+        "useKeyWithMouseEvents": "off"
+      },
       "correctness": {
         "noUndeclaredVariables": "off",
         "noConstantCondition": "off",
         "noUnusedVariables": "off",
         "noUnusedImports": "off",
         "noNodejsModules": "off",
-        "useExhaustiveDependencies": "off"
+        "useExhaustiveDependencies": "off",
+        "useJsxKeyInIterable": "off"
       },
       "style": {
         "noDefaultExport": "off",
@@ -46,10 +51,12 @@
       "suspicious": {
         "noEmptyBlockStatements": "off",
         "noDebugger": "off",
+        "noArrayIndexKey": "off",
         "noConsoleLog": "off",
         "noExplicitAny": "off",
         "noAssignInExpressions": "off",
-        "noImplicitAnyLet": "off"
+        "noImplicitAnyLet": "off",
+        "noControlCharactersInRegex": "off"
       },
       "security": {
         "noDangerouslySetInnerHtml": "off"

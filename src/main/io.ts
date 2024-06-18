@@ -101,7 +101,7 @@ export const toKey = (keycode: number, shift = false) => {
 export const registerIO = async (handler: (event: any) => void) => {
   const { UiohookKey, uIOhook } = shims['uiohook-napi'];
 
-  const notAuthorized = await getAccessibilityAuthorized();
+  const notAuthorized = getAccessibilityAuthorized();
   if (!notAuthorized) {
     log.info('Requesting accessibility access...');
 
